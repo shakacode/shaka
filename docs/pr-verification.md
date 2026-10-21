@@ -42,8 +42,8 @@ commit for your decision.
 When you choose to merge through GitHub, compare its current commit with the
 agent's chat handoff before using the offered control. If they differ, or no allowed merge
 method is offered, return to the agent. For a squash merge, use the
-[prepared commit message](#squash-merge-details). A merge queue takes no message, so
-add the PR to the queue instead.
+[prepared commit message](#squash-merge-details). A merge queue takes no message; see
+[merge queues](#merge-queues) for when to add the PR yourself and when to ask the agent.
 
 <a id="read-a-pr-for-your-decision"></a>
 
@@ -537,16 +537,24 @@ message itself.
 
 GitHub fills those boxes from a repository setting, by default with every branch
 commit's title. To start from the PR title and an empty body instead, set **Settings →
-General → Pull Requests → Allow squash merging** to **Default to pull request title**.
+General → Pull Requests → Allow squash merging** to **Pull request title**.
 
 ### Merge queues
 
-A merge queue offers no message box and ignores any message, so the checkpoint
-prepares none when the PR's base branch has one. It tells you to add the PR to the
-queue and says what the queue will write, which comes from the repository's setting
-for the queue's merge method: squash merging or merge commits.
+A merge queue offers no message box and ignores any message. It writes what the
+repository's setting for its merge method chooses, under **Settings → General → Pull
+Requests**, and the checkpoint says what that will be.
 
-When that setting is **Default to pull request title and description**, the queue copies
-the whole PR description into git history, including Shaka's sections and **WIP Details**,
-so the checkpoint warns you. Choose **Default to pull request title** to keep the commit
-to the PR title.
+With **Pull request title** or **Default message**, add the PR to the queue yourself.
+**Pull request title** commits the PR title alone. **Default message** commits the branch
+commit messages, under the PR title when the branch has more than one commit.
+
+With **Pull request title and description**, the queue copies the PR description into the
+commit, so ask the agent to merge instead. It puts the prepared commit message in the
+description and adds the PR to the queue. Your other text in the description waits in
+a comment, and the whole description comes back when the agent publishes it after the
+PR merges or leaves the queue.
+
+If you add such a PR to the queue yourself, its whole description, including Shaka's
+sections and **WIP Details**, goes into git history. The checkpoint warns you, and
+`shaka doctor` flags the setting.

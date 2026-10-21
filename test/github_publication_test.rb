@@ -58,10 +58,10 @@ class GitHubDescriptionTest < Minitest::Test
 
   def test_description_keeps_content_other_authors_appended
     existing = "old\n\n<!-- coderabbit -->\nSummary by CodeRabbit"
-    github = client(pull_response(existing), RENDERED, html_response('<p>ok</p>'), pull_response(existing),
-                    pull_response("#{MANAGED}\n\n#{existing}"))
+    github = client(pull_response(existing), RENDERED, response([]), html_response('<p>ok</p>'),
+                    pull_response(existing), pull_response("#{MANAGED}\n\n#{existing}"))
     github.description(body: BODY)
-    sent = sent_body
+    sent = sent_body(5)
     assert_equal "#{MANAGED}\n\n#{existing}", sent
     assert_includes sent, 'Summary by CodeRabbit'
   end
@@ -112,10 +112,11 @@ class GitHubDescriptionTest < Minitest::Test
   end
 
   def test_an_edit_that_lands_while_the_update_is_prepared_is_not_erased
-    github = client(pull_response('original'), RENDERED, html_response('<p>ok</p>'), pull_response('someone edited'))
+    github = client(pull_response('original'), RENDERED, response([]), html_response('<p>ok</p>'),
+                    pull_response('someone edited'))
     error = assert_raises(Shaka::Error) { github.description(body: BODY) }
     assert_includes error.message, 'changed while'
-    assert_equal 4, @calls.size, 'the update must not be written after a concurrent edit'
+    assert_equal 5, @calls.size, 'the update must not be written after a concurrent edit'
   end
 
   def test_stored_body_that_does_not_match_the_submission_is_reported

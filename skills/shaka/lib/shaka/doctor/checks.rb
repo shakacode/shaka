@@ -9,6 +9,7 @@ require_relative 'check'
 require_relative 'configured_reviewers'
 require_relative 'git_runtime'
 require_relative 'machine_alias'
+require_relative 'merge_queue_defaults'
 require_relative 'usage_source'
 require_relative 'reviewer_clis'
 require_relative 'installation_state'
@@ -40,7 +41,10 @@ module Shaka
 
       # What a task start needs: whose settings the checkout holds, and whether the helper's own
       # prerequisites and the repository work. Reviewer and usage setup stay in the full report.
-      def brief = [repository_seam, ruby_runtime, GitRuntime.new(method(:run)).call, github_cli, repository_access]
+      def brief
+        [repository_seam, ruby_runtime, GitRuntime.new(method(:run)).call, github_cli, repository_access,
+         MergeQueueDefaults.new(->(argv) { run(argv, chdir: @root) }).call]
+      end
 
       private
 

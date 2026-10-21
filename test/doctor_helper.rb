@@ -8,6 +8,7 @@ module DoctorHelper
   INSTALLED = "gh version 2.64.0 (2026-09-01)\n"
   GIT = "git version 2.45.0\n"
   WRITABLE = '{"nameWithOwner":"owner/repo","viewerPermission":"WRITE"}'
+  NO_QUEUE = '{"data":{"repository":{"mergeQueue":null}}}'
   EXECUTABLE = ->(_name, _path, _root) { true }
   INSTALLED_STATE = lambda do
     { 'state' => 'A1', 'title' => 'Default install, one host', 'severity' => 'ok',
@@ -39,6 +40,7 @@ module DoctorHelper
   def stub_gh(responses)
     lambda do |argv, _chdir = nil|
       next responses.fetch(:git, [GIT, '', true]) if argv == %w[git version]
+      next responses.fetch(:queue, [NO_QUEUE, '', true]) if argv.take(3) == %w[gh api graphql]
 
       key = argv.include?('--version') ? :version : :view
       responses.fetch(key, key == :version ? [INSTALLED, '', true] : [WRITABLE, '', true])

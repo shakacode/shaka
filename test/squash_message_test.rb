@@ -43,6 +43,13 @@ class SquashMessageTest < Minitest::Test
                  'Co-authored-by: Ana <ana@example.test>', squash(messages:).body
   end
 
+  # A merge queue copies the PR title and description, and GitHub adds the number and trailers itself.
+  def test_the_queue_parts_leave_out_the_number_and_the_trailers
+    message = squash(title: 'Already numbered (#42)', messages: ["Fix\n\nCo-authored-by: Ana <ana@example.test>"])
+
+    assert_equal ['Already numbered', 'Summary.'], [message.title, message.prose]
+  end
+
   def test_a_trailer_example_inside_the_body_is_not_a_co_author
     messages = ["Document attribution\n\nCo-authored-by: Example <example@example.test>\n\nThis is sample syntax."]
 
@@ -164,15 +171,32 @@ class MergeSquashMessageTest < Minitest::Test
     refute result.key?('squash_message')
   end
 
-  def test_a_merge_queue_reports_that_the_message_was_not_applied
+  def enqueue_with(body)
+    queue = { 'mergeQueue' => { 'configuration' => { 'mergeMethod' => 'SQUASH' } } }
+    @client.queue_settings = { 'squashMergeCommitTitle' => 'PR_TITLE', 'squashMergeCommitMessage' => body,
+                               'pullRequest' => queue }
     entry = queue_entry(position: 1)
     ready = snapshot.merge('isMergeQueueEnabled' => true)
     @client.snapshots = [ready, ready, ready.merge('isInMergeQueue' => true, 'mergeQueueEntry' => entry)]
     @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => entry } }
+    @merge.call(head: HEAD, base: BASE, walkthrough: 17, squash_message:)
+  end
 
-    result = @merge.call(head: HEAD, base: BASE, walkthrough: 17, squash_message:)
+  def test_a_merge_queue_that_leaves_out_the_description_reports_that_the_message_was_not_applied
+    result = enqueue_with('COMMIT_MESSAGES')
 
     assert_equal 'not_applied_merge_queue', result.fetch('squash_message')
+    assert_equal [:mutation], @client.events
+  end
+
+  # GitHub builds the queue commit as the PR enters the queue, so the message must be there first.
+  def test_a_merge_queue_that_copies_the_description_gets_the_message_there_before_enqueueing
+    result = enqueue_with('PR_BODY')
+
+    assert_equal 'applied_through_description', result.fetch('squash_message')
+    assert_equal 'https://example.test/c/parked', result.fetch('parked_description')
+    assert_equal [[:describe, 'T', 'B'], :mutation], @client.events
+    assert_equal 'merge_queue', result.fetch('submission')
   end
 
   def test_an_already_queued_pull_request_reports_that_the_message_was_not_applied
@@ -184,5 +208,6 @@ class MergeSquashMessageTest < Minitest::Test
 
     assert_equal 'not_applied_merge_queue', result.fetch('squash_message')
     assert_empty @client.mutations
+    assert_empty @client.events
   end
 end

@@ -592,7 +592,9 @@ phases:
         `squash-message` remains the standalone path for an opted-out checkpoint and older installations;
         it posts a new comment and deletes this account's earlier standalone one.
         A merge queue takes no message: on a queue base the ready checkpoint replaces the copyable
-        blocks with what the queue will write, `handoff` owes none, and `merge` reports that.
+        blocks with what the queue will write, and `handoff` owes none. When the queue copies the PR
+        description, `merge` puts the message there first; `description` restores the description
+        once the PR leaves the queue.
         `description` replaces only its marked region. `reply` reuses its stable key; `--comment`
         answers an inline thread. When a reply addresses a review, its `reviews` list holds
         that pull request's comment URLs. The helper writes one opening line per URL from the
@@ -837,10 +839,10 @@ phases:
         click, run `attention OWNER/REPO NUMBER --state merge` to label the PR
         `awaiting-merge-approval`, verify the checkpoint contains the current head
         and copyable commit title and body. For an opted-out checkpoint, run `squash-message`
-        for that head instead. On a merge-queue base, tell the user to add the PR to the queue
-        instead and relay `handoff`'s note on what the queue will write. Name the expected head SHA,
-        list each open step besides merging with its timing and who does it, and tell the user they may use
-        GitHub's currently offered merge control for that SHA. Arrange continued feedback intake
+        for that head instead. On a merge-queue base, relay `handoff`'s note, which says whether the
+        user adds the PR to the queue or asks you to merge it, and what the queue will write.
+        Name the expected head SHA, list each open step besides merging with its timing and who
+        does it, and tell the user they may use GitHub's currently offered merge control for that SHA. Arrange continued feedback intake
         through the procedure below before ending the turn. If GitHub
         shows a different head or offers no allowed merge method, tell them not to merge. Do not
         bypass protection. Do not ask whether you should merge. Ask does not treat that GitHub click

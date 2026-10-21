@@ -8,9 +8,14 @@ module Shaka
     # Reads back the WIP Details note that `description` published, from the description's managed region.
     module WipNote
       NOTE = %r{<details>\n<summary>#{WipDetails::SUMMARY}</summary>\n\n(.*?)\n\n</details>}m
+      QUEUED = 'description holds the queued commit message'
       ROW = /\A\| (.+?) \| (.*) \|\z/
 
       module_function
+
+      # A queue that copies the description reads it from enqueue to merge, so `merge` leaves the
+      # prepared commit message there, without Shaka's region, until the PR leaves the queue.
+      def replaced?(body) = !body.to_s.include?(Publishing::OPEN_MARK)
 
       # The Revision cell of a complete note, or nil when the body holds none.
       def revision(body)

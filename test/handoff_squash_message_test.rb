@@ -152,8 +152,8 @@ class HandoffMergeQueueTest < Minitest::Test
   def test_a_queue_base_tells_the_agent_what_the_queue_writes
     note = awaiting_merge['notes'].find { |item| item.start_with?('Merge queue:') }
 
-    assert_includes note, 'add the PR to the merge queue'
-    assert_includes note, 'the whole PR description'
+    assert_includes note, 'ask you to merge this head'
+    assert_includes note, 'the PR description as the body'
   end
 
   def test_a_queue_base_still_owes_the_checkpoint

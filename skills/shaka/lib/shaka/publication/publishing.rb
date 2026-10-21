@@ -8,23 +8,30 @@ require_relative 'publication'
 require_relative 'feature_guard'
 require_relative 'managed_region'
 require_relative 'merge_warning_region'
+require_relative 'queued_description'
 require_relative 'rendered_prose'
 
 module Shaka
   # Publishes rendered Markdown, checking GitHub's own rendering before anything is written
   # and confirming the stored bytes afterwards.
   module Publishing
+    include QueuedDescription
+
     VERBATIM = 'Quoted text.'
     REPLY_PAGES = 20
 
-    # A block builds the body from the pull request it replaces, using this same read.
+    # A block builds the body from the pull request it replaces, using this same read. A description
+    # parked for a merge queue comes back around the new region.
     def description(body: nil)
       current = pull
       existing = current['body'].to_s
-      merged = check_length(merge(existing, publishable(block_given? ? yield(current) : body)))
-      verify_rendering(merged)
-      check_unchanged(existing, current)
-      confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
+      text = publishable(block_given? ? yield(current) : body)
+      restoring(existing) do |around|
+        merged = check_length(merge(around, text))
+        verify_rendering(merged)
+        check_unchanged(existing, current)
+        confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
+      end
     end
 
     # `verbatim` names quoted text the rendering check leaves to the caller; see verify_rendering.
