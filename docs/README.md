@@ -10,8 +10,8 @@ judge.
 
 - **See the outcome first.** The PR description opens with what changed, why,
   what it leaves out, and why it is safe.
-- **See the proof.** Each check says what ran and how it turned out. Anything
-  unproven is listed as a gap, not passed off as done.
+- **See the proof.** Each check says what ran and how it turned out, and a
+  **Not verified** line names what went unproven.
 - **Read the code with a guide.** A code walkthrough explains each choice and
   links to the exact lines.
 - **Skip what you do not need.** Usage, detailed checks, and history sit in

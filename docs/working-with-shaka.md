@@ -10,8 +10,8 @@ in Pi, load the installed skill.
 
 A PR built to help you decide:
 
-- **Description**: the outcome, the decisions left for you, and how the change
-  was checked. Anything unproven appears as a gap.
+- **Description**: the outcome, the decisions left for you, how the change was
+  checked, and what went unproven.
 - **Code walkthrough**: each implementation choice and the alternatives, with
   links to the reviewed lines.
 - **Evidence**: tests, review findings, and screenshots for visible changes.
@@ -67,7 +67,7 @@ Search your repository's PR list on GitHub:
 | Search | What to do |
 | --- | --- |
 | `is:open label:awaiting-answer` | Answer **Decisions to make** in the description. |
-| `is:open label:awaiting-merge-approval` | Merge with GitHub's offered control, or tell the agent to merge that commit. |
+| `is:open label:awaiting-merge-approval` | Merge on GitHub with the [commit message](pr-verification.md#squash-merge-details) the checkpoint comment gives, or tell the agent to merge that commit. |
 | `is:open label:awaiting-resume` | Paste **WIP Details → Next action** into the owning chat. |
 
 A label does not wake a chat. Answer in the chat unless the handoff says automatic
@@ -175,8 +175,8 @@ Which SKILL instructions did you follow, and where did they conflict with Shaka?
 $shaka retrospective
 ```
 
-The agent lists what would have made the session go better and waits for you to
-pick findings to deliver. It may read the local timing log Shaka keeps at
+The agent lists what would have made the session go better and should change
+nothing until you pick findings to deliver. It may read the local timing log Shaka keeps at
 `~/.local/state/shaka/calls.jsonl`, which holds no paths or task text and is never
 uploaded. Set `SHAKA_CALL_LOG=off` to stop it, or to a path to move it.
 
