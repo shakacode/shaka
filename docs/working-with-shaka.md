@@ -216,7 +216,8 @@ $shaka retrospective
 The agent lists what would have helped. It waits for you to pick what to fix.
 
 The agent may read Shaka's local timing log, `~/.local/state/shaka/calls.jsonl`.
-The log holds no paths or task text and is never uploaded. To stop recording, set
+It records each helper command's name, timing, and result, with the repository,
+PR, and commit when known. It holds no paths or task text and is never uploaded. To stop recording, set
 `SHAKA_CALL_LOG=off`. To move the log, set it to a path.
 
 ## Suggest improvements to Shaka

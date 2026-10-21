@@ -18,7 +18,7 @@ Install Shaka from https://github.com/shakacode/shaka.
 To run the commands yourself, follow [manual installation](manual-installation.md).
 Don't install the `shaka` gem. It only reserves the name.
 
-If the `shaka` command isn't found, start a new chat. Then check your setup and
+If the Shaka skill doesn't appear, start a new chat. Then check your setup and
 follow what it says:
 
 ```text
