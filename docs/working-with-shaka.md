@@ -1,7 +1,8 @@
 # Working with Shaka
 
-Ask the agent about anything this page leaves out. Code enforces the merge checks.
-The rest of the agent behavior here follows Shaka's instructions
+Ask the agent about anything this page leaves out. When the agent merges, code
+checks required checks, review evidence, and size limits. The rest of the agent
+behavior here follows Shaka's instructions
 ([what is enforced](workflow.md#what-is-enforced)).
 
 Examples use `$shaka` from Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode
