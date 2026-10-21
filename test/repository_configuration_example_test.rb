@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require 'shaka/defaults'
 require 'shaka/repository_config'
 require 'shaka/local_review/runner'
+require 'shaka/publication/review_effort_floor'
 
 # The repository contract doubles as the browsable example of shipped defaults.
 class RepositoryConfigurationExampleTest < Minitest::Test
@@ -12,6 +13,17 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     required ci_review_jobs local_review_agents local_review_count post_implementation prompt_file provider_coverage
     human_review_floors auto_max_review_floor
   ].freeze
+  # The only files this repository removes from a shipped floor: its own code and tests leave the
+  # agent-instructions floor so merge.auto_max_review_floor can merge them.
+  FLOOR_EXEMPTIONS = { 'changes agent instructions' => %w[skills/shaka/lib/**/* test/**/*] }.freeze
+  # Where this repository's floors put its files; Auto merges only those at 2 or below.
+  FLOOR_LEVELS = {
+    'skills/shaka/lib/shaka/doctor/checks.rb' => 2, 'test/doctor_test.rb' => 2,
+    'skills/shaka/lib/shaka/install/links.rb' => 3, 'bin/validate' => 3, 'skills/shaka/SKILL.md' => 3,
+    'skills/shaka/lib/shaka/required_checks.rb' => 4, 'skills/shaka/lib/shaka/merge_review_floor.rb' => 4,
+    'skills/shaka/lib/shaka/publication/review_effort_floor.rb' => 4,
+    'skills/shaka/lib/shaka/repository_config/merge_schema.rb' => 4, 'docs/settings.md' => 5
+  }.freeze
 
   def setup
     config = Shaka::RepositoryConfig.load(root: ROOT)
@@ -52,11 +64,17 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     end
   end
 
-  # This repository adds its own floors and paths, and exempts its own code from the instruction
-  # floor, but keeps every shipped floor's level, reason, and paths.
+  # This repository adds its own floors and paths but keeps every shipped floor, removing files from
+  # one only through FLOOR_EXEMPTIONS.
   def test_example_floors_keep_every_shipped_floor
     floors = @example.fetch('pr_description').fetch('human_review_floors')
     Shaka::Defaults.fetch('pr_description', 'human_review_floors').each { |shipped| assert_floor_kept(shipped, floors) }
+  end
+
+  def test_example_floors_hold_settings_merge_and_install_code_above_code_fixes
+    floors = @example.fetch('pr_description').fetch('human_review_floors')
+    levels = FLOOR_LEVELS.to_h { |path, _| [path, Shaka::ReviewEffortFloor.for([path], floors).fetch('level')] }
+    assert_equal FLOOR_LEVELS, levels
   end
 
   def test_review_deadline_defaults_applied_outside_repository_config
@@ -74,7 +92,13 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     floor = floors.find { |candidate| candidate.values_at('level', 'reason') == shipped.values_at('level', 'reason') }
     assert floor, "Keep the shipped floor: #{shipped['reason']}"
     assert_empty shipped.fetch('paths', []) - floor.fetch('paths', []), shipped['reason']
-    assert_equal shipped.fetch('words', []), floor.fetch('words', []), shipped['reason']
+    assert_equal kept_floor(shipped, floor), floor, shipped['reason']
+  end
+
+  # A kept floor may add paths; its except may add only this repository's exemptions.
+  def kept_floor(shipped, floor)
+    except = shipped.fetch('except', []) + FLOOR_EXEMPTIONS.fetch(shipped['reason'], [])
+    shipped.merge('paths' => floor['paths'], 'except' => except).reject { |_, value| value == [] }
   end
 
   def example_section(section)
