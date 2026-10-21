@@ -13,9 +13,7 @@ Explain what is ready and the first useful fixes, using the report's evidence.
 Distinguish CLIs found on PATH from verified sign-in or working reviews. Offer
 the reported installation links for missing tools, and explain why a second
 provider can help independent review. Keep optional tools optional.
-An unset `SHAKA_MACHINE_ALIAS` is not a fix to raise. Offer doctor's suggested
-token and the shell-profile line only when the user works on several machines,
-and edit the profile only when the user asks.
+Raise the machine alias hint only when the user works on several machines.
 Installation, sign-in, and repository setup are separate actions the user can
 request; the diagnostic itself changes nothing.
 

@@ -58,7 +58,7 @@ profile to a short name such as `mini`. An unfinished PR shows it as the owner,
 so you can tell which machine holds the work, and local validation results name
 it as the machine that ran them. On one machine you can skip it; the owner reads
 UNKNOWN. PRs may be public, so do not use the machine's own name. Doctor suggests
-one that differs from it.
+an alias that differs from the machine's name.
 
 Give the agent a task when you are ready.
 
