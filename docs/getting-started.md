@@ -18,6 +18,7 @@ Install Shaka from https://github.com/shakacode/shaka.
 ```
 
 Prefer to run the commands yourself? Follow [manual installation](manual-installation.md).
+Do not install the `shaka` gem; it only reserves the name.
 
 Then check your setup and follow what it reports:
 
@@ -36,6 +37,9 @@ whether to set it up just for you or for your team, and explains each choice.
 - **Just for you:** settings stay out of commits, and the task continues.
 - **For your team:** the agent opens a setup PR. **Review and merge it yourself
   on GitHub.** See [repository setup](configure-repository.md).
+
+To check that your AI accounts can run the chosen reviewers, ask
+`$shaka Probe this project's configured reviewers.` Each probe may use quota.
 
 ## 3. Start a task
 

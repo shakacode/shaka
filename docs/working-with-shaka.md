@@ -57,8 +57,8 @@ request. To go back to one:
 $shaka Return to C2. Use the simpler approach.
 ```
 
-Ask the agent what it can restore before rewinding. It does not undo deployments
-or other outside effects. See [checkpoints](pr-verification.md#checkpoint).
+The agent rewinds from Git and task records, not saved snapshots, so ask what it
+can restore first. It does not undo deployments or other outside effects. See [checkpoints](pr-verification.md#checkpoint).
 
 ## Find PRs waiting on you
 
@@ -145,8 +145,9 @@ first, then the integration that needs it."
 ## Combine Shaka with other skills
 
 Name another skill in your prompt, and Shaka still delivers the result: your
-checks, independent review, its PR format, and your merge policy. Another skill
-cannot relax a check or approve a merge.
+checks, independent review, its PR format, and your merge policy. Shaka's
+instructions tell the agent not to let another skill relax a check or approve a
+merge; code does not enforce this.
 
 ```text
 $shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N. Go.
@@ -177,7 +178,7 @@ $shaka retrospective
 The agent lists what would have made the session go better and waits for you to
 pick findings to deliver. It may read the local timing log Shaka keeps at
 `~/.local/state/shaka/calls.jsonl`, which holds no paths or task text and is never
-uploaded. Set `SHAKA_CALL_LOG=off` to stop it.
+uploaded. Set `SHAKA_CALL_LOG=off` to stop it, or to a path to move it.
 
 ## Suggest improvements to Shaka
 
