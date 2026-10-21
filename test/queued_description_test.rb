@@ -143,6 +143,26 @@ class QueuedDescriptionSafetyTest < Minitest::Test
     assert_match(/Parking comment 100 is damaged/, error.message)
   end
 
+  # A retry after a refused enqueue must not lose the copy it rebuilt from.
+  def test_a_failed_write_on_a_retry_keeps_the_earlier_parked_copy
+    @github.queue_description(prepared)
+    @fake.refuse_edit = true
+    assert_raises(Shaka::Error) { @github.queue_description(prepared) }
+
+    @fake.refuse_edit = false
+    @github.description(body: "New summary.\n")
+    assert_equal "<!-- shaka:begin -->\nNew summary.\n<!-- shaka:end -->\n\n#{CODERABBIT}", @fake.body
+  end
+
+  # A deleted parking comment, or a queue a person joined, leaves no comment to recognize.
+  def test_a_queued_description_without_comments_is_never_published_over
+    @fake.body = 'What changed and why.'
+    @fake.queued = true
+
+    assert_raises(Shaka::Error) { @github.description(body: "New summary.\n") }
+    assert_equal 'What changed and why.', @fake.body
+  end
+
   def test_a_failed_write_takes_the_parking_comment_back
     @fake.refuse_edit = true
 

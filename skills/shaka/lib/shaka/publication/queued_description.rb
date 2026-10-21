@@ -28,9 +28,10 @@ module Shaka
       parking = park(whole(body, earlier), message.prose)
       unparking_on_failure(parking) do
         check_unchanged(current)
-        release_parked(earlier)
         confirmed(api(pull_path, method: 'PATCH', fields: { body: message.prose }), message.prose)
       end
+      # The earlier copies go only once the new one holds the description and the message is in place.
+      release_parked(earlier)
       parking['html_url']
     end
 
@@ -39,18 +40,24 @@ module Shaka
     # The pull request as publication should read it, with the parked description in place of a
     # queued commit message, and the parking comments to delete once the restored body is stored.
     # Restoring while the PR is queued would let a rebuilt queue commit copy the whole description.
-    # A queued description without Shaka's region may be one another account parked, so it is
-    # never published over. A PR without comments has nothing parked, so its comments go unread.
+    # A queued description without Shaka's region may hold a commit message someone else parked, or
+    # be the one the queue copies, so it is never published over. An empty description on a PR
+    # without comments is a new PR's, so its first publication makes no extra request.
     def unparked(current)
       body = current['body'].to_s
-      return [current, []] if body.include?(Publishing::OPEN_MARK) || current['comments'].to_i.zero?
-      if snapshot['isInMergeQueue'] == true
-        raise Error, 'The PR is in the merge queue and its description may hold the prepared commit message; ' \
-                     'publish the description after the PR merges or leaves the queue.'
-      end
+      count = current['comments'].to_i
+      return [current, []] if body.include?(Publishing::OPEN_MARK) || (body.strip.empty? && count.zero?)
 
-      comments = parked_descriptions
+      refuse_while_queued
+      comments = count.zero? ? [] : parked_descriptions
       [comments.empty? ? current : current.merge('body' => whole(body, comments)), comments]
+    end
+
+    def refuse_while_queued
+      return unless snapshot['isInMergeQueue'] == true
+
+      raise Error, 'The PR is in the merge queue and its description may hold the prepared commit message; ' \
+                   'publish the description after the PR merges or leaves the queue.'
     end
 
     # This account's parking comments, when the description has no Shaka region to hold.
