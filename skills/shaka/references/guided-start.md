@@ -13,7 +13,6 @@ Explain what is ready and the first useful fixes, using the report's evidence.
 Distinguish CLIs found on PATH from verified sign-in or working reviews. Offer
 the reported installation links for missing tools, and explain why a second
 provider can help independent review. Keep optional tools optional.
-Raise the machine alias hint only when the user works on several machines.
 Installation, sign-in, and repository setup are separate actions the user can
 request; the diagnostic itself changes nothing.
 
