@@ -121,7 +121,7 @@ def description_pr_evidence(root, ref)
     Shaka::Guidance.new(name: 'pr_evidence', root: candidate_root, ref:).configured
   end
   guide ? { 'pr_evidence_guide' => guide } : {}
-rescue Shaka::Error => e
+rescue Shaka::Error, SystemCallError => e
   { 'pr_evidence_guide' => "The PR evidence guide could not be read: #{e.message}" }
 end
 
