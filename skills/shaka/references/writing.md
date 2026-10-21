@@ -17,7 +17,12 @@
     every commit, and see on the PR when one could not.”
   - Write: “Maintainers can now list the AI providers that review every commit.
     When one cannot review, the review comment says so.”
-- Put conditions beside the behavior they limit.
+- Put a condition before the instruction or behavior it limits: "When the base
+  is stale, rebase first," not "Rebase first when the base is stale."
+- Keep the space between sentences empty. Skip a lead-in that announces the next
+  sentence and a closing sentence that restates the last.
+- Drop "therefore", "thus", "so", "however", and "but" when the order already
+  shows the relation. Split joined clauses into separate sentences.
 - Use familiar words; explain unfamiliar project terms through the behavior they name.
 - Name the feature, user, or dependency behind references to an agreed design
   or earlier discussion; supply the context the reader needs.
@@ -27,8 +32,11 @@
 - Describe observable behavior rather than implementation jargon. For example:
   - Instead of: “Adds validation of the configured base parameter.”
   - Write: “Shaka now rejects an invalid base branch before the agent starts work.”
-- Keep explanations proportional to the change. Aim for sentences under 25 words
-  and paragraphs of about four sentences when prose is useful.
+- Keep explanations proportional to the change. Keep the average sentence under
+  about 15 words; no sentence should need more than 25. Keep paragraphs to about
+  four sentences when prose is useful.
+- Revise by deleting first. Ask whether the reader will follow each sentence,
+  not whether they could.
 
 ## Review evidence
 
