@@ -16,9 +16,7 @@ module Shaka
     UNAVAILABLE_SETTINGS = 'Withheld: settings unavailable; fix seam check --ref, then rerun description'
 
     def self.refuse_free_form!(items)
-      return unless items.any? do |item|
-        item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(SUMMARY)
-      end
+      return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(SUMMARY) }
 
       raise Error, 'Shaka settings must come from validation/review results, not a details item.'
     end
@@ -82,6 +80,9 @@ module Shaka
       rows = @current&.fetch('pr_description.max_human_comments', nil)
       rows.is_a?(Integer) && rows.positive? ? rows : RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('max_human_comments')
     end
+
+    # The bound results Verification reports, or nil when description received none.
+    attr_reader :verdict
 
     NOTE = 'Local files remain local. This reports operation settings and cannot restore them. ' \
            'It does not prove earlier checks ran. Private merge.preference grants no Auto authority. ' \
