@@ -151,7 +151,7 @@ Ask for separate PRs, such as "Update React first, then the code that needs it."
 ## Combine Shaka with other skills
 
 Name another skill in your prompt. Shaka still runs your checks and review, writes
-the PR, and keeps your merge policy. The agent won't let another skill skip a
+the PR, and keeps your merge policy. Its instructions don't let another skill skip a
 check or approve a merge. Your check scripts run from the PR branch, so review
 changes to them like other code; see the [trust model](workflow.md#trust-model).
 

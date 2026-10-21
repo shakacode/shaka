@@ -18,8 +18,8 @@ Install Shaka from https://github.com/shakacode/shaka.
 ```
 
 Prefer to run the commands yourself? Follow [manual installation](manual-installation.md).
-Don't install the `shaka` gem; it only reserves the name. If `$shaka` isn't
-found, start a new chat.
+Don't install the `shaka` gem; it only reserves the name. If the `shaka`
+command isn't found, start a new chat.
 
 Then check your setup and follow what it says:
 
