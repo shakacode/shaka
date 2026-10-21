@@ -36,8 +36,8 @@ On your first task in a project without Shaka settings, the agent asks whether t
 set Shaka up just for you or for your team.
 
 - **Just for you:** settings stay out of commits, and the task goes on.
-- **For your team:** the agent opens a setup PR. **Review and merge it yourself.**
-  See [repository setup](configure-repository.md).
+- **For your team:** the agent opens a setup PR for you to review. See
+  [repository setup](configure-repository.md).
 
 To check that your AI accounts can run the chosen reviewers, ask
 `$shaka Probe this project's configured reviewers.` Each probe may use quota or cost money.

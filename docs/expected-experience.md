@@ -31,10 +31,9 @@ When a later task starts in a new worktree, the agent copies your individual
 settings into it. Edits you made after setup come along while the earlier
 checkout still exists.
 
-Setup instructions tell the agent to find your existing commands and continue
-into your task. A genuine first run by a new user has not yet been evaluated; the
-[earlier acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759)
-records a maintainer-led PR, with interventions, on an older installation.
+The agent should find your existing commands and go on with your task. No new
+user has tried this alone yet; see the
+[acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759).
 
 To try repository settings for one task before adopting them, use a
 [settings preview](settings.md#preview-settings-before-adopting-them). Trying an
