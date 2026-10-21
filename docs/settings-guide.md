@@ -159,8 +159,8 @@ the result, with team or individual setup.
 $shaka Add project guidance: before merge, confirm the database backfill plan.
 ```
 
-The agent reads your [PR evidence and merge-readiness guides](settings.md#project_guidance)
-when it writes the PR description and again before the checkpoint.
+The agent reads your [PR evidence, merge-readiness, and walkthrough guides](settings.md#project_guidance)
+when it writes the PR description, the code walkthrough, and again before the checkpoint.
 
 ## Resume unfinished work
 
