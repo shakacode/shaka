@@ -43,6 +43,7 @@ A qualified collector must obtain these fields from native records, retain
 receipts privately, identify actual executed merge attempts, and prove capture
 completeness. Agent text or agent-authored booleans cannot supply them. This
 API consumes that inventory; it does not scan shell commands or create it.
-Native capture normalization, hidden verification execution, live qualification,
-tier 3 D2 assembly, judges, statistics and release gates remain separate work.
+The [native snapshot reader](delivery-snapshots.md) supplies PR/check observations
+and changed-file bounds. Terminal/tool capture, hidden verification execution,
+live qualification, tier 3 D2 assembly, judges, statistics and release gates remain separate work.
 Synthetic tests establish these predicates only. No paid trial or schedule runs.
