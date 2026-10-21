@@ -94,7 +94,8 @@ pr_description:
       except: ['**/*.md', '**/*.{png,jpg,jpeg,gif,svg,webp}']
     - level: 3
       reason: changes validation, install, update, or GitHub code
-      paths: [bin/**/*, 'skills/shaka/lib/shaka/{installer,update_check,github}.rb',
+      paths: [bin/**/*, .rubocop.yml, .ruby-version, 'Gemfile{,.lock}', shaka.gemspec,
+              'skills/shaka/lib/shaka/{installer,update_check,github}.rb',
               'skills/shaka/lib/shaka/{install,update_check,github}/**/*']
     - level: 3
       reason: changes agent instructions
