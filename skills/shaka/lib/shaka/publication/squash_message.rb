@@ -14,8 +14,8 @@ module Shaka
     TRAILER = /^co-authored-by:[ \t]*(\S[^<\n]*<[^>\n]+>)[ \t]*$/i
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
 
-    # `title` and `prose` are the PR title and body a merge queue copies; GitHub adds `(#N)` and the trailers.
-    attr_reader :headline, :body, :title, :prose
+    # `prose` is the body without trailers, for a merge queue that copies the PR description; GitHub adds them.
+    attr_reader :headline, :body, :prose
 
     # GitHub lists at most 250 commits for a PR; a longer PR would lose trailers silently.
     def self.for(github, content)
@@ -31,8 +31,7 @@ module Shaka
     def initialize(content, number:, commit_messages: [])
       raise Error, 'Squash message content must be a JSON object.' unless content.is_a?(Hash)
 
-      @title = PublicationText.single_line(content['title'], 'squash title').strip.delete_suffix(" (##{number})")
-      @headline = headline_for(@title, number)
+      @headline = headline_for(PublicationText.single_line(content['title'], 'squash title'), number)
       @prose = wrap(plain(content['body']))
       @body = [@prose, trailers(commit_messages)].reject(&:empty?).join("\n\n")
     end

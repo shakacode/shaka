@@ -23,7 +23,7 @@ module MergeFixtures
     def number = 42
 
     def queue_description(message)
-      @events << [:describe, message.title, message.prose]
+      @events << [:describe, message.prose]
       'https://example.test/c/parked'
     end
 

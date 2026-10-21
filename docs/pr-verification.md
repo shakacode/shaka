@@ -545,15 +545,16 @@ A merge queue offers no message box and ignores any message. It writes what the
 repository's setting for its merge method chooses, under **Settings → General → Pull
 Requests**, and the checkpoint says what that will be.
 
-With **Pull request title** or **Default message**, add the PR to the queue yourself.
-**Pull request title** commits the PR title alone. **Default message** commits the branch
-commit messages, under the PR title when the branch has more than one commit.
+With any setting but **Pull request title and description**, add the PR to the queue
+yourself. **Pull request title** commits the PR title alone. **Default message** and
+**Pull request title and commit details** commit the branch commit messages under a title.
 
 With **Pull request title and description**, the queue copies the PR description into the
 commit, so ask the agent to merge instead. It puts the prepared commit message in the
-description and adds the PR to the queue. Your other text in the description waits in
-a comment, and the whole description comes back when the agent publishes it after the
-PR merges or leaves the queue.
+description and adds the PR to the queue; the PR title stays the commit title. Your other
+text in the description waits in a comment. The whole description comes back when the
+agent publishes it after the PR merges or leaves the queue, along with anything added to
+the description meanwhile.
 
 If you add such a PR to the queue yourself, its whole description, including Shaka's
 sections and **WIP Details**, goes into git history. The checkpoint warns you, and

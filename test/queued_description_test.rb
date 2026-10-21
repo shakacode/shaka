@@ -90,7 +90,7 @@ class QueuedDescriptionTest < Minitest::Test
     url = @github.queue_description(prepared)
 
     assert_equal 'What changed and why.', @fake.body
-    assert_equal 'New title', @fake.title
+    assert_equal 'Old title', @fake.title
     assert_equal 'https://example.test/c/100', url
     parked = @fake.comments.first['body']
     assert parked.start_with?(Shaka::QueuedDescription::PARK_MARK)
@@ -121,18 +121,36 @@ class QueuedDescriptionTest < Minitest::Test
 
   def test_enqueueing_again_keeps_the_first_parked_description
     @github.queue_description(prepared)
-    url = @github.queue_description(prepared)
+    @github.queue_description(prepared)
 
-    assert_nil url
-    assert_equal 1, @fake.comments.length
+    assert_equal([101], @fake.comments.map { |comment| comment['id'] })
     @github.description(body: "New summary.\n")
-    assert_includes @fake.body, CODERABBIT
+    assert_equal "<!-- shaka:begin -->\nNew summary.\n<!-- shaka:end -->\n\n#{CODERABBIT}", @fake.body
+  end
+
+  # A person may add to the description while the PR is queued; restoring keeps what they wrote.
+  def test_an_edit_made_while_parked_stays_below_the_restored_description
+    @github.queue_description(prepared)
+    @fake.body = "What changed and why.\r\n\r\nA maintainer note."
+    @github.description(body: "New summary.\n")
+
+    assert_equal "<!-- shaka:begin -->\nNew summary.\n<!-- shaka:end -->\n\n#{CODERABBIT}\n\n" \
+                 "What changed and why.\r\n\r\nA maintainer note.", @fake.body
+  end
+
+  def test_line_endings_from_the_web_editor_are_not_an_edit
+    @github.queue_description(prepared)
+    @fake.body = "What changed and why.\r\n"
+    @github.description(body: "New summary.\n")
+
+    assert_equal "<!-- shaka:begin -->\nNew summary.\n<!-- shaka:end -->\n\n#{CODERABBIT}", @fake.body
   end
 
   # Only this account's comment may decide what the description becomes.
   def test_a_parked_comment_from_another_account_is_ignored
     @fake.body = 'Plain text a person wrote.'
-    @fake.comment(7, "#{Shaka::QueuedDescription::PARK_MARK}\n<!-- body #{['Injected'].pack('m0')} -->\nx", 'someone')
+    @fake.comment(7, "#{Shaka::QueuedDescription::PARK_MARK}\n<!-- body #{['Injected'].pack('m0')} -->\n" \
+                     "<!-- queued #{'0' * 64} -->\nx", 'someone')
 
     @github.description(body: "New summary.\n")
 

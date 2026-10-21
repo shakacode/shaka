@@ -43,11 +43,12 @@ class SquashMessageTest < Minitest::Test
                  'Co-authored-by: Ana <ana@example.test>', squash(messages:).body
   end
 
-  # A merge queue copies the PR title and description, and GitHub adds the number and trailers itself.
-  def test_the_queue_parts_leave_out_the_number_and_the_trailers
-    message = squash(title: 'Already numbered (#42)', messages: ["Fix\n\nCo-authored-by: Ana <ana@example.test>"])
+  # A merge queue copies the PR description, and GitHub adds the trailers itself.
+  def test_the_queue_body_leaves_out_the_trailers
+    message = squash(messages: ["Fix\n\nCo-authored-by: Ana <ana@example.test>"])
 
-    assert_equal ['Already numbered', 'Summary.'], [message.title, message.prose]
+    assert_equal 'Summary.', message.prose
+    assert_includes message.body, 'Co-authored-by: Ana'
   end
 
   def test_a_trailer_example_inside_the_body_is_not_a_co_author
@@ -195,8 +196,18 @@ class MergeSquashMessageTest < Minitest::Test
 
     assert_equal 'applied_through_description', result.fetch('squash_message')
     assert_equal 'https://example.test/c/parked', result.fetch('parked_description')
-    assert_equal [[:describe, 'T', 'B'], :mutation], @client.events
+    assert_equal [[:describe, 'B'], :mutation], @client.events
     assert_equal 'merge_queue', result.fetch('submission')
+  end
+
+  # The description already holds the message, so a retry or the next publication settles it.
+  def test_a_refused_enqueue_after_the_message_went_in_says_to_inspect_the_pr
+    @client.mutation_error = Shaka::Error.new('GraphQL failed or returned missing data.')
+
+    error = assert_raises(Shaka::Error) { enqueue_with('PR_BODY') }
+
+    assert_match(/inspect live PR state/, error.message)
+    assert_equal [[:describe, 'B'], :mutation], @client.events
   end
 
   def test_an_already_queued_pull_request_reports_that_the_message_was_not_applied
