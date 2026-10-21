@@ -24,5 +24,14 @@ module Shaka
     rescue SystemCallError
       false
     end
+
+    # Install checks the owner bit Git stored. Windows checkout does not keep that bit.
+    def mode_bit_or_shebang?(path)
+      return true if File.stat(path).mode.anybits?(0o100)
+
+      windows? && shebang?(path)
+    rescue SystemCallError
+      false
+    end
   end
 end
