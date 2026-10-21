@@ -28,15 +28,16 @@ module Shaka
         'B11' => ['Checkout behind its recorded revision', 'attention'],
         'C1' => ['Orphan installation record', 'attention'],
         'C3' => ['Source checkout is a worktree, or hosts worktrees', 'attention'],
-        'C5' => ['Hosts pointing at different installs', 'attention']
+        'C5' => ['Hosts pointing at different installs', 'attention'],
+        'E1' => ['Source checkout at the settings path', 'attention']
       }.freeze
 
       # The first problem in this order is the one to fix first: later checks read state an
       # earlier problem can make misleading, such as a revision on a switched branch. Steps that
       # update use bin/install, not the helper, so they still run when the recorded Ruby is gone.
-      # A worktree checkout's C3 comes early: its fix is a fresh install, which makes its other problems
-      # moot. A checkout that only hosts development ranks as C3-development, after the B states.
-      PROBLEMS = %w[B10 C1 C3 B9 C5 B5 B4 B3 B6 B2 B11 B1 B7 B8 C3-development A9].freeze
+      # E1 and a worktree checkout's C3 come early: their fix is a fresh install, which makes the checkout's
+      # other problems moot. A checkout that only hosts development ranks as C3-development, after the B states.
+      PROBLEMS = %w[B10 C1 E1 C3 B9 C5 B5 B4 B3 B6 B2 B11 B1 B7 B8 C3-development A9].freeze
       HEALTHY = %w[A5 A4 A3 A6 A2 A1 A8].freeze
 
       module_function

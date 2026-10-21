@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'official'
+require_relative 'settings_location'
 require_relative 'status_checkout'
 
 module Shaka
@@ -19,8 +20,8 @@ module Shaka
       end
 
       def host_directories = Official::HOSTS.values.map { |directory| File.join(@home, directory) }
-      def default_directory = File.join(@home, '.local/share/shaka/source')
-      def old_directory = File.join(@home, '.agents/shaka')
+      def default_directory = SettingsLocation.default_directory(@home)
+      def old_directory = File.join(@home, Locations::SETTINGS, 'shaka')
       def trial_directory = File.join(@home, '.local/share/shaka/pr-trials')
       def trials = entries(trial_directory).select { |path| File.directory?(path) }
 

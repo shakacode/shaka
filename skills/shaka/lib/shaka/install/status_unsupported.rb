@@ -2,30 +2,44 @@
 
 require 'open3'
 require 'shellwords'
+require_relative 'settings_location'
 require_relative 'status_states'
 
 module Shaka
   module Install
-    # Reports a source checkout that is a linked worktree with the one command that replaces it: clone
-    # into the default location, remove the old links, and install there with the same selections.
+    # Reports source checkouts Shaka no longer supports, each with the one command that replaces it. A linked
+    # worktree is cloned again into the default location; a checkout under the settings path is taken over.
     class StatusUnsupported
-      TOWERS = { 'rct' => '--with-rct', 'mct' => '--with-mct', 'mct-claude' => '--with-claude-towers',
-                 'rct-claude' => '--with-claude-towers' }.freeze
-      DECIDE = 'Reinstall into ~/.local/share/shaka/source from the branch you use, with the hosts, skills folders, ' \
-               'and towers you use (one bin/install run per host whose towers differ); see official-installation.md.'
+      DECIDE = "Reinstall into ~/#{Locations::SOURCE} from the branch you use, with the hosts, skills " \
+               'folders, and towers you use (one bin/install run per host whose towers differ); ' \
+               'see official-installation.md.'.freeze
+
+      SETTINGS_DETAIL = "the source checkout sits under ~/#{Locations::SETTINGS}, where Shaka keeps settings; " \
+                        'move its links to a checkout at '.freeze
 
       def initialize(inventory)
         @inventory = inventory
       end
 
       def findings
-        @inventory.worktrees.map do |root|
+        settings_location + @inventory.worktrees.map do |root|
           replace('C3', root, 'the source checkout is a linked worktree, which goes away when its branch is cleaned up',
                   selected(root, @inventory.links_to(root)))
         end
       end
 
       private
+
+      # A registered checkout under the settings folder in HOME.
+      def settings_location
+        home = @inventory.home
+        old = @inventory.checkouts.values.select { |checkout| SettingsLocation.inside?(checkout.root, home) }
+        old.map do |checkout|
+          command = SettingsLocation.take_over(checkout.root, home, checkout.record)
+          StatusStates.finding('E1', checkout.root, SETTINGS_DETAIL + @inventory.default_directory,
+                               command:, decision: (SettingsLocation.decision(home) unless command))
+        end
+      end
 
       # The host folders and skills the worktree serves, and the origin to clone it from again.
       def selected(root, links)
@@ -108,7 +122,7 @@ module Shaka
         end&.first
       end
 
-      def towers(selection) = selection['names'].filter_map { |name| TOWERS[name] }.uniq
+      def towers(selection) = selection['names'].filter_map { |name| SettingsLocation::TOWERS[name] }.uniq
       def escape(*words) = words.map { |word| Shellwords.escape(word) }.join(' ')
     end
   end

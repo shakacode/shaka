@@ -120,6 +120,13 @@ module BrokenInstallScenarios
     problem(root, nil)
   end
 
+  # The old default location, which is also where every project keeps its Shaka settings.
+  def build_e1
+    root = old_location_install
+    problem(root, "#{Shellwords.escape(File.join(File.realpath(root), 'bin/install'))} --directory " \
+                  "#{Shellwords.escape(default_path)} --take-over")
+  end
+
   # A split install: Claude uses one registered checkout and Cursor another.
   def build_c5
     root = default_install('--agent', 'claude')

@@ -30,7 +30,7 @@ branch before you install:
 ```bash
 gh repo fork shakacode/shaka --clone=false
 FORK_URL="https://github.com/YOUR-LOGIN/shaka.git"
-SHAKA_DIR="$HOME/.agents/shaka"
+SHAKA_DIR="$HOME/.local/share/shaka/source"
 umask 022
 mkdir -p "$(dirname "$SHAKA_DIR")"
 git clone "$FORK_URL" "$SHAKA_DIR"
@@ -54,7 +54,7 @@ commit until your next update:
 ```bash
 gh repo fork shakacode/shaka --clone=false
 FORK_URL="https://github.com/YOUR-LOGIN/shaka.git"
-SHAKA_DIR="$HOME/.agents/shaka"
+SHAKA_DIR="$HOME/.local/share/shaka/source"
 git -C "$SHAKA_DIR" remote rename origin upstream
 git -C "$SHAKA_DIR" remote add origin "$FORK_URL"
 git -C "$SHAKA_DIR" fetch origin

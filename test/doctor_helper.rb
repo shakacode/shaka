@@ -9,7 +9,8 @@ module DoctorHelper
   WRITABLE = '{"nameWithOwner":"owner/repo","viewerPermission":"WRITE"}'
   EXECUTABLE = ->(_name, _path, _root) { true }
   INSTALLED_STATE = lambda do
-    { 'state' => 'A1', 'title' => 'Default install, one host', 'severity' => 'ok', 'location' => '/home/.agents/shaka' }
+    { 'state' => 'A1', 'title' => 'Default install, one host', 'severity' => 'ok',
+      'location' => '/home/.local/share/shaka/source' }
   end
   DEFAULTS = { root: nil, environment: { 'SHAKA_MACHINE_ALIAS' => 'm5' }, responses: {}, runner: nil,
                usage_files: nil, usage_source: nil, host_name: 'test-machine.local', host: 'claude-code',
