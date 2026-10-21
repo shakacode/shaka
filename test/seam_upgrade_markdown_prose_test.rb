@@ -40,7 +40,8 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
   COMMAND_DIRECTORY_CODE = ["Add `$PWD/.agents/bin` to PATH.\n",
                             "```sh\nexport PATH=\".agents/bin:$PATH\"\n```\n",
                             "```text\n> ```\nexport PATH=\".agents/bin:$PATH\"\n```\n",
-                            "> ```sh\n> > ```\n> export PATH=\".agents/bin:$PATH\"\n> ```\n"].freeze
+                            "> ```sh\n> > ```\n> export PATH=\".agents/bin:$PATH\"\n> ```\n",
+                            "    - .agents/bin\n", "    > .agents/bin\n"].freeze
 
   def test_computed_or_fenced_command_directory_still_blocks
     COMMAND_DIRECTORY_CODE.each do |source|

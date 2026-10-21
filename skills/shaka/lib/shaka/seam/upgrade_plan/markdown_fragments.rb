@@ -26,7 +26,7 @@ module Shaka
           def code?(raw)
             line = raw.sub(CONTAINER, '')
             return inside_fence?(raw) if @fence
-            return true if line.match?(INDENTED)
+            return true if raw.match?(INDENTED) || line.match?(INDENTED)
 
             @fence = line[FENCE, 1]
             @prefix = marker_columns(raw[0, raw.length - line.length])
