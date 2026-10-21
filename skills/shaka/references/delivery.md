@@ -342,7 +342,7 @@ before the step that needs it, and say where a reviewer should look hardest.
 Explain unfamiliar terms on first use. Distinguish mechanical moves and generated
 output from behavior changes. Cover purpose, choices, validation, risks, and
 rollback consequences where they fit; avoid a heading for every checklist item.
-State each risk and rollback as the [writing guidance](writing.md) describes.
+State each risk and rollback as the [review evidence rules](publication.md#review-evidence) describe.
 Cover the change completely, then stop.
 
 ### Connect a technical fix to its evidence
