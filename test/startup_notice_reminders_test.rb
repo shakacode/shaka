@@ -19,7 +19,7 @@ class StartupNoticeRemindersTest < Minitest::Test
   def test_a_repository_without_settings_names_the_file_and_both_setups_once_a_day
     line = reminder
     assert_includes line, "#{@repository} has no Shaka settings (.agents/shaka/config.yml)"
-    assert_includes line, 'a private trial in this clone or team setup'
+    assert_includes line, 'Unless the user already chose, ask for a private trial in this clone or team setup'
     assert_includes line, 'getting-started.md#2-choose-individual-or-team-setup'
     assert_nil reminder(now: NOW + 3600)
     assert_match(/no Shaka settings/, reminder(now: NOW + Shaka::UpdateCheck::Cache::SECONDS + 1))

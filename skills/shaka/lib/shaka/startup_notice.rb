@@ -107,8 +107,8 @@ module Shaka
       return if @repository.nil? || settings?
 
       reminder("settings #{@repository}",
-               "#{@repository} has no Shaka settings (#{Configuration::Layout::NEW.contract}). Before the task, " \
-               "ask the user to choose a private trial in this clone or team setup: #{SETUP_GUIDE}. " \
+               "#{@repository} has no Shaka settings (#{Configuration::Layout::NEW.contract}). Unless the user " \
+               "already chose, ask for a private trial in this clone or team setup: #{SETUP_GUIDE}. " \
                'Declining setup skips settings, not the publication steps.')
     end
 
