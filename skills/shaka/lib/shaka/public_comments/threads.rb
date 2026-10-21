@@ -99,7 +99,7 @@ module Shaka
         meta, comments = normalize_thread(row)
         threads << meta
         record_authors(meta['thread_id'], comments)
-        @posts[meta['thread_id']] = comments.map { |comment| [author_login(comment['author']), comment['body']] }
+        @posts[meta['thread_id']] = comments.map { |comment| [GitHubLogin.author(comment['author']), comment['body']] }
         @truncated << meta['thread_id'] if row.dig('comments', 'pageInfo', 'hasNextPage')
         comments.each { |comment| index_comment(comment, meta, index) }
       end
