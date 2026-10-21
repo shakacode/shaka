@@ -20,18 +20,15 @@ module Shaka
     VERBATIM = 'Quoted text.'
     REPLY_PAGES = 20
 
-    # A block builds the body from the pull request it replaces, using this same read. A description
-    # parked for a merge queue comes back around the new region.
+    # A block builds the body from the pull request it replaces, using this same read. While a merge
+    # queue holds the prepared message there, that read is the parked description.
     def description(body: nil)
       current = pull
-      existing = current['body'].to_s
-      text = publishable(block_given? ? yield(current) : body)
-      restoring(current) do |around|
-        merged = check_length(merge(around, text))
-        verify_rendering(merged)
-        check_unchanged(existing, current)
-        confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
-      end
+      read, parked = unparked(current)
+      merged = check_length(merge(read['body'].to_s, publishable(block_given? ? yield(read) : body)))
+      verify_rendering(merged)
+      check_unchanged(current)
+      confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged).tap { release_parked(parked) }
     end
 
     # `verbatim` names quoted text the rendering check leaves to the caller; see verify_rendering.
@@ -105,7 +102,7 @@ module Shaka
     # This update rewrites the whole body, so an edit that landed while it was prepared
     # would be erased. Re-reading narrows that window; it does not close it, because
     # GitHub offers no compare-and-swap for a pull request body.
-    def check_unchanged(existing, original) = FeaturePublication.unchanged!(self, existing, original)
+    def check_unchanged(original) = FeaturePublication.unchanged!(self, original['body'].to_s, original)
 
     # Rewriting an ambiguous region would delete whatever sits between the wrong markers.
     def check_region(existing, opens, closes)

@@ -111,6 +111,18 @@ class QueuedDescriptionTest < Minitest::Test
     assert_empty @fake.comments
   end
 
+  # Provenance history and carried usage come from the description a publication replaces.
+  def test_a_publication_after_the_queue_reads_the_parked_description
+    @github.queue_description(prepared)
+    seen = nil
+    @github.description do |read|
+      seen = read['body']
+      "New summary.\n"
+    end
+
+    assert_equal "#{REGION}\n\n#{CODERABBIT}", seen
+  end
+
   # A queue that rebuilds its commit while the PR waits would copy a restored description.
   def test_publishing_while_the_pr_is_queued_is_refused_and_changes_nothing
     @github.queue_description(prepared)

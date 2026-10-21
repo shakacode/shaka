@@ -1,14 +1,15 @@
 # frozen_string_literal: true
 
 require 'digest'
+require 'zlib'
 require_relative '../error'
 require_relative 'managed_region'
 require_relative '../public_comments/bounded_list'
 
 module Shaka
   # A merge queue that copies the PR description into its commit takes no message, so the
-  # description holds the prepared message while the queue builds the commit. The text around
-  # Shaka's region waits in a comment; the next `description` publication puts it back.
+  # description holds the prepared message while the queue builds the commit. The description
+  # waits in a comment meanwhile, and every `description` publication reads it from there.
   module QueuedDescription
     PARK_MARK = '<!-- shaka:queued-description -->'
     PARKED = %r{\A#{Regexp.escape(PARK_MARK)}\n<!-- body ([A-Za-z0-9+/]*={0,2}) -->\n<!-- queued (\h{64}) -->\n}
@@ -16,7 +17,7 @@ module Shaka
     COMMENT_PAGES = 20
     NOTICE = '**Description parked for the merge queue.** This queue copies the PR description into its ' \
              'commit, so the description holds the prepared commit message until the PR merges or leaves ' \
-             'the queue. Publishing the description again brings the rest back.'
+             'the queue. Publishing the description again brings it back.'
 
     # Parks the description, or what an earlier enqueue parked, then writes the message body in its
     # place. The PR title stays: the queue already takes the commit title from it. Returns the URL.
@@ -25,7 +26,7 @@ module Shaka
       body = current['body'].to_s
       earlier = parked_around(body)
       parking = park(whole(body, earlier), message.prose)
-      unchanged_since_parking(body, current, parking)
+      unchanged_since_parking(current, parking)
       release_parked(earlier)
       confirmed(api(pull_path, method: 'PATCH', fields: { body: message.prose }), message.prose)
       parking['html_url']
@@ -33,27 +34,40 @@ module Shaka
 
     private
 
-    # Yields the body to publish around: the parked one when the description still holds a queued
-    # commit message. The parking comments go once the restored description is stored.
-    def restoring(current)
-      existing = current['body'].to_s
-      parked = unparked_description(existing, current['comments'])
-      yield(parked ? parked['body'] : existing).tap { release_parked(parked['comments']) if parked }
+    # The pull request as publication should read it, with the parked description in place of a
+    # queued commit message, and the parking comments to delete once the restored body is stored.
+    # Restoring while the PR is queued would let a rebuilt queue commit copy the whole description.
+    def unparked(current)
+      body = current['body'].to_s
+      # A PR without comments has nothing parked, so its comments go unread.
+      comments = current['comments'].to_i.zero? ? [] : parked_around(body)
+      return [current, []] if comments.empty?
+      if snapshot['isInMergeQueue'] == true
+        raise Error, 'The PR is in the merge queue and its description holds the prepared commit message; ' \
+                     'publish the description after the PR merges or leaves the queue.'
+      end
+
+      [current.merge('body' => whole(body, comments)), comments]
     end
 
     # This account's parking comments, when the description has no Shaka region to hold.
     def parked_around(body) = body.include?(Publishing::OPEN_MARK) ? [] : parked_descriptions
 
-    # The description to park: the live one, or what an earlier enqueue parked plus any edit since.
-    def whole(body, earlier) = earlier.empty? ? body : restored(earlier.last, body)
+    # The real description: the live one, or what was parked, followed by the live body when
+    # someone changed the message since. An emptied description changes nothing parked.
+    def whole(body, parked)
+      return body if parked.empty?
 
-    # The text around Shaka's region, which the next publication fills again, and a digest of the
-    # message written in its place, so an edit made while the PR is queued is kept.
+      encoded, queued = parked.last['body'].to_s.gsub("\r\n", "\n").match(PARKED).captures
+      text = Zlib::Inflate.inflate(encoded.unpack1('m0')).force_encoding(Encoding::UTF_8)
+      digest(body) == queued || body.strip.empty? ? text : "#{text}\n\n#{body}"
+    end
+
+    # The whole description, compressed, and a digest of the message written in its place.
     def park(body, queued)
-      text = "#{PARK_MARK}\n<!-- body #{[outside_region(body)].pack('m0')} -->\n" \
+      text = "#{PARK_MARK}\n<!-- body #{[Zlib::Deflate.deflate(body)].pack('m0')} -->\n" \
              "<!-- queued #{digest(queued)} -->\n#{NOTICE}\n"
-      raise Error, 'The description outside Shaka\'s region is too long to park for the merge queue.' if
-        text.length > COMMENT_LIMIT
+      raise Error, 'The description is too long to park for the merge queue.' if text.length > COMMENT_LIMIT
 
       posted = api("repos/#{@repository}/issues/#{@number}/comments", method: 'POST', fields: { body: text })
       confirmed(posted, text)
@@ -61,45 +75,11 @@ module Shaka
 
     # An edit that landed while the comment was posted is in neither copy, so the swap stops and
     # takes back a comment that no longer matches the description.
-    def unchanged_since_parking(body, current, parking)
-      check_unchanged(body, current)
+    def unchanged_since_parking(current, parking)
+      check_unchanged(current)
     rescue Error
       release_parked([parking])
       raise
-    end
-
-    def outside_region(body)
-      return body unless body.include?(Publishing::OPEN_MARK) || body.include?(Publishing::CLOSE_MARK)
-
-      region = Publishing.managed_region(body)
-      raise Error, 'The description has an ambiguous or malformed managed region; repair it before merging.' unless
-        region
-
-      body.sub("#{Publishing::OPEN_MARK}#{region}#{Publishing::CLOSE_MARK}",
-               "#{Publishing::OPEN_MARK}\n#{Publishing::CLOSE_MARK}")
-    end
-
-    # The parked text and its comments, when the description still holds a queued commit message,
-    # even one someone emptied. A PR without comments has nothing parked, so its comments go unread.
-    # Restoring while the PR is queued would let a rebuilt queue commit copy the whole description.
-    def unparked_description(existing, count)
-      return if count.to_i.zero?
-
-      comments = parked_around(existing)
-      return if comments.empty?
-      if snapshot['isInMergeQueue'] == true
-        raise Error, 'The PR is in the merge queue and its description holds the prepared commit message; ' \
-                     'publish the description after the PR merges or leaves the queue.'
-      end
-
-      { 'body' => restored(comments.last, existing), 'comments' => comments }
-    end
-
-    # The parked text, followed by the live description when someone changed the message since.
-    def restored(comment, live)
-      encoded, queued = comment['body'].to_s.gsub("\r\n", "\n").match(PARKED).captures
-      text = encoded.unpack1('m0').force_encoding(Encoding::UTF_8)
-      digest(live) == queued || live.strip.empty? ? text : "#{text}\n\n#{live}"
     end
 
     # GitHub's web editor stores CRLF line endings, which change no text.

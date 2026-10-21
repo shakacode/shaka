@@ -200,6 +200,18 @@ class MergeSquashMessageTest < Minitest::Test
     assert_equal 'merge_queue', result.fetch('submission')
   end
 
+  # Without a message the queue would copy the whole description, so nothing is enqueued.
+  def test_a_copying_queue_without_a_message_is_refused_before_enqueueing
+    @client.queue_settings = { 'squashMergeCommitTitle' => 'PR_TITLE', 'squashMergeCommitMessage' => 'PR_BODY' }
+    ready = snapshot.merge('isMergeQueueEnabled' => true)
+    @client.snapshots = [ready]
+
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: 17) }
+
+    assert_match(/copies the PR description.*--squash-message/, error.message)
+    assert_empty @client.events
+  end
+
   # The description already holds the message, so a retry or the next publication settles it.
   def test_a_refused_enqueue_after_the_message_went_in_says_to_inspect_the_pr
     @client.mutation_error = Shaka::Error.new('GraphQL failed or returned missing data.')

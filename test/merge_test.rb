@@ -17,6 +17,8 @@ module MergeFixtures
       @mutations = []
       @features = []
       @events = []
+      @queue_settings = { 'squashMergeCommitTitle' => 'PR_TITLE', 'squashMergeCommitMessage' => 'BLANK',
+                          'pullRequest' => { 'mergeQueue' => { 'configuration' => { 'mergeMethod' => 'SQUASH' } } } }
     end
 
     def repository = 'owner/repo'
