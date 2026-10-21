@@ -23,10 +23,12 @@ class DoctorTest < Minitest::Test
     end
   end
 
-  def test_an_unset_alias_degrades_the_report_without_blocking
+  # One machine has nothing to tell apart, so leaving the alias unset is a working setup.
+  def test_an_unset_alias_is_healthy_and_keeps_the_hint_for_several_machines
     report, blocked = doctor(environment: {})
-    assert_includes report, 'DEGRADED'
+    assert_includes report, '[HEALTHY] Machine alias'
     assert_includes report, 'UNKNOWN'
+    assert_includes report, 'Needed only on more than one machine.'
     refute blocked
   end
 
@@ -34,7 +36,7 @@ class DoctorTest < Minitest::Test
   def test_alias_guidance_never_offers_a_host_name
     host = 'developer-laptop-m5-max'
     report, = doctor(environment: { 'HOST' => host, 'HOSTNAME' => host })
-    assert_includes report, 'DEGRADED'
+    assert_includes report, 'such as `m5`'
     refute_includes report, host
   end
 
@@ -73,7 +75,7 @@ class DoctorTest < Minitest::Test
   def test_the_suggested_example_is_never_this_machine_name
     %w[m5 m5.local].each do |name|
       report, = doctor(host_name: name, environment: {})
-      assert_includes report, 'DEGRADED', name
+      assert_includes report, 'such as `m1`', name
       refute_match(/`m5`/, report, name)
     end
   end
