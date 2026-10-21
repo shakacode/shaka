@@ -27,8 +27,8 @@ class SettingsPreviewConsumersTest < Minitest::Test
       assert_includes result['prompt'], 'Selected preview writing instructions.'
       refute_includes result['prompt'], 'Unselected candidate instructions.'
       assert_equal 19, Shaka::ProseLimits.from_ref(root:, ref: trusted).to_h['max_sentence_words']
-      snapshot = Shaka::PublicationSettings.current_settings(root:, ref: trusted,
-                                                             repository: 'owner/repo', required: true)
+      snapshot, = Shaka::PublicationSettings.current_settings(root:, ref: trusted,
+                                                              repository: 'owner/repo', required: true)
       refute_predicate Shaka::PublicationSettings.new(current: snapshot), :include_checkout_path?
     end
   end

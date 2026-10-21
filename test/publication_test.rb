@@ -690,6 +690,26 @@ class PublicationUsageRowGroupingTest < Minitest::Test
     assert_includes rendered, '| claude‑opus‑5‑5 review (claude‑code anthropic claude‑opus‑5‑5 medium) |'
     assert_includes rendered, '| claude‑opus‑5‑5 review (claude‑code anthropic gpt‑6‑astra high) |'
   end
+
+  # Break: rows followed arrival order, so two reviews sat above the implementation they checked.
+  def test_implementation_comes_first_then_reviews_by_label
+    gpt = REVIEW.merge('label' => 'gpt-6.1-sol review', 'provider' => 'openai', 'model' => 'gpt-6.1-sol')
+    review = USAGE_RECORD.merge('contribution' => 'review', 'columns' => [gpt, REVIEW])
+    rendered = render(usage: { 'note' => 'n', 'records' => [review, USAGE_RECORD.merge('columns' => [COLUMN])] })
+    labels = rendered.scan(/^\| ([^|]+?) \| \$/).flatten.map { |label| label.tr("\u2011", '-') }
+    assert_equal ['claude-opus-5-5 implementation', 'claude-opus-5-5 review', 'gpt-6.1-sol review', '**Total**'],
+                 labels
+  end
+
+  # Break: carried reports always followed fresh ones, whatever they measured.
+  def test_a_carried_implementation_row_comes_before_a_fresh_review
+    hidden = "<!-- usage-columns #{JSON.generate([COLUMN])} -->"
+    block = "#{Shaka::UsageRecords.begin_mark(USAGE_RECORD)}\n#{hidden}\n#{Shaka::UsageRecords::END_MARK}"
+    review = USAGE_RECORD.merge('contribution' => 'review', 'columns' => [REVIEW])
+    rendered = render(usage: { 'note' => 'n', 'records' => [review], 'carried' => block })
+    assert_includes rendered, PublicationUsageTableTest::RENDERED
+    refute_includes rendered.scan(/<!-- usage-columns .* -->/).join, 'contribution'
+  end
 end
 
 # A reader new to these reports can read the table without guessing.

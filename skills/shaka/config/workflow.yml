@@ -32,6 +32,8 @@ phases:
         Confirm the destination's live owner and visibility with
         `gh repo view OWNER/REPO --json owner,visibility,defaultBranchRef` before publishing
         there; the same call reports the default branch the plan step needs.
+      - Run the saved helper's `doctor --brief --root ROOT` and show its output to the user in
+        your first reply.
       - Ask for a missing issue number, URL, or description. Resolve bare issue numbers against
         the verified repository. After intake, confirm the task matches the checkout; if it does
         not, resolve the target checkout, reread its trusted instructions, and reassess
@@ -467,8 +469,8 @@ phases:
         phrasing. Keep exact commands, identifiers, domain terms, risks, and evidence. Skip chatbot
         wrappers and inflated significance. A reply leads with the decision and uses the thread's
         shared context.
-      - `description` reports an advisory `opening` result. Pass the verified default-branch
-        full commit SHA with `description --ref SHA`. Opening settings live under
+      - `description` and `walkthrough` report an advisory `opening` result for the `summary`.
+        Pass the verified default-branch full commit SHA with `--ref SHA`. Opening settings live under
         `pr_description.opening_check`; the top-level `opening_check` remains a compatibility
         input. When `enabled` is false, the command skips the check. Otherwise, a configured `reviewer`, `model`,
         and `effort` select this check independently of code review; the same provider as the
@@ -500,10 +502,15 @@ phases:
         problem, what the PR covers, what it deliberately leaves out, and the fact its safety rests
         on. Its `review_effort`, 1 to 5, tells the reviewer how hard to look given that blast radius:
         1 for docs a reader can trust from the description, 5 for irreversible or security changes.
+        The helper refuses a rating below the floor the changed files set; to choose or change the
+        floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
-        `verification` lists 1 to 3 `checks`, each what was run and its outcome, citing a link
-        or the command, and a `not_verified` line naming what went unproven and why that is
+        The helper writes the repository validation and local review line under Verification
+        from `--validation-result` and `--review-result`, so leave those out of `checks`.
+        `verification` lists 1 to 3 `checks`, each proof of this PR's own claim: what was run
+        against the changed behavior and its outcome, citing a link or the command. Its
+        `not_verified` line names what went unproven and why that is
         acceptable, or `Nothing.` when every claim was proved. An unfinished PR may list no checks
         yet. The helper renders both after the links and refuses a check with neither a Markdown
         link nor a code span; it cannot tell whether the check ran.
@@ -554,6 +561,7 @@ phases:
         reply OWNER/REPO NUMBER --content-file PATH --key NAME [--comment ROOT_COMMENT_ID]
         resolve OWNER/REPO NUMBER --thread THREAD_ID
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
+          [--opening-reviewer PROVIDER/FAMILY] [--opening-model MODEL] [--opening-effort LEVEL]
         attention OWNER/REPO NUMBER --state answer|merge|resume|none
         handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
@@ -574,7 +582,8 @@ phases:
         Ready checkpoint publication embeds copyable title and body blocks in the checkpoint.
         `squash-message` remains the standalone path for an opted-out checkpoint and older installations;
         it posts a new comment and deletes this account's earlier standalone one.
-        A merge queue takes no message, and `merge` reports that.
+        A merge queue takes no message: on a queue base the ready checkpoint replaces the copyable
+        blocks with what the queue will write, `handoff` owes none, and `merge` reports that.
         `description` replaces only its marked region. `reply` reuses its stable key; `--comment`
         answers an inline thread. When a reply addresses a review, its `reviews` list holds
         that pull request's comment URLs. The helper writes one opening line per URL from the
@@ -739,9 +748,9 @@ phases:
       - Before calling implementation merge-ready, perform
         [checkpoint evaluation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>):
         Use `post-implementation run` with a public-safe evidence packet and the verified
-        default-branch `--ref`, then publish its result on this PR. For a ready result, pass
-        `post-implementation publish --squash-message PATH` with the commit title and body
-        so the checkpoint contains the copyable merge message. The companion procedure
+        default-branch `--ref`, then publish its result on this PR. For a ready result on a base
+        without a merge queue, pass `post-implementation publish --squash-message PATH` with the
+        commit title and body so the checkpoint contains the copyable merge message. The companion procedure
         defines trusted settings, explicit task overrides, failures, and opt-outs.
         When this task's settings set `project_guidance.merge_readiness`, first read it with
         `guidance merge_readiness --root DIR --ref SHA`, and put each applicable requirement
@@ -817,7 +826,8 @@ phases:
         click, run `attention OWNER/REPO NUMBER --state merge` to label the PR
         `awaiting-merge-approval`, verify the checkpoint contains the current head
         and copyable commit title and body. For an opted-out checkpoint, run `squash-message`
-        for that head instead. Name the expected head SHA,
+        for that head instead. On a merge-queue base, tell the user to add the PR to the queue
+        instead and relay `handoff`'s note on what the queue will write. Name the expected head SHA,
         list each open step besides merging with its timing and who does it, and tell the user they may use
         GitHub's currently offered merge control for that SHA. Arrange continued feedback intake
         through the procedure below before ending the turn. If GitHub
@@ -937,7 +947,7 @@ always: |-
   Before ending any turn on a task that owns an open PR, run the saved helper's
   `handoff OWNER/REPO NUMBER --head SHA --root DIR --ref SHA`. Its status line names the head,
   attention label, required checks, walkthrough head, and WIP Details head, plus the squash
-  message head while the PR awaits merge approval; exit status 2 lists owed work. For an Ask
+  message head, or `merge queue`, while the PR awaits merge approval; exit status 2 lists owed work. For an Ask
   handoff, follow [continued feedback intake](<{{package_root}}/skills/shaka/references/continued-feedback.md>):
   keep one time-limited monitor connected to a coding-tool feature that resumes this task,
   or name who checks new feedback and how they resume it manually. When work resumes for

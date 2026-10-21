@@ -1,17 +1,24 @@
 # frozen_string_literal: true
 
 require_relative 'official_install_support'
+require 'shaka/executable_file'
 require 'shellwords'
 
 class OfficialUpdateTest < Minitest::Test
   include OfficialInstallSupport
 
   def test_invalid_incoming_skill_does_not_advance_the_live_checkout
+    skip 'this platform does not store an executable bit' if Shaka::ExecutableFile.windows?
+
     installed = cloned_installation
     before = git('-C', installed, 'rev-parse', 'HEAD')
     File.chmod(0o644, File.join(@source, 'scripts/shaka'))
     push_source
     output, status = invoke('--directory', installed, '--update')
+    assert_rejected_executable(installed, before, output, status)
+  end
+
+  def assert_rejected_executable(installed, before, output, status)
     refute_predicate status, :success?
     assert_includes output, 'not executable'
     assert_equal before, git('-C', installed, 'rev-parse', 'HEAD')

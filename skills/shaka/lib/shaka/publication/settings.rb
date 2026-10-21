@@ -6,6 +6,8 @@ require_relative '../repository_config'
 require_relative 'feature_guard'
 require_relative '../opening_publication'
 require_relative 'settings_table'
+require_relative 'run_summary'
+require_relative 'review_effort_floor'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
@@ -15,19 +17,18 @@ module Shaka
     UNAVAILABLE_SETTINGS = 'Withheld: settings unavailable; fix seam check --ref, then rerun description'
 
     def self.refuse_free_form!(items)
-      return unless items.any? do |item|
-        item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(SUMMARY)
-      end
+      return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(SUMMARY) }
 
       raise Error, 'Shaka settings must come from validation/review results, not a details item.'
     end
 
     def self.prepare(root:, ref:, pull:, options:, github:)
-      FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
+      changed_paths = FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current = current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref
-      new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:)
+      current, floors = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
+      new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
+          review_effort_floor: ReviewEffortFloor.for(changed_paths, floors))
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
@@ -36,24 +37,24 @@ module Shaka
       raise Error, 'Settings publication requires --ref and --root' unless ref && options[:root]
 
       verdict = Evidence::Verification.new(root:, ref:, repository:, head: pull.dig('head', 'sha'), paths:).run
-      raise Error, 'Settings evidence is missing or stale; rerun affected validation/review' unless
-        verdict['status'] == 'ready'
+      return verdict if verdict['status'] == 'ready'
 
-      verdict
+      raise Error, 'Settings evidence is missing or stale; rerun affected validation/review'
     end
 
+    # Returns the public settings snapshot and the trusted review-effort floors.
     def self.current_settings(root:, ref:, repository:, required: false)
       OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
-        _config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
-        current
+        config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
+        [current, config.pr_description['human_review_floors']]
       end
     rescue Error, SystemCallError
       raise if required
-
-      nil
     end
 
-    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil)
+    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil,
+                   review_effort_floor: nil)
+      @review_effort_floor = review_effort_floor
       @repository = repository
       @verdict = verdict
       @current = current
@@ -82,6 +83,9 @@ module Shaka
       rows.is_a?(Integer) && rows.positive? ? rows : RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('max_human_comments')
     end
 
+    # The bound results Verification reports and the floor the changed paths set; nil when not read.
+    attr_reader :verdict, :review_effort_floor
+
     NOTE = 'Local files remain local. This reports operation settings and cannot restore them. ' \
            'It does not prove earlier checks ran. Private merge.preference grants no Auto authority. ' \
            'Private trials default to Ask; explicit user authorization and live required gates govern merging.'
@@ -107,8 +111,8 @@ module Shaka
     # One row per recorded result. Binding refuses a result whose settings differ from the
     # current ones, so a row needs only what can still vary: its revision and what it ran with.
     def operations_table
-      rows = operations.map do |title, settings|
-        [title, SettingsTable.source(settings, @repository), ran_with(settings)]
+      rows = operations.map do |title, settings, run|
+        [title, SettingsTable.source(settings, @repository), [ran_with(settings), run].compact.join(': ')]
       end
       return [] if rows.empty?
 
@@ -119,7 +123,8 @@ module Shaka
     def operations
       OPERATIONS.flat_map do |kind, title|
         Array(@verdict&.dig('checks', kind)).map do |entry|
-          [title, Evidence::PublicSettings.sanitize(entry.dig('original', 'public_settings'))]
+          [title, Evidence::PublicSettings.sanitize(entry.dig('original', 'public_settings')),
+           RunSummary.render(entry['original'])]
         end
       end
     end

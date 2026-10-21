@@ -2,6 +2,7 @@
 
 require_relative 'attention'
 require_relative 'error'
+require_relative 'merge_queue_commit'
 require_relative 'merge_required_checks'
 require_relative 'status'
 require_relative 'handoff/conversation'
@@ -56,13 +57,23 @@ module Shaka
 
     def open_facts(snapshot, live)
       checks = snapshot['requiredChecks']
-      [label_fact(checks), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
-       comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live), squash_fact(live), wip_fact(live)].compact
+      [attention_fact(checks, live), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
+       comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live), squash_fact(snapshot, live),
+       wip_fact(live)].compact
+    end
+
+    # An unsubmitted review by this account outranks every other wait, because only its author can see it.
+    # GitHub refuses only a new review beside it, so a merge wait with a current walkthrough just names it.
+    def attention_fact(checks, live)
+      @labels = Attention.new(@github).current
+      return label_fact(checks) unless walkthrough_reader.pending?
+      return note(label_fact(checks), PendingReview::MESSAGE) if merge_requested? && walkthrough_reader.revision == live
+
+      pending_review_fact
     end
 
     # One label names the one decision the PR waits on, so a missing label hides the PR from its searches.
     def label_fact(checks)
-      @labels = Attention.new(@github).current
       return woken_fact if @woken_by
       return owe('no awaiting label', 'Set the attention label for what the PR waits on.') if @labels.empty?
       return owe(@labels.join('+'), "Keep exactly one attention label; found #{list}.") if @labels.length > 1
@@ -92,8 +103,12 @@ module Shaka
     def passing?(checks) = checks.is_a?(Array) && checks.all? { |check| passing_check?(check) }
 
     # Checked here because this helper's current code runs even for a session that loaded an older Finish.
-    def squash_fact(live)
+    # A merge queue takes no message, so the agent passes on what the queue writes instead.
+    def squash_fact(snapshot, live)
       return unless merge_requested?
+
+      queue = MergeQueueCommit.for(@github, snapshot)
+      return note('merge queue', queue.note) if queue
 
       head = SquashNote.new(@github).head
       message = "Publish squash commit message for #{live} in the checkpoint; use `squash-message` for opt-out."

@@ -9,7 +9,8 @@ module ConfigurationBoundaryFileIO
   OTHER_FILE_IO = %w[
     hosts/codex_wake.rb trial/prepare.rb trial/command.rb install/display.rb install/checkout.rb install/official.rb
     local_review/usage.rb doctor/installation_identity.rb doctor/cursor_stop_hook.rb local_review/ledger_running.rb
-    enforcement_config.rb evidence/command.rb evidence/verification.rb installer.rb install/source.rb install/tree.rb
+    enforcement_config.rb evidence/command.rb evidence/verification.rb executable_file.rb installer.rb
+    install/source.rb install/tree.rb
     install/link_lock.rb install/package.rb install/package_verification.rb install/version.rb local_review/ledger.rb
     post_implementation.rb post_implementation_report.rb post_implementation_runner.rb usage/cursor_usage_refresh.rb
     local_review.rb local_review/cli.rb local_review/comment.rb local_review/path_guard.rb local_review/shebang.rb
@@ -24,7 +25,8 @@ module ConfigurationBoundaryFileIO
     seam/upgrade_plan/symlink_chain.rb seam/private_recovery/exclusion.rb seam/upgrader.rb seam/upgrader/filesystem.rb
     seam/private_recovery/seed.rb seam/private_seed.rb ui_check.rb install/refusal.rb install/ruby_record.rb
     install/checkout_record.rb install/take_over.rb
-    update_check/cache.rb install/session_hook.rb
+    update_check/cache.rb install/session_hook.rb ruby_requirement.rb
+    evidence/machine_facts.rb
   ].freeze
 end
 

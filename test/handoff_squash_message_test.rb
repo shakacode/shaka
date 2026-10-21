@@ -72,10 +72,10 @@ class HandoffSquashMessageTest < Minitest::Test
     assert owed?(result, 'squash commit message')
     assert_equal Shaka::Handoff::OWED_EXIT, Shaka::Handoff.exit_status(result)
 
-    checkpoint = { 'user' => { 'login' => 'shaka-agent' },
+    checkpoint = { 'id' => 1, 'created_at' => '2026-10-01T00:00:00Z', 'user' => { 'login' => 'shaka-agent' },
                    'body' => "<!-- shaka:reply:post-implementation-aaaaaaa-abc12345 -->\nReport\n\n" \
                              "#{Shaka::PostImplementationEvidence.attestation(HEAD, 'ready')}" }
-    result = awaiting_merge(post_implementation: {}, comments: [checkpoint, squash_comment(HEAD)])
+    result = awaiting_merge(post_implementation: {}, comments: [checkpoint, squash_comment(HEAD, id: 2)])
     assert_empty result['owed']
   end
 
@@ -89,7 +89,7 @@ class HandoffEvaluationMessageTest < Minitest::Test
 
   def checkpoint(state: 'ready', head: HEAD, message_head: HEAD, id: 2, author: 'shaka-agent')
     message = Shaka::SquashMessage.new({ 'title' => 'Fix', 'body' => 'Why.' }, number: 42)
-    { 'id' => id, 'user' => { 'login' => author },
+    { 'id' => id, 'created_at' => '2026-10-01T00:00:00Z', 'user' => { 'login' => author },
       'body' => "<!-- shaka:reply:post-implementation-#{head[0, 7]}-abc12345 -->\nReport\n\n" \
                 "#{Shaka::SquashComment.body(message_head, message)}\n" \
                 "#{Shaka::PostImplementationEvidence.attestation(head, state)}" }
@@ -127,5 +127,42 @@ class HandoffEvaluationMessageTest < Minitest::Test
     archived['body'] = archived['body'].sub('Report', 'Superseded — read the current checkpoint: URL')
     archived['body'] += "\n</details>"
     assert_predicate(awaiting([archived])['owed'], :any?)
+  end
+end
+
+# A merge queue takes no message, so an Ask handoff on a queue base owes none and says what the queue writes.
+class HandoffMergeQueueTest < Minitest::Test
+  include HandoffHarness
+
+  SETTINGS = { 'squashMergeCommitTitle' => 'PR_TITLE', 'squashMergeCommitMessage' => 'PR_BODY',
+               'pullRequest' => { 'mergeQueue' => { 'configuration' => { 'mergeMethod' => 'SQUASH' } } } }.freeze
+
+  def awaiting_merge(**pull)
+    handoff(labels: ['awaiting-merge-approval'], queue: true, queue_settings: SETTINGS, **pull)
+  end
+
+  def test_a_queue_base_owes_no_squash_message
+    result = awaiting_merge
+
+    assert_empty result['owed']
+    assert_includes result['status'], 'merge queue'
+    refute_includes result['status'], 'no squash message'
+  end
+
+  def test_a_queue_base_tells_the_agent_what_the_queue_writes
+    note = awaiting_merge['notes'].find { |item| item.start_with?('Merge queue:') }
+
+    assert_includes note, 'add the PR to the merge queue'
+    assert_includes note, 'the whole PR description'
+  end
+
+  def test_a_queue_base_still_owes_the_checkpoint
+    assert(awaiting_merge(post_implementation: {})['owed'].any? { |item| item.include?('Checkpoint') })
+  end
+
+  def test_a_base_without_a_queue_still_owes_the_message
+    result = handoff(labels: ['awaiting-merge-approval'], queue: false)
+
+    assert(result['owed'].any? { |item| item.include?('squash commit message') })
   end
 end
