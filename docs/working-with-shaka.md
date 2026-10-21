@@ -200,7 +200,8 @@ tests and review, and the original chat keeps the remaining branch current.
 - **Start small.** Pick a fix whose result you can recognize.
 - **Choose a model when you need to.** Activate it in your coding agent, then
   name it, for example `Use Sol, medium effort. Go.` A prompt cannot switch the
-  model, and a setting that differs from Shaka's recommendation can cause a pause.
+  model. Naming a model or effort that is unavailable, unverified, or differs from
+  Shaka's recommendation can cause a pause.
 - **Keep public PRs public-safe.** Tell the agent before publishing if local
   paths or chat links should be hidden. [WIP settings](settings.md#wipinclude_checkout_path)
   hide the checkout path.
@@ -235,14 +236,14 @@ $shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N. Go.
 ```
 
 The agent orders the sub-issues by their blocked-by links and delivers each PR
-the usual way. Under Ask, each PR comes back to you, and dependent PRs wait.
+the usual way. When the spec needs more than one PR, it asks where to keep its
+plan. Under Ask, each PR comes back to you, and dependent PRs wait.
 Tickets stay open: the agent links them without `Fixes`, because reading a
 tracker gives no permission to change it.
 
 Add a sentence to change that:
 
-- "You may comment on the spec with your plan" skips the question about where
-  to keep a multi-PR plan.
+- "You may comment on the spec with your plan" skips that question.
 - "Close each ticket when its PR merges" lets merges close them.
 
 On a public repository, the agent checks with you before adopting criteria from
@@ -318,7 +319,8 @@ $shaka retrospective
 
 The agent lists findings with evidence, a proposed fix, and its maintenance cost,
 then waits. Pick some, for example `Deliver findings 1 and 3`, and each is
-delivered as an ordinary task.
+delivered as an ordinary task. If a retrospective skill such as AI Hero's `retro`
+is installed, the agent uses it; Shaka works without one.
 
 To find slow steps, the agent reads a timing log Shaka keeps on your machine at
 `~/.local/state/shaka/calls.jsonl`. It records each helper command's name,
