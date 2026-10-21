@@ -2,7 +2,6 @@
 
 require 'open3'
 require 'rbconfig'
-require 'timeout'
 
 # Shared process helpers for the Windows exercise. Product code stays in lib/.
 class WindowsSession
@@ -63,8 +62,10 @@ class WindowsSession
     Shaka::Doctor::BoundedCommand.new(timeout:)
   end
 
+  # Open3.capture3 waits for the child inside its ensure, so Timeout cannot stop a hang.
+  # BoundedCommand drains the pipes and ends the child when the deadline passes.
   def capture(command, seconds)
-    Timeout.timeout(seconds) { Open3.capture3(*command, chdir: root) }
+    bounded(seconds).call(command, root)
   end
 
   def excerpt(text)

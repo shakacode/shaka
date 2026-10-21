@@ -20,16 +20,16 @@ class WindowsDoctor < WindowsSession
 
   def helper
     script = File.join(root, 'skills/shaka/scripts/shaka')
-    stdout, stderr, status = capture([git_bash, script, 'doctor', '--root', root], 90)
-    accept_report(stdout, stderr, status)
+    stdout, stderr, passed = capture([git_bash, script, 'doctor', '--root', root], 90)
+    accept_report(stdout, stderr, passed)
   end
 
-  def accept_report(stdout, stderr, status)
+  def accept_report(stdout, stderr, passed)
     combined = "#{stdout}\n#{stderr}"
     raise "aborted while spawning: #{excerpt(combined)}" if combined.include?('wrong exec option symbol: pgroup')
-    return puts("  exit #{status.exitstatus}") if stdout.include?('Shaka doctor:')
+    return puts("  report #{passed ? 'ok' : 'failed'}") if stdout.include?('Shaka doctor:')
 
-    raise "no report (exit #{status.exitstatus}): #{excerpt(combined)}"
+    raise "no report (passed=#{passed}): #{excerpt(combined)}"
   end
 
   def short_command
