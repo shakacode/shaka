@@ -16,7 +16,12 @@ module TimelineStepsFixture
     { 'at' => '2026-10-21T09:00:00Z', 'exit' => 0, 'duration_ms' => 60_000 }.merge(fields.transform_keys(&:to_s))
   end
 
-  def validation(**) = record(command: 'evidence run', check: 'validate', repository: REPOSITORY, tree: TREE, **)
+  # A validation runs before the review of the same commit.
+  def validation(**)
+    record(command: 'evidence run', check: 'validate', repository: REPOSITORY, tree: TREE, at: '2026-10-21T08:59:00Z',
+           **)
+  end
+
   def review(**) = record(command: 'review run', head: HEAD, provider: 'openai', **)
 
   def logged(*records, commits: COMMITS, machine: 'm5')

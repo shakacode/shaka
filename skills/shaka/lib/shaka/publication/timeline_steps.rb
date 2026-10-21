@@ -41,11 +41,14 @@ module Shaka
       [kept, dropped + steps.size - kept.size]
     end
 
-    # A logged step older than every kept one was already counted as dropped, so it is not counted again.
+    # A logged step no newer than the oldest kept one, and not kept itself, was already counted as
+    # dropped, so it is not counted again. Times have whole seconds, so steps can share the boundary.
     def unseen(fresh, carried, dropped)
       return fresh unless dropped.positive? && carried.any?
 
-      fresh.reject { |step| step['at'] < carried.first['at'] }
+      oldest = carried.first['at']
+      kept = carried.to_set { |step| step['id'] }
+      fresh.reject { |step| step['at'] <= oldest && !kept.include?(step['id']) }
     end
 
     def same_repository?(pull)
@@ -54,7 +57,8 @@ module Shaka
     end
 
     # Steps are sorted by start time, and a step both carried and logged again appears once.
-    def merge(*lists) = lists.flatten.uniq { |step| step['id'] }.sort_by { |step| step['at'] }
+    # The id breaks ties, so the same steps are cut at the limit on every update.
+    def merge(*lists) = lists.flatten.uniq { |step| step['id'] }.sort_by { |step| step.values_at('at', 'id') }
 
     # The dropped count travels with the steps, so a later reader knows the history is partial.
     def hidden(steps, dropped = 0) = "<!-- timeline-steps #{JSON.generate('steps' => steps, 'dropped' => dropped)} -->"

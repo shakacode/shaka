@@ -48,14 +48,16 @@ class TimelineStepsTest < Minitest::Test
     assert_equal [Shaka::TimelineSteps::MAX_STEPS, 14, starts.sort], [starts.size, timeline['dropped_steps'], starts]
   end
 
-  # The log still holds the dropped steps, so an update with no new runs must not count them again.
+  # The log still holds the dropped steps, so an update with no new runs must not count them again,
+  # including a dropped step that started in the same second as the oldest kept one.
   def test_an_unchanged_log_does_not_grow_the_dropped_count
-    counts = with_log(*reviews_at_each_minute) do |log|
+    tie = review(at: '2026-10-21T10:10:00Z', provider: 'anthropic')
+    counts = with_log(*reviews_at_each_minute, tie) do |log|
       first = attach(log, pull(''))
       second = attach(log, pull(body(first['steps'], dropped: first['dropped_steps'])))
       [first, second].map { |timeline| timeline['dropped_steps'] }
     end
-    assert_equal [10, 10], counts
+    assert_equal [11, 11], counts
   end
 
   # The body is editable, so a carried step is checked again and an unsafe value never renders.
