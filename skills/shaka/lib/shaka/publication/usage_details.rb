@@ -136,13 +136,14 @@ module Shaka
     end
 
     # Hosts count input differently, so rows only combine reports from one host.
+    # The contribution orders the rows; neither key reaches the hidden record.
     def hosted(columns, identity)
       unless identity
         raise Error,
               'A carried usage record has an unreadable identity; restore or remove it in the PR body.'
       end
 
-      columns.map { |column| column.merge('host' => identity['host']) }
+      columns.map { |column| column.merge(identity.slice('host', 'contribution')) }
     end
 
     def parse_hidden(text)

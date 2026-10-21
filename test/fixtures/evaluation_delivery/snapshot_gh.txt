@@ -1,0 +1,14 @@
+require 'json'
+directory = File.dirname(__FILE__)
+request = STDIN.read
+File.open(File.join(directory, 'requests'), 'a') { |f| f.puts(JSON.generate({ argv: ARGV, input: request })) }
+index_path = File.join(directory, 'index')
+index = File.exist?(index_path) ? File.read(index_path).to_i : 0
+File.write(index_path, index + 1)
+rows = JSON.parse(File.read(File.join(directory, 'responses')))
+row = rows.fetch(index)
+if row == 'hang'
+  File.write(File.join(directory, 'pid'), Process.pid)
+  sleep 60
+end
+print JSON.generate(row)

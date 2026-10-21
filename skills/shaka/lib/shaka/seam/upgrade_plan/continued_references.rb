@@ -8,6 +8,7 @@ module Shaka
         private
 
         def scan_complex_references(path, text)
+          note_workflow_filters(path, text)
           scan_bare_directory_dependency(path, text)
           scan_segmented_reference(path, text)
           scan_continued_reference(path, text)
@@ -79,28 +80,30 @@ module Shaka
         end
 
         def scan_continued_reference(path, text)
-          return unless continued_old_path?(text)
+          return unless continued_old_path?(text, path)
 
           @references << { 'path' => path, 'kind' => 'continued old-layout reference', 'paths' => [PATHS::DIRECTORY] }
           @blockers << "#{path}: continued old-layout reference needs explicit repair"
         end
 
-        def continued_old_path?(text)
+        def continued_old_path?(text, path = nil)
           joined = text.gsub(/\\\r?\n/, '')
           return false if joined == text
 
-          matching_paths(joined).any? || directory_reference?(joined) || segmented_reference?(joined)
+          matching_paths(joined).any? || directory_reference?(joined, path) || segmented_reference?(joined)
         end
 
         def scan_alias_reference(path, text)
-          return unless alias_reference?(text)
+          return unless alias_reference?(text, path)
 
           @references << { 'path' => path, 'kind' => 'aliased old-layout directory', 'paths' => [PATHS::DIRECTORY] }
           @blockers << "#{path}: aliased old-layout directory needs explicit repair"
         end
 
-        def alias_reference?(text)
+        # Markdown is not executed, so a variable assigned the old directory there is not an alias.
+        def alias_reference?(text, path = nil)
           return true if bare_directory_dependency?(text)
+          return false if path.to_s.match?(/\.(?:md|markdown|mdx)\z/i)
 
           assignment = %r{\b[A-Za-z_]\w*\s*[+?:]?=[^\r\n]*#{Regexp.escape(PATHS::DIRECTORY)}(?=/|[^[:alnum:]_.-]|$)}o
           mapping = %r{\b[A-Za-z_]\w*\s*:[ \t]+[^\r\n]*#{Regexp.escape(PATHS::DIRECTORY)}/?(?=[ \t\r\n#'";]|$)}o
@@ -108,17 +111,19 @@ module Shaka
         end
 
         def scan_shell_fragmented_reference(path, text)
-          return unless shell_fragmented_reference?(text)
+          return unless shell_fragmented_reference?(text, path)
 
           @references << { 'path' => path, 'kind' => 'fragmented old-layout reference', 'paths' => [PATHS::DIRECTORY] }
           @blockers << "#{path}: fragmented old-layout reference needs explicit repair"
         end
 
-        def shell_fragmented_reference?(text)
+        def shell_fragmented_reference?(text, path = nil)
+          return markdown_fragmented_reference?(text, path) if markdown_document?(text, path)
+
           joined = normalize_shell_fragments(text)
           return false if joined == text
 
-          matching_paths(joined).any? || directory_reference?(joined)
+          matching_paths(joined).any? || directory_reference?(joined, path)
         end
 
         def normalize_shell_fragments(text)

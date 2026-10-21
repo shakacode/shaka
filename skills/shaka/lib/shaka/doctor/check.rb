@@ -9,6 +9,12 @@ module Shaka
       end
 
       def first_line(text) = text.to_s.lines.first.to_s.strip
+
+      def render(item)
+        lines = ["[#{item.fetch(:status).upcase}] #{item.fetch(:name)} — #{item.fetch(:summary)}"]
+        lines << "    Next: #{item[:guidance]}" if item[:guidance]
+        lines.join("\n")
+      end
     end
   end
 end

@@ -205,6 +205,14 @@ For example: “The menu stays reachable on narrow screens. The regression test
 failed before the fix and passes now; desktop and mobile screenshots show the
 result.” Details can hold commands, tested commits, and a recording of the menu.
 
+Local validation shows how long it ran and on what kind of machine, such as
+`validate: 27m on m5 (Apple M5 Max, 18 cores, 128 GB RAM, 3 GB free, load 140→450)`
+under **Shaka settings used**. When you compare runs across machines, the
+hardware and the load at start and end help you judge whether a slow run met a
+busy machine or slower hardware. They are context, not proof of the cause. Only
+the CPU model, these counts, and your machine alias are published, never the
+machine's own name, your user name, or paths.
+
 Shaka uses your existing tests and validation commands, plus browser tools when
 needed. Required GitHub checks and approvals still apply.
 
@@ -355,6 +363,9 @@ and recoverable work state for a later return. This uses the existing
 [recovery procedure](working-with-shaka.md#revise-earlier-guidance-and-try-again),
 not an automatic Ruby snapshot or an extra human approval at every return point.
 The PR description opens with **Decisions to make** while you have questions to answer.
+Until you answer them, the links below the questions show **Decisions to make** as the
+checkpoint, and the code walkthrough waits, because your answers may change the code it
+would explain. Ask your agent for a walkthrough sooner if you want to read one first.
 Otherwise, below the line naming the AI that wrote it, it opens with the task owner's
 recommendation from the checkpoint published for that commit, such as
 **Recommendation: Merge**, or **No recommendation yet** before the owner has recorded one.

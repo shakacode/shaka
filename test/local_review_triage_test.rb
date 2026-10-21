@@ -104,6 +104,29 @@ class LocalReviewTriageTest < Minitest::Test
 
     assert_equal(['5,000', nil], ledger.rounds.map { |round| round['tokens'] })
   end
+
+  # Break caught: an invalid fallback was recorded, and only publication refused the ledger.
+  def test_recording_refuses_a_fallback_publication_would_refuse
+    append(EARLIER, 'openai/codex', findings: 0)
+    { 'bogus' => 'must be an object', { 'outcome' => 'bogus' } => 'outcome must be one of',
+      { 'outcome' => 'same_model', 'attempts' => ['x'] } => 'attempt must be an object' }.each do |fallback, message|
+      assert_includes assert_raises(Shaka::Error) { record([], fallback:) }.message, message
+    end
+    refute ledger.rounds.first.key?('findings')
+  end
+
+  # Break caught: a stray reviewer recorded against an earlier batch was blamed on the latest commit.
+  def test_a_stray_reviewer_error_names_the_recorded_batch
+    append(EARLIER, 'openai/codex', findings: 0)
+    append(EARLIER, 'anthropic/claude', findings: 0)
+    record([])
+    append(HEAD, 'openai/codex', findings: 0)
+
+    error = assert_raises(Shaka::Error) do
+      ledger.record!({ 'usage' => { 'xai/grok' => { 'tokens' => '5' } } }, head: EARLIER)
+    end
+    assert_equal "Usage names xai/grok, which did not review #{EARLIER}.", error.message
+  end
 end
 
 # A review marks itself running, so its commit is triaged only after it finishes.

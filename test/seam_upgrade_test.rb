@@ -376,6 +376,63 @@ class SeamUpgradeHiddenIndexReviewTest < Minitest::Test
     end
   end
 
+  def test_markdown_apostrophe_keeps_ordinary_reference_handling
+    with_repository do |root|
+      File.write(File.join(root, 'notes.md'), "Don't edit .agents/bin/test; it's \"generated\".\n")
+      File.write(File.join(root, 'log.md'), "Kept .agents/bin/test's header.\n")
+      commit_fixture(root, 'prose with apostrophe')
+      preview = report(root)
+      assert_equal 'ready', preview.fetch('status'), preview.fetch('blockers').join("\n")
+      apply_upgrade(root)
+      assert_prose_rewritten(root)
+    end
+  end
+
+  def assert_prose_rewritten(root)
+    assert_equal "Don't edit .agents/shaka/bin/test; it's \"generated\".\n", File.read(File.join(root, 'notes.md'))
+    assert_equal "Kept .agents/shaka/bin/test's header.\n", File.read(File.join(root, 'log.md'))
+  end
+
+  def test_quoted_shell_fragment_in_workflow_still_blocks
+    with_repository do |root|
+      write_tracked(root, '.github/workflows/ci.yml', "run: exec .age'nts'/bin/test\n")
+      assert_includes report(root).fetch('blockers').join, 'fragmented old-layout reference'
+    end
+  end
+
+  def test_markdown_shell_fragment_still_blocks
+    source = "Don't skip it:\n\n```sh\nexec .age'nts'/bin/test\n```\n"
+    with_repository do |root|
+      write_tracked(root, 'guide.md', source)
+      assert_includes report(root).fetch('blockers').join, 'fragmented old-layout reference'
+    end
+  end
+
+  MARKDOWN_FRAGMENTS = {
+    'literal beside fragment' => "```sh\n.agents/bin/test;.age'nts'/bin/test\n```\n",
+    'escaped character' => "```sh\nexec .agents/bin/tes\\t\n```\n",
+    'line continuation' => "```sh\nexec .agents/bi\\\nn/test\n```\n"
+  }.freeze
+
+  def test_markdown_shell_fragments_block
+    MARKDOWN_FRAGMENTS.each do |name, source|
+      with_repository do |root|
+        write_tracked(root, 'guide.md', "Don't skip it:\n\n#{source}")
+        assert_equal 'blocked', report(root).fetch('status'), name
+      end
+    end
+  end
+
+  def test_executable_markdown_keeps_whole_file_fragment_check
+    with_repository do |root|
+      path = File.join(root, 'check.md')
+      File.write(path, "Don't run .agents/bin/test\n")
+      File.chmod(0o755, path)
+      commit_fixture(root, 'executable markdown')
+      assert_includes report(root).fetch('blockers').join, 'fragmented old-layout reference'
+    end
+  end
+
   def test_escaped_character_inside_legacy_command_blocks
     with_repository do |root|
       File.write(File.join(root, 'ci.sh'), "#!/bin/sh\nexec .agents/bin/tes\\t\n")
@@ -2007,6 +2064,177 @@ class SeamUpgradeDirectoryReferenceTest < Minitest::Test
         File.write(File.join(root, 'launcher.sh'), source)
         commit_fixture(root, 'legacy directory and command pair')
         assert_blocked_with(root, 'bare old-layout directory')
+      end
+    end
+  end
+end
+
+class SeamUpgradeCorrectReferenceTest < Minitest::Test
+  include SeamUpgradeFixture
+
+  def test_whole_directory_glob_entries_in_ignore_files_stay_as_written
+    { '.gitignore' => ".agents/**\n", '.github/CODEOWNERS' => "/.agents/** @maintainers\n" }.each do |name, source|
+      with_repository do |root|
+        path = write_tracked(root, name, source)
+        assert_equal 'ready', report(root).fetch('status'), name
+        apply_upgrade(root)
+        assert_equal source, File.read(path)
+      end
+    end
+  end
+
+  COMMAND_GLOB_SOURCES = {
+    'ci.rb' => "Dir.glob('.agents/**').each { |path| puts path }\n",
+    'list.rb' => "['.agents/**'].flat_map { |pattern| Dir.glob(pattern) }\n",
+    'keyword.rb' => "files(\n  pattern: '.agents/**'\n)\n",
+    'ci.sh' => "#!/bin/sh\nls .agents/**\n",
+    'wrapped.sh' => "#!/bin/sh\ntar czf out.tgz \\\n  .agents/**\n",
+    '.github/workflows/ci.yml' => "jobs:\n  a:\n    steps:\n      - run: ls .agents/**\n",
+    '.github/workflows/matrix.yml' => "strategy:\n  matrix:\n    pattern: ['.agents/**']\n"
+  }.freeze
+
+  def test_double_star_glob_in_commands_still_blocks
+    COMMAND_GLOB_SOURCES.each do |name, source|
+      with_repository do |root|
+        write_tracked(root, name, source)
+        assert_blocked_with(root, 'layout')
+      end
+    end
+  end
+
+  def test_partial_layout_globs_still_block
+    ['.agents/*', '.agents/**/agent-workflow.yml', '.agents/**/bin/test', '.agents/**.yml'].each do |glob|
+      with_repository do |root|
+        write_workflow(root, "on:\n  push:\n    paths-ignore:\n      - \"#{glob}\"\n")
+        assert_blocked_with(root, 'old layout-directory pattern')
+      end
+    end
+  end
+
+  def test_prose_assignment_before_directory_mention_stays_as_written
+    with_repository do |root|
+      path = File.join(root, 'NOTES.md')
+      File.write(path, "The purge ran, LEFT=0, and the `.agents/skills` folder stays.\n")
+      commit_fixture(root, 'prose assignment')
+      assert_equal 'ready', report(root).fetch('status')
+      apply_upgrade(root)
+      assert_equal "The purge ran, LEFT=0, and the `.agents/skills` folder stays.\n", File.read(path)
+    end
+  end
+
+  ASSIGNED_DIRECTORY_SOURCES = {
+    'ci.sh' => "#!/bin/sh\nagent_dir=$(dirname \"$0\")/.agents\nexec \"$agent_dir/custom-tool\"\n",
+    'quoted.sh' => "#!/bin/sh\nagent_dir=\"$HOME/my repo/.agents\"\nexec \"$agent_dir/custom-tool\"\n",
+    'tick.sh' => "#!/bin/sh\nagent_dir=`git rev-parse --show-toplevel`/.agents\nexec \"$agent_dir/custom-tool\"\n",
+    'ci.rb' => "dir = File.join(root, '.agents')\nsystem(File.join(dir, 'custom-tool'))\n",
+    'concat.rb' => "dir = root + '/.agents'\nsystem(\"\#{dir}/custom-tool\")\n",
+    'paths.py' => "AGENTS = ROOT / \".agents\"\nrun(AGENTS / \"custom-tool\")\n",
+    'guide.rst' => ".. code-block:: ruby\n\n   dir = root + '/.agents'\n",
+    'guide.adoc' => "----\ndir = root + '/.agents'\n----\n"
+  }.freeze
+
+  def test_assigned_directory_values_without_command_names_block
+    ASSIGNED_DIRECTORY_SOURCES.each do |name, source|
+      with_repository do |root|
+        File.write(File.join(root, name), source)
+        commit_fixture(root, 'assigned directory')
+        assert_blocked_with(root, 'aliased old-layout directory')
+      end
+    end
+  end
+
+  def test_markdown_is_not_checked_for_directory_aliases
+    source = "Load it:\n\n```ruby\ndir = root + '/.agents'\nload(\"\#{dir}/custom-tool\")\n```\n"
+    with_repository do |root|
+      path = write_tracked(root, 'guide.md', source)
+      assert_equal 'ready', report(root).fetch('status')
+      apply_upgrade(root)
+      assert_equal source, File.read(path)
+    end
+  end
+
+  def test_indexed_markdown_directory_change_still_blocks
+    with_repository do |root|
+      path = write_tracked(root, 'README.md', "Run:\n\n    cd .agents\n    ./bin/test\n")
+      File.write(path, "Run make test.\n")
+      assert_blocked_with(root, 'indexed segmented old-layout reference differs from worktree')
+    end
+  end
+end
+
+class SeamUpgradeWorkflowGlobTest < Minitest::Test
+  include SeamUpgradeFixture
+
+  FILTER_WORKFLOWS = [<<~QUOTED, <<~MIXED, <<~INLINE].freeze
+    on:
+      push:
+        paths-ignore:
+          - ".agents/**"
+  QUOTED
+    on:
+      push:
+        paths-ignore:
+          - .agents/**
+      pull_request:
+        paths: ["!.agents/**", 'docs/**']
+  MIXED
+    on:
+      push:
+        paths-ignore: ['.agents/**', 'docs/**']
+    jobs:
+      a:
+        steps:
+          - run: make test
+  INLINE
+
+  def test_event_path_filters_stay_as_written
+    FILTER_WORKFLOWS.each do |source|
+      with_repository do |root|
+        path = write_workflow(root, source)
+        assert_equal 'ready', report(root).fetch('status'), source
+        apply_upgrade(root)
+        assert_equal source, File.read(path)
+      end
+    end
+  end
+
+  COMMAND_WORKFLOWS = [<<~MATRIX, <<~RUN, <<~HEREDOC, <<~ANCHORED].freeze
+    on: push
+    jobs:
+      a:
+        strategy:
+          matrix:
+            paths: ['.agents/**']
+  MATRIX
+    on:
+      push:
+        paths-ignore: ['.agents/**']
+    jobs:
+      a:
+        steps:
+          - run: ls .agents/**
+  RUN
+    on: push
+    jobs:
+      a:
+        steps:
+          - run: |
+              ruby <<'RUBY'
+              opts = { paths: ['.agents/**'] }
+              RUBY
+  HEREDOC
+    on:
+      push:
+        paths-ignore: &filters ['.agents/**']
+      pull_request:
+        paths-ignore: *filters
+  ANCHORED
+
+  def test_workflow_globs_outside_event_filters_still_block
+    COMMAND_WORKFLOWS.each do |source|
+      with_repository do |root|
+        write_workflow(root, source)
+        assert_blocked_with(root, 'layout')
       end
     end
   end
