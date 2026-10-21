@@ -37,9 +37,10 @@ $shaka doctor
 ```
 
 Doctor reports what is ready and which reviewer CLIs it found, with install hints
-for missing ones. It changes no settings. `$shaka` alone gives a guided welcome
-with the same check. One extra provider is enough for an
-independent review; you do not need every CLI.
+for missing ones. Finding a CLI does not prove it is signed in or has quota.
+Doctor changes no settings and exits with status 1 when any check fails.
+`$shaka` alone gives a guided welcome with the same check. One extra provider is
+enough for an independent review; you do not need every CLI.
 
 Optional: set `SHAKA_MACHINE_ALIAS` in your shell profile to a short name such as
 `mini`. Unfinished PRs then show which machine holds the work. PRs may be public,

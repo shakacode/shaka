@@ -6,8 +6,6 @@ Give your coding agent a task. Shaka has it build the change, test it, and get
 an independent review. Then it hands you one pull request (PR) that is quick to
 judge.
 
-![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](img/task-to-pr.svg)
-
 ## Why use Shaka
 
 - **See the outcome first.** The PR description opens with what changed, why,
@@ -22,6 +20,8 @@ judge.
 
 [PR verification](pr-verification.md#read-a-pr-for-your-decision) shows where each
 answer lives in a PR.
+
+![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](img/task-to-pr.svg)
 
 <a id="start-here"></a>
 

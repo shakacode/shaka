@@ -101,7 +101,8 @@ Answer in the chat unless the handoff says automatic follow-up is active. A
 label does not wake a chat or prove checks passed.
 
 If the agent posts with your GitHub account, a review you started but never
-submitted also shows `awaiting-answer`. Submit or discard it.
+submitted blocks its walkthrough. Submit or discard it. Until you do, the PR shows
+`awaiting-answer`, unless it was already waiting for merge.
 
 If a label looks stale, resume the owning chat from **WIP Details → Chat link**.
 Removing a label by hand does not restart work or authorize merging. See
@@ -165,11 +166,12 @@ ask. This is agent guidance, not enforced by code.
 
 ```text
 $shaka Resume https://github.com/OWNER/REPO/pull/N. The previous owner has
-stopped and handed this work to me. Go.
+stopped and handed this work to me. Keep merge policy ask. Go.
 ```
 
 Confirm the handoff first. The agent reads **WIP Details**, checks the PR's
-current state, and finishes the work.
+current state, and finishes the work. Under Ask, it returns the PR for your merge
+decision or explains what still blocks it.
 
 ### Configure a repository for your team
 
@@ -218,8 +220,8 @@ Examples:
 - [Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills) cover
   practices from spec to launch.
 
-Only AI Hero's skills have been tried on a full Shaka delivery.
-[Try a new pack](#try-a-new-skill-pack-with-shaka) on one task first.
+pstack, Ponytail, and Addy Osmani's skills have not been tried on a full Shaka
+delivery. [Try a new pack](#try-a-new-skill-pack-with-shaka) on one task first.
 
 ### Hand over a spec and tickets
 
@@ -298,7 +300,8 @@ reviewer, or approve a merge.
 Shaka takes its settings, such as reviewers and merge rules, from your default
 branch. Rule files and check scripts a skill changes on the branch are part of
 the change under review. If a skill you named is not installed, the agent says
-so and continues without it. This is agent guidance, not enforced by code.
+so, continues the work that does not need it, and asks about the rest. It does
+not install software for you. This is agent guidance, not enforced by code.
 
 ## Review a session for improvements
 
@@ -314,7 +317,8 @@ delivered as an ordinary task.
 
 To find slow steps, the agent reads a timing log Shaka keeps on your machine at
 `~/.local/state/shaka/calls.jsonl`. It records each helper command's name,
-timing, exit status, and the repository, PR, and commit it worked on. It holds no
+timing, and exit status, plus the repository, issue or PR, and commit when the
+command names them. It holds no
 paths or task text and is never uploaded. Set `SHAKA_CALL_LOG=off` to stop it,
 or set it to a path to keep the log elsewhere.
 
