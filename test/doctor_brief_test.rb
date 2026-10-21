@@ -15,11 +15,13 @@ class DoctorBriefTest < Minitest::Test
 
   def test_a_ready_installation_lists_the_installation_settings_and_basic_checks
     report, blocked = brief(identity: INSTALLED)
-    assert_equal ['Shaka start check: HEALTHY', 'Installation', 'Repository seam', 'Ruby', 'GitHub CLI',
-                  'Repository access'], [report.lines.first.strip, *report.scan(/^\[\w+\] (.+?) —/).flatten]
+    expected = ['Shaka start check: HEALTHY', 'Installation', 'Repository seam', 'Ruby', 'Git', 'GitHub CLI',
+                'Repository access']
+    assert_equal expected, [report.lines.first.strip, *report.scan(/^\[\w+\] (.+?) —/).flatten]
     assert_includes report, '0.1.0 at '
     assert_includes report, 'revision 2363e217b603'
     assert_includes report, 'team settings committed in this checkout'
+    assert_includes report, '[HEALTHY] Git — git version 2.45.0'
     refute_includes report, 'Machine alias'
     refute blocked
   end
@@ -69,6 +71,23 @@ class DoctorBriefTest < Minitest::Test
     assert blocked
   end
 
+  # Debian 12 ships Git 2.39, and merge's rebase proof needs the version the proof itself names.
+  def test_git_older_than_the_merge_proof_needs_is_degraded_and_names_what_stops
+    report, blocked = brief(responses: { git: ["git version 2.39.5\n", '', true] })
+    minimum = Shaka::MergeTreeProof::MINIMUM_GIT.join('.')
+    assert_includes report, 'Shaka start check: DEGRADED'
+    assert_includes report, "[DEGRADED] Git — git version 2.39.5 is older than #{minimum}"
+    assert_includes report, 'review of an earlier commit'
+    assert_includes report, "Next: Install Git #{minimum} or newer"
+    refute blocked
+  end
+
+  def test_git_that_does_not_run_fails_the_start_check
+    report, blocked = brief(responses: { git: ['', 'git: command not found', false] })
+    assert_includes report, '[FAILED] Git — git does not run: git: command not found'
+    assert blocked
+  end
+
   def test_brief_refuses_reviewer_probes
     [%w[--brief --probe-reviewers], %w[--brief --installation-json], %w[--brief --host codex]].each do |arguments|
       assert_equal(1, silently { Shaka::Doctor.run(arguments) }, arguments.join(' '))
@@ -90,7 +109,7 @@ class DoctorBriefTest < Minitest::Test
   def git_runner(git, responses = {})
     gh = stub_gh(responses)
     lambda do |argv, chdir = nil|
-      next gh.call(argv, chdir) unless argv.first == 'git'
+      next gh.call(argv, chdir) unless argv.first == 'git' && argv != %w[git version]
 
       output, answered = git.fetch(argv[1], ['', true])
       [output, '', answered]

@@ -1,7 +1,7 @@
 # Install Shaka manually
 
 Run the installation yourself when you want to read what will run before it
-runs. You need Ruby 3.4 or later, Git, and an authenticated
+runs. You need Ruby 3.4 or later, Git 2.41 or later, and an authenticated
 [GitHub CLI](https://cli.github.com/). To let your coding agent do this instead,
 use the [installation prompt](getting-started.md).
 
