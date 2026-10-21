@@ -197,9 +197,10 @@ you are doing so. Before launching one:
 3. Give the agent its own worktree and its own scratch subdirectory, and name both in
    its prompt.
 4. Tell it to stay within the review-round budget, publish its PR, stop at the merge
-   decision, and never merge.
-5. Run at most about eight deliveries per machine, counting chips and agents, and
-   queue the rest.
+   decision, and never merge, even under Auto. Tell the user that its PR comes back
+   for their merge decision.
+5. Unless the user sets another limit, run at most about eight deliveries per
+   machine, counting chips and agents, and queue the rest.
 
 A delivery agent owns its task and PR under the workflow's delivery-agent rule; helpers
 it starts follow the helper-worker rule. When the host cannot start or suggest a
@@ -213,6 +214,8 @@ review events; it relays the event to the owner. Before relaying a maintainer
 decision, ask the owner for its current state, because the maintainer may already
 have answered there. When the owner's review ledger needs a human decision recorded
 in its own session, ask the maintainer to answer there instead of relaying it.
+When a delivery agent has stopped, as it does when the tower chat ends, recheck
+ownership and offer a chip that resumes its PR; that session becomes the owner.
 
 ## Scan for attention only when asked
 
