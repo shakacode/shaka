@@ -41,8 +41,10 @@ class PublicationVerificationGatesTest < Minitest::Test
     assert_includes render(bound), folded
   end
 
-  def test_a_failure_or_a_missing_review_stays_visible
-    [bound(validation: [VALIDATE.merge('exit_code' => 1)]), bound(review: [])].each do |settings|
+  # A host-reported review is only attested, so its reviewer stays in view.
+  def test_a_failure_a_missing_review_or_a_host_reported_review_stays_visible
+    [bound(validation: [VALIDATE.merge('exit_code' => 1)]), bound(review: []),
+     bound(review: [CLAUDE, CODEX])].each do |settings|
       assert_includes render(settings), "## Verification\n\n**Validation and review:**"
     end
   end

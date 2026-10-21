@@ -27,12 +27,14 @@ module Shaka
       "#{LABEL} #{[*validations(validation), review(reviews, review_url)].join('; ')} at `#{short_head(verdict)}`."
     end
 
-    # Only a ready verdict reaches publication, so every listed review completed or was reported.
+    # Only a ready verdict reaches publication. A host-reported review rests on its attestation
+    # alone, so it stays visible with the reviewers' names.
     def routine?(verdict)
       return false unless verdict
 
       validation, reviews = results(verdict)
-      validation.any? && reviews.any? && validation.all? { |result| result['exit_code']&.zero? }
+      validation.map { |result| result['exit_code'] }.uniq == [0] &&
+        reviews.map { |result| result['status'] }.uniq == ['completed']
     end
 
     def short_head(verdict) = verdict['head'][0, 7]
