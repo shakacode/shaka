@@ -6,21 +6,25 @@ require_relative '../workflow_version'
 module Shaka
   # Renders a small, allowlisted record of route-selection evidence for a public PR.
   # The helper supplies the workflow version itself, so the row names the code that ran.
+  # An optional task_number links the task when it is an issue or PR in the same repository.
   class ExecutionProvenance
     FIELDS = %w[task_source initial_prompt requested_model requested_effort
                 recommended_model recommended_effort active_model active_effort].freeze
+    OPTIONAL_FIELDS = %w[task_number].freeze
     TASK_SOURCES = %w[description issue pull_request].freeze
+    TASK_PATHS = { 'issue' => 'issues', 'pull_request' => 'pull' }.freeze
     REQUESTED_FIELDS = %w[requested_model requested_effort].freeze
     NOT_SPECIFIED = 'Not specified'
     SAFE_VALUE = /\A(?:UNKNOWN|[A-Za-z0-9][A-Za-z0-9._:-]{0,79})\z/
 
-    def initialize(spec, workflow_version: nil)
+    def initialize(spec, workflow_version: nil, pull: nil)
       @spec = spec
       @workflow_version = workflow_version || WorkflowVersion.current
+      @repository = pull&.dig('base', 'repo', 'full_name')
     end
 
     def detail
-      { 'summary' => 'Execution provenance', 'body' => table }
+      { 'summary' => 'Execution details', 'body' => table }
     end
 
     # The values a provenance history entry compares, as the table renders them.
@@ -39,8 +43,8 @@ module Shaka
     def rows
       values = validated
       [
-        ['Task source', values.fetch('task_source')],
-        ['Workflow version', @workflow_version.markdown],
+        ['Task source', task(values.fetch('task_source'))],
+        ['Shaka skill version', @workflow_version.markdown],
         (['User-requested model / effort', route(values, 'requested')] unless
           REQUESTED_FIELDS.all? { |field| values.fetch(field).nil? }),
         ['Recommended model / effort', route(values, 'recommended')],
@@ -66,11 +70,12 @@ module Shaka
 
       validate_fields
       validate_task_source
+      validate_task_number
       validate_prompt_exclusion
     end
 
     def validate_fields
-      return if @spec.keys.sort == FIELDS.sort
+      return if (@spec.keys - OPTIONAL_FIELDS).sort == FIELDS.sort
 
       raise Error, 'Publication provenance fields do not match the metadata allowlist.'
     end
@@ -81,10 +86,26 @@ module Shaka
       raise Error, 'Publication provenance task_source is invalid.'
     end
 
+    def validate_task_number
+      return unless @spec.key?('task_number')
+      return if TASK_PATHS.key?(@spec['task_source']) && @spec['task_number'].is_a?(Integer) &&
+                @spec['task_number'].positive?
+
+      raise Error, 'Publication provenance task_number must be a positive issue or pull request number.'
+    end
+
     def validate_prompt_exclusion
       return if @spec['initial_prompt'] == 'EXCLUDED'
 
       raise Error, 'Publication provenance initial_prompt must be EXCLUDED.'
+    end
+
+    def task(source)
+      number = @spec['task_number']
+      return source unless number
+      return "#{source} ##{number}" unless @repository
+
+      "#{source} [##{number}](https://github.com/#{@repository}/#{TASK_PATHS.fetch(source)}/#{number})"
     end
 
     def valid?(value) = value.is_a?(String) && value.match?(SAFE_VALUE)
