@@ -42,12 +42,10 @@ module Shaka
           @blockers << "#{path}: bare old-layout directory needs explicit repair"
         end
 
-        # Markdown prose names the old directory and its commands without running them, so pairing the two
-        # applies only to its code. A change into the old directory blocks even in prose: agents follow it.
         def bare_directory_dependency?(text, path = nil)
-          return shell_directory_dependency?(text) unless markdown_document?(text, path)
+          return markdown_directory_dependency?(text) if markdown_document?(text, path)
 
-          text.match?(old_directory_change) || shell_directory_dependency?(markdown_code(text))
+          shell_directory_dependency?(text)
         end
 
         def shell_directory_dependency?(text)

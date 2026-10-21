@@ -3,7 +3,8 @@
 module Shaka
   class Seam
     class UpgradePlan
-      # Finds old paths assembled from shell quotes inside Markdown without joining prose apostrophes.
+      # Separates Markdown code from prose, so prose naming old paths, or holding apostrophes, does not
+      # read as a shell dependency.
       module MarkdownFragments
         MARKDOWN_PATH = /\.(?:md|markdown|mdx)\z/i
         REMOVED_OR_KEPT = /(\\\r?\n|['"]|\\(?=[^\r\n]))|./m
@@ -49,6 +50,13 @@ module Shaka
           !File.lstat(File.join(@root, path)).mode.anybits?(0o111)
         rescue SystemCallError
           false
+        end
+
+        # Markdown prose can name the old directory and a command paragraphs apart, so outside code the two
+        # block only on one line, where agents may follow them as an instruction.
+        def markdown_directory_dependency?(text)
+          text.each_line.any? { |line| line.match?(old_directory_change) || legacy_directory_command_pair?(line) } ||
+            shell_directory_dependency?(markdown_code(text))
         end
 
         # Markdown runs nothing outside code, so prose lines are blanked and fenced or indented lines stay.
