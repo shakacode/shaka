@@ -38,9 +38,9 @@ Go.
 
 ![A ready PR follows Ask, where you merge or approve it, or Auto, where the agent merges. A PR that is too large or risky returns to you under Auto.](img/merge-policy.svg)
 
-For Auto, add `Use merge policy auto` to your prompt. Large PRs
-([size limits](settings.md#mergelimits)) and changes to trust, authentication, or
-releases still come back to you.
+For Auto, add `Use merge policy auto` to your prompt. Large PRs still come back to
+you ([size limits](settings.md#mergelimits)), and the agent hands back changes to
+trust, authentication, or releases.
 
 ## Give feedback
 
@@ -73,7 +73,7 @@ Search your PR list on GitHub:
 | Search | What to do |
 | --- | --- |
 | `is:open label:awaiting-answer` | Answer **Decisions to make** in the description, or submit or discard your own pending review. |
-| `is:open label:awaiting-merge-approval` | Merge with the checkpoint's [commit message](pr-verification.md#squash-merge-details), add the PR to your [merge queue](pr-verification.md#merge-queues), or tell the agent to merge that commit. |
+| `is:open label:awaiting-merge-approval` | Merge with the prepared [commit message](pr-verification.md#squash-merge-details), add the PR to your [merge queue](pr-verification.md#merge-queues), or tell the agent to merge that commit. |
 | `is:open label:awaiting-resume` | Paste **WIP Details → Next action** into a chat. |
 
 A label doesn't wake a chat. See [approval details](pr-verification.md#approval-and-attention-labels).
