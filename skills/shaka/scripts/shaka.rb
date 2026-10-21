@@ -94,6 +94,14 @@ def merge_limits(options, seam)
   Shaka::MergeLimits.new(seam ? seam.merge.fetch('limits') : {}, confirmed_head: options[:confirmed_head])
 end
 
+def merge_review_floor(options, seam)
+  return Shaka::MergeReviewFloor.new(confirmed_head: options[:confirmed_head]) unless seam
+
+  Shaka::MergeReviewFloor.new(seam.merge.fetch('auto_max_review_floor'),
+                              floors: seam.pr_description['human_review_floors'],
+                              confirmed_head: options[:confirmed_head])
+end
+
 def require_merge_ref!(options)
   return if options[:ref].is_a?(String) && !options[:ref].strip.empty?
 
@@ -166,7 +174,7 @@ end
 
 def merge_flags(flags, options)
   flags.on('--review-waiver REASON', 'Merge without review evidence') { |value| options[:review_waiver] = value }
-  flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits') { |sha| options[:confirmed_head] = sha }
+  flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits/floor') { |sha| options[:confirmed_head] = sha }
   flags.on('--empty-checks-confirmed-head SHA', 'Head the user told you to merge with no required checks') do |sha|
     options[:empty_checks_confirmed_head] = sha
   end
@@ -359,6 +367,7 @@ begin
                                               seam_wait: seam&.review&.fetch('ci_review_wait'), review:,
                                               seam_required_checks:)
              merge.empty_checks_confirmed_head = options[:empty_checks_confirmed_head]
+             merge.review_floor = merge_review_floor(options, seam)
              merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention' then Shaka::Attention.new(github).call(state: options.fetch(:state))
@@ -366,8 +375,9 @@ begin
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))
              github.squash_comment(head: options.fetch(:head), message:)
            when 'handoff'
-             Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint)
-                           .call(head: options[:head], woken_by: options[:woken_by])
+             handoff = Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint)
+             handoff.review_floor = merge_review_floor({}, seam) if seam&.sha
+             handoff.call(head: options[:head], woken_by: options[:woken_by])
            end
   if native_wake
     result['codexWake'] = { 'registrationId' => native_wake, 'registrationEvidence' => 'checked',

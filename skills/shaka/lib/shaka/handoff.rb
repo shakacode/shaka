@@ -5,6 +5,7 @@ require_relative 'error'
 require_relative 'merge_queue_commit'
 require_relative 'merge_required_checks'
 require_relative 'status'
+require_relative 'handoff/auto_merge_note'
 require_relative 'handoff/conversation'
 require_relative 'handoff/review_threads'
 require_relative 'handoff/squash_note'
@@ -17,6 +18,7 @@ module Shaka
   # It reads only; the agent settles each owed item and runs it again.
   class Handoff
     include MergeRequiredChecks
+    include AutoMergeNote
 
     OWED_EXIT = 2
     SHORT = 7
@@ -59,7 +61,7 @@ module Shaka
       checks = snapshot['requiredChecks']
       [attention_fact(checks, live), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
        comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live), squash_fact(snapshot, live),
-       wip_fact(live)].compact
+       wip_fact(live), auto_merge_note(live)].compact
     end
 
     # An unsubmitted review by this account outranks every other wait, because only its author can see it.

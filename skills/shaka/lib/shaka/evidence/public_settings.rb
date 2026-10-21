@@ -25,6 +25,7 @@ module Shaka
       BOOLEANS = %w[wip.include_checkout_path opening_check.enabled opening_check.external_enabled
                     pr_description.show_shaka_credit pr_description.show_human_comments].freeze
       NUMBERS = %w[merge.limits.max_changed_files merge.limits.max_changed_lines merge.limits.max_commits
+                   merge.auto_max_review_floor
                    prose_limits.max_sentence_words prose_limits.max_paragraph_words prose_limits.max_description_words
                    prose_limits.words_per_changed_line pr_description.max_human_comments].freeze
       REDACTED = %w[commands paths review.prompts review.ci_review_jobs merge.required_checks branches base_branch

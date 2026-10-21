@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'merge_review_floor'
 
 module Shaka
   # The commit and branch a merge run is allowed to land, named before any gate is read.
@@ -9,28 +10,32 @@ module Shaka
   # request may never have targeted the branch the change was validated against, because it
   # was retargeted before this run or because a stated base was never applied to a pull
   # request the task adopted. Or its target may move while this run reads gates. Both live
-  # here so neither can be dropped without the other being obvious. A head past the size limits
-  # also needs a human to confirm it before an agent may land it.
+  # here so neither can be dropped without the other being obvious. A head past the size limits,
+  # or changing files above the Auto review floor, also needs a human to confirm it before an
+  # agent may land it.
   class MergeTarget
-    def self.required!(head, base, limits)
+    def self.required!(head, base, limits, review_floor = nil)
       raise Error, 'Expected a full commit SHA' unless head.is_a?(String) && head.match?(/\A[0-9a-f]{40}\z/)
-      return new(head, base, limits) if base.is_a?(String) && !base.strip.empty?
+      return new(head, base, limits, review_floor || MergeReviewFloor.new) if base.is_a?(String) && !base.strip.empty?
 
       raise Error, 'Expected the base branch the change was validated against'
     end
 
-    def initialize(head, base, limits)
+    def initialize(head, base, limits, review_floor)
       @head = head
       @base = base
       @limits = limits
+      @review_floor = review_floor
     end
 
-    def validated!(pull)
+    # The changed files cannot change without the head, so the floor is read once.
+    def validated!(pull, github)
       unless pull['baseRefName'] == @base
         raise Error, "PR targets #{pull['baseRefName'].inspect}, not the validated base #{@base.inspect}"
       end
 
       @limits.verify!(pull, @head)
+      @review_floor.verify!(github, @head)
     end
 
     # The size is rechecked so the counts that gate submission come from the last snapshot read.

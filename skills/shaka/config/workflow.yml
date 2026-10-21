@@ -804,8 +804,9 @@ phases:
         helper checks GitHub readiness; you establish local verification, authority, and acceptable
         consequences. Trust, authentication, permission, release, deployment, destructive-migration,
         and merge-guard changes require explicit human review. Small diffs do not prove low risk.
-        Uncertain authority, consequential risk, or a base neither the trusted seam nor the
-        default branch establishes switches Auto to Ask; safety failures block. So does an open
+        Uncertain authority, consequential risk, a compatibility break (a removed or renamed
+        command, flag, or setting, or a step users have to take after merge), or a base neither
+        the trusted seam nor the default branch establishes switches Auto to Ask; safety failures block. So does an open
         `before merge` step besides merging until the user confirms it is done.
       - A base-failure draft stays blocked until its repair lands or the maintainer explicitly
         accepts the documented local failure for this task, as the [base-failure procedure](<{{package_root}}/skills/shaka/references/base-validation-failure.md>) describes.
@@ -823,11 +824,13 @@ phases:
         UNSTABLE. Pass `merge --ref` from intake and `--ci-review-wait MODE` only for a this-task override. Read
         completed feedback before merge and report pending optional reviews.
       - `merge` refuses a PR over the trusted `merge.limits` for changed files, changed lines, or
-        commits, or whose size GitHub does not report. That refusal switches Auto to Ask: report
-        the counts and hand the PR back. Label that handoff `awaiting-merge-approval` with
+        commits, or whose size GitHub does not report. It also refuses a PR with a changed file
+        above the trusted `merge.auto_max_review_floor`, or one changing Shaka's configuration
+        while that setting is below 5. That refusal switches Auto to Ask: report the counts or the
+        file it names and hand the PR back. Label that handoff `awaiting-merge-approval` with
         `attention --state merge`, because the user's confirmation of the head approves its
         merge. Pass `--limits-confirmed-head SHA` only for a head the
-        user confirmed in this task after seeing the counts; asking you to merge a named head, or an
+        user confirmed in this task after seeing the counts or that file; asking you to merge a named head, or an
         Ask approval of it, is that confirmation. A confirmation carries to the head a clean rebase produces, or a
         conflict resolution that changes no behavior the walkthrough describes. Any other new
         commit needs a new confirmation.
@@ -838,8 +841,8 @@ phases:
         `awaiting-merge-approval`, verify the checkpoint contains the current head
         and copyable commit title and body. For an opted-out checkpoint, run `squash-message`
         for that head instead. On a merge-queue base, tell the user to add the PR to the queue
-        instead and relay `handoff`'s note on what the queue will write. Name the expected head SHA,
-        list each open step besides merging with its timing and who does it, and tell the user they may use
+        instead and relay `handoff`'s note on what the queue will write. Relay any `handoff` note
+        on what Auto would have done. Name the expected head SHA, list each open step besides merging with its timing and who does it, and tell the user they may use
         GitHub's currently offered merge control for that SHA. Arrange continued feedback intake
         through the procedure below before ending the turn. If GitHub
         shows a different head or offers no allowed merge method, tell them not to merge. Do not

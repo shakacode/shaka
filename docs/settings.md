@@ -159,6 +159,36 @@ merged. Whether you actually confirmed it is the agent's responsibility; the
 [enforcement reference](workflow.md#what-is-enforced) explains the boundary.
 Put other project restrictions in `AGENTS.md`.
 
+## `merge.auto_max_review_floor`
+
+**Optional. Default: 5, which holds nothing back.** Lets the agent merge only the PRs whose
+[human review floor](#pr_descriptionhuman_review_floors) is at or below this number. Use it
+with `preference: auto` when you want small code fixes merged for you but docs and agent
+instructions brought back to you.
+
+```yaml
+merge:
+  preference: auto
+  auto_max_review_floor: 2
+```
+
+With the default floors, this merges a PR that changes only code, tests, and Markdown docs. A
+PR that also edits `SKILL.md` sets floor 3, so the agent hands it back as Ask and names the
+file: `skills/shaka/SKILL.md sets review floor 3 (changes agent instructions)`. To let the agent
+merge it anyway, confirm that commit the same way as a PR past [`merge.limits`](#mergelimits).
+Docs sit at floor 1 by default, so raise their floor first if a person should read them.
+
+A PR that changes Shaka's settings in `.agents/shaka/` always comes back to you once this is
+below 5, whatever floors you set. If Shaka cannot read the PR's complete list of changed files
+from GitHub, the PR comes back too.
+
+Try a number before you switch to `auto`. While `preference` is still `ask`, the agent tells
+you whether Auto would have merged each PR it hands you, such as
+`Auto would merge this PR by its paths.`
+
+Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
+something after merge, so the agent hands those PRs back on its own judgment.
+
 ## `review.required`
 
 **Required.** Values: `meaningful_changes`, `always`, or `none`.

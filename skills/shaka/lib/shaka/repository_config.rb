@@ -5,6 +5,7 @@ require_relative 'defaults'
 require_relative 'error'
 require_relative 'ci_review_wait'
 require_relative 'merge_limits'
+require_relative 'merge_review_floor'
 require_relative 'prose_limits'
 require_relative 'configuration/paths'
 require_relative 'configuration/layout'
@@ -102,7 +103,8 @@ module Shaka
       @base_branch = @data['base_branch']
       @review = with_default_review_wait(@data.fetch('review'))
       merge = @data.fetch('merge')
-      @merge = merge.merge('limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
+      @merge = { 'auto_max_review_floor' => MergeReviewFloor::DEFAULT }
+               .merge(merge, 'limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = WipSchema.resolve(@data.fetch('wip', {}))
       assign_presentation
     end
