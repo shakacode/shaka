@@ -32,8 +32,8 @@ $shaka doctor
 
 ## 2. Choose individual or team setup
 
-On your first task in a new project, the agent asks whether to set Shaka up just
-for you or for your team.
+On your first task in a project without Shaka settings, the agent asks whether to
+set Shaka up just for you or for your team.
 
 - **Just for you:** settings stay out of commits, and the task goes on.
 - **For your team:** the agent opens a setup PR. **Review and merge it yourself.**

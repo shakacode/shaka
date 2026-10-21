@@ -1,8 +1,9 @@
 # Working with Shaka
 
 Read this after your first task. It covers the choices only you can make and the
-prompts for other work. For anything else, ask the agent. The agent behavior
-described here comes from Shaka's instructions; code does not enforce it.
+prompts for other work. For anything else, ask the agent. Some agent behavior here
+is enforced by code and the rest follows Shaka's instructions; see
+[what is enforced](workflow.md#what-is-enforced).
 
 Examples use `$shaka` from Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode
 ([other agents](coding-agents.md)).
