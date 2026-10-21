@@ -43,7 +43,7 @@ class SeamUpgradeRootLookupTest < Minitest::Test
       source = %(#!/bin/sh\nset -eu\nroot=/elsewhere\ncd "$(dirname "$0")/../.."\nexec bin/probe "$root"\n)
       write_wrapper(root, 'setup', source)
       commit_fixture(root, 'existing root variable')
-      assert_blocked_with(root, 'ambiguous repository-root')
+      assert_blocked_with(root, 'ambiguous repository-root calculation; repair it explicitly')
     end
   end
 
@@ -52,6 +52,14 @@ class SeamUpgradeRootLookupTest < Minitest::Test
       write_wrapper(root, 'setup', %(#!/bin/sh\nset -eu\nrepo_root=$(realpath "$0/../../..")\n))
       commit_fixture(root, 'unrecognized root')
       assert_blocked_with(root, "repo_root=#{Shaka::Seam::UpgradePlan::GIT_ROOT.delete_prefix('root=')}")
+    end
+  end
+
+  def test_exported_root_gets_no_replacement_that_drops_export
+    with_repository do |root|
+      write_wrapper(root, 'setup', %(#!/bin/sh\nset -eu\nexport ROOT="$(dirname "$0")/../.."\n))
+      commit_fixture(root, 'exported root')
+      assert_blocked_with(root, 'ambiguous repository-root calculation; repair it explicitly')
     end
   end
 

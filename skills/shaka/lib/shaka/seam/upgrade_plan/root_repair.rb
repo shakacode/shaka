@@ -79,14 +79,20 @@ module Shaka
           /^(?<indent>[ \t]*)root = (?<expression>#{file}|#{pathname})[ \t]*$/
         end
 
-        # Names the replacement for a shell root lookup the repair does not recognize.
+        # Names a replacement only where following it keeps the script's other variables intact.
         def root_repair_hint(text)
           line = text.lines.find { |candidate| candidate.include?('../..') }&.strip
-          return 'repair it explicitly' if line.nil? || shebang_command(text.lines.first.to_s) == 'ruby'
+          lookup = root_replacement(text, line) if line && shebang_command(text.lines.first.to_s) != 'ruby'
+          return 'repair it explicitly' unless lookup
 
-          name = line[/\A(?:export[ \t]+)?([A-Za-z_]\w*)=/, 1]
-          lookup = name ? "#{name}=#{GIT_ROOT.delete_prefix('root=')}" : %(#{GIT_ROOT}; cd "$root")
           "after `set -e`, replace `#{line}` with `#{lookup}`"
+        end
+
+        def root_replacement(text, line)
+          name = line[/\A([A-Za-z_]\w*)=/, 1]
+          return "#{name}=#{GIT_ROOT.delete_prefix('root=')}" if name
+
+          %(#{GIT_ROOT}; cd "$root") if line.start_with?('cd ') && !text.match?(ROOT_VARIABLE)
         end
 
         def ambiguous_root?(text)

@@ -24,11 +24,11 @@ class SeamUpgradeRelativeReferenceTest < Minitest::Test
 
   def test_command_directory_notes_are_rewritten
     with_repository do |root|
-      source = "Policy: ../agent-workflow.yml\nTrust: `trusted-github-actors.yml`\nRun test here.\n"
+      source = "Policy: ../agent-workflow.yml\nTrust: `../trusted-github-actors.yml`\nRun test here; see ./ notes.\n"
       path = write_tracked(root, '.agents/bin/README.md', source)
       apply_upgrade(root)
-      assert_equal "Policy: ../shaka/config.yml\nTrust: `../shaka/trusted-github-actors.yml`\nRun test here.\n",
-                   File.read(path)
+      assert_equal "Policy: ../shaka/config.yml\nTrust: `../shaka/trusted-github-actors.yml`\n" \
+                   "Run test here; see ./ notes.\n", File.read(path)
     end
   end
 
@@ -45,6 +45,15 @@ class SeamUpgradeRelativeReferenceTest < Minitest::Test
     with_repository do |root|
       write_tracked(root, '.agents/logo.png', "\x89PNG\0bin/test\0".b)
       assert_equal 'ready', report(root).fetch('status')
+    end
+  end
+
+  def test_nested_file_keeps_its_own_yaml_name
+    with_repository do |root|
+      write_tracked(root, '.agents/custom/agent-workflow.yml', "own: true\n")
+      path = write_tracked(root, '.agents/custom/README.md', "[policy](agent-workflow.yml)\n")
+      apply_upgrade(root)
+      assert_equal "[policy](agent-workflow.yml)\n", File.read(path)
     end
   end
 

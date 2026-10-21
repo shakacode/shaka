@@ -40,15 +40,16 @@ module Shaka
         def relative_reference_file?(path) = !relative_mapping(path).empty?
 
         # Maps each spelling to [new spelling, old path]. A bare command name is prose, so only
-        # spellings with a slash and the two distinctive YAML names count.
+        # spellings with a slash and the two YAML names beside their old files count.
         def relative_mapping(path)
           directory = File.dirname(path)
           return {} unless inside_old_directory?(directory)
 
           relative_targets.each_with_object({}) do |(old, new), mapping|
             spelling = relative_to(old, directory)
-            mapping[spelling] = [relative_to(new, directory), old] if spelling.include?('/')
-            mapping[File.basename(old)] ||= [relative_to(new, directory), old] if yaml_file?(old)
+            next if spelling == './'
+
+            mapping[spelling] = [relative_to(new, directory), old] if spelling.include?('/') || yaml_file?(old)
           end
         end
 
