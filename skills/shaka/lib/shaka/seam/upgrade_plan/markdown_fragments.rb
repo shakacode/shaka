@@ -7,6 +7,8 @@ module Shaka
       module MarkdownFragments
         MARKDOWN_PATH = /\.(?:md|markdown|mdx)\z/i
         REMOVED_OR_KEPT = /(\\\r?\n|['"]|\\(?=[^\r\n]))|./m
+        FENCE = /\A[ \t]*(`{3,}|~{3,})/
+        INDENTED = /\A(?: {4}|[ \t]*\t)/
 
         private
 
@@ -45,6 +47,38 @@ module Shaka
           !File.lstat(File.join(@root, path)).mode.anybits?(0o111)
         rescue SystemCallError
           false
+        end
+
+        # Markdown runs nothing outside code, so prose lines are blanked and fenced or indented lines stay.
+        def markdown_code(text)
+          code = markdown_code_lines(text)
+          text.lines.each_with_index.map { |line, index| code[index] ? line : line.gsub(/[^\r\n]/, '') }.join
+        end
+
+        def markdown_prose_lines(text, path)
+          return [] unless markdown_document?(text, path)
+
+          markdown_code_lines(text).map(&:!)
+        end
+
+        def markdown_code_lines(text)
+          fence = nil
+          text.lines.map do |line|
+            if fence
+              fence = nil if line.match?(/\A[ \t]*#{fence[0]}{#{fence.length},}[ \t]*$/)
+              true
+            else
+              fence = line[FENCE, 1]
+              !fence.nil? || line.match?(INDENTED)
+            end
+          end
+        end
+
+        # Prose names the old command directory as a place, so it is rewritten like a command path.
+        def rewrite_prose_command_directory(line)
+          pattern = %r{(?<![[:alnum:]_./-])(?<lead>\./)?#{Regexp.escape(PATHS::COMMAND_DIRECTORY)}
+                       (?=/(?![[:alnum:]_-])|[^[:alnum:]_./-]|\.(?![[:alnum:]_/-])|$)}xo
+          line.gsub(pattern) { "#{::Regexp.last_match[:lead]}#{PATHS::NEW_COMMAND_DIRECTORY}" }
         end
 
         def old_token = /#{Regexp.escape(PATHS::DIRECTORY)}[^\s;|&()<>`]*/o
