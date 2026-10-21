@@ -118,6 +118,8 @@ module Shaka
         end
 
         def shell_fragmented_reference?(text, path = nil)
+          return markdown_fragmented_reference?(text, path) if markdown_document?(text, path)
+
           joined = normalize_shell_fragments(text)
           return false if joined == text
 
