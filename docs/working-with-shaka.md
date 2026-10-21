@@ -445,4 +445,5 @@ for Ask authority, required GitHub approvals, and branch updates.
 
 When you choose a manual squash merge through GitHub, use the agent's prepared
 message for the commit in the handoff. See [squash merge details](pr-verification.md#squash-merge-details)
-to find it and copy it into GitHub's merge boxes.
+to find it and copy it into GitHub's merge boxes. A repository with a merge queue
+writes its own message, so you add the PR to the queue; see [merge queues](pr-verification.md#merge-queues).
