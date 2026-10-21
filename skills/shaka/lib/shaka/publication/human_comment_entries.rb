@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
-require_relative '../walkthrough/history'
+require_relative 'agent_post'
 
 module Shaka
   # Finds the comments people wrote in a `shaka comments` result, and what answered each one.
@@ -12,11 +12,6 @@ module Shaka
     KINDS = { 'review_summaries' => 'review_summary', 'inline_comments' => 'inline_comment',
               'issue_comments' => 'issue_comment' }.freeze
     VERDICTS = { 'APPROVED' => 'Approved', 'CHANGES_REQUESTED' => 'Requested changes' }.freeze
-    # Agents post under a person's login, so the login cannot tell them apart. An agent post opens
-    # with its four-field identity line, a hidden `tool:purpose` marker, or the pointer of an
-    # archived walkthrough. A person's own line may start with the emoji or another hidden comment.
-    IDENTITY = /🤖 [^\n·]+(?: · [^\n·]+){3}$/
-    AGENT_OPENING = /\A(?:#{IDENTITY}|<!-- ?[a-z][\w-]*:[\w.:-]+ ?-->|#{Regexp.escape(WalkthroughHistory::MARKER)})/
     OPEN = ['Open', 'No reply', 'Changes requested'].freeze
 
     def initialize(packet)
@@ -78,9 +73,9 @@ module Shaka
       approved_later?(entry) ? 'Approved later' : 'Changes requested'
     end
 
-    def bot?(entry) = entry.login.to_s.end_with?('[bot]')
+    def bot?(entry) = AgentPost.bot?(entry.login)
 
-    def marked?(entry) = entry.body.to_s.lstrip.match?(AGENT_OPENING)
+    def marked?(entry) = AgentPost.marked?(entry.body)
 
     def thread_replies(entry)
       return [] unless entry.thread
@@ -89,11 +84,7 @@ module Shaka
                          .sort_by(&:id)
     end
 
-    # GitHub serves a conversation comment under both /pull/ and /issues/, and `shaka reply` accepts either.
-    def links?(other, entry)
-      url = Regexp.escape(entry.url.to_s).sub(%r{/pull/(?=\d+\\#)}, '/(?:pull|issues)/')
-      other.body.to_s.match?(/#{url}(?!\d)/)
-    end
+    def links?(other, entry) = AgentPost.links?(other.body, entry.url)
 
     # A review can be submitted long after it was started, so time decides and the id only breaks a tie.
     def later(posts, entry)

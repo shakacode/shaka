@@ -6,6 +6,9 @@ module Shaka
   # Renders description sections, including the decisions list that owns one heading.
   class PublicationSections
     DECISIONS_HEADING = 'Decisions to make'
+    # GitHub gives comment headings no anchor, so the heading carries one; GitHub prefixes its id.
+    DECISIONS_ANCHOR = 'decisions-to-make'
+    DECISIONS_LINK = "[#{DECISIONS_HEADING}](#user-content-#{DECISIONS_ANCHOR})".freeze
     HEADINGS = [DECISIONS_HEADING, 'Decisions for the maintainer'].freeze
     MARKER = '<!-- shaka:decisions -->'
 
@@ -21,7 +24,7 @@ module Shaka
       return [] if listed.empty?
 
       lines = listed.map { |item| "- #{PublicationText.single_line(item, 'decision')}" }
-      ["#{MARKER}\n## #{DECISIONS_HEADING}\n\n#{lines.join("\n")}"]
+      ["#{MARKER}\n## #{DECISIONS_HEADING}<a id=\"#{DECISIONS_ANCHOR}\"></a>\n\n#{lines.join("\n")}"]
     end
 
     def self.refuse_heading(sections)

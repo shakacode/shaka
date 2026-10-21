@@ -89,7 +89,7 @@ class WalkthroughNotesTest < Minitest::Test
   # The comment reader leaves agent posts out of the Human comments list by their opening.
   def test_a_note_opens_as_an_agent_post
     body = notes({ 'path' => 'lib/package.rb', 'from' => 'def publish', 'body' => 'Skim this.' }).first['body']
-    assert_match Shaka::HumanCommentEntries::AGENT_OPENING, body
+    assert_match Shaka::AgentPost::OPENING, body
   end
 end
 

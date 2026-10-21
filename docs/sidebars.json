@@ -53,7 +53,8 @@
       "label": "Articles",
       "collapsed": true,
       "items": [
-        "articles/review-process-study"
+        "articles/review-process-study",
+        "articles/checkpoint-sentence-eval"
       ]
     },
     {
