@@ -54,7 +54,7 @@ merge:
     max_changed_lines: 999 # Additions plus deletions.
     max_commits: 9
   # Default: 5, any human review floor (below). Ours: 2, so the agent merges code and tests
-  # and hands back docs, agent instructions, and settings, merge, trust, and install code.
+  # and hands back docs, agent instructions, and settings, merge, trust, validation, and install code.
   auto_max_review_floor: 2
 
 branches:
@@ -69,9 +69,9 @@ pr_description:
   max_human_comments: 20 # Default: how many of those comments to list.
   # Default: Shaka's shipped floors. The lowest human review effort a PR may claim, from the
   # files it changes. This list replaces the default one. Ours adds the first two floors and the
-  # install floor, names merge and trust code in the trust floor, and exempts Shaka's own code
-  # and tests from the agent-instructions floor, so auto_max_review_floor can tell them apart.
-  # The rest are the defaults.
+  # validation and install floor, names merge-gate and trust code in the trust floor, and
+  # exempts Shaka's own code and tests from the agent-instructions floor, so
+  # auto_max_review_floor can tell them apart. The rest are the defaults.
   human_review_floors:
     - level: 5
       reason: changes docs for Shaka's users
@@ -86,14 +86,15 @@ pr_description:
     - level: 4
       reason: changes trust, merge, authentication, or release paths
       paths: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS,
-              'skills/shaka/lib/shaka/{required_checks,ci_review_wait,review_coverage,public_comments}.rb',
+              'skills/shaka/lib/shaka/{required_checks,ci_review_wait,review_coverage,public_comments,defaults}.rb',
+              'skills/shaka/lib/shaka/publication/{review_effort_floor,feature_guard,verification_gates}.rb',
               skills/shaka/lib/shaka/public_comments/**/*]
       words: [auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
               credential]
       except: ['**/*.md', '**/*.{png,jpg,jpeg,gif,svg,webp}']
     - level: 3
-      reason: changes install, update, or GitHub code
-      paths: [bin/install, 'skills/shaka/lib/shaka/{installer,update_check,github}.rb',
+      reason: changes validation, install, update, or GitHub code
+      paths: [bin/**/*, 'skills/shaka/lib/shaka/{installer,update_check,github}.rb',
               'skills/shaka/lib/shaka/{install,update_check,github}/**/*']
     - level: 3
       reason: changes agent instructions
