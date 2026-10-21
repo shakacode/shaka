@@ -73,7 +73,7 @@ module Shaka
         DecisionLabels.asks_for_decisions?(Publishing.managed_region(body.gsub("\r\n", "\n")).to_s)
       end
 
-      def walkthrough_reader = @walkthrough_reader
+      def walkthrough_reader = @walkthrough_reader ||= Walkthrough.new(@github)
 
       # The unsubmitted review is visible only to its author, so the PR waits on that person's answer
       # even when something would wake the agent.

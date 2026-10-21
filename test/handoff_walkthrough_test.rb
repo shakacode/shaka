@@ -63,4 +63,12 @@ class HandoffWalkthroughTest < Minitest::Test
     assert_empty result['owed']
     refute_includes result['status'], 'unsubmitted review'
   end
+
+  # GitHub would refuse a walkthrough beside the unsubmitted review, so a merge wait gives way to the answer.
+  def test_an_unsubmitted_review_on_a_merge_wait_owes_the_answer_label
+    owed = handoff(labels: ['awaiting-merge-approval'], reviews: [walkthrough(HEAD), PENDING]).fetch('owed')
+
+    asked = owed.find { |item| item.include?(Shaka::PendingReview::MESSAGE) }
+    assert_includes asked, '`attention --state answer` first'
+  end
 end

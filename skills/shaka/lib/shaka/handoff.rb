@@ -63,7 +63,6 @@ module Shaka
     # An unsubmitted review by this account outranks every other wait, because only its author can see it.
     def attention_fact(checks)
       @labels = Attention.new(@github).current
-      @walkthrough_reader = Walkthrough.new(@github)
       walkthrough_reader.pending? ? pending_review_fact : label_fact(checks)
     end
 
