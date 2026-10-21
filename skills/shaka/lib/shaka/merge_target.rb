@@ -28,7 +28,6 @@ module Shaka
       @review_floor = review_floor
     end
 
-    # The changed files cannot change without the head, so the floor is read once.
     def validated!(pull, github)
       unless pull['baseRefName'] == @base
         raise Error, "PR targets #{pull['baseRefName'].inspect}, not the validated base #{@base.inspect}"
@@ -38,13 +37,15 @@ module Shaka
       @review_floor.verify!(github, @head)
     end
 
-    # The size is rechecked so the counts that gate submission come from the last snapshot read.
-    def unchanged!(initial, current)
+    # The size and changed files are rechecked so what gates submission comes from the last read;
+    # a rewritten base can change the diff without moving the head.
+    def unchanged!(initial, current, github)
       unless current['baseRefName'] == initial['baseRefName']
         raise Error, 'PR base changed; refresh verification and walkthrough'
       end
 
       @limits.verify!(current, @head)
+      @review_floor.verify!(github, @head)
     end
   end
 end

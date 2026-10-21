@@ -56,14 +56,13 @@ module Shaka
                    'user confirmed'
     end
 
-    # GitHub's list follows the live head, so the head is read on both sides of it.
+    # GitHub's list follows the live head and base, so both are read on each side of it.
     def paths(github, head)
       pull = pull_at(github, head)
-      paths = FeaturePublication.paths(github, pull)
-      pull_at(github, head)
-      paths
-    rescue Error => e
-      raise Error, "Cannot read the PR's changed files to check #{SETTING} (#{e.message}); hand it to the user as Ask"
+      paths = list(github, pull)
+      return paths if pull_at(github, head).dig('base', 'sha') == pull.dig('base', 'sha')
+
+      raise Error, 'PR base moved while its changed files were read; refresh verification and walkthrough'
     end
 
     private
@@ -73,6 +72,12 @@ module Shaka
       return pull if pull.dig('head', 'sha') == head
 
       raise Error, 'PR head changed; refresh verification and walkthrough'
+    end
+
+    def list(github, pull)
+      FeaturePublication.paths(github, pull)
+    rescue Error => e
+      raise Error, "Cannot read the PR's changed files to check #{SETTING} (#{e.message}); hand it to the user as Ask"
     end
   end
 end

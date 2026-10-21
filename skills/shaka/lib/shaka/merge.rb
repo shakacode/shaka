@@ -46,7 +46,7 @@ module Shaka
 
     def submit(initial, current, head)
       verify_snapshot(current, head)
-      @target.unchanged!(initial, current)
+      @target.unchanged!(initial, current, @github)
       @review_evidence.final_check(head)
       @submission.call(current, head)
     end
@@ -69,7 +69,7 @@ module Shaka
     def reconcile_queued_replay(initial, current, head)
       unless current['state'] == 'MERGED'
         verify_snapshot(current, head)
-        @target.unchanged!(initial, current)
+        @target.unchanged!(initial, current, @github)
       end
 
       @submission.reconcile_queued(initial, current, head)

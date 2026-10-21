@@ -7,7 +7,7 @@ require 'shaka/repository_config'
 
 # Answers the PR and file-list reads the floor check makes beside the merge client's own.
 class MergeReviewFloorClient < MergeFixtures::Client
-  attr_accessor :files, :pull_heads
+  attr_accessor :files, :pull_heads, :pull_bases
 
   def self.copy(client)
     new.tap do |copy|
@@ -25,7 +25,9 @@ class MergeReviewFloorClient < MergeFixtures::Client
     raise "unexpected read #{path}" unless path == 'repos/owner/repo/pulls/42'
 
     head = pull_heads.length > 1 ? pull_heads.shift : pull_heads.first
-    { 'head' => { 'sha' => head }, 'changed_files' => files.length }
+    bases = (@pull_bases ||= ['d' * 40])
+    base = bases.length > 1 ? bases.shift : bases.first
+    { 'head' => { 'sha' => head }, 'base' => { 'sha' => base }, 'changed_files' => files.length }
   end
 
   def api_list(path)
@@ -103,17 +105,35 @@ class MergeReviewFloorTest < Minitest::Test
     assert_held(/Cannot read the PR's changed files .*hand it to the user as Ask/)
   end
 
-  def test_a_head_that_moves_while_the_list_is_read_hands_back
+  def test_a_head_that_moves_while_the_list_is_read_needs_a_refresh
     @client.pull_heads = [HEAD, 'c' * 40]
 
-    assert_held(/PR head changed/)
+    assert_held(/\APR head changed; refresh/)
+  end
+
+  def test_a_base_rewritten_while_the_list_is_read_needs_a_refresh
+    @client.pull_bases = ['d' * 40, 'e' * 40]
+
+    assert_held(/PR base moved while its changed files were read/)
+  end
+
+  def test_files_are_read_again_before_submission
+    @client.pull_heads = [HEAD, HEAD, HEAD, 'c' * 40]
+
+    assert_held(/\APR head changed; refresh/)
+  end
+
+  def test_a_path_no_repository_floor_covers_sits_at_floor_one
+    floors = [{ 'level' => 5, 'reason' => 'changes docs for users', 'paths' => ['docs/**/*'] }]
+
+    assert_equal 'MERGED', merge_with(1, floors:).fetch('state')
   end
 
   def test_the_top_floor_reads_no_file_list
     def @client.api(_path) = raise('file list read')
 
     assert_equal 'MERGED', merge_with(5).fetch('state')
-    assert_equal 'MERGED', @merge.call(head: HEAD, base: BASE, walkthrough: 17).fetch('state')
+    assert_equal 'MERGED', Shaka::Merge.new(@client).call(head: HEAD, base: BASE, walkthrough: 17).fetch('state')
   end
 end
 
