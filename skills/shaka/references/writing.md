@@ -21,8 +21,8 @@
   is stale, rebase first," not "Rebase first when the base is stale."
 - Keep the space between sentences empty. Skip a lead-in that announces the next
   sentence and a closing sentence that restates the last.
-- Drop "therefore", "thus", "so", "however", and "but" when the order already
-  shows the relation. Split joined clauses into separate sentences.
+- When the order already shows the relation, drop "therefore", "thus", "so",
+  "however", and "but", and split the joined clauses into separate sentences.
 - Use familiar words; explain unfamiliar project terms through the behavior they name.
 - Name the feature, user, or dependency behind references to an agreed design
   or earlier discussion; supply the context the reader needs.
