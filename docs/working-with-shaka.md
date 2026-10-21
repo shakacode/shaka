@@ -49,8 +49,7 @@ trust, authentication, or releases, still come back to you; see
 
 Comment on the PR and paste the link into the chat, or say in chat what's wrong.
 
-To edit files yourself, tell the agent first, and hand the files back when you're
-done. Don't both write at once.
+To edit files yourself, tell the agent first, and tell it when you're done. Don't both write at once.
 
 ### Revise earlier guidance and try again
 
