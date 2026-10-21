@@ -37,13 +37,10 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     end
   end
 
-  def test_indented_paragraph_continuation_is_rewritten
+  def test_quoted_fence_line_inside_fence_stays_code
     with_repository do |root|
-      path = write_tracked(root, 'ledger.md', "Wrappers live\n    in the directory\n    `.agents/bin/`.\n")
-      preview = report(root)
-      assert_equal 'ready', preview.fetch('status'), preview.fetch('blockers').join("\n")
-      apply_upgrade(root)
-      assert_equal "Wrappers live\n    in the directory\n    `.agents/shaka/bin/`.\n", File.read(path)
+      write_tracked(root, 'guide.md', "```text\n> ```\nexport PATH=\".agents/bin:$PATH\"\n```\n")
+      assert_blocked_with(root, 'old command-directory reference')
     end
   end
 
@@ -75,9 +72,10 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     end
   end
 
-  def test_indented_code_after_non_paragraph_line_still_blocks
+  def test_indented_code_after_any_line_still_blocks
     ["Setup\n-----\n", "Setup\n\n---\n", "Setup\n\n* * *\n", "Setup\n=====\n", "# Setup\n",
-     "> Setup\n> * * *\n> ", "[a]: /u\n", "<!-- note -->\n"].each do |opening|
+     "> Setup\n> * * *\n> ", "[a]: /u\n", "<!-- note -->\n", "Setup\n    \n",
+     "Wrappers live in\n"].each do |opening|
       with_repository do |root|
         write_tracked(root, 'guide.md', "#{opening}    export PATH=\".agents/bin:$PATH\"\n")
         assert_blocked_with(root, 'old command-directory reference')

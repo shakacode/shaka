@@ -9,37 +9,32 @@ module Shaka
         MARKDOWN_PATH = /\.(?:md|markdown|mdx)\z/i
         REMOVED_OR_KEPT = /(\\\r?\n|['"]|\\(?=[^\r\n]))|./m
 
-        # Follows which Markdown lines are fenced or indented code. Doubtful lines count as code.
+        # Follows which Markdown lines are fenced or indented code. Doubtful lines count as code, so an
+        # indented line continuing a prose paragraph is code too.
         class CodeLines
           # A fence starts at most three spaces in, and a backtick fence's info text holds no backtick.
           FENCE = /\A {0,3}(`{3,}(?=[^`]*\z)|~{3,})/
           # Quotes and list items can hold code, so their markers are removed before a line is classified.
           CONTAINER = /\A(?:[ \t]*(?:>|[-+*](?=[ \t])|\d{1,9}[.)](?=[ \t])))+[ \t]?/
           INDENTED = /\A(?: {4}|[ \t]*\t)/
-          # Only a top-level line of plain text opens a paragraph. After any other line, such as a heading,
-          # a rule, a link definition, HTML, or a quote or list line, an indented line stays code.
-          PARAGRAPH = /\A {0,3}[[:alnum:]`(]/
 
           def initialize
             @fence = nil
-            @paragraph = false
+            @contained = false
           end
 
-          # An indented line continues an open paragraph rather than starting code.
+          # A top-level fence closes only on an unmarked line, so a quoted fence inside it stays content.
           def code?(raw)
             line = raw.sub(CONTAINER, '')
-            return inside_fence?(line) if @fence
-            return true if !@paragraph && line.match?(INDENTED)
+            return inside_fence?(@contained ? line : raw) if @fence
+            return true if line.match?(INDENTED)
 
             @fence = line[FENCE, 1]
-            @paragraph = @fence.nil? && line == raw && paragraph_text?(raw)
+            @contained = line != raw
             !@fence.nil?
           end
 
           private
-
-          # Plain text opens a paragraph, and an indented line inside one continues it.
-          def paragraph_text?(raw) = raw.match?(PARAGRAPH) || (@paragraph && raw.match?(INDENTED))
 
           def inside_fence?(line)
             @fence = nil if line.match?(/\A {0,3}#{@fence[0]}{#{@fence.length},}[ \t]*\r?$/)
