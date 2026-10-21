@@ -57,8 +57,9 @@ request. To go back to one:
 $shaka Return to C2. Use the simpler approach.
 ```
 
-The agent rewinds from Git and task records, not saved snapshots, so ask what it
-can restore first. It does not undo deployments or other outside effects. See [checkpoints](pr-verification.md#checkpoint).
+Shaka's instructions have the agent rewind from Git and task records, not saved
+snapshots, and recovery in real use is not yet evaluated, so ask what it can
+restore first. It does not undo deployments or other outside effects. See [checkpoints](pr-verification.md#checkpoint).
 
 ## Find PRs waiting on you
 
