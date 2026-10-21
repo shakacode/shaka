@@ -288,12 +288,9 @@ Continue this task with at most fifteen review executions in total,
 including its five existing reviews. Keep merge policy ask. Go.
 ```
 
-The agent records that total and your reason in the existing task ledger. It replaces
-the repository round cap for that ledger alone. Repeating the same total adds no slots.
-Each reviewer start counts, including failed launches and additional reviewers of the
-same commit. The PR shows consumed starts and the selected total; repository settings
-and other tasks retain their existing limits. Ruby enforces the supplied budget;
-the agent verifies your authorization.
+The total counts reviewer runs, not commits: with two reviewers per commit, each round
+uses two. To allow more later, give a larger total; repeating the same one adds nothing.
+It applies to this task only, and the PR shows the runs used against it.
 
 ## `review.local_review_agents`
 
