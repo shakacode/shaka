@@ -4,17 +4,26 @@ module Shaka
   class Doctor
     # Parses doctor options before any optional billable launch.
     module Command
+      BANNER = 'Usage: shaka doctor [--root DIR] [--host NAME] [--brief] [--probe-reviewers] [--installation-json]'
+
       def option_parser(options)
         OptionParser.new do |flags|
-          flags.banner = 'Usage: shaka doctor [--root DIR] [--host NAME] [--probe-reviewers] [--installation-json]'
+          flags.banner = BANNER
           flags.on('--root DIR', 'Repository root (default: current directory)') { |value| options[:root] = value }
           flags.on('--host NAME', Usage::READERS.keys, Usage::READERS.keys.join(', ')) do |value|
             options[:host] = value
           end
           probe_flags(flags, options)
-          flags.on('--installation-json', 'JSON installation identity') { options[:installation_json] = true }
+          mode_flags(flags, options)
           flags.on('-h', '--help', 'Show usage') { options[:help] = true }
         end
+      end
+
+      def mode_flags(flags, options)
+        flags.on('--brief', 'Task-start check: installation, settings source, Ruby, gh, repository access') do
+          options[:brief] = true
+        end
+        flags.on('--installation-json', 'JSON installation identity') { options[:installation_json] = true }
       end
 
       def probe_flags(flags, options)
@@ -31,8 +40,10 @@ module Shaka
         validate_probe_ref!(options)
         return unless options.key?(:probe_timeout) || options[:ref]
 
-        raise OptionParser::InvalidArgument, '--probe-timeout-seconds requires --probe-reviewers' unless
-          options[:probe_reviewers]
+        unless options[:probe_reviewers]
+          flag = options.key?(:probe_timeout) ? '--probe-timeout-seconds' : '--ref'
+          raise OptionParser::InvalidArgument, "#{flag} requires --probe-reviewers"
+        end
         return unless options.key?(:probe_timeout)
 
         raise OptionParser::InvalidArgument, '--probe-timeout-seconds must be 1..120' unless
@@ -50,7 +61,7 @@ module Shaka
         options.slice(:ref).merge(timeout: options.fetch(:probe_timeout, 30)) if options[:probe_reviewers]
       end
 
-      private :option_parser, :probe_flags, :validate_probe_options!, :validate_probe_ref!, :probe_options
+      private :option_parser, :mode_flags, :probe_flags, :validate_probe_options!, :validate_probe_ref!, :probe_options
     end
   end
 end

@@ -25,6 +25,14 @@ settings with shared team settings.
 | Shared Shaka settings exist on the default branch | The default-branch configuration, including when reviewing a PR that changes it. |
 | No shared settings; individual setup is configured | Your local `.agents/shaka/config.yml`, kept out of Git. |
 
+Sources never fill each other's gaps. When the chosen source leaves out a value,
+Shaka uses its own default for it, never your individual setting. For example, if
+team settings leave out `prose_limits`, PR descriptions use the default limit of
+300 words, whatever your individual setup says.
+
+Shaka keeps no settings in your home directory. The one exception is your machine's
+comment allowlist, which adds people and bots whose public comments the agent may read.
+
 Omitted optional values use Shaka's defaults, all listed in
 [Shaka's defaults file](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/defaults.yml).
 An explicit task choice takes
@@ -681,12 +689,14 @@ rendered before and after screenshots.
 
 ## `pr_description.opening_check`
 
-**Optional.** Check whether the first sentence leads with a useful outcome for
-its reader. This is writing advice, not a check of the whole description's accuracy.
+**Optional.** Check whether the first sentence of a PR description or code
+walkthrough leads with a useful outcome for its reader. This is writing advice,
+not a check of the whole text's accuracy.
 It flags a first sentence led by an internal tool, such as a command or helper, and
 one that gives a thing something only a person does, such as "A repository can now
 see when a reviewer could not run."
-A failed check does not block publication or merging.
+A failed check does not block publication or merging. With an opening reviewer
+configured, each walkthrough with a new opening adds one call to it.
 
 > $shaka Use Codex for opening checks.
 

@@ -376,6 +376,63 @@ class SeamUpgradeHiddenIndexReviewTest < Minitest::Test
     end
   end
 
+  def test_markdown_apostrophe_keeps_ordinary_reference_handling
+    with_repository do |root|
+      File.write(File.join(root, 'notes.md'), "Don't edit .agents/bin/test; it's \"generated\".\n")
+      File.write(File.join(root, 'log.md'), "Kept .agents/bin/test's header.\n")
+      commit_fixture(root, 'prose with apostrophe')
+      preview = report(root)
+      assert_equal 'ready', preview.fetch('status'), preview.fetch('blockers').join("\n")
+      apply_upgrade(root)
+      assert_prose_rewritten(root)
+    end
+  end
+
+  def assert_prose_rewritten(root)
+    assert_equal "Don't edit .agents/shaka/bin/test; it's \"generated\".\n", File.read(File.join(root, 'notes.md'))
+    assert_equal "Kept .agents/shaka/bin/test's header.\n", File.read(File.join(root, 'log.md'))
+  end
+
+  def test_quoted_shell_fragment_in_workflow_still_blocks
+    with_repository do |root|
+      write_tracked(root, '.github/workflows/ci.yml', "run: exec .age'nts'/bin/test\n")
+      assert_includes report(root).fetch('blockers').join, 'fragmented old-layout reference'
+    end
+  end
+
+  def test_markdown_shell_fragment_still_blocks
+    source = "Don't skip it:\n\n```sh\nexec .age'nts'/bin/test\n```\n"
+    with_repository do |root|
+      write_tracked(root, 'guide.md', source)
+      assert_includes report(root).fetch('blockers').join, 'fragmented old-layout reference'
+    end
+  end
+
+  MARKDOWN_FRAGMENTS = {
+    'literal beside fragment' => "```sh\n.agents/bin/test;.age'nts'/bin/test\n```\n",
+    'escaped character' => "```sh\nexec .agents/bin/tes\\t\n```\n",
+    'line continuation' => "```sh\nexec .agents/bi\\\nn/test\n```\n"
+  }.freeze
+
+  def test_markdown_shell_fragments_block
+    MARKDOWN_FRAGMENTS.each do |name, source|
+      with_repository do |root|
+        write_tracked(root, 'guide.md', "Don't skip it:\n\n#{source}")
+        assert_equal 'blocked', report(root).fetch('status'), name
+      end
+    end
+  end
+
+  def test_executable_markdown_keeps_whole_file_fragment_check
+    with_repository do |root|
+      path = File.join(root, 'check.md')
+      File.write(path, "Don't run .agents/bin/test\n")
+      File.chmod(0o755, path)
+      commit_fixture(root, 'executable markdown')
+      assert_includes report(root).fetch('blockers').join, 'fragmented old-layout reference'
+    end
+  end
+
   def test_escaped_character_inside_legacy_command_blocks
     with_repository do |root|
       File.write(File.join(root, 'ci.sh'), "#!/bin/sh\nexec .agents/bin/tes\\t\n")

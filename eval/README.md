@@ -21,7 +21,9 @@ successful skill evaluation or repeated without a changed hypothesis.
 Prepared tier 1 tasks can use the [native decision replay API](decision-replays.md)
 for accounting, fingerprint capture and exact ordered-action scoring.
 The future tier 3 driver can retain [protected review readbacks](delivery-readback.md);
-its complete delivery protocol and qualification remain unbuilt.
+the [offline Ask grader](ask-grading.md) checks protected evidence. The
+[native snapshot reader](delivery-snapshots.md) captures PR/check identities and final-blob bounds.
+Native collection and driver qualification remain unbuilt.
 
 | Experiment | Evidence | Outcome |
 | --- | --- | --- |

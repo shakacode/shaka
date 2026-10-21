@@ -86,7 +86,7 @@ class CliFeaturePublicationTest < Minitest::Test
     assert_predicate status, :success?, error
     linked = %r{\[`\h{7}`\]\(https://github\.com/[^)]+/commit/\h{40}\)}
     body = File.read(File.join(dir, 'published.md'))
-    assert_match(%r{\| Before push: validation \| trusted/team at #{linked} \| validate \|}, body)
+    assert_match(%r{\| Before push: validation \| trusted/team at #{linked} \| validate: \d+s[^|]* \|}, body)
     assert_includes body, '**Validation and review:** `validate` passed (exit 0); ' \
                           "local review by openai/codex (host-reported) at `#{@head[0, 7]}`."
   end

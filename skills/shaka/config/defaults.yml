@@ -50,7 +50,7 @@ pr_description:
       paths: ['**/*']
       except: ['**/*.md', docs/**/*, '**/*.{png,jpg,jpeg,gif,svg,webp}']
   opening_check:
-    enabled: true # Check the PR opening before publication.
+    enabled: true # Check description and walkthrough openings after publication.
     effort: low # Independent of the code-review effort.
 
 prose_limits: # Visible PR description and walkthrough prose.

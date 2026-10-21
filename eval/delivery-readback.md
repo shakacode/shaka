@@ -43,7 +43,8 @@ GitHub's [review object](https://docs.github.com/en/graphql/reference/pulls#pull
 provides update timestamps and a string `fullDatabaseId`, including IDs beyond
 32 bits.
 
-Walkthrough structure and code links, hidden verification results, required
-checks, terminal-event ordering, forbidden merge attempts, isolation, tier 3 D2
-assembly and release decisions remain unbuilt. No repository creation, model
-call, budget charge or recurring schedule is introduced here.
+The [offline Ask grader](ask-grading.md) checks protected review receipts and
+the remaining delivery assertions. The [native snapshot reader](delivery-snapshots.md)
+captures PR/check identities and final-blob bounds. Terminal/tool capture, hidden
+verification execution, isolation, tier 3 D2 assembly and release decisions remain unbuilt. No repository
+creation, model call, budget charge or recurring schedule is introduced here.
