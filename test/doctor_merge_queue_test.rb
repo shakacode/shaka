@@ -41,5 +41,6 @@ class DoctorMergeQueueTest < Minitest::Test
 
     report, = doctor(responses: { queue: queue_answer(nil) })
     assert_includes report, "could not read the queue's commit defaults"
+    assert_includes report, "can read this repository's pull request settings"
   end
 end

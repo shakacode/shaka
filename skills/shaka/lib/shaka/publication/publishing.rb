@@ -26,7 +26,7 @@ module Shaka
       current = pull
       existing = current['body'].to_s
       text = publishable(block_given? ? yield(current) : body)
-      restoring(existing) do |around|
+      restoring(current) do |around|
         merged = check_length(merge(around, text))
         verify_rendering(merged)
         check_unchanged(existing, current)

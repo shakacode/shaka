@@ -15,7 +15,7 @@ class QueuedDescriptionTest < Minitest::Test
 
   # One pull request and its comments, answering each gh call by path and method.
   class Fake
-    attr_accessor :body, :title, :queued
+    attr_accessor :body, :title, :queued, :edit_while_parking
     attr_reader :comments, :deleted
 
     def initialize(body)
@@ -56,7 +56,10 @@ class QueuedDescriptionTest < Minitest::Test
       ok(path.end_with?('page=1') ? @comments : [])
     end
 
-    def pull = { 'body' => @body, 'title' => @title, 'head' => { 'sha' => HEAD }, 'base' => { 'sha' => 'b' * 40 } }
+    def pull
+      { 'body' => @body, 'title' => @title, 'comments' => @comments.length,
+        'head' => { 'sha' => HEAD }, 'base' => { 'sha' => 'b' * 40 } }
+    end
 
     def edit(input)
       @body = input['body'] if input.key?('body')
@@ -65,6 +68,7 @@ class QueuedDescriptionTest < Minitest::Test
     end
 
     def post(body)
+      @body = edit_while_parking if edit_while_parking
       comment(100 + @comments.length, body)
       ok(@comments.last.merge('html_url' => "https://example.test/c/#{@comments.last['id']}"))
     end
@@ -117,6 +121,29 @@ class QueuedDescriptionTest < Minitest::Test
     assert_match(/in the merge queue.*after the PR merges or leaves the queue/, error.message)
     assert_equal 'What changed and why.', @fake.body
     assert_equal 1, @fake.comments.length
+  end
+
+  # An edit landing between the read and the write would be in neither the parked text nor the message.
+  def test_an_edit_while_parking_stops_before_the_description_is_replaced
+    @fake.edit_while_parking = "#{REGION}\n\nA maintainer note."
+
+    error = assert_raises(Shaka::Error) { @github.queue_description(prepared) }
+
+    assert_match(/changed while/, error.message)
+    assert_equal "#{REGION}\n\nA maintainer note.", @fake.body
+    assert_empty @fake.comments
+  end
+
+  # An emptied description still holds the queue's place, so it neither publishes nor loses the parked text.
+  def test_an_emptied_description_is_still_parked
+    @github.queue_description(prepared)
+    @fake.body = ''
+    @fake.queued = true
+    assert_raises(Shaka::Error) { @github.description(body: "New summary.\n") }
+
+    @fake.queued = false
+    @github.description(body: "New summary.\n")
+    assert_equal "<!-- shaka:begin -->\nNew summary.\n<!-- shaka:end -->\n\n#{CODERABBIT}", @fake.body
   end
 
   def test_enqueueing_again_keeps_the_first_parked_description
