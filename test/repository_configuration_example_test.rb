@@ -71,6 +71,13 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     Shaka::Defaults.fetch('pr_description', 'human_review_floors').each { |shipped| assert_floor_kept(shipped, floors) }
   end
 
+  # A misspelled path would let that code fall to floor 2 and merge without a person.
+  def test_example_floor_paths_this_repository_adds_name_real_files
+    shipped = Shaka::Defaults.fetch('pr_description', 'human_review_floors').flat_map { |floor| floor['paths'] }
+    added = @example.fetch('pr_description').fetch('human_review_floors').flat_map { |floor| floor['paths'] } - shipped
+    added.flat_map { |glob| alternatives(glob) }.each { |glob| refute_empty Dir.glob(glob, base: ROOT), glob }
+  end
+
   def test_example_floors_hold_settings_merge_and_install_code_above_code_fixes
     floors = @example.fetch('pr_description').fetch('human_review_floors')
     levels = FLOOR_LEVELS.to_h { |path, _| [path, Shaka::ReviewEffortFloor.for([path], floors).fetch('level')] }
@@ -93,6 +100,12 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     assert floor, "Keep the shipped floor: #{shipped['reason']}"
     assert_empty shipped.fetch('paths', []) - floor.fetch('paths', []), shipped['reason']
     assert_equal kept_floor(shipped, floor), floor, shipped['reason']
+  end
+
+  # Each name in a brace list, so one real file cannot hide a misspelled one beside it.
+  def alternatives(glob)
+    match = glob.match(/\{([^{}]*)\}/)
+    match ? match[1].split(',').flat_map { |name| alternatives(match.pre_match + name + match.post_match) } : [glob]
   end
 
   # A kept floor may add paths; its except may add only this repository's exemptions.
