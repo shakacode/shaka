@@ -2,6 +2,7 @@
 
 require 'time'
 require_relative 'assessments'
+require_relative 'fallback'
 
 module Shaka
   # Shares the ledger's existing lock and atomic write. Retry identity excludes helper timestamps.
@@ -34,6 +35,7 @@ module Shaka
     def record_current!(content)
       @recorded_at = Time.now.utc.iso8601
       LocalReviewAssessment.actor!(content['by']) if content.key?('by')
+      LocalReviewFallback.notice(content['fallback'])
       updated = recorded_rounds(content)
       LocalReviewAssessments.new(data).check_triage!(updated)
       write(data.merge(content.slice('fallback'), 'version' => LocalReviewBundle::VERSION, 'rounds' => updated))

@@ -19,7 +19,11 @@ class HandoffFakeGitHub
     @pull = pull
   end
 
-  def snapshot = { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42 }
+  def snapshot
+    { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42,
+      'author' => { 'login' => @pull.fetch(:author, 'shaka-agent') } }
+  end
+
   def required_checks = @pull[:checks]
   def configured_required_checks = []
   def viewer_login = @pull.fetch(:viewer, 'shaka-agent')
@@ -42,7 +46,7 @@ class HandoffFakeGitHub
   def api_list(path)
     return @pull[:labels].map { |name| { 'name' => name } } if path.start_with?(HandoffFakeGitHub::LABELS)
     return @pull[:reviews] if path.start_with?(HandoffFakeGitHub::REVIEWS)
-    return @pull[:comments] if path.start_with?(HandoffFakeGitHub::COMMENTS)
+    return Array(@pull[:comments]) if path.start_with?(HandoffFakeGitHub::COMMENTS)
 
     raise "unexpected list #{path}"
   end
@@ -72,12 +76,12 @@ module HandoffFixtures
   USAGE = { 'note' => 'Native usage is PARTIAL.',
             'records' => [USAGE_RECORD.merge('columns' => [USAGE_COLUMN])] }.freeze
 
-  def self.rendered(wip = WIP)
+  def self.rendered(wip = WIP, extra = {})
     Shaka::Publication.description(
-      'identity' => IDENTITY, 'summary' => 'A summary.', 'table' => TABLE, 'deployment' => 'none',
-      'steps_besides_merging' => 'none',
-      'intent' => INTENT, 'verification' => VERIFICATION,
-      'provenance' => PROVENANCE, 'usage' => USAGE, 'details' => [], 'wip' => wip
+      { 'identity' => IDENTITY, 'summary' => 'A summary.', 'table' => TABLE, 'deployment' => 'none',
+        'steps_besides_merging' => 'none',
+        'intent' => INTENT, 'verification' => VERIFICATION,
+        'provenance' => PROVENANCE, 'usage' => USAGE, 'details' => [], 'wip' => wip }.merge(extra)
     )
   end
 
@@ -90,20 +94,35 @@ module HandoffFixtures
 
   STATES = { 'pass' => 'SUCCESS', 'pending' => 'PENDING', 'skipping' => 'SKIPPED' }.freeze
 
-  # A review thread opened by a reviewer, with later comments from each login in replies.
-  # A login ending in [bot] is a Bot author, which GraphQL names without the suffix.
-  def self.thread(id, resolved: false, replies: [])
-    comments = ['reviewer', *replies].each_with_index.map do |login, index|
+  AGENT_POST = "🤖 Claude Code · Anthropic · claude-opus-5-5 · medium\n\nDone."
+  PERSON_POST = 'Please rename this.'
+
+  # A review thread opened by opener, with later comments from each login in replies. A login
+  # ending in [bot] is a Bot author, which GraphQL names without the suffix. A shaka-agent login
+  # posts as the agent unless given as [login, body].
+  def self.thread(id, resolved: false, replies: [], opener: 'reviewer')
+    comments = [opener, *replies].each_with_index.map do |login, index|
+      login, body = login.is_a?(Array) ? login : [login, post(login)]
       author = { '__typename' => login.end_with?('[bot]') ? 'Bot' : 'User', 'login' => login.delete_suffix('[bot]') }
-      { 'fullDatabaseId' => "#{id.delete('^0-9')}#{index + 1}", 'author' => author }
+      { 'fullDatabaseId' => "#{id.delete('^0-9')}#{index + 1}", 'author' => author, 'body' => body }
     end
     page = { 'nodes' => comments, 'pageInfo' => { 'hasNextPage' => false } }
     { 'id' => id, 'isResolved' => resolved, 'comments' => page }
   end
 
+  def self.post(login) = login.start_with?('shaka-agent') ? AGENT_POST : PERSON_POST
+
+  # A conversation comment as REST lists it.
+  def self.comment(id, body = PERSON_POST, author: 'shaka-agent')
+    { 'id' => id, 'user' => { 'login' => author }, 'body' => body,
+      'html_url' => "https://github.com/owner/repo/pull/42#issuecomment-#{id}" }
+  end
+
   def self.check(bucket) = { 'name' => 'validate', 'state' => STATES.fetch(bucket), 'bucket' => bucket }
 
-  def self.description(wip = WIP) = "#{Shaka::Publishing::OPEN_MARK}\n#{rendered(wip)}#{Shaka::Publishing::CLOSE_MARK}"
+  def self.description(wip = WIP, extra = {})
+    "#{Shaka::Publishing::OPEN_MARK}\n#{rendered(wip, extra)}#{Shaka::Publishing::CLOSE_MARK}"
+  end
 end
 
 # Runs handoff against a fake PR whose defaults owe nothing, so each test changes one fact.
@@ -113,8 +132,9 @@ module HandoffHarness
   def walkthrough(...) = HandoffFixtures.walkthrough(...)
   def check(bucket) = HandoffFixtures.check(bucket)
   def thread(...) = HandoffFixtures.thread(...)
+  def comment(...) = HandoffFixtures.comment(...)
 
-  def description(wip = WIP) = HandoffFixtures.description(wip)
+  def description(wip = WIP, extra = {}) = HandoffFixtures.description(wip, extra)
 
   def handoff(expected: HEAD, woken_by: nil, post_implementation: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,

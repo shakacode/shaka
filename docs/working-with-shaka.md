@@ -243,7 +243,10 @@ over, confirm the previous one has stopped or handed off; a timestamp cannot pro
 
 To recover after a crash or in a new chat, paste the **Next action** from WIP Details,
 such as `$shaka https://github.com/OWNER/REPO/pull/N`. The agent checks the live PR
-before continuing. If no PR exists, supply the original task and checkout.
+before continuing. It owes an answer to each open review thread it has not
+answered or where someone other than a bot commented after its answer. It also
+owes one to each PR comment from the PR's author or the agent's account that no
+agent reply links, even when you post from the account the agent uses. If no PR exists, supply the original task and checkout.
 See [recovery limits](expected-experience.md#resume-or-change-your-checkout).
 
 ## Split a large change

@@ -122,6 +122,24 @@ class LocalReviewCodexTest < Minitest::Test
   end
 end
 
+# Break caught: a failed setup command hides its own reason, such as an unfetched base commit.
+class LocalReviewSetupCommandTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_missing_base_commit_reports_the_git_error_without_the_checkout_path
+    with_repository do |root, _base, head, bin|
+      missing = '1234567890abcdef1234567890abcdef12345678'
+      output, _error, status = run_review(root, missing, head, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      refute result.fetch('attempted')
+      assert_match(/failed \(exit 128\): fatal: .*#{missing}/, result.fetch('reason'))
+      refute_includes result.fetch('reason'), root
+    end
+  end
+end
+
 # Break caught: review run starts a nested helper Ruby that a project's RUBYOPT reaches.
 class LocalReviewRubyIsolationTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
@@ -526,6 +544,16 @@ class LocalReviewStdoutFailureTest < Minitest::Test
       result = JSON.parse(output)
       assert_includes result.fetch('reason'), 'killed by signal 15'
       assert_equal 'requires_cause_review', result.fetch('skip_evidence')
+    end
+  end
+
+  # A background child keeps stdout open, so the drain times out after the reviewer is killed.
+  def test_drain_timeout_after_signal_names_the_signal
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'codex', "#!/bin/sh\n(sleep 10 &)\nkill -KILL $$\n")
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      assert_includes JSON.parse(output).fetch('reason'), 'output drain timed out after 2s (process killed by signal 9)'
     end
   end
 
@@ -1773,6 +1801,7 @@ end
 LocalReviewCodexTest.include(LocalReviewFixture)
 LocalReviewSettingsTest.include(LocalReviewFixture)
 LocalReviewRubyIsolationTest.include(LocalReviewFixture)
+LocalReviewSetupCommandTest.include(LocalReviewFixture)
 LocalReviewCodexTest.include(LocalReviewContextAssertion)
 LocalReviewCodexUsageTest.include(LocalReviewFixture)
 LocalReviewOtherCliTest.include(LocalReviewFixture)
