@@ -1,0 +1,69 @@
+name: Windows
+
+# Free windows-latest runner. This workflow is not the required validate check.
+# The job and each step continue after a failure so one Windows bug does not hide
+# the others, and so a red step does not block merge. Justin decides when to require it.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    continue-on-error: true
+    timeout-minutes: 45
+    env:
+      # Gems in the lockfile are pure Ruby or ship a generic platform build.
+      BUNDLE_FORCE_RUBY_PLATFORM: "true"
+    defaults:
+      run:
+        shell: bash --noprofile --norc -eo pipefail {0}
+    steps:
+      - name: Keep Git line endings as stored
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: shaka doctor
+        continue-on-error: true
+        run: ruby bin/windows-exercise doctor
+
+      - name: Repository commands
+        continue-on-error: true
+        run: ruby bin/windows-exercise commands
+
+      - name: Cursor usage hook
+        continue-on-error: true
+        run: ruby bin/windows-exercise cursor
+
+      # Each test file runs on its own. A file still running after 90s is
+      # killed and printed as a WINDOWS suite gap. On current main, test_helper
+      # raises "git executable not found" until pull request 748 looks up
+      # git.exe, and the suite stops after the first file that hits that.
+      # A windows-latest run that includes that lookup (actions run 39495412891)
+      # then finished 172 files and failed 205. The repeated causes were
+      # Errno::ENOEXEC spawning an extensionless shebang, ArgumentError from
+      # pgroup, harbor paths rejected unless they start with "/", File.open
+      # on a directory in the budget ledger, ENAMETOOLONG under the install
+      # home, and require pty in test/local_evaluation_probe_container_test.rb.
+      # Five private trial files were still running at 90s.
+      - name: Test suite
+        continue-on-error: true
+        env:
+          SHAKA_TEST_WORKERS: "2"
+        run: ruby bin/windows-exercise suite

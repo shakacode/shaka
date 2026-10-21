@@ -8,6 +8,8 @@ module Shaka
     class CursorStopHook
       NAME = 'cursor-usage-hook'
       HOOKS = '~/.cursor/hooks.json'
+      EXTENSION = /\.(?:cmd|bat|exe)\z/i
+      RUBY = /\Aruby(?:\.exe)?\z/i
 
       def self.installed?(path = nil)
         new(path || File.expand_path(HOOKS)).installed?
@@ -40,11 +42,27 @@ module Shaka
       end
 
       def hook_command?(command)
-        token = command.split.first
-        File.basename(token.to_s) == NAME
+        tokens = command_tokens(command)
+        return false if tokens.empty?
+        return true if hook_name?(tokens.first)
+        return false unless ruby?(tokens.first)
+
+        tokens.drop(1).any? { |token| hook_name?(token) }
       rescue ArgumentError
         false
       end
+
+      def command_tokens(command)
+        command.scan(/"([^"]*)"|'([^']*)'|(\S+)/).map { |quoted, single, bare| quoted || single || bare }
+      end
+
+      def ruby?(token) = path_name(token).match?(RUBY)
+
+      # Windows runs the `.cmd` launcher. Its basename is the hook name without that extension.
+      # Split on both separators: File.basename on Linux only treats `/` as one.
+      def hook_name?(token) = path_name(token).sub(EXTENSION, '') == NAME
+
+      def path_name(token) = token.to_s.split(%r{[\\/]}).last.to_s
     end
   end
 end
