@@ -62,18 +62,18 @@ module Shaka
                              command: command(selection, @inventory.links_to(root), install))
       end
 
-      # The old links go first, because the installer refuses links another checkout owns; if the install
-      # then fails, the command puts them back so the hosts keep a working Shaka.
+      # The old links go first, because the installer refuses links another checkout owns. If removing
+      # them or the install fails, the command puts every old link back, so the hosts keep a working Shaka.
       def command(selection, links, install)
         steps = ["git clone #{escape('--branch', 'main', repository(selection), @inventory.default_directory)}"]
         return (steps << install).join(' && ') if links.empty?
 
-        steps << "rm -- #{escape(*links.map { |link| link['path'] })}"
-        steps << "{ #{install} || { #{restore(links)}; false; }; }"
+        removal = "rm -f -- #{escape(*links.map { |link| link['path'] })}"
+        steps << "{ { #{removal} && #{install}; } || { #{restore(links)}; false; }; }"
         steps.join(' && ')
       end
 
-      def restore(links) = links.map { |link| "ln -s #{escape(link['target'], link['path'])}" }.join('; ')
+      def restore(links) = links.map { |link| "ln -sfn #{escape(link['target'], link['path'])}" }.join('; ')
 
       def install_step(selection, hosts)
         target = @inventory.default_directory

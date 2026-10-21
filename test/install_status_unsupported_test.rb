@@ -31,6 +31,19 @@ class InstallStatusUnsupportedTest < Minitest::Test
     assert_equal before, File.realpath(link)
   end
 
+  # When one old link cannot be removed, the command puts back any it did remove.
+  def test_a_partial_removal_restores_the_old_links
+    worktree_links('.claude/skills' => %w[shaka], '.agents/skills' => %w[shaka])
+    links = [File.join(@home, '.claude/skills/shaka'), File.join(@home, '.agents/skills/shaka')]
+    before = resolved(links)
+    report = status(@root)
+    File.chmod(0o555, File.join(@home, '.agents/skills'))
+    _output, process = Open3.capture2e(environment, 'sh', '-c', report['next_command'])
+    File.chmod(0o755, File.join(@home, '.agents/skills'))
+    refute_predicate process, :success?
+    assert_equal(before, links.map { |link| File.realpath(link) })
+  end
+
   # One command would give every host the union of their towers, so differing hosts get a decision.
   def test_hosts_with_different_towers_get_a_decision
     worktree_links('.claude/skills' => %w[shaka], '.agents/skills' => %w[shaka rct])
@@ -92,6 +105,8 @@ class InstallStatusUnsupportedTest < Minitest::Test
     output, process = Open3.capture2e(environment, 'sh', '-c', report['next_command'])
     assert_predicate process, :success?, output
   end
+
+  def resolved(links) = links.map { |link| File.realpath(link) }
 
   def tower_in(root) = File.join(File.realpath(root), 'skills/rct')
 

@@ -32,6 +32,16 @@ class InstallStatusEntryTest < Minitest::Test
     assert_equal "#{other}\n", File.read(record)
   end
 
+  # A plain SSH login is no secret, so status keeps it and still offers the origin command.
+  def test_an_ssh_login_is_not_a_credential
+    root = default_install
+    git('-C', root, 'remote', 'set-url', 'origin', 'ssh://git@example.com/shaka.git')
+    report = status(root)
+    assert_equal 'B5', report['state']
+    assert_includes report['detail'], 'ssh://git@example.com/shaka.git'
+    refute_nil report['next_command']
+  end
+
   # The token holds an @, so redaction must strip up to the last @ before the path, as git does.
   def test_an_origin_token_is_never_printed
     root = default_install

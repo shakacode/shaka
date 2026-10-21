@@ -41,9 +41,18 @@ module Shaka
 
       module_function
 
-      # An origin URL can carry a token; status prints only its host and path.
-      # Everything up to the last @ before the path is credentials, as git reads the URL.
-      def redact(url) = url&.sub(%r{\A([a-z][a-z0-9+.-]*://)[^/]*@}i, '\\1')
+      # An origin URL can carry a token; status prints only its host and path. Everything up to the
+      # last @ before the path is user info, as git reads the URL. A plain SSH login such as git@ is no
+      # secret, so only http(s) user info, or user info holding a password, is removed.
+      USERINFO = %r{\A([a-z][a-z0-9+.-]*)://([^/]*)@}i
+
+      def redact(url)
+        match = url&.match(USERINFO)
+        return url unless match && (match[1].match?(/\Ahttps?\z/i) || match[2].include?(':'))
+
+        url.sub(USERINFO, "#{match[1]}://")
+      end
+
       def credentials?(url) = redact(url) != url
 
       def finding(id, location, detail, command: nil, decision: nil)
