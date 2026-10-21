@@ -394,11 +394,21 @@ class SeamUpgradeHiddenIndexReviewTest < Minitest::Test
     end
   end
 
-  def test_markdown_shell_fragment_is_not_joined
-    source = "Run it:\n\n```sh\nexec .age'nts'/bin/test\n```\n"
+  def test_markdown_shell_fragment_still_blocks
+    source = "Don't skip it:\n\n```sh\nexec .age'nts'/bin/test\n```\n"
     with_repository do |root|
       write_tracked(root, 'guide.md', source)
-      assert_equal 'ready', report(root).fetch('status')
+      assert_includes report(root).fetch('blockers').join, 'fragmented old-layout reference'
+    end
+  end
+
+  def test_executable_markdown_keeps_whole_file_fragment_check
+    with_repository do |root|
+      path = File.join(root, 'check.md')
+      File.write(path, "Don't run .agents/bin/test\n")
+      File.chmod(0o755, path)
+      commit_fixture(root, 'executable markdown')
+      assert_includes report(root).fetch('blockers').join, 'fragmented old-layout reference'
     end
   end
 
