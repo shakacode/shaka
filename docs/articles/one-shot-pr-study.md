@@ -29,8 +29,9 @@ local coding-agent chat logs. No chat text is quoted.
   or 2.
 - On 28 PRs (9%), the agent changed the PR after a review bot reported a problem.
   The hosted Claude review, which runs on GitHub after each push, reported on 22
-  of them; CodeRabbit or the Codex connector reported on others. An automatic
-  merge should still wait for the hosted review.
+  of them; CodeRabbit or the Codex connector reported on others. The hosted
+  review flagged all 3 such PRs among the 73 above, so an automatic merge should
+  still wait for it.
 - The data cannot separate the implementing model from the week it worked in.
   OpenAI models wrote most of the early PRs, when the maintainer commented most.
 
@@ -121,13 +122,15 @@ rating, and 105 of them reached the ready point from 2026-10-15 on.
   other PR at any rating. This supports computing a minimum rating from the
   changed paths, as [#757](https://github.com/shakacode/shaka/pull/757) proposes.
 - In those last days, people gave feedback on 10% of rated PRs and 8% of all
-  PRs, the lowest rate in the window. The rating rule below covers only those
-  days, so compare it with the path rules with that in mind.
+  PRs. The rating rule below covers only those days, so compare it with the path
+  rules with that in mind.
 
 ## What people asked for
 
-145 GitHub comments from a person came after a ready point. A keyword count gives
-a rough split, and one comment can fall in more than one group:
+145 GitHub comments from the maintainer and ShakaCode members came after a ready
+point. Two more, from someone outside that group, were counted as feedback
+without reading their text. A keyword count gives a rough split of the 145, and
+one comment can fall in more than one group:
 
 - 60 asked for clearer, shorter, or better-aimed docs, such as "too verbose!" and
   "too hard to understand for new user!"
@@ -190,15 +193,16 @@ names the agent that wrote the description, which is usually the implementer.
 | Agent rated review effort 1 or 2 (rated PRs only) | 73 | 5 (7%) | 58 of 201 |
 | Any PR within `merge.limits` | 271 | 44 (16%) | 197 of 201 |
 
-- Rules about which files changed did better than rules about size or the
-  agent's rating.
+- The two rules that leave out docs and agent instructions drew no feedback.
+  Every rule based on size or the agent's rating did.
 - The second rule is the widest the data supports. It includes 4 PRs that touched
   trust code, 1 that touched merge code, and 11 that touched code that reads
   settings or installs Shaka. None drew a person's feedback, but that few PRs
   cannot show such changes are safe. Keeping them for a person stays a policy
   choice.
-- 3 of those 73 PRs changed after a review bot's finding, so an automatic merge
-  must still wait for the hosted review.
+- 3 of those 73 PRs changed after the hosted Claude review reported a problem,
+  and CodeRabbit also flagged one of them. An automatic merge must still wait for
+  the hosted review.
 
 [#780](https://github.com/shakacode/shaka/issues/780) proposes path rules for
 automatic merging, and [#757](https://github.com/shakacode/shaka/pull/757)
