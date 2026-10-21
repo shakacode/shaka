@@ -23,10 +23,19 @@ class TimingsMeasuredStepsTest < Minitest::Test
 
     assert_includes body, '**Measured steps:** Validation 13m (1 run) · Local review 58s (1 run)'
     assert_includes body, '| Validation: validate | 2026-10-18 08:05 | 13m | passed | — | m5 |'
-    assert_includes body, '| Local review | 2026-10-18 08:20 | 58s | failed (exit 1) | ' \
+    assert_includes body, '| Local review | 2026-10-18 08:20 | 58s | not completed (exit 1) | ' \
                           'openai · gpt-6.1-sol · medium | UNKNOWN |'
     assert_equal STEPS, carried(body)
     assert_operator body.index('Between checkpoints'), :<, body.index('Measured steps')
+  end
+
+  # A review or checkpoint exits 0 whatever it concluded, so a finished one is never called passed.
+  def test_a_finished_review_or_checkpoint_reads_completed_not_passed
+    checkpoint = STEPS.last.merge('command' => 'post-implementation run', 'exit' => 0)
+    body = Shaka::TimingsDetails.new({ 'unavailable' => 'x', 'steps' => [checkpoint] }).detail['body']
+
+    assert_includes body, '| Product checkpoint | 2026-10-18 08:20 | 58s | completed |'
+    refute_includes body, 'passed'
   end
 
   # Steps are carried even when GitHub's timeline is missing, so one failed read loses none of them.

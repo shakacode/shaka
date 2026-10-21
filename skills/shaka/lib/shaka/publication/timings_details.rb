@@ -79,7 +79,15 @@ module Shaka
 
     def step_cells(step)
       [step_name(step), clock(Time.iso8601(step['at'])), RunSummary.duration(step['duration_ms']),
-       step['exit'].zero? ? 'passed' : "failed (exit #{step['exit']})", step_model(step), step['machine'] || 'UNKNOWN']
+       step_result(step), step_model(step), step['machine'] || 'UNKNOWN']
+    end
+
+    # A review or checkpoint exits 0 whatever it concluded, so its exit says only whether it finished.
+    def step_result(step)
+      exit = step['exit']
+      return (exit.zero? ? 'passed' : "failed (exit #{exit})") if step['command'] == 'evidence run'
+
+      exit.zero? ? 'completed' : "not completed (exit #{exit})"
     end
 
     def step_name(step) = [TimelineSteps::NAMES.fetch(step['command']), step['check']].compact.join(': ')

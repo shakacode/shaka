@@ -54,14 +54,17 @@ description still publishes. The next update tries again.
 ## Measured steps
 
 Below the stretches, the section lists how long each validation run, local
-review, and product checkpoint took. Each row also shows whether the step passed,
-the reviewer's provider, model, and effort, and the machine alias that ran it.
+review, and product checkpoint took. Each row also shows the reviewer's provider,
+model, and effort, the machine alias that ran it, and a result. A validation run
+reads `passed` or `failed`. A review or checkpoint reads `completed` or
+`not completed`, because its result says only whether it finished; its findings and
+recommendation are in its own PR comment.
 For example:
 
 | Step | Started | Time | Result | Model | Machine |
 | --- | --- | ---: | --- | --- | --- |
 | Validation: validate | 2026-10-18 08:05 | 13m | passed | — | m5 |
-| Local review | 2026-10-18 08:20 | 58s | passed | openai · gpt-6.1-sol · medium | m5 |
+| Local review | 2026-10-18 08:20 | 58s | completed | openai · gpt-6.1-sol · medium | m5 |
 
 Above the table, a totals line such as
 `Measured steps: Validation 13m (1 run) · Local review 58s (1 run)` adds up each kind of step.
