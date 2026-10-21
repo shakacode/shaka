@@ -16,9 +16,7 @@ module Shaka
     UNAVAILABLE_SETTINGS = 'Withheld: settings unavailable; fix seam check --ref, then rerun description'
 
     def self.refuse_free_form!(items)
-      return unless items.any? do |item|
-        item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(SUMMARY)
-      end
+      return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(SUMMARY) }
 
       raise Error, 'Shaka settings must come from validation/review results, not a details item.'
     end
