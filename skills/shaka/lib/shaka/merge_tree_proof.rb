@@ -21,12 +21,23 @@ module Shaka
     ISOLATED = { 'GIT_CONFIG_NOSYSTEM' => '1', 'GIT_CONFIG_GLOBAL' => File::NULL, 'GIT_ATTR_NOSYSTEM' => '1',
                  'XDG_CONFIG_HOME' => File::NULL, 'HOME' => File::NULL }.freeze
 
+    # The [major, minor] release a `git version` line names, or nil when it names none.
+    def self.git_release(output)
+      match = output.to_s.match(/\Agit version (\d+)\.(\d+)/)
+      [match[1].to_i, match[2].to_i] if match
+    end
+
+    def self.supported_git?(output)
+      release = git_release(output)
+      !release.nil? && (release <=> MINIMUM_GIT) >= 0
+    end
+
     def initialize(root) = @root = root
 
     # Returns nil when the proof holds, or why it does not.
     def problem(reviewed:, base:, head:)
       return 'the commits are not full SHAs' unless [reviewed, base, head].all? { |sha| sha.to_s.match?(COMMIT) }
-      return 'the proof needs Git 2.41 or later' unless supported_git?
+      return "the proof needs Git #{MINIMUM_GIT.join('.')} or later" unless self.class.supported_git?(git_version)
 
       objects = object_directory
       return UNAVAILABLE unless objects
@@ -40,11 +51,6 @@ module Shaka
     end
 
     private
-
-    def supported_git?
-      version = git_version.to_s[/\Agit version (\d+)\.(\d+)/, 0]&.scan(/\d+/)&.map(&:to_i)
-      version && (version <=> MINIMUM_GIT) >= 0
-    end
 
     def git_version
       output, _error, status = run('git', 'version')
