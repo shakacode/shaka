@@ -2,24 +2,20 @@
 
 **PRs that are a delight to review.**
 
-Give your coding agent a task. Shaka has it build the change, test it, and get
-an independent review. Then it hands you one pull request (PR) that is quick to
-judge.
+Give your coding agent a task. Shaka has it build, test, and get an independent
+review, then hands you a pull request (PR) you can judge quickly.
 
 ## Why use Shaka
 
-- **See the outcome first.** The PR description opens with what changed, why,
-  what it leaves out, and why it is safe.
-- **See the proof.** Each check says what ran and how it turned out, and a
-  **Not verified** line names what went unproven.
-- **Read the code with a guide.** A code walkthrough explains each choice and
-  links to the exact lines.
-- **Skip what you do not need.** Usage, detailed checks, and history sit in
-  collapsed sections.
-- **Keep the merge decision.** By default the agent hands the ready PR back to you.
+- **Outcome first.** The PR opens with what changed, why, what it leaves out, and
+  why it's safe.
+- **Proof.** Each check says what ran and what happened; **Not verified** lists
+  the rest.
+- **A guide to the code.** A walkthrough explains each choice and links to the lines.
+- **Less to read.** Detail you can skip is collapsed.
+- **Your merge decision.** By default, the agent hands the ready PR back to you.
 
-[PR verification](pr-verification.md#read-a-pr-for-your-decision) shows where each
-answer lives in a PR.
+See [where each answer lives](pr-verification.md#read-a-pr-for-your-decision).
 
 ![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](img/task-to-pr.svg)
 
@@ -28,17 +24,17 @@ answer lives in a PR.
 ## What to do first
 
 1. Ask your coding agent: `Install Shaka from https://github.com/shakacode/shaka.`
-2. Open a chat in your project and give it a small fix you can recognize:
+2. In your project, give it a small fix you can check:
 
    ```text
    $shaka Fix search when the query contains an apostrophe. Go.
    ```
 
    Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode.
-3. Read the PR it returns and decide whether to merge.
+3. Read the PR and decide whether to merge.
 
-[Start here](getting-started.md) covers setup choices. New to branches and pull
-requests? [Shaka in pictures](shaka-in-pictures.md) explains them with a practice task.
+[Start here](getting-started.md) covers setup. New to pull requests? Try
+[Shaka in pictures](shaka-in-pictures.md).
 
 ## Learn as you go
 

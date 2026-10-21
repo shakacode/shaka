@@ -1,27 +1,26 @@
 # Working with Shaka
 
-Read this page after your first task. It covers the choices only you can make and
-the prompts for other kinds of work. For everything else, ask the agent.
+Read this after your first task. It covers the choices only you can make and the
+prompts for other work. For anything else, ask the agent. The agent behavior
+described here comes from Shaka's instructions; code does not enforce it.
 
-Examples use Codex's `$shaka`. Use `/shaka` in Claude Code, Cursor, or OpenCode;
-in Pi, load the installed skill.
+Examples use `$shaka` from Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode.
 
 ## What you get
 
-A PR built to help you decide:
+A PR built for your decision:
 
-- **Description**: the outcome, the decisions left for you, how the change was
-  checked, and what went unproven.
-- **Code walkthrough**: each implementation choice and the alternatives, with
-  links to the reviewed lines.
-- **Evidence**: tests, review findings, and screenshots for visible changes.
-- **Collapsed sections**: detail you can skip, such as usage and **WIP Details**.
+- **Description**: the outcome, decisions left for you, how the change was
+  checked, and what was not.
+- **Code walkthrough**: each choice and its alternatives, linked to the code.
+- **Evidence**: tests, review findings, and screenshots of visible changes.
+- **Collapsed sections**: detail you can skip.
 
 See [where each answer lives](pr-verification.md#read-a-pr-for-your-decision).
 
 ## Give it an outcome
 
-Describe the result or link an issue. Add only what the agent could not infer:
+Describe the result or link an issue. Add only what the agent can't infer:
 
 ```text
 $shaka Add CSV export to the orders page. Reuse the filters shown on screen.
@@ -32,61 +31,57 @@ Go.
 
 | Policy | What happens |
 | --- | --- |
-| **Ask** (default) | Review the ready PR, then merge it on GitHub or approve it so the agent merges. |
+| **Ask** (default) | You merge the ready PR on GitHub, or approve it and the agent merges. |
 | **Auto** | The agent merges after required checks, review, and approvals. |
 
 ![A ready PR follows Ask, where you merge or approve it, or Auto, where the agent merges. A PR that is too large or risky returns to you under Auto.](img/merge-policy.svg)
 
-Say `Use merge policy auto` in your prompt to let the agent merge. Large or
-consequential changes still come back to you; see [size limits](settings.md#mergelimits).
+For Auto, add `Use merge policy auto` to your prompt. Large or risky changes still
+come back to you; see [size limits](settings.md#mergelimits).
 
 ## Give feedback
 
-Leave PR comments and paste the review link into the chat, or say in chat what
-feels wrong.
+Comment on the PR and paste the link into the chat, or say in chat what's wrong.
 
-To edit files yourself, tell the agent first so it keeps the checkout read-only,
-and hand the files back when you stop. Take turns; do not both write at once.
+To edit files yourself, tell the agent first, and hand the files back when you're
+done. Don't both write at once.
 
 ### Revise earlier guidance and try again
 
-Shaka numbers your instructions on the PR as checkpoints: C1 is your first
-request. To go back to one:
+The PR numbers your instructions as checkpoints, starting with C1. To go back:
 
 ```text
 $shaka Return to C2. Use the simpler approach.
 ```
 
-Shaka's instructions have the agent rewind from Git and task records, not saved
-snapshots, and recovery in real use is not yet evaluated, so ask what it can
-restore first. It does not undo deployments or other outside effects. See [checkpoints](pr-verification.md#checkpoint).
+The agent rewinds with Git and task records, not snapshots, and this is untested
+in real use. Ask what it can restore first. It can't undo deployments.
+See [checkpoints](pr-verification.md#checkpoint).
 
 ## Find PRs waiting on you
 
-Search your repository's PR list on GitHub:
+Search your PR list on GitHub:
 
 | Search | What to do |
 | --- | --- |
-| `is:open label:awaiting-answer` | Answer **Decisions to make** in the description, or submit or discard your own pending GitHub review. |
-| `is:open label:awaiting-merge-approval` | Merge on GitHub with the [commit message](pr-verification.md#squash-merge-details) the checkpoint comment gives, or add the PR to the [merge queue](pr-verification.md#merge-queues) if your repository has one. Or tell the agent to merge that commit. |
+| `is:open label:awaiting-answer` | Answer **Decisions to make** in the description, or submit or discard your own pending review. |
+| `is:open label:awaiting-merge-approval` | Merge with the checkpoint's [commit message](pr-verification.md#squash-merge-details), add the PR to your [merge queue](pr-verification.md#merge-queues), or tell the agent to merge. |
 | `is:open label:awaiting-resume` | Paste **WIP Details → Next action** into the owning chat. |
 
-A label does not wake a chat. Answer in the chat unless the handoff says automatic
-follow-up is active. See [approval details](pr-verification.md#approval-and-attention-labels).
+A label doesn't wake a chat. See [approval details](pr-verification.md#approval-and-attention-labels).
 
 ## Resume unfinished work
 
-You can comment on any open PR; wait for the agent to answer before merging. A
-comment wakes the agent only while the handoff says automatic follow-up is active
-and the expiry in **WIP Details** has not passed.
-Otherwise, or after a crash or in a new chat, paste **WIP Details → Next action**,
-for example `$shaka https://github.com/OWNER/REPO/pull/N`. Before another agent
-takes over, confirm the previous one has stopped. See
-[recovery limits](expected-experience.md#resume-or-change-your-checkout).
+Comment on any open PR, and wait for an answer before merging. A comment wakes the
+agent only if the handoff says automatic follow-up is on and the expiry in
+**WIP Details** hasn't passed. Otherwise, or after a crash, paste
+**WIP Details → Next action** into a chat, such as
+`$shaka https://github.com/OWNER/REPO/pull/N`. Make sure the previous agent has
+stopped first. See [recovery limits](expected-experience.md#resume-or-change-your-checkout).
 
 ## Choose the outcome you need
 
-State the stopping point in your prompt.
+Say where to stop.
 
 ### Get a plan before implementing
 
@@ -94,9 +89,8 @@ State the stopping point in your prompt.
 $shaka Plan CSV export for the orders page. Planning only.
 ```
 
-For work that needs several PRs, Shaka's instructions have the agent keep the
-plan in the original issue, asking first if it needs permission to write there. Give a new chat the same task
-link to continue.
+For work that needs several PRs, the agent keeps the plan in the issue, asking
+first if it needs permission. A new chat continues from the same link.
 
 ### Review an existing PR
 
@@ -110,8 +104,7 @@ $shaka Review https://github.com/OWNER/REPO/pull/N. Review only.
 $shaka Review docs with me: https://github.com/OWNER/REPO/pull/N
 ```
 
-Shaka's instructions have the agent explain one topic at a time; say `continue`
-for the next.
+The agent explains one topic at a time. Say `continue` for the next.
 
 ### Resume a PR you already started
 
@@ -133,32 +126,27 @@ or [individual setup](expected-experience.md#individual-setup) to try Shaka alon
 
 ### Split a large change
 
-Ask for independently useful changes as separate PRs, for example "Update React
-first, then the integration that needs it."
+Ask for separate PRs, such as "Update React first, then the code that needs it."
 
 ## Useful tips
 
-- **Start small.** Pick a fix whose result you can recognize.
-- **Choose a model when you need to.** Activate it in your coding agent, then
-  name it, for example `Use Sol, medium effort. Go.` A prompt cannot switch the model.
-- **Keep public PRs public-safe.** Tell the agent before publishing if local
-  paths or chat links should be hidden.
-- **Name your machine.** Set `SHAKA_MACHINE_ALIAS` to a short public name such as
-  `mini` so unfinished PRs show which machine holds the work.
+- **Start small.** Pick a fix you can check yourself.
+- **Pick a model.** Switch to it in your coding agent, then name it:
+  `Use Sol, medium effort. Go.` A prompt can't switch models.
+- **Keep public PRs public-safe.** Tell the agent before publishing if paths or
+  chat links should be hidden.
+- **Name your machine.** Set `SHAKA_MACHINE_ALIAS` to a short public name, such as
+  `mini`, so unfinished PRs show where the work is.
 
 ## Combine Shaka with other skills
 
-Name another skill in your prompt, and Shaka still delivers the result: your
-checks, independent review, its PR format, and your merge policy. Shaka's
-instructions tell the agent not to let another skill relax a check or approve a
-merge; code does not enforce this. Shaka reads its settings from your default
-branch, but your check scripts run from the PR branch, so review changes to them
-like any other code. See the [trust model](workflow.md#trust-model).
+Name another skill in your prompt. Shaka still runs your checks and review, writes
+the PR, and keeps your merge policy. The agent won't let another skill skip a
+check or approve a merge. Your check scripts run from the PR branch, so review
+changes to them like other code; see the [trust model](workflow.md#trust-model).
 
-Examples are [AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md),
-which turn an idea into a spec and tickets, and
-[pstack](https://github.com/cursor/plugins/tree/main/pstack), whose poteto mode
-applies engineering principles and parallel workers:
+[AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md)
+turn an idea into a spec and tickets:
 
 ```text
 $shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N. Go.
@@ -166,15 +154,18 @@ $shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N. Go.
 
 Tickets stay open unless you add "Close each ticket when its PR merges."
 
+[pstack](https://github.com/cursor/plugins/tree/main/pstack)'s poteto mode adds
+engineering principles and parallel workers:
+
 ```text
 $shaka Fix https://github.com/OWNER/REPO/issues/N in poteto mode. You may use
 subagents for swarm and arena. Go.
 ```
 
 pstack, [Ponytail](https://github.com/DietrichGebert/ponytail), and
-[Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills) have not
-been tried on a full Shaka delivery. Try a new pack on one task you would merge
-anyway, then ask:
+[Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills) haven't
+been tried on a full Shaka delivery. Try a new pack on a task you'd merge anyway,
+then ask:
 
 ```text
 Which instructions from that pack did you follow, and where did they conflict with Shaka?
@@ -186,12 +177,11 @@ Which instructions from that pack did you follow, and where did they conflict wi
 $shaka retrospective
 ```
 
-The agent lists what would have made the session go better and should change
-nothing until you pick findings to deliver. It may read the local timing log Shaka keeps at
-`~/.local/state/shaka/calls.jsonl`, which holds no paths or task text and is never
-uploaded. Set `SHAKA_CALL_LOG=off` to stop it, or to a path to move it.
+The agent lists what would have helped, and waits for you to pick what to fix. It
+may read Shaka's local timing log, `~/.local/state/shaka/calls.jsonl`, which holds
+no paths or task text and is never uploaded. Set `SHAKA_CALL_LOG=off` to stop it,
+or to a path to move it.
 
 ## Suggest improvements to Shaka
 
-Tell your agent what Shaka should do better. It helps refine the idea and asks
-before filing an issue.
+Tell your agent what Shaka should do better. It asks before filing an issue.

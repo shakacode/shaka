@@ -1,8 +1,8 @@
 # Start here
 
-Give your coding agent a task. Shaka guides it through implementation, checks,
-independent review, and a pull request you can understand and decide whether to merge.
-Start with a small fix in a project you know.
+Give your coding agent a task. Shaka has it build, test, and get an independent
+review, then hands you a pull request you can judge. Start with a small fix in a
+project you know.
 
 Examples use `$shaka` in Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode;
 in Pi, load the installed Shaka skill. See [coding agents](coding-agents.md).
@@ -18,10 +18,10 @@ Install Shaka from https://github.com/shakacode/shaka.
 ```
 
 Prefer to run the commands yourself? Follow [manual installation](manual-installation.md).
-Do not install the `shaka` gem; it only reserves the name. If `$shaka` is not
-found afterward, start a new chat.
+Don't install the `shaka` gem; it only reserves the name. If `$shaka` isn't
+found, start a new chat.
 
-Then check your setup and follow what it reports:
+Then check your setup and follow what it says:
 
 ```text
 $shaka doctor
@@ -32,12 +32,12 @@ $shaka doctor
 
 ## 2. Choose individual or team setup
 
-If your project has no Shaka settings yet, the agent asks on your first task
-whether to set it up just for you or for your team, and explains each choice.
+On your first task in a new project, the agent asks whether to set Shaka up just
+for you or for your team.
 
-- **Just for you:** settings stay out of commits, and the task continues.
-- **For your team:** the agent opens a setup PR. **Review and merge it yourself
-  on GitHub.** See [repository setup](configure-repository.md).
+- **Just for you:** settings stay out of commits, and the task goes on.
+- **For your team:** the agent opens a setup PR. **Review and merge it yourself.**
+  See [repository setup](configure-repository.md).
 
 To check that your AI accounts can run the chosen reviewers, ask
 `$shaka Probe this project's configured reviewers.` Each probe may use quota.
@@ -48,10 +48,9 @@ To check that your AI accounts can run the chosen reviewers, ask
 $shaka Fix search when the query contains an apostrophe. Go.
 ```
 
-Replace the example with a small outcome or an issue link. The agent asks when it
-needs a choice or access from you.
+Use your own small outcome or an issue link. The agent asks when it needs you.
 
-For a different outcome, choose an example:
+Other kinds of tasks:
 
 - [Plan before implementing](working-with-shaka.md#get-a-plan-before-implementing).
 - [Review an existing PR](working-with-shaka.md#review-an-existing-pr).
@@ -59,9 +58,8 @@ For a different outcome, choose an example:
   [recover unfinished work](working-with-shaka.md#resume-unfinished-work).
 - [Set up a repository for your team](working-with-shaka.md#configure-a-repository-for-your-team).
 
-The PR explains what changed, how it was checked, and what is still open. Under
-**Ask**, the default, you decide whether to merge.
-[Working with Shaka](working-with-shaka.md) covers what to do next.
+Under **Ask**, the default, you decide whether to merge the PR.
+[Working with Shaka](working-with-shaka.md) covers what comes next.
 
 ### Use a personal fork
 
