@@ -76,7 +76,7 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
   end
 
   def test_indented_code_after_paragraph_end_still_blocks
-    ["Setup\n-----\n", "Setup\n\n---\n", "Setup\n=====\n", "# Setup\n"].each do |opening|
+    ["Setup\n-----\n", "Setup\n\n---\n", "Setup\n\n* * *\n", "Setup\n=====\n", "# Setup\n"].each do |opening|
       with_repository do |root|
         write_tracked(root, 'guide.md', "#{opening}    export PATH=\".agents/bin:$PATH\"\n")
         assert_blocked_with(root, 'old command-directory reference')

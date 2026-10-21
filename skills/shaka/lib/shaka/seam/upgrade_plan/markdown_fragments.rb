@@ -30,7 +30,8 @@ module Shaka
             return true if !@paragraph && line.match?(INDENTED)
 
             @fence = line[FENCE, 1]
-            @paragraph = @fence.nil? && line.match?(/\S/) && !line.match?(ENDS_PARAGRAPH)
+            # Stripping a `* ` marker would hide a `* * *` break, so both spellings are checked.
+            @paragraph = @fence.nil? && line.match?(/\S/) && [raw, line].none?(ENDS_PARAGRAPH)
             !@fence.nil?
           end
 
