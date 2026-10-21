@@ -66,7 +66,7 @@ Search your repository's PR list on GitHub:
 
 | Search | What to do |
 | --- | --- |
-| `is:open label:awaiting-answer` | Answer **Decisions to make** in the description. |
+| `is:open label:awaiting-answer` | Answer **Decisions to make** in the description, or submit or discard your own pending GitHub review. |
 | `is:open label:awaiting-merge-approval` | Merge on GitHub with the [commit message](pr-verification.md#squash-merge-details) the checkpoint comment gives, or tell the agent to merge that commit. |
 | `is:open label:awaiting-resume` | Paste **WIP Details → Next action** into the owning chat. |
 
@@ -76,7 +76,8 @@ follow-up is active. See [approval details](pr-verification.md#approval-and-atte
 ## Resume unfinished work
 
 You can comment on any open PR; wait for the agent to answer before merging. A
-comment wakes the agent only while the handoff says automatic follow-up is active.
+comment wakes the agent only while the handoff says automatic follow-up is active
+and the expiry in **WIP Details** has not passed.
 Otherwise, or after a crash or in a new chat, paste **WIP Details → Next action**,
 for example `$shaka https://github.com/OWNER/REPO/pull/N`. Before another agent
 takes over, confirm the previous one has stopped. See
@@ -152,6 +153,8 @@ merge; code does not enforce this.
 ```text
 $shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N. Go.
 ```
+
+Tickets stay open unless you add "Close each ticket when its PR merges."
 
 ```text
 $shaka Fix https://github.com/OWNER/REPO/issues/N in poteto mode. You may use
