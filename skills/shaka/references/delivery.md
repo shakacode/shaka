@@ -208,7 +208,8 @@ architecture decision record (ADR) using the project's conventions. An ADR recor
 the decision, alternatives, and consequences; a design document can hold detailed
 implementation analysis. Keep execution order, progress, and the document link in
 the work item. Recommend either only when the detail warrants it; use the tracker
-alone for a compact plan.
+alone for a compact plan. When the user chose a design PR first, that PR holds the
+document instead.
 
 ### Design PR first
 
@@ -216,8 +217,9 @@ When the user picks a design PR in Plan, deliver the ADR or design document as i
 own PR before any implementation PR, following the task's PR split. It states the
 open choices, the chosen design with its alternatives and consequences, and how the
 components fit together. After publishing it, stop and wait for the user to approve
-the design in chat or with an approving GitHub review; merging it still follows the
-task's merge preference. Record the approval as a human attention checkpoint. If the
+the design in chat, or for an approving review of the design PR, as `comments` reports
+it, from a GitHub login the user named in this task as a design approver. Merging it
+still follows the task's merge preference. Record the approval as a human attention checkpoint. If the
 user asks for changes, revise the design PR and wait again. Start implementation on
 its own branch. Summarize and link the approved design in that PR's description, and
 pass the description to every local review round with `--description-file`, so the

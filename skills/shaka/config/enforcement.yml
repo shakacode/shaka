@@ -222,7 +222,7 @@ rules:
       candidate text chooses which repository's code the setup and validation commands run.
   - id: design-approval-before-implementation
     phase: plan
-    quote: Do not make implementation edits until the user approves the design.
+    quote: do not make implementation edits until the user approves the design
     enforced_by: agent
     note: >-
       Nothing records which design PR a task chose or whether the user approved it, so no

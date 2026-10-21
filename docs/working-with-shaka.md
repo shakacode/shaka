@@ -83,8 +83,8 @@ $shaka https://github.com/OWNER/REPO/issues/N
 Design PR first; wait for my approval before implementing.
 ```
 
-Approve in chat or with an approving GitHub review. Merging the design PR follows
-your usual merge choice. A small or fully specified task starts directly, with no
+Approve the design in chat, or name a teammate whose approving GitHub review of
+the design PR counts. Merging the design PR follows your usual merge choice. A small or fully specified task starts directly, with no
 extra question.
 
 ### Review an existing PR
