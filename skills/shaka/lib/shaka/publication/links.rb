@@ -4,6 +4,7 @@ require 'uri'
 require_relative '../error'
 require_relative '../post_implementation_report'
 require_relative 'text'
+require_relative '../publication_sections'
 
 module Shaka
   # Renders the links a reader needs before any description section.
@@ -12,6 +13,7 @@ module Shaka
     POST_IMPLEMENTATION_URL = %r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+#issuecomment-\d+\z}
     REVIEW_URL = POST_IMPLEMENTATION_URL
     UNPUBLISHED = '_Not published yet._'
+    AFTER_DECISIONS = 'Code Walkthrough: _After the decisions._'
     CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
 
     module_function
@@ -20,7 +22,7 @@ module Shaka
     # Open decisions come first while they last, even over a Merge checkpoint, and take the label's place.
     # The head check keeps a stale recommendation off the page, so the text need not name the commit.
     def lead(content, pull, decisions)
-      links = links(content, pull)
+      links = links(content, pull, deciding: decisions.any?)
       return [*decisions, links] unless content.key?('checkpoint')
 
       checkpoint = current_checkpoint(content['checkpoint'], pull)
@@ -68,9 +70,10 @@ module Shaka
     end
 
     # Keep both review surfaces together before an optional deployment preview.
-    def links(content, pull)
-      reviews = [walkthrough(content['walkthrough']), review(content['review']),
-                 post_implementation(content['post_implementation'])].compact.join(' · ')
+    # While decisions are open, the walkthrough waits for them and they are the checkpoint, so placeholders say so.
+    def links(content, pull, deciding: false)
+      reviews = [walkthrough(content['walkthrough'], deciding:), review(content['review']),
+                 post_implementation(content['post_implementation'], deciding:)].compact.join(' · ')
       preview = deployment(content['deployment']) ||
                 deployment_not_found(content['deployment_not_found_for'], pull&.dig('head', 'sha'))
       preview ? "#{reviews} · #{preview}" : reviews
@@ -79,8 +82,10 @@ module Shaka
     # The credit closes the description so it never sits between the decision and its evidence.
     def credit(settings) = settings.attribution? ? [CREDIT] : []
 
-    def post_implementation(url)
-      return "Checkpoint: #{UNPUBLISHED}" if url.nil? || (url.is_a?(String) && url.strip.empty?)
+    def post_implementation(url, deciding:)
+      if url.nil? || (url.is_a?(String) && url.strip.empty?)
+        return "Checkpoint: #{deciding ? PublicationSections::DECISIONS_LINK : UNPUBLISHED}"
+      end
 
       url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'post_implementation')
       unless url.match?(POST_IMPLEMENTATION_URL)
@@ -138,8 +143,10 @@ module Shaka
       "_Walkthrough for commit #{commit}. This is a COMMENT, not an approval._"
     end
 
-    def walkthrough(url)
-      return UNPUBLISHED if url.nil? || (url.is_a?(String) && url.strip.empty?)
+    def walkthrough(url, deciding:)
+      if url.nil? || (url.is_a?(String) && url.strip.empty?)
+        return deciding ? AFTER_DECISIONS : UNPUBLISHED
+      end
 
       url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'walkthrough')
       unless url.match?(WALKTHROUGH_URL)

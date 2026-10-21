@@ -13,7 +13,7 @@ class CheckpointRecommendationTest < Minitest::Test
     body = "<!-- shaka:reply:post-implementation-aaaaaaa-abc12345 -->\nReport\n\n#{marker}" \
            "#{Shaka::PostImplementationEvidence.disposition(recommendation)}\n" \
            "#{Shaka::PostImplementationEvidence.attestation(HEAD, recommendation == 'Merge' ? 'ready' : 'blocked')}"
-    { 'user' => { 'login' => 'agent' }, 'body' => body }
+    { 'id' => 1, 'created_at' => '2026-10-01T00:00:00Z', 'user' => { 'login' => 'agent' }, 'body' => body }
   end
 
   def resolve(content, comments)

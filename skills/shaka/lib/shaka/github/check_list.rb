@@ -24,8 +24,9 @@ module Shaka
       def required_checks
         checks(required: true)
       rescue Error => e
-        raise Error.new('Required-check evidence is unavailable; confirm native required checks and GitHub access.',
-                        http_status: e.http_status)
+        status = " (HTTP #{e.http_status})" if e.http_status
+        raise Error.new("Required-check evidence is unavailable#{status}; " \
+                        'confirm native required checks and GitHub access.', http_status: e.http_status)
       end
 
       private
@@ -43,7 +44,9 @@ module Shaka
       end
 
       def check_failure(exitstatus, stderr)
-        Error.from_gh("gh pr #{@number} failed (exit #{exitstatus}).", stderr)
+        http_status = Error.http_status_in(stderr)
+        detail = ["exit #{exitstatus}", ("HTTP #{http_status}" if http_status)].compact.join(', ')
+        Error.new("gh pr #{@number} failed (#{detail}).", http_status:)
       end
 
       def empty_check_list?(stderr, required)

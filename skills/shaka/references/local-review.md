@@ -363,6 +363,13 @@ Another reviewer may join the last reviewed head. It refuses any other head the 
 reviewed, a head that lacks the last reviewed head or any recorded fix commit, a fix recorded as the
 head it was found in, and a different `--base`; after a rebase, start a new ledger. Publishing
 refuses a fix recorded by any round on the last head, because no later round has reviewed it.
+
+When `evidence verify` reports review evidence superseded because settings components differ,
+such as after the installed Shaka updated mid-task, review the same head again with the same
+ledger; do not invent a commit or start a new ledger. Record the earlier batch and settle its
+open findings first, then run every reviewer again with `--settings-ref` and record the new
+batch as usual. The ledger refuses this when no material setting changed or an earlier round
+on the head ran without `--settings-ref`.
 The next round's prompt
 lists, as review data, every earlier finding's id, class, summary, and latest disposition
 (including fixed, open, decision-needed, and closed dispositions), plus the commits since the newest

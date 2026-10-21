@@ -7,9 +7,9 @@ require 'shaka/publication/squash_message'
 class MergeFinalCheckpointTest < Minitest::Test
   include MergeFixtures
 
-  def product_comment(state, adequacy: nil)
+  def product_comment(state, id: 1, adequacy: nil)
     marker = "#{Shaka::PostImplementationEvidence.adequacy(adequacy)}\n" if adequacy
-    { 'user' => { 'login' => 'shaka-agent' },
+    { 'id' => id, 'created_at' => '2026-10-01T00:00:00Z', 'user' => { 'login' => 'shaka-agent' },
       'body' => "<!-- shaka:reply:post-implementation-aaaaaaa-abc12345 -->\nReport\n\n" \
                 "#{marker}#{Shaka::PostImplementationEvidence.attestation(HEAD, state)}" }
   end
@@ -64,7 +64,7 @@ class MergeFinalCheckpointTest < Minitest::Test
     @client.comments << product_comment('ready')
     checkpoint = Shaka::PostImplementationEvidence.new(@client)
     assert_equal 'ready', checkpoint.call(HEAD)['basis']
-    publish_during_last_snapshot(product_comment('blocked'))
+    publish_during_last_snapshot(product_comment('blocked', id: 2))
     @merge = Shaka::Merge.new(@client, review: { checkpoint: })
 
     assert_blocked(/Checkpoint is missing, stale, or blocked/)
