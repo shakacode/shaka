@@ -222,8 +222,8 @@ to write the work item, ask for it or offer the design PR.
 
 Then stop and wait for the user to approve the design in chat, or, for a design PR,
 for an approving review as `comments` reports it from a GitHub login the user named
-in this task as a design approver. Merging a design PR still follows the task's
-merge preference. Record the approval as a human attention checkpoint. If the user
+in this task as a design approver. A design PR is not ready to merge until then;
+after approval, merging it follows the task's merge preference. Record the approval as a human attention checkpoint. If the user
 asks for changes, revise the design and wait again. Summarize and link the approved
 design in the implementation PR's description, and pass the description to every
 local review round with `--description-file`, so the reviewer compares the code with
