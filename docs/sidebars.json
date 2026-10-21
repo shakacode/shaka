@@ -54,7 +54,8 @@
       "collapsed": true,
       "items": [
         "articles/review-process-study",
-        "articles/checkpoint-sentence-eval"
+        "articles/checkpoint-sentence-eval",
+        "articles/one-shot-pr-study"
       ]
     },
     {
