@@ -368,7 +368,7 @@ no commit can be found, the row shows the release version instead, such as
 `0.1.0.pre.1` (commit unknown).
 
 The table shows the latest publication, so `description` also keeps a history in a hidden
-marker in the PR body. It adds an entry, recording the PR head, whenever the Workflow version
+marker in the PR body. It adds an entry, recording the PR head, whenever the Shaka skill version
 cell or a route differs from the last entry; republishing the same values adds nothing. Once
 there are two entries, a collapsed **Provenance history** block lists them oldest first. It
 keeps the first entry and the 20 most recent, and says how many it omitted. The helper writes

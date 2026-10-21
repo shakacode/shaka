@@ -35,7 +35,7 @@ class ExecutionProvenanceTest < Minitest::Test
                                                  upstream: true)
     body = Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE, workflow_version: version).detail.fetch('body')
 
-    assert_includes body, "| Workflow version | [`aaaaaaa`](https://github.com/shakacode/shaka/commit/#{'a' * 40}) |"
+    assert_includes body, "| Shaka skill version | [`aaaaaaa`](https://github.com/shakacode/shaka/commit/#{'a' * 40}) |"
   end
 
   def test_refuses_an_agent_supplied_workflow_version

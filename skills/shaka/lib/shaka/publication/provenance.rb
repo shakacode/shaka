@@ -44,7 +44,7 @@ module Shaka
       values = validated
       [
         ['Task source', task(values.fetch('task_source'))],
-        ['Workflow version', @workflow_version.markdown],
+        ['Shaka skill version', @workflow_version.markdown],
         (['User-requested model / effort', route(values, 'requested')] unless
           REQUESTED_FIELDS.all? { |field| values.fetch(field).nil? }),
         ['Recommended model / effort', route(values, 'recommended')],

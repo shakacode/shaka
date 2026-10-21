@@ -152,7 +152,7 @@ class ProvenanceHistoryRefusalTest < Minitest::Test
     assert_refused(@body.sub(%r{ -->(?=\n\n</details>\n\n<details>\n<summary>Provenance history)}, ' --'))
   end
 
-  # Every shape the Workflow version cell renders must read back, or the next publication refuses.
+  # Every shape the Shaka skill version cell renders must read back, or the next publication refuses.
   def test_unlinked_and_unknown_workflow_versions_round_trip
     unlinked = Shaka::WorkflowVersion::Result.new(version: Shaka::VERSION, commit: 'd' * 40, modified: true,
                                                   upstream: false)

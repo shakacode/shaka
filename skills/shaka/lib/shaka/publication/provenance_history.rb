@@ -127,7 +127,7 @@ module Shaka
       rows = entries.map do |entry|
         "| `#{entry['head'][0, 7]}` | #{entry['workflow']} | #{ROUTES.map { |route| entry[route] }.join(' | ')} |"
       end
-      ['| Head | Workflow version | User-requested model / effort | ' \
+      ['| Head | Shaka skill version | User-requested model / effort | ' \
        'Recommended model / effort | Active model / effort |',
        '| --- | --- | --- | --- | --- |', *rows].join("\n")
     end
