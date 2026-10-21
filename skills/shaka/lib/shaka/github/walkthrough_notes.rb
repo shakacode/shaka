@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative '../pending_review'
+require_relative '../public_comments/bounded_list'
 require_relative '../walkthrough/notes'
 
 module Shaka
@@ -22,17 +24,39 @@ module Shaka
     # GitHub refuses the whole review when one note's lines are outside the diff, so nothing is posted.
     def create_walkthrough(head, body, notes)
       fields = { event: 'COMMENT', commit_id: head, body: body }
-      return api(reviews_path, method: 'POST', fields:) if notes.empty?
+      return post_review(fields) if notes.empty?
 
       refuse_blocking_notes
       post_with_notes(fields, notes)
     end
 
+    def post_review(fields)
+      api(reviews_path, method: 'POST', fields:)
+    rescue Error
+      refuse_pending_review
+      raise
+    end
+
     def post_with_notes(fields, notes)
       api(reviews_path, method: 'POST', fields: fields.merge(comments: notes))
     rescue Error => e
+      refuse_pending_review
       raise Error, "#{e.message} GitHub refuses the whole review when a note sits on lines the diff " \
                    "does not show; check #{notes.map { |note| Walkthrough::Notes.location(note) }.join(', ')}."
+    end
+
+    # GitHub allows one pending review per person, so this account's unsubmitted review refuses the
+    # walkthrough. Looking only after a refusal keeps a normal publication to its usual requests.
+    def refuse_pending_review
+      raise Error, PendingReview::MESSAGE if pending_review?
+    end
+
+    # A failed lookup leaves GitHub's own refusal as the report.
+    def pending_review?
+      reviews = PublicComments::BoundedList.new(self, max_pages: 5, label: 'Review listing').call(reviews_path)
+      !PendingReview.find(reviews, viewer).nil?
+    rescue Error
+      false
     end
 
     # The current notes stay open until a newer walkthrough, so they would block such a merge.

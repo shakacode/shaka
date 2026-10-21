@@ -5,6 +5,8 @@ require_relative 'github_helper'
 class GitHubWalkthroughTest < Minitest::Test
   include GitHubHelper
 
+  def viewer_response = response({ 'login' => 'shaka-agent' })
+
   def test_walkthrough_creates_comment_and_reads_back_the_review_and_head
     github = client(*publish_responses(snapshot_response), response([]))
     published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
@@ -53,14 +55,34 @@ class GitHubWalkthroughTest < Minitest::Test
   end
 
   def test_unauthorized_publication_does_not_attempt_readback
-    github = client(snapshot_response, files_response, *gate_responses, html_response, response({}, status: 1))
+    github = client(snapshot_response, files_response, *gate_responses, html_response, response({}, status: 1),
+                    response([]), viewer_response)
     assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH) }
-    assert_equal 8, @calls.size
+    assert_equal 10, @calls.size
+  end
+
+  # GitHub allows one pending review per person, so the maintainer's unsubmitted review refuses this one.
+  def test_an_unsubmitted_review_by_this_account_is_named_instead_of_the_refusal
+    pending = [{ 'id' => 9, 'state' => 'PENDING', 'user' => { 'login' => 'shaka-agent' } }]
+    github = client(snapshot_response, files_response, *gate_responses, html_response,
+                    response({}, status: 1, http_status: 422), response(pending), viewer_response)
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH) }
+    assert_equal Shaka::PendingReview::MESSAGE, error.message
+  end
+
+  def test_another_accounts_pending_review_leaves_githubs_refusal
+    pending = [{ 'id' => 9, 'state' => 'PENDING', 'user' => { 'login' => 'someone-else' } }]
+    github = client(snapshot_response, files_response, *gate_responses, html_response,
+                    response({}, status: 1, http_status: 422), response(pending), viewer_response)
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH) }
+    refute_equal Shaka::PendingReview::MESSAGE, error.message
   end
 end
 
 class GitHubWalkthroughNotesTest < Minitest::Test
   include GitHubHelper
+
+  def viewer_response = response({ 'login' => 'shaka-agent' })
 
   NOTE = { 'path' => CHANGED_FILE, 'line' => 4, 'side' => 'RIGHT',
            'body' => "#{Shaka::Walkthrough::Notes::MARKER}\n🤖 Claude\n\nStart here." }.freeze
@@ -108,9 +130,19 @@ class GitHubWalkthroughNotesTest < Minitest::Test
 
   def test_a_refused_review_names_each_note_location
     github = client(snapshot_response, files_response, *gate_responses, html_response, html_response,
-                    *resolution_responses, response({}, status: 1, http_status: 422))
+                    *resolution_responses, response({}, status: 1, http_status: 422), response([]),
+                    viewer_response)
     error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH, notes: [NOTE]) }
     assert_includes error.message, "check #{CHANGED_FILE}:L4."
+  end
+
+  def test_an_unsubmitted_review_is_named_before_note_locations
+    pending = [{ 'id' => 9, 'state' => 'PENDING', 'user' => { 'login' => 'shaka-agent' } }]
+    github = client(snapshot_response, files_response, *gate_responses, html_response, html_response,
+                    *resolution_responses, response({}, status: 1, http_status: 422), response(pending),
+                    viewer_response)
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH, notes: [NOTE]) }
+    assert_equal Shaka::PendingReview::MESSAGE, error.message
   end
 
   def test_notes_are_refused_where_the_base_requires_conversation_resolution
