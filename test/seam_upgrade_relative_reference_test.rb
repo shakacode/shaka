@@ -95,6 +95,21 @@ class SeamUpgradeRelativeReferenceTest < Minitest::Test
     end
   end
 
+  def test_hand_written_note_with_root_like_command_blocks
+    with_repository do |root|
+      write_tracked(root, '.agents/notes.md', "Run bin/setup after cloning.\n")
+      assert_blocked_with(root, '.agents/notes.md: relative old-layout reference bin/setup')
+    end
+  end
+
+  def test_explicitly_relative_command_in_note_is_rewritten
+    with_repository do |root|
+      path = write_tracked(root, '.agents/notes.md', "Run ./bin/setup now.\n")
+      apply_upgrade(root)
+      assert_equal "Run ./shaka/bin/setup now.\n", File.read(path)
+    end
+  end
+
   def test_names_outside_the_old_directory_are_not_rewritten
     with_repository do |root|
       source = "Each repository keeps agent-workflow.yml and bin/test.\n"
