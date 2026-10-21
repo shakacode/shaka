@@ -210,6 +210,25 @@ implementation analysis. Keep execution order, progress, and the document link i
 the work item. Recommend either only when the detail warrants it; use the tracker
 alone for a compact plan.
 
+### Agree on the design first
+
+When the user chooses to agree on the design first in Plan, write down the open
+choices, the chosen design with its alternatives and consequences, and how the
+components fit together. Put it in the work item as the current plan. Use a design
+PR holding an ADR or design document instead when the repository keeps ADRs or the
+user asks for one, and deliver it as the first PR of the task's split, with the
+implementation PR following on its own branch. Without permission
+to write the work item, ask for it or offer the design PR.
+
+Then stop and wait for the user to approve the design in chat, or, for a design PR,
+for an approving review as `comments` reports it from a GitHub login the user named
+in this task as a design approver. A design PR is not ready to merge until then;
+after approval, merging it follows the task's merge preference. Record the approval as a human attention checkpoint. If the user
+asks for changes, revise the design and wait again. Summarize and link the approved
+design in the implementation PR's description, and pass the description to every
+local review round with `--description-file`, so the reviewer compares the code with
+the design rather than with its own.
+
 Before implementing a material correction, update the current plan with what
 changed, why, and every affected PR, including one already awaiting review. Mark
 superseded proposals and unresolved decisions clearly. Refresh affected PR
@@ -323,7 +342,7 @@ before the step that needs it, and say where a reviewer should look hardest.
 Explain unfamiliar terms on first use. Distinguish mechanical moves and generated
 output from behavior changes. Cover purpose, choices, validation, risks, and
 rollback consequences where they fit; avoid a heading for every checklist item.
-State each risk and rollback as the [writing guidance](writing.md) describes.
+State each risk and rollback as the [review evidence rules](publication.md#review-evidence) describe.
 Cover the change completely, then stop.
 
 ### Connect a technical fix to its evidence
@@ -350,7 +369,8 @@ or accept it; technical confidence does not grant merge consent. Scale detail to
   branch's own history: "was removed" or "now rejects" about an earlier commit
   on the branch goes stale and means nothing to a reader of the diff.
 - Give each paragraph one idea and lead with it. Split a paragraph past about
-  four sentences, and keep most sentences under 25 words.
+  four sentences, and keep sentences within the length the
+  [shared writing rules](writing.md#plain-language-and-organization) set.
 - Use a list for parallel items, such as the guarantees a guard provides: one
   per bullet, each linked to its code. Keep reasoning in prose.
 - Add one small visual when control passes through three or more components,

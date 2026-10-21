@@ -14,8 +14,9 @@ module Shaka
   class Merge
     include MergeRequiredChecks
 
-    # The head a user told the agent to merge although no required check gates it.
-    attr_writer :empty_checks_confirmed_head
+    # The head a user told the agent to merge although no required check gates it, and the
+    # MergeReviewFloor that sends PRs changing higher-floor paths back to the user.
+    attr_writer :empty_checks_confirmed_head, :review_floor
 
     # `review` takes MergeReviewEvidence's technical settings and final product checkpoint.
     def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
@@ -28,7 +29,7 @@ module Shaka
 
     # `squash_message` is a SquashMessage, or nil for the repository's squash default.
     def call(head:, base:, walkthrough:, limits: MergeLimits.new, squash_message: nil)
-      @target = MergeTarget.required!(head, base, limits)
+      @target = MergeTarget.required!(head, base, limits, @review_floor)
       @submission.message = squash_message
       @head = head
       initial = @github.snapshot
@@ -45,7 +46,7 @@ module Shaka
 
     def submit(initial, current, head)
       verify_snapshot(current, head)
-      @target.unchanged!(initial, current)
+      @target.unchanged!(initial, current, @github)
       @review_evidence.final_check(head)
       @submission.call(current, head)
     end
@@ -68,7 +69,7 @@ module Shaka
     def reconcile_queued_replay(initial, current, head)
       unless current['state'] == 'MERGED'
         verify_snapshot(current, head)
-        @target.unchanged!(initial, current)
+        @target.unchanged!(initial, current, @github)
       end
 
       @submission.reconcile_queued(initial, current, head)
@@ -76,7 +77,7 @@ module Shaka
 
     def verify_snapshot(pull, head, target = nil)
       verify_identity(pull, head)
-      target&.validated!(pull)
+      target&.validated!(pull, @github)
       verify_submission_mode(pull)
       verify_native_state(pull)
     end

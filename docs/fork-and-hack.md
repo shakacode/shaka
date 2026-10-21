@@ -14,7 +14,7 @@ or its helper, everywhere you use it.
 ## Fork and install
 
 You need the same tools as a [manual installation](manual-installation.md):
-Ruby 3.4 or later, Git, and an authenticated
+Ruby 3.4 or later, Git 2.41 or later, and an authenticated
 [GitHub CLI](https://cli.github.com/).
 
 **Ask your agent:**
@@ -30,7 +30,7 @@ branch before you install:
 ```bash
 gh repo fork shakacode/shaka --clone=false
 FORK_URL="https://github.com/YOUR-LOGIN/shaka.git"
-SHAKA_DIR="$HOME/.agents/shaka"
+SHAKA_DIR="$HOME/.local/share/shaka/source"
 umask 022
 mkdir -p "$(dirname "$SHAKA_DIR")"
 git clone "$FORK_URL" "$SHAKA_DIR"
@@ -54,7 +54,7 @@ commit until your next update:
 ```bash
 gh repo fork shakacode/shaka --clone=false
 FORK_URL="https://github.com/YOUR-LOGIN/shaka.git"
-SHAKA_DIR="$HOME/.agents/shaka"
+SHAKA_DIR="$HOME/.local/share/shaka/source"
 git -C "$SHAKA_DIR" remote rename origin upstream
 git -C "$SHAKA_DIR" remote add origin "$FORK_URL"
 git -C "$SHAKA_DIR" fetch origin

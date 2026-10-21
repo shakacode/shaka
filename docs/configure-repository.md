@@ -68,7 +68,8 @@ need exact options and defaults.
 Shaka ships a [Claude review workflow](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/claude-code-review.yml)
 that reviews PRs opened from branches in your repository, and fits teams where only
 some people use Shaka. It skips drafts, Dependabot, and PRs from forks; review those
-another way.
+another way. It reviews pushes from Cursor cloud agents. A push from another GitHub
+App fails the review job until you add that app to the workflow's `allowed_bots` line.
 When a PR's author already published a Shaka local review of the pushed commit
 with Claude among its reviewers, Claude makes a short pass for serious bugs the
 local reviewers missed. Every other PR gets a full review, including one only

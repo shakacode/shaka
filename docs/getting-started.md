@@ -19,10 +19,11 @@ Install Shaka from https://github.com/shakacode/shaka.
 
 Prefer to run the commands yourself? Follow [manual installation](manual-installation.md).
 
-The agent checks for Ruby 3.4 or later, Git, and an authenticated GitHub CLI.
+The agent checks for Ruby 3.4 or later, Git 2.41 or later, and an authenticated GitHub CLI.
 It installs one dedicated checkout outside your projects and links the skill
-directly into it. The default location is `~/.agents/shaka`; you can
-choose another directory, such as `~/agent-tools/shaka`.
+directly into it. The default location is `~/.local/share/shaka/source`; you can
+choose another directory, such as `~/agent-tools/shaka`, outside `~/.agents/`,
+which holds settings.
 
 The installer adds a `shaka` link and an empty lock file to your coding agent's
 skills folder, such as `~/.claude/skills` for Claude Code. Your agent finds Shaka
@@ -52,12 +53,6 @@ An extra provider can supply independent review; installing every CLI is optiona
 The diagnostic changes no settings. It exits with status 1 when any check reports
 FAILED; read the full report, since piping it through another command can hide
 that status.
-
-Set `SHAKA_MACHINE_ALIAS` in your shell profile to a short name such as `mini`.
-An unfinished PR shows it as the owner, so you can tell which machine holds the
-work, and local validation results name it as the machine that ran them; without
-it, the owner reads UNKNOWN. PRs may be public, so do not use the
-machine's own name.
 
 Give the agent a task when you are ready.
 

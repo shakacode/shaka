@@ -51,6 +51,7 @@ merge:
     max_changed_files: 29
     max_changed_lines: 999 # Additions plus deletions.
     max_commits: 9
+  auto_max_review_floor: 5 # Default: auto may merge a PR at any human review floor (below).
 
 branches:
   name: '{login}-{host}/{issue}-{description}' # Default branch-name template.

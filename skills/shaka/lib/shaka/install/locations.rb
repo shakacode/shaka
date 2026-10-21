@@ -8,6 +8,9 @@ module Shaka
       HOSTS = { 'codex' => '.agents/skills', 'claude' => '.claude/skills', 'cursor' => '.cursor/skills',
                 'opencode' => '.config/opencode/skills' }.freeze
       RECORD = 'shaka-install.json'
+      # The default source checkout, under HOME. HOME/.agents holds settings and never a checkout.
+      SOURCE = '.local/share/shaka/source'
+      SETTINGS = '.agents'
     end
   end
 end

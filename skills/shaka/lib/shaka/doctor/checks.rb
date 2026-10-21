@@ -7,9 +7,11 @@ require_relative '../ruby_requirement'
 require_relative '../configuration'
 require_relative 'check'
 require_relative 'configured_reviewers'
+require_relative 'git_runtime'
 require_relative 'machine_alias'
 require_relative 'usage_source'
 require_relative 'reviewer_clis'
+require_relative 'installation_state'
 require_relative 'settings_source'
 
 module Shaka
@@ -33,12 +35,12 @@ module Shaka
         seam, *basics = brief
         [*basics, seam, reviewer_settings(seam), @reviewer_clis.call(seam),
          MachineAlias.new(@environment, host_name: @system.host_name).call,
-         UsageSourceCheck.new(host: @host, system: @system).call]
+         UsageSourceCheck.new(host: @host, system: @system).call, InstallationState.new(system: @system).call]
       end
 
       # What a task start needs: whose settings the checkout holds, and whether the helper's own
       # prerequisites and the repository work. Reviewer and usage setup stay in the full report.
-      def brief = [repository_seam, ruby_runtime, github_cli, repository_access]
+      def brief = [repository_seam, ruby_runtime, GitRuntime.new(method(:run)).call, github_cli, repository_access]
 
       private
 
@@ -140,8 +142,10 @@ module Shaka
       def missing_seam
         paths = [Configuration::Paths::CONTRACT, Configuration::Paths::NEW_CONTRACT].join(' or ')
         check('Repository seam', 'failed', "this root has no #{paths} regular file",
-              guidance: 'Ask your coding agent: Configure this repository for Shaka using its existing checks ' \
-                        'and merge policy ask. Or point `--root` at the checkout you meant.')
+              guidance: 'Choose a setup before the task. For a private trial in this clone, ask your coding ' \
+                        'agent: Set up Shaka just for me. For team settings in a setup PR, ask: Configure this ' \
+                        'repository for Shaka using its existing checks and merge policy ask. Or point `--root` ' \
+                        'at the checkout you meant.')
       end
 
       # A command that cannot even launch is this check's answer, never an aborted report.

@@ -14,11 +14,16 @@ module Shaka
         raise Error, 'Publication flow must be feature, setup, or migration'
       end
 
-      paths = files(github, pull).flat_map { |file| [file['filename'], file['previous_filename']].compact }
+      paths = paths(github, pull)
       return paths unless flow == 'feature' && paths.any? { |path| Configuration::FeatureGuard.configuration?(path) }
 
       raise Error, 'Feature PR contains Shaka configuration changes; use a separate setup/migration PR. ' \
                    'Private paths are REDACTED.'
+    end
+
+    # Both names of a rename, from a list checked complete against the PR's changed-file count.
+    def paths(github, pull)
+      files(github, pull).flat_map { |file| [file['filename'], file['previous_filename']].compact }
     end
 
     def files(github, pull)

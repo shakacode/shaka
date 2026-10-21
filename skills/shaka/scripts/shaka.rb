@@ -176,7 +176,7 @@ end
 
 # Heads a user approved for merge although a gate would otherwise hand them back.
 def confirmation_flags(flags, options)
-  flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits') { |sha| options[:confirmed_head] = sha }
+  flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits/floor') { |sha| options[:confirmed_head] = sha }
   flags.on('--empty-checks-confirmed-head SHA', 'Head the user told you to merge with no required checks') do |sha|
     options[:empty_checks_confirmed_head] = sha
   end
@@ -371,6 +371,7 @@ begin
                                               seam_wait: seam&.review&.fetch('ci_review_wait'), review:,
                                               seam_required_checks:)
              merge.empty_checks_confirmed_head = options[:empty_checks_confirmed_head]
+             merge.review_floor = Shaka::MergeReviewFloor.from(seam, confirmed_head: options[:confirmed_head])
              merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention' then Shaka::Attention.new(github).call(state: options.fetch(:state))

@@ -4,11 +4,14 @@ require 'optparse'
 require_relative '../installer'
 require_relative 'official'
 require_relative 'session_hook'
+require_relative 'status'
 
 module Shaka
   module Install
     # One entry point for the official checkout and explicit managed-copy operations.
     class Command
+      include StatusFlags
+
       VALUES = { '--directory DIR' => :directory, '--repository URL' => :repository,
                  '--branch NAME' => :branch, '--skills-dir DIR' => :skills_dir,
                  '--managed-dir DIR' => :managed_dir, '--rollback PACKAGE_ID' => :rollback }.freeze
@@ -23,7 +26,7 @@ module Shaka
       def run(arguments)
         parser.parse!(arguments)
         validate(arguments)
-        install
+        @actions == [:status] ? print_status : install
         0
       rescue OptionParser::ParseError, SystemCallError, IOError, ArgumentError => e
         warn e.message
@@ -34,7 +37,7 @@ module Shaka
 
       def parser
         OptionParser.new do |options|
-          options.banner = "Usage: #{@program} [--directory DIR] [--agent NAME] [--update|--verify]"
+          options.banner = "Usage: #{@program} [--directory DIR] [--agent NAME] [--update|--verify|--status [--json]]"
           VALUES.each { |flag, key| options.on(flag) { |value| @options[key] = value } }
           selections(options)
           actions(options)
@@ -55,6 +58,7 @@ module Shaka
       def actions(options)
         options.on('--update') { @actions << :update }
         options.on('--verify') { @actions << :verify }
+        status_options(options)
         options.on('--take-over', 'Move every host link from the checkout that owns them to this one') do
           @options[:take_over] = true
         end
@@ -66,7 +70,7 @@ module Shaka
 
       def validate(arguments)
         raise OptionParser::InvalidArgument, arguments.join(' ') unless arguments.empty?
-        raise ArgumentError, 'Choose only one of --update and --verify' if @actions.size > 1
+        raise ArgumentError, 'Choose only one of --update, --verify, and --status' if @actions.size > 1
 
         VALUES.each_value do |key|
           raise ArgumentError, "#{key} must not be empty" if @options[key]&.strip == ''
@@ -90,11 +94,9 @@ module Shaka
       end
 
       def validate_action
-        if @actions.empty? || (@options[:agents].empty? && @options.values_at(:skills_dir, :repository,
-                                                                              :branch).none? &&
-                  @options[:names] == ['shaka'])
-          return
-        end
+        validate_status
+        selected = @options[:agents].any? || @options.values_at(:skills_dir, :repository, :branch).any?
+        return if @actions.empty? || !(selected || @options[:names] != ['shaka'])
 
         raise ArgumentError, 'Use bin/install to change installation selections before maintenance'
       end

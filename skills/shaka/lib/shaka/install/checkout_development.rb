@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
 require 'shellwords'
+require_relative 'locations'
 
 module Shaka
   module Install
     # Finds linked worktrees and extra local branches, which mean the source checkout is used for development.
     module CheckoutDevelopment
-      SOURCE_EXAMPLE = '~/.local/share/shaka/source'
+      SOURCE_EXAMPLE = "~/#{Locations::SOURCE}".freeze
 
       # Installation refuses development use; maintenance only warns, so an existing install keeps working.
       def check_development_use(action)

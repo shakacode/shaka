@@ -63,11 +63,31 @@ When a task needs several PRs or a detailed plan, Shaka saves the steps and
 important decisions in the original issue or tracker item. It updates the plan
 as the work changes. If it needs permission to write there, Shaka asks.
 
-For larger design decisions, Shaka may suggest a separate document linked from
-the task.
-
 To pick up the work in a new chat, give Shaka the same task link after the previous
 agent has stopped. Shaka reads the plan and checks the PRs before continuing.
+
+### Agree on a design before implementing
+
+When a task leaves design choices open, such as several parts that depend on one
+design or more than one reasonable approach, Shaka names those choices while planning
+and offers to agree on the design first. It writes the design in the issue or tracker
+item, or in a design PR holding an architecture decision record (ADR) when your
+repository keeps ADRs. Shaka waits for your approval before writing any code, then
+builds and reviews the implementation against the design you approved.
+
+Choose it when a wrong design would waste the implementation: for example, a feature
+whose API, storage, and screens all depend on one data model. To ask up front:
+
+```text
+$shaka https://github.com/OWNER/REPO/issues/N
+Agree on the design first; wait for my approval before implementing.
+```
+
+Add `Use a design PR.` when you want one in any repository.
+
+Approve the design in chat. For a design PR, you can also name a teammate whose
+approving GitHub review counts, and merging it follows your usual merge choice. A
+small or fully specified task starts directly, with no extra question.
 
 ### Review an existing PR
 
@@ -236,6 +256,11 @@ responsible for checking new feedback. That person opens the **Chat link** in WI
 Details and sends its resume prompt, for example `$shaka https://github.com/OWNER/REPO/pull/N`.
 Do the same if the recorded expiry has passed without a renewed handoff. Leaving a GitHub comment alone does not
 resume the agent in this case.
+
+If you work on more than one machine, name each one so the **Owner** in WIP
+Details shows which machine holds the chat: set `SHAKA_MACHINE_ALIAS` in your
+shell profile to a short name such as `mini`. PRs may be public, so do not use
+the machine's own name; `$shaka doctor` suggests one that differs from it.
 
 The Chat link works when the owning chat is reachable. In Codex,
 `codex://threads/...` opens the original conversation. Before another agent takes

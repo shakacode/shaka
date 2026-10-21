@@ -29,7 +29,7 @@ private context and links before invoking or publishing.
 shaka post-implementation run --root DIR --base BASE_SHA --head HEAD_SHA \
   --ref TRUSTED_DEFAULT_SHA --content-file description.json > checkpoint.json
 shaka post-implementation publish OWNER/REPO NUMBER --content-file checkpoint.json \
-  --squash-message message.json
+  --squash-message message.json --root DIR --ref TRUSTED_DEFAULT_SHA
 ```
 
 For a ready result, supply `message.json` with the same `title` and plain-text `body`

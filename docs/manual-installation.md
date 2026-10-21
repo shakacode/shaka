@@ -1,7 +1,7 @@
 # Install Shaka manually
 
 Run the installation yourself when you want to read what will run before it
-runs. You need Ruby 3.4 or later, Git, and an authenticated
+runs. You need Ruby 3.4 or later, Git 2.41 or later, and an authenticated
 [GitHub CLI](https://cli.github.com/). To let your coding agent do this instead,
 use the [installation prompt](getting-started.md).
 
@@ -33,10 +33,11 @@ reviewer model a command was given. Set `SHAKA_CALL_LOG=off` to stop recording.
 ## Install
 
 Clone the source. To install somewhere else, such as `~/agent-tools/shaka`,
-change `SHAKA_DIR` on the first line:
+change `SHAKA_DIR` on the first line. Keep it out of `~/.agents/`, which holds
+settings; the installer refuses any folder there:
 
 ```bash
-SHAKA_DIR="$HOME/.agents/shaka"
+SHAKA_DIR="$HOME/.local/share/shaka/source"
 umask 022
 mkdir -p "$(dirname "$SHAKA_DIR")"
 git clone https://github.com/shakacode/shaka.git "$SHAKA_DIR"
@@ -63,6 +64,11 @@ Each one adds this link:
 Pi has no option of its own; it loads the shared skill linked for `codex`.
 `bin/install --help` lists the remaining options.
 
+When it finishes, the installer prints where everything lives: the source
+checkout and its commit, each skills folder it linked, and your settings. The
+source checkout is not configuration. Settings live in each project's
+`.agents/shaka/` folder and in `~/.agents/trusted-github-actors.yml`.
+
 Start a new chat and look for **Shaka**. [Coding agents](coding-agents.md) shows
 how to start a task in each one. Then continue with
 [setup](getting-started.md#2-choose-individual-or-team-setup).
@@ -79,11 +85,38 @@ Check the installation at any time, using the directory you installed into.
 This command changes nothing in the checkout or your skill links:
 
 ```bash
-"$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --verify
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --verify
 ```
 
 It confirms that the checkout comes from the recorded origin, has no local
 changes, and is the target of each skill link, and that the recorded Ruby still exists.
+
+When verification or an update refuses, or you are not sure which checkout your
+agents use, ask for the installation state. It also changes nothing and works
+offline:
+
+```bash
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --status
+```
+
+It names the state, where it found it, and the one command for you to run next,
+or the decision you need to make. For example:
+
+- After a `git pull` inside the checkout, it names `install --update`.
+- When an older checkout still holds an install record that your links no longer
+  use, it names the command that renames that record aside.
+- When your links point into a linked Git worktree, which disappears when its
+  branch is cleaned up, it names the command that reinstalls Shaka into
+  `~/.local/share/shaka/source`, or what to decide when one command cannot.
+- When Shaka is installed at the old default, `~/.agents/shaka`, it names the
+  command that clones Shaka into `~/.local/share/shaka/source` and moves your
+  links there. Every install action names the same command until you run it.
+  If `~/.local/share/shaka/source` already holds something else, it says what to
+  move aside instead. The old checkout stays where it is; delete it once the new
+  one works.
+
+Below the state it lists the links, checkouts, and PR trials it found.
+`shaka doctor` reports the same state.
 
 Shaka tells you when an update is available once your installation is three
 commits behind, or when the oldest change you lack is a day old, so a busy
@@ -92,7 +125,15 @@ saved in `~/.local/share/shaka/update-check.json`. Any later Shaka command reads
 that file, without a network request, and prints one line to standard error at
 most once a day when it says to update, says the checkout moved, or is missing or over a day old.
 A command run from a different Shaka checkout than your skill links point to
-prints one line naming the linked one. Set `SHAKA_NOTICES=off` to silence both.
+prints one line naming the linked one.
+
+Two more reminders show at most once a day. A command run in a repository with no
+Shaka settings names the missing file and the two setup choices, so a first task
+starts by choosing [individual or team setup](getting-started.md#2-choose-individual-or-team-setup).
+Until `shaka doctor` has run on your machine, a command suggests running it. Doctor
+records each run in `~/.local/share/shaka/doctor-ran`, and the reminder times are
+kept in `~/.local/share/shaka/notices.json`. Set `SHAKA_NOTICES=off` to silence every
+notice; doctor then records nothing.
 
 To have each new Claude Code chat start with the saved answer, add `--session-hook`
 to `bin/install --agent claude`. The chat then hears about an update, a moved
@@ -103,7 +144,7 @@ installing with `--agent claude` again without the flag removes it.
 When an update is due, finish active Shaka chats, fetch and apply it, then start a new chat:
 
 ```bash
-"$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --update
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --update
 ```
 
 The update stops without changing the checkout when it finds local changes or
