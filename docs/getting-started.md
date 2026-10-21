@@ -18,12 +18,13 @@ Install Shaka from https://github.com/shakacode/shaka.
 To run the commands yourself, follow [manual installation](manual-installation.md).
 Don't install the `shaka` gem. It only reserves the name.
 
-If the Shaka skill doesn't appear, start a new chat. Then check your setup and
-follow what it says:
+Check the install, and follow what the report says:
 
 ```text
 $shaka doctor
 ```
+
+If the Shaka skill doesn't appear, start a new chat and try again.
 
 <a id="2-choose-private-trial-or-team-setup"></a>
 <a id="2-choose-individual-trial-or-team-setup"></a>
