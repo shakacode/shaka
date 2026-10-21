@@ -74,7 +74,7 @@ Search your PR list on GitHub:
 | --- | --- |
 | `is:open label:awaiting-answer` | Answer **Decisions to make** in the description. Or submit or discard your own pending review. |
 | `is:open label:awaiting-merge-approval` | Merge with the prepared [commit message](pr-verification.md#squash-merge-details). Or add the PR to your [merge queue](pr-verification.md#merge-queues), or tell the agent to merge that commit. |
-| `is:open label:awaiting-resume` | Paste **WIP Details → Next action** into a chat. |
+| `is:open label:awaiting-resume` | Open **WIP Details → Chat link** and paste **Next action** there. |
 
 A label doesn't wake a chat. See [approval details](pr-verification.md#approval-and-attention-labels).
 
