@@ -67,7 +67,7 @@ Search your repository's PR list on GitHub:
 | Search | What to do |
 | --- | --- |
 | `is:open label:awaiting-answer` | Answer **Decisions to make** in the description, or submit or discard your own pending GitHub review. |
-| `is:open label:awaiting-merge-approval` | Merge on GitHub with the [commit message](pr-verification.md#squash-merge-details) the checkpoint comment gives, or tell the agent to merge that commit. |
+| `is:open label:awaiting-merge-approval` | Merge on GitHub with the [commit message](pr-verification.md#squash-merge-details) the checkpoint comment gives, or add the PR to the [merge queue](pr-verification.md#merge-queues) if your repository has one. Or tell the agent to merge that commit. |
 | `is:open label:awaiting-resume` | Paste **WIP Details → Next action** into the owning chat. |
 
 A label does not wake a chat. Answer in the chat unless the handoff says automatic
@@ -93,8 +93,8 @@ State the stopping point in your prompt.
 $shaka Plan CSV export for the orders page. Planning only.
 ```
 
-For work that needs several PRs, Shaka keeps the plan in the original issue,
-asking first if it needs permission to write there. Give a new chat the same task
+For work that needs several PRs, Shaka's instructions have the agent keep the
+plan in the original issue, asking first if it needs permission to write there. Give a new chat the same task
 link to continue.
 
 ### Review an existing PR
@@ -109,7 +109,8 @@ $shaka Review https://github.com/OWNER/REPO/pull/N. Review only.
 $shaka Review docs with me: https://github.com/OWNER/REPO/pull/N
 ```
 
-The agent explains one topic at a time; say `continue` for the next.
+Shaka's instructions have the agent explain one topic at a time; say `continue`
+for the next.
 
 ### Resume a PR you already started
 
