@@ -32,7 +32,7 @@ How often maintainers need this is unknown; the issue reports the gap, not a cou
 
 This is a scope extension. No requirement in `internal/requirements.md` covers explaining
 or changing an existing configuration, so approving this ADR is the maintainer's scope
-decision, and the last delivery PR adds the requirement.
+decision. Each delivery PR adds the part of the requirement it ships.
 
 ### Predecessor check
 
@@ -105,13 +105,14 @@ as decision 3, but the code is tied to its own layout. Nothing is reused.
 
 ## Delivery
 
-Recommendation: proceed in this order, each its own PR after this ADR is approved. The
-smallest useful stop is after step 1: the prompt report covers what cannot be read from
-`config.yml`, and steps 2 and 3 can wait for evidence that maintainers use it. Stopping
-there gives up decision 2's guarantee that no setting is left out.
+Recommendation: proceed in this order, each its own PR after this ADR is approved. Each
+step ships its command with its routing, procedure section, and requirement, so the work
+can stop after any step and still be usable.
 
 1. Shared prompt assembly and `configure prompts`, with tests that run each runner's real
-   path and compare the prompt it sends with the report.
-2. `configure settings` and the anchor test.
-3. `references/configure.md`, the `SKILL.md` routing line, the guide section, and the
-   requirement in `internal/requirements.md`.
+   path and compare the prompt it sends with the report. Adds the `SKILL.md` routing line,
+   `references/configure.md` with its prompt section, and the requirement. This is the
+   smallest useful stop: it covers what cannot be read from `config.yml`, and gives up
+   decision 2's guarantee that no setting is left out.
+2. `configure settings`, the anchor test, and the procedure's settings section.
+3. The settings-change section of the procedure and the guide section.
