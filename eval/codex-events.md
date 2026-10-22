@@ -43,3 +43,33 @@ full tier 3 D2 assembly and release verdicts remain separate work.
 
 The [official Codex JSONL contract](https://learn.chatgpt.com/docs/non-interactive-mode#make-output-machine-readable)
 supplies the supported envelope names. This reader adds no model call or schedule.
+
+## Read a live process
+
+`CodexCapture` connects the reader to an operator-selected process on a POSIX host:
+
+```ruby
+require_relative 'lib/shaka/evaluation/codex_capture'
+
+capture = Shaka::Evaluation::CodexCapture.new(environment: selected_child_environment).run(
+  command: pinned_codex_argv, cwd: agent_workspace, directory: new_private_directory,
+  seconds: 60, clock_id: controller_clock_id
+)
+```
+
+The command starts with an absolute executable path. Its arguments, environment,
+workspace and output directory come from the protected operator. The operator
+reserves the evaluation budget before calling it and accounts for usage afterward.
+The capture does not select models, discover credentials or provide agent isolation.
+
+The new directory is private, with exclusive `stdout.jsonl` and `stderr.log` files.
+Stdout retains the reader's bounds; stderr is limited to 8 MiB. Both pipes drain
+under one deadline. Parent exit triggers group cleanup before waiting for EOF;
+timeout or invalid output also terminates and reaps the owned process.
+Raw output remains private, including after failure.
+
+`transport_status` describes collection, not task success. A timeout returns
+`timed_out` with no terminal candidate. Native failure or missing completion also
+cannot produce a terminal. `command_capture_complete` remains false, including
+after a successful live invocation. This connection does not qualify full command
+coverage, GitHub delivery, hidden verification or a release verdict.
