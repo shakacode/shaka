@@ -290,8 +290,8 @@ Use the skills you like for planning and engineering technique, and let Shaka
 deliver the result. Examples are
 [AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md),
 which turn an idea into a spec and tickets;
-[pstack](https://github.com/cursor/plugins/tree/main/pstack), which adds
-engineering principles and parallel workers;
+[pstack](https://github.com/cursor/plugins/tree/main/pstack), which provides
+investigation, design, application verification, and its own delivery workflows;
 [Ponytail](https://github.com/DietrichGebert/ponytail), which keeps each change
 as small as it can be while still complete; and
 [Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills), a
@@ -325,23 +325,109 @@ lets merges close them. On a public repository, the agent also checks with you
 before adopting criteria from a ticket that someone without write access wrote
 or edited.
 
-### Use a technique skill during delivery
+### Use pstack for a bounded part of delivery
+
+Choose Shaka to own the PR, and select a pstack procedure for a specific result:
+an explanation, a design, a runnable verification harness, or review findings.
+Shaka carries that result through repository checks, independent review, the
+PR description and walkthrough, and your merge decision. Its existing skill-use
+record names the skills actually applied and their contribution.
+
+This pairing is especially useful when a passing test suite leaves a user journey
+unproven. pstack's
+[verification-skill generator](https://github.com/cursor/plugins/blob/eb4db2b55b2b7dec3d9282754cddf0a56bf4ff10/pstack/skills/create-verification-skill/SKILL.md)
+can build a reusable way to launch, drive, inspect, and clean up an application.
+Ask for that harness as a scoped task before depending on it for delivery:
 
 ```text
-$shaka Fix https://github.com/OWNER/REPO/issues/N in poteto mode. You may use
-subagents for swarm and arena. Keep merge policy ask. Go.
+$shaka Use the installed pstack create-verification-skill procedure to build
+a verification harness for order search. Prove searching for O'Brien returns
+the seeded order. You may delegate. Keep startup repairs outside this task.
+Shaka owns the PR and merge policy ask. Go.
 ```
 
-The agent applies pstack's principles and playbook steps while it implements and
-verifies. Shaka still runs your checks, gets an independent review, publishes
-the PR in its own format, and returns it to you to merge. pstack's "don't block
-on the human" guidance does not turn Ask into Auto. Leave out the subagent
-sentence and the agent does the fan-out steps alone or asks first.
+Resolve the installed command before running it; the name and invocation syntax
+depend on the host. The named pstack investigation, design, and verification
+procedures are explicit requests, not automatic Shaka steps.
 
-A [community port of pstack for Claude Code and Codex](https://github.com/michael-denyer/pstack-claude)
-turns poteto mode on by itself. At the start of each session it tells the agent
-to use poteto mode for any task that touches more than one file, so you do not
-need to name it.
+| Result you need | Selected pstack procedure | Boundary to include |
+| --- | --- | --- |
+| Understand a subsystem | `how` | Return source pointers, invariants, and open questions; authorize its subagents. |
+| Agree on a design | `architect` | Say **with checkpoint; stop before implementing**. Upstream implements by default. |
+| Verify real application behavior | `create-verification-skill` | Name the journey and allowed harness changes; preserve evidence after cleanup. |
+| Repair a stale verification harness | `maintain-verification-skill` | Keep corrections within the harness; report product regressions separately. Shaka owns publication, including the procedure's proposed PR. |
+| Get specialist criticism | `interrogate` | Return findings; retain Shaka's required independent review and publication. |
+
+These boundaries follow the upstream
+[design](https://github.com/cursor/plugins/blob/eb4db2b55b2b7dec3d9282754cddf0a56bf4ff10/pstack/skills/architect/SKILL.md),
+[maintenance](https://github.com/cursor/plugins/blob/eb4db2b55b2b7dec3d9282754cddf0a56bf4ff10/pstack/skills/maintain-verification-skill/SKILL.md), and
+[review](https://github.com/cursor/plugins/blob/eb4db2b55b2b7dec3d9282754cddf0a56bf4ff10/pstack/skills/interrogate/SKILL.md)
+procedures. Using their selected techniques within Shaka is an adaptation; it does
+not mean the full `poteto-mode` workflow ran unchanged.
+
+### Hand verification evidence back to Shaka
+
+For an existing harness, give Shaka the task and the repository's actual verification
+command. The following is an illustrative handoff for an orders app, not a Shaka
+command or a reported test run:
+
+```text
+Task: Order search must preserve apostrophes and return the matching seeded order.
+Source: Installed verify-orders skill, generated with pstack; record its revision.
+Revision/environment: Full tested Git SHA; isolated local app and seeded database.
+Command: bin/verify-orders search-apostrophe --evidence-dir /tmp/order-search-proof
+Expected: Enter O'Brien in the browser; the matching order appears after submission.
+Observed: Matching order displayed; request completed successfully; no browser error.
+Artifacts: Screenshot, request trace, and harness log in /tmp/order-search-proof.
+Limits: Local fixture only; production authentication and deployment not exercised.
+Cleanup: App and database removed; evidence directory retained for publication.
+```
+
+The real handoff records actual commands, outcomes, and artifacts, including failures.
+Shaka checks what behavior the evidence demonstrates, which revision and environment
+it covers, and what remains unverified. A screenshot alone does not prove the request
+or its side effects. Relevant evidence goes into the existing PR verification and
+walkthrough, with public-safe artifacts published before local files disappear.
+
+After a code change, the agent reassesses affected evidence and satisfies Shaka's
+current-revision validation and review requirements. pstack Shipping has its own
+[rules for reusing verification across revisions](https://github.com/cursor/plugins/blob/eb4db2b55b2b7dec3d9282754cddf0a56bf4ff10/pstack/skills/poteto-mode/playbooks/shipping.md);
+those rules do not replace Shaka's gates. No new handoff file format or automatic
+harness discovery is required by this guide.
+
+### Check the host and installation
+
+As of October 22, 2026, official pstack documents
+[Cursor and Claude Code installations](https://github.com/cursor/plugins/blob/eb4db2b55b2b7dec3d9282754cddf0a56bf4ff10/pstack/README.md).
+Its [Claude adapter](https://github.com/cursor/plugins/blob/eb4db2b55b2b7dec3d9282754cddf0a56bf4ff10/pstack/docs/harness/claude-code.md)
+maps tools and paths, skips unsupported Cursor facilities, and maps non-Claude
+model choices to the session model. Several reviewers can therefore use the same
+model; their number alone does not establish model diversity.
+
+Codex users need a compatible independent port, such as
+[this community distribution](https://github.com/mdsmithaustin/pstack/blob/6283892ac48f5ee42e6045c118a5bd067a4e4b09/README.md),
+and its own setup instructions. Official Cursor support does not establish Codex
+compatibility. Check the installed revision, skill names, dependencies, hooks,
+and supported tools. Some installations prefix names with `pstack-`; Claude's
+official distribution uses `pstack:`. Session hooks may enable a full mode even
+when the prompt names only one technique.
+
+### Use Addy's checks where they fit
+
+Addy's
+[constraint-driven-development](https://github.com/addyosmani/agent-skills/blob/aeac41d4d005999432bb7312f7ff06383a91d59d/skills/constraint-driven-development/SKILL.md)
+can help turn an agreed quality requirement into an executable check. Treat adoption
+as a scoped repository setup task: start with one useful constraint and connect its
+check to the repository's existing validation command. Keep an existing authoritative
+rule in place instead of creating a competing contract.
+
+For example, a team with an agreed bundle-size limit could adopt a check that fails
+when the limit is exceeded. Shaka can deliver and review that check, then run it on
+later changes. The skill's prose itself enforces nothing, and its sample floor guard
+is a starting point, not proof of semantic correctness. Addy's full
+[`/build auto`](https://github.com/addyosmani/agent-skills/blob/aeac41d4d005999432bb7312f7ff06383a91d59d/.claude/commands/build.md)
+and [`/ship`](https://github.com/addyosmani/agent-skills/blob/aeac41d4d005999432bb7312f7ff06383a91d59d/.claude/commands/ship.md)
+flows own delivery decisions; choose one delivery owner for a task.
 
 ### Try a new skill pack with Shaka
 
@@ -361,7 +447,7 @@ Then check four things:
 
 1. **Does the pack turn itself on?** Some packs load at the start of every
    session, so they shape tasks you did not name them in. Ponytail and the
-   pstack port work this way.
+   some pstack ports work this way.
 2. **Does it change how Shaka delivers?** A pack that skips checks, merges,
    closes tickets, or replaces Shaka's PR description is its own delivery
    workflow. Keep it out of Shaka tasks.
@@ -370,10 +456,19 @@ Then check four things:
 4. **Do its reports clash with Shaka's?** Compare its closing summary with the
    PR description and the final report.
 
+For a verification trial, also check that the harness catches a known failure,
+passes after the fix, preserves inspectable evidence after cleanup, and covers
+the delivered revision. Record the host, pack revision, adaptations, and blocked
+steps. A successful trial supports that combination; it does not establish every
+host or playbook as compatible. A later UI task and a task revised after review
+can test the boundaries the first trial did not exercise.
+
 Shaka starts its Claude and Codex reviewers without your plugins, skills, and
-hooks. In a check with Ponytail and the pstack port loaded, neither reviewer
-received them, while a normal session did. The Grok reviewer has not been
-checked.
+hooks. In an earlier check with Ponytail and
+[michael-denyer's pstack port](https://github.com/michael-denyer/pstack-claude)
+loaded, neither reviewer received them, while a normal session did. That check
+does not establish isolation for every distribution. The Grok reviewer has not
+been checked.
 
 ### What each kind of skill can do
 
@@ -384,11 +479,11 @@ or approve a merge.
 | Kind of skill | Examples | With Shaka |
 | --- | --- | --- |
 | Planning | AI Hero `to-spec`, `to-tickets` | Its spec and tickets become the task. |
-| Technique or mode | pstack `poteto-mode`, principles, `how`, `tdd` | Shapes how the agent works inside each step. |
+| Technique | Selected pstack principles and verification procedures; Addy's constraint checks | Produces a bounded result inside a Shaka step. |
 | Parallel workers | pstack `swarm`, `arena`, `interrogate` | Runs only when you say the agent may delegate. Workers never publish or merge. |
 | Same-session review | AI Hero `code-review`, pstack `blast-radius` | Findings the agent weighs and fixes before Shaka's own review. The skill does not replace that review, which runs in a separate session and, when available, with another provider's model. |
 | PR text | AI Hero `pr`, pstack `technical-writing`, `unslop` | Advice on wording and presentation. Shaka's description keeps its own format and required fields. |
-| Its own delivery | AI Hero `implement-spec`, pstack Shipping, Babysit, Orchestrate, and Autopilot playbooks | A separate orchestrator that cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
+| Its own delivery | AI Hero `implement-spec`; full pstack `poteto-mode` with Shipping, Babysit, Orchestrate, or Autopilot; Addy's `/build auto` and `/ship` | A separate orchestrator that cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
 
 A rule file that a skill writes into your repository is part of the change
 under review. Shaka still takes its settings, such as reviewers and merge
