@@ -363,8 +363,7 @@ phases:
         list in run order. None is an error:
         when all listed paths fail, start a new host chat with the implementation model and no
         implementation conversation or Task/subagent context; its own failed CLI does not remove
-        that fallback. A `review_blocked` result from `reviewer` or `review run` means no configured
-        reviewer can start on this machine: follow its `guidance` instead of trying the others.
+        that fallback. On a `review_blocked` result, follow its `guidance`.
         Run a selected CLI through `shaka review run` as described in
         [invoke a reviewer locally](<{{package_root}}/skills/shaka/references/local-review.md>);
         do not substitute a current-host Task or subagent, or a more expensive same-provider model,
