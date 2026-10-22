@@ -85,7 +85,7 @@ module Shaka
       report = PostImplementationReport.read(@result.fetch('report'), head: @head)
       disposition = PostImplementationDisposition.read(@result['disposition'], head: @head, report:)
       @disposition = disposition.fetch('recommendation')
-      @state = @disposition == 'Merge' ? 'ready' : 'blocked'
+      @state = PostImplementationDisposition.merge?(disposition) ? 'ready' : 'blocked'
       @summary = disposition.fetch('reason')
       verification = report.fetch('summary', report.fetch('reasons').first)
       ["## Recommendation: #{@disposition}", @summary, *next_line(disposition),

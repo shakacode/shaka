@@ -2,6 +2,7 @@
 
 require_relative '../error'
 require_relative '../post_implementation/evidence'
+require_relative 'merge_warning_region'
 
 module Shaka
   # Reads the description's recommendation and verification verdict from the checkpoint published for its head,
@@ -18,7 +19,6 @@ module Shaka
         supplied.any?
 
       published = published(PostImplementationEvidence.new(github), checkpoint['head'])
-      awaiting!(published['recommendation'], content['decisions'])
       published.empty? ? content : content.merge('checkpoint' => checkpoint.merge(published))
     end
 
@@ -26,10 +26,12 @@ module Shaka
       { 'recommendation' => evidence.recommendation(head), 'verification_adequacy' => evidence.adequacy(head) }.compact
     end
 
-    # The open decisions replace the headline label, so they must carry the question the checkpoint waits on.
-    def awaiting!(published, decisions)
-      return unless published == PostImplementationReport::AWAITING_DECISION
+    # A waiting banner sends the maintainer to the description, so that description must list the question,
+    # whether or not it carries a checkpoint object.
+    def require_decisions!(content, pull, repository)
+      decisions = content['decisions']
       return if decisions.is_a?(Array) && decisions.any?
+      return unless MergeWarningRegion.awaiting?(pull['body'].to_s, repository, pull.dig('head', 'sha'))
 
       raise Error, 'The checkpoint waits for a maintainer decision; list that question in decisions.'
     end

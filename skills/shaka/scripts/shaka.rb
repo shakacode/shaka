@@ -147,6 +147,7 @@ def rendered_description(described, github, pull, workflow_version, options)
   timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
   rendered = Shaka::Publication.description(carried, workflow_version, pull, settings, timeline)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
+  Shaka::CheckpointRecommendation.require_decisions!(carried, pull, github.repository)
   [rendered, carried, usage_records]
 end
 

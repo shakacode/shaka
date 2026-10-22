@@ -169,7 +169,7 @@ Choose one fixed value; Ruby parses these values, so they are not configurable:
 | Recommendation | Meaning and next step |
 | --- | --- |
 | Merge | The result is appropriate to ship. Complete required checks, reviews, and the task's Ask or Auto path. |
-| Merge after maintainer decision | You would merge, but unaccepted concerns or a Simplify/reframe verdict wait on the maintainer. Ask in description `decisions`. After the answer, record each accepted concern, or run the checkpoint again with the decision in its evidence packet. |
+| Merge after maintainer decision | You would merge, but unaccepted concerns or a Simplify/reframe verdict wait on the maintainer. Ask in description `decisions`. After the answer, record each accepted concern, or run the checkpoint again with the decision in its evidence packet. A recommendation inside a decision agrees with this disposition. |
 | Revise before merge | The direction is sound. Name the specific changes, make them, then repeat affected verification and review. |
 | Reconsider approach | Working code revealed a wrong or disproportionate solution. Explain why and propose an alternative through the existing maintainer decision path. |
 | Do not merge | Recommend abandoning or replacing this PR, with the reason and next step. The maintainer decides whether to close it. |
@@ -210,7 +210,7 @@ It rejects **Merge** when verification has a blocking conclusion, or lists a con
 without a matching `accepted_concerns` entry, and never verifies who made a decision.
 It accepts **Merge after maintainer decision** only while Merge is refused and the verdict
 is not Do not merge, and `description` refuses an empty `decisions` list while that is the
-current head's recommendation. Every decision's recommendation agrees with the disposition.
+current head's recommendation.
 The other three values publish the existing `blocked` attestation, including when
 verification says **Proceed**. A disposition for an older head cannot publish. A failed
 or opted-out execution has no completed verification to attach a disposition to;

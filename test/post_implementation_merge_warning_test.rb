@@ -49,7 +49,7 @@ class PostImplementationMergeWarningTest < Minitest::Test
       assert_equal 0, status
       assert github.snapshot['isDraft']
       assert_includes banner, "Not ready to merge — waiting for the maintainer's decision."
-      assert_includes banner, 'Maintainer: answer the decisions below.'
+      assert_includes banner, 'Maintainer: make the decision the linked checkpoint asks for.'
       refute_includes banner, 'Do not merge'
     end
   end
