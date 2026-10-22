@@ -20,6 +20,8 @@ module Shaka
     # Each reference in a list after one keyword counts as claimed, so the note can name the unlinked ones.
     CLAIM = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+(#{REFERENCE}(?:\s*(?:,|,?\s*and|&)\s*#{REFERENCE})*)/i
     FIELDS = %w[why scope root_cause].freeze
+    # GitHub links no keyword inside code, so a quoted example such as `Fixes #1` claims nothing.
+    CODE = /(`+).*?\1/m
     # A read that fails or comes back partial is reported, never raised, because the note is advisory.
     FAILURES = [Error, KeyError, TypeError, SystemCallError].freeze
 
@@ -33,7 +35,7 @@ module Shaka
 
     # Each issue the texts say this PR fixes, as OWNER/REPO#N.
     def claimed(texts, repository)
-      texts.flat_map { |text| text.scan(CLAIM).flatten }.flat_map { |list| list.scan(REFERENCE) }
+      texts.flat_map { |text| text.gsub(CODE, ' ').scan(CLAIM).flatten }.flat_map { |list| list.scan(REFERENCE) }
            .map { |reference| normalize(reference, repository) }.uniq
     end
 

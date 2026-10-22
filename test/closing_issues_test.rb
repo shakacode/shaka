@@ -45,7 +45,8 @@ class ClosingIssuesTest < Minitest::Test
   def test_a_reference_without_a_keyword_claims_nothing_and_reads_nothing
     github = FakeGitHub.new([])
 
-    ['Refs #763.', 'Part of #683.', 'This was fixed in #806.', 'Mentions #762 only.'].each do |text|
+    ['Refs #763.', 'Part of #683.', 'This was fixed in #806.', 'Mentions #762 only.',
+     'Warns when `Fixes #1 and #2` closes only #1.', 'Quotes ``Fixes #3`` too.'].each do |text|
       assert_equal({}, Shaka::ClosingIssues.note(content(text), github), text)
     end
     assert_equal 0, github.reads
