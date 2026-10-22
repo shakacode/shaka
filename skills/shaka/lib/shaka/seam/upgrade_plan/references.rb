@@ -5,6 +5,8 @@ module Shaka
     class UpgradePlan
       # Tracked reference inventory and checkout overlap checks.
       module References
+        include RelativeReferences
+
         private
 
         def scan_references
@@ -40,13 +42,17 @@ module Shaka
           scan_relative_helper_dependency(path, text)
           scan_unmoved_tool(path, text)
           scan_complex_references(path, text)
-          return unless text.include?("#{PATHS::DIRECTORY}/")
-
           executable = text.start_with?('#!') || stat.mode.anybits?(0o111)
-          updated = text.lines.map { |line| rewrite_line(path, line, executable) }.join
+          updated = rewrite_relative_references(path, rewrite_lines(path, text, executable), executable)
           return if updated == text
 
           @changes << { from: path, to: path, after: file_state_from_text(stat, updated) }
+        end
+
+        def rewrite_lines(path, text, executable)
+          return text unless text.include?("#{PATHS::DIRECTORY}/")
+
+          text.lines.map { |line| rewrite_line(path, line, executable) }.join
         end
 
         def file_state_from_text(stat, text)

@@ -17,6 +17,7 @@ require_relative 'upgrade_plan/indexed_references'
 require_relative 'upgrade_plan/private_tools'
 require_relative 'upgrade_plan/markdown_fragments'
 require_relative 'upgrade_plan/continued_references'
+require_relative 'upgrade_plan/relative_references'
 require_relative 'upgrade_plan/references'
 
 module Shaka
