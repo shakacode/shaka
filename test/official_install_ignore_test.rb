@@ -33,6 +33,18 @@ class OfficialInstallIgnoreTest < Minitest::Test
     assert_refusal 'Installation skills are group or world writable'
   end
 
+  # A symlink's own mode bits mean nothing, and Linux reports every symlink as 0777.
+  def test_verify_accepts_an_ignored_symlink
+    official_install
+    File.write(File.join(@root, '.git/info/exclude'), "build\n")
+    link = File.join(@root, 'skills/shaka/build')
+    File.symlink('SKILL.md', link)
+    lchmod_all(link)
+
+    output, status = invoke('--verify')
+    assert_predicate status, :success?, output
+  end
+
   def test_verify_and_update_skip_a_directory_that_holds_only_ignored_files
     official_install
     File.write(File.join(@root, '.git/info/exclude'), ".DS_Store\n")
@@ -66,5 +78,13 @@ class OfficialInstallIgnoreTest < Minitest::Test
 
     output, status = Open3.capture2e({ 'HOME' => @home, 'GIT_DIR' => other }, RbConfig.ruby, @installer, '--verify')
     assert_predicate status, :success?, output
+  end
+
+  private
+
+  def lchmod_all(link)
+    File.lchmod(0o777, link)
+  rescue NotImplementedError
+    nil
   end
 end

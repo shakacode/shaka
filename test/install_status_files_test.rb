@@ -26,6 +26,19 @@ class InstallStatusFilesTest < Minitest::Test
     assert_includes report['next_command'], 'chmod -R go-w'
   end
 
+  def test_an_ignored_symlink_is_healthy
+    root = default_install
+    File.write(File.join(root, '.git/info/exclude'), "build\n")
+    link = File.join(root, 'skills/shaka/build')
+    File.symlink('SKILL.md', link)
+    begin
+      File.lchmod(0o777, link)
+    rescue NotImplementedError
+      nil
+    end
+    assert_equal 'A1', status(root)['state']
+  end
+
   # Installation refuses a symlink in a skill, and chmod cannot fix one, so status asks to move it.
   def test_a_symlink_in_a_skill_is_named
     root = default_install

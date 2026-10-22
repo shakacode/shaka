@@ -73,7 +73,7 @@ module Shaka
       end
 
       def writable(paths, skills)
-        path = paths.find { |entry| File.lstat(entry).mode.anybits?(0o022) }
+        path = paths.find { |entry| !File.symlink?(entry) && File.lstat(entry).mode.anybits?(0o022) }
         return unless path
 
         finding('B10', "#{path} is group or world writable", command: "chmod -R go-w #{Shellwords.escape(skills)}")
