@@ -1,0 +1,93 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require_relative 'support/seam_upgrade_fixture'
+
+# Shapes seen in real repositories that keep their meaning after the upgrade.
+class SeamUpgradeUnmovedToolTest < Minitest::Test
+  include SeamUpgradeFixture
+
+  README = Class.new do
+    include Shaka::Seam::InitializerReadme
+
+    public :readme_source
+  end.new
+
+  ROOT_TOOLS = {
+    'inline root cd' => %(#!/bin/sh\nset -eu\ncd "$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"\n) +
+                        %(exec bin/probe\n),
+    'root assignment' => %(#!/bin/sh\nset -eu\nroot="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"\n) +
+                         %(exec "$root/bin/probe"\n),
+    'Ruby root' => %(#!/usr/bin/env ruby\nroot = File.expand_path("../..", __dir__)\nputs root\n),
+    'require outside the layout' => %(#!/usr/bin/env ruby\nrequire_relative "../skills/helper/lib/probe"\n),
+    'require an unmoved sibling' => %(#!/usr/bin/env ruby\nrequire_relative "formatter_support"\n)
+  }.freeze
+
+  SIBLING_TOOLS = {
+    'dirname sibling' => %(#!/bin/sh\nexec "$(dirname "$0")/test"\n),
+    'root then sibling' => %(#!/bin/sh\ncd "$(dirname "$0")/../.."\nexec "$(dirname "$0")/validate"\n),
+    'require a moved sibling' => %(#!/usr/bin/env ruby\nrequire_relative "validate"\n)
+  }.freeze
+
+  def test_unmoved_tool_finding_the_root_does_not_block
+    ROOT_TOOLS.each do |name, source|
+      with_repository do |root|
+        write_tool(root, 'formatter', source)
+        preview = report(root)
+        refute(preview.fetch('blockers').any? { |item| item.include?('formatter') }, name)
+      end
+    end
+  end
+
+  def test_unmoved_tool_reaching_a_moved_sibling_blocks
+    SIBLING_TOOLS.each_value do |source|
+      with_repository do |root|
+        write_tool(root, 'formatter', source)
+        assert_blocked_with(root, '.agents/bin/formatter: tool uses an invocation-relative path')
+      end
+    end
+  end
+
+  def test_generated_pointer_is_rewritten_beside_retained_tools
+    with_repository do |root|
+      write_tool(root, 'build', "#!/bin/sh\necho ok\n")
+      path = write_tracked(root, '.agents/shaka.md', README.readme_source(Shaka::Configuration::Layout::LEGACY))
+      assert_equal 'applied', apply_upgrade(root).fetch('status')
+      assert_equal README.readme_source(Shaka::Configuration::Layout::NEW), File.read(path)
+    end
+  end
+
+  def test_hand_written_note_beside_retained_tools_still_blocks
+    with_repository do |root|
+      write_tool(root, 'build', "#!/bin/sh\necho ok\n")
+      write_tracked(root, '.agents/notes.md', "Wrappers live in `bin/`.\n")
+      assert_blocked_with(root, '.agents/notes.md: relative old-layout reference bin/')
+    end
+  end
+
+  def test_markdown_link_leaving_the_layout_is_unchanged
+    source = "See [.agents/workflows/x.md](../../.agents/workflows/x.md).\n" \
+             "See [`.agents/docs/a.md`](../../.agents/docs/a.md), too.\n"
+    with_repository do |root|
+      path = write_tracked(root, '.claude/prompts/review.md', source)
+      assert_equal 'applied', apply_upgrade(root).fetch('status')
+      assert_equal source, File.read(path)
+    end
+  end
+
+  def test_parent_traversal_inside_the_layout_still_blocks
+    with_repository do |root|
+      write_tracked(root, 'docs/run.md', "Run .agents/workflows/../bin/test first.\n")
+      assert_blocked_with(root, 'docs/run.md: normalized old-layout reference')
+    end
+  end
+
+  private
+
+  def write_tool(root, name, source)
+    path = File.join(root, '.agents/bin', name)
+    File.write(path, source)
+    File.chmod(0o755, path)
+    commit_fixture(root, name)
+  end
+end
