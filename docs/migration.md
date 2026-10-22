@@ -29,15 +29,18 @@ and anything that blocks the upgrade. Nothing changes until you approve the whol
 preview. The upgrade command refuses to apply while any blocker remains, or when
 files changed after the preview; the agent then previews again.
 
+The upgrade also rewrites old paths in historical Markdown, such as dated notes,
+decision logs, and review records. Git history keeps the original text. Changelog,
+history, and release-notes files stay as written. A Markdown line that starts with
+a word such as "Previously" or "Historically" blocks the upgrade until you edit it,
+because the same line may hold a current instruction.
+
 The upgrade keeps your settings, script modes, and command arguments. Repaired
 scripts find the repository root with Git instead of counting parent directories.
 Unrelated tools in `.agents/bin/` stay where they are. The upgrade command runs
 none of your repository's scripts, so check the result and run your validation before
 committing. Merge it in its own PR; until then, Shaka keeps reading settings from
 your default branch.
-
-The upgrade also rewrites old paths in historical Markdown, such as dated notes,
-decision logs, and review ledgers. Git history keeps the original text.
 
 If the upgrade is interrupted, ask your agent to recover it. The recovery command
 restores only the files that upgrade recorded. It refuses to overwrite a file you
