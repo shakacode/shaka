@@ -3,6 +3,7 @@
 require 'open3'
 require 'pathname'
 require_relative 'error'
+require_relative 'configuration/git_memo'
 
 module Shaka
   # Resolves a repository path against one immutable Git tree using filesystem symlink semantics.
@@ -24,7 +25,9 @@ module Shaka
     def entry(path)
       parent = File.dirname(path)
       treeish = parent == '.' ? @sha : "#{@sha}:#{parent}"
-      output, _error, status = @git.call('-C', @root, 'ls-tree', '-z', treeish)
+      output, _error, status = Configuration::GitMemo.capture([:tree, @git, @root, treeish], @sha) do
+        @git.call('-C', @root, 'ls-tree', '-z', treeish)
+      end
       return unless status.success? && !output.empty?
 
       parse_entry(output, File.basename(path))

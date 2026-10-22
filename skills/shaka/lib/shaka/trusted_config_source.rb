@@ -80,13 +80,7 @@ module Shaka
       text
     end
 
-    def resolve(ref)
-      arguments = ['git', '-C', @root, 'rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}"]
-      sha, error, status = Open3.capture3(*arguments)
-      raise Error, "Invalid trusted ref #{ref}: #{error.strip}" unless status.success?
-
-      sha.strip
-    end
+    def resolve(ref) = resolve_commit(root: @root, ref:, label: 'trusted ref')
 
     def optional_commands(sha, layout)
       validate_command_directory(sha, layout)
@@ -113,7 +107,9 @@ module Shaka
 
     def validate_command_directory(sha, layout)
       directory = layout.command_directory
-      type, error, status = Open3.capture3('git', '-C', @root, 'cat-file', '-t', "#{sha}:#{directory}")
+      type, error, status = Configuration::GitMemo.capture([:object_type, @root, sha, directory], sha) do
+        Open3.capture3('git', '-C', @root, 'cat-file', '-t', "#{sha}:#{directory}")
+      end
       return if status.success? && type.strip == 'tree'
       raise Error, "#{directory} at #{sha} must be a real directory, not a symlink" if status.success?
 
