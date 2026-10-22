@@ -24,14 +24,16 @@
 - When the order already shows the relation, drop "therefore", "thus", "so",
   "however", and "but", and split the joined clauses into separate sentences.
 - Use familiar words; explain unfamiliar project terms through the behavior they name.
-- Name the feature, user, or dependency behind references to an agreed design
-  or earlier discussion; supply the context the reader needs.
+- Explain a PR’s problem and benefit for a maintainer who has not read the issue or design.
+  For preparatory work, connect this part to the later user outcome.
 - Keep exact commands, identifiers, risks, and evidence intact.
 - Delete greetings, praise, and claims of significance that add no information.
   State each visible conclusion once; different wording or labels do not add meaning.
 - Describe observable behavior rather than implementation jargon. For example:
-  - Instead of: “Adds validation of the configured base parameter.”
-  - Write: “Shaka now rejects an invalid base branch before the agent starts work.”
+  - Instead of: “Tier 3 needs a bounded reader for native events.”
+  - Write: “We need to test whether agents follow the PR workflow, including waiting
+    for merge permission. This change reads Codex’s reported activity for those tests.
+    Running and grading the full workflow remains future work.”
 - Keep explanations proportional to the change. Keep the average sentence under
   about 15 words; no sentence should need more than 25. Keep paragraphs to about
   four sentences when prose is useful.
