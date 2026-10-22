@@ -62,7 +62,7 @@ prose_limits: # Visible PR description and walkthrough prose.
   max_description_words: 300
   words_per_changed_line: 4 # Proportional budget: 150 words plus this many per changed line.
 
-project_guidance: {} # None: no repository guides for PR evidence or merge readiness.
+project_guidance: {} # None: no repository guides for PR evidence, merge readiness, or walkthroughs.
 
 # Command-line defaults; config.yml does not set these, but the flags override them per run.
 runtime:

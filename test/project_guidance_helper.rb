@@ -5,7 +5,8 @@ require 'shaka/configuration/fingerprint'
 
 # Builds repositories with project guidance and reads it back through `shaka guidance`.
 module ProjectGuidanceHelper
-  GUIDANCE = { 'pr_evidence' => '.agents/pr-evidence.md', 'merge_readiness' => '.agents/merge-readiness.md' }.freeze
+  GUIDANCE = { 'pr_evidence' => '.agents/pr-evidence.md', 'merge_readiness' => '.agents/merge-readiness.md',
+               'walkthrough' => '.agents/walkthrough.md' }.freeze
 
   private
 

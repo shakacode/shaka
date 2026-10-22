@@ -646,6 +646,7 @@ which the agent reads at the moment they apply instead of carrying them through 
 project_guidance:
   pr_evidence: .agents/shaka/pr-evidence.md
   merge_readiness: .agents/shaka/merge-readiness.md
+  walkthrough: .agents/shaka/walkthrough.md
 ```
 
 - `pr_evidence`: read before the agent writes the PR description. For example, a
@@ -656,6 +657,10 @@ project_guidance:
   each requirement and its status, and an unmet one blocks the merge-ready claim.
   Write standing rules for every PR here; a task's own acceptance criteria stay in
   its issue or spec.
+- `walkthrough`: read before the agent writes the code walkthrough. For example, a
+  Rails app can ask every walkthrough that adds a migration to say whether it locks
+  a large table and how to roll it back. The guide adds to Shaka's own walkthrough
+  rules, such as opening with the behavior that changed; it does not replace them.
 
 When `pr_evidence` is set and your repository has a pull request template, the agent
 also reads that template and fills any of its sections Shaka's description does not
@@ -668,7 +673,7 @@ Put anything a command can check in your [validate script](#standard-command-scr
 or CI, where a failure stops the PR. Keep the guides for judgment calls, such as
 whether a preview looks right, which the agent reports rather than proves.
 
-Set either one or both. Shaka reads the guides and the template from
+Set any of them. Shaka reads the guides and the template from
 [the same place as prompt files](#where-shaka-reads-a-prompt-file), with the same file checks,
 so a PR cannot rewrite the requirements it is judged by. A PR that edits them is judged
 by the version already merged. Changing them makes earlier validation and review results
