@@ -62,7 +62,8 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     'quoted inline' => "Run `cd .age\"nts\" && bin/validate`.\n",
     'wrapped' => "Run `bin/validate` from\n`.agents`.\n",
     'inline env' => "Run `env -C .agents bin/validate`.\n",
-    'same line' => "Run `bin/validate` from `.agents`.\n"
+    'same line' => "Run `bin/validate` from `.agents`.\n",
+    'prose then fence' => "Run these from the `.agents` directory:\n\n```sh\nbin/validate\n```\n"
   }.freeze
 
   def test_shell_code_in_markdown_still_blocks
@@ -109,6 +110,18 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
       File.chmod(0o755, path)
       commit_fixture(root, 'executable markdown')
       assert_blocked_with(root, 'bare old-layout directory')
+    end
+  end
+end
+
+class SeamUpgradeMarkdownRetainedToolTest < Minitest::Test
+  include SeamUpgradeFixture
+
+  def test_prose_command_directory_blocks_while_own_tools_remain
+    with_repository do |root|
+      write_tracked(root, '.agents/bin/custom', "custom tool\n")
+      write_tracked(root, 'ledger.md', "Wrappers live in `.agents/bin/`.\n")
+      assert_blocked_with(root, 'old command-directory reference')
     end
   end
 end

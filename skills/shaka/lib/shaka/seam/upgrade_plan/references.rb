@@ -66,7 +66,7 @@ module Shaka
           record_reference(path, line, keys)
           return historical_reference(path, line) if historical_line?(path, line)
 
-          line = rewrite_prose_command_directory(line) if prose
+          line = rewrite_prose_command_directory(line, prose)
           return block_directory_reference(path, line) if directory_reference?(line, path)
           return block_reference(path, keys, executable, line) if blocked_reference?(keys, executable, line)
 

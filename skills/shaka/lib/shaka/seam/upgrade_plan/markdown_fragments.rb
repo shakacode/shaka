@@ -88,10 +88,27 @@ module Shaka
         end
 
         # Markdown prose can name the old directory and a command paragraphs apart, so outside code the two
-        # block only within one paragraph, where agents may follow them as an instruction.
+        # block only within one instruction: a prose paragraph and the code block right after it.
         def markdown_directory_dependency?(text)
-          text.split(/\n(?:[ \t]*\r?\n)+/).any? { |paragraph| shell_directory_dependency?(paragraph) } ||
+          markdown_instructions(text).any? { |instruction| shell_directory_dependency?(instruction) } ||
             shell_directory_dependency?(markdown_code(text))
+        end
+
+        def markdown_instructions(text)
+          blocks = markdown_blocks(text)
+          blocks.each_with_index.filter_map do |(code, body), index|
+            following_code, following = blocks[index + 1]
+            body + (following_code ? following : '') unless code
+          end
+        end
+
+        # Splits text into runs of prose or code; a blank prose line ends a run.
+        def markdown_blocks(text)
+          code = markdown_code_lines(text)
+          runs = text.lines.each_with_index.chunk_while do |(line, index), (_next_line, next_index)|
+            code[index] == code[next_index] && (code[index] || line.match?(/\S/))
+          end
+          runs.map { |run| [code[run.first.last], run.map(&:first).join] }
         end
 
         # Markdown runs nothing outside code, so prose lines are blanked and fenced or indented lines stay.
@@ -111,8 +128,11 @@ module Shaka
           text.lines.map { |line| code.code?(line) }
         end
 
-        # Prose names the old command directory as a place, so it is rewritten like a command path.
-        def rewrite_prose_command_directory(line)
+        # Prose names the old command directory as a place, so it is rewritten like a command path, unless
+        # the repository's own tools stay behind in it.
+        def rewrite_prose_command_directory(line, prose)
+          return line unless prose && !retained_command_file?
+
           pattern = %r{(?<![[:alnum:]_./-])(?<lead>\./)?#{Regexp.escape(PATHS::COMMAND_DIRECTORY)}
                        (?=/(?![[:alnum:]_-])|[^[:alnum:]_./-]|\.(?![[:alnum:]_/-])|$)}xo
           line.gsub(pattern) { "#{::Regexp.last_match[:lead]}#{PATHS::NEW_COMMAND_DIRECTORY}" }
