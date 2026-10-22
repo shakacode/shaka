@@ -11,7 +11,7 @@ class ReviewPromptTest < Minitest::Test
 
   def render(*extra)
     out, err, status = Open3.capture3(
-      File.expand_path('../skills/shaka/scripts/shaka', __dir__), 'review-prompt', *BASE, *extra
+      *SHAKA_COMMAND, 'review-prompt', *BASE, *extra
     )
     raise err unless status.success?
 
@@ -60,7 +60,7 @@ class ReviewPromptTest < Minitest::Test
 
   def test_reports_a_missing_required_flag_as_a_usage_error
     _, err, status = Open3.capture3(
-      File.expand_path('../skills/shaka/scripts/shaka', __dir__),
+      *SHAKA_COMMAND,
       'review-prompt', '--base', 'main', '--reviewer', 'openai/codex'
     )
 
@@ -79,7 +79,7 @@ class ReviewPromptTest < Minitest::Test
 
   def test_rejects_an_empty_required_value
     _, err, status = Open3.capture3(
-      File.expand_path('../skills/shaka/scripts/shaka', __dir__),
+      *SHAKA_COMMAND,
       'review-prompt', '--base', 'main', '--head', '', '--reviewer', 'openai/codex'
     )
 
@@ -89,7 +89,7 @@ class ReviewPromptTest < Minitest::Test
 
   def test_rejects_a_reviewer_without_a_model_family
     _, err, status = Open3.capture3(
-      File.expand_path('../skills/shaka/scripts/shaka', __dir__),
+      *SHAKA_COMMAND,
       'review-prompt', '--base', 'main', '--head', 'abc1234', '--reviewer', 'openai'
     )
 
@@ -122,7 +122,7 @@ class ReviewPromptTest < Minitest::Test
       path = File.join(directory, 'review-prompt.md')
       File.write(path, "  \n")
       _, err, status = Open3.capture3(
-        File.expand_path('../skills/shaka/scripts/shaka', __dir__), 'review-prompt', *BASE, '--prompt-file', path
+        *SHAKA_COMMAND, 'review-prompt', *BASE, '--prompt-file', path
       )
 
       refute_predicate status, :success?

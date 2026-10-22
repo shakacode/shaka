@@ -7,7 +7,7 @@ class CliFeaturePublicationTest < Minitest::Test
   include CliOpeningCheckFakes
   include EvidenceFixture
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   SUMMARY = 'Feature descriptions report the settings used.'
 
   def test_description_without_settings_flags_still_blocks_live_configuration_diff
@@ -108,7 +108,7 @@ class CliFeaturePublicationTest < Minitest::Test
     write_fake_commands(dir)
     path = File.join(dir, 'content.json')
     File.write(path, JSON.generate(content))
-    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, COMMAND,
+    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, *COMMAND,
                    'description', 'shakacode/shaka', '1', '--root', root, '--content-file', path, *flags)
   end
 

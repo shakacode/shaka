@@ -56,7 +56,7 @@ module SeamInitializerLayoutHelpers
   end
 
   def seam_check(root, *)
-    output, error, status = Open3.capture3(SeamInitializerTestHelpers::COMMAND, 'seam', 'check', '--root', root, *)
+    output, error, status = Open3.capture3(*SeamInitializerTestHelpers::COMMAND, 'seam', 'check', '--root', root, *)
     assert_predicate status, :success?, error
     JSON.parse(output)
   end

@@ -80,12 +80,12 @@ class WorkflowConfigTest < Minitest::Test
 end
 
 class WorkflowCommandTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   GUIDE_LINK = /\]\(<([^>]+\.md)(?:#([\w-]+))?>\)/
   MARKDOWN_LINK_TARGET = /\]\((<[^>]*>|[^)\s]+)/
 
   def test_workflow_command_renders_every_phase_and_boundary
-    output, status = Open3.capture2e(COMMAND, 'workflow')
+    output, status = Open3.capture2e(*COMMAND, 'workflow')
 
     assert_predicate status, :success?, output
     assert_equal 7, output.scan(/^## \d+\. /).size
@@ -95,7 +95,7 @@ class WorkflowCommandTest < Minitest::Test
   end
 
   def test_workflow_uses_resolved_configuration_paths
-    output, status = Open3.capture2e(COMMAND, 'workflow')
+    output, status = Open3.capture2e(*COMMAND, 'workflow')
 
     assert_predicate status, :success?, output
     assert_includes output, 'run the reported scripts'
@@ -105,14 +105,14 @@ class WorkflowCommandTest < Minitest::Test
   end
 
   def test_workflow_command_rejects_arguments
-    output, status = Open3.capture2e(COMMAND, 'workflow', 'candidate.yml')
+    output, status = Open3.capture2e(*COMMAND, 'workflow', 'candidate.yml')
 
     refute_predicate status, :success?
     assert_includes output, 'Usage: shaka workflow'
   end
 
   def test_rendered_guide_links_resolve_to_existing_headings
-    output, status = Open3.capture2e(COMMAND, 'workflow')
+    output, status = Open3.capture2e(*COMMAND, 'workflow')
     links = output.scan(GUIDE_LINK)
 
     assert_predicate status, :success?, output
@@ -124,7 +124,7 @@ class WorkflowCommandTest < Minitest::Test
   end
 
   def test_rendered_guide_links_are_absolute_or_web_urls
-    output, status = Open3.capture2e(COMMAND, 'workflow')
+    output, status = Open3.capture2e(*COMMAND, 'workflow')
     relative = output.scan(MARKDOWN_LINK_TARGET).flatten.grep(/\.md(?:#|>|\z)/)
                      .reject { |target| target.start_with?('</', 'https://') }
 

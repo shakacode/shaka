@@ -22,7 +22,7 @@ module CliOpeningCheckFakes
     options.push('--opening-reviewer', reviewer) if reviewer
     options.push('--opening-model', model) if model
     Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir },
-                   self.class::COMMAND, 'description', 'owner/repo', '1', *options)
+                   *self.class::COMMAND, 'description', 'owner/repo', '1', *options)
   end
 
   def write_fake_commands(dir)

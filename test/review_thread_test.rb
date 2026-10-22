@@ -7,7 +7,7 @@ class ReviewThreadTest < Minitest::Test
   include GitHubHelper
 
   THREAD = 'PRRT_kwDOExample'
-  SCRIPT = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  SCRIPT = SHAKA_COMMAND
 
   def test_resolve_marks_an_unresolved_thread_after_this_account_replied
     github = client(user_response, thread_page, mutation_response(true))
@@ -81,7 +81,7 @@ class ReviewThreadTest < Minitest::Test
   end
 
   def test_resolve_command_requires_a_thread_id
-    output, status = Open3.capture2e(SCRIPT, 'resolve', 'owner/repo', '42')
+    output, status = Open3.capture2e(*SCRIPT, 'resolve', 'owner/repo', '42')
 
     assert_equal 1, status.exitstatus
     assert_includes output, '--thread'

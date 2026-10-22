@@ -6,7 +6,7 @@ require 'fileutils'
 require 'json'
 
 module ClaudeUsageFixture
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   COMMIT = 'a' * 40
   SESSION = '00000000-0000-4000-8000-000000000002'
   NO_HOST = { 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => nil, 'CLAUDE_CODE_SESSION_ID' => nil,
@@ -54,7 +54,7 @@ module ClaudeUsageFixture
   end
 
   def report(*, environment: {})
-    output, error, status = Open3.capture3(NO_HOST.merge(environment), COMMAND, 'usage', '--commit', COMMIT,
+    output, error, status = Open3.capture3(NO_HOST.merge(environment), *COMMAND, 'usage', '--commit', COMMIT,
                                            '--contribution', 'implementation', *)
     assert_predicate status, :success?, error
     output
@@ -235,7 +235,7 @@ class ClaudeUsageFailuresTest < Minitest::Test
   def test_turn_that_matches_no_response_fails_and_names_the_expected_field
     Dir.mktmpdir do |directory|
       file = transcript(directory, 'session.jsonl', [prompt('old'), reply('m0', 900), prompt('new'), reply(nil, 1)])
-      output, error, status = Open3.capture3(NO_HOST, COMMAND, 'usage', '--commit', COMMIT, '--contribution',
+      output, error, status = Open3.capture3(NO_HOST, *COMMAND, 'usage', '--commit', COMMIT, '--contribution',
                                              'implementation', '--host', 'claude-code', '--file', file,
                                              '--turn', 'old', '--turn', 'new', '--turn', 'user-uuid')
       refute_predicate status, :success?
@@ -260,7 +260,7 @@ class ClaudeUsageFailuresTest < Minitest::Test
   def test_both_host_contexts_require_an_explicit_host
     environment = { 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => SESSION,
                     'CLAUDE_CODE_SESSION_ID' => SESSION }
-    output, error, status = Open3.capture3(environment, COMMAND, 'usage', '--commit', COMMIT,
+    output, error, status = Open3.capture3(environment, *COMMAND, 'usage', '--commit', COMMIT,
                                            '--contribution', 'implementation')
     refute_predicate status, :success?
     assert_empty output
@@ -419,7 +419,7 @@ class ClaudeUsageSinceTimeTest < Minitest::Test
   def test_start_time_refuses_an_aggregate_print_result
     Dir.mktmpdir do |directory|
       file = print_result_file(directory, timestamp: '2026-09-14T12:00:01Z')
-      output, error, status = Open3.capture3(NO_HOST, COMMAND, 'usage', '--host', 'claude-code', '--file', file,
+      output, error, status = Open3.capture3(NO_HOST, *COMMAND, 'usage', '--host', 'claude-code', '--file', file,
                                              '--commit', COMMIT, '--contribution', 'review',
                                              '--since-time', '2026-09-14T12:00:00Z')
 

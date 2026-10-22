@@ -12,7 +12,7 @@ class OpeningRealpathWrapperTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include CliOpeningCheckFakes
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'Pull requests explain the outcome first.'
 

@@ -65,7 +65,7 @@ class InstallRecoveryTest < Minitest::Test
     output, status = run_installer('--skills-dir', @skills_dir)
     assert_predicate status, :success?, output
     File.unlink(File.join(package_path, '.shaka-install.json'))
-    output, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor',
+    output, status = Open3.capture2e(*installed_helper, 'doctor',
                                      '--installation-json')
 
     refute_predicate status, :success?

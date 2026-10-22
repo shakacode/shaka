@@ -6,7 +6,7 @@ require 'time'
 require 'shaka/publication/publication'
 
 module UsageFixture
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   COMMIT = 'a' * 40
   THREAD = '00000000-0000-0000-0000-000000000001'
   NATIVE_OPENAI = <<~TABLE.chomp
@@ -43,7 +43,7 @@ module UsageFixture
       file = write_records(directory, records, options)
       environment = host_environment(directory).merge(options.fetch(:environment, {}))
       sources = options[:discover] ? [] : ['--file', file] * options.fetch(:copies, 1)
-      output, error, status = Open3.capture3(environment, COMMAND, 'usage', *sources, '--commit', COMMIT,
+      output, error, status = Open3.capture3(environment, *COMMAND, 'usage', *sources, '--commit', COMMIT,
                                              '--contribution', options[:contribution] || 'implementation', *)
       assert_predicate status, :success?, error
       output
@@ -238,7 +238,7 @@ class UsageSinceTimeTest < Minitest::Test
   end
 
   def test_rejects_an_invalid_start_time
-    _output, error, status = Open3.capture3(COMMAND, 'usage', '--commit', COMMIT,
+    _output, error, status = Open3.capture3(*COMMAND, 'usage', '--commit', COMMIT,
                                             '--contribution', 'implementation', '--since-time', 'bad')
 
     refute_predicate status, :success?
@@ -247,7 +247,7 @@ class UsageSinceTimeTest < Minitest::Test
 
   def test_rejects_start_time_combined_with_other_turn_selection
     [['--all-turns'], ['--turn', 'current']].each do |selection|
-      _output, error, status = Open3.capture3(COMMAND, 'usage', '--commit', COMMIT,
+      _output, error, status = Open3.capture3(*COMMAND, 'usage', '--commit', COMMIT,
                                               '--contribution', 'implementation', '--since-time', START.iso8601,
                                               *selection)
       refute_predicate status, :success?
@@ -276,7 +276,7 @@ class UsageSinceTimeTest < Minitest::Test
       record = usage('unplaced', 'current', 100)
       record[:timestamp] = '2026-09-14T12:00:01'
       file = write_records(directory, [context('current'), record], {})
-      _output, error, status = Open3.capture3(host_environment(directory), COMMAND, 'usage', '--file', file,
+      _output, error, status = Open3.capture3(host_environment(directory), *COMMAND, 'usage', '--file', file,
                                               '--commit', COMMIT, '--contribution', 'implementation',
                                               '--since-time', START.iso8601)
 
@@ -306,7 +306,7 @@ class UsageSinceTimeTest < Minitest::Test
   def run_raw_report(records, start)
     Dir.mktmpdir do |directory|
       file = write_records(directory, records, {})
-      Open3.capture3(host_environment(directory), COMMAND, 'usage', '--file', file,
+      Open3.capture3(host_environment(directory), *COMMAND, 'usage', '--file', file,
                      '--commit', COMMIT, '--contribution', 'implementation', '--since-time', start)
     end
   end
@@ -468,7 +468,7 @@ class UsageFailuresTest < Minitest::Test
     [['--commit', '/private/SENSITIVE', '--contribution', 'implementation'],
      ['--commit', COMMIT, '--contribution', 'SENSITIVE'],
      ['--commit', COMMIT, '--contribution', 'implementation', '--all-turns', '--turn', 'old'], []].each do |arguments|
-      output, error, status = Open3.capture3(COMMAND, 'usage', *arguments)
+      output, error, status = Open3.capture3(*COMMAND, 'usage', *arguments)
       refute_predicate status, :success?
       assert_empty output
       assert_includes error, 'shaka usage:'
@@ -482,7 +482,7 @@ class UsageCommitTest < Minitest::Test
 
   def test_abbreviated_commit_names_the_full_sha_requirement
     ['HEAD', 'a' * 7, "#{COMMIT},HEAD", ''].each do |commit|
-      _output, error, status = Open3.capture3(COMMAND, 'usage', '--commit', commit,
+      _output, error, status = Open3.capture3(*COMMAND, 'usage', '--commit', commit,
                                               '--contribution', 'implementation')
       refute_predicate status, :success?
       assert_includes error, 'full 40-character commit SHA'
@@ -497,7 +497,7 @@ class UsageTurnSelectionTest < Minitest::Test
   def test_codex_turn_that_matches_no_response_fails_and_names_the_expected_field
     Dir.mktmpdir do |directory|
       file = write_records(directory, [context('old'), usage('first', 'old', 900)], {})
-      output, error, status = Open3.capture3({ 'CODEX_THREAD_ID' => nil }, COMMAND, 'usage', '--host', 'codex',
+      output, error, status = Open3.capture3({ 'CODEX_THREAD_ID' => nil }, *COMMAND, 'usage', '--host', 'codex',
                                              '--file', file, '--commit', COMMIT, '--contribution',
                                              'implementation', '--turn', 'typo')
       refute_predicate status, :success?

@@ -29,14 +29,14 @@ end
 
 # A throwaway repository whose seam lists Claude, Codex, and Grok, and a runner for `shaka reviewer`.
 module ReviewerCommandFixture
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   private
 
   def reviewer(root, *)
     env = { 'PATH' => ReviewerCliStubs.path('/usr/bin:/bin'), 'OPENROUTER_API_KEY' => nil,
             'SHAKA_RUBY' => RbConfig.ruby }
-    output, error, status = Open3.capture3(env, COMMAND, 'reviewer', '--root', root, *)
+    output, error, status = Open3.capture3(env, *COMMAND, 'reviewer', '--root', root, *)
     raise error unless status.success?
 
     JSON.parse(output)

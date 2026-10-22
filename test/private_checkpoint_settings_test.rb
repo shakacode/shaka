@@ -50,7 +50,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
       write_executable(bin, 'claude', checkpoint_reviewer)
       environment = { 'PATH' => "#{bin}:#{ENV.fetch('PATH')}",
                       'REVIEW_TRACE' => File.join(@state, 'checkpoint-trace.json') }
-      output, error, status = Open3.capture3(environment, COMMAND, 'post-implementation', 'run', '--root', @root,
+      output, error, status = Open3.capture3(environment, *COMMAND, 'post-implementation', 'run', '--root', @root,
                                              '--base', @ref, '--head', @ref, '--ref', @ref,
                                              '--content-file', state_file('packet.json', PACKET))
       assert_predicate status, :success?, "#{output}\n#{error}"
@@ -73,7 +73,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
   # The fake API's comments carry no history fields, so publication exits 1 after posting the body.
   def published(result)
     output, error, status = Open3.capture3({ 'PATH' => "#{@state}:#{ENV.fetch('PATH')}", 'HOME' => @state },
-                                           COMMAND, 'post-implementation', 'publish', 'owner/repo', '1',
+                                           *COMMAND, 'post-implementation', 'publish', 'owner/repo', '1',
                                            '--content-file', state_file('checkpoint.json', result))
     assert_equal 1, status.exitstatus, error
     { 'id' => 1, 'created_at' => '2026-10-01T00:00:00Z', 'user' => { 'login' => 'shaka-agent' },

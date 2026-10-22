@@ -11,7 +11,7 @@ class SeamCheckModeTest < Minitest::Test
   COMMAND = SeamCheckHelpers::COMMAND
 
   def test_help_documents_local_mode
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--help')
+    output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--help')
 
     assert_predicate status, :success?, error
     assert_includes output, '--local'
@@ -70,7 +70,7 @@ class SeamCheckModeTest < Minitest::Test
 
   def test_local_does_not_apply_to_init
     Dir.mktmpdir('shaka-seam-init') do |root|
-      _output, error, status = Open3.capture3(COMMAND, 'seam', 'init', '--root', root, '--local')
+      _output, error, status = Open3.capture3(*COMMAND, 'seam', 'init', '--root', root, '--local')
 
       refute_predicate status, :success?
       assert_includes error, '--local does not apply to init'

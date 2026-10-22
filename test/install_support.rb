@@ -16,6 +16,8 @@ module InstallTestSupport
     FileUtils.remove_entry(@directory)
   end
 
+  def installed_helper = shaka_command(File.join(@destination, 'scripts', 'shaka'))
+
   def install
     run_installer('--skills-dir', @skills_dir, '--with-rct')
   end
@@ -96,13 +98,13 @@ module InstallTestSupport
   def assert_installed_doctor_works_from_second_worktree
     second_worktree = File.join(@directory, 'worktree-b')
     FileUtils.mkdir_p(second_worktree)
-    output, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor',
+    output, status = Open3.capture2e(*installed_helper, 'doctor',
                                      '--installation-json', chdir: second_worktree)
     assert_predicate status, :success?, output
     identity = JSON.parse(output)
     assert_equal 'development', identity.fetch('source').fetch('kind')
     assert_equal '0.1.0.pre.1', identity.fetch('version')
-    report, = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor', chdir: second_worktree)
+    report, = Open3.capture2e(*installed_helper, 'doctor', chdir: second_worktree)
     assert_includes report, "installation #{identity.fetch('version')} · development base UNKNOWN content"
   end
 end

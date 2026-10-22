@@ -9,7 +9,7 @@ class SeamTest < Minitest::Test
   COMMAND = SeamCheckHelpers::COMMAND
 
   def test_help_succeeds
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--help')
+    output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--help')
 
     assert_predicate status, :success?, error
     assert_includes output, 'shaka seam check'
@@ -18,7 +18,7 @@ class SeamTest < Minitest::Test
   end
 
   def test_help_before_the_operation_succeeds
-    output, error, status = Open3.capture3(COMMAND, 'seam', '--help')
+    output, error, status = Open3.capture3(*COMMAND, 'seam', '--help')
 
     assert_predicate status, :success?, error
     assert_includes output, 'shaka seam check'
@@ -52,7 +52,7 @@ class SeamTest < Minitest::Test
       commit_repository(root)
       FileUtils.rm(File.join(root, '.agents/bin/validate-local'))
 
-      _output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, '--ref', 'HEAD')
+      _output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root, '--ref', 'HEAD')
       refute_predicate status, :success?
       assert_includes error, '.agents/bin/validate-local does not exist'
     end
@@ -75,7 +75,7 @@ class SeamTest < Minitest::Test
       write_command(root, 'trigger-hosted-ci')
       commit_repository(root)
 
-      _output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, '--ref', 'HEAD')
+      _output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root, '--ref', 'HEAD')
       refute_predicate status, :success?
       assert_includes error, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
     end
@@ -83,12 +83,12 @@ class SeamTest < Minitest::Test
 end
 
 class SeamPointerTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   # Break: a copy-ready AGENTS.md pointer that omits --ref would be pasted as
   # trusted policy loading, which is the Control Plane Flow failure mode.
   def test_pointer_renders_trust_safe_agents_guidance
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'pointer')
+    output, error, status = Open3.capture3(*COMMAND, 'seam', 'pointer')
 
     assert_predicate status, :success?, error
     assert_empty error
@@ -96,14 +96,14 @@ class SeamPointerTest < Minitest::Test
   end
 
   def test_check_refuses_the_local_review_agent_init_option
-    _output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--local-review-agent', 'openai/codex')
+    _output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--local-review-agent', 'openai/codex')
 
     refute_predicate status, :success?
     assert_includes error, 'init options do not apply to check'
   end
 
   def test_pointer_refuses_check_and_init_options
-    _output, error, status = Open3.capture3(COMMAND, 'seam', 'pointer', '--ref', 'HEAD')
+    _output, error, status = Open3.capture3(*COMMAND, 'seam', 'pointer', '--ref', 'HEAD')
 
     refute_predicate status, :success?
     assert_includes error, 'pointer'

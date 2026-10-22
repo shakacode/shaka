@@ -40,7 +40,7 @@ module WorkFixture
   def launch(*, directory: @nested, command: @command, temporary: File.join(@directory, 'temp'))
     environment = { 'PATH' => "#{@directory}/bin:#{ENV.fetch('PATH')}", 'WORK_CAPTURE' => @capture,
                     'TMPDIR' => temporary }
-    Open3.capture3(environment, command, 'work', *, chdir: directory)
+    Open3.capture3(environment, *shaka_command(command), 'work', *, chdir: directory)
   end
 
   def write_codex

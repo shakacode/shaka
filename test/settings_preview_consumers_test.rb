@@ -62,7 +62,7 @@ class SettingsPreviewConsumersTest < Minitest::Test
   end
 
   def reviewer(root, trusted, *)
-    output, error, status = Open3.capture3({ 'PATH' => ReviewerCliStubs.path }, COMMAND, 'reviewer',
+    output, error, status = Open3.capture3({ 'PATH' => ReviewerCliStubs.path }, *COMMAND, 'reviewer',
                                            '--root', root, '--ref', trusted,
                                            '--implementer', 'anthropic/claude', *)
     assert_predicate status, :success?, error

@@ -16,7 +16,7 @@ module CandidateRateCardFixture
       file = write_records(directory, records, {})
       environment = { 'PI_CODING_AGENT' => nil, 'CODEX_HOME' => directory, 'CODEX_THREAD_ID' => UsageFixture::THREAD,
                       'CLAUDE_CODE_SESSION_ID' => nil, 'CURSOR_CONVERSATION_ID' => nil }
-      Open3.capture3(environment.merge(env), UsageFixture::COMMAND, 'usage', '--file', file, '--commit',
+      Open3.capture3(environment.merge(env), *UsageFixture::COMMAND, 'usage', '--file', file, '--commit',
                      UsageFixture::COMMIT, '--contribution', 'implementation', *)
     end
   end

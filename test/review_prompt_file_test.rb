@@ -12,7 +12,7 @@ require 'shaka/seam/field_classifier'
 # A repository's review instructions, read from the trusted commit and chosen per reviewer.
 # Builds a repository whose trusted commit configures review prompts, and runs review run on it.
 module ReviewPromptFileFixture
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   private
 
@@ -26,7 +26,7 @@ module ReviewPromptFileFixture
 
   def run_review(root, base, head, bin, *options)
     Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'REVIEW_TRACE' => File.join(root, 'trace.json') },
-                   COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
+                   *COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
                    '--reviewer', 'openai/codex', '--criteria-ref', base, *options)
   end
 
