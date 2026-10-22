@@ -34,7 +34,7 @@ module Shaka
         end
 
         def blocked_relative?(line, found, strict)
-          strict == :all || split_directory?(line, found) || (strict == :root_like && root_like?(line, found))
+          strict == :all || split_directory?(line, found, strict) || (strict == :root_like && root_like?(line, found))
         end
 
         # A hand-written note in the old directory may mean the repository's own bin/; only Shaka's generated
@@ -54,10 +54,12 @@ module Shaka
         end
 
         # Helper tools stay in the old command directory, so a pattern over it, or any mention of it
-        # while a tracked tool stays there, has no single new home. A Markdown note is not a tool.
-        def split_directory?(line, found)
+        # while a tracked tool stays there, has no single new home. A Markdown note is not a tool, and
+        # Shaka's generated pointer (no strictness) names only its own wrappers, which all move.
+        def split_directory?(line, found, strict)
           found.any? do |spelling|
-            line.match?(relative_pattern(spelling, '[*?\\[]')) || (spelling.end_with?('/') && retained_command_file?)
+            line.match?(relative_pattern(spelling, '[*?\\[]')) ||
+              (strict && spelling.end_with?('/') && retained_command_file?)
           end
         end
 

@@ -5,6 +5,8 @@ module Shaka
     class UpgradePlan
       # References whose behavior depends on the old command directory.
       module ReferenceDependencies
+        include UnmovedTools
+
         private
 
         def reference_text(path, stat)
@@ -108,23 +110,6 @@ module Shaka
           @moves.filter_map do |move|
             source = move.fetch('from')
             source if source == target || source.start_with?("#{target}/")
-          end
-        end
-
-        def scan_unmoved_tool(path, text)
-          return unless path.start_with?("#{PATHS::COMMAND_DIRECTORY}/")
-          return unless invocation_relative?(text) || relative_command_call?(text)
-
-          @references << { 'path' => path, 'kind' => 'unmoved tool dependency', 'paths' => [] }
-          @blockers << "#{path}: tool uses an invocation-relative path; check moved sibling commands explicitly"
-        end
-
-        def relative_command_call?(text)
-          @moves.any? do |move|
-            source = move.fetch('from')
-            next unless source.start_with?("#{PATHS::COMMAND_DIRECTORY}/")
-
-            text.match?(%r{(?<![[:alnum:]_./-])\./#{Regexp.escape(File.basename(source))}(?![[:alnum:]_./-])})
           end
         end
       end
