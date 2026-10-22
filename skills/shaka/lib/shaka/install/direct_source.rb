@@ -40,7 +40,7 @@ module Shaka
       def skills_root = File.join(@root, 'skills')
 
       def skill_paths
-        [skills_root] + @names.flat_map { |name| [File.join(skills_root, name)] + @tree.entries(@root, name) }
+        [skills_root] + @names.flat_map { |name| [File.join(skills_root, name)] + @tree.listing(@root, name) }
       end
 
       def refuse_writable(paths)

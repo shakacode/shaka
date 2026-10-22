@@ -33,10 +33,10 @@ module Shaka
       # Installation verification refuses these same files; each kind gets a step that can fix it.
       def unsafe_files
         skills = File.join(@root, 'skills')
-        paths = skill_paths(skills)
+        paths, listed = skill_paths(skills)
         return refused if @refusal
 
-        symlink(paths) || foreign(paths) || special(paths, skills) || writable(paths, skills)
+        symlink(paths) || foreign(listed) || special(paths, skills) || writable(listed, skills)
       rescue SystemCallError
         nil
       end
@@ -96,14 +96,16 @@ module Shaka
 
       def owned?(path) = trusted_owner?(File.lstat(path))
 
-      # The installer's own file list, which leaves out ignored files.
+      # The paths installation verification checks: package files, plus ignored files for ownership and modes.
       def skill_paths(skills)
         names = @record['targets'].flat_map { |target| target['names'] }.uniq
         tree = Tree.new(names, source_root: @root)
-        [skills] + names.flat_map { |name| [File.join(skills, name)] + tree.entries(@root, name) }
+        %i[entries listing].map do |list|
+          [skills] + names.flat_map { |name| [File.join(skills, name)] + tree.public_send(list, @root, name) }
+        end
       rescue ArgumentError => e
         @refusal = e.message
-        [skills]
+        [[skills], [skills]]
       end
     end
   end
