@@ -107,14 +107,6 @@ class InstallRepairTest < Minitest::Test
 
   private
 
-  def local_install(*)
-    root = clone_to(default_path)
-    run_install(root, '--directory', root, '--repository', @remote, *)
-    root
-  end
-
-  def host_link = File.join(@home, '.agents/skills/shaka')
-
   def claim_host(root, directory)
     path = File.join(root, '.git/shaka-install.json')
     record = JSON.parse(File.read(path))

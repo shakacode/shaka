@@ -124,7 +124,7 @@ To have Shaka run those steps for you, ask it to repair the installation:
 "$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --repair
 ```
 
-Repair handles a pull, an unfinished update, a missing Ruby record, a missing or
+Repair handles a pull, an unfinished update, a removed Ruby, a missing or
 broken link, an install record nothing uses, local commits in the checkout, and
 links split between two checkouts. Split links move to the checkout whose install
 record changed last; run `install --status` first to see which. Local commits

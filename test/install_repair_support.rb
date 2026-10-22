@@ -6,6 +6,14 @@ require_relative 'install_scenario_support'
 module InstallRepairSupport
   private
 
+  def local_install(*)
+    root = clone_to(default_path)
+    run_install(root, '--directory', root, '--repository', @remote, *)
+    root
+  end
+
+  def host_link = File.join(@home, '.agents/skills/shaka')
+
   def repair(root) = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), '--repair')
 
   # Repair reaches the expected state, deletes nothing but the records it renames, and a second run
