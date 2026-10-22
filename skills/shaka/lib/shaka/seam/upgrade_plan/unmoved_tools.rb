@@ -16,11 +16,14 @@ module Shaka
         end
 
         # The tool stays put, so finding the root or requiring a file that does not move keeps its meaning.
+        # Two levels up is the root only for a tool directly in the command directory.
         def unmoved_tool_text(path, text)
-          text.gsub(%r{#{script_parent}(?![[:alnum:]_./-])}o, '').gsub(ruby_root_expression, '')
-              .gsub(/\brequire_relative[ (]*(['"])([^'"\#$\\]+)\1/) do |call|
-                moved_require?(path, ::Regexp.last_match(2)) ? call : ''
-              end
+          if File.dirname(path) == PATHS::COMMAND_DIRECTORY
+            text = text.gsub(%r{#{script_parent}(?![[:alnum:]_./-])}o, '').gsub(ruby_root_expression, '')
+          end
+          text.gsub(/\brequire_relative[ (]*(['"])([^'"\#$\\]+)\1/) do |call|
+            moved_require?(path, ::Regexp.last_match(2)) ? call : ''
+          end
         end
 
         def moved_require?(path, target)

@@ -48,6 +48,13 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
     end
   end
 
+  def test_nested_tool_two_levels_up_still_blocks
+    with_repository do |root|
+      write_tool(root, 'sub/formatter', %(#!/bin/sh\ncd "$(dirname "$0")/../.."\nexec bin/validate\n))
+      assert_blocked_with(root, '.agents/bin/sub/formatter: tool uses an invocation-relative path')
+    end
+  end
+
   def test_generated_pointer_is_rewritten_beside_retained_tools
     with_repository do |root|
       write_tool(root, 'build', "#!/bin/sh\necho ok\n")
@@ -76,9 +83,11 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
   end
 
   def test_parent_traversal_inside_the_layout_still_blocks
-    with_repository do |root|
-      write_tracked(root, 'docs/run.md', "Run .agents/workflows/../bin/test first.\n")
-      assert_blocked_with(root, 'docs/run.md: normalized old-layout reference')
+    ['.agents/workflows/../bin/test', '.agents/cache[1]/../bin/test'].each do |reference|
+      with_repository do |root|
+        write_tracked(root, 'docs/run.md', "Run #{reference} first.\n")
+        assert_blocked_with(root, 'docs/run.md: normalized old-layout reference')
+      end
     end
   end
 
@@ -86,6 +95,7 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
 
   def write_tool(root, name, source)
     path = File.join(root, '.agents/bin', name)
+    FileUtils.mkdir_p(File.dirname(path))
     File.write(path, source)
     File.chmod(0o755, path)
     commit_fixture(root, name)

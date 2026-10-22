@@ -44,11 +44,11 @@ module Shaka
           end
         end
 
-        # Segments stop at brackets so a Markdown link's text and target read as two paths.
+        # A segment never spans `](`, so a Markdown link's text and target read as two paths.
         def parent_traversal_reference?(line)
           return false unless line.include?("#{PATHS::DIRECTORY}/") && line.include?('/../')
 
-          line.match?(directory_pattern(PATHS::DIRECTORY, '/(?:[^/\s"\x27()\[\]]+/)*\.\./'))
+          line.match?(directory_pattern(PATHS::DIRECTORY, '/(?:(?:(?!\]\()[^/\s"\x27])+/)*\.\./'))
         end
 
         def directory_end = '(?=[^[:alnum:]_./-]|\\.(?![[:alnum:]_/-])|$)'
