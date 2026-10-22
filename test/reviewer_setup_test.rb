@@ -14,7 +14,7 @@ class ReviewerSetupTest < Minitest::Test
       assert_equal 'same_model', result.fetch('outcome')
       assert_equal ['openai/codex'], result.fetch('reviewers')
       assert_equal(['not set up on this machine'] * 2, result.fetch('considered').map { |row| row.fetch('reason') })
-      assert_setup_notices(result.fetch('setup_notices'))
+      assert_setup_notices(result)
       refute_path_exists marker
     end
   end
@@ -39,7 +39,7 @@ class ReviewerSetupTest < Minitest::Test
         rewrite_reviewers(root, [{ 'provider' => 'anthropic', 'model_family' => 'claude' }])
         write_reviewer_tool(tools, marker)
         result = selection_with_path(root, "#{tools}:/usr/bin:/bin")
-        assert_empty result.fetch('setup_notices')
+        assert_equal [[], nil], result.values_at('setup_notices', 'review_blocked')
         refute_path_exists marker
       end
     end
@@ -63,7 +63,7 @@ class ReviewerSetupTest < Minitest::Test
 
   def selection_with_path(root, path, *, key: nil)
     env = { 'SHAKA_RUBY' => RbConfig.ruby, 'PATH' => path, 'OPENROUTER_API_KEY' => key }
-    output, error, status = Open3.capture3(env, COMMAND, 'reviewer', '--root', root,
+    output, error, status = Open3.capture3(env, *COMMAND, 'reviewer', '--root', root,
                                            '--implementer', 'openai/codex', *)
     assert_predicate status, :success?, error
     JSON.parse(output)
@@ -82,7 +82,9 @@ class ReviewerSetupTest < Minitest::Test
      { 'provider' => 'anthropic', 'model_family' => 'claude' }]
   end
 
-  def assert_setup_notices(notices)
+  def assert_setup_notices(result)
+    assert_equal 'no_reviewer_can_launch', result.fetch('review_blocked')
+    notices = result.fetch('setup_notices')
     assert_equal(%w[anthropic/claude deepseek/openrouter], notices.map { |notice| notice.fetch('reviewer') }.sort)
     assert_includes notices.find { |notice| notice['reviewer'] == 'deepseek/openrouter' }.fetch('guidance'),
                     'OPENROUTER_API_KEY'

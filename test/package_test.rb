@@ -5,16 +5,26 @@ require_relative 'package_test_helpers'
 class PackageTest < Minitest::Test
   include PackageTestHelpers
 
-  def test_built_gem_runs_and_installs_its_skill_without_the_source_checkout
+  def test_built_gem_runs_its_commands_without_the_source_checkout
     archive = File.join(@directory, 'pilot.gem')
     run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
     run_gem('install', '--local', '--no-document', archive)
     check_commands
-    source = install_skill
-    %w[shaka rct mct mct-claude rct-claude].each { |name| File.unlink(File.join(@directory, 'pilot skills', name)) }
+    assert_includes run_executable('shaka-install', '--help'), 'Usage: '
     run_gem('uninstall', 'shaka', '--all', '--executables', '--ignore-dependencies')
     refute_path_exists File.join(@home, 'bin', 'shaka')
-    assert File.file?(File.join(source, 'SKILL.md'))
+  end
+
+  def test_built_gem_installs_the_official_checkout
+    install_gem
+    remote = File.join(@directory, 'remote.git')
+    assert system('git', 'clone', '-q', '--bare', ROOT, remote)
+    # CI checks out a detached head, so the clone needs main named explicitly.
+    assert system('git', '-C', remote, 'update-ref', 'refs/heads/main', `git -C #{ROOT} rev-parse HEAD`.strip)
+    skills = File.join(@directory, 'pilot skills')
+    run_executable('shaka-install', '--repository', remote, '--skills-dir', skills)
+    source = File.realpath(File.join(@environment.fetch('HOME'), '.local/share/shaka/source'))
+    assert_equal File.join(source, 'skills/shaka'), File.realpath(File.join(skills, 'shaka'))
   end
 
   def test_built_gem_distributes_the_declared_license
@@ -81,33 +91,6 @@ class PackageTest < Minitest::Test
     assert_includes workflow, '## 1. Intake'
     assert_includes workflow, '## 7. Finish'
     assert_match(/\]\(<[^>]+gem home[^>]+>\)/, workflow)
-  end
-
-  def check_public_skills(skills, source)
-    check_shaka_skill(File.realpath(File.join(skills, 'shaka')), source)
-    %w[rct mct mct-claude rct-claude].each do |name|
-      tower = File.realpath(File.join(skills, name))
-      assert File.file?(File.join(tower, 'SKILL.md')), name
-      assert_equal File.dirname(source), File.dirname(tower)
-    end
-  end
-
-  def check_shaka_skill(shaka, source)
-    assert File.file?(File.join(shaka, 'SKILL.md'))
-    assert File.file?(File.join(shaka, 'config', 'workflow.yml'))
-    assert File.file?(File.join(shaka, 'references', 'shaka-issue-offer.md'))
-    assert_equal source, shaka
-  end
-
-  def install_skill
-    skills = File.join(@directory, 'pilot skills')
-    run_executable('shaka-install', '--skills-dir', skills, '--with-rct', '--with-mct', '--with-claude-towers')
-    source = File.realpath(File.join(skills, 'shaka'))
-    assert source.start_with?("#{File.realpath(@environment.fetch('HOME'))}/.local/share/shaka/installs/"), source
-    check_public_skills(skills, source)
-    assert File.file?(File.join(source, 'SKILL.md'))
-    assert File.file?(File.join(source, 'scripts', 'shaka'))
-    source
   end
 
   def run_executable(name, *)

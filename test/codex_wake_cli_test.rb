@@ -4,13 +4,13 @@ require_relative 'test_helper'
 require 'shaka/hosts/codex_wake'
 
 class CodexWakeCliTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   THREAD = '11111111-2222-4333-8444-555555555555'
 
   def test_codex_shell_watcher_cannot_supply_an_automatic_handoff
     Dir.mktmpdir do |directory|
       environment = fake_git_environment(directory)
-      _output, error, status = Open3.capture3(environment, COMMAND, 'handoff', 'owner/repo', '42',
+      _output, error, status = Open3.capture3(environment, *COMMAND, 'handoff', 'owner/repo', '42',
                                               '--ref', 'a' * 40, '--head', 'b' * 40,
                                               '--woken-by', 'SHAKA_WAKE shell watcher')
 

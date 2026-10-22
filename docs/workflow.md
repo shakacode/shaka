@@ -13,7 +13,8 @@ Shaka supplies the process; your repository supplies the commands and constraint
 | Finish | Merge when authorized, or return the reviewed PR for your merge |
 
 Before shipping, Shaka compares the finished solution with the original goal, then
-recommends **Merge**, **Revise before merge**, **Reconsider approach**, or **Do not merge**.
+recommends **Merge**, **Merge after maintainer decision**, **Revise before merge**,
+**Reconsider approach**, or **Do not merge**.
 A working implementation can still warrant reconsideration. Each recommendation
 includes a reason and next step; Merge still follows your checks and Ask or Auto choice.
 

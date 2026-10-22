@@ -6,7 +6,7 @@ require_relative 'cli_opening_check_fakes'
 require_relative 'handoff_helper'
 
 module PrivateTrialPublicationHelpers
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   SECRET = 'synthetic-credential-277'
   PRIVATE_LINK = 'https://private.example/prompt?token=synthetic-credential-277'
   CHECKOUT = '/synthetic/approved-checkout'
@@ -65,7 +65,7 @@ module PrivateTrialPublicationHelpers
     write_fake_commands(dir)
     path = trial_content(dir)
     flags = result_flags(dir, validation, review)
-    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, COMMAND,
+    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, *COMMAND,
                                             'description', 'shakacode/shaka', '1', '--root', root, '--ref', ref,
                                             '--content-file', path, *flags)
     assert_predicate status, :success?, error

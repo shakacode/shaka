@@ -52,7 +52,7 @@ module Shaka
 
         installer = Installer.new(source_root: source, skills_dir: File.join(@directory, 'links', @number, head),
                                   managed_dir: File.join(@directory, 'installs'), names: ['shaka'])
-        package = installer.run(announce: false, link: false)
+        package = installer.run(link: false)
         verify_identity(package, head)
         result(package, head)
       end

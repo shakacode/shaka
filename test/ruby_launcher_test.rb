@@ -9,6 +9,10 @@ class RubyLauncherTest < Minitest::Test
   SOURCE_HELPER = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
   OLD_RUBY = 'Object.send(:remove_const, :RUBY_VERSION); RUBY_VERSION = "3.3.7"; load ARGV.shift'
 
+  # Windows CreateProcess cannot start the sh launcher (#748); hosts there run it through Git Bash.
+  def setup = WINDOWS ? skip('Windows cannot start the sh launcher directly') : super
+  def teardown = (super if @directory)
+
   def test_installed_helper_ignores_the_project_ruby_and_bundler
     install_full_skill
     output, status = Open3.capture2e(project_environment, File.join(@destination, 'scripts', 'shaka'), '--help',

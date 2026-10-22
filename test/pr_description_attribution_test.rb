@@ -10,7 +10,7 @@ class PrDescriptionAttributionTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include CliOpeningCheckFakes
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   SUMMARY = 'Reviewers can see the changed behavior.'
   CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
 

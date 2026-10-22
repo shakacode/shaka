@@ -8,7 +8,7 @@ require 'json'
 class PrefixIndividualSettingsTest < Minitest::Test
   include ConfigurationLayoutFixture
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def test_complete_individual_settings_supply_the_prefix
     with_individual_settings('repo_prefix' => 'CPF') do |root, ref|
@@ -74,7 +74,7 @@ class PrefixIndividualSettingsTest < Minitest::Test
   def refreshed_row(home, root)
     env = { 'SHAKA_HOME' => home, 'PATH' => ENV.fetch('PATH') }
     [%w[add --root] + [root], %w[refresh]].each do |arguments|
-      _output, error, status = Open3.capture3(env, COMMAND, 'repos', *arguments)
+      _output, error, status = Open3.capture3(env, *COMMAND, 'repos', *arguments)
       raise error unless status.success?
     end
     JSON.parse(File.read(File.join(home, 'catalog.json'))).fetch('repositories').first

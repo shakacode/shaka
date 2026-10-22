@@ -479,7 +479,7 @@ class SeamUpgradeApplyTest < Minitest::Test
 
   def assert_policy_sources(root)
     sha = git!(root, 'rev-parse', 'HEAD').strip
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, '--ref', sha)
+    output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root, '--ref', sha)
     assert_predicate status, :success?, error
     paths = JSON.parse(output).fetch('paths')
     assert_equal '.agents/agent-workflow.yml', paths.fetch('policy_configuration')
@@ -1484,7 +1484,7 @@ class SeamUpgradePatternSafetyTest < Minitest::Test
   end
 
   def init_fixture(root)
-    Open3.capture3(COMMAND, 'seam', 'init', '--root', root, '--setup-command', 'bin/probe',
+    Open3.capture3(*COMMAND, 'seam', 'init', '--root', root, '--setup-command', 'bin/probe',
                    '--test-command', 'bin/probe', '--validate-command', 'bin/probe', '--review-policy', 'none')
   end
 end

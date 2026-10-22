@@ -70,10 +70,10 @@ class UpdateCheckTest < Minitest::Test
     end
   end
 
-  def test_retained_copy_offers_migration_instead_of_an_unsupported_update
+  def test_unregistered_copy_offers_installation_instead_of_an_unsupported_update
     result = check('ahead', checkout: nil)
     assert_equal 'available', result.fetch('status')
-    assert_includes result.fetch('guidance'), 'retained copy'
+    assert_includes result.fetch('guidance'), 'not a registered installation'
     refute_includes result.fetch('guidance'), 'install --update'
     assert_equal 1, @calls.size
   end

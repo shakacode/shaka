@@ -192,14 +192,14 @@ class CodeLinksRefusalTest < Minitest::Test
 end
 
 class CodeLinksCommandTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def test_undefined_code_link_stops_the_walkthrough_before_github
     Dir.mktmpdir do |dir|
       sentinel = failing_gh(dir)
       content = File.join(dir, 'content.json')
       File.write(content, JSON.generate({ 'identity' => {}, 'summary' => '[it](code:missing)', 'code_links' => {} }))
-      _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, COMMAND, 'walkthrough',
+      _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, *COMMAND, 'walkthrough',
                                               'owner/repo', '1', '--head', 'a' * 40, '--content-file', content)
       refute_predicate status, :success?
       assert_includes error, 'undefined code link missing'

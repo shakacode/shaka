@@ -363,7 +363,8 @@ phases:
         list in run order. None is an error:
         when all listed paths fail, start a new host chat with the implementation model and no
         implementation conversation or Task/subagent context; its own failed CLI does not remove
-        that fallback. Run a selected CLI through `shaka review run` as described in
+        that fallback. On a `review_blocked` result, follow its `guidance`.
+        Run a selected CLI through `shaka review run` as described in
         [invoke a reviewer locally](<{{package_root}}/skills/shaka/references/local-review.md>);
         do not substitute a current-host Task or subagent, or a more expensive same-provider model,
         when a listed different provider is available. A current-host Task or subagent is neither
@@ -483,8 +484,7 @@ phases:
         shared context.
       - `description` and `walkthrough` report an advisory `opening` result for the `summary`.
         Pass the verified default-branch full commit SHA with `--ref SHA`. Opening settings live under
-        `pr_description.opening_check`; the top-level `opening_check` remains a compatibility
-        input. When `enabled` is false, the command skips the check. Otherwise, a configured `reviewer`, `model`,
+        `pr_description.opening_check`. When `enabled` is false, the command skips the check. Otherwise, a configured `reviewer`, `model`,
         and `effort` select this check independently of code review; the same provider as the
         implementer is allowed. Let the helper apply these settings without reconstructing them
         as flags. Without a configured opening reviewer, use the ordered local code-review
@@ -494,8 +494,7 @@ phases:
         Codex and Claude use CLI defaults without an opening model; Grok and OpenRouter require
         an explicit model. Without an opening effort, use low. Model and effort stay independent
         of code-review settings.
-        The legacy `opening_check.external_enabled: false` keeps the check in the current model.
-        A `host_check` or `not_checked` result carries the prompt for that fallback. Preserve a
+        A `host_check` or `not_checked` result carries the prompt for a check in the current model. Preserve a
         configured model when its CLI fails; report the reason and apply the returned prompt.
         A `flagged` result means the first sentence has an internal subject or gives a thing a
         person's action. Rewrite it as its `reason` says, then publish again. Successful verdicts
@@ -518,6 +517,8 @@ phases:
         floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
+        Write `Fixes #N` once per issue the PR fully resolves and `Part of #N` for partial work.
+        When `description` returns `closing_issues`, correct the wording it names once.
         The helper writes the repository validation and local review line under Verification
         from `--validation-result` and `--review-result`, so leave those out of `checks`.
         `verification` lists 1 to 3 `checks`, each proof of this PR's own claim: what was run
@@ -596,7 +597,8 @@ phases:
         `squash-message` remains the standalone path for an opted-out checkpoint and older installations;
         it posts a new comment and deletes this account's earlier standalone one.
         A merge queue takes no message: on a queue base the ready checkpoint replaces the copyable
-        blocks with what the queue will write, `handoff` owes none, and `merge` reports that.
+        blocks with what the queue will write, `handoff` owes none, and `merge` reports that. `merge`
+        refuses a queue that copies the PR description into its commit.
         `description` replaces only its marked region. `reply` reuses its stable key; `--comment`
         answers an inline thread. When a reply addresses a review, its `reviews` list holds
         that pull request's comment URLs. The helper writes one opening line per URL from the
@@ -784,7 +786,8 @@ phases:
         PR comment: Proceed, Simplify/reframe, or Do not merge. Revisit it after changes that
         affect the result or its cost; an earlier conclusion is not evidence for a different approach.
         After verification, supply the task owner's head-bound `disposition` in the checkpoint
-        publication: Merge, Revise before merge, Reconsider approach, or Do not merge,
+        publication: Merge, Merge after maintainer decision, Revise before merge, Reconsider approach,
+        or Do not merge,
         with a reason and, except for Merge, a concrete next action. Judge the finished PR against the original
         outcome; successful verification alone does not choose its disposition.
         A Merge recommendation grants no merge authority. Every other disposition blocks
@@ -852,8 +855,8 @@ phases:
         `awaiting-merge-approval`, verify the checkpoint contains the current head
         and copyable commit title and body. For an opted-out checkpoint, run `squash-message`
         for that head instead. On a merge-queue base, tell the user to add the PR to the queue
-        instead and relay `handoff`'s note on what the queue will write. Name the expected head SHA,
-        list each open step besides merging with its timing and who does it, and tell the user they may use
+        instead and relay `handoff`'s note on what the queue will write. Name the expected head SHA
+        and the issues `handoff` says the merge closes, list each open step besides merging with its timing and who does it, and tell the user they may use
         GitHub's currently offered merge control for that SHA. Arrange continued feedback intake
         through the procedure below before ending the turn. If GitHub
         shows a different head or offers no allowed merge method, tell them not to merge. Do not

@@ -17,12 +17,10 @@ class PrivateDeliverySettingsTest < Minitest::Test
   def test_opening_reads_private_reviewer_enablement_and_prompt
     with_trial do
       prepare_private_opening
-      output = publish_description(*evidence_files, opening: true)
-      assert_equal 'flagged', output.dig('opening', 'status')
+      assert_equal 'flagged', opening_status
       assert_includes File.read(File.join(@state, 'opening-prompt.txt')), 'Name the reader-facing subject.'
-      update_private { |data| data['opening_check']['external_enabled'] = false }
-      output = publish_description(*evidence_files, opening: true)
-      assert_includes output.dig('opening', 'reason'), 'external_enabled'
+      update_private { |data| data['pr_description']['opening_check']['enabled'] = false }
+      assert_equal 'disabled', opening_status
     end
   end
 
@@ -41,11 +39,13 @@ class PrivateDeliverySettingsTest < Minitest::Test
 
   private
 
+  def opening_status = publish_description(*evidence_files, opening: true).dig('opening', 'status')
+
   def prepare_private_opening
     write_executable(@state, 'claude', fake_claude)
     path = '.agents/shaka/opening.md'
     File.write(File.join(@root, path), 'Name the reader-facing subject.')
-    update_private { |data| data['opening_check'] = { 'external_enabled' => true, 'prompt_file' => path } }
+    update_private { |data| data['pr_description']['opening_check'] = { 'prompt_file' => path } }
   end
 
   def adopt_team(layout)

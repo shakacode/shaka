@@ -52,8 +52,8 @@ module Shaka
 
       def update_guidance
         unless @checkout
-          return "This is a retained copy; follow #{GUIDE} to migrate. " \
-                 'Keep trial and rollback copies for active chats.'
+          return "This copy is not a registered installation; install Shaka through #{GUIDE} to update it. " \
+                 'Keep PR trial copies for active chats.'
         end
 
         "Finish active Shaka chats, run #{Shellwords.escape(@helper)} install --update, then start a new chat. " \

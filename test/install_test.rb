@@ -25,8 +25,7 @@ class InstallTest < Minitest::Test
     assert_predicate status, :success?, output
     assert_skill_link(@source, @destination, 'version one')
     assert_skill_link(@rct_source, @rct_destination, 'rct version one')
-    executable = Shellwords.escape(File.join(@destination, 'scripts/shaka'))
-    assert_includes output, "#{executable} seam init --help"
+    assert_includes output, "Package: #{File.basename(package_path)}"
   end
 
   def test_repeat_install_keeps_the_same_link
@@ -84,9 +83,9 @@ class InstallTest < Minitest::Test
   end
 
   def test_rejects_invalid_arguments_without_installing
-    [['--managed'], ['--skills-dir'], ['--skills-dir', ''], ['--unknown'],
+    [['--managed'], ['--rollback', 'id'], ['--skills-dir'], ['--skills-dir', ''], ['--unknown'],
      ['--skills-dir', @skills_dir, 'extra']].each do |arguments|
-      _output, status = run_installer(*arguments)
+      _output, status = Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, @installer, *arguments)
       refute_predicate status, :success?, arguments.inspect
       refute_path_exists @skills_dir
     end

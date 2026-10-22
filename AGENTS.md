@@ -134,7 +134,7 @@ breaks it, and say which reason applies.
   site listens for `docs-updated`, a push to `main` that changes `docs/`
   triggers a site rebuild.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
-- `bin/install` registers a dedicated official checkout and links selected host skills directly into it. Explicit managed copies remain for trials and legacy rollback.
+- `bin/install` registers a dedicated official checkout and links selected host skills directly into it. PR trials copy a revision into a managed package.
 - `.agents/shaka/config.yml` is the machine-readable repository contract. It
   records Shaka-specific review, merge-authority, branch-naming, and WIP
   policy. Live GitHub settings remain authoritative. Standard executable entry

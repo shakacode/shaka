@@ -8,7 +8,10 @@ module Shaka
   module PostImplementationReport
     CONCLUSIONS = ['Proceed', 'Simplify/reframe', 'Do not merge'].freeze
     # The task owner's dispositions, shared by the owner's checkpoint comment and the description headline.
-    RECOMMENDATIONS = ['Merge', 'Revise before merge', 'Reconsider approach', 'Do not merge'].freeze
+    RECOMMENDATIONS = ['Merge', 'Merge after maintainer decision', 'Revise before merge', 'Reconsider approach',
+                       'Do not merge'].freeze
+    # The owner would merge, but listed concerns or a Simplify/reframe verdict wait on the maintainer.
+    AWAITING_DECISION = 'Merge after maintainer decision'
     # Whether the verification proves the intent. The last two stop an agent merge, never readiness.
     ADEQUACY = ['adequate', 'adequate with accepted gaps', 'inadequate', 'cannot judge'].freeze
     # Fixed because Ruby acts on the parsed verdict, and no maintainer has a use for Auto merging past

@@ -9,7 +9,7 @@ class CliOpeningSettingsTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include CliOpeningCheckFakes
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'Maintainers can choose how their PR opening is checked.'
 
@@ -41,27 +41,17 @@ class CliOpeningSettingsTest < Minitest::Test
   def test_candidate_changes_cannot_choose_another_opening_model
     with_settings('reviewer' => 'anthropic/claude', 'model' => 'trusted-model') do |root, dir|
       File.write(File.join(root, '.agents/agent-workflow.yml'),
-                 YAML.dump(seam('opening_check' => { 'reviewer' => 'openai/codex', 'model' => 'candidate-model' })))
+                 YAML.dump(seam('pr_description' => { 'opening_check' => { 'reviewer' => 'openai/codex',
+                                                                           'model' => 'candidate-model' } })))
       assert_opening(dir, root, 'flagged')
       assert_arguments(dir, 'claude', '--model', 'trusted-model')
-    end
-  end
-
-  def test_legacy_disabled_setting_explains_why_an_explicit_reviewer_was_skipped
-    with_settings('external_enabled' => false) do |root, dir|
-      output, error, status = run_description(dir, root:, reviewer: 'anthropic/claude')
-      assert_predicate status, :success?, error
-      result = JSON.parse(output).fetch('opening')
-      assert_equal 'host_check', result['status']
-      assert_includes result['reason'], 'external_enabled'
-      refute_path_exists File.join(dir, 'claude-called')
     end
   end
 
   private
 
   def with_settings(settings)
-    with_repository('opening_check' => settings) do |root|
+    with_repository('pr_description' => { 'opening_check' => settings }) do |root|
       commit(root)
       Dir.mktmpdir { |dir| yield root, dir }
     end

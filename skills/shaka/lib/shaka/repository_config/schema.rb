@@ -23,8 +23,7 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch branches wip pr_description repo_prefix opening_check prose_limits
-                    project_guidance].freeze
+      OPTIONAL = %w[base_branch branches wip pr_description repo_prefix prose_limits project_guidance].freeze
       OPTIONAL_REVIEW_KEYS = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, ReviewSchema::PROMPT_FILE,
                               ReviewSchema::LOCAL_REVIEW_COUNT, ReviewCoverage::KEY, ReviewLimit::KEY,
                               'ci_review_wait', 'post_implementation'].freeze
@@ -51,7 +50,7 @@ module Shaka
         keys!(@data, REQUIRED, OPTIONAL, @config_path)
         validate_header
         validate_commands
-        # Validate opening_check before review prompt collection reads its prompt_file.
+        # Validate pr_description.opening_check before review prompt collection reads its prompt_file.
         validate_optional
         ProjectGuidanceSchema.new(project_guidance).validate if @data.key?(ProjectGuidanceSchema::KEY)
         validate_review
@@ -60,7 +59,7 @@ module Shaka
       end
 
       def opening_check
-        @data.fetch('pr_description', {}).fetch('opening_check') { @data.fetch('opening_check', {}) }
+        @data.fetch('pr_description', {}).fetch('opening_check', {})
       end
 
       def project_guidance = ProjectGuidanceSchema.resolve(@data)
@@ -78,7 +77,6 @@ module Shaka
       def validate_optional
         BranchSchema.new(@data['branches'], root: @root).validate if @data.key?('branches')
         WipSchema.new(@data['wip']).validate if @data.key?('wip')
-        OpeningSchema.new(@data['opening_check']).validate if @data.key?('opening_check')
         validate_description
         RepoPrefix.validate!(@data['repo_prefix']) if @data.key?('repo_prefix')
       end
@@ -86,11 +84,7 @@ module Shaka
       def validate_description
         return unless @data.key?('pr_description')
 
-        description = @data['pr_description']
-        PrDescriptionSchema.new(description).validate
-        return unless @data.key?('opening_check') && description.key?('opening_check')
-
-        raise Error, 'Use pr_description.opening_check or opening_check, not both'
+        PrDescriptionSchema.new(@data['pr_description']).validate
       end
 
       def validate_commands

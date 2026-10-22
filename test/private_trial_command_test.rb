@@ -8,7 +8,7 @@ require 'shaka/pr_watch/command'
 class PrivateTrialCommandTest < Minitest::Test
   include PrivateSetupFixture
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def test_generated_trial_publishes_walkthrough_and_hands_off_with_native_gates
     with_setup do |root, ref|
@@ -77,7 +77,7 @@ class PrivateTrialCommandTest < Minitest::Test
   end
 
   def assert_native_watch(directory, root, ref)
-    arguments = [COMMAND, 'pr', 'watch', 'owner/repo', '1', '--root', root, '--ref', ref,
+    arguments = [*COMMAND, 'pr', 'watch', 'owner/repo', '1', '--root', root, '--ref', ref,
                  '--head', ref, '--settle', '1', '--interval', '1']
     output, error, status = Open3.capture3({ 'PATH' => "#{directory}:#{ENV.fetch('PATH')}" }, *arguments)
     assert_predicate status, :success?, "#{error}\n#{output}"
@@ -85,7 +85,7 @@ class PrivateTrialCommandTest < Minitest::Test
   end
 
   def invoke(command, directory, root, ref)
-    arguments = [COMMAND, command, 'owner/repo', '1', '--root', root, '--ref', ref, '--head', ref]
+    arguments = [*COMMAND, command, 'owner/repo', '1', '--root', root, '--ref', ref, '--head', ref]
     arguments.push('--body-file', File.join(directory, 'walkthrough.md')) if command == 'walkthrough'
     Open3.capture3({ 'PATH' => "#{directory}:#{ENV.fetch('PATH')}" }, *arguments)
   end

@@ -289,8 +289,5 @@ from any new file, database, or scheduler. Each delivery
 retains one owner and the same repository gates. This does not restore predecessor fleet
 machinery; claim adoption only after a real tower-to-delivery trial.
 
-Rollback: select a prior managed package with
-`bin/install --skills-dir DIR --rollback PACKAGE_ID` with the same optional
-`--managed-dir DIR` and its recorded tower flags,
-or remove the verified skill link. Preserve unrelated installations and user files. See
-[upgrade and removal](../skills/shaka/references/installation.md#upgrade).
+Rollback: remove the verified skill link. Preserve unrelated installations and user files. See
+[removal](../skills/shaka/references/installation.md#remove).

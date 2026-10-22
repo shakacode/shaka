@@ -115,8 +115,7 @@ class AttentionTest < Minitest::Test
   end
 
   def test_command_rejects_an_unknown_state
-    command = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
-    _output, error, status = Open3.capture3(command, 'attention', 'owner/repo', '1', '--state', 'approved')
+    _output, error, status = Open3.capture3(*SHAKA_COMMAND, 'attention', 'owner/repo', '1', '--state', 'approved')
 
     refute_predicate status, :success?
     assert_match(/invalid argument: --state approved/, error)

@@ -42,7 +42,7 @@ module OpencodeWorkFixture
   def launch(*, directory: @target, command: @command, temporary: File.join(@directory, 'temp'))
     environment = { 'PATH' => "#{@directory}/bin:#{ENV.fetch('PATH')}", 'WORK_CAPTURE' => @capture,
                     'TMPDIR' => temporary, 'BUNDLE_GEMFILE' => PROJECT_GEMFILE }
-    Open3.capture3(environment, command, 'work', '--host', 'opencode', *, chdir: directory)
+    Open3.capture3(environment, *shaka_command(command), 'work', '--host', 'opencode', *, chdir: directory)
   end
 
   def write_opencode
@@ -97,7 +97,7 @@ class OpencodeWorkTest < Minitest::Test
 
   def test_help_names_the_host_option
     output, error, status = Open3.capture3({ 'PATH' => "#{@directory}/bin:#{ENV.fetch('PATH')}" },
-                                           @command, 'work', '--help')
+                                           *shaka_command(@command), 'work', '--help')
     assert_predicate status, :success?, error
     assert_includes output, '--host'
     assert_includes output, 'opencode'

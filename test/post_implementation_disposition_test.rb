@@ -201,6 +201,44 @@ class PostImplementationAcceptedConcernTest < Minitest::Test
     end
   end
 
+  AWAITING = Shaka::PostImplementationReport::AWAITING_DECISION
+
+  def awaiting_with(result, conclusion, concerns, acceptance = [])
+    merge_with(result, conclusion, concerns, acceptance)
+    result['disposition']['recommendation'] = AWAITING
+  end
+
+  def test_owner_can_recommend_merge_after_the_maintainer_settles_the_verdict
+    [['Simplify/reframe', ['Too costly.']], ['Simplify/reframe', []], ['Proceed', ['Frequency is unknown.']]]
+      .each { |conclusion, concerns| assert_awaiting(conclusion, concerns) }
+  end
+
+  def assert_awaiting(conclusion, concerns)
+    with_result do |result, path|
+      awaiting_with(result, conclusion, concerns)
+      github, status = publish(result, path)
+      evidence = Shaka::PostImplementationEvidence.new(github)
+
+      assert_equal 0, status, conclusion
+      assert_includes github.bodies.first.first, "## Recommendation: #{AWAITING}"
+      assert_raises(Shaka::Error) { evidence.call('a' * 40) }
+      assert_equal AWAITING, evidence.recommendation('a' * 40)
+    end
+  end
+
+  def test_merge_after_maintainer_decision_needs_something_the_maintainer_can_settle
+    concern = 'Frequency is unknown.'
+    [['Proceed', [], []], ['Proceed', [concern], accepted(concern)], ['Do not merge', [concern], []]]
+      .each do |conclusion, concerns, acceptance|
+        with_result do |result, path|
+          awaiting_with(result, conclusion, concerns, acceptance)
+          github, status = publish(result, path)
+          assert_equal 1, status, conclusion
+          assert_empty github.bodies
+        end
+      end
+  end
+
   def test_other_recommendations_stay_blocked_and_show_the_remaining_concern
     with_result do |result, path|
       merge_with(result, 'Proceed', ['Frequency is unknown.', 'The flag has no test.'],

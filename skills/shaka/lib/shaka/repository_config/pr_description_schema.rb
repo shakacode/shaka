@@ -24,7 +24,7 @@ module Shaka
           @description.key?('human_review_floors')
         return unless @description.key?('opening_check')
 
-        OpeningSchema.new(@description['opening_check'], label: 'pr_description.opening_check').validate
+        OpeningSchema.new(@description['opening_check']).validate
       end
 
       private

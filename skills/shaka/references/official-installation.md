@@ -1,6 +1,6 @@
 # Official installation
 
-Use this procedure for everyday installation, update, verification, or migration.
+Use this procedure for everyday installation, update, and verification.
 Require Ruby 3.4 or later, Git, and authenticated GitHub CLI; see
 [prerequisite details](installation.md#prerequisites). Shaka records its own Ruby
 and ignores project Ruby and Bundler settings. Never edit the dedicated checkout.
@@ -87,31 +87,13 @@ completes on the next installation or update run.
 Finish active Shaka chats before updating this mutable path. Doctor reads recorded identity;
 verification rechecks it. Project settings use [repository migration](migration.md).
 
-## Migrate retained-copy installations
-
-When the user selects migration:
-
-1. Select the dedicated directory. Clone the current official source there, or
-   bring an existing clean, expected checkout to the current default branch before
-   first registration. Stop for local changes or an unexpected remote.
-2. Run its new `bin/install --directory DIR` with every selected `--agent`, or
-   the original custom `--skills-dir`. Recognized tower links migrate too.
-3. Run its helper's `install --verify` and confirm Shaka in a new chat.
-
-Canonical Codex installation retires verified `~/.codex/skills` aliases after
-`~/.agents/skills` links succeed. This covers the standard managed directory
-and selected checkout; inspect other duplicates and preserve intentional trials.
-Keep every older package: active chats may reference its absolute paths.
-
 ## Teams and forks
 
 Use the [fork guide](https://github.com/shakacode/shaka/blob/main/docs/fork-and-hack.md).
 Keep local `.git` installation records per machine. For forks or SSH origins, register the exact `--repository URL` and optional `--branch NAME`.
 Publish upstream integrations separately before updating.
 
-## PR trials and retained copies
+## PR trials
 
 Use [PR trials](https://github.com/shakacode/shaka/blob/main/docs/trying-pr-versions.md)
 for intentional evaluation without replacing the default links.
-`--skills-dir DIR` alone preserves the [legacy managed-copy procedure](installation.md).
-Keep all retained copies; this migration authorizes no deletion or automatic cleanup.

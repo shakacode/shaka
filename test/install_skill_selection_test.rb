@@ -31,27 +31,13 @@ class InstallSkillSelectionTest < Minitest::Test
     assert_predicate status, :success?, output
   end
 
-  def test_tower_flag_order_selects_one_package_and_rollback
+  def test_tower_flag_order_selects_one_package
     assert_predicate install('--with-mct', '--with-rct').last, :success?
     package = package_id
 
     assert_predicate install('--with-rct', '--with-mct').last, :success?
     assert_equal package, package_id
     assert_equal %w[shaka rct mct], metadata.fetch('skills')
-
-    output, status = install('--with-mct', '--with-rct', '--rollback', package)
-    assert_predicate status, :success?, output
-  end
-
-  # Packages from earlier releases recorded skills in flag order.
-  def test_rollback_accepts_package_recorded_in_flag_order
-    output, status = unnormalized_package(%w[shaka mct rct])
-    assert_predicate status, :success?, output
-    package = output.strip
-
-    output, status = install('--with-rct', '--with-mct', '--rollback', File.basename(package))
-    assert_predicate status, :success?, output
-    assert_equal File.basename(package), package_id
   end
 
   def test_unknown_skill_is_refused_before_metadata_is_written

@@ -164,6 +164,29 @@ class MergeSquashMessageTest < Minitest::Test
     refute result.key?('squash_message')
   end
 
+  # The queue would commit the whole description, Shaka's sections and WIP Details included.
+  def test_a_queue_that_copies_the_description_is_refused_before_enqueueing
+    queue = { 'mergeQueue' => { 'configuration' => { 'mergeMethod' => 'SQUASH' } } }
+    @client.queue_settings = { 'squashMergeCommitTitle' => 'PR_TITLE', 'squashMergeCommitMessage' => 'PR_BODY',
+                               'pullRequest' => queue }
+    @client.snapshots = [snapshot.merge('isMergeQueueEnabled' => true)]
+
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: 17, squash_message:) }
+
+    assert_match(/copies the PR description.*Default message or Pull request title/, error.message)
+    assert_empty @client.mutations
+  end
+
+  def test_unread_queue_defaults_are_refused_before_enqueueing
+    @client.queue_settings = nil
+    @client.snapshots = [snapshot.merge('isMergeQueueEnabled' => true)]
+
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: 17) }
+
+    assert_match(/Could not read this merge queue's commit defaults/, error.message)
+    assert_empty @client.mutations
+  end
+
   def test_a_merge_queue_reports_that_the_message_was_not_applied
     entry = queue_entry(position: 1)
     ready = snapshot.merge('isMergeQueueEnabled' => true)

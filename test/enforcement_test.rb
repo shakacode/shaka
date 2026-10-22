@@ -33,8 +33,7 @@ class EnforcementConfigTest < Minitest::Test
   # A rule stated outside a phase still binds the agent, so every standing field is scanned
   # and every scanned section can be rendered.
   def test_reports_a_rule_from_every_section_it_scans
-    command = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
-    output = Open3.capture2e(command, 'enforcement').first.force_encoding(Encoding::UTF_8)
+    output = Open3.capture2e(*SHAKA_COMMAND, 'enforcement').first.force_encoding(Encoding::UTF_8)
     rules = Shaka::EnforcementConfig.load.fetch('rules')
 
     Shaka::EnforcementCoverage.sections(Shaka::WorkflowConfig.load).each_key do |id|
@@ -159,7 +158,7 @@ class PackagedAuditTest < Minitest::Test
 end
 
 class EnforcementCommandTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def test_reports_every_audited_rule_under_its_workflow_section
     output, status = report
@@ -245,7 +244,7 @@ class EnforcementCommandTest < Minitest::Test
   end
 
   def test_rejects_arguments
-    output, status = Open3.capture2e(COMMAND, 'enforcement', 'candidate.yml')
+    output, status = Open3.capture2e(*COMMAND, 'enforcement', 'candidate.yml')
 
     refute_predicate status, :success?
     assert_includes output, 'Usage: shaka enforcement'
@@ -257,7 +256,7 @@ class EnforcementCommandTest < Minitest::Test
 
   # The report is UTF-8 prose; a POSIX locale would otherwise hand the test binary bytes.
   def report
-    output, status = Open3.capture2e(COMMAND, 'enforcement')
+    output, status = Open3.capture2e(*COMMAND, 'enforcement')
     [output.force_encoding(Encoding::UTF_8), status]
   end
 end

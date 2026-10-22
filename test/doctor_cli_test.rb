@@ -6,7 +6,7 @@ require_relative 'doctor_helper'
 require 'stringio'
 
 class DoctorCliTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def test_an_unexpected_argument_is_refused_rather_than_ignored
     assert_equal(1, silently { Shaka::Doctor.run(['unexpected']) })
@@ -63,7 +63,7 @@ class DoctorCliTest < Minitest::Test
   private
 
   def capture_doctor(path, root)
-    Open3.capture3({ 'PATH' => path }, COMMAND, 'doctor', '--root', root)
+    Open3.capture3({ 'PATH' => path }, *COMMAND, 'doctor', '--root', root)
   end
 
   def stub_gh

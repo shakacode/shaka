@@ -35,7 +35,7 @@ module Shaka
       return clear(current, head) if publication.state == 'ready'
 
       failure = draft_failure(head)
-      update(current, head, publication.summary, published)
+      update(current, head, publication, published)
       raise Error, failure if failure
 
       { 'state' => 'blocked', 'head' => head }
@@ -43,17 +43,18 @@ module Shaka
 
     private
 
-    # The latest checkpoint is ready, so only a warning for an earlier head is settled; one naming
-    # this head, or no head, stays for the maintainer. The task owner still marks the PR ready.
+    # The latest checkpoint is ready, so a warning for an earlier head is settled, and so is one for this head
+    # that waited only on the maintainer's decision; any other one naming this head, or no head, stays for the
+    # maintainer. The task owner still marks the PR ready.
     def clear(current, head)
       body = current['body'].to_s
-      cleared = ![nil, head].include?(MergeWarningRegion.head(body, @github.repository))
+      cleared = MergeWarningRegion.settled_by_ready?(body, @github.repository, head)
       replace(current, MergeWarningRegion.remove(body)) if cleared
       { 'state' => cleared ? 'cleared' : 'unchanged', 'head' => head, 'draft' => current['draft'] }
     end
 
-    def update(current, head, summary, published)
-      updated = "#{warning(head, summary, published)}#{MergeWarningRegion.remove(current['body'].to_s)}"
+    def update(current, head, publication, published)
+      updated = "#{warning(head, publication, published)}#{MergeWarningRegion.remove(current['body'].to_s)}"
       raise Error, 'Merge warning exceeds GitHub description length.' if updated.length > 65_536
 
       replace(current, updated)
@@ -98,15 +99,15 @@ module Shaka
       raise Error, 'Merge warning is not for the live open PR head; the checkpoint comment remains published.'
     end
 
-    def warning(head, summary, published)
+    def warning(head, publication, published)
       url = PublicationText.single_line(published['html_url'], 'checkpoint URL')
       raise Error, 'Checkpoint URL must use HTTPS.' unless url.match?(%r{\Ahttps://[^\s]+\z})
 
-      reason = summary.lines.map do |line|
+      reason = publication.summary.lines.map do |line|
         "> #{line.chomp.gsub('&', '&amp;').gsub('<', '&lt;').gsub('>', '&gt;')}"
       end.join("\n")
-      "#{OPEN}\n> **⛔ Do not merge — post-implementation checkpoint blocked.**\n>\n#{reason}\n>\n" \
-        '> Task owner: resolve the linked concerns and publish a new checkpoint for the current head. ' \
+      heading, step = MergeWarningRegion.wording(publication.disposition)
+      "#{OPEN}\n> **#{heading}**\n>\n#{reason}\n>\n> #{step} " \
         "Keep this PR in draft until all required gates pass.\n>\n" \
         "> [Blocking report](#{url}) · Head #{PublicationText.commit(head, @github.repository)}. " \
         "Passing technical checks does not resolve this blocker.\n#{CLOSE}\n\n"

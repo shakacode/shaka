@@ -9,7 +9,7 @@ require 'yaml'
 class CliSeamRequiredChecksTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   # Answers only the requests `pr` makes on an unprotected branch; anything else fails the command.
   FAKE_GH = <<~RUBY
     #!/usr/bin/env ruby
@@ -46,7 +46,7 @@ class CliSeamRequiredChecksTest < Minitest::Test
     File.write(File.join(bin, 'gh'), FAKE_GH)
     File.chmod(0o755, File.join(bin, 'gh'))
     Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}" },
-                   COMMAND, 'pr', 'owner/repo', '1', '--root', root, '--ref', 'HEAD')
+                   *COMMAND, 'pr', 'owner/repo', '1', '--root', root, '--ref', 'HEAD')
   end
 
   def commit(root)

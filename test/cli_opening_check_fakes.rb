@@ -22,7 +22,7 @@ module CliOpeningCheckFakes
     options.push('--opening-reviewer', reviewer) if reviewer
     options.push('--opening-model', model) if model
     Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir },
-                   self.class::COMMAND, 'description', 'owner/repo', '1', *options)
+                   *self.class::COMMAND, 'description', 'owner/repo', '1', *options)
   end
 
   def write_fake_commands(dir)
@@ -83,6 +83,10 @@ module CliOpeningCheckFakes
         end
       when %r{pulls/1/files?} then puts '[]'
       when 'markdown' then puts JSON.generate('<table></table>' * 10)
+      when 'graphql'
+        nodes = [{ 'number' => 1, 'repository' => { 'nameWithOwner' => 'owner/repo' } }]
+        references = { 'totalCount' => 1, 'nodes' => nodes }
+        puts JSON.generate('data' => { 'repository' => { 'pullRequest' => { 'closingIssuesReferences' => references } } })
       else abort "unexpected gh request: \#{ARGV.inspect}"
       end
     RUBY

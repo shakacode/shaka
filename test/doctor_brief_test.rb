@@ -16,7 +16,7 @@ class DoctorBriefTest < Minitest::Test
   def test_a_ready_installation_lists_the_installation_settings_and_basic_checks
     report, blocked = brief(identity: INSTALLED)
     expected = ['Shaka start check: HEALTHY', 'Installation', 'Repository seam', 'Ruby', 'Git', 'GitHub CLI',
-                'Repository access']
+                'Repository access', 'Merge queue commits']
     assert_equal expected, [report.lines.first.strip, *report.scan(/^\[\w+\] (.+?) —/).flatten]
     assert_includes report, '0.1.0 at '
     assert_includes report, 'revision 2363e217b603'
