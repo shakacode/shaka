@@ -39,6 +39,12 @@ class HandoffSquashMessageTest < Minitest::Test
     assert_includes result['status'], "squash message #{HEAD[0, 7]}"
   end
 
+  def test_a_merge_wait_names_the_issues_the_merge_closes
+    assert_includes awaiting_merge(closes: [839, 840])['status'], 'closes #839, #840'
+    assert_includes awaiting_merge['status'], 'closes no issues'
+    refute_includes handoff['status'], 'closes'
+  end
+
   def test_a_squash_message_for_an_older_head_is_owed
     assert owed?(awaiting_merge(comments: [squash_comment(OLD)]), "post one for #{HEAD}")
   end

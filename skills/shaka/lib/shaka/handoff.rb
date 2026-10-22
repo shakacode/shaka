@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'attention'
+require_relative 'closing_issues'
 require_relative 'error'
 require_relative 'merge_queue_commit'
 require_relative 'merge_required_checks'
@@ -59,7 +60,7 @@ module Shaka
       checks = snapshot['requiredChecks']
       [attention_fact(checks, live), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
        comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live), squash_fact(snapshot, live),
-       wip_fact(live)].compact
+       closing_fact, wip_fact(live)].compact
     end
 
     # An unsubmitted review by this account outranks every other wait, because only its author can see it.
@@ -117,6 +118,9 @@ module Shaka
 
       owe("squash message #{head[0, SHORT]}", "The squash commit message names #{head}; post one for #{live}.")
     end
+
+    # The person clicking merge sees which issues it closes before they click.
+    def closing_fact = (ClosingIssues.fact(@github) if merge_requested?)
 
     def checkpoint_fact(live)
       return unless @checkpoint && merge_requested?
