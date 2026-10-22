@@ -25,7 +25,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: Reply with exactly OK. Do not use tools.
           settings: '{"disableAllHooks":true}'
-          claude_args: --max-turns 1 --tools "" --disable-slash-commands
+          claude_args: --max-turns 1 --tools Read --disallowedTools Read --disable-slash-commands
           show_full_output: false
 
       - name: Encrypt the diagnostic for local inspection
