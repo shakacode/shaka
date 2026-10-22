@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require 'find'
+require_relative '../../conventions'
 require_relative '../../repository_config'
+require_relative '../../trusted_path_resolver'
 require_relative '../private_inventory'
 require_relative '../private_source'
 require_relative 'trusted_prompts'
@@ -38,7 +40,15 @@ module Shaka
         guidance = RepositoryConfig::ProjectGuidanceSchema.resolve(@settings)
         paths = RepositoryConfig.prompt_files(review: @settings.fetch('review'),
                                               opening: @settings.fetch('opening_check'), guidance:).map(&:last)
-        paths + pr_template_paths(guidance)
+        paths + pr_template_paths(guidance) + convention_paths
+      end
+
+      # A conventional file counts only where it exists. Private settings already hash their whole tree.
+      def convention_paths
+        return [] if @private_source || !@trusted_ref
+
+        resolver = TrustedPathResolver.new(root: @root, sha: @trusted_ref)
+        Conventions.files.select { |path| resolver.entry(path) }
       end
 
       # `shaka guidance pr_evidence` adds the pull request template, so the template counts as read input too.

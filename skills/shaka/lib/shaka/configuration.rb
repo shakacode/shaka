@@ -75,6 +75,14 @@ module Shaka
       private_prompt(root:, path:, label:)
     end
 
+    # A conventional file in individual setup's tree may be missing or empty; the caller keeps its built-in prompt.
+    def optional_private_prompt(root:, path:)
+      file = File.join(root, path)
+      return unless File.file?(file) && !File.read(file).strip.empty?
+
+      private_prompt(root:, path:, label: path)
+    end
+
     # Reads instructions an individual setup keeps in its untracked settings directory.
     def private_prompt(root:, path:, label:)
       full = File.realpath(File.expand_path(path, root))

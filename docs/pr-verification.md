@@ -403,7 +403,7 @@ Parsed identifiers and readiness rules remain unchanged.
 For example, a settings page may satisfy the task but introduce an interface most
 users never need. The agent can recommend extending an existing setting instead
 before more work builds around that page. Maintainers can customize the
-[checkpoint settings](settings.md#reviewpost_implementation)
+[checkpoint settings](settings.md#checkpoint)
 with their audience and architectural priorities.
 
 ## Change one behavior at a time

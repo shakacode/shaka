@@ -23,7 +23,8 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch branches wip pr_description repo_prefix prose_limits project_guidance].freeze
+      OPTIONAL = %w[base_branch branches wip pr_description repo_prefix prose_limits project_guidance
+                    checkpoint].freeze
       OPTIONAL_REVIEW_KEYS = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, ReviewSchema::PROMPT_FILE,
                               ReviewSchema::LOCAL_REVIEW_COUNT, ReviewCoverage::KEY, ReviewLimit::KEY,
                               'ci_review_wait', 'post_implementation'].freeze
@@ -94,6 +95,7 @@ module Shaka
       end
 
       def validate_review
+        validate_checkpoint
         review = mapping!(@data['review'], 'review')
         ReviewSchema.retired!(review)
         ReviewSchema.renamed!(review)
@@ -102,7 +104,15 @@ module Shaka
         ReviewCoverage.validate!(review)
         count = ReviewSchema::LOCAL_REVIEW_COUNT
         positive_integer!(review[count], "review.#{count}") if review.key?(count)
-        local_prompt_files!(review) unless @available_commands
+        local_prompt_files!(PostImplementationSchema.fold(@data)) unless @available_commands
+      end
+
+      def validate_checkpoint
+        section = PostImplementationSchema::SECTION
+        return unless @data.key?(section)
+
+        PostImplementationSchema.new(@data[section], label: section).validate
+        PostImplementationSchema.fold(@data)
       end
 
       # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.

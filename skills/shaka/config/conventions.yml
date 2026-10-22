@@ -1,0 +1,20 @@
+# Files Shaka reads by name from a repository's .agents/shaka/ directory, without a setting.
+# Each top-level key is a directory there. seam init writes the directory's README from its
+# introduction and a table of its files, and the code that reads a file takes its path from here.
+---
+reviewers:
+  introduction: |
+    Files here add rules to the prompts Shaka's reviewing models receive. A reviewer gets
+    Shaka's built-in prompt, or the replacement a `prompt_file` setting names, then this
+    repository's applicable `AGENTS.md` files, then its file here. Later parts win when they
+    conflict, so put a rule for every agent in `AGENTS.md` and a rule for one reviewer here.
+
+    Shaka reads these files from the default branch, so a pull request cannot change the
+    rules it is reviewed by. A file Shaka does not list below is ignored.
+  files:
+    checkpoint.md:
+      reader: Checkpoint reviewer
+      when: The "did we build the right thing?" check before merge
+      effect: Added to the checkpoint prompt
+      absent: The checkpoint prompt alone; an empty file counts as absent
+      docs: https://shaka.shakacode.com/docs/settings#checkpoint

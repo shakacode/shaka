@@ -590,7 +590,9 @@ commit and prevent edits. See [what Shaka enforces](workflow.md#what-is-enforced
 The file configures local reviews. A CI review job gets its prompt from its own
 workflow; to give it the same instructions, have the workflow read this file.
 
-## `review.post_implementation`
+<a id="reviewpost_implementation"></a>
+
+## `checkpoint`
 
 **Optional.** Choose who evaluates the result at the **checkpoint**:
 whether it solves the intended problem, earns its maintenance cost, and what to do
@@ -602,15 +604,26 @@ For example, to ask Claude Sonnet to reconsider each finished change with your
 project's audience in mind:
 
 ```yaml
-review:
-  required: meaningful_changes
-  ci_review_jobs: [claude-review]
-  post_implementation:
-    reviewer: anthropic/claude
-    model: sonnet
-    effort: high
-    prompt_file: .agents/shaka/product-checkpoint.md
+checkpoint:
+  reviewer: anthropic/claude
+  model: sonnet
+  effort: high
 ```
+
+To add your own questions to the checkpoint without copying Shaka's prompt, write
+them in `.agents/shaka/reviewers/checkpoint.md`. For example, "Ask whether the
+change adds a step maintainers must remember." The reviewer reads Shaka's prompt,
+then your `AGENTS.md` files, then this file, and the later text wins when they
+conflict. A missing or empty file leaves Shaka's prompt unchanged.
+`.agents/shaka/reviewers/README.md` lists every file Shaka reads there.
+
+To replace Shaka's prompt instead, set `prompt_file`, such as
+`prompt_file: .agents/shaka/product-checkpoint.md`. A replacement can drop
+questions the checkpoint relies on, so prefer adding rules. Rules in
+`reviewers/checkpoint.md` still follow a replacement prompt.
+
+Older setups write these settings as `review.post_implementation`, which still
+works. Settings validation fails when a file uses both.
 
 Repository choices come from the [configuration source](#which-settings-apply),
 and the prompt file from [where Shaka reads prompt files](#where-shaka-reads-a-prompt-file).
