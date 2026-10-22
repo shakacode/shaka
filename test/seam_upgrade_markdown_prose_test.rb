@@ -60,11 +60,9 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     'list fence' => "1. ```sh\n   cd .agents\n   bin/validate\n   ```\n",
     'inline code' => "Run `cd .agents && bin/validate` before pushing.\n",
     'quoted inline' => "Run `cd .age\"nts\" && bin/validate`.\n",
-    'inline env' => "Run `env -C .agents bin/validate`.\n",
-    'inline env chdir' => "Run `env --chdir=.agents bin/validate`.\n",
-    'same line' => "Run `bin/validate` from `.agents`.\n",
     'wrapped' => "Run `bin/validate` from\n`.agents`.\n",
-    'directory first' => "From the `.agents` directory, run `bin/validate`.\n",
+    'inline env' => "Run `env -C .agents bin/validate`.\n",
+    'same line' => "Run `bin/validate` from `.agents`.\n",
     'prose then fence' => "Run these from the `.agents` directory:\n\n```sh\nbin/validate\n```\n",
     'prose, blanks, fence' => "Run these from the `.agents` directory:\n\n\n```sh\nbin/validate\n```\n",
     'indented middle line' => "Run these from `.agents`\n    once the cache is warm,\nthen `bin/validate`.\n"
@@ -130,7 +128,8 @@ class SeamUpgradeMarkdownRetainedToolTest < Minitest::Test
   end
 end
 
-# Prose has no working directory, so outside code only a change into the directory blocks.
+# Prose has no working directory, so outside code only a change into the directory, or a command it says to run
+# from there, blocks.
 class SeamUpgradeMarkdownProsePairTest < Minitest::Test
   include SeamUpgradeFixture
 
@@ -149,6 +148,23 @@ class SeamUpgradeMarkdownProsePairTest < Minitest::Test
         write_tracked(root, 'ledger.md', source)
         preview = report(root)
         assert_equal 'ready', preview.fetch('status'), "#{name}: #{preview.fetch('blockers').join("\n")}"
+      end
+    end
+  end
+
+  PROSE_RUN_FROM_DIRECTORY = {
+    'inline env chdir' => "Run `env --chdir=.agents bin/validate`.\n",
+    'env option first' => "Run `env -i -C .agents bin/validate`.\n",
+    'directory first' => "From the `.agents` directory, run `bin/validate`.\n",
+    'command with arguments' => "Run `bin/test fail` from `.agents`.\n",
+    'parenthesized place' => "Run `bin/validate` (from `.agents`).\n"
+  }.freeze
+
+  def test_prose_running_a_command_from_the_directory_still_blocks
+    PROSE_RUN_FROM_DIRECTORY.each do |name, source|
+      with_repository do |root|
+        write_tracked(root, 'guide.md', source)
+        assert_includes report(root).fetch('blockers').join("\n"), 'bare old-layout directory', name
       end
     end
   end

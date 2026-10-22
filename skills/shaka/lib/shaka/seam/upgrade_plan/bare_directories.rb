@@ -34,15 +34,16 @@ module Shaka
 
         # env takes the directory as the -C argument itself; a later path is the command it runs.
         def old_directory_change
-          change = /(?:(?:cd|pushd)\s+|chdir\s*\()[^\n]*?|env\s+(?:-C\s*|--chdir[=\s]\s*)\S*?/
+          change = /(?:(?:cd|pushd)\s+|chdir\s*\()[^\n]*?|env\s+(?:-\S+\s+)*?(?:-C\s*|--chdir[=\s]\s*)\S*?/
           /(?<![\w-])(?:#{change})#{Regexp.escape(PATHS::DIRECTORY)}(?![\w.-])/o
         end
 
         def prose_command_from_directory?(text)
           # A sentence may end right after the directory, so a closing period still leaves it bare.
           directory = %r{(?<![\w.-])#{Regexp.escape(PATHS::DIRECTORY)}/?(?![\w-]|\.\w|/[[:alnum:]_-])}o
-          place = /(?i:from|in|inside|within|under)\s+(?:the\s+)?['"]?#{directory}['"]?/
-          command = /(?<![\w.-])#{command_name}/
+          place = /\(?(?i:from|in|inside|within|under)\s+(?:the\s+)?['"]?#{directory}['"]?/
+          # The command may carry a few arguments before the phrase that places it.
+          command = %r{(?<![\w.-])#{command_name}(?:\s+[\w./=-]+){0,4}?}
           text.match?(/#{command}['"]?,?\s+#{place}/) ||
             text.match?(/#{place}(?:\s+directory)?,?\s+(?:run\s+)?['"]?#{command}/)
         end
