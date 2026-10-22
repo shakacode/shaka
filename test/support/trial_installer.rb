@@ -19,6 +19,8 @@ until arguments.empty?
   end
 end
 
+abort 'Missing --skills-dir' if options[:skills_dir].to_s.strip.empty?
+
 begin
   puts "Package: #{File.basename(Shaka::Installer.new(source_root:, **options).run)}"
 rescue SystemCallError, IOError, ArgumentError => e
