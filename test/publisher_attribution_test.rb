@@ -39,7 +39,7 @@ class PublisherAttributionTest < Minitest::Test
       assert_equal 'medium', result.dig('identity', 'effort')
       assert_equal 'gpt-6.1-sol', result.dig('provenance', 'active_model')
       assert_equal 'medium', result.dig('provenance', 'active_effort')
-      assert_includes result['publisher_note'], 'served model is UNKNOWN'
+      assert_includes result['publisher_note'], 'Served model unavailable in saved Codex logs.'
     end
   end
 

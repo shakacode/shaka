@@ -42,7 +42,25 @@ class CliDescriptionTimingsTest < Minitest::Test
     end
   end
 
+  def test_description_counts_work_before_the_first_commit_and_validation
+    @task_started_at = '2026-10-18T07:00:00Z'
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, decisions: [], env: steps_env(dir))
+
+        assert_predicate status, :success?, error
+        published = File.read(File.join(dir, 'published.md'))
+        assert_includes published, '**Before first recorded validation:** 1h 5m'
+      end
+    end
+  end
+
   private
+
+  def description_content
+    super.merge('task_started_at' => @task_started_at)
+  end
 
   # This machine logged a review of the pull request's commit.
   def steps_env(dir)

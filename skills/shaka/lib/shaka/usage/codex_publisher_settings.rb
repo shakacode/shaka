@@ -7,7 +7,7 @@ module Shaka
   class CodexPublisherSettings
     AGENT = 'Codex'
     MODEL_SUFFIX = ' (configured)'
-    NOTE = 'Publisher model is configured; served model is UNKNOWN.'
+    NOTE = 'Served model unavailable in saved Codex logs.'
     FIELDS = %w[provider model effort].freeze
     TOKEN = /\A[A-Za-z0-9][A-Za-z0-9._:-]{0,79}\z/
 
