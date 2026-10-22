@@ -18,6 +18,32 @@ class OfficialInstallIgnoreTest < Minitest::Test
     assert_path_exists File.join(@root, 'skills/shaka/.DS_Store')
   end
 
+  # Hosts read ignored files through the link, so the permission check covers them though the revision check skips them.
+  def test_verify_refuses_a_writable_ignored_file
+    official_install
+    File.write(File.join(@root, '.git/info/exclude'), ".DS_Store\n")
+    ignored = File.join(@root, 'skills/shaka/.DS_Store')
+    File.write(ignored, '')
+    File.chmod(0o666, ignored)
+
+    output, status = invoke('--verify')
+    refute_predicate status, :success?
+    assert_includes output, 'Installation skills are group or world writable'
+    assert_includes output, ignored
+    assert_refusal 'Installation skills are group or world writable'
+  end
+
+  # A symlink's own mode bits mean nothing, and Linux reports every symlink as 0777.
+  def test_verify_accepts_an_ignored_symlink
+    official_install
+    File.write(File.join(@root, '.git/info/exclude'), "build\n")
+    link = File.join(@root, 'skills/shaka/build')
+    loose_symlink('SKILL.md', link)
+
+    output, status = invoke('--verify')
+    assert_predicate status, :success?, output
+  end
+
   def test_verify_and_update_skip_a_directory_that_holds_only_ignored_files
     official_install
     File.write(File.join(@root, '.git/info/exclude'), ".DS_Store\n")

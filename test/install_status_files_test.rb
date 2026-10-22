@@ -14,6 +14,26 @@ class InstallStatusFilesTest < Minitest::Test
     assert_includes report['next_command'], 'chmod -R go-w'
   end
 
+  # Verification checks the modes of ignored files too, so status must not call one healthy.
+  def test_a_writable_ignored_file_is_unsafe
+    root = default_install
+    File.write(File.join(root, '.git/info/exclude'), ".DS_Store\n")
+    ignored = File.join(root, 'skills/shaka/.DS_Store')
+    File.write(ignored, '')
+    File.chmod(0o666, ignored)
+    report = status(root)
+    assert_equal 'B10', report['state']
+    assert_includes report['next_command'], 'chmod -R go-w'
+  end
+
+  def test_an_ignored_symlink_is_healthy
+    root = default_install
+    File.write(File.join(root, '.git/info/exclude'), "build\n")
+    link = File.join(root, 'skills/shaka/build')
+    loose_symlink('SKILL.md', link)
+    assert_equal 'A1', status(root)['state']
+  end
+
   # Installation refuses a symlink in a skill, and chmod cannot fix one, so status asks to move it.
   def test_a_symlink_in_a_skill_is_named
     root = default_install

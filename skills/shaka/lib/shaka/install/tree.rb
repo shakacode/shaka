@@ -19,15 +19,19 @@ module Shaka
         @source_alias = source_alias
       end
 
-      def entries(root, name)
+      # Every path on disk under the skill, including ignored files hosts can still read.
+      def listing(root, name)
         skill = File.join(root, 'skills', name)
         raise ArgumentError, "Missing skill: #{skill}" unless File.directory?(skill) && !File.symlink?(skill)
 
         validate_skill_entry_points(skill, name)
 
-        paths = Dir.glob('**/*', File::FNM_DOTMATCH, base: skill)
-                   .grep_v(/\A\.{1,2}\z/)
-                   .sort.map { |path| File.join(skill, path) }
+        Dir.glob('**/*', File::FNM_DOTMATCH, base: skill).grep_v(/\A\.{1,2}\z/).sort.map { |path| File.join(skill, path) }
+      end
+
+      # The package files: the listing without Git-ignored files, which the revision comparison skips.
+      def entries(root, name)
+        paths = listing(root, name)
         ignored = ignored_files(root, paths)
         without_ignored_only_directories(paths.reject { |path| ignored_path?(path, ignored) }, ignored)
       end
@@ -67,8 +71,6 @@ module Shaka
       end
 
       private
-
-      def ignored_path?(path, ignored) = ignored.any? { |entry| path == entry || path.start_with?("#{entry}/") }
 
       # Drop a directory whose only contents are ignored; an empty untracked directory still counts as drift.
       # Sorted paths list children after their parent, so reverse order visits children first.
