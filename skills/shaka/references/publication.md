@@ -45,6 +45,10 @@
   to the lines it explains.
 - Describe the result at this head. Review rounds belong in the description's
   collapsed history, not in its visible sections.
+- Keep prior-task outcomes in a PR description only when they help review this PR.
+  When earlier work is a dependency, link it and briefly explain the relationship.
+  Omit unrelated completion reports; retain useful verification and repair history
+  for the current PR.
 - `description` and `walkthrough` refuse text past the
   [prose limits](https://github.com/shakacode/shaka/blob/main/docs/settings.md#prose_limits):
   long sentences, long paragraphs, or more visible words than the change warrants.
