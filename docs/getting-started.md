@@ -39,8 +39,7 @@ set Shaka up just for you or for your team.
   [repository setup](configure-repository.md).
 
 To check that your AI accounts can run the chosen reviewers, ask
-`$shaka Probe this project's configured reviewers.` Each probe may use quota or
-cost money.
+`$shaka Probe this project's configured reviewers.`
 
 ## 3. Start a task
 
