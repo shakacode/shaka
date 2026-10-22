@@ -40,6 +40,16 @@ module OfficialInstallSupport
                             "Settings: each project's .agents/shaka/ and ~/.agents/trusted-github-actors.yml\n"
   end
 
+  # A symlink with mode 0777, as Linux reports every symlink; macOS can set that mode, Linux cannot change it.
+  def loose_symlink(target, link)
+    File.symlink(target, link)
+    begin
+      File.lchmod(0o777, link)
+    rescue NotImplementedError, Errno::ENOTSUP
+      nil
+    end
+  end
+
   def assert_refusal(message)
     output, status = invoke('--update')
     refute_predicate status, :success?

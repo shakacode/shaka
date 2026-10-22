@@ -30,17 +30,20 @@ module Shaka
 
       def verify_modes
         entries = skill_paths.to_h { |path| [path, File.lstat(path)] }
-        writable = entries.select { |_, entry| entry.mode.anybits?(0o022) }.keys
+        writable = entries.select { |_, entry| writable?(entry) }.keys
         foreign = entries.reject { |_, entry| trusted_owner?(entry) }.keys
         # Ownership comes first: chmod cannot fix a file another account owns.
         refuse_foreign(foreign) unless foreign.empty?
         refuse_writable(writable) unless writable.empty?
       end
 
+      # A symlink's own mode bits grant nothing, and Linux reports every symlink as 0777.
+      def writable?(entry) = !entry.symlink? && entry.mode.anybits?(0o022)
+
       def skills_root = File.join(@root, 'skills')
 
       def skill_paths
-        [skills_root] + @names.flat_map { |name| [File.join(skills_root, name)] + @tree.entries(@root, name) }
+        [skills_root] + @names.flat_map { |name| [File.join(skills_root, name)] + @tree.listing(@root, name) }
       end
 
       def refuse_writable(paths)

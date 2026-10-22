@@ -21,6 +21,8 @@ module Shaka
         ignored
       end
 
+      def ignored_path?(path, ignored) = ignored.any? { |entry| path == entry || path.start_with?("#{entry}/") }
+
       def reject_nested_ignored(top, root, ignored)
         return if top == root || ignored.empty?
 
