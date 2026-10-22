@@ -11,7 +11,8 @@ verification, independent review, and PR delivery. Each PR shows:
 - **UI evidence:** for a UI change, annotated before-and-after screenshots, plus
   a video when timing matters.
 - **Review effort:** how carefully to read the code, from the description alone
-  to every line. Walkthrough notes point out lines that need a closer look.
+  to every line. When a few lines need a closer look, walkthrough notes can
+  point them out.
 
 Then you approve the change, request revisions, or resolve an open question.
 
