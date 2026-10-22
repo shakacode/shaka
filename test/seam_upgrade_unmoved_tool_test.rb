@@ -67,8 +67,8 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
   def test_hand_written_note_beside_retained_tools_still_blocks
     with_repository do |root|
       write_tool(root, 'build', "#!/bin/sh\necho ok\n")
-      write_tracked(root, '.agents/notes.md', "Wrappers live in `bin/`.\n")
-      assert_blocked_with(root, '.agents/notes.md: relative old-layout reference bin/')
+      write_tracked(root, '.agents/docs/notes.md', "Wrappers live in `../bin/`.\n")
+      assert_blocked_with(root, '.agents/docs/notes.md: relative old-layout reference ../bin/')
     end
   end
 
@@ -83,7 +83,8 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
   end
 
   def test_parent_traversal_inside_the_layout_still_blocks
-    ['.agents/workflows/../bin/test', '.agents/cache[1]/../bin/test'].each do |reference|
+    %w(.agents/workflows .agents/cache[1] .agents/cache](1)).each do |directory|
+      reference = "#{directory}/../bin/test"
       with_repository do |root|
         write_tracked(root, 'docs/run.md', "Run #{reference} first.\n")
         assert_blocked_with(root, 'docs/run.md: normalized old-layout reference')

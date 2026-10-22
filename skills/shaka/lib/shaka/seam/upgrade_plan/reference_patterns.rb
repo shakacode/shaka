@@ -44,12 +44,15 @@ module Shaka
           end
         end
 
-        # A segment never spans `](`, so a Markdown link's text and target read as two paths.
         def parent_traversal_reference?(line)
           return false unless line.include?("#{PATHS::DIRECTORY}/") && line.include?('/../')
 
-          line.match?(directory_pattern(PATHS::DIRECTORY, '/(?:(?:(?!\]\()[^/\s"\x27])+/)*\.\./'))
+          pattern = directory_pattern(PATHS::DIRECTORY, '/(?:[^/\s"\x27]+/)*\.\./')
+          markdown_link_parts(line).any? { |part| part.match?(pattern) }
         end
+
+        # A Markdown link's text and target are two paths, so `[a/b](../c)` never reads as `a/b](../c`.
+        def markdown_link_parts(line) = line.match?(/\[[^\]]*\]\(/) ? line.split('](') : [line]
 
         def directory_end = '(?=[^[:alnum:]_./-]|\\.(?![[:alnum:]_/-])|$)'
 
