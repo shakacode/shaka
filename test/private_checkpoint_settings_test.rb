@@ -32,7 +32,25 @@ class PrivateCheckpointSettingsTest < Minitest::Test
     end
   end
 
+  def test_private_prompts_file_reaches_the_reviewer_and_an_empty_one_is_skipped
+    { 'PRIVATE ADDED RULE' => true, " \n" => false }.each do |text, added|
+      with_trial do
+        write_private_rules(text)
+        update_private { |data| data['checkpoint'] = CHOICES.except('prompt_file') }
+        assert_equal 'completed', run_checkpoint['status']
+        prompt = JSON.parse(File.read(File.join(@state, 'checkpoint-trace.json')))['prompt']
+        assert_equal added, prompt.include?('TRUSTED CHECKPOINT RULES'), text
+      end
+    end
+  end
+
   private
+
+  def write_private_rules(text)
+    path = File.join(@root, '.agents/shaka/prompts/checkpoint.md')
+    FileUtils.mkdir_p(File.dirname(path))
+    File.write(path, text)
+  end
 
   def record_on_pull(result)
     publish_delivery
