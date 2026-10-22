@@ -44,6 +44,16 @@ class PrivateCheckpointSettingsTest < Minitest::Test
     end
   end
 
+  def test_private_prompts_file_that_is_not_utf8_fails_the_checkpoint_cleanly
+    with_trial do
+      write_private_rules("\xFF\xFE rule".b)
+      update_private { |data| data['checkpoint'] = CHOICES.except('prompt_file') }
+      result = run_checkpoint(succeed: false)
+      assert_equal 'not_completed', result['status']
+      assert_includes result['reason'], 'is not UTF-8'
+    end
+  end
+
   private
 
   def write_private_rules(text)
@@ -63,7 +73,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
     assert_includes trace['prompt'], 'PRIVATE CHECKPOINT RULES'
   end
 
-  def run_checkpoint
+  def run_checkpoint(succeed: true)
     Dir.mktmpdir('checkpoint-cli', @state) do |bin|
       write_executable(bin, 'claude', checkpoint_reviewer)
       environment = { 'PATH' => "#{bin}:#{ENV.fetch('PATH')}",
@@ -71,7 +81,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
       output, error, status = Open3.capture3(environment, *COMMAND, 'post-implementation', 'run', '--root', @root,
                                              '--base', @ref, '--head', @ref, '--ref', @ref,
                                              '--content-file', state_file('packet.json', PACKET))
-      assert_predicate status, :success?, "#{output}\n#{error}"
+      assert_equal succeed, status.success?, "#{output}\n#{error}"
       JSON.parse(output)
     end
   end

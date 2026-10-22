@@ -77,14 +77,11 @@ module Shaka
 
     # A conventional file in individual setup's tree may be missing or empty; the caller keeps its built-in prompt.
     def optional_private_prompt(root:, path:)
-      file = File.join(root, path)
-      return unless File.file?(file) && !File.read(file).strip.empty?
-
-      private_prompt(root:, path:, label: path)
+      private_prompt(root:, path:, label: path, optional: true) if File.file?(File.join(root, path))
     end
 
     # Reads instructions an individual setup keeps in its untracked settings directory.
-    def private_prompt(root:, path:, label:)
+    def private_prompt(root:, path:, label:, optional: false)
       full = File.realpath(File.expand_path(path, root))
       unless full.start_with?("#{File.realpath(root)}/#{PrivateInventory::DIRECTORY}/")
         raise Error, "#{label} must remain inside the private settings tree."
@@ -92,6 +89,7 @@ module Shaka
 
       text = nil
       error = ReviewPrompt.file_error(File.size(full)) { text = File.binread(full) }
+      return if optional && error == 'is empty'
       raise Error, "#{label} #{error}" if error
 
       text.force_encoding(Encoding::UTF_8)
