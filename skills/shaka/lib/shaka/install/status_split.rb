@@ -7,7 +7,8 @@ require_relative 'status_states'
 module Shaka
   module Install
     # Host folders whose Shaka links reach different installs (C5). Two registered checkouts that claim
-    # different hosts unify under the one with the newer record, through its installer's --take-over.
+    # different hosts unify under the one whose record changed last, through its installer's --take-over.
+    # The step names that checkout; a person who wants the other runs the other's --take-over instead.
     class StatusSplit
       DECIDE = 'Choose one install, then rerun its bin/install with every --agent you use.'
 
@@ -41,9 +42,19 @@ module Shaka
         return [nil, both_claim([first, second], shared)] if shared.any?
 
         winner = [first, second].max_by { |checkout| File.mtime(record(checkout)) }
-        ["#{Shellwords.escape(File.join(winner.root, 'bin/install'))} --take-over", nil]
+        return [nil, DECIDE] if StatusStates.credentials?(winner.record['repository'])
+
+        [take_over(winner), nil]
       rescue SystemCallError
         [nil, DECIDE]
+      end
+
+      # A take-over follows the other checkout's origin and branch unless told otherwise, and the winner's
+      # installer refuses a source it was not registered with.
+      def take_over(winner)
+        words = [File.join(winner.root, 'bin/install'), '--take-over', '--repository', winner.record['repository'],
+                 '--branch', winner.record['branch']]
+        words.map { |word| Shellwords.escape(word) }.join(' ')
       end
 
       def both_claim(checkouts, shared)

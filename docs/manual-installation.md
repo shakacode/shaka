@@ -126,10 +126,11 @@ To have Shaka run those steps for you, ask it to repair the installation:
 
 Repair handles a pull, an unfinished update, a missing Ruby record, a missing or
 broken link, an install record nothing uses, local commits in the checkout, and
-links split between two checkouts. Local commits move to a `kept-<commit>`
-branch first, and a record it replaces is renamed aside, so nothing is deleted.
-It stops when a step needs your decision and shows that state. Running it again
-changes nothing.
+links split between two checkouts. Split links move to the checkout whose install
+record changed last; run `install --status` first to see which. Local commits
+move to a `kept-<commit>` branch first, and a record it replaces is renamed
+aside, so nothing is deleted. It stops when a step needs your decision and shows
+that state. Running it again changes nothing.
 
 Shaka tells you when an update is available once your installation is three
 commits behind, or when the oldest change you lack is a day old, so a busy

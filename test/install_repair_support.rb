@@ -31,7 +31,7 @@ module InstallRepairSupport
   def assert_second_run_changes_nothing(root)
     before = snapshot
     output, = repair(root)
-    assert_includes output, 'Nothing to repair.'
+    refute_includes output, 'Repairing'
     assert_equal before, snapshot
   end
 

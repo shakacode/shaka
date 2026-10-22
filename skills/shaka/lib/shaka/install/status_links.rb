@@ -46,7 +46,7 @@ module Shaka
       def elsewhere(checkout, path, name, owner)
         expected = File.join(checkout.root, 'skills', name)
         return relink(path, expected, "is not #{expected}") if owner == checkout.root
-        return relink(path, expected, 'resolves to nothing Shaka installed') unless owner
+        return relink(path, expected, 'does not exist') unless File.exist?(path)
 
         finding('B9', path, "points to #{File.readlink(path)}, which this checkout does not own",
                 decision: "Choose which install #{path} should use, then run that install's bin/install.")

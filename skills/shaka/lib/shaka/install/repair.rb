@@ -71,7 +71,7 @@ module Shaka
       end
 
       def healthy?(report)
-        puts 'Nothing to repair.' if @applied.empty?
+        puts(report['severity'] == 'ok' ? 'Nothing to repair.' : 'No step repair can run.') if @applied.empty?
         puts StatusText.render(report)
         report['severity'] == 'ok'
       end

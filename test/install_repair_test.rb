@@ -73,6 +73,16 @@ class InstallRepairTest < Minitest::Test
     end
   end
 
+  # The take-over keeps the newer checkout's own origin, not the one it takes the links from.
+  def test_a_split_install_across_origins_keeps_the_newer_origin
+    local_install('--agent', 'claude')
+    other = File.join(@directory, 'other.git')
+    git('clone', '-q', '--bare', @remote, other)
+    git('-C', @root, 'remote', 'set-url', 'origin', other)
+    run_install(@root, '--directory', @root, '--repository', other, '--agent', 'cursor')
+    assert_repaired(@root, 'C5', retired: [default_path])
+  end
+
   # Status names the split with both owners; neither record is changed.
   def test_two_records_claiming_one_host_are_refused_with_both_named
     older = local_install('--agent', 'claude')
