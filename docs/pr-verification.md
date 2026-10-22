@@ -550,7 +550,7 @@ message itself.
 
 GitHub fills those boxes from a repository setting, by default with every branch
 commit's title. To start from the PR title and an empty body instead, set **Settings →
-General → Pull Requests → Allow squash merging** to **Default to pull request title**.
+General → Pull Requests → Allow squash merging** to **Pull request title**.
 
 ### Merge queues
 
@@ -559,7 +559,9 @@ prepares none when the PR's base branch has one. It tells you to add the PR to t
 queue and says what the queue will write, which comes from the repository's setting
 for the queue's merge method: squash merging or merge commits.
 
-When that setting is **Default to pull request title and description**, the queue copies
-the whole PR description into git history, including Shaka's sections and **WIP Details**,
-so the checkpoint warns you. Choose **Default to pull request title** to keep the commit
-to the PR title.
+When that setting is **Pull request title and description**, the queue copies the whole
+PR description into git history, including Shaka's sections and **WIP Details**. The
+checkpoint warns you, `shaka doctor` flags the setting, and the agent's merge refuses the
+queue, as it does when it cannot read the queue's settings. For a squash queue, choose
+**Default message** to commit the branch commit messages, or **Pull request title** to keep
+the commit to the PR title.

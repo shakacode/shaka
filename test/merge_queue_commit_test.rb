@@ -39,19 +39,26 @@ class MergeQueueCommitTest < Minitest::Test
   end
 
   def test_a_description_default_warns_that_the_managed_description_enters_history
-    text = commit.checkpoint_section
+    queue = commit
+    text = queue.checkpoint_section
 
+    assert_predicate queue, :copies_description?
     assert_includes text, 'Add this PR to the merge queue'
     assert_includes text, 'the PR title as the title and the whole PR description as the body'
     assert_includes text, 'WIP Details'
-    assert_includes text, '**Default to pull request title**'
+    assert_includes text, "Shaka's merge refuses this queue"
+    assert_includes text, '**Default message** or **Pull request title**'
     assert_includes text, '`squash_merge_commit_message`'
+    assert_includes queue.refusal, 'Allow squash merging (`squash_merge_commit_message`) to Default message'
   end
 
   def test_other_squash_defaults_name_what_the_queue_writes_without_a_warning
     { 'BLANK' => 'an empty body', 'COMMIT_MESSAGES' => 'the branch commit messages' }.each do |body, words|
-      text = commit(settings(title: 'COMMIT_OR_PR_TITLE', body:)).checkpoint_section
+      queue = commit(settings(title: 'COMMIT_OR_PR_TITLE', body:))
+      text = queue.checkpoint_section
 
+      refute_predicate queue, :copies_description?
+      assert_includes text, 'Add this PR to the merge queue'
       assert_includes text, "the commit title for a one-commit PR, otherwise the PR title as the title and #{words}"
       refute_includes text, 'WIP Details'
     end
@@ -74,17 +81,22 @@ class MergeQueueCommitTest < Minitest::Test
   end
 
   def test_a_rebase_queue_writes_no_new_message
-    text = commit(settings(method: 'REBASE')).checkpoint_section
+    queue = commit(settings(method: 'REBASE'))
 
-    assert_includes text, 'rebases the branch commits'
-    refute_includes text, 'WIP Details'
+    refute_predicate queue, :copies_description?
+    assert_includes queue.checkpoint_section, 'rebases the branch commits'
+    refute_includes queue.checkpoint_section, 'WIP Details'
   end
 
-  def test_unreadable_settings_say_so_instead_of_failing_the_publication
-    text = commit(:unreadable).checkpoint_section
+  # Unread defaults might copy the description, so Shaka's merge refuses rather than risk history.
+  def test_unreadable_settings_say_so_and_count_as_copying_the_description
+    queue = commit(:unreadable)
 
-    assert_includes text, 'Add this PR to the merge queue'
-    assert_includes text, 'could not read'
+    assert_predicate queue, :copies_description?
+    refute_predicate queue, :defaults_read?
+    assert_includes queue.checkpoint_section, 'Add this PR to the merge queue'
+    assert_includes queue.checkpoint_section, "could not read the queue's commit defaults, so Shaka's merge refuses it"
+    assert_includes queue.refusal, "an account that can read this repository's pull request settings"
   end
 
   def test_an_unread_method_still_warns_about_a_description_default

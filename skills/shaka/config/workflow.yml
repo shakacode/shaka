@@ -599,7 +599,8 @@ phases:
         `squash-message` remains the standalone path for an opted-out checkpoint and older installations;
         it posts a new comment and deletes this account's earlier standalone one.
         A merge queue takes no message: on a queue base the ready checkpoint replaces the copyable
-        blocks with what the queue will write, `handoff` owes none, and `merge` reports that.
+        blocks with what the queue will write, `handoff` owes none, and `merge` reports that. `merge`
+        refuses a queue that copies the PR description into its commit.
         `description` replaces only its marked region. `reply` reuses its stable key; `--comment`
         answers an inline thread. When a reply addresses a review, its `reviews` list holds
         that pull request's comment URLs. The helper writes one opening line per URL from the

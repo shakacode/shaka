@@ -8,14 +8,20 @@ module MergeFixtures
   BASE = 'main'
 
   class Client
-    attr_accessor :snapshots, :head_checks, :review_result, :mutation_result, :mutation_error, :comments
+    attr_accessor :snapshots, :head_checks, :review_result, :mutation_result, :mutation_error, :comments,
+                  :queue_settings
     attr_reader :mutations, :requested_review, :features
     attr_writer :checks, :configured
 
     def initialize
       @mutations = []
       @features = []
+      @queue_settings = { 'squashMergeCommitTitle' => 'PR_TITLE', 'squashMergeCommitMessage' => 'BLANK',
+                          'pullRequest' => { 'mergeQueue' => { 'configuration' => { 'mergeMethod' => 'SQUASH' } } } }
     end
+
+    def repository = 'owner/repo'
+    def number = 42
 
     def snapshot
       value = snapshots.length > 1 ? snapshots.shift : snapshots.first
@@ -51,7 +57,9 @@ module MergeFixtures
 
     def compare(_from, _to) = raise(Shaka::Error, 'compare is not stubbed')
 
-    def graphql(query, variables, feature: nil)
+    def graphql(query, variables = {}, feature: nil, **)
+      return { 'repository' => queue_settings } if query.include?('squashMergeCommitMessage')
+
       @mutations << [query, variables]
       @features << feature
       raise mutation_error if mutation_error
