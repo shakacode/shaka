@@ -35,6 +35,12 @@ class EvaluationDeliveryWorkflowsTest < Minitest::Test
     assert_empty record::SCHEMA.errors('UNKNOWN', rule)
   end
 
+  def test_directory_with_yaml_suffix_is_not_a_workflow
+    result = capture_workflows(add_directory(workflow, 'archive.yml'))
+    assert_equal ['.github/workflows/ci.yml'], result.fetch('workflow_blobs').keys
+    assert_equal 1, result.fetch('pinned_actions').size
+  end
+
   def test_empty_native_tree_and_workflow_without_actions_have_no_declared_pins
     assert_empty capture_workflows(workflow_set({})).fetch('pinned_actions')
     plain = workflow("jobs:\n  build:\n    steps:\n      - run: echo hello\n")

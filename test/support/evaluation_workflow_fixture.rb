@@ -38,4 +38,13 @@ module EvaluationWorkflowFixture
     FileUtils.rm_f(File.join(@directory, 'index'))
     Shaka::Evaluation::DeliveryWorkflows.new(repository: 'fixture-org/cell', head: HEAD, github: @gh).read
   end
+
+  def add_directory(response, name)
+    tree = response.dig('data', 'repository', 'object')
+    tree['entries'] << { 'name' => name, 'mode' => 16_384, 'type' => 'tree',
+                         'oid' => native_git('mktree'), 'object' => { '__typename' => 'Tree' } }
+    rows = tree.fetch('entries').map { "#{it['mode'].to_s(8)} #{it['type']} #{it['oid']}\t#{it['name']}\n" }
+    tree['oid'] = native_git('mktree', input: rows.join)
+    response
+  end
 end

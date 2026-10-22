@@ -60,7 +60,8 @@ module Shaka
       def declarations(entries)
         blobs = {}
         pins = {}
-        entries.select { /\.ya?ml\z/.match?(it.fetch('name')) }.sort_by { it.fetch('name') }.each do |entry|
+        files = entries.select { workflow_entry?(it) }
+        files.sort_by { it.fetch('name') }.each do |entry|
           path = ".github/workflows/#{entry.fetch('name')}"
           found = WorkflowPins.new(path).read(workflow_text(entry))
           blobs[path] = entry.fetch('oid')
@@ -69,6 +70,7 @@ module Shaka
         { 'workflow_blobs' => blobs, 'pinned_actions' => pins }
       end
 
+      def workflow_entry?(row) = row.fetch('type') == 'blob' && /\.ya?ml\z/.match?(row.fetch('name'))
       def unavailable = raise(IOError, 'Native workflow snapshot unavailable')
     end
   end
