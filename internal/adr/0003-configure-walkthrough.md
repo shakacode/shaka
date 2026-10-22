@@ -1,6 +1,6 @@
 # 0003: Configuration walkthrough
 
-Status: proposed on 2026-10-21; awaiting maintainer approval. Nothing here is shipped.
+Status: proposed; awaiting maintainer approval. Nothing here is shipped.
 Date: 2026-10-21. Tracks [issue #817](https://github.com/shakacode/shaka/issues/817).
 
 ## Context
@@ -65,12 +65,15 @@ as decision 3, but the code is tied to its own layout. Nothing is reused.
 4. **Changes leave as a migration-flow settings PR.** The procedure edits
    `.agents/shaka/config.yml`, runs `seam check --local`, and publishes with
    `evidence guard --flow migration` and `description --publication-flow migration`.
-   It tells the maintainer before editing that installations need `shaka install --update`
-   after merge when the change adds a key their installed Shaka may not know, and lists
-   that as an after-merge step in the PR. Changing an existing key's value lists no update.
+   Before editing, it tells the maintainer that installations need `shaka install --update`
+   after merge when the change uses a key or value an older Shaka rejects: a new key, a
+   new enum option, or a new nested shape. It lists that as an after-merge step in the PR,
+   and lists it whenever it cannot tell. Switching between long-supported values lists no
+   update.
 5. **Reads are trusted; edits are candidates.** Both commands read settings and prompt files
    at the `--ref` default-branch commit, never the working tree. A proposed change grants
-   nothing until its PR merges.
+   nothing until its PR merges. So the walkthrough shows what reviewers receive today, not
+   what they would receive after an unmerged edit.
 
 ## Alternatives considered
 
@@ -97,7 +100,7 @@ as decision 3, but the code is tied to its own layout. Nothing is reused.
 
 Proposed order, each its own PR after this ADR is approved:
 
-1. Shared prompt assembly and `configure prompts`, with tests that compare its output to
-   the prompt each runner sends.
+1. Shared prompt assembly and `configure prompts`, with tests that run each runner's real
+   path and compare the prompt it sends with the report.
 2. `configure settings` and the anchor test.
 3. `references/configure.md`, the `SKILL.md` routing line, and the guide section.
