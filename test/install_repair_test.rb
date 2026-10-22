@@ -95,11 +95,13 @@ class InstallRepairTest < Minitest::Test
     assert_equal before, snapshot
   end
 
-  def test_repair_takes_no_other_action_or_json
-    [%w[--repair --json], %w[--repair --update], %w[--repair --agent claude]].each do |flags|
-      output, process = Open3.capture2e(environment, RbConfig.ruby, File.join(@root, 'bin/install'), *flags)
+  def test_repair_takes_no_other_action_or_selection
+    { %w[--json] => '--json works only with --status', %w[--update] => 'Choose only one of',
+      %w[--agent claude] => 'before maintenance', %w[--repository URL] => 'before maintenance',
+      %w[--take-over] => 'Use --take-over alone' }.each do |flags, refusal|
+      output, process = Open3.capture2e(environment, RbConfig.ruby, File.join(@root, 'bin/install'), '--repair', *flags)
       refute_predicate process, :success?, flags.inspect
-      refute_includes output, 'Repairing', flags.inspect
+      assert_includes output, refusal, flags.inspect
     end
   end
 
