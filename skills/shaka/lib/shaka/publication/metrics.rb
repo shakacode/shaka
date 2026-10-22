@@ -7,11 +7,10 @@ module Shaka
 
     # Only helper-owned metadata belongs here; caller-supplied details remain with the change's evidence.
     def metrics
-      usage = UsageDetails.new(@content['usage'])
-      usage_detail = usage.detail
+      usage_detail = UsageDetails.new(@content['usage']).detail
       blocks = [*provenance, *skills_used, details_block(usage_detail),
                 *TimingsDetails.for(@timeline).map { |item| details_block(item) }, details_block(@settings.detail)]
-      ["**Estimated cost:** #{usage_detail.fetch('estimate')}",
+      [UsageEstimate.markdown(usage_detail),
        details_block('summary' => 'Shaka metrics', 'body' => blocks.join("\n\n"))]
     end
   end

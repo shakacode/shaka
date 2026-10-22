@@ -12,8 +12,9 @@ require_relative 'usage_records'
 module Shaka
   # Renders the usage details block the stop hook swaps into a published description.
   module UsageDetailsBlock
-    def self.markdown(spec)
-      rendered = UsageDetails.new(spec).detail
+    def self.markdown(spec) = from_detail(UsageDetails.new(spec).detail)
+
+    def self.from_detail(rendered)
       summary = PublicationText.summary_text(rendered['summary'], 'details summary')
       "<details>\n<summary>#{summary}</summary>\n\n#{rendered['body']}\n\n</details>"
     end
@@ -311,10 +312,11 @@ module Shaka
         region = Publishing.managed_region(body)
         raise Error, 'Cursor usage refresh found no managed description.' unless region
 
-        updated = replace_block(region, UsageDetailsBlock.markdown(usage))
+        detail = UsageDetails.new(usage).detail
+        updated = replace_block(region, UsageDetailsBlock.from_detail(detail))
         raise Error, 'Cursor usage refresh found no usage section.' unless updated
 
-        updated
+        UsageEstimate.refresh(updated, detail)
       end
 
       def replace_block(region, block)
