@@ -30,12 +30,7 @@ class InstallStatusFilesTest < Minitest::Test
     root = default_install
     File.write(File.join(root, '.git/info/exclude'), "build\n")
     link = File.join(root, 'skills/shaka/build')
-    File.symlink('SKILL.md', link)
-    begin
-      File.lchmod(0o777, link)
-    rescue NotImplementedError
-      nil
-    end
+    loose_symlink('SKILL.md', link)
     assert_equal 'A1', status(root)['state']
   end
 

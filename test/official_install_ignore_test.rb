@@ -38,8 +38,7 @@ class OfficialInstallIgnoreTest < Minitest::Test
     official_install
     File.write(File.join(@root, '.git/info/exclude'), "build\n")
     link = File.join(@root, 'skills/shaka/build')
-    File.symlink('SKILL.md', link)
-    lchmod_all(link)
+    loose_symlink('SKILL.md', link)
 
     output, status = invoke('--verify')
     assert_predicate status, :success?, output
@@ -78,13 +77,5 @@ class OfficialInstallIgnoreTest < Minitest::Test
 
     output, status = Open3.capture2e({ 'HOME' => @home, 'GIT_DIR' => other }, RbConfig.ruby, @installer, '--verify')
     assert_predicate status, :success?, output
-  end
-
-  private
-
-  def lchmod_all(link)
-    File.lchmod(0o777, link)
-  rescue NotImplementedError
-    nil
   end
 end
