@@ -46,16 +46,18 @@ as decision 3, but the code is tied to its own layout. Nothing is reused.
    skill would show up in host skill lists but adds install and update surface for every
    host.
 2. **Ruby reports the settings; the agent explains them.** A new read-only
-   `shaka configure settings --root DIR --ref SHA` prints JSON with one entry per setting
-   in the trusted config: key, effective value, packaged default, whether the repository
+   `shaka configure settings --root DIR (--ref SHA | --local)` prints JSON with one entry
+   per setting: key, effective value, packaged default, whether the repository
    sets it explicitly, whether that explicit value equals the default, and its
    `docs/settings.md` anchor. Explicit values come from the raw seam data that
-   `RepositoryConfig` already keeps apart from its effective `to_h`; defaults come only
-   from `defaults.yml`. A test fails when a schema key has no reference anchor, so a new
-   setting cannot be left out of the walkthrough.
+   `RepositoryConfig` already keeps apart from its effective `to_h`. Effective values and
+   defaults come from the resolver each consuming module uses, such as
+   `OpeningSchema.effective`, which reads `defaults.yml`; the report never restates a
+   default. A test fails when a schema key has no reference anchor, or when a repository
+   setting in `defaults.yml` is missing from the report, so a new setting cannot be left out.
 3. **Ruby shows each reviewer prompt from the code that sends it.**
-   `shaka configure prompts --root DIR --ref SHA [--head SHA --base REF]` prints the code
-   review, checkpoint, and opening check prompts as labeled sections: `built-in`,
+   `shaka configure prompts --root DIR (--ref SHA | --local) [--head SHA --base REF]`
+   prints the code review, checkpoint, and opening check prompts as labeled sections: `built-in`,
    `repository file PATH@SHA`, or `AGENTS.md PATH@SHA`, with the diff and earlier findings
    shown as placeholders. Without `--head`, it lists every nested `AGENTS.md` with the
    directory that triggers it. With `--head` and `--base`, it shows exactly what a review of
@@ -70,10 +72,11 @@ as decision 3, but the code is tied to its own layout. Nothing is reused.
    new enum option, or a new nested shape. It lists that as an after-merge step in the PR,
    and lists it whenever it cannot tell. Switching between long-supported values lists no
    update.
-5. **Reads are trusted; edits are candidates.** Both commands read settings and prompt files
-   at the `--ref` default-branch commit, never the working tree. A proposed change grants
-   nothing until its PR merges. So the walkthrough shows what reviewers receive today, not
-   what they would receive after an unmerged edit.
+5. **Reads are trusted; a draft is labeled.** Both commands read settings and prompt files
+   at the `--ref` default-branch commit. With `--local` instead, as `seam check --local`
+   does, they read the working tree and label every section as an untrusted draft, so a
+   maintainer can see what reviewers would receive before publishing an edit. A draft
+   report grants nothing; the settings change takes effect only when its PR merges.
 
 ## Alternatives considered
 
