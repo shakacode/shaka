@@ -96,7 +96,7 @@ class MergeQueueCommitTest < Minitest::Test
     refute_predicate queue, :defaults_read?
     assert_includes queue.checkpoint_section, 'Add this PR to the merge queue'
     assert_includes queue.checkpoint_section, "could not read the queue's commit defaults, so Shaka's merge refuses it"
-    assert_includes queue.refusal, 'Could not read'
+    assert_includes queue.refusal, "an account that can read this repository's pull request settings"
   end
 
   def test_an_unread_method_still_warns_about_a_description_default

@@ -73,7 +73,8 @@ module Shaka
     def refusal
       unless defaults_read?
         return "Could not read this merge queue's commit defaults, which might copy the PR description " \
-               'into its commit. Check Settings → General → Pull Requests, then merge again'
+               "into its commit. Merge as an account that can read this repository's pull request settings, " \
+               'or check Settings → General → Pull Requests, then merge again'
       end
 
       "This merge queue copies the PR description into its commit. Set #{setting.delete('*')} to " \

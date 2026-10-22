@@ -549,5 +549,6 @@ for the queue's merge method: squash merging or merge commits.
 When that setting is **Pull request title and description**, the queue copies the whole
 PR description into git history, including Shaka's sections and **WIP Details**. The
 checkpoint warns you, `shaka doctor` flags the setting, and the agent's merge refuses the
-queue. Choose **Default message** to commit the branch commit messages, or **Pull request
-title** to keep the commit to the PR title.
+queue, as it does when it cannot read the queue's settings. For a squash queue, choose
+**Default message** to commit the branch commit messages, or **Pull request title** to keep
+the commit to the PR title.
