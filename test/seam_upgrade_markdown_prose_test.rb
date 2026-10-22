@@ -63,7 +63,9 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     'wrapped' => "Run `bin/validate` from\n`.agents`.\n",
     'inline env' => "Run `env -C .agents bin/validate`.\n",
     'same line' => "Run `bin/validate` from `.agents`.\n",
-    'prose then fence' => "Run these from the `.agents` directory:\n\n```sh\nbin/validate\n```\n"
+    'prose then fence' => "Run these from the `.agents` directory:\n\n```sh\nbin/validate\n```\n",
+    'prose, blanks, fence' => "Run these from the `.agents` directory:\n\n\n```sh\nbin/validate\n```\n",
+    'indented middle line' => "Run these from `.agents`\n    once the cache is warm,\nthen `bin/validate`.\n"
   }.freeze
 
   def test_shell_code_in_markdown_still_blocks

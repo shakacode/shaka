@@ -96,19 +96,18 @@ module Shaka
 
         def markdown_instructions(text)
           blocks = markdown_blocks(text)
-          blocks.each_with_index.filter_map do |(code, body), index|
+          blocks.each_with_index.map do |(_, body), index|
             following_code, following = blocks[index + 1]
-            body + (following_code ? following : '') unless code
+            following_code ? body + following : body
           end
         end
 
-        # Splits text into runs of prose or code; a blank prose line ends a run.
+        # Splits text into blocks at blank prose lines, however many; a block may mix prose and indented
+        # lines, as a wrapped paragraph does. Each block records whether it opens with code.
         def markdown_blocks(text)
           code = markdown_code_lines(text)
-          runs = text.lines.each_with_index.chunk_while do |(line, index), (_next_line, next_index)|
-            code[index] == code[next_index] && (code[index] || line.match?(/\S/))
-          end
-          runs.map { |run| [code[run.first.last], run.map(&:first).join] }
+          runs = text.lines.each_with_index.chunk { |line, index| code[index] || line.match?(/\S/) || :_separator }
+          runs.map { |_, run| [code[run.first.last], run.map(&:first).join] }
         end
 
         # Markdown runs nothing outside code, so prose lines are blanked and fenced or indented lines stay.
