@@ -36,11 +36,11 @@ class MergeQueueCheckpointTest < Minitest::Test
     ['publish', 'example/test', '1', '--content-file', path, *(['--squash-message', message_file(path)] if message)]
   end
 
-  def test_ready_checkpoint_on_a_description_copying_queue_needs_no_message_and_says_to_ask_for_the_merge
+  def test_ready_checkpoint_on_a_queue_base_needs_no_message_and_says_to_enqueue
     body, status, = publish_ready
 
     assert_equal 0, status
-    assert_includes body, 'Ask Shaka to merge this head'
+    assert_includes body, 'Add this PR to the merge queue'
     assert_includes body, 'WIP Details'
     refute_includes body, Shaka::SquashComment::SQUASH_MARK
     refute_includes body, 'Squash commit message'

@@ -91,16 +91,6 @@ class HandoffTest < Minitest::Test
     assert(handoff(body: cleared).fetch('owed').any? { |item| item.include?('WIP Details is missing') })
   end
 
-  # The queue reads the description until the PR merges, so the WIP note returns afterwards.
-  def test_a_queued_description_holding_the_commit_message_owes_no_wip_note
-    result = handoff(body: 'What changed and why.', queue: true, in_queue: true)
-
-    refute(result.fetch('owed').any? { |item| item.include?('WIP Details') })
-    assert_includes result.fetch('status'), 'description holds the queued commit message'
-    assert(handoff(body: 'What changed and why.', queue: true, in_queue: false).fetch('owed')
-             .any? { |item| item.include?('WIP Details is missing') })
-  end
-
   def test_a_missing_or_stale_wip_note_is_owed
     assert(handoff(body: 'no note').fetch('owed').any? { |item| item.include?('WIP Details is missing') })
 

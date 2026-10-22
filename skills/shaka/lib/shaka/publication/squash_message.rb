@@ -6,16 +6,15 @@ require_relative '../public_comments/bounded_list'
 
 module Shaka
   # The squash commit a PR lands as: `Title (#N)`, a plain-text body wrapped for `git log`,
-  # and the co-author trailers the branch commits carried. GitHub adds those trailers only to
-  # a message it builds from the repository default, so a supplied message carries them here.
+  # and the co-author trailers the branch commits carried. GitHub copies those trailers only
+  # when the squash body is the list of commit messages, so they are carried here instead.
   class SquashMessage
     WIDTH = 72
     COMMIT_PAGES = 3
     TRAILER = /^co-authored-by:[ \t]*(\S[^<\n]*<[^>\n]+>)[ \t]*$/i
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
 
-    # `prose` is the body without trailers, for a merge queue that copies the PR description; GitHub adds them.
-    attr_reader :headline, :body, :prose
+    attr_reader :headline, :body
 
     # GitHub lists at most 250 commits for a PR; a longer PR would lose trailers silently.
     def self.for(github, content)
@@ -32,8 +31,7 @@ module Shaka
       raise Error, 'Squash message content must be a JSON object.' unless content.is_a?(Hash)
 
       @headline = headline_for(PublicationText.single_line(content['title'], 'squash title'), number)
-      @prose = wrap(plain(content['body']))
-      @body = [@prose, trailers(commit_messages)].reject(&:empty?).join("\n\n")
+      @body = [wrap(plain(content['body'])), trailers(commit_messages)].reject(&:empty?).join("\n\n")
     end
 
     private

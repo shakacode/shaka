@@ -43,14 +43,6 @@ class SquashMessageTest < Minitest::Test
                  'Co-authored-by: Ana <ana@example.test>', squash(messages:).body
   end
 
-  # A merge queue copies the PR description, and GitHub adds the trailers itself.
-  def test_the_queue_body_leaves_out_the_trailers
-    message = squash(messages: ["Fix\n\nCo-authored-by: Ana <ana@example.test>"])
-
-    assert_equal 'Summary.', message.prose
-    assert_includes message.body, 'Co-authored-by: Ana'
-  end
-
   def test_a_trailer_example_inside_the_body_is_not_a_co_author
     messages = ["Document attribution\n\nCo-authored-by: Example <example@example.test>\n\nThis is sample syntax."]
 
@@ -172,54 +164,38 @@ class MergeSquashMessageTest < Minitest::Test
     refute result.key?('squash_message')
   end
 
-  def enqueue_with(body)
+  # The queue would commit the whole description, Shaka's sections and WIP Details included.
+  def test_a_queue_that_copies_the_description_is_refused_before_enqueueing
     queue = { 'mergeQueue' => { 'configuration' => { 'mergeMethod' => 'SQUASH' } } }
-    @client.queue_settings = { 'squashMergeCommitTitle' => 'PR_TITLE', 'squashMergeCommitMessage' => body,
+    @client.queue_settings = { 'squashMergeCommitTitle' => 'PR_TITLE', 'squashMergeCommitMessage' => 'PR_BODY',
                                'pullRequest' => queue }
+    @client.snapshots = [snapshot.merge('isMergeQueueEnabled' => true)]
+
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: 17, squash_message:) }
+
+    assert_match(/copies the PR description.*Default message or Pull request title/, error.message)
+    assert_empty @client.mutations
+  end
+
+  def test_unread_queue_defaults_are_refused_before_enqueueing
+    @client.queue_settings = nil
+    @client.snapshots = [snapshot.merge('isMergeQueueEnabled' => true)]
+
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: 17) }
+
+    assert_match(/Could not read this merge queue's commit defaults/, error.message)
+    assert_empty @client.mutations
+  end
+
+  def test_a_merge_queue_reports_that_the_message_was_not_applied
     entry = queue_entry(position: 1)
     ready = snapshot.merge('isMergeQueueEnabled' => true)
     @client.snapshots = [ready, ready, ready.merge('isInMergeQueue' => true, 'mergeQueueEntry' => entry)]
     @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => entry } }
-    @merge.call(head: HEAD, base: BASE, walkthrough: 17, squash_message:)
-  end
 
-  def test_a_merge_queue_that_leaves_out_the_description_reports_that_the_message_was_not_applied
-    result = enqueue_with('COMMIT_MESSAGES')
+    result = @merge.call(head: HEAD, base: BASE, walkthrough: 17, squash_message:)
 
     assert_equal 'not_applied_merge_queue', result.fetch('squash_message')
-    assert_equal [:mutation], @client.events
-  end
-
-  # GitHub builds the queue commit as the PR enters the queue, so the message must be there first.
-  def test_a_merge_queue_that_copies_the_description_gets_the_message_there_before_enqueueing
-    result = enqueue_with('PR_BODY')
-
-    assert_equal 'body_applied_through_description', result.fetch('squash_message')
-    assert_equal 'https://example.test/c/parked', result.fetch('parked_description')
-    assert_equal [[:describe, 'B'], :mutation], @client.events
-    assert_equal 'merge_queue', result.fetch('submission')
-  end
-
-  # Without a message the queue would copy the whole description, so nothing is enqueued.
-  def test_a_copying_queue_without_a_message_is_refused_before_enqueueing
-    @client.queue_settings = { 'squashMergeCommitTitle' => 'PR_TITLE', 'squashMergeCommitMessage' => 'PR_BODY' }
-    ready = snapshot.merge('isMergeQueueEnabled' => true)
-    @client.snapshots = [ready]
-
-    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: 17) }
-
-    assert_match(/copies the PR description.*--squash-message/, error.message)
-    assert_empty @client.events
-  end
-
-  # The description already holds the message, so a retry or the next publication settles it.
-  def test_a_refused_enqueue_after_the_message_went_in_says_to_inspect_the_pr
-    @client.mutation_error = Shaka::Error.new('GraphQL failed or returned missing data.')
-
-    error = assert_raises(Shaka::Error) { enqueue_with('PR_BODY') }
-
-    assert_match(/inspect live PR state/, error.message)
-    assert_equal [[:describe, 'B'], :mutation], @client.events
   end
 
   def test_an_already_queued_pull_request_reports_that_the_message_was_not_applied
@@ -231,6 +207,5 @@ class MergeSquashMessageTest < Minitest::Test
 
     assert_equal 'not_applied_merge_queue', result.fetch('squash_message')
     assert_empty @client.mutations
-    assert_empty @client.events
   end
 end

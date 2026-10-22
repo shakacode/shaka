@@ -28,8 +28,7 @@ module Shaka
     GRAPHQL
 
     # A SquashMessage, or nil for the repository's squash default. A merge queue takes no
-    # message: it writes the repository default, so a queue that copies the PR description
-    # gets the message there, and the result says which happened.
+    # message: it squashes with the repository default, and the result says so.
     attr_writer :message
 
     def initialize(github)
@@ -82,13 +81,13 @@ module Shaka
     end
 
     def enqueue(pull, head)
-      described = MergeQueueCommit.describe(@github, @message)
+      MergeQueueCommit.refuse_copying!(@github)
       result = @github.graphql(ENQUEUE_MUTATION, { 'id' => pull.fetch('id'), 'head' => head }, feature: 'merge_queue')
       payload = result['enqueuePullRequest']
       entry = payload['mergeQueueEntry'] if payload.is_a?(Hash)
       raise Error, 'GitHub did not confirm enqueueing the expected head' unless valid_entry?(entry, head)
 
-      confirm_queue(head, pull.fetch('baseRefName'), entry).merge(described)
+      confirm_queue(head, pull.fetch('baseRefName'), entry)
     end
 
     def confirm_queue(head, base, entry)

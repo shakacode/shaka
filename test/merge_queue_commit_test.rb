@@ -38,17 +38,18 @@ class MergeQueueCommitTest < Minitest::Test
     [false, nil].each { |queue| assert_nil commit(queue:) }
   end
 
-  # Shaka's merge can put the prepared message in the description; a person's queue click cannot.
-  def test_a_description_default_asks_for_shakas_merge_and_warns_about_a_queue_click
-    text = commit.checkpoint_section
+  def test_a_description_default_warns_that_the_managed_description_enters_history
+    queue = commit
+    text = queue.checkpoint_section
 
-    assert_predicate commit, :copies_description?
-    assert_includes text, 'Ask Shaka to merge this head'
-    assert_includes text, 'the PR title as the title and the PR description as the body'
-    assert_includes text, 'Adding the PR to the queue yourself'
+    assert_predicate queue, :copies_description?
+    assert_includes text, 'Add this PR to the merge queue'
+    assert_includes text, 'the PR title as the title and the whole PR description as the body'
     assert_includes text, 'WIP Details'
-    assert_includes text, '**Pull request title** or **Default message**'
+    assert_includes text, "Shaka's merge refuses this queue"
+    assert_includes text, '**Default message** or **Pull request title**'
     assert_includes text, '`squash_merge_commit_message`'
+    assert_includes queue.refusal, 'Allow squash merging (`squash_merge_commit_message`) to Default message'
   end
 
   def test_other_squash_defaults_name_what_the_queue_writes_without_a_warning
@@ -87,14 +88,15 @@ class MergeQueueCommitTest < Minitest::Test
     refute_includes queue.checkpoint_section, 'WIP Details'
   end
 
-  # Unread defaults might copy the description, so Shaka's merge parks it rather than risk history.
+  # Unread defaults might copy the description, so Shaka's merge refuses rather than risk history.
   def test_unreadable_settings_say_so_and_count_as_copying_the_description
     queue = commit(:unreadable)
 
     assert_predicate queue, :copies_description?
     refute_predicate queue, :defaults_read?
-    assert_includes queue.checkpoint_section, 'Ask Shaka to merge this head'
+    assert_includes queue.checkpoint_section, 'Add this PR to the merge queue'
     assert_includes queue.checkpoint_section, 'could not read'
+    assert_includes queue.refusal, 'Could not read'
   end
 
   def test_an_unread_method_still_warns_about_a_description_default
@@ -107,7 +109,7 @@ class MergeQueueCommitTest < Minitest::Test
   def test_the_handoff_note_is_plain_text_for_the_agent
     note = commit.note
 
-    assert note.start_with?('Merge queue: tell the person to ask you to merge this head')
+    assert note.start_with?('Merge queue: tell the person to add the PR to the merge queue')
     refute_includes note, '**'
     assert_includes note, 'WIP Details'
   end

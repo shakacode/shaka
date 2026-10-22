@@ -10,24 +10,18 @@ module MergeFixtures
   class Client
     attr_accessor :snapshots, :head_checks, :review_result, :mutation_result, :mutation_error, :comments,
                   :queue_settings
-    attr_reader :mutations, :requested_review, :features, :events
+    attr_reader :mutations, :requested_review, :features
     attr_writer :checks, :configured
 
     def initialize
       @mutations = []
       @features = []
-      @events = []
       @queue_settings = { 'squashMergeCommitTitle' => 'PR_TITLE', 'squashMergeCommitMessage' => 'BLANK',
                           'pullRequest' => { 'mergeQueue' => { 'configuration' => { 'mergeMethod' => 'SQUASH' } } } }
     end
 
     def repository = 'owner/repo'
     def number = 42
-
-    def queue_description(message)
-      @events << [:describe, message.prose]
-      'https://example.test/c/parked'
-    end
 
     def snapshot
       value = snapshots.length > 1 ? snapshots.shift : snapshots.first
@@ -66,7 +60,6 @@ module MergeFixtures
     def graphql(query, variables = {}, feature: nil, **)
       return { 'repository' => queue_settings } if query.include?('squashMergeCommitMessage')
 
-      @events << :mutation
       @mutations << [query, variables]
       @features << feature
       raise mutation_error if mutation_error

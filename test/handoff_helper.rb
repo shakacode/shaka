@@ -21,8 +21,7 @@ class HandoffFakeGitHub
 
   def snapshot
     { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42,
-      'author' => { 'login' => @pull.fetch(:author, 'shaka-agent') }, 'isMergeQueueEnabled' => @pull[:queue],
-      'isInMergeQueue' => @pull[:in_queue] }
+      'author' => { 'login' => @pull.fetch(:author, 'shaka-agent') }, 'isMergeQueueEnabled' => @pull[:queue] }
   end
 
   def required_checks = @pull[:checks]

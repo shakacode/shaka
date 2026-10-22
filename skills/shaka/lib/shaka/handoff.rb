@@ -59,7 +59,7 @@ module Shaka
       checks = snapshot['requiredChecks']
       [attention_fact(checks, live), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
        comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live), squash_fact(snapshot, live),
-       wip_fact(live, snapshot['isInMergeQueue'] == true)].compact
+       wip_fact(live)].compact
     end
 
     # An unsubmitted review by this account outranks every other wait, because only its author can see it.
@@ -127,16 +127,13 @@ module Shaka
       owe('checkpoint owed', e.message)
     end
 
-    def wip_fact(live, queued)
+    def wip_fact(live)
       pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
       recheck_head(pull.dig('head', 'sha'), live)
-      body = pull['body']
-      return WipNote::QUEUED if queued && WipNote.replaced?(body)
-
-      revision = WipNote.revision(body)
+      revision = WipNote.revision(pull['body'])
       return owe('no WIP', 'WIP Details is missing; publish it before stopping.') unless revision
 
-      problem = WipDetails.owner_error(WipNote.value(body, 'owner'))
+      problem = WipDetails.owner_error(WipNote.value(pull['body'], 'owner'))
       return owe('WIP owner incomplete', problem) if problem
       return "WIP #{live[0, SHORT]}" if WipNote.head(revision) == live
 
@@ -152,8 +149,14 @@ module Shaka
 
     def merge_requested? = @labels.any? { |label| label.casecmp?('awaiting-merge-approval') }
 
-    def owe(fact, item) = fact.tap { @owed << item }
+    def owe(fact, item)
+      @owed << item
+      fact
+    end
 
-    def note(fact, item) = fact.tap { @notes << item }
+    def note(fact, item)
+      @notes << item
+      fact
+    end
   end
 end

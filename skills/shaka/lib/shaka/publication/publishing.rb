@@ -8,27 +8,23 @@ require_relative 'publication'
 require_relative 'feature_guard'
 require_relative 'managed_region'
 require_relative 'merge_warning_region'
-require_relative 'queued_description'
 require_relative 'rendered_prose'
 
 module Shaka
   # Publishes rendered Markdown, checking GitHub's own rendering before anything is written
   # and confirming the stored bytes afterwards.
   module Publishing
-    include QueuedDescription
-
     VERBATIM = 'Quoted text.'
     REPLY_PAGES = 20
 
-    # A block builds the body from the pull request it replaces, using this same read. While a merge
-    # queue holds the prepared message there, that read is the parked description.
+    # A block builds the body from the pull request it replaces, using this same read.
     def description(body: nil)
       current = pull
-      read, parked = unparked(current)
-      merged = check_length(merge(read['body'].to_s, publishable(block_given? ? yield(read) : body)))
+      existing = current['body'].to_s
+      merged = check_length(merge(existing, publishable(block_given? ? yield(current) : body)))
       verify_rendering(merged)
-      check_unchanged(current)
-      confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged).tap { release_parked(parked) }
+      check_unchanged(existing, current)
+      confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
     end
 
     # `verbatim` names quoted text the rendering check leaves to the caller; see verify_rendering.
@@ -102,7 +98,7 @@ module Shaka
     # This update rewrites the whole body, so an edit that landed while it was prepared
     # would be erased. Re-reading narrows that window; it does not close it, because
     # GitHub offers no compare-and-swap for a pull request body.
-    def check_unchanged(original) = FeaturePublication.unchanged!(self, original['body'].to_s, original)
+    def check_unchanged(existing, original) = FeaturePublication.unchanged!(self, existing, original)
 
     # Rewriting an ambiguous region would delete whatever sits between the wrong markers.
     def check_region(existing, opens, closes)

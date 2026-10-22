@@ -54,8 +54,8 @@ module Shaka
       def copying(commit)
         check(NAME, 'degraded', 'adding a PR to the merge queue on GitHub copies its whole description, ' \
                                 "including Shaka's sections and WIP Details, into git history",
-              guidance: 'Ask Shaka to merge, which puts the prepared commit message in the description first, ' \
-                        "or set #{commit.setting.delete('*')} to Pull request title or Default message.")
+              guidance: "Set #{commit.setting.delete('*')} to Default message or Pull request title. " \
+                        "Until then Shaka's merge refuses this queue.")
       end
 
       def unread_defaults

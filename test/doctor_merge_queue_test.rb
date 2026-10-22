@@ -14,12 +14,12 @@ class DoctorMergeQueueTest < Minitest::Test
     [JSON.generate('data' => { 'repository' => repository }), '', true]
   end
 
-  def test_a_queue_that_copies_the_description_is_degraded_with_both_ways_out
+  def test_a_queue_that_copies_the_description_is_degraded_with_the_setting_to_choose
     report, blocked = doctor(responses: { queue: queue_answer('PR_BODY') })
 
     assert_includes report, '[DEGRADED] Merge queue commits — adding a PR to the merge queue on GitHub copies'
-    assert_includes report, 'Ask Shaka to merge'
-    assert_includes report, 'Allow squash merging (`squash_merge_commit_message`) to Pull request title'
+    assert_includes report, "Until then Shaka's merge refuses this queue"
+    assert_includes report, 'Allow squash merging (`squash_merge_commit_message`) to Default message'
     refute blocked
   end
 

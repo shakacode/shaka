@@ -4,8 +4,7 @@ require_relative 'error'
 
 module Shaka
   # What GitHub's merge queue writes for a PR's commit. The queue offers no message box: it
-  # applies the repository's defaults. When those copy the PR description, `merge` puts the
-  # prepared message there first; otherwise the person enqueues the PR without pasting text.
+  # applies the repository's defaults, so the person enqueues the PR instead of pasting text.
   class MergeQueueCommit
     QUERY = <<~GRAPHQL
       query($owner: String!, $name: String!, $number: Int!) {
@@ -24,24 +23,17 @@ module Shaka
     }.freeze
     TITLES = { 'PR_TITLE' => 'the PR title', 'MERGE_MESSAGE' => "GitHub's default merge message",
                'COMMIT_OR_PR_TITLE' => 'the commit title for a one-commit PR, otherwise the PR title' }.freeze
-    BODIES = { 'PR_BODY' => 'the PR description', 'COMMIT_MESSAGES' => 'the branch commit messages',
+    BODIES = { 'PR_BODY' => 'the whole PR description', 'COMMIT_MESSAGES' => 'the branch commit messages',
                'PR_TITLE' => 'the PR title', 'BLANK' => 'an empty body' }.freeze
 
     # nil when the PR's base has no merge queue, so the caller keeps the prepared message.
     def self.for(github, pull) = (new(read(github)) if pull['isMergeQueueEnabled'] == true)
 
-    # GitHub builds the queue commit as the PR enters the queue, so a queue that copies the PR
-    # description gets the prepared message there first. Answers what the merge result reports.
-    def self.describe(github, message)
-      return {} unless new(read(github)).copies_description?
-      unless message
-        raise Error, 'This merge queue copies the PR description into its commit; pass --squash-message ' \
-                     'with the prepared title and body.'
-      end
-
-      # The queue takes the commit title from its own title setting, so only the body is applied.
-      { 'squash_message' => 'body_applied_through_description',
-        'parked_description' => github.queue_description(message) }
+    # A queue that copies the PR description would commit Shaka's sections and WIP Details, so
+    # Shaka adds no PR to one. Unread defaults might copy it too.
+    def self.refuse_copying!(github)
+      queue = new(read(github))
+      raise Error, queue.refusal if queue.copies_description?
     end
 
     # A token that cannot read repository settings still gets the instruction to enqueue.
@@ -58,7 +50,7 @@ module Shaka
       @title, @body = repository.values_at(*@style[:fields]) if @style
     end
 
-    # Unread defaults count as copying: parking a description costs less than leaking one into history.
+    # Unread defaults count as copying: a refused merge costs less than a description in history.
     def copies_description? = @method != 'REBASE' && (@body == 'PR_BODY' || !BODIES.key?(@body))
 
     # Whether this account read the commit defaults, and the GitHub setting that chooses them.
@@ -66,23 +58,24 @@ module Shaka
     def setting = @style && "**Settings → General → Pull Requests → #{@style[:setting]}** (`#{@style[:api]}`)"
 
     def checkpoint_section
-      lead = if copies_description?
-               'Ask Shaka to merge this head. It puts the prepared commit message in the PR description, ' \
-                 'then adds the PR to the queue.'
-             else
-               'Add this PR to the merge queue; it takes no commit message to paste.'
-             end
-      ["**Merge queue:** #{lead} #{outcome}", *(warning && "**Warning:** #{warning}")].join("\n\n")
+      lead = '**Merge queue:** Add this PR to the merge queue; it takes no commit message to paste.'
+      ["#{lead} #{outcome}", *(warning && "**Warning:** #{warning}")].join("\n\n")
     end
 
     def note
-      lead = if copies_description?
-               'tell the person to ask you to merge this head: `merge` puts the prepared commit message in ' \
-                 'the PR description before it adds the PR to the queue.'
-             else
-               'tell the person to add the PR to the merge queue; it takes no commit message to paste.'
-             end
-      ["Merge queue: #{lead}", outcome, warning].compact.join(' ').delete('*').delete('`')
+      ['Merge queue: tell the person to add the PR to the merge queue; it takes no commit message to paste.',
+       outcome, warning].compact.join(' ').delete('*').delete('`')
+    end
+
+    # `merge` adds its own advice after this sentence, so it ends without a period.
+    def refusal
+      unless defaults_read?
+        return "Could not read this merge queue's commit defaults, which might copy the PR description " \
+               'into its commit. Check Settings → General → Pull Requests, then merge again'
+      end
+
+      "This merge queue copies the PR description into its commit. Set #{setting.delete('*')} to " \
+        'Default message or Pull request title, then merge again'
     end
 
     private
@@ -101,9 +94,9 @@ module Shaka
     def warning
       return unless @body == 'PR_BODY'
 
-      'Adding the PR to the queue yourself puts this whole description, including Shaka\'s sections and ' \
-        "WIP Details, into git history. To make that click safe, set #{setting} to **Pull request title** " \
-        'or **Default message**; the queue then leaves out the prepared message.'
+      "That puts this description, including Shaka's sections and WIP Details, into git history, and " \
+        "Shaka's merge refuses this queue. Before adding the PR, set #{setting} to **Default message** or " \
+        '**Pull request title**.'
     end
   end
 end
