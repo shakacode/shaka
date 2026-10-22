@@ -38,7 +38,7 @@ class PrivateCheckpointTest < Minitest::Test
   private
 
   def prepare_private_opt_out
-    update_private { |data| data['review']['post_implementation'] = { 'enabled' => false } }
+    update_private { |data| data['checkpoint'] = { 'enabled' => false } }
     publish_delivery
     alter_pull do |pull|
       pull['labels'] = [{ 'name' => 'awaiting-merge-approval' }]

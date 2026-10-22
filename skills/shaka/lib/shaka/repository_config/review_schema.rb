@@ -81,7 +81,6 @@ module Shaka
         validate_check
         validate_review_wait
         ReviewLimit.from(@review)
-        PostImplementationSchema.new(@review['post_implementation']).validate if @review.key?('post_implementation')
         local_review_agents!(@review[LOCAL_REVIEW_AGENTS]) if @review.key?(LOCAL_REVIEW_AGENTS)
         prompt_path!(@review[PROMPT_FILE], "review.#{PROMPT_FILE}") if @review.key?(PROMPT_FILE)
       end

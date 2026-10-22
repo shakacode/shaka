@@ -20,8 +20,8 @@ class PostImplementationTest < Minitest::Test
   end
 
   def test_trusted_settings_and_prompt_reach_the_cli
-    settings = { 'post_implementation' => { 'model' => 'chosen-model', 'effort' => 'high',
-                                            'prompt_file' => '.agents/codex-prompt.md' } }
+    settings = { 'checkpoint' => { 'model' => 'chosen-model', 'effort' => 'high',
+                                   'prompt_file' => '.agents/codex-prompt.md' } }
     with_repository(settings) do |root, base, head, bin|
       fake_checkpoint(bin, head)
       _, status = run_checkpoint(root, base, head, bin)
@@ -34,8 +34,8 @@ class PostImplementationTest < Minitest::Test
   end
 
   def test_explicit_overrides_select_another_provider_and_trusted_prompt
-    with_repository({ 'post_implementation' => { 'model' => 'old-model',
-                                                 'effort' => 'low' } }) do |root, base, head, bin|
+    with_repository({ 'checkpoint' => { 'model' => 'old-model',
+                                        'effort' => 'low' } }) do |root, base, head, bin|
       fake_claude(bin, head)
       result, status = run_checkpoint(root, base, head, bin, '--reviewer', 'anthropic/claude', '--model', 'sonnet',
                                       '--effort', 'high', '--prompt-file', '.agents/codex-prompt.md')
@@ -49,7 +49,7 @@ class PostImplementationTest < Minitest::Test
 
   def test_capitalized_trusted_identity_keeps_its_model_when_task_changes_only_case
     settings = { 'reviewer' => 'Anthropic/Claude', 'model' => 'sonnet' }
-    with_repository({ 'post_implementation' => settings }) do |root, base, head, bin|
+    with_repository({ 'checkpoint' => settings }) do |root, base, head, bin|
       fake_claude(bin, head)
       result, status = run_checkpoint(root, base, head, bin, '--reviewer', 'ANTHROPIC/CLAUDE')
       assert_predicate status, :success?, result.inspect
@@ -69,7 +69,7 @@ class PostImplementationTest < Minitest::Test
 
   def test_claude_xhigh_reaches_the_cli
     settings = { 'reviewer' => 'anthropic/claude', 'effort' => 'xhigh' }
-    with_repository({ 'post_implementation' => settings }) do |root, base, head, bin|
+    with_repository({ 'checkpoint' => settings }) do |root, base, head, bin|
       fake_claude(bin, head)
       result, status = run_checkpoint(root, base, head, bin)
       assert_predicate status, :success?, result.inspect
@@ -78,7 +78,7 @@ class PostImplementationTest < Minitest::Test
   end
 
   def test_codex_max_reaches_the_cli
-    with_repository({ 'post_implementation' => { 'effort' => 'max' } }) do |root, base, head, bin|
+    with_repository({ 'checkpoint' => { 'effort' => 'max' } }) do |root, base, head, bin|
       fake_checkpoint(bin, head)
       result, status = run_checkpoint(root, base, head, bin)
       assert_predicate status, :success?, result.inspect
@@ -132,7 +132,7 @@ class PostImplementationFailureTest < Minitest::Test
   def test_invalid_settings_and_missing_prompt_stop_before_invocation
     [{ 'effort' => 'invalid' }, { 'reviewer' => 'unknown/provider' }, { 'model' => '' },
      { 'prompt_file' => '.agents/missing.md' }, { 'prompt_file' => '../outside.md' }].each do |settings|
-      with_repository({ 'post_implementation' => settings }) do |root, base, head, bin|
+      with_repository({ 'checkpoint' => settings }) do |root, base, head, bin|
         result, status = run_checkpoint(root, base, head, bin)
 
         refute_predicate status, :success?
@@ -171,7 +171,7 @@ class PostImplementationFailureTest < Minitest::Test
   def test_opt_out_does_not_build_a_packet_or_load_an_inactive_prompt
     [{ 'enabled' => false }, {}].each do |settings|
       settings['prompt_file'] = '.agents/missing.md'
-      with_repository({ 'post_implementation' => settings }) do |root, base, head, bin|
+      with_repository({ 'checkpoint' => settings }) do |root, base, head, bin|
         options = settings.key?('enabled') ? [] : ['--opt-out', 'Maintainer decision']
         result, status = run_checkpoint(root, base, head, bin, *options, :without_packet)
 
@@ -184,7 +184,7 @@ class PostImplementationFailureTest < Minitest::Test
 
   def test_trusted_and_explicit_opt_outs_never_claim_successful_review
     [{ 'enabled' => false }, {}].each do |settings|
-      with_repository({ 'post_implementation' => settings }) do |root, base, head, bin|
+      with_repository({ 'checkpoint' => settings }) do |root, base, head, bin|
         options = settings.empty? ? ['--opt-out', 'Maintainer opted out for this task'] : []
         result, status = run_checkpoint(root, base, head, bin, *options)
 
@@ -203,7 +203,7 @@ class PostImplementationSchemaTest < Minitest::Test
   def test_trusted_schema_accepts_and_resolves_checkpoint_prompt
     settings = { 'reviewer' => 'Anthropic/Claude', 'model' => 'sonnet', 'effort' => 'high',
                  'prompt_file' => '.agents/checkpoint.md' }
-    with_repository('review' => review_policy('post_implementation' => settings)) do |root|
+    with_repository('checkpoint' => settings) do |root|
       File.write(File.join(root, '.agents/checkpoint.md'), 'Compare actual outcome and cost')
       config = Shaka::RepositoryConfig.load(root:)
 
@@ -212,8 +212,7 @@ class PostImplementationSchemaTest < Minitest::Test
   end
 
   def test_missing_trusted_prompt_never_uses_a_candidate_replacement
-    policy = review_policy('post_implementation' => { 'prompt_file' => '.agents/absent.md' })
-    with_repository('review' => policy) do |root|
+    with_repository('checkpoint' => { 'prompt_file' => '.agents/absent.md' }) do |root|
       system(TEST_GIT, '-C', root, 'init', '--quiet', exception: true)
       system(TEST_GIT, '-C', root, 'add', '.', exception: true)
       system(TEST_GIT, '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',

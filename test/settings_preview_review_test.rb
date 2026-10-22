@@ -70,8 +70,8 @@ class SettingsPreviewCheckpointTest < Minitest::Test
   def preview_checkpoint(root)
     path = File.join(root, '.agents/agent-workflow.yml')
     data = YAML.safe_load_file(path)
-    data['review']['post_implementation'] = { 'enabled' => false, 'model' => 'preview-model',
-                                              'prompt_file' => '.agents/private-checkpoint.md' }
+    data['checkpoint'] = { 'enabled' => false, 'model' => 'preview-model',
+                           'prompt_file' => '.agents/private-checkpoint.md' }
     File.write(File.join(root, '.agents/private-checkpoint.md'), 'Assess the intended outcome.')
     File.write(path, YAML.dump(data))
     commit!(root, 'preview checkpoint')

@@ -69,9 +69,10 @@ module ReviewPromptFileFixture
     File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(review)))
   end
 
+  # A `checkpoint` entry is its own top-level section, beside the review overrides.
   def seam(review)
     { 'version' => 1, 'merge' => { 'preference' => 'ask' },
-      'review' => { 'required' => 'none' }.merge(review) }
+      'review' => { 'required' => 'none' }.merge(review.except('checkpoint')) }.merge(review.slice('checkpoint'))
   end
 
   def fake_codex(bin, head)
