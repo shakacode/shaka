@@ -43,7 +43,8 @@ is the reusable default.
 
 - One root task owns integration, publication, and user communication. Use bounded
   subagents only when authorized. Give each implementation worker exclusive files
-  or an isolated worktree; workers do not publish or merge.
+  or an isolated worktree; workers do not publish or merge. A background delivery
+  agent that a tower starts for one whole task owns that task: it may publish its PR but never merges.
 - This is a fresh kernel. Do not import predecessor workflow contracts, ledgers, schemas,
   review reducers, coordination clients, or policy engines as dependencies.
 - Before designing Shaka workflow behavior, check the current

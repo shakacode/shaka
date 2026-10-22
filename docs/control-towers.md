@@ -77,6 +77,12 @@ Start that batch with Shaka and Ask. Coordinate the chats.
 chats and creates any missing ones. Each task stays with one chat through testing,
 review, and its PR. If a chat stops, ask the RCT to resume it.
 
+In Claude Code, the tower offers each task as a session you start with a click, so
+you can watch, steer, and archive it. Ask for unattended work, such as “Don't wait
+for me to click,” and it starts background agents instead. Those agents don't
+appear in your session list and stop when the tower chat ends. Each one opens its
+own PR and stops for your merge decision, even under Auto.
+
 See [merge policies](working-with-shaka.md#choose-a-merge-policy) for Ask and Auto.
 Setting up towers or starting a batch does not authorize a deployment.
 
