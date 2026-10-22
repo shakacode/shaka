@@ -86,11 +86,12 @@ module Shaka
           @blockers << "#{path}: continued old-layout reference needs explicit repair"
         end
 
+        # Only the physical lines a continuation joins can hide a split path.
         def continued_old_path?(text, path = nil)
-          joined = text.gsub(/\\\r?\n/, '')
-          return false if joined == text
-
-          matching_paths(joined).any? || directory_reference?(joined, path) || segmented_reference?(joined)
+          text.scan(/(?:[^\r\n]*\\\r?\n)+[^\r\n]*/).any? do |span|
+            joined = span.gsub(/\\\r?\n/, '')
+            matching_paths(joined).any? || directory_reference?(joined, path) || segmented_reference?(joined)
+          end
         end
 
         def scan_alias_reference(path, text)
@@ -105,9 +106,16 @@ module Shaka
           return true if bare_directory_dependency?(text)
           return false if path.to_s.match?(/\.(?:md|markdown|mdx)\z/i)
 
-          assignment = %r{\b[A-Za-z_]\w*\s*[+?:]?=[^\r\n]*#{Regexp.escape(PATHS::DIRECTORY)}(?=/|[^[:alnum:]_.-]|$)}o
+          assignment = /\b[A-Za-z_]\w*\s*[+?:]?=[^\r\n]*#{aliased_value}/o
           mapping = %r{\b[A-Za-z_]\w*\s*:[ \t]+[^\r\n]*#{Regexp.escape(PATHS::DIRECTORY)}/?(?=[ \t\r\n#'";]|$)}o
           [text, normalize_shell_fragments(text)].any? { |source| source.match?(assignment) || source.match?(mapping) }
+        end
+
+        # The new layout also lives under the old directory, so only the directory itself or a moved path aliases it.
+        def aliased_value
+          moved = [PATHS::CONTRACT, PATHS::REPOSITORY_ALLOWLIST].map { |old| Regexp.escape(old) }
+          commands = "#{Regexp.escape(PATHS::COMMAND_DIRECTORY)}(?:/[[:alnum:]_.-]*)*"
+          "(?:#{Regexp.escape(PATHS::DIRECTORY)}/?|#{commands}|#{moved.join('|')})(?=[^[:alnum:]_./-]|$)"
         end
 
         def scan_shell_fragmented_reference(path, text)
