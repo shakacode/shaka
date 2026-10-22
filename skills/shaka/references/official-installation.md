@@ -76,10 +76,12 @@ registered helper's `install --status` (`--json` for tools) and relay its state,
 and next step. When the helper stops because its recorded Ruby is unavailable, run
 `ruby DIR/bin/install --status` with Ruby 3.4 or later instead. Status is read-only and
 offline; run the next command it names only with the user's approval.
+`install --repair` runs the next commands status names that repair can run, until a decision
+remains; run it only with the user's approval and relay its final state.
 Update validates the fetched tree before advancing the recorded origin branch. Dirty tracked or untracked files, unexpected checkout changes,
 and divergent updates stop it. After a manual pull of the registered branch,
 `install --update` records the pulled revision; local commits still stop it. Preserve changes in a development checkout;
-do not reset them to make installation succeed. Repair missing Ruby records by
+do not reset them to make installation succeed, except through the step status names or `install --repair`, which keep them on a branch first. Repair missing Ruby records by
 running `bin/install` with Ruby 3.4 or later. Maintenance uses registered selections;
 change hosts or towers through installation first. A known interrupted update
 completes on the next installation or update run.

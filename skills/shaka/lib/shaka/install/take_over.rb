@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'English'
+require_relative 'locations'
 
 module Shaka
   module Install
@@ -99,7 +100,7 @@ module Shaka
       # Renames the previous record so its checkout stops claiming the links; the checkout itself stays.
       def retire_owner
         stamp = Time.now.utc.strftime('%Y%m%dT%H%M%SZ')
-        retired = File.join(@owner.root, '.git', "shaka-install.retired-#{stamp}.json")
+        retired = File.join(@owner.root, '.git', "#{Locations::RETIRED}#{stamp}.json")
         raise ArgumentError, "Retired installation record already exists: #{retired}" if File.exist?(retired)
 
         @retired = retired

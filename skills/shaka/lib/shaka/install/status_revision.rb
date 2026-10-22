@@ -22,15 +22,23 @@ module Shaka
         local_commits(head)
       end
 
+      # The commits stay on a new branch; reset --keep refuses rather than overwrite an edited file.
       def local_commits(head)
-        finding('B2', "checkout #{head[0, 7]} has commits that #{tracking_name} lacks (recorded #{recorded[0, 7]})",
-                decision: "Keep these commits in a development checkout, then return #{@record['branch']} " \
-                          "to #{recorded[0, 7]}.")
+        finding('B2', "checkout #{head[0, 7]} has commits that #{tracking_name} lacks (recorded #{recorded[0, 7]}); " \
+                      'the step keeps them on a branch and returns the checkout to its record',
+                command: "#{keep_commits(head)}#{git_command} reset --keep #{command(recorded)}")
+      end
+
+      # A kept branch left by an earlier attempt already holds these commits, so the step can run again.
+      def keep_commits(head)
+        name = "kept-#{value('rev-parse', '--short', 'HEAD')}"
+        kept = value('rev-parse', '--verify', '--quiet', "refs/heads/#{name}")
+        "#{git_command} branch #{command(name)} && " unless kept == head
       end
 
       def behind(head)
         finding('B11', "checkout #{head[0, 7]} is behind its recorded revision #{recorded[0, 7]}",
-                command: "#{git_command} merge --ff-only #{recorded}")
+                command: "#{git_command} merge --ff-only #{command(recorded)}")
       end
 
       def rewritten

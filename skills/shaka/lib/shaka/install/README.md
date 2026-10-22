@@ -41,6 +41,9 @@ The code in this directory handles four parts of that installation:
   `StatusUnsupported` turn what they find into findings; `StatusStates` orders them so
   the first one is the state to fix first. State IDs match the install-state
   matrix in [#683](https://github.com/shakacode/shaka/issues/683).
+- `Repair` answers `install --repair`: it runs the next command status names, one
+  finding at a time, for the states listed in `Repair::REPAIRABLE`, and stops at a
+  healthy install, a decision, or any other state.
 - `Version` reads the Shaka product version from `skills/shaka/lib/shaka/version.rb`
   without running that file. It does not read a repository workflow setting.
 

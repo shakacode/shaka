@@ -57,7 +57,7 @@ module BrokenInstallScenarios
   def build_b2
     root = default_install
     commit(root, 'local change')
-    problem(root)
+    problem(root, 'reset --keep')
   end
 
   def build_b6
@@ -131,6 +131,6 @@ module BrokenInstallScenarios
   def build_c5
     root = default_install('--agent', 'claude')
     run_install(@root, '--directory', @root, '--repository', @remote, '--agent', 'cursor')
-    { from: root, location: @home, next: nil }
+    { from: root, location: @home, next: '--take-over' }
   end
 end

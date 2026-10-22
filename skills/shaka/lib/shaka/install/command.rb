@@ -3,6 +3,7 @@
 require 'optparse'
 require_relative 'official'
 require_relative 'session_hook'
+require_relative 'repair'
 require_relative 'status'
 
 module Shaka
@@ -10,6 +11,7 @@ module Shaka
     # One entry point for the official checkout.
     class Command
       include StatusFlags
+      include RepairFlags
 
       VALUES = { '--directory DIR' => :directory, '--repository URL' => :repository,
                  '--branch NAME' => :branch, '--skills-dir DIR' => :skills_dir }.freeze
@@ -24,8 +26,7 @@ module Shaka
       def run(arguments)
         parser.parse!(arguments)
         validate(arguments)
-        @actions == [:status] ? print_status : install
-        0
+        perform ? 0 : 1
       rescue OptionParser::ParseError, SystemCallError, IOError, ArgumentError => e
         warn e.message
         1
@@ -35,7 +36,8 @@ module Shaka
 
       def parser
         OptionParser.new do |options|
-          options.banner = "Usage: #{@program} [--directory DIR] [--agent NAME] [--update|--verify|--status [--json]]"
+          options.banner = "Usage: #{@program} [--directory DIR] [--agent NAME] " \
+                           '[--update|--verify|--repair|--status [--json]]'
           VALUES.each { |flag, key| options.on(flag) { |value| @options[key] = value } }
           selections(options)
           actions(options)
@@ -53,9 +55,9 @@ module Shaka
       end
 
       def actions(options)
-        options.on('--update') { @actions << :update }
-        options.on('--verify') { @actions << :verify }
+        %i[update verify].each { |action| options.on("--#{action}") { @actions << action } }
         status_options(options)
+        repair_options(options)
         options.on('--take-over', 'Move every host link from the checkout that owns them to this one') do
           @options[:take_over] = true
         end
@@ -67,7 +69,7 @@ module Shaka
 
       def validate(arguments)
         raise OptionParser::InvalidArgument, arguments.join(' ') unless arguments.empty?
-        raise ArgumentError, 'Choose only one of --update, --verify, and --status' if @actions.size > 1
+        raise ArgumentError, 'Choose only one of --update, --verify, --repair, and --status' if @actions.size > 1
 
         VALUES.each_value do |key|
           raise ArgumentError, "#{key} must not be empty" if @options[key]&.strip == ''
@@ -78,10 +80,8 @@ module Shaka
       end
 
       def validate_agents
-        if @options[:skills_dir] && @options[:agents].any?
-          raise ArgumentError,
-                'Choose --skills-dir or --agent, not both'
-        end
+        both = @options[:skills_dir] && @options[:agents].any?
+        raise ArgumentError, 'Choose --skills-dir or --agent, not both' if both
 
         @options[:agents].each do |agent|
           raise ArgumentError, "Unknown coding agent: #{agent}" unless Official::HOSTS.key?(agent)

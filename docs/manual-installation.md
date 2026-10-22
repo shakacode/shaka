@@ -118,6 +118,21 @@ or the decision you need to make. For example:
 Below the state it lists the links, checkouts, and PR trials it found.
 `shaka doctor` reports the same state.
 
+To have Shaka run those steps for you, ask it to repair the installation:
+
+```bash
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --repair
+```
+
+Repair handles a pull, an unfinished update, a removed Ruby, a missing or
+broken link, an install record nothing uses, local commits in the checkout, and
+links split between two checkouts. Split links move to the checkout whose install
+record changed last, which `install --status` names; when other steps run
+first, repair stops so you can check again. Local commits move to a
+`kept-<commit>` branch first, which you then decide what to do with, and a
+record it replaces is renamed aside, so nothing is deleted. It stops when a step
+needs your decision and shows that state. Running it again changes nothing.
+
 Shaka tells you when an update is available once your installation is three
 commits behind, or when the oldest change you lack is a day old, so a busy
 day on `main` does not interrupt every new chat. Each `update-check` answer is
