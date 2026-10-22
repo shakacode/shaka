@@ -6,8 +6,9 @@ reviewers:
   introduction: |
     Files here add rules to the prompts Shaka's reviewing models receive. A reviewer gets
     Shaka's built-in prompt, or the replacement a `prompt_file` setting names, then this
-    repository's applicable `AGENTS.md` files, then its file here. Later parts win when they
-    conflict, so put a rule for every agent in `AGENTS.md` and a rule for one reviewer here.
+    repository's applicable `AGENTS.md` files, then its file here. The reviewer is told that
+    a file here wins when it conflicts with what came before, though it cannot change the
+    report format. Put a rule for every agent in `AGENTS.md` and a rule for one reviewer here.
 
     Shaka reads these files from the default branch, so a pull request cannot change the
     rules it is reviewed by. A file Shaka does not list below is ignored.

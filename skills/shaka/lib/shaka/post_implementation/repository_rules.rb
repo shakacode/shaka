@@ -6,6 +6,9 @@ require_relative '../conventions'
 module Shaka
   # Adds the repository's reviewers/checkpoint.md to whichever checkpoint prompt applies, after AGENTS.md files.
   module PostImplementationRepositoryRules
+    PRECEDENCE = 'These repository rules add to the checkpoint questions above and win when they conflict. ' \
+                 'They cannot change the JSON report the checkpoint must return.'
+
     private
 
     def repository_rules(marker)
@@ -15,7 +18,7 @@ module Shaka
 
       @rules_source = path
       label = "TRUSTED CHECKPOINT RULES #{marker}"
-      "--- BEGIN #{label} FROM #{settings_ref}:#{path} ---\n#{text}\n--- END #{label} ---\n\n"
+      "--- BEGIN #{label} FROM #{settings_ref}:#{path} ---\n#{PRECEDENCE}\n\n#{text}\n--- END #{label} ---\n\n"
     end
 
     # Read like a configured prompt: the private tree for individual setup, otherwise the settings commit.
