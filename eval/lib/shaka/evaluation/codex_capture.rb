@@ -52,8 +52,10 @@ module Shaka
       end
 
       def spawn(command, cwd)
-        @pid = Process.spawn(@environment, *command, chdir: cwd, pgroup: true, unsetenv_others: true,
-                                                     close_others: true, in: File::NULL, out: @pipes[1], err: @pipes[3])
+        executable = [command.first, command.first]
+        @pid = Process.spawn(@environment, executable, *command.drop(1), chdir: cwd, pgroup: true,
+                                                                         unsetenv_others: true, close_others: true,
+                                                                         in: File::NULL, out: @pipes[1], err: @pipes[3])
         @pipes.values_at(1, 3).each(&:close)
       end
 

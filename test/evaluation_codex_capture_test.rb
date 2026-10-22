@@ -56,4 +56,16 @@ class EvaluationCodexCaptureTest < Minitest::Test
     assert_equal 'incomplete', result.fetch('native_status')
     assert_nil result.fetch('terminal')
   end
+
+  def test_a_literal_executable_without_arguments_can_have_spaces
+    folder = File.join(@root, 'Codex Builds')
+    Dir.mkdir(folder)
+    executable = File.join(folder, 'native-client')
+    File.write(executable, "#!#{RbConfig.ruby}\nSTDOUT.write(#{native_stream.dump})\n")
+    File.chmod(0o700, executable)
+    result = @capture.run(command: [executable], cwd: @root, directory: @directory,
+                          seconds: 5, clock_id: 'test-controller')
+    assert_equal 'completed', result.fetch('native_status')
+    assert_equal '日本語 🌊', result.dig('terminal', 'text')
+  end
 end
