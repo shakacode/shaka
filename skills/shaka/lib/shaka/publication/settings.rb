@@ -98,8 +98,11 @@ module Shaka
     UNCOMMITTED = %w[private/local preview/local].freeze
 
     def detail
-      status = @verdict ? 'Recorded checks match this PR’s current commit.' :
-                         'No matching check records supplied. Rerun missing validation or review to record them.'
+      status = if @verdict
+                 'Recorded checks match this PR’s current commit.'
+               else
+                 'No matching check records supplied. Rerun missing validation or review to record them.'
+               end
       { 'summary' => SUMMARY, 'body' => [status, NOTE, current_line, *operations_table, *values].join("\n\n") }
     end
 
@@ -116,7 +119,7 @@ module Shaka
     # current ones, so a row needs only what can still vary: its revision and what it ran with.
     def operations_table
       rows = operations.map do |title, settings, run|
-        [title, SettingsTable.source(settings, @repository), [ran_with(settings), run].compact.join(': ')]
+        [title, SettingsTable.source(settings, @repository), [SettingsTable.ran_with(settings), run].compact.join(': ')]
       end
       return [] if rows.empty?
 
@@ -133,24 +136,12 @@ module Shaka
       end
     end
 
-    def ran_with(settings)
-      command, reviewer, effort = settings.values_at('overrides.command', 'overrides.reviewer', 'overrides.effort')
-      parts = [command, reviewer, ("#{effort} effort" unless effort == 'UNKNOWN')].compact - ['UNKNOWN']
-      parts.empty? ? 'UNKNOWN' : parts.join(', ')
-    end
-
     def values
-      columns = operations.map { |title, settings| [column_title(title, settings), settings] }
+      columns = operations.map { |title, settings| [SettingsTable.column_title(title, settings), settings] }
       columns << [CURRENT, Evidence::PublicSettings.sanitize(@current)]
       return [] unless columns.any? { |_title, settings| UNCOMMITTED.include?(settings['source']) }
 
       [LOCAL_NOTE, SettingsTable.disclosure(columns)]
-    end
-
-    # Several reviewers would otherwise share one column title.
-    def column_title(title, settings)
-      reviewer = settings['overrides.reviewer']
-      reviewer == 'UNKNOWN' ? title : "#{title}: #{reviewer}"
     end
   end
 end
