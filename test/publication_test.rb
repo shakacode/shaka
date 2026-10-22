@@ -226,9 +226,9 @@ class PublicationStructureTest < Minitest::Test
   def test_a_details_summary_cannot_close_its_own_disclosure
     rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    # Provenance, skills, settings, usage with pricing notes, and supplied details.
-    assert_equal 6, rendered.scan('</summary>').size
-    assert_equal 6, rendered.scan('</details>').size
+    # Metrics, provenance, skills, settings, usage with pricing notes, and supplied details.
+    assert_equal 7, rendered.scan('</summary>').size
+    assert_equal 7, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing

@@ -56,10 +56,32 @@ class CliDescriptionTimingsTest < Minitest::Test
     end
   end
 
-  private
+  def test_publication_groups_metadata_but_leaves_change_evidence_and_cost_visible
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, decisions: [])
+        assert_predicate status, :success?, error
+        published = File.read(File.join(dir, 'published.md'))
+        assert_metrics_layout(published)
+      end
+    end
+  end
 
   def description_content
-    super.merge('task_started_at' => @task_started_at)
+    super.merge('task_started_at' => @task_started_at, 'details' => [{ 'summary' => 'Capture limits', 'body' => 'Fixture capture evidence.' }])
+  end
+
+  private
+
+  def assert_metrics_layout(published)
+    before, metrics = published.split("<details>\n<summary>Shaka metrics</summary>", 2)
+    refute_nil metrics, 'one disclosure should group Shaka metadata'
+    assert_includes before, '**Estimated cost:** UNKNOWN'
+    assert_includes before, '<summary>Capture limits</summary>'
+    ['Execution details', 'Skills used', 'Usage and cost', 'Timings', 'Shaka settings'].each do |title|
+      assert_includes metrics, "<summary>#{title}"
+    end
   end
 
   # This machine logged a review of the pull request's commit.

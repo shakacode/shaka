@@ -28,6 +28,10 @@
   instruction timestamp in UTC. Omit it when unavailable or later than PR opening.
   The helper retains it across updates; a resumed chat's start is not a new task start.
 
+- Keep PR-specific explanations, such as capture limits, with verification evidence.
+  The renderer groups execution details, skills, usage, timings, and settings under
+  Shaka metrics; estimated cost stays visible outside that disclosure.
+
 - Put the current-head recommendation, main reason, and next action before analysis.
 - Name model settings with their provenance; a configured model is not proof of a served model.
 - Name the user benefit, scope, and unfinished verification when they affect the decision.
