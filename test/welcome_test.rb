@@ -20,7 +20,7 @@ class WelcomeTest < Minitest::Test
   private
 
   def assert_welcome_has_next_steps(output)
-    assert_includes output, 'tested, reviewed PR'
+    assert_includes output, 'Review the intent and the evidence'
     assert_includes output, 'shaka doctor'
     assert_includes output, 'Configure this repository'
     assert_includes output, 'https://github.com/OWNER/REPO/pull/123'

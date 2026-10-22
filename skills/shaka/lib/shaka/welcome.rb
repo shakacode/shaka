@@ -4,7 +4,7 @@ module Shaka
   # First-run help needs neither a repository nor a GitHub connection.
   module Welcome
     TEXT = <<~TEXT
-      Give your coding agent a task. Get a tested, reviewed PR.
+      Give your coding agent a task. Review the intent and the evidence, not every line.
 
       In Codex, use $shaka; in Claude Code, Cursor, or OpenCode, use /shaka.
       In Pi, load the installed Shaka skill and give it the same request.
