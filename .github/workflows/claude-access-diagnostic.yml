@@ -1,0 +1,81 @@
+name: Temporary Claude access diagnostic
+
+# DEBUG-853: remove after the hosted provider failure is diagnosed.
+on:
+  push:
+    branches: [justin808-codex/ad-hoc-publisher-wording-task-timing]
+    paths: [.github/workflows/claude-access-diagnostic.yml]
+
+permissions: {}
+
+jobs:
+  access:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Prepare empty probe directory
+        run: mkdir -p "$RUNNER_TEMP/shaka-claude-probe"
+
+      - name: Test the existing review credential
+        uses: anthropics/claude-code-action/base-action@f27be6b65a4652f08a2ba3cff79114829b588967
+        continue-on-error: true
+        env:
+          CLAUDE_WORKING_DIR: ${{ runner.temp }}/shaka-claude-probe
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: Reply with exactly OK. Do not use tools.
+          settings: '{"disableAllHooks":true}'
+          claude_args: --max-turns 1 --tools "" --disable-slash-commands
+          show_full_output: false
+
+      - name: Encrypt the diagnostic for local inspection
+        if: always()
+        env:
+          DIAGNOSTIC_CERTIFICATE: |
+            -----BEGIN CERTIFICATE-----
+            MIIFBDCCAuygAwIBAgIUX0CVbojy3I97dJvwXvTUn/LuDEIwDQYJKoZIhvcNAQEL
+            BQAwIjEgMB4GA1UEAwwXc2hha2EtcmV2aWV3LWRpYWdub3N0aWMwHhcNMjYxMDIy
+            MjM0NTM5WhcNMjYxMDI0MjM0NTM5WjAiMSAwHgYDVQQDDBdzaGFrYS1yZXZpZXct
+            ZGlhZ25vc3RpYzCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBALjOqGSS
+            n38BCSQUmNCzV6lFT8q7H8oGcV1MBJH3MeQLUVODJRjpCvg7fo2dWTOheZfzMrfp
+            ZV+g0ZLfFjv7lLxISjT6NwIoZbNhD6Kx0brawDtmtc+1kP9eq1xPaXE0RfM3kt/0
+            uJmgmyuqFruEsPeMmjqMZ+mokIThx0SEolDvLlitG5BjbHOzSjpVtNUtRC3UCboB
+            dfTEK6GAyUcZqt53cAUugloosUZiqU4oO7BZSJhted1JVo9lCFUM5lHzk54s4DrH
+            Lmy1GO1+vnuQqPKBGZfmjFGaVqsyc190gLPoaHxnjXYxU55i33Y0tR65AaSvcTGH
+            +16EOwhVejMcDtVEcgoiX60RUWItcGMrk5MaaZRKdqPApJ82H4Hl3n2uINtHj5qB
+            8ES/RhxZpfPqHlYGEJWVcOPResOoMdZ1epvwUEvjCRt+kn2aLkqABEsBN0xsaxlN
+            xRwTnhqh7Ot/NgYm1huU+2UUwQEHdTC2ozG5yfcLFGdwpxVM32w1PweOjYrKuJU6
+            m1bbIdK2O4Nb48ERpeM+9BBD8flu0NNzgiTkkMn3t0HLTe4J8DL/t+NRO8VIo11U
+            Adw6W6YNkQ/5Jai3E/PwOEpX8KkXUqUbPrzMIm7jcOsqMGAt3tjQwpWKhna+rBMz
+            5mkZozWuigxN/U/+bea8PalTeAQsALHMoa+XAgMBAAGjMjAwMB0GA1UdDgQWBBQn
+            oKmcPLD4nhJ6IWLYpX8m+7x/DTAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEB
+            CwUAA4ICAQBVGOtJdE17TTinxRZFRVQdSVG7FiuRjpVbuH9vxjtV7eAR58a58OKG
+            /1PsmU28m8t4BQOqo0Q3ScVhGkoq4KU6vpoC4GbmCK/gF4MJjxjkdPCz5x4LDxMz
+            JkXdTDITzAQ80xcBgd6mzmvzTeVb8yVafS2CCPvxkQpDXciHm9u3vHV/9Pb/y9kP
+            wk32+eIzXq2AgX3O5POAlPb8B6vLvafp99DKJSAJFhHdZ8o0F6W5bhXDPRjKPC9l
+            eq62+MfhjzHgB9PP/CvHiuAKVGfIloxdYEy/tFSQmKgxvZIzDUwzSCrckJDkMMxo
+            du2gwCzsK2rP7Lr165K7s28oTvj9BGLM2yrZoWCGHK5wAA9pgQzxDAbXW4p0K7Y8
+            i+uP3H0Rcj+bG/njCX/fw2j3IIO6Wn9ohRqm2aj950Qo/p8sU8NG1IaH1oyJwbGy
+            azPUPKKbddDwiZmIPTdTp8YfgTcOCziyFuqdTETBcvEI/+/qvLK0/dXXs+6GkSH4
+            bwrPTM4RK2I4JGylPDLblyx3s0ibmvTgZ8yBBwF+EFP3eTG65aSPMvKjoEdEG4ZI
+            KDuJgduSrzytu2rykgPHoD0r8luxlecv3EOnrTtqxnPPR9/R0met6NvbgiTpf0RD
+            IbP1uVXxHzBnR/jceoI7dOG2qSzDuWecfJZJbFfHvB078k8y45UrFg==
+            -----END CERTIFICATE-----
+        run: |
+          set -euo pipefail
+          certificate="$RUNNER_TEMP/diagnostic-public.pem"
+          printf '%s\n' "$DIAGNOSTIC_CERTIFICATE" > "$certificate"
+          test -f "$RUNNER_TEMP/claude-execution-output.json"
+          openssl cms -encrypt -aes-256-cbc -binary -outform DER \
+            -in "$RUNNER_TEMP/claude-execution-output.json" \
+            -out "$RUNNER_TEMP/claude-diagnostic.p7m" "$certificate"
+          rm -f "$RUNNER_TEMP/claude-execution-output.json"
+
+      - name: Retain only the encrypted diagnostic
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: encrypted-claude-diagnostic
+          path: ${{ runner.temp }}/claude-diagnostic.p7m
+          if-no-files-found: error
+          retention-days: 1
