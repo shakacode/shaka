@@ -1,0 +1,92 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require 'shaka/closing_issues'
+
+# Proves the description note names each issue the text claims to fix that GitHub will not close.
+class ClosingIssuesTest < Minitest::Test
+  # Answers the closing-reference read with the issues GitHub linked, counting reads.
+  class FakeGitHub
+    attr_reader :repository, :number, :reads
+
+    def initialize(linked, repository: 'owner/repo')
+      @linked = linked
+      @repository = repository
+      @number = 7
+      @reads = 0
+    end
+
+    def graphql(_query, **)
+      @reads += 1
+      raise Shaka::Error, 'GraphQL failed or returned missing data.' if @linked == :unreadable
+
+      nodes = @linked.map do |issue|
+        repository, number = issue.split('#')
+        { 'number' => Integer(number), 'repository' => { 'nameWithOwner' => repository } }
+      end
+      { 'repository' => { 'pullRequest' => { 'closingIssuesReferences' => { 'nodes' => nodes } } } }
+    end
+  end
+
+  def test_a_second_issue_after_one_keyword_is_named
+    note = note_for('Fixes #727 and #729.', ['owner/repo#727'])
+
+    assert_includes note, 'fixes #729, but GitHub will not close it'
+    refute_includes note, '#727,'
+  end
+
+  def test_matching_closing_references_add_no_note
+    assert_equal({}, Shaka::ClosingIssues.note(content('Fixes #727, fixes #729.'),
+                                               FakeGitHub.new(['owner/repo#727', 'owner/repo#729'])))
+  end
+
+  def test_a_reference_without_a_keyword_claims_nothing_and_reads_nothing
+    github = FakeGitHub.new([])
+
+    ['Refs #763.', 'Part of #683.', 'This was fixed in #806.', 'Mentions #762 only.'].each do |text|
+      assert_equal({}, Shaka::ClosingIssues.note(content(text), github), text)
+    end
+    assert_equal 0, github.reads
+  end
+
+  def test_only_the_reference_after_the_keyword_is_claimed
+    claimed = Shaka::ClosingIssues.claimed(['Fixes #680 for #710 of #683.'], 'owner/repo')
+
+    assert_equal ['owner/repo#680'], claimed
+  end
+
+  def test_intent_fields_count_and_other_forms_normalize
+    intent = { 'why' => 'Closes other/lib#3.', 'scope' => 'Resolves https://github.com/Owner/Repo/issues/9.',
+               'leaves_out' => 'Fixes #99 later.' }
+    claimed = Shaka::ClosingIssues.claimed(Shaka::ClosingIssues.texts('summary' => 'x', 'intent' => intent),
+                                           'owner/repo')
+
+    assert_equal ['other/lib#3', 'owner/repo#9'], claimed
+  end
+
+  def test_several_missing_issues_are_named_together
+    note = note_for('Fixes #1, #2 & #3.', [])
+
+    assert_includes note, 'fixes #1, #2, #3, but GitHub will not close them'
+  end
+
+  def test_an_unreadable_reference_list_is_reported_without_raising
+    note = note_for('Fixes #1.', :unreadable)
+
+    assert_includes note, 'could not be read'
+  end
+
+  def test_the_handoff_fact_names_the_issues_a_merge_closes
+    linked = FakeGitHub.new(['owner/repo#839', 'other/lib#3'])
+
+    assert_equal 'closes #839, other/lib#3', Shaka::ClosingIssues.fact(linked)
+    assert_equal 'closes no issues', Shaka::ClosingIssues.fact(FakeGitHub.new([]))
+    assert_includes Shaka::ClosingIssues.fact(FakeGitHub.new(:unreadable)), 'closing issues unavailable'
+  end
+
+  private
+
+  def content(summary) = { 'summary' => summary, 'intent' => { 'why' => 'A problem.' } }
+
+  def note_for(summary, linked) = Shaka::ClosingIssues.note(content(summary), FakeGitHub.new(linked))['closing_issues']
+end

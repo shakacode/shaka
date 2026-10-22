@@ -83,6 +83,9 @@ module CliOpeningCheckFakes
         end
       when %r{pulls/1/files?} then puts '[]'
       when 'markdown' then puts JSON.generate('<table></table>' * 10)
+      when 'graphql'
+        nodes = [{ 'number' => 1, 'repository' => { 'nameWithOwner' => 'owner/repo' } }]
+        puts JSON.generate('data' => { 'repository' => { 'pullRequest' => { 'closingIssuesReferences' => { 'nodes' => nodes } } } })
       else abort "unexpected gh request: \#{ARGV.inspect}"
       end
     RUBY

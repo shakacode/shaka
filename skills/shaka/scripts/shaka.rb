@@ -27,6 +27,7 @@ require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
 require_relative '../lib/shaka/claim'
+require_relative '../lib/shaka/closing_issues'
 require_relative '../lib/shaka/decision_labels'
 require_relative '../lib/shaka/publication/deployment_link'
 require_relative '../lib/shaka/publication/checkpoint_recommendation'
@@ -360,7 +361,7 @@ begin
                attention = Shaka::DecisionLabels.sync(github, carried)
                opening = opening_result(options.merge(root:), described['summary'])
                refresh = Shaka::CursorUsageRefresh.bind(repository, number, carried['usage']) if carried.is_a?(Hash)
-               notes = prose_note.merge(guide)
+               notes = prose_note.merge(guide).merge(Shaka::ClosingIssues.note(described, github))
                published.merge('opening' => opening, 'usage_records' => usage_records).merge(notes).tap do |result|
                  result['attention'] = attention if attention
                  result['cursor_usage_refresh'] = refresh if refresh

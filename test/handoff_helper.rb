@@ -31,10 +31,18 @@ class HandoffFakeGitHub
 
   def graphql(query, **)
     return { 'repository' => @pull.fetch(:queue_settings) } if query.include?('squashMergeCommitMessage')
+    return closing_references if query.include?('closingIssuesReferences')
     raise Shaka::Error, 'GraphQL failed or returned missing data.' if @pull[:threads] == :unreadable
 
     page = { 'nodes' => @pull.fetch(:threads, []), 'pageInfo' => { 'hasNextPage' => false } }
     { 'repository' => { 'pullRequest' => { 'reviewThreads' => page } } }
+  end
+
+  def closing_references
+    nodes = @pull.fetch(:closes, []).map do |number|
+      { 'number' => number, 'repository' => { 'nameWithOwner' => @repository } }
+    end
+    { 'repository' => { 'pullRequest' => { 'closingIssuesReferences' => { 'nodes' => nodes } } } }
   end
 
   def api(path, **)

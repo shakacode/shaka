@@ -518,6 +518,9 @@ phases:
         floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
+        For each issue the PR fully resolves, write `Fixes #N` in `why` or `scope`, one keyword
+        per issue; partial work says `Part of #N`. When `description` returns `closing_issues`,
+        fix the wording and publish again.
         The helper writes the repository validation and local review line under Verification
         from `--validation-result` and `--review-result`, so leave those out of `checks`.
         `verification` lists 1 to 3 `checks`, each proof of this PR's own claim: what was run
@@ -852,8 +855,8 @@ phases:
         `awaiting-merge-approval`, verify the checkpoint contains the current head
         and copyable commit title and body. For an opted-out checkpoint, run `squash-message`
         for that head instead. On a merge-queue base, tell the user to add the PR to the queue
-        instead and relay `handoff`'s note on what the queue will write. Name the expected head SHA,
-        list each open step besides merging with its timing and who does it, and tell the user they may use
+        instead and relay `handoff`'s note on what the queue will write. Name the expected head SHA
+        and the issues `handoff` says the merge closes, list each open step besides merging with its timing and who does it, and tell the user they may use
         GitHub's currently offered merge control for that SHA. Arrange continued feedback intake
         through the procedure below before ending the turn. If GitHub
         shows a different head or offers no allowed merge method, tell them not to merge. Do not
