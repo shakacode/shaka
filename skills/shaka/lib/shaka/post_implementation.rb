@@ -6,6 +6,8 @@ require_relative 'post_implementation/history'
 require_relative 'post_implementation/publication'
 require_relative 'post_implementation/disposition'
 require_relative 'post_implementation/merge_warning'
+require_relative 'post_implementation/auto_merge_preview'
+require_relative 'trusted_config_source'
 require_relative 'github'
 require_relative 'handoff/walkthrough'
 require_relative 'merge_queue_commit'
@@ -78,10 +80,21 @@ module Shaka
     def publish_body(github, result, head, pull)
       renderer = result.key?('disposition') ? PostImplementationDispositionPublication : PostImplementationPublication
       message = -> { ready_message(github, head, pull) }
-      publication = renderer.new(result, head:, repository: @arguments.first, message:)
+      auto_merge = ->(verdict) { AutoMergePreview.line(trusted_seam, github, pull, head, verdict) }
+      publication = renderer.new(result, head:, repository: @arguments.first, message:, auto_merge:)
       published = github.reply(body: publication.render, key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
       safeguard = merge_safeguard(github, head, publication, published)
       published.merge('merge_safeguard' => safeguard)
+    end
+
+    # Settings come from the trusted default branch, never the PR; without --ref there is no preview.
+    # The preview is advisory, so unreadable settings leave it out instead of blocking the checkpoint.
+    def trusted_seam
+      return unless @options[:criteria_ref]
+
+      TrustedConfigSource.from_ref(root: @options[:root] || Dir.pwd, ref: @options[:criteria_ref])
+    rescue Error, SystemCallError
+      nil
     end
 
     def merge_safeguard(github, head, publication, published)

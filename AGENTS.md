@@ -43,7 +43,8 @@ is the reusable default.
 
 - One root task owns integration, publication, and user communication. Use bounded
   subagents only when authorized. Give each implementation worker exclusive files
-  or an isolated worktree; workers do not publish or merge.
+  or an isolated worktree; workers do not publish or merge. A background delivery
+  agent that a tower starts for one whole task owns that task: it may publish its PR but never merges.
 - This is a fresh kernel. Do not import predecessor workflow contracts, ledgers, schemas,
   review reducers, coordination clients, or policy engines as dependencies.
 - Before designing Shaka workflow behavior, check the current
@@ -70,8 +71,8 @@ is the reusable default.
   out of SKILL.md earns no reduction if the workflow loads it on every task.
 - Before adding instructions, identify the demonstrated failure or decision
   they change and why existing code or a shorter instruction is insufficient.
-- Supply `bin/report-instruction-growth` output in the existing local-review and
-  checkpoint evidence packets. Use it to assess the
+- Supply `bin/report-instruction-growth` output in the existing local-review evidence
+  packet and the checkpoint's `checkpoint.evidence`. Use it to assess the
   rendered workflow, entry point, project guidance, and other changed Markdown
   instruction files. Assess their actual loading conditions separately. Words and
   bytes are cost evidence, not token counts or quality gates.

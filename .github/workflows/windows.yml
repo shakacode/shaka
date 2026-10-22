@@ -3,10 +3,15 @@ name: Windows
 # Free windows-latest runner. This workflow is not the required validate check.
 # The job and each step continue after a failure so one Windows bug does not hide
 # the others, and so a red step does not block merge. Justin decides when to require it.
+# Pull requests and pushes run the quick steps. The full test suite takes about
+# 20 minutes, so it runs nightly and when someone starts this workflow by hand.
 on:
   pull_request:
   push:
     branches: [main]
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
@@ -63,6 +68,7 @@ jobs:
       # home, and require pty in test/local_evaluation_probe_container_test.rb.
       # Five private trial files were still running at 90s.
       - name: Test suite
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         continue-on-error: true
         env:
           SHAKA_TEST_WORKERS: "2"

@@ -359,6 +359,17 @@ preparation without this account's published ready review or explicit opt-out fo
 current commit. A new commit needs fresh evidence. The reviewer judges value; Ruby
 checks the published result and commit, not the judgment’s quality.
 
+The checkpoint also says whether the description's **Verification** proves what its
+**Intent** claims: **Adequate**, **Adequate with accepted gaps**, **Inadequate**, or
+**Cannot judge**. It names the weakest claim and the one check that would most raise
+confidence, and the description shows the verdict under its recommendation. With Ask,
+an **Inadequate** or **Cannot judge** verdict is information for your merge decision; with
+Auto, your agent stops and hands the PR back to you, and merges only after you approve that
+commit. No setting turns this stop off: Auto merging past verification that failed or could
+not be judged has no known use; open an issue if your repository needs one. For
+example, a fix whose safety rests on a shared caller, checked only by a unit test that
+stubs that caller, would be **Inadequate**, with the next check naming a run through it.
+
 Use **Recommendation** for the proposal and **Recorded decision** for
 accepted guidance. Once a direction is chosen, the agent records that guidance
 and recoverable work state for a later return. This uses the existing

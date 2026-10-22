@@ -68,7 +68,13 @@ module Shaka
 
         finding('B4', "checkout is on #{current.empty? ? 'a detached HEAD' : current}; " \
                       "the record expects #{@record['branch']}",
-                command: "#{git_command} switch #{command(@record['branch'])}")
+                command: "#{keep_detached if current.empty?}#{git_command} switch #{command(@record['branch'])}")
+      end
+
+      # Switching away from a detached HEAD strands commits no branch holds, so they go on a branch first.
+      def keep_detached
+        held = value('for-each-ref', '--contains', 'HEAD', '--count=1', 'refs/heads', 'refs/remotes')
+        "#{git_command} branch kept-#{value('rev-parse', '--short', 'HEAD')} && " unless held&.match?(/\S/)
       end
 
       # Verification and update both require the branch to track origin's branch of the same name.

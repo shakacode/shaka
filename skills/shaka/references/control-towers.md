@@ -157,7 +157,9 @@ host exposes it before starting `$shaka`.
 If another owner now holds the candidate and the user has not explicitly transferred
 ownership to this task, report it and wait for the user's decision instead of starting
 a second writer. Each selected delivery continues through the installed `$shaka`
-skill with one accountable owner.
+skill with one accountable owner. Before starting it, follow
+[keep one owner per branch](#keep-one-owner-per-branch), and in Claude Code also
+[start a delivery in Claude Code](#start-a-delivery-in-claude-code).
 
 Reconstruct the repository's essential backlog from GitHub or the selected project
 tracker. A fresh authorized task should not need a private workflow database, old
@@ -176,6 +178,44 @@ alternatives.
 Every triage refresh lists open Dependabot PRs and gives each an explicit disposition
 from the classification categories above. Addressing Dependabot does not mean blindly
 merging it. No bot PR may disappear from the recommendation without a disposition.
+
+## Start a delivery in Claude Code
+
+Start each delivery as a session chip: suggest the task with the host's session tool,
+and the user starts it as its own session. Use a chip whenever the user is present or
+may want to watch, steer, or archive the delivery. Make the chip prompt stand alone:
+the issue link, scope limits, overlapping issues and their owners, and the merge
+preference.
+
+Start a delivery agent, a background agent in its own worktree that runs `/shaka`,
+only when the user in this tower asks for unattended work, and say in the tower that
+you are doing so. Before launching one:
+
+1. Withdraw the issue's chip with `dismiss_task` and read the result. If it says the
+   chip was already started, launch nothing: that session owns the issue.
+2. Recheck ownership: open PRs, remote branches, and live sessions for the issue.
+3. Give the agent its own worktree and its own scratch subdirectory, and name both in
+   its prompt.
+4. Tell it to stay within the review-round budget, publish its PR, stop at the merge
+   decision, and never merge, even under Auto. Tell the user that its PR comes back
+   for their merge decision.
+5. Unless the user sets another limit, run at most about eight deliveries per
+   machine, counting chips and agents, and queue the rest.
+
+A delivery agent owns its task and PR under the workflow's delivery-agent rule; helpers
+it starts follow the helper-worker rule. When the host cannot start or suggest a
+session, say so. Report a chip as started only after the host confirms it.
+
+## Keep one owner per branch
+
+Each delivery's branch and PR have one writer: the session or delivery agent that
+owns them. The tower does not push to an owned PR, including in response to CI or
+review events; it relays the event to the owner. Before relaying a maintainer
+decision, ask the owner for its current state, because the maintainer may already
+have answered there. When a chip session's review ledger needs a human decision
+recorded in that session, ask the maintainer to answer there instead of relaying it.
+When a delivery agent has stopped, as it does when the tower chat ends, recheck
+ownership and offer a chip that resumes its PR; that session becomes the owner.
 
 ## Scan for attention only when asked
 

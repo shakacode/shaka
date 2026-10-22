@@ -19,6 +19,9 @@ merge:
     max_changed_files: 29
     max_changed_lines: 999 # Additions plus deletions.
     max_commits: 9
+  # The highest human review floor (pr_description.human_review_floors) a PR may set and still
+  # merge without a person confirming its head. 5 holds nothing back.
+  auto_max_review_floor: 5
 
 branches:
   name: '{login}-{host}/{issue}-{description}' # Feature branch-name template.
@@ -59,7 +62,7 @@ prose_limits: # Visible PR description and walkthrough prose.
   max_description_words: 300
   words_per_changed_line: 4 # Proportional budget: 150 words plus this many per changed line.
 
-project_guidance: {} # None: no repository guides for PR evidence or merge readiness.
+project_guidance: {} # None: no repository guides for PR evidence, merge readiness, or walkthroughs.
 
 # Command-line defaults; config.yml does not set these, but the flags override them per run.
 runtime:

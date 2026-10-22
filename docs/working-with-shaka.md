@@ -220,7 +220,9 @@ The agent lists what would have helped. It waits for you to pick what to fix.
 
 The agent may read Shaka's local timing log, `~/.local/state/shaka/calls.jsonl`.
 It records each helper command's name, timing, and result, with the repository,
-PR, and commit when known. It holds no paths or task text and is never uploaded. To stop recording, set
+PR, and commit when known. It holds no paths or task text, and Shaka never uploads
+the file. A PR's description does list that PR's validation, review, and checkpoint
+lines; see [PR timings](reference/timings.md). To stop recording, set
 `SHAKA_CALL_LOG=off`. To move the log, set it to a path.
 
 ## Suggest improvements to Shaka

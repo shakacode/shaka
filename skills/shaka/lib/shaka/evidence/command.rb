@@ -82,7 +82,7 @@ module Shaka
 
       def execute_run(context)
         root = context.fetch(:root)
-        before_tree = CandidateTree.capture(root:)
+        before_tree = CandidateTree.tested(root:)
         (output, error, process), timing = timed_check(root, context.fetch(:path))
         $stderr.write(output, error)
         after_tree = CandidateTree.capture(root:)

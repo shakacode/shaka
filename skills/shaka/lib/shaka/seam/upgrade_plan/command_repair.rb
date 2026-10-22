@@ -23,7 +23,7 @@ module Shaka
           return invalid_script(old, 'unsupported command language; inspect it') unless supported_language?(text)
 
           repaired, kind = repair_root(text)
-          return invalid_script(old, 'ambiguous repository-root calculation; repair it explicitly') unless repaired
+          return invalid_script(old, "ambiguous repository-root calculation; #{root_repair_hint(text)}") unless repaired
           return invalid_script(old, 'invocation-relative dependency') if invocation_relative?(repaired)
           return invalid_script(old, 'old command path; repair it explicitly') if old_path?(repaired)
 

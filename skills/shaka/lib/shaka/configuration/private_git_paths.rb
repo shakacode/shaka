@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require_relative 'git_memo'
 require_relative 'paths'
 require_relative '../error'
 
@@ -40,10 +41,12 @@ module Shaka
         Set.new
       end
 
-      def verify_trusted_tree!(sha:, git:)
-        paths = parse(git.call('ls-tree', '-r', '-z', '--name-only', sha, Paths::DIRECTORY))
-        [Paths::CONTRACT, Paths::NEW_CONTRACT].each do |path|
-          git.call('cat-file', '-e', "#{sha}:#{path}") if paths.include?(path)
+      def verify_trusted_tree!(root:, sha:, git:)
+        GitMemo.fetch([:private_trusted_tree, root, sha]) do
+          paths = parse(git.call('ls-tree', '-r', '-z', '--name-only', sha, Paths::DIRECTORY))
+          [Paths::CONTRACT, Paths::NEW_CONTRACT].each do |path|
+            git.call('cat-file', '-e', "#{sha}:#{path}") if paths.include?(path)
+          end
         end
       end
     end

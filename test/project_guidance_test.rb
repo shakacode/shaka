@@ -50,6 +50,13 @@ class ProjectGuidanceTest < Minitest::Test
     end
   end
 
+  def test_walkthrough_guide_prints_without_the_pull_request_template
+    with_guidance(GUIDANCE) do |root|
+      write_template(root, 'Trusted template.')
+      assert_equal 'Trusted walkthrough.', guidance('walkthrough', root, commit(root))
+    end
+  end
+
   def test_refuses_guidance_only_the_candidate_branch_configures
     with_repository do |root|
       sha = commit(root)
@@ -73,6 +80,6 @@ class ProjectGuidanceTest < Minitest::Test
 
   def test_rejects_an_unknown_name
     _, error = capture_io { assert_equal 1, Shaka::Guidance.run(%w[other]) }
-    assert_includes error, 'Usage: shaka guidance pr_evidence|merge_readiness'
+    assert_includes error, 'Usage: shaka guidance pr_evidence|merge_readiness|walkthrough'
   end
 end

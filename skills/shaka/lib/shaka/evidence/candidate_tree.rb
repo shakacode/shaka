@@ -3,6 +3,7 @@
 require 'fileutils'
 require 'open3'
 require 'tmpdir'
+require_relative '../call_log'
 require_relative '../error'
 require_relative '../workflow_version'
 
@@ -14,6 +15,9 @@ module Shaka
       def self.capture(root:)
         new(root).capture
       end
+
+      # The call log keeps the tree a check tests, so a description can tell which pull request it validated.
+      def self.tested(root:) = capture(root:).tap { CallLog.tag(tree: it) }
 
       def initialize(root)
         @root = File.realpath(root)

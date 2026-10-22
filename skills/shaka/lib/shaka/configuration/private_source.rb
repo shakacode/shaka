@@ -3,6 +3,7 @@
 require 'open3'
 require_relative '../error'
 require_relative '../repository_config'
+require_relative 'git_memo'
 require_relative 'layout'
 require_relative 'paths'
 require_relative 'private_git_paths'
@@ -41,7 +42,7 @@ module Shaka
       def resolve
         verify_worktree!
         sha = resolved_ref
-        PrivateGitPaths.verify_trusted_tree!(sha:, git: method(:git))
+        PrivateGitPaths.verify_trusted_tree!(root: @root, sha:, git: method(:git))
         trusted = Layout.commit(root: @root, sha:, allow_missing: true, git: PrivateGitPaths.method(:command))
         indexed = indexed_paths
         committed = committed_paths
@@ -60,7 +61,9 @@ module Shaka
         raise Error, 'Private source ref must be an immutable commit SHA' unless
           @ref.is_a?(String) && @ref.match?(/\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/)
 
-        sha = git('rev-parse', '--verify', '--end-of-options', "#{@ref}^{commit}").strip
+        sha = GitMemo.fetch([:private_commit, @root, @ref]) do
+          git('rev-parse', '--verify', '--end-of-options', "#{@ref}^{commit}").strip
+        end
         raise Error, 'Private source ref must be a full commit SHA' unless sha == @ref
 
         sha
@@ -83,11 +86,17 @@ module Shaka
       end
 
       def verify_worktree!
-        raise Error, "#{@root} is not the Git worktree root" unless
-          File.realpath(git('rev-parse', '--show-toplevel').strip) == @root
+        toplevel = GitMemo.fetch([:private_toplevel, @root]) do
+          File.realpath(git('rev-parse', '--show-toplevel').strip)
+        end
+        raise Error, "#{@root} is not the Git worktree root" unless toplevel == @root
       end
 
-      def common_git_dir = File.realpath(File.expand_path(git('rev-parse', '--git-common-dir').strip, @root))
+      def common_git_dir
+        GitMemo.fetch([:private_common_git_dir, @root]) do
+          File.realpath(File.expand_path(git('rev-parse', '--git-common-dir').strip, @root))
+        end
+      end
 
       def git(*args)
         output, error, status = PrivateGitPaths.capture(@root, *args)

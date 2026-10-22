@@ -10,7 +10,7 @@ module Shaka
       include Validation
 
       KEY = 'project_guidance'
-      NAMES = %w[pr_evidence merge_readiness].freeze
+      NAMES = %w[pr_evidence merge_readiness walkthrough].freeze
 
       # The effective guides: the repository's choice, or the packaged default.
       def self.resolve(settings) = settings.fetch(KEY) { Defaults.fetch(KEY) }

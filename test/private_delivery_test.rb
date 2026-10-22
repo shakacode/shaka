@@ -40,7 +40,27 @@ class PrivateDeliveryTest < Minitest::Test
     end
   end
 
+  # One description resolves settings ten times. Before the CLI remembered immutable Git answers it
+  # ran 122 Git commands; afterwards 50, most of them the index and HEAD reads each resolution repeats.
+  def test_description_repeats_only_the_git_reads_that_can_change
+    with_trial do
+      commands = traced_description_git_commands
+
+      assert_operator commands.length, :<, 60
+      assert_equal 1, commands.grep(/check-ref-format/).length
+      assert_equal 1, commands.grep(/rev-parse --git-common-dir/).length
+      assert_operator commands.grep(/ls-files --cached/).length, :>, 1
+    end
+  end
+
   private
+
+  def traced_description_git_commands
+    evidence = evidence_files
+    trace = File.join(@state, 'git-trace')
+    publish_description(*evidence, env: { 'GIT_TRACE' => trace })
+    File.readlines(trace).filter_map { |line| line[/trace: built-in: git (.*)/, 1] }
+  end
 
   def select_private_grok
     update_private do |data|

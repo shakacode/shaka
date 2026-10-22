@@ -74,10 +74,24 @@ module Shaka
     def self.terminate(waiter)
       Process.kill('TERM', -waiter.pid)
       waiter.join(2)
-      Process.kill('KILL', -waiter.pid)
+      kill_exiting_group(-waiter.pid)
       waiter.join
     rescue Errno::ESRCH
       waiter.join
+    end
+
+    # macOS denies signals to a group whose last members are exiting after TERM, then reports
+    # ESRCH once they are reaped. Retry briefly so only a lasting denial reaches the caller.
+    def self.kill_exiting_group(group)
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 0.5
+      begin
+        Process.kill('KILL', group)
+      rescue Errno::EPERM
+        raise if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+
+        sleep 0.01
+        retry
+      end
     end
 
     def self.thread_output(thread)

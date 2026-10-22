@@ -13,6 +13,8 @@ class InstallStatusDevelopmentTest < Minitest::Test
     report = status(@root)
     assert_equal 'C3', report['state']
     assert_includes report['next_command'], "--directory #{Shellwords.escape(default_path)} --take-over"
+    run_next(report, 'C3')
+    assert_equal File.join(File.realpath(default_path), 'skills/shaka'), host_link
   end
 
   def test_development_with_an_occupied_default_gets_a_decision
@@ -33,4 +35,8 @@ class InstallStatusDevelopmentTest < Minitest::Test
     details = status(root)['findings'].map { |item| item['detail'] }
     assert(details.any? { |detail| detail.include?('local branches: experiment') }, details.inspect)
   end
+
+  private
+
+  def host_link = File.realpath(File.join(@home, '.agents/skills/shaka'))
 end
