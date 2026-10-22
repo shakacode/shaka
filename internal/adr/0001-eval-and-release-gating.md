@@ -235,8 +235,9 @@ observations and explicit operator evidence. Missing observations remain `UNKNOW
 requested version pins cannot substitute for observed versions. The
 [decision adapter](../../eval/decision-replays.md) reuses that capture for tier 1,
 sets inapplicable fields to `N/A`, and binds the expected actions and checker code
-in its criteria digest. Tier 3 capture, the diff card, statistics and release
-verdict remain proposed.
+in its criteria digest. The [workflow declaration reader](../../eval/delivery-workflows.md)
+supplies immutable fixture Action pins for D2. Full tier 3 assembly, the diff card,
+statistics and release verdict remain proposed.
 
 ### D3. Three task tiers by cost, and most of the budget on the cheap two
 

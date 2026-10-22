@@ -23,7 +23,8 @@ for accounting, fingerprint capture and exact ordered-action scoring.
 The future tier 3 driver can retain [protected review readbacks](delivery-readback.md);
 the [offline Ask grader](ask-grading.md) checks protected evidence. The
 [native snapshot reader](delivery-snapshots.md) captures PR/check identities and final-blob bounds.
-Native collection and driver qualification remain unbuilt.
+The [workflow declaration reader](delivery-workflows.md) supplies immutable Action pins for D2.
+Complete native collection and driver qualification remain unbuilt.
 
 | Experiment | Evidence | Outcome |
 | --- | --- | --- |
