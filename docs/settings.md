@@ -614,8 +614,8 @@ To add your own questions to the checkpoint without copying Shaka's prompt, writ
 them in `.agents/shaka/reviewers/checkpoint.md`. For example, "Ask whether the
 change adds a step maintainers must remember." The reviewer reads Shaka's prompt,
 then your `AGENTS.md` files, then this file. Shaka tells the reviewer to follow your
-file when they conflict, though it cannot change the report format. A missing or
-empty file leaves Shaka's prompt unchanged.
+file when they conflict, though it cannot relax Shaka's safety rules or change the
+report format. A missing or empty file leaves Shaka's prompt unchanged.
 `.agents/shaka/reviewers/README.md` lists every file Shaka reads there.
 
 To replace Shaka's prompt instead, set `prompt_file`, such as

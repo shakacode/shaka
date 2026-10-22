@@ -43,7 +43,7 @@ class CheckpointConventionsTest < Minitest::Test
       assert_predicate status, :success?
       assert prompt.start_with?('Codex-only instructions')
       assert_includes prompt, 'Repository checkpoint rule'
-      assert_includes prompt, 'They cannot change the JSON report the checkpoint must return.'
+      assert_includes prompt, 'the JSON report the checkpoint must return.'
     end
   end
 
