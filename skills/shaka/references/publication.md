@@ -14,7 +14,7 @@
   [the checkpoint procedure](post-implementation-validation.md#recommend-the-next-action) describes.
 - Use this example for content, not exact wording or claims:
 
-  > ## Recommendation: {Merge, Revise before merge, Reconsider approach, or Do not merge}
+  > ## Recommendation: {Merge, Merge after maintainer decision, Revise before merge, Reconsider approach, or Do not merge}
   >
   > {Affected users} can now {specific behavior}. {Main reason for the recommendation}.
   >

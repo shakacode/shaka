@@ -48,6 +48,18 @@ class CheckpointRecommendationTest < Minitest::Test
     assert_includes error.message, 'verification_adequacy comes from the published checkpoint'
   end
 
+  def test_a_checkpoint_awaiting_the_maintainer_needs_the_question_in_decisions
+    awaiting = Shaka::PostImplementationReport::AWAITING_DECISION
+    content = { 'checkpoint' => { 'head' => HEAD, 'next_action' => 'Ask Justin to accept the risk.' } }
+    [content, content.merge('decisions' => [])].each do |undecided|
+      error = assert_raises(Shaka::Error) { resolve(undecided, [checkpoint(awaiting)]) }
+      assert_includes error.message, 'decisions'
+    end
+
+    asked = resolve(content.merge('decisions' => ['Accept the risk and merge?']), [checkpoint(awaiting)])
+    assert_equal awaiting, asked.dig('checkpoint', 'recommendation')
+  end
+
   def test_content_without_a_checkpoint_is_unchanged
     content = { 'summary' => 'Done.' }
     assert_same content, resolve(content, [])

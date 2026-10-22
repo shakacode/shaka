@@ -13,8 +13,11 @@ module Shaka
     def read(content, head:, report:)
       validate(content, head:)
       accepted = accepted_concerns(content, report)
+      ready = PostImplementationReport.ready?(report.merge('concerns' => unresolved(report, accepted)))
       raise Error, 'Merge disposition cannot override a blocking conclusion or unresolved concerns' if
-        merge?(content) && !PostImplementationReport.ready?(report.merge('concerns' => unresolved(report, accepted)))
+        merge?(content) && !ready
+
+      awaiting!(content, report, ready)
 
       content.slice('head', 'recommendation', 'reason', 'next_action').merge('accepted_concerns' => accepted)
     end
@@ -39,6 +42,16 @@ module Shaka
       entry.is_a?(Hash) && %w[concern decision].all? { |key| PostImplementationReport.text?(entry[key]) } &&
         !entry['decision'].match?(/[\r\n<`]/)
     end
+
+    # Only a verdict the maintainer can settle leaves the owner recommending merge after that decision.
+    def awaiting!(content, report, ready)
+      return unless awaiting?(content) && (ready || report.fetch('conclusion') == 'Do not merge')
+
+      raise Error, "#{PostImplementationReport::AWAITING_DECISION} needs unaccepted concerns or a " \
+                   'Simplify/reframe verdict; use Merge or another recommendation'
+    end
+
+    def awaiting?(content) = content['recommendation'] == PostImplementationReport::AWAITING_DECISION
 
     def unresolved(report, accepted) = report.fetch('concerns') - accepted.map { |entry| entry['concern'] }
 
@@ -71,10 +84,11 @@ module Shaka
     def completed_body
       report = PostImplementationReport.read(@result.fetch('report'), head: @head)
       disposition = PostImplementationDisposition.read(@result['disposition'], head: @head, report:)
-      @state = PostImplementationDisposition.merge?(disposition) ? 'ready' : 'blocked'
+      @disposition = disposition.fetch('recommendation')
+      @state = @disposition == 'Merge' ? 'ready' : 'blocked'
       @summary = disposition.fetch('reason')
       verification = report.fetch('summary', report.fetch('reasons').first)
-      ["## Recommendation: #{disposition.fetch('recommendation')}", @summary, *next_line(disposition),
+      ["## Recommendation: #{@disposition}", @summary, *next_line(disposition),
        evidence_lines(report, disposition), adequacy(report),
        supporting_analysis(report, verification, lead: "Reviewer summary: #{verification}")].join("\n\n")
     end

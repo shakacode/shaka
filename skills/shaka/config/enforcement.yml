@@ -116,7 +116,8 @@ rules:
     phase: finish
     quote: >-
       After verification, supply the task owner's head-bound `disposition` in the checkpoint
-      publication: Merge, Revise before merge, Reconsider approach, or Do not merge,
+      publication: Merge, Merge after maintainer decision, Revise before merge, Reconsider approach,
+      or Do not merge,
       with a reason and, except for Merge, a concrete next action. Judge the finished PR against the original
       outcome; successful verification alone does not choose its disposition.
       A Merge recommendation grants no merge authority. Every other disposition blocks
@@ -128,8 +129,9 @@ rules:
       The owner supplies and judges the disposition. Ruby validates a supplied disposition's
       vocabulary, head, reason, and any next action, requires a next action except for Merge,
       rejects Merge against a blocking conclusion or a concern without a recorded
-      `accepted_concerns` decision,
-      and publishes other dispositions through the existing blocked attestation. It does not
+      `accepted_concerns` decision, accepts Merge after maintainer decision only while Merge is
+      refused and the verdict is not Do not merge, refuses a description without decisions
+      while that is the head's recommendation, and publishes other dispositions through the existing blocked attestation. It does not
       infer merge authority, evaluate free-form prose, close a PR, or require the optional field.
   - id: post-implementation-merge-blocker
     phase: finish
