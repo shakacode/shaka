@@ -25,6 +25,16 @@ class WindowsWorkflowTest < Minitest::Test
     refute @workflow.key?('services')
   end
 
+  def test_runs_the_full_suite_only_nightly_or_on_request
+    on = @workflow['on'] || @workflow[true]
+    suite = exercise_steps.find { |step| step['run'] == 'ruby bin/windows-exercise suite' }
+
+    assert on.dig('schedule', 0, 'cron')
+    assert on.key?('workflow_dispatch')
+    assert_equal "github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'", suite['if']
+    assert((exercise_steps - [suite]).none? { |step| step.key?('if') })
+  end
+
   def test_pins_the_same_checkout_and_ruby_actions_as_validate
     validate_steps = @validate.dig('jobs', 'validate', 'steps')
 
