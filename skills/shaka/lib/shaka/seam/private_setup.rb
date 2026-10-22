@@ -102,6 +102,9 @@ module Shaka
           result.status == 'complete'
       end
 
+      # Individual setup writes no reviewers README for the header to point at.
+      def config_notes = []
+
       def generated_files
         return seeded_files if seeding?
 

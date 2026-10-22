@@ -17,6 +17,8 @@ module Shaka
 
       private
 
+      def config_notes = CONFIG_NOTES
+
       def reviewers_readme
         { Configuration::Paths.at(@root, Configuration::Paths::REVIEWERS_README) => Conventions.readme('reviewers') }
       end

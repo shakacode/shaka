@@ -7,6 +7,7 @@ class CheckpointConventionsTest < Minitest::Test
   include PostImplementationFixture
 
   RULES = '.agents/shaka/reviewers/checkpoint.md'
+  REPLACEMENT = { 'post_implementation' => { 'prompt_file' => '.agents/codex-prompt.md' } }.freeze
 
   def test_top_level_checkpoint_section_reaches_the_runner
     @root_settings = { 'checkpoint' => { 'enabled' => false } }
@@ -34,8 +35,7 @@ class CheckpointConventionsTest < Minitest::Test
 
   def test_rules_add_to_a_replacement_prompt
     @rules = "Repository checkpoint rule\n"
-    settings = { 'post_implementation' => { 'prompt_file' => '.agents/codex-prompt.md' } }
-    with_repository(settings) do |root, base, head, bin|
+    with_repository(REPLACEMENT) do |root, base, head, bin|
       fake_checkpoint(bin, head)
       _, status = run_checkpoint(root, base, head, bin)
       prompt = checkpoint_trace(root).fetch('prompt')
@@ -43,6 +43,7 @@ class CheckpointConventionsTest < Minitest::Test
       assert_predicate status, :success?
       assert prompt.start_with?('Codex-only instructions')
       assert_includes prompt, 'Repository checkpoint rule'
+      assert_includes prompt, 'They cannot change the JSON report the checkpoint must return.'
     end
   end
 

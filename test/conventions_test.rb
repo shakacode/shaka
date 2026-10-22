@@ -41,6 +41,17 @@ class ConventionsSeamInitTest < Minitest::Test
     end
   end
 
+  def test_repeat_init_accepts_a_configuration_written_before_the_header_notes
+    with_repository do |root|
+      init(root)
+      config = File.join(root, '.agents/shaka/config.yml')
+      File.write(config, File.read(config).lines.reject { it.include?('reviewers/') }.join)
+      _, error, status = init(root)
+
+      assert_predicate status, :success?, error
+    end
+  end
+
   def test_init_keeps_a_maintainer_readme
     with_repository do |root|
       FileUtils.mkdir_p(File.join(root, '.agents/shaka/reviewers'))

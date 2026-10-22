@@ -57,7 +57,14 @@ module Shaka
         return false unless (File.stat(path).mode & 0o7777) == destination_mode(path)
 
         existing = Configuration.generated_text(root: @root, path:)
-        existing == content || previously_generated_readme?(path, existing)
+        existing == content || previously_generated_readme?(path, existing) ||
+          contract_without_notes?(path, existing, content)
+      end
+
+      # A config.yml from a release before the header notes still matches a plain repeat of seam init.
+      def contract_without_notes?(path, existing, content)
+        path == Configuration::Paths.at(@root, Initializer::LAYOUT.contract) &&
+          existing == content.sub(config_notes.map { "# #{it}\n" }.join, '')
       end
 
       # The reviewers README belongs to the maintainer once it exists; seam init writes only a missing one.

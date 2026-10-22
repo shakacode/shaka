@@ -45,6 +45,15 @@ end
 class PrivateSetupTest < Minitest::Test
   include PrivateSetupFixture
 
+  def test_private_configuration_names_no_reviewers_readme
+    with_setup do |root, ref|
+      setup_private(root, ref)
+
+      refute_includes File.read(File.join(root, '.agents/shaka/config.yml')), 'reviewers/README.md'
+      refute_path_exists File.join(root, '.agents/shaka/reviewers')
+    end
+  end
+
   def test_setup_preserves_exclusion_and_local_authority
     with_setup do |root, ref|
       exclude = File.join(root, '.git/info/exclude')
