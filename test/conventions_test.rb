@@ -6,23 +6,24 @@ require 'shaka/configuration/fingerprint'
 
 class ConventionsTest < Minitest::Test
   def test_listed_file_resolves_beside_the_configuration
-    assert_equal '.agents/shaka/reviewers/checkpoint.md', Shaka::Conventions.path('reviewers/checkpoint.md')
-    assert_raises(Shaka::Error) { Shaka::Conventions.path('reviewers/checkpont.md') }
+    assert_equal '.agents/shaka/prompts/checkpoint.md', Shaka::Conventions.path('prompts/checkpoint.md')
+    assert_raises(Shaka::Error) { Shaka::Conventions.path('prompts/checkpont.md') }
   end
 
-  def test_readme_table_names_reader_and_absent_behavior_between_markers
-    readme = Shaka::Conventions.readme('reviewers')
+  def test_readme_table_links_the_built_in_prompt_and_absent_behavior_between_markers
+    readme = Shaka::Conventions.readme('prompts')
     table = readme[readme.index(Shaka::Conventions::TABLE_BEGIN)..readme.index(Shaka::Conventions::TABLE_END)]
 
-    assert_includes table, '| `checkpoint.md` | Checkpoint reviewer |'
+    assert_includes table, '| `checkpoint.md` | [Checkpoint prompt]('
+    assert_includes table, 'skills/shaka/config/post-implementation-prompt.md'
     assert_includes table, 'an empty file counts as absent'
   end
 
   def test_rejects_an_entry_missing_a_field
-    source = { 'reviewers' => { 'introduction' => 'Text', 'files' => { 'checkpoint.md' => { 'reader' => 'x' } } } }
+    source = { 'prompts' => { 'introduction' => 'Text', 'files' => { 'checkpoint.md' => { 'reader' => 'x' } } } }
     error = assert_raises(Shaka::Error) { Shaka::Conventions.load(YAML.dump(source)) }
 
-    assert_includes error.message, 'reviewers/checkpoint.md needs reader'
+    assert_includes error.message, 'prompts/checkpoint.md needs adds_to'
   end
 end
 
@@ -30,14 +31,14 @@ class ConventionsSeamInitTest < Minitest::Test
   include SeamInitializerTestHelpers
   include SeamInitializerLayoutHelpers
 
-  def test_init_writes_the_reviewers_readme_and_points_the_header_at_it
+  def test_init_writes_the_prompts_readme_and_points_the_header_at_it
     with_repository do |root|
       _, error, status = init(root)
 
       assert_predicate status, :success?, error
-      assert_equal Shaka::Conventions.readme('reviewers'),
-                   File.read(File.join(root, '.agents/shaka/reviewers/README.md'))
-      assert_includes File.read(File.join(root, '.agents/shaka/config.yml')), '# reviewers/README.md lists each file'
+      assert_equal Shaka::Conventions.readme('prompts'),
+                   File.read(File.join(root, '.agents/shaka/prompts/README.md'))
+      assert_includes File.read(File.join(root, '.agents/shaka/config.yml')), '# prompts/README.md lists each file'
     end
   end
 
@@ -45,7 +46,7 @@ class ConventionsSeamInitTest < Minitest::Test
     with_repository do |root|
       init(root)
       config = File.join(root, '.agents/shaka/config.yml')
-      File.write(config, File.read(config).lines.reject { it.include?('reviewers/') }.join)
+      File.write(config, File.read(config).lines.reject { it.include?('prompts/') }.join)
       _, error, status = init(root)
 
       assert_predicate status, :success?, error
@@ -54,18 +55,18 @@ class ConventionsSeamInitTest < Minitest::Test
 
   def test_init_keeps_a_maintainer_readme
     with_repository do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents/shaka/reviewers'))
-      File.write(File.join(root, '.agents/shaka/reviewers/README.md'), "Our notes\n")
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka/prompts'))
+      File.write(File.join(root, '.agents/shaka/prompts/README.md'), "Our notes\n")
       _, error, status = init(root)
 
       assert_predicate status, :success?, error
-      assert_equal "Our notes\n", File.read(File.join(root, '.agents/shaka/reviewers/README.md'))
+      assert_equal "Our notes\n", File.read(File.join(root, '.agents/shaka/prompts/README.md'))
     end
   end
 end
 
 class ConventionsFingerprintTest < Minitest::Test
-  RULES = '.agents/shaka/reviewers/checkpoint.md'
+  RULES = '.agents/shaka/prompts/checkpoint.md'
 
   def setup
     @root = Dir.mktmpdir('fingerprint-conventions')

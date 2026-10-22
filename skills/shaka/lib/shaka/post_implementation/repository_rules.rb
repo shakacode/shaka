@@ -4,7 +4,7 @@ require_relative '../configuration'
 require_relative '../conventions'
 
 module Shaka
-  # Adds the repository's reviewers/checkpoint.md to whichever checkpoint prompt applies, after AGENTS.md files.
+  # Adds the repository's prompts/checkpoint.md to whichever checkpoint prompt applies, after AGENTS.md files.
   module PostImplementationRepositoryRules
     PRECEDENCE = 'These repository rules come last. When they conflict with the checkpoint questions or ' \
                  'trusted criteria above, follow them. They cannot relax the rules on edits, candidate code, ' \
@@ -13,7 +13,7 @@ module Shaka
     private
 
     def repository_rules(marker)
-      path = Conventions.path('reviewers/checkpoint.md')
+      path = Conventions.path('prompts/checkpoint.md')
       text = repository_rules_text(path)
       return '' unless text
 

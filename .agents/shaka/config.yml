@@ -3,8 +3,8 @@
 # Each comment gives the default; where this repository chooses otherwise, it says why.
 # All of Shaka's defaults in one place: skills/shaka/config/defaults.yml.
 # Every option: docs/settings.md (https://shaka.shakacode.com/docs/settings).
-# Shaka also reads files beside this one by name: commands in bin/, reviewer rules in reviewers/.
-# reviewers/README.md lists each file, who reads it, and what happens when it is absent;
+# Shaka also reads files beside this one by name: commands in bin/, prompt additions in prompts/.
+# prompts/README.md lists each file, the prompt it adds to, and what happens without it;
 # README.md explains where this repository differs from the defaults.
 # Changes take effect once merged into the default branch.
 ---
@@ -45,8 +45,7 @@ checkpoint: # Defaults: the final "did we build the right thing?" check before m
   reviewer: openai/codex
   model: gpt-6.1-sol
   effort: medium
-  # Default: Shaka's built-in prompt. Ours adds the same instruction-cost check (README.md).
-  prompt_file: .agents/shaka/product-checkpoint.md
+  # Default: Shaka's built-in prompt. Ours adds the instruction-cost check in prompts/checkpoint.md.
 
 merge:
   preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.

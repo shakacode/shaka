@@ -15,7 +15,7 @@ module Shaka
       PRIVATE_EXCLUDE_PATTERN = '/.agents/shaka/'
       NEW_COMMAND_DIRECTORY = '.agents/shaka/bin'
       NEW_REPOSITORY_ALLOWLIST = '.agents/shaka/trusted-github-actors.yml'
-      REVIEWERS_README = '.agents/shaka/reviewers/README.md'
+      PROMPTS_README = '.agents/shaka/prompts/README.md'
       MACHINE_ALLOWLIST = '~/.agents/trusted-github-actors.yml'
 
       REQUIRED_COMMANDS = {
@@ -47,7 +47,7 @@ module Shaka
       }.freeze
       GENERATED_FILES = [CONTRACT, POINTER, LEGACY_README, *COMMANDS.values,
                          NEW_CONTRACT, *NEW_REQUIRED_COMMANDS.values, *NEW_OPTIONAL_COMMANDS.values,
-                         REVIEWERS_README].freeze
+                         PROMPTS_README].freeze
 
       def self.at(root, relative) = File.join(root, relative)
     end

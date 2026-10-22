@@ -86,7 +86,7 @@ module Shaka
           [Configuration::Paths.at(@root, relative), wrapper(command)]
         end
         wrappers.merge(Configuration::Paths.at(@root, LAYOUT.contract) => config_source,
-                       Configuration.path(@root, :POINTER) => readme_source(LAYOUT), **reviewers_readme)
+                       Configuration.path(@root, :POINTER) => readme_source(LAYOUT), **prompts_readme)
       end
 
       def config_source

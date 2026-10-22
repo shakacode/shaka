@@ -109,7 +109,7 @@ module Shaka
         return seeded_files if seeding?
 
         # Team-facing guides stay out of an individual's untracked settings.
-        guides = [Configuration.path(@root, :POINTER), Configuration::Paths.at(@root, Configuration::Paths::REVIEWERS_README)]
+        guides = [Configuration.path(@root, :POINTER), Configuration::Paths.at(@root, Configuration::Paths::PROMPTS_README)]
         files = super.except(*guides)
         files.merge(optional_files)
       end

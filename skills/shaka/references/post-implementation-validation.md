@@ -294,7 +294,7 @@ does not substitute for this judgment.
 ## Customize for the project
 
 The default works without configuration. Maintainers can extend or replace the
-prompt through a trusted `.agents/shaka/reviewers/checkpoint.md`, which the runner adds
+prompt through a trusted `.agents/shaka/prompts/checkpoint.md`, which the runner adds
 after `AGENTS.md`, replace it through a trusted `checkpoint.prompt_file`, or use trusted
 default-branch `AGENTS.md` or direct task instructions. For example: “Extend post-implementation validation: our audience is
 professional maintainers; favor existing interfaces over a new settings surface.”
