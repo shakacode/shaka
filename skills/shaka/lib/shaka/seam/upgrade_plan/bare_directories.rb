@@ -26,8 +26,12 @@ module Shaka
           end
         end
 
+        def directory_change?(text)
+          [text, normalize_shell_fragments(text)].any? { |source| source.match?(old_directory_change) }
+        end
+
         def old_directory_change
-          /(?<![\w-])(?:(?:cd|pushd)\s+|chdir\s*\()[^\n]*?#{Regexp.escape(PATHS::DIRECTORY)}(?![\w.-])/o
+          /(?<![\w-])(?:(?:cd|pushd|env\s+-C)\s+|chdir\s*\()[^\n]*?#{Regexp.escape(PATHS::DIRECTORY)}(?![\w.-])/o
         end
 
         def legacy_directory_command_pair?(text)
@@ -35,7 +39,8 @@ module Shaka
           return false unless text.match?(bare)
 
           names = command_paths.map { |command| Regexp.escape(File.basename(command)) }.join('|')
-          text.match?(%r{\bbin[/'"\s,]+(?:#{names})\b})
+          # A full old command path is rewritten whole, so its bin/ part is not a command beside the directory.
+          text.match?(%r{(?<!#{Regexp.escape(PATHS::DIRECTORY)}/)\bbin[/'"\s,]+(?:#{names})\b})
         end
       end
     end

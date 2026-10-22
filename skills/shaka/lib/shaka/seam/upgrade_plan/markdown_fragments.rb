@@ -87,27 +87,29 @@ module Shaka
           false
         end
 
-        # Markdown prose can name the old directory and a command paragraphs apart, so outside code the two
-        # block only within one instruction: a prose paragraph and the code block right after it.
+        # Prose has no working directory, so prose alone blocks only a change into the old directory. The
+        # directory and a command pair only within an instruction that holds code: a block with a code line,
+        # or a prose paragraph and the code block right after it.
         def markdown_directory_dependency?(text)
-          markdown_instructions(text).any? { |instruction| shell_directory_dependency?(instruction) } ||
-            shell_directory_dependency?(markdown_code(text))
+          markdown_instructions(text).any? do |instruction, code|
+            code ? shell_directory_dependency?(instruction) : directory_change?(instruction)
+          end || shell_directory_dependency?(markdown_code(text))
         end
 
         def markdown_instructions(text)
           blocks = markdown_blocks(text)
-          blocks.each_with_index.map do |(_, body), index|
-            following_code, following = blocks[index + 1]
-            following_code ? body + following : body
+          blocks.each_with_index.map do |(_, has_code, body), index|
+            following_code, _, following = blocks[index + 1]
+            following_code ? [body + following, true] : [body, has_code]
           end
         end
 
         # Splits text into blocks at blank prose lines, however many; a block may mix prose and indented
-        # lines, as a wrapped paragraph does. Each block records whether it opens with code.
+        # lines, as a wrapped paragraph does. Each block records whether it opens with code and holds any.
         def markdown_blocks(text)
           code = markdown_code_lines(text)
           runs = text.lines.each_with_index.chunk { |line, index| code[index] || line.match?(/\S/) || :_separator }
-          runs.map { |_, run| [code[run.first.last], run.map(&:first).join] }
+          runs.map { |_, run| [code[run.first.last], run.any? { |_, index| code[index] }, run.map(&:first).join] }
         end
 
         # Markdown runs nothing outside code, so prose lines are blanked and fenced or indented lines stay.
