@@ -7,7 +7,10 @@ require 'rbconfig'
 require 'shaka/usage/cursor_usage'
 
 module CursorUsageFixture
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  # Windows cannot spawn the extensionless sh launcher, so start its Ruby entry point the same way.
+  # test/ruby_launcher_test.rb covers the launcher itself.
+  COMMAND = [RbConfig.ruby, '--disable-gems', '--disable-rubyopt',
+             File.expand_path('../skills/shaka/scripts/shaka.rb', __dir__)].freeze
   HOOK = File.expand_path('../skills/shaka/scripts/cursor-usage-hook', __dir__)
   COMMIT = 'a' * 40
   SESSION = '11111111-1111-4111-8111-111111111111'
@@ -91,7 +94,7 @@ module CursorUsageFixture
   end
 
   def report(*, environment: {})
-    output, error, status = Open3.capture3(CLEAR.merge(environment), COMMAND, 'usage', '--commit', COMMIT,
+    output, error, status = Open3.capture3(CLEAR.merge(environment), *COMMAND, 'usage', '--commit', COMMIT,
                                            '--contribution', 'implementation', *)
     assert_predicate status, :success?, error
     output
@@ -263,7 +266,7 @@ class CursorUsageFailuresTest < Minitest::Test
   def test_turn_that_matches_no_generation_fails_and_names_the_expected_field
     Dir.mktmpdir do |directory|
       file = write_records(directory, [stored(NEW, 100)])
-      output, error, status = Open3.capture3(CLEAR, COMMAND, 'usage', '--host', 'cursor', '--file', file,
+      output, error, status = Open3.capture3(CLEAR, *COMMAND, 'usage', '--host', 'cursor', '--file', file,
                                              '--commit', COMMIT, '--contribution', 'implementation',
                                              '--turn', 'typo')
       refute_predicate status, :success?
