@@ -67,7 +67,7 @@ module Shaka
           existing == content.sub(config_notes.map { "# #{it}\n" }.join, '')
       end
 
-      # The reviewers README belongs to the maintainer once it exists; seam init writes only a missing one.
+      # The prompts README belongs to the maintainer once it exists; seam init writes only a missing one.
       def maintainer_readme?(path) = path == File.join(@root, Configuration::Paths::PROMPTS_README)
 
       # The pointer records the generating skill version, so an upgrade changes its text while

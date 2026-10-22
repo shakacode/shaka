@@ -6,7 +6,7 @@ require_relative 'configuration/paths'
 require_relative 'repository_config/duplicate_keys'
 
 module Shaka
-  # Files a repository adds by name beside its config.yml; the packaged list owns their paths.
+  # Files a repository adds by name under its Shaka settings directory; the packaged list owns their paths.
   module Conventions
     PATH = File.expand_path('../../config/conventions.yml', __dir__)
     DIRECTORY = File.dirname(Configuration::Paths::NEW_CONTRACT)
