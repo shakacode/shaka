@@ -18,7 +18,7 @@ class DoctorReviewerSettingsTest < Minitest::Test
   end
 
   def test_an_unknown_checkpoint_model_warns
-    report, blocked = doctor_with('review' => checkpoint('model' => 'claude-opus-5-6'))
+    report, blocked = doctor_with(checkpoint('model' => 'claude-opus-5-6'))
 
     assert_includes report, '[DEGRADED] Reviewer settings'
     assert_includes report, 'Checkpoint: anthropic/claude model `claude-opus-5-6`'
@@ -26,14 +26,14 @@ class DoctorReviewerSettingsTest < Minitest::Test
   end
 
   def test_a_checkpoint_reviewer_without_a_model_does_not_inherit_the_default_model
-    report, = doctor_with('review' => checkpoint('model' => nil))
+    report, = doctor_with(checkpoint('model' => nil))
 
     assert_includes report, '[HEALTHY] Reviewer settings'
   end
 
   def test_disabled_checks_are_not_reported
     report, = doctor_with('pr_description' => opening('effort' => 'turbo', 'enabled' => false),
-                          'review' => checkpoint('model' => 'claude-opus-5-6', 'enabled' => false))
+                          **checkpoint('model' => 'claude-opus-5-6', 'enabled' => false))
 
     assert_includes report, '[HEALTHY] Reviewer settings'
   end
@@ -46,7 +46,7 @@ class DoctorReviewerSettingsTest < Minitest::Test
 
   # A Claude checkpoint keeps these tests independent of which Codex models the catalog lists.
   def checkpoint(settings)
-    review_policy('post_implementation' => { 'reviewer' => 'anthropic/claude' }.merge(settings).compact)
+    { 'checkpoint' => { 'reviewer' => 'anthropic/claude' }.merge(settings).compact }
   end
 
   def doctor_with(sections)

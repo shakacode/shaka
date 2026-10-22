@@ -77,7 +77,7 @@ committed head; after material edits, repeat validation, technical review, and t
 checkpoint. A checkout whose HEAD differs fails before reviewer launch.
 
 Settings follow this precedence: explicit task flags, trusted
-`checkpoint` (formerly `review.post_implementation`), then packaged defaults. The defaults are
+`checkpoint`, then packaged defaults. The defaults are
 `openai/codex`, model `gpt-6.1-sol`, medium effort, and the
 [default product prompt](../config/post-implementation-prompt.md), adapted
 from #338 with proportional reporting guidance. Technical `review.prompt_file` and per-reviewer settings do not choose

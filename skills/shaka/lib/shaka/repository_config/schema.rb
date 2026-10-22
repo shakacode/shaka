@@ -27,7 +27,7 @@ module Shaka
                     checkpoint].freeze
       OPTIONAL_REVIEW_KEYS = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, ReviewSchema::PROMPT_FILE,
                               ReviewSchema::LOCAL_REVIEW_COUNT, ReviewCoverage::KEY, ReviewLimit::KEY,
-                              'ci_review_wait', 'post_implementation'].freeze
+                              'ci_review_wait'].freeze
 
       attr_reader :commands
 
@@ -108,11 +108,9 @@ module Shaka
       end
 
       def validate_checkpoint
-        section = PostImplementationSchema::SECTION
-        return unless @data.key?(section)
-
-        PostImplementationSchema.new(@data[section], label: section).validate
         PostImplementationSchema.fold(@data)
+        section = PostImplementationSchema::SECTION
+        PostImplementationSchema.new(@data[section], label: section).validate if @data.key?(section)
       end
 
       # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.

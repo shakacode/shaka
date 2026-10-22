@@ -20,16 +20,16 @@ module Shaka
 
       def self.reviewer(identity) = ReviewerSelection.parse(identity).values.map(&:downcase).join('/')
 
-      # Readers of the review section find the checkpoint in one place, whichever key set it.
+      # Internal readers keep finding the checkpoint under review; settings write it only as `checkpoint`.
       def self.fold(data)
         review = data.is_a?(Hash) && data['review'].is_a?(Hash) ? data['review'] : {}
+        raise Error, "review.#{KEY} moved to the top-level #{SECTION} section" if review.key?(KEY)
         return review unless data.is_a?(Hash) && data.key?(SECTION)
-        raise Error, "Use #{SECTION} or review.#{KEY}, not both" if review.key?(KEY)
 
         review.merge(KEY => data[SECTION])
       end
 
-      def initialize(settings, label: "review.#{KEY}")
+      def initialize(settings, label: SECTION)
         @settings = settings
         @label = label
       end

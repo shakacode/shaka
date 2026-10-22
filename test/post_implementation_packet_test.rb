@@ -55,7 +55,7 @@ class PostImplementationPacketTest < Minitest::Test
   end
 
   def test_a_repository_prompt_keeps_the_packaged_verdict_definitions
-    settings = { 'post_implementation' => { 'prompt_file' => '.agents/codex-prompt.md' } }
+    settings = { 'checkpoint' => { 'prompt_file' => '.agents/codex-prompt.md' } }
     with_repository(settings) do |root, base, head, bin|
       fake_checkpoint(bin, head)
       _, status = run_checkpoint(root, base, head, bin)

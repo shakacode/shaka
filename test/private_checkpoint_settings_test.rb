@@ -12,7 +12,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
 
   def test_private_opt_out_is_recorded_then_accepted_by_final_preparation
     with_trial do
-      update_private { |data| data['review']['post_implementation'] = { 'enabled' => false } }
+      update_private { |data| data['checkpoint'] = { 'enabled' => false } }
       result = run_checkpoint
       assert_equal 'opted_out', result['status']
       assert_includes result['reason'], 'enabled is false'
@@ -24,7 +24,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
   def test_private_checkpoint_choices_and_instructions_reach_the_reviewer
     with_trial do
       File.write(File.join(@root, CHOICES['prompt_file']), 'PRIVATE CHECKPOINT RULES')
-      update_private { |data| data['review']['post_implementation'] = CHOICES }
+      update_private { |data| data['checkpoint'] = CHOICES }
       result = run_checkpoint
       assert_equal %w[completed anthropic/claude], result.values_at('status', 'reviewer')
       assert_equal 'Individual settings (private source)', result['prompt_source']

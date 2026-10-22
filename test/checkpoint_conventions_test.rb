@@ -7,7 +7,7 @@ class CheckpointConventionsTest < Minitest::Test
   include PostImplementationFixture
 
   RULES = '.agents/shaka/prompts/checkpoint.md'
-  REPLACEMENT = { 'post_implementation' => { 'prompt_file' => '.agents/codex-prompt.md' } }.freeze
+  REPLACEMENT = { 'checkpoint' => { 'prompt_file' => '.agents/codex-prompt.md' } }.freeze
 
   def test_top_level_checkpoint_section_reaches_the_runner
     @root_settings = { 'checkpoint' => { 'enabled' => false } }
@@ -100,13 +100,11 @@ class CheckpointSectionSchemaTest < Minitest::Test
     end
   end
 
-  def test_checkpoint_section_and_old_key_together_are_refused
-    settings = { 'checkpoint' => { 'enabled' => false },
-                 'review' => review_policy('post_implementation' => { 'enabled' => true }) }
-    with_repository(settings) do |root|
+  def test_the_old_review_key_names_its_new_section
+    with_repository('review' => review_policy('post_implementation' => { 'enabled' => true })) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_equal 'Use checkpoint or review.post_implementation, not both', error.message
+      assert_equal 'review.post_implementation moved to the top-level checkpoint section', error.message
     end
   end
 
