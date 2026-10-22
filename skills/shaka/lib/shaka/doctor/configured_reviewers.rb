@@ -23,7 +23,7 @@ module Shaka
 
       # Without its own reviewer, the opening check uses a code reviewer, which is already checked.
       def opening(settings)
-        return [] unless settings['enabled'] && settings['external_enabled'] != false && settings['reviewer']
+        return [] unless settings['enabled'] && settings['reviewer']
 
         labeled('Opening check', settings['reviewer'], settings)
       end

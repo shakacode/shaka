@@ -48,7 +48,6 @@ class CliWalkthroughOpeningTest < Minitest::Test
 
   def with_walkthrough_opening
     with_trial do
-      update_private { |data| data['opening_check'] = { 'external_enabled' => true } }
       write_executable(@state, 'claude', walkthrough_claude)
       yield
     end

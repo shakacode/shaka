@@ -1,46 +1,33 @@
 # frozen_string_literal: true
 
 require 'rbconfig'
-require 'shellwords'
 require_relative 'install/tree'
 require_relative 'install/source'
 require_relative 'install/package'
 require_relative 'install/links'
 
 module Shaka
-  # Installs a checkout independent copy and points one host's skills directory to it.
+  # Copies a checkout into a verified package for a PR trial; see install/README.md.
   class Installer
     RUBY_RECORD = '.shaka-ruby'
 
-    def initialize(source_root:, skills_dir:, names:, rollback: nil, managed_dir: nil)
+    def initialize(source_root:, skills_dir:, names:, managed_dir:)
       @source_alias = File.expand_path(source_root)
       @source_root = File.realpath(source_root)
       @skills_dir = canonical(skills_dir)
       @names = Install::Package.ordered_skills(names)
-      @rollback = rollback
-      @managed = canonical(managed_dir || File.join(Dir.home, '.local/share/shaka/installs'))
+      @managed = canonical(managed_dir)
       refuse_overlap
     end
 
-    def run(announce: true, link: true)
+    def run(link: true)
       tree = Install::Tree.new(@names, source_root: @source_root, source_alias: @source_alias)
       source = Install::Source.new(@source_root, @names, tree)
       package = Install::Package.new(@managed, source, @names, tree)
-      target = @rollback ? package.existing(@rollback) : package.prepare(@source_root)
+      target = package.prepare(@source_root)
       record_ruby
       Install::Links.new(@skills_dir, @managed, @source_root, @names).switch_all(target) if link
-      announce(target) if announce
       target
-    end
-
-    def announce(target)
-      puts "Package: #{File.basename(target)}"
-      puts "Next: #{Shellwords.escape(File.join(@skills_dir, 'shaka/scripts/shaka'))} seam init --help"
-      puts 'Keep Shaka updated: this is a managed copy. Follow ' \
-           'https://github.com/shakacode/shaka/blob/main/skills/shaka/references/official-installation.md ' \
-           'to migrate or refresh your chosen source. Keep active trial and rollback copies.'
-    rescue SystemCallError, IOError
-      nil
     end
 
     private

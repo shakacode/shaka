@@ -68,11 +68,9 @@ Applications that only need the experimental public-comment screen can load
 `shaka/public_comments` from this package without the skill; see
 [screen public comments from Ruby](public-comments-api.md).
 
-The package also contains `shaka-install --skills-dir DIR`, which calls
-the existing explicit-directory installer. It installs the portable `shaka` skill
-by default; add `--with-mct` and/or `--with-rct` only for a Codex app skills directory, or
-`--with-claude-towers` only for a Claude Code desktop skills directory. It preserves
-existing content and refuses to replace a different source. The
+The package also contains `shaka-install`, which runs `bin/install`. It installs the
+official checkout, cloning it into `~/.local/share/shaka/source` unless `--directory DIR`
+names another place, and links the selected hosts to it. The
 [first-use guide](../docs/getting-started.md) explains the trusted source and host startup
 boundaries.
 

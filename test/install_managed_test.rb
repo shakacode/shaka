@@ -6,15 +6,13 @@ require 'json'
 class InstallManagedTest < Minitest::Test
   include InstallTestSupport
 
-  def test_upgrade_keeps_previous_package_for_rollback
+  def test_upgrade_keeps_previous_package
     install!
     previous = File.readlink(@destination)
     File.write(File.join(@source, 'SKILL.md'), 'version two')
     install!
 
     assert_upgraded(previous)
-    rollback!(File.basename(File.dirname(previous, 2)))
-    assert_rolled_back(previous)
   end
 
   def test_modified_source_records_development_identity_and_hash
@@ -35,8 +33,6 @@ class InstallManagedTest < Minitest::Test
     assert_equal 'revision', identity.fetch('kind')
     assert_equal revision, identity.fetch('revision')
     assert_nil identity.fetch('base_revision')
-    install!
-    rollback!(package_identity.fetch('package_id'))
   end
 
   def test_modified_git_source_records_base_revision
@@ -94,22 +90,12 @@ class InstallManagedTest < Minitest::Test
     assert_predicate status, :success?, output
   end
 
-  def rollback!(id)
-    output, status = run_installer('--skills-dir', @skills_dir, '--with-rct', '--rollback', id)
-    assert_predicate status, :success?, output
-  end
-
   def skill_text = File.read(File.join(@destination, 'SKILL.md'))
 
   def assert_upgraded(previous)
     refute_equal previous, File.readlink(@destination)
     assert_equal 'version two', skill_text
     assert File.directory?(File.dirname(previous, 2))
-  end
-
-  def assert_rolled_back(previous)
-    assert_equal previous, File.readlink(@destination)
-    assert_equal 'version one', skill_text
   end
 
   def commit_source

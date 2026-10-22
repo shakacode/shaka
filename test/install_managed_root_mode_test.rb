@@ -8,7 +8,7 @@ class InstallManagedRootModeTest < Minitest::Test
   def test_new_managed_directory_is_safe_under_permissive_umask
     managed = File.join(@directory, 'shaka', 'managed')
     output, status = Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, '-e',
-                                     'File.umask(0); load ARGV.shift', @installer,
+                                     'File.umask(0); load ARGV.shift', @trial_installer,
                                      '--skills-dir', @skills_dir, '--managed-dir', managed)
 
     assert_predicate status, :success?, output

@@ -55,15 +55,6 @@ class InstallEdgeCasesTest < Minitest::Test
     assert_equal 'development', package_identity.fetch('source').fetch('kind')
   end
 
-  def test_rollback_rejects_flags_that_would_mix_skill_versions
-    install!
-    id = package_identity.fetch('package_id')
-    output, status = run_installer('--skills-dir', @skills_dir, '--rollback', id)
-
-    refute_predicate status, :success?, output
-    assert_includes output, 'Rollback flags must match'
-  end
-
   def test_upgrade_replaces_a_changed_old_package
     install!
     old_package = package_path

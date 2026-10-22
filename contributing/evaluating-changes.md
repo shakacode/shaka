@@ -13,18 +13,17 @@ to push a branch or open a Shaka PR to run tests, compare outputs, or try your
 candidate on a separate project task. Start with deterministic checks; agree on
 the task, time/cost limits and permitted actions before an agent trial.
 
-For a real-work trial, review the local candidate and use the existing
-[source installer](../skills/shaka/references/installation.md#install) with
-dedicated skills and managed-package directories outside the project being tested.
-Keep normal skill links unchanged. In a fresh chat, explicitly select that installed
-candidate's skill and retain its absolute helper path. Do not switch the helper
+For a real-work trial, review the local candidate and clone it at the candidate
+commit into a directory outside the project being tested, for example
+`git clone CHECKOUT DIR` followed by `git -C DIR switch --detach COMMIT`.
+Keep normal skill links unchanged. In a fresh chat, explicitly select that clone's
+`skills/shaka/SKILL.md` and retain its absolute `skills/shaka/scripts/shaka` helper path. Do not switch the helper
 in an ongoing task. The target project's trusted settings and merge policy still
 apply; an isolated installation is not the full sandbox described below.
 
 Record the local candidate commit, baseline, task, checks, outputs and limitations
-outside the source checkout. Prefer a clean local commit for reproducibility;
-it need not be pushed. If testing uncommitted changes, preserve the patch and
-record the installed development package's content hash, not just its base SHA.
+outside the source checkout. Commit the candidate first; it need not be pushed, and
+the clone carries only committed work.
 Keep this evidence locally until you choose to publish. When opening a PR,
 include a public-safe summary of the tested revision and results, including
 failures. Do not expose private project details or credentials.

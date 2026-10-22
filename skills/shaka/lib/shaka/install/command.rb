@@ -1,20 +1,18 @@
 # frozen_string_literal: true
 
 require 'optparse'
-require_relative '../installer'
 require_relative 'official'
 require_relative 'session_hook'
 require_relative 'status'
 
 module Shaka
   module Install
-    # One entry point for the official checkout and explicit managed-copy operations.
+    # One entry point for the official checkout.
     class Command
       include StatusFlags
 
       VALUES = { '--directory DIR' => :directory, '--repository URL' => :repository,
-                 '--branch NAME' => :branch, '--skills-dir DIR' => :skills_dir,
-                 '--managed-dir DIR' => :managed_dir, '--rollback PACKAGE_ID' => :rollback }.freeze
+                 '--branch NAME' => :branch, '--skills-dir DIR' => :skills_dir }.freeze
 
       def initialize(source, program: 'bin/install')
         @source = source
@@ -52,7 +50,6 @@ module Shaka
         options.on('--with-rct') { @options[:names] << 'rct' }
         options.on('--with-claude-towers') { @options[:names].push('mct-claude', 'rct-claude') }
         options.on('--session-hook', 'Show saved update checks in new Claude chats') { @options[:session_hook] = true }
-        options.on('--managed', 'Explicit managed copy (normally use a PR trial)') { @options[:managed] = true }
       end
 
       def actions(options)
@@ -78,7 +75,6 @@ module Shaka
         validate_agents
         validate_action
         validate_take_over
-        validate_managed if managed?
       end
 
       def validate_agents
@@ -103,32 +99,13 @@ module Shaka
 
       def validate_take_over
         return if !@options[:take_over] ||
-                  (@actions.empty? && @options[:agents].empty? && @options[:names] == ['shaka'] && !managed?)
+                  (@actions.empty? && @options[:agents].empty? && @options[:names] == ['shaka'])
 
         raise ArgumentError, 'Use --take-over alone or with --directory, --repository, --branch, or --skills-dir'
       end
 
-      def validate_managed
-        raise ArgumentError, 'Managed installation requires --skills-dir' unless @options[:skills_dir]
-        return if @actions.empty? && @options[:agents].empty? &&
-                  @options.values_at(:directory, :repository, :branch).none?
-
-        raise ArgumentError, 'Managed options cannot be combined with official checkout options'
-      end
-
-      def managed? = @options.values_at(:managed, :managed_dir, :rollback).any? || legacy_target?
-
-      def legacy_target?
-        @options[:skills_dir] && !@options[:directory] && @options[:agents].empty? && @actions.empty? &&
-          !@options[:take_over]
-      end
-
       def install
-        if managed?
-          Installer.new(source_root: @source, **@options.slice(:skills_dir, :names, :managed_dir, :rollback)).run
-        else
-          SessionHook.around(@options, @actions.any?) { Official.new(@source, @options).run(@actions[0] || :install) }
-        end
+        SessionHook.around(@options, @actions.any?) { Official.new(@source, @options).run(@actions[0] || :install) }
       end
     end
   end

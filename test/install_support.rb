@@ -23,7 +23,7 @@ module InstallTestSupport
   end
 
   def run_installer(*)
-    Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, @installer, *)
+    Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, @trial_installer, *)
   end
 
   def git(*)
@@ -52,6 +52,7 @@ module InstallTestSupport
     @source = File.join(@directory, 'source', 'skills', 'shaka')
     @rct_source = File.join(@directory, 'source', 'skills', 'rct')
     @installer = File.join(@directory, 'source', 'bin', 'install')
+    @trial_installer = File.join(@directory, 'source', 'bin', 'trial-install')
     @skills_dir = File.join(@directory, 'isolated profile', 'skills')
     @destination = File.join(@skills_dir, 'shaka')
     @rct_destination = File.join(@skills_dir, 'rct')
@@ -61,6 +62,7 @@ module InstallTestSupport
 
   def copy_installer
     FileUtils.cp(File.expand_path('../bin/install', __dir__), @installer)
+    FileUtils.cp(File.expand_path('support/trial_installer.rb', __dir__), @trial_installer)
     library = File.join(@source, 'lib', 'shaka')
     FileUtils.mkdir_p(library)
     copy_library(library)
@@ -87,6 +89,7 @@ module InstallTestSupport
     FileUtils.rm_rf(root)
     FileUtils.mkdir_p([File.dirname(@installer), File.dirname(@source)])
     FileUtils.cp(File.expand_path('../bin/install', __dir__), @installer)
+    FileUtils.cp(File.expand_path('support/trial_installer.rb', __dir__), @trial_installer)
     FileUtils.cp_r(File.expand_path('../skills/shaka', __dir__), @source)
   end
 

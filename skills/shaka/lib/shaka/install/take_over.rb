@@ -22,7 +22,6 @@ module Shaka
           links = targets.map { |target| links_for(target, previous_source: @owner.root) }
           links.each { |entry| entry.check(@checkout.root) }
           move(targets, links)
-          links.each(&:retire_aliases)
           verify(targets)
         end
       end
