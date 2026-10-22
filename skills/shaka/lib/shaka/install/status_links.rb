@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'shellwords'
+require_relative 'locations'
 require_relative 'status_split'
 require_relative 'status_states'
 
@@ -66,11 +67,10 @@ module Shaka
                 command: "ln -sfn #{Shellwords.escape(expected)} #{Shellwords.escape(path)}")
       end
 
-      # The retired name matches the one a take-over gives the record it replaces.
       def orphan(checkout, path)
         git = File.join(checkout.root, '.git')
         record = Shellwords.escape(File.join(git, Checkout::RECORD))
-        retired = "#{Shellwords.escape(File.join(git, 'shaka-install.retired-'))}$(date -u +%Y%m%dT%H%M%SZ).json"
+        retired = "#{Shellwords.escape(File.join(git, Locations::RETIRED))}$(date -u +%Y%m%dT%H%M%SZ).json"
         finding('C1', checkout.root, "no link this record names reaches it (#{path} is #{describe(path)}); " \
                                      'another registered checkout serves the hosts',
                 command: "mv -n #{record} #{retired}")

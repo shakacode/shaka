@@ -33,6 +33,10 @@ module Shaka
       # commits on a branch, and unify a split install.
       REPAIRABLE = %w[B1 B7 B8 B9 C1 B2 C5].freeze
       LIMIT = 20
+      # Git variables such as GIT_DIR, or a config file that sets core.worktree, would point the step's
+      # git -C at another repository; status reads without them, so the step runs without them too. Only
+      # the SSH and password-prompt settings a fetch needs stay.
+      KEPT_GIT = CheckoutGit::AUTHENTICATION_ENV.grep_v(/\AGIT_CONFIG/).freeze
 
       def initialize(source:, directory: nil, home: Dir.home)
         @status = -> { Status.new(source:, directory:, home:) }
@@ -74,10 +78,8 @@ module Shaka
         run(step)
       end
 
-      # Git variables such as GIT_DIR would point the step's git -C at another repository; status reads
-      # without them, so the step runs without them too. Credentials for a fetch stay.
       def run(step)
-        environment = (ENV.keys.grep(/\AGIT_/) - CheckoutGit::AUTHENTICATION_ENV).to_h { |key| [key, nil] }
+        environment = (ENV.keys.grep(/\AGIT_/) - KEPT_GIT).to_h { |key| [key, nil] }
         output, process = Open3.capture2e(environment, 'sh', '-c', step[2])
         print output
         raise ArgumentError, "Repair step failed for #{step[0]}; run install --status" unless process.success?

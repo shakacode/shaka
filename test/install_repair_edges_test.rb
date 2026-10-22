@@ -32,12 +32,14 @@ class InstallRepairEdgesTest < Minitest::Test
     assert_repaired(root, 'B2', final: 'C3')
   end
 
-  # A GIT_DIR left in the environment must not point the step's Git commands at another repository.
-  def test_local_commits_repair_ignores_an_inherited_git_dir
+  # GIT_DIR, or a config file naming another worktree, must not point the step's Git commands elsewhere.
+  def test_local_commits_repair_ignores_inherited_git_settings
     root = local_install
     commit(root, 'local change')
     other = git('-C', @root, 'rev-parse', 'HEAD').strip
-    output, process = repair(root, 'GIT_DIR' => File.join(@root, '.git'))
+    config = File.join(@directory, 'redirect.gitconfig')
+    File.write(config, "[core]\n\tworktree = #{@root}\n")
+    output, process = repair(root, 'GIT_DIR' => File.join(@root, '.git'), 'GIT_CONFIG_GLOBAL' => config)
     assert_includes output, 'Repairing B2', output
     refute_predicate process, :success?
     assert_equal other, git('-C', @root, 'rev-parse', 'HEAD').strip
