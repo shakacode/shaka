@@ -27,11 +27,12 @@ module Shaka
                    'trial' => %w[prepare report] }.freeze
     # The fixed commands `evidence run` accepts; any other `--command` value is not recorded.
     CHECKS = %w[setup test validate validate_local trigger_hosted_ci].freeze
-    # Task and reviewer values a command may add to its record. A value is kept only when it
+    # Task and reviewer values a command may add to its record; a validation run's `tree` is the
+    # tested tree, which matches a commit's tree once that work is committed. A value is kept only when it
     # has its key's shape, so free text cannot reach the log through a tag. Issues and PRs
     # share one number space per repository, so `number` names either.
     TAGS = { 'repository' => %r{\A[A-Za-z0-9][\w.-]*/[\w.-]+\z}, 'number' => /\A[1-9]\d{0,9}\z/,
-             'head' => /\A[0-9a-f]{40}\z/, 'provider' => /\A[a-z][a-z0-9-]*\z/,
+             'head' => /\A[0-9a-f]{40}\z/, 'tree' => /\A[0-9a-f]{40}\z/, 'provider' => /\A[a-z][a-z0-9-]*\z/,
              'model' => %r{\A[A-Za-z0-9][\w.:+/-]*\z}, 'effort' => /\A[a-z][a-z-]*\z/ }.freeze
     MAX_TAG_LENGTH = 100
 

@@ -18,6 +18,7 @@ Shaka::StartupNotice.call(ARGV)
 
 require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/github/pull_timeline'
+require_relative '../lib/shaka/publication/timeline_steps'
 require_relative '../lib/shaka/attention'
 require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
@@ -143,6 +144,7 @@ def rendered_description(described, github, pull, workflow_version, options)
   carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
   settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
   timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
+  timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
   rendered = Shaka::Publication.description(carried, workflow_version, pull, settings, timeline)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
   [rendered, carried, usage_records]
