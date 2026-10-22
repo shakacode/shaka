@@ -518,9 +518,8 @@ phases:
         floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
-        For each issue the PR fully resolves, write `Fixes #N` in `why` or `scope`, one keyword
-        per issue; partial work says `Part of #N`. When `description` returns `closing_issues`,
-        fix the wording and publish again.
+        Write `Fixes #N` once per issue the PR fully resolves and `Part of #N` for partial work.
+        When `description` returns `closing_issues`, correct the wording it names once.
         The helper writes the repository validation and local review line under Verification
         from `--validation-result` and `--review-result`, so leave those out of `checks`.
         `verification` lists 1 to 3 `checks`, each proof of this PR's own claim: what was run

@@ -42,7 +42,8 @@ class HandoffFakeGitHub
     nodes = @pull.fetch(:closes, []).map do |number|
       { 'number' => number, 'repository' => { 'nameWithOwner' => @repository } }
     end
-    { 'repository' => { 'pullRequest' => { 'closingIssuesReferences' => { 'nodes' => nodes } } } }
+    references = { 'totalCount' => nodes.size, 'nodes' => nodes }
+    { 'repository' => { 'pullRequest' => { 'closingIssuesReferences' => references } } }
   end
 
   def api(path, **)

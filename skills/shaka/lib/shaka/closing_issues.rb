@@ -11,7 +11,7 @@ module Shaka
       query($owner: String!, $name: String!, $number: Int!) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $number) {
-            closingIssuesReferences(first: 100) { nodes { number repository { nameWithOwner } } }
+            closingIssuesReferences(first: 100) { totalCount nodes { number repository { nameWithOwner } } }
           }
         }
       }
@@ -20,6 +20,8 @@ module Shaka
     # Each reference in a list after one keyword counts as claimed, so the note can name the unlinked ones.
     CLAIM = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+(#{REFERENCE}(?:\s*(?:,|,?\s*and|&)\s*#{REFERENCE})*)/i
     FIELDS = %w[why scope root_cause].freeze
+    # A read that fails or comes back partial is reported, never raised, because the note is advisory.
+    FAILURES = [Error, KeyError, TypeError, SystemCallError].freeze
 
     module_function
 
@@ -39,10 +41,17 @@ module Shaka
     def linked(github)
       owner, name = github.repository.split('/')
       data = github.graphql(QUERY, owner:, name:, number: github.number)
-      nodes = data.dig('repository', 'pullRequest', 'closingIssuesReferences', 'nodes')
-      raise Error, 'GitHub returned no closing issue references.' unless nodes.is_a?(Array)
+      nodes(data.dig('repository', 'pullRequest', 'closingIssuesReferences'))
+        .map { |node| "#{node.dig('repository', 'nameWithOwner')}##{node.fetch('number')}" }
+    end
 
-      nodes.map { |node| "#{node.dig('repository', 'nameWithOwner')}##{node.fetch('number')}" }
+    # A page shorter than the total would hide linked issues, so it is refused rather than trusted.
+    def nodes(references)
+      nodes = references['nodes'] if references.is_a?(Hash)
+      raise Error, 'GitHub returned no closing issue references.' unless nodes.is_a?(Array)
+      raise Error, 'GitHub lists more closing issues than one page holds.' if references['totalCount'] != nodes.size
+
+      nodes.compact
     end
 
     # Names each claimed issue GitHub will not close; reads GitHub only when the texts claim one.
@@ -52,7 +61,7 @@ module Shaka
 
       missing = claimed - linked(github).map(&:downcase)
       missing.empty? ? {} : { 'closing_issues' => missing_note(missing, github.repository) }
-    rescue Error, KeyError, SystemCallError => e
+    rescue *FAILURES => e
       { 'closing_issues' => "Closing issue references could not be read: #{e.message}" }
     end
 
@@ -60,7 +69,7 @@ module Shaka
     def fact(github)
       issues = linked(github).map { |issue| short(issue, github.repository) }
       issues.empty? ? 'closes no issues' : "closes #{issues.join(', ')}"
-    rescue Error, KeyError => e
+    rescue *FAILURES => e
       "closing issues unavailable: #{e.message}"
     end
 

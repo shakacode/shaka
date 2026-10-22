@@ -9,8 +9,9 @@ class ClosingIssuesTest < Minitest::Test
   class FakeGitHub
     attr_reader :repository, :number, :reads
 
-    def initialize(linked, repository: 'owner/repo')
+    def initialize(linked, repository: 'owner/repo', total: nil)
       @linked = linked
+      @total = total
       @repository = repository
       @number = 7
       @reads = 0
@@ -24,7 +25,8 @@ class ClosingIssuesTest < Minitest::Test
         repository, number = issue.split('#')
         { 'number' => Integer(number), 'repository' => { 'nameWithOwner' => repository } }
       end
-      { 'repository' => { 'pullRequest' => { 'closingIssuesReferences' => { 'nodes' => nodes } } } }
+      references = { 'totalCount' => @total || nodes.size, 'nodes' => nodes }
+      { 'repository' => { 'pullRequest' => { 'closingIssuesReferences' => references } } }
     end
   end
 
@@ -74,6 +76,13 @@ class ClosingIssuesTest < Minitest::Test
     note = note_for('Fixes #1.', :unreadable)
 
     assert_includes note, 'could not be read'
+  end
+
+  def test_a_partial_reference_page_is_reported_instead_of_trusted
+    github = FakeGitHub.new(['owner/repo#1'], total: 101)
+
+    assert_includes Shaka::ClosingIssues.note(content('Fixes #2.'), github)['closing_issues'], 'more closing issues'
+    assert_includes Shaka::ClosingIssues.fact(github), 'closing issues unavailable'
   end
 
   def test_the_handoff_fact_names_the_issues_a_merge_closes
