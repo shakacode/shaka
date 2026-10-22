@@ -1,0 +1,56 @@
+#!/usr/bin/ruby
+# frozen_string_literal: true
+
+require 'json'
+require 'shellwords'
+
+# Optional macOS adapter. Linear supplies context; the installed launcher owns the session.
+module LinearCodex
+  APPLESCRIPT = <<~APPLESCRIPT
+    on run argv
+      tell application "Terminal"
+        do script (item 1 of argv)
+        activate
+      end tell
+    end run
+  APPLESCRIPT
+
+  def self.command(environment, helper: File.expand_path('../skills/shaka/scripts/shaka', __dir__))
+    directory = required(environment, 'LINEAR_WORK_DIR')
+    unless directory.start_with?('/') && File.directory?(directory)
+      raise ArgumentError, 'LINEAR_WORK_DIR must be an absolute directory'
+    end
+    raise ArgumentError, 'Shaka helper is missing or not executable' unless File.executable?(helper)
+
+    Shellwords.join([helper, 'work', '--host', 'codex', '--repo', directory, '--', task(environment)])
+  end
+
+  def self.task(environment)
+    JSON.generate('prompt' => required(environment, 'LINEAR_PROMPT'),
+                  'issue' => required(environment, 'LINEAR_ISSUE_IDENTIFIER'),
+                  'branch' => required(environment, 'LINEAR_ISSUE_BRANCH_NAME'))
+  end
+
+  def self.required(environment, name)
+    value = environment[name]
+    if value.nil? || value.strip.empty?
+      raise ArgumentError, "Missing #{name}; configure Linear's custom script env list"
+    end
+    raise ArgumentError, "#{name} contains a NUL byte" if value.include?("\0")
+
+    value
+  end
+
+  def self.run(environment = ENV, runner: method(:system))
+    # argv keeps the generated shell command out of AppleScript source.
+    launched = runner.call('/usr/bin/osascript', '-e', APPLESCRIPT, command(environment))
+    raise ArgumentError, 'Terminal could not be opened; check macOS Automation permission' unless launched
+
+    0
+  rescue ArgumentError, SystemCallError => e
+    warn "linear-codex: #{e.message}"
+    1
+  end
+end
+
+exit LinearCodex.run if $PROGRAM_NAME == __FILE__
