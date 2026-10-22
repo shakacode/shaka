@@ -46,10 +46,19 @@ module Shaka
       def elsewhere(checkout, path, name, owner)
         expected = File.join(checkout.root, 'skills', name)
         return relink(path, expected, "is not #{expected}") if owner == checkout.root
-        return relink(path, expected, 'does not exist') unless File.exist?(path)
+
+        dangling = !File.exist?(path) && !other_checkout_target?(checkout, path)
+        return relink(path, expected, 'does not exist') if dangling
 
         finding('B9', path, "points to #{File.readlink(path)}, which this checkout does not own",
                 decision: "Choose which install #{path} should use, then run that install's bin/install.")
+      end
+
+      # A missing target inside another registered checkout is that checkout's to restore, not this one's.
+      def other_checkout_target?(checkout, path)
+        target = File.expand_path(File.readlink(path), File.dirname(path))
+        folder = @inventory.real(File.dirname(target)) || File.dirname(target)
+        (@inventory.checkouts.keys - [checkout.root]).any? { |root| "#{folder}/".start_with?("#{root}/") }
       end
 
       def relink(path, expected, reason)

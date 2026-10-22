@@ -31,4 +31,27 @@ class InstallRepairEdgesTest < Minitest::Test
     git('-C', root, 'branch', "kept-#{git('-C', root, 'rev-parse', '--short', 'HEAD').strip}")
     assert_repaired(root, 'B2', final: 'C3')
   end
+
+  # A GIT_DIR left in the environment must not point the step's Git commands at another repository.
+  def test_local_commits_repair_ignores_an_inherited_git_dir
+    root = local_install
+    commit(root, 'local change')
+    other = git('-C', @root, 'rev-parse', 'HEAD').strip
+    output, process = repair(root, 'GIT_DIR' => File.join(@root, '.git'))
+    assert_includes output, 'Repairing B2', output
+    refute_predicate process, :success?
+    assert_equal other, git('-C', @root, 'rev-parse', 'HEAD').strip
+    assert_equal 'C3', status(root)['state']
+  end
+
+  # A link into another registered checkout whose skill is missing belongs to that checkout.
+  def test_a_missing_skill_in_another_checkout_is_not_relinked
+    root = local_install('--agent', 'codex', '--agent', 'cursor')
+    run_install(@root, '--directory', @root, '--repository', @remote, '--agent', 'claude')
+    File.unlink(host_link)
+    File.symlink(File.join(@root, 'skills/missing'), host_link)
+    finding = status(root)['findings'].find { |item| item['location'] == host_link }
+    assert_equal 'B9', finding['id']
+    assert_nil finding['next_command']
+  end
 end

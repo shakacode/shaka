@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require_relative 'checkout_git'
 require_relative 'status'
 
 module Shaka
@@ -42,7 +43,7 @@ module Shaka
       def call
         LIMIT.times do
           report = @status.call.call
-          return healthy?(report) unless repairable?(report)
+          return healthy?(report) unless repairable?(report) && !moved_split?(report)
 
           apply(report)
         end
@@ -52,6 +53,15 @@ module Shaka
       private
 
       def repairable?(report) = REPAIRABLE.include?(report['state']) && report['next_command']
+
+      # The newer record wins a split install, and an earlier step can rewrite a record, so a split runs only
+      # as a run's first step, where install --status showed the same winner.
+      def moved_split?(report)
+        return false unless report['state'] == 'C5' && @applied.any?
+
+        puts 'Run install --status to see which checkout the split install moves to, then repair again.'
+        true
+      end
 
       # A step that leaves its own finding in place would repeat forever, so a repeat stops the repair.
       def apply(report)
@@ -64,8 +74,11 @@ module Shaka
         run(step)
       end
 
+      # Git variables such as GIT_DIR would point the step's git -C at another repository; status reads
+      # without them, so the step runs without them too. Credentials for a fetch stay.
       def run(step)
-        output, process = Open3.capture2e('sh', '-c', step[2])
+        environment = (ENV.keys.grep(/\AGIT_/) - CheckoutGit::AUTHENTICATION_ENV).to_h { |key| [key, nil] }
+        output, process = Open3.capture2e(environment, 'sh', '-c', step[2])
         print output
         raise ArgumentError, "Repair step failed for #{step[0]}; run install --status" unless process.success?
       end

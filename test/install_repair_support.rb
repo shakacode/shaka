@@ -14,7 +14,9 @@ module InstallRepairSupport
 
   def host_link = File.join(@home, '.agents/skills/shaka')
 
-  def repair(root) = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), '--repair')
+  def repair(root, extra = {})
+    Open3.capture2e(environment.merge(extra), RbConfig.ruby, File.join(root, 'bin/install'), '--repair')
+  end
 
   # Repair reaches the expected state, deletes nothing but the records it renames, and a second run
   # changes nothing.
