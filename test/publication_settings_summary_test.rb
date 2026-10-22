@@ -5,18 +5,18 @@ require_relative 'settings_snapshot_helper'
 class PublicationSettingsSummaryTest < Minitest::Test
   include SettingsSnapshotHelper
 
-  COMMITTED = "trusted/team at `#{REVISION[0, 7]}`".freeze
+  COMMITTED = "Repository settings at `#{REVISION[0, 7]}`".freeze
 
   def test_the_block_opens_on_its_status_then_the_current_settings
     status, _note, current = settings_block(current: snapshot).split("\n\n")
-    assert_equal 'UNKNOWN: rerun missing evidence.', status
-    assert_equal "Current merge input (not evidence): #{COMMITTED}; Shaka 0.1.0 (installation: revision)", current
+    assert_equal 'No matching check records supplied. Rerun missing validation or review to record them.', status
+    assert_equal "Current settings: #{COMMITTED}; Shaka 0.1.0 (installed revision)", current
   end
 
   def test_committed_settings_get_one_row_per_operation_instead_of_a_table_of_settings
     body = settings_block(current: snapshot, validation: [snapshot(command: 'validate')],
                           review: [snapshot(reviewer: 'openai/codex')])
-    assert_includes body, "| Before push: validation | #{COMMITTED} | validate |"
+    assert_includes body, "| Validation | #{COMMITTED} | validate |"
     assert_includes body, "| Review | #{COMMITTED} | openai/codex |"
     refute_includes body, '<details>'
     refute_includes body, '| merge.preference |'
@@ -38,23 +38,35 @@ class PublicationSettingsSummaryTest < Minitest::Test
   def test_a_result_recorded_at_another_settings_revision_shows_that_revision
     earlier = snapshot(ref: 'b' * 40, command: 'validate')
     body = settings_block(current: snapshot, validation: [earlier], review: [snapshot(reviewer: 'openai/codex')])
-    assert_includes body, '| Before push: validation | trusted/team at `bbbbbbb` | validate |'
-    assert_includes body, "Current merge input (not evidence): #{COMMITTED}"
+    assert_includes body, '| Validation | Repository settings at `bbbbbbb` | validate |'
+    assert_includes body, "Current settings: #{COMMITTED}"
   end
 
   def test_a_result_that_recorded_no_settings_reads_unknown
     body = settings_block(current: snapshot, validation: [nil], review: [snapshot(reviewer: 'openai/codex')])
-    assert_includes body, '| Before push: validation | UNKNOWN | UNKNOWN |'
+    assert_includes body, '| Validation | UNKNOWN | UNKNOWN |'
   end
 
   def test_without_results_there_are_no_operation_rows
     body = settings_block(current: snapshot)
-    refute_includes body, '| Operation |'
+    refute_includes body, '| Step |'
     refute_includes body, '| Review |'
   end
 
   def test_unread_settings_stay_unknown
     assert_includes Shaka::PublicationSettings.new.detail.fetch('body'),
-                    'Current merge input (not evidence): UNKNOWN; Shaka UNKNOWN'
+                    'Current settings: UNKNOWN; Shaka UNKNOWN (installation source unavailable)'
+  end
+
+  def test_team_runs_omit_private_trial_cautions
+    body = settings_block(current: snapshot, validation: [snapshot(command: 'validate')])
+    assert_includes body, '| Step | Settings source | Run details |'
+    refute_includes body, 'Private trials'
+    refute_includes body, 'backup'
+  end
+
+  def test_missing_installation_record_does_not_claim_shaka_is_absent
+    current = snapshot.merge('installation.source' => 'uninstalled')
+    assert_includes settings_block(current:), 'Shaka 0.1.0 (no installation record)'
   end
 end

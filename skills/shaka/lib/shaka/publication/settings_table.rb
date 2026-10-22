@@ -9,6 +9,8 @@ module Shaka
     SUMMARY = 'Setting values at validation, review, and merge'
     FOLDED = { 'UNKNOWN' => 'UNKNOWN in every column',
                'REDACTED' => 'Never published, so REDACTED in every column' }.freeze
+    SOURCES = { 'trusted/team' => 'Repository settings', 'private/local' => 'Private local settings',
+                'preview/local' => 'Unmerged settings preview' }.freeze
 
     module_function
 
@@ -19,7 +21,7 @@ module Shaka
       if kind == 'UNKNOWN'
         kind
       else
-        "#{kind} at #{PublicationText.commit(revision,
+        "#{SOURCES.fetch(kind)} at #{PublicationText.commit(revision,
                                              (repository if kind == 'trusted/team'))}"
       end
     end
