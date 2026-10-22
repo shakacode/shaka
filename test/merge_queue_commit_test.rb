@@ -95,7 +95,7 @@ class MergeQueueCommitTest < Minitest::Test
     assert_predicate queue, :copies_description?
     refute_predicate queue, :defaults_read?
     assert_includes queue.checkpoint_section, 'Add this PR to the merge queue'
-    assert_includes queue.checkpoint_section, 'could not read'
+    assert_includes queue.checkpoint_section, "could not read the queue's commit defaults, so Shaka's merge refuses it"
     assert_includes queue.refusal, 'Could not read'
   end
 

@@ -30,7 +30,9 @@ module Shaka
     def self.for(github, pull) = (new(read(github)) if pull['isMergeQueueEnabled'] == true)
 
     # A queue that copies the PR description would commit Shaka's sections and WIP Details, so
-    # Shaka adds no PR to one. Unread defaults might copy it too.
+    # Shaka adds no PR to one. Unread defaults might copy it too. The maintainer chose a fixed
+    # refusal over a setting (shakacode/shaka#824); a repository that wants its descriptions in
+    # commits can still use GitHub's queue button.
     def self.refuse_copying!(github)
       queue = new(read(github))
       raise Error, queue.refusal if queue.copies_description?
@@ -83,7 +85,8 @@ module Shaka
     def outcome
       return 'It rebases the branch commits onto the base, keeping their own messages.' if @method == 'REBASE'
       unless TITLES[@title] || BODIES[@body]
-        return "This account could not read the queue's commit defaults; check **Settings → General → Pull Requests**."
+        return "This account could not read the queue's commit defaults, so Shaka's merge refuses it; " \
+               'check **Settings → General → Pull Requests**.'
       end
 
       lead = @method ? "It #{@style[:verb]}" : 'If the queue squashes, it uses'
