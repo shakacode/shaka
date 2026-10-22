@@ -22,7 +22,7 @@ class CliDescriptionTimingsTest < Minitest::Test
 
         assert_predicate status, :success?, error
         published = File.read(File.join(dir, 'published.md'))
-        assert_includes published, '**Totals:** 10m between checkpoints'
+        assert_includes published, '<summary>Timings · 10m between checkpoints ·'
         assert_match(/\| Waiting on a person: answer \| 2026-10-18 08:10 \| [^|]+ \(resumed\) \|/, published)
       end
     end

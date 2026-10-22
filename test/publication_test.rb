@@ -87,7 +87,7 @@ class PublicationRegressionTest < Minitest::Test
     timeline = { 'opened' => Time.utc(2026, 10, 18, 8), 'merged' => Time.utc(2026, 10, 18, 9), 'labels' => [] }
     rendered = Shaka::Publication.description(description_content, nil, nil, nil, timeline)
     assert_operator rendered.index('<summary>Usage'), :<,
-                    rendered.index("<summary>Timings</summary>\n\n**Totals:** 1h 0m")
+                    rendered.index("<summary>Timings · 1h 0m between checkpoints</summary>\n\n**Totals:** 1h 0m")
     refute_includes Shaka::Publication.description(description_content), '<summary>Timings'
   end
 
