@@ -6,13 +6,13 @@ require 'json'
 require 'yaml'
 
 module SeamMigrateHelpers
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   FIXTURES = File.expand_path('fixtures/seam_migrate', __dir__)
 
   private
 
   def migrate(root, sha, *flags)
-    Open3.capture3(COMMAND, 'seam', 'migrate', '--root', root, '--from-ref', sha, *flags)
+    Open3.capture3(*COMMAND, 'seam', 'migrate', '--root', root, '--from-ref', sha, *flags)
   end
 
   def migrate_report(root, sha, *flags)
@@ -73,7 +73,7 @@ class SeamMigrateHelpTest < Minitest::Test
   include SeamMigrateHelpers
 
   def test_help_lists_migrate
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--help')
+    output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--help')
 
     assert_predicate status, :success?, error
     assert_includes output, 'shaka seam migrate'

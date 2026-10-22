@@ -8,7 +8,7 @@ require_relative '../../skills/shaka/lib/shaka/seam'
 
 # Harmless version-one repository used by the layout upgrade tests.
 module SeamUpgradeFixture
-  COMMAND = File.expand_path('../../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   ROOT_LINE = 'root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)'
 
   def with_repository
@@ -64,7 +64,7 @@ module SeamUpgradeFixture
   end
 
   def upgrade(root, *)
-    Open3.capture3(COMMAND, 'seam', 'upgrade', '--root', root, *)
+    Open3.capture3(*COMMAND, 'seam', 'upgrade', '--root', root, *)
   end
 
   def report(root, *)

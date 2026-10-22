@@ -5,7 +5,7 @@ require 'json'
 require 'yaml'
 
 module SeamCheckHelpers
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   private
 
@@ -45,7 +45,7 @@ module SeamCheckHelpers
   end
 
   def capture_check(root, *)
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, *)
+    output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root, *)
     payload = status.success? ? JSON.parse(output) : output
     [payload, error, status]
   end

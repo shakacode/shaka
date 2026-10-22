@@ -7,7 +7,7 @@ require 'shaka/evidence/inputs'
 module SettingsPreviewFixture
   include RepositoryConfigTestHelpers
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   private
 
@@ -16,7 +16,7 @@ module SettingsPreviewFixture
   end
 
   def select_preview(root, source)
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'preview', 'start', '--root', root,
+    output, error, status = Open3.capture3(*COMMAND, 'seam', 'preview', 'start', '--root', root,
                                            '--settings-ref', source)
     assert_predicate status, :success?, error
     assert_equal 'active', JSON.parse(output)['status']

@@ -7,7 +7,7 @@ require 'shaka/call_log'
 class CallLogTagsTest < Minitest::Test
   include PostImplementationFixture
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   HEAD = 'a' * 40
 
   def test_pull_request_commands_record_repository_number_and_head
@@ -109,7 +109,7 @@ class CallLogTagsTest < Minitest::Test
   private
 
   def call(env, *)
-    output, status = Open3.capture2e(env, COMMAND, *)
+    output, status = Open3.capture2e(env, *COMMAND, *)
     [output, status]
   end
 

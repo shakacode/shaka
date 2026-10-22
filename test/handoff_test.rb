@@ -159,18 +159,18 @@ class HandoffEvidenceTest < Minitest::Test
 end
 
 class HandoffCliTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   # The flag is refused before any GitHub client exists, so this runs offline.
   def test_handoff_without_a_trusted_ref_is_refused
-    _output, error, status = Open3.capture3(COMMAND, 'handoff', 'owner/repo', '1')
+    _output, error, status = Open3.capture3(*COMMAND, 'handoff', 'owner/repo', '1')
 
     refute_predicate status, :success?
     assert_includes error, 'handoff requires --ref'
   end
 
   def test_woken_by_is_refused_outside_handoff
-    _output, error, status = Open3.capture3(COMMAND, 'attention', 'owner/repo', '1', '--state', 'none',
+    _output, error, status = Open3.capture3(*COMMAND, 'attention', 'owner/repo', '1', '--state', 'none',
                                             '--woken-by', 'watcher')
 
     refute_predicate status, :success?

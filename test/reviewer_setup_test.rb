@@ -63,7 +63,7 @@ class ReviewerSetupTest < Minitest::Test
 
   def selection_with_path(root, path, *, key: nil)
     env = { 'SHAKA_RUBY' => RbConfig.ruby, 'PATH' => path, 'OPENROUTER_API_KEY' => key }
-    output, error, status = Open3.capture3(env, COMMAND, 'reviewer', '--root', root,
+    output, error, status = Open3.capture3(env, *COMMAND, 'reviewer', '--root', root,
                                            '--implementer', 'openai/codex', *)
     assert_predicate status, :success?, error
     JSON.parse(output)

@@ -31,7 +31,7 @@ class SettingsPreviewGatesTest < Minitest::Test
   def read_status(root, ref, required)
     Dir.mktmpdir do |bin|
       prepare_github(bin, ref, required)
-      output, error, status = Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}" }, COMMAND,
+      output, error, status = Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}" }, *COMMAND,
                                              'pr', 'owner/repo', '1', '--root', root, '--ref', ref)
       assert_predicate status, :success?, error
       JSON.parse(output)

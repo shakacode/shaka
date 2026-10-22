@@ -27,7 +27,7 @@ class StartupLinkNoticeTest < Minitest::Test
     link('.claude/skills', @root)
     path = "#{fake_commands}:#{File.dirname(RbConfig.ruby)}"
     _output, error, status = Open3.capture3({ 'HOME' => @home, 'PATH' => path, 'SHAKA_NOTICES' => nil },
-                                            COMMAND, 'workflow', '--help')
+                                            *COMMAND, 'workflow', '--help')
     assert_predicate status, :success?, error
     assert_match(/\Ashaka: This helper runs from .* links to #{Regexp.escape(@root)}\./, error)
     refute_path_exists ran

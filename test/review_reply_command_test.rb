@@ -6,7 +6,7 @@ require 'shaka/review_reply'
 
 # The reply command fails a missing key before it asks GitHub for the review comment.
 class ReviewReplyCommandTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def test_a_review_reply_without_a_key_does_not_call_github
     with_stub_gh do |dir, sentinel|
@@ -34,7 +34,7 @@ class ReviewReplyCommandTest < Minitest::Test
     File.write(path, JSON.generate({ 'identity' => { 'agent' => 'Codex' }, 'summary' => 'Done.',
                                      'sections' => [{ 'heading' => 'Explanation', 'body' => 'Keep this.' }],
                                      'reviews' => ['https://github.com/owner/repo/pull/1#issuecomment-1'] }))
-    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, COMMAND, 'reply',
+    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, *COMMAND, 'reply',
                                             'owner/repo', '1', '--content-file', path, '--key', 'fix-1')
     [status, error]
   end
@@ -53,7 +53,7 @@ class ReviewReplyCommandTest < Minitest::Test
     reviews = ['https://github.com/owner/repo/pull/1#issuecomment-1']
     File.write(path, JSON.generate({ 'identity' => { 'agent' => 'Codex' }, 'summary' => 'Done.',
                                      'reviews' => reviews }))
-    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, COMMAND, 'reply',
+    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, *COMMAND, 'reply',
                                             'owner/repo', '1', '--content-file', path)
     [status, error]
   end

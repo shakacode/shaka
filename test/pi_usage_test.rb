@@ -4,7 +4,7 @@ require_relative 'test_helper'
 require 'json'
 
 module PiUsageFixture
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   COMMIT = 'a' * 40
   SESSION = '00000000-0000-4000-8000-000000000003'
   CLEAR = { 'PI_CODING_AGENT' => nil, 'PI_SESSION_ID' => nil, 'PI_SESSION_FILE' => nil,
@@ -80,7 +80,7 @@ module PiUsageFixture
   end
 
   def capture_report(*, environment: {})
-    Open3.capture3(CLEAR.merge(environment), COMMAND, 'usage', '--commit', COMMIT,
+    Open3.capture3(CLEAR.merge(environment), *COMMAND, 'usage', '--commit', COMMIT,
                    '--contribution', 'implementation', *)
   end
 

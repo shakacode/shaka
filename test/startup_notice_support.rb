@@ -10,7 +10,7 @@ require 'shaka/update_check'
 module StartupNoticeSupport
   NOW = Time.utc(2026, 10, 18, 12)
   LIBRARY = File.expand_path('../skills/shaka/lib', __dir__)
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def setup
     @directory = Dir.mktmpdir('startup-notice')

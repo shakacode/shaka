@@ -3,7 +3,7 @@
 require_relative 'test_helper'
 
 class WelcomeTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def test_no_arguments_welcomes_a_new_user_without_contacting_github
     Dir.mktmpdir do |directory|
@@ -29,6 +29,6 @@ class WelcomeTest < Minitest::Test
   def welcome_without_github(directory, sentinel)
     File.write(File.join(directory, 'gh'), "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
     File.chmod(0o755, File.join(directory, 'gh'))
-    Open3.capture3({ 'PATH' => "#{directory}:#{ENV.fetch('PATH')}" }, COMMAND, chdir: directory)
+    Open3.capture3({ 'PATH' => "#{directory}:#{ENV.fetch('PATH')}" }, *COMMAND, chdir: directory)
   end
 end

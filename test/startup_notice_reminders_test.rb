@@ -108,7 +108,7 @@ class StartupNoticeRemindersTest < Minitest::Test
   end
 
   def run_doctor(env)
-    _output, error, = Open3.capture3(env, COMMAND, 'doctor', '--brief', '--root', @repository)
+    _output, error, = Open3.capture3(env, *COMMAND, 'doctor', '--brief', '--root', @repository)
     refute_includes error, 'not recorded'
   end
 end

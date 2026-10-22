@@ -9,7 +9,7 @@ class CliPublisherAttributionTest < Minitest::Test
   include ClaudePublisherAttributionFixture
   include CliOpeningCheckFakes
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'Missing attribution comes from the publisher session.'
 
@@ -93,7 +93,7 @@ class CliPublisherAttributionTest < Minitest::Test
 
   def invoke(env, file, command)
     flags = command == 'reply' ? ['--key', 'native-attribution'] : ['--root', ROOT]
-    Open3.capture3(env, COMMAND, command, 'owner/repo', '1', '--content-file', file, *flags)
+    Open3.capture3(env, *COMMAND, command, 'owner/repo', '1', '--content-file', file, *flags)
   end
 
   def fake_gh

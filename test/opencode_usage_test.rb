@@ -6,7 +6,7 @@ require 'open3'
 require 'time'
 
 module OpencodeUsageFixture
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   COMMIT = 'a' * 40
   SESSION = 'ses_0123456789abcdefABCDEF'
   CLEAR = { 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => nil, 'CLAUDE_CODE_SESSION_ID' => nil,
@@ -70,7 +70,7 @@ module OpencodeUsageFixture
   end
 
   def report(*arguments, environment: {})
-    args = [CLEAR.merge(environment), COMMAND, 'usage', '--commit', COMMIT, '--contribution', 'implementation',
+    args = [CLEAR.merge(environment), *COMMAND, 'usage', '--commit', COMMIT, '--contribution', 'implementation',
             *arguments]
     output, error, status = Open3.capture3(*args)
     assert_predicate status, :success?, error
@@ -110,7 +110,7 @@ class OpencodeSinceTimeTest < Minitest::Test
         file = same_second_export(directory, 1_789_660_292_357, missing:)
         args = ['usage', '--host', 'opencode', '--file', file, '--commit', COMMIT,
                 '--contribution', 'implementation', '--since-time', '2026-09-17T15:51:32.057Z']
-        output, error, status = Open3.capture3(CLEAR, COMMAND, *args)
+        output, error, status = Open3.capture3(CLEAR, *COMMAND, *args)
 
         assert_equal [false, '', true],
                      [status.success?, output, error.include?('--since-time cannot scope incomplete native sources')]

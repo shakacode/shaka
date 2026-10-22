@@ -101,8 +101,7 @@ class InstallStatusEntryTest < Minitest::Test
   end
 
   def test_the_documented_helper_reports_a_state
-    output, process = Open3.capture2e(environment, File.join(REPOSITORY, 'skills/shaka/scripts/shaka'),
-                                      'install', '--status', '--json')
+    output, process = Open3.capture2e(environment, *SHAKA_COMMAND, 'install', '--status', '--json')
     assert_predicate process, :success?, output
     assert_equal 'none', JSON.parse(output)['state']
   end
