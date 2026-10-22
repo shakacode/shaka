@@ -2,7 +2,7 @@
 
 Give your coding agent a task. Shaka guides it through implementation, checks,
 and independent review. Its pull request states the change's intent and the
-evidence that it works, and you decide whether to merge.
+evidence that it works. You decide whether to merge.
 Start with a small fix in a project you know.
 
 Examples use `$shaka` in Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode;
