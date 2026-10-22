@@ -32,6 +32,7 @@ module EvaluationCodexFixture
     start
     emit('item.started', item: { id: 'command', type: 'command_execution',
                                  command: 'echo SHAKA_NEEDS_APPROVAL', status: 'in_progress' })
+    emit('item.completed', item: { id: 'command', type: 'command_execution', status: 'completed' })
     emit_message('Final answer')
     emit('turn.completed', usage: { input_tokens: 12 })
     @reader.finish(exit_code: 0)

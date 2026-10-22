@@ -79,8 +79,10 @@ module Shaka
         return 'incomplete' if exit_code.nil?
         return 'failed' unless exit_code.zero?
 
-        @phase == :completed ? 'completed' : 'incomplete'
+        complete? ? 'completed' : 'incomplete'
       end
+
+      def complete? = @phase == :completed && @items.values.all? { |_type, stage| stage == 'item.completed' }
 
       def terminal
         return unless @message

@@ -13,7 +13,7 @@ class EvaluationCodexEventsTest < Minitest::Test
   def test_native_terminal_has_host_receipt_time_and_no_controller_acceptance
     terminal = completed_capture.fetch('terminal')
     assert_equal 'Final answer', terminal.fetch('text')
-    assert_equal 4, terminal.fetch('received_at')
+    assert_equal 5, terminal.fetch('received_at')
     refute terminal.key?('accepted_at')
     assert_equal 'assistant_terminal', terminal.fetch('type')
   end
@@ -23,7 +23,7 @@ class EvaluationCodexEventsTest < Minitest::Test
     assert_equal 'native-thread', result.fetch('thread_id')
     assert_equal 'completed', result.fetch('native_status')
     assert_equal 'controller-lifetime', result.fetch('clock_id')
-    assert_equal([1, 2, 3, 4, 5], result.fetch('events').map { it.fetch('ordinal') })
+    assert_equal([1, 2, 3, 4, 5, 6], result.fetch('events').map { it.fetch('ordinal') })
   end
 
   def test_stream_digest_covers_the_original_bytes
