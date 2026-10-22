@@ -46,7 +46,7 @@ class ReviewLaunchBlockTest < Minitest::Test
   def launch(reviewer, key: nil)
     root, base, head, bin = @machine
     output, = Open3.capture3({ 'PATH' => bin, 'OPENROUTER_API_KEY' => key },
-                             COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
+                             *COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
                              '--reviewer', reviewer, '--criteria-ref', base)
     JSON.parse(output)
   end
