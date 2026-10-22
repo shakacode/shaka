@@ -3,10 +3,50 @@
 module Shaka
   class Seam
     class UpgradePlan
-      # Finds old paths assembled from shell quotes inside Markdown without joining prose apostrophes.
+      # Separates Markdown code from prose, so prose naming old paths, or holding apostrophes, does not
+      # read as a shell dependency.
       module MarkdownFragments
         MARKDOWN_PATH = /\.(?:md|markdown|mdx)\z/i
         REMOVED_OR_KEPT = /(\\\r?\n|['"]|\\(?=[^\r\n]))|./m
+
+        # Follows which Markdown lines are fenced or indented code. Doubtful lines count as code, so an
+        # indented line continuing a prose paragraph is code too.
+        class CodeLines
+          # A fence starts at most three spaces in, and a backtick fence's info text holds no backtick.
+          FENCE = /\A {0,3}(`{3,}(?=[^`]*\z)|~{3,})/
+          # Quotes and list items can hold code, so their markers are removed before a line is classified.
+          CONTAINER = /\A(?:[ \t]*(?:>|[-+*](?=[ \t])|\d{1,9}[.)](?=[ \t])))+[ \t]?/
+          INDENTED = /\A(?: {4}|[ \t]*\t)/
+
+          def initialize
+            @fence = nil
+            @prefix = ''
+          end
+
+          def code?(raw)
+            line = raw.sub(CONTAINER, '')
+            return inside_fence?(raw) if @fence
+            return true if raw.match?(INDENTED) || line.match?(INDENTED)
+
+            @fence = line[FENCE, 1]
+            @prefix = marker_columns(raw[0, raw.length - line.length])
+            !@fence.nil?
+          end
+
+          private
+
+          # A fence closes only behind its opener's own quote markers, so a quoted fence line inside it stays
+          # content. List markers count as the spaces that continue their item.
+          def inside_fence?(raw)
+            rest = raw[@prefix.length..].to_s
+            closes = marker_columns(raw[0, @prefix.length]) == @prefix &&
+                     rest.match?(/\A {0,3}#{@fence[0]}{#{@fence.length},}[ \t]*\r?$/)
+            @fence = nil if closes
+            true
+          end
+
+          def marker_columns(prefix) = prefix.gsub(/[-+*]|\d{1,9}[.)]/) { |marker| ' ' * marker.length }
+        end
 
         private
 
@@ -45,6 +85,56 @@ module Shaka
           !File.lstat(File.join(@root, path)).mode.anybits?(0o111)
         rescue SystemCallError
           false
+        end
+
+        # Markdown prose can name the old directory and a command paragraphs apart, so outside code the two
+        # block only within one instruction: a prose paragraph and the code block right after it.
+        def markdown_directory_dependency?(text)
+          markdown_instructions(text).any? { |instruction| shell_directory_dependency?(instruction) } ||
+            shell_directory_dependency?(markdown_code(text))
+        end
+
+        def markdown_instructions(text)
+          blocks = markdown_blocks(text)
+          blocks.each_with_index.map do |(_, body), index|
+            following_code, following = blocks[index + 1]
+            following_code ? body + following : body
+          end
+        end
+
+        # Splits text into blocks at blank prose lines, however many; a block may mix prose and indented
+        # lines, as a wrapped paragraph does. Each block records whether it opens with code.
+        def markdown_blocks(text)
+          code = markdown_code_lines(text)
+          runs = text.lines.each_with_index.chunk { |line, index| code[index] || line.match?(/\S/) || :_separator }
+          runs.map { |_, run| [code[run.first.last], run.map(&:first).join] }
+        end
+
+        # Markdown runs nothing outside code, so prose lines are blanked and fenced or indented lines stay.
+        def markdown_code(text)
+          code = markdown_code_lines(text)
+          text.lines.each_with_index.map { |line, index| code[index] ? line : line.gsub(/[^\r\n]/, '') }.join
+        end
+
+        # Pairs each line with whether it is Markdown prose; outside a Markdown document no line is.
+        def lines_with_prose(text, path)
+          prose = markdown_document?(text, path) ? markdown_code_lines(text).map(&:!) : []
+          text.lines.zip(prose)
+        end
+
+        def markdown_code_lines(text)
+          code = CodeLines.new
+          text.lines.map { |line| code.code?(line) }
+        end
+
+        # Prose names the old command directory as a place, so it is rewritten like a command path, unless
+        # the repository's own tools stay behind in it.
+        def rewrite_prose_command_directory(line, prose)
+          return line unless prose && !retained_command_file?
+
+          pattern = %r{(?<![[:alnum:]_./-])(?<lead>\./)?#{Regexp.escape(PATHS::COMMAND_DIRECTORY)}
+                       (?=/(?![[:alnum:]_-])|[^[:alnum:]_./-]|\.(?![[:alnum:]_/-])|$)}xo
+          line.gsub(pattern) { "#{::Regexp.last_match[:lead]}#{PATHS::NEW_COMMAND_DIRECTORY}" }
         end
 
         def old_token = /#{Regexp.escape(PATHS::DIRECTORY)}[^\s;|&()<>`]*/o
