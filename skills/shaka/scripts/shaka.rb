@@ -116,6 +116,19 @@ rescue Shaka::Error => e
   [Shaka::ProseLimits.new, { 'prose_limits' => "Default prose limits apply: #{e.message}" }]
 end
 
+# Returns the trusted PR evidence guide so the agent sees it at every publication. It is advisory:
+# an unset guide adds nothing, and one that cannot be read is reported instead of refusing.
+def description_pr_evidence(root, ref)
+  return {} unless ref
+
+  guide = Shaka::OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
+    Shaka::Guidance.new(name: 'pr_evidence', root: candidate_root, ref:).configured
+  end
+  guide ? { 'pr_evidence_guide' => guide } : {}
+rescue Shaka::Error, SystemCallError => e
+  { 'pr_evidence_guide' => "The PR evidence guide could not be read: #{e.message}" }
+end
+
 # The Git a description may run to read the helper's own commit, or nil when PATH offers
 # only one that could load candidate code; the workflow version then shows no commit.
 def vetted_git(candidate_root)
@@ -314,6 +327,7 @@ begin
            when 'description'
              root = options[:root] || Dir.pwd
              prose, prose_note = description_prose_limits(root, options[:ref])
+             guide = description_pr_evidence(root, options[:ref])
              Shaka::OpeningPublication.with_safe_path(root:) do |candidate_root, gh, neutral|
                raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
 
@@ -333,7 +347,8 @@ begin
                attention = Shaka::DecisionLabels.sync(github, carried)
                opening = opening_result(options.merge(root:), described['summary'])
                refresh = Shaka::CursorUsageRefresh.bind(repository, number, carried['usage']) if carried.is_a?(Hash)
-               published.merge('opening' => opening, 'usage_records' => usage_records).merge(prose_note).tap do |result|
+               notes = prose_note.merge(guide)
+               published.merge('opening' => opening, 'usage_records' => usage_records).merge(notes).tap do |result|
                  result['attention'] = attention if attention
                  result['cursor_usage_refresh'] = refresh if refresh
                end

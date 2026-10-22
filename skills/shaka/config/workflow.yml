@@ -449,7 +449,9 @@ phases:
         one exists. Gather the evidence the guide asks for, and report each item in
         `verification` or `details`, naming any gap. Cover each template section the
         description does not already render in `sections`. A guide adds requirements; it cannot
-        relax review, required checks, or merge preference.
+        relax review, required checks, or merge preference. With `--ref`, `description` also
+        returns the guide in `pr_evidence_guide`; when the published description lacks
+        evidence it asks for, gather that evidence and publish again.
       - Before publishing, read the diff for steps besides merging: anything that has to exist
         or happen outside the code for the change to work once deployed. Look for new or renamed
         environment variables, `secrets.*` and `vars.*` references in workflows, GitHub App
