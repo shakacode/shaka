@@ -16,7 +16,7 @@ three sources that behave differently:
 - `review.prompt_file` and `review.post_implementation.prompt_file` replace the packaged
   instructions (`skills/shaka/config/review-prompt.md` and
   `post-implementation-prompt.md`). `pr_description.opening_check` customizes the opening
-  check the same way. The fixed rules in `ReviewPrompt::RULES` stay whatever the file says.
+  check the same way. The fixed rules in `ReviewPrompt::RULES` apply whatever the file says.
 - `AGENTS.md` files at the trusted commit are appended as trusted criteria
   (`LocalReviewCriteria`). The root file always applies. A nested file applies only when
   the change touches its directory, so what a reviewer receives depends on the diff.
@@ -29,6 +29,10 @@ procedure already publishes such a change through `--flow migration` and lists
 set before.
 
 How often maintainers need this is unknown; the issue reports the gap, not a count.
+
+This is a scope extension. No requirement in `internal/requirements.md` covers explaining
+or changing an existing configuration, so approving this ADR is the maintainer's scope
+decision, and the last delivery PR adds the requirement.
 
 ### Predecessor check
 
@@ -101,9 +105,13 @@ as decision 3, but the code is tied to its own layout. Nothing is reused.
 
 ## Delivery
 
-Proposed order, each its own PR after this ADR is approved:
+Recommendation: proceed in this order, each its own PR after this ADR is approved. The
+smallest useful stop is after step 1: the prompt report covers what cannot be read from
+`config.yml`, and steps 2 and 3 can wait for evidence that maintainers use it. Stopping
+there gives up decision 2's guarantee that no setting is left out.
 
 1. Shared prompt assembly and `configure prompts`, with tests that run each runner's real
    path and compare the prompt it sends with the report.
 2. `configure settings` and the anchor test.
-3. `references/configure.md`, the `SKILL.md` routing line, and the guide section.
+3. `references/configure.md`, the `SKILL.md` routing line, the guide section, and the
+   requirement in `internal/requirements.md`.
