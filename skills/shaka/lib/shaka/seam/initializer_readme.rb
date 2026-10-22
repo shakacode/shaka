@@ -3,6 +3,7 @@
 require_relative '../version'
 require_relative '../configuration/paths'
 require_relative '../configuration/layout'
+require_relative '../conventions'
 
 module Shaka
   class Seam
@@ -11,8 +12,14 @@ module Shaka
       HOME = 'https://github.com/shakacode/shaka'
       DOCS = "#{HOME}/blob/main/docs".freeze
       LEGACY_README = Configuration::Paths::LEGACY_README
+      CONFIG_NOTES = ['Shaka also reads files beside this one by name: commands in bin/, reviewer rules in reviewers/.',
+                      'reviewers/README.md lists each file, who reads it, and what happens when it is absent.'].freeze
 
       private
+
+      def reviewers_readme
+        { Configuration::Paths.at(@root, Configuration::Paths::REVIEWERS_README) => Conventions.readme('reviewers') }
+      end
 
       # Migration still writes the old layout, so the table follows the layout being written.
       def readme_source(layout = Configuration::Layout::LEGACY)

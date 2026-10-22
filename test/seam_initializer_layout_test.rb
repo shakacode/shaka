@@ -5,7 +5,8 @@ require_relative 'seam_initializer_test'
 module SeamInitializerLayoutHelpers
   NEW_INVENTORY = %w[
     .agents .agents/shaka .agents/shaka.md .agents/shaka/bin .agents/shaka/bin/setup
-    .agents/shaka/bin/test .agents/shaka/bin/validate .agents/shaka/config.yml
+    .agents/shaka/bin/test .agents/shaka/bin/validate .agents/shaka/config.yml .agents/shaka/reviewers
+    .agents/shaka/reviewers/README.md
   ].freeze
 
   def agents_inventory(root)

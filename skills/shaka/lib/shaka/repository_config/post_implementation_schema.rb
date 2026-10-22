@@ -11,18 +11,31 @@ module Shaka
       include Validation
 
       KEY = 'post_implementation'
+      SECTION = 'checkpoint'
       KEYS = %w[enabled reviewer model effort prompt_file].freeze
       EFFORTS = { 'openai/codex' => %w[low medium high xhigh max],
                   'anthropic/claude' => %w[low medium high xhigh max],
                   'xai/grok' => %w[low medium high] }.freeze
-      DEFAULTS = Defaults.fetch('review', KEY)
+      DEFAULTS = Defaults.fetch(SECTION)
 
       def self.reviewer(identity) = ReviewerSelection.parse(identity).values.map(&:downcase).join('/')
 
-      def initialize(settings) = @settings = settings
+      # Readers of the review section find the checkpoint in one place, whichever key set it.
+      def self.fold(data)
+        review = data.is_a?(Hash) && data['review'].is_a?(Hash) ? data['review'] : {}
+        return review unless data.is_a?(Hash) && data.key?(SECTION)
+        raise Error, "Use #{SECTION} or review.#{KEY}, not both" if review.key?(KEY)
+
+        review.merge(KEY => data[SECTION])
+      end
+
+      def initialize(settings, label: "review.#{KEY}")
+        @settings = settings
+        @label = label
+      end
 
       def validate
-        label = "review.#{KEY}"
+        label = @label
         mapping!(@settings, label)
         keys!(@settings, [], KEYS, label)
         validate_enabled(label)

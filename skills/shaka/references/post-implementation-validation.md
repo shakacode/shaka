@@ -77,7 +77,7 @@ committed head; after material edits, repeat validation, technical review, and t
 checkpoint. A checkout whose HEAD differs fails before reviewer launch.
 
 Settings follow this precedence: explicit task flags, trusted
-`review.post_implementation`, then packaged defaults. The defaults are
+`checkpoint` (formerly `review.post_implementation`), then packaged defaults. The defaults are
 `openai/codex`, model `gpt-6.1-sol`, medium effort, and the
 [default product prompt](../config/post-implementation-prompt.md), adapted
 from #338 with proportional reporting guidance. Technical `review.prompt_file` and per-reviewer settings do not choose
@@ -294,8 +294,9 @@ does not substitute for this judgment.
 ## Customize for the project
 
 The default works without configuration. Maintainers can extend or replace the
-prompt through a trusted `review.post_implementation.prompt_file`, trusted
-default-branch `AGENTS.md`, or direct task instructions. For example: “Extend post-implementation validation: our audience is
+prompt through a trusted `.agents/shaka/reviewers/checkpoint.md`, which the runner adds
+after `AGENTS.md`, replace it through a trusted `checkpoint.prompt_file`, or use trusted
+default-branch `AGENTS.md` or direct task instructions. For example: “Extend post-implementation validation: our audience is
 professional maintainers; favor existing interfaces over a new settings surface.”
 
 A replacement prompt preserves the original-outcome comparison, actual maintenance
@@ -303,7 +304,7 @@ cost, simpler alternatives, visible conclusion, and handling of substantive
 concerns. Replacing the prompt does not silently disable the checkpoint. An explicit
 checkpoint opt-out in trusted default-branch instructions or a direct user instruction
 uses `--opt-out REASON` and needs a visible note on the PR. Repository settings
-can explicitly opt out with `review.post_implementation.enabled: false`. The runner
+can explicitly opt out with `checkpoint.enabled: false`. The runner
 returns `opted_out`, not a completed review; publish that result on the existing PR.
 An opted-out run needs no packet and does not load an inactive prompt. Settings
 syntax and revision checks still apply; the repository seam still validates its
@@ -318,7 +319,7 @@ when the PR awaits merge approval. A later blocked, failed, or malformed executi
 supersedes an earlier ready one. A new commit needs new evidence, including prose edits.
 
 Pass the trusted default-branch `--ref` to `squash-message` too. A trusted
-`review.post_implementation.enabled: false` disables the code gate. The owner verifies
+`checkpoint.enabled: false` disables the code gate. The owner verifies
 explicit task opt-out authority and resolves all earlier substantive concerns; changing
 settings or publishing an opt-out does not settle them. These checks establish what this
 account published, not independent proof of reviewer execution or judgment quality.

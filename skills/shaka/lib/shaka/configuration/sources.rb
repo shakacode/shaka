@@ -71,15 +71,20 @@ module Shaka
         source = capture.call(git, '-C', root, 'show', "#{sha}:#{layout.contract}")
         RepositoryConfig::DuplicateKeys.check(source, filename: layout.contract)
         data = YAML.safe_load(source, permitted_classes: [], permitted_symbols: [], aliases: false)
-        review = data.is_a?(Hash) ? data['review'] : nil
-        review.is_a?(Hash) ? review : {}
+        RepositoryConfig::PostImplementationSchema.fold(data)
       rescue Psych::Exception => e
         raise Error, "Invalid #{layout.contract} at #{sha}: #{e.message}"
       end
 
       def prompt_at_commit(root:, ref:, path:, git_access:)
-        resolved = resolved_prompt_path(root:, ref:, path:, git_access:)
-        prompt_source(root:, ref:, path:, resolved:, git_access:)
+        prompt_source(root:, ref:, path:, git_access:)
+      end
+
+      # A conventional file may be missing or empty at the commit; the caller then keeps its built-in prompt.
+      def optional_prompt_at_commit(root:, ref:, path:, git_access:)
+        return unless TrustedPathResolver.new(root:, sha: ref, git: git_access.fetch(:resolver)).entry(path)
+
+        prompt_source(root:, ref:, path:, git_access:, optional: true)
       end
 
       def resolved_prompt_path(root:, ref:, path:, git_access:)
@@ -89,13 +94,15 @@ module Shaka
         raise Error, "Review prompt file #{path} is not a file at #{ref}"
       end
 
-      def prompt_source(root:, ref:, path:, resolved:, git_access:)
+      def prompt_source(root:, ref:, path:, git_access:, optional: false)
+        resolved = resolved_prompt_path(root:, ref:, path:, git_access:)
         blob = lambda do |option|
           git_access.fetch(:capture).call(git_access.fetch(:executable), '-C', root, 'cat-file', option,
                                           "#{ref}:#{resolved}")
         end
         text = nil
         error = ReviewPrompt.file_error(blob.call('-s').to_i) { text = blob.call('-p') }
+        return if optional && error == 'is empty'
         raise Error, "Review prompt file #{path} at #{ref} #{error}" if error
 
         text

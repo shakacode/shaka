@@ -11,8 +11,8 @@ module Shaka
         File.read(path, encoding: 'UTF-8')
       end
 
-      def generated_contract(marker:, data:)
-        "# #{marker}\n#{YAML.dump(data)}"
+      def generated_contract(marker:, data:, notes: [])
+        "# #{marker}\n#{notes.map { "# #{it}\n" }.join}#{YAML.dump(data)}"
       end
 
       def create_generated_file(root:, path:, content:, mode:, &)
