@@ -50,8 +50,7 @@ The agent opens a settings PR for you to review. Its choices become the team's
 defaults after it merges into the default branch. Individual settings do not
 override team settings.
 
-[Merged #426](https://github.com/shakacode/shaka/pull/426) lets you
-[try a settings PR on one task](settings.md#preview-settings-before-adopting-them)
+You can [try a settings PR on one task](settings.md#preview-settings-before-adopting-them)
 before adoption. The PR keeps the experiment visible.
 
 ## Change your team's settings
@@ -141,9 +140,8 @@ review replies follow agent instructions; code does not check their length.
 An [opening check](settings.md#opening_check) advises whether the first sentence
 of a description or walkthrough leads with what improves for the reader. It does
 not verify the whole text.
-[Merged #425](https://github.com/shakacode/shaka/pull/425) added independent opening
-reviewer choices and a way to disable the check completely after #420.
-Both team and individual settings support these options.
+You can choose its reviewer, model, and effort separately from code review, or
+turn it off, in team or individual settings.
 
 ## Decide what happens next
 

@@ -23,8 +23,7 @@ Set up Shaka just for me. Go.
 
 Settings stay out of commits. See [individual support and acceptance gaps](expected-experience.md#individual-setup).
 With team settings, local choices do not override them. You can explicitly
-[select a settings PR](settings.md#preview-settings-before-adopting-them) for one task,
-as shipped in [#426](https://github.com/shakacode/shaka/pull/426).
+[select a settings PR](settings.md#preview-settings-before-adopting-them) for one task.
 Trying a different Shaka implementation is separate: see [try a Shaka PR](trying-pr-versions.md).
 
 ## Can I use a different setting than my team?
