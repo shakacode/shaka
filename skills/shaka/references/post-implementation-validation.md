@@ -51,7 +51,8 @@ with the Checkpoint link beside Code Walkthrough, followed by any deployment lin
 a named placeholder. This link locates the report; it does not establish readiness.
 
 Publishing a blocked or incomplete checkpoint converts the PR to draft and adds a
-**Do not merge** warning above its feature summary. The warning names the reason,
+**Do not merge** warning above its feature summary, or a **Not ready to merge** warning
+for Merge after maintainer decision. The warning names the reason,
 head, report link, and task owner's next step. Its separate marked region survives
 normal description updates. When a ready checkpoint is the latest one and the warning
 names an earlier head, publication removes the warning and reports `cleared` with the
@@ -168,6 +169,7 @@ Choose one fixed value; Ruby parses these values, so they are not configurable:
 | Recommendation | Meaning and next step |
 | --- | --- |
 | Merge | The result is appropriate to ship. Complete required checks, reviews, and the task's Ask or Auto path. |
+| Merge after maintainer decision | You would merge, but unaccepted concerns or a Simplify/reframe verdict wait on the maintainer. Ask in description `decisions`. After the answer, record each accepted concern, or run the checkpoint again with the decision in its evidence packet. A recommendation inside a decision agrees with this disposition. |
 | Revise before merge | The direction is sound. Name the specific changes, make them, then repeat affected verification and review. |
 | Reconsider approach | Working code revealed a wrong or disproportionate solution. Explain why and propose an alternative through the existing maintainer decision path. |
 | Do not merge | Recommend abandoning or replacing this PR, with the reason and next step. The maintainer decides whether to close it. |
@@ -206,6 +208,9 @@ concern and the change behind it is unchanged; ask again when the concern differ
 Ruby checks the disposition's head, vocabulary, reason, and next-action field, which only Merge may omit.
 It rejects **Merge** when verification has a blocking conclusion, or lists a concern
 without a matching `accepted_concerns` entry, and never verifies who made a decision.
+It accepts **Merge after maintainer decision** only while Merge is refused and the verdict
+is not Do not merge, and `description` refuses an empty `decisions` list while the PR's waiting warning names the
+current head. A later Merge checkpoint for that head removes the waiting warning.
 The other three values publish the existing `blocked` attestation, including when
 verification says **Proceed**. A disposition for an older head cannot publish. A failed
 or opted-out execution has no completed verification to attach a disposition to;

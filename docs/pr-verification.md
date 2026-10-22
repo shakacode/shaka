@@ -354,7 +354,9 @@ hold readiness and Auto even when technical checks pass. When the checkpoint say
 checkpoint with your decision under **Concerns recorded as accepted by the maintainer**, and merge
 preparation continues. Shaka checks that a decision is recorded for each concern, not
 who made it, so read that list before you merge. Accepting a concern does not override
-**Simplify/reframe** or **Do not merge**. Shaka blocks final merge
+**Simplify/reframe** or **Do not merge**. When the agent disagrees with a concern or a
+**Simplify/reframe** verdict, it recommends **Merge after maintainer decision** and asks you
+under **Decisions to make**, so the checkpoint, the warning, and the question agree. Shaka blocks final merge
 preparation without this account's published ready review or explicit opt-out for the
 current commit. A new commit needs fresh evidence. The reviewer judges value; Ruby
 checks the published result and commit, not the judgment’s quality.

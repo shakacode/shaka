@@ -18,7 +18,8 @@ module Shaka
     include PostImplementationExecutionText
     include PostImplementationAdequacy
 
-    attr_reader :state
+    # disposition is the owner's recommendation, or nil when the result supplies none.
+    attr_reader :state, :disposition
 
     def summary = @summary || PublicationText.required(@result.fetch('reason'), 'checkpoint failure reason')
 

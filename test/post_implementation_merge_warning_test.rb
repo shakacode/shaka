@@ -31,6 +31,48 @@ class PostImplementationMergeWarningTest < Minitest::Test
     end
   end
 
+  def await_maintainer(result)
+    domain_block(result)
+    report = JSON.parse(File.read(result['report'])).merge('conclusion' => 'Simplify/reframe')
+    File.write(result['report'], JSON.generate(report))
+    result['disposition'] = { 'head' => result['head'],
+                              'recommendation' => Shaka::PostImplementationReport::AWAITING_DECISION,
+                              'reason' => 'Domain acceptance is pending.', 'next_action' => 'Ask Justin.' }
+  end
+
+  def test_owner_waiting_on_the_maintainer_is_not_told_never_to_merge
+    with_result do |result, path|
+      await_maintainer(result)
+      github, status = publish(result, path)
+      banner = github.description_body
+
+      assert_equal 0, status
+      assert github.snapshot['isDraft']
+      assert_includes banner, "Not ready to merge — waiting for the maintainer's decision."
+      assert_includes banner, 'Maintainer: make the decision the linked checkpoint asks for.'
+      refute_includes banner, 'Do not merge'
+    end
+  end
+
+  def accept_and_merge(result)
+    concern = 'Fallback continuity needs a maintainer decision.'
+    report = JSON.parse(File.read(result['report'])).merge('conclusion' => 'Proceed')
+    File.write(result['report'], JSON.generate(report))
+    result['disposition'] = { 'head' => result['head'], 'recommendation' => 'Merge', 'reason' => 'Accepted.',
+                              'accepted_concerns' => [{ 'concern' => concern, 'decision' => 'Justin accepted it.' }] }
+  end
+
+  def test_merge_after_the_decision_clears_the_waiting_warning_for_the_same_head
+    with_result do |result, path|
+      await_maintainer(result)
+      github, = publish(result, path)
+      accept_and_merge(result)
+
+      assert_equal 0, publish(result, path, github:)[1]
+      refute_includes github.description_body, 'Not ready to merge'
+    end
+  end
+
   def test_blocked_report_makes_the_pr_draft_and_puts_the_reason_before_the_feature_summary
     with_result do |result, path|
       domain_block(result)

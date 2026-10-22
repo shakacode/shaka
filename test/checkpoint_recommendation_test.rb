@@ -48,6 +48,34 @@ class CheckpointRecommendationTest < Minitest::Test
     assert_includes error.message, 'verification_adequacy comes from the published checkpoint'
   end
 
+  def banner(wording, head: HEAD)
+    region = Shaka::MergeWarningRegion
+    "#{region::OPEN}\n> **#{wording.first}**\n>\n> Reason.\n>\n" \
+      '> [Blocking report](https://github.com/example/test/pull/1#issuecomment-1) · ' \
+      "Head [`#{head[0, 7]}`](https://github.com/example/test/commit/#{head}). Passing checks.\n" \
+      "#{region::CLOSE}\n\nFeature summary"
+  end
+
+  def require_decisions(content, body)
+    pull = { 'body' => body, 'head' => { 'sha' => HEAD } }
+    Shaka::CheckpointRecommendation.require_decisions!(content, pull, 'example/test')
+  end
+
+  def test_a_banner_waiting_on_the_maintainer_needs_the_question_in_decisions
+    waiting = banner(Shaka::MergeWarningRegion::AWAITING)
+    [{}, { 'decisions' => [] }, { 'checkpoint' => { 'head' => HEAD } }].each do |undecided|
+      error = assert_raises(Shaka::Error) { require_decisions(undecided, waiting) }
+      assert_includes error.message, 'decisions'
+    end
+
+    assert_nil require_decisions({ 'decisions' => ['Accept the risk and merge?'] }, waiting)
+  end
+
+  def test_other_banners_and_older_heads_need_no_decisions
+    [banner(Shaka::MergeWarningRegion::BLOCKED), banner(Shaka::MergeWarningRegion::AWAITING, head: 'b' * 40),
+     'Feature summary'].each { |body| assert_nil require_decisions({}, body) }
+  end
+
   def test_content_without_a_checkpoint_is_unchanged
     content = { 'summary' => 'Done.' }
     assert_same content, resolve(content, [])

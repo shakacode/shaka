@@ -1,14 +1,24 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative '../post_implementation_report'
 
 module Shaka
   # Keeps the checkpoint warning ahead of a newly inserted feature description.
   module MergeWarningRegion
     OPEN = '<!-- shaka:merge-warning:begin -->'
     CLOSE = '<!-- shaka:merge-warning:end -->'
+    BLOCKED = ['⛔ Do not merge — post-implementation checkpoint blocked.',
+               'Task owner: resolve the linked concerns and publish a new checkpoint for the current head.'].freeze
+    # An owner who would merge after the maintainer's decision is not told the PR must never merge.
+    AWAITING = ["⛔ Not ready to merge — waiting for the maintainer's decision.",
+                'Maintainer: make the decision the linked checkpoint asks for. ' \
+                'Task owner: then publish a new checkpoint.'].freeze
 
     module_function
+
+    # The heading and next step for a blocked checkpoint with this owner disposition.
+    def wording(disposition) = disposition == PostImplementationReport::AWAITING_DECISION ? AWAITING : BLOCKED
 
     def prepend(existing, managed)
       warning, remaining = split(existing)
@@ -21,6 +31,17 @@ module Shaka
     def head(body, repository)
       link = %r{· Head \[`\h{7}`\]\(https://github\.com/#{Regexp.escape(repository)}/commit/(\h{40})\)\. Passing}
       split(body).first.scan(link).last&.first
+    end
+
+    # Whether the warning for this head waits on the maintainer; only its generated first line counts.
+    def awaiting?(body, repository, current)
+      split(body).first.start_with?("#{OPEN}\n> **#{AWAITING.first}**\n") && head(body, repository) == current
+    end
+
+    # Whether a ready checkpoint for this head settles the warning: it names an earlier head, or it waited
+    # only on the maintainer's decision for this one.
+    def settled_by_ready?(body, repository, current)
+      ![nil, current].include?(head(body, repository)) || awaiting?(body, repository, current)
     end
 
     def split(body)
