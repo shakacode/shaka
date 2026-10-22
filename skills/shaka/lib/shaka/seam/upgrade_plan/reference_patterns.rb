@@ -47,8 +47,9 @@ module Shaka
         def parent_traversal_reference?(line)
           return false unless line.include?("#{PATHS::DIRECTORY}/") && line.include?('/../')
 
-          # Markdown renders what this consumes as a link: a text and a target, never the path `a/b](../c`.
-          unlinked = line.gsub(/\[([^\]\n]*)\]\(([^)\s]*)\)/, ' \1 \2 ')
+          # A link's text and target are two paths, never `a/b](../c`. A bracket after a path character
+          # belongs to that path, so `cache[1](2)/../bin` stays one.
+          unlinked = line.gsub(%r{(?<![[:alnum:]_./-])\[([^\]\n]*)\]\(([^)\s]*)\)}, ' \1 \2 ')
           unlinked.match?(directory_pattern(PATHS::DIRECTORY, '/(?:[^/\s"\x27]+/)*\.\./'))
         end
 

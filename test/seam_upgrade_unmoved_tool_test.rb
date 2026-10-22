@@ -83,7 +83,7 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
   end
 
   def test_parent_traversal_inside_the_layout_still_blocks
-    %w(.agents/workflows .agents/cache[1] .agents/cache](1)).each do |directory|
+    %w(.agents/workflows .agents/cache[1] .agents/cache](1) .agents/cache[1](2)).each do |directory|
       reference = "#{directory}/../bin/test"
       with_repository do |root|
         write_tracked(root, 'docs/run.md', "Run #{reference} first; see [guide](guide.md).\n")
