@@ -34,14 +34,10 @@ class InstallDisplayTest < Minitest::Test
     refute display.fetch('policy').fetch('allow_implicit_invocation')
   end
 
-  def test_changed_display_metadata_is_rejected_on_reinstall_and_rollback
+  def test_changed_display_metadata_is_rejected_on_reinstall
     assert_predicate install.last, :success?
-    id = package_identity.fetch('package_id')
     File.write(File.join(@destination, 'agents/openai.yaml'), 'interface: {}')
     output, status = install
-    refute_predicate status, :success?
-    assert_includes output, 'Managed package content differs'
-    output, status = run_installer('--skills-dir', @skills_dir, '--with-rct', '--rollback', id)
     refute_predicate status, :success?
     assert_includes output, 'Managed package content differs'
   end

@@ -9,14 +9,10 @@ class HandoffWipNoteTest < Minitest::Test
     assert_equal "feature @ #{HandoffFixtures::HEAD}", Shaka::Handoff::WipNote.revision(body)
   end
 
-  def test_notes_published_under_current_and_previous_headings_still_read
-    ['Chat name', 'Task'].product(['Chat link', 'Thread']).each do |name, link|
-      body = HandoffFixtures.description.sub('| Chat name |', "| #{name} |")
-                            .sub('| Chat link |', "| #{link} |")
+  def test_notes_under_other_headings_have_no_revision
+    body = HandoffFixtures.description.sub('| Chat name |', '| Task |')
 
-      assert_equal "feature @ #{HandoffFixtures::HEAD}", Shaka::Handoff::WipNote.revision(body),
-                   "#{name} / #{link}"
-    end
+    assert_nil Shaka::Handoff::WipNote.revision(body)
   end
 
   # https://github.com/shakacode/shaka/issues/659: publication escapes `|` and `\` in cells.

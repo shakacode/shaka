@@ -4,7 +4,7 @@ require_relative 'links'
 
 module Shaka
   module Install
-    # Migrates verified copies without removing their contents.
+    # Points host links at the official checkout, replacing verified Shaka links without removing their targets.
     class OfficialLinks < Links
       # A take-over also owns links that point at the previous registered checkout.
       def initialize(*, previous_source: nil)
@@ -15,10 +15,6 @@ module Shaka
       def check(target)
         ensure_safe_directory(@skills_dir, 'Host skills directory')
         validate_location(target)
-        if codex? && File.directory?(codex_aliases)
-          verify_safe_directory(codex_aliases,
-                                'Codex legacy skills directory')
-        end
         preflight(target)
       end
 
@@ -36,20 +32,7 @@ module Shaka
       # Restores only links that differ from the snapshot, so a host that never switched is left alone.
       def restore_locked(previous) = restore_links(@names.reject { old_target(it) == previous[it] }, previous)
 
-      def existing_names
-        current = Package::ALLOWED.select { |name| File.symlink?(destination(name)) && owned?(name) }
-        return current unless codex?
-
-        current | Package::ALLOWED.select { |name| owned_alias?(name) }
-      end
-
-      def retire_aliases
-        return unless codex? && File.directory?(codex_aliases)
-
-        with_lock(codex_aliases) do
-          @names.each { |name| File.unlink(File.join(codex_aliases, name)) if owned_alias?(name) }
-        end
-      end
+      def existing_names = Package::ALLOWED.select { |name| File.symlink?(destination(name)) && owned?(name) }
 
       private
 
@@ -86,24 +69,6 @@ module Shaka
         root = File.realpath(target)
         raise ArgumentError, 'Skills directory overlaps installation' if
           directory == root || directory.start_with?("#{root}/") || root.start_with?("#{directory}/")
-      end
-
-      def codex? = @skills_dir == File.join(Dir.home, '.agents/skills')
-      def codex_aliases = File.join(Dir.home, '.codex/skills')
-
-      def owned_alias?(name)
-        path = File.join(codex_aliases, name)
-        return false unless File.symlink?(path)
-
-        target = File.expand_path(File.readlink(path), codex_aliases)
-        package = managed_package(name, target)
-        source_target?(name, target) || default_package?(package)
-      rescue Errno::ENOENT
-        false
-      end
-
-      def default_package?(package)
-        package && File.realpath(File.dirname(package)) == File.realpath(@managed) && verified_package?(package)
       end
 
       def managed_target?(name, target)

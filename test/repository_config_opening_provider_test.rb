@@ -9,7 +9,7 @@ class RepositoryConfigOpeningProviderTest < Minitest::Test
 
   def test_requires_a_model_for_opening_reviewers_without_a_default
     ['xai/grok', 'deepseek/openrouter', ' XAI/Grok ', ' DeepSeek/OpenRouter '].each do |reviewer|
-      with_repository('opening_check' => { 'reviewer' => reviewer }) do |root|
+      with_repository('pr_description' => { 'opening_check' => { 'reviewer' => reviewer } }) do |root|
         assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
       end
     end
@@ -28,7 +28,7 @@ class RepositoryConfigOpeningProviderTest < Minitest::Test
 
   def test_openrouter_uses_the_default_low_effort
     settings = { 'reviewer' => 'deepseek/openrouter', 'model' => 'deepseek/deepseek-v4.1-flash' }
-    with_repository('opening_check' => settings) do |root|
+    with_repository('pr_description' => { 'opening_check' => settings }) do |root|
       assert_equal 'low', Shaka::RepositoryConfig.load(root:).opening_check.fetch('effort')
     end
   end

@@ -15,10 +15,9 @@ class CliOpeningCheckTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = '`shaka merge` now checks the reviewed head.'
   FALLBACK_ROUTES = [
-    [{ 'external_enabled' => false }, 'anthropic/claude'],
-    [{ 'external_enabled' => true, 'prompt_file' => '.agents/missing.md' }, 'anthropic/claude'],
-    [{ 'external_enabled' => true }, 'anthropic/other-family'],
-    [{ 'external_enabled' => true }, 'unlisted/model']
+    [{ 'prompt_file' => '.agents/missing.md' }, 'anthropic/claude'],
+    [{}, 'anthropic/other-family'],
+    [{}, 'unlisted/model']
   ].freeze
 
   def test_description_returns_the_opening_result_after_publishing
@@ -79,21 +78,19 @@ class CliOpeningCheckTest < Minitest::Test
   end
 
   def test_trusted_prompt_reaches_default_host_model
-    [true, false].each do |enabled|
-      with_trusted_prompt(enabled:) do |root|
-        Dir.mktmpdir do |dir|
-          output, error, status = run_description(dir, root:, ref: true)
-          assert_predicate status, :success?, error
-          assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
-          assert_includes JSON.parse(output).dig('opening', 'prompt'), 'Name the reader-facing subject.'
-        end
+    with_trusted_prompt do |root|
+      Dir.mktmpdir do |dir|
+        output, error, status = run_description(dir, root:, ref: true)
+        assert_predicate status, :success?, error
+        assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
+        assert_includes JSON.parse(output).dig('opening', 'prompt'), 'Name the reader-facing subject.'
       end
     end
   end
 
   def test_unavailable_or_untrusted_opening_route_publishes_with_host_fallback
     FALLBACK_ROUTES.each do |setting, reviewer|
-      with_repository('opening_check' => setting) do |root|
+      with_repository('pr_description' => { 'opening_check' => setting }) do |root|
         commit(root)
         Dir.mktmpdir { |dir| assert_host_fallback(dir, root:, reviewer:) }
       end
@@ -102,9 +99,8 @@ class CliOpeningCheckTest < Minitest::Test
 
   private
 
-  def with_trusted_prompt(enabled: true)
-    with_repository('opening_check' => { 'external_enabled' => enabled,
-                                         'prompt_file' => '.agents/opening.md' }) do |root|
+  def with_trusted_prompt
+    with_repository('pr_description' => { 'opening_check' => { 'prompt_file' => '.agents/opening.md' } }) do |root|
       File.write(File.join(root, '.agents/opening.md'), 'Name the reader-facing subject.')
       commit(root)
       yield root

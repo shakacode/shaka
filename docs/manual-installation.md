@@ -16,9 +16,6 @@ is a Ruby script that uses only Ruby's standard library. It makes these changes:
 - **Installation records.** It writes the checkout's origin, branch, and selected
   agents, plus the path of the Ruby that ran it, inside the checkout's `.git`
   directory. Shaka then runs with that Ruby in every project.
-- **Older Codex links.** For Codex, it removes a `shaka` link from
-  `~/.codex/skills` when that link points at this checkout or at a Shaka copy an
-  earlier installer made. It leaves every other entry alone.
 - **Lock files.** It leaves an empty `.shaka-install.lock` file in each skills
   directory it links.
 

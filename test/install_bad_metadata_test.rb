@@ -20,21 +20,15 @@ class InstallBadMetadataTest < Minitest::Test
     File.symlink(moved, original)
 
     assert_clean_rejection
-    output, status = run_installer('--skills-dir', @skills_dir, '--with-rct', '--rollback', File.basename(original))
-    refute_predicate status, :success?
-    assert_includes output, 'Managed package root is invalid'
   end
 
-  def test_fifo_metadata_fails_promptly_on_reinstall_and_rollback
+  def test_fifo_metadata_fails_promptly_on_reinstall
     install!
     metadata = File.join(package_path, '.shaka-install.json')
     File.unlink(metadata)
     assert system('mkfifo', metadata)
 
-    Timeout.timeout(5) do
-      assert_clean_rejection
-      assert_fifo_rejected_on_rollback
-    end
+    Timeout.timeout(5) { assert_clean_rejection }
   end
 
   def test_non_object_source_metadata_fails_without_backtrace
@@ -98,13 +92,6 @@ class InstallBadMetadataTest < Minitest::Test
   end
 
   private
-
-  def assert_fifo_rejected_on_rollback
-    output, status = run_installer('--skills-dir', @skills_dir, '--with-rct',
-                                   '--rollback', File.basename(package_path))
-    refute_predicate status, :success?
-    assert_includes output, 'Managed package metadata is invalid'
-  end
 
   def install!
     output, status = install

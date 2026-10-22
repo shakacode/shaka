@@ -773,21 +773,8 @@ and `effort: low`, `high`, or `max`. Shaka checks these fixed adapter choices
 when it loads the settings. Grok also needs an explicit model because its CLI
 has no default.
 
-The top-level `opening_check` section remains supported for existing setups.
-Use one location for these settings; Shaka rejects a configuration that supplies
-both. New setups use `pr_description.opening_check`.
-
-The older `external_enabled` setting remains supported: `false` keeps the check
-in the coding chat instead of launching a separate reviewer. Use either that
-legacy setting or `enabled`, not both. With `enabled: false`, Shaka returns no
-parsing prompt and launches no opening reviewer; the agent still follows your
-ordinary writing instructions.
-
-[Merged #425](https://github.com/shakacode/shaka/pull/425) added these independent
-choices and the fully disabled state after #420. At #420's merged revision,
-opening checks used the code-reviewer list at low effort, without independent
-configuration for their provider, model, or effort. The legacy
-`external_enabled: false` still means a check in the current chat.
+With `enabled: false`, Shaka returns no parsing prompt and launches no opening
+reviewer; the agent still follows your ordinary writing instructions.
 
 ### Customize the opening check
 

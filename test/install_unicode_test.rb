@@ -23,6 +23,6 @@ class InstallUnicodeTest < Minitest::Test
     FileUtils.mv(old_root, new_root)
     @source = File.join(new_root, 'skills', 'shaka')
     @rct_source = File.join(new_root, 'skills', 'rct')
-    @installer = File.join(new_root, 'bin', 'install')
+    @trial_installer = File.join(new_root, 'bin', 'trial-install')
   end
 end

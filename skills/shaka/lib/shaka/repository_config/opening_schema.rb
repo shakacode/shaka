@@ -18,14 +18,14 @@ module Shaka
         DEFAULTS.merge(settings)
       end
 
-      def initialize(opening, label: 'opening_check')
+      def initialize(opening, label: 'pr_description.opening_check')
         @opening = opening
         @label = label
       end
 
       def validate
         mapping!(@opening, @label)
-        keys!(@opening, [], %w[enabled external_enabled reviewer model effort prompt_file], @label)
+        keys!(@opening, [], %w[enabled reviewer model effort prompt_file], @label)
         validate_enabled
         validate_reviewer
         validate_model
@@ -39,15 +39,9 @@ module Shaka
       private
 
       def validate_enabled
-        if @opening.key?('enabled') && @opening.key?('external_enabled')
-          raise Error, "Use #{@label}.enabled; omit its older name external_enabled"
-        end
+        return unless @opening.key?('enabled')
 
-        %w[enabled external_enabled].each do |key|
-          next unless @opening.key?(key)
-
-          enum!(@opening[key], [true, false], "#{@label}.#{key} must be true or false")
-        end
+        enum!(@opening['enabled'], [true, false], "#{@label}.enabled must be true or false")
       end
 
       def validate_reviewer

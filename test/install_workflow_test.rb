@@ -9,7 +9,6 @@ class InstallWorkflowTest < Minitest::Test
     replace_fixture_with_full_skill
     output, status = run_installer('--skills-dir', @skills_dir)
     assert_predicate status, :success?, output
-    assert_includes output, 'managed copy'
     refute_includes output, 'install --update'
     FileUtils.rm_rf(File.join(@directory, 'source'))
 
