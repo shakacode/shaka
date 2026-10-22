@@ -108,7 +108,7 @@ module Shaka
     def current_line
       settings = Evidence::PublicSettings.sanitize(@current)
       version, installation = settings.values_at('installation.version', 'installation.source')
-      shaka = "#{version} (#{INSTALLATIONS.fetch(installation)})"
+      shaka = "#{version} (#{INSTALLATIONS.fetch(installation, 'REDACTED')})"
       "#{CURRENT}: #{SettingsTable.source(settings, @repository)}; Shaka #{shaka}"
     end
 

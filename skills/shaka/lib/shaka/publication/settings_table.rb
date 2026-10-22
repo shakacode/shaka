@@ -21,7 +21,7 @@ module Shaka
       if kind == 'UNKNOWN'
         kind
       else
-        "#{SOURCES.fetch(kind)} at #{PublicationText.commit(revision,
+        "#{SOURCES.fetch(kind, 'REDACTED')} at #{PublicationText.commit(revision,
                                              (repository if kind == 'trusted/team'))}"
       end
     end

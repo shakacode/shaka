@@ -69,4 +69,11 @@ class PublicationSettingsSummaryTest < Minitest::Test
     current = snapshot.merge('installation.source' => 'uninstalled')
     assert_includes settings_block(current:), 'Shaka 0.1.0 (no installation record)'
   end
+
+  def test_redacted_source_labels_remain_publishable_without_exposing_invalid_values
+    current = snapshot.merge('source' => 'private-secret', 'installation.source' => 'private-secret')
+    body = settings_block(current:)
+    assert_includes body, "Current settings: REDACTED at `#{REVISION[0, 7]}`; Shaka 0.1.0 (REDACTED)"
+    refute_includes body, 'private-secret'
+  end
 end
