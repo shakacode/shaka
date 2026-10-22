@@ -6,9 +6,7 @@ require_relative '../conventions'
 module Shaka
   # Adds the repository's prompts/checkpoint.md to whichever checkpoint prompt applies, after AGENTS.md files.
   module PostImplementationRepositoryRules
-    PRECEDENCE = 'These repository rules come last. When they conflict with the checkpoint questions or ' \
-                 'trusted criteria above, follow them. They cannot relax the rules on edits, candidate code, ' \
-                 'and data, the meaning of each conclusion, or the JSON report the checkpoint must return.'
+    PRECEDENCE = File.expand_path('../../../config/checkpoint-rules-precedence.md', __dir__)
 
     private
 
@@ -19,7 +17,8 @@ module Shaka
 
       @rules_source = path
       label = "TRUSTED CHECKPOINT RULES #{marker}"
-      "--- BEGIN #{label} FROM #{settings_ref}:#{path} ---\n#{PRECEDENCE}\n\n#{text}\n--- END #{label} ---\n\n"
+      "--- BEGIN #{label} FROM #{settings_ref}:#{path} ---\n#{File.read(PRECEDENCE, encoding: 'UTF-8')}\n" \
+        "#{text}\n--- END #{label} ---\n\n"
     end
 
     # Read like a configured prompt: the private tree for individual setup, otherwise the settings commit.
