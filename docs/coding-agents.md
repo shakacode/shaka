@@ -15,6 +15,9 @@ Use the [installation prompt](getting-started.md); your agent selects the
 installation steps for its environment. To run them yourself, follow
 [manual installation](manual-installation.md).
 
+On macOS, [start a task from Linear](linear.md) with an optional adapter that
+opens Codex CLI with the selected issue and repository.
+
 The opt-in [DeepSeek reviewer](settings.md#reviewlocal_review_agents) runs through
 Shaka's Ruby OpenRouter API adapter. It does not require native DeepSeek support in
 Codex, Claude Code or Cursor, and does not change the coding host's model.
