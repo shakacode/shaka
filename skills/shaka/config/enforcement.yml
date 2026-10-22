@@ -131,7 +131,7 @@ rules:
       rejects Merge against a blocking conclusion or a concern without a recorded
       `accepted_concerns` decision, accepts Merge after maintainer decision only while Merge is
       refused and the verdict is not Do not merge, refuses a description without decisions
-      while that is the head's recommendation, and publishes other dispositions through the existing blocked attestation. It does not
+      while its waiting banner names the current head, and publishes other dispositions through the existing blocked attestation. It does not
       infer merge authority, evaluate free-form prose, close a PR, or require the optional field.
   - id: post-implementation-merge-blocker
     phase: finish

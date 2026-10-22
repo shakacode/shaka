@@ -38,6 +38,12 @@ module Shaka
       split(body).first.start_with?("#{OPEN}\n> **#{AWAITING.first}**\n") && head(body, repository) == current
     end
 
+    # Whether a ready checkpoint for this head settles the warning: it names an earlier head, or it waited
+    # only on the maintainer's decision for this one.
+    def settled_by_ready?(body, repository, current)
+      ![nil, current].include?(head(body, repository)) || awaiting?(body, repository, current)
+    end
+
     def split(body)
       return ['', body] if body.scan(OPEN).empty? && body.scan(CLOSE).empty?
 

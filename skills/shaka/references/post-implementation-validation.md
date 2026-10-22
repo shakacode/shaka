@@ -209,8 +209,8 @@ Ruby checks the disposition's head, vocabulary, reason, and next-action field, w
 It rejects **Merge** when verification has a blocking conclusion, or lists a concern
 without a matching `accepted_concerns` entry, and never verifies who made a decision.
 It accepts **Merge after maintainer decision** only while Merge is refused and the verdict
-is not Do not merge, and `description` refuses an empty `decisions` list while that is the
-current head's recommendation.
+is not Do not merge, and `description` refuses an empty `decisions` list while the PR's waiting warning names the
+current head. A later Merge checkpoint for that head removes the waiting warning.
 The other three values publish the existing `blocked` attestation, including when
 verification says **Proceed**. A disposition for an older head cannot publish. A failed
 or opted-out execution has no completed verification to attach a disposition to;

@@ -43,11 +43,12 @@ module Shaka
 
     private
 
-    # The latest checkpoint is ready, so only a warning for an earlier head is settled; one naming
-    # this head, or no head, stays for the maintainer. The task owner still marks the PR ready.
+    # The latest checkpoint is ready, so a warning for an earlier head is settled, and so is one for this head
+    # that waited only on the maintainer's decision; any other one naming this head, or no head, stays for the
+    # maintainer. The task owner still marks the PR ready.
     def clear(current, head)
       body = current['body'].to_s
-      cleared = ![nil, head].include?(MergeWarningRegion.head(body, @github.repository))
+      cleared = MergeWarningRegion.settled_by_ready?(body, @github.repository, head)
       replace(current, MergeWarningRegion.remove(body)) if cleared
       { 'state' => cleared ? 'cleared' : 'unchanged', 'head' => head, 'draft' => current['draft'] }
     end
