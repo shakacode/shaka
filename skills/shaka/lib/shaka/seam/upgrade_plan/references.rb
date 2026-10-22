@@ -56,8 +56,7 @@ module Shaka
         def rewrite_lines(path, text, executable)
           return text unless text.include?("#{PATHS::DIRECTORY}/")
 
-          prose = markdown_prose_lines(text, path)
-          text.lines.each_with_index.map { |line, index| rewrite_line(path, line, executable, prose[index]) }.join
+          lines_with_prose(text, path).map { |line, prose| rewrite_line(path, line, executable, prose) }.join
         end
 
         def rewrite_line(path, line, executable, prose)

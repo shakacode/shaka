@@ -100,10 +100,10 @@ module Shaka
           text.lines.each_with_index.map { |line, index| code[index] ? line : line.gsub(/[^\r\n]/, '') }.join
         end
 
-        def markdown_prose_lines(text, path)
-          return [] unless markdown_document?(text, path)
-
-          markdown_code_lines(text).map(&:!)
+        # Pairs each line with whether it is Markdown prose; outside a Markdown document no line is.
+        def lines_with_prose(text, path)
+          prose = markdown_document?(text, path) ? markdown_code_lines(text).map(&:!) : []
+          text.lines.zip(prose)
         end
 
         def markdown_code_lines(text)
