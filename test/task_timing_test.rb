@@ -42,11 +42,20 @@ class TaskTimingTest < Minitest::Test
     assert_equal Time.iso8601(VALIDATION), attach['first_validation_at']
   end
 
-  def test_start_requires_a_timestamp_with_timezone_before_opening_and_validation
-    [123, 'yesterday', '2026-10-18T07:00:00', '2026-10-19T07:00:00Z', '2026-10-18T07:46:00Z'].each do |value|
+  def test_start_requires_a_timestamp_with_timezone_before_opening
+    [123, 'yesterday', '2026-10-18T07:00:00', '2026-10-19T07:00:00Z', '2026-10-18T08:01:00Z'].each do |value|
       assert_raises(Shaka::Error) { attach('task_started_at' => value) }
     end
     assert_equal Time.iso8601(START), attach('task_started_at' => '2026-10-18T09:00:00+02:00')['task_started_at']
+  end
+
+  def test_earlier_validation_keeps_publication_available_and_retains_both_timestamps
+    data = timeline.merge('steps' => [{ 'command' => 'evidence run', 'at' => '2026-10-18T06:59:00Z' }])
+    updated = attach({}, pull(Shaka::TaskTiming.hidden(recorded)), data)
+    assert_includes Shaka::TaskTiming.summary(updated), 'predates task start; interval unavailable'
+    assert_equal Time.iso8601(START), updated['task_started_at']
+    repeated = attach({ 'task_started_at' => START }, pull(Shaka::TaskTiming.hidden(updated)), data)
+    assert_equal updated, repeated
   end
 
   def test_forks_and_markers_outside_the_managed_region_carry_no_task_start

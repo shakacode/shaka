@@ -33,6 +33,8 @@ uses it to include planning and implementation before the first commit. The
 from that start to the earliest recorded validation run, including a focused test.
 It overlaps the stretches and is not added to the totals again. Missing start or
 validation records are reported as unavailable.
+If a validation timestamp predates the reported start, the interval is unavailable
+and description publication continues.
 
 Shaka reads PR opening, closing, commit and label times from GitHub every time it updates the description. A
 wait is the time one of the attention labels stayed on the PR:

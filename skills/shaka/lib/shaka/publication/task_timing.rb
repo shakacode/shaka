@@ -16,10 +16,6 @@ module Shaka
       saved = TimelineSteps.same_repository?(pull) ? read(pull['body'], now) : {}
       started = start(content['task_started_at'], saved, timeline, now)
       first = first_validation(timeline, saved, now)
-      if started && first && started > first
-        raise Error, 'Publication task_started_at is after the first recorded validation.'
-      end
-
       timeline.merge('task_started_at' => started, 'first_validation_at' => first)
     end
 
@@ -67,6 +63,7 @@ module Shaka
 
       origin = "Task start (agent-reported): #{clock(started)} UTC."
       return "#{origin} First recorded validation: unavailable." unless first
+      return "#{origin} First recorded validation predates task start; interval unavailable." if first < started
 
       "**Before first recorded validation:** #{RunSummary.duration((first - started) * 1000)} · #{origin} " \
         "Validation started: #{clock(first)} UTC. This interval overlaps the stretches above."
