@@ -19,6 +19,8 @@ class PackageTest < Minitest::Test
     install_gem
     remote = File.join(@directory, 'remote.git')
     assert system('git', 'clone', '-q', '--bare', ROOT, remote)
+    # CI checks out a detached head, so the clone needs main named explicitly.
+    assert system('git', '-C', remote, 'update-ref', 'refs/heads/main', `git -C #{ROOT} rev-parse HEAD`.strip)
     skills = File.join(@directory, 'pilot skills')
     run_executable('shaka-install', '--repository', remote, '--skills-dir', skills)
     source = File.realpath(File.join(@environment.fetch('HOME'), '.local/share/shaka/source'))
