@@ -18,15 +18,32 @@ installation steps for its environment. To run them yourself, follow
 The opt-in [DeepSeek reviewer](settings.md#reviewlocal_review_agents) runs through
 Shaka's Ruby OpenRouter API adapter. It does not require native DeepSeek support in
 Codex, Claude Code or Cursor, and does not change the coding host's model.
-Local hosts need Ruby, outbound HTTPS and `OPENROUTER_API_KEY` in the process that
-runs Shaka. A Cursor cloud agent or CI job also needs those capabilities and an
-explicit secret provision; local environment variables are not automatically
-available there. Cloud execution and reviewer quality require a live trial in
-that environment; deterministic adapter tests do not establish either.
+It needs Ruby, outbound HTTPS and `OPENROUTER_API_KEY` in the process that
+runs Shaka.
 
 To support another coding agent, [contribute](../CONTRIBUTING.md) installation
 instructions, a demonstrated task, and known limitations. Keep environment-specific
 code separate from the shared workflow.
+
+## Cloud agents
+
+A cloud agent, such as a Cursor cloud agent, can implement a task and open its
+pull request. It runs no local adversarial review unless its environment provides a
+reviewer. A cloud machine usually has no signed-in reviewer tools, and it can't
+open the fresh chat Shaka otherwise uses as a fallback reviewer.
+
+The DeepSeek reviewer is the one option that needs only outbound HTTPS. Add it to
+your reviewer list and give the cloud agent an `OPENROUTER_API_KEY` secret; your
+local environment variables don't reach a cloud machine. Try one review there
+before relying on it, since Shaka's tests don't run in your cloud environment.
+
+Without a reviewer, Shaka's review command reports after one attempt that no
+reviewer can start, and the agent stops the review. Finish it from a local
+session (use `$shaka` in Codex):
+
+```text
+/shaka https://github.com/OWNER/REPO/pull/123
+```
 
 ## Codex desktop follow-up
 

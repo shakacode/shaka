@@ -8,6 +8,7 @@ require_relative 'reviewer_selection'
 require_relative 'review_coverage'
 require_relative 'configuration'
 require_relative 'doctor/cli_inventory'
+require_relative 'local_review/launch_block'
 
 module Shaka
   # Answers which listed reviewers satisfy the alternate-review gate for one change.
@@ -44,8 +45,12 @@ module Shaka
       result = ReviewerSelection.new(reviewers: candidates(review, unavailable + not_set_up),
                                      implementers: identities(:implementers, required: true),
                                      unavailable:, not_set_up:, count: count(review)).call
-      result.merge('provider_coverage' => coverage(review, result),
-                   'setup_notices' => Doctor::CliInventory.setup_notices(inventory))
+      result.merge('provider_coverage' => coverage(review, result), **setup(inventory))
+    end
+
+    def setup(inventory)
+      blocked = LocalReviewLaunchBlock.none_launchable?(inventory) ? LocalReviewLaunchBlock.fields('SHA') : {}
+      { 'setup_notices' => Doctor::CliInventory.setup_notices(inventory), **blocked }
     end
 
     # A task's --count wins unless coverage sets one reviewer per listed provider.
