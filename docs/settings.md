@@ -648,7 +648,7 @@ Ask whether the change adds a step maintainers must remember.
 
 When your file conflicts with a built-in question, the reviewer follows your file.
 It cannot relax Shaka's safety rules or change the report format. Without the file,
-or with an empty one, the reviewer uses the built-in prompt alone. Each file in
+or with an empty one, the reviewer gets no added questions. Each file in
 `.agents/shaka/prompts/` is named for the built-in prompt it adds to, and the
 folder's README lists them.
 
