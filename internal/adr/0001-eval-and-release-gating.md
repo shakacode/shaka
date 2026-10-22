@@ -238,6 +238,9 @@ sets inapplicable fields to `N/A`, and binds the expected actions and checker co
 in its criteria digest. The [workflow declaration reader](../../eval/delivery-workflows.md)
 supplies immutable fixture Action pins for D2. The [Codex event reader](../../eval/codex-events.md)
 retains bounded terminal/tool observations without capture-completeness evidence.
+Its [process connection](../../eval/codex-events.md#read-a-live-process) feeds live
+output through that reader with private logs, deadlines and owned-process cleanup.
+It still cannot prove a complete command inventory or qualify delivery success.
 Full tier 3 assembly, the diff card,
 statistics and release verdict remain proposed.
 
