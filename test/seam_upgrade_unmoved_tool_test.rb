@@ -19,7 +19,7 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
     'root assignment' => %(#!/bin/sh\nset -eu\nroot="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"\n) +
                          %(exec "$root/bin/probe"\n),
     'Ruby root' => %(#!/usr/bin/env ruby\nroot = File.expand_path("../..", __dir__)\nputs root\n),
-    'require outside the layout' => %(#!/usr/bin/env ruby\nrequire_relative "../skills/helper/lib/probe"\n),
+    'require outside the command directory' => %(#!/usr/bin/env ruby\nrequire_relative "../skills/helper/lib/probe"\n),
     'require an unmoved sibling' => %(#!/usr/bin/env ruby\nrequire_relative "formatter_support"\n)
   }.freeze
 
@@ -86,9 +86,16 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
     %w(.agents/workflows .agents/cache[1] .agents/cache](1)).each do |directory|
       reference = "#{directory}/../bin/test"
       with_repository do |root|
-        write_tracked(root, 'docs/run.md', "Run #{reference} first.\n")
+        write_tracked(root, 'docs/run.md', "Run #{reference} first; see [guide](guide.md).\n")
         assert_blocked_with(root, 'docs/run.md: normalized old-layout reference')
       end
+    end
+  end
+
+  def test_parent_traversal_beside_a_link_still_blocks
+    with_repository do |root|
+      write_tracked(root, 'docs/run.md', "See [guide](guide.md).agents/workflows/../bin/test now.\n")
+      assert_blocked_with(root, 'docs/run.md: normalized old-layout reference')
     end
   end
 

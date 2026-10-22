@@ -47,12 +47,10 @@ module Shaka
         def parent_traversal_reference?(line)
           return false unless line.include?("#{PATHS::DIRECTORY}/") && line.include?('/../')
 
-          pattern = directory_pattern(PATHS::DIRECTORY, '/(?:[^/\s"\x27]+/)*\.\./')
-          markdown_link_parts(line).any? { |part| part.match?(pattern) }
+          # Markdown renders what this consumes as a link: a text and a target, never the path `a/b](../c`.
+          unlinked = line.gsub(/\[([^\]\n]*)\]\(([^)\s]*)\)/, ' \1 \2 ')
+          unlinked.match?(directory_pattern(PATHS::DIRECTORY, '/(?:[^/\s"\x27]+/)*\.\./'))
         end
-
-        # A Markdown link's text and target are two paths, so `[a/b](../c)` never reads as `a/b](../c`.
-        def markdown_link_parts(line) = line.match?(/\[[^\]]*\]\(/) ? line.split('](') : [line]
 
         def directory_end = '(?=[^[:alnum:]_./-]|\\.(?![[:alnum:]_/-])|$)'
 
