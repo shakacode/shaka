@@ -80,7 +80,7 @@ class InstallEdgeCasesTest < Minitest::Test
     output, status = run_installer('--skills-dir', @skills_dir)
     assert_predicate status, :success?, output
     corrupt_metadata
-    output, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor',
+    output, status = Open3.capture2e(*installed_helper, 'doctor',
                                      '--installation-json')
 
     refute_predicate status, :success?
@@ -104,7 +104,7 @@ class InstallEdgeCasesTest < Minitest::Test
   def skill_text = File.read(File.join(@destination, 'SKILL.md'))
 
   def assert_invalid_full_doctor_report
-    report, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor')
+    report, status = Open3.capture2e(*installed_helper, 'doctor')
     refute_predicate status, :success?
     assert_includes report, 'Shaka doctor: FAILED'
     assert_includes report, '[FAILED] Installation — Installed package metadata is invalid'

@@ -30,7 +30,7 @@ class InstallMetadataSymlinkTest < Minitest::Test
   end
 
   def assert_doctor_rejects
-    output, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor', '--installation-json')
+    output, status = Open3.capture2e(*installed_helper, 'doctor', '--installation-json')
     refute_predicate status, :success?
     assert_includes output, 'Installed package metadata is invalid'
   end

@@ -13,7 +13,7 @@ class InstallWorkflowTest < Minitest::Test
     refute_includes output, 'install --update'
     FileUtils.rm_rf(File.join(@directory, 'source'))
 
-    output, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'workflow', chdir: @directory)
+    output, status = Open3.capture2e(*installed_helper, 'workflow', chdir: @directory)
     assert_predicate status, :success?, output
     assert_workflow_links(output)
     assert_installed_update_check
@@ -22,7 +22,7 @@ class InstallWorkflowTest < Minitest::Test
   private
 
   def assert_installed_update_check
-    output, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'update-check', chdir: @directory)
+    output, status = Open3.capture2e(*installed_helper, 'update-check', chdir: @directory)
     assert_predicate status, :success?, output
     assert_equal 'custom', JSON.parse(output).fetch('status')
   end

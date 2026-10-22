@@ -97,7 +97,7 @@ class OpencodeWorkTest < Minitest::Test
 
   def test_help_names_the_host_option
     output, error, status = Open3.capture3({ 'PATH' => "#{@directory}/bin:#{ENV.fetch('PATH')}" },
-                                           @command, 'work', '--help')
+                                           *shaka_command(@command), 'work', '--help')
     assert_predicate status, :success?, error
     assert_includes output, '--host'
     assert_includes output, 'opencode'
