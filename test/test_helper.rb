@@ -50,9 +50,10 @@ WINDOWS = RUBY_PLATFORM.match?(/mswin|mingw/)
 
 # The argv that starts a Shaka helper launcher. Windows CreateProcess ignores the sh launcher's
 # shebang (#798), so there tests run its last line: Ruby with the same flags and entry point.
+# test/shaka_command_test.rb keeps that argv equal to the launcher's exec line.
 # Elsewhere tests run the launcher itself; test/ruby_launcher_test.rb covers what it adds.
-def shaka_command(launcher = File.expand_path('../skills/shaka/scripts/shaka', __dir__))
-  return [launcher].freeze unless WINDOWS
+def shaka_command(launcher = File.expand_path('../skills/shaka/scripts/shaka', __dir__), windows: WINDOWS)
+  return [launcher].freeze unless windows
 
   scripts = File.dirname(launcher)
   [RbConfig.ruby, '--disable-gems', '--disable-rubyopt', '-r', File.join(scripts, '../lib/shaka/ruby_requirement.rb'),
