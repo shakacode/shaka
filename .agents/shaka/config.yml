@@ -45,16 +45,15 @@ review:
   #   model_family: grok
 
 merge:
-  # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.
-  # Ours: auto, so small tested code fixes merge without a click; the floor below holds the rest.
-  preference: auto
+  preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.
   # required_checks: [validate] # Default: none; use when GitHub requires no checks.
   limits: # Defaults. A larger PR needs your confirmation before the agent merges it.
     max_changed_files: 29
     max_changed_lines: 999 # Additions plus deletions.
     max_commits: 9
-  # Default: 5, any human review floor (below). Ours: 2, so the agent merges code and tests
-  # and hands back docs, agent instructions, and settings, merge, trust, validation, and install code.
+  # Default: 5, any human review floor (below). Ours: 2, so Auto would merge code and tests and
+  # hand back docs, agent instructions, and settings, merge, trust, validation, and install code.
+  # While preference is ask, each ready checkpoint says whether Auto would merge the PR.
   auto_max_review_floor: 2
 
 branches:
