@@ -12,7 +12,7 @@ module Shaka
 
       def destination_directories
         [Configuration::Paths::DIRECTORY, File.dirname(Initializer::LAYOUT.contract),
-         Initializer::LAYOUT.command_directory, File.dirname(Configuration::Paths::REVIEWERS_README)]
+         Initializer::LAYOUT.command_directory, File.dirname(Configuration::Paths::PROMPTS_README)]
       end
 
       def preflight_directories
@@ -68,7 +68,7 @@ module Shaka
       end
 
       # The reviewers README belongs to the maintainer once it exists; seam init writes only a missing one.
-      def maintainer_readme?(path) = path == File.join(@root, Configuration::Paths::REVIEWERS_README)
+      def maintainer_readme?(path) = path == File.join(@root, Configuration::Paths::PROMPTS_README)
 
       # The pointer records the generating skill version, so an upgrade changes its text while
       # the repository's copy stays correct. Recognizing our own marker keeps a plain repeat of

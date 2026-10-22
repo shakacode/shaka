@@ -10,7 +10,7 @@ module Shaka
   module Conventions
     PATH = File.expand_path('../../config/conventions.yml', __dir__)
     DIRECTORY = File.dirname(Configuration::Paths::NEW_CONTRACT)
-    FIELDS = %w[reader when effect absent docs].freeze
+    FIELDS = %w[adds_to reader when absent docs].freeze
     TABLE_BEGIN = '<!-- shaka:conventions:begin -->'
     TABLE_END = '<!-- shaka:conventions:end -->'
 
@@ -29,7 +29,7 @@ module Shaka
       raise Error, "Invalid #{PATH}: #{e.message}"
     end
 
-    # The repository path of one listed file, such as `reviewers/checkpoint.md`.
+    # The repository path of one listed file, such as `prompts/checkpoint.md`.
     def self.path(name)
       directory, file = name.split('/', 2)
       raise Error, "#{PATH} lists no #{name}" unless data.dig(directory, 'files', file)
@@ -50,10 +50,10 @@ module Shaka
 
     def self.table(directory)
       rows = data.fetch(directory).fetch('files').map do |file, entry|
-        cells = ["`#{file}`", *entry.values_at('reader', 'when', 'effect', 'absent'), "[Settings](#{entry['docs']})"]
+        cells = ["`#{file}`", *entry.values_at('adds_to', 'reader', 'when', 'absent'), "[Settings](#{entry['docs']})"]
         "| #{cells.join(' | ')} |"
       end
-      [TABLE_BEGIN, '| File | Read by | When | Effect | If absent | Reference |',
+      [TABLE_BEGIN, '| File | Adds to | Read by | When | If absent | Reference |',
        '| --- | --- | --- | --- | --- | --- |', *rows, TABLE_END].join("\n")
     end
 

@@ -12,15 +12,15 @@ module Shaka
       HOME = 'https://github.com/shakacode/shaka'
       DOCS = "#{HOME}/blob/main/docs".freeze
       LEGACY_README = Configuration::Paths::LEGACY_README
-      CONFIG_NOTES = ['Shaka also reads files beside this one by name: commands in bin/, reviewer rules in reviewers/.',
-                      'reviewers/README.md lists each file, who reads it, and what happens when it is absent.'].freeze
+      CONFIG_NOTES = ['Shaka also reads files beside this one by name: commands in bin/, prompt additions in prompts/.',
+                      'prompts/README.md lists each file, the prompt it adds to, and what happens without it.'].freeze
 
       private
 
       def config_notes = CONFIG_NOTES
 
-      def reviewers_readme
-        { Configuration::Paths.at(@root, Configuration::Paths::REVIEWERS_README) => Conventions.readme('reviewers') }
+      def prompts_readme
+        { Configuration::Paths.at(@root, Configuration::Paths::PROMPTS_README) => Conventions.readme('prompts') }
       end
 
       # Migration still writes the old layout, so the table follows the layout being written.

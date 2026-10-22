@@ -2,11 +2,11 @@
 
 require_relative 'support/post_implementation_fixture'
 
-# The top-level checkpoint section and the conventional reviewers/checkpoint.md file.
+# The top-level checkpoint section and the conventional prompts/checkpoint.md file.
 class CheckpointConventionsTest < Minitest::Test
   include PostImplementationFixture
 
-  RULES = '.agents/shaka/reviewers/checkpoint.md'
+  RULES = '.agents/shaka/prompts/checkpoint.md'
   REPLACEMENT = { 'post_implementation' => { 'prompt_file' => '.agents/codex-prompt.md' } }.freeze
 
   def test_top_level_checkpoint_section_reaches_the_runner
