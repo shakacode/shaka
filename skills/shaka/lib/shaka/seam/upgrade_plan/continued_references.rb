@@ -88,7 +88,7 @@ module Shaka
 
         # Only the physical lines a continuation joins can hide a split path.
         def continued_old_path?(text, path = nil)
-          text.scan(/(?:[^\r\n]*\\\r?\n)+[^\r\n]*/).any? do |span|
+          text.scan(/^(?:[^\r\n]*\\\r?\n)+[^\r\n]*/).any? do |span|
             joined = span.gsub(/\\\r?\n/, '')
             matching_paths(joined).any? || directory_reference?(joined, path) || segmented_reference?(joined)
           end
@@ -115,7 +115,7 @@ module Shaka
         def aliased_value
           moved = [PATHS::CONTRACT, PATHS::REPOSITORY_ALLOWLIST].map { |old| Regexp.escape(old) }
           commands = "#{Regexp.escape(PATHS::COMMAND_DIRECTORY)}(?:/[[:alnum:]_.-]*)*"
-          "(?:#{Regexp.escape(PATHS::DIRECTORY)}/?|#{commands}|#{moved.join('|')})(?=[^[:alnum:]_./-]|$)"
+          "(?:#{Regexp.escape(PATHS::DIRECTORY)}(?:/+\\.?)*|#{commands}|#{moved.join('|')})(?=[^[:alnum:]_./-]|$)"
         end
 
         def scan_shell_fragmented_reference(path, text)

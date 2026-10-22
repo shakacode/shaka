@@ -17,6 +17,9 @@ class SeamUpgradeUnrelatedPathTest < Minitest::Test
   end
 
   MOVED_PATH_ASSIGNMENTS = {
+    'normalized directory' => "#!/bin/sh\ndir=.agents/.\ncommand=test\nexec \"$dir/bin/$command\"\n",
+    'repeated separator' => "#!/bin/sh\ndir=.agents//\ncommand=test\nexec \"$dir/bin/$command\"\n",
+    'allowlist' => "#!/bin/sh\nactors=.agents/trusted-github-actors.yml\ncat \"$actors\"\n",
     'command directory' => "#!/bin/sh\nhelpers=.agents/bin\nexec \"$helpers/test\"\n",
     'command' => "#!/bin/sh\nrunner=$ROOT/.agents/bin/test\nexec \"$runner\"\n",
     'contract' => "#!/bin/sh\nconfig=\"$ROOT/.agents/agent-workflow.yml\"\ncat \"$config\"\n"
