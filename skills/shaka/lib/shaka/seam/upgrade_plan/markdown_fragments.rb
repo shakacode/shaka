@@ -87,12 +87,12 @@ module Shaka
           false
         end
 
-        # Prose has no working directory, so prose alone blocks only a change into the old directory. The
-        # directory and a command pair only within an instruction that holds code: a block with a code line,
-        # or a prose paragraph and the code block right after it.
+        # Prose names the old directory beside commands it never runs from there, so prose alone blocks only a
+        # change into the directory or a command it says to run from there. Any mention pairs within an
+        # instruction that holds code: a block with a code line, or a prose paragraph and the code block after it.
         def markdown_directory_dependency?(text)
           markdown_instructions(text).any? do |instruction, code|
-            code ? shell_directory_dependency?(instruction) : directory_change?(instruction)
+            code ? shell_directory_dependency?(instruction) : prose_directory_dependency?(instruction)
           end || shell_directory_dependency?(markdown_code(text))
         end
 

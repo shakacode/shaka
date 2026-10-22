@@ -61,6 +61,10 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     'inline code' => "Run `cd .agents && bin/validate` before pushing.\n",
     'quoted inline' => "Run `cd .age\"nts\" && bin/validate`.\n",
     'inline env' => "Run `env -C .agents bin/validate`.\n",
+    'inline env chdir' => "Run `env --chdir=.agents bin/validate`.\n",
+    'same line' => "Run `bin/validate` from `.agents`.\n",
+    'wrapped' => "Run `bin/validate` from\n`.agents`.\n",
+    'directory first' => "From the `.agents` directory, run `bin/validate`.\n",
     'prose then fence' => "Run these from the `.agents` directory:\n\n```sh\nbin/validate\n```\n",
     'prose, blanks, fence' => "Run these from the `.agents` directory:\n\n\n```sh\nbin/validate\n```\n",
     'indented middle line' => "Run these from `.agents`\n    once the cache is warm,\nthen `bin/validate`.\n"
@@ -136,8 +140,7 @@ class SeamUpgradeMarkdownProsePairTest < Minitest::Test
     'full command path' => "There is no `.agents/` directory at all; `.agents/bin/setup` came later.\n",
     'root command' => 'This repository has no `.agents/` directory: `bin/validate` is its own root validator, ' \
                       "not `.agents/bin/validate`.\n",
-    'same line' => "Run `bin/validate` from `.agents`.\n",
-    'wrapped' => "Run `bin/validate` from\n`.agents`.\n"
+    'command elsewhere' => "Run `bin/validate` from the root; `.agents/` holds settings.\n"
   }.freeze
 
   def test_prose_naming_directory_and_command_without_changing_into_it_is_ready
@@ -152,7 +155,7 @@ class SeamUpgradeMarkdownProsePairTest < Minitest::Test
 
   def test_full_old_command_path_in_code_does_not_pair_with_directory
     with_repository do |root|
-      write_tracked(root, 'guide.md', "```sh\nls .agents/\n.agents/bin/validate\n```\n")
+      write_tracked(root, 'guide.md', "```sh\nls .agents/\nenv -C . .agents/bin/validate\n```\n")
       preview = report(root)
       assert_equal 'ready', preview.fetch('status'), preview.fetch('blockers').join("\n")
     end
