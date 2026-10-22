@@ -12,6 +12,7 @@ require_relative '../reviewer_settings'
 require_relative 'cli'
 require_relative 'criteria'
 require_relative 'evidence'
+require_relative 'launch_block'
 require_relative 'ledger'
 require_relative 'path_guard'
 require_relative 'process'
@@ -332,7 +333,7 @@ module Shaka
       report.close
       report_path = report.path
       result = launch_neutral(prompt, report_path)
-      result || validate_report(report_path)
+      result ? LocalReviewLaunchBlock.mark(result, review: effective_review, root:) : validate_report(report_path)
     rescue Shaka::Error, SystemCallError
       File.unlink(report_path) if report_path && File.exist?(report_path)
       raise
