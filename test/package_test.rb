@@ -15,6 +15,16 @@ class PackageTest < Minitest::Test
     refute_path_exists File.join(@home, 'bin', 'shaka')
   end
 
+  def test_built_gem_installs_the_official_checkout
+    install_gem
+    remote = File.join(@directory, 'remote.git')
+    assert system('git', 'clone', '-q', '--bare', ROOT, remote)
+    skills = File.join(@directory, 'pilot skills')
+    run_executable('shaka-install', '--repository', remote, '--skills-dir', skills)
+    source = File.realpath(File.join(@environment.fetch('HOME'), '.local/share/shaka/source'))
+    assert_equal File.join(source, 'skills/shaka'), File.realpath(File.join(skills, 'shaka'))
+  end
+
   def test_built_gem_distributes_the_declared_license
     archive = File.join(@directory, 'licensed.gem')
     run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
