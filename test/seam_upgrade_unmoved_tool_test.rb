@@ -87,7 +87,7 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
   def test_parent_traversal_inside_the_layout_still_blocks
     ['workflows', 'cache[1]', 'cache](1)', 'cache[1](2)', 'cache+[1](2)', 'x([1](2)'].each do |directory|
       with_repository do |root|
-        write_tracked(root, ".agents/#{directory}/.keep", '') if directory.match?(/[\[\]()]/)
+        write_tracked(root, ".agents/#{directory}/.keep", '') if directory.include?('](')
         write_tracked(root, 'docs/run.md', "Run .agents/#{directory}/../bin/test first; see [guide](guide.md).\n")
         assert_blocked_with(root, 'docs/run.md: normalized old-layout reference')
       end
@@ -95,9 +95,12 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
   end
 
   def test_parent_traversal_beside_a_link_still_blocks
-    with_repository do |root|
-      write_tracked(root, 'docs/run.md', "See [guide](guide.md).agents/workflows/../bin/test now.\n")
-      assert_blocked_with(root, 'docs/run.md: normalized old-layout reference')
+    ['See [guide](guide.md).agents/workflows/../bin/test now.',
+     'See [.agents/workflows/../bin/test](../guide.md).'].each do |line|
+      with_repository do |root|
+        write_tracked(root, 'docs/run.md', "#{line}\n")
+        assert_blocked_with(root, 'docs/run.md: normalized old-layout reference')
+      end
     end
   end
 
