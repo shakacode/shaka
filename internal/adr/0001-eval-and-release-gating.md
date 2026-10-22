@@ -236,7 +236,9 @@ requested version pins cannot substitute for observed versions. The
 [decision adapter](../../eval/decision-replays.md) reuses that capture for tier 1,
 sets inapplicable fields to `N/A`, and binds the expected actions and checker code
 in its criteria digest. The [workflow declaration reader](../../eval/delivery-workflows.md)
-supplies immutable fixture Action pins for D2. Full tier 3 assembly, the diff card,
+supplies immutable fixture Action pins for D2. The [Codex event reader](../../eval/codex-events.md)
+retains bounded terminal/tool observations without capture-completeness evidence.
+Full tier 3 assembly, the diff card,
 statistics and release verdict remain proposed.
 
 ### D3. Three task tiers by cost, and most of the budget on the cheap two
@@ -721,8 +723,9 @@ What it does not provide, checked the same way:
   now retains native IDs, bodies, digests and timestamps and detects later changes.
   The [offline Ask grader](../../eval/ask-grading.md) now checks the six
   protected-evidence assertions. A [native snapshot reader](../../eval/delivery-snapshots.md)
-  captures PR/check identities and final-blob bounds. Terminal/tool capture and
-  executor qualification remain unbuilt. The proposal's driver
+  captures PR/check identities and final-blob bounds. A [Codex JSONL reader](../../eval/codex-events.md)
+  retains terminal/tool observations; live capture and executor qualification
+  remain unbuilt. The proposal's driver
   posts head-bound reviews during the run
   and reads GitHub state back. Tier 3 stays on that driver, and the spike does not
   test it.

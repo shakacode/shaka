@@ -24,7 +24,8 @@ The future tier 3 driver can retain [protected review readbacks](delivery-readba
 the [offline Ask grader](ask-grading.md) checks protected evidence. The
 [native snapshot reader](delivery-snapshots.md) captures PR/check identities and final-blob bounds.
 The [workflow declaration reader](delivery-workflows.md) supplies immutable Action pins for D2.
-Complete native collection and driver qualification remain unbuilt.
+The [Codex event reader](codex-events.md) retains bounded native terminal/tool
+observations. Complete native collection and driver qualification remain unbuilt.
 
 | Experiment | Evidence | Outcome |
 | --- | --- | --- |
