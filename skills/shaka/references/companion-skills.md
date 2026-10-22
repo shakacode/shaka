@@ -67,15 +67,11 @@ A selected companion technique applies within the Shaka phase it concerns.
 
 ## Consume verification evidence
 
-When a companion supplies a harness or verification report, carry its runnable
-command, tested revision and environment, expected and observed behavior, artifact
-locations, and unverified conditions into the existing verification record. Preserve
-evidence through cleanup and publication. Assess what it proves; a pass label alone
-does not establish user-path coverage. Reassess affected evidence after changes and
-follow Shaka's current-head requirements, not a companion's verdict-reuse policy.
-Record applied skills through [skill attribution](skill-attribution.md); add no
-parallel delivery record. The [worked handoff](https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#hand-verification-evidence-back-to-shaka)
-is illustrative, not an executable command or a required schema.
+Carry companion verification evidence into the existing verification record;
+Shaka's current-head requirements override a companion's verdict-reuse policy.
+Record applied skills through [skill attribution](skill-attribution.md).
+Use the [worked handoff](https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#hand-verification-evidence-back-to-shaka)
+as an example.
 
 ## Use PR-body advice inside the managed description
 
@@ -98,8 +94,9 @@ Examples are AI Hero's `implement-spec`, full pstack `poteto-mode` delivery play
 (Shipping, Babysit, Orchestrate, Autopilot), and Addy's `/build auto` and `/ship`,
 which plan or execute delivery, review, watch PRs, or merge.
 
-- Do not substitute it for Implement, Review, or Finish. When a Shaka task asks for
-  it, decline that part and offer a separate trial.
+- For requested or hook-activated modes, use only selected in-phase techniques.
+  Do not substitute their delivery playbooks for Implement, Review, or Finish;
+  decline that part and offer a separate trial.
 - That trial needs the user's explicit request naming the spec, repository, and
   stopping point, plus delegation authorization. Tracker writes need their own permission.
 - To deliver the trial's branch through Shaka, start at Intake. Earlier worker
