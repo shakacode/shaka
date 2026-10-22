@@ -47,10 +47,18 @@ module Shaka
         def parent_traversal_reference?(line)
           return false unless line.include?("#{PATHS::DIRECTORY}/") && line.include?('/../')
 
-          # A link's text and target are two paths, never `a/b](../c`. A link starts only after a line start,
-          # whitespace, or `(`; any other bracket belongs to its path, so `cache+[1](2)/../bin` stays one.
-          unlinked = line.gsub(/(?:^|(?<=[\s(]))\[([^\]\n]*)\]\(([^)\s]*)\)/, ' \1 \2 ')
-          unlinked.match?(directory_pattern(PATHS::DIRECTORY, '/(?:[^/\s"\x27]+/)*\.\./'))
+          pattern = directory_pattern(PATHS::DIRECTORY, '/(?<segments>(?:[^/\s"\x27]+/)*)\.\./')
+          line.to_enum(:scan, pattern).any? { checkout_segments?(::Regexp.last_match[:segments]) }
+        end
+
+        # Markdown puts `](` between a link's text and its target, so a segment holding a bracket or
+        # parenthesis is a directory only where the checkout has one.
+        def checkout_segments?(segments)
+          directory = File.join(@root, PATHS::DIRECTORY)
+          segments.split('/').all? do |segment|
+            directory = File.join(directory, segment)
+            !segment.match?(/[\[\]()]/) || File.directory?(directory)
+          end
         end
 
         def directory_end = '(?=[^[:alnum:]_./-]|\\.(?![[:alnum:]_/-])|$)'

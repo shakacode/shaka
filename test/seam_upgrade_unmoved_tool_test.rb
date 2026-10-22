@@ -74,7 +74,9 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
 
   def test_markdown_link_leaving_the_layout_is_unchanged
     source = "See [.agents/workflows/x.md](../../.agents/workflows/x.md).\n" \
-             "See [`.agents/docs/a.md`](../../.agents/docs/a.md), too.\n"
+             "See [`.agents/docs/a.md`](../../.agents/docs/a.md), too.\n" \
+             '**[.agents/workflows/x.md](../../.agents/workflows/x.md)** and ' \
+             "![.agents/a.png](../../.agents/a.png)\n"
     with_repository do |root|
       path = write_tracked(root, '.claude/prompts/review.md', source)
       assert_equal 'applied', apply_upgrade(root).fetch('status')
@@ -83,12 +85,10 @@ class SeamUpgradeUnmovedToolTest < Minitest::Test
   end
 
   def test_parent_traversal_inside_the_layout_still_blocks
-    %w(
-      .agents/workflows .agents/cache[1] .agents/cache](1) .agents/cache[1](2) .agents/cache+[1](2)
-    ).each do |directory|
-      reference = "#{directory}/../bin/test"
+    ['workflows', 'cache[1]', 'cache](1)', 'cache[1](2)', 'cache+[1](2)', 'x([1](2)'].each do |directory|
       with_repository do |root|
-        write_tracked(root, 'docs/run.md', "Run #{reference} first; see [guide](guide.md).\n")
+        write_tracked(root, ".agents/#{directory}/.keep", '') if directory.match?(/[\[\]()]/)
+        write_tracked(root, 'docs/run.md', "Run .agents/#{directory}/../bin/test first; see [guide](guide.md).\n")
         assert_blocked_with(root, 'docs/run.md: normalized old-layout reference')
       end
     end
