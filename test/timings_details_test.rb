@@ -30,16 +30,16 @@ class TimingsDetailsTest < Minitest::Test
     assert_includes detail['body'], '1h 10m between checkpoints · 12h 40m waiting on a person in 2 waits'
   end
 
-  # A collapsed summary counts toward the description's visible word limit.
-  def test_the_summary_is_one_word_and_the_totals_open_the_body
+  def test_the_summary_shows_the_same_totals_as_the_body
     detail = Shaka::TimingsDetails.new(timeline(merged: at(60))).detail
-    assert_equal 'Timings', detail['summary']
+    assert_equal 'Timings · 1h 0m between checkpoints', detail['summary']
     assert detail['body'].start_with?('**Totals:** 1h 0m between checkpoints')
   end
 
   def test_an_open_wait_runs_until_this_update
     detail = Shaka::TimingsDetails.new(timeline(labels: [label('awaiting-merge-approval', 20)]), now: at(200)).detail
     assert_equal ['Waiting on a person: merge approval', '3h 0m so far'], rows(detail).last.values_at(0, 3)
+    assert_equal 'Timings · 20m between checkpoints · 3h 0m waiting on a person in 1 wait', detail['summary']
     assert_includes rows(detail).last[2], 'still waiting'
   end
 
@@ -65,6 +65,7 @@ class TimingsDetailsTest < Minitest::Test
               label('awaiting-answer', 30, added: false), label('awaiting-resume', 50, added: false)]
     detail = Shaka::TimingsDetails.new(timeline(labels:, merged: at(60))).detail
     assert_equal ['Waiting on a person: answer and resume', '40m'], rows(detail)[1].values_at(0, 3)
+    assert_equal 'Timings · 20m between checkpoints · 40m waiting on a person in 1 wait', detail['summary']
   end
 
   def test_a_pull_request_with_no_checkpoints_has_no_waits
@@ -80,7 +81,7 @@ class TimingsDetailsTest < Minitest::Test
 
   def test_an_unavailable_timeline_is_noted_without_publishing_the_raw_error
     detail = Shaka::TimingsDetails.new({ 'unavailable' => 'gh: HTTP 502 from api.github.com' }).detail
-    assert_equal 'Timings', detail['summary']
+    assert_equal 'Timings · timeline unavailable', detail['summary']
     assert_includes detail['body'], 'did not supply'
     refute_includes detail['body'], 'HTTP 502'
   end
@@ -96,11 +97,23 @@ class TimingsDetailsTest < Minitest::Test
     assert_equal Shaka::TimingsDetails::MAX_ROWS, rows(detail).size
     assert_includes detail['body'], 'of 80 stretches'
     assert_includes detail['body'], '3h 20m waiting on a person in 40 waits'
+    assert_equal 'Timings · 3h 20m between checkpoints · 3h 20m waiting on a person in 40 waits', detail['summary']
   end
 
   def test_a_just_opened_wait_shows_although_it_is_under_a_minute
     detail = Shaka::TimingsDetails.new(timeline(labels: [label('awaiting-answer', 30)]), now: at(30)).detail
     assert_equal ['Waiting on a person: answer', '<1m so far'], rows(detail).last.values_at(0, 3)
+  end
+
+  def test_measured_steps_stay_separate_from_the_timeline_totals
+    step = { 'id' => 'a' * 16, 'command' => 'evidence run', 'at' => OPENED.iso8601,
+             'duration_ms' => 120_000, 'exit' => 0 }
+    data = timeline(merged: at(60)).merge('steps' => [step], 'dropped_steps' => 2)
+    detail = Shaka::TimingsDetails.new(data).detail
+    assert_equal 'Timings · 1h 0m between checkpoints', detail['summary']
+    assert_includes detail['body'], '**Measured steps:** Validation 2m 0s (1 run)'
+    assert_includes detail['body'], '2 older steps are no longer kept'
+    assert_includes detail['body'], 'A step can overlap the stretches above.'
   end
 
   def test_a_hand_written_timings_item_is_refused
