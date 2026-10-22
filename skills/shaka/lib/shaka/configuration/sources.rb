@@ -5,6 +5,7 @@ require 'yaml'
 require_relative '../repository_config'
 require_relative '../review_prompt'
 require_relative '../trusted_path_resolver'
+require_relative 'git_memo'
 require_relative 'layout'
 
 module Shaka
@@ -18,11 +19,13 @@ module Shaka
       end
 
       def resolve_commit(root:, ref:, label:)
-        sha, error, status = Open3.capture3('git', '-C', root, 'rev-parse', '--verify', '--end-of-options',
-                                            "#{ref}^{commit}")
-        raise Error, "Invalid #{label} #{ref}: #{error.strip}" unless status.success?
+        GitMemo.commit([:commit, root, ref], ref) do
+          sha, error, status = Open3.capture3('git', '-C', root, 'rev-parse', '--verify', '--end-of-options',
+                                              "#{ref}^{commit}")
+          raise Error, "Invalid #{label} #{ref}: #{error.strip}" unless status.success?
 
-        sha.strip
+          sha.strip
+        end
       end
 
       def commit_exists?(root:, ref:)
@@ -32,10 +35,12 @@ module Shaka
       end
 
       def read_at_commit(root:, sha:, path: Paths::CONTRACT, display_ref: sha)
-        source, error, status = Open3.capture3('git', '-C', root, 'show', "#{sha}:#{path}")
-        raise Error, "Cannot read #{path} at #{display_ref}: #{error.strip}" unless status.success?
+        GitMemo.commit([:file, root, sha, path], sha) do
+          source, error, status = Open3.capture3('git', '-C', root, 'show', "#{sha}:#{path}")
+          raise Error, "Cannot read #{path} at #{display_ref}: #{error.strip}" unless status.success?
 
-        source
+          source
+        end
       end
 
       def contract_at_commit?(root:, ref:, git:)

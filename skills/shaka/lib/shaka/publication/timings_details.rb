@@ -1,10 +1,13 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'run_summary'
+require_relative 'timeline_steps'
 require_relative 'timing_stretches'
 
 module Shaka
-  # Renders the time between checkpoints and how long each checkpoint waited on a person.
+  # Renders the time between checkpoints, how long each checkpoint waited on a person, and the
+  # measured steps, such as validation runs, that the pull request's sessions recorded.
   class TimingsDetails
     SUMMARY = 'Timings'
     UNAVAILABLE = 'GitHub did not supply the timeline; the next update tries again.'
@@ -12,6 +15,9 @@ module Shaka
     GUIDE = '[Understand the timings](https://shaka.shakacode.com/docs/reference/timings).'
     LEGEND = 'Times are UTC wall-clock time. A wait runs from when an attention label goes on until it ' \
              'comes off or the pull request merges or closes.'
+    STEPS_LEGEND = 'Each measured step is a helper run recorded on the machine that ran it. A step ' \
+                   'logged on a machine that never updated this description is missing, so the totals ' \
+                   'can be partial. A step can overlap the stretches above.'
     # Thirty rows keep the body far below GitHub's size limit however often a pull request waits.
     MAX_ROWS = 30
 
@@ -29,16 +35,67 @@ module Shaka
     end
 
     def detail
+      steps = Array(@timeline['steps'])
+      dropped = @timeline.fetch('dropped_steps', 0)
       # The reason can quote gh output, so it stays out of the public body.
-      return { 'summary' => SUMMARY, 'body' => UNAVAILABLE } if @timeline.key?('unavailable')
-
-      rows = TimingStretches.new(@timeline, @now).rows
-      body = [totals(rows), table(rows.last(MAX_ROWS)), omitted(rows), LEGEND, GUIDE].compact.join("\n\n")
+      unavailable = @timeline.key?('unavailable')
+      parts = unavailable ? [UNAVAILABLE] : stretches
+      parts.concat(measured(steps, dropped)) unless steps.empty?
+      parts << GUIDE unless unavailable
+      # The hidden line lets the next update, from any session, keep these steps.
+      parts << TimelineSteps.hidden(steps, dropped) unless steps.empty?
       # A collapsed summary counts as visible description prose, so the totals stay inside.
-      { 'summary' => SUMMARY, 'body' => body }
+      { 'summary' => SUMMARY, 'body' => parts.compact.join("\n\n") }
     end
 
     private
+
+    def stretches
+      rows = TimingStretches.new(@timeline, @now).rows
+      [totals(rows), table(rows.last(MAX_ROWS)), omitted(rows), LEGEND]
+    end
+
+    def measured(steps, dropped)
+      lines = ['| Step | Started | Time | Result | Model | Machine |', '| --- | --- | ---: | --- | --- | --- |']
+      lines.concat(steps.last(MAX_ROWS).map { |step| "| #{step_cells(step).join(' | ')} |" })
+      [step_totals(steps), lines.join("\n"), steps_omitted(steps.size, dropped), STEPS_LEGEND]
+    end
+
+    def steps_omitted(kept, dropped)
+      notes = []
+      notes << "Showing the latest #{MAX_ROWS} of #{kept} steps." if kept > MAX_ROWS
+      notes << "The totals cover the latest #{kept}; #{dropped} older steps are no longer kept." if dropped.positive?
+      notes.join(' ') unless notes.empty?
+    end
+
+    def step_totals(steps)
+      groups = steps.group_by { |step| TimelineSteps::NAMES.fetch(step['command']) }
+      parts = groups.map do |name, group|
+        runs = group.size == 1 ? '1 run' : "#{group.size} runs"
+        "#{name} #{RunSummary.duration(group.sum { |step| step['duration_ms'] })} (#{runs})"
+      end
+      "**Measured steps:** #{parts.join(' · ')}"
+    end
+
+    def step_cells(step)
+      [step_name(step), clock(Time.iso8601(step['at'])), RunSummary.duration(step['duration_ms']),
+       step_result(step), step_model(step), step['machine'] || 'UNKNOWN']
+    end
+
+    # A review or checkpoint exits 0 whatever it concluded, so its exit says only whether it finished.
+    def step_result(step)
+      exit = step['exit']
+      return (exit.zero? ? 'passed' : "failed (exit #{exit})") if step['command'] == 'evidence run'
+
+      exit.zero? ? 'completed' : "not completed (exit #{exit})"
+    end
+
+    def step_name(step) = [TimelineSteps::NAMES.fetch(step['command']), step['check']].compact.join(': ')
+
+    def step_model(step)
+      model = step.values_at('provider', 'model', 'effort').compact.join(' · ')
+      model.empty? ? '—' : model
+    end
 
     def totals(rows)
       waited = rows.select { |row| row[:wait] }

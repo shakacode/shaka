@@ -8,12 +8,17 @@ require_relative '../lib/shaka/call_log'
 
 Shaka::CallLog.start(ARGV.dup)
 
+require_relative '../lib/shaka/configuration/git_memo'
+
+Shaka::Configuration::GitMemo.enable
+
 require_relative '../lib/shaka/startup_notice'
 
 Shaka::StartupNotice.call(ARGV)
 
 require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/github/pull_timeline'
+require_relative '../lib/shaka/publication/timeline_steps'
 require_relative '../lib/shaka/attention'
 require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
@@ -112,6 +117,19 @@ rescue Shaka::Error => e
   [Shaka::ProseLimits.new, { 'prose_limits' => "Default prose limits apply: #{e.message}" }]
 end
 
+# Returns the trusted PR evidence guide so the agent sees it at every publication. It is advisory:
+# an unset guide adds nothing, and one that cannot be read is reported instead of refusing.
+def description_pr_evidence(root, ref)
+  return {} unless ref
+
+  guide = Shaka::OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
+    Shaka::Guidance.new(name: 'pr_evidence', root: candidate_root, ref:).configured
+  end
+  guide ? { 'pr_evidence_guide' => guide } : {}
+rescue Shaka::Error, SystemCallError => e
+  { 'pr_evidence_guide' => "The PR evidence guide could not be read: #{e.message}" }
+end
+
 # The Git a description may run to read the helper's own commit, or nil when PATH offers
 # only one that could load candidate code; the workflow version then shows no commit.
 def vetted_git(candidate_root)
@@ -126,6 +144,7 @@ def rendered_description(described, github, pull, workflow_version, options)
   carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
   settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
   timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
+  timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
   rendered = Shaka::Publication.description(carried, workflow_version, pull, settings, timeline)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
   [rendered, carried, usage_records]
@@ -166,14 +185,22 @@ end
 
 def merge_flags(flags, options)
   flags.on('--review-waiver REASON', 'Merge without review evidence') { |value| options[:review_waiver] = value }
+  flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
+  confirmation_flags(flags, options)
+  flags.on('--woken-by WHAT', 'For handoff: what will wake this session') { |value| options[:woken_by] = value }
+  flags.on('--codex-wake PATH', 'For handoff: native Codex registration evidence as JSON') do |path|
+    options[:codex_wake] = path
+  end
+end
+
+# Heads a user approved for merge although a gate would otherwise hand them back.
+def confirmation_flags(flags, options)
   flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits/floor') { |sha| options[:confirmed_head] = sha }
   flags.on('--empty-checks-confirmed-head SHA', 'Head the user told you to merge with no required checks') do |sha|
     options[:empty_checks_confirmed_head] = sha
   end
-  flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
-  flags.on('--woken-by WHAT', 'For handoff: what will wake this session') { |value| options[:woken_by] = value }
-  flags.on('--codex-wake PATH', 'For handoff: native Codex registration evidence as JSON') do |path|
-    options[:codex_wake] = path
+  flags.on('--adequacy-confirmed-head SHA', 'Head the user approved despite inadequate verification') do |sha|
+    options[:adequacy_confirmed_head] = sha
   end
 end
 
@@ -254,6 +281,9 @@ begin
   if options[:squash_message] && command != 'merge'
     raise OptionParser::InvalidArgument, '--squash-message is only for merge'
   end
+  if options[:adequacy_confirmed_head] && command != 'merge'
+    raise OptionParser::InvalidArgument, '--adequacy-confirmed-head is only for merge'
+  end
   raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
   raise Shaka::Error, '--woken-by is only for handoff.' if options[:woken_by] && command != 'handoff'
   raise Shaka::Error, '--comments is only for description.' if options[:comments] && command != 'description'
@@ -310,6 +340,7 @@ begin
            when 'description'
              root = options[:root] || Dir.pwd
              prose, prose_note = description_prose_limits(root, options[:ref])
+             guide = description_pr_evidence(root, options[:ref])
              Shaka::OpeningPublication.with_safe_path(root:) do |candidate_root, gh, neutral|
                raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
 
@@ -329,7 +360,8 @@ begin
                attention = Shaka::DecisionLabels.sync(github, carried)
                opening = opening_result(options.merge(root:), described['summary'])
                refresh = Shaka::CursorUsageRefresh.bind(repository, number, carried['usage']) if carried.is_a?(Hash)
-               published.merge('opening' => opening, 'usage_records' => usage_records).merge(prose_note).tap do |result|
+               notes = prose_note.merge(guide)
+               published.merge('opening' => opening, 'usage_records' => usage_records).merge(notes).tap do |result|
                  result['attention'] = attention if attention
                  result['cursor_usage_refresh'] = refresh if refresh
                end
@@ -352,7 +384,8 @@ begin
              head = options.fetch(:head)
              review = { required: seam&.review&.fetch('required'), waiver: options[:review_waiver],
                         root: options[:root] || Dir.pwd,
-                        checkpoint: Shaka::PostImplementationEvidence.new(github, **checkpoint) }
+                        checkpoint: Shaka::PostImplementationEvidence.new(github, **checkpoint),
+                        adequacy_confirmed_head: options[:adequacy_confirmed_head] }
              squash_message = options[:squash_message] &&
                               Shaka::SquashMessage.for(github, content(options[:squash_message]))
              merge = Shaka::Merge.new(github, ci_review_wait: options[:ci_review_wait],

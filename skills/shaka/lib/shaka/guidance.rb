@@ -51,19 +51,23 @@ module Shaka
       @ref = ref
     end
 
-    def call
+    def call = configured || raise(Error, "#{label} is not configured")
+
+    # The guide's text, or nil when the selected settings leave it unset.
+    def configured
       ref = @ref || Configuration.default_ref(root: @root)
       sha = Configuration.resolve_commit(root: @root, ref:, label: 'guidance ref')
       config = Configuration.resolve_source(root: @root, ref: sha, candidate_commands: false).first
-      label = "#{RepositoryConfig::ProjectGuidanceSchema::KEY}.#{@name}"
       path = config.project_guidance[@name]
-      raise Error, "#{label} is not configured" unless path
+      return unless path
 
       text = Configuration.configured_prompt(root: @root, config:, ref: sha, path:, label:)
       @name == 'pr_evidence' ? with_template(text, path, config.sha || sha) : text
     end
 
     private
+
+    def label = "#{RepositoryConfig::ProjectGuidanceSchema::KEY}.#{@name}"
 
     # PR evidence also carries the repository's pull request template, read from the same trusted commit.
     # A guide that names a template is the template; a broken template is skipped so the guide still prints.
