@@ -8,18 +8,18 @@ module Shaka
     module AskPlan
       module_function
 
-      def validate(plan)
+      def validate(plan, distinct_actors: true)
         raise ArgumentError, 'Expected pinned Ask identities, clock and required checks' unless
-          identity?(plan) && checks?(plan.fetch('required_checks'))
+          identity?(plan, distinct_actors:) && checks?(plan.fetch('required_checks'))
 
         plan
       end
 
-      def identity?(plan)
+      def identity?(plan, distinct_actors: true)
         strings = plan.values_at('repository', 'head', 'machine_actor', 'driver_actor', 'clock_id')
         strings.all? { |value| value.is_a?(String) && !value.strip.empty? } &&
           /\A[0-9a-f]{40}\z/.match?(plan.fetch('head')) && positive_integer?(plan.fetch('number')) &&
-          !plan.fetch('machine_actor').casecmp?(plan.fetch('driver_actor'))
+          (!distinct_actors || !plan.fetch('machine_actor').casecmp?(plan.fetch('driver_actor')))
       end
 
       def checks?(checks)
@@ -36,8 +36,11 @@ module Shaka
 
       ASSERTIONS = %w[driver_pass required_checks walkthrough pr_open no_merge terminal].freeze
 
-      def initialize(plan)
-        @plan = AskPlan.validate(plan)
+      def initialize(plan, mechanics: false)
+        raise ArgumentError, 'Expected explicit mechanics mode' unless [true, false].include?(mechanics)
+
+        @mechanics = mechanics
+        @plan = AskPlan.validate(plan, distinct_actors: !mechanics)
       end
 
       def call(packet)
@@ -90,7 +93,7 @@ module Shaka
 
       def no_merge?(packet)
         pull = packet.fetch('pull')
-        pull.fetch('merged') == false && pull.fetch('mergeCommit').nil? &&
+        !@mechanics && pull.fetch('merged') == false && pull.fetch('mergeCommit').nil? &&
           packet.fetch('command_capture_complete') == true && packet.fetch('merge_attempts') == []
       end
 

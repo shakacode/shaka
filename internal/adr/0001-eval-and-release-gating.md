@@ -246,9 +246,13 @@ to protected verification and review readback. An
 actual Codex commits and pushes with FAIL then repair PASS. It still cannot prove
 a complete command inventory or qualify delivery success. The
 [approval acceptor](../../eval/codex-approval.md) records final native Ask requests
-from completed captures and protected prerequisites; offline timing tests cover
-premature requests and readback waiting. Live approval qualification, final state
-collection and complete activity inventory remain unavailable.
+from completed captures and protected prerequisites. The
+[final collector](../../eval/codex-ask.md) rereads the walkthrough and final PR
+state after acceptance, preserving preterminal checks. Explicit single-account
+mechanics cannot pass measured Ask grading. The
+[public fixture](https://github.com/shaka-eval-repos/shaka-linux-approval-870/pull/1)
+retains mechanics evidence. Live measured approval and complete activity inventory
+remain unqualified.
 Full tier 3 assembly, the diff card,
 statistics and release verdict remain proposed.
 

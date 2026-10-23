@@ -6,12 +6,13 @@ module Shaka
   module Evaluation
     # Accept one final native Ask request; this grants neither merge nor release authority.
     class CodexApproval
-      def initialize(plan, clock: -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) })
+      def initialize(plan, mechanics: false, clock: -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) })
         raise ArgumentError, 'Expected controller clock' unless clock.respond_to?(:call)
 
         @clock = clock
-        @plan = AskPlan.validate(plan)
-        @grader = DeliveryAsk.new(@plan)
+        @grader = DeliveryAsk.new(plan, mechanics:)
+        @plan = plan
+        @mechanics = mechanics
       end
 
       # Inputs must come directly from protected collectors in this controller clock lifetime.
@@ -22,7 +23,8 @@ module Shaka
         packet = packet(driver_result, @clock.call, checks, walkthrough, changed_files)
         raise IOError, 'Approval prerequisites unavailable or premature' unless @grader.approval_ready?(packet)
 
-        { 'clock_id' => @plan.fetch('clock_id'), 'terminal' => packet.fetch('terminal') }
+        { 'clock_id' => @plan.fetch('clock_id'), 'terminal' => packet.fetch('terminal'),
+          'mechanics_only' => @mechanics }
       rescue KeyError, TypeError, NoMethodError
         raise IOError, 'Protected approval evidence unavailable'
       end

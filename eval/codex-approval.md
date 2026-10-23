@@ -47,3 +47,18 @@ PR state and reread the walkthrough, then grade the full packet with
 `DeliveryAsk`. Complete activity inventory, merge-attempt collection, separate
 measured identities, full delivery records and live acceptance qualification
 remain separate. In particular, native command-capture completeness stays false.
+
+## Single-account mechanics
+
+For an explicitly authorized mechanics trial, pass `mechanics: true` to
+`CodexApproval` and `DeliveryAsk`. This permits one declared account to supply
+both fixture roles. The acceptance receipt labels `mechanics_only: true`.
+The default still requires different actors.
+
+Mechanics grading always refuses the complete-delivery assertion, even if a
+caller supplies a complete inventory. Timing, native identity, pinned head,
+distinct review IDs and artifact checks remain required. This option cannot
+qualify a measured Ask cell or establish independent identities.
+
+The [final collector](codex-ask.md) connects acceptance to the later PR snapshot
+and unchanged walkthrough check.
