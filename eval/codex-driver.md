@@ -52,7 +52,9 @@ This is checkpoint-based discovery, without background polling. It can miss head
 between observations or a newly pushed head while GitHub still reports the prior
 SHA. It does not wait for a PR to be created, qualify every tool route, assemble
 delivery records, or produce release decisions. Complete activity capture and
-terminal acceptance still require separate qualification.
+live terminal acceptance still require separate qualification. The
+[approval acceptor](codex-approval.md) records acceptance from a completed driver
+result and protected prerequisites; it does not qualify complete capture.
 
 ## Public mechanics qualification
 

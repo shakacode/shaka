@@ -48,6 +48,16 @@ module Shaka
         { 'passed' => assertions.values.all?(true), 'assertions' => assertions }
       end
 
+      # Prerequisites available at acceptance; final state and capture completeness remain separate.
+      def approval_ready?(packet)
+        raise ArgumentError, 'Evidence is from another clock lifetime' unless
+          packet.fetch('clock_id') == @plan.fetch('clock_id')
+
+        %w[driver_pass required_checks walkthrough_ready terminal].all? do |name|
+          assertion { send("#{name}?", packet) }
+        end
+      end
+
       private
 
       def assertion
