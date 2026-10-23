@@ -5,6 +5,7 @@ require 'json'
 require_relative '../error'
 require_relative '../github'
 require_relative '../publication/usage_details'
+require_relative '../publication/rendering_preview'
 require_relative 'cursor_usage'
 require_relative 'cursor_usage_store'
 require_relative 'usage_records'
@@ -316,7 +317,8 @@ module Shaka
         updated = replace_block(region, UsageDetailsBlock.from_detail(detail))
         raise Error, 'Cursor usage refresh found no usage section.' unless updated
 
-        UsageEstimate.refresh(updated, detail)
+        updated = UsageEstimate.refresh(updated, detail)
+        updated == region ? updated : RenderingPreview.invalidate(updated)
       end
 
       def replace_block(region, block)

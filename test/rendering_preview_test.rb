@@ -51,6 +51,17 @@ class RenderingPreviewTest < Minitest::Test
     assert_equal 'rendering preview aaaaaaa', result.fetch('fact')
   end
 
+  def test_other_artifact_renderers_cannot_pass_with_a_description_marker
+    %w[walkthrough/history.rb local_review/loop_comment.rb post_implementation/publication.rb].each do |path|
+      github = preview_github
+      github.define_singleton_method(:api_list) { |_query| [{ 'filename' => "skills/shaka/lib/shaka/#{path}" }] }
+      assert Shaka::RenderingPreview.required?(github)
+      result = rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->")
+      assert_includes result.fetch('owed').join, path
+      assert_includes result.fetch('owed').join, 'does not yet load'
+    end
+  end
+
   def test_fork_prs_do_not_owe_an_unsafe_preview
     result = rendering_fact(preview_github, nil, source: 'contributor/shaka')
     assert_empty result.fetch('owed')

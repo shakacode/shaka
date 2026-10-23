@@ -16,6 +16,7 @@ class CursorUsageEstimateRefreshTest < Minitest::Test
       _out, err, status = run_hook(hook_env(directory, pull, log))
       assert_predicate status, :success?, err
       assert_visible_estimate(patched_body(log))
+      refute_includes patched_body(log), 'shaka:rendering-preview'
     end
   end
 
@@ -26,7 +27,8 @@ class CursorUsageEstimateRefreshTest < Minitest::Test
     pull['body'] = pull['body'].sub("<details>\n<summary>Usage and cost",
                                     "<!-- shaka:estimated-cost -->\n**Estimated cost:** UNKNOWN\n\n" \
                                     "<details>\n<summary>Shaka metrics</summary>\n\n<details>\n<summary>Usage and cost")
-    pull['body'] = pull['body'].sub('<!-- shaka:end -->', "</details>\n<!-- shaka:end -->")
+    marker = "<!-- shaka:rendering-preview #{'a' * 40} -->"
+    pull['body'] = pull['body'].sub('<!-- shaka:end -->', "</details>\n#{marker}\n<!-- shaka:end -->")
     pull
   end
 

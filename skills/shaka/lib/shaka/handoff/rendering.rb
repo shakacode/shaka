@@ -13,6 +13,8 @@ module Shaka
       pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
       recheck_head(pull.dig('head', 'sha'), live)
       return note('rendering preview skipped', 'Fork PR: preview code stays unexecuted.') if fork_preview?(pull)
+
+      RenderingPreview.verify_supported!(@github)
       return "rendering preview #{live[0, Handoff::SHORT]}" if RenderingPreview.current?(pull['body'], live)
 
       owe('rendering preview owed', 'Apply the reviewed rendering to this PR description with ' \

@@ -32,4 +32,8 @@ maintainer's one exception to the skill's rule against running a branch-provided
    the reviewed renderer list before previewing it. Never claim a sample completes self-preview.
 
 Repeat after each new head and after any later installed-helper publication overwrites the
-preview. Every other command, including seam, evidence, review, and merge, stays installed.
+preview. Usage refresh invalidates the marker when it replaces rendered usage. Handoff also
+detects walkthrough, review-comment, and checkpoint renderers; these remain blocked until
+their reviewed preview path and artifact-specific evidence check are supported. A description
+marker cannot satisfy them. Every other command, including seam, evidence, review, and merge,
+stays installed.

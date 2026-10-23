@@ -8,6 +8,17 @@ module Shaka
   module RenderingPreview
     REPOSITORY = 'shakacode/shaka'
     DIRECTORY = 'skills/shaka/lib/shaka/publication/'
+    OTHER_RENDERERS = %w[walkthrough/ local_review/comment.rb local_review/comment_part.rb
+                         local_review/loop_comment.rb local_review/history.rb local_review/triage_history.rb
+                         local_review/summary.rb local_review/assessment_view.rb local_review/attention.rb
+                         local_review/commit_section.rb local_review/usage.rb local_review/coverage.rb
+                         local_review/bound.rb local_review/budget.rb local_review/fallback.rb local_review/triage.rb
+                         local_review/publisher.rb
+                         post_implementation/publication.rb post_implementation/execution_text.rb
+                         post_implementation/adequacy.rb post_implementation/publisher_identity.rb
+                         post_implementation/history.rb post_implementation/auto_merge_preview.rb
+                         post_implementation/disposition.rb post_implementation/merge_warning.rb]
+                      .map { |path| "skills/shaka/lib/shaka/#{path}" }.freeze
     RENDERERS = %w[usage_details metrics verification_gates diff_buckets intent_verification publication]
                 .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
@@ -39,6 +50,10 @@ module Shaka
     # This check belongs to Shaka's own PRs, not to projects that use Shaka.
     def required?(github) = !changed_renderers(github).empty?
 
+    # A description marker cannot attest to another artifact's rendering. Fail closed
+    # until that renderer has a reviewed preview and artifact-specific evidence check.
+    def verify_supported!(github) = supported!(github)
+
     def supported!(github)
       unsupported = changed_renderers(github) - RENDERERS - ["#{DIRECTORY}rendering_preview.rb"]
       return if unsupported.empty?
@@ -53,7 +68,7 @@ module Shaka
       paths = []
       loop do
         files = github.api_list("repos/#{github.repository}/pulls/#{github.number}/files?per_page=100&page=#{page}")
-        paths.concat(files.map { |file| file.fetch('filename') }.select { |path| path.start_with?(DIRECTORY) })
+        paths.concat(files.map { |file| file.fetch('filename') }.select { |path| rendering_path?(path) })
         return paths if files.size < 100
 
         page += 1
@@ -61,6 +76,14 @@ module Shaka
     end
 
     def current?(body, head) = body.to_s.scan(MARKER).flatten == [head]
+
+    def invalidate(body) = body.to_s.gsub(MARKER, '')
+
+    def rendering_path?(path)
+      path.start_with?(DIRECTORY) || OTHER_RENDERERS.any? do |renderer|
+        renderer.end_with?('/') ? path.start_with?(renderer) : path == renderer
+      end
+    end
 
     def git(root, *)
       output, error, status = Open3.capture3('git', '-C', root, *)
@@ -80,6 +103,6 @@ module Shaka
       $VERBOSE = previous
     end
 
-    private_class_method :git, :load_renderer, :changed_renderers, :supported!
+    private_class_method :git, :load_renderer, :changed_renderers, :supported!, :rendering_path?
   end
 end
