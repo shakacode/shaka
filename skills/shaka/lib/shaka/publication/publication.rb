@@ -26,7 +26,7 @@ module Shaka
     # Callers pass content as a bare hash, so a keyword here would swallow it; every argument is positional.
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil) # rubocop:disable Metrics/ParameterLists
       new(content, description: true, workflow_version:, pull:, settings:, timeline:)
-        .render(%i[steps intent_verification sections table details metrics wip credit],
+        .render(%i[steps intent_verification sections evidence metrics wip credit],
                 lead: %i[lead]).tap { QuotedMarkers.refuse!(content) }
     end
 
@@ -75,6 +75,13 @@ module Shaka
     # Intent and verification answer whether to trust the merge, so they come before any section.
     def intent_verification
       IntentVerification.render(@content, @settings.verdict, @settings.review_effort_floor, @pull)
+    end
+
+    def evidence
+      spec = @content.fetch('verification')
+      body = [VerificationGates.line(@settings.verdict, @content['review']),
+              IntentVerification.evidence(spec, @content['wip'].nil? ? (1..3) : (0..3)), *table, *details]
+      [details_block('summary' => 'Evidence and limitations', 'body' => body.join("\n\n"))]
     end
 
     # Verification carries the proof, so a table only adds facts that fit no check.
@@ -141,21 +148,6 @@ module Shaka
 
       raise Error, 'Publication provenance history is carried from the PR body, not supplied as a details item.'
     end
-
-    def provenance
-      spec = @content.fetch('provenance') do
-        raise Error, 'Publication description requires execution provenance.'
-      end
-      execution = ExecutionProvenance.new(spec, workflow_version: @workflow_version, pull: @pull)
-      return [details_block(execution.detail)] unless @pull
-
-      history = ProvenanceHistory.carry(@pull, execution.entry)
-      detail = execution.detail
-      marked = detail.merge('body' => "#{detail['body']}\n\n#{ProvenanceHistory.marker(history)}")
-      [details_block(marked), *ProvenanceHistory.detail(history)&.then { |item| details_block(item) }]
-    end
-
-    def skills_used = [details_block(SkillsUsed.new(@content['skills_used']).detail)]
 
     def details_block(detail)
       summary = PublicationText.summary_text(detail['summary'], 'details summary')

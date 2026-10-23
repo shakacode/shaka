@@ -511,8 +511,8 @@ phases:
         whose summary names usage is refused; walkthroughs also require `head`.
         `intent` holds one line each for `why`, `scope`, and `safe_because`: the problem,
         what changes, and the concrete safeguard. Add optional `leaves_out` only for a deliberate
-        boundary a reviewer needs; otherwise omit it. The Change and review section includes
-        GitHub's file and line counts. Its `review_effort`, 1 to 5, tells the reviewer how hard to look:
+        deferred part readers would reasonably expect; otherwise omit it. Change and review includes
+        GitHub's file/line counts and path-based buckets. Its `review_effort`, 1 to 5, tells the reviewer how hard to look:
         1 for docs a reader can trust from the description, 5 for irreversible or security changes.
         The helper refuses a rating below the floor the changed files set; to choose or change the
         floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
@@ -522,6 +522,9 @@ phases:
         When `description` returns `closing_issues`, correct the wording it names once.
         The helper writes the repository validation and local review line under Verification
         from `--validation-result` and `--review-result`, so leave those out of `checks`.
+        An optional linked `verification.summary` gives a compact result. Keep material gaps visible
+        in `merge_limitations`; accepted gaps, checks, tables, and `details` fold under Evidence and limitations.
+        Use optional `task_history` for the initial request and useful decision history.
         `verification` lists 1 to 3 `checks`, each proof of this PR's own claim: what was run
         against the changed behavior and its outcome, citing a link or the command. Its
         `not_verified` line names a claim this PR makes that went unproven and why that is

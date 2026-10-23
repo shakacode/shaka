@@ -16,7 +16,7 @@ module Shaka
       return text unless routine?(verdict)
 
       summary = "Validation passed; local review completed at #{short_head(verdict)}"
-      "<details>\n<summary>#{summary}</summary>\n\n#{text}\n\n</details>"
+      review_url ? "#{summary} ([evidence](#{review_url}))." : "#{summary}."
     end
 
     # Binding accepts a completed run whatever its exit, so the exit code decides the wording here.

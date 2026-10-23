@@ -6,7 +6,7 @@ require_relative 'publication_test'
 class PublicationMetricsTest < Minitest::Test
   def test_cost_remains_visible_with_partial_data_and_unknown_labels_preserved
     rendered = render(usd: '$1.25 (partial)')
-    visible, metrics = rendered.split("<details>\n<summary>Shaka metrics</summary>", 2)
+    visible, metrics = rendered.split("<details>\n<summary>Details</summary>", 2)
     assert_includes visible, '**Estimated token costs:** $1.25+'
     assert_includes metrics, '<summary>Usage and cost · $1.25+ estimated</summary>'
     assert_includes metrics, 'some usage not reported, so the amount is a minimum'
@@ -18,12 +18,54 @@ class PublicationMetricsTest < Minitest::Test
   def test_all_metadata_is_nested_while_change_specific_evidence_is_a_peer
     rendered = render(usd: '$0.00')
     hierarchy = disclosure_hierarchy(rendered)
-    assert_includes hierarchy, [0, 'Capture limits']
-    assert_includes hierarchy, [0, 'Shaka metrics']
+    assert_includes hierarchy, [1, 'Capture limits']
+    assert_includes hierarchy, [0, 'Evidence and limitations']
+    assert_includes hierarchy, [0, 'Details']
     ['Execution details', 'Skills used', 'Usage and cost', 'Shaka settings used'].each do |summary|
       assert hierarchy.any? { |depth, title| depth == 1 && title.start_with?(summary) }, summary
     end
-    assert_includes rendered.split('<summary>Shaka metrics</summary>').first, '**Estimated token costs:** $0.00'
+    assert_includes rendered.split('<summary>Details</summary>').first, '**Estimated token costs:** $0.00'
+  end
+
+  def test_metrics_prioritize_usage_and_time_before_configuration_and_history
+    rendered = render(usd: '$1.25')
+    usage = rendered.index('<summary>Usage and cost')
+    execution = rendered.index('<summary>Execution details')
+    settings = rendered.index('<summary>Shaka settings used')
+    skills = rendered.index('<summary>Skills used')
+    assert_operator usage, :<, execution
+    assert_operator execution, :<, settings
+    assert_operator settings, :<, skills
+  end
+
+  def test_buckets_count_each_current_filename_once_and_expose_the_paths
+    paths = %w[lib/main.rb test/main_test.rb spec/main_spec.rb src/main.test.ts docs/guide.md
+               skills/shaka/config/workflow.yml assets/logo.svg config.yml]
+    pull = { 'changed_files' => paths.size, 'additions' => 12, 'deletions' => 3,
+             'shaka_changed_files' => paths.map { |path| { 'filename' => path } } }
+    pull['shaka_changed_files'].first['previous_filename'] = 'test/old.rb'
+    rendered = Shaka::DiffBuckets.render(pull).join
+    assert_includes rendered, '**Files:** Code 1 · Tests 3 · Docs/instructions 2 · Other 2'
+    paths.each { |path| assert_includes rendered, "- `#{path}`" }
+    refute_includes rendered, '- `test/old.rb`'
+  end
+
+  def test_incomplete_file_lists_do_not_publish_bucket_counts
+    pull = { 'changed_files' => 2, 'additions' => 12, 'deletions' => 3,
+             'shaka_changed_files' => [{ 'filename' => 'test/main_test.rb' }] }
+    refute_includes Shaka::DiffBuckets.render(pull).join, '**Files:**'
+  end
+
+  def test_material_gaps_stay_visible_while_supporting_proof_and_task_history_fold
+    spec = content(usd: 'UNKNOWN')
+    spec['verification'] = VERIFICATION.merge('merge_limitations' => 'Live migration needs maintainer approval.')
+    spec['task_history'] = 'The maintainer requested this change.'
+    rendered = Shaka::Publication.description(spec)
+    visible = rendered.split('<summary>Evidence and limitations</summary>').first
+    assert_includes visible, '**Not verified:** Live migration needs maintainer approval.'
+    refute_includes visible, VERIFICATION['checks'].first
+    hierarchy = disclosure_hierarchy(rendered)
+    assert_includes hierarchy, [1, 'Task history']
   end
 
   def test_republication_carries_usage_from_inside_the_metrics_group

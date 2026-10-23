@@ -28,9 +28,16 @@
   instruction timestamp in UTC. Omit it when unavailable or later than PR opening.
   The helper retains it across updates; a resumed chat's start is not a new task start.
 
-- Keep PR-specific explanations, such as capture limits, with verification evidence.
-  The renderer groups execution details, skills, usage, timings, and settings under
-  Shaka metrics; estimated cost stays visible outside that disclosure.
+- Verification opens with bound validation/review status and an optional linked `summary`.
+  Put material merge-affecting gaps in `merge_limitations`; accepted gaps stay in `not_verified`.
+  Checks, tables, and PR-specific `details` share one Evidence and limitations disclosure.
+  Put the initiating request and useful decision history in optional `task_history`.
+- Change and review shows GitHub's file/line totals and path-based file buckets.
+  Count each current filename once: Tests, then Docs/instructions, Code, or Other.
+  Inspect the expandable paths for ambiguous classifications; buckets describe paths, not effort.
+  Supply `leaves_out` only for a deliberately deferred part readers would reasonably expect.
+- Shaka metrics keeps estimated token costs visible, then folds usage, timings, execution,
+  settings, skills, provenance history, and task history under Details, in that order.
 
 - Put the current-head recommendation, main reason, and next action before analysis.
 - Name model settings with their provenance; a configured model is not proof of a served model.

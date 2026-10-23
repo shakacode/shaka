@@ -69,13 +69,14 @@ class CliDescriptionTimingsTest < Minitest::Test
   end
 
   def description_content
-    super.merge('task_started_at' => @task_started_at, 'details' => [{ 'summary' => 'Capture limits', 'body' => 'Fixture capture evidence.' }])
+    super.merge('task_started_at' => @task_started_at,
+                'details' => [{ 'summary' => 'Capture limits', 'body' => 'Fixture capture evidence.' }])
   end
 
   private
 
   def assert_metrics_layout(published)
-    before, metrics = published.split("<details>\n<summary>Shaka metrics</summary>", 2)
+    before, metrics = published.split("<details>\n<summary>Details</summary>", 2)
     refute_nil metrics, 'one disclosure should group Shaka metadata'
     assert_includes before, '**Estimated token costs:** UNKNOWN'
     assert_includes before, '<summary>Capture limits</summary>'

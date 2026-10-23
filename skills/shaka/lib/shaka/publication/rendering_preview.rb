@@ -8,7 +8,8 @@ module Shaka
   module RenderingPreview
     REPOSITORY = 'shakacode/shaka'
     DIRECTORY = 'skills/shaka/lib/shaka/publication/'
-    RENDERERS = %w[usage_details metrics intent_verification publication].map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
+    RENDERERS = %w[usage_details metrics verification_gates diff_buckets intent_verification publication]
+                .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
 
     module_function

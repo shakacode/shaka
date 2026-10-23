@@ -17,7 +17,7 @@ class PublicationIntentVerificationTest < Minitest::Test
              "**Safe because:** #{INTENT['safe_because']}\n\n**Outside scope:** #{INTENT['leaves_out']}\n\n" \
              '**Review effort:** 2 of 5, easy: skim the diff.'
     verification = "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n" \
-                   "- #{VERIFICATION['checks'].first}\n\n"
+                   "<details>\n<summary>Evidence and limitations</summary>"
     assert_includes rendered, intent
     assert_includes rendered, verification
   end
@@ -102,8 +102,9 @@ class PublicationIntentVerificationTest < Minitest::Test
     rendered = render('wip' => HandoffFixtures::WIP,
                       'verification' => { 'checks' => [], 'not_verified' => 'Validation has not run yet.' })
 
-    assert_includes rendered, "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n" \
-                              '**Not verified:** Validation has not run yet.'
+    assert_includes rendered, '**Not verified:** Validation has not run yet.'
+    assert_operator rendered.index('<summary>Evidence and limitations</summary>'), :<,
+                    rendered.index('**Not verified:**')
   end
 
   def test_one_to_three_checks_are_allowed

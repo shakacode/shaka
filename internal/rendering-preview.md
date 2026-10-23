@@ -15,14 +15,15 @@ maintainer's one exception to the skill's rule against running a branch-provided
 3. Confirm `gh pr view --json headRefOid` still reports the reviewed head. For the description,
    rerun the installed `description` command with the same content and evidence arguments plus
    `--rendering-preview-root DIR`, where DIR is a checkout of that head. It verifies evidence
-   with the installed helper before loading the four supported rendering modules from the
+   with the installed helper before loading the supported rendering modules from the
    immutable commit. It leaves evidence checks, dependencies, policy, and installation identity
    installed. Never copy installation metadata or rewrite evidence to force a match.
    Other affected artifacts use `skills/shaka/scripts/shaka` from a detached checkout of that
    head; review their rendering code before running it. Mixed workflow changes do not excuse
    skipping the supported description preview.
-4. Inspect the actual PR description on GitHub: headings, diff size, visible token cost, and
-   expanded metadata. Record the result under verification. A fixture comment is supporting
+4. Inspect the actual PR description on GitHub at desktop and mobile widths: headings,
+   diff totals and bucket paths, visible token cost, and expanded evidence and metadata.
+   Record the result under verification. A fixture comment is supporting
    evidence and does not replace self-preview. Run the installed `handoff`; it requires the
    current-head preview marker for Shaka publication changes. For a review comment, confirm its last line is still the
    `REVIEWED` attestation that `merge` reads.

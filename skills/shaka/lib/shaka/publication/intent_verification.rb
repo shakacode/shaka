@@ -3,6 +3,7 @@
 require_relative '../error'
 require_relative 'text'
 require_relative 'verification_gates'
+require_relative 'diff_buckets'
 
 module Shaka
   # Renders what a pull request is for and how it was proved, so a maintainer can decide whether to trust it.
@@ -30,10 +31,9 @@ module Shaka
     # The verdict binds the validation and review results; nil when description received none.
     # The floor comes from the PR's changed paths; without a pull request there is none.
     def render(content, verdict = nil, floor = nil, pull = nil)
-      checks_allowed = content['wip'].nil? ? CHECKS : (0..CHECKS.max)
       gate_line = VerificationGates.render(verdict, content['review'])
       [intent(object(content, 'intent'), floor, pull),
-       verification(object(content, 'verification'), checks_allowed, gate_line)]
+       verification(object(content, 'verification'), gate_line)]
     end
 
     def intent(spec, floor, pull)
@@ -59,7 +59,7 @@ module Shaka
       return [] unless counts&.all? { |count| count.is_a?(Integer) && count >= 0 }
 
       files, added, removed = counts
-      ["**Diff:** #{files} #{files == 1 ? 'file' : 'files'} · +#{added} / −#{removed} lines"]
+      ["**Diff:** #{files} #{files == 1 ? 'file' : 'files'} · +#{added} / −#{removed} lines", *DiffBuckets.render(pull)]
     end
 
     def review_effort(effort, floor)
@@ -90,9 +90,14 @@ module Shaka
     # A changed filename comes from the PR author, so only a plain one reaches the description.
     def floor_path(path) = path.match?(SAFE_PATH) ? "`#{path}`" : 'a file whose name is withheld'
 
-    def verification(spec, allowed, gate_line)
-      ['## Verification', gate_line, *checks(spec['checks'], allowed), *not_verified(spec['not_verified'])]
-        .join("\n\n")
+    def verification(spec, gate_line)
+      visible = spec['merge_limitations']
+      summary = evidenced(PublicationText.single_line(spec['summary'], 'verification summary')) if spec['summary']
+      ['## Verification', gate_line, summary, *(not_verified(visible) unless visible.nil?)].compact.join("\n\n")
+    end
+
+    def evidence(spec, allowed)
+      [*checks(spec['checks'], allowed), *not_verified(spec['not_verified'])].join("\n\n")
     end
 
     # The agent still answers, but a reader learns nothing from being told no claim went unproven.
@@ -127,7 +132,8 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :exclusions, :diff_size, :review_effort, :floor_text, :floor_path, :verification,
+    private_class_method :intent, :exclusions, :diff_size,
+                         :review_effort, :floor_text, :floor_path, :verification,
                          :not_verified, :checks, :evidenced, :object
   end
 end
