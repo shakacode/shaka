@@ -22,7 +22,9 @@ agent mounts and public summaries. Parsing a saved stream records replay time,
 not its original arrival time.
 
 A `terminal` candidate requires native turn completion, exit code zero and a
-nonempty completed agent message. The last completed message supplies its text.
+nonempty completed agent message. Every reported item must have a completion
+event; an unfinished command or tool leaves the invocation incomplete even after
+`turn.completed`. The last completed message supplies its text.
 Reasoning and tool output cannot supply it. The reader supplies `received_at`;
 the protected controller still owns acceptance and any queued PASS readback.
 Failed or incomplete runs retain observations with no terminal candidate.
@@ -43,6 +45,8 @@ full tier 3 D2 assembly and release verdicts remain separate work.
 
 The [official Codex JSONL contract](https://learn.chatgpt.com/docs/non-interactive-mode#make-output-machine-readable)
 supplies the supported envelope names. This reader adds no model call or schedule.
+The [Linux collection check](reports/codex-linux-collection.md) records the tested
+container recipe, native sandbox failure, costs and remaining release prerequisites.
 
 ## Read a live process
 
