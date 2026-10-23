@@ -16,7 +16,8 @@ The controller supplies `repository`, `number`, the full `head` SHA,
 `driver_actor`, and its `clock_id` in the plan. The agent never selects
 commands or credentials through event text. Invoke this API from the native
 observer after the controller resolves a new head; head discovery is still
-the caller's responsibility.
+the caller's responsibility. [CodexDriver](codex-driver.md) connects these calls
+to bounded native activity checkpoints and a private ledger.
 
 Before and after verification, the writer reads the native PR and requires
 the same open, unmerged, same-repository head. It supplies that SHA through
