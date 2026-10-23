@@ -15,10 +15,10 @@ module Shaka
         @environment = environment.dup.freeze
       end
 
-      def run(command:, cwd:, directory:, seconds:, clock_id:)
+      def run(command:, cwd:, directory:, seconds:, clock_id:, &observer)
         validate(command, seconds)
         @started = true
-        @reader = CodexEvents.new(clock_id:)
+        @reader = CodexEvents.new(clock_id:, observer:)
         @deadline = now + seconds
         Dir.mkdir(directory, 0o700)
         CodexStreams.open(reader: @reader, directory:) { |streams| execute(command, File.realpath(cwd), streams) }
@@ -62,10 +62,9 @@ module Shaka
       def pump(streams)
         loop do
           observe_process
-          return false if @status && @channels.empty?
-
           remaining = @deadline - now
           return true unless remaining.positive?
+          return false if @status && @channels.empty?
 
           ready(remaining).each { |io| consume(io, streams) }
         end
