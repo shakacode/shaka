@@ -244,7 +244,11 @@ The [native controller](../../eval/codex-driver.md) connects observed head chang
 to protected verification and review readback. An
 [isolated Linux qualification](../../eval/reports/linux-codex-pushes.md) exercised
 actual Codex commits and pushes with FAIL then repair PASS. It still cannot prove
-a complete command inventory or qualify delivery success.
+a complete command inventory or qualify delivery success. The
+[approval acceptor](../../eval/codex-approval.md) records final native Ask requests
+from completed captures and protected prerequisites; offline timing tests cover
+premature requests and readback waiting. Live approval qualification, final state
+collection and complete activity inventory remain unavailable.
 Full tier 3 assembly, the diff card,
 statistics and release verdict remain proposed.
 
