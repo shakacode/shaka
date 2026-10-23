@@ -32,8 +32,10 @@ module Shaka
     # The floor comes from the PR's changed paths; without a pull request there is none.
     def render(content, verdict = nil, floor = nil, pull = nil)
       gate_line = VerificationGates.render(verdict, content['review'])
+      spec = object(content, 'verification')
+      evidence(spec, content['wip'].nil? ? CHECKS : (0..CHECKS.max))
       [intent(object(content, 'intent'), floor, pull),
-       verification(object(content, 'verification'), gate_line)]
+       verification(spec, gate_line)]
     end
 
     def intent(spec, floor, pull)

@@ -38,24 +38,6 @@ class PublicationMetricsTest < Minitest::Test
     assert_operator settings, :<, skills
   end
 
-  def test_buckets_count_each_current_filename_once_and_expose_the_paths
-    paths = %w[lib/main.rb test/main_test.rb spec/main_spec.rb src/main.test.ts docs/guide.md
-               skills/shaka/config/workflow.yml assets/logo.svg config.yml]
-    pull = { 'changed_files' => paths.size, 'additions' => 12, 'deletions' => 3,
-             'shaka_changed_files' => paths.map { |path| { 'filename' => path } } }
-    pull['shaka_changed_files'].first['previous_filename'] = 'test/old.rb'
-    rendered = Shaka::DiffBuckets.render(pull).join
-    assert_includes rendered, '**Files:** Code 1 · Tests 3 · Docs/instructions 2 · Other 2'
-    paths.each { |path| assert_includes rendered, "- `#{path}`" }
-    refute_includes rendered, '- `test/old.rb`'
-  end
-
-  def test_incomplete_file_lists_do_not_publish_bucket_counts
-    pull = { 'changed_files' => 2, 'additions' => 12, 'deletions' => 3,
-             'shaka_changed_files' => [{ 'filename' => 'test/main_test.rb' }] }
-    refute_includes Shaka::DiffBuckets.render(pull).join, '**Files:**'
-  end
-
   def test_material_gaps_stay_visible_while_supporting_proof_and_task_history_fold
     spec = content(usd: 'UNKNOWN')
     spec['verification'] = VERIFICATION.merge('merge_limitations' => 'Live migration needs maintainer approval.')

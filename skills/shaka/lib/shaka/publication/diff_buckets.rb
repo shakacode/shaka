@@ -7,6 +7,8 @@ module Shaka
   module DiffBuckets
     ORDER = %w[Code Tests Docs/instructions Other].freeze
     SAFE_PATH = %r{\A[\w.@+/ -]+\z}
+    MAX_PATHS = 40
+    MAX_PATH_LENGTH = 200
 
     module_function
 
@@ -16,9 +18,27 @@ module Shaka
 
       ordered = groups(files)
       counts = ordered.map { |name, items| "#{name} #{items.size}" }.join(' · ')
-      body = ordered.map { |name, items| paths(name, items) }.join("\n\n")
+      body = disclosure(files, pull)
       ["**Files:** #{counts}",
        "<details>\n<summary>Changed files by bucket</summary>\n\n#{body}\n\n</details>"]
+    end
+
+    # At most 40 short paths: filenames cannot consume GitHub's whole description allowance.
+    def disclosure(files, pull)
+      shown = files.select { |file| file['filename'].length <= MAX_PATH_LENGTH }.first(MAX_PATHS)
+      body = groups(shown).map { |name, items| paths(name, items) }
+      omitted = files.size - shown.size
+      if omitted.positive?
+        body << "#{omitted} paths omitted; bucket counts include every changed file. #{files_link(pull)}"
+      end
+      body.join("\n\n")
+    end
+
+    def files_link(pull)
+      url = pull['html_url'].to_s
+      return "[All changed files](#{url}/files)." if url.match?(%r{\Ahttps://[\w.-]+/[\w.-]+/[\w.-]+/pull/\d+\z})
+
+      'See the PR’s Files changed tab for all paths.'
     end
 
     def groups(files)
@@ -50,6 +70,6 @@ module Shaka
       "**#{name}:**\n\n#{listed.join("\n")}"
     end
 
-    private_class_method :groups, :complete?, :bucket, :paths
+    private_class_method :disclosure, :files_link, :groups, :complete?, :bucket, :paths
   end
 end
