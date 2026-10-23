@@ -18,7 +18,7 @@ module Shaka
       def run(command:, cwd:, directory:, seconds:, clock_id:, &observer)
         validate(command, seconds)
         @started = true
-        @reader = CodexEvents.new(clock_id:, observer: observing(observer))
+        @reader = CodexEvents.new(clock_id:, clock: -> { @received_at || now }, observer: observing(observer))
         @deadline = now + seconds
         Dir.mkdir(directory, 0o700)
         CodexStreams.open(reader: @reader, directory:) { |streams| execute(command, File.realpath(cwd), streams) }
@@ -91,10 +91,14 @@ module Shaka
       def consume(io, streams)
         data = io.read_nonblock(16_384, exception: false)
         return if data == :wait_readable
+
+        @received_at = now
         return streams.write(@channels.fetch(io), data) if data
 
         streams.eof(@channels.delete(io))
         io.close
+      ensure
+        @received_at = nil
       end
 
       def cleanup

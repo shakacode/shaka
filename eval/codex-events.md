@@ -78,6 +78,9 @@ readbacks before the agent exits. Each call receives one deeply frozen observati
 after lifecycle validation, host timestamping and retention, in stream order.
 The observation has the same shape as an entry in the final `events` array.
 It remains private controller data, never an instruction from the agent.
+Events completed by one pipe read share its host receipt timestamp, so callback
+work cannot retime already-buffered activity. Deadline checks still use current
+monotonic time.
 
 The observer runs synchronously on the controller thread. Supply bounded work;
 its time counts against the capture deadline, but the transport cannot interrupt

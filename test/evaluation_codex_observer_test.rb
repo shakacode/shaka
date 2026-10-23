@@ -49,6 +49,12 @@ class EvaluationCodexObserverTest < Minitest::Test
     end
   end
 
+  def test_buffered_terminal_receipt_does_not_include_controller_work
+    result = run_child("STDOUT.syswrite(#{native_stream.dump})") { delay_controller(it) }
+    assert_operator result.dig('terminal', 'received_at'), :<, @observer_finished_at
+    assert_operator result.fetch('observed_at'), :>=, @observer_finished_at
+  end
+
   def test_reader_cannot_finish_after_observer_failure
     reader = Shaka::Evaluation::CodexEvents.new(clock_id: 'test', observer: ->(_) { raise 'readback failed' })
     assert_raises(IOError) { reader.receive(native_stream.lines.first) }
@@ -73,6 +79,13 @@ class EvaluationCodexObserverTest < Minitest::Test
   end
 
   private
+
+  def delay_controller(event)
+    return unless event.dig('native', 'type') == 'turn.started'
+
+    sleep 0.05
+    @observer_finished_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  end
 
   def expiring_observer(seen)
     lambda do |event|
