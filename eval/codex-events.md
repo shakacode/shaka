@@ -90,6 +90,9 @@ An observer exception invalidates the reader and aborts the
 capture, terminating and reaping its process without returning a capture result.
 Observer return values grant no terminal acceptance or capture qualification.
 
+Use [protected verification](protected-verification.md) to run an operator-selected
+check with a bounded deadline and private output from this observer.
+
 `transport_status` describes collection, not task success. A timeout returns
 `timed_out` with no terminal candidate. Native failure or missing completion also
 cannot produce a terminal. `command_capture_complete` remains false, including
