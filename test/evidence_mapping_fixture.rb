@@ -20,7 +20,7 @@ module EvidenceMappingFixture
 
   def write_mapping_commands(root, fixed:)
     FileUtils.mkdir_p(File.join(root, 'script'))
-    File.write(File.join(root, 'script/selector.rb'), "exit(ARGV == #{MAPPINGS.inspect} ? 0 : 64)\n")
+    write_mapping_selector(root)
     File.write(File.join(root, 'script/security.rb'), "exit 0\n")
     mappings = fixed ? MAPPINGS.shelljoin : '"$@"'
     File.write(File.join(root, '.agents/bin/validate'), <<~SH)
@@ -29,6 +29,16 @@ module EvidenceMappingFixture
       ruby script/selector.rb #{mappings}
       ruby script/security.rb
     SH
+  end
+
+  def write_mapping_selector(root)
+    File.write(File.join(root, 'changed-files.json'), JSON.generate(['app/new.rb', 'README.md']))
+    File.write(File.join(root, 'script/selector.rb'), <<~RUBY_SCRIPT)
+      require 'json'
+      changed = JSON.parse(File.read('changed-files.json'))
+      mapped = ARGV.each_slice(3).map { |_kind, path, _value| path }
+      exit(ARGV == #{MAPPINGS.inspect} && (changed - mapped).empty? ? 0 : 64)
+    RUBY_SCRIPT
   end
 
   def commit_changes(root)

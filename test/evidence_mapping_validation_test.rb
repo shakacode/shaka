@@ -38,7 +38,7 @@ class EvidenceMappingValidationTest < Minitest::Test
     end
   end
 
-  def test_existing_repository_script_can_supply_defaults_without_wrapper_changes
+  def test_existing_repository_script_can_supply_mappings_without_wrapper_changes
     with_mapping_checkout do |root, base|
       supply_default_mappings(root)
       head = commit_changes(root)
@@ -56,6 +56,17 @@ class EvidenceMappingValidationTest < Minitest::Test
       ref = commit_changes(root)
       validation = run_check(root, ref, command: 'validate', expected_exit: 1)
       assert_equal 9, validation.fetch('exit_code')
+      with_results(validation:, review: review_check(root, ref)) do |paths|
+        assert_equal 'not_ready', verify(root, ref, **paths).fetch('status')
+      end
+    end
+  end
+
+  def test_unmapped_changed_file_still_blocks_fixed_mappings
+    with_mapping_checkout(fixed: true) do |root, _ref|
+      File.write(File.join(root, 'changed-files.json'), JSON.generate(['app/unmapped.rb']))
+      ref = commit_changes(root)
+      validation = run_check(root, ref, command: 'validate', expected_exit: 1)
       with_results(validation:, review: review_check(root, ref)) do |paths|
         assert_equal 'not_ready', verify(root, ref, **paths).fetch('status')
       end
