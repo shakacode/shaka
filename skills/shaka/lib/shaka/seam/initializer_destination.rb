@@ -12,7 +12,7 @@ module Shaka
 
       def destination_directories
         [Configuration::Paths::DIRECTORY, File.dirname(Initializer::LAYOUT.contract),
-         Initializer::LAYOUT.command_directory]
+         Initializer::LAYOUT.command_directory, File.dirname(Configuration::Paths::PROMPTS_README)]
       end
 
       def preflight_directories
@@ -53,11 +53,22 @@ module Shaka
 
       def matching_destination?(path, content)
         return false unless File.file?(path) && !File.symlink?(path)
+        return true if maintainer_readme?(path)
         return false unless (File.stat(path).mode & 0o7777) == destination_mode(path)
 
         existing = Configuration.generated_text(root: @root, path:)
-        existing == content || previously_generated_readme?(path, existing)
+        existing == content || previously_generated_readme?(path, existing) ||
+          contract_without_notes?(path, existing, content)
       end
+
+      # A config.yml from a release before the header notes still matches a plain repeat of seam init.
+      def contract_without_notes?(path, existing, content)
+        path == Configuration::Paths.at(@root, Initializer::LAYOUT.contract) &&
+          existing == content.sub(config_notes.map { "# #{it}\n" }.join, '')
+      end
+
+      # The prompts README belongs to the maintainer once it exists; seam init writes only a missing one.
+      def maintainer_readme?(path) = path == File.join(@root, Configuration::Paths::PROMPTS_README)
 
       # The pointer records the generating skill version, so an upgrade changes its text while
       # the repository's copy stays correct. Recognizing our own marker keeps a plain repeat of
@@ -71,7 +82,7 @@ module Shaka
         preflight_directories
         preflight_files(files)
         preflight_permissions(files)
-        FileUtils.mkdir_p(Configuration::Paths.at(@root, Initializer::LAYOUT.command_directory))
+        files.each_key { |path| FileUtils.mkdir_p(File.dirname(path)) }
         preflight_directories
         files.each do |path, content|
           preflight_directories

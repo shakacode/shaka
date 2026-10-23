@@ -102,10 +102,15 @@ module Shaka
           result.status == 'complete'
       end
 
+      # Individual setup writes no prompts README for the header to point at.
+      def config_notes = []
+
       def generated_files
         return seeded_files if seeding?
 
-        files = super.reject { |path, _| path == Configuration.path(@root, :POINTER) }
+        # Team-facing guides stay out of an individual's untracked settings.
+        guides = [Configuration.path(@root, :POINTER), Configuration::Paths.at(@root, Configuration::Paths::PROMPTS_README)]
+        files = super.except(*guides)
         files.merge(optional_files)
       end
 

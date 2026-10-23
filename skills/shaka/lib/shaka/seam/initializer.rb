@@ -86,12 +86,11 @@ module Shaka
           [Configuration::Paths.at(@root, relative), wrapper(command)]
         end
         wrappers.merge(Configuration::Paths.at(@root, LAYOUT.contract) => config_source,
-                       Configuration.path(@root, :POINTER) => readme_source(LAYOUT))
+                       Configuration.path(@root, :POINTER) => readme_source(LAYOUT), **prompts_readme)
       end
 
       def config_source
-        config = config_hash
-        Configuration.generated_contract(marker: MARKER, data: config)
+        Configuration.generated_contract(marker: MARKER, data: config_hash, notes: config_notes)
       end
 
       # base_branch is omitted when it was not requested: an absent key means the

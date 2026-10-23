@@ -11,18 +11,31 @@ module Shaka
       include Validation
 
       KEY = 'post_implementation'
+      SECTION = 'checkpoint'
       KEYS = %w[enabled reviewer model effort prompt_file].freeze
       EFFORTS = { 'openai/codex' => %w[low medium high xhigh max],
                   'anthropic/claude' => %w[low medium high xhigh max],
                   'xai/grok' => %w[low medium high] }.freeze
-      DEFAULTS = Defaults.fetch('review', KEY)
+      DEFAULTS = Defaults.fetch(SECTION)
 
       def self.reviewer(identity) = ReviewerSelection.parse(identity).values.map(&:downcase).join('/')
 
-      def initialize(settings) = @settings = settings
+      # Internal readers keep finding the checkpoint under review; settings write it only as `checkpoint`.
+      def self.fold(data)
+        review = data.is_a?(Hash) && data['review'].is_a?(Hash) ? data['review'] : {}
+        raise Error, "review.#{KEY} moved to the top-level #{SECTION} section" if review.key?(KEY)
+        return review unless data.is_a?(Hash) && data.key?(SECTION)
+
+        review.merge(KEY => data[SECTION])
+      end
+
+      def initialize(settings, label: SECTION)
+        @settings = settings
+        @label = label
+      end
 
       def validate
-        label = "review.#{KEY}"
+        label = @label
         mapping!(@settings, label)
         keys!(@settings, [], KEYS, label)
         validate_enabled(label)

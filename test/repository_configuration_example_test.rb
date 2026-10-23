@@ -38,8 +38,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   end
 
   def test_example_post_implementation_defaults_match
-    assert_equal Shaka::Defaults.fetch('review', 'post_implementation'),
-                 @example.fetch('review').fetch('post_implementation').except('prompt_file')
+    assert_equal Shaka::Defaults.fetch('checkpoint'), @example.fetch('checkpoint').except('prompt_file')
   end
 
   def test_example_matches_packaged_defaults_without_changing_repository_choices

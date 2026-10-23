@@ -12,7 +12,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
 
   def test_private_opt_out_is_recorded_then_accepted_by_final_preparation
     with_trial do
-      update_private { |data| data['review']['post_implementation'] = { 'enabled' => false } }
+      update_private { |data| data['checkpoint'] = { 'enabled' => false } }
       result = run_checkpoint
       assert_equal 'opted_out', result['status']
       assert_includes result['reason'], 'enabled is false'
@@ -24,7 +24,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
   def test_private_checkpoint_choices_and_instructions_reach_the_reviewer
     with_trial do
       File.write(File.join(@root, CHOICES['prompt_file']), 'PRIVATE CHECKPOINT RULES')
-      update_private { |data| data['review']['post_implementation'] = CHOICES }
+      update_private { |data| data['checkpoint'] = CHOICES }
       result = run_checkpoint
       assert_equal %w[completed anthropic/claude], result.values_at('status', 'reviewer')
       assert_equal 'Individual settings (private source)', result['prompt_source']
@@ -32,7 +32,35 @@ class PrivateCheckpointSettingsTest < Minitest::Test
     end
   end
 
+  def test_private_prompts_file_reaches_the_reviewer_and_an_empty_one_is_skipped
+    { 'PRIVATE ADDED RULE' => true, " \n" => false }.each do |text, added|
+      with_trial do
+        write_private_rules(text)
+        update_private { |data| data['checkpoint'] = CHOICES.except('prompt_file') }
+        assert_equal 'completed', run_checkpoint['status']
+        prompt = JSON.parse(File.read(File.join(@state, 'checkpoint-trace.json')))['prompt']
+        assert_equal added, prompt.include?('TRUSTED CHECKPOINT RULES'), text
+      end
+    end
+  end
+
+  def test_private_prompts_file_that_is_not_utf8_fails_the_checkpoint_cleanly
+    with_trial do
+      write_private_rules("\xFF\xFE rule".b)
+      update_private { |data| data['checkpoint'] = CHOICES.except('prompt_file') }
+      result = run_checkpoint(succeed: false)
+      assert_equal 'not_completed', result['status']
+      assert_includes result['reason'], 'is not UTF-8'
+    end
+  end
+
   private
+
+  def write_private_rules(text)
+    path = File.join(@root, '.agents/shaka/prompts/checkpoint.md')
+    FileUtils.mkdir_p(File.dirname(path))
+    File.write(path, text)
+  end
 
   def record_on_pull(result)
     publish_delivery
@@ -45,7 +73,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
     assert_includes trace['prompt'], 'PRIVATE CHECKPOINT RULES'
   end
 
-  def run_checkpoint
+  def run_checkpoint(succeed: true)
     Dir.mktmpdir('checkpoint-cli', @state) do |bin|
       write_executable(bin, 'claude', checkpoint_reviewer)
       environment = { 'PATH' => "#{bin}:#{ENV.fetch('PATH')}",
@@ -53,7 +81,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
       output, error, status = Open3.capture3(environment, *COMMAND, 'post-implementation', 'run', '--root', @root,
                                              '--base', @ref, '--head', @ref, '--ref', @ref,
                                              '--content-file', state_file('packet.json', PACKET))
-      assert_predicate status, :success?, "#{output}\n#{error}"
+      assert_equal succeed, status.success?, "#{output}\n#{error}"
       JSON.parse(output)
     end
   end

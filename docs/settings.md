@@ -590,30 +590,28 @@ commit and prevent edits. See [what Shaka enforces](workflow.md#what-is-enforced
 The file configures local reviews. A CI review job gets its prompt from its own
 workflow; to give it the same instructions, have the workflow read this file.
 
-## `review.post_implementation`
+<a id="reviewpost_implementation"></a>
+
+## `checkpoint`
 
 **Optional.** Choose who evaluates the result at the **checkpoint**:
 whether it solves the intended problem, earns its maintenance cost, and what to do
 next. This differs from the code walkthrough explaining the implementation.
 With no settings, Shaka invokes Codex (`gpt-6.1-sol`) at medium effort using its
-[default product prompt](../skills/shaka/config/post-implementation-prompt.md).
+built-in prompt.
 
 For example, to ask Claude Sonnet to reconsider each finished change with your
 project's audience in mind:
 
 ```yaml
-review:
-  required: meaningful_changes
-  ci_review_jobs: [claude-review]
-  post_implementation:
-    reviewer: anthropic/claude
-    model: sonnet
-    effort: high
-    prompt_file: .agents/shaka/product-checkpoint.md
+checkpoint:
+  reviewer: anthropic/claude
+  model: sonnet
+  effort: high
 ```
 
 Repository choices come from the [configuration source](#which-settings-apply),
-and the prompt file from [where Shaka reads prompt files](#where-shaka-reads-a-prompt-file).
+and prompt files from [where Shaka reads prompt files](#where-shaka-reads-a-prompt-file).
 A task's explicit choices take precedence. See
 [the checkpoint](pr-verification.md#checkpoint)
 for what the checkpoint means for your merge decision.
@@ -636,6 +634,26 @@ maintaining. The task owner supplies the original problem and evidence, resolves
 concerns, and establishes merge readiness. Final merge preparation
 requires a report for the current commit with no unresolved concerns, counting a concern
 you [accepted](pr-verification.md#checkpoint) as resolved, or an explicit opt-out.
+
+### Add your own checkpoint questions
+
+Write them in `.agents/shaka/prompts/checkpoint.md`. Shaka's
+[built-in checkpoint prompt](../skills/shaka/config/post-implementation-prompt.md)
+still applies in full. The reviewer reads it, then your `AGENTS.md` files, then your
+file. For example:
+
+```markdown
+Ask whether the change adds a step maintainers must remember.
+```
+
+When your file conflicts with a built-in question, the reviewer follows your file.
+It cannot relax Shaka's safety rules or change the report format. Without the file,
+or with an empty one, the reviewer gets no added questions. Each file in
+`.agents/shaka/prompts/` is named for the built-in prompt it adds to, and the
+folder's README lists them.
+
+To remove a built-in question instead, set `prompt_file` to replace the whole prompt;
+you then keep that copy in step with Shaka's changes.
 
 ## `project_guidance`
 

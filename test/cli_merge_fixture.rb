@@ -54,8 +54,8 @@ module CliMergeFixture
 
   def with_merge_repository
     with_repository('merge' => merge_policy,
-                    'review' => review_policy('required' => 'none', 'post_implementation' => { 'enabled' => false })
-                                .except('ci_review_jobs')) do |root|
+                    'review' => review_policy('required' => 'none').except('ci_review_jobs'),
+                    'checkpoint' => { 'enabled' => false }) do |root|
       commit_repository(root)
       ref, = Open3.capture3('git', '-C', root, 'rev-parse', 'HEAD')
       ref = ref.strip

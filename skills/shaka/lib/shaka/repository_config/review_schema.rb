@@ -68,7 +68,7 @@ module Shaka
         ([["review.#{PROMPT_FILE}", review[PROMPT_FILE]]] +
           agents.each_with_index.map do |entry, index|
             ["review.#{LOCAL_REVIEW_AGENTS}[#{index}].#{PROMPT_FILE}", entry[PROMPT_FILE]]
-          end + [['review.post_implementation.prompt_file',
+          end + [['checkpoint.prompt_file',
                   review.dig('post_implementation', PROMPT_FILE)]]).select { |_, path| path }
       end
 
@@ -81,7 +81,6 @@ module Shaka
         validate_check
         validate_review_wait
         ReviewLimit.from(@review)
-        PostImplementationSchema.new(@review['post_implementation']).validate if @review.key?('post_implementation')
         local_review_agents!(@review[LOCAL_REVIEW_AGENTS]) if @review.key?(LOCAL_REVIEW_AGENTS)
         prompt_path!(@review[PROMPT_FILE], "review.#{PROMPT_FILE}") if @review.key?(PROMPT_FILE)
       end

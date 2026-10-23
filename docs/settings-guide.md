@@ -150,7 +150,7 @@ Both team and individual settings support these options.
 Shaka recommends what to do next at a
 [checkpoint](pr-verification.md#checkpoint) and records the owner's
 choice for later. See that guide for the terms and current report labels.
-[Checkpoint settings](settings.md#reviewpost_implementation) choose who evaluates
+[Checkpoint settings](settings.md#checkpoint) choose who evaluates
 the result, with team or individual setup.
 
 ## Add your own PR requirements
