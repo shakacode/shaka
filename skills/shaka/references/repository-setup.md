@@ -260,6 +260,37 @@ there; Shaka does not require that file.
 Command arguments are parsed as argument lists. Put pipelines and other compound
 shell behavior in repository scripts rather than in command flags.
 
+## Required validation inputs
+
+When `evidence verify` reports `repository validation used command arguments`,
+keep that run as diagnostic evidence. It does not satisfy repository validation.
+
+Add durable file-to-spec rules to the existing repository selector invoked by the
+fixed validation wrapper. For example, extend its existing case statement:
+
+```bash
+app/new.rb)
+  printf '%s\n' spec/new_spec.rb
+  ;;
+```
+
+Keep unknown changed files fail-closed and preserve every required lint, security,
+and other check. Review each coverage rule against the changed files. Do not
+persist task-specific `--no-spec-for` defaults: a later change could inherit an
+exclusion. If coverage cannot be expressed safely, keep validation blocked.
+Do not use `eval`, shell command strings, executable overrides, or external
+untracked mapping inputs.
+
+Inspect the script diff before execution. Run `evidence run --command validate`
+with the existing root, trusted ref, and repository flags, without trailing
+arguments. Commit the script with the candidate, bind the fresh result to that
+head, and obtain fresh review before verifying. Changed mappings or other candidate
+inputs invalidate earlier results. Do not edit historical evidence or infer
+merge authority from a passing check.
+
+If the repair requires changing the fixed validation wrapper, use a separate
+setup/migration PR; the feature configuration guard still applies to both
+`.agents/shaka/bin/validate` and `.agents/bin/validate`.
 
 ## Validate the configuration
 
