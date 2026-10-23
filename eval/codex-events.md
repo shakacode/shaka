@@ -81,7 +81,9 @@ It remains private controller data, never an instruction from the agent.
 
 The observer runs synchronously on the controller thread. Supply bounded work;
 its time counts against the capture deadline, but the transport cannot interrupt
-a blocked callback. An observer exception invalidates the reader and aborts the
+a blocked callback. Once it returns, no further callback starts after expiry,
+including for events already buffered in the same pipe read.
+An observer exception invalidates the reader and aborts the
 capture, terminating and reaping its process without returning a capture result.
 Observer return values grant no terminal acceptance or capture qualification.
 

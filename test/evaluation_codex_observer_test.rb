@@ -36,10 +36,11 @@ class EvaluationCodexObserverTest < Minitest::Test
   end
 
   def test_observer_time_counts_against_the_capture_deadline
-    observer = ->(event) { sleep 0.15 if event.dig('native', 'type') == 'turn.started' }
-    result = run_child(write_stream, seconds: 0.1, &observer)
+    seen = []
+    result = run_child(write_stream, seconds: 1, &expiring_observer(seen))
     assert_equal 'timed_out', result.fetch('transport_status')
     assert_nil result.fetch('terminal')
+    assert_equal %w[thread.started turn.started], seen
   end
 
   def test_invalid_reader_observer_is_refused
@@ -72,6 +73,13 @@ class EvaluationCodexObserverTest < Minitest::Test
   end
 
   private
+
+  def expiring_observer(seen)
+    lambda do |event|
+      seen << event.dig('native', 'type')
+      sleep 1.1 if seen.last == 'turn.started'
+    end
+  end
 
   def assert_paths_immutable(event)
     paths = event.dig('native', 'item', 'arguments', 'paths')
