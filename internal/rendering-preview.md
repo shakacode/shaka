@@ -27,8 +27,8 @@ maintainer's one exception to the skill's rule against running a branch-provided
    current-head preview marker for Shaka publication changes. For a review comment, confirm its last line is still the
    `REVIEWED` attestation that `merge` reads.
 5. If preview, `handoff`, or attestation checks fail, restore the installed rendering and
-   resolve the failure before handoff. Report a genuine unsupported renderer as a blocker;
-   only explicit maintainer acceptance can waive self-preview. Never claim a sample completes it.
+   resolve the failure before handoff. Report an unsupported renderer as a blocker and extend
+   the reviewed renderer list before previewing it. Never claim a sample completes self-preview.
 
 Repeat after each new head and after any later installed-helper publication overwrites the
 preview. Every other command, including seam, evidence, review, and merge, stays installed.

@@ -806,8 +806,8 @@ phases:
         current-head URL. Preserve an explicit choice that this repository deploys nothing.
         Complete the trusted `pr_evidence` guide after this last publication, including any
         required rendering preview on the PR itself. Inspect the live result. A sample comment
-        does not complete self-preview; a failed preview blocks handoff until resolved or the
-        maintainer accepts the named limitation. Repeat after a new head or later publication.
+        does not complete self-preview; a failed preview blocks handoff until resolved.
+        Repeat after a new head or later publication.
       - Reassess scope and authority for the final head, including the base the PR actually
         targets: `pr` reports it as `baseRefName`, and a retarget after planning is the case
         that silently moves an Auto merge onto a branch nobody agreed to. Refresh the
