@@ -57,9 +57,9 @@ module Shaka
   # Marks the cost outside the disclosure so a usage-only refresh can update it too.
   module UsageEstimate
     MARKER = '<!-- shaka:estimated-cost -->'
-    BLOCK = /^#{Regexp.escape(MARKER)}\n\*\*Estimated cost:\*\* [^\n]*$/
+    BLOCK = /^#{Regexp.escape(MARKER)}\n\*\*Estimated (?:token costs|cost):\*\* [^\n]*$/
 
-    def self.markdown(detail) = "#{MARKER}\n**Estimated cost:** #{detail.fetch('estimate')}"
+    def self.markdown(detail) = "#{MARKER}\n**Estimated token costs:** #{detail.fetch('estimate')}"
     def self.refresh(region, detail) = region.sub(BLOCK) { markdown(detail) }
   end
 

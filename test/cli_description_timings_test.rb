@@ -77,7 +77,7 @@ class CliDescriptionTimingsTest < Minitest::Test
   def assert_metrics_layout(published)
     before, metrics = published.split("<details>\n<summary>Shaka metrics</summary>", 2)
     refute_nil metrics, 'one disclosure should group Shaka metadata'
-    assert_includes before, '**Estimated cost:** UNKNOWN'
+    assert_includes before, '**Estimated token costs:** UNKNOWN'
     assert_includes before, '<summary>Capture limits</summary>'
     ['Execution details', 'Skills used', 'Usage and cost', 'Timings', 'Shaka settings'].each do |title|
       assert_includes metrics, "<summary>#{title}"

@@ -7,7 +7,7 @@ class PublicationMetricsTest < Minitest::Test
   def test_cost_remains_visible_with_partial_data_and_unknown_labels_preserved
     rendered = render(usd: '$1.25 (partial)')
     visible, metrics = rendered.split("<details>\n<summary>Shaka metrics</summary>", 2)
-    assert_includes visible, '**Estimated cost:** $1.25+'
+    assert_includes visible, '**Estimated token costs:** $1.25+'
     assert_includes metrics, '<summary>Usage and cost · $1.25+ estimated</summary>'
     assert_includes metrics, 'some usage not reported, so the amount is a minimum'
     assert_includes metrics, 'Native usage is PARTIAL.'
@@ -23,7 +23,7 @@ class PublicationMetricsTest < Minitest::Test
     ['Execution details', 'Skills used', 'Usage and cost', 'Shaka settings used'].each do |summary|
       assert hierarchy.any? { |depth, title| depth == 1 && title.start_with?(summary) }, summary
     end
-    assert_includes rendered.split('<summary>Shaka metrics</summary>').first, '**Estimated cost:** $0.00'
+    assert_includes rendered.split('<summary>Shaka metrics</summary>').first, '**Estimated token costs:** $0.00'
   end
 
   def test_republication_carries_usage_from_inside_the_metrics_group
@@ -32,8 +32,22 @@ class PublicationMetricsTest < Minitest::Test
     fresh['usage']['records'].first.merge!('responses' => ['second'], 'sources' => ['second'])
     carried, = Shaka::UsageRecords.carry(fresh, "<!-- shaka:begin -->\n#{first}\n<!-- shaka:end -->")
     rendered = Shaka::Publication.description(carried)
-    assert_includes rendered, '**Estimated cost:** $2.00'
+    assert_includes rendered, '**Estimated token costs:** $2.00'
     assert_equal 2, Shaka::UsageRecords.text_records(rendered).size
+  end
+
+  def test_scope_exclusions_are_optional_and_blank_ones_are_omitted
+    [INTENT.except('leaves_out'), INTENT.merge('leaves_out' => ' ')].each do |intent|
+      refute_includes Shaka::Publication.description(content(usd: 'UNKNOWN').merge('intent' => intent)),
+                      '**Outside scope:**'
+    end
+  end
+
+  def test_diff_size_comes_from_the_live_pull_request
+    pull = { 'changed_files' => 9, 'additions' => 172, 'deletions' => 13 }
+    rendered = Shaka::IntentVerification.render({ 'intent' => INTENT, 'verification' => VERIFICATION }, nil, nil, pull)
+    assert_includes rendered.first, '**Diff:** 9 files · +172 / −13 lines'
+    refute_includes render(usd: 'UNKNOWN'), '**Diff:**'
   end
 
   private

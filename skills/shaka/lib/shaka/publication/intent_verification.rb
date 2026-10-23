@@ -7,7 +7,7 @@ require_relative 'verification_gates'
 module Shaka
   # Renders what a pull request is for and how it was proved, so a maintainer can decide whether to trust it.
   module IntentVerification
-    INTENT = { 'why' => 'Why', 'scope' => 'Scope', 'leaves_out' => 'Leaves out',
+    INTENT = { 'why' => 'Why', 'scope' => 'Changes',
                'safe_because' => 'Safe because' }.freeze
     # A bug fix names its cause apart from the symptom; other changes have none to name.
     ROOT_CAUSE = 'root_cause'
@@ -29,21 +29,37 @@ module Shaka
 
     # The verdict binds the validation and review results; nil when description received none.
     # The floor comes from the PR's changed paths; without a pull request there is none.
-    def render(content, verdict = nil, floor = nil)
+    def render(content, verdict = nil, floor = nil, pull = nil)
       checks_allowed = content['wip'].nil? ? CHECKS : (0..CHECKS.max)
       gate_line = VerificationGates.render(verdict, content['review'])
-      [intent(object(content, 'intent'), floor),
+      [intent(object(content, 'intent'), floor, pull),
        verification(object(content, 'verification'), checks_allowed, gate_line)]
     end
 
-    def intent(spec, floor)
+    def intent(spec, floor, pull)
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
       unless spec[ROOT_CAUSE].nil?
         lines.insert(1, "**Root cause:** #{PublicationText.single_line(spec[ROOT_CAUSE], "intent #{ROOT_CAUSE}")}")
       end
-      "## Intent\n\n#{[*lines, review_effort(spec['review_effort'], floor)].join("\n\n")}"
+      lines.concat(exclusions(spec['leaves_out']))
+      "## Change and review\n\n#{[*diff_size(pull), *lines, review_effort(spec['review_effort'], floor)].join("\n\n")}"
+    end
+
+    def exclusions(value)
+      return [] if value.nil? || value == '' || (value.is_a?(String) && value.strip.empty?)
+
+      ["**Outside scope:** #{PublicationText.single_line(value, 'intent leaves_out')}"]
+    end
+
+    # GitHub supplies these counts for the published head; an author does not estimate them.
+    def diff_size(pull)
+      counts = pull&.values_at('changed_files', 'additions', 'deletions')
+      return [] unless counts&.all? { |count| count.is_a?(Integer) && count >= 0 }
+
+      files, added, removed = counts
+      ["**Diff:** #{files} #{files == 1 ? 'file' : 'files'} · +#{added} / −#{removed} lines"]
     end
 
     def review_effort(effort, floor)
@@ -111,7 +127,7 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :review_effort, :floor_text, :floor_path, :verification, :not_verified, :checks,
-                         :evidenced, :object
+    private_class_method :intent, :exclusions, :diff_size, :review_effort, :floor_text, :floor_path, :verification,
+                         :not_verified, :checks, :evidenced, :object
   end
 end

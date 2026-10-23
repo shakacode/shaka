@@ -13,8 +13,8 @@ class PublicationIntentVerificationTest < Minitest::Test
   def test_intent_and_verification_render_each_field_on_its_own_line
     rendered = render
 
-    intent = "## Intent\n\n**Why:** #{INTENT['why']}\n\n**Scope:** #{INTENT['scope']}\n\n" \
-             "**Leaves out:** #{INTENT['leaves_out']}\n\n**Safe because:** #{INTENT['safe_because']}\n\n" \
+    intent = "## Change and review\n\n**Why:** #{INTENT['why']}\n\n**Changes:** #{INTENT['scope']}\n\n" \
+             "**Safe because:** #{INTENT['safe_because']}\n\n**Outside scope:** #{INTENT['leaves_out']}\n\n" \
              '**Review effort:** 2 of 5, easy: skim the diff.'
     verification = "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n" \
                    "- #{VERIFICATION['checks'].first}\n\n"
@@ -33,8 +33,8 @@ class PublicationIntentVerificationTest < Minitest::Test
   def test_intent_and_verification_follow_the_links_and_precede_every_section
     rendered = render('sections' => [{ 'heading' => 'Detail', 'body' => 'More.' }])
 
-    assert_operator rendered.index('[Code Walkthrough]('), :<, rendered.index('## Intent')
-    assert_operator rendered.index('## Intent'), :<, rendered.index('## Verification')
+    assert_operator rendered.index('[Code Walkthrough]('), :<, rendered.index('## Change and review')
+    assert_operator rendered.index('## Change and review'), :<, rendered.index('## Verification')
     assert_operator rendered.index('## Verification'), :<, rendered.index('## Detail')
   end
 
@@ -46,7 +46,7 @@ class PublicationIntentVerificationTest < Minitest::Test
   end
 
   def test_each_intent_field_is_required
-    INTENT.each_key do |field|
+    (INTENT.keys - ['leaves_out']).each do |field|
       error = assert_raises(Shaka::Error) { render('intent' => INTENT.except(field)) }
       assert_includes error.message, "intent #{field}"
     end
@@ -73,7 +73,7 @@ class PublicationIntentVerificationTest < Minitest::Test
     cause = 'The booking link covered the underlined price.'
     rendered = render('intent' => INTENT.merge('root_cause' => cause))
 
-    assert_includes rendered, "**Why:** #{INTENT['why']}\n\n**Root cause:** #{cause}\n\n**Scope:**"
+    assert_includes rendered, "**Why:** #{INTENT['why']}\n\n**Root cause:** #{cause}\n\n**Changes:**"
   end
 
   def test_root_cause_is_optional_but_not_blank
@@ -128,6 +128,6 @@ class PublicationIntentVerificationTest < Minitest::Test
   def test_a_walkthrough_needs_neither
     content = { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.', 'head' => 'a' * 40 }
 
-    refute_includes Shaka::Publication.walkthrough(content), '## Intent'
+    refute_includes Shaka::Publication.walkthrough(content), '## Change and review'
   end
 end
