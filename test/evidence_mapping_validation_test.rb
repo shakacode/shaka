@@ -23,8 +23,7 @@ class EvidenceMappingValidationTest < Minitest::Test
         verdict = verify(root, ref, **paths)
         assert_equal 'not_ready', verdict.fetch('status')
         entry = verdict.fetch('checks').fetch('validation').first
-        assert_includes entry.fetch('guidance'), 'fixed validation wrapper'
-        assert_includes entry.fetch('guidance'), 'without trailing arguments'
+        assert_includes entry.fetch('guidance'), 'repository-setup.md#required-validation-inputs'
       end
     end
   end

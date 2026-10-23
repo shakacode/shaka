@@ -44,11 +44,8 @@ module Shaka
         return if original.dig('task_overrides', 'arguments') == []
 
         binding['reasons'] << 'repository validation used command arguments'
-        binding['guidance'] = 'Put mappings in the fixed validation wrapper or the repository script it invokes; ' \
-                              'preserve every required check, then rerun without trailing arguments. ' \
-                              'Inspect and review the script change; ' \
-                              'do not edit the result JSON. ' \
-                              'See skills/shaka/references/repository-setup.md#required-validation-inputs.'
+        binding['guidance'] = 'For required mappings, see ' \
+                              'skills/shaka/references/repository-setup.md#required-validation-inputs.'
       end
 
       def check_kind(kind, original, binding)
