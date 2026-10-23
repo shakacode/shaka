@@ -45,8 +45,8 @@ module Shaka
       parts.concat(measured(steps, dropped)) unless steps.empty?
       parts << GUIDE unless unavailable
       # The hidden line lets the next update, from any session, keep these steps.
-      parts.push(TimelineSteps.hidden(steps, dropped), TaskTiming.hidden(@timeline))
-      { 'summary' => summary, 'body' => parts.compact.join("\n\n") }
+      { 'summary' => summary,
+        'body' => [*parts, TimelineSteps.hidden(steps, dropped), TaskTiming.hidden(@timeline)].compact.join("\n\n") }
     end
 
     private

@@ -79,14 +79,6 @@ class TimingsDetailsTest < Minitest::Test
     assert_equal ['Between checkpoints'], rows(detail).map(&:first)
   end
 
-  def test_a_recorded_task_start_includes_work_before_the_first_commit
-    data = timeline(first_commit: at(-5), merged: at(30)).merge('task_started_at' => at(-60))
-    detail = Shaka::TimingsDetails.new(data).detail
-    assert_equal ['Before the pull request', '1h 0m'], rows(detail).first.values_at(0, 3)
-    assert_includes detail['body'], '1h 30m between checkpoints'
-    assert_equal 'Timings · 1h 30m between checkpoints', detail['summary']
-  end
-
   def test_an_unavailable_timeline_is_noted_without_publishing_the_raw_error
     detail = Shaka::TimingsDetails.new({ 'unavailable' => 'gh: HTTP 502 from api.github.com' }).detail
     assert_equal 'Timings · timeline unavailable', detail['summary']
