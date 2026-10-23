@@ -260,6 +260,48 @@ there; Shaka does not require that file.
 Command arguments are parsed as argument lists. Put pipelines and other compound
 shell behavior in repository scripts rather than in command flags.
 
+## Required validation inputs
+
+When `evidence verify` reports `repository validation used command arguments`,
+keep that result as diagnostic evidence. A successful `evidence run ... -- ARGS`
+does not satisfy repository validation: arguments could select fewer checks.
+
+If the repository's selector requires explicit mappings, put the approved literal
+arguments in its fixed `.agents/shaka/bin/validate` wrapper. Keep every required
+lint, security, and other check. For example, adapt the existing wrapper:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+root="$(env -u GIT_DIR -u GIT_WORK_TREE git -C "$(dirname -- "$0")" rev-parse --show-toplevel)"
+cd "$root"
+[[ $# -eq 0 ]] || exit 64
+script/run-changed-specs \
+  --spec-for app/new.rb spec/new_spec.rb \
+  --no-spec-for README.md 'Documentation only'
+bin/lint
+```
+
+Use the repository's actual selector and full validation sequence. Have the task
+owner review each mapping and exclusion against the changed files; a successful
+selector exit does not prove sufficient coverage. Do not use `eval`, shell command
+strings, an executable override, or an external untracked mapping file.
+
+If the repair changes a Shaka wrapper, keep it in a separate setup/migration PR;
+the feature configuration guard still applies. An existing repository script
+already invoked by that wrapper can instead own the literal mappings, with its
+changes covered by the candidate tree and review. Keep the same required checks.
+
+Inspect the script diff before execution. Run `evidence run --command validate`
+with the existing root, trusted ref, and repository flags, without trailing
+arguments. Commit the script with the candidate, bind the fresh result to that
+head, and obtain fresh review before verifying. Shaka binds the candidate tree
+and wrapper settings; changing a literal mapping invalidates the earlier result.
+An unchanged wrapper still requires fresh validation when affected inputs change.
+Do not edit historical evidence or treat this repair as merge authorization.
+
+This uses the existing fixed-command interface and needs no helper upgrade or new
+setting. For the older layout, the same procedure uses `.agents/bin/validate`.
 
 ## Validate the configuration
 
