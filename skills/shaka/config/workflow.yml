@@ -509,9 +509,10 @@ phases:
         required `usage` (`note` and `records` from
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
         whose summary names usage is refused; walkthroughs also require `head`.
-        `intent` holds one line each for `why`, `scope`, `leaves_out`, and `safe_because`: the
-        problem, what the PR covers, what it deliberately leaves out, and the fact its safety rests
-        on. Its `review_effort`, 1 to 5, tells the reviewer how hard to look given that blast radius:
+        `intent` holds one line each for `why`, `scope`, and `safe_because`: the problem,
+        what changes, and the concrete safeguard. Add optional `leaves_out` only for a deliberate
+        deferred part readers would reasonably expect; otherwise omit it. Change and review includes
+        GitHub's file/line counts and path-based buckets. Its `review_effort`, 1 to 5, tells the reviewer how hard to look:
         1 for docs a reader can trust from the description, 5 for irreversible or security changes.
         The helper refuses a rating below the floor the changed files set; to choose or change the
         floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
@@ -521,6 +522,9 @@ phases:
         When `description` returns `closing_issues`, correct the wording it names once.
         The helper writes the repository validation and local review line under Verification
         from `--validation-result` and `--review-result`, so leave those out of `checks`.
+        An optional linked `verification.summary` gives a compact result. Keep material gaps visible
+        in `merge_limitations`; accepted gaps, checks, tables, and `details` fold under Evidence and limitations.
+        Use optional `task_history` for the initial request and useful decision history.
         `verification` lists 1 to 3 `checks`, each proof of this PR's own claim: what was run
         against the changed behavior and its outcome, citing a link or the command. Its
         `not_verified` line names a claim this PR makes that went unproven and why that is
@@ -803,6 +807,10 @@ phases:
         current head after the builds settle.
         When the provider supplies the preview solely in a comment or log, supply its verified
         current-head URL. Preserve an explicit choice that this repository deploys nothing.
+        Complete the trusted `pr_evidence` guide after this last publication, including any
+        required rendering preview on the PR itself. Inspect the live result. A sample comment
+        does not complete self-preview; a failed preview blocks handoff until resolved.
+        Repeat after a new head or later publication.
       - Reassess scope and authority for the final head, including the base the PR actually
         targets: `pr` reports it as `baseRefName`, and a retarget after planning is the case
         that silently moves an Auto merge onto a branch nobody agreed to. Refresh the

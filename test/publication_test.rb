@@ -57,12 +57,12 @@ class PublicationRegressionTest < Minitest::Test
     rendered = Shaka::Publication.description(
       description_content('table' => { 'columns' => columns, 'rows' => [%w[openai sol UNKNOWN medium 1 2 3 4 5 6]] })
     )
-    widths = visible_table_widths(rendered)
+    widths = visible_table_widths(rendered.split('<summary>Evidence and limitations</summary>').last)
     assert_equal [columns.size] * 3, widths
   end
 
   def visible_table_widths(markdown)
-    markdown.split('<details>', 2).first.lines.select { |line| line.start_with?('|') }.map do |line|
+    markdown.split('</details>', 2).first.lines.select { |line| line.start_with?('|') }.map do |line|
       line.strip.delete_prefix('|').delete_suffix('|').split('|').size
     end
   end
@@ -226,9 +226,9 @@ class PublicationStructureTest < Minitest::Test
   def test_a_details_summary_cannot_close_its_own_disclosure
     rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    # Provenance, skills, settings, usage with pricing notes, and supplied details.
-    assert_equal 6, rendered.scan('</summary>').size
-    assert_equal 6, rendered.scan('</details>').size
+    # Metrics, provenance, skills, settings, usage with pricing notes, and supplied details.
+    assert_equal 8, rendered.scan('</summary>').size
+    assert_equal 8, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing

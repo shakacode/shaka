@@ -38,7 +38,9 @@ class ConfigurationBoundaryTest < Minitest::Test
   INTERNAL = %w[configuration.rb repository_config.rb trusted_config_source.rb].freeze
   OTHER_PATHS = %w[install/locations.rb install/official.rb install/official_links.rb install/status_inventory.rb
                    merge_review_comparison.rb seam/initializer_readme.rb seam/pointer.rb].freeze
-  OTHER_GIT_READ = %w[local_review/criteria.rb seam/upgrade_plan/indexed_references.rb].freeze
+  # Preview reads pinned renderer source; configuration still goes through its existing owner.
+  OTHER_GIT_READ = %w[local_review/criteria.rb seam/upgrade_plan/indexed_references.rb
+                      publication/rendering_preview.rb].freeze
 
   def test_public_paths_remain_concrete_and_independent
     paths = Shaka::Configuration::Paths

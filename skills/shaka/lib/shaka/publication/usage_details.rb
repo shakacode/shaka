@@ -54,6 +54,15 @@ module Shaka
     end
   end
 
+  # Marks the cost outside the disclosure so a usage-only refresh can update it too.
+  module UsageEstimate
+    MARKER = '<!-- shaka:estimated-cost -->'
+    BLOCK = /^#{Regexp.escape(MARKER)}\n\*\*Estimated (?:token costs|cost):\*\* [^\n]*$/
+
+    def self.markdown(detail) = "#{MARKER}\n**Estimated token costs:** #{detail.fetch('estimate')}"
+    def self.refresh(region, detail) = region.sub(BLOCK) { markdown(detail) }
+  end
+
   # Renders the PR usage table so every host publishes the same rows and alignment.
   class UsageDetails
     # Hand-written notes are what made each host publish a different shape.
@@ -82,7 +91,8 @@ module Shaka
       checked
       fresh = @records.flat_map { |entry| hosted(entry['columns'], entry['identity']) }
       rows = UsageRows.new(fresh + carried_columns, earlier: earlier_reports.any?)
-      { 'summary' => [SUMMARY, rows.summary].compact.join(' · '), 'body' => body(rows) }
+      { 'summary' => [SUMMARY, rows.summary].compact.join(' · '), 'body' => body(rows),
+        'estimate' => rows.summary&.delete_suffix(' estimated') || 'UNKNOWN' }
     end
 
     private
