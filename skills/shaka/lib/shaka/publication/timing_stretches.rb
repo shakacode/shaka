@@ -32,7 +32,7 @@ module Shaka
 
     # A rebase can date the first commit after the pull request opened; then there is no earlier stretch.
     def before_opening
-      first = @timeline['first_commit']&.utc
+      first = (@timeline['task_started_at'] || @timeline['first_commit'])&.utc
       first && first < @opened ? [stretch('Before the pull request', first, @opened, 'opened')] : []
     end
 

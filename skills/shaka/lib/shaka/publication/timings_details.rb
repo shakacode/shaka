@@ -4,6 +4,7 @@ require_relative '../error'
 require_relative 'run_summary'
 require_relative 'timeline_steps'
 require_relative 'timing_stretches'
+require_relative 'task_timing'
 
 module Shaka
   # Renders the time between checkpoints, how long each checkpoint waited on a person, and the
@@ -40,11 +41,12 @@ module Shaka
       # The reason can quote gh output, so it stays out of the public body.
       unavailable = @timeline.key?('unavailable')
       parts = unavailable ? [UNAVAILABLE] : stretches
+      parts << TaskTiming.summary(@timeline)
       parts.concat(measured(steps, dropped)) unless steps.empty?
       parts << GUIDE unless unavailable
       # The hidden line lets the next update, from any session, keep these steps.
-      parts << TimelineSteps.hidden(steps, dropped) unless steps.empty?
-      { 'summary' => summary, 'body' => parts.compact.join("\n\n") }
+      { 'summary' => summary,
+        'body' => [*parts, TimelineSteps.hidden(steps, dropped), TaskTiming.hidden(@timeline)].compact.join("\n\n") }
     end
 
     private

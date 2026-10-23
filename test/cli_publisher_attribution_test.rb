@@ -64,7 +64,7 @@ class CliPublisherAttributionTest < Minitest::Test
         assert_predicate status, :success?, error
         body = File.read(File.join(dir, 'published.md'))
         assert_includes body, 'Codex · OpenAI · gpt-6.1-sol (configured) · medium'
-        assert_includes body, 'served model is UNKNOWN'
+        assert_includes body, 'Served model unavailable in saved Codex logs.'
       end
     end
   end

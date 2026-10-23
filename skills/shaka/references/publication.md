@@ -24,6 +24,10 @@
 
 ## Review evidence
 
+- Supply description `task_started_at` from the original task's initiating
+  instruction timestamp in UTC. Omit it when unavailable or later than PR opening.
+  The helper retains it across updates; a resumed chat's start is not a new task start.
+
 - Put the current-head recommendation, main reason, and next action before analysis.
 - Name model settings with their provenance; a configured model is not proof of a served model.
 - Name the user benefit, scope, and unfinished verification when they affect the decision.

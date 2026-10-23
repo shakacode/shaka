@@ -86,16 +86,23 @@ module Shaka
     # The bound results Verification reports and the floor the changed paths set; nil when not read.
     attr_reader :verdict, :review_effort_floor
 
-    NOTE = 'Local files remain local. This reports operation settings and cannot restore them. ' \
-           'It does not prove earlier checks ran. Private merge.preference grants no Auto authority. ' \
-           'Private trials default to Ask; explicit user authorization and live required gates govern merging.'
-    OPERATIONS = { 'validation' => 'Before push: validation', 'review' => 'Review' }.freeze
-    CURRENT = 'Current merge input (not evidence)'
+    NOTE = 'Only the listed runs are covered. Selecting settings does not show that a check ran.'
+    LOCAL_NOTE = 'Local files remain local; the values below are a report, not a backup. ' \
+                 'Private trials default to asking before merge. A local merge preference cannot authorize merging; ' \
+                 'user authorization and required GitHub checks still apply.'
+    INSTALLATIONS = { 'revision' => 'installed revision', 'development' => 'development install',
+                      'uninstalled' => 'no installation record', 'UNKNOWN' => 'installation source unavailable' }.freeze
+    OPERATIONS = { 'validation' => 'Validation', 'review' => 'Review' }.freeze
+    CURRENT = 'Current settings'
     # Settings from these sources are not readable in the repository, so the block keeps every value.
     UNCOMMITTED = %w[private/local preview/local].freeze
 
     def detail
-      status = @verdict ? 'Bound to the current candidate commit.' : 'UNKNOWN: rerun missing evidence.'
+      status = if @verdict
+                 'Recorded checks match this PR’s current commit.'
+               else
+                 'No matching check records supplied. Rerun missing validation or review to record them.'
+               end
       { 'summary' => SUMMARY, 'body' => [status, NOTE, current_line, *operations_table, *values].join("\n\n") }
     end
 
@@ -104,7 +111,7 @@ module Shaka
     def current_line
       settings = Evidence::PublicSettings.sanitize(@current)
       version, installation = settings.values_at('installation.version', 'installation.source')
-      shaka = installation == 'UNKNOWN' ? version : "#{version} (installation: #{installation})"
+      shaka = "#{version} (#{INSTALLATIONS.fetch(installation, 'REDACTED')})"
       "#{CURRENT}: #{SettingsTable.source(settings, @repository)}; Shaka #{shaka}"
     end
 
@@ -112,11 +119,11 @@ module Shaka
     # current ones, so a row needs only what can still vary: its revision and what it ran with.
     def operations_table
       rows = operations.map do |title, settings, run|
-        [title, SettingsTable.source(settings, @repository), [ran_with(settings), run].compact.join(': ')]
+        [title, SettingsTable.source(settings, @repository), [SettingsTable.ran_with(settings), run].compact.join(': ')]
       end
       return [] if rows.empty?
 
-      lines = [['Operation', 'Settings', 'Ran with'], %w[--- --- ---], *rows]
+      lines = [['Step', 'Settings source', 'Run details'], %w[--- --- ---], *rows]
       [lines.map { |cells| "| #{cells.join(' | ')} |" }.join("\n")]
     end
 
@@ -129,24 +136,12 @@ module Shaka
       end
     end
 
-    def ran_with(settings)
-      command, reviewer, effort = settings.values_at('overrides.command', 'overrides.reviewer', 'overrides.effort')
-      parts = [command, reviewer, ("#{effort} effort" unless effort == 'UNKNOWN')].compact - ['UNKNOWN']
-      parts.empty? ? 'UNKNOWN' : parts.join(', ')
-    end
-
     def values
-      columns = operations.map { |title, settings| [column_title(title, settings), settings] }
+      columns = operations.map { |title, settings| [SettingsTable.column_title(title, settings), settings] }
       columns << [CURRENT, Evidence::PublicSettings.sanitize(@current)]
       return [] unless columns.any? { |_title, settings| UNCOMMITTED.include?(settings['source']) }
 
-      [SettingsTable.disclosure(columns)]
-    end
-
-    # Several reviewers would otherwise share one column title.
-    def column_title(title, settings)
-      reviewer = settings['overrides.reviewer']
-      reviewer == 'UNKNOWN' ? title : "#{title}: #{reviewer}"
+      [LOCAL_NOTE, SettingsTable.disclosure(columns)]
     end
   end
 end
