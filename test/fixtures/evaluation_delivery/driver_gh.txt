@@ -1,0 +1,25 @@
+require 'json'
+root = File.dirname(__FILE__)
+row = JSON.parse(File.read(File.join(root, 'response.json'))).fetch('data').fetch('node')
+mode = File.read(File.join(root, 'mode'))
+input = STDIN.read
+request = input.empty? ? nil : JSON.parse(input)
+File.open(File.join(root, 'calls.jsonl'), 'a') { |file| file.puts(JSON.generate(argv: ARGV, request: request)) }
+posted = File.join(root, 'posted.json')
+head = File.exist?(File.join(root, 'moved')) ? 'b' * 40 : row.dig('pullRequest', 'headRefOid')
+if ARGV.include?('graphql')
+  row['body'] = JSON.parse(File.read(posted)).fetch('body')
+  row['body'] += ' edited' if mode == 'edited_body'
+  row['author']['login'] = 'another-actor' if mode == 'wrong_actor'
+  row['pullRequest']['headRefOid'] = head
+  puts JSON.generate(data: { node: row })
+elsif ARGV.include?('POST')
+  File.write(posted, JSON.generate(request))
+  File.write(File.join(root, 'moved'), 'yes') if mode == 'move_after_post'
+  abort 'Ambiguous write failure' if mode == 'ambiguous_post'
+  puts JSON.generate(node_id: row.fetch('id'), id: Integer(row.fetch('fullDatabaseId'), 10))
+else
+  puts JSON.generate(number: 1, state: 'open', merged: false,
+                     head: { sha: head, repo: { full_name: 'fixture-org/cell' } },
+                     base: { repo: { full_name: 'fixture-org/cell' } })
+end

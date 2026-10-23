@@ -43,3 +43,6 @@ does not accept a terminal action, prove a hidden task passed, or qualify all
 activity. `command_capture_complete` remains false. GitHub review receipts,
 delivery grading, full activity qualification, and release decisions need their
 own evidence.
+
+Use [head-specific driver reviews](driver-reviews.md) to run this verifier for a
+pinned PR head, publish its result, and obtain a native review receipt.
