@@ -109,7 +109,7 @@ module Shaka
 
         status
         signal('TERM')
-        sleep 0.1
+        sleep 0.1 unless @status
         status
         signal('KILL')
         Timeout.timeout(5) { @status = Process.waitpid2(@pid).last } unless @status

@@ -27,6 +27,14 @@ class EvaluationProtectedVerificationTest < Minitest::Test
     assert_equal "hidden failure\n", File.read(verifier_log)
   end
 
+  def test_successful_short_command_is_not_timed_out_by_cleanup_grace
+    receipt = Shaka::Evaluation::ProtectedVerification.new(environment: {}).run(
+      command: ['/usr/bin/true'], cwd: @root, directory: File.join(@root, 'verification'),
+      seconds: 0.09, clock_id: 'test-controller'
+    )
+    assert_equal 0, receipt.fetch('exit_code')
+  end
+
   def test_verifier_timeout_aborts_capture_and_reaps_both_processes
     body = "File.write('verifier-pid', Process.pid); sleep 30"
     assert_raises(IOError) do
