@@ -51,6 +51,12 @@ class RenderingPreviewTest < Minitest::Test
     assert_equal 'rendering preview aaaaaaa', result.fetch('fact')
   end
 
+  def test_fork_prs_do_not_owe_an_unsafe_preview
+    result = rendering_fact(preview_github, nil, source: 'contributor/shaka')
+    assert_empty result.fetch('owed')
+    assert_equal 'rendering preview skipped', result.fetch('fact')
+  end
+
   def test_ordinary_projects_need_no_self_hosted_preview_or_extra_read
     github = Object.new
     def github.repository = 'owner/repo'
@@ -77,10 +83,12 @@ class RenderingPreviewTest < Minitest::Test
     github
   end
 
-  def rendering_fact(github, body)
-    github.define_singleton_method(:api) { |_path| { 'body' => body, 'head' => { 'sha' => 'a' * 40 } } }
+  def rendering_fact(github, body, source: github.repository)
+    head = { 'sha' => 'a' * 40, 'repo' => { 'full_name' => source } }
+    github.define_singleton_method(:api) { |_path| { 'body' => body, 'head' => head } }
     handoff = Shaka::Handoff.new(github)
     handoff.instance_variable_set(:@owed, [])
+    handoff.instance_variable_set(:@notes, [])
     fact = handoff.send(:rendering_fact, 'a' * 40)
     { 'owed' => handoff.instance_variable_get(:@owed), 'fact' => fact }
   end
