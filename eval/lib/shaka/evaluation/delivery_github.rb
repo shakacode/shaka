@@ -6,7 +6,7 @@ require 'timeout'
 
 module Shaka
   module Evaluation
-    # Bounded read-only GitHub transport shared by protected delivery readers.
+    # Bounded GitHub transport for protected delivery readers and the fixture review writer.
     class DeliveryGitHub
       def initialize(github:, seconds: 30, deadline: nil)
         unless valid_transport?(github, seconds)
@@ -38,6 +38,8 @@ module Shaka
       end
 
       def get(path) = capture(['--method', 'GET', path], '')
+
+      def post(path, request) = capture(['--method', 'POST', path, '--input', '-'], JSON.generate(request))
 
       private
 
