@@ -37,6 +37,8 @@ class CliRenderingPreviewTest < Minitest::Test
   end
 
   def fake_gh
-    DESCRIPTION_GH.gsub('owner/repo', 'shakacode/shaka').sub("'sha' => 'c' * 40", "'sha' => ENV.fetch('PREVIEW_HEAD')")
+    DESCRIPTION_GH.gsub('owner/repo', 'shakacode/shaka')
+                  .gsub("'full_name' => 'shakacode/shaka'", "'full_name' => 'ShakaCode/Shaka'")
+                  .sub("'sha' => 'c' * 40", "'sha' => ENV.fetch('PREVIEW_HEAD')")
   end
 end

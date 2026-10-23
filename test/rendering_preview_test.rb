@@ -57,6 +57,11 @@ class RenderingPreviewTest < Minitest::Test
     assert_equal 'rendering preview skipped', result.fetch('fact')
   end
 
+  def test_repository_casing_cannot_skip_a_required_preview
+    result = rendering_fact(preview_github, nil, source: 'ShakaCode/Shaka')
+    assert_includes result.fetch('owed').join, 'description --rendering-preview-root'
+  end
+
   def test_ordinary_projects_need_no_self_hosted_preview_or_extra_read
     github = Object.new
     def github.repository = 'owner/repo'

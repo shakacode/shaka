@@ -16,7 +16,7 @@ module Shaka
     def publish(options, pull, github, &)
       root = options[:rendering_preview_root]
       return yield unless root
-      if pull.dig('head', 'repo', 'full_name') != github.repository
+      unless pull.dig('head', 'repo', 'full_name').to_s.casecmp?(github.repository)
         raise Error, 'Rendering preview requires a same-repository PR.'
       end
 

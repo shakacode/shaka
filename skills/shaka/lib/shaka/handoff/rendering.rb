@@ -23,7 +23,7 @@ module Shaka
 
     def fork_preview?(pull)
       source = pull.dig('head', 'repo', 'full_name')
-      source && source != @github.repository
+      source && !source.casecmp?(@github.repository)
     end
 
     # Every final read checks the head so an intervening push cannot pass as current.
