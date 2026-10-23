@@ -15,16 +15,26 @@ module Shaka
         @environment = environment.dup.freeze
       end
 
-      def run(command:, cwd:, directory:, seconds:, clock_id:)
+      def run(command:, cwd:, directory:, seconds:, clock_id:, &observer)
         validate(command, seconds)
         @started = true
-        @reader = CodexEvents.new(clock_id:)
+        @reader = CodexEvents.new(clock_id:, clock: -> { @received_at || now }, observer: observing(observer))
         @deadline = now + seconds
         Dir.mkdir(directory, 0o700)
         CodexStreams.open(reader: @reader, directory:) { |streams| execute(command, File.realpath(cwd), streams) }
       end
 
       private
+
+      def observing(observer)
+        return unless observer
+
+        lambda do |observation|
+          throw :codex_capture_deadline, true unless now < @deadline
+
+          observer.call(observation)
+        end
+      end
 
       def validate(command, seconds)
         valid = !@started && valid_command?(command) && valid_seconds?(seconds)
@@ -43,7 +53,7 @@ module Shaka
         @pipes = IO.pipe + IO.pipe
         spawn(command, cwd)
         @channels = { @pipes[0] => 0, @pipes[2] => 1 }
-        timed_out = pump(streams)
+        timed_out = catch(:codex_capture_deadline) { pump(streams) }
         @reader.finish(exit_code: timed_out ? nil : @status.exitstatus).merge(
           'transport_status' => timed_out ? 'timed_out' : 'completed', 'exit_code' => @status&.exitstatus
         )
@@ -62,10 +72,9 @@ module Shaka
       def pump(streams)
         loop do
           observe_process
-          return false if @status && @channels.empty?
-
           remaining = @deadline - now
           return true unless remaining.positive?
+          return false if @status && @channels.empty?
 
           ready(remaining).each { |io| consume(io, streams) }
         end
@@ -74,17 +83,22 @@ module Shaka
       def ready(remaining) = IO.select(@channels.keys, nil, nil, [remaining, 0.05].min)&.first || []
 
       def observe_process
-        @status ||= Process.waitpid2(@pid, Process::WNOHANG)&.last
-        terminate if @status
+        terminate if status
       end
+
+      def status = @status ||= Process.waitpid2(@pid, Process::WNOHANG)&.last
 
       def consume(io, streams)
         data = io.read_nonblock(16_384, exception: false)
         return if data == :wait_readable
+
+        @received_at = now
         return streams.write(@channels.fetch(io), data) if data
 
         streams.eof(@channels.delete(io))
         io.close
+      ensure
+        @received_at = nil
       end
 
       def cleanup
@@ -96,9 +110,10 @@ module Shaka
       def terminate
         return if @terminated
 
+        status
         signal('TERM')
         sleep 0.1
-        @status ||= Process.waitpid2(@pid, Process::WNOHANG)&.last
+        status
         signal('KILL')
         Timeout.timeout(5) { Process.waitpid(@pid) } unless @status
         @terminated = true

@@ -72,6 +72,24 @@ under one deadline. Parent exit triggers group cleanup before waiting for EOF;
 timeout or invalid output also terminates and reaps the owned process.
 Raw output remains private, including after failure.
 
+Pass an optional block to `CodexCapture#run` to react to native events while the process
+is running. The controller can use it to start protected verification or retain
+readbacks before the agent exits. Each call receives one deeply frozen observation,
+after lifecycle validation, host timestamping and retention, in stream order.
+The observation has the same shape as an entry in the final `events` array.
+It remains private controller data, never an instruction from the agent.
+Events completed by one pipe read share its host receipt timestamp, so callback
+work cannot retime already-buffered activity. Deadline checks still use current
+monotonic time.
+
+The observer runs synchronously on the controller thread. Supply bounded work;
+its time counts against the capture deadline, but the transport cannot interrupt
+a blocked callback. Once it returns, no further callback starts after expiry,
+including for events already buffered in the same pipe read.
+An observer exception invalidates the reader and aborts the
+capture, terminating and reaping its process without returning a capture result.
+Observer return values grant no terminal acceptance or capture qualification.
+
 `transport_status` describes collection, not task success. A timeout returns
 `timed_out` with no terminal candidate. Native failure or missing completion also
 cannot produce a terminal. `command_capture_complete` remains false, including

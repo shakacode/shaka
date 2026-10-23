@@ -12,12 +12,14 @@ module Shaka
       MAX_BYTES = 64 * MAX_LINE
       MAX_EVENTS = 100_000
 
-      def initialize(clock_id:, clock: -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) })
+      def initialize(clock_id:, clock: -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) }, observer: nil)
         raise ArgumentError, 'Expected a controller clock lifetime and clock' unless
-          clock_id.is_a?(String) && !clock_id.strip.empty? && clock.respond_to?(:call)
+          clock_id.is_a?(String) && !clock_id.strip.empty? && clock.respond_to?(:call) &&
+          (observer.nil? || observer.respond_to?(:call))
 
         @clock_id = clock_id
         @clock = clock
+        @observer = observer
         @events = []
         @bytes = 0
         @digest = Digest::SHA256.new
@@ -30,6 +32,7 @@ module Shaka
         observation = { 'ordinal' => @events.size + 1, 'received_at' => timestamp, 'native' => event }
         @state.receive(observation)
         retain(observation, line)
+        notify(observation) if @observer
         nil
       rescue JSON::ParserError, KeyError, TypeError, NoMethodError, ArgumentError, IOError
         @invalid = true
@@ -51,6 +54,21 @@ module Shaka
       end
 
       private
+
+      def notify(observation)
+        @observer.call(deep_freeze(observation))
+      rescue StandardError
+        @invalid = true
+        unavailable
+      end
+
+      def deep_freeze(value)
+        case value
+        when Hash then value.each { |key, entry| [key, entry].each { deep_freeze(it) } }
+        when Array then value.each { deep_freeze(it) }
+        end
+        value.freeze
+      end
 
       def parse(line)
         unavailable unless line.is_a?(String) && within_bounds?(line) && line?(line)

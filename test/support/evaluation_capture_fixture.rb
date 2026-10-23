@@ -18,9 +18,9 @@ module EvaluationCaptureFixture
     super
   end
 
-  def run_child(body, seconds: 5)
+  def run_child(body, seconds: 5, &)
     @capture.run(command: [RbConfig.ruby, '-rjson', '-e', body], cwd: @root,
-                 directory: @directory, seconds:, clock_id: 'test-controller')
+                 directory: @directory, seconds:, clock_id: 'test-controller', &)
   end
 
   def native_stream
