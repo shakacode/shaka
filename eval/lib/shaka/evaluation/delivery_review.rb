@@ -63,7 +63,7 @@ module Shaka
 
           Time.iso8601(value)
         end
-        submitted.between?(created, updated)
+        created <= updated && submitted <= updated
       end
     end
   end
