@@ -28,6 +28,9 @@ module Shaka
         open_ledger do
           capture = @capture.run(command:, cwd:, directory: File.join(directory, 'capture'),
                                  seconds: remaining, clock_id: @plan.fetch('clock_id')) { observe(it) }
+          raise IOError, 'Driver native capture incomplete' unless
+            capture.values_at('transport_status', 'native_status', 'exit_code') == ['completed', 'completed', 0]
+
           { 'capture' => capture, 'verifications' => @entries }
         end
       end

@@ -2,18 +2,10 @@
 
 require_relative 'test_helper'
 require_relative '../eval/lib/shaka/evaluation/codex_driver'
-require_relative 'support/evaluation_delivery_fixture'
+require_relative 'support/evaluation_codex_driver_fixture'
 
 class EvaluationCodexDriverTest < Minitest::Test
-  include EvaluationDeliveryFixture
-
-  def setup
-    super
-    source = File.read(File.expand_path('fixtures/evaluation_delivery/driver_gh.txt', __dir__))
-    File.write(@gh, "#!#{RbConfig.ruby}\n#{source}")
-    File.write(File.join(@directory, 'mode'), '')
-    @output = File.join(@directory, 'driver')
-  end
+  include EvaluationCodexDriverFixture
 
   def test_observed_head_transitions_run_once_each_and_preserve_private_receipts
     result = run_driver(sequence: [HEAD, 'c' * 40, 'c' * 40, HEAD])
@@ -88,29 +80,8 @@ class EvaluationCodexDriverTest < Minitest::Test
 
   private
 
-  def run_driver(sequence: [HEAD], verifier: 'exit 0', max_attempts: 4, seconds: 10, writer: nil)
-    plan = { 'repository' => 'fixture-org/cell', 'number' => 1,
-             'driver_actor' => 'fixture-agent', 'clock_id' => 'driver-clock' }
-    @writer = writer || Shaka::Evaluation::CodexDriver.new(plan, github: @gh, environment: {},
-                                                                 verifier: { command: [RbConfig.ruby, '-e', verifier],
-                                                                             cwd: @directory, environment: {} },
-                                                                 max_attempts:)
-    command = [RbConfig.ruby, child, JSON.generate(sequence), @buffered ? 'buffered' : 'stream']
-    @writer.run(command:, cwd: @directory,
-                directory: @output, seconds:)
-  end
-
   def assert_journal(entries)
     assert_equal(%w[started completed started completed started completed], ledger.map { it.fetch('state') })
     assert_equal(entries, ledger.filter_map { it['entry'] })
-  end
-
-  def child = File.expand_path('fixtures/evaluation_delivery/codex_driver.txt', __dir__)
-
-  def ledger = File.readlines(File.join(@output, 'ledger.jsonl')).map { JSON.parse(it) }
-
-  def posts
-    path = File.join(@directory, 'calls.jsonl')
-    File.exist?(path) ? File.readlines(path).map { JSON.parse(it) }.select { it.fetch('argv').include?('POST') } : []
   end
 end
