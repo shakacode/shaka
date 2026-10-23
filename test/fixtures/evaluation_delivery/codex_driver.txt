@@ -13,6 +13,8 @@ completed = lambda do
   File.readlines('driver/ledger.jsonl', encoding: 'UTF-8').map { JSON.parse(it) }.count { it['state'] == 'completed' }
 end
 until completed.call == 1; sleep 0.01; end
+exit if ARGV[1] == 'incomplete'
+sleep 30 if ARGV[1] == 'hang'
 expected = 1
 previous = sequence.first
 sequence.drop(1).each_with_index do |head, index|
@@ -29,3 +31,5 @@ sequence.drop(1).each_with_index do |head, index|
   until File.readlines('calls.jsonl').size > calls && completed.call == expected; sleep 0.01; end
 end
 finish.each { puts JSON.generate(it) }
+
+exit 7 if ARGV[1] == 'failed'

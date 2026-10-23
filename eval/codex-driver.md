@@ -27,10 +27,15 @@ Unchanged observations do not repeat verification, including a FAIL. A later
 different head can recover; returning to an earlier SHA runs another check.
 Attempts and cumulative executions count from one in this single run.
 A flushed, synced private `ledger.jsonl` records each started attempt before work
-and its completed receipt afterward. An exception records a failed attempt and
+and its completed receipt afterward. A verifier exception records a failed attempt and
 aborts capture without an aggregate result. A failed entry does not establish
 whether execution or publication occurred; inspect retained evidence before
 starting another controller. Instances cannot resume or retry ambiguous writes.
+
+A failed, incomplete or timed-out native capture also raises without returning an
+aggregate, even when earlier verifier receipts succeeded. Completed receipts and
+raw logs remain private for diagnosis. Native completion does not establish
+complete command capture or delivery success.
 
 The fresh controller directory is mode 0700; the ledger is 0600. Raw native logs
 and each verifier's bounded output stay beneath it. Discovery and verification
@@ -66,3 +71,7 @@ The successful fixture synchronized setup and continued emitting checkpoints.
 This establishes mechanics on that fixture, with zero model calls. It does not
 qualify agent-authored pushes, protected checkout isolation, Linux integration,
 complete capture, or measured Ask cells.
+
+The [isolated Linux push qualification](reports/linux-codex-pushes.md) exercised
+actual agent commits and pushes. It preserves the remaining capture and release
+qualification limits.

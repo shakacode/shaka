@@ -240,7 +240,11 @@ supplies immutable fixture Action pins for D2. The [Codex event reader](../../ev
 retains bounded terminal/tool observations without capture-completeness evidence.
 Its [process connection](../../eval/codex-events.md#read-a-live-process) feeds live
 output through that reader with private logs, deadlines and owned-process cleanup.
-It still cannot prove a complete command inventory or qualify delivery success.
+The [native controller](../../eval/codex-driver.md) connects observed head changes
+to protected verification and review readback. An
+[isolated Linux qualification](../../eval/reports/linux-codex-pushes.md) exercised
+actual Codex commits and pushes with FAIL then repair PASS. It still cannot prove
+a complete command inventory or qualify delivery success.
 Full tier 3 assembly, the diff card,
 statistics and release verdict remain proposed.
 
@@ -727,11 +731,12 @@ What it does not provide, checked the same way:
   The [offline Ask grader](../../eval/ask-grading.md) now checks the six
   protected-evidence assertions. A [native snapshot reader](../../eval/delivery-snapshots.md)
   captures PR/check identities and final-blob bounds. A [Codex JSONL reader](../../eval/codex-events.md)
-  retains terminal/tool observations; live capture and executor qualification
-  remain unbuilt. The proposal's driver
-  posts head-bound reviews during the run
-  and reads GitHub state back. Tier 3 stays on that driver, and the spike does not
-  test it.
+  retains terminal/tool observations. The [native controller](../../eval/codex-driver.md)
+  now connects observed heads to verification and readback;
+  [Linux mechanics qualification](../../eval/reports/linux-codex-pushes.md) covers
+  actual command-tool pushes. Complete activity and measured delivery qualification
+  remain unfinished. Tier 3 stays on the proposal's driver; the original Harbor
+  spike did not test it.
 
 Rules that hold whenever Harbor runs here. Proposed, enforced by the Ruby wrapper
 that launches it, and set by hand for the spike, which runs before the wrapper
