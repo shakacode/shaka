@@ -137,7 +137,8 @@ class SeamUpgradeMarkdownProsePairTest < Minitest::Test
     'root command' => 'This repository has no `.agents/` directory: `bin/validate` is its own root validator, ' \
                       "not `.agents/bin/validate`.\n",
     'same line' => "Run `bin/validate` from `.agents`.\n",
-    'wrapped' => "Run `bin/validate` from\n`.agents`.\n"
+    'wrapped' => "Run `bin/validate` from\n`.agents`.\n",
+    'env other directory' => "Run `env -C foo.agents bin/validate`.\n"
   }.freeze
 
   def test_prose_naming_directory_and_command_without_changing_into_it_is_ready
@@ -152,7 +153,9 @@ class SeamUpgradeMarkdownProsePairTest < Minitest::Test
 
   PROSE_DIRECTORY_CHANGE = {
     'inline env chdir' => "Run `env --chdir=.agents bin/validate`.\n",
-    'env option first' => "Run `env -i -C .agents bin/validate`.\n"
+    'env option first' => "Run `env -i -C .agents bin/validate`.\n",
+    'env option with argument' => "Run `env -u HOME -C .agents bin/validate`.\n",
+    'env grouped flags' => "Run `env -iC .agents bin/validate`.\n"
   }.freeze
 
   def test_prose_changing_into_the_directory_still_blocks

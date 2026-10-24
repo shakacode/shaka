@@ -30,10 +30,11 @@ module Shaka
           [text, normalize_shell_fragments(text)].any? { |source| source.match?(old_directory_change) }
         end
 
-        # env takes the directory as the -C argument itself; a later path is the command it runs.
+        # env takes the directory as the -C argument itself, after any other options; a later path is the command
+        # it runs.
         def old_directory_change
-          change = /(?:(?:cd|pushd)\s+|chdir\s*\()[^\n]*?|env\s+(?:-\S+\s+)*?(?:-C\s*|--chdir[=\s]\s*)\S*?/
-          /(?<![\w-])(?:#{change})#{Regexp.escape(PATHS::DIRECTORY)}(?![\w.-])/o
+          change = /(?:(?:cd|pushd)\s+|chdir\s*\()[^\n]*?|env\s+(?:[^\n]*?\s)?(?:-[A-Za-z]*C\s*|--chdir[=\s]\s*)\S*?/
+          /(?<![\w-])(?:#{change})(?<![\w.-])#{Regexp.escape(PATHS::DIRECTORY)}(?![\w.-])/o
         end
 
         def legacy_directory_command_pair?(text)
