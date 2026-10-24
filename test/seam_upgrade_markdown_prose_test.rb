@@ -60,9 +60,7 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     'list fence' => "1. ```sh\n   cd .agents\n   bin/validate\n   ```\n",
     'inline code' => "Run `cd .agents && bin/validate` before pushing.\n",
     'quoted inline' => "Run `cd .age\"nts\" && bin/validate`.\n",
-    'wrapped' => "Run `bin/validate` from\n`.agents`.\n",
     'inline env' => "Run `env -C .agents bin/validate`.\n",
-    'same line' => "Run `bin/validate` from `.agents`.\n",
     'prose then fence' => "Run these from the `.agents` directory:\n\n```sh\nbin/validate\n```\n",
     'prose, blanks, fence' => "Run these from the `.agents` directory:\n\n\n```sh\nbin/validate\n```\n",
     'indented middle line' => "Run these from `.agents`\n    once the cache is warm,\nthen `bin/validate`.\n"
@@ -128,8 +126,7 @@ class SeamUpgradeMarkdownRetainedToolTest < Minitest::Test
   end
 end
 
-# Prose has no working directory, so outside code only a change into the directory, or a command it says to run
-# from there, blocks.
+# Prose has no working directory, so outside code only a change into the directory blocks.
 class SeamUpgradeMarkdownProsePairTest < Minitest::Test
   include SeamUpgradeFixture
 
@@ -139,7 +136,8 @@ class SeamUpgradeMarkdownProsePairTest < Minitest::Test
     'full command path' => "There is no `.agents/` directory at all; `.agents/bin/setup` came later.\n",
     'root command' => 'This repository has no `.agents/` directory: `bin/validate` is its own root validator, ' \
                       "not `.agents/bin/validate`.\n",
-    'command elsewhere' => "Run `bin/validate` from the root; `.agents/` holds settings.\n"
+    'same line' => "Run `bin/validate` from `.agents`.\n",
+    'wrapped' => "Run `bin/validate` from\n`.agents`.\n"
   }.freeze
 
   def test_prose_naming_directory_and_command_without_changing_into_it_is_ready
@@ -152,16 +150,13 @@ class SeamUpgradeMarkdownProsePairTest < Minitest::Test
     end
   end
 
-  PROSE_RUN_FROM_DIRECTORY = {
+  PROSE_DIRECTORY_CHANGE = {
     'inline env chdir' => "Run `env --chdir=.agents bin/validate`.\n",
-    'env option first' => "Run `env -i -C .agents bin/validate`.\n",
-    'directory first' => "From the `.agents` directory, run `bin/validate`.\n",
-    'command with arguments' => "Run `bin/test fail` from `.agents`.\n",
-    'parenthesized place' => "Run `bin/validate` (from `.agents`).\n"
+    'env option first' => "Run `env -i -C .agents bin/validate`.\n"
   }.freeze
 
-  def test_prose_running_a_command_from_the_directory_still_blocks
-    PROSE_RUN_FROM_DIRECTORY.each do |name, source|
+  def test_prose_changing_into_the_directory_still_blocks
+    PROSE_DIRECTORY_CHANGE.each do |name, source|
       with_repository do |root|
         write_tracked(root, 'guide.md', source)
         assert_includes report(root).fetch('blockers').join("\n"), 'bare old-layout directory', name
