@@ -42,7 +42,7 @@ approval because a published version cannot be replaced.
    ```
 
    A passing result identifies the commit, version, gem digest, validation digest and
-   notes digest for approval. Ruby checks a clean checkout at remote `main`, matching
+   notes digest for approval. Ruby checks a clean checkout at `shakacode/shaka`'s `main`, matching
    validation and settings, package metadata, file contents and executable modes,
    matching changelog notes, and absence of the release tag. It makes no remote changes.
    Keep the JSON with the release evidence. A pass does not establish behavioral or

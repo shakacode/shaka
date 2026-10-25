@@ -38,6 +38,7 @@ module ReleasePreflightHelpers
     @remote = File.join(@directory, 'origin.git')
     execute('git', 'clone', '--bare', '--quiet', @root, @remote)
     execute('git', 'remote', 'set-url', 'origin', @remote)
+    execute('git', 'config', "url.#{@remote}.insteadOf", 'https://github.com/shakacode/shaka.git')
   end
 
   def prepare_artifact
@@ -70,9 +71,9 @@ module ReleasePreflightHelpers
       'task_overrides' => { 'command' => 'validate', 'arguments' => [] } }
   end
 
-  def capture
+  def capture(**)
     Open3.capture3(RbConfig.ruby, COMMAND, '--commit', @head, '--gem', @gem,
-                   '--validation', @validation, '--notes', @notes, chdir: @root)
+                   '--validation', @validation, '--notes', @notes, chdir: @root, **)
   end
 
   def preflight

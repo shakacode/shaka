@@ -1,13 +1,11 @@
 # frozen_string_literal: true
 
 require 'rubygems/package'
-require 'tmpdir'
 
 module ShakaRelease
   # Compares the supplied gem's metadata, bytes and executable modes with the clean source.
   class Artifact
-    METADATA = %i[name version platform summary authors licenses metadata required_ruby_version
-                  required_rubygems_version dependencies executables bindir require_paths extensions].freeze
+    METADATA = (Gem::Specification.attribute_names - %i[date rubygems_version]).freeze
 
     def initialize(root:, path:)
       @root = root
@@ -39,9 +37,16 @@ module ShakaRelease
       raise Shaka::Error, 'Gem package file list differs from source' unless package.contents.sort == paths
 
       entries = committed_entries
-      Dir.mktmpdir('shaka-release-package') do |directory|
-        package.extract_files(directory)
-        paths.each { |path| check_file(File.join(directory, path), path, entries[path]) }
+      File.open(@path, 'rb') do |archive|
+        Gem::Package::TarReader.new(archive).each do |entry|
+          check_payload(entry, entries) if entry.full_name == 'data.tar.gz'
+        end
+      end
+    end
+
+    def check_payload(entry, entries)
+      Zlib::GzipReader.wrap(entry) do |gzip|
+        Gem::Package::TarReader.new(gzip).each { |file| check_file(file, entries[file.full_name]) }
       end
     end
 
@@ -57,15 +62,15 @@ module ShakaRelease
       end
     end
 
-    def check_file(packaged, path, entry)
-      raise Shaka::Error, "File absent from committed source: #{path}" unless entry
+    def check_file(file, entry)
+      raise Shaka::Error, "File absent from committed source: #{file.full_name}" unless entry
 
       mode, sha = entry
-      bytes = File.binread(packaged)
-      valid = !File.symlink?(packaged) && %w[100644 100755].include?(mode) &&
+      bytes = file.read
+      valid = file.file? && %w[100644 100755].include?(mode) &&
               Digest::SHA1.hexdigest("blob #{bytes.bytesize}\0#{bytes}") == sha &&
-              File.stat(packaged).mode & 0o111 == (mode == '100755' ? 0o111 : 0)
-      raise Shaka::Error, "Gem package content differs from committed source: #{path}" unless valid
+              file.header.mode & 0o111 == (mode == '100755' ? 0o111 : 0)
+      raise Shaka::Error, "Gem package content differs from committed source: #{file.full_name}" unless valid
     end
   end
 end

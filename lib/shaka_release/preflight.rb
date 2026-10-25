@@ -8,6 +8,8 @@ require_relative 'artifact'
 module ShakaRelease
   # Maintainer-only checks; a pass identifies inputs for a separate human publication decision.
   class Preflight
+    REMOTE = 'https://github.com/shakacode/shaka.git'
+
     def initialize(root:, commit:, gem:, validation:, notes:)
       @root = root
       @commit = commit
@@ -22,7 +24,7 @@ module ShakaRelease
       artifact = Artifact.new(root: @root, path: @gem).check
       version = artifact.fetch('version')
       notes = check_notes(version)
-      refuse 'release tag already exists' unless git('ls-remote', '--tags', 'origin', "refs/tags/v#{version}").empty?
+      refuse 'release tag already exists' unless git('ls-remote', '--tags', REMOTE, "refs/tags/v#{version}").empty?
       check_source
       artifact.merge('status' => 'ready_for_approval', 'commit' => @commit,
                      'validation_sha256' => @validation_digest,
@@ -35,8 +37,14 @@ module ShakaRelease
       refuse 'commit must be a full SHA matching HEAD' unless @commit.match?(/\A[0-9a-f]{40}\z/) &&
                                                               git('rev-parse', 'HEAD').strip == @commit
       refuse 'requires a clean checkout' unless git('status', '--porcelain', '--untracked-files=all').empty?
-      remote = git('ls-remote', '--exit-code', 'origin', 'refs/heads/main').split
+      check_index_flags
+      remote = git('ls-remote', '--exit-code', REMOTE, 'refs/heads/main').split
       refuse 'commit differs from remote main' unless remote == [@commit, 'refs/heads/main']
+    end
+
+    def check_index_flags
+      flags = git('ls-files', '-v', '-z').split("\0")
+      refuse 'clear hidden index flags before preflight' unless flags.all? { |entry| entry.start_with?('H ') }
     end
 
     def check_validation
