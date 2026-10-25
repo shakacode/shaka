@@ -61,30 +61,41 @@ approval because a published version cannot be replaced.
    ```bash
    shaka_version=0.1.0.pre.2
    gem list shaka --remote --all --exact --prerelease
-   gh release view "v$shaka_version"
-   git ls-remote --exit-code --tags origin "refs/tags/v$shaka_version"
+   gh release view "v$shaka_version" --repo shakacode/shaka
+   git ls-remote --exit-code --tags https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
    ```
 
-7. Tag and push the validated commit:
+7. Tag and push the validated commit. Replace `APPROVED_COMMIT` with the `commit`
+   recorded in the approval:
 
    ```bash
-   git tag -a "v$shaka_version" -m "Release shaka $shaka_version"
-   git push origin "refs/tags/v$shaka_version"
+   git tag -a "v$shaka_version" APPROVED_COMMIT -m "Release shaka $shaka_version"
+   git push https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
    ```
 
-8. Publish with the maintainer's RubyGems credentials and MFA code:
+8. Publish with the maintainer's RubyGems credentials and MFA code. Replace
+   `APPROVED_GEM_SHA256` with the approved `gem_sha256`. Keep the digest check joined
+   to the upload with `&&` so a changed file stops publication:
 
    ```bash
-   gem push "/outside/checkout/shaka-$shaka_version.gem"
+   ruby -rdigest -e 'abort "Gem differs from approval" unless
+     Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' \
+     "/outside/checkout/shaka-$shaka_version.gem" APPROVED_GEM_SHA256 &&
+     gem push "/outside/checkout/shaka-$shaka_version.gem"
    ```
 
 9. Create the GitHub release from the verified tag and reviewed notes. GitHub appends
    the merged PRs, grouped by label as `.github/release.yml` defines. Use
-   `--prerelease` only for a prerelease version; omit it for a stable version:
+   `--prerelease` only for a prerelease version; omit it for a stable version.
+   Replace `APPROVED_NOTES_SHA256` with the approved `notes_sha256` and keep its
+   check joined to release creation:
 
    ```bash
-   gh release create "v$shaka_version" --verify-tag --prerelease \
-     --title "shaka $shaka_version" --notes-file /outside/checkout/RELEASE_NOTES.md --generate-notes
+   ruby -rdigest -e 'abort "Notes differ from approval" unless
+     Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' \
+     /outside/checkout/RELEASE_NOTES.md APPROVED_NOTES_SHA256 &&
+     gh release create "v$shaka_version" --repo shakacode/shaka --verify-tag --prerelease \
+       --title "shaka $shaka_version" --notes-file /outside/checkout/RELEASE_NOTES.md --generate-notes
    ```
 
 10. Verify RubyGems and GitHub, then install the exact version into a temporary
@@ -92,7 +103,7 @@ approval because a published version cannot be replaced.
 
     ```bash
     gem list shaka --remote --all --exact --prerelease
-    gh release view "v$shaka_version"
+    gh release view "v$shaka_version" --repo shakacode/shaka
     shaka_gem_home=$(mktemp -d)
     GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" \
       gem install shaka --version "$shaka_version" --no-document
