@@ -9,7 +9,7 @@ class PackageReleaseInstallTest < Minitest::Test
     install_gem
     prepare_release
     prepare_newer_main
-    @skills = File.join(@directory, 'skills')
+    @skills = File.join(@environment.fetch('HOME'), '.agents/skills')
     run_command(File.join(@home, 'bin/shaka-install'), '--skills-dir', @skills)
     assert_installed_release
     assert_development_override
@@ -62,6 +62,17 @@ class PackageReleaseInstallTest < Minitest::Test
     record = JSON.parse(File.read(File.join(development, '.git/shaka-install.json')))
     assert_equal 'main', record.fetch('branch')
     refute record.key?('release')
+    assert_custom_install_preserved(development)
+  end
+
+  def assert_custom_install_preserved(development)
+    output, status = Bundler.with_unbundled_env do
+      Open3.capture2e(@environment, RbConfig.ruby, File.join(@home, 'bin/shaka-install'))
+    end
+    refute_predicate status, :success?, output
+    assert_equal File.realpath(File.join(development, 'skills/shaka')), File.realpath(File.join(@skills, 'shaka'))
+    record = JSON.parse(File.read(File.join(development, '.git/shaka-install.json')))
+    assert_equal 'main', record.fetch('branch')
   end
 
   def commit

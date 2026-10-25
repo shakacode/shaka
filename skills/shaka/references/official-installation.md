@@ -62,8 +62,9 @@ For an approved published version, use `bin/install --release VERSION --director
 The installer selects `refs/tags/vVERSION`, checks the declared version, and records
 its commit in a detached checkout. `--branch` and `--release` are mutually exclusive.
 Source installations without either flag retain the pilot's `main` default.
-New gem installations select their own version; an existing registered installation
-keeps its source selection. An explicit repository or branch overrides the gem default.
+New gem installations select their own version. To reuse an existing custom installation,
+run its registered helper or pass `--directory DIR`; installation there keeps its source
+selection. An explicit repository or branch overrides the gem default.
 
 To change versions or roll back, use a separate directory with `--release VERSION --take-over`.
 The existing take-over procedure moves all registered host links and preserves both

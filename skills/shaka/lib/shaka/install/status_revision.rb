@@ -85,6 +85,10 @@ module Shaka
       end
 
       def untracked
+        if @record['release']
+          return finding('B4', "#{tracking_name} is missing from the checkout",
+                         decision: 'Investigate the missing release tag before reinstalling; keep the recorded commit.')
+        end
         finding('B4', "#{tracking_name} is missing from the checkout, so its revision cannot be compared",
                 command: "#{git_command} fetch origin #{command(@record['branch'])}")
       end
