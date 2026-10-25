@@ -52,9 +52,9 @@ approval because a published version cannot be replaced.
    preflight binding; its installation identity is part of the evidence.
    Keep the JSON with the release evidence. A pass does not establish behavioral or
    host compatibility, check registry availability, or grant publication authority.
-   Require every behavioral result's `status` to be `passed` and compare its `commit`
-   with this preflight's `commit`. Stop on a mismatch and rerun the batch against the
-   release commit before requesting approval.
+   Run the behavioral gate with this preflight's `commit` as its required `--commit`
+   input. Ruby refuses a mismatched skill or batch. Require passing results for every
+   intended profile before requesting approval.
    Obtain approval for those exact inputs; stop until it is recorded. The preflight
    is repository maintenance tooling and is not included in the gem.
 

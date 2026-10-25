@@ -13,13 +13,15 @@ class EvaluationReleaseBehaviorCliTest < Minitest::Test
     assert_predicate status, :success?, error
     assert_includes output, '--skill'
     assert_includes output, '--records'
+    assert_includes output, '--commit'
   end
 
   def test_invalid_input_is_refused_without_echoing_private_contents
     Dir.mktmpdir do |directory|
       file = File.join(directory, 'private-records.json')
       File.write(file, 'private malformed input')
-      output, _, status = Open3.capture3(RbConfig.ruby, COMMAND, '--skill', ROOT, '--records', file)
+      output, _, status = Open3.capture3(RbConfig.ruby, COMMAND, '--skill', ROOT,
+                                         '--commit', @commit, '--records', file)
       refute_predicate status, :success?
       assert_equal 'unreadable_or_invalid_input', JSON.parse(output)['reason']
       refute_includes output, 'private'
@@ -32,6 +34,11 @@ class EvaluationReleaseBehaviorCliTest < Minitest::Test
 
   def test_real_cli_refuses_a_failed_decision
     first['gate'].first['passed'] = false
+    assert_cli_result(false)
+  end
+
+  def test_real_cli_refuses_records_for_another_release_commit
+    @commit = 'a' * 40
     assert_cli_result(false)
   end
 

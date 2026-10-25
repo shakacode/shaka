@@ -6,15 +6,17 @@ require_relative '../lib/shaka/evaluation/release_behavior'
 
 options = {}
 parser = OptionParser.new do |cli|
-  cli.banner = 'Usage: eval/bin/release-behavior --skill DIRECTORY --records PRIVATE_BATCH.json'
+  cli.banner = 'Usage: eval/bin/release-behavior --commit RELEASE_SHA --skill DIRECTORY --records PRIVATE_BATCH.json'
+  cli.on('--commit SHA') { options[:commit] = it }
   cli.on('--skill DIRECTORY') { options[:skill] = it }
   cli.on('--records FILE') { options[:records] = it }
 end
 begin
   parser.parse!
-  abort parser.to_s unless ARGV.empty? && options.size == 2
+  abort parser.to_s unless ARGV.empty? && options.size == 3
   records = JSON.parse(File.read(options.fetch(:records), encoding: 'UTF-8'))
-  result = Shaka::Evaluation::ReleaseBehavior.new(records:, skill: options.fetch(:skill)).check
+  result = Shaka::Evaluation::ReleaseBehavior.new(records:, skill: options.fetch(:skill),
+                                                  commit: options.fetch(:commit)).check
   puts JSON.pretty_generate(result)
   exit(result['status'] == 'passed' ? 0 : 1)
 rescue SystemCallError, JSON::ParserError, ArgumentError

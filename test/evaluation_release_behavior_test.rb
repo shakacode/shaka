@@ -48,6 +48,13 @@ class EvaluationReleaseBehaviorTest < Minitest::Test
     assert_equal 'unknown_or_modified_package', check['reason']
   end
 
+  def test_expected_release_commit_must_be_an_exact_full_sha
+    [nil, 'main', 'a' * 40].each do |commit|
+      @commit = commit
+      assert_equal 'release_commit_mismatch', check['reason']
+    end
+  end
+
   def test_unknown_native_profile_is_refused
     %w[host_cli host_cli_version provider configured_model effort].each do |key|
       original = fingerprint[key]

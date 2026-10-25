@@ -8,6 +8,7 @@ module ReleaseBehaviorFixture
   def setup
     prepare_skill
     snapshot = E::SkillSnapshot.read(@skill).slice(*E::Comparison::SKILL)
+    @commit = snapshot.fetch('skill_commit')
     @records = E::ReleaseSafetyBank.cases.map.with_index { |scenario, index| record(scenario, index, snapshot) }
   end
 
@@ -26,7 +27,7 @@ module ReleaseBehaviorFixture
   end
 
   def git(*)
-    _, error, status = Open3.capture3(TEST_GIT, '-C', @skill, *)
+    _, error, status = Open3.capture3(TEST_GIT, '-C', @directory, *)
     raise error unless status.success?
   end
 
@@ -46,12 +47,13 @@ module ReleaseBehaviorFixture
       'kind' => 'regression', 'bank_version' => E::ReleaseSafetyBank.version }
   end
 
-  def check = E::ReleaseBehavior.new(records: @records, skill: @skill).check
+  def check = E::ReleaseBehavior.new(records: @records, skill: @skill, commit: @commit).check
   def fingerprint = @records.first.fetch('fingerprint')
   def first = @records.first
   def failure_reason = check.fetch('failures').first.fetch('reason')
 
   def run_cli(path)
-    Open3.capture3(RbConfig.ruby, File.join(ROOT, 'eval/bin/release-behavior'), '--skill', @skill, '--records', path)
+    Open3.capture3(RbConfig.ruby, File.join(ROOT, 'eval/bin/release-behavior'), '--skill', @skill,
+                   '--commit', @commit, '--records', path)
   end
 end

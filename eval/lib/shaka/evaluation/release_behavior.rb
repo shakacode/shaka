@@ -10,25 +10,34 @@ module Shaka
     class ReleaseBehavior
       PROFILE = %w[host_cli host_cli_version provider configured_model routed_model effort].freeze
 
-      def initialize(records:, skill:)
+      def initialize(records:, skill:, commit:)
         @records = records
         @snapshot = SkillSnapshot.read(skill)
+        @commit = commit
       end
 
       def check
         return refused('invalid_records') unless Comparison.valid?(@records)
         return refused('incomplete_or_duplicate_cases') unless complete?
         return refused('unknown_or_modified_package') unless package?
+        return refused('release_commit_mismatch') unless release_commit?
         return refused('mixed_or_unknown_profile') unless profile?
 
-        failures = @records.filter_map { failure(it) }
+        result(@records.filter_map { failure(it) })
+      end
+
+      private
+
+      def result(failures)
         { 'status' => failures.empty? ? 'passed' : 'refused', 'cases' => @records.size,
           'commit' => @snapshot.fetch('skill_commit'), 'bank_version' => ReleaseSafetyBank.version,
           'failures' => failures, 'publication_authorized' => false,
           'limitations' => limitations }
       end
 
-      private
+      def release_commit?
+        @snapshot['skill_commit'] == @commit && /\A[0-9a-f]{40}\z/.match?(@commit.to_s)
+      end
 
       def complete?
         ids = @records.map { it.dig('task', 'id') }.sort

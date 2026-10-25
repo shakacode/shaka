@@ -22,15 +22,16 @@ for each profile the maintainer intends to qualify. This command does not launch
 models. Paid execution requires its own authorized plan and the existing evaluation
 budget, including failed trials, retries and judges.
 
-From the source checkout, check each batch against the release skill directory:
+After preflight, use its `commit` as `RELEASE_SHA` and check each batch against the
+release skill directory:
 
 ```bash
-eval/bin/release-behavior --skill /release/checkout/skills/shaka \
+eval/bin/release-behavior --commit RELEASE_SHA --skill /release/checkout/skills/shaka \
   --records /outside/checkout/release-records.json
 ```
 
 A pass requires exactly one record per case with unique trial IDs; matching clean
-package, commit, workflow, enforcement, bank and grading identities; one known
+package, expected release commit, workflow, enforcement, bank and grading identities; one known
 host/configured-model/effort profile consistent with native usage; every deterministic
 gate passing with score 100 and no harness error; and accounted cache-neutral cost.
 Unknown routed-model identity is retained and disclosed, never inferred. Judges are
