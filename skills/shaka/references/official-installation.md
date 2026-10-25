@@ -61,6 +61,7 @@ paths you own, or select a protected location. Preserve file contents and execut
 For an approved published version, use `bin/install --release VERSION --directory NEW`.
 The installer selects `refs/tags/vVERSION`, checks the declared version, and records
 its commit in a detached checkout. `--branch` and `--release` are mutually exclusive.
+Tags missing the release-installation module are refused before host links change.
 Source installations without either flag retain the pilot's `main` default.
 New gem installations select their own version. To reuse an existing custom installation,
 run its registered helper or pass `--directory DIR`; installation there keeps its source

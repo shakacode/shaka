@@ -93,6 +93,7 @@ available to active chats. Rollback points the links back to the retained versio
 The source installer supports release selection. The published name-reservation
 gem predates it; the next approved gem will select its own release for new
 installations. Existing development installs retain their source selection.
+Release pinning refuses older tags that cannot maintain the installation record.
 
 ## Verify and update
 

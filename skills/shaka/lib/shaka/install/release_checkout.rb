@@ -25,6 +25,14 @@ module Shaka
         raise ArgumentError, 'Release tag differs from the installed revision' unless
           git('rev-parse', "#{release_ref}^{commit}") == revision
 
+        validate_release_version
+      end
+
+      def validate_release_version
+        unless File.file?(File.join(@root, 'skills/shaka/lib/shaka/install/release_checkout.rb'))
+          raise ArgumentError, 'Release predates release-pinned installation; choose a release containing this feature'
+        end
+
         actual = Version.read(File.join(@root, 'skills/shaka/lib/shaka/version.rb'))
         return if actual == @release
 

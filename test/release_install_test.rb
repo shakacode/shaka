@@ -79,7 +79,31 @@ class ReleaseInstallTest < Minitest::Test
     assert_includes output, 'Choose --branch or --release'
   end
 
+  def test_legacy_release_is_refused_before_changing_host_links
+    output, status = install_release
+    assert_predicate status, :success?, output
+    publish_legacy_release
+    output, status = install_legacy_release
+    refute_predicate status, :success?, output
+    assert_includes output, 'Release predates release-pinned installation'
+    assert_equal File.realpath(File.join(@installed, 'skills/shaka')), File.realpath(@destination)
+  end
+
   private
+
+  def publish_legacy_release
+    FileUtils.rm(File.join(@source, 'lib/shaka/install/release_checkout.rb'))
+    File.write(File.join(@source, 'lib/shaka/version.rb'), "module Shaka\n  VERSION = '0.1.0.pre.0'\nend\n")
+    commit_source
+    git('-C', @root, 'tag', 'v0.1.0.pre.0')
+    git('-C', @root, 'push', '-q', 'origin', 'refs/tags/v0.1.0.pre.0')
+  end
+
+  def install_legacy_release
+    Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, File.expand_path('../bin/install', __dir__),
+                    '--directory', File.join(@directory, 'legacy'), '--release', '0.1.0.pre.0',
+                    '--take-over', '--skills-dir', @skills_dir)
+  end
 
   def move_release_tag
     git('-C', @root, 'tag', '-f', 'v0.1.0.pre.1')
