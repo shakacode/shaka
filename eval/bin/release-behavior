@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require_relative '../lib/shaka/evaluation/release_behavior'
+
+options = {}
+parser = OptionParser.new do |cli|
+  cli.banner = 'Usage: eval/bin/release-behavior --skill DIRECTORY --records PRIVATE_BATCH.json'
+  cli.on('--skill DIRECTORY') { options[:skill] = it }
+  cli.on('--records FILE') { options[:records] = it }
+end
+begin
+  parser.parse!
+  abort parser.to_s unless ARGV.empty? && options.size == 2
+  records = JSON.parse(File.read(options.fetch(:records), encoding: 'UTF-8'))
+  result = Shaka::Evaluation::ReleaseBehavior.new(records:, skill: options.fetch(:skill)).check
+  puts JSON.pretty_generate(result)
+  exit(result['status'] == 'passed' ? 0 : 1)
+rescue SystemCallError, JSON::ParserError, ArgumentError
+  puts JSON.generate({ 'status' => 'refused', 'reason' => 'unreadable_or_invalid_input',
+                       'publication_authorized' => false })
+  exit 1
+end

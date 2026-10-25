@@ -33,8 +33,9 @@ approval because a published version cannot be replaced.
 
 5. Confirm the version's `CHANGELOG.md` entry merged with the version change: a short
    summary, then breaking changes with upgrade steps. Save that entry's body as
-   `RELEASE_NOTES.md`, then obtain explicit maintainer approval for the registry
-   publication. Before requesting approval, run the maintainer preflight from the
+   `RELEASE_NOTES.md`. Before requesting publication approval, complete the
+   [release behavioral gate](../eval/release-behavior.md) for the intended host/model/effort
+   profiles and retain its results. Then run the maintainer preflight from the
    source checkout, with the gem, original validation JSON, and notes saved outside it:
 
    ```bash
