@@ -96,8 +96,7 @@ module Shaka
       agent = reviewer_settings(review)
       # This path reads the review section without the schema, so the old name must not be ignored.
       RepositoryConfig::ReviewSchema.renamed!(review)
-      raise Shaka::Error, "#{reviewer} prompt_file was renamed to #{prompt_file}" if agent&.key?('prompt_file')
-
+      RepositoryConfig::ReviewSchema.renamed_agent_prompt_files!(review)
       owner, path = agent&.key?(prompt_file) ? ["#{reviewer} ", agent[prompt_file]] : ['review.', review[prompt_file]]
       return if path.nil?
       raise Shaka::Error, "review #{prompt_file} must be a repository path" unless path.is_a?(String)

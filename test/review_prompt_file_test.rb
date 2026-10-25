@@ -174,6 +174,22 @@ class ReviewPromptFileTest < Minitest::Test
   end
 end
 
+# A trusted commit still using a reviewer's old prompt name stops the review with the rename to ask for.
+class ReviewPromptFileRenameTest < Minitest::Test
+  include ReviewPromptFileFixture
+
+  def test_an_old_reviewer_prompt_name_stops_the_review_with_the_request
+    agents = [{ 'provider' => 'openai', 'model_family' => 'codex', 'prompt_file' => '.agents/codex-prompt.md' }]
+    with_repository({ 'local_review_agents' => agents }) do |root, base, head, bin|
+      result = JSON.parse(run_review(root, base, head, bin).first)
+
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), 'review.local_review_agents[0].prompt_file was renamed'
+      assert_includes result.fetch('reason'), 'Tell your agent'
+    end
+  end
+end
+
 # The settings that name review instructions.
 class ReviewPromptFileSchemaTest < Minitest::Test
   include RepositoryConfigTestHelpers

@@ -8,6 +8,18 @@ module Shaka
   class RepositoryConfig
     # Shared primitive validators for repository policy sections.
     module Validation
+      # Ends a rename refusal with the request a maintainer can give their agent.
+      def self.rename_request(old, new) = "Tell your agent: \"Rename #{old} to #{new} in the Shaka settings.\""
+
+      # `prompt_file` did not say whether it replaced or added to Shaka's prompt.
+      def self.renamed_prompt_file!(mapping, label)
+        return unless mapping.is_a?(Hash) && mapping.key?('prompt_file')
+
+        old = "#{label}.prompt_file"
+        new = "#{label}.replacement_prompt_file"
+        raise Error, "#{old} was renamed to #{new}. #{rename_request(old, new)}"
+      end
+
       private
 
       def string!(value, label)
@@ -16,13 +28,7 @@ module Shaka
         value
       end
 
-      # `prompt_file` did not say whether it replaced or added to Shaka's prompt.
-      def renamed_prompt_file!(mapping, label)
-        return unless mapping.is_a?(Hash) && mapping.key?('prompt_file')
-
-        raise Error, "#{label}.prompt_file was renamed to #{label}.replacement_prompt_file. Tell your agent: " \
-                     '"Rename prompt_file to replacement_prompt_file in the Shaka settings."'
-      end
+      def renamed_prompt_file!(mapping, label) = Validation.renamed_prompt_file!(mapping, label)
 
       def prompt_path!(value, label)
         path = string!(value, label)

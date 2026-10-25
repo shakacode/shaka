@@ -48,7 +48,15 @@ module Shaka
         old = RENAMED.keys.find { |key| review.key?(key) }
         return unless old
 
-        raise Error, "review.#{old} moved to review.#{RENAMED.fetch(old)}; see skills/shaka/references/migration.md"
+        new = "review.#{RENAMED.fetch(old)}"
+        raise Error, "review.#{old} moved to #{new}. #{Validation.rename_request("review.#{old}", new)}"
+      end
+
+      # The review section is also read without the schema, so each reviewer's old prompt name is refused here.
+      def self.renamed_agent_prompt_files!(review)
+        Array(review[LOCAL_REVIEW_AGENTS]).each_with_index do |entry, index|
+          Validation.renamed_prompt_file!(entry, "review.#{LOCAL_REVIEW_AGENTS}[#{index}]")
+        end
       end
 
       def self.effort_level!(value, label)
@@ -108,10 +116,8 @@ module Shaka
         raise Error, "#{label} must be a list" unless reviewers.is_a?(Array)
         raise Error, "#{label} must not be empty" if reviewers.empty?
 
-        reviewers.each_with_index do |entry, index|
-          renamed_prompt_file!(entry, "#{label}[#{index}]")
-          entry!(entry, index)
-        end
+        self.class.renamed_agent_prompt_files!(@review)
+        reviewers.each_with_index { |entry, index| entry!(entry, index) }
         repeated!(reviewers)
       end
 
