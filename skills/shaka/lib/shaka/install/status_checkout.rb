@@ -25,6 +25,7 @@ module Shaka
         @root = root
         @record = record
         @branch = record['branch']
+        @release = record['release']
       end
 
       def helper = command(File.join(@root, 'skills/shaka/scripts/shaka'))
@@ -60,33 +61,6 @@ module Shaka
           StatusStates.credentials?(expected)
 
         finding('B5', detail, command: "#{git_command} remote set-url origin #{command(expected)}")
-      end
-
-      def branch
-        current = value('branch', '--show-current').to_s
-        return tracked_branch if current == @record['branch']
-
-        finding('B4', "checkout is on #{current.empty? ? 'a detached HEAD' : current}; " \
-                      "the record expects #{@record['branch']}",
-                command: "#{keep_detached if current.empty?}#{git_command} switch #{command(@record['branch'])}")
-      end
-
-      # Switching away from a detached HEAD strands commits no branch holds, so they go on a branch first.
-      def keep_detached
-        held = value('for-each-ref', '--contains', 'HEAD', '--count=1', 'refs/heads', 'refs/remotes')
-        "#{git_command} branch kept-#{value('rev-parse', '--short', 'HEAD')} && " unless held&.match?(/\S/)
-      end
-
-      # Verification and update both require the branch to track origin's branch of the same name.
-      # Reading the config, not the ref, leaves a missing tracking ref to the revision check.
-      def tracked_branch
-        name = @record['branch']
-        remote, merge = %w[remote merge].map { |key| value('config', '--get', "branch.#{name}.#{key}") }
-        return if remote == 'origin' && merge == "refs/heads/#{name}"
-
-        tracked = remote ? "#{remote}/#{merge.to_s.delete_prefix('refs/heads/')}" : 'no remote branch'
-        finding('B4', "#{name} tracks #{tracked}, not origin/#{name}",
-                command: "#{git_command} branch -u origin/#{command(name)}")
       end
 
       def dirty

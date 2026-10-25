@@ -65,6 +65,11 @@ module Shaka
       end
 
       def update_reminder
+        if @checkout.release?
+          return puts "Pinned Shaka release #{@checkout.record['release']}; install another version in a new " \
+                      'directory with --take-over, keeping this checkout for active chats and rollback.'
+        end
+
         puts "Keep Shaka updated: #{Shellwords.escape(File.join(@checkout.root, 'skills/shaka/scripts/shaka'))} " \
              'install --update (finish active Shaka chats first; start a new chat afterward).'
       end

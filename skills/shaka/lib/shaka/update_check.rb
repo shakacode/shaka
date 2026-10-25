@@ -4,6 +4,7 @@ require 'json'
 require 'shellwords'
 require 'tmpdir'
 require_relative 'doctor/installation_identity'
+require_relative 'install/release_checkout'
 require_relative 'startup_notice'
 require_relative 'update_check/cache'
 require_relative 'update_check/launch'
@@ -46,7 +47,8 @@ module Shaka
       record = JSON.parse(File.read(record_path)) if File.file?(record_path)
       raise Shaka::Error, 'Invalid installation record' if record && !record.is_a?(Hash)
 
-      new(source: identity.fetch('source'), branch: record&.fetch('branch', nil) || 'main',
+      branch = record ? Install::ReleaseCheckout.reference(record) : 'main'
+      new(source: identity.fetch('source'), branch:,
           helper: File.join(ROOT, 'skills/shaka/scripts/shaka'), checkout: (ROOT if record))
     end
 
@@ -60,6 +62,7 @@ module Shaka
       @helper = helper
       @checkout = checkout
       @runner = runner
+      @release = branch.delete_prefix('refs/tags/v') if branch.start_with?('refs/tags/v')
     end
 
     # Later helper calls repeat a registered checkout's answer from this cache instead of the network.
@@ -71,7 +74,7 @@ module Shaka
         @source['kind'] == 'uninstalled'
       return development unless @source['kind'] == 'revision'
 
-      compare(@source['repository'].to_s[GITHUB, 1])
+      @release ? pinned_release : compare(@source['repository'].to_s[GITHUB, 1])
     rescue Launch::Unavailable => e
       unknown(e.reason, e.message)
     rescue JSON::ParserError, TypeError

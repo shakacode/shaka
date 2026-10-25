@@ -34,7 +34,7 @@ module Shaka
       end
 
       def git(*arguments)
-        preserved = %w[clone fetch].include?(arguments.first) ? AUTHENTICATION_ENV : []
+        preserved = %w[clone fetch ls-remote].include?(arguments.first) ? AUTHENTICATION_ENV : []
         environment = (ENV.keys.grep(/\AGIT_/) - preserved).to_h { |key| [key, nil] }
         output, error, status = Open3.capture3(environment, 'git', '-c', "core.hooksPath=#{File::NULL}",
                                                '-c', 'submodule.recurse=false', '-C', @root, *arguments, umask: 0o022)
