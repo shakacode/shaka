@@ -41,5 +41,6 @@ execution. Preserve their private captures for inspection. These are public regr
 cases, not hidden capability tests. Passing this simulated batch establishes neither
 full evaluation-driver qualification nor real-use acceptance or host compatibility.
 Synthetic unit-test batches prove checker behavior only. Keep the JSON result with
-the release evidence. `publication_authorized` remains false even on a pass: explicit
+the release evidence and follow the [preflight comparison](../contributing/releasing.md#release-process)
+before requesting approval. `publication_authorized` remains false even on a pass: explicit
 maintainer approval for the prepared release is still required.
