@@ -33,6 +33,7 @@
       "collapsed": true,
       "items": [
         "pr-verification",
+        "release-watchers",
         "reference/usage-and-cost",
         "reference/timings",
         {
