@@ -12,12 +12,14 @@ require_relative 'handoff/squash_note'
 require_relative 'handoff/walkthrough'
 require_relative 'handoff/wip_note'
 require_relative 'post_implementation/evidence'
+require_relative 'handoff/rendering'
 
 module Shaka
   # Reports what an agent still owes a PR before it ends a turn, and what a resumed session finds.
   # It reads only; the agent settles each owed item and runs it again.
   class Handoff
     include MergeRequiredChecks
+    include HandoffRendering
 
     OWED_EXIT = 2
     SHORT = 7
@@ -60,7 +62,7 @@ module Shaka
       checks = snapshot['requiredChecks']
       [attention_fact(checks, live), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
        comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live), squash_fact(snapshot, live),
-       closing_fact, wip_fact(live)].compact
+       closing_fact, wip_fact(live), rendering_fact(live)].compact
     end
 
     # An unsubmitted review by this account outranks every other wait, because only its author can see it.
@@ -142,11 +144,6 @@ module Shaka
       return "WIP #{live[0, SHORT]}" if WipNote.head(revision) == live
 
       owe('WIP stale', "WIP Details names #{revision}, not #{live}; refresh it.")
-    end
-
-    # The final read also returns the head, so a push during the earlier reads cannot pass as current.
-    def recheck_head(moved, live)
-      @owed << "PR head moved to #{moved} while handoff read it; run it again." if moved && moved != live
     end
 
     def list = @labels.join(', ')

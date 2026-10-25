@@ -41,6 +41,7 @@ require_relative '../lib/shaka/publication/squash_message'
 require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/guidance'
 require_relative '../lib/shaka/publication/publication'
+require_relative '../lib/shaka/publication/rendering_preview'
 require_relative '../lib/shaka/review_reply'
 require_relative '../lib/shaka/recommendation'
 require_relative '../lib/shaka/repos'
@@ -147,10 +148,18 @@ def rendered_description(described, github, pull, workflow_version, options)
   timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
   timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
   timeline = Shaka::TaskTiming.attach(timeline, carried, pull)
-  rendered = Shaka::Publication.description(carried, workflow_version, pull, settings, timeline)
+  rendered = render_description(carried, workflow_version, pull, settings, timeline, options, github)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
   Shaka::CheckpointRecommendation.require_decisions!(carried, pull, github.repository)
   [rendered, carried, usage_records]
+end
+
+# Evidence is prepared first; a preview can only replace the rendering that follows it.
+def render_description(carried, version, pull, settings, timeline, options, github) # rubocop:disable Metrics/ParameterLists
+  pull = pull.merge('shaka_changed_files' => Shaka::FeaturePublication.files(github, pull))
+  Shaka::RenderingPreview.publish(options, pull, github) do
+    Shaka::Publication.description(carried, version, pull, settings, timeline)
+  end
 end
 
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.
@@ -223,6 +232,7 @@ def trust_flags(flags, options)
 end
 
 def settings_flags(flags, options)
+  rendering_preview_flag(flags, options)
   flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   %w[validation review].each do |kind|
     flags.on("--#{kind}-result PATH", 'Existing settings-bound result') { |path| (options[kind.to_sym] ||= []) << path }
@@ -231,6 +241,12 @@ def settings_flags(flags, options)
   flags.on('--publication-flow FLOW', Shaka::Configuration::FeatureGuard::FLOWS,
            'Separate setup/migration flow') do |flow|
     options[:publication_flow] = flow
+  end
+end
+
+def rendering_preview_flag(flags, options)
+  flags.on('--rendering-preview-root DIR', 'Preview reviewed Shaka description renderers') do |value|
+    options[:rendering_preview_root] = value
   end
 end
 
@@ -290,6 +306,9 @@ begin
   raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
   raise Shaka::Error, '--woken-by is only for handoff.' if options[:woken_by] && command != 'handoff'
   raise Shaka::Error, '--comments is only for description.' if options[:comments] && command != 'description'
+  if options[:rendering_preview_root] && command != 'description'
+    raise Shaka::Error, '--rendering-preview-root is only for description.'
+  end
   if command == 'handoff' && options[:ref].to_s.strip.empty?
     raise Shaka::Error, 'handoff requires --ref so seam-required checks come from a trusted commit.'
   end

@@ -149,7 +149,9 @@ class ProvenanceHistoryRefusalTest < Minitest::Test
     publish(HEADS[0])
     publish(HEADS[1], 'active_effort' => 'high')
     assert_refused(@body.sub('<!-- shaka:provenance ', "<!-- shaka:provenance\n"))
-    assert_refused(@body.sub(%r{ -->(?=\n\n</details>\n\n<details>\n<summary>Provenance history)}, ' --'))
+    damaged = @body.sub(/<!-- shaka:provenance .*? -->/) { |marker| "#{marker.delete_suffix('-->')}--" }
+    refute_equal @body, damaged
+    assert_refused(damaged)
   end
 
   # Every shape the Shaka skill version cell renders must read back, or the next publication refuses.
