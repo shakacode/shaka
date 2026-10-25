@@ -17,8 +17,8 @@ Ask your agent:
 > missing, and propose a separate activation PR. Rehearse on staging first.
 
 Add your preferred observation window, release cadence, or incident channel when
-the agent cannot infer them. Keep provider-specific commands, credentials, alert
-thresholds, and recovery instructions in the project's private configuration.
+the agent cannot infer them. Keep provider commands, alert thresholds, and recovery
+instructions with the project. Supply scoped credentials from a secret manager.
 
 ## Keep three decisions separate
 
@@ -73,10 +73,11 @@ A notification failure should not stop independent collectors. Save the final
 result before attempting delivery. Preserve missed samples and recovered failures
 so a later healthy sample cannot silently erase a breach.
 
-An always-run cleanup step cannot report after runner loss or workflow
-cancellation. Test an independent failure/cancellation notification and the
-responder's recovery path. If those are unavailable, state the gap and keep an
-attended fallback until the handoff is proven.
+An always-run cleanup step cannot report after runner loss. Cancellation behavior
+varies: [GitHub Actions re-evaluates conditions during cancellation](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-cancellation),
+with a bounded grace period. Test forced cancellation, timeouts, an independent
+notification, and the responder's recovery path. If those are unavailable, state
+the gap and keep an attended fallback until the handoff is proven.
 
 ## Rehearse before making it a release gate
 
@@ -101,4 +102,5 @@ their owners, and retain the project's deployment approval. A detected regressio
 can request a decision; it does not authorize an automatic rollback.
 
 See [PR evidence](pr-verification.md) for reviewing the change and
-[repository configuration](configure-repository.md) for keeping project policy local.
+[repository configuration](configure-repository.md) for Shaka's project-specific
+PR policy. Store watcher credentials in the project's secret manager.
