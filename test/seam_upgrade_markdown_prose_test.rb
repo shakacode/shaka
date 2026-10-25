@@ -60,9 +60,7 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     'list fence' => "1. ```sh\n   cd .agents\n   bin/validate\n   ```\n",
     'inline code' => "Run `cd .agents && bin/validate` before pushing.\n",
     'quoted inline' => "Run `cd .age\"nts\" && bin/validate`.\n",
-    'wrapped' => "Run `bin/validate` from\n`.agents`.\n",
     'inline env' => "Run `env -C .agents bin/validate`.\n",
-    'same line' => "Run `bin/validate` from `.agents`.\n",
     'prose then fence' => "Run these from the `.agents` directory:\n\n```sh\nbin/validate\n```\n",
     'prose, blanks, fence' => "Run these from the `.agents` directory:\n\n\n```sh\nbin/validate\n```\n",
     'indented middle line' => "Run these from `.agents`\n    once the cache is warm,\nthen `bin/validate`.\n"
@@ -124,6 +122,56 @@ class SeamUpgradeMarkdownRetainedToolTest < Minitest::Test
       write_tracked(root, '.agents/bin/custom', "custom tool\n")
       write_tracked(root, 'ledger.md', "Wrappers live in `.agents/bin/`.\n")
       assert_blocked_with(root, 'old command-directory reference')
+    end
+  end
+end
+
+# Prose has no working directory, so outside code only a change into the directory blocks.
+class SeamUpgradeMarkdownProsePairTest < Minitest::Test
+  include SeamUpgradeFixture
+
+  PROSE_WITHOUT_DIRECTORY_CHANGE = {
+    'table' => "| Area | Note |\n| --- | --- |\n| Layout | a small `.agents/` directory |\n" \
+               "| Gate | `.agents/bin/validate` is the pre-push gate |\n",
+    'full command path' => "There is no `.agents/` directory at all; `.agents/bin/setup` came later.\n",
+    'root command' => 'This repository has no `.agents/` directory: `bin/validate` is its own root validator, ' \
+                      "not `.agents/bin/validate`.\n",
+    'same line' => "Run `bin/validate` from `.agents`.\n",
+    'wrapped' => "Run `bin/validate` from\n`.agents`.\n",
+    'env other directory' => "Run `env -C foo.agents bin/validate`.\n"
+  }.freeze
+
+  def test_prose_naming_directory_and_command_without_changing_into_it_is_ready
+    PROSE_WITHOUT_DIRECTORY_CHANGE.each do |name, source|
+      with_repository do |root|
+        write_tracked(root, 'ledger.md', source)
+        preview = report(root)
+        assert_equal 'ready', preview.fetch('status'), "#{name}: #{preview.fetch('blockers').join("\n")}"
+      end
+    end
+  end
+
+  PROSE_DIRECTORY_CHANGE = {
+    'inline env chdir' => "Run `env --chdir=.agents bin/validate`.\n",
+    'env option first' => "Run `env -i -C .agents bin/validate`.\n",
+    'env option with argument' => "Run `env -u HOME -C .agents bin/validate`.\n",
+    'env grouped flags' => "Run `env -iC .agents bin/validate`.\n"
+  }.freeze
+
+  def test_prose_changing_into_the_directory_still_blocks
+    PROSE_DIRECTORY_CHANGE.each do |name, source|
+      with_repository do |root|
+        write_tracked(root, 'guide.md', source)
+        assert_includes report(root).fetch('blockers').join("\n"), 'bare old-layout directory', name
+      end
+    end
+  end
+
+  def test_full_old_command_path_in_code_does_not_pair_with_directory
+    with_repository do |root|
+      write_tracked(root, 'guide.md', "```sh\nls .agents/\nenv -C . .agents/bin/validate\n```\n")
+      preview = report(root)
+      assert_equal 'ready', preview.fetch('status'), preview.fetch('blockers').join("\n")
     end
   end
 end
