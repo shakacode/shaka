@@ -63,7 +63,7 @@ module Shaka
       # A config.yml from a release before the commented defaults still matches a plain repeat of seam init.
       def contract_without_trailer?(path, existing, content)
         path == Configuration::Paths.at(@root, Initializer::LAYOUT.contract) &&
-          existing == content.delete_suffix(config_trailer.map { "#{"# #{it}".rstrip}\n" }.join)
+          existing == content.delete_suffix(Configuration.comment_lines(config_trailer))
       end
 
       # The pointer records the generating skill version, so an upgrade changes its text while

@@ -223,7 +223,7 @@ class PrivateSetupOptionalTest < Minitest::Test
     FileUtils.mkdir_p(File.join(root, 'docs'))
     File.write(File.join(root, 'docs/review.md'), 'local prompt')
     policy = YAML.safe_load_file(config_path(root))
-    policy['review'] = review_policy('prompt_file' => 'docs/review.md')
+    policy['review'] = review_policy('replacement_prompt_file' => 'docs/review.md')
     File.write(config_path(root), YAML.dump(policy))
   end
 

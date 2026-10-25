@@ -540,7 +540,9 @@ To pay for one local review instead, leave this unset and set `local_review_coun
 the [hosted Claude review](configure-repository.md#add-hosted-claude-review), a PR that only
 Codex reviewed locally still gets a full Claude review on GitHub.
 
-## `review.prompt_file`
+<a id="reviewprompt_file"></a>
+
+## `review.replacement_prompt_file`
 
 **Optional. Default: Shaka's [review instructions](../skills/shaka/config/review-prompt.md).**
 A Markdown file in your repository that replaces what the local reviewer looks for
@@ -551,23 +553,23 @@ and how it reports. Copy the default to start, or see Shaka's own
 review:
   required: meaningful_changes
   ci_review_jobs: [claude-review]
-  prompt_file: .agents/review-prompt.md
+  replacement_prompt_file: .agents/review-prompt.md
   local_review_agents:
     - provider: openai
       model_family: codex
-      prompt_file: .agents/review-prompt-codex.md
+      replacement_prompt_file: .agents/review-prompt-codex.md
     - provider: anthropic
       model_family: claude
 ```
 
-To give one review agent different instructions, set `prompt_file` on that
-agent's entry in `local_review_agents`. It replaces `review.prompt_file` when that
+To give one review agent different instructions, set `replacement_prompt_file` on that
+agent's entry in `local_review_agents`. It replaces `review.replacement_prompt_file` when that
 agent reviews. Here Codex reviews with `.agents/review-prompt-codex.md`, and Claude,
-which has no `prompt_file` on its entry, uses `.agents/review-prompt.md`.
+which has no `replacement_prompt_file` on its entry, uses `.agents/review-prompt.md`.
 
 ### Where Shaka reads a prompt file
 
-The [configuration source](#which-settings-apply) determines which `prompt_file`
+The [configuration source](#which-settings-apply) determines which `replacement_prompt_file`
 settings apply. This rule covers code-review, checkpoint, and opening prompts, and
 [project guidance](#project_guidance) files.
 A settings preview reads each prompt at its selected commit. Without a preview:
@@ -637,7 +639,7 @@ you [accepted](pr-verification.md#checkpoint) as resolved, or an explicit opt-ou
 
 ### Add your own checkpoint questions
 
-Write them in `.agents/shaka/prompts/checkpoint.md`. Shaka's
+Write them in `.agents/shaka/instructions/checkpoint.md`. Shaka's
 [built-in checkpoint prompt](../skills/shaka/config/post-implementation-prompt.md)
 still applies in full. The reviewer reads it, then your `AGENTS.md` files, then your
 file. For example:
@@ -651,22 +653,22 @@ Shaka tells the reviewer that your file cannot relax its safety rules or change 
 report format. Shaka checks the report's format; the reviewer is trusted to keep the
 other rules.
 
-That path is the default of `checkpoint.extra_prompt_file`. To keep the file elsewhere,
+That path is the default of `checkpoint.custom_instructions_file`. To keep the file elsewhere,
 name it:
 
 ```yaml
 checkpoint:
-  extra_prompt_file: docs/review/checkpoint.md
+  custom_instructions_file: docs/review/checkpoint.md
 ```
 
-| `extra_prompt_file` | File | Result |
+| `custom_instructions_file` | File | Result |
 | --- | --- | --- |
 | Not set | Missing or empty at the default path | No added questions |
 | Not set | Present at the default path | The file is added |
 | Set | Missing or empty | Settings validation fails |
 | Set to another path | Also present at the default path | The named file is added; `seam check` and `doctor` warn that the default one is ignored |
 
-To remove a built-in question instead, set `prompt_file` to replace the whole prompt;
+To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to replace the whole prompt;
 you then keep that copy in step with Shaka's changes.
 
 ## `project_guidance`
@@ -775,7 +777,7 @@ pr_description:
     reviewer: openai/codex
     model: gpt-6.1-sol
     effort: medium
-    # prompt_file: .agents/shaka/opening.md
+    # replacement_prompt_file: .agents/shaka/opening.md
 ```
 
 Choose the provider and model that works best for your writing. It can be the
@@ -792,7 +794,7 @@ its own model and effort choices. It does not copy those from code review.
 | `reviewer` | The agent chooses from your local AI code reviewers. An explicit `provider/family`, such as `openai/codex`, selects the opening reviewer independently. |
 | `model` | The selected CLI's default model for Codex or Claude. Grok requires a model; OpenRouter requires `deepseek/deepseek-v4.1-flash`. To name a model, also set `reviewer`. |
 | `effort` | `low`. Use a thinking level supported by the selected provider. |
-| `prompt_file` | Shaka's default opening instructions. |
+| `replacement_prompt_file` | Shaka's default opening instructions. |
 
 For example, `reviewer: openai/codex` with no `model` uses the Codex CLI's
 built-in default model. Shaka runs Codex with personal configuration disabled.
@@ -811,15 +813,15 @@ reviewer; the agent still follows your ordinary writing instructions.
 ### Customize the opening check
 
 Copy [Shaka's default opening prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/opening-prompt.md)
-and set `prompt_file` to your copy. The path is relative to the repository root,
+and set `replacement_prompt_file` to your copy. The path is relative to the repository root,
 not the configuration file's directory. For example,
-`prompt_file: .agents/shaka/opening.md` selects that file beneath the repository
+`replacement_prompt_file: .agents/shaka/opening.md` selects that file beneath the repository
 root. Both the separate AI session and the coding agent use those instructions.
 Leave the setting out to use Shaka's default.
 
 Shaka reads the file from [the same place as other prompt files](#where-shaka-reads-a-prompt-file).
 
-Prompt files must pass the [review prompt file checks](#reviewprompt_file).
+Prompt files must pass the [review prompt file checks](#reviewreplacement_prompt_file).
 Custom instructions cannot change the JSON fields Shaka expects in the response.
 Shaka treats the PR opening as text to assess, not as instructions to follow.
 

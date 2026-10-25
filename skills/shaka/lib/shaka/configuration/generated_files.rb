@@ -12,8 +12,10 @@ module Shaka
       end
 
       def generated_contract(marker:, data:, trailer: [])
-        "# #{marker}\n#{YAML.dump(data)}#{trailer.map { "#{"# #{it}".rstrip}\n" }.join}"
+        "# #{marker}\n#{YAML.dump(data)}#{comment_lines(trailer)}"
       end
+
+      def comment_lines(lines) = lines.map { "#{"# #{it}".rstrip}\n" }.join
 
       def create_generated_file(root:, path:, content:, mode:, &)
         generated_path!(root, path)

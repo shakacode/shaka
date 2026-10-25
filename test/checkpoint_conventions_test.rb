@@ -2,14 +2,42 @@
 
 require_relative 'support/post_implementation_fixture'
 
-# The top-level checkpoint section and checkpoint.extra_prompt_file, with its default path.
-class CheckpointConventionsTest < Minitest::Test
+# Trusted commits that hold checkpoint custom instructions at chosen paths.
+module CheckpointInstructionsFixture
   include PostImplementationFixture
 
-  RULES = '.agents/shaka/prompts/checkpoint.md'
-  REPLACEMENT = { 'checkpoint' => { 'prompt_file' => '.agents/codex-prompt.md' } }.freeze
+  RULES = '.agents/shaka/instructions/checkpoint.md'
+  REPLACEMENT = { 'checkpoint' => { 'replacement_prompt_file' => '.agents/codex-prompt.md' } }.freeze
   NAMED = '.agents/named-rules.md'
-  NAMED_SETTINGS = { 'checkpoint' => { 'extra_prompt_file' => NAMED } }.freeze
+  NAMED_SETTINGS = { 'checkpoint' => { 'custom_instructions_file' => NAMED } }.freeze
+
+  private
+
+  def seam(review) = super.merge(@root_settings || {})
+
+  # The default folder is a symlink to another folder in the repository.
+  def write_linked_rules(root)
+    FileUtils.mkdir_p(File.join(root, '.agents/shared-instructions'))
+    File.write(File.join(root, '.agents/shared-instructions/checkpoint.md'), @linked)
+    FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
+    File.symlink('../shared-instructions', File.join(root, '.agents/shaka/instructions'))
+  end
+
+  def write_trusted_files(root, review)
+    super
+    File.write(File.join(root, NAMED), @named) if @named
+    write_linked_rules(root) if @linked
+    return unless @rules
+
+    File.write(File.join(root, 'AGENTS.md'), "Trusted agent criteria\n")
+    FileUtils.mkdir_p(File.join(root, File.dirname(RULES)))
+    File.write(File.join(root, RULES), @rules)
+  end
+end
+
+# The top-level checkpoint section and checkpoint.custom_instructions_file, with its default path.
+class CheckpointConventionsTest < Minitest::Test
+  include CheckpointInstructionsFixture
 
   def test_top_level_checkpoint_section_reaches_the_runner
     @root_settings = { 'checkpoint' => { 'enabled' => false } }
@@ -76,6 +104,11 @@ class CheckpointConventionsTest < Minitest::Test
       refute_includes checkpoint_trace(root).fetch('prompt'), 'TRUSTED CHECKPOINT RULES'
     end
   end
+end
+
+# A named custom instructions file, and the default one under a symlinked folder.
+class CheckpointNamedInstructionsTest < Minitest::Test
+  include CheckpointInstructionsFixture
 
   def test_a_named_file_is_added_and_the_default_one_is_ignored
     @rules = "Default-location rule\n"
@@ -90,6 +123,17 @@ class CheckpointConventionsTest < Minitest::Test
     end
   end
 
+  def test_a_default_file_under_a_symlinked_folder_reaches_the_reviewer
+    @linked = "Linked-folder rule\n"
+    with_repository do |root, base, head, bin|
+      fake_checkpoint(bin, head)
+      _, status = run_checkpoint(root, base, head, bin)
+
+      assert_predicate status, :success?
+      assert_includes checkpoint_trace(root).fetch('prompt'), 'Linked-folder rule'
+    end
+  end
+
   def test_a_named_file_that_is_missing_fails_the_checkpoint
     with_repository(NAMED_SETTINGS) do |root, base, head, bin|
       fake_checkpoint(bin, head)
@@ -98,20 +142,6 @@ class CheckpointConventionsTest < Minitest::Test
       refute_predicate status, :success?
       assert_includes result.fetch('reason'), NAMED
     end
-  end
-
-  private
-
-  def seam(review) = super.merge(@root_settings || {})
-
-  def write_trusted_files(root, review)
-    super
-    File.write(File.join(root, NAMED), @named) if @named
-    return unless @rules
-
-    File.write(File.join(root, 'AGENTS.md'), "Trusted agent criteria\n")
-    FileUtils.mkdir_p(File.join(root, File.dirname(RULES)))
-    File.write(File.join(root, RULES), @rules)
   end
 end
 
@@ -130,7 +160,7 @@ class CheckpointSectionSchemaTest < Minitest::Test
     with_repository('review' => review_policy('post_implementation' => { 'enabled' => true })) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_equal 'review.post_implementation moved to the top-level checkpoint section', error.message
+      assert error.message.start_with?('review.post_implementation moved to the top-level checkpoint section.')
     end
   end
 

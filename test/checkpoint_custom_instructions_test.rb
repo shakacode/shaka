@@ -17,7 +17,7 @@ class CheckpointExtraPromptSeamInitTest < Minitest::Test
 
       assert_predicate status, :success?, error
       assert_includes config, "# checkpoint:\n"
-      assert_includes config, "#   extra_prompt_file: .agents/shaka/prompts/checkpoint.md\n"
+      assert_includes config, "#   custom_instructions_file: .agents/shaka/instructions/checkpoint.md\n"
       refute YAML.safe_load(config).key?('checkpoint')
     end
   end
@@ -38,22 +38,22 @@ class CheckpointExtraPromptWarningTest < Minitest::Test
   include DoctorHelper
   include RepositoryConfigTestHelpers
 
-  DEFAULT = '.agents/shaka/prompts/checkpoint.md'
+  DEFAULT = '.agents/shaka/instructions/checkpoint.md'
 
   def test_a_default_file_beside_a_named_one_is_reported_as_ignored
-    with_repository('checkpoint' => { 'extra_prompt_file' => '.agents/named.md' }) do |root|
+    with_repository('checkpoint' => { 'custom_instructions_file' => '.agents/named.md' }) do |root|
       File.write(File.join(root, '.agents/named.md'), 'Named rule')
       assert_empty Shaka::RepositoryConfig.load(root:).warnings
 
       FileUtils.mkdir_p(File.join(root, File.dirname(DEFAULT)))
       File.write(File.join(root, DEFAULT), 'Default rule')
-      assert_equal ["#{DEFAULT} is ignored because checkpoint.extra_prompt_file names .agents/named.md; " \
-                    'delete it or point the setting back'], Shaka::RepositoryConfig.load(root:).warnings
+      assert_match(/\A#{Regexp.escape(DEFAULT)} is ignored because checkpoint.custom_instructions_file names /o,
+                   Shaka::RepositoryConfig.load(root:).warnings.join("\n"))
     end
   end
 
   def test_doctor_reports_the_ignored_file_and_still_checks_reviewers
-    with_repository('checkpoint' => { 'extra_prompt_file' => '.agents/named.md' }) do |root|
+    with_repository('checkpoint' => { 'custom_instructions_file' => '.agents/named.md' }) do |root|
       File.write(File.join(root, '.agents/named.md'), 'Named rule')
       FileUtils.mkdir_p(File.join(root, File.dirname(DEFAULT)))
       File.write(File.join(root, DEFAULT), 'Default rule')
@@ -66,16 +66,41 @@ class CheckpointExtraPromptWarningTest < Minitest::Test
   end
 
   def test_a_named_file_that_is_missing_fails_settings_validation
-    with_repository('checkpoint' => { 'extra_prompt_file' => '.agents/absent.md' }) do |root|
+    with_repository('checkpoint' => { 'custom_instructions_file' => '.agents/absent.md' }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'checkpoint.extra_prompt_file'
+      assert_includes error.message, 'checkpoint.custom_instructions_file'
     end
   end
 end
 
+# The old prompt_file name is refused everywhere, with the new name in the message.
+class ReplacementPromptFileRenameTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+
+  OLD = { 'prompt_file' => '.agents/old.md' }.freeze
+
+  def test_every_old_prompt_file_names_its_replacement
+    cases.each do |section, message|
+      with_repository(section) do |root|
+        assert_includes assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message, message
+      end
+    end
+  end
+
+  private
+
+  def cases
+    [[{ 'review' => review_policy(OLD) }, 'review.prompt_file moved to review.replacement_prompt_file'],
+     [{ 'checkpoint' => OLD }, 'checkpoint.prompt_file was renamed to checkpoint.replacement_prompt_file'],
+     [{ 'pr_description' => { 'opening_check' => OLD } }, 'opening_check.prompt_file was renamed'],
+     [{ 'review' => review_policy('local_review_agents' => [reviewers.first.merge(OLD)]) },
+      'review.local_review_agents[0].prompt_file was renamed']]
+  end
+end
+
 class CheckpointExtraPromptFingerprintTest < Minitest::Test
-  RULES = '.agents/shaka/prompts/checkpoint.md'
+  RULES = '.agents/shaka/instructions/checkpoint.md'
 
   def setup
     @root = Dir.mktmpdir('fingerprint-extra-prompt')

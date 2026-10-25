@@ -108,7 +108,7 @@ class ReviewPromptFileTest < Minitest::Test
 
   # The PR under review cannot change the instructions it is reviewed with.
   def test_uses_the_repository_prompt_file_from_the_trusted_commit
-    with_repository({ 'prompt_file' => '.agents/review-prompt.md' }) do |root, base, head, bin|
+    with_repository({ 'replacement_prompt_file' => '.agents/review-prompt.md' }) do |root, base, head, bin|
       prompt = review_prompt(root, base, head, bin)
 
       assert_includes prompt, 'Trusted repository instructions'
@@ -118,8 +118,9 @@ class ReviewPromptFileTest < Minitest::Test
   end
 
   def test_a_reviewer_prompt_file_overrides_the_repository_prompt_file
-    agents = [{ 'provider' => 'openai', 'model_family' => 'codex', 'prompt_file' => '.agents/codex-prompt.md' }]
-    review = { 'prompt_file' => '.agents/review-prompt.md', 'local_review_agents' => agents }
+    agents = [{ 'provider' => 'openai', 'model_family' => 'codex',
+                'replacement_prompt_file' => '.agents/codex-prompt.md' }]
+    review = { 'replacement_prompt_file' => '.agents/review-prompt.md', 'local_review_agents' => agents }
     with_repository(review) do |root, base, head, bin|
       prompt = review_prompt(root, base, head, bin)
 
@@ -130,7 +131,8 @@ class ReviewPromptFileTest < Minitest::Test
 
   # Reading one review setting must not make the review depend on the rest of the seam being valid.
   def test_reads_the_prompt_file_when_other_settings_at_the_trusted_commit_are_incomplete
-    with_repository({ 'prompt_file' => '.agents/review-prompt.md' }, commands: false) do |root, base, head, bin|
+    with_repository({ 'replacement_prompt_file' => '.agents/review-prompt.md' },
+                    commands: false) do |root, base, head, bin|
       assert_includes review_prompt(root, base, head, bin), 'Trusted repository instructions'
     end
   end
@@ -142,7 +144,7 @@ class ReviewPromptFileTest < Minitest::Test
   end
 
   def test_an_unusable_prompt_file_stops_the_review_with_the_reason
-    with_repository({ 'prompt_file' => '.agents/empty-prompt.md' }) do |root, base, head, bin|
+    with_repository({ 'replacement_prompt_file' => '.agents/empty-prompt.md' }) do |root, base, head, bin|
       reason = JSON.parse(run_review(root, base, head, bin).first).fetch('reason')
 
       assert_includes reason, '.agents/empty-prompt.md'
@@ -151,7 +153,7 @@ class ReviewPromptFileTest < Minitest::Test
   end
 
   def test_a_stalled_prompt_lookup_is_bounded_by_the_review_timeout
-    with_repository({ 'prompt_file' => '.agents/review-prompt.md' }) do |root, base, head, bin|
+    with_repository({ 'replacement_prompt_file' => '.agents/review-prompt.md' }) do |root, base, head, bin|
       stall_prompt_lookup(bin)
       result = JSON.parse(run_review(root, base, head, bin, '--timeout-seconds', '2').first)
 
@@ -161,7 +163,7 @@ class ReviewPromptFileTest < Minitest::Test
   end
 
   def test_a_missing_prompt_file_stops_the_review_before_launch
-    with_repository({ 'prompt_file' => '.agents/absent.md' }) do |root, base, head, bin|
+    with_repository({ 'replacement_prompt_file' => '.agents/absent.md' }) do |root, base, head, bin|
       output, = run_review(root, base, head, bin)
       result = JSON.parse(output)
 
@@ -177,55 +179,55 @@ class ReviewPromptFileSchemaTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
   def test_loads_repository_and_reviewer_prompt_files
-    agents = [reviewers.first.merge('prompt_file' => '.agents/codex-prompt.md'), reviewers.last]
-    policy = review_policy('prompt_file' => '.agents/review-prompt.md', 'local_review_agents' => agents)
+    agents = [reviewers.first.merge('replacement_prompt_file' => '.agents/codex-prompt.md'), reviewers.last]
+    policy = review_policy('replacement_prompt_file' => '.agents/review-prompt.md', 'local_review_agents' => agents)
     with_repository('review' => policy) do |root|
       write_prompts(root)
       review = Shaka::RepositoryConfig.load(root:).review
 
-      assert_equal '.agents/review-prompt.md', review.fetch('prompt_file')
-      assert_equal '.agents/codex-prompt.md', review.fetch('local_review_agents').first.fetch('prompt_file')
+      assert_equal '.agents/review-prompt.md', review.fetch('replacement_prompt_file')
+      assert_equal '.agents/codex-prompt.md', review.fetch('local_review_agents').first.fetch('replacement_prompt_file')
     end
   end
 
   def test_rejects_a_prompt_file_outside_the_repository
-    with_repository('review' => review_policy('prompt_file' => '../shared/review-prompt.md')) do |root|
+    with_repository('review' => review_policy('replacement_prompt_file' => '../shared/review-prompt.md')) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.prompt_file must be a path inside the repository'
+      assert_includes message, 'review.replacement_prompt_file must be a path inside the repository'
     end
   end
 
   # A setting that names a missing file would stop every review, including the one for its fix.
   def test_rejects_a_prompt_file_missing_from_the_checkout
-    with_repository('review' => review_policy('prompt_file' => '.agents/absent.md')) do |root|
+    with_repository('review' => review_policy('replacement_prompt_file' => '.agents/absent.md')) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.prompt_file does not exist'
+      assert_includes message, 'review.replacement_prompt_file does not exist'
     end
   end
 
   def test_rejects_a_prompt_file_missing_from_the_trusted_commit
-    agents = [reviewers.first.merge('prompt_file' => '.agents/absent.md')]
+    agents = [reviewers.first.merge('replacement_prompt_file' => '.agents/absent.md')]
     with_repository('review' => review_policy('local_review_agents' => agents)) do |root|
       commit(root)
       error = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.load(root:, ref: 'HEAD') }
 
-      assert_includes error.message, 'review.local_review_agents[0].prompt_file does not name a file'
+      assert_includes error.message, 'review.local_review_agents[0].replacement_prompt_file does not name a file'
     end
   end
 
   def test_rejects_an_empty_prompt_file_in_the_checkout
-    with_repository('review' => review_policy('prompt_file' => '.agents/empty.md')) do |root|
+    with_repository('review' => review_policy('replacement_prompt_file' => '.agents/empty.md')) do |root|
       File.write(File.join(root, '.agents/empty.md'), "\n")
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.prompt_file .agents/empty.md is empty'
+      assert_includes message, 'review.replacement_prompt_file .agents/empty.md is empty'
     end
   end
 
   def test_rejects_an_empty_prompt_file_at_the_trusted_commit
-    with_repository('review' => review_policy('prompt_file' => '.agents/empty.md')) do |root|
+    with_repository('review' => review_policy('replacement_prompt_file' => '.agents/empty.md')) do |root|
       File.write(File.join(root, '.agents/empty.md'), "\n")
       commit(root)
       error = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.load(root:, ref: 'HEAD') }
@@ -248,13 +250,13 @@ end
 
 # Upgrading a seam keeps the review prompt setting.
 class ReviewPromptFileMigrationTest < Minitest::Test
-  def test_migration_retains_the_prompt_file
+  def test_migration_renames_the_prompt_file
     data = { 'version' => 1, 'merge' => { 'preference' => 'ask' },
              'review' => { 'required' => 'none', 'prompt_file' => '.agents/review-prompt.md' } }
     result = Shaka::Seam::FieldClassifier.new(data).call
 
     assert_empty result.blocking
-    assert_equal '.agents/review-prompt.md', result.established.dig('review', 'prompt_file')
+    assert_equal '.agents/review-prompt.md', result.established.dig('review', 'replacement_prompt_file')
   end
 end
 
@@ -263,10 +265,12 @@ class ReviewPromptSourceTest < Minitest::Test
   include ReviewPromptFileFixture
 
   def test_reports_which_instructions_the_reviewer_received
-    agents = [{ 'provider' => 'openai', 'model_family' => 'codex', 'prompt_file' => '.agents/codex-prompt.md' }]
+    agents = [{ 'provider' => 'openai', 'model_family' => 'codex',
+                'replacement_prompt_file' => '.agents/codex-prompt.md' }]
     sources = { {} => 'Shaka default',
-                { 'prompt_file' => '.agents/review-prompt.md' } => 'review.prompt_file .agents/review-prompt.md',
-                { 'local_review_agents' => agents } => 'openai/codex prompt_file .agents/codex-prompt.md' }
+                { 'replacement_prompt_file' => '.agents/review-prompt.md' } =>
+                  'review.replacement_prompt_file .agents/review-prompt.md',
+                { 'local_review_agents' => agents } => 'openai/codex replacement_prompt_file .agents/codex-prompt.md' }
     sources.each { |review, source| assert_prompt_source(review, source) }
   end
 

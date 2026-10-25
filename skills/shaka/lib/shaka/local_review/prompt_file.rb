@@ -62,7 +62,7 @@ module Shaka
       return unless review
 
       path = configured_prompt_path(review)
-      path && configured_prompt(path, 'review prompt_file')
+      path && configured_prompt(path, "review #{RepositoryConfig::ReviewSchema::PROMPT_FILE}")
     end
 
     # Individual setup keeps its own instructions in its untracked settings directory. Any other
@@ -94,6 +94,10 @@ module Shaka
     def configured_prompt_path(review)
       prompt_file = RepositoryConfig::ReviewSchema::PROMPT_FILE
       agent = reviewer_settings(review)
+      # This path reads the review section without the schema, so the old name must not be ignored.
+      RepositoryConfig::ReviewSchema.renamed!(review)
+      raise Shaka::Error, "#{reviewer} prompt_file was renamed to #{prompt_file}" if agent&.key?('prompt_file')
+
       owner, path = agent&.key?(prompt_file) ? ["#{reviewer} ", agent[prompt_file]] : ['review.', review[prompt_file]]
       return if path.nil?
       raise Shaka::Error, "review #{prompt_file} must be a repository path" unless path.is_a?(String)

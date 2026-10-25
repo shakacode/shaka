@@ -10,7 +10,8 @@ require 'shaka/publication/review_effort_floor'
 class RepositoryConfigurationExampleTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   POLICY_KEYS = %w[
-    required ci_review_jobs local_review_agents local_review_count post_implementation prompt_file provider_coverage
+    required ci_review_jobs local_review_agents local_review_count post_implementation replacement_prompt_file
+    provider_coverage
     human_review_floors auto_max_review_floor
   ].freeze
   # The only files this repository removes from a shipped floor: its Ruby library code leaves the
@@ -52,7 +53,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   end
 
   def test_example_post_implementation_defaults_match
-    assert_equal Shaka::Defaults.fetch('checkpoint'), @example.fetch('checkpoint').except('prompt_file')
+    assert_equal Shaka::Defaults.fetch('checkpoint'), @example.fetch('checkpoint').except('replacement_prompt_file')
   end
 
   def test_example_matches_packaged_defaults_without_changing_repository_choices

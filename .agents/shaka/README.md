@@ -18,7 +18,7 @@ whether new instructions are worth that cost, not only whether they are correct.
 - **Code review prompt.** [review-prompt.md](review-prompt.md) replaces Shaka's
   [default review prompt](../../skills/shaka/config/review-prompt.md). It adds that
   cost check, and checks that people can reach any new procedure from the skill.
-- **Final check before merge.** [prompts/checkpoint.md](prompts/checkpoint.md)
+- **Final check before merge.** [instructions/checkpoint.md](instructions/checkpoint.md)
   adds the same cost check to the
   [default checkpoint prompt](../../skills/shaka/config/post-implementation-prompt.md).
 - **Two reviewers.** Claude and Codex both read each reviewed commit; the default

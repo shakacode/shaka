@@ -6,7 +6,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
   include PrivateDeliveryFixture
 
   CHOICES = { 'reviewer' => 'anthropic/claude', 'model' => 'claude-sonnet-4-6', 'effort' => 'high',
-              'prompt_file' => '.agents/shaka/checkpoint.md' }.freeze
+              'replacement_prompt_file' => '.agents/shaka/checkpoint.md' }.freeze
   COMMITS = { 'totalCount' => 1 }.freeze
   PACKET = CHECKPOINT_CONTENT
 
@@ -23,7 +23,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
 
   def test_private_checkpoint_choices_and_instructions_reach_the_reviewer
     with_trial do
-      File.write(File.join(@root, CHOICES['prompt_file']), 'PRIVATE CHECKPOINT RULES')
+      File.write(File.join(@root, CHOICES['replacement_prompt_file']), 'PRIVATE CHECKPOINT RULES')
       update_private { |data| data['checkpoint'] = CHOICES }
       result = run_checkpoint
       assert_equal %w[completed anthropic/claude], result.values_at('status', 'reviewer')
@@ -36,7 +36,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
     { 'PRIVATE ADDED RULE' => true, " \n" => false }.each do |text, added|
       with_trial do
         write_private_rules(text)
-        update_private { |data| data['checkpoint'] = CHOICES.except('prompt_file') }
+        update_private { |data| data['checkpoint'] = CHOICES.except('replacement_prompt_file') }
         assert_equal 'completed', run_checkpoint['status']
         prompt = JSON.parse(File.read(File.join(@state, 'checkpoint-trace.json')))['prompt']
         assert_equal added, prompt.include?('TRUSTED CHECKPOINT RULES'), text
@@ -47,7 +47,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
   def test_private_prompts_file_that_is_not_utf8_fails_the_checkpoint_cleanly
     with_trial do
       write_private_rules("\xFF\xFE rule".b)
-      update_private { |data| data['checkpoint'] = CHOICES.except('prompt_file') }
+      update_private { |data| data['checkpoint'] = CHOICES.except('replacement_prompt_file') }
       result = run_checkpoint(succeed: false)
       assert_equal 'not_completed', result['status']
       assert_includes result['reason'], 'is not UTF-8'
@@ -57,7 +57,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
   private
 
   def write_private_rules(text)
-    path = File.join(@root, '.agents/shaka/prompts/checkpoint.md')
+    path = File.join(@root, '.agents/shaka/instructions/checkpoint.md')
     FileUtils.mkdir_p(File.dirname(path))
     File.write(path, text)
   end

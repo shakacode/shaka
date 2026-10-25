@@ -62,8 +62,8 @@ module Shaka
     private_class_method :standard_source
 
     def opening_prompt(root:, config:, ref:)
-      configured_prompt(root:, config:, ref:, path: config.opening_check.fetch('prompt_file'),
-                        label: 'opening_check.prompt_file')
+      key = RepositoryConfig::ReviewSchema::PROMPT_FILE
+      configured_prompt(root:, config:, ref:, path: config.opening_check.fetch(key), label: "opening_check.#{key}")
     end
 
     # Reads a prompt from the commit its settings came from, or from individual setup's private tree.

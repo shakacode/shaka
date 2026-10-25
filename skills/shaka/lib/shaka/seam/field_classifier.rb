@@ -11,7 +11,7 @@ module Shaka
       REVIEW_KEYS = (%w[required] + RepositoryConfig::ReviewSchema::RENAMED.values +
                      [RepositoryConfig::ReviewSchema::PROMPT_FILE,
                       RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT,
-                      ReviewCoverage::KEY, 'post_implementation']).uniq.freeze
+                      ReviewCoverage::KEY]).uniq.freeze
       PREVIOUS_CI_KEY = 'ci_review_agents'
 
       private

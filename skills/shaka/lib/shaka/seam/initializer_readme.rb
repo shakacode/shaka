@@ -15,8 +15,10 @@ module Shaka
       # Shows the default a maintainer most often changes, so config.yml names the file Shaka reads.
       CONFIG_TRAILER = ['', 'Defaults you can change (https://shaka.shakacode.com/docs/settings#checkpoint):',
                         'checkpoint:',
-                        '  # Added to the checkpoint prompt when it exists; uncommented, a missing file is an error.',
-                        "  extra_prompt_file: #{Defaults.fetch('checkpoint', 'extra_prompt_file')}"].freeze
+                        '  # Your instructions, added after the checkpoint prompt when the file exists.',
+                        "  custom_instructions_file: #{Defaults.fetch('checkpoint', 'custom_instructions_file')}",
+                        "  # Or replace Shaka's whole checkpoint prompt with your own file:",
+                        '  # replacement_prompt_file: .agents/shaka/checkpoint-prompt.md'].freeze
 
       private
 

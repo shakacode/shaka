@@ -126,7 +126,7 @@ The agent starts from Shaka's defaults when preparing replacement instructions.
 Use one prompt for all local reviewers or one for a particular reviewer. Team
 instructions come from the default branch; individual instructions stay in your
 local settings folder. See
-[custom review instructions](settings.md#reviewprompt_file).
+[custom review instructions](settings.md#reviewreplacement_prompt_file).
 
 ## Keep PR explanations useful
 

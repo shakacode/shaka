@@ -16,9 +16,9 @@ class RepositoryConfigOpeningTest < Minitest::Test
   end
 
   def test_effective_contract_includes_the_default_with_a_prompt_file
-    with_repository('pr_description' => { 'opening_check' => { 'prompt_file' => '.agents/opening.md' } }) do |root|
+    with_repository(opening_prompt('.agents/opening.md')) do |root|
       File.write(File.join(root, '.agents/opening.md'), 'Parse this opening.')
-      assert_equal({ 'enabled' => true, 'effort' => 'low', 'prompt_file' => '.agents/opening.md' },
+      assert_equal({ 'enabled' => true, 'effort' => 'low', 'replacement_prompt_file' => '.agents/opening.md' },
                    Shaka::RepositoryConfig.load(root:).to_h.fetch('opening_check'))
     end
   end
@@ -43,9 +43,10 @@ class RepositoryConfigOpeningTest < Minitest::Test
   end
 
   def test_rejects_an_invalid_opening_prompt_path
-    with_repository('pr_description' => { 'opening_check' => { 'prompt_file' => '../outside.md' } }) do |root|
+    with_repository(opening_prompt('../outside.md')) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
-      assert_equal 'pr_description.opening_check.prompt_file must be a path inside the repository', error.message
+      assert_equal 'pr_description.opening_check.replacement_prompt_file must be a path inside the repository',
+                   error.message
     end
   end
 
@@ -58,14 +59,14 @@ class RepositoryConfigOpeningTest < Minitest::Test
   end
 
   def test_rejects_a_missing_local_opening_prompt
-    with_repository('pr_description' => { 'opening_check' => { 'prompt_file' => '.agents/missing.md' } }) do |root|
+    with_repository(opening_prompt('.agents/missing.md')) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
-      assert_includes error.message, 'opening_check.prompt_file does not exist'
+      assert_includes error.message, 'opening_check.replacement_prompt_file does not exist'
     end
   end
 
   def test_trusted_prompt_comes_from_the_pinned_commit
-    with_repository('pr_description' => { 'opening_check' => { 'prompt_file' => '.agents/opening.md' } }) do |root|
+    with_repository(opening_prompt('.agents/opening.md')) do |root|
       File.write(File.join(root, '.agents/opening.md'), 'Parse the first sentence.')
       commit(root)
       source = Shaka::TrustedConfigSource.new(root:)
@@ -76,7 +77,7 @@ class RepositoryConfigOpeningTest < Minitest::Test
   end
 
   def test_trusted_prompt_resolves_a_symlinked_directory
-    opening = { 'prompt_file' => '.agents/opening-link/prompt.md' }
+    opening = { 'replacement_prompt_file' => '.agents/opening-link/prompt.md' }
     with_repository('pr_description' => { 'opening_check' => opening }) do |root|
       FileUtils.mkdir_p(File.join(root, 'prompts'))
       File.write(File.join(root, 'prompts/prompt.md'), 'Parse this opening.')
@@ -88,7 +89,7 @@ class RepositoryConfigOpeningTest < Minitest::Test
   end
 
   def test_trusted_prompt_rejects_a_directory
-    with_repository('pr_description' => { 'opening_check' => { 'prompt_file' => '.agents/opening' } }) do |root|
+    with_repository(opening_prompt('.agents/opening')) do |root|
       Dir.mkdir(File.join(root, '.agents/opening'))
       File.write(File.join(root, '.agents/opening/note.md'), 'text')
       commit(root)
@@ -97,7 +98,7 @@ class RepositoryConfigOpeningTest < Minitest::Test
   end
 
   def test_trusted_prompt_rejects_an_oversize_file
-    with_repository('pr_description' => { 'opening_check' => { 'prompt_file' => '.agents/opening.md' } }) do |root|
+    with_repository(opening_prompt('.agents/opening.md')) do |root|
       File.write(File.join(root, '.agents/opening.md'), 'x' * 100_001)
       commit(root)
       assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.load(root:, ref: 'HEAD') }
@@ -112,4 +113,6 @@ class RepositoryConfigOpeningTest < Minitest::Test
     system('git', '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
            'commit', '-qm', 'trusted', exception: true)
   end
+
+  def opening_prompt(path) = { 'pr_description' => { 'opening_check' => { 'replacement_prompt_file' => path } } }
 end

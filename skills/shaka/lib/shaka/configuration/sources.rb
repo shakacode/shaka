@@ -82,7 +82,8 @@ module Shaka
 
       # A conventional file may be missing or empty at the commit; the caller then keeps its built-in prompt.
       def optional_prompt_at_commit(root:, ref:, path:, git_access:)
-        return unless TrustedPathResolver.new(root:, sha: ref, git: git_access.fetch(:resolver)).entry(path)
+        _resolved, entry = TrustedPathResolver.new(root:, sha: ref, git: git_access.fetch(:resolver)).resolve(path)
+        return unless entry
 
         prompt_source(root:, ref:, path:, git_access:, optional: true)
       end

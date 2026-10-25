@@ -21,7 +21,7 @@ class PostImplementationTest < Minitest::Test
 
   def test_trusted_settings_and_prompt_reach_the_cli
     settings = { 'checkpoint' => { 'model' => 'chosen-model', 'effort' => 'high',
-                                   'prompt_file' => '.agents/codex-prompt.md' } }
+                                   'replacement_prompt_file' => '.agents/codex-prompt.md' } }
     with_repository(settings) do |root, base, head, bin|
       fake_checkpoint(bin, head)
       _, status = run_checkpoint(root, base, head, bin)
@@ -38,7 +38,7 @@ class PostImplementationTest < Minitest::Test
                                         'effort' => 'low' } }) do |root, base, head, bin|
       fake_claude(bin, head)
       result, status = run_checkpoint(root, base, head, bin, '--reviewer', 'anthropic/claude', '--model', 'sonnet',
-                                      '--effort', 'high', '--prompt-file', '.agents/codex-prompt.md')
+                                      '--effort', 'high', '--replacement-prompt-file', '.agents/codex-prompt.md')
       trace = checkpoint_trace(root)
 
       assert_predicate status, :success?, result.inspect
@@ -131,7 +131,8 @@ class PostImplementationFailureTest < Minitest::Test
 
   def test_invalid_settings_and_missing_prompt_stop_before_invocation
     [{ 'effort' => 'invalid' }, { 'reviewer' => 'unknown/provider' }, { 'model' => '' },
-     { 'prompt_file' => '.agents/missing.md' }, { 'prompt_file' => '../outside.md' }].each do |settings|
+     { 'replacement_prompt_file' => '.agents/missing.md' },
+     { 'replacement_prompt_file' => '../outside.md' }].each do |settings|
       with_repository({ 'checkpoint' => settings }) do |root, base, head, bin|
         result, status = run_checkpoint(root, base, head, bin)
 
@@ -170,7 +171,7 @@ class PostImplementationFailureTest < Minitest::Test
 
   def test_opt_out_does_not_build_a_packet_or_load_an_inactive_prompt
     [{ 'enabled' => false }, {}].each do |settings|
-      settings['prompt_file'] = '.agents/missing.md'
+      settings['replacement_prompt_file'] = '.agents/missing.md'
       with_repository({ 'checkpoint' => settings }) do |root, base, head, bin|
         options = settings.key?('enabled') ? [] : ['--opt-out', 'Maintainer decision']
         result, status = run_checkpoint(root, base, head, bin, *options, :without_packet)
@@ -202,7 +203,7 @@ class PostImplementationSchemaTest < Minitest::Test
 
   def test_trusted_schema_accepts_and_resolves_checkpoint_prompt
     settings = { 'reviewer' => 'Anthropic/Claude', 'model' => 'sonnet', 'effort' => 'high',
-                 'prompt_file' => '.agents/checkpoint.md' }
+                 'replacement_prompt_file' => '.agents/checkpoint.md' }
     with_repository('checkpoint' => settings) do |root|
       File.write(File.join(root, '.agents/checkpoint.md'), 'Compare actual outcome and cost')
       config = Shaka::RepositoryConfig.load(root:)
@@ -212,7 +213,7 @@ class PostImplementationSchemaTest < Minitest::Test
   end
 
   def test_missing_trusted_prompt_never_uses_a_candidate_replacement
-    with_repository('checkpoint' => { 'prompt_file' => '.agents/absent.md' }) do |root|
+    with_repository('checkpoint' => { 'replacement_prompt_file' => '.agents/absent.md' }) do |root|
       system(TEST_GIT, '-C', root, 'init', '--quiet', exception: true)
       system(TEST_GIT, '-C', root, 'add', '.', exception: true)
       system(TEST_GIT, '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',

@@ -131,7 +131,7 @@ aside first.
 | --- | --- |
 | Commands, merge policy, and review jobs | [Settings](settings.md) in `.agents/shaka/config.yml` |
 | Project constraints, review criteria, and writing style | `AGENTS.md` |
-| What the local reviewer looks for and how it reports | [`review.prompt_file`](settings.md#reviewprompt_file), replacing Shaka's defaults |
+| What the local reviewer looks for and how it reports | [`review.replacement_prompt_file`](settings.md#reviewreplacement_prompt_file), replacing Shaka's defaults |
 | Changes to Shaka's workflow | A [fork of Shaka](fork-and-hack.md) |
 
 Shaka reads `AGENTS.md` from Git at the trusted commit. When `AGENTS.md` is a
@@ -145,11 +145,11 @@ file at the same commit. Claude Code is a separate case: recent versions can rea
 ## Can I customize the prompt Shaka gives its local reviewer?
 
 Yes. In your [settings](settings.md) file, set
-[`review.prompt_file`](settings.md#reviewprompt_file) to the path of a Markdown
+[`review.replacement_prompt_file`](settings.md#reviewreplacement_prompt_file) to the path of a Markdown
 file, relative to the repository root, such as `.agents/review-prompt.md`. It
 replaces Shaka's default instructions for what the local reviewer looks for and
 how it reports. To give one review agent different instructions, set
-`prompt_file` on that agent's entry in `local_review_agents`. Copy Shaka's
+`replacement_prompt_file` on that agent's entry in `local_review_agents`. Copy Shaka's
 [default instructions](../skills/shaka/config/review-prompt.md) to start.
 
 With shared settings, Shaka reads the default-branch version, so a PR that edits it
@@ -159,7 +159,7 @@ Criteria in `AGENTS.md` still apply on top of the prompt file.
 The prompt file configures local reviews; a CI review job takes its prompt from
 its own workflow.
 
-The [settings reference](settings.md#reviewprompt_file) explains which instructions
+The [settings reference](settings.md#reviewreplacement_prompt_file) explains which instructions
 apply and links the review protocol.
 
 ## Can a PR change Shaka's settings or rules for itself?

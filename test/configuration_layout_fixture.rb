@@ -45,7 +45,7 @@ module ConfigurationLayoutFixture
 
   def write_new_prompt_config(root)
     path = File.join(root, '.agents/shaka/config.yml')
-    policy = config.merge('review' => review_policy('prompt_file' => '.agents/shaka/review-prompt.md'))
+    policy = config.merge('review' => review_policy('replacement_prompt_file' => '.agents/shaka/review-prompt.md'))
     File.write(path, YAML.dump(policy))
     File.write(File.join(root, '.agents/shaka/review-prompt.md'), "Review instructions\n")
   end

@@ -21,8 +21,9 @@ review:
   # Default: none, so local_review_count (default 1) sets how many review. Ours: Claude and Codex
   # both review every commit, because a mistake in Shaka weakens checks on every project.
   provider_coverage: [anthropic, openai]
-  # Default: Shaka's built-in prompt. Ours also weighs the cost of instruction changes (README.md).
-  prompt_file: .agents/shaka/review-prompt.md
+  # Default: Shaka's built-in prompt. Ours replaces it to also weigh the cost of instruction
+  # changes (README.md).
+  replacement_prompt_file: .agents/shaka/review-prompt.md
   # Default: none, so the implementing model reviews in a fresh session.
   # Ours: reviewers from other providers first, in this order.
   local_review_agents:
@@ -43,9 +44,9 @@ checkpoint: # Defaults: the final "did we build the right thing?" check before m
   reviewer: openai/codex
   model: gpt-6.1-sol
   effort: medium
-  # Default: added to Shaka's checkpoint prompt when it exists. Ours holds the instruction-cost
+  # Default: added after Shaka's checkpoint prompt when it exists. Ours holds the instruction-cost
   # check (README.md); naming it here makes a missing file an error.
-  extra_prompt_file: .agents/shaka/prompts/checkpoint.md
+  custom_instructions_file: .agents/shaka/instructions/checkpoint.md
 
 merge:
   preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.

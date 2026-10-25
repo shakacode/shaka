@@ -42,7 +42,7 @@ class FingerprintTrustedSourceTest < Minitest::Test
     commit_config('first')
     path = File.join(@root, 'review.md')
     File.write(path, 'one')
-    settings = @settings.merge('review' => { 'prompt_file' => 'review.md' })
+    settings = @settings.merge('review' => { 'replacement_prompt_file' => 'review.md' })
     [path, commit_prompt, settings]
   end
 
@@ -80,7 +80,7 @@ class FingerprintTrustedSourceTest < Minitest::Test
     File.write(File.join(@root, target), 'instructions')
     File.symlink(target, File.join(@root, 'review.md'))
     ref = commit_prompt_with_target(target)
-    settings = @settings.merge('review' => { 'prompt_file' => 'review.md' })
+    settings = @settings.merge('review' => { 'replacement_prompt_file' => 'review.md' })
     [target, ref, settings]
   end
 

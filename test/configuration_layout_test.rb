@@ -164,10 +164,10 @@ class ConfigurationLayoutSafetyTest < Minitest::Test
   def test_new_config_keeps_repository_relative_prompt_paths
     with_new_layout do |root|
       write_new_prompt_config(root)
-      assert_equal '.agents/shaka/review-prompt.md', Shaka::Configuration.worktree(root:).review.fetch('prompt_file')
+      assert_equal '.agents/shaka/review-prompt.md', Shaka::Configuration.worktree(root:).review.fetch('replacement_prompt_file')
       commit_fixture(root)
       assert_equal '.agents/shaka/review-prompt.md',
-                   Shaka::Configuration.trusted(root:, ref: 'HEAD').review.fetch('prompt_file')
+                   Shaka::Configuration.trusted(root:, ref: 'HEAD').review.fetch('replacement_prompt_file')
     end
   end
 
@@ -224,7 +224,7 @@ class ConfigurationReviewLayoutTest < Minitest::Test
       probe = ->(*arguments) { Open3.capture3('git', *arguments, chdir: root) }
       assert Shaka::Configuration.contract_at_commit?(root:, ref: 'HEAD', git: probe)
       review = Shaka::Configuration.review_at_commit(root:, ref: 'HEAD', git: 'git', capture:, probe:)
-      assert_equal '.agents/shaka/review-prompt.md', review.fetch('prompt_file')
+      assert_equal '.agents/shaka/review-prompt.md', review.fetch('replacement_prompt_file')
     end
   end
 

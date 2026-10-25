@@ -16,6 +16,14 @@ module Shaka
         value
       end
 
+      # `prompt_file` did not say whether it replaced or added to Shaka's prompt.
+      def renamed_prompt_file!(mapping, label)
+        return unless mapping.is_a?(Hash) && mapping.key?('prompt_file')
+
+        raise Error, "#{label}.prompt_file was renamed to #{label}.replacement_prompt_file. Tell your agent: " \
+                     '"Rename prompt_file to replacement_prompt_file in the Shaka settings."'
+      end
+
       def prompt_path!(value, label)
         path = string!(value, label)
         inside = !Pathname.new(path).absolute? && !path.split('/').include?('..')
