@@ -647,7 +647,9 @@ Ask whether the change adds a step maintainers must remember.
 ```
 
 When your file conflicts with a built-in question, the reviewer follows your file.
-It cannot relax Shaka's safety rules or change the report format.
+Shaka tells the reviewer that your file cannot relax its safety rules or change the
+report format. Shaka checks the report's format; the reviewer is trusted to keep the
+other rules.
 
 That path is the default of `checkpoint.extra_prompt_file`. To keep the file elsewhere,
 name it:
