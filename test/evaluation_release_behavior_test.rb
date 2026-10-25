@@ -43,6 +43,11 @@ class EvaluationReleaseBehaviorTest < Minitest::Test
     end
   end
 
+  def test_modified_release_skill_is_refused
+    File.write(File.join(@skill, 'SKILL.md'), 'Uncommitted change')
+    assert_equal 'unknown_or_modified_package', check['reason']
+  end
+
   def test_unknown_native_profile_is_refused
     %w[host_cli host_cli_version provider configured_model effort].each do |key|
       original = fingerprint[key]
