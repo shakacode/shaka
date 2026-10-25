@@ -19,20 +19,36 @@ approval because a published version cannot be replaced.
 
    ```bash
    bundle install
-   bin/validate
+   /absolute/path/to/trusted/shaka evidence run --root . --ref RELEASE_SHA \
+     --repository shakacode/shaka --command validate > /outside/checkout/validation.json
    ```
 
 4. Build and inspect the gem before changing any remote state:
 
    ```bash
-   gem build shaka.gemspec
-   gem specification shaka-VERSION.gem
+   gem build shaka.gemspec --output /outside/checkout/shaka-VERSION.gem
+   gem specification /outside/checkout/shaka-VERSION.gem
    ```
 
 5. Confirm the version's `CHANGELOG.md` entry merged with the version change: a short
    summary, then breaking changes with upgrade steps. Save that entry's body as
    `RELEASE_NOTES.md`, then obtain explicit maintainer approval for the registry
-   publication. Stop here until that approval is recorded.
+   publication. Before requesting approval, run the maintainer preflight from the
+   source checkout, with the gem, original validation JSON, and notes saved outside it:
+
+   ```bash
+   bin/release-preflight --commit RELEASE_SHA --gem /outside/checkout/shaka-VERSION.gem \
+     --validation /outside/checkout/validation.json --notes /outside/checkout/RELEASE_NOTES.md
+   ```
+
+   A passing result identifies the commit, version, gem digest, validation digest and
+   notes digest for approval. Ruby checks a clean checkout at remote `main`, matching
+   validation and settings, package metadata, file contents and executable modes,
+   matching changelog notes, and absence of the release tag. It makes no remote changes.
+   Keep the JSON with the release evidence. A pass does not establish behavioral or
+   host compatibility, check registry availability, or grant publication authority.
+   Obtain approval for those exact inputs; stop until it is recorded. The preflight
+   is repository maintenance tooling and is not included in the gem.
 
 6. Set the approved version and confirm it is absent from RubyGems, GitHub releases,
    and remote tags. The first command lists existing prereleases; the latter commands
@@ -55,7 +71,7 @@ approval because a published version cannot be replaced.
 8. Publish with the maintainer's RubyGems credentials and MFA code:
 
    ```bash
-   gem push "shaka-$shaka_version.gem"
+   gem push "/outside/checkout/shaka-$shaka_version.gem"
    ```
 
 9. Create the GitHub release from the verified tag and reviewed notes. GitHub appends
@@ -64,7 +80,7 @@ approval because a published version cannot be replaced.
 
    ```bash
    gh release create "v$shaka_version" --verify-tag --prerelease \
-     --title "shaka $shaka_version" --notes-file RELEASE_NOTES.md --generate-notes
+     --title "shaka $shaka_version" --notes-file /outside/checkout/RELEASE_NOTES.md --generate-notes
    ```
 
 10. Verify RubyGems and GitHub, then install the exact version into a temporary
