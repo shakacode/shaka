@@ -11,6 +11,13 @@ module Shaka
 
       private
 
+      def pinned_release
+        return not_a_pull(checkout_head) if checkout_head != recorded
+
+        answer('custom', "Pinned release #{@release}; install another version in a new directory with --take-over. " \
+                         'Keep this checkout for active chats and rollback.', 'pinned_release')
+      end
+
       def current = answer('current', "This installed revision matches #{@target}.")
 
       def drift(head)

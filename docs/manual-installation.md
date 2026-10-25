@@ -79,6 +79,21 @@ The commands above install ShakaCode's repository. To run a version you can
 change, follow [Fork Shaka and make it yours](fork-and-hack.md). Pass
 `--repository` with your fork's exact origin URL.
 
+## Keep a tested release
+
+Once a tested release is published, ask your agent:
+
+> Install Shaka VERSION and keep my previous version available for rollback.
+
+Replace VERSION with the published version you chose. Shaka keeps that release at
+its recorded commit, even when development continues on `main`. Changing versions
+uses a separate checkout and moves your skill links; the previous helper remains
+available to active chats. Rollback points the links back to the retained version.
+
+The source installer supports release selection. The published name-reservation
+gem predates it; the next approved gem will select its own release for new
+installations. Existing development installs retain their source selection.
+
 ## Verify and update
 
 Check the installation at any time, using the directory you installed into.

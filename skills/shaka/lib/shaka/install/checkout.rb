@@ -9,6 +9,7 @@ require_relative 'checkout_validation'
 require_relative 'directory_safety'
 require_relative 'locations'
 require_relative 'package'
+require_relative 'release_checkout'
 
 module Shaka
   module Install
@@ -20,16 +21,18 @@ module Shaka
       include CheckoutDevelopment
       include CheckoutRecord
       include CheckoutValidation
+      include ReleaseCheckout
 
       REPOSITORY = 'https://github.com/shakacode/shaka.git'
       RECORD = Locations::RECORD
-      attr_reader :root, :record
+      attr_reader :root, :record, :repository, :release
 
-      def initialize(directory, repository: nil, branch: nil)
+      def initialize(directory, repository: nil, branch: nil, release: nil)
         @root = File.expand_path(directory)
         @root = File.realpath(@root) if File.directory?(@root)
         @repository = repository
         @branch = branch
+        @release = release
       end
 
       def prepare(action)
@@ -43,6 +46,8 @@ module Shaka
       end
 
       def update(&)
+        return check_release if release?
+
         git('fetch', '--quiet', 'origin', @branch)
         validate
         candidate = git('rev-parse', "refs/remotes/origin/#{@branch}")
@@ -57,6 +62,7 @@ module Shaka
       def save(targets, identity)
         data = { 'schema_version' => 1, 'directory' => @root, 'repository' => @repository,
                  'branch' => @branch, 'revision' => revision, 'targets' => targets, 'identity' => identity }
+        data['release'] = @release if release?
         write_record(data)
       end
 
@@ -82,12 +88,18 @@ module Shaka
       end
 
       def select_source
-        @repository ||= @record&.fetch('repository') || REPOSITORY
-        @branch = @branch || @record&.fetch('branch') || 'main'
+        @repository ||= recorded_source('repository') || REPOSITORY
+        @release ||= recorded_source('release')
+        @branch = @branch || recorded_source('branch') || default_branch
       end
+
+      def recorded_source(key) = @record && @record[key]
+      def default_branch = ('main' unless release?)
 
       def clone
         @repository ||= REPOSITORY
+        return clone_release if release?
+
         @branch ||= 'main'
         git('clone', '--quiet', '--branch', @branch, '--', @repository, @root)
       end

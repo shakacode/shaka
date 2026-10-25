@@ -13,7 +13,7 @@ module Shaka
       # Only an update may record a pull, because it validates the fetched origin tree before advancing.
       def refuse_drift
         return unless @record && drifted?
-        return if @action == :update && pulled?
+        return if !release? && @action == :update && pulled?
 
         raise ArgumentError, drift_message
       end
@@ -33,6 +33,8 @@ module Shaka
       def drift_message
         detail = "Installation revision changed outside the update procedure (recorded #{@record['revision'][0, 7]}, " \
                  "checkout #{revision[0, 7]})."
+        return "#{detail} Release #{@release} must remain at its recorded commit." if release?
+
         return "#{detail} Run #{Shellwords.escape(helper)} install --update to record it." if pulled?
 
         "#{detail} It must match #{@repository} #{@branch}; keep local commits in a separate development checkout."

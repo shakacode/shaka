@@ -56,6 +56,24 @@ paths you own, or select a protected location. Preserve file contents and execut
 
 ## Verify and update
 
+### Install a published release
+
+For an approved published version, use `bin/install --release VERSION --directory NEW`.
+The installer selects `refs/tags/vVERSION`, checks the declared version, and records
+its commit in a detached checkout. `--branch` and `--release` are mutually exclusive.
+Source installations without either flag retain the pilot's `main` default.
+New gem installations select their own version; an existing registered installation
+keeps its source selection. An explicit repository or branch overrides the gem default.
+
+To change versions or roll back, use a separate directory with `--release VERSION --take-over`.
+The existing take-over procedure moves all registered host links and preserves both
+checkouts. Keep the previous helper for active chats. Release `install --update` checks
+that the remote tag still resolves to the recorded commit; it never advances to `main`
+or another release. A missing or moved tag fails. `update-check` reports the local pin,
+without checking for newer releases.
+
+### Maintain a branch installation
+
 The installer prints an update reminder for every host and custom skills directory.
 
 `update-check` compares the checkout's HEAD commit with its registered origin branch from any folder. `drift` means
