@@ -2,7 +2,7 @@
 
 require 'digest'
 require 'json'
-require_relative '../../skills/shaka/lib/shaka/evidence/result'
+require_relative '../../skills/shaka/lib/shaka/workflow_version'
 require_relative 'artifact'
 
 module ShakaRelease
@@ -10,12 +10,13 @@ module ShakaRelease
   class Preflight
     REMOTE = 'https://github.com/shakacode/shaka.git'
 
-    def initialize(root:, commit:, gem:, validation:, notes:)
+    def initialize(root:, shaka:, **inputs)
       @root = root
-      @commit = commit
-      @gem = gem
-      @validation = validation
-      @notes = notes
+      @commit = inputs.fetch(:commit)
+      @gem = inputs.fetch(:gem)
+      @validation = inputs.fetch(:validation)
+      @notes = inputs.fetch(:notes)
+      @shaka = shaka
     end
 
     def check
@@ -51,12 +52,28 @@ module ShakaRelease
       bytes = File.binread(@validation)
       @validation_digest = Digest::SHA256.hexdigest(bytes)
       result = JSON.parse(bytes)
-      bound = Shaka::Evidence::Result.bind(result, root: @root, head: @commit, ref: @commit,
-                                                   repository: 'shakacode/shaka')
+      bound = bind_validation
+      refuse 'validation changed during preflight' unless File.binread(@validation) == bytes
       refuse 'validation must pass unchanged for this commit and current settings' unless
         bound['status'] == 'bound' && completed_validation?(result)
     rescue SystemCallError, JSON::ParserError, Shaka::Error => e
       refuse "validation: #{e.message}"
+    end
+
+    def bind_validation
+      output, error, status = Open3.capture3(trusted_helper, 'evidence', 'bind', '--root', @root,
+                                             '--head', @commit, '--ref', @commit,
+                                             '--repository', 'shakacode/shaka', '--result', @validation)
+      result = JSON.parse(output)
+      refuse "validation helper refused binding: #{error.strip}" unless status.success?
+      result
+    end
+
+    def trusted_helper
+      helper = File.realpath(@shaka)
+      refuse 'trusted Shaka helper must be outside the release checkout' if
+        helper.start_with?("#{File.realpath(@root)}/") || !File.executable?(helper)
+      helper
     end
 
     def completed_validation?(result)

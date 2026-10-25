@@ -6,12 +6,16 @@ require_relative '../lib/shaka_release/preflight'
 
 options = {}
 parser = OptionParser.new do |cli|
-  cli.banner = 'Usage: bin/release-preflight --commit SHA --gem FILE --validation FILE --notes FILE'
-  %w[commit gem validation notes].each { |name| cli.on("--#{name} VALUE") { |value| options[name.to_sym] = value } }
+  cli.banner = 'Usage: bin/release-preflight --commit SHA --gem FILE --validation FILE --notes FILE --shaka PATH'
+  %w[commit gem validation notes shaka].each do |name|
+    cli.on("--#{name} VALUE") do |value|
+      options[name.to_sym] = value
+    end
+  end
 end
 begin
   parser.parse!
-  abort parser.to_s unless ARGV.empty? && options.size == 4
+  abort parser.to_s unless ARGV.empty? && options.size == 5
   puts JSON.pretty_generate(ShakaRelease::Preflight.new(root: Dir.pwd, **options).check)
 rescue Shaka::Error, OptionParser::ParseError, SystemCallError, JSON::ParserError, Gem::Package::Error => e
   warn "Release preflight refused: #{e.message}"

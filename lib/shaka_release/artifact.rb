@@ -67,9 +67,10 @@ module ShakaRelease
 
       mode, sha = entry
       bytes = file.read
+      # Git records owner execution; group and other permissions can vary with umask.
       valid = file.file? && %w[100644 100755].include?(mode) &&
               Digest::SHA1.hexdigest("blob #{bytes.bytesize}\0#{bytes}") == sha &&
-              file.header.mode & 0o111 == (mode == '100755' ? 0o111 : 0)
+              file.header.mode.anybits?(0o100) == (mode == '100755')
       raise Shaka::Error, "Gem package content differs from committed source: #{file.full_name}" unless valid
     end
   end

@@ -73,7 +73,8 @@ module ReleasePreflightHelpers
 
   def capture(**)
     Open3.capture3(RbConfig.ruby, COMMAND, '--commit', @head, '--gem', @gem,
-                   '--validation', @validation, '--notes', @notes, chdir: @root, **)
+                   '--validation', @validation, '--notes', @notes,
+                   '--shaka', @shaka || File.join(ROOT, 'skills/shaka/scripts/shaka'), chdir: @root, **)
   end
 
   def preflight

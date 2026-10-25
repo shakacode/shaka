@@ -19,7 +19,8 @@ approval because a published version cannot be replaced.
 
    ```bash
    bundle install
-   /absolute/path/to/trusted/shaka evidence run --root . --ref RELEASE_SHA \
+   shaka_helper=/absolute/path/to/trusted/shaka
+   "$shaka_helper" evidence run --root . --ref RELEASE_SHA \
      --repository shakacode/shaka --command validate > /outside/checkout/validation.json
    ```
 
@@ -38,13 +39,16 @@ approval because a published version cannot be replaced.
 
    ```bash
    bin/release-preflight --commit RELEASE_SHA --gem /outside/checkout/shaka-VERSION.gem \
-     --validation /outside/checkout/validation.json --notes /outside/checkout/RELEASE_NOTES.md
+     --validation /outside/checkout/validation.json --notes /outside/checkout/RELEASE_NOTES.md \
+     --shaka "$shaka_helper"
    ```
 
    A passing result identifies the commit, version, gem digest, validation digest and
    notes digest for approval. Ruby checks a clean checkout at `shakacode/shaka`'s `main`, matching
-   validation and settings, package metadata, file contents and executable modes,
+   validation and settings, package metadata, file contents and executable status,
    matching changelog notes, and absence of the release tag. It makes no remote changes.
+   Use the same trusted helper outside the release checkout for validation and
+   preflight binding; its installation identity is part of the evidence.
    Keep the JSON with the release evidence. A pass does not establish behavioral or
    host compatibility, check registry availability, or grant publication authority.
    Obtain approval for those exact inputs; stop until it is recorded. The preflight

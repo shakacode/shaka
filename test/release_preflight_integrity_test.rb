@@ -41,4 +41,17 @@ class ReleasePreflightIntegrityTest < Minitest::Test
     execute('git', 'update-index', '--skip-worktree', 'shaka.gemspec')
     assert_refused 'index flags'
   end
+
+  def test_accepts_a_gem_built_with_restrictive_checkout_modes
+    File.chmod(0o700, File.join(@root, 'exe/shaka'))
+    execute('gem', 'build', 'shaka.gemspec', '--output', @gem)
+    assert_equal 'ready_for_approval', preflight.fetch('status')
+  end
+
+  def test_rejects_an_executable_without_owner_execution_permission
+    execute('git', 'config', 'core.filemode', 'false')
+    File.chmod(0o650, File.join(@root, 'exe/shaka'))
+    execute('gem', 'build', 'shaka.gemspec', '--output', @gem)
+    assert_refused 'committed source'
+  end
 end
