@@ -52,6 +52,17 @@ class CheckpointExtraPromptWarningTest < Minitest::Test
     end
   end
 
+  def test_the_trusted_commit_reports_an_ignored_default_file
+    with_repository('checkpoint' => { 'custom_instructions_file' => '.agents/named.md' }) do |root|
+      File.write(File.join(root, '.agents/named.md'), 'Named rule')
+      FileUtils.mkdir_p(File.join(root, File.dirname(DEFAULT)))
+      File.write(File.join(root, DEFAULT), 'Default rule')
+      commit_all(root)
+
+      assert_includes Shaka::TrustedConfigSource.load(root:, ref: 'HEAD').warnings.join, "#{DEFAULT} is ignored"
+    end
+  end
+
   def test_doctor_reports_the_ignored_file_and_still_checks_reviewers
     with_repository('checkpoint' => { 'custom_instructions_file' => '.agents/named.md' }) do |root|
       File.write(File.join(root, '.agents/named.md'), 'Named rule')
@@ -71,6 +82,15 @@ class CheckpointExtraPromptWarningTest < Minitest::Test
 
       assert_includes error.message, 'checkpoint.custom_instructions_file'
     end
+  end
+
+  private
+
+  def commit_all(root)
+    system('git', '-C', root, 'init', '--quiet', exception: true)
+    system('git', '-C', root, 'add', '.', exception: true)
+    system('git', '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+           'commit', '--quiet', '-m', 'trusted', exception: true)
   end
 end
 
