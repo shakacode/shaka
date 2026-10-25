@@ -9,6 +9,7 @@ require_relative 'merge_review_floor'
 require_relative 'prose_limits'
 require_relative 'configuration/paths'
 require_relative 'configuration/layout'
+require_relative 'trusted_path_resolver'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
 
@@ -87,7 +88,21 @@ module Shaka
 
     def prompt_files = self.class.prompt_files(review:, opening: opening_check, guidance: project_guidance)
 
+    # A file left at the default path is ignored once the settings name another one.
+    def warnings
+      schema = PostImplementationSchema
+      path, named = schema.extra_prompt(review.fetch(schema::KEY, {}))
+      default = schema::DEFAULTS.fetch(schema::EXTRA)
+      return [] unless named && path != default && file_present?(default)
+
+      ["#{default} is ignored because checkpoint.#{schema::EXTRA} names #{path}; delete it or point the setting back"]
+    end
+
     private
+
+    def file_present?(path)
+      sha ? !TrustedPathResolver.new(root: @root, sha:).entry(path).nil? : File.exist?(File.join(@root, path))
+    end
 
     def apply_schema
       schema = Schema.new(root: @root, data: @data, available_commands: @available_commands,

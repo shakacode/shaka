@@ -12,7 +12,8 @@ module Shaka
 
       KEY = 'post_implementation'
       SECTION = 'checkpoint'
-      KEYS = %w[enabled reviewer model effort prompt_file].freeze
+      EXTRA = 'extra_prompt_file'
+      KEYS = ['enabled', 'reviewer', 'model', 'effort', 'prompt_file', EXTRA].freeze
       EFFORTS = { 'openai/codex' => %w[low medium high xhigh max],
                   'anthropic/claude' => %w[low medium high xhigh max],
                   'xai/grok' => %w[low medium high] }.freeze
@@ -29,6 +30,9 @@ module Shaka
         review.merge(KEY => data[SECTION])
       end
 
+      # The added file's path, and whether settings named it; a named file must exist, the default need not.
+      def self.extra_prompt(settings) = [settings.fetch(EXTRA, DEFAULTS.fetch(EXTRA)), settings.key?(EXTRA)]
+
       def initialize(settings, label: SECTION)
         @settings = settings
         @label = label
@@ -43,7 +47,9 @@ module Shaka
         raise Error, "#{label}.reviewer must be a supported provider/family" unless EFFORTS.key?(reviewer)
 
         validate_choices(label, reviewer)
-        prompt_path!(@settings['prompt_file'], "#{label}.prompt_file") if @settings.key?('prompt_file')
+        %w[prompt_file extra_prompt_file].each do |key|
+          prompt_path!(@settings[key], "#{label}.#{key}") if @settings.key?(key)
+        end
       end
 
       private

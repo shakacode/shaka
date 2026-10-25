@@ -13,6 +13,8 @@ checkpoint: # The finished-result checkpoint before merge readiness.
   reviewer: openai/codex
   model: gpt-6.1-sol # Applies only while the reviewer above is selected.
   effort: medium
+  # Added to the checkpoint prompt when it exists. Naming it in config.yml makes the file required.
+  extra_prompt_file: .agents/shaka/prompts/checkpoint.md
 
 merge:
   preference: ask # Setup writes this; config.yml must state a preference.

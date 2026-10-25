@@ -647,10 +647,22 @@ Ask whether the change adds a step maintainers must remember.
 ```
 
 When your file conflicts with a built-in question, the reviewer follows your file.
-It cannot relax Shaka's safety rules or change the report format. Without the file,
-or with an empty one, the reviewer gets no added questions. Each file in
-`.agents/shaka/prompts/` is named for the built-in prompt it adds to, and the
-folder's README lists them.
+It cannot relax Shaka's safety rules or change the report format.
+
+That path is the default of `checkpoint.extra_prompt_file`. To keep the file elsewhere,
+name it:
+
+```yaml
+checkpoint:
+  extra_prompt_file: docs/review/checkpoint.md
+```
+
+| `extra_prompt_file` | File | Result |
+| --- | --- | --- |
+| Not set | Missing or empty at the default path | No added questions |
+| Not set | Present at the default path | The file is added |
+| Set | Missing or empty | Settings validation fails |
+| Set to another path | Also present at the default path | The named file is added; `seam check` and `doctor` warn that the default one is ignored |
 
 To remove a built-in question instead, set `prompt_file` to replace the whole prompt;
 you then keep that copy in step with Shaka's changes.

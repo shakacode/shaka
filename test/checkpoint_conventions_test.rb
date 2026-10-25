@@ -2,12 +2,14 @@
 
 require_relative 'support/post_implementation_fixture'
 
-# The top-level checkpoint section and the conventional prompts/checkpoint.md file.
+# The top-level checkpoint section and checkpoint.extra_prompt_file, with its default path.
 class CheckpointConventionsTest < Minitest::Test
   include PostImplementationFixture
 
   RULES = '.agents/shaka/prompts/checkpoint.md'
   REPLACEMENT = { 'checkpoint' => { 'prompt_file' => '.agents/codex-prompt.md' } }.freeze
+  NAMED = '.agents/named-rules.md'
+  NAMED_SETTINGS = { 'checkpoint' => { 'extra_prompt_file' => NAMED } }.freeze
 
   def test_top_level_checkpoint_section_reaches_the_runner
     @root_settings = { 'checkpoint' => { 'enabled' => false } }
@@ -75,12 +77,36 @@ class CheckpointConventionsTest < Minitest::Test
     end
   end
 
+  def test_a_named_file_is_added_and_the_default_one_is_ignored
+    @rules = "Default-location rule\n"
+    @named = "Named rule\n"
+    with_repository(NAMED_SETTINGS) do |root, base, head, bin|
+      fake_checkpoint(bin, head)
+      result, status = run_checkpoint(root, base, head, bin)
+      assert_predicate status, :success?, result.inspect
+      assert_equal "Shaka default + #{NAMED}", result.fetch('prompt_source')
+      assert_includes checkpoint_trace(root).fetch('prompt'), 'Named rule'
+      refute_includes checkpoint_trace(root).fetch('prompt'), 'Default-location rule'
+    end
+  end
+
+  def test_a_named_file_that_is_missing_fails_the_checkpoint
+    with_repository(NAMED_SETTINGS) do |root, base, head, bin|
+      fake_checkpoint(bin, head)
+      result, status = run_checkpoint(root, base, head, bin)
+
+      refute_predicate status, :success?
+      assert_includes result.fetch('reason'), NAMED
+    end
+  end
+
   private
 
   def seam(review) = super.merge(@root_settings || {})
 
   def write_trusted_files(root, review)
     super
+    File.write(File.join(root, NAMED), @named) if @named
     return unless @rules
 
     File.write(File.join(root, 'AGENTS.md'), "Trusted agent criteria\n")

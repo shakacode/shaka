@@ -68,8 +68,9 @@ module Shaka
         ([["review.#{PROMPT_FILE}", review[PROMPT_FILE]]] +
           agents.each_with_index.map do |entry, index|
             ["review.#{LOCAL_REVIEW_AGENTS}[#{index}].#{PROMPT_FILE}", entry[PROMPT_FILE]]
-          end + [['checkpoint.prompt_file',
-                  review.dig('post_implementation', PROMPT_FILE)]]).select { |_, path| path }
+          end + %w[prompt_file extra_prompt_file].map do |key|
+            ["checkpoint.#{key}", review.dig('post_implementation', key)]
+          end).select { |_, path| path }
       end
 
       def initialize(review) = @review = review

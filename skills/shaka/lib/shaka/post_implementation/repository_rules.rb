@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
 require_relative '../configuration'
-require_relative '../conventions'
 
 module Shaka
-  # Adds the repository's prompts/checkpoint.md to whichever checkpoint prompt applies, after AGENTS.md files.
+  # Adds checkpoint.extra_prompt_file to whichever checkpoint prompt applies, after AGENTS.md files.
   module PostImplementationRepositoryRules
     PRECEDENCE = File.expand_path('../../../config/checkpoint-rules-precedence.md', __dir__)
+    LABEL = 'checkpoint.extra_prompt_file'
 
     private
 
     def repository_rules(marker)
-      path = Conventions.path('prompts/checkpoint.md')
+      path, = extra_prompt
       text = repository_rules_text(path)
       return '' unless text
 
@@ -22,11 +22,25 @@ module Shaka
     end
 
     # Read like a configured prompt: the private tree for individual setup, otherwise the settings commit.
+    # A file the settings name must exist; the default file is optional.
     def repository_rules_text(path)
-      return Configuration.optional_private_prompt(root:, path:) if individual_prompt?(path)
+      _, named = extra_prompt
+      if individual_prompt?(path)
+        return Configuration.private_prompt(root:, path:, label: LABEL) if named
+
+        return Configuration.optional_private_prompt(root:, path:)
+      end
 
       access = { executable: git_executable, capture: method(:capture), resolver: method(:bounded_git) }
+      return Configuration.prompt_at_commit(root:, ref: settings_ref, path:, git_access: access) if named
+
       Configuration.optional_prompt_at_commit(root:, ref: settings_ref, path:, git_access: access)
+    end
+
+    def extra_prompt
+      @extra_prompt ||= RepositoryConfig::PostImplementationSchema.extra_prompt(
+        (effective_review || {}).fetch('post_implementation', {})
+      )
     end
 
     def prompt_source
