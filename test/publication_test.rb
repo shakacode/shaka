@@ -35,7 +35,7 @@ class PublicationRegressionTest < Minitest::Test
     provenance = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_number' => 818, 'task_relation' => 'part_of')
     rendered = Shaka::Publication.description(description_content('provenance' => provenance))
 
-    assert_includes rendered, "## Summary\n\nA summary.\n\n**Task source:** Part of #818\n\n## Change and review"
+    assert_includes rendered, "## Summary\n\nA summary.\n\n**Task source:** Part of #818\n\n## Intent"
   end
 
   # https://github.com/shakacode/shaka/pull/37 published its whole description as one
