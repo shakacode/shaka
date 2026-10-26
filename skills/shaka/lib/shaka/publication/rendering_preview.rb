@@ -23,6 +23,9 @@ module Shaka
     RENDERERS = %w[usage_details usage_pricing metrics verification_gates diff_buckets intent_verification
                    task_source_line provenance publication]
                 .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
+    # A listed renderer the default branch does not have yet. A head without it keeps the installed copy;
+    # every other listed renderer must be at the head, so a preview never stands in for a missing one.
+    NOT_YET_LANDED = ["#{DIRECTORY}task_source_line.rb"].freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
 
     module_function
@@ -86,13 +89,13 @@ module Shaka
       end
     end
 
-    # A listed renderer the head does not have yet, such as one its PR adds, keeps the installed copy.
     def sources(root, head)
-      present = RENDERERS.select { |path| present?(root, head, path) }
-      present.to_h { |path| [path, git(root, 'show', "#{head}:#{path}")] }
+      listed = RENDERERS.reject { |path| NOT_YET_LANDED.include?(path) && !present?(root, head, path) }
+      listed.to_h { |path| [path, git(root, 'show', "#{head}:#{path}")] }
     end
 
-    def present?(root, head, path) = system('git', '-C', root, 'cat-file', '-e', "#{head}:#{path}", err: File::NULL)
+    # A read failure raises, so only a path the head truly lacks counts as absent.
+    def present?(root, head, path) = !git(root, 'ls-tree', '--name-only', head, '--', path).strip.empty?
 
     def git(root, *)
       output, error, status = Open3.capture3('git', '-C', root, *)
