@@ -19,7 +19,7 @@ module Shaka
                          post_implementation/history.rb post_implementation/auto_merge_preview.rb
                          post_implementation/disposition.rb post_implementation/merge_warning.rb]
                       .map { |path| "skills/shaka/lib/shaka/#{path}" }.freeze
-    RENDERERS = %w[usage_details metrics verification_gates diff_buckets intent_verification publication]
+    RENDERERS = %w[usage_details usage_pricing metrics verification_gates diff_buckets intent_verification publication]
                 .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
 
