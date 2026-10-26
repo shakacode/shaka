@@ -3,6 +3,7 @@
 require_relative '../version'
 require_relative '../configuration/paths'
 require_relative '../configuration/layout'
+require_relative '../defaults'
 
 module Shaka
   class Seam
@@ -11,8 +12,18 @@ module Shaka
       HOME = 'https://github.com/shakacode/shaka'
       DOCS = "#{HOME}/blob/main/docs".freeze
       LEGACY_README = Configuration::Paths::LEGACY_README
+      # Shows the default a maintainer most often changes, so config.yml names the file Shaka reads.
+      CONFIG_TRAILER = ['', 'Defaults you can change (https://shaka.shakacode.com/docs/settings#checkpoint):',
+                        'checkpoint:',
+                        '  # Your instructions, added after the checkpoint prompt. Commented out, the file is',
+                        '  # optional; uncommented, a missing file fails settings validation.',
+                        "  custom_instructions_file: #{Defaults.fetch('checkpoint', 'custom_instructions_file')}",
+                        "  # Or replace Shaka's whole checkpoint prompt with your own file:",
+                        '  # replacement_prompt_file: .agents/shaka/checkpoint-prompt.md'].freeze
 
       private
+
+      def config_trailer = CONFIG_TRAILER
 
       # Migration still writes the old layout, so the table follows the layout being written.
       def readme_source(layout = Configuration::Layout::LEGACY)

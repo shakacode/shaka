@@ -25,15 +25,16 @@ module Shaka
 
       def validate
         mapping!(@opening, @label)
-        keys!(@opening, [], %w[enabled reviewer model effort prompt_file], @label)
+        renamed_prompt_file!(@opening, @label)
+        keys!(@opening, [], ['enabled', 'reviewer', 'model', 'effort', ReviewSchema::PROMPT_FILE], @label)
         validate_enabled
         validate_reviewer
         validate_model
         ReviewSchema.effort_level!(@opening['effort'], "#{@label}.effort") if @opening.key?('effort')
         validate_provider_options
-        return unless @opening.key?('prompt_file')
+        return unless @opening.key?(ReviewSchema::PROMPT_FILE)
 
-        prompt_path!(@opening['prompt_file'], "#{@label}.prompt_file")
+        prompt_path!(@opening[ReviewSchema::PROMPT_FILE], "#{@label}.#{ReviewSchema::PROMPT_FILE}")
       end
 
       private

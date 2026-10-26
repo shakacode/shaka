@@ -62,12 +62,6 @@ class RenderingPreviewTest < Minitest::Test
     end
   end
 
-  def test_settings_and_history_renderers_are_previewed
-    github = preview_github(%w[provenance_history settings settings_table])
-    assert_includes rendering_fact(github, nil).fetch('owed').join, 'description --rendering-preview-root'
-    assert_empty rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->").fetch('owed')
-  end
-
   def test_fork_prs_do_not_owe_an_unsafe_preview
     result = rendering_fact(preview_github, nil, source: 'contributor/shaka')
     assert_empty result.fetch('owed')
@@ -83,6 +77,16 @@ class RenderingPreviewTest < Minitest::Test
     github = Object.new
     def github.repository = 'owner/repo'
     refute Shaka::RenderingPreview.required?(github)
+  end
+
+  # provenance.rb calls task_source_line.rb to render the line, so a PR changing either can preview its description.
+  # A PR changing the settings block or the provenance history can preview too, and owes one without a marker.
+  def test_provenance_task_source_settings_and_history_renderers_can_be_previewed
+    %w[provenance task_source_line provenance_history settings settings_table].each do |name|
+      github = preview_github([name])
+      assert_includes rendering_fact(github, nil).fetch('owed').join, 'description --rendering-preview-root', name
+      assert_empty rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->").fetch('owed'), name
+    end
   end
 
   def test_unsupported_renderers_block_instead_of_publishing_an_incomplete_preview

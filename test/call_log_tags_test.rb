@@ -87,7 +87,7 @@ class CallLogTagsTest < Minitest::Test
   end
 
   def test_checkpoint_run_records_the_settings_it_resolved_from_trusted_configuration
-    settings = { 'post_implementation' => { 'model' => 'chosen-model', 'effort' => 'high' } }
+    settings = { 'checkpoint' => { 'model' => 'chosen-model', 'effort' => 'high' } }
     with_repository(settings) do |root, base, head, bin|
       fake_checkpoint(bin, head)
       log = File.join(root, 'calls.jsonl')

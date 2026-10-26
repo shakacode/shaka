@@ -42,7 +42,8 @@ class RenderingPreviewGuardTest < Minitest::Test
   end
 
   def commit_renderers(root)
-    Shaka::RenderingPreview::RENDERERS.each do |path|
+    # A renderer the default branch lacks stays absent at the head too, as the preview allows.
+    Shaka::RenderingPreview::RENDERERS.select { |path| File.exist?(File.join(ROOT, path)) }.each do |path|
       FileUtils.mkdir_p(File.dirname(File.join(root, path)))
       FileUtils.cp(File.join(ROOT, path), File.join(root, path))
     end

@@ -34,6 +34,16 @@ class EvaluationSkillSnapshotTest < Minitest::Test
     refute_equal before['skill_package_digest'], read['skill_package_digest']
   end
 
+  def test_hidden_index_flags_do_not_claim_a_clean_package
+    %w[--assume-unchanged --skip-worktree].each do |flag|
+      git('update-index', flag, 'skills/shaka/references/guide.md')
+      File.write(File.join(@root, 'references/guide.md'), 'hidden changed helper')
+      assert read['skill_modified'], flag
+      git('update-index', "--no-#{flag.delete_prefix('--')}", 'skills/shaka/references/guide.md')
+      File.write(File.join(@root, 'references/guide.md'), 'run helper')
+    end
+  end
+
   def test_executable_mode_affects_package_even_when_harbor_content_hash_matches
     before = read
     File.chmod(0o755, File.join(@root, 'references/guide.md'))

@@ -48,7 +48,8 @@ module Shaka
       end
 
       def to_h
-        @config.to_h.merge('validation' => validation)
+        warnings = @config.warnings
+        @config.to_h.merge('validation' => validation).merge(warnings.empty? ? {} : { 'warnings' => warnings })
       end
 
       private

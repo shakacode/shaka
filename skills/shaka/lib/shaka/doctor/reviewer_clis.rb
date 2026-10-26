@@ -22,7 +22,7 @@ module Shaka
       end
 
       def call(seam)
-        report(seam[:status] == 'healthy' ? Configuration.worktree(root: @root).review : nil)
+        report(seam[:status] == 'failed' ? nil : Configuration.worktree(root: @root).review)
       rescue Shaka::Error, SystemCallError
         report(nil)
       end

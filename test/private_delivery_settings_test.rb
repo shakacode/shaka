@@ -45,7 +45,7 @@ class PrivateDeliverySettingsTest < Minitest::Test
     write_executable(@state, 'claude', fake_claude)
     path = '.agents/shaka/opening.md'
     File.write(File.join(@root, path), 'Name the reader-facing subject.')
-    update_private { |data| data['pr_description']['opening_check'] = { 'prompt_file' => path } }
+    update_private { |data| data['pr_description']['opening_check'] = { 'replacement_prompt_file' => path } }
   end
 
   def adopt_team(layout)

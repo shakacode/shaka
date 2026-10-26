@@ -8,8 +8,8 @@ require_relative 'diff_buckets'
 module Shaka
   # Renders what a pull request is for and how it was proved, so a maintainer can decide whether to trust it.
   module IntentVerification
-    INTENT = { 'why' => 'Why', 'scope' => 'Changes',
-               'safe_because' => 'Safe because' }.freeze
+    # Why and safety lead; scope closes the section with the diff it covers.
+    INTENT = { 'why' => 'Why', 'safe_because' => 'Safe because' }.freeze
     # A bug fix names its cause apart from the symptom; other changes have none to name.
     ROOT_CAUSE = 'root_cause'
     # Like heart-rate zones: the blast radius sets how hard a reviewer should work.
@@ -45,23 +45,29 @@ module Shaka
       unless spec[ROOT_CAUSE].nil?
         lines.insert(1, "**Root cause:** #{PublicationText.single_line(spec[ROOT_CAUSE], "intent #{ROOT_CAUSE}")}")
       end
+      lines << review_effort(spec['review_effort'], floor)
       lines.concat(exclusions(spec['leaves_out']))
-      "## Change and review\n\n#{[*diff_size(pull), *lines, review_effort(spec['review_effort'], floor)].join("\n\n")}"
+      "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
+    end
+
+    def scope(spec, pull)
+      ["**Scope:** #{PublicationText.single_line(spec['scope'], 'intent scope')}#{diff_size(pull)}",
+       *(DiffBuckets.render(pull) if pull)]
     end
 
     def exclusions(value)
       return [] if value.nil? || value == '' || (value.is_a?(String) && value.strip.empty?)
 
-      ["**Outside scope:** #{PublicationText.single_line(value, 'intent leaves_out')}"]
+      ["**Leaves out:** #{PublicationText.single_line(value, 'intent leaves_out')}"]
     end
 
     # GitHub supplies these counts for the published head; an author does not estimate them.
     def diff_size(pull)
       counts = pull&.values_at('changed_files', 'additions', 'deletions')
-      return [] unless counts&.all? { |count| count.is_a?(Integer) && count >= 0 }
+      return '' unless counts&.all? { |count| count.is_a?(Integer) && count >= 0 }
 
       files, added, removed = counts
-      ["**Diff:** #{files} #{files == 1 ? 'file' : 'files'} · +#{added} / −#{removed} lines", *DiffBuckets.render(pull)]
+      " (#{files} #{files == 1 ? 'file' : 'files'}, +#{added} / −#{removed} lines)"
     end
 
     def review_effort(effort, floor)
@@ -134,7 +140,7 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :exclusions, :diff_size,
+    private_class_method :intent, :scope, :exclusions, :diff_size,
                          :review_effort, :floor_text, :floor_path, :verification,
                          :not_verified, :checks, :evidenced, :object
   end

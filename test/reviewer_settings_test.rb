@@ -70,7 +70,7 @@ class ReviewerSettingsTest < Minitest::Test
   end
 
   def test_the_packaged_default_reviewer_settings_are_quiet
-    defaults = Shaka::Defaults.fetch('review', 'post_implementation')
+    defaults = Shaka::Defaults.fetch('checkpoint')
 
     assert_empty notices(defaults.fetch('reviewer'), model: defaults.fetch('model'), effort: defaults.fetch('effort'))
     assert_empty notices('anthropic/claude', model: 'claude-opus-5-5', effort: 'max')

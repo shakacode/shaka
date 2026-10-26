@@ -3,6 +3,7 @@
 # Each comment gives the default; where this repository chooses otherwise, it says why.
 # All of Shaka's defaults in one place: skills/shaka/config/defaults.yml.
 # Every option: docs/settings.md (https://shaka.shakacode.com/docs/settings).
+# README.md explains where this repository differs from the defaults.
 # Changes take effect once merged into the default branch.
 ---
 version: 1 # Required. The configuration format, not the Shaka release.
@@ -20,15 +21,9 @@ review:
   # Default: none, so local_review_count (default 1) sets how many review. Ours: Claude and Codex
   # both review every commit, because a mistake in Shaka weakens checks on every project.
   provider_coverage: [anthropic, openai]
-  # Default: Shaka's built-in prompt. Ours also weighs the cost of instruction changes (README.md).
-  prompt_file: .agents/shaka/review-prompt.md
-  post_implementation: # Defaults: the final "did we build the right thing?" check before merge.
-    enabled: true
-    reviewer: openai/codex
-    model: gpt-6.1-sol
-    effort: medium
-    # Default: Shaka's built-in prompt. Ours adds the same instruction-cost check (README.md).
-    prompt_file: .agents/shaka/product-checkpoint.md
+  # Default: added after Shaka's code review prompt when it exists. Ours weighs the cost of
+  # instruction changes (README.md); naming it here makes a missing file an error.
+  custom_instructions_file: .agents/shaka/instructions/review.md
   # Default: none, so the implementing model reviews in a fresh session.
   # Ours: reviewers from other providers first, in this order.
   local_review_agents:
@@ -36,13 +31,22 @@ review:
       model_family: claude # No model or effort: use the Claude CLI's defaults.
     - provider: openai
       model_family: codex
-  # Optional reviewers, used only when a task asks for one by name:
-  # - provider: deepseek # Needs OPENROUTER_API_KEY; deadline 600 seconds by default.
-  #   model_family: openrouter
-  #   model: deepseek/deepseek-v4.1-flash
-  #   effort: low
-  # - provider: xai # Needs a model named in the task.
-  #   model_family: grok
+    # Optional: provider_coverage never picks these, so they run only when a task names one.
+    # doctor warns on a machine without their setup.
+    - provider: deepseek # Needs OPENROUTER_API_KEY; deadline 600 seconds by default.
+      model_family: openrouter
+      model: deepseek/deepseek-v4.1-flash
+      effort: low
+    - provider: xai # Needs a model named in the task.
+      model_family: grok
+
+checkpoint: # Defaults: the final "did we build the right thing?" check before merge.
+  reviewer: openai/codex
+  model: gpt-6.1-sol
+  effort: medium
+  # Default: added after Shaka's checkpoint prompt when it exists. Ours holds the instruction-cost
+  # check (README.md); naming it here makes a missing file an error.
+  custom_instructions_file: .agents/shaka/instructions/checkpoint.md
 
 merge:
   preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.

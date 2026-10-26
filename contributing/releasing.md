@@ -33,8 +33,9 @@ approval because a published version cannot be replaced.
 
 5. Confirm the version's `CHANGELOG.md` entry merged with the version change: a short
    summary, then breaking changes with upgrade steps. Save that entry's body as
-   `RELEASE_NOTES.md`, then obtain explicit maintainer approval for the registry
-   publication. Before requesting approval, run the maintainer preflight from the
+   `RELEASE_NOTES.md`. Before requesting publication approval, complete the
+   [release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md) for the intended host/model/effort
+   profiles and retain its results. Then run the maintainer preflight from the
    source checkout, with the gem, original validation JSON, and notes saved outside it:
 
    ```bash
@@ -51,6 +52,9 @@ approval because a published version cannot be replaced.
    preflight binding; its installation identity is part of the evidence.
    Keep the JSON with the release evidence. A pass does not establish behavioral or
    host compatibility, check registry availability, or grant publication authority.
+   Run the behavioral gate with this preflight's `commit` as its required `--commit`
+   input. Ruby refuses a mismatched skill or batch. Require passing results for every
+   intended profile before requesting approval.
    Obtain approval for those exact inputs; stop until it is recorded. The preflight
    is repository maintenance tooling and is not included in the gem.
 
