@@ -7,7 +7,7 @@ Date: 2026-10-25. Tracks [issue #846](https://github.com/shakacode/shaka/issues/
 
 A Shaka PR description gives one review effort for the whole change, from 1 (read the
 description) to 5 (review every line, reproduce it, and ask a second reviewer).
-`IntentVerification::REVIEW_EFFORT` renders it under **Change and review**, and
+`IntentVerification::REVIEW_EFFORT` renders it under **Intent**, and
 `ReviewEffortFloor` refuses a rating below the highest
 [human review floor](../../skills/shaka/references/human-review-floors.md) that the
 changed paths match.
