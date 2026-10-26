@@ -64,6 +64,8 @@ class ThroughputStatsTest < Minitest::Test
     error = assert_raises(Shaka::Error) { Shaka::ThroughputStats.update(one, 'rounds' => 0) }
     assert_includes error.message, 'positive'
     assert_equal 'no block here', Shaka::ThroughputStats.update('no block here', 'spend' => '$1.00')
+    assert_raises(Shaka::Error) { Shaka::ThroughputStats.update(one, 'spend' => 'x-->y') }
+    assert_raises(Shaka::Error) { Shaka::ThroughputStats.update(one, 'spend' => 'x--!>y') }
   end
 
   def test_republishing_keeps_ready_time_for_the_same_head

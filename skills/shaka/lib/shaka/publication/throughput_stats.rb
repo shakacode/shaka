@@ -117,9 +117,18 @@ module Shaka
         return value if key == 'rounds'
 
         text = value.to_s
-        raise Error, "Throughput #{key} must be one line." if text.empty? || text.match?(/[\r\n]|<!--|-->/)
+        raise Error, "Throughput #{key} must be one line." unless one_line?(text)
 
         text
+      end
+
+      def one_line?(text)
+        !text.empty? && !text.match?(/[\r\n]/) && comment_safe?(text)
+      end
+
+      # HTML comments can end with --> or --!>, so either string would close the stats marker early.
+      def comment_safe?(text)
+        !text.include?('<!--') && !text.include?('-->') && !text.include?('--!>')
       end
     end
   end
