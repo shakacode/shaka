@@ -103,9 +103,8 @@ Auto-review checks the retry again and can still deny it.
 
 Shaka has not verified an equivalent in the Codex desktop app. Its
 **Approve for me** control selects Auto-review for the chat; it does not
-approve one denied action. When the review stays denied, the PR says the review
-did not run. The agent also records that result, unless Codex denies that
-command too.
+approve one denied action. When the review stays denied, the agent records on
+the PR that the review did not run, unless Codex denies that command too.
 
 ## Codex desktop follow-up
 
