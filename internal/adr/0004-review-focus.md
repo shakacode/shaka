@@ -52,7 +52,11 @@ Impact and frequency: UNKNOWN. The gap comes from one maintainer comment on
    `path` is not among the PR's changed files or has no file at the head (a deleted file or
    the old side of a rename), whose text is missing or ambiguous at the
    head, or whose `reason` is empty or more than one line. An entry asks for more care; it
-   never lowers the PR rating or a floor.
+   never lowers the PR rating or a floor. The file check reads each file's `status` and
+   `previous_filename` from the pull request file list that publication already fetches:
+   a `removed` file and the old name of a rename have no file at the head. The changed-path
+   list the floors use cannot answer this, because it holds both names of a rename and no
+   status.
 4. **Rendered under Review effort, linked to the head.** Each entry becomes one line
    below the Review effort line, highest level first:
 
@@ -111,8 +115,9 @@ would keep that care for those files, so the PR rating could stay lower.
 - One optional content key with refusals and behavioral tests in
   `IntentVerification`'s tests. Ranges use the existing `Walkthrough::LineRange.find`;
   reading a file at the head is shared with `CodeLinks` rather than copied.
-- Description publication reads file text at the head when entries name `from`; without
-  entries it makes no new request.
+- Description publication reads file text at the head when entries name `from`. The
+  file check reuses the file list it already fetches; without entries it makes no new
+  request.
 - `workflow.yml` grows by one sentence, `post-implementation-adequacy.md` by a clause.
   `bin/report-instruction-growth` evidence goes with the implementation PR.
 - The checkpoint packet validates intent without a pull request, so there it checks
