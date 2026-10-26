@@ -21,17 +21,27 @@ module Shaka
     class AttemptHistory
       def self.capture(runs, repository:, current:, runner: Runner.new)
         (runs + [{ 'databaseId' => current }]).uniq { |run| run.fetch('databaseId').to_s }.map do |run|
-          started = start_for(run, repository, runner)
-          run.merge('agent_started_at' => started&.iso8601)
+          run.merge(facts_for(run, repository, runner))
         end
       end
 
-      def self.start_for(run, repository, runner)
+      def self.facts_for(run, repository, runner)
         path = "repos/#{repository}/actions/runs/#{run.fetch('databaseId')}/jobs?filter=all&per_page=100"
         result = runner.capture(['gh', 'api', '--paginate', '--slurp', path])
         raise "cannot read canary attempts: #{result['err']}" unless result['ok']
 
-        Throttle.latest_start(JSON.parse(result['out']).flat_map { |page| page.fetch('jobs') })
+        jobs = JSON.parse(result['out']).flat_map { |page| page.fetch('jobs') }
+        { 'agent_started_at' => Throttle.latest_start(jobs)&.iso8601,
+          'collected_at' => collection_time(jobs)&.iso8601 }
+      end
+
+      def self.collection_time(jobs)
+        jobs.flat_map { |job| job.fetch('steps') }.filter_map do |step|
+          next unless step['name'] == 'Check the canary pull request and write the summary'
+          next unless step['conclusion'] == 'success' && step['completed_at']
+
+          Time.iso8601(step['completed_at'])
+        end.max
       end
     end
 
@@ -86,8 +96,8 @@ module Shaka
       end
 
       def commits
-        previous = previous_sha
-        range = previous ? "#{previous}..#{sha}" : sha
+        previous = previous_boundary
+        range = "#{previous}#{sha}"
         argv = ['git', '-C', workspace, 'log', '--format=%h %s']
         argv << '-1' unless previous
         ran = @runner.capture([*argv, range])
@@ -107,29 +117,49 @@ module Shaka
       private
 
       def bodies(number)
-        ran = @runner.capture(['gh', 'api', "repos/#{repo}/issues/#{number}/comments"])
+        login = current_login
+        return [] unless login
+
+        ran = @runner.capture(['gh', 'api', '--paginate', '--slurp', "repos/#{repo}/issues/#{number}/comments"])
         return [] unless ran['ok']
 
         parsed = JSON.parse(ran['out'])
         return [] unless parsed.is_a?(Array)
 
-        parsed.map { |comment| comment['body'].to_s }
+        parsed.flatten(1).filter_map { |comment| own_summary(comment, login) }
       rescue JSON::ParserError
         []
       end
 
-      def previous_sha
+      def current_login
+        ran = @runner.capture(['gh', 'api', 'user', '--jq', '.login'])
+        ran['out'].strip if ran['ok'] && !ran['out'].strip.empty?
+      end
+
+      def own_summary(comment, login)
+        body = comment['body'].to_s
+        body if comment.dig('user', 'login') == login && body.start_with?(Summary::IDENTITY)
+      end
+
+      def previous_boundary
         path = File.join(temp, 'canary-runs.json')
         return unless File.file?(path)
 
         runs = JSON.parse(File.read(path))
-        exercised = runs.select { |run| exercised?(run) }
-        exercised.max_by { |run| run.fetch('agent_started_at') }&.fetch('headSha')
+        boundary(runs.select { |run| known_revision?(run) })
       rescue JSON::ParserError
         nil
       end
 
-      def exercised?(run) = run['agent_started_at'] && run['headSha'] && run['headSha'] != sha
+      def boundary(runs)
+        collected = runs.select { |run| run['collected_at'] }.max_by { |run| run.fetch('collected_at') }
+        return "#{collected.fetch('headSha')}.." if collected
+
+        attempted = runs.select { |run| run['agent_started_at'] }.min_by { |run| run.fetch('agent_started_at') }
+        "#{attempted.fetch('headSha')}^.." if attempted
+      end
+
+      def known_revision?(run) = run['headSha'] && run['headSha'] != sha
 
       def sha = @env.fetch('GITHUB_SHA')
       def repo = @env.fetch('SHAKA_CANARY_REPO')

@@ -91,6 +91,28 @@ class CanaryInstallTest < Minitest::Test
     out, status = Open3.capture2e({ 'dest' => @root, 'GITHUB_SHA' => pinned }, 'bash', '-c', line)
     assert_predicate status, :success?, out
   end
+
+  def test_real_git_coverage_includes_the_first_cancelled_agent_revision
+    first = fixture_revision('first attempt')
+    current = fixture_revision('next attempt')
+    Dir.mktmpdir do |dir|
+      history = [{ 'headSha' => first, 'agent_started_at' => '2026-10-26T10:00:00Z' }]
+      File.write(File.join(dir, 'canary-runs.json'), JSON.generate(history))
+      env = { 'RUNNER_TEMP' => dir, 'GITHUB_WORKSPACE' => @root, 'GITHUB_SHA' => current }
+      lines = Shaka::Canary::Coverage.new(env, Shaka::Canary::Runner.new).commits
+      assert_named_revisions(lines, first, current)
+    end
+  end
+
+  def assert_named_revisions(lines, *revisions)
+    revisions.each { |revision| assert(lines.any? { |line| line.start_with?(revision[0, 7]) }) }
+  end
+
+  def fixture_revision(text)
+    File.write(File.join(@source, 'SKILL.md'), text)
+    commit_source
+    git('-C', @root, 'rev-parse', 'HEAD').strip
+  end
 end
 
 CANARY_BODY = <<~BODY
@@ -275,6 +297,14 @@ class CanaryRunnerTest < Minitest::Test
 end
 
 class CanaryAttemptHistoryTest < Minitest::Test
+  def test_only_successfully_completed_collection_steps_supply_coverage_boundaries
+    name = 'Check the canary pull request and write the summary'
+    steps = [{ 'name' => name, 'conclusion' => 'success', 'completed_at' => '2026-10-26T10:00:00Z' },
+             { 'name' => name, 'conclusion' => 'cancelled', 'completed_at' => '2026-10-26T11:00:00Z' }]
+    assert_equal Time.iso8601('2026-10-26T10:00:00Z'),
+                 Shaka::Canary::AttemptHistory.collection_time([{ 'steps' => steps }])
+  end
+
   def test_the_throttle_cli_persists_the_history_used_by_collection
     Dir.mktmpdir do |dir|
       path = prepare_cli_history(dir)
@@ -325,12 +355,49 @@ class CanaryCoverageTest < Minitest::Test
 
   def test_a_cancelled_wait_does_not_hide_untested_commits
     Dir.mktmpdir do |dir|
-      history = [{ 'headSha' => 'bbb2222', 'agent_started_at' => nil },
-                 { 'headSha' => 'aaa1111', 'agent_started_at' => '2026-10-26T10:00:00Z' }]
+      history = [{ 'headSha' => 'bbb2222', 'agent_started_at' => nil, 'collected_at' => nil },
+                 { 'headSha' => 'aaa1111', 'collected_at' => '2026-10-26T10:00:00Z' }]
       File.write(File.join(dir, 'canary-runs.json'), JSON.generate(history))
       runner = FakeCanary.new('[]')
       Shaka::Canary::Coverage.new(environment(dir), runner).commits
       assert_equal 'aaa1111..abc123', runner.commands.last.last
+    end
+  end
+
+  def test_cancelled_agents_are_included_even_before_the_first_completed_collection
+    Dir.mktmpdir do |dir|
+      history = [{ 'headSha' => 'aaa1111', 'agent_started_at' => '2026-10-26T10:00:00Z', 'collected_at' => nil }]
+      File.write(File.join(dir, 'canary-runs.json'), JSON.generate(history))
+      runner = FakeCanary.new('[]')
+      Shaka::Canary::Coverage.new(environment(dir), runner).commits
+      assert_equal 'aaa1111^..abc123', runner.commands.last.last
+    end
+  end
+
+  def test_an_outsider_cannot_spoof_the_previous_elapsed_time
+    Dir.mktmpdir do |dir|
+      spoof = timer_comment('outsider', 1)
+      real = timer_comment('canary-bot', 123)
+      runner = FakeCanary.new('[]', comments: [spoof, real])
+      pulls = JSON.parse(list_body)
+      bodies = Shaka::Canary::Coverage.new(environment(dir), runner).comments(pulls, pulls.first)
+      assert_equal [real['body']], bodies
+      assert_equal '123', Shaka::Canary::Summary.elapsed_marker(bodies)
+    end
+  end
+
+  def timer_comment(login, elapsed)
+    { 'user' => { 'login' => login },
+      'body' => "#{Shaka::Canary::Summary::IDENTITY}\n\n<!-- shaka-canary elapsed_seconds=#{elapsed} spend=$1 -->" }
+  end
+
+  def test_unavailable_commenter_identity_keeps_the_comparison_unknown
+    Dir.mktmpdir do |dir|
+      runner = FakeCanary.new('[]', failure: 'user', comments: [timer_comment('outsider', 1)])
+      pulls = JSON.parse(list_body)
+      bodies = Shaka::Canary::Coverage.new(environment(dir), runner).comments(pulls, pulls.first)
+      assert_empty bodies
+      assert_equal 'UNKNOWN', Shaka::Canary::Summary.elapsed_marker(bodies)
     end
   end
 
@@ -361,9 +428,10 @@ end
 class FakeCanary
   attr_reader :commands
 
-  def initialize(list, failure: '')
+  def initialize(list, failure: '', comments: [])
     @list = list
     @failure = failure
+    @comments = comments
     @commands = []
   end
 
@@ -374,9 +442,15 @@ class FakeCanary
     return { 'out' => @list, 'err' => '', 'ok' => true } if argv[0] == 'gh' && argv[2] == 'list'
     return { 'out' => 'deadbeef', 'err' => '', 'ok' => true } if argv.include?('rev-parse')
     return { 'out' => "abc123 Add canary\n", 'err' => '', 'ok' => true } if argv.include?('log')
-    return { 'out' => '[]', 'err' => '', 'ok' => true } if argv[1] == 'api'
+    return api(argv) if argv[1] == 'api'
 
     { 'out' => "ok\n", 'err' => '', 'ok' => true }
+  end
+
+  def api(argv)
+    data = argv.include?('--slurp') ? [@comments] : @comments
+    out = argv[2] == 'user' ? 'canary-bot' : JSON.generate(data)
+    { 'out' => out, 'err' => '', 'ok' => true }
   end
 end
 
