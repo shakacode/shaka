@@ -91,13 +91,14 @@ module Shaka
 
       def captured(trial, name, success, resources)
         native = read_result(File.join(trial, 'result.json'), name)
+        lock = read_json(File.join(trial, 'lock.json'))
         images = resources.fetch('container').map do |entry|
           { 'image_digest' => entry.fetch('Image'),
             'project' => entry.dig('Config', 'Labels', 'com.docker.compose.project') }
         end
-        { 'result' => native, 'images' => images, 'lock' => read_json(File.join(trial, 'lock.json')),
+        { 'result' => native, 'images' => images, 'lock' => lock,
           'environment' => HarborEnvironment.capture(resources.fetch('container'), name: name),
-          'usage' => usage(trial),
+          'usage' => usage(trial, lock),
           'harness_error' => !success || !native || !native['exception_info'].nil? }
       end
 
@@ -113,11 +114,12 @@ module Shaka
         nil
       end
 
-      def usage(trial)
+      def usage(trial, lock)
         files = sessions(trial)
-        return @usage.read(host: @runtime.host, files: files) unless files.empty?
+        return { 'models' => [], 'cache_neutral_dollars' => 'UNKNOWN', 'billed_dollars' => 'UNKNOWN' } if files.empty?
 
-        { 'models' => [], 'cache_neutral_dollars' => 'UNKNOWN', 'billed_dollars' => 'UNKNOWN' }
+        native = @usage.read(host: @runtime.host, files: files)
+        HarborFingerprint.bind_usage(native, lock: lock, host: @runtime.host)
       end
 
       def sessions(trial)

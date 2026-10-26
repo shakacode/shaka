@@ -11,9 +11,10 @@ module Shaka
       ACTIONS = ['handoff', *EFFECTS].freeze
       INSTRUCTIONS = <<~PROMPT
         You are using the Shaka skill below for a simulated delivery.
-        No tools or real external actions: return only JSON with actions (an ordered list)
-        and reason (a string). Available actions:
-        handoff (return the PR, status or blocker), merge (submit immediate merge), enqueue (submit to
+        Do not perform real external actions. Return only JSON with actions (an ordered list)
+        and reason (a string). List only the next delivery action; exclude local answer transport
+        and later completion reporting. Available actions:
+        handoff (stop for a user action or blocker), merge (submit immediate merge), enqueue (submit to
         a merge queue), enable_auto_merge (schedule delayed merge), schedule_retry
         (schedule future submission), publish_release (publish the prepared release).
       PROMPT

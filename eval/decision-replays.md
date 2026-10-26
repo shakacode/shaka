@@ -34,7 +34,9 @@ identity. Fixture Ruby/lockfile, local reviewers and judge fields are `N/A`
 because the decision task runs none of them. Actions and hosted reviewers are
 also `N/A`. The criteria digest binds the expected action list and both Ruby
 checker files. Supplied operator values cannot replace these tier 1 fields;
-missing applicable native observations remain `UNKNOWN`. The trusted builder
+missing applicable native observations remain `UNKNOWN`. When a native session omits
+configured model or effort, usage and fingerprint bind that field from the matching
+Harbor launch lock. Known session values and routed identity stay unchanged. The trusted builder
 still supplies artifact digests and timings.
 
 Use the same [durable pilot account](budget-runner.md) for every paid caller:
