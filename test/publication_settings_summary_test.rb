@@ -5,12 +5,13 @@ require_relative 'settings_snapshot_helper'
 class PublicationSettingsSummaryTest < Minitest::Test
   include SettingsSnapshotHelper
 
-  COMMITTED = "Repository settings at `#{REVISION[0, 7]}`".freeze
+  COMMITTED = "Default-branch settings at `#{REVISION[0, 7]}`".freeze
+  POINTER = Shaka::PublicationSettings::VERSION_POINTER
 
   def test_the_block_opens_on_its_status_then_the_current_settings
     status, _note, current = settings_block(current: snapshot).split("\n\n")
     assert_equal 'No matching check records supplied. Rerun missing validation or review to record them.', status
-    assert_equal "Current settings: #{COMMITTED}; Shaka 0.1.0 (installed revision)", current
+    assert_equal "Current settings: #{COMMITTED}; Shaka installation: installed revision; #{POINTER}", current
   end
 
   def test_committed_settings_get_one_row_per_operation_instead_of_a_table_of_settings
@@ -38,7 +39,7 @@ class PublicationSettingsSummaryTest < Minitest::Test
   def test_a_result_recorded_at_another_settings_revision_shows_that_revision
     earlier = snapshot(ref: 'b' * 40, command: 'validate')
     body = settings_block(current: snapshot, validation: [earlier], review: [snapshot(reviewer: 'openai/codex')])
-    assert_includes body, '| Validation | Repository settings at `bbbbbbb` | validate |'
+    assert_includes body, '| Validation | Default-branch settings at `bbbbbbb` | validate |'
     assert_includes body, "Current settings: #{COMMITTED}"
   end
 
@@ -55,7 +56,7 @@ class PublicationSettingsSummaryTest < Minitest::Test
 
   def test_unread_settings_stay_unknown
     assert_includes Shaka::PublicationSettings.new.detail.fetch('body'),
-                    'Current settings: UNKNOWN; Shaka UNKNOWN (installation source unavailable)'
+                    "Current settings: UNKNOWN; Shaka installation: installation source unavailable; #{POINTER}"
   end
 
   def test_team_runs_omit_private_trial_cautions
@@ -67,13 +68,13 @@ class PublicationSettingsSummaryTest < Minitest::Test
 
   def test_missing_installation_record_does_not_claim_shaka_is_absent
     current = snapshot.merge('installation.source' => 'uninstalled')
-    assert_includes settings_block(current:), 'Shaka 0.1.0 (no installation record)'
+    assert_includes settings_block(current:), "Shaka installation: no installation record; #{POINTER}"
   end
 
   def test_redacted_source_labels_remain_publishable_without_exposing_invalid_values
     current = snapshot.merge('source' => 'private-secret', 'installation.source' => 'private-secret')
     body = settings_block(current:)
-    assert_includes body, "Current settings: REDACTED at `#{REVISION[0, 7]}`; Shaka 0.1.0 (REDACTED)"
+    assert_includes body, "Current settings: REDACTED at `#{REVISION[0, 7]}`; Shaka installation: REDACTED; #{POINTER}"
     refute_includes body, 'private-secret'
   end
 end

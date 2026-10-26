@@ -9,7 +9,7 @@ module Shaka
     SUMMARY = 'Setting values at validation, review, and merge'
     FOLDED = { 'UNKNOWN' => 'UNKNOWN in every column',
                'REDACTED' => 'Never published, so REDACTED in every column' }.freeze
-    SOURCES = { 'trusted/team' => 'Repository settings', 'private/local' => 'Private local settings',
+    SOURCES = { 'trusted/team' => 'Default-branch settings', 'private/local' => 'Private local settings',
                 'preview/local' => 'Unmerged settings preview' }.freeze
 
     module_function
