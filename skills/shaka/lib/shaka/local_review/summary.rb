@@ -131,7 +131,7 @@ module Shaka
 
     def prompt
       "**Prompt sources:** `Shaka default` is Shaka's [review instructions](#{INSTRUCTIONS}) plus its " \
-        "[fixed rules](#{RULES}); a `review.replacement_prompt_file` entry names the repository file used instead. " \
+        "[fixed rules](#{RULES}); a `review.prompt_file` entry names the repository file used instead. " \
         '`criteria SHA` means the reviewer also received the trusted `AGENTS.md` files from that commit.'
     end
 
