@@ -2,6 +2,7 @@
 
 require 'optparse'
 require_relative 'error'
+require_relative 'prompt_section'
 require_relative 'reviewer_selection'
 
 module Shaka
@@ -14,6 +15,7 @@ module Shaka
     # The editorial part of the prompt: what to look for and how to report it. A repository can
     # replace it with `review.replacement_prompt_file`; see docs/settings.md.
     DEFAULT_INSTRUCTIONS = File.expand_path('../../config/review-prompt.md', __dir__)
+    DEFAULT_SOURCE = 'built-in: review instructions (skills/shaka/config/review-prompt.md)'
     MAX_INSTRUCTIONS_BYTES = 100_000
 
     # These rules stay whatever instructions the repository supplies. The reviewer runs in the
@@ -64,19 +66,32 @@ module Shaka
       1
     end
 
-    def initialize(arguments)
+    # The prompt a runner sends, as labeled sections. `instructions` replaces the packaged text and
+    # `source` names where it came from; both are omitted for the default instructions.
+    def self.sections(options, instructions: nil, source: nil)
+      new([], options).sections(instructions:, source:)
+    end
+
+    def initialize(arguments, options = {})
       @arguments = arguments.dup
-      @options = {}
+      @options = options
+    end
+
+    def sections(instructions: nil, source: nil)
+      require_options!
+      source ||= @options[:prompt_file] ? "file #{@options[:prompt_file]}" : DEFAULT_SOURCE
+      [PromptSection.new('built-in: reviewer heading', "#{heading}\n\n#{scope}\n\n"),
+       PromptSection.new(source, instructions_text(instructions)),
+       PromptSection.new('built-in: fixed rules', "\n\n#{list('Rules:', RULES)}\n\n#{closing}\n")]
     end
 
     def run
       parser = option_parser
       parser.parse!(@arguments)
-      return help(parser) if @options[:help]
+      return 0.tap { puts parser } if @options[:help]
       raise OptionParser::InvalidArgument, parser.to_s unless @arguments.empty?
 
-      require_options!
-      puts render
+      print PromptSection.join(sections)
       0
     end
 
@@ -89,10 +104,6 @@ module Shaka
       raise OptionParser::MissingArgument, "--#{missing} is required" if missing
     end
 
-    def render
-      [heading, scope, instructions, list('Rules:', RULES), closing].join("\n\n")
-    end
-
     def heading
       ['You are reviewing a change you did not write. Do not implement anything.', '',
        "BASE: #{base}          HEAD: #{head}",
@@ -101,12 +112,13 @@ module Shaka
 
     def scope = "The change is exactly: git diff #{base}...#{head}"
 
-    def instructions
-      path = @options.fetch(:prompt_file, DEFAULT_INSTRUCTIONS)
-      error = self.class.file_error(File.size(path)) { File.binread(path) }
-      raise Shaka::Error, "--prompt-file #{error}" if error
+    # The supplied text, else the --prompt-file or packaged file, within the limits seam checks apply.
+    def instructions_text(text)
+      path = @options.fetch(:prompt_file, DEFAULT_INSTRUCTIONS) unless text
+      error = self.class.file_error(text ? text.bytesize : File.size(path)) { text || File.binread(path) }
+      raise Shaka::Error, "#{text ? 'review instructions' : '--prompt-file'} #{error}" if error
 
-      File.read(path, encoding: 'UTF-8').strip
+      (text || File.binread(path)).dup.force_encoding(Encoding::UTF_8).strip
     end
 
     def closing
@@ -132,20 +144,11 @@ module Shaka
     def option_parser
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY'
-        add_value_options(flags)
+        VALUE_OPTIONS.each do |key, (option, description)|
+          flags.on(option, description) { |value| @options[key] = value }
+        end
         flags.on('-h', '--help', 'Show usage') { @options[:help] = true }
       end
-    end
-
-    def add_value_options(flags)
-      VALUE_OPTIONS.each do |key, (option, description)|
-        flags.on(option, description) { |value| @options[key] = value }
-      end
-    end
-
-    def help(parser)
-      puts parser
-      0
     end
   end
 end

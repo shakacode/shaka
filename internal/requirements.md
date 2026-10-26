@@ -66,6 +66,11 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   checks CLI execution and its report; `shaka review check` labels a fresh host report
   or records a missing review with a nonzero result. Record each
   reviewer and revision in chat and the PR. See [review](../skills/shaka/references/review.md#choose-a-local-reviewer).
+- **R20 — Show what reviewers receive.** On request, show the code review, checkpoint,
+  or opening check prompt as its runner assembles it, each part labeled built-in,
+  replacement, `AGENTS.md`, or custom instructions with its path and commit. Read the
+  trusted default-branch commit, or label a working-tree draft untrusted. See
+  [ADR 0003](adr/0003-configure-walkthrough.md).
 
 ### Preserve control and recover work
 

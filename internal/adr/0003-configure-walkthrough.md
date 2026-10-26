@@ -1,6 +1,6 @@
 # 0003: Configuration walkthrough
 
-Status: accepted on 2026-10-25; not yet implemented. Nothing here is shipped.
+Status: accepted on 2026-10-25. Step 1 (`prompt show`) is implemented; steps 2 and 3 are not.
 Date: 2026-10-21. Tracks [issue #817](https://github.com/shakacode/shaka/issues/817).
 
 ## Context
@@ -132,9 +132,7 @@ can stop after any step and still be usable.
 Step 1 lands after #837, so it reads the renamed settings and the checkpoint's custom
 instructions. It replaces #818's step 5 `prompt show` work rather than duplicating it.
 
-## Open question
+## Routing scope
 
-Whether step 1's routing line covers only reviewer-prompt requests, widening in steps 2
-and 3, or every configure request from the start. Recommended: reviewer-prompt requests
-only, so the procedure never promises a settings report that has not shipped. Decide in
-the step 1 PR.
+Step 1's routing line covers only requests to see what a reviewer receives; steps 2 and 3
+widen it. The procedure never promises a settings report that has not shipped.

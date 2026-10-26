@@ -8,8 +8,45 @@ require_relative 'configuration'
 require 'tmpdir'
 
 module Shaka
+  # Reads the opening settings and any replacement instructions the check uses, from the trusted commit.
+  module OpeningPromptSettings
+    # What the opening reviewer would read for `opening`, or nil when the check is disabled.
+    def prompt_sections(opening)
+      validate_ref!
+      self.class.with_safe_path(root: @root, select_gh: false) do
+        config = settings
+        OpeningCheck.prompt_sections(opening, prompt: @prompt, source: @prompt_source) if
+          config.opening_check.fetch('enabled')
+      end
+    end
+
+    private
+
+    def validate_ref!
+      raise Error, 'No trusted --ref supplied for opening settings.' unless @ref
+      raise Error, 'Opening settings require a full commit SHA from the trusted default branch.' unless
+        @ref.match?(/\A[0-9a-f]{40}\z/i)
+    end
+
+    # Loads the settings and any replacement instructions the check reads.
+    def settings
+      config = Configuration.resolve_source(root: @root, ref: @ref, candidate_commands: false).first
+      key = RepositoryConfig::ReviewSchema::PROMPT_FILE
+      path = config.opening_check[key]
+      if config.opening_check.fetch('enabled') && path
+        @prompt = Configuration.opening_prompt(root: @root, config:, ref: @ref)
+        private_copy = !config.sha && Configuration::PrivateInventory.private_path?(root: @root, path:)
+        where = private_copy ? ' (individual settings, private)' : "@#{config.sha || @ref}"
+        @prompt_source = "replacement #{path}#{where} (pr_description.opening_check.#{key})"
+      end
+      config
+    end
+  end
+
   # Loads the private or trusted team parser choice after a PR description is published.
   class OpeningPublication
+    include OpeningPromptSettings
+
     def self.with_safe_path(root:, select_gh: true)
       original = ENV.fetch('PATH', nil)
       candidate_root = OpeningCheckout.root(root) || (raise Error, 'Candidate checkout root is unknown.')
@@ -61,9 +98,7 @@ module Shaka
 
     def call(summary)
       @prompt = nil
-      raise Error, 'No trusted --ref supplied for opening settings.' unless @ref
-      raise Error, 'Opening settings require a full commit SHA from the trusted default branch.' unless
-        @ref.match?(/\A[0-9a-f]{40}\z/i)
+      validate_ref!
 
       self.class.with_safe_path(root: @root, select_gh: false) do |candidate_root|
         check_with_settings(summary, candidate_root)
@@ -75,12 +110,9 @@ module Shaka
     private
 
     def check_with_settings(summary, candidate_root)
-      config = Configuration.resolve_source(root: @root, ref: @ref, candidate_commands: false).first
+      config = settings
       return { 'status' => 'disabled' } unless config.opening_check.fetch('enabled')
 
-      if config.opening_check.key?(RepositoryConfig::ReviewSchema::PROMPT_FILE)
-        @prompt = Configuration.opening_prompt(root: @root, config:, ref: @ref)
-      end
       select_reviewer(config.opening_check)
       validate_reviewer!(config) if @reviewer
       OpeningCheck.new(summary:, candidate_root:, reviewer: @reviewer, model: @model,
