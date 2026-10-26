@@ -139,6 +139,30 @@ class PromptShowTest < Minitest::Test
     end
   end
 
+  def test_a_disabled_checkpoint_reports_that_no_prompt_is_sent
+    with_change('checkpoint' => { 'enabled' => false }) do |root, base, _head, _bin|
+      document = show(root, 'checkpoint', '--ref', base)
+
+      refute document.fetch('enabled')
+      assert_empty document.fetch('sections')
+    end
+  end
+
+  def test_requests_without_one_settings_source_or_with_half_a_change_are_refused
+    with_change do |root, base, head, _bin|
+      [['--ref', base, '--local'], [], ['--ref', base, '--head', head], ['--ref', 'main']].each do |arguments|
+        _, error, status = Open3.capture3(*COMMAND, 'prompt', 'show', 'review', '--root', root, *arguments)
+        refute_predicate status, :success?, arguments.join(' ')
+        assert_match(/--ref|--local|--head/, error)
+      end
+    end
+  end
+end
+
+# The settings a view reads: a selected preview, and the reviewer the settings list first.
+class PromptShowSettingsTest < Minitest::Test
+  include PromptShowFixture
+
   # Reviewers read a selected preview's settings, so the report names that commit, not --ref.
   def test_a_settings_preview_is_reported_as_the_settings_source
     with_change do |root, base, _head, _bin|
@@ -165,22 +189,21 @@ class PromptShowTest < Minitest::Test
     end
   end
 
-  def test_a_disabled_checkpoint_reports_that_no_prompt_is_sent
-    with_change('checkpoint' => { 'enabled' => false }) do |root, base, _head, _bin|
-      document = show(root, 'checkpoint', '--ref', base)
-
-      refute document.fetch('enabled')
-      assert_empty document.fetch('sections')
+  def test_the_review_view_defaults_to_the_first_configured_reviewer
+    agents = [{ 'provider' => 'openai', 'model_family' => 'codex' },
+              { 'provider' => 'anthropic', 'model_family' => 'claude' }]
+    with_change('local_review_agents' => agents) do |root, base, _head, _bin|
+      assert_includes show(root, 'review', '--ref', base).fetch('sections').first.fetch('text'),
+                      'REVIEWER: openai/codex'
     end
   end
 
-  def test_requests_without_one_settings_source_or_with_half_a_change_are_refused
-    with_change do |root, base, head, _bin|
-      [['--ref', base, '--local'], [], ['--ref', base, '--head', head], ['--ref', 'main']].each do |arguments|
-        _, error, status = Open3.capture3(*COMMAND, 'prompt', 'show', 'review', '--root', root, *arguments)
-        refute_predicate status, :success?, arguments.join(' ')
-        assert_match(/--ref|--local|--head/, error)
-      end
+  def test_the_review_view_asks_for_a_reviewer_when_none_is_configured
+    with_change do |root, base, _head, _bin|
+      _, error, status = Open3.capture3(*COMMAND, 'prompt', 'show', 'review', '--root', root, '--ref', base)
+
+      refute_predicate status, :success?
+      assert_includes error, 'pass --reviewer PROVIDER/FAMILY'
     end
   end
 end
