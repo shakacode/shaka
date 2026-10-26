@@ -28,7 +28,6 @@ module PrWatchFixtures
   end
 end
 
-# The watch cases share one fake GitHub, so they stay in this class.
 # rubocop:disable-next Metrics/ClassLength
 class PrWatchTest < Minitest::Test
   include PrWatchFixtures

@@ -133,6 +133,13 @@ class ThroughputStatsTest < Minitest::Test
                  Shaka::ThroughputStats.bounded_first_push(earlier, true, { 'first_push' => LATER.iso8601 })
   end
 
+  def test_an_unfinished_review_does_not_hide_a_failed_check
+    runs = [check_run('validate', 'FAILURE'), { 'name' => 'claude-review', 'status' => 'IN_PROGRESS' }]
+    head = { 'oid' => HEAD, 'pushedDate' => PUSH.iso8601, 'runs' => runs }
+    found = Shaka::ThroughputStats.ci_heads([head], required: ['validate'], review_jobs: ['claude-review'])
+    assert found[0].dig(0, 'failed')
+  end
+
   def test_a_commit_status_failure_counts_as_a_round
     status = { 'oid' => '1' * 40, 'pushedDate' => START.iso8601, 'status' => { 'contexts' => [
       { 'context' => 'validate', 'state' => 'FAILURE', 'createdAt' => START.iso8601 }

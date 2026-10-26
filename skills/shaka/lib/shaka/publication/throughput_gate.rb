@@ -135,9 +135,7 @@ module Shaka
     end
 
     def failed?(runs)
-      return false if runs.any? { |run| run['status'].is_a?(String) && run['status'] != 'COMPLETED' }
-
-      runs.any? { |run| FAILURES.include?(run['conclusion']) }
+      runs.any? { |run| run['status'] == 'COMPLETED' && FAILURES.include?(run['conclusion']) }
     end
   end
 end
