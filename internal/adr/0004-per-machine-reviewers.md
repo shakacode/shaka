@@ -90,10 +90,10 @@ coordination state. Nothing is reused.
 ## Alternatives considered
 
 - **An `optional: true` flag on a `local_review_agents` entry.** It is one repository
-  field and keeps the home directory clear. But it decides for every developer at once: a
-  maintainer who relies on Grok and loses its sign-in gets no warning. Decision 1 gives
-  the same quiet result for this repository with no field to maintain, because coverage
-  already says which entries are optional.
+  field and keeps the home directory clear. Decision 1 gives the same quiet result here
+  with no field to maintain, because coverage already says which entries are optional.
+  Both lose the warning for a developer who relies on an uncovered reviewer; only
+  decision 2 restores it.
 - **Let the per-machine file add reviewers.** A developer could review with a model the
   repository never accepted, and the published review would name a reviewer the
   repository's order does not contain. Deferred until someone asks for it.
@@ -106,8 +106,9 @@ coordination state. Nothing is reused.
 
 ## Consequences
 
-- Decision 1: a few lines in `CliInventory` and `ReviewerClis`, with behavioral tests for
-  covered, uncovered, and no-coverage repositories. The comment above the optional entries in
+- Decision 1: `CliInventory.setup_notices` takes only inventory entries today, so its two
+  callers, `ReviewerClis#readiness` and `Reviewer#setup`, pass the coverage they already
+  read. Behavioral tests cover covered, uncovered, and no-coverage repositories. The comment above the optional entries in
   `.agents/shaka/config.yml` and the `provider_coverage` section of `docs/settings.md`
   change to say doctor no longer warns about them.
 - Decision 2 adds a home-directory file that Shaka reads, a loader with schema checks,
