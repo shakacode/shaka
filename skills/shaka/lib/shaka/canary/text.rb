@@ -51,7 +51,9 @@ module Shaka
         list = Array(report['commits'])
         return 'No Shaka commits were named for this run.' if list.empty?
 
-        ['Shaka commits this run covers:', *list.map { |line| "- #{line}" }].join("\n")
+        repo = report.fetch('shaka_repo')
+        links = list.map { |line| "- [#{line}](https://github.com/#{repo}/commit/#{line.split.first})" }
+        ['Shaka commits this run covers:', *links].join("\n")
       end
 
       def diff(report)
@@ -83,26 +85,11 @@ module Shaka
 
     # The fixed task every canary run gives the headless agent.
     module Prompt
-      TASK = 'Add a farewell function beside the existing greeting. It returns the string goodbye. ' \
-             'Add a test that asserts that return value, and add one line to docs/notes.md that names farewell. ' \
-             'Do not change unrelated files.'
-
       module_function
 
-      def render(sha:, repo:)
-        <<~TEXT
-          You are running Shaka's canary. Use the installed Shaka skill and follow its workflow. Do not merge or approve.
-
-          Repository: #{repo}. This checkout is that repository.
-          Shaka revision under test: #{sha}
-          https://github.com/shakacode/shaka/commit/#{sha}
-
-          The trusted Shaka skill is already installed for Cursor. Use that skill. Do not copy the skill into this repository.
-
-          Task: #{TASK}
-
-          Open one pull request for that task. Stop when the pull request is open. Do not merge it.
-        TEXT
+      def render(sha:, repo:, branch:)
+        File.read(File.expand_path('../../../config/canary-prompt.md', __dir__))
+            .gsub('{{sha}}', sha).gsub('{{repo}}', repo).gsub('{{branch}}', branch)
       end
     end
   end

@@ -27,15 +27,19 @@ module Shaka
       end
     end
 
-    # Holds a push-triggered run until about an hour after the previous success.
+    # Holds a push-triggered run until an hour after the previous agent start.
     # A manual dispatch starts immediately. Cancelling superseded runs is the workflow's concurrency group.
     module Throttle
       INTERVAL = 3600
 
       module_function
 
-      def latest_finish(runs)
-        runs.filter_map { |run| finish_at(run) }.max
+      def latest_start(jobs)
+        jobs.flat_map { |job| job.fetch('steps') }.filter_map do |step|
+          next unless step['name'] == 'Run the fixed task headless' && step['conclusion'] != 'skipped'
+
+          Time.iso8601(step['started_at']) if step['started_at']
+        end.max
       end
 
       def wait_seconds(last_finished_at:, now:, manual:)
@@ -43,10 +47,6 @@ module Shaka
 
         remaining = INTERVAL - (now - last_finished_at)
         remaining.positive? ? remaining.ceil : 0
-      end
-
-      def finish_at(run)
-        Time.iso8601(run['updatedAt']) if run['updatedAt'].is_a?(String)
       end
     end
 

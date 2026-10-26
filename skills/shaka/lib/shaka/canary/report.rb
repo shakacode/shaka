@@ -16,6 +16,7 @@ module Shaka
       MISSING_PR = 'no canary pull request opened after the run started'
 
       def build(input)
+        input = input.merge('pulls' => Pulls.canaries(input.fetch('pulls')))
         context = context_for(input)
         payload(input, context)
       end
@@ -29,7 +30,8 @@ module Shaka
       end
 
       def opened(input)
-        Pulls.newest_since(input.fetch('pulls'), Time.iso8601(input.fetch('started_at')))
+        pulls = Pulls.for_run(input.fetch('pulls'), input['branch'])
+        Pulls.newest_since(pulls, Time.iso8601(input.fetch('started_at')))
       end
 
       def commands(input, found)

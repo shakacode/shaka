@@ -42,7 +42,7 @@ module Shaka
       def throttle(argv)
         options = Flags.parse(argv)
         runs = JSON.parse(File.read(options.fetch('runs')))
-        last = Throttle.latest_finish(runs)
+        last = AttemptHistory.latest(runs, repository: options.fetch('repository'), current: options.fetch('run'))
         puts Throttle.wait_seconds(last_finished_at: last, now: Time.now.utc,
                                    manual: options['event'] == 'workflow_dispatch')
         0
@@ -50,7 +50,7 @@ module Shaka
 
       def prompt(argv)
         options = Flags.parse(argv)
-        puts Prompt.render(sha: options.fetch('sha'), repo: options.fetch('repo'))
+        puts Prompt.render(sha: options.fetch('sha'), repo: options.fetch('repo'), branch: options.fetch('branch'))
         0
       end
 
@@ -64,7 +64,7 @@ module Shaka
       end
 
       def collect(_argv)
-        Collect.call(ENV)
+        puts Collect.call(ENV).fetch('summary')
         0
       end
 

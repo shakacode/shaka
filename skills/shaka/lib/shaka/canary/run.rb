@@ -17,6 +17,20 @@ module Shaka
       end
     end
 
+    # Reads actual agent-step starts, including failed and cancelled runs.
+    class AttemptHistory
+      def self.latest(runs, repository:, current:, runner: Runner.new)
+        starts = runs.reject { |run| run.fetch('databaseId').to_s == current }.filter_map do |run|
+          path = "repos/#{repository}/actions/runs/#{run.fetch('databaseId')}/jobs?per_page=100"
+          result = runner.capture(['gh', 'api', path])
+          raise "cannot read canary attempts: #{result['err']}" unless result['ok']
+
+          Throttle.latest_start(JSON.parse(result['out']).fetch('jobs'))
+        end
+        starts.max
+      end
+    end
+
     # Runs seam check, doctor, and validate in the canary checkout.
     class RepositoryChecks
       def initialize(env, runner)
@@ -45,7 +59,9 @@ module Shaka
 
       def default_sha
         ran = @runner.capture(['git', '-C', canary_dir, 'rev-parse', 'origin/main'])
-        ran['ok'] ? ran['out'].strip : 'HEAD'
+        raise "cannot resolve trusted canary base: #{clip(ran['err'])}" unless ran['ok']
+
+        ran['out'].strip
       end
 
       def clip(text)
@@ -136,17 +152,15 @@ module Shaka
 
       def list_pulls
         listed = @runner.capture(['gh', 'pr', 'list', '--repo', repo, '--state', 'all', '--limit', '30',
-                                  '--json', 'number,state,createdAt,title,body,url'])
+                                  '--json', 'number,state,createdAt,title,body,url,headRefName,isCrossRepository'])
         raise "gh pr list failed: #{listed['err'].to_s.lines.first.to_s.strip}" unless listed['ok']
 
         parsed = JSON.parse(listed['out'])
-        parsed.is_a?(Array) ? parsed : []
+        parsed.is_a?(Array) ? Pulls.canaries(parsed) : []
       end
 
       def opened(pulls)
-        Pulls.newest_since(pulls, started_at)
-      rescue ArgumentError
-        nil
+        Pulls.newest_since(Pulls.for_run(pulls, @env['CANARY_BRANCH']), started_at)
       end
 
       def input_for(pulls, found)
@@ -155,7 +169,7 @@ module Shaka
           'shaka_sha' => @env.fetch('GITHUB_SHA'), 'shaka_repo' => repository,
           'run_url' => run_url, 'commits' => coverage.commits, 'keep' => keep,
           'command_checks' => found ? RepositoryChecks.new(@env, @runner).run(found) : [],
-          'previous_comments' => coverage.comments(pulls, found) }
+          'previous_comments' => coverage.comments(pulls, found), 'branch' => @env['CANARY_BRANCH'] }
       end
 
       def write(result)

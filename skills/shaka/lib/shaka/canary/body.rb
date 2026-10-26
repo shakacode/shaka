@@ -16,9 +16,26 @@ module Shaka
       module_function
 
       def issues(body)
-        text = body.to_s
+        text = without_fences(body.to_s)
         [*tokens(text), *sections(text), *stats(text), *tables(text), *links(text)]
       end
+
+      def without_fences(text)
+        fence = nil
+        text.lines.map do |line|
+          shown, fence = visible_line(line, fence)
+          shown
+        end.join
+      end
+
+      def visible_line(line, fence)
+        return ["\n", closes_fence?(line, fence) ? nil : fence] if fence
+
+        opening = line.match(/\A {0,3}(`{3,}|~{3,})/)
+        opening ? ["\n", opening[1]] : [line, nil]
+      end
+
+      def closes_fence?(line, fence) = line.match?(/\A {0,3}#{Regexp.escape(fence[0])}{#{fence.length},}\s*\z/)
 
       def tokens(text) = text.match?(TOKEN) ? ['unresolved {{token}}'] : []
 
@@ -45,7 +62,9 @@ module Shaka
         problems
       end
 
-      def cells(line) = line.strip.delete_prefix('|').delete_suffix('|').split('|', -1)
+      def cells(line)
+        line.gsub(/\\./, 'x').strip.delete_prefix('|').delete_suffix('|').split('|', -1)
+      end
 
       def separator?(line) = cells(line).all? { |cell| cell.strip.match?(SEPARATOR) }
 
@@ -55,7 +74,10 @@ module Shaka
         end.uniq
       end
 
-      def destination_ok?(dest) = !dest.empty? && !dest.match?(/\s/)
+      def destination_ok?(dest)
+        url = dest.sub(/\s+(?:"[^"]*"|'[^']*')\z/, '')
+        !url.empty? && !url.match?(/\s/)
+      end
     end
 
     # Diffs a canary pull-request body against the previous canary pull request.

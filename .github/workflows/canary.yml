@@ -47,9 +47,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh run list --workflow canary.yml --repo "${{ github.repository }}" --status success --limit 5 \
+          gh run list --workflow canary.yml --repo "${{ github.repository }}" --limit 100 \
             --json databaseId,headSha,url,createdAt,updatedAt > "$RUNNER_TEMP/canary-runs.json"
-          seconds=$(ruby bin/canary throttle --runs "$RUNNER_TEMP/canary-runs.json" --event "${{ github.event_name }}")
+          seconds=$(ruby bin/canary throttle --runs "$RUNNER_TEMP/canary-runs.json" --event "${{ github.event_name }}" --repository "$GITHUB_REPOSITORY" --run "$GITHUB_RUN_ID")
           echo "Waiting ${seconds}s before this canary."
           sleep "$seconds"
 
@@ -60,7 +60,7 @@ jobs:
           dest="$RUNNER_TEMP/shaka-source"
           git clone --quiet --branch main https://github.com/shakacode/shaka.git "$dest"
           git -C "$dest" fetch --quiet origin "$GITHUB_SHA"
-          git -C "$dest" checkout --detach "$GITHUB_SHA"
+          git -C "$dest" checkout -B main "$GITHUB_SHA"
           "$dest/bin/install" --agent cursor --directory "$dest"
           echo "SHAKA_HELPER=$dest/skills/shaka/scripts/shaka" >> "$GITHUB_ENV"
 
@@ -73,7 +73,12 @@ jobs:
           set -euo pipefail
           gh repo clone "$SHAKA_CANARY_REPO" "$RUNNER_TEMP/canary"
           echo "CANARY_DIR=$RUNNER_TEMP/canary" >> "$GITHUB_ENV"
+          echo "CANARY_BRANCH=shaka-canary/run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
           date -u +%Y-%m-%dT%H:%M:%SZ > "$RUNNER_TEMP/canary-started-at"
+
+      - name: Install Cursor CLI
+        if: steps.preflight.outputs.action == 'run'
+        run: curl https://cursor.com/install -fsS | bash
 
       - name: Run the fixed task headless
         if: steps.preflight.outputs.action == 'run'
@@ -83,9 +88,8 @@ jobs:
           SHAKA_CANARY_REPO: ${{ steps.preflight.outputs.repo }}
         run: |
           set -euo pipefail
-          curl https://cursor.com/install -fsS | bash
           export PATH="$HOME/.cursor/bin:$PATH"
-          ruby bin/canary prompt --sha "$GITHUB_SHA" --repo "$SHAKA_CANARY_REPO" > "$RUNNER_TEMP/canary-prompt.txt"
+          ruby bin/canary prompt --sha "$GITHUB_SHA" --repo "$SHAKA_CANARY_REPO" --branch "$CANARY_BRANCH" > "$RUNNER_TEMP/canary-prompt.txt"
           agent -p --force --trust --workspace "$CANARY_DIR" --output-format text "$(cat "$RUNNER_TEMP/canary-prompt.txt")"
 
       - name: Check the canary pull request and write the summary

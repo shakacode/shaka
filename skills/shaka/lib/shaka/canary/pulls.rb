@@ -5,8 +5,19 @@ module Shaka
     # Picks the pull request this run opened, the one before it, and older ones to close.
     module Pulls
       KEEP = 5
+      BRANCH = %r{\Ashaka-canary/run-\d+-\d+\z}
 
       module_function
+
+      def canaries(pulls)
+        pulls.select { |pull| pull['isCrossRepository'] == false && BRANCH.match?(pull['headRefName'].to_s) }
+      end
+
+      def for_run(pulls, branch)
+        raise ArgumentError, 'missing or invalid canary run branch' unless BRANCH.match?(branch.to_s)
+
+        canaries(pulls).select { |pull| pull['headRefName'] == branch }
+      end
 
       def newest_since(pulls, since)
         pulls.select { |pull| created(pull) >= since }.max_by { |pull| pull.fetch('createdAt') }

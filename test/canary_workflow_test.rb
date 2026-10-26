@@ -5,6 +5,7 @@ require 'json'
 require 'yaml'
 require 'fileutils'
 require 'shaka/canary/run'
+require_relative 'official_install_support'
 
 class CanaryWorkflowTest < Minitest::Test
   def setup
@@ -35,16 +36,21 @@ class CanaryWorkflowTest < Minitest::Test
     refute_includes @text, 'missing stats line'
   end
 
-  def test_preflight_checks_the_key_and_the_agent_step_exposes_it_to_the_installer
+  def test_preflight_checks_the_key_and_only_the_agent_step_receives_credentials
     step = @workflow.dig('jobs', 'canary', 'steps').find { |item| item['name'] == 'Run the fixed task headless' }
     preflight = @workflow.dig('jobs', 'canary', 'steps').find { |item| item['id'] == 'preflight' }
 
     assert_equal '${{ secrets.SHAKA_CANARY_MODEL_KEY }}', preflight.dig('env', 'SHAKA_CANARY_MODEL_KEY')
     assert_equal '${{ secrets.SHAKA_CANARY_MODEL_KEY }}', step.dig('env', 'CURSOR_API_KEY')
-    assert_includes step['run'], 'https://cursor.com/install'
     assert_includes step['run'], 'agent -p --force --trust'
     assert_includes @text, 'bin/install'
-    assert_includes @text, 'checkout --detach "$GITHUB_SHA"'
+    assert_includes @text, 'checkout -B main "$GITHUB_SHA"'
+  end
+
+  def test_the_remote_installer_has_no_step_credentials
+    installer = @workflow.dig('jobs', 'canary', 'steps').find { |item| item['name'] == 'Install Cursor CLI' }
+    assert_nil installer['env']
+    assert_includes installer['run'], 'https://cursor.com/install'
   end
 
   def test_clone_and_prompt_use_the_repository_normalized_by_preflight
@@ -62,6 +68,28 @@ class CanaryWorkflowTest < Minitest::Test
     steps.each do |step|
       assert_equal "${{ !cancelled() && steps.preflight.outputs.action == 'run' }}", step['if']
     end
+  end
+end
+
+class CanaryInstallTest < Minitest::Test
+  include OfficialInstallSupport
+
+  def test_workflow_checkout_installs_the_pinned_revision_on_the_tracked_branch
+    pinned = git('-C', @root, 'rev-parse', 'HEAD').strip
+    File.write(File.join(@source, 'SKILL.md'), 'newer main')
+    commit_source
+    git('-C', @root, 'push', '-q', 'origin', 'main')
+    pin_from_workflow(pinned)
+    official_install
+    assert_equal pinned, JSON.parse(File.read(File.join(@root, '.git/shaka-install.json')))['revision']
+    assert_equal 'version one', File.read(File.join(@destination, 'SKILL.md'))
+  end
+
+  def pin_from_workflow(pinned)
+    text = File.read(File.expand_path('../.github/workflows/canary.yml', __dir__))
+    line = text.lines.find { |item| item.include?('git -C "$dest" checkout') }
+    out, status = Open3.capture2e({ 'dest' => @root, 'GITHUB_SHA' => pinned }, 'bash', '-c', line)
+    assert_predicate status, :success?, out
   end
 end
 
@@ -89,7 +117,59 @@ CANARY_BODY = <<~BODY
   See [the run](https://github.com/shakacode/shaka/commit/abc).
 BODY
 
+module CanaryCollectionFixtures
+  def environment(dir)
+    { 'RUNNER_TEMP' => dir, 'SHAKA_CANARY_REPO' => 'shakacode/shaka-canary', 'SHAKA_CANARY_KEEP' => '1',
+      'CANARY_DIR' => dir, 'SHAKA_HELPER' => 'shaka', 'GITHUB_SHA' => 'abc123',
+      'GITHUB_REPOSITORY' => 'shakacode/shaka', 'GITHUB_SERVER_URL' => 'https://github.com',
+      'GITHUB_RUN_ID' => '99', 'GITHUB_WORKSPACE' => dir, 'CANARY_BRANCH' => 'shaka-canary/run-99-1' }
+  end
+
+  def list_body
+    previous = CANARY_BODY.sub('$1.00', '$0.40')
+    pulls = [pull(2, CANARY_BODY, '2026-10-26T12:30:00Z'), pull(1, previous, '2026-10-26T11:00:00Z')]
+    JSON.generate(pulls)
+  end
+
+  def pull(number, body, created)
+    { 'number' => number, 'state' => 'OPEN', 'createdAt' => created, 'body' => body,
+      'url' => "https://example/#{number}", 'isCrossRepository' => false,
+      'headRefName' => "shaka-canary/run-#{number == 2 ? 99 : 98}-1" }
+  end
+end
+
 class CanaryCollectTest < Minitest::Test
+  include CanaryCollectionFixtures
+
+  def test_a_missing_trusted_base_never_falls_back_to_candidate_policy
+    Dir.mktmpdir do |dir|
+      runner, result = failed_collection(dir, 'rev-parse')
+      assert_false result['ok']
+      assert_includes result['summary'], 'cannot resolve trusted canary base'
+      assert_no_repository_checks(runner, resolves_base: true)
+    end
+  end
+
+  def test_a_newer_fork_or_another_run_cannot_supply_executable_checks
+    Dir.mktmpdir do |dir|
+      runner, result = rejected_collection(dir)
+      assert_false result['ok']
+      assert_nil result['number']
+      assert_empty result['close']
+      assert_no_repository_checks(runner)
+      refute(runner.commands.any? { |argv| argv[2] == 'checkout' })
+    end
+  end
+
+  def rejected_collection(dir)
+    File.write(File.join(dir, 'canary-started-at'), "2026-10-26T12:00:00Z\n")
+    fork = pull(3, CANARY_BODY, '2026-10-26T12:40:00Z').merge('isCrossRepository' => true,
+                                                              'headRefName' => 'shaka-canary/run-99-1')
+    other = pull(4, CANARY_BODY, '2026-10-26T12:41:00Z').merge('headRefName' => 'shaka-canary/run-100-1')
+    runner = FakeCanary.new(JSON.generate([fork, other]))
+    [runner, Shaka::Canary::Collect.call(environment(dir), runner: runner)]
+  end
+
   def test_failed_checkout_never_checks_the_previous_clone
     Dir.mktmpdir do |dir|
       runner, result = failed_collection(dir, 'checkout')
@@ -117,9 +197,9 @@ class CanaryCollectTest < Minitest::Test
     [runner, Shaka::Canary::Collect.call(environment(dir), runner: runner)]
   end
 
-  def assert_no_repository_checks(runner)
+  def assert_no_repository_checks(runner, resolves_base: false)
     refute(runner.commands.any? { |argv| argv.first == 'shaka' || argv.first.end_with?('/validate') })
-    refute(runner.commands.any? { |argv| argv.include?('rev-parse') })
+    refute(runner.commands.any? { |argv| argv.include?('rev-parse') }) unless resolves_base
   end
 
   def assert_no_publication(dir, runner, result)
@@ -165,24 +245,6 @@ class CanaryCollectTest < Minitest::Test
   def command_prefix(runner, name)
     runner.commands.find { |argv| argv[2] == name }.first(4)
   end
-
-  def environment(dir)
-    { 'RUNNER_TEMP' => dir, 'SHAKA_CANARY_REPO' => 'shakacode/shaka-canary', 'SHAKA_CANARY_KEEP' => '1',
-      'CANARY_DIR' => dir, 'SHAKA_HELPER' => 'shaka', 'GITHUB_SHA' => 'abc123',
-      'GITHUB_REPOSITORY' => 'shakacode/shaka', 'GITHUB_SERVER_URL' => 'https://github.com',
-      'GITHUB_RUN_ID' => '99', 'GITHUB_WORKSPACE' => dir }
-  end
-
-  def list_body
-    previous = CANARY_BODY.sub('$1.00', '$0.40')
-    pulls = [pull(2, CANARY_BODY, '2026-10-26T12:30:00Z'), pull(1, previous, '2026-10-26T11:00:00Z')]
-    JSON.generate(pulls)
-  end
-
-  def pull(number, body, created)
-    { 'number' => number, 'state' => 'OPEN', 'createdAt' => created, 'body' => body,
-      'url' => "https://example/#{number}" }
-  end
 end
 
 class CanaryRunnerTest < Minitest::Test
@@ -207,6 +269,45 @@ class CanaryRunnerTest < Minitest::Test
   end
 end
 
+class CanaryAttemptHistoryTest < Minitest::Test
+  def test_job_steps_include_failed_attempts_and_exclude_the_current_run
+    runner = history_runner(true)
+    runs = [{ 'databaseId' => 99 }, { 'databaseId' => 98 }]
+    started = Shaka::Canary::AttemptHistory.latest(runs, repository: 'owner/repo', current: '99', runner: runner)
+
+    assert_equal Time.iso8601('2026-10-26T11:30:00Z'), started
+    assert_equal [['gh', 'api', 'repos/owner/repo/actions/runs/98/jobs?per_page=100']], runner.commands
+  end
+
+  def test_unreadable_attempt_history_fails_instead_of_starting_another_agent
+    error = assert_raises(RuntimeError) do
+      Shaka::Canary::AttemptHistory.latest([{ 'databaseId' => 98 }], repository: 'owner/repo',
+                                                                     current: '99', runner: history_runner(false))
+    end
+    assert_includes error.message, 'cannot read canary attempts: denied'
+  end
+
+  def history_runner(success)
+    step = { 'name' => 'Run the fixed task headless', 'conclusion' => 'failure',
+             'started_at' => '2026-10-26T11:30:00Z' }
+    FakeCanaryHistory.new('ok' => success, 'err' => 'denied', 'out' => JSON.generate('jobs' => [{ 'steps' => [step] }]))
+  end
+end
+
+class FakeCanaryHistory
+  attr_reader :commands
+
+  def initialize(response)
+    @response = response
+    @commands = []
+  end
+
+  def capture(argv)
+    @commands << argv
+    @response
+  end
+end
+
 class FakeCanary
   attr_reader :commands
 
@@ -219,7 +320,7 @@ class FakeCanary
   def capture(argv, chdir: nil)
     @commands << argv
     @dir = chdir
-    return { 'out' => '', 'err' => 'permission denied', 'ok' => false } if argv[2] == @failure
+    return { 'out' => '', 'err' => 'permission denied', 'ok' => false } if argv.include?(@failure)
     return { 'out' => @list, 'err' => '', 'ok' => true } if argv[0] == 'gh' && argv[2] == 'list'
     return { 'out' => 'deadbeef', 'err' => '', 'ok' => true } if argv.include?('rev-parse')
     return { 'out' => "abc123 Add canary\n", 'err' => '', 'ok' => true } if argv.include?('log')

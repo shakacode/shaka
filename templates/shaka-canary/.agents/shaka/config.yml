@@ -7,7 +7,7 @@ review:
 merge:
   preference: ask
 branches:
-  name: "{login}-{host}/{issue}-{description}"
+  name: "shaka-canary/{issue}-{description}"
 wip:
   include_checkout_path: true
 #

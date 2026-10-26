@@ -58,6 +58,15 @@ class CanaryBodyTest < Minitest::Test
     assert_includes Shaka::Canary::BodyCheck.issues(body), 'table is missing its separator row'
   end
 
+  def test_valid_markdown_examples_pipes_and_link_titles_do_not_fail
+    body = "#{BODY}\n```markdown\n| example |\n[a]()\n```\n" \
+           "\n| A | B |\n| --- | --- |\n| a\\|b | `a\\|b` |\n\n[a](https://example.com \"a title\")\n"
+
+    assert_empty Shaka::Canary::BodyCheck.issues(body)
+    assert_includes Shaka::Canary::BodyCheck.issues(body.sub('`a\\|b`', '`a|b`')),
+                    'table rows have different column counts'
+  end
+
   def test_previous_body_diff_is_empty_only_when_the_text_matches
     assert_equal 'No previous canary PR body.', Shaka::Canary::BodyDiff.report(nil, BODY)
     assert_equal 'Canary PR body matches the previous run.', Shaka::Canary::BodyDiff.report(BODY, BODY)
@@ -85,6 +94,18 @@ class CanaryBodyTest < Minitest::Test
 end
 
 class CanaryScheduleTest < Minitest::Test
+  def test_failed_and_cancelled_agent_attempts_anchor_the_wait_but_skipped_steps_do_not
+    jobs = [{ 'steps' => [attempt('failure', '2026-10-26T11:00:00Z'),
+                          attempt('cancelled', '2026-10-26T11:30:00Z'),
+                          attempt('skipped', '2026-10-26T11:55:00Z')] }]
+
+    assert_equal Time.iso8601('2026-10-26T11:30:00Z'), Shaka::Canary::Throttle.latest_start(jobs)
+  end
+
+  def attempt(conclusion, started)
+    { 'name' => 'Run the fixed task headless', 'conclusion' => conclusion, 'started_at' => started }
+  end
+
   def test_push_runs_wait_until_an_hour_after_the_previous_success
     now = Time.utc(2026, 10, 26, 12, 0, 0)
     last = now - 600
@@ -100,10 +121,10 @@ class CanaryScheduleTest < Minitest::Test
     assert_equal 0, Shaka::Canary::Throttle.wait_seconds(last_finished_at: now - 3600, now: now, manual: false)
   end
 
-  def test_latest_finish_uses_the_newest_timestamp
-    runs = [{ 'updatedAt' => '2026-10-26T10:00:00Z' }, { 'updatedAt' => '2026-10-26T11:00:00Z' }, {}]
+  def test_an_unstarted_or_skipped_agent_does_not_delay_the_next_run
+    jobs = [{ 'steps' => [attempt(nil, nil), attempt('skipped', '2026-10-26T11:55:00Z')] }]
 
-    assert_equal Time.iso8601('2026-10-26T11:00:00Z'), Shaka::Canary::Throttle.latest_finish(runs)
+    assert_nil Shaka::Canary::Throttle.latest_start(jobs)
   end
 
   def test_cleanup_keeps_the_newest_open_pull_requests_and_the_current_one
@@ -168,11 +189,12 @@ end
 
 class CanaryReportTest < Minitest::Test
   def test_the_prompt_repeats_the_same_task_for_the_merged_commit
-    text = Shaka::Canary::Prompt.render(sha: 'abc123', repo: 'shakacode/shaka-canary')
+    text = Shaka::Canary::Prompt.render(sha: 'abc123', repo: 'shakacode/shaka-canary', branch: 'shaka-canary/run-99-1')
 
     assert_includes text, 'abc123'
     assert_includes text, 'farewell'
     assert_includes text, 'Do not merge'
+    assert_includes text, 'shaka-canary/run-99-1'
   end
 
   def test_a_run_without_a_pull_request_fails_and_names_the_commit
@@ -203,11 +225,13 @@ class CanaryReportTest < Minitest::Test
   def input(pulls, checks: [], comments: [])
     { 'pulls' => pulls, 'started_at' => '2026-10-26T12:00:00Z', 'finished_at' => '2026-10-26T12:40:00Z',
       'shaka_sha' => 'abc123', 'shaka_repo' => 'shakacode/shaka', 'run_url' => 'https://example/run',
-      'commits' => ['abc123 Add canary'], 'keep' => 1, 'command_checks' => checks, 'previous_comments' => comments }
+      'commits' => ['abc123 Add canary'], 'keep' => 1, 'command_checks' => checks, 'previous_comments' => comments,
+      'branch' => 'shaka-canary/run-99-1' }
   end
 
   def pull(number, body, created)
-    { 'number' => number, 'state' => 'OPEN', 'createdAt' => created, 'body' => body, 'url' => "https://example/#{number}" }
+    { 'number' => number, 'state' => 'OPEN', 'createdAt' => created, 'body' => body, 'url' => "https://example/#{number}",
+      'isCrossRepository' => false, 'headRefName' => "shaka-canary/run-#{number == 2 ? 99 : 98}-1" }
   end
 
   def passing_checks

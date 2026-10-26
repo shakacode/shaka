@@ -19,7 +19,7 @@ A run with the repository, model key, or token unset posts a notice and
 succeeds. Merging this workflow is safe before the setup below.
 
 Manual runs start immediately. A push waits until about an hour after the
-previous successful canary. A newer push cancels the run still in progress,
+previous agent start, including failed or cancelled attempts. A newer push cancels the run still in progress,
 so the run that finishes uses the latest `main`.
 
 ## Set it up once
@@ -37,8 +37,9 @@ set secrets, or change organization settings.
    `owner/name`.
 4. Set the secret `SHAKA_CANARY_MODEL_KEY` to a Cursor API key from the
    Cursor dashboard. Preflight receives `SHAKA_CANARY_MODEL_KEY` to check
-   that it is set. The agent step receives it as `CURSOR_API_KEY`, including
-   the Cursor installer in that step.
+   that it is set. The agent step receives it as `CURSOR_API_KEY`.
+   The separate Cursor installer step receives neither the model key nor
+   the sandbox write token.
 5. Set the secret `SHAKA_CANARY_TOKEN` to a token that can clone the
    sandbox, push branches, and open and close pull requests.
    `gh repo view OWNER/REPO --json viewerPermission` must report `WRITE`
@@ -49,7 +50,9 @@ set secrets, or change organization settings.
    requests to keep. The default is 5. Older open pull requests are closed.
 7. Use Actions → Canary → Run workflow to try it. Do not merge the canary
    pull requests. `main` should stay the template so every run repeats the
-   same task: add `farewell`, its test, and one docs line.
+   same task: add `farewell`, its test, and one docs line. Each Actions
+   attempt uses its own `shaka-canary/run-ID-ATTEMPT` branch. Checks and
+   cleanup ignore fork pull requests and branches outside that pattern.
 
 Review is `none` in the template so the sandbox can finish without
 reviewer CLIs. Turn review on after a reviewer key exists if you want the
