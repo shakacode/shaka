@@ -8,6 +8,7 @@ require 'shaka/pr_watch'
 class ThroughputStatsTest < Minitest::Test
   HEAD = 'a' * 40
   NEXT = 'b' * 40
+  LATER = Time.utc(2026, 10, 26, 20, 0, 0)
   START = Time.utc(2026, 10, 26, 18, 0, 0)
   PUSH = Time.utc(2026, 10, 26, 18, 38, 0)
   READY = Time.utc(2026, 10, 26, 19, 19, 0)
@@ -124,6 +125,17 @@ class ThroughputStatsTest < Minitest::Test
                                                                     wait: 'none')
   end
 
+  def test_a_cut_off_history_keeps_an_earlier_first_push_and_does_not_invent_one
+    kept = watch_cut_off(filled_block)
+    assert_includes kept, "\"first_push\":\"#{PUSH.iso8601}\""
+    refute_includes kept, LATER.iso8601
+    assert_includes kept, 'UNKNOWN rounds'
+
+    invented = watch_cut_off(Shaka::ThroughputStats.update(filled_block, 'first_push' => nil))
+    assert_includes invented, '"first_push":"UNKNOWN"'
+    refute_includes invented, LATER.iso8601
+  end
+
   def test_pr_watch_fills_the_block_once_from_github_timestamps
     github = watch_github
     publisher = Shaka::PrWatch::ThroughputPublisher.new(github, head: HEAD,
@@ -152,6 +164,17 @@ class ThroughputStatsTest < Minitest::Test
   def commit_runs
     [{ 'oid' => '1' * 40, 'pushedDate' => START.iso8601, 'runs' => [check_run('validate', 'FAILURE')] },
      { 'oid' => HEAD, 'pushedDate' => PUSH.iso8601, 'runs' => [check_run('validate', 'SUCCESS')] }]
+  end
+
+  def watch_cut_off(block)
+    page = { 'headRefOid' => HEAD, 'commits' => { 'totalCount' => 60, 'nodes' => [
+      { 'commit' => { 'oid' => HEAD, 'pushedDate' => LATER.iso8601,
+                      'runs' => [check_run('validate', 'SUCCESS')] } }
+    ] } }
+    github = FakeGitHub.new("Intro.\n\n#{block}\n", page, [check('validate', READY.iso8601)])
+    Shaka::PrWatch::ThroughputPublisher.new(github, head: HEAD, review_jobs: [], wait: 'none')
+                                       .call(required: ['validate'])
+    github.patches.fetch(0)
   end
 
   def watch_github

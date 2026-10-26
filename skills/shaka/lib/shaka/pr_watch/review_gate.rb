@@ -46,6 +46,8 @@ module Shaka
         return unless @throughput && gate_green?(required, checks)
 
         @throughput.call(required: required_names(required))
+      rescue Error
+        nil
       end
 
       def required_names(required) = required.filter_map { |row| row['name'] if row.is_a?(Hash) }

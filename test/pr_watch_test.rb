@@ -28,6 +28,8 @@ module PrWatchFixtures
   end
 end
 
+# The watch cases share one fake GitHub, so they stay in this class.
+# rubocop:disable-next Metrics/ClassLength
 class PrWatchTest < Minitest::Test
   include PrWatchFixtures
 
@@ -159,6 +161,18 @@ class PrWatchTest < Minitest::Test
                  checks: [check('claude-review', 'FAILURE', 'fail')])],
           throughput: ->(**) { failed << :called })
     assert_empty failed
+  end
+
+  def test_a_throughput_write_failure_still_lets_the_watch_wake
+    called = false
+    result = watch([frame(required: [check('validate', 'SUCCESS', 'pass')],
+                          checks: [check('claude-review', 'SUCCESS', 'pass')])],
+                   throughput: lambda { |**|
+                     called = true
+                     raise Shaka::Error, 'patch refused'
+                   })
+    assert called
+    assert_equal 'checks_terminal', result
   end
 
   private

@@ -56,9 +56,10 @@ module Shaka
         return unless pull['headRefOid'] == @head
 
         body = description_body
-        return unless ThroughputStats.read(body)
+        carried = ThroughputStats.read(body)
+        return unless carried
 
-        updated = ThroughputStats.update(body, changes(pull, required))
+        updated = ThroughputStats.update(body, changes(pull, required, carried))
         write(updated) unless updated == body
       end
 
@@ -72,19 +73,18 @@ module Shaka
         found
       end
 
-      def changes(pull, required)
+      def changes(pull, required, carried)
         commits, total = commit_page(pull)
         heads, suites_complete = ThroughputStats.ci_heads(commits, required:, review_jobs: @review_jobs)
         ready = ThroughputStats.ready_at(@github.check_times, required:, review_jobs: @review_jobs, wait: @wait)
-        fields(heads, ready, history_complete?(suites_complete, total, commits))
+        fields(heads, ready, history_complete?(suites_complete, total, commits), carried)
       end
 
-      def fields(heads, ready, complete)
-        result = { 'head' => @head }
+      def fields(heads, ready, complete, carried)
+        result = { 'head' => @head, 'rounds' => complete ? ThroughputStats.rounds(heads) : nil }
         result['t2'] = stamp(ready) if ready
-        push = ThroughputStats.first_push(heads)
+        push = ThroughputStats.bounded_first_push(heads, complete, carried)
         result['first_push'] = push if push
-        result['rounds'] = complete ? ThroughputStats.rounds(heads) : nil
         result
       end
 

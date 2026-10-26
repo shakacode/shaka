@@ -23,6 +23,15 @@ module Shaka
       Array(heads).filter_map { |head| head['pushed_at'] if head.is_a?(Hash) && head['pushed_at'].is_a?(String) }.first
     end
 
+    # A partial commit page must not replace an earlier push, and must not invent one.
+    def bounded_first_push(heads, complete, carried)
+      seen = first_push(heads)
+      return seen if complete && seen
+      return 'UNKNOWN' unless complete || kept_push?(carried['first_push'])
+
+      nil
+    end
+
     # Time the gate turned green, :unknown when it is green without timestamps, or nil when it is not green.
     def ready_at(rows, required:, review_jobs:, wait:)
       selected = selected_rows(Array(rows).grep(Hash), required, review_jobs, wait)
@@ -33,6 +42,8 @@ module Shaka
     end
 
     private
+
+    def kept_push?(value) = value.is_a?(String) && !value.empty? && value != 'UNKNOWN'
 
     def next_round(count, previous_failed, head)
       return [count, previous_failed] unless head.is_a?(Hash)
