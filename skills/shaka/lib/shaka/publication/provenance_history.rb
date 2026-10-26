@@ -16,7 +16,7 @@ module Shaka
     # A details item with this summary is refused, since only the helper writes the history.
     SUMMARY = 'Provenance history'
     LEAD = 'One row per head that published a different Shaka skill version or model / effort, ' \
-           'oldest first; the last row is the table above.'
+           'oldest first; the last row holds the values in the table above.'
     FIELDS = %w[head workflow requested recommended active].freeze
     ROUTES = %w[requested recommended active].freeze
     # The entries after the first that a long-lived PR keeps.

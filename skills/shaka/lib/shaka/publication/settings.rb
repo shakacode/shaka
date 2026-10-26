@@ -15,8 +15,8 @@ module Shaka
                       'uninstalled' => 'no installation record', 'UNKNOWN' => 'installation source unavailable' }.freeze
     OPERATIONS = { 'validation' => 'Validation', 'review' => 'Review' }.freeze
     CURRENT = 'Current settings'
-    # Execution details names the skill version, with its commit when known, so it is not repeated here.
-    VERSION_POINTER = 'Execution details shows the Shaka version'
+    # Execution details names the commit the helper ran from, so this line names only the release.
+    COMMIT_POINTER = 'commit under Execution details'
     # Settings from these sources are not readable in the repository, so the block keeps every value.
     UNCOMMITTED = %w[private/local preview/local].freeze
 
@@ -33,9 +33,9 @@ module Shaka
 
     def current_line
       settings = Evidence::PublicSettings.sanitize(@current)
-      installation = INSTALLATIONS.fetch(settings['installation.source'], 'REDACTED')
-      "#{CURRENT}: #{SettingsTable.source(settings, @repository)}; Shaka installation: #{installation}; " \
-        "#{VERSION_POINTER}"
+      version, installation = settings.values_at('installation.version', 'installation.source')
+      "#{CURRENT}: #{SettingsTable.source(settings, @repository)}; Shaka installation: release #{version}, " \
+        "#{INSTALLATIONS.fetch(installation, 'REDACTED')} (#{COMMIT_POINTER})"
     end
 
     # One row per recorded result. Binding refuses a result whose settings differ from the

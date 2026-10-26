@@ -6,12 +6,13 @@ class PublicationSettingsSummaryTest < Minitest::Test
   include SettingsSnapshotHelper
 
   COMMITTED = "Default-branch settings at `#{REVISION[0, 7]}`".freeze
-  POINTER = Shaka::PublicationSettings::VERSION_POINTER
+  POINTER = Shaka::PublicationSettings::COMMIT_POINTER
 
   def test_the_block_opens_on_its_status_then_the_current_settings
     status, _note, current = settings_block(current: snapshot).split("\n\n")
     assert_equal 'No matching check records supplied. Rerun missing validation or review to record them.', status
-    assert_equal "Current settings: #{COMMITTED}; Shaka installation: installed revision; #{POINTER}", current
+    assert_equal "Current settings: #{COMMITTED}; Shaka installation: release 0.1.0, installed revision " \
+                 "(#{POINTER})", current
   end
 
   def test_committed_settings_get_one_row_per_operation_instead_of_a_table_of_settings
@@ -56,7 +57,8 @@ class PublicationSettingsSummaryTest < Minitest::Test
 
   def test_unread_settings_stay_unknown
     assert_includes Shaka::PublicationSettings.new.detail.fetch('body'),
-                    "Current settings: UNKNOWN; Shaka installation: installation source unavailable; #{POINTER}"
+                    'Current settings: UNKNOWN; Shaka installation: release UNKNOWN, ' \
+                    "installation source unavailable (#{POINTER})"
   end
 
   def test_team_runs_omit_private_trial_cautions
@@ -68,13 +70,14 @@ class PublicationSettingsSummaryTest < Minitest::Test
 
   def test_missing_installation_record_does_not_claim_shaka_is_absent
     current = snapshot.merge('installation.source' => 'uninstalled')
-    assert_includes settings_block(current:), "Shaka installation: no installation record; #{POINTER}"
+    assert_includes settings_block(current:), "Shaka installation: release 0.1.0, no installation record (#{POINTER})"
   end
 
   def test_redacted_source_labels_remain_publishable_without_exposing_invalid_values
     current = snapshot.merge('source' => 'private-secret', 'installation.source' => 'private-secret')
     body = settings_block(current:)
-    assert_includes body, "Current settings: REDACTED at `#{REVISION[0, 7]}`; Shaka installation: REDACTED; #{POINTER}"
+    assert_includes body, "Current settings: REDACTED at `#{REVISION[0, 7]}`; " \
+                          "Shaka installation: release 0.1.0, REDACTED (#{POINTER})"
     refute_includes body, 'private-secret'
   end
 end
