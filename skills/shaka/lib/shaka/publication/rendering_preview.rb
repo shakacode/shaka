@@ -2,7 +2,7 @@
 
 require 'open3'
 require_relative '../error'
-require_relative '../publication_settings'
+require_relative '../publication_settings_guard'
 
 module Shaka
   # Self-hosted previews keep evidence verification installed and load only reviewed renderers.
@@ -24,10 +24,6 @@ module Shaka
                    provenance_history settings_table settings]
                 .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
-    # Evidence reading, verification, and publication policy that a previewed renderer must not redefine.
-    GUARDED = { singleton: %i[prepare verify current_settings refuse_free_form!],
-                instance: %i[initialize include_checkout_path? path_redaction attribution? human_comments?
-                             human_comment_rows] }.freeze
 
     module_function
 
@@ -55,9 +51,9 @@ module Shaka
     # Loading reopens PublicationSettings, so a head that redefines what verifies evidence is refused.
     def load_renderers(root, head)
       sources = RENDERERS.to_h { |path| [path, git(root, 'show', "#{head}:#{path}")] }
-      installed = guarded_methods
+      installed = PublicationSettingsGuard.snapshot
       sources.each { |path, source| load_renderer(path, source) }
-      return if guarded_methods == installed
+      return unless PublicationSettingsGuard.changed?(installed)
 
       raise Error, 'Rendering preview refused: the PR head redefines settings verification or policy; ' \
                    'rebase it onto the default branch.'
@@ -101,11 +97,6 @@ module Shaka
       end
     end
 
-    def guarded_methods
-      GUARDED[:singleton].map { |name| PublicationSettings.method(name) } +
-        GUARDED[:instance].map { |name| PublicationSettings.instance_method(name) }
-    end
-
     def git(root, *)
       output, error, status = Open3.capture3('git', '-C', root, *)
       raise Error, "Cannot read rendering preview: #{error.strip}" unless status.success?
@@ -124,7 +115,7 @@ module Shaka
       $VERBOSE = previous
     end
 
-    private_class_method :git, :guarded_methods, :load_renderers, :load_renderer, :changed_renderers, :supported!,
+    private_class_method :git, :load_renderers, :load_renderer, :changed_renderers, :supported!,
                          :rendering_path?
   end
 end

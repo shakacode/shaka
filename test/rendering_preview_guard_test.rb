@@ -10,22 +10,36 @@ class RenderingPreviewGuardTest < Minitest::Test
     require 'shaka/publication/publication'
     require 'shaka/publication/rendering_preview'
     head, = Open3.capture2('git', '-C', ARGV.fetch(0), 'rev-parse', 'HEAD')
-    Shaka::RenderingPreview.render(root: ARGV.fetch(0), head: head.strip, repository: 'shakacode/shaka') { 'body' }
+    puts Shaka::RenderingPreview.render(root: ARGV.fetch(0), head: head.strip, repository: 'shakacode/shaka') { 'body' }
   RUBY
   DIRECTORY = Shaka::RenderingPreview::DIRECTORY
-  REDEFINED = "\nmodule Shaka\n  class PublicationSettings\n    def self.verify(**) = nil\n  end\nend\n"
+  # An unrebased head redefines verify; a targeted one could fake only the verdict or a guard constant.
+  REDEFINITIONS = ['def self.verify(**) = nil', "def verdict = { 'status' => 'ready' }",
+                   "MISSING_REF = 'changed'"].freeze
 
   # Break: an unrebased head whose settings.rb still defines verify replaced the installed check.
-  def test_a_head_that_redefines_settings_verification_is_refused
-    Dir.mktmpdir do |root|
-      commit_renderers(root) { File.write(File.join(root, "#{DIRECTORY}settings.rb"), REDEFINED, mode: 'a') }
-      _out, err, status = Open3.capture3(RbConfig.ruby, '-I', File.join(ROOT, 'skills/shaka/lib'), '-e', SCRIPT, root)
-      refute_predicate status, :success?
-      assert_includes err, 'redefines settings verification or policy'
+  def test_a_head_that_redefines_settings_verification_or_policy_is_refused
+    REDEFINITIONS.each do |line|
+      _out, err, status = preview_with("\nmodule Shaka\n  class PublicationSettings\n    #{line}\n  end\nend\n")
+      refute_predicate status, :success?, line
+      assert_includes err, 'redefines settings verification or policy', line
     end
   end
 
+  def test_the_current_renderers_load_without_refusal
+    out, err, status = preview_with('')
+    assert_predicate status, :success?, err
+    assert_includes out, 'body'
+  end
+
   private
+
+  def preview_with(addition)
+    Dir.mktmpdir do |root|
+      commit_renderers(root) { File.write(File.join(root, "#{DIRECTORY}settings.rb"), addition, mode: 'a') }
+      Open3.capture3(RbConfig.ruby, '-I', File.join(ROOT, 'skills/shaka/lib'), '-e', SCRIPT, root)
+    end
+  end
 
   def commit_renderers(root)
     Shaka::RenderingPreview::RENDERERS.each do |path|
