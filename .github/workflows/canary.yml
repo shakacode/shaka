@@ -1,0 +1,106 @@
+# Opens a sandbox pull request from the merged commit. Skips when the canary
+# repository, model key, or token is unset, so merging this file is safe first.
+name: Canary
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: shaka-canary
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
+        with:
+          ruby-version: .ruby-version
+
+      - id: preflight
+        env:
+          SHAKA_CANARY_REPO: ${{ vars.SHAKA_CANARY_REPO }}
+          SHAKA_CANARY_MODEL_KEY: ${{ secrets.SHAKA_CANARY_MODEL_KEY }}
+          SHAKA_CANARY_TOKEN: ${{ secrets.SHAKA_CANARY_TOKEN }}
+          SHAKA_CANARY_KEEP: ${{ vars.SHAKA_CANARY_KEEP }}
+        run: ruby bin/canary preflight
+
+      - name: Notice when the canary is not configured
+        if: steps.preflight.outputs.action == 'skip'
+        run: echo "${{ steps.preflight.outputs.notice }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Wait until canary runs are about an hour apart
+        if: steps.preflight.outputs.action == 'run'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run list --workflow canary.yml --repo "${{ github.repository }}" --status success --limit 5 \
+            --json databaseId,headSha,url,createdAt,updatedAt > "$RUNNER_TEMP/canary-runs.json"
+          seconds=$(ruby bin/canary throttle --runs "$RUNNER_TEMP/canary-runs.json" --event "${{ github.event_name }}")
+          echo "Waiting ${seconds}s before this canary."
+          sleep "$seconds"
+
+      - name: Install Shaka from the merged commit
+        if: steps.preflight.outputs.action == 'run'
+        run: |
+          set -euo pipefail
+          dest="$RUNNER_TEMP/shaka-source"
+          git clone --quiet --branch main https://github.com/shakacode/shaka.git "$dest"
+          git -C "$dest" fetch --quiet origin "$GITHUB_SHA"
+          git -C "$dest" checkout --detach "$GITHUB_SHA"
+          "$dest/bin/install" --agent cursor --directory "$dest"
+          echo "SHAKA_HELPER=$dest/skills/shaka/scripts/shaka" >> "$GITHUB_ENV"
+
+      - name: Clone the canary repository
+        if: steps.preflight.outputs.action == 'run'
+        env:
+          GH_TOKEN: ${{ secrets.SHAKA_CANARY_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh repo clone "${{ vars.SHAKA_CANARY_REPO }}" "$RUNNER_TEMP/canary"
+          echo "CANARY_DIR=$RUNNER_TEMP/canary" >> "$GITHUB_ENV"
+          date -u +%Y-%m-%dT%H:%M:%SZ > "$RUNNER_TEMP/canary-started-at"
+
+      - name: Run the fixed task headless
+        if: steps.preflight.outputs.action == 'run'
+        env:
+          CURSOR_API_KEY: ${{ secrets.SHAKA_CANARY_MODEL_KEY }}
+          GH_TOKEN: ${{ secrets.SHAKA_CANARY_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl https://cursor.com/install -fsS | bash
+          export PATH="$HOME/.cursor/bin:$PATH"
+          ruby bin/canary prompt --sha "$GITHUB_SHA" --repo "${{ vars.SHAKA_CANARY_REPO }}" > "$RUNNER_TEMP/canary-prompt.txt"
+          agent -p --force --trust --workspace "$CANARY_DIR" --output-format text "$(cat "$RUNNER_TEMP/canary-prompt.txt")"
+
+      - name: Check the canary pull request and write the summary
+        if: always() && steps.preflight.outputs.action == 'run'
+        env:
+          GH_TOKEN: ${{ secrets.SHAKA_CANARY_TOKEN }}
+          SHAKA_CANARY_REPO: ${{ steps.preflight.outputs.repo }}
+          SHAKA_CANARY_KEEP: ${{ steps.preflight.outputs.keep }}
+        run: ruby bin/canary collect
+
+      - name: Publish the summary and close old pull requests
+        if: always() && steps.preflight.outputs.action == 'run'
+        env:
+          GH_TOKEN: ${{ secrets.SHAKA_CANARY_TOKEN }}
+          SHAKA_CANARY_REPO: ${{ steps.preflight.outputs.repo }}
+        run: ruby bin/canary publish
+
+      - name: Fail the run when a check failed
+        if: always() && steps.preflight.outputs.action == 'run'
+        run: ruby bin/canary finish --result "$RUNNER_TEMP/canary-result.json"
