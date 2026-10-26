@@ -64,8 +64,9 @@ review provider.
    denied launch only through the host's own path, such as the user's Codex CLI
    `/approve`, which permits one retry of that exact action.
 3. When consent is missing or narrower than the request, ask the user before
-   launch. Name the provider and model, the repository, the payload, and the
-   exclusions for secrets and unrelated private data. Point to the
+   launch. Name the provider and model, the repository, and the payload. Say that
+   Shaka adds only those items, and that a reviewer given the checkout path can
+   read other files its sandbox allows, including secrets. Point to the
    [consent template](https://github.com/shakacode/shaka/blob/main/docs/coding-agents.md#give-consent-once).
    Record the answer in the task. When the user declines, follow checklist step 4.
 4. Do not change the reviewer, payload, or flags on your own to fit consent or

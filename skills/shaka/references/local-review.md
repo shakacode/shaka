@@ -264,13 +264,13 @@ A local review is **UNVERIFIED** until the owner publishes its report, including
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
 tests, then publishes the review after pushing.
 
-## Recover from host denial before launch
+## Host approval and denial
 
 If the host denies `shaka review run` before launch, follow
-[host-denied review recovery](host-denied-review.md). When the host's approval
-settings show that Codex Auto-review guards commands, read its [consent section](host-denied-review.md#surface-data-transfer-consent)
-before launch. Otherwise read that procedure only for a denial; it covers permitted
-retries, consent, honest not-run evidence, and a synthetic replay.
+[host-denied review recovery](host-denied-review.md). Its
+[consent section](host-denied-review.md#surface-data-transfer-consent) also says when
+to read it before launch. Otherwise skip that procedure; it covers permitted retries,
+consent, honest not-run evidence, and a synthetic replay.
 
 ## Run the review loop with a ledger
 
