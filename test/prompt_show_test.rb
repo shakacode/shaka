@@ -152,6 +152,19 @@ class PromptShowTest < Minitest::Test
     end
   end
 
+  def test_the_opening_view_reads_the_prompt_a_settings_preview_names
+    with_change do |root, base, _head, _bin|
+      opening = { 'opening_check' => { 'replacement_prompt_file' => '.agents/codex-prompt.md' } }
+      preview = preview_commit(root, { 'pr_description' => opening })
+      Shaka::Configuration::SettingsPreview.new(root:).start(preview)
+      document = show(root, 'opening', '--ref', base)
+
+      assert_equal preview, document.fetch('settings_ref')
+      assert_includes sources(document).first, "replacement .agents/codex-prompt.md@#{preview}"
+      assert_includes shown_text(document), 'Codex-only instructions'
+    end
+  end
+
   def test_a_disabled_checkpoint_reports_that_no_prompt_is_sent
     with_change('checkpoint' => { 'enabled' => false }) do |root, base, _head, _bin|
       document = show(root, 'checkpoint', '--ref', base)
