@@ -441,8 +441,10 @@ rules:
     enforced_by: code
     detector: >-
       `ReviewThread#check_reply` ignores the thread's opening comment and refuses the
-      mutation until a later comment is from the authenticated account. A truncated
-      comment page that does not already show that reply fails closed.
+      mutation until a later comment from the authenticated account opens with the identity
+      line or a hidden marker, as `handoff` counts an agent post. An unmarked reply from that
+      account is the person's, so it does not count. A truncated comment page that does not
+      already show that reply fails closed.
   - id: resolve-only-when-settled
     phase: explain
     quote: >-
