@@ -48,7 +48,7 @@ module Shaka
       "#{yield}\n<!-- shaka:rendering-preview #{head} -->\n"
     end
 
-    # Loading reopens PublicationSettings, so a head that redefines what verifies evidence is refused.
+    # Loading reopens PublicationSettings, so a head that redefines its evidence or policy methods is refused.
     def load_renderers(root, head)
       sources = RENDERERS.to_h { |path| [path, git(root, 'show', "#{head}:#{path}")] }
       installed = PublicationSettingsGuard.snapshot

@@ -3,8 +3,9 @@
 require_relative 'publication_settings'
 
 module Shaka
-  # Detects a rendering preview redefining what publication_settings.rb defines: evidence reading,
-  # verification, and publication policy. It lives outside publication/, so a preview never loads it.
+  # Catches a previewed renderer that redefines what publication_settings.rb defines, such as an
+  # unrebased head's settings.rb. Head renderers run in this process, so this is not a boundary
+  # against deliberate head code; only same-repository heads, whose diff is inspected first, preview.
   module PublicationSettingsGuard
     FILE = File.expand_path('publication_settings.rb', __dir__)
 

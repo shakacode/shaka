@@ -13,7 +13,7 @@ class RenderingPreviewGuardTest < Minitest::Test
     puts Shaka::RenderingPreview.render(root: ARGV.fetch(0), head: head.strip, repository: 'shakacode/shaka') { 'body' }
   RUBY
   DIRECTORY = Shaka::RenderingPreview::DIRECTORY
-  # An unrebased head redefines verify; a targeted one could fake only the verdict or a guard constant.
+  # An unrebased head redefines verify; a stray edit could redefine the verdict or a guard constant.
   REDEFINITIONS = ['def self.verify(**) = nil', "def verdict = { 'status' => 'ready' }",
                    "MISSING_REF = 'changed'"].freeze
 
