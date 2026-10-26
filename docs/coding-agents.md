@@ -79,9 +79,9 @@ Never send secrets, credentials, .env files, or private data unrelated to the
 change. Approved by NAME on DATE.
 ```
 
-The exclusions are your instruction to the agent. Shaka adds only the listed
-items to the request. A reviewer given the checkout path can still read other
-files its own sandbox allows, so keep secrets out of the checkout.
+The exclusions are your instruction to the agent, not a limit on the reviewer.
+A reviewer given the checkout path can read other files its own sandbox allows,
+so keep secrets out of the checkout.
 
 When the agent knows Auto-review checks its commands, it quotes the statement
 that covers the review before starting it. It also quotes it before retrying a
