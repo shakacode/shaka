@@ -147,9 +147,23 @@ class PrWatchTest < Minitest::Test
     refute_predicate status, :success?
   end
 
+  def test_throughput_is_recorded_only_when_required_checks_and_reviews_pass
+    ready = []
+    watch([frame(required: [check('validate', 'SUCCESS', 'pass')],
+                 checks: [check('claude-review', 'SUCCESS', 'pass')])],
+          throughput: ->(**) { ready << :called })
+    refute_empty ready
+
+    failed = []
+    watch([frame(required: [check('validate', 'FAILURE', 'fail')],
+                 checks: [check('claude-review', 'FAILURE', 'fail')])],
+          throughput: ->(**) { failed << :called })
+    assert_empty failed
+  end
+
   private
 
-  def watch(frames, timeout: 10, baseline: nil)
+  def watch(frames, timeout: 10, baseline: nil, throughput: nil)
     github = FakeGitHub.new(frames)
     now = 0
     reader = -> { comments_packet(frames.fetch([now, frames.length - 1].min)) }
@@ -158,7 +172,7 @@ class PrWatchTest < Minitest::Test
       github.advance
     end
     settings = { interval: 1, timeout: timeout, settle: 1, baseline: }
-    adapters = { clock: -> { now }, sleeper: tick, comments: reader }
+    adapters = { clock: -> { now }, sleeper: tick, comments: reader, throughput: }
     Shaka::PrWatch.new(github, head: HEAD, ci_jobs: ['claude-review'], settings:, adapters:).call
   end
 end

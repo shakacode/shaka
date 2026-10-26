@@ -35,8 +35,8 @@ module Shaka
         raise Error, 'Private trial settings changed during watcher setup.' unless review_source
 
         settings = watch_settings(options, seam, review: review_source.review)
-        PrWatch.new(GitHub.new(*arguments), head: options[:head],
-                                            ci_jobs: review_jobs(options, review_source), settings:)
+        jobs = review_jobs(options, review_source)
+        ThroughputPublisher.watch(arguments, options[:head], jobs, settings)
       end
 
       def review_jobs(options, seam)

@@ -13,6 +13,7 @@ module Shaka
           pullRequest(number: $number) {
             state createdAt mergedAt closedAt
             firstCommit: commits(first: 1) { nodes { commit { committedDate } } }
+            headCommit: commits(last: 1) { nodes { commit { oid pushedDate } } }
             commits(last: 100) { nodes { commit { oid tree { oid } } } }
             timelineItems(first: 100, after: $cursor, itemTypes: [LABELED_EVENT, UNLABELED_EVENT]) {
               pageInfo { hasNextPage endCursor }
@@ -91,6 +92,7 @@ module Shaka
       {
         'opened' => Time.iso8601(pull.fetch('createdAt')),
         'first_commit' => first && Time.iso8601(first),
+        'head_pushed_at' => pushed_at(pull),
         'merged' => pull['mergedAt'] && Time.iso8601(pull['mergedAt']),
         # A reopened pull request keeps its old closedAt.
         'closed' => pull['state'] == 'CLOSED' ? Time.iso8601(pull['closedAt']) : nil,
@@ -103,5 +105,12 @@ module Shaka
     end
 
     def commits(pull) = Array(pull.dig('commits', 'nodes')).filter_map { |node| node['commit'] if node.is_a?(Hash) }
+
+    def pushed_at(pull)
+      value = pull.dig('headCommit', 'nodes', 0, 'commit', 'pushedDate')
+      Time.iso8601(value)
+    rescue ArgumentError, TypeError
+      nil
+    end
   end
 end

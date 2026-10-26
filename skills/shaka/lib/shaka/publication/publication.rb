@@ -4,6 +4,7 @@ require_relative '../error'
 require_relative 'text'
 require_relative 'links'
 require_relative 'usage_details'
+require_relative 'throughput_stats'
 require_relative 'timings_details'
 require_relative 'provenance'
 require_relative 'provenance_history'
@@ -51,7 +52,7 @@ module Shaka
     # A description leads with the maintainer's decision, so lead parts come before the summary.
     # Only a description names its summary, because there the decision line stands above it.
     def render(parts, title: false, lead: [])
-      blocks = [PublicationText.publisher_identity(@content)]
+      blocks = opening
       blocks << '# Code Walkthrough' if title
       lead.each { |part| blocks.concat(send(part)) }
       summary = PublicationText.required(@content['summary'], 'summary')
@@ -61,6 +62,15 @@ module Shaka
     end
 
     private
+
+    # The stats line sits directly under the model line, before an optional publisher note.
+    def opening
+      identity = PublicationText.publisher_identity(@content)
+      return [identity] unless @description
+
+      header, note = identity.split("\n\n", 2)
+      [header, ThroughputStats.for_description(@content, @timeline, @pull), *(note ? [note] : [])]
+    end
 
     # Only a description is rendered with its pull request, so only a description lists what people wrote.
     def sections = PublicationSections.render(@content, HumanComments.for(@content, @pull, @settings))

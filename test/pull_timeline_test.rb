@@ -63,6 +63,13 @@ class PullTimelineTest < Minitest::Test
                   ['awaiting-resume', false], ['awaiting-resume', true]], names
   end
 
+  def test_records_the_head_push_time
+    commit = { 'oid' => 'a' * 40, 'pushedDate' => '2026-10-18T08:05:00Z' }
+    pull = page([]).merge('headCommit' => { 'nodes' => [{ 'commit' => commit }] })
+    assert_equal Time.utc(2026, 10, 18, 8, 5), read([pull])['head_pushed_at']
+    assert_nil read([page([])])['head_pushed_at']
+  end
+
   def test_reports_the_first_commit_and_the_merge
     timeline = read([page([])])
     assert_equal [Time.utc(2026, 10, 18, 7, 30), Time.utc(2026, 10, 18, 9)],
