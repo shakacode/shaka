@@ -2,6 +2,7 @@
 
 require_relative '../configuration/paths'
 require_relative '../repository_config/review_schema'
+require_relative '../repository_config/post_implementation_schema'
 require_relative '../review_coverage'
 
 module Shaka
@@ -23,6 +24,9 @@ module Shaka
       end
 
       def classify_review_entry(source, nested)
+        checkpoint = RepositoryConfig::PostImplementationSchema
+        return @blocking << checkpoint::MOVED if source == checkpoint::KEY
+
         key = RepositoryConfig::ReviewSchema::RENAMED.fetch(source, source)
         return @blocking << "review.#{source}" unless REVIEW_KEYS.include?(key)
         return @blocking << collision(source, key) if @established.fetch('review', {}).key?(key)

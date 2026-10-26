@@ -19,6 +19,7 @@ module Shaka
                   'anthropic/claude' => %w[low medium high xhigh max],
                   'xai/grok' => %w[low medium high] }.freeze
       DEFAULTS = Defaults.fetch(SECTION)
+      MOVED = "review.#{KEY} moved to the top-level #{SECTION} section".freeze
 
       def self.reviewer(identity) = ReviewerSelection.parse(identity).values.map(&:downcase).join('/')
 
@@ -26,7 +27,7 @@ module Shaka
       def self.fold(data)
         review = data.is_a?(Hash) && data['review'].is_a?(Hash) ? data['review'] : {}
         if review.key?(KEY)
-          raise Error, "review.#{KEY} moved to the top-level #{SECTION} section. Tell your agent: " \
+          raise Error, "#{MOVED}. Tell your agent: " \
                        '"Move review.post_implementation to checkpoint in the Shaka settings."'
         end
         return review unless data.is_a?(Hash) && data.key?(SECTION)

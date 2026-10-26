@@ -276,6 +276,17 @@ class ReviewPromptFileMigrationTest < Minitest::Test
   end
 end
 
+# Migration stops on the old checkpoint key and names where it moved.
+class CheckpointKeyMigrationTest < Minitest::Test
+  def test_migration_blocks_the_old_checkpoint_key_with_its_new_section
+    data = { 'version' => 1, 'merge' => { 'preference' => 'ask' },
+             'review' => { 'required' => 'none', 'post_implementation' => { 'enabled' => false } } }
+
+    assert_includes Shaka::Seam::FieldClassifier.new(data).call.blocking,
+                    'review.post_implementation moved to the top-level checkpoint section'
+  end
+end
+
 # The published review summary names the instructions the reviewer received.
 class ReviewPromptSourceTest < Minitest::Test
   include ReviewPromptFileFixture
