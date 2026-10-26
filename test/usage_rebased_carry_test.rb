@@ -99,6 +99,17 @@ class UsageRebasedCarryTest < Minitest::Test
     refute_includes body, '_No note was recorded'
   end
 
+  # Break: the note of a block carry had dropped for its unreadable identity was read and aborted the publish.
+  def test_a_dropped_block_with_a_bad_note_does_not_stop_the_publish
+    body = unshared([review('a', 'r1')])
+    broken = "#{Shaka::UsageRecords::BEGIN_PREFIX}not json -->\n<!-- usage-note\n<bad>\n-->\n" \
+             "#{Shaka::UsageRecords::END_MARK}\n\n"
+    body, stats = publish(body.sub(Shaka::Publishing::OPEN_MARK, "\\0\n#{broken}"), [review('b', 'r2')])
+
+    assert_equal({ 'retained' => 1, 'replaced' => 0, 'dropped' => 1 }, stats)
+    refute_includes body, '<bad>'
+  end
+
   # Break: a body published before notes were shared, such as PR 837's, would lose its notes.
   def test_a_body_with_a_full_note_in_every_report_is_read_and_shared
     body, stats = publish(unshared([review('a', 'r1'), review('b', 'r2')]), [review('c', 'r3')])

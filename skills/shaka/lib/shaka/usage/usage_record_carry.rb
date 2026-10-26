@@ -3,6 +3,7 @@
 require_relative '../error'
 require_relative '../publication/managed_region'
 require_relative '../publication/usage_pricing'
+require_relative 'usage_record_shape'
 
 module Shaka
   # Carries earlier usage reports when the new description supplies structured records.
@@ -34,7 +35,12 @@ module Shaka
 
     def identities(usage) = Array(usage['records']).map { |fields| identity!(without_columns(fields)) }
 
-    def blocks(region) = region.to_enum(:scan, UsageRecords::BLOCK).map { Regexp.last_match[0] }
+    # Only a block that passed the identity and shape checks may lend its note, so a dropped one is never read.
+    def blocks(region)
+      region.to_enum(:scan, UsageRecords::BLOCK).map { Regexp.last_match[0] }.select do |text|
+        UsageRecordShape.report_shape?(text) && UsageRecords.text_records(text).any?
+      end
+    end
 
     # Each report from a rebased head names only that head. When complete reports hold every response an
     # earlier report counted, those sharing its responses take on its commits, so the usual rule replaces
