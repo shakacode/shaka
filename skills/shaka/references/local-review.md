@@ -269,8 +269,8 @@ tests, then publishes the review after pushing.
 If the host denies `shaka review run` before launch, follow
 [host-denied review recovery](host-denied-review.md). When Codex Auto-review guards
 commands, read its [consent section](host-denied-review.md#surface-data-transfer-consent)
-before launch. Otherwise skip that procedure; it covers permitted retries, consent,
-honest not-run evidence, and a synthetic replay.
+before launch; otherwise skip that section until a denial. The procedure covers
+permitted retries, consent, honest not-run evidence, and a synthetic replay.
 
 ## Run the review loop with a ledger
 
