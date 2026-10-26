@@ -1,6 +1,6 @@
 # 0003: Configuration walkthrough
 
-Status: proposed; awaiting maintainer approval. Nothing here is shipped.
+Status: accepted on 2026-10-25; not yet implemented. Nothing here is shipped.
 Date: 2026-10-21. Tracks [issue #817](https://github.com/shakacode/shaka/issues/817).
 
 ## Context
@@ -11,12 +11,20 @@ A maintainer tuning an existing repository has no guided path. First-time setup 
 and working out from it what each reviewer receives.
 
 That last part cannot be worked out from `config.yml`. Reviewer instructions come from
-three sources that behave differently:
+four sources that behave differently. Setting names here follow
+[#837](https://github.com/shakacode/shaka/pull/837), which renames `prompt_file` to
+`replacement_prompt_file` and moves `review.post_implementation` to `checkpoint`:
 
-- `review.prompt_file` and `review.post_implementation.prompt_file` replace the packaged
-  instructions (`skills/shaka/config/review-prompt.md` and
-  `post-implementation-prompt.md`). `pr_description.opening_check` customizes the opening
-  check the same way. The fixed rules in `ReviewPrompt::RULES` apply whatever the file says.
+- `review.replacement_prompt_file`, `checkpoint.replacement_prompt_file`, and
+  `pr_description.opening_check.replacement_prompt_file` replace the packaged instructions
+  (`skills/shaka/config/review-prompt.md`, `post-implementation-prompt.md`, and
+  `opening-prompt.md`). The fixed rules in `ReviewPrompt::RULES` apply whatever the file
+  says.
+- `checkpoint.custom_instructions_file`, by default
+  `.agents/shaka/instructions/checkpoint.md`, adds to the packaged checkpoint prompt
+  instead of replacing it.
+  [#818](https://github.com/shakacode/shaka/issues/818) plans the same addition for code
+  review and the opening check.
 - `AGENTS.md` files at the trusted commit are appended as trusted criteria
   (`LocalReviewCriteria`). The root file always applies. A nested file applies only when
   the change touches its directory, so what a reviewer receives depends on the diff.
@@ -60,9 +68,11 @@ as decision 3, but the code is tied to its own layout. Nothing is reused.
    default. A test fails when a schema key has no reference anchor, or when a repository
    setting in `defaults.yml` is missing from the report, so a new setting cannot be left out.
 3. **Ruby shows each reviewer prompt from the code that sends it.**
-   `shaka configure prompts --root DIR (--ref SHA | --local) [--head SHA --base REF]`
-   prints the code review, checkpoint, and opening check prompts as labeled sections: `built-in`,
-   `repository file PATH@SHA`, or `AGENTS.md PATH@SHA`, with the diff and earlier findings
+   `shaka prompt show NAME --root DIR (--ref SHA | --local) [--head SHA --base REF]` is
+   the prompt view #818 also plans, so one command serves both issues. It prints the code
+   review, checkpoint, or opening check prompt as labeled sections in the order the
+   reviewer receives them: `built-in` or `replacement PATH@SHA`, then `AGENTS.md PATH@SHA`,
+   then `custom instructions PATH@SHA`, with the diff and earlier findings
    shown as placeholders. Without `--head`, it lists every nested `AGENTS.md` with the
    directory that triggers it. With `--head` and `--base`, it shows exactly what a review of
    that change gets. Prompt assembly for all three moves into one module that the
@@ -109,10 +119,20 @@ Recommendation: proceed in this order, each its own PR after this ADR is approve
 step ships its command with its routing, procedure section, and requirement, so the work
 can stop after any step and still be usable.
 
-1. Shared prompt assembly and `configure prompts`, with tests that run each runner's real
+1. Shared prompt assembly and `prompt show`, with tests that run each runner's real
    path and compare the prompt it sends with the report. Adds the `SKILL.md` routing line,
    `references/configure.md` with its prompt section, and the requirement. This is the
    smallest useful stop: it covers what cannot be read from `config.yml`, and gives up
    decision 2's guarantee that no setting is left out.
 2. `configure settings`, the anchor test, and the procedure's settings section.
 3. The settings-change section of the procedure and the guide section.
+
+Step 1 lands after #837, so it reads the renamed settings and the checkpoint's custom
+instructions. It replaces #818's step 5 `prompt show` work rather than duplicating it.
+
+## Open question
+
+Whether step 1's routing line covers only reviewer-prompt requests, widening in steps 2
+and 3, or every configure request from the start. Recommended: reviewer-prompt requests
+only, so the procedure never promises a settings report that has not shipped. Decide in
+the step 1 PR.

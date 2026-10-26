@@ -9,7 +9,7 @@ instructions or private company plans.
 - [Local evaluation proposal](local-evaluation-proposal.md) — proposed experiments, not shipped behavior.
 - [Eval and release-gating decision record](adr/0001-eval-and-release-gating.md) — proposed comparison design and execution-layer spike.
 - [Install locations and no-compatibility decision record](adr/0002-install-locations-and-no-compatibility.md) — accepted install defaults, worktree refusal, opt-in updates, and no backward compatibility before 1.0; not yet shipped.
-- [Configuration walkthrough decision record](adr/0003-configure-walkthrough.md) — proposed `configure` entry, settings and prompt reports from Ruby, and migration-flow settings PRs; not shipped.
+- [Configuration walkthrough decision record](adr/0003-configure-walkthrough.md) — accepted `configure` entry, settings and prompt reports from Ruby, and migration-flow settings PRs; not yet shipped.
 - [Experiment index](../eval/README.md) — retained repositories, outcomes, and the next proposed case.
 - [Review outcomes](review-outcomes.md) — proposed record of review decisions and later assessments, not shipped behavior.
 - [Improving Shaka](improving-shaka.md) — maintainer method for investigating observed workflow failures.
