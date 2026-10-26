@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
+require 'rbconfig'
+
 module Shaka
-  # Whether a repository command file may be executed.
+  # Whether a repository command file may be executed, and how to start Shaka's own launcher.
   #
   # Unix records that in the file mode, and File.executable? reads it. Windows Ruby
   # never reports an extensionless file as executable, even when Git stored mode
@@ -18,6 +20,17 @@ module Shaka
     end
 
     def windows? = RUBY_PLATFORM.match?(/mswin|mingw/)
+
+    # The argv that starts the sh helper LAUNCHER. Windows CreateProcess ignores its shebang
+    # (#798), so there it is the launcher's exec line: this Ruby with the same flags and entry
+    # point. test/shaka_command_test.rb keeps the two equal.
+    def helper_command(launcher, windows: windows?)
+      return [launcher] unless windows
+
+      scripts = File.dirname(launcher)
+      requirement = File.join(scripts, '../lib/shaka/ruby_requirement.rb')
+      [RbConfig.ruby, '--disable-gems', '--disable-rubyopt', '-r', requirement, File.join(scripts, 'shaka.rb')]
+    end
 
     def shebang?(path)
       File.open(path, 'rb') { |io| io.read(2) == '#!' }

@@ -3,7 +3,8 @@
 require_relative 'test_helper'
 require 'shellwords'
 
-# Windows test runs start the helper through shaka_command's Ruby argv instead of the sh launcher.
+# On Windows, Shaka and its tests start the helper through ExecutableFile.helper_command's Ruby argv
+# instead of the sh launcher.
 class ShakaCommandTest < Minitest::Test
   LAUNCHER = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
 
@@ -20,5 +21,9 @@ class ShakaCommandTest < Minitest::Test
 
     assert_predicate status, :success?, output
     assert_includes output, 'Usage: shaka'
+  end
+
+  def test_other_platforms_run_the_launcher
+    assert_equal [LAUNCHER], shaka_command(LAUNCHER, windows: false)
   end
 end
