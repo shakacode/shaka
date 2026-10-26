@@ -119,6 +119,8 @@ module Shaka
         return { 'models' => [], 'cache_neutral_dollars' => 'UNKNOWN', 'billed_dollars' => 'UNKNOWN' } if files.empty?
 
         native = @usage.read(host: @runtime.host, files: files)
+        return native unless files.one? && !files.first.include?('/subagents/')
+
         HarborFingerprint.bind_usage(native, lock: lock, host: @runtime.host)
       end
 

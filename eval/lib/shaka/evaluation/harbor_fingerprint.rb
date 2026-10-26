@@ -58,17 +58,17 @@ module Shaka
       end
 
       def bind_usage(usage, lock:, host:)
-        settings = launch_settings(lock, host)
-        provider = { 'codex' => 'openai', 'claude-code' => 'anthropic' }.fetch(host)
-        models = usage.fetch('models').map do |row|
-          next row unless row['provider'] == provider
+        models = usage.fetch('models')
+        return usage unless models.one?
 
-          fallback = settings.select do |key, value|
-            row[key] == 'UNKNOWN' && value.is_a?(String) && !value.strip.empty?
-          end
-          row.merge(fallback)
+        row = models.first
+        provider = { 'codex' => 'openai', 'claude-code' => 'anthropic' }.fetch(host)
+        return usage unless row['provider'] == provider
+
+        fallback = launch_settings(lock, host).select do |key, value|
+          row[key] == 'UNKNOWN' && value.is_a?(String) && !value.strip.empty?
         end
-        usage.merge('models' => models)
+        usage.merge('models' => [row.merge(fallback)])
       end
 
       def model(capture, host)

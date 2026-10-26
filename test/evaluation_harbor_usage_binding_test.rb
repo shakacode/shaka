@@ -19,15 +19,39 @@ class EvaluationHarborUsageBindingTest < Minitest::Test
   end
 
   def test_saved_usage_and_fingerprint_share_the_observed_launch_configuration
-    setup_harbor(host: 'claude-code')
-    capture_native_files('claude-code')
-    observed = native_usage
-    @usage.define_singleton_method(:read) { |**| observed }
-    assert_equal 'complete', harbor_run['status']
-    saved = saved_harbor_record
+    saved = capture_usage(remove: 'nested')
     assert_equal 'requested-model', saved.dig('usage', 'models', 0, 'configured_model')
     assert_equal saved.dig('fingerprint', 'configured_model'), saved.dig('usage', 'models', 0, 'configured_model')
     assert_equal 'observed-model', saved.dig('usage', 'models', 0, 'routed_model')
+  end
+
+  def test_multiple_transcripts_keep_unknown_per_response_configuration
+    saved = capture_usage
+    assert_equal 'UNKNOWN', saved.dig('usage', 'models', 0, 'configured_model')
+  end
+
+  def test_only_a_child_transcript_cannot_inherit_the_root_configuration
+    saved = capture_usage(remove: 'first.jsonl')
+    assert_equal 'UNKNOWN', saved.dig('usage', 'models', 0, 'configured_model')
+  end
+
+  def test_other_providers_cannot_inherit_the_launch_configuration
+    observed = native_usage
+    observed['models'].first['provider'] = 'openai'
+    assert_equal observed, bind(observed)
+  end
+
+  def test_unknown_effort_uses_launch_configuration_without_changing_native_input
+    observed = native_usage
+    observed['models'].first['effort'] = 'UNKNOWN'
+    assert_equal 'medium', bind(observed).dig('models', 0, 'effort')
+    assert_equal 'UNKNOWN', observed.dig('models', 0, 'effort')
+  end
+
+  def test_multiple_models_keep_unknown_per_response_configuration
+    observed = native_usage
+    observed['models'] << observed['models'].first.merge('routed_model' => 'secondary-model')
+    assert_equal observed, bind(observed)
   end
 
   def test_launch_cannot_replace_a_known_native_configuration_or_routed_model
@@ -53,6 +77,21 @@ class EvaluationHarborUsageBindingTest < Minitest::Test
   end
 
   private
+
+  def capture_usage(remove: nil)
+    setup_harbor(host: 'claude-code')
+    capture_native_files('claude-code')
+    omit_session(remove) if remove
+    observed = native_usage
+    @usage.define_singleton_method(:read) { |**| observed }
+    assert_equal 'complete', harbor_run['status']
+    saved_harbor_record
+  end
+
+  def omit_session(relative)
+    path = File.join(@bin, 'harbor')
+    File.open(path, 'a') { it.puts "FileUtils.rm_rf(File.join(trial, 'agent/sessions', #{relative.inspect}))" }
+  end
 
   def bind(usage, lock: { 'agent' => { 'name' => 'claude-code', 'model_name' => 'anthropic/requested-model',
                                        'kwargs' => { 'reasoning_effort' => 'medium' } } })
