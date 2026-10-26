@@ -86,8 +86,8 @@ files its own sandbox allows, so keep secrets out of the checkout.
 When the agent knows Auto-review checks its commands, it quotes the statement
 that covers the review before starting it. It also quotes it before retrying a
 denied review. OpenAI documents that Auto-review reads your messages and the
-agent's visible updates, so the quote reaches it. In those cases, without a
-statement or when the review would go beyond it, the agent asks you first. It names the provider,
+agent's visible updates, so the quote reaches it. If no statement covers the
+review, the agent asks you first. It names the provider,
 the repository, and what it would send.
 
 A custom Auto-review policy, set with `[auto_review].policy` in Codex's
