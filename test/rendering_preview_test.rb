@@ -79,6 +79,19 @@ class RenderingPreviewTest < Minitest::Test
     refute Shaka::RenderingPreview.required?(github)
   end
 
+  # The task source line renders from provenance, so a PR changing either can preview its description.
+  def test_provenance_and_task_source_renderers_can_be_previewed
+    %w[provenance.rb task_source_line.rb].each do |name|
+      github = preview_github
+      github.define_singleton_method(:api_list) do |_path|
+        [{ 'filename' => "skills/shaka/lib/shaka/publication/#{name}" }]
+      end
+      result = rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->")
+
+      assert_empty result.fetch('owed'), name
+    end
+  end
+
   def test_unsupported_renderers_block_instead_of_publishing_an_incomplete_preview
     github = preview_github
     def github.api_list(_path) = [{ 'filename' => 'skills/shaka/lib/shaka/publication/text.rb' }]

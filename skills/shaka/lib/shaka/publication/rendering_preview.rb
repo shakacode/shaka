@@ -19,7 +19,9 @@ module Shaka
                          post_implementation/history.rb post_implementation/auto_merge_preview.rb
                          post_implementation/disposition.rb post_implementation/merge_warning.rb]
                       .map { |path| "skills/shaka/lib/shaka/#{path}" }.freeze
-    RENDERERS = %w[usage_details usage_pricing metrics verification_gates diff_buckets intent_verification publication]
+    # In load order: a renderer loads before the ones that call it.
+    RENDERERS = %w[usage_details usage_pricing metrics verification_gates diff_buckets intent_verification
+                   task_source_line provenance publication]
                 .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
 
@@ -42,8 +44,7 @@ module Shaka
       raise Error, 'Rendering preview checkout does not name the live head.' unless git(root, 'rev-parse',
                                                                                         'HEAD').strip == head
 
-      sources = RENDERERS.to_h { |path| [path, git(root, 'show', "#{head}:#{path}")] }
-      sources.each { |path, source| load_renderer(path, source) }
+      sources(root, head).each { |path, source| load_renderer(path, source) }
       "#{yield}\n<!-- shaka:rendering-preview #{head} -->\n"
     end
 
@@ -85,6 +86,14 @@ module Shaka
       end
     end
 
+    # A listed renderer the head does not have yet, such as one its PR adds, keeps the installed copy.
+    def sources(root, head)
+      present = RENDERERS.select { |path| present?(root, head, path) }
+      present.to_h { |path| [path, git(root, 'show', "#{head}:#{path}")] }
+    end
+
+    def present?(root, head, path) = system('git', '-C', root, 'cat-file', '-e', "#{head}:#{path}", err: File::NULL)
+
     def git(root, *)
       output, error, status = Open3.capture3('git', '-C', root, *)
       raise Error, "Cannot read rendering preview: #{error.strip}" unless status.success?
@@ -103,6 +112,6 @@ module Shaka
       $VERBOSE = previous
     end
 
-    private_class_method :git, :load_renderer, :changed_renderers, :supported!, :rendering_path?
+    private_class_method :git, :sources, :present?, :load_renderer, :changed_renderers, :supported!, :rendering_path?
   end
 end
