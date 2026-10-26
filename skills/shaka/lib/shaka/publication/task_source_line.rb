@@ -68,7 +68,7 @@ module Shaka
 
     def self.task(spec)
       return "GitHub#{' PR' if spec['task_source'] == 'pull_request'} ##{spec['task_number']}" if spec['task_number']
-      return 'issue' unless spec['task_tracker']
+      return spec['task_source'] == 'pull_request' ? 'pull request' : 'issue' unless spec['task_tracker']
 
       name = "#{TRACKERS.fetch(spec['task_tracker'])} #{spec['task_key']}"
       spec['task_url'] ? "[#{name}](#{spec['task_url']})" : name

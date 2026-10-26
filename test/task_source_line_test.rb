@@ -41,6 +41,7 @@ class TaskSourceLineTest < Minitest::Test
 
   def test_a_task_in_another_github_repository_names_only_its_kind
     assert_equal '**Task:** issue', line(PUBLIC_PROVENANCE.merge('task_source' => 'issue'))
+    assert_equal '**Task:** pull request', line(PUBLIC_PROVENANCE.merge('task_source' => 'pull_request'))
   end
 
   def test_refuses_a_relation_or_tracker_it_cannot_render_safely

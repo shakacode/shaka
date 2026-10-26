@@ -357,7 +357,7 @@ The helper renders the Task line after Why in Intent:
 | issue `1234`, `part_of` | `GitHub #1234 · part of` |
 | issue `1234`, `fixes` | `GitHub · fixes #1234`, which closes the issue when the PR merges into the default branch |
 | `linear`, `MKT-1234` | `Linear MKT-1234` |
-| issue with no number or key | `issue` |
+| issue or PR with no number or key | `issue` or `pull request` |
 
 Carry those values from intake; recommendations and host settings do not establish
 a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not
