@@ -32,7 +32,7 @@
   Put material merge-affecting gaps in `merge_limitations`; accepted gaps stay in `not_verified`.
   Checks, tables, and PR-specific `details` share one Evidence and limitations disclosure.
   Put the initiating request and useful decision history in optional `task_history`.
-- Change and review shows GitHub's file/line totals and path-based file buckets.
+- Intent ends with `scope`, GitHub's file/line totals, and path-based file buckets.
   Count each current filename once: Tests, then Docs/instructions, Code, or Other.
   Inspect the expandable paths for ambiguous classifications; buckets describe paths, not effort.
   Supply `leaves_out` only for a deliberately deferred part readers would reasonably expect.
