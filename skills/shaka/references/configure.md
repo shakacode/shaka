@@ -15,7 +15,8 @@ shaka prompt show (review|checkpoint|opening) --root DIR --ref SHA [--head REV -
 ```
 
 - Pass the verified default-branch commit that `seam check --ref` used. The command reads
-  settings and prompt files at that commit, the way the reviewers do.
+  settings and prompt files at that commit, the way the reviewers do. When a settings
+  preview is selected, settings come from the preview, as they do for the reviewers; say so.
 - Add `--head` and `--base` when the user asks about a specific change. A nested
   `AGENTS.md` reaches a reviewer only when the change touches its directory. Without a
   change, the output shows the root file and lists each nested one with its directory.

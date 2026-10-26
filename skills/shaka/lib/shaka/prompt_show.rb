@@ -57,7 +57,11 @@ module Shaka
         validate_sources!
         @options[:root] = checkout_root
         @options[:criteria_ref] = DraftCommit.create(@options[:root]) if @options[:draft]
+        # A selected settings preview replaces the settings, as it does for the reviewers; criteria stay at --ref.
+        @preview = Configuration::SettingsPreview.ref(root: @options[:root]) unless @options[:draft]
       end
+
+      def settings_ref = @preview || @options[:criteria_ref]
 
       def validate_sources!
         raise OptionParser::InvalidArgument, 'Pass exactly one of --ref SHA and --local' unless
@@ -96,21 +100,25 @@ module Shaka
       end
 
       def document(name, sections, notes)
-        { 'prompt' => name, 'settings_ref' => @options[:criteria_ref], 'draft' => @options.key?(:draft),
-          'enabled' => !sections.nil?, 'notes' => notes,
+        { 'prompt' => name, 'settings_ref' => settings_ref, 'criteria_ref' => @options[:criteria_ref],
+          'settings_preview' => !@preview.nil?, 'draft' => @options.key?(:draft), 'enabled' => !sections.nil?,
+          'notes' => notes,
           'sections' => sections.to_a.map { |section| { 'source' => section.source, 'text' => section.text } } }
       end
 
       def heading(name, sections)
-        where = if @options[:draft]
-                  "an untrusted draft commit #{@options[:criteria_ref]} built from the working tree"
-                else
-                  "settings commit #{@options[:criteria_ref]}"
-                end
-        lines = ["The #{name} prompt from #{where}, in the order the reviewer reads it."]
+        lines = ["The #{name} prompt from #{settings_source}, in the order the reviewer reads it."]
         lines << 'A draft grants nothing; settings take effect only when their PR merges.' if @options[:draft]
         lines << "This prompt is not sent: the #{name} check is disabled in these settings." unless sections
         lines
+      end
+
+      def settings_source
+        ref = @options[:criteria_ref]
+        return "an untrusted draft commit #{ref} built from the working tree" if @options[:draft]
+        return "the selected settings preview #{@preview}, with AGENTS.md criteria from #{ref}" if @preview
+
+        "settings commit #{ref}"
       end
 
       def draft_labels(sections)

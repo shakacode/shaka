@@ -2,6 +2,7 @@
 
 require_relative 'support/post_implementation_fixture'
 require 'shaka/opening_publication'
+require 'shaka/configuration'
 
 # A trusted commit with every source a reviewer prompt can draw on, and a change that touches lib/.
 module PromptShowFixture
@@ -53,6 +54,14 @@ module PromptShowFixture
   def shown_text(document) = document.fetch('sections').map { |section| section.fetch('text') }.join
   def sources(document) = document.fetch('sections').map { |section| section.fetch('source') }
   def sent_prompt(root) = JSON.parse(File.read(File.join(root, 'trace.json'))).fetch('prompt')
+
+  # A commit on another branch whose settings drop the replacement prompt.
+  def preview_commit(root, review)
+    git!(root, 'switch', '--quiet', '-c', 'settings-preview')
+    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(review)))
+    commit!(root, 'preview settings')
+    git!(root, 'rev-parse', 'HEAD').strip.tap { git!(root, 'switch', '--quiet', '-') }
+  end
 
   def review_prompt_sent(root, base, head, bin)
     fake_codex(bin, head)
@@ -127,6 +136,19 @@ class PromptShowTest < Minitest::Test
       assert_includes shown_text(document), 'Draft review rule'
       refute_equal base, document.fetch('settings_ref')
       assert_includes git!(root, 'status', '--porcelain'), '.agents/shaka/instructions/review.md'
+    end
+  end
+
+  # Reviewers read a selected preview's settings, so the report names that commit, not --ref.
+  def test_a_settings_preview_is_reported_as_the_settings_source
+    with_change do |root, base, _head, _bin|
+      preview = preview_commit(root, {})
+      Shaka::Configuration::SettingsPreview.new(root:).start(preview)
+      document = show(root, 'review', '--ref', base, '--reviewer', 'openai/codex')
+
+      assert_equal [preview, base, true], document.values_at('settings_ref', 'criteria_ref', 'settings_preview')
+      refute(sources(document).any? { |source| source.start_with?('replacement ') })
+      assert_includes sources(document), "AGENTS.md AGENTS.md@#{base}"
     end
   end
 
