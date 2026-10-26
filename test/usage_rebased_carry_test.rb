@@ -110,6 +110,15 @@ class UsageRebasedCarryTest < Minitest::Test
     refute_includes body, '<bad>'
   end
 
+  # Break: replacing a report whose note had been edited to fail its checks aborted the publish.
+  def test_replacing_a_report_with_a_bad_note_does_not_stop_the_publish
+    body = unshared([implementation('a', %w[c1], note: '<bad>'), review('a', 'r1')])
+    body, stats = publish(body, [implementation('b', %w[c1 c2])])
+
+    assert_equal({ 'retained' => 1, 'replaced' => 1, 'dropped' => 0 }, stats)
+    refute_includes body, '<bad>'
+  end
+
   # Break: a body published before notes were shared, such as PR 837's, would lose its notes.
   def test_a_body_with_a_full_note_in_every_report_is_read_and_shared
     body, stats = publish(unshared([review('a', 'r1'), review('b', 'r2')]), [review('c', 'r3')])

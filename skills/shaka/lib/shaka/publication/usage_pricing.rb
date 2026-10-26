@@ -64,15 +64,22 @@ module Shaka
     end
 
     # Puts each referenced note back in full, from any record in `sources` that holds it, so a record
-    # stays readable after the one holding its note is replaced. An unknown reference reads as no note.
+    # stays readable after the one holding its note is replaced. An unknown reference reads as no note,
+    # and so does a source note that fails its checks, since its record may be one carry is replacing.
     def inline(blocks, sources)
-      notes = sources.filter_map { |block| from_block(block) }.to_h { |note| [key(note), note] }
+      notes = sources.filter_map { |block| lendable(block) }.to_h { |note| [key(note), note] }
       blocks.map do |block|
         block.sub(REFERENCE) do
           note = notes[Regexp.last_match(1)]
           note ? "#{hidden(note)}\n" : ''
         end
       end
+    end
+
+    def lendable(block)
+      from_block(block)
+    rescue Error
+      nil
     end
 
     # Takes [label, note] pairs, one per report, and lists each distinct note under the
