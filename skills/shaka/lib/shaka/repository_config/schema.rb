@@ -26,6 +26,7 @@ module Shaka
       OPTIONAL = %w[base_branch branches wip pr_description repo_prefix prose_limits project_guidance
                     checkpoint].freeze
       OPTIONAL_REVIEW_KEYS = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, ReviewSchema::PROMPT_FILE,
+                              ReviewSchema::CUSTOM_INSTRUCTIONS,
                               ReviewSchema::LOCAL_REVIEW_COUNT, ReviewCoverage::KEY, ReviewLimit::KEY,
                               'ci_review_wait'].freeze
 

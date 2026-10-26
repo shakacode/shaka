@@ -53,7 +53,7 @@ module Shaka
         raise Error, "#{label}.reviewer must be a supported provider/family" unless EFFORTS.key?(reviewer)
 
         validate_choices(label, reviewer)
-        [REPLACEMENT, CUSTOM].each { |key| prompt_path!(@settings[key], "#{label}.#{key}") if @settings.key?(key) }
+        prompt_paths!(@settings, [REPLACEMENT, CUSTOM], label)
       end
 
       private

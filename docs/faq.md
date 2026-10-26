@@ -144,13 +144,13 @@ file at the same commit. Claude Code is a separate case: recent versions can rea
 
 ## Can I customize the prompt Shaka gives its local reviewer?
 
-Yes. In your [settings](settings.md) file, set
-[`review.replacement_prompt_file`](settings.md#reviewreplacement_prompt_file) to the path of a Markdown
-file, relative to the repository root, such as `.agents/review-prompt.md`. It
-replaces Shaka's default instructions for what the local reviewer looks for and
-how it reports. To give one review agent different instructions, set
-`replacement_prompt_file` on that agent's entry in `local_review_agents`. Copy Shaka's
-[default instructions](../skills/shaka/config/review-prompt.md) to start.
+Yes. Write your own rules in `.agents/shaka/instructions/review.md`. Shaka adds them
+after its [default instructions](../skills/shaka/config/review-prompt.md), so you keep
+Shaka's rules and add yours; [`review.custom_instructions_file`](settings.md#reviewcustom_instructions_file)
+names another file. To remove one of Shaka's rules instead, set
+[`review.replacement_prompt_file`](settings.md#reviewreplacement_prompt_file) to a copy of the
+default instructions, or set `replacement_prompt_file` on one agent's entry in
+`local_review_agents`. Paths are relative to the repository root.
 
 With shared settings, Shaka reads the default-branch version, so a PR that edits it
 is reviewed with the current version. With individual setup, keep the file in

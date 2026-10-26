@@ -30,6 +30,10 @@ module Shaka
 
       def renamed_prompt_file!(mapping, label) = Validation.renamed_prompt_file!(mapping, label)
 
+      def prompt_paths!(mapping, keys, label)
+        keys.each { |key| prompt_path!(mapping[key], "#{label}.#{key}") if mapping.key?(key) }
+      end
+
       def prompt_path!(value, label)
         path = string!(value, label)
         inside = !Pathname.new(path).absolute? && !path.split('/').include?('..')

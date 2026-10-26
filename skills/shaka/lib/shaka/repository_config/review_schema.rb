@@ -18,6 +18,7 @@ module Shaka
       LOCAL_REVIEW_AGENTS = 'local_review_agents'
       LOCAL_REVIEW_COUNT = 'local_review_count'
       PROMPT_FILE = 'replacement_prompt_file'
+      CUSTOM_INSTRUCTIONS = 'custom_instructions_file'
       MODEL = 'model'
       EFFORT = 'effort'
       # Codex reads the effort as configuration text, and every reviewer repeats it in the attestation.
@@ -81,7 +82,7 @@ module Shaka
         validate_review_wait
         ReviewLimit.from(@review)
         local_review_agents!(@review[LOCAL_REVIEW_AGENTS]) if @review.key?(LOCAL_REVIEW_AGENTS)
-        prompt_path!(@review[PROMPT_FILE], "review.#{PROMPT_FILE}") if @review.key?(PROMPT_FILE)
+        prompt_paths!(@review, [PROMPT_FILE, CUSTOM_INSTRUCTIONS], 'review')
       end
 
       private

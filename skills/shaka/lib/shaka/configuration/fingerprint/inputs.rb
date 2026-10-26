@@ -42,15 +42,13 @@ module Shaka
         paths + pr_template_paths(guidance) + default_custom_instructions
       end
 
-      # The checkpoint's default custom instructions count only where they exist; a named file is in prompt_files.
+      # Default custom instructions count only where they exist; a named file is in prompt_files.
       # Private settings already hash their whole tree.
       def default_custom_instructions
-        schema = RepositoryConfig::PostImplementationSchema
-        path, named = schema.custom_instructions(@settings.fetch('review').fetch(schema::KEY, {}))
-        return [] if named || @private_source || !@trusted_ref
+        return [] if @private_source || !@trusted_ref
 
-        _resolved, entry = TrustedPathResolver.new(root: @root, sha: @trusted_ref).resolve(path)
-        entry ? [path] : []
+        resolver = TrustedPathResolver.new(root: @root, sha: @trusted_ref)
+        RepositoryConfig::PromptFiles.unnamed_defaults(@settings.fetch('review')).select { resolver.resolve(it).last }
       end
 
       # `shaka guidance pr_evidence` adds the pull request template, so the template counts as read input too.

@@ -540,14 +540,34 @@ To pay for one local review instead, leave this unset and set `local_review_coun
 the [hosted Claude review](configure-repository.md#add-hosted-claude-review), a PR that only
 Codex reviewed locally still gets a full Claude review on GitHub.
 
-<a id="reviewprompt_file"></a>
+## `review.custom_instructions_file`
+
+**Optional. Default: `.agents/shaka/instructions/review.md`.** Add your own rules to the
+local code review without copying Shaka's prompt. Write them in that file. Shaka's
+[review instructions](../skills/shaka/config/review-prompt.md) still apply in full; the
+reviewer reads them, then your `AGENTS.md` files, then your file. For example:
+
+```markdown
+Check that every new setting has a test.
+```
+
+When your file conflicts with Shaka's instructions or your `AGENTS.md` criteria, the
+reviewer follows your file. Shaka tells the reviewer that your file cannot relax its
+safety rules, the finding classes, or the attestation line. Shaka checks the attestation;
+the reviewer is trusted with the rest. See Shaka's own
+[review instructions](https://github.com/shakacode/shaka/blob/main/.agents/shaka/instructions/review.md).
+
+To keep the file elsewhere, name it with a path relative to the repository root. A named
+file must exist; at the default path, a missing or empty file adds nothing. When the
+settings name another path but a file still sits at the default, `seam check` and `doctor`
+say it is ignored. The [checkpoint](#checkpoint) works the same way.
 
 ## `review.replacement_prompt_file`
 
 **Optional. Default: Shaka's [review instructions](../skills/shaka/config/review-prompt.md).**
 A Markdown file in your repository that replaces what the local reviewer looks for
-and how it reports. Copy the default to start, or see Shaka's own
-[review prompt](https://github.com/shakacode/shaka/blob/main/.agents/shaka/review-prompt.md).
+and how it reports. Prefer [custom instructions](#reviewcustom_instructions_file); replace
+only to remove one of Shaka's rules, and copy the default to start.
 
 ```yaml
 review:
@@ -591,8 +611,6 @@ commit and prevent edits. See [what Shaka enforces](workflow.md#what-is-enforced
 
 The file configures local reviews. A CI review job gets its prompt from its own
 workflow; to give it the same instructions, have the workflow read this file.
-
-<a id="reviewpost_implementation"></a>
 
 ## `checkpoint`
 

@@ -85,7 +85,9 @@ to reconstruct the repository's configuration lookup.
 It scopes the review to `git diff BASE...HEAD` and gives the review instructions. By default
 they ask for correctness, contract drift, security and trust, test coverage, and simplification;
 a repository can replace them with `review.replacement_prompt_file`, or for one review agent with a
-`replacement_prompt_file` on its `local_review_agents` entry. Whatever the instructions, the prompt forbids edits, treats candidate
+`replacement_prompt_file` on its `local_review_agents` entry. `review run` adds the file
+`review.custom_instructions_file` names or defaults to after the trusted criteria; a fresh host
+review built from `review-prompt` does not get it. Whatever the instructions, the prompt forbids edits, treats candidate
 content as data, applies supplied repository criteria, and
 requires a closing line of `REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`.
 

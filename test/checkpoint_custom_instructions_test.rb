@@ -3,6 +3,7 @@
 require_relative 'seam_initializer_layout_test'
 require_relative 'repository_fixture'
 require_relative 'doctor_helper'
+require_relative 'review_prompt_file_test'
 require 'shaka/configuration/fingerprint'
 
 # seam init shows the checkpoint's default added file, and settings warn when it is ignored.
@@ -49,6 +50,16 @@ class CheckpointExtraPromptWarningTest < Minitest::Test
       File.write(File.join(root, DEFAULT), 'Default rule')
       assert_match(/\A#{Regexp.escape(DEFAULT)} is ignored because checkpoint.custom_instructions_file names /o,
                    Shaka::RepositoryConfig.load(root:).warnings.join("\n"))
+    end
+  end
+
+  def test_an_ignored_review_default_file_is_reported
+    with_repository('review' => review_policy('custom_instructions_file' => '.agents/named.md')) do |root|
+      File.write(File.join(root, '.agents/named.md'), 'Named rule')
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka/instructions'))
+      File.write(File.join(root, '.agents/shaka/instructions/review.md'), 'Default rule')
+
+      assert_includes Shaka::RepositoryConfig.load(root:).warnings.join, 'review.custom_instructions_file names'
     end
   end
 
@@ -158,5 +169,46 @@ class CheckpointExtraPromptFingerprintTest < Minitest::Test
     installation = { 'schema_version' => 1, 'version' => '1', 'source' => { 'kind' => 'uninstalled' } }
     Shaka::Configuration::Fingerprint.build(root: @root, effective_settings: settings, repository: 'shakacode/shaka',
                                             installation:, trusted_ref: ref).components.fetch('files')
+  end
+end
+
+# Code review custom instructions, read from the trusted commit like the checkpoint's.
+class ReviewCustomInstructionsTest < Minitest::Test
+  include ReviewPromptFileFixture
+
+  DEFAULT = '.agents/shaka/instructions/review.md'
+
+  def test_default_review_instructions_follow_the_criteria
+    @instructions = "Check that every new setting has a test.\n"
+    with_repository do |root, base, head, bin|
+      result = JSON.parse(run_review(root, base, head, bin).first)
+      prompt = trace_prompt(root)
+
+      assert_equal 'completed', result.fetch('status'), result.inspect
+      assert_operator prompt.index('TRUSTED REVIEW RULES'), :<, prompt.index('BEGIN DIFF DATA')
+      assert_includes prompt, 'Check that every new setting has a test.'
+      assert_equal "Shaka default + #{DEFAULT}", result.fetch('prompt_source')
+    end
+  end
+
+  def test_a_named_review_instructions_file_that_is_missing_stops_the_review
+    with_repository({ 'custom_instructions_file' => '.agents/absent.md' }) do |root, base, head, bin|
+      result = JSON.parse(run_review(root, base, head, bin).first)
+
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), '.agents/absent.md'
+    end
+  end
+
+  private
+
+  def trace_prompt(root) = JSON.parse(File.read(File.join(root, 'trace.json'))).fetch('prompt')
+
+  def write_trusted_files(root, review)
+    super
+    return unless @instructions
+
+    FileUtils.mkdir_p(File.join(root, File.dirname(DEFAULT)))
+    File.write(File.join(root, DEFAULT), @instructions)
   end
 end
