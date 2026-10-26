@@ -40,11 +40,10 @@ class WindowsHelperStartTest < Minitest::Test
 
   def with_unrunnable_launcher
     Dir.mktmpdir('shaka-windows-helper') do |root|
-      scripts = File.join(root, 'skills/shaka/scripts')
-      FileUtils.mkdir_p(scripts)
-      FileUtils.cp(File.join(SKILL, 'scripts/shaka.rb'), scripts)
-      File.symlink(File.join(SKILL, 'lib'), File.join(root, 'skills/shaka/lib'))
-      launcher = File.join(scripts, 'shaka')
+      # A copy, not a symlink: Windows runners may lack the symlink privilege.
+      FileUtils.mkdir_p(File.join(root, 'skills'))
+      FileUtils.cp_r(SKILL, File.join(root, 'skills'))
+      launcher = File.join(root, 'skills/shaka/scripts/shaka')
       File.write(launcher, "#!/bin/sh\nexit 1\n")
       File.chmod(0o755, launcher)
       yield root, launcher
