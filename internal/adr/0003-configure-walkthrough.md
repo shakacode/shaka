@@ -85,7 +85,8 @@ as decision 3, but the code is tied to its own layout. Nothing is reused.
    after merge when the change uses a key or value an older Shaka rejects: a new key, a
    new enum option, or a new nested shape. It lists that as an after-merge step in the PR,
    and lists it whenever it cannot tell. Switching between long-supported values lists no
-   update.
+   update. This rule replaces the narrower one in the human review floors procedure:
+   step 3 moves it to one shared section that both procedures point to.
 5. **Reads are trusted; a draft is labeled.** Both commands read settings and prompt files
    at the `--ref` default-branch commit. With `--local` instead, as `seam check --local`
    does, they read the working tree and label every section as an untrusted draft, so a
@@ -125,7 +126,8 @@ can stop after any step and still be usable.
    smallest useful stop: it covers what cannot be read from `config.yml`, and gives up
    decision 2's guarantee that no setting is left out.
 2. `configure settings`, the anchor test, and the procedure's settings section.
-3. The settings-change section of the procedure and the guide section.
+3. The settings-change section of the procedure, the shared update rule, and the guide
+   section.
 
 Step 1 lands after #837, so it reads the renamed settings and the checkpoint's custom
 instructions. It replaces #818's step 5 `prompt show` work rather than duplicating it.
