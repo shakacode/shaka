@@ -18,7 +18,8 @@ line ships, this check fails on purpose.
 A run with the repository, model key, or token unset posts a notice and
 succeeds. Merging this workflow is safe before the setup below.
 
-Manual runs start immediately. A push waits until about an hour after the
+Manual runs start immediately and test the selected ref; choose `main` to
+test merged code. A push waits until about an hour after the
 previous agent start, including failed or cancelled attempts. A newer push cancels the run still in progress,
 so the run that finishes uses the latest `main`.
 
@@ -40,11 +41,13 @@ set secrets, or change organization settings.
    that it is set. The agent step receives it as `CURSOR_API_KEY`.
    The separate Cursor installer step receives neither the model key nor
    the sandbox write token.
-5. Set the secret `SHAKA_CANARY_TOKEN` to a token that can clone the
+5. Set the secret `SHAKA_CANARY_TOKEN` to a user-owned personal access token that can clone the
    sandbox, push branches, and open and close pull requests.
    `gh repo view OWNER/REPO --json viewerPermission` must report `WRITE`
    or `ADMIN`. A blank permission fails `doctor --brief` and the canary
-   goes red. Reviewer CLIs on the runner are a separate gap,
+   goes red. GitHub App installation tokens are unsupported here.
+   If the token's user identity cannot be read, previous elapsed time stays
+   `UNKNOWN`. Reviewer CLIs on the runner are a separate gap,
    [issue 796](https://github.com/shakacode/shaka/issues/796).
 6. Optionally set `SHAKA_CANARY_KEEP` to how many open canary pull
    requests to keep. The default is 5. Older open pull requests are closed.

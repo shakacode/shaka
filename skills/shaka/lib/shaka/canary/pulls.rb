@@ -19,6 +19,13 @@ module Shaka
         canaries(pulls).select { |pull| pull['headRefName'] == branch }
       end
 
+      def from_api(pull)
+        head = pull.dig('head', 'repo', 'id')
+        { 'number' => pull.fetch('number'), 'state' => pull.fetch('state'),
+          'createdAt' => pull.fetch('created_at'), 'headRefName' => pull.dig('head', 'ref'),
+          'isCrossRepository' => head.nil? || head != pull.dig('base', 'repo', 'id') }
+      end
+
       def newest_since(pulls, since)
         pulls.select { |pull| created(pull) >= since }.max_by { |pull| pull.fetch('createdAt') }
       end

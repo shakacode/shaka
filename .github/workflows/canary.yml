@@ -53,7 +53,7 @@ jobs:
           echo "Waiting ${seconds}s before this canary."
           sleep "$seconds"
 
-      - name: Install Shaka from the merged commit
+      - name: Install the selected Shaka commit
         if: steps.preflight.outputs.action == 'run'
         run: |
           set -euo pipefail

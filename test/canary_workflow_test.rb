@@ -160,6 +160,41 @@ module CanaryCollectionFixtures
   end
 end
 
+class CanaryRetentionTest < Minitest::Test
+  include CanaryCollectionFixtures
+
+  def test_unreadable_open_inventory_fails_without_cleanup
+    Dir.mktmpdir do |dir|
+      endpoint = 'repos/shakacode/shaka-canary/pulls?state=open&per_page=100'
+      runner = FakeCanary.new(list_body, failure: endpoint)
+      result = Shaka::Canary::Collect.call(environment(dir), runner: runner)
+      assert_false result['ok']
+      assert_includes result['summary'], 'cannot list open canary pull requests'
+      assert_empty result['close']
+    end
+  end
+
+  def test_retention_uses_all_open_pulls_beyond_the_comparison_window
+    Dir.mktmpdir do |dir|
+      runner = retention_runner
+      File.write(File.join(dir, 'canary-started-at'), "2026-10-26T12:00:00Z\n")
+      result = Shaka::Canary::Collect.call(environment(dir).merge('SHAKA_CANARY_KEEP' => '30'), runner: runner)
+      assert_true result['ok'], result['summary']
+      assert_equal 31, result['number']
+      assert_equal [1], result['close']
+    end
+  end
+
+  def retention_runner
+    pulls = (1..31).map do |number|
+      created = (Time.utc(2026, 10, 26, 12) + (number * 60)).iso8601
+      branch = "shaka-canary/run-#{number == 31 ? 99 : number}-1"
+      pull(number, CANARY_BODY, created).merge('headRefName' => branch)
+    end.reverse
+    FakeCanary.new(JSON.generate(pulls.first(30)), open_pulls: pulls)
+  end
+end
+
 class CanaryCollectTest < Minitest::Test
   include CanaryCollectionFixtures
 
@@ -428,10 +463,11 @@ end
 class FakeCanary
   attr_reader :commands
 
-  def initialize(list, failure: '', comments: [])
+  def initialize(list, failure: '', comments: [], open_pulls: nil)
     @list = list
     @failure = failure
     @comments = comments
+    @open_pulls = open_pulls
     @commands = []
   end
 
@@ -448,9 +484,19 @@ class FakeCanary
   end
 
   def api(argv)
-    data = argv.include?('--slurp') ? [@comments] : @comments
+    pages = argv.last.include?('/pulls?') ? rest_open_pulls.each_slice(30).to_a : [@comments]
+    pages = pages.first(1) unless argv.include?('--paginate')
+    data = argv.include?('--slurp') ? pages : pages.first
     out = argv[2] == 'user' ? 'canary-bot' : JSON.generate(data)
     { 'out' => out, 'err' => '', 'ok' => true }
+  end
+
+  def rest_open_pulls
+    (@open_pulls || JSON.parse(@list)).map do |pull|
+      { 'number' => pull['number'], 'state' => pull['state'], 'created_at' => pull['createdAt'],
+        'head' => { 'ref' => pull['headRefName'], 'repo' => { 'id' => pull['isCrossRepository'] ? 2 : 1 } },
+        'base' => { 'repo' => { 'id' => 1 } } }
+    end
   end
 end
 

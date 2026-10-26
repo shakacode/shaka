@@ -55,7 +55,8 @@ module Shaka
 
       def close_numbers(input, found)
         keep = input['keep'].is_a?(Integer) && input['keep'].positive? ? input['keep'] : Pulls::KEEP
-        Pulls.closable(input.fetch('pulls'), keep: keep, current: found && found['number']).map do |pull|
+        inventory = Pulls.canaries(input.fetch('open_pulls', input.fetch('pulls')))
+        Pulls.closable(inventory, keep: keep, current: found && found['number']).map do |pull|
           pull['number']
         end
       end

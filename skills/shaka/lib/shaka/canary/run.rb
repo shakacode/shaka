@@ -203,13 +203,21 @@ module Shaka
         Pulls.newest_since(Pulls.for_run(pulls, @env['CANARY_BRANCH']), started_at)
       end
 
+      def open_pulls
+        ran = @runner.capture(['gh', 'api', '--paginate', '--slurp', "repos/#{repo}/pulls?state=open&per_page=100"])
+        raise "cannot list open canary pull requests: #{ran['err']}" unless ran['ok']
+
+        Pulls.canaries(JSON.parse(ran['out']).flatten(1).map { |pull| Pulls.from_api(pull) })
+      end
+
       def input_for(pulls, found)
         coverage = Coverage.new(@env, @runner)
         { 'pulls' => pulls, 'started_at' => started_at.iso8601, 'finished_at' => Time.now.utc.iso8601,
           'shaka_sha' => @env.fetch('GITHUB_SHA'), 'shaka_repo' => repository,
           'run_url' => run_url, 'commits' => coverage.commits, 'keep' => keep,
           'command_checks' => found ? RepositoryChecks.new(@env, @runner).run(found) : [],
-          'previous_comments' => coverage.comments(pulls, found), 'branch' => @env['CANARY_BRANCH'] }
+          'previous_comments' => coverage.comments(pulls, found), 'branch' => @env['CANARY_BRANCH'],
+          'open_pulls' => open_pulls }
       end
 
       def write(result)
