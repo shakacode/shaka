@@ -23,7 +23,7 @@ module PostImplementationFixture
 
   def commit_candidate_instructions(root)
     File.write(File.join(root, '.agents/agent-workflow.yml'),
-               YAML.dump(seam('post_implementation' => { 'enabled' => false, 'model' => 'candidate-model' })))
+               YAML.dump(seam('checkpoint' => { 'enabled' => false, 'model' => 'candidate-model' })))
     directory = File.join(root, 'skills/shaka/references')
     FileUtils.mkdir_p(directory)
     File.write(File.join(directory, 'writing.md'), 'Candidate-only writing instruction')

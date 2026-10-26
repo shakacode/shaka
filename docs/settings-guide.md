@@ -126,7 +126,7 @@ The agent starts from Shaka's defaults when preparing replacement instructions.
 Use one prompt for all local reviewers or one for a particular reviewer. Team
 instructions come from the default branch; individual instructions stay in your
 local settings folder. See
-[custom review instructions](settings.md#reviewprompt_file).
+[custom review instructions](settings.md#reviewreplacement_prompt_file).
 
 ## Keep PR explanations useful
 
@@ -150,7 +150,7 @@ Both team and individual settings support these options.
 Shaka recommends what to do next at a
 [checkpoint](pr-verification.md#checkpoint) and records the owner's
 choice for later. See that guide for the terms and current report labels.
-[Checkpoint settings](settings.md#reviewpost_implementation) choose who evaluates
+[Checkpoint settings](settings.md#checkpoint) choose who evaluates
 the result, with team or individual setup.
 
 ## Add your own PR requirements

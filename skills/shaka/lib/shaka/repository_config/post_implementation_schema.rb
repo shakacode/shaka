@@ -11,26 +11,49 @@ module Shaka
       include Validation
 
       KEY = 'post_implementation'
-      KEYS = %w[enabled reviewer model effort prompt_file].freeze
+      SECTION = 'checkpoint'
+      REPLACEMENT = 'replacement_prompt_file'
+      CUSTOM = 'custom_instructions_file'
+      KEYS = ['enabled', 'reviewer', 'model', 'effort', REPLACEMENT, CUSTOM].freeze
       EFFORTS = { 'openai/codex' => %w[low medium high xhigh max],
                   'anthropic/claude' => %w[low medium high xhigh max],
                   'xai/grok' => %w[low medium high] }.freeze
-      DEFAULTS = Defaults.fetch('review', KEY)
+      DEFAULTS = Defaults.fetch(SECTION)
+      MOVED = "review.#{KEY} moved to the top-level #{SECTION} section".freeze
 
       def self.reviewer(identity) = ReviewerSelection.parse(identity).values.map(&:downcase).join('/')
 
-      def initialize(settings) = @settings = settings
+      # Internal readers keep finding the checkpoint under review; settings write it only as `checkpoint`.
+      def self.fold(data)
+        review = data.is_a?(Hash) && data['review'].is_a?(Hash) ? data['review'] : {}
+        if review.key?(KEY)
+          raise Error, "#{MOVED}. Tell your agent: " \
+                       '"Move review.post_implementation to checkpoint in the Shaka settings."'
+        end
+        return review unless data.is_a?(Hash) && data.key?(SECTION)
+
+        review.merge(KEY => data[SECTION])
+      end
+
+      # The custom instructions' path, and whether settings named it; a named file must exist, the default need not.
+      def self.custom_instructions(settings) = [settings.fetch(CUSTOM, DEFAULTS.fetch(CUSTOM)), settings.key?(CUSTOM)]
+
+      def initialize(settings, label: SECTION)
+        @settings = settings
+        @label = label
+      end
 
       def validate
-        label = "review.#{KEY}"
+        label = @label
         mapping!(@settings, label)
+        renamed_prompt_file!(@settings, label)
         keys!(@settings, [], KEYS, label)
         validate_enabled(label)
         reviewer = self.class.reviewer(@settings.fetch('reviewer', DEFAULTS.fetch('reviewer')))
         raise Error, "#{label}.reviewer must be a supported provider/family" unless EFFORTS.key?(reviewer)
 
         validate_choices(label, reviewer)
-        prompt_path!(@settings['prompt_file'], "#{label}.prompt_file") if @settings.key?('prompt_file')
+        prompt_paths!(@settings, [REPLACEMENT, CUSTOM], label)
       end
 
       private

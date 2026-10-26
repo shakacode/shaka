@@ -10,9 +10,12 @@ require 'shaka/publication/review_effort_floor'
 class RepositoryConfigurationExampleTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   POLICY_KEYS = %w[
-    required ci_review_jobs local_review_agents local_review_count post_implementation prompt_file provider_coverage
+    required ci_review_jobs local_review_agents local_review_count post_implementation replacement_prompt_file
+    provider_coverage custom_instructions_file
     human_review_floors auto_max_review_floor
   ].freeze
+  # Defaults the example leaves out because nobody needs to change them.
+  OMITTED = { 'checkpoint' => %w[enabled] }.freeze
   # The only files this repository removes from a shipped floor: its Ruby library code leaves the
   # agent-instructions floor so merge.auto_max_review_floor can merge it.
   FLOOR_EXEMPTIONS = { 'changes agent instructions' => %w[skills/shaka/lib/**/*.rb] }.freeze
@@ -52,14 +55,14 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   end
 
   def test_example_post_implementation_defaults_match
-    assert_equal Shaka::Defaults.fetch('review', 'post_implementation'),
-                 @example.fetch('review').fetch('post_implementation').except('prompt_file')
+    assert_equal Shaka::Defaults.fetch('checkpoint').except(*OMITTED.fetch('checkpoint')),
+                 @example.fetch('checkpoint').except('replacement_prompt_file')
   end
 
   def test_example_matches_packaged_defaults_without_changing_repository_choices
     Shaka::Defaults.data.except('runtime').each do |section, defaults|
       defaults.each do |key, value|
-        next if POLICY_KEYS.include?(key) || key == 'preference'
+        next if POLICY_KEYS.include?(key) || key == 'preference' || OMITTED.fetch(section, []).include?(key)
 
         assert_equal value, @example.fetch(section).fetch(key), "Update the #{section}.#{key} example"
       end

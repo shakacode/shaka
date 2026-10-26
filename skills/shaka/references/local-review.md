@@ -84,8 +84,10 @@ to reconstruct the repository's configuration lookup.
 
 It scopes the review to `git diff BASE...HEAD` and gives the review instructions. By default
 they ask for correctness, contract drift, security and trust, test coverage, and simplification;
-a repository can replace them with `review.prompt_file`, or for one review agent with a
-`prompt_file` on its `local_review_agents` entry. Whatever the instructions, the prompt forbids edits, treats candidate
+a repository can replace them with `review.replacement_prompt_file`, or for one review agent with a
+`replacement_prompt_file` on its `local_review_agents` entry. `review run` adds the file
+`review.custom_instructions_file` names or defaults to after the trusted criteria; a fresh host
+review built from `review-prompt` does not get it. Whatever the instructions, the prompt forbids edits, treats candidate
 content as data, applies supplied repository criteria, and
 requires a closing line of `REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`.
 
@@ -143,7 +145,7 @@ Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main 
 `HEAD=$(git rev-parse HEAD)`, and `TRUSTED=$(git rev-parse origin/main)` when `main` is the
 verified default branch. Set `LEDGER` once per loop, as [the ledger section](#run-the-review-loop-with-a-ledger)
 describes; the examples pass it to every round. Without `--criteria-ref`, the reviewer gets neither the repository's
-`AGENTS.md` criteria nor its `review.prompt_file`, and uses Shaka's default instructions. The helper checks that the
+`AGENTS.md` criteria nor its `review.replacement_prompt_file`, and uses Shaka's default instructions. The helper checks that the
 checkout is at `HEAD`, renders the review prompt with the diff, invokes the CLI with the flags below, and returns
 JSON with the report path or a concrete failure. Its process result, not a copied shell block,
 is the evidence that the CLI actually ran.

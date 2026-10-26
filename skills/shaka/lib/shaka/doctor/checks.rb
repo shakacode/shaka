@@ -103,7 +103,8 @@ module Shaka
       end
 
       def reviewer_settings(seam)
-        return seam_settings unless seam[:status] == 'healthy'
+        # A warning leaves the settings loadable; only a failed seam stops this check.
+        return seam_settings if seam[:status] == 'failed'
 
         notices = configured_notices
         return known_settings if notices.empty?
@@ -136,7 +137,10 @@ module Shaka
         return missing_seam unless Configuration.contract_entry?(@root)
 
         config = Configuration.worktree(root: @root)
-        check('Repository seam', 'healthy', SettingsSource.new(@root, @system.runner).summary(config.config_path))
+        summary = SettingsSource.new(@root, @system.runner).summary(config.config_path)
+        return check('Repository seam', 'healthy', summary) if config.warnings.empty?
+
+        check('Repository seam', 'degraded', "#{summary} #{config.warnings.join(' ')}")
       rescue Shaka::Error, SystemCallError => e
         check('Repository seam', 'failed', "repository configuration is not usable: #{first_line(e.message)}",
               guidance: 'Repair the contract, or let `shaka seam init` rewrite a valid one.')

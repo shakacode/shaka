@@ -46,10 +46,11 @@ module Shaka
     end
 
     def opening_prompt(config, ref: config.sha)
-      path = config.opening_check['prompt_file']
+      key = RepositoryConfig::ReviewSchema::PROMPT_FILE
+      path = config.opening_check[key]
       return unless path
 
-      read_prompt(path, ref, 'opening_check.prompt_file')
+      read_prompt(path, ref, "opening_check.#{key}")
     end
 
     def read_prompt(path, sha, label)

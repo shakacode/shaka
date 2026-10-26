@@ -2,6 +2,7 @@
 
 require 'find'
 require_relative '../../repository_config'
+require_relative '../../trusted_path_resolver'
 require_relative '../private_inventory'
 require_relative '../private_source'
 require_relative 'trusted_prompts'
@@ -38,7 +39,16 @@ module Shaka
         guidance = RepositoryConfig::ProjectGuidanceSchema.resolve(@settings)
         paths = RepositoryConfig.prompt_files(review: @settings.fetch('review'),
                                               opening: @settings.fetch('opening_check'), guidance:).map(&:last)
-        paths + pr_template_paths(guidance)
+        paths + pr_template_paths(guidance) + default_custom_instructions
+      end
+
+      # Default custom instructions count only where they exist; a named file is in prompt_files.
+      # Private settings already hash their whole tree.
+      def default_custom_instructions
+        return [] if @private_source || !@trusted_ref
+
+        resolver = TrustedPathResolver.new(root: @root, sha: @trusted_ref)
+        RepositoryConfig::PromptFiles.unnamed_defaults(@settings.fetch('review')).select { resolver.resolve(it).last }
       end
 
       # `shaka guidance pr_evidence` adds the pull request template, so the template counts as read input too.

@@ -12,7 +12,7 @@ module Shaka
   # attestation line the owner can paste, because a local run carries no GitHub-attested identity.
   class ReviewPrompt
     # The editorial part of the prompt: what to look for and how to report it. A repository can
-    # replace it with `review.prompt_file`; see docs/settings.md.
+    # replace it with `review.replacement_prompt_file`; see docs/settings.md.
     DEFAULT_INSTRUCTIONS = File.expand_path('../../config/review-prompt.md', __dir__)
     MAX_INSTRUCTIONS_BYTES = 100_000
 

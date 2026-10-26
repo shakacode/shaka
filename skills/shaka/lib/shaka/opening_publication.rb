@@ -78,7 +78,7 @@ module Shaka
       config = Configuration.resolve_source(root: @root, ref: @ref, candidate_commands: false).first
       return { 'status' => 'disabled' } unless config.opening_check.fetch('enabled')
 
-      if config.opening_check.key?('prompt_file')
+      if config.opening_check.key?(RepositoryConfig::ReviewSchema::PROMPT_FILE)
         @prompt = Configuration.opening_prompt(root: @root, config:, ref: @ref)
       end
       select_reviewer(config.opening_check)

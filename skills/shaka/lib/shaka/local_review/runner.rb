@@ -17,6 +17,7 @@ require_relative 'ledger'
 require_relative 'path_guard'
 require_relative 'process'
 require_relative 'prompt_file'
+require_relative 'custom_instructions'
 
 module Shaka
   # Native readers are loaded only by the runner; publication uses retained metadata.
@@ -305,6 +306,7 @@ module Shaka
     include LocalReviewPathGuard
     include LocalReviewCriteria
     include LocalReviewPromptFile
+    include LocalReviewCustomInstructions
     include LocalReviewRounds
     include LocalReviewCheckout
     include LocalReviewTiming
@@ -404,7 +406,8 @@ module Shaka
       diff = capture(git_executable, '-C', root, 'diff', '--no-ext-diff', '--no-textconv',
                      "#{@options[:base]}...#{head}", '--')
       marker = SecureRandom.hex(16)
-      "#{output}\n\n#{source_context(marker)}#{trusted_criteria(marker)}#{prior_rounds(marker)}" \
+      "#{output}\n\n#{source_context(marker)}#{trusted_criteria(marker)}#{custom_instructions(marker)}" \
+        "#{prior_rounds(marker)}" \
         "--- BEGIN DIFF DATA #{marker} ---\n#{diff}\n--- END DIFF DATA #{marker} ---\n"
     end
 

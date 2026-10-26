@@ -19,7 +19,9 @@ class PrivateReviewSettingsTest < Minitest::Test
     with_trial do
       prepare_private_review
       File.write(File.join(@root, '.agents/shaka/claude.md'), 'CLAUDE ONLY')
-      update_private { |data| data['review']['local_review_agents'][0]['prompt_file'] = '.agents/shaka/claude.md' }
+      update_private do |data|
+        data['review']['local_review_agents'][0]['replacement_prompt_file'] = '.agents/shaka/claude.md'
+      end
       review_result
       assert_includes instructions, 'CLAUDE ONLY'
       refute_includes instructions, 'PRIVATE INSTRUCTIONS'
@@ -30,10 +32,10 @@ class PrivateReviewSettingsTest < Minitest::Test
     with_trial do
       commit_prompt('TRUSTED REVIEW RULES')
       @ref = git(@root, 'rev-parse', 'HEAD')
-      update_private { |data| data['review']['prompt_file'] = 'review.md' }
+      update_private { |data| data['review']['replacement_prompt_file'] = 'review.md' }
       commit_prompt('CANDIDATE REVIEW RULES')
       result = JSON.parse(review_result(head: git(@root, 'rev-parse', 'HEAD')))
-      assert_equal 'review.prompt_file review.md', result['prompt_source']
+      assert_equal 'review.replacement_prompt_file review.md', result['prompt_source']
       assert_includes instructions, 'TRUSTED REVIEW RULES'
       refute_includes instructions, 'CANDIDATE REVIEW RULES'
     end
@@ -78,7 +80,7 @@ class PrivateReviewSettingsTest < Minitest::Test
   def prepare_private_review
     File.write(File.join(@root, '.agents/shaka/review.md'), 'PRIVATE INSTRUCTIONS')
     update_private do |data|
-      data['review']['prompt_file'] = '.agents/shaka/review.md'
+      data['review']['replacement_prompt_file'] = '.agents/shaka/review.md'
       data['review']['local_review_agents'] = [{ 'provider' => 'anthropic', 'model_family' => 'claude',
                                                  'model' => 'claude-opus-4-6', 'effort' => 'high' }]
     end
