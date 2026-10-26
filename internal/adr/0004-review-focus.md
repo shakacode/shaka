@@ -1,7 +1,7 @@
 # 0004: Mark the lines that need the closest reading
 
 Status: proposed; awaiting maintainer approval. Nothing here is shipped.
-Date: 2026-10-26. Tracks [issue #846](https://github.com/shakacode/shaka/issues/846).
+Date: 2026-10-25. Tracks [issue #846](https://github.com/shakacode/shaka/issues/846).
 
 ## Context
 
@@ -36,11 +36,12 @@ Impact and frequency: UNKNOWN. The gap comes from one maintainer comment on
 ## Decisions
 
 1. **A short list beside the PR rating.** Description content gains optional
-   `intent.review_focus`: a list of at most 3 entries, each with `path`, `level`, `reason`,
-   and optionally `from` with `to` or `block: true`. `review_effort` stays a whole number,
-   so existing content files keep working. The cap is a constant, not a setting: "the few
-   lines" is the point, and a setting would add a default, a reference entry, and a
-   migration for every repository.
+   `intent.review_focus`: a list of entries, each with `path`, `level`, `reason`, and
+   optionally `from` with `to` or `block: true`. `review_effort` stays a whole number, so
+   existing content files keep working. Ruby sets no count limit. A fixed cap would be a
+   maintainer choice with no default to change, and a setting would add a default, a
+   reference entry, and a migration for every repository. The workflow sentence asks for
+   a few entries, and a long list is visible to the reviewer it fails.
 2. **Ranges are found by text, the way walkthrough code links are.** `from`, `to`, and
    `block` mean what they mean in `code_links`, through the same `LineRange` lookup at
    the PR head the description already reads (`headRefOid`). Without `from`, the entry
@@ -48,7 +49,8 @@ Impact and frequency: UNKNOWN. The gap comes from one maintainer comment on
    moves code, and a republished description would then point at the wrong lines.
 3. **Ruby refuses entries that cannot help a reviewer.** Publication refuses an entry
    whose `level` is not a whole number above the PR's `review_effort` and at most 5, whose
-   `path` is not among the PR's changed files, whose text is missing or ambiguous at the
+   `path` is not among the PR's changed files or has no file at the head (a deleted file or
+   the old side of a rename), whose text is missing or ambiguous at the
    head, or whose `reason` is empty or more than one line. An entry asks for more care; it
    never lowers the PR rating or a floor.
 4. **Rendered under Review effort, linked to the head.** Each entry becomes one line
@@ -58,11 +60,13 @@ Impact and frequency: UNKNOWN. The gap comes from one maintainer comment on
    **Review effort:** 2 of 5, easy: skim the diff.
 
    **Closer reading:**
-   - 4 of 5: [`lib/shaka/merge.rb` lines 40–58](https://github.com/OWNER/REPO/blob/HEAD/lib/shaka/merge.rb#L40-L58), compares the queue base before submitting.
+   - 4 of 5: [`lib/shaka/merge.rb` lines 40–58](https://github.com/OWNER/REPO/blob/HEAD_SHA/lib/shaka/merge.rb#L40-L58), compares the queue base before submitting.
    ```
 
    A path with unusual characters shows as "a file whose name is withheld", as the floor
-   line already does, because a changed filename comes from the PR author.
+   line already does, because a changed filename comes from the PR author. Its link keeps
+   the path percent-encoded, as `CodeLinks` writes it, so no author text reaches the
+   Markdown unescaped.
 5. **Merge stays as it is.** `merge` and `MergeReviewFloor` read changed paths and
    trusted floors, never the agent's ratings; a PR rated 5 does not hold Auto today.
    `review_focus` follows that rule and holds nothing. A reviewer sees it; the merge
