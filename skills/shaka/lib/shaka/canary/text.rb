@@ -52,8 +52,15 @@ module Shaka
         return 'No Shaka commits were named for this run.' if list.empty?
 
         repo = report.fetch('shaka_repo')
-        links = list.map { |line| "- [#{line}](https://github.com/#{repo}/commit/#{line.split.first})" }
+        links = list.map { |line| commit_link(line, repo) }
         ['Shaka commits this run covers:', *links].join("\n")
+      end
+
+      def commit_link(line, repo)
+        sha, subject = line.split(' ', 2)
+        return "- #{line}" unless sha.match?(/\A[0-9a-f]{4,40}\z/)
+
+        "- [#{sha}](https://github.com/#{repo}/commit/#{sha}) #{subject}".rstrip
       end
 
       def diff(report)

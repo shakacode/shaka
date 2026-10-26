@@ -214,6 +214,7 @@ class CanaryReportTest < Minitest::Test
     assert_includes result['summary'], 'Spend $1.00. Previous run $0.50.'
     assert_includes result['summary'], 'Previous run 2m 3s.'
     assert_includes result['summary'], '--- previous'
+    assert_includes result['summary'], '[abc123](https://github.com/shakacode/shaka/commit/abc123) Add canary'
   end
 
   def passing_input

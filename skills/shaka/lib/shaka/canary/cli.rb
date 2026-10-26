@@ -41,11 +41,17 @@ module Shaka
 
       def throttle(argv)
         options = Flags.parse(argv)
-        runs = JSON.parse(File.read(options.fetch('runs')))
-        last = AttemptHistory.latest(runs, repository: options.fetch('repository'), current: options.fetch('run'))
+        last = throttle_history(options)
         puts Throttle.wait_seconds(last_finished_at: last, now: Time.now.utc,
                                    manual: options['event'] == 'workflow_dispatch')
         0
+      end
+
+      def throttle_history(options)
+        runs = JSON.parse(File.read(options.fetch('runs')))
+        history = AttemptHistory.capture(runs, repository: options.fetch('repository'), current: options.fetch('run'))
+        File.write(options.fetch('runs'), JSON.generate(history))
+        history.filter_map { |run| Time.iso8601(run['agent_started_at']) if run['agent_started_at'] }.max
       end
 
       def prompt(argv)

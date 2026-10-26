@@ -205,10 +205,15 @@ class CanaryCollectTest < Minitest::Test
   def assert_no_publication(dir, runner, result)
     assert_nil result['number']
     assert_empty result['close']
-    assert_equal 1, runner.commands.size
+    assert_fallback_links(result['summary'])
     assert_equal result, JSON.parse(File.read(File.join(dir, 'canary-result.json')))
     assert_equal 0, Shaka::Canary::Publish.call(environment(dir), runner: runner)
     assert_equal 1, runner.commands.size
+  end
+
+  def assert_fallback_links(summary)
+    assert_includes summary, 'https://github.com/shakacode/shaka/commit/abc123'
+    assert_includes summary, 'https://github.com/shakacode/shaka/actions/runs/99'
   end
 
   def test_collect_checks_the_new_pull_request_and_publish_closes_the_older_one
@@ -270,19 +275,39 @@ class CanaryRunnerTest < Minitest::Test
 end
 
 class CanaryAttemptHistoryTest < Minitest::Test
-  def test_job_steps_include_failed_attempts_and_exclude_the_current_run
-    runner = history_runner(true)
-    runs = [{ 'databaseId' => 99 }, { 'databaseId' => 98 }]
-    started = Shaka::Canary::AttemptHistory.latest(runs, repository: 'owner/repo', current: '99', runner: runner)
+  def test_the_throttle_cli_persists_the_history_used_by_collection
+    Dir.mktmpdir do |dir|
+      path = prepare_cli_history(dir)
+      args = %w[throttle --event push --repository owner/repo --run 99]
+      out, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, RbConfig.ruby,
+                                          File.expand_path('../bin/canary', __dir__), *args, '--runs', path)
+      assert_predicate status, :success?, error
+      assert_equal "0\n", out
+      assert_equal '2020-01-01T00:00:00Z', JSON.parse(File.read(path)).first['agent_started_at']
+    end
+  end
 
-    assert_equal Time.iso8601('2026-10-26T11:30:00Z'), started
-    assert_equal [['gh', 'api', 'repos/owner/repo/actions/runs/98/jobs?per_page=100']], runner.commands
+  def prepare_cli_history(dir)
+    step = { 'name' => 'Run the fixed task headless', 'started_at' => '2020-01-01T00:00:00Z' }
+    pages = JSON.generate([{ 'jobs' => [{ 'steps' => [step] }] }])
+    File.write(File.join(dir, 'gh'), "#!/bin/sh\ncat <<'JSON'\n#{pages}\nJSON\n")
+    File.chmod(0o755, File.join(dir, 'gh'))
+    File.join(dir, 'runs.json').tap { |path| File.write(path, '[{"databaseId":99,"headSha":"abc123"}]') }
+  end
+
+  def test_job_steps_include_earlier_attempts_of_the_current_run
+    runner = history_runner(true)
+    history = Shaka::Canary::AttemptHistory.capture([], repository: 'owner/repo', current: '99', runner: runner)
+
+    assert_equal '2026-10-26T11:30:00Z', history.first['agent_started_at']
+    assert_equal [['gh', 'api', '--paginate', '--slurp',
+                   'repos/owner/repo/actions/runs/99/jobs?filter=all&per_page=100']], runner.commands
   end
 
   def test_unreadable_attempt_history_fails_instead_of_starting_another_agent
     error = assert_raises(RuntimeError) do
-      Shaka::Canary::AttemptHistory.latest([{ 'databaseId' => 98 }], repository: 'owner/repo',
-                                                                     current: '99', runner: history_runner(false))
+      Shaka::Canary::AttemptHistory.capture([{ 'databaseId' => 98 }], repository: 'owner/repo',
+                                                                      current: '99', runner: history_runner(false))
     end
     assert_includes error.message, 'cannot read canary attempts: denied'
   end
@@ -290,7 +315,32 @@ class CanaryAttemptHistoryTest < Minitest::Test
   def history_runner(success)
     step = { 'name' => 'Run the fixed task headless', 'conclusion' => 'failure',
              'started_at' => '2026-10-26T11:30:00Z' }
-    FakeCanaryHistory.new('ok' => success, 'err' => 'denied', 'out' => JSON.generate('jobs' => [{ 'steps' => [step] }]))
+    pages = [{ 'jobs' => [{ 'steps' => [step] }] }, { 'jobs' => [{ 'steps' => [] }] }]
+    FakeCanaryHistory.new('ok' => success, 'err' => 'denied', 'out' => JSON.generate(pages))
+  end
+end
+
+class CanaryCoverageTest < Minitest::Test
+  include CanaryCollectionFixtures
+
+  def test_a_cancelled_wait_does_not_hide_untested_commits
+    Dir.mktmpdir do |dir|
+      history = [{ 'headSha' => 'bbb2222', 'agent_started_at' => nil },
+                 { 'headSha' => 'aaa1111', 'agent_started_at' => '2026-10-26T10:00:00Z' }]
+      File.write(File.join(dir, 'canary-runs.json'), JSON.generate(history))
+      runner = FakeCanary.new('[]')
+      Shaka::Canary::Coverage.new(environment(dir), runner).commits
+      assert_equal 'aaa1111..abc123', runner.commands.last.last
+    end
+  end
+
+  def test_the_first_run_names_only_its_selected_commit
+    Dir.mktmpdir do |dir|
+      runner = FakeCanary.new('[]')
+      Shaka::Canary::Coverage.new(environment(dir), runner).commits
+      assert_includes runner.commands.last, '-1'
+      assert_equal 'abc123', runner.commands.last.last
+    end
   end
 end
 

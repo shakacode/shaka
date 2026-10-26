@@ -19,15 +19,19 @@ module Shaka
 
     # Reads actual agent-step starts, including failed and cancelled runs.
     class AttemptHistory
-      def self.latest(runs, repository:, current:, runner: Runner.new)
-        starts = runs.reject { |run| run.fetch('databaseId').to_s == current }.filter_map do |run|
-          path = "repos/#{repository}/actions/runs/#{run.fetch('databaseId')}/jobs?per_page=100"
-          result = runner.capture(['gh', 'api', path])
-          raise "cannot read canary attempts: #{result['err']}" unless result['ok']
-
-          Throttle.latest_start(JSON.parse(result['out']).fetch('jobs'))
+      def self.capture(runs, repository:, current:, runner: Runner.new)
+        (runs + [{ 'databaseId' => current }]).uniq { |run| run.fetch('databaseId').to_s }.map do |run|
+          started = start_for(run, repository, runner)
+          run.merge('agent_started_at' => started&.iso8601)
         end
-        starts.max
+      end
+
+      def self.start_for(run, repository, runner)
+        path = "repos/#{repository}/actions/runs/#{run.fetch('databaseId')}/jobs?filter=all&per_page=100"
+        result = runner.capture(['gh', 'api', '--paginate', '--slurp', path])
+        raise "cannot read canary attempts: #{result['err']}" unless result['ok']
+
+        Throttle.latest_start(JSON.parse(result['out']).flat_map { |page| page.fetch('jobs') })
       end
     end
 
@@ -82,8 +86,11 @@ module Shaka
       end
 
       def commits
-        range = previous_sha ? "#{previous_sha}..#{sha}" : sha
-        ran = @runner.capture(['git', '-C', workspace, 'log', '--format=%h %s', range])
+        previous = previous_sha
+        range = previous ? "#{previous}..#{sha}" : sha
+        argv = ['git', '-C', workspace, 'log', '--format=%h %s']
+        argv << '-1' unless previous
+        ran = @runner.capture([*argv, range])
         return [range] unless ran['ok']
 
         lines = ran['out'].lines.map(&:strip).reject(&:empty?)
@@ -116,10 +123,13 @@ module Shaka
         return unless File.file?(path)
 
         runs = JSON.parse(File.read(path))
-        runs.filter_map { |run| run['headSha'] }.find { |commit| commit != sha }
+        exercised = runs.select { |run| exercised?(run) }
+        exercised.max_by { |run| run.fetch('agent_started_at') }&.fetch('headSha')
       rescue JSON::ParserError
         nil
       end
+
+      def exercised?(run) = run['agent_started_at'] && run['headSha'] && run['headSha'] != sha
 
       def sha = @env.fetch('GITHUB_SHA')
       def repo = @env.fetch('SHAKA_CANARY_REPO')
@@ -201,7 +211,8 @@ module Shaka
           'ok' => false, 'shaka_sha' => @env.fetch('GITHUB_SHA', 'unknown'),
           'shaka_repo' => repository,
           'checks' => [{ 'name' => 'collect', 'ok' => false, 'detail' => error.message }],
-          'spend' => 'UNKNOWN', 'previous_spend' => 'UNKNOWN', 'commits' => [],
+          'spend' => 'UNKNOWN', 'previous_spend' => 'UNKNOWN', 'commits' => [@env.fetch('GITHUB_SHA', 'unknown')],
+          'run_url' => run_url,
           'diff' => 'No previous canary PR body.'
         )
         { 'ok' => false, 'summary' => summary, 'number' => nil, 'close' => [] }
