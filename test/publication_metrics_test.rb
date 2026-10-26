@@ -63,15 +63,20 @@ class PublicationMetricsTest < Minitest::Test
   def test_scope_exclusions_are_optional_and_blank_ones_are_omitted
     [INTENT.except('leaves_out'), INTENT.merge('leaves_out' => ' ')].each do |intent|
       refute_includes Shaka::Publication.description(content(usd: 'UNKNOWN').merge('intent' => intent)),
-                      '**Outside scope:**'
+                      '**Leaves out:**'
     end
   end
 
-  def test_diff_size_comes_from_the_live_pull_request
-    pull = { 'changed_files' => 9, 'additions' => 172, 'deletions' => 13 }
+  # Readers saw three lines of counts before the reason for the change, so the counts close Intent.
+  def test_diff_size_comes_from_the_live_pull_request_and_closes_intent
+    pull = { 'changed_files' => 2, 'additions' => 5, 'deletions' => 1,
+             'shaka_changed_files' => [{ 'filename' => 'lib/a.rb' }, { 'filename' => 'test/a_test.rb' }] }
     rendered = Shaka::IntentVerification.render({ 'intent' => INTENT, 'verification' => VERIFICATION }, nil, nil, pull)
-    assert_includes rendered.first, '**Diff:** 9 files · +172 / −13 lines'
-    refute_includes render(usd: 'UNKNOWN'), '**Diff:**'
+
+    assert rendered.first.end_with?("**Scope:** #{INTENT['scope']} (2 files, +5 / −1 lines)\n\n" \
+                                    "<details>\n<summary>Files: Code 1 · Tests 1</summary>\n\n" \
+                                    "**Code:**\n\n- `lib/a.rb`\n\n**Tests:**\n\n- `test/a_test.rb`\n\n</details>")
+    refute_includes render(usd: 'UNKNOWN'), 'lines)'
   end
 
   private

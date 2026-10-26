@@ -19,8 +19,7 @@ module Shaka
       ordered = groups(files)
       counts = ordered.map { |name, items| "#{name} #{items.size}" }.join(' · ')
       body = disclosure(files, pull)
-      ["**Files:** #{counts}",
-       "<details>\n<summary>Changed files by bucket</summary>\n\n#{body}\n\n</details>"]
+      ["<details>\n<summary>Files: #{counts}</summary>\n\n#{body}\n\n</details>"]
     end
 
     # At most 40 short paths: filenames cannot consume GitHub's whole description allowance.
