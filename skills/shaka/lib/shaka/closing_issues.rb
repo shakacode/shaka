@@ -83,7 +83,7 @@ module Shaka
       linked = linked(github).map(&:downcase)
       [missing_note(claimed - linked, repository),
        task_note(left_open(task, linked + claimed, texts, repository), repository),
-       extra_note(linked - claimed - [task], repository)].compact
+       extra_note(linked - expected(claimed, task, texts, repository), repository)].compact
     end
 
     # The issues a merge would close, for a handoff to name before anyone merges, and the
@@ -97,6 +97,9 @@ module Shaka
     rescue *FAILURES => e
       "closing issues unavailable: #{e.message}"
     end
+
+    # The task's issue is expected to close too, unless the texts say this PR is only part of it.
+    def expected(claimed, task, texts, repository) = claimed | ([task].compact - claimed(texts, repository, PARTIAL))
 
     # The task's issue when the merge leaves it open and no text says this PR is only part of it.
     def left_open(task, expected, texts, repository)

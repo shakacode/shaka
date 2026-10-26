@@ -71,6 +71,13 @@ class ClosingIssuesTest < Minitest::Test
     refute_includes note, "task's issue"
   end
 
+  def test_a_task_issue_the_text_calls_partial_but_github_closes_is_named
+    note = Shaka::ClosingIssues.note(content('Part of #631.', task: 631),
+                                     FakeGitHub.new(['owner/repo#631']))['closing_issues']
+
+    assert_includes note, 'GitHub will also close #631'
+  end
+
   def test_an_issue_neither_the_task_nor_the_text_names_is_named
     note = Shaka::ClosingIssues.note(content('Fixes #631.', task: 631),
                                      FakeGitHub.new(['owner/repo#631', 'other/lib#5']))['closing_issues']
