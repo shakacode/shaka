@@ -42,16 +42,18 @@ coordination state. Nothing is reused.
 
 1. **Report a missing reviewer only when automatic selection can pick it.** When
    `provider_coverage` is set, entries from providers it does not name run only on a
-   task's request. `setup_notices` leaves them out, so `doctor` stays HEALTHY and the
-   agent relays nothing. `doctor` still lists them, with "(optional: runs only when a task
-   names it)" in place of "(configured)". This needs no new setting: Ruby derives it from
+   task's request: `ReviewCoverage.candidates` keeps only covered providers, and
+   `test_a_listed_reviewer_outside_coverage_does_not_run` holds that. `setup_notices` leaves
+   those entries out, so `doctor` stays HEALTHY and the agent relays nothing. `doctor` still
+   lists them, set up or not, with "(optional: runs only when a task names it)" in place of
+   "(configured)". This needs no new setting: Ruby derives it from
    the two settings that already decide selection. When a task does name an optional
    reviewer that is not set up, `shaka review run` fails with `executable_missing` or
    `credentials_missing` and names what is missing, as it does today. Without
    `provider_coverage`, any listed entry can be picked as a fallback, so every entry keeps
    today's notice.
 
-2. **A per-machine list for repositories without `provider_coverage`.** An optional file
+2. **A per-machine list of the reviewers a developer expects to run.** An optional file
    at `~/.agents/shaka/reviewers.yml` names the reviewers this machine is expected to run:
 
    ```yaml
@@ -60,8 +62,10 @@ coordination state. Nothing is reused.
    ```
 
    When the file exists, `setup_notices` and `doctor` report a missing reviewer only if
-   the file lists it or `provider_coverage` names its provider. The file only narrows
-   reporting:
+   the file lists it or `provider_coverage` names its provider. Without coverage, that
+   narrows today's notices to the reviewers the developer expects. With coverage, it turns
+   decision 1's warning back on for an uncovered reviewer the developer relies on, such as
+   Grok. Either way, the file changes reporting only:
    - It cannot add a reviewer. A listed identity the repository does not configure is
      ignored, and `doctor` names it once as unused here. The repository's list stays the
      accepted set and its order stays the preference.
@@ -108,19 +112,23 @@ coordination state. Nothing is reused.
   change to say doctor no longer warns about them.
 - Decision 2 adds a home-directory file that Shaka reads, a loader with schema checks,
   and tests. `docs/settings.md` "Which settings apply?" changes to name a second
-  home-directory exception. The file is not in `defaults.yml`, because it is not a
-  repository setting. `doctor` reports whether the file exists and what it lists.
+  home-directory exception, because it changes what the reader sees there. The
+  file is not in `defaults.yml`, because it is not a repository setting. `doctor` reports whether the file exists and what it lists.
+- Decision 1 alone loses one warning: a developer who relies on an uncovered reviewer
+  learns that its setup broke only when a task names it and `shaka review run` reports
+  `executable_missing` or `credentials_missing`. Decision 2 restores the earlier warning
+  for developers who list that reviewer.
 - No workflow instruction changes: `review.md` already says to relay `setup_notices`, and
   there will be fewer of them.
 
 ## Delivery
 
-Recommendation: ship decision 1 as one PR after this ADR is approved. It fixes the
-reported symptom in this repository. Hold decision 2 until a repository without
-`provider_coverage` reports the same noise, because nothing yet shows that it happens.
+Ship decision 1 as one PR after this ADR is approved; it fixes the reported symptom in
+this repository.
 
 ## Open question
 
-Should decision 2 ship now with decision 1, or wait for that second report? Recommended:
-wait. Decision 1 removes the warning seen here, and decision 2 adds a home-directory file
-Shaka must support across hosts.
+Should decision 2 ship with decision 1, or wait until a developer reports a missed warning
+or a repository without `provider_coverage` reports the same noise? Recommended: wait.
+Nothing yet shows either happens, and decision 2 adds a home-directory file Shaka must
+support across hosts.
