@@ -195,13 +195,14 @@ module Shaka
       { 'identity' => UsageRecordCarry.identity!(copied), 'columns' => columns(nested), 'note' => note }
     end
 
-    # Carried record blocks stay hidden and unchanged, so the next publish can read them again.
+    # Carried record blocks stay hidden and keep their identity and columns, so the next publish can read
+    # them again. Only where each note is written in full may move.
     def record_blocks
       fresh = @records.map do |entry|
         hidden = ["<!-- usage-columns #{JSON.generate(entry['columns'])} -->", UsagePricing.hidden(entry['note'])]
         "#{UsageRecords.begin_mark(entry['identity'])}\n#{hidden.compact.join("\n")}\n#{UsageRecords::END_MARK}"
       end
-      @carried.grep(HIDDEN) + fresh
+      UsagePricing.shared(@carried.grep(HIDDEN) + fresh)
     end
   end
 end

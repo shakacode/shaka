@@ -1,15 +1,18 @@
 # frozen_string_literal: true
 
+require 'digest'
 require_relative '../error'
 require_relative 'text'
 
 module Shaka
   # Each report is priced once, when `shaka usage` runs, with the rate card of that moment.
   # Its note, with that rate card and the report's coverage gaps, travels with its record,
-  # so a carried row still says which prices produced it and what it left out.
+  # so a carried row still says which prices produced it and what it left out. Reports usually share
+  # a note, so the body writes each one once and later records point to it by digest.
   module UsagePricing
     # Kept as plain lines inside the comment: an escaped \n would read as a literal escape.
     HIDDEN = /^<!-- usage-note\n(.*?)\n-->$/m
+    REFERENCE = /^<!-- usage-note-ref ([0-9a-f]{12}) -->\n?/
     SUMMARY = 'How each report was measured and priced'
     # Only known generated paragraphs are shortened. Unknown notes remain evidence.
     ACCOUNTING = {
@@ -46,6 +49,38 @@ module Shaka
     def hidden(note) = note && "<!-- usage-note\n#{note}\n-->"
 
     def from_block(block) = checked(block[HIDDEN, 1])
+
+    def key(note) = Digest::SHA256.hexdigest(note)[0, 12]
+
+    # Writes each distinct note in full in the first record holding it; later records point to it.
+    def shared(blocks)
+      written = Set.new
+      blocks.map do |block|
+        note = from_block(block)
+        next block if note.nil? || written.add?(key(note))
+
+        block.sub(HIDDEN) { "<!-- usage-note-ref #{key(note)} -->" }
+      end
+    end
+
+    # Puts each referenced note back in full, from any record in `sources` that holds it, so a record
+    # stays readable after the one holding its note is replaced. An unknown reference reads as no note,
+    # and so does a source note that fails its checks, since its record may be one carry is replacing.
+    def inline(blocks, sources)
+      notes = sources.filter_map { |block| lendable(block) }.to_h { |note| [key(note), note] }
+      blocks.map do |block|
+        block.sub(REFERENCE) do
+          note = notes[Regexp.last_match(1)]
+          note ? "#{hidden(note)}\n" : ''
+        end
+      end
+    end
+
+    def lendable(block)
+      from_block(block)
+    rescue Error
+      nil
+    end
 
     # Takes [label, note] pairs, one per report, and lists each distinct note under the
     # reports it priced.

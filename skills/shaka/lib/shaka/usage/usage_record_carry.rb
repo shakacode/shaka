@@ -2,6 +2,8 @@
 
 require_relative '../error'
 require_relative '../publication/managed_region'
+require_relative '../publication/usage_pricing'
+require_relative 'usage_record_shape'
 
 module Shaka
   # Carries earlier usage reports when the new description supplies structured records.
@@ -19,16 +21,48 @@ module Shaka
       usage ? content.merge('usage' => usage.except('carried')) : content
     end
 
+    # A kept report may point to a note that only a replaced report held, so notes are written back in full.
     def apply(records, content, usage, existing, stats)
-      fresh = Array(usage['records']).map { |fields| identity!(without_columns(fields)) }
+      fresh = identities(usage)
       region = Publishing.managed_region(existing)
       return [content, stats] unless region
 
-      kept = records.carried(region, '', stats, fresh)
-      return [content, stats] if kept.empty?
-
-      [content.merge('usage' => usage.except('carried').merge('carried' => kept.join("\n\n"))), stats]
+      usage = with_inherited_commits(usage, fresh, records.text_records(region))
+      kept = records.carried(region, '', stats, identities(usage))
+      usage = usage.merge('carried' => UsagePricing.inline(kept, blocks(region)).join("\n\n")) unless kept.empty?
+      [content.merge('usage' => usage), stats]
     end
+
+    def identities(usage) = Array(usage['records']).map { |fields| identity!(without_columns(fields)) }
+
+    # Only a block that passed the identity and shape checks may lend its note, so a dropped one is never read.
+    def blocks(region)
+      region.to_enum(:scan, UsageRecords::BLOCK).map { Regexp.last_match[0] }.select do |text|
+        UsageRecordShape.report_shape?(text) && UsageRecords.text_records(text).any?
+      end
+    end
+
+    # Each report from a rebased head names only that head. When complete reports hold every response an
+    # earlier report counted, those sharing its responses take on its commits, so the usual rule replaces
+    # it and the surviving report still names all the work it counts.
+    def with_inherited_commits(usage, fresh, earlier)
+      return usage if fresh.empty?
+
+      complete = fresh.select { |new| new['complete'] == true }
+      covered = earlier.select { |old| UsageRecords.covered?(old, complete.select { |new| same_work?(old, new) }) }
+      records = usage['records'].zip(fresh).map do |record, new|
+        complete.include?(new) ? inherit(record, new, covered) : record
+      end
+      usage.merge('records' => records)
+    end
+
+    def inherit(record, new, covered)
+      commits = (new['commits'] + covered.select { |old| shares?(old, new) }.flat_map { |old| old['commits'] }).uniq
+      commits == new['commits'] ? record : record.merge('commits' => commits)
+    end
+
+    def same_work?(old, new) = old['host'] == new['host'] && old['contribution'] == new['contribution']
+    def shares?(old, new) = same_work?(old, new) && old['responses'].intersect?(new['responses'])
 
     # A report that read no source records nothing about its commits. Once a complete report from
     # the same host measured the same contribution and commits, the empty one only adds noise.
