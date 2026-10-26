@@ -56,10 +56,12 @@ module Shaka
 
       def diff(report)
         text = report['diff'].to_s
-        rows = text.lines
-        return text if rows.size <= DIFF_LINES
+        return text unless text.start_with?('--- previous')
 
-        "#{rows.first(DIFF_LINES).join}… diff truncated\n"
+        rows = text.lines
+        shown = rows.size <= DIFF_LINES ? text : "#{rows.first(DIFF_LINES).join}… diff truncated\n"
+        fence = '`' * [4, text.scan(/`+/).map(&:length).max.to_i + 1].max
+        "#{fence}diff\n#{shown.chomp}\n#{fence}"
       end
 
       def marker(report)

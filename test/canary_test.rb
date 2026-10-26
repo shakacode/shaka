@@ -63,6 +63,25 @@ class CanaryBodyTest < Minitest::Test
     assert_equal 'Canary PR body matches the previous run.', Shaka::Canary::BodyDiff.report(BODY, BODY)
     assert_includes Shaka::Canary::BodyDiff.report("#{BODY}\nextra\n", BODY), '--- previous'
   end
+
+  def test_summary_fences_diffs_even_when_the_body_contains_long_code_fences
+    raw = "--- previous\n+++ current\n@@ -1 +1 @@\n-<details>old</details>\n+``````ruby\n+new\n+``````\n"
+    shown = Shaka::Canary::Summary.diff('diff' => raw)
+
+    assert_equal "```````diff\n#{raw}```````", shown
+  end
+
+  def test_summary_closes_truncated_diffs_and_leaves_status_messages_unfenced
+    raw = "--- previous\n+++ current\n#{"+line\n" * 90}"
+    shown = Shaka::Canary::Summary.diff('diff' => raw)
+
+    assert shown.start_with?("````diff\n--- previous\n")
+    assert shown.end_with?("… diff truncated\n````")
+    assert_equal(80, shown.lines.count { |line| line.start_with?('---', '+++', '+line') })
+    ['No previous canary PR body.', 'Canary PR body matches the previous run.'].each do |message|
+      assert_equal message, Shaka::Canary::Summary.diff('diff' => message)
+    end
+  end
 end
 
 class CanaryScheduleTest < Minitest::Test

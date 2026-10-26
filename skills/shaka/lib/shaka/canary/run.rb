@@ -12,7 +12,7 @@ module Shaka
     # Runs one command and keeps its status. Tests pass a substitute.
     class Runner
       def capture(argv, chdir: nil)
-        out, err, status = Open3.capture3(*argv, chdir: chdir)
+        out, err, status = Open3.capture3(*argv, **(chdir ? { chdir: } : {}))
         { 'out' => out, 'err' => err, 'ok' => status.success? }
       end
     end
@@ -25,7 +25,8 @@ module Shaka
       end
 
       def run(pull)
-        checkout(pull)
+        return [] unless checkout(pull)['ok']
+
         [['seam check', seam_argv], ['doctor --brief', doctor_argv], ['validate', validate_argv]].map do |name, argv|
           ran = @runner.capture(argv, chdir: canary_dir)
           { 'name' => name, 'ok' => ran['ok'], 'detail' => clip("#{ran['out']}#{ran['err']}") }
@@ -136,7 +137,7 @@ module Shaka
       def list_pulls
         listed = @runner.capture(['gh', 'pr', 'list', '--repo', repo, '--state', 'all', '--limit', '30',
                                   '--json', 'number,state,createdAt,title,body,url'])
-        return [] unless listed['ok']
+        raise "gh pr list failed: #{listed['err'].to_s.lines.first.to_s.strip}" unless listed['ok']
 
         parsed = JSON.parse(listed['out'])
         parsed.is_a?(Array) ? parsed : []

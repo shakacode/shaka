@@ -68,9 +68,10 @@ jobs:
         if: steps.preflight.outputs.action == 'run'
         env:
           GH_TOKEN: ${{ secrets.SHAKA_CANARY_TOKEN }}
+          SHAKA_CANARY_REPO: ${{ steps.preflight.outputs.repo }}
         run: |
           set -euo pipefail
-          gh repo clone "${{ vars.SHAKA_CANARY_REPO }}" "$RUNNER_TEMP/canary"
+          gh repo clone "$SHAKA_CANARY_REPO" "$RUNNER_TEMP/canary"
           echo "CANARY_DIR=$RUNNER_TEMP/canary" >> "$GITHUB_ENV"
           date -u +%Y-%m-%dT%H:%M:%SZ > "$RUNNER_TEMP/canary-started-at"
 
@@ -79,15 +80,16 @@ jobs:
         env:
           CURSOR_API_KEY: ${{ secrets.SHAKA_CANARY_MODEL_KEY }}
           GH_TOKEN: ${{ secrets.SHAKA_CANARY_TOKEN }}
+          SHAKA_CANARY_REPO: ${{ steps.preflight.outputs.repo }}
         run: |
           set -euo pipefail
           curl https://cursor.com/install -fsS | bash
           export PATH="$HOME/.cursor/bin:$PATH"
-          ruby bin/canary prompt --sha "$GITHUB_SHA" --repo "${{ vars.SHAKA_CANARY_REPO }}" > "$RUNNER_TEMP/canary-prompt.txt"
+          ruby bin/canary prompt --sha "$GITHUB_SHA" --repo "$SHAKA_CANARY_REPO" > "$RUNNER_TEMP/canary-prompt.txt"
           agent -p --force --trust --workspace "$CANARY_DIR" --output-format text "$(cat "$RUNNER_TEMP/canary-prompt.txt")"
 
       - name: Check the canary pull request and write the summary
-        if: always() && steps.preflight.outputs.action == 'run'
+        if: ${{ !cancelled() && steps.preflight.outputs.action == 'run' }}
         env:
           GH_TOKEN: ${{ secrets.SHAKA_CANARY_TOKEN }}
           SHAKA_CANARY_REPO: ${{ steps.preflight.outputs.repo }}
@@ -95,12 +97,12 @@ jobs:
         run: ruby bin/canary collect
 
       - name: Publish the summary and close old pull requests
-        if: always() && steps.preflight.outputs.action == 'run'
+        if: ${{ !cancelled() && steps.preflight.outputs.action == 'run' }}
         env:
           GH_TOKEN: ${{ secrets.SHAKA_CANARY_TOKEN }}
           SHAKA_CANARY_REPO: ${{ steps.preflight.outputs.repo }}
         run: ruby bin/canary publish
 
       - name: Fail the run when a check failed
-        if: always() && steps.preflight.outputs.action == 'run'
+        if: ${{ !cancelled() && steps.preflight.outputs.action == 'run' }}
         run: ruby bin/canary finish --result "$RUNNER_TEMP/canary-result.json"

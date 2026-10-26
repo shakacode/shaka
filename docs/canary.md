@@ -36,8 +36,9 @@ set secrets, or change organization settings.
 3. In `shakacode/shaka`, set the Actions variable `SHAKA_CANARY_REPO` to
    `owner/name`.
 4. Set the secret `SHAKA_CANARY_MODEL_KEY` to a Cursor API key from the
-   Cursor dashboard. The workflow passes it only to the Cursor CLI as
-   `CURSOR_API_KEY`.
+   Cursor dashboard. Preflight receives `SHAKA_CANARY_MODEL_KEY` to check
+   that it is set. The agent step receives it as `CURSOR_API_KEY`, including
+   the Cursor installer in that step.
 5. Set the secret `SHAKA_CANARY_TOKEN` to a token that can clone the
    sandbox, push branches, and open and close pull requests.
    `gh repo view OWNER/REPO --json viewerPermission` must report `WRITE`

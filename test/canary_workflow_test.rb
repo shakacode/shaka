@@ -35,13 +35,33 @@ class CanaryWorkflowTest < Minitest::Test
     refute_includes @text, 'missing stats line'
   end
 
-  def test_the_agent_step_uses_the_cursor_key_only_there
+  def test_preflight_checks_the_key_and_the_agent_step_exposes_it_to_the_installer
     step = @workflow.dig('jobs', 'canary', 'steps').find { |item| item['name'] == 'Run the fixed task headless' }
+    preflight = @workflow.dig('jobs', 'canary', 'steps').find { |item| item['id'] == 'preflight' }
 
+    assert_equal '${{ secrets.SHAKA_CANARY_MODEL_KEY }}', preflight.dig('env', 'SHAKA_CANARY_MODEL_KEY')
     assert_equal '${{ secrets.SHAKA_CANARY_MODEL_KEY }}', step.dig('env', 'CURSOR_API_KEY')
+    assert_includes step['run'], 'https://cursor.com/install'
     assert_includes step['run'], 'agent -p --force --trust'
     assert_includes @text, 'bin/install'
     assert_includes @text, 'checkout --detach "$GITHUB_SHA"'
+  end
+
+  def test_clone_and_prompt_use_the_repository_normalized_by_preflight
+    steps = @workflow.dig('jobs', 'canary', 'steps')
+    ['Clone the canary repository', 'Run the fixed task headless'].each do |name|
+      step = steps.find { |item| item['name'] == name }
+      assert_equal '${{ steps.preflight.outputs.repo }}', step.dig('env', 'SHAKA_CANARY_REPO')
+      assert_includes step['run'], '"$SHAKA_CANARY_REPO"'
+      refute_includes step['run'], 'vars.SHAKA_CANARY_REPO'
+    end
+  end
+
+  def test_cancelled_runs_skip_collection_publication_and_finish
+    steps = @workflow.dig('jobs', 'canary', 'steps').last(3)
+    steps.each do |step|
+      assert_equal "${{ !cancelled() && steps.preflight.outputs.action == 'run' }}", step['if']
+    end
   end
 end
 
@@ -70,6 +90,47 @@ CANARY_BODY = <<~BODY
 BODY
 
 class CanaryCollectTest < Minitest::Test
+  def test_failed_checkout_never_checks_the_previous_clone
+    Dir.mktmpdir do |dir|
+      runner, result = failed_collection(dir, 'checkout')
+
+      assert_false result['ok']
+      Shaka::Canary::Report::COMMANDS.each { |name| assert_includes result['summary'], "missing command check #{name}" }
+      assert_no_repository_checks(runner)
+    end
+  end
+
+  def test_failed_listing_reports_the_error_and_never_checks_or_closes_pulls
+    Dir.mktmpdir do |dir|
+      runner, result = failed_collection(dir, 'list')
+
+      assert_false result['ok']
+      assert_includes result['summary'], 'gh pr list failed: permission denied'
+      refute_includes result['summary'], 'no canary pull request opened after the run started'
+      assert_no_publication(dir, runner, result)
+    end
+  end
+
+  def failed_collection(dir, failure)
+    File.write(File.join(dir, 'canary-started-at'), "2026-10-26T12:00:00Z\n")
+    runner = FakeCanary.new(list_body, failure: failure)
+    [runner, Shaka::Canary::Collect.call(environment(dir), runner: runner)]
+  end
+
+  def assert_no_repository_checks(runner)
+    refute(runner.commands.any? { |argv| argv.first == 'shaka' || argv.first.end_with?('/validate') })
+    refute(runner.commands.any? { |argv| argv.include?('rev-parse') })
+  end
+
+  def assert_no_publication(dir, runner, result)
+    assert_nil result['number']
+    assert_empty result['close']
+    assert_equal 1, runner.commands.size
+    assert_equal result, JSON.parse(File.read(File.join(dir, 'canary-result.json')))
+    assert_equal 0, Shaka::Canary::Publish.call(environment(dir), runner: runner)
+    assert_equal 1, runner.commands.size
+  end
+
   def test_collect_checks_the_new_pull_request_and_publish_closes_the_older_one
     Dir.mktmpdir { |dir| assert_published(*collected(dir)) }
   end
@@ -124,17 +185,41 @@ class CanaryCollectTest < Minitest::Test
   end
 end
 
+class CanaryRunnerTest < Minitest::Test
+  def test_commands_without_a_directory_run_in_the_current_directory
+    result = Shaka::Canary::Runner.new.capture([RbConfig.ruby, '-e', 'puts Dir.pwd'])
+
+    assert_true result['ok']
+    assert_equal "#{Dir.pwd}\n", result['out']
+    assert_empty result['err']
+  end
+
+  def test_an_explicit_directory_and_command_failure_are_preserved
+    Dir.mktmpdir do |dir|
+      result = Shaka::Canary::Runner.new.capture(
+        [RbConfig.ruby, '-e', 'puts Dir.pwd; warn "failed"; exit 7'], chdir: dir
+      )
+
+      assert_false result['ok']
+      assert_equal "#{File.realpath(dir)}\n", result['out']
+      assert_equal "failed\n", result['err']
+    end
+  end
+end
+
 class FakeCanary
   attr_reader :commands
 
-  def initialize(list)
+  def initialize(list, failure: '')
     @list = list
+    @failure = failure
     @commands = []
   end
 
   def capture(argv, chdir: nil)
     @commands << argv
     @dir = chdir
+    return { 'out' => '', 'err' => 'permission denied', 'ok' => false } if argv[2] == @failure
     return { 'out' => @list, 'err' => '', 'ok' => true } if argv[0] == 'gh' && argv[2] == 'list'
     return { 'out' => 'deadbeef', 'err' => '', 'ok' => true } if argv.include?('rev-parse')
     return { 'out' => "abc123 Add canary\n", 'err' => '', 'ok' => true } if argv.include?('log')
