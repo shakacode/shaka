@@ -30,6 +30,13 @@ class RenderingPreviewHeadTest < Minitest::Test
     end
   end
 
+  # The exemption must end when the file lands, or a PR deleting it would preview with the installed copy.
+  def test_a_landed_renderer_is_no_longer_exempt
+    landed = Shaka::RenderingPreview::NOT_YET_LANDED.select { |path| File.exist?(File.join(ROOT, path)) }
+
+    assert_empty landed, 'Remove these from RenderingPreview::NOT_YET_LANDED now that they have landed.'
+  end
+
   private
 
   # A commit holding this checkout's listed renderers, less one.

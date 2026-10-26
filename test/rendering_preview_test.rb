@@ -79,7 +79,7 @@ class RenderingPreviewTest < Minitest::Test
     refute Shaka::RenderingPreview.required?(github)
   end
 
-  # The task source line renders from provenance, so a PR changing either can preview its description.
+  # provenance.rb calls task_source_line.rb to render the line, so a PR changing either can preview its description.
   def test_provenance_and_task_source_renderers_can_be_previewed
     %w[provenance.rb task_source_line.rb].each do |name|
       github = preview_github
