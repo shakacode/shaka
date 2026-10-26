@@ -139,8 +139,8 @@ module Shaka
       return if extra.empty?
 
       them = extra.one? ? 'it' : 'them'
-      "GitHub will also close #{names(extra, repository)} on merge, though neither the task nor the description " \
-        "says this PR fixes #{them}. Remove the closing keyword or manual link unless the task may close #{them}."
+      "GitHub will also close #{names(extra, repository)} on merge, though neither the task nor the summary and " \
+        "intent say this PR fixes #{them}. Remove the closing keyword or manual link unless the task may close #{them}."
     end
   end
 end
