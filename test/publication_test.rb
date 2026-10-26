@@ -30,12 +30,13 @@ class PublicationRegressionTest < Minitest::Test
       'details' => [] }.merge(changes)
   end
 
-  # The task source stands right under the summary, so a summary need not link the task itself.
-  def test_the_task_source_line_follows_the_summary
+  # The task follows Why in Intent, so a summary need not link the task itself.
+  def test_the_task_line_follows_why_in_intent
     provenance = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_number' => 818, 'task_relation' => 'part_of')
     rendered = Shaka::Publication.description(description_content('provenance' => provenance))
 
-    assert_includes rendered, "## Summary\n\nA summary.\n\n**Task source:** Part of #818\n\n## Intent"
+    assert_includes rendered, "## Summary\n\nA summary.\n\n## Intent\n\n**Why:** #{INTENT['why']}\n\n" \
+                              "**Task:** GitHub #818 · part of\n\n**Safe because:**"
   end
 
   # https://github.com/shakacode/shaka/pull/37 published its whole description as one

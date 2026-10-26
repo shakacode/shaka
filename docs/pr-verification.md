@@ -61,7 +61,7 @@ input. You can approve the approach, request revisions, or settle an open questi
 | Your question | Where to look |
 | --- | --- |
 | What changes for users? | The description, preview, and visual comparisons when applicable. |
-| What is it for, and what does it leave out? | **Intent** in the description: the problem, the scope, what was deliberately left out, and why the change is safe. A bug fix also names its **Root cause**, or says it was not found and the PR treats only the symptom. |
+| What is it for, and what does it leave out? | **Intent** in the description: the problem, the **Task** it came from (a ticket such as GitHub #1234 or Linear MKT-1234, with this PR's relation to it, or the agent prompt), the scope, what was deliberately left out, and why the change is safe. A bug fix also names its **Root cause**, or says it was not found and the PR treats only the symptom. |
 | How carefully should I review it? | **Review effort** under Intent, from 1 (read the description) to 5 (review every line, reproduce it, and ask a second reviewer), based on what a mistake could reach. Shaka sets a minimum from the files the PR changes and names the file that set it, unless that name contains unusual characters. Each repository chooses those minimums with [`pr_description.human_review_floors`](settings.md#pr_descriptionhuman_review_floors). |
 | Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
 | How was it checked? | **Verification** in the description. Its first line, written by Shaka from the recorded results, says whether repository validation passed and who reviewed the current revision; when validation passed and a local review ran through Shaka, it is folded under a one-line summary so a failure or a missing review stands out. Up to three checks follow, each showing what ran against this change's behavior, its outcome, and a link to the evidence or the command itself. **Not verified** names a claim this PR makes that went unproven and why that is acceptable; Shaka leaves the line out when the agent reports nothing unproven. |
@@ -391,9 +391,7 @@ recommendation** and leaves the description at **No recommendation yet**. Shaka 
 to show a recommendation made for an earlier commit, so the recommendation does not name
 one. Beside it, links open the walkthrough, the detailed code review when one was
 published, and the full checkpoint. Your agent adds a **Next** line when merging waits on
-something the recommendation does not say, such as another PR. The **Summary** follows,
-then a **Task source** line naming the task the work came from. When the agent records how
-this PR relates to an issue or PR, the line says so, such as **Fixes #818** or **Part of #818**.
+something the recommendation does not say, such as another PR. The **Summary** follows.
 Your agent summarizes
 consequential decisions, questions or friction, and critical changes in a few lines.
 Supporting evidence appears below.

@@ -340,13 +340,24 @@ evidence keeps the row too. All eight keys remain required.
 
 Add the optional integer `task_number` when `task_source` is `issue` or `pull_request`
 and that issue or PR is in the PR's own repository; the helper links it in the Task
-source row. Omit it for a task in another repository or tracker, which may be private.
+source row. Omit it for a task in another GitHub repository, which may be private.
 
-With a `task_number`, add the optional `task_relation` to say how this PR relates to
-that task: `fixes`, `part_of`, `follow_up`, or `refs`. Only an issue takes `fixes`.
-The helper renders a visible Task source line right under the summary, such as
-`Part of #818`, or `Fixes #818`, which closes the issue on merge. Without a relation
-the line names the task alone, as `issue #818` or `task description`.
+For a Jira or Linear ticket, set `task_source` to `issue`, `task_tracker` to `jira` or
+`linear`, and `task_key` to its key, such as `MKT-1234`. Add an https `task_url` only
+when the ticket's address may appear in this PR; without it the key is shown unlinked.
+
+With a number or key, the optional `task_relation` says how this PR relates to the
+task: `fixes`, `part_of`, `follow_up`, or `refs`. Only a GitHub issue number takes `fixes`.
+
+The helper renders the Task line after Why in Intent:
+
+| Provenance | Task line |
+| --- | --- |
+| `description` | `Claude prompt` or `Codex prompt`, from the writer's identity |
+| issue `1234`, `part_of` | `GitHub #1234 · part of` |
+| issue `1234`, `fixes` | `GitHub · fixes #1234`, which closes the issue when the PR merges into the default branch |
+| `linear`, `MKT-1234` | `Linear MKT-1234` |
+| issue with no number or key | `issue` |
 
 Carry those values from intake; recommendations and host settings do not establish
 a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not

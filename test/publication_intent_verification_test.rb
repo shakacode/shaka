@@ -13,7 +13,8 @@ class PublicationIntentVerificationTest < Minitest::Test
   def test_intent_and_verification_render_each_field_on_its_own_line
     rendered = render
 
-    intent = "## Intent\n\n**Why:** #{INTENT['why']}\n\n**Safe because:** #{INTENT['safe_because']}\n\n" \
+    intent = "## Intent\n\n**Why:** #{INTENT['why']}\n\n**Task:** Codex prompt\n\n" \
+             "**Safe because:** #{INTENT['safe_because']}\n\n" \
              "**Review effort:** 2 of 5, easy: skim the diff.\n\n**Leaves out:** #{INTENT['leaves_out']}\n\n" \
              "**Scope:** #{INTENT['scope']}"
     verification = "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n" \
@@ -73,7 +74,8 @@ class PublicationIntentVerificationTest < Minitest::Test
     cause = 'The booking link covered the underlined price.'
     rendered = render('intent' => INTENT.merge('root_cause' => cause))
 
-    assert_includes rendered, "**Why:** #{INTENT['why']}\n\n**Root cause:** #{cause}\n\n**Safe because:**"
+    assert_includes rendered, "**Why:** #{INTENT['why']}\n\n**Task:** Codex prompt\n\n" \
+                              "**Root cause:** #{cause}\n\n**Safe because:**"
   end
 
   def test_root_cause_is_optional_but_not_blank

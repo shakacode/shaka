@@ -11,7 +11,7 @@ module Shaka
   class ExecutionProvenance
     FIELDS = %w[task_source initial_prompt requested_model requested_effort
                 recommended_model recommended_effort active_model active_effort].freeze
-    OPTIONAL_FIELDS = %w[task_number task_relation].freeze
+    OPTIONAL_FIELDS = %w[task_number task_relation task_tracker task_key task_url].freeze
     TASK_SOURCES = %w[description issue pull_request].freeze
     TASK_PATHS = { 'issue' => 'issues', 'pull_request' => 'pull' }.freeze
     REQUESTED_FIELDS = %w[requested_model requested_effort].freeze
@@ -28,10 +28,10 @@ module Shaka
       { 'summary' => 'Execution details', 'body' => table }
     end
 
-    # The visible line under the summary, so the summary need not restate the task to link it.
-    def line
+    # The Task line in Intent, so the summary need not restate the task to link it.
+    def line(agent)
       validated
-      TaskSourceLine.render(@spec)
+      TaskSourceLine.render(@spec, agent)
     end
 
     # The values a provenance history entry compares, as the table renders them.

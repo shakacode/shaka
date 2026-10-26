@@ -518,10 +518,10 @@ phases:
         floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
-        For a numbered task, add the provenance `task_relation` the
+        Name the task in provenance as the
         [usage guide](<{{package_root}}/skills/shaka/references/usage-reporting.md#pr-execution-provenance>)
-        lists. The helper renders it as the Task source line under the summary, so the summary
-        need not repeat the task link.
+        describes, with an optional `task_relation`. The helper renders it as the Task line after
+        Why in Intent, so the summary need not repeat the task link.
         Write `Fixes #N` once per other issue the PR fully resolves and `Part of #N` for partial work.
         When `description` returns `closing_issues`, correct the wording it names once.
         The helper writes the repository validation and local review line under Verification

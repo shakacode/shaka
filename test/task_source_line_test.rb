@@ -8,37 +8,51 @@ class TaskSourceLineTest < Minitest::Test
                         'requested_model' => nil, 'requested_effort' => nil,
                         'recommended_model' => 'gpt-5.6-terra', 'recommended_effort' => 'medium',
                         'active_model' => 'gpt-5.6-terra', 'active_effort' => 'medium' }.freeze
-  PULL = { 'base' => { 'repo' => { 'full_name' => 'shakacode/shaka' } } }.freeze
+  ISSUE = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_number' => 1234).freeze
+  LINEAR = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_tracker' => 'linear',
+                                   'task_key' => 'MKT-1234').freeze
 
-  def test_the_task_source_line_names_how_the_pull_request_relates_to_its_task
-    issue = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_number' => 818)
-    { 'fixes' => 'Fixes #818', 'part_of' => 'Part of #818', 'follow_up' => 'Follow-up to #818',
-      'refs' => 'Refs #818' }.each do |relation, text|
-      line = Shaka::ExecutionProvenance.new(issue.merge('task_relation' => relation), pull: PULL).line
-
-      assert_equal "**Task source:** #{text}", line
-    end
+  def test_a_prompt_is_named_after_the_agent_that_took_it
+    assert_equal '**Task:** Claude prompt', line(PUBLIC_PROVENANCE, 'Claude Code')
+    assert_equal '**Task:** Codex prompt', line(PUBLIC_PROVENANCE, 'Codex')
   end
 
-  def test_without_a_relation_the_line_names_the_task_alone
-    issue = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_number' => 818)
-    pull = issue.merge('task_source' => 'pull_request')
-
-    assert_equal '**Task source:** issue #818', Shaka::ExecutionProvenance.new(issue, pull: PULL).line
-    assert_equal '**Task source:** task description', Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE).line
-    assert_equal '**Task source:** pull request #818', Shaka::ExecutionProvenance.new(pull).line
-    assert_equal '**Task source:** Follow-up to #818',
-                 Shaka::ExecutionProvenance.new(pull.merge('task_relation' => 'follow_up')).line
+  def test_a_github_task_names_its_number_and_relation
+    assert_equal '**Task:** GitHub #1234', line(ISSUE)
+    assert_equal '**Task:** GitHub #1234 · part of', line(ISSUE.merge('task_relation' => 'part_of'))
+    assert_equal '**Task:** GitHub #1234 · related', line(ISSUE.merge('task_relation' => 'refs'))
+    pull = ISSUE.merge('task_source' => 'pull_request', 'task_relation' => 'follow_up')
+    assert_equal '**Task:** GitHub PR #1234 · follow-up', line(pull)
   end
 
-  def test_refuses_a_task_relation_without_a_task_it_can_name
-    issue = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_number' => 818)
-    invalid = [issue.merge('task_relation' => 'closes'), PUBLIC_PROVENANCE.merge('task_relation' => 'refs'),
-               issue.merge('task_source' => 'pull_request', 'task_relation' => 'fixes')]
+  # GitHub closes the issue only when the keyword directly precedes the bare reference.
+  def test_a_fix_puts_its_closing_keyword_before_the_number
+    assert_equal '**Task:** GitHub · fixes #1234', line(ISSUE.merge('task_relation' => 'fixes'))
+  end
+
+  def test_another_trackers_ticket_is_linked_only_when_a_url_is_supplied
+    assert_equal '**Task:** Linear MKT-1234', line(LINEAR)
+    jira = LINEAR.merge('task_tracker' => 'jira', 'task_key' => 'PROJ-1234',
+                        'task_url' => 'https://acme.atlassian.net/browse/PROJ-1234', 'task_relation' => 'part_of')
+    assert_equal '**Task:** [Jira PROJ-1234](https://acme.atlassian.net/browse/PROJ-1234) · part of', line(jira)
+  end
+
+  def test_a_task_in_another_github_repository_names_only_its_kind
+    assert_equal '**Task:** issue', line(PUBLIC_PROVENANCE.merge('task_source' => 'issue'))
+  end
+
+  def test_refuses_a_relation_or_tracker_it_cannot_render_safely
+    invalid = [ISSUE.merge('task_relation' => 'closes'), PUBLIC_PROVENANCE.merge('task_relation' => 'refs'),
+               ISSUE.merge('task_source' => 'pull_request', 'task_relation' => 'fixes'),
+               LINEAR.merge('task_relation' => 'fixes'), LINEAR.merge('task_tracker' => 'trello'),
+               LINEAR.merge('task_key' => 'mkt 1234'), LINEAR.merge('task_number' => 1234),
+               LINEAR.merge('task_url' => 'http://linear.app/x'), LINEAR.merge('task_url' => 'https://x.test/a)(b')]
     invalid.each do |spec|
-      error = assert_raises(Shaka::Error) { Shaka::ExecutionProvenance.new(spec).line }
-
-      assert_includes error.message, 'task_relation'
+      assert_raises(Shaka::Error, spec.inspect) { line(spec) }
     end
   end
+
+  private
+
+  def line(spec, agent = 'Claude Code') = Shaka::ExecutionProvenance.new(spec).line(agent)
 end
