@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'json'
 require 'open3'
 require 'optparse'
@@ -139,8 +140,8 @@ module Shaka
       end
     end
 
-    # A commit object holding the working tree's nonignored files, so a draft is read through the same
-    # commit-based path as trusted settings. It writes only unreferenced objects, which `git gc` removes.
+    # A commit object holding the working tree's tracked files and nonignored new files, so a draft is read through
+    # the same commit-based path as trusted settings. It writes only unreferenced objects, which `git gc` removes.
     module DraftCommit
       IDENTITY = { 'GIT_AUTHOR_NAME' => 'shaka', 'GIT_AUTHOR_EMAIL' => 'shaka@localhost',
                    'GIT_COMMITTER_NAME' => 'shaka', 'GIT_COMMITTER_EMAIL' => 'shaka@localhost' }.freeze
@@ -151,19 +152,14 @@ module Shaka
 
         Dir.mktmpdir('shaka-prompt-draft-') do |directory|
           environment = IDENTITY.merge('GIT_INDEX_FILE' => File.join(directory, 'index'))
-          # Starting from HEAD keeps tracked files an ignore rule matches; a new repository has no HEAD yet.
-          git(environment, root, 'read-tree', 'HEAD') if head?(root)
+          # A copy of the real index keeps every tracked and staged path, even one an ignore rule matches. Its own
+          # timestamp keeps Git's check for files edited in the same second as the index was written.
+          index = File.expand_path(git({}, root, 'rev-parse', '--git-path', 'index'), root)
+          FileUtils.cp(index, environment.fetch('GIT_INDEX_FILE'), preserve: true) if File.file?(index)
           git(environment, root, 'add', '--all', '--', '.')
           tree = git(environment, root, 'write-tree')
           git(environment, root, 'commit-tree', tree, '-m', 'shaka prompt show --local draft')
         end
-      end
-
-      def self.head?(root)
-        git({}, root, 'rev-parse', '--verify', '--quiet', 'HEAD^{commit}')
-        true
-      rescue Error
-        false
       end
 
       # The same Git a review would use: never one the checkout itself supplies.

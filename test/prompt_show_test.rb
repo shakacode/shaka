@@ -149,6 +149,18 @@ class PromptShowTest < Minitest::Test
     end
   end
 
+  def test_a_local_draft_keeps_a_newly_staged_ignored_file
+    with_change do |root, _base, _head, _bin|
+      File.write(File.join(root, '.gitignore'), "extra/\n")
+      FileUtils.mkdir_p(File.join(root, 'extra'))
+      File.write(File.join(root, 'extra/AGENTS.md'), "Extra criteria\n")
+      git!(root, 'add', '--force', 'extra/AGENTS.md')
+
+      notes = show(root, 'review', '--local', '--reviewer', 'openai/codex').fetch('notes')
+      assert_includes notes, 'extra/AGENTS.md is added when a change touches extra/'
+    end
+  end
+
   def test_a_disabled_checkpoint_reports_that_no_prompt_is_sent
     with_change('checkpoint' => { 'enabled' => false }) do |root, base, _head, _bin|
       document = show(root, 'checkpoint', '--ref', base)
