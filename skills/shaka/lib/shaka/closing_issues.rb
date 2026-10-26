@@ -3,7 +3,7 @@
 require_relative 'error'
 
 module Shaka
-  # Compares the issues a description says it fixes with the ones GitHub will close on merge.
+  # Compares the issues a description and its task name with the ones GitHub will close on merge.
   # GitHub links an issue only when its reference directly follows a closing keyword, so
   # "Fixes #1 and #2" closes #1 alone; the notes it returns are advisory.
   module ClosingIssues
@@ -17,8 +17,11 @@ module Shaka
       }
     GRAPHQL
     REFERENCE = %r{(?<![\w/])(?:[\w.-]+/[\w.-]+)?\#\d+(?!\w)|https://github\.com/[\w.-]+/[\w.-]+/issues/\d+(?![\w/])}i
+    LIST = /#{REFERENCE}(?:\s*(?:,|,?\s*and|&)\s*#{REFERENCE})*/
     # Each reference in a list after one keyword counts as claimed, so the note can name the unlinked ones.
-    CLAIM = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+(#{REFERENCE}(?:\s*(?:,|,?\s*and|&)\s*#{REFERENCE})*)/i
+    CLAIM = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+(#{LIST})/i
+    # Partial work names its issue with no keyword, so the task's issue is expected to stay open.
+    PARTIAL = /\bpart\s+of:?\s+(#{LIST})/i
     FIELDS = %w[why scope root_cause].freeze
     # GitHub links no keyword inside code, so a quoted example such as `Fixes #1` claims nothing.
     CODE = /(`+).*?\1/m
@@ -34,9 +37,16 @@ module Shaka
     end
 
     # Each issue the texts say this PR fixes, as OWNER/REPO#N.
-    def claimed(texts, repository)
-      texts.flat_map { |text| text.gsub(CODE, ' ').scan(CLAIM).flatten }.flat_map { |list| list.scan(REFERENCE) }
+    def claimed(texts, repository, pattern = CLAIM)
+      texts.flat_map { |text| text.gsub(CODE, ' ').scan(pattern).flatten }.flat_map { |list| list.scan(REFERENCE) }
            .map { |reference| normalize(reference, repository) }.uniq
+    end
+
+    # The issue the task came from, as OWNER/REPO#N, when provenance records one.
+    def task_issue(content, repository)
+      provenance = content['provenance']
+      number = provenance['task_number'] if provenance.is_a?(Hash) && provenance['task_source'] == 'issue'
+      "#{repository}##{number}".downcase if number.is_a?(Integer)
     end
 
     # Each issue GitHub will close when this PR merges, as OWNER/REPO#N.
@@ -56,23 +66,48 @@ module Shaka
       nodes.compact
     end
 
-    # Names each claimed issue GitHub will not close; reads GitHub only when the texts claim one.
+    # Names each claimed issue GitHub will not close, the task's issue left open without `Part of`,
+    # and each issue GitHub will close that neither the task nor the texts name.
     def note(content, github)
-      claimed = claimed(texts(content), github.repository)
-      return {} if claimed.empty?
-
-      missing = claimed - linked(github).map(&:downcase)
-      missing.empty? ? {} : { 'closing_issues' => missing_note(missing, github.repository) }
+      notes = notes(content, github)
+      notes.empty? ? {} : { 'closing_issues' => notes.join(' ') }
     rescue *FAILURES => e
       { 'closing_issues' => "Closing issue references could not be read: #{e.message}" }
     end
 
-    # The issues a merge would close, for a handoff to name before anyone merges.
-    def fact(github)
-      issues = linked(github).map { |issue| short(issue, github.repository) }
-      issues.empty? ? 'closes no issues' : "closes #{issues.join(', ')}"
+    def notes(content, github)
+      repository = github.repository
+      texts = texts(content)
+      claimed = claimed(texts, repository)
+      task = task_issue(content, repository)
+      linked = linked(github).map(&:downcase)
+      [missing_note(claimed - linked, repository),
+       task_note(left_open(task, linked + claimed, texts, repository), repository),
+       extra_note(linked - claimed - [task], repository)].compact
+    end
+
+    # The issues a merge would close, for a handoff to name before anyone merges, and the
+    # published task issue it would leave open when the body does not say `Part of` it.
+    def fact(github, body = nil)
+      repository = github.repository
+      linked = linked(github)
+      closes = linked.empty? ? 'closes no issues' : "closes #{names(linked, repository)}"
+      task = left_open(published_task(body.to_s, repository), linked.map(&:downcase), [body.to_s], repository)
+      task ? "#{closes}; task issue #{short(task, repository)} stays open" : closes
     rescue *FAILURES => e
       "closing issues unavailable: #{e.message}"
+    end
+
+    # The task's issue when the merge leaves it open and no text says this PR is only part of it.
+    def left_open(task, expected, texts, repository)
+      task unless task.nil? || [*expected, *claimed(texts, repository, PARTIAL)].include?(task)
+    end
+
+    # The provenance row `description` renders for an issue task, read back from the published body.
+    def published_task(body, repository)
+      link = %r{\[#(\d+)\]\(https://github\.com/#{Regexp.escape(repository)}/issues/\1\)}i
+      number = body[/^\| Task source \| issue #{link} \|/, 1]
+      "#{repository}##{number}".downcase if number
     end
 
     def normalize(reference, repository)
@@ -82,11 +117,30 @@ module Shaka
 
     def short(issue, repository) = issue.downcase.start_with?("#{repository.downcase}#") ? issue[/#\d+\z/] : issue
 
+    def names(issues, repository) = issues.map { |issue| short(issue, repository) }.join(', ')
+
     def missing_note(missing, repository)
-      names = missing.map { |issue| short(issue, repository) }.join(', ')
-      "The description says this PR fixes #{names}, but GitHub will not close #{missing.one? ? 'it' : 'them'} " \
-        'on merge. Put a keyword before each issue, as in `Fixes #1, fixes #2`, or say `Part of` ' \
-        'when the issue stays open.'
+      return if missing.empty?
+
+      "The description says this PR fixes #{names(missing, repository)}, but GitHub will not close " \
+        "#{missing.one? ? 'it' : 'them'} on merge. Put a keyword before each issue, as in `Fixes #1, fixes #2`, " \
+        'or say `Part of` when the issue stays open.'
+    end
+
+    def task_note(task, repository)
+      return unless task
+
+      issue = short(task, repository)
+      "This PR comes from the task's issue #{issue}, but GitHub will not close it on merge. Write " \
+        "`Fixes #{issue}` when this PR resolves it, or `Part of #{issue}` when it stays open."
+    end
+
+    def extra_note(extra, repository)
+      return if extra.empty?
+
+      them = extra.one? ? 'it' : 'them'
+      "GitHub will also close #{names(extra, repository)} on merge, though neither the task nor the description " \
+        "says this PR fixes #{them}. Remove the closing keyword or manual link unless the task may close #{them}."
     end
   end
 end

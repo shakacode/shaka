@@ -59,6 +59,7 @@ module Shaka
     end
 
     def open_facts(snapshot, live)
+      @pull = nil
       checks = snapshot['requiredChecks']
       [attention_fact(checks, live), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
        comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live), squash_fact(snapshot, live),
@@ -122,7 +123,7 @@ module Shaka
     end
 
     # The person clicking merge sees which issues it closes before they click.
-    def closing_fact = (ClosingIssues.fact(@github) if merge_requested?)
+    def closing_fact = (ClosingIssues.fact(@github, pull['body']) if merge_requested?)
 
     def checkpoint_fact(live)
       return unless @checkpoint && merge_requested?
@@ -133,8 +134,9 @@ module Shaka
       owe('checkpoint owed', e.message)
     end
 
+    def pull = @pull ||= @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
+
     def wip_fact(live)
-      pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
       recheck_head(pull.dig('head', 'sha'), live)
       revision = WipNote.revision(pull['body'])
       return owe('no WIP', 'WIP Details is missing; publish it before stopping.') unless revision
