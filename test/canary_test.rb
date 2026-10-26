@@ -195,6 +195,7 @@ class CanaryReportTest < Minitest::Test
     assert_includes text, 'farewell'
     assert_includes text, 'Do not merge'
     assert_includes text, 'shaka-canary/run-99-1'
+    assert_includes text, 'claim --description run-99-1'
   end
 
   def test_a_run_without_a_pull_request_fails_and_names_the_commit

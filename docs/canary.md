@@ -54,7 +54,8 @@ set secrets, or change organization settings.
 7. Use Actions → Canary → Run workflow to try it. Do not merge the canary
    pull requests. `main` should stay the template so every run repeats the
    same task: add `farewell`, its test, and one docs line. Each Actions
-   attempt uses its own `shaka-canary/run-ID-ATTEMPT` branch. Checks and
+   attempt uses the branch Shaka's claim command names for `run-ID-ATTEMPT`,
+   currently `shaka-canary/ad-hoc-run-ID-ATTEMPT`. Checks and
    cleanup ignore fork pull requests and branches outside that pattern.
 
 Review is `none` in the template so the sandbox can finish without

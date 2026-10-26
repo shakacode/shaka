@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
+require_relative '../claim/names'
+
 module Shaka
   module Canary
     # Picks the pull request this run opened, the one before it, and older ones to close.
     module Pulls
       KEEP = 5
-      BRANCH = %r{\Ashaka-canary/run-\d+-\d+\z}
+      AD_HOC = Regexp.escape(Claim::Names::AD_HOC)
+      BRANCH = %r{\Ashaka-canary/(?:#{AD_HOC}-)?run-\d+-\d+\z}
 
       module_function
 

@@ -72,8 +72,11 @@ jobs:
         run: |
           set -euo pipefail
           gh repo clone "$SHAKA_CANARY_REPO" "$RUNNER_TEMP/canary"
+          slug="run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          "$SHAKA_HELPER" claim --description "$slug" --root "$RUNNER_TEMP/canary" > "$RUNNER_TEMP/canary-claim.json"
+          branch=$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("branch_name")' "$RUNNER_TEMP/canary-claim.json")
           echo "CANARY_DIR=$RUNNER_TEMP/canary" >> "$GITHUB_ENV"
-          echo "CANARY_BRANCH=shaka-canary/run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+          echo "CANARY_BRANCH=$branch" >> "$GITHUB_ENV"
           date -u +%Y-%m-%dT%H:%M:%SZ > "$RUNNER_TEMP/canary-started-at"
 
       - name: Install Cursor CLI

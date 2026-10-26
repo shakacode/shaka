@@ -95,8 +95,9 @@ module Shaka
       module_function
 
       def render(sha:, repo:, branch:)
+        slug = branch[/run-\d+-\d+\z/] || raise(ArgumentError, 'invalid canary run branch')
         File.read(File.expand_path('../../../config/canary-prompt.md', __dir__))
-            .gsub('{{sha}}', sha).gsub('{{repo}}', repo).gsub('{{branch}}', branch)
+            .gsub('{{sha}}', sha).gsub('{{repo}}', repo).gsub('{{branch}}', branch).gsub('{{slug}}', slug)
       end
     end
   end

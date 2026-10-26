@@ -69,6 +69,13 @@ class CanaryWorkflowTest < Minitest::Test
       assert_equal "${{ !cancelled() && steps.preflight.outputs.action == 'run' }}", step['if']
     end
   end
+
+  def test_the_controller_gets_the_branch_from_the_installed_claim_command
+    step = @workflow.dig('jobs', 'canary', 'steps').find { |item| item['name'] == 'Clone the canary repository' }
+
+    assert_includes step['run'], '"$SHAKA_HELPER" claim --description "$slug"'
+    assert_includes step['run'], 'echo "CANARY_BRANCH=$branch"'
+  end
 end
 
 class CanaryInstallTest < Minitest::Test
@@ -501,6 +508,15 @@ class FakeCanary
 end
 
 class CanaryTemplateTest < Minitest::Test
+  def test_the_real_description_claim_branch_is_accepted_for_this_run
+    path = File.expand_path('../templates/shaka-canary/.agents/shaka/config.yml', __dir__)
+    template = YAML.load_file(path).dig('branches', 'name')
+    name = Shaka::Claim::Names.new(query: nil, description: 'run-99-1', template: template).reported
+    pull = { 'headRefName' => name, 'isCrossRepository' => false }
+
+    assert_equal [pull], Shaka::Canary::Pulls.for_run([pull], name)
+  end
+
   def test_the_template_validate_script_passes_and_the_seam_loads
     Dir.mktmpdir { |dir| assert_template(copy_template(dir)) }
   end
