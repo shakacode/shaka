@@ -23,8 +23,8 @@ module Shaka
 
       private
 
-      # On Windows the incoming tree's shaka.rb starts with this revision's launcher flags and
-      # paths, so an update that moves those files fails here until it runs from the new revision.
+      # On Windows this starts the incoming shaka.rb with this revision's argv. Windows installs
+      # therefore refuse an update that moves the files it names; test/shaka_command_test.rb says so.
       def verify_helper
         command = ExecutableFile.helper_command(File.join(@root, 'skills/shaka/scripts/shaka'))
         output, status = Open3.capture2e({ 'SHAKA_RUBY' => RbConfig.ruby }, *command, '--help', chdir: @root)

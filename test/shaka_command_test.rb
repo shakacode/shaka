@@ -8,6 +8,8 @@ require 'shellwords'
 class ShakaCommandTest < Minitest::Test
   LAUNCHER = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
 
+  # When this fails, remember that installed Windows copies check an incoming revision with their
+  # own argv, so moving shaka.rb or ruby_requirement.rb makes their updates refuse that revision.
   def test_windows_argv_matches_the_launcher_exec_line
     exec_line = File.readlines(LAUNCHER, chomp: true).grep(/\Aexec /).last
     scripts = File.dirname(LAUNCHER)
