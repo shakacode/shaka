@@ -151,10 +151,19 @@ module Shaka
 
         Dir.mktmpdir('shaka-prompt-draft-') do |directory|
           environment = IDENTITY.merge('GIT_INDEX_FILE' => File.join(directory, 'index'))
+          # Starting from HEAD keeps tracked files an ignore rule matches; a new repository has no HEAD yet.
+          git(environment, root, 'read-tree', 'HEAD') if head?(root)
           git(environment, root, 'add', '--all', '--', '.')
           tree = git(environment, root, 'write-tree')
           git(environment, root, 'commit-tree', tree, '-m', 'shaka prompt show --local draft')
         end
+      end
+
+      def self.head?(root)
+        git({}, root, 'rev-parse', '--verify', '--quiet', 'HEAD^{commit}')
+        true
+      rescue Error
+        false
       end
 
       # The same Git a review would use: never one the checkout itself supplies.

@@ -139,6 +139,16 @@ class PromptShowTest < Minitest::Test
     end
   end
 
+  # A tracked file stays in the draft even when an ignore rule matches it.
+  def test_a_local_draft_keeps_tracked_files_that_match_ignore_rules
+    with_change do |root, _base, _head, _bin|
+      File.write(File.join(root, '.gitignore'), "AGENTS.md\n")
+      document = show(root, 'review', '--local', '--reviewer', 'openai/codex')
+
+      assert_includes shown_text(document), 'Root criteria'
+    end
+  end
+
   def test_a_disabled_checkpoint_reports_that_no_prompt_is_sent
     with_change('checkpoint' => { 'enabled' => false }) do |root, base, _head, _bin|
       document = show(root, 'checkpoint', '--ref', base)
