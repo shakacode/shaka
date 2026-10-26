@@ -19,8 +19,13 @@ module Shaka
                          post_implementation/history.rb post_implementation/auto_merge_preview.rb
                          post_implementation/disposition.rb post_implementation/merge_warning.rb]
                       .map { |path| "skills/shaka/lib/shaka/#{path}" }.freeze
-    RENDERERS = %w[usage_details usage_pricing metrics verification_gates diff_buckets intent_verification publication]
+    # In load order: a renderer loads before the ones that call it.
+    RENDERERS = %w[usage_details usage_pricing metrics verification_gates diff_buckets intent_verification
+                   task_source_line provenance publication]
                 .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
+    # A listed renderer the default branch does not have yet. A head without it keeps the installed copy;
+    # every other listed renderer must be at the head, so a preview never stands in for a missing one.
+    NOT_YET_LANDED = ["#{DIRECTORY}task_source_line.rb"].freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
 
     module_function
@@ -42,8 +47,7 @@ module Shaka
       raise Error, 'Rendering preview checkout does not name the live head.' unless git(root, 'rev-parse',
                                                                                         'HEAD').strip == head
 
-      sources = RENDERERS.to_h { |path| [path, git(root, 'show', "#{head}:#{path}")] }
-      sources.each { |path, source| load_renderer(path, source) }
+      sources(root, head).each { |path, source| load_renderer(path, source) }
       "#{yield}\n<!-- shaka:rendering-preview #{head} -->\n"
     end
 
@@ -85,6 +89,14 @@ module Shaka
       end
     end
 
+    def sources(root, head)
+      listed = RENDERERS.reject { |path| NOT_YET_LANDED.include?(path) && !present?(root, head, path) }
+      listed.to_h { |path| [path, git(root, 'show', "#{head}:#{path}")] }
+    end
+
+    # A read failure raises, so only a path the head truly lacks counts as absent.
+    def present?(root, head, path) = !git(root, 'ls-tree', '--name-only', head, '--', path).strip.empty?
+
     def git(root, *)
       output, error, status = Open3.capture3('git', '-C', root, *)
       raise Error, "Cannot read rendering preview: #{error.strip}" unless status.success?
@@ -103,6 +115,6 @@ module Shaka
       $VERBOSE = previous
     end
 
-    private_class_method :git, :load_renderer, :changed_renderers, :supported!, :rendering_path?
+    private_class_method :git, :sources, :present?, :load_renderer, :changed_renderers, :supported!, :rendering_path?
   end
 end
