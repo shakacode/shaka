@@ -101,9 +101,9 @@ class ClosingIssuesTest < Minitest::Test
   end
 
   def test_an_unreadable_reference_list_is_reported_without_raising
-    note = note_for('Fixes #1.', :unreadable)
-
-    assert_includes note, 'could not be read'
+    assert_includes note_for('Fixes #1.', :unreadable), 'could not be read'
+    # Unexpected closes need the read even when the text claims nothing, so its failure shows there too.
+    assert_includes note_for('Adds the check.', :unreadable), 'could not be read'
   end
 
   def test_a_partial_reference_page_is_reported_instead_of_trusted
