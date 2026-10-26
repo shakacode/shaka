@@ -34,7 +34,7 @@ identity. Fixture Ruby/lockfile, local reviewers and judge fields are `N/A`
 because the decision task runs none of them. Actions and hosted reviewers are
 also `N/A`. The criteria digest binds the expected action list and both Ruby
 checker files. Supplied operator values cannot replace these tier 1 fields;
-missing applicable native observations remain `UNKNOWN`. Usage fills omitted configured
+missing applicable native observations remain `UNKNOWN`. Claude usage fills omitted configured
 model or effort from the matching Harbor launch lock only for a single root transcript
 with one model row. Other usage retains its native unknowns. The fingerprint independently
 falls back to root-launch settings for missing configuration. Known session values and

@@ -35,6 +35,15 @@ class EvaluationHarborUsageBindingTest < Minitest::Test
     assert_equal 'UNKNOWN', saved.dig('usage', 'models', 0, 'configured_model')
   end
 
+  def test_codex_unknown_effort_cannot_inherit_a_root_launch
+    observed = native_usage(configured: 'child-configured')
+    observed['models'].first.merge!('provider' => 'openai', 'routed_model' => 'UNKNOWN', 'effort' => 'UNKNOWN')
+    lock = { 'agent' => { 'name' => 'codex', 'model_name' => 'openai/root-configured',
+                          'kwargs' => { 'reasoning_effort' => 'medium' } } }
+    bound = Shaka::Evaluation::HarborFingerprint.bind_usage(observed, lock: lock, host: 'codex')
+    assert_equal observed, bound
+  end
+
   def test_other_providers_cannot_inherit_the_launch_configuration
     observed = native_usage
     observed['models'].first['provider'] = 'openai'
