@@ -9,6 +9,7 @@ module CheckpointInstructionsFixture
   RULES = '.agents/shaka/instructions/checkpoint.md'
   REPLACEMENT = { 'checkpoint' => { 'replacement_prompt_file' => '.agents/codex-prompt.md' } }.freeze
   NAMED = '.agents/named-rules.md'
+  PRECEDENCE = File.expand_path('../skills/shaka/config/checkpoint-rules-precedence.md', __dir__)
   NAMED_SETTINGS = { 'checkpoint' => { 'custom_instructions_file' => NAMED } }.freeze
 
   private
@@ -73,7 +74,7 @@ class CheckpointConventionsTest < Minitest::Test
       assert_predicate status, :success?
       assert prompt.start_with?('Codex-only instructions')
       assert_includes prompt, 'Repository checkpoint rule'
-      assert_includes prompt, 'the JSON report the checkpoint must return.'
+      assert_includes prompt, File.read(PRECEDENCE).strip
     end
   end
 

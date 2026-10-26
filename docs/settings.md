@@ -590,8 +590,8 @@ which has no `replacement_prompt_file` on its entry, uses `.agents/review-prompt
 ### Where Shaka reads a prompt file
 
 The [configuration source](#which-settings-apply) determines which `replacement_prompt_file`
-settings apply. This rule covers code-review, checkpoint, and opening prompts, and
-[project guidance](#project_guidance) files.
+and `custom_instructions_file` settings apply. This rule covers code-review, checkpoint, and
+opening prompts, custom instructions files, and [project guidance](#project_guidance) files.
 A settings preview reads each prompt at its selected commit. Without a preview:
 
 - **Shared team settings:** commit the prompt with the settings PR. Shaka uses
