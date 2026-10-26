@@ -125,6 +125,25 @@ class ThroughputStatsTest < Minitest::Test
                                                                     wait: 'none')
   end
 
+  def test_a_complete_page_keeps_the_earlier_of_the_carried_and_seen_push
+    later = [{ 'pushed_at' => LATER.iso8601 }]
+    assert_equal PUSH.iso8601, Shaka::ThroughputStats.bounded_first_push(later, true, { 'first_push' => PUSH.iso8601 })
+    earlier = [{ 'pushed_at' => PUSH.iso8601 }]
+    assert_equal PUSH.iso8601,
+                 Shaka::ThroughputStats.bounded_first_push(earlier, true, { 'first_push' => LATER.iso8601 })
+  end
+
+  def test_a_commit_status_failure_counts_as_a_round
+    status = { 'oid' => '1' * 40, 'pushedDate' => START.iso8601, 'status' => { 'contexts' => [
+      { 'context' => 'validate', 'state' => 'FAILURE', 'createdAt' => START.iso8601 }
+    ] } }
+    fixed = { 'oid' => HEAD, 'pushedDate' => PUSH.iso8601, 'runs' => [check_run('validate', 'SUCCESS')] }
+    heads, complete = Shaka::ThroughputStats.ci_heads([status, fixed], required: ['validate'], review_jobs: [])
+    assert complete
+    assert_equal 2, Shaka::ThroughputStats.rounds(heads)
+    assert_equal START.iso8601, Shaka::ThroughputStats.first_push(heads)
+  end
+
   def test_a_cut_off_history_keeps_an_earlier_first_push_and_does_not_invent_one
     kept = watch_cut_off(filled_block)
     assert_includes kept, "\"first_push\":\"#{PUSH.iso8601}\""

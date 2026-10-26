@@ -17,6 +17,7 @@ module Shaka
                   commit {
                     oid
                     pushedDate
+                    status { contexts { context state createdAt } }
                     checkSuites(first: 8) {
                       pageInfo { hasNextPage }
                       nodes {

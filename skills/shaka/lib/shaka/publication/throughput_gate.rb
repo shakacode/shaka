@@ -26,8 +26,9 @@ module Shaka
     # A partial commit page must not replace an earlier push, and must not invent one.
     def bounded_first_push(heads, complete, carried)
       seen = first_push(heads)
-      return seen if complete && seen
-      return 'UNKNOWN' unless complete || kept_push?(carried['first_push'])
+      kept = carried['first_push']
+      return earlier_push(seen, kept) if complete && seen
+      return 'UNKNOWN' unless complete || kept_push?(kept)
 
       nil
     end
@@ -44,6 +45,8 @@ module Shaka
     private
 
     def kept_push?(value) = value.is_a?(String) && !value.empty? && value != 'UNKNOWN'
+
+    def earlier_push(seen, kept) = kept_push?(kept) ? [seen, kept].min : seen
 
     def next_round(count, previous_failed, head)
       return [count, previous_failed] unless head.is_a?(Hash)
@@ -98,8 +101,23 @@ module Shaka
     def runs_of(commit)
       return [Array(commit['runs']).grep(Hash), false] if commit['runs'].is_a?(Array)
 
-      suite_page(commit['checkSuites'])
+      runs, cut = suite_page(commit['checkSuites'])
+      [runs + status_runs(commit['status']), cut]
     end
+
+    def status_runs(status)
+      return [] unless status.is_a?(Hash)
+
+      Array(status['contexts']).grep(Hash).map { |row| status_run(row) }
+    end
+
+    def status_run(row)
+      state = row['state']
+      { 'name' => row['context'], 'status' => pending_status?(state) ? state : 'COMPLETED',
+        'conclusion' => state == 'ERROR' ? 'FAILURE' : state, 'completedAt' => row['createdAt'] }
+    end
+
+    def pending_status?(state) = %w[PENDING EXPECTED].include?(state)
 
     def suite_page(suites)
       nodes = suites.is_a?(Hash) ? Array(suites['nodes']) : []
