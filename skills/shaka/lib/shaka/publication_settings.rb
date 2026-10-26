@@ -9,8 +9,8 @@ require_relative 'publication/review_effort_floor'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
-  # Reading, verification, and publication policy live outside publication/, so a rendering
-  # preview, which loads that directory's renderers from the PR head, never replaces them.
+  # Reading, verification, and publication policy live outside publication/, whose renderers a
+  # rendering preview loads from the PR head; RenderingPreview refuses a head that redefines them.
   # publication/settings.rb renders the block.
   class PublicationSettings
     SUMMARY = 'Shaka settings used'

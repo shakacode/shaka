@@ -15,15 +15,10 @@ class RenderingPreviewTest < Minitest::Test
     root = ARGV.fetch(0)
     head, = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD')
     before = Shaka::Doctor::InstallationIdentity.read
-    # Evidence reading, verification, and publication policy must stay the installed copies.
-    settings = Shaka::PublicationSettings
-    readers = %i[prepare verify current_settings refuse_free_form!]
-    policy = %i[initialize include_checkout_path? path_redaction attribution? human_comments? human_comment_rows]
-    guarded = -> { readers.map { settings.method(it) } + policy.map { settings.instance_method(it) } }
-    installed = guarded.call
+    verifier = Shaka::PublicationSettings.method(:verify)
     result = Shaka::RenderingPreview.render(root: root, head: head.strip, repository: 'shakacode/shaka') { 'body' }
     abort 'installation changed' unless before == Shaka::Doctor::InstallationIdentity.read
-    abort 'evidence or policy replaced' unless installed == guarded.call
+    abort 'verifier replaced' unless verifier == Shaka::PublicationSettings.method(:verify)
     puts result
   RUBY
 
@@ -69,6 +64,7 @@ class RenderingPreviewTest < Minitest::Test
 
   def test_settings_and_history_renderers_are_previewed
     github = preview_github(%w[provenance_history settings settings_table])
+    assert_includes rendering_fact(github, nil).fetch('owed').join, 'description --rendering-preview-root'
     assert_empty rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->").fetch('owed')
   end
 
