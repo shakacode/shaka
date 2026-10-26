@@ -655,7 +655,7 @@ report format. Shaka checks the report's format; the reviewer is trusted to keep
 other rules.
 
 That path is the default of `checkpoint.custom_instructions_file`. To keep the file elsewhere,
-name it:
+name it with a path relative to the repository root:
 
 ```yaml
 checkpoint:
