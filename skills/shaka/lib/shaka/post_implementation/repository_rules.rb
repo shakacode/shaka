@@ -39,7 +39,7 @@ module Shaka
 
     def custom_instructions
       @custom_instructions ||= RepositoryConfig::PostImplementationSchema.custom_instructions(
-        (effective_review || {}).fetch('post_implementation', {})
+        (effective_review || {}).fetch(RepositoryConfig::PostImplementationSchema::KEY, {})
       )
     end
 
