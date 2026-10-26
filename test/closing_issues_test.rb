@@ -52,6 +52,18 @@ class ClosingIssuesTest < Minitest::Test
     assert_equal 0, github.reads
   end
 
+  # A fixes task relation renders `Fixes #N` under the summary, so the note checks it like summary text.
+  def test_a_fixes_task_relation_is_checked_like_summary_text
+    data = content('A neutral summary.').merge('provenance' => { 'task_source' => 'issue', 'task_number' => 818,
+                                                                 'task_relation' => 'fixes' })
+    note = Shaka::ClosingIssues.note(data, FakeGitHub.new([]))['closing_issues']
+
+    assert_includes note, 'fixes #818, but GitHub will not close it'
+    assert_equal({}, Shaka::ClosingIssues.note(data, FakeGitHub.new(['owner/repo#818'])))
+    part = data.merge('provenance' => data['provenance'].merge('task_relation' => 'part_of'))
+    assert_equal({}, Shaka::ClosingIssues.note(part, FakeGitHub.new([])))
+  end
+
   def test_only_the_reference_after_the_keyword_is_claimed
     claimed = Shaka::ClosingIssues.claimed(['Fixes #680 for #710 of #683.'], 'owner/repo')
 

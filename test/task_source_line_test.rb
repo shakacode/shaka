@@ -18,8 +18,17 @@ class TaskSourceLineTest < Minitest::Test
 
       assert_equal "**Task source:** #{text}", line
     end
+  end
+
+  def test_without_a_relation_the_line_names_the_task_alone
+    issue = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_number' => 818)
+    pull = issue.merge('task_source' => 'pull_request')
+
     assert_equal '**Task source:** issue #818', Shaka::ExecutionProvenance.new(issue, pull: PULL).line
     assert_equal '**Task source:** task description', Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE).line
+    assert_equal '**Task source:** pull request #818', Shaka::ExecutionProvenance.new(pull).line
+    assert_equal '**Task source:** Follow-up to #818',
+                 Shaka::ExecutionProvenance.new(pull.merge('task_relation' => 'follow_up')).line
   end
 
   def test_refuses_a_task_relation_without_a_task_it_can_name

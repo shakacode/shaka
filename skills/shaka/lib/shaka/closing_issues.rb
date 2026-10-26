@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'publication/task_source_line'
 
 module Shaka
   # Compares the issues a description says it fixes with the ones GitHub will close on merge.
@@ -27,10 +28,10 @@ module Shaka
 
     module_function
 
-    # The summary and intent, the text a description's reader takes as the PR's claim.
+    # The summary, intent, and task source line: the text a description's reader takes as the PR's claim.
     def texts(content)
       intent = content['intent'].is_a?(Hash) ? content['intent'] : {}
-      [content['summary'], *intent.values_at(*FIELDS)].grep(String)
+      [content['summary'], *intent.values_at(*FIELDS), TaskSourceLine.closing_claim(content['provenance'])].grep(String)
     end
 
     # Each issue the texts say this PR fixes, as OWNER/REPO#N.

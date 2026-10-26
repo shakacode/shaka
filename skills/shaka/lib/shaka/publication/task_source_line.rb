@@ -22,6 +22,13 @@ module Shaka
                    'with a task_number; fixes needs an issue.'
     end
 
+    # The closing keyword the line renders, so the closing-issue note checks it like summary text.
+    def self.closing_claim(spec)
+      return unless spec.is_a?(Hash) && spec['task_relation'] == 'fixes' && spec['task_number'].is_a?(Integer)
+
+      "#{RELATIONS.fetch('fixes')} ##{spec['task_number']}"
+    end
+
     def self.render(spec)
       name = NAMES.fetch(spec.fetch('task_source'))
       number = spec['task_number']

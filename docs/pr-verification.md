@@ -392,8 +392,8 @@ to show a recommendation made for an earlier commit, so the recommendation does 
 one. Beside it, links open the walkthrough, the detailed code review when one was
 published, and the full checkpoint. Your agent adds a **Next** line when merging waits on
 something the recommendation does not say, such as another PR. The **Summary** follows,
-then a **Task source** line naming the issue or PR the work came from and whether this PR
-fixes it, is part of it, follows up on it, or only refers to it.
+then a **Task source** line naming the task the work came from. When the agent records how
+this PR relates to an issue or PR, the line says so, such as **Fixes #818** or **Part of #818**.
 Your agent summarizes
 consequential decisions, questions or friction, and critical changes in a few lines.
 Supporting evidence appears below.
