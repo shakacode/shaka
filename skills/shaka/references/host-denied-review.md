@@ -50,8 +50,9 @@ Use this recovery checklist:
 
 ## Surface data-transfer consent
 
-Apply this whenever Codex Auto-review guards the review command, before the first
-launch and after a denial about sending code to the review provider.
+Apply this before the first launch when the host's approval settings show that
+Codex Auto-review guards commands, and after any denial about sending code to the
+review provider.
 
 1. Look for consent the user gave in this task's chat or in trusted `AGENTS.md`
    or host instructions. Consent must name the selected provider, this repository,
@@ -67,7 +68,8 @@ launch and after a denial about sending code to the review provider.
    exclusions for secrets and unrelated private data. Point to the
    [consent template](https://github.com/shakacode/shaka/blob/main/docs/coding-agents.md#give-consent-once).
    Record the answer in the task. When the user declines, follow checklist step 4.
-4. Do not change the reviewer, payload, or flags to fit consent or avoid a denial.
+4. Do not change the reviewer, payload, or flags on your own to fit consent or
+   avoid a denial; a reviewer the user names in answer to step 3 is a new request.
    Leave Codex approval and Auto-review policy settings to the user.
 
 ## Replay the blocked path without launching a provider
