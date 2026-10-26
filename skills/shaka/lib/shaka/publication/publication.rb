@@ -26,7 +26,7 @@ module Shaka
     # Callers pass content as a bare hash, so a keyword here would swallow it; every argument is positional.
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil) # rubocop:disable Metrics/ParameterLists
       new(content, description: true, workflow_version:, pull:, settings:, timeline:)
-        .render(%i[steps intent_verification sections evidence metrics wip credit],
+        .render(%i[task_source steps intent_verification sections evidence metrics wip credit],
                 lead: %i[lead]).tap { QuotedMarkers.refuse!(content) }
     end
 
@@ -67,7 +67,10 @@ module Shaka
 
     def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']))
 
-    # The steps besides merging sit right under the summary so a reader cannot miss them.
+    # The task source sits right under the summary, so the summary need not link the task.
+    def task_source = [ExecutionProvenance.new(provenance_spec, pull: @pull).line]
+
+    # The steps besides merging follow the task source so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)
 
     def credit = PublicationLinks.credit(@settings)

@@ -518,7 +518,10 @@ phases:
         floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
-        Write `Fixes #N` once per issue the PR fully resolves and `Part of #N` for partial work.
+        Set provenance `task_relation` for a numbered task: `fixes` when the PR fully resolves
+        that issue, `part_of` for partial work. The helper renders it as the Task source line
+        under the summary, so the summary need not repeat the task link.
+        Write `Fixes #N` once per other issue the PR fully resolves and `Part of #N` for partial work.
         When `description` returns `closing_issues`, correct the wording it names once.
         The helper writes the repository validation and local review line under Verification
         from `--validation-result` and `--review-result`, so leave those out of `checks`.
@@ -682,7 +685,7 @@ phases:
         uses `UNKNOWN`.
       - Description provenance has exactly eight flat keys: `task_source`, `initial_prompt`,
         `requested_model`, `requested_effort`, `recommended_model`, `recommended_effort`,
-        `active_model`, and `active_effort`, plus an optional `task_number` that the
+        `active_model`, and `active_effort`, plus optional `task_number` and `task_relation` that the
         [usage guide](<{{package_root}}/skills/shaka/references/usage-reporting.md#pr-execution-provenance>) defines.
         `initial_prompt` is `EXCLUDED`; the other values use
         allowlisted text or `UNKNOWN`, except that either requested field uses JSON `null`

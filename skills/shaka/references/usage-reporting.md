@@ -342,6 +342,12 @@ Add the optional integer `task_number` when `task_source` is `issue` or `pull_re
 and that issue or PR is in the PR's own repository; the helper links it in the Task
 source row. Omit it for a task in another repository or tracker, which may be private.
 
+With a `task_number`, add the optional `task_relation` to say how this PR relates to
+that task: `fixes`, `part_of`, `follow_up`, or `refs`. Only an issue takes `fixes`.
+The helper renders a visible Task source line right under the summary, such as
+`Part of #818`, or `Fixes #818`, which closes the issue on merge. Without a relation
+the line names the task alone, as `issue #818` or `task description`.
+
 Carry those values from intake; recommendations and host settings do not establish
 a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not
 reclassified. Recommended and active fields accept allowlisted strings or `UNKNOWN`,

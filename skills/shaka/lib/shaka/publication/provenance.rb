@@ -2,6 +2,7 @@
 
 require_relative '../error'
 require_relative '../workflow_version'
+require_relative 'task_source_line'
 
 module Shaka
   # Renders a small, allowlisted record of route-selection evidence for a public PR.
@@ -10,7 +11,7 @@ module Shaka
   class ExecutionProvenance
     FIELDS = %w[task_source initial_prompt requested_model requested_effort
                 recommended_model recommended_effort active_model active_effort].freeze
-    OPTIONAL_FIELDS = %w[task_number].freeze
+    OPTIONAL_FIELDS = %w[task_number task_relation].freeze
     TASK_SOURCES = %w[description issue pull_request].freeze
     TASK_PATHS = { 'issue' => 'issues', 'pull_request' => 'pull' }.freeze
     REQUESTED_FIELDS = %w[requested_model requested_effort].freeze
@@ -25,6 +26,12 @@ module Shaka
 
     def detail
       { 'summary' => 'Execution details', 'body' => table }
+    end
+
+    # The visible line under the summary, so the summary need not restate the task to link it.
+    def line
+      validated
+      TaskSourceLine.render(@spec)
     end
 
     # The values a provenance history entry compares, as the table renders them.
@@ -71,6 +78,7 @@ module Shaka
       validate_fields
       validate_task_source
       validate_task_number
+      TaskSourceLine.validate!(@spec)
       validate_prompt_exclusion
     end
 

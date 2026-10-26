@@ -30,6 +30,14 @@ class PublicationRegressionTest < Minitest::Test
       'details' => [] }.merge(changes)
   end
 
+  # The task source stands right under the summary, so a summary need not link the task itself.
+  def test_the_task_source_line_follows_the_summary
+    provenance = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_number' => 818, 'task_relation' => 'part_of')
+    rendered = Shaka::Publication.description(description_content('provenance' => provenance))
+
+    assert_includes rendered, "## Summary\n\nA summary.\n\n**Task source:** Part of #818\n\n## Change and review"
+  end
+
   # https://github.com/shakacode/shaka/pull/37 published its whole description as one
   # line containing literal backslash-n sequences instead of paragraph breaks.
   def test_escaped_newlines_in_supplied_text_are_reported_before_publication

@@ -85,8 +85,8 @@ module Shaka
     def missing_note(missing, repository)
       names = missing.map { |issue| short(issue, repository) }.join(', ')
       "The description says this PR fixes #{names}, but GitHub will not close #{missing.one? ? 'it' : 'them'} " \
-        'on merge. Put a keyword before each issue, as in `Fixes #1, fixes #2`, or say `Part of` ' \
-        'when the issue stays open.'
+        'on merge. Set provenance `task_relation` to `fixes` for the task issue, put a keyword before ' \
+        'each other issue, as in `Fixes #1, fixes #2`, or say `Part of` when the issue stays open.'
     end
   end
 end
