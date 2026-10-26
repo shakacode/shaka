@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'error'
-require_relative 'publication/agent_post'
 require_relative 'review_thread/lookup'
-require_relative 'review_thread/mutation'
 
 module Shaka
   # Marks one inline review thread resolved after the agent has replied from the authenticated
@@ -11,6 +9,13 @@ module Shaka
   # `handoff` counts it; an unmarked reply is the person's and reads as theirs.
   class ReviewThread
     THREAD_ID = /\A[A-Za-z0-9_-]{1,200}\z/
+    MUTATION = <<~GRAPHQL
+      mutation($id: ID!) {
+        resolveReviewThread(input: { threadId: $id }) {
+          thread { id isResolved }
+        }
+      }
+    GRAPHQL
 
     def self.resolve(github, thread_id)
       new(github, thread_id).resolve
@@ -50,7 +55,10 @@ module Shaka
       raise Error, 'The review thread is already resolved.' if thread['isResolved']
     end
 
+    # Walkthrough history loads this file, and AgentPost loads walkthrough history, so the
+    # reply check loads AgentPost only when it runs.
     def check_reply(thread)
+      require_relative 'publication/agent_post'
       replies = own_replies(thread)
       return if replies.any? { |comment| AgentPost.marked?(comment['body']) }
       raise Error, 'Review-thread reply evidence is incomplete.' if more_comments?(thread)

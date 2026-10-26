@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
-require_relative '../review_thread/mutation'
+require_relative '../review_thread'
 require_relative '../public_comments/threads'
 require_relative 'notes'
 
