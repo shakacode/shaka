@@ -15,6 +15,8 @@ class TaskSourceLineTest < Minitest::Test
   def test_a_prompt_is_named_after_the_agent_that_took_it
     assert_equal '**Task:** Claude prompt', line(PUBLIC_PROVENANCE, 'Claude Code')
     assert_equal '**Task:** Codex prompt', line(PUBLIC_PROVENANCE, 'Codex')
+    assert_equal '**Task:** Claude prompt', line(PUBLIC_PROVENANCE, 'claude')
+    assert_equal '**Task:** task description', line(PUBLIC_PROVENANCE, nil)
   end
 
   def test_a_github_task_names_its_number_and_relation

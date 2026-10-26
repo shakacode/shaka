@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'text'
 
 module Shaka
   # Renders the Task line in a description's Intent: where the work came from and how the PR relates to it,
@@ -53,10 +54,16 @@ module Shaka
 
     # A prompt is named after the agent that took it, such as Claude Code's "Claude prompt".
     def self.render(spec, agent)
-      return "**Task:** #{agent.to_s.delete_suffix(' Code')} prompt" if spec.fetch('task_source') == 'description'
+      return "**Task:** #{prompt(agent)}" if spec.fetch('task_source') == 'description'
       return "**Task:** GitHub · #{closing_claim(spec)}" if closing_claim(spec)
 
       "**Task:** #{task(spec)}#{suffix(spec)}"
+    end
+
+    # The identity's display name, so `claude` and `Claude Code` both read "Claude prompt".
+    def self.prompt(agent)
+      name = PublicationText.identity_field(agent, 'agent').delete_suffix(' Code')
+      name == 'UNKNOWN' ? 'task description' : "#{name} prompt"
     end
 
     def self.task(spec)
@@ -72,6 +79,6 @@ module Shaka
       relation ? " · #{RELATIONS.fetch(relation)}" : ''
     end
 
-    private_class_method :validate_tracker!, :relation?, :ticket?, :matches?, :task, :suffix
+    private_class_method :validate_tracker!, :relation?, :ticket?, :matches?, :prompt, :task, :suffix
   end
 end
