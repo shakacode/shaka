@@ -512,7 +512,7 @@ phases:
         `intent` holds one line each for `why`, `scope`, and `safe_because`: the problem,
         what changes, and the concrete safeguard. Add optional `leaves_out` only for a deliberate
         deferred part readers would reasonably expect; otherwise omit it. Intent ends with
-        `scope`, GitHub's file/line counts, and path-based buckets. Its `review_effort`, 1 to 5, tells the reviewer how hard to look:
+        `scope`, GitHub's file/line counts, and path-based buckets. Intent's `review_effort`, 1 to 5, tells the reviewer how hard to look:
         1 for docs a reader can trust from the description, 5 for irreversible or security changes.
         The helper refuses a rating below the floor the changed files set; to choose or change the
         floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
