@@ -15,14 +15,24 @@ class RenderingPreviewGuardTest < Minitest::Test
   DIRECTORY = Shaka::RenderingPreview::DIRECTORY
   # An unrebased head redefines verify; a stray edit could redefine the verdict or a guard constant.
   REDEFINITIONS = ['def self.verify(**) = nil', "def verdict = { 'status' => 'ready' }",
-                   "MISSING_REF = 'changed'"].freeze
+                   "MISSING_REF = 'changed'", 'remove_method :path_redaction'].freeze
 
   # Break: an unrebased head whose settings.rb still defines verify replaced the installed check.
   def test_a_head_that_redefines_settings_verification_or_policy_is_refused
     REDEFINITIONS.each do |line|
-      _out, err, status = preview_with("\nmodule Shaka\n  class PublicationSettings\n    #{line}\n  end\nend\n")
+      _out, err, status = preview_with(addition(line))
       refute_predicate status, :success?, line
       assert_includes err, 'redefines settings verification or policy', line
+    end
+  end
+
+  # An empty snapshot would pass every head, so a symlinked load path must still match the installed file.
+  def test_a_symlinked_load_path_still_guards
+    Dir.mktmpdir do |links|
+      File.symlink(File.join(ROOT, 'skills/shaka/lib'), File.join(links, 'lib'))
+      _out, err, status = preview_with(addition(REDEFINITIONS.first), lib: File.join(links, 'lib'))
+      refute_predicate status, :success?
+      assert_includes err, 'redefines settings verification or policy'
     end
   end
 
@@ -34,10 +44,12 @@ class RenderingPreviewGuardTest < Minitest::Test
 
   private
 
-  def preview_with(addition)
+  def addition(line) = "\nmodule Shaka\n  class PublicationSettings\n    #{line}\n  end\nend\n"
+
+  def preview_with(addition, lib: File.join(ROOT, 'skills/shaka/lib'))
     Dir.mktmpdir do |root|
       commit_renderers(root) { File.write(File.join(root, "#{DIRECTORY}settings.rb"), addition, mode: 'a') }
-      Open3.capture3(RbConfig.ruby, '-I', File.join(ROOT, 'skills/shaka/lib'), '-e', SCRIPT, root)
+      Open3.capture3(RbConfig.ruby, '-I', lib, '-e', SCRIPT, root)
     end
   end
 

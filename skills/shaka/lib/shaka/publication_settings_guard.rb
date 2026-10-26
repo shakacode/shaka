@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'error'
 require_relative 'publication_settings'
 
 module Shaka
@@ -7,7 +8,8 @@ module Shaka
   # unrebased head's settings.rb. Head renderers run in this process, so this is not a boundary
   # against deliberate head code; only same-repository heads, whose diff is inspected first, preview.
   module PublicationSettingsGuard
-    FILE = File.expand_path('publication_settings.rb', __dir__)
+    # A real path, so a symlinked load path still matches the locations Ruby reports.
+    FILE = File.realpath(File.expand_path('publication_settings.rb', __dir__))
 
     module_function
 
@@ -15,10 +17,20 @@ module Shaka
       klass = PublicationSettings
       keys = klass.singleton_methods(false).map { [:singleton, it] } + klass.constants(false).map { [:constant, it] } +
              (klass.instance_methods(false) + klass.private_instance_methods(false)).map { [:instance, it] }
-      values(keys).select { |(kind, name), value| defined_here?(kind, name, value) }
+      found = values(keys).select { |(kind, name), value| defined_here?(kind, name, value) }
+      # An empty snapshot would pass every head, so fail closed when the file was not recognized.
+      raise Error, 'Rendering preview cannot locate the installed settings verification.' unless
+        found.key?(%i[singleton verify])
+
+      found
     end
 
-    def changed?(snapshot) = values(snapshot.keys) != snapshot
+    # A removed method or constant counts as a change.
+    def changed?(snapshot)
+      values(snapshot.keys) != snapshot
+    rescue NameError
+      true
+    end
 
     def values(keys)
       klass = PublicationSettings
@@ -34,7 +46,8 @@ module Shaka
 
     def defined_here?(kind, name, value)
       location = kind == :constant ? PublicationSettings.const_source_location(name) : value.source_location
-      location&.first == FILE
+      path = location&.first
+      path && File.exist?(path) && File.realpath(path) == FILE
     end
 
     private_class_method :values, :defined_here?
