@@ -21,7 +21,7 @@ rules:
   - id: startup-review-before-implementation
     phase: plan
     quote: >-
-      Stop before implementation if consent is missing or declined, or the probe fails or is unverified.
+      Stop before implementation if consent is missing or declined, or a requested probe fails or is unverified.
     enforced_by: agent
     note: >-
       Ruby validates the switch, ref format, configured probe identities, and probe outcome.

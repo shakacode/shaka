@@ -218,10 +218,12 @@ phases:
         `reviewer --root DIR --ref TRUSTED_SHA --implementer PROVIDER/FAMILY`.
         Resolve [review consent](<{{package_root}}/skills/shaka/references/review-consent.md>)
         for those providers now, reusing covering standing consent without another question.
-        Then run `doctor --startup-review --root DIR --ref TRUSTED_SHA`, passing
+        For selected configured CLI reviewers, run `doctor --startup-review --root DIR --ref TRUSTED_SHA`, passing
         `--reviewer PROVIDER/FAMILY` for each selected CLI reviewer. This honors
         `review.startup_check`; the tiny prompt sends no repository content and may consume quota.
-        Stop before implementation if consent is missing or declined, or the probe fails or is unverified.
+        A fresh-host fallback has no CLI probe: establish its review path before implementation
+        and record the probe as not applicable.
+        Stop before implementation if consent is missing or declined, or a requested probe fails or is unverified.
         A successful probe establishes current access, not approval of a future code transfer.
       - Default to one PR. For larger tasks, read the
         [task-splitting section](<{{package_root}}/skills/shaka/references/delivery.md#when-a-task-needs-several-prs>).
@@ -230,7 +232,8 @@ phases:
         pilot, so do not create or merge them.
     done_when: >-
       The seam, settings, and PR shape are settled, review consent is resolved,
-      selected reviewers passed the startup probe or it is disabled, and the checkpoint says proceed.
+      selected CLI reviewers passed the startup probe or it is disabled, any fresh-host fallback
+      has an established review path, and the checkpoint says proceed.
   - id: implement
     title: Implement
     body: |-
