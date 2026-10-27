@@ -10,7 +10,7 @@ Three different identifiers appear in this work. They are not interchangeable:
 
 | Name | Current value | Meaning |
 | --- | --- | --- |
-| Product API line | `1.0.x` | Source candidate line; the version does not establish pilot acceptance. |
+| Product stage | `1.0.x` | Source candidate line; the version does not establish pilot acceptance. |
 | Gem / skill version | Source: `1.0.0`; published: `0.1.0.pre.1` | The source candidate is unpublished. The existing gem only reserves the name and lacks the current workflow. Consumer rows below retain their recorded target until separately upgraded. |
 | Seam contract | `version: 1` | Integer field in `.agents/agent-workflow.yml`. It identifies the typed contract, not the product stage or gem. |
 

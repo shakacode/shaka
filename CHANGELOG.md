@@ -31,12 +31,13 @@ After publication, new gem installations select the matching release tag. Follow
 
 Real-use acceptance and host qualification remain evidence requirements; the
 version number does not establish them.
+
 ## [0.1.0.pre.1] - 2026-09-16
 
 Reserved the `shaka` name on RubyGems. This prerelease does not include the
 current workflow; install from source as described in
 [getting started](docs/getting-started.md).
 
-[Unreleased]: https://github.com/shakacode/shaka/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...v1.0.0
+[Unreleased]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...HEAD
+[1.0.0]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...HEAD
 [0.1.0.pre.1]: https://github.com/shakacode/shaka/releases/tag/v0.1.0.pre.1
