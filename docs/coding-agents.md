@@ -48,6 +48,63 @@ session (use `$shaka` in Codex):
 /shaka https://github.com/OWNER/REPO/pull/123
 ```
 
+## Approve private-code reviews in Codex
+
+Shaka's local review sends your change to the reviewer you configured, such as
+Claude or Codex, using your own credentials. When Codex runs with
+[Auto-review](https://learn.chatgpt.com/docs/sandboxing/auto-review), a separate
+reviewer agent checks that command first. It can deny sending private code to
+another provider.
+
+Three separate permissions apply:
+
+- **The task.** Asking Shaka to deliver a task includes its local review.
+- **Your consent.** You agree that named providers may receive this
+  repository's code for review.
+- **Codex's decision.** Auto-review, or your organization's managed policy,
+  still decides each command. Your consent gives it context; it does not make
+  Codex run the command.
+
+### Give consent once
+
+Write a consent statement in the chat for one task, or in your own `AGENTS.md`
+for recurring reviews. Adjust the providers, repository, and exclusions. For the
+DeepSeek reviewer, name OpenRouter too, because the request passes through it:
+
+```text
+Shaka review consent: local reviews of OWNER/REPO may send the committed diff,
+its head commit and checkout path, the review instructions and criteria, the
+repository's review prompt, the PR description, and earlier review findings to
+Anthropic (Claude CLI) and OpenAI (Codex CLI).
+Never send secrets, credentials, .env files, or private data unrelated to the
+change. Approved by NAME on DATE.
+```
+
+The exclusions are your instruction to the agent, not a limit on the reviewer.
+A reviewer given the checkout path can read other files its own sandbox allows,
+so keep secrets out of the checkout.
+
+Before implementation, Shaka checks for covering consent and asks only when it
+is missing. It then runs a tiny reviewer access check, enabled by
+[`review.startup_check`](settings.md#reviewstartup_check). Standing consent is
+reused without another question. Auto-review still decides each actual command.
+
+A custom Auto-review policy, set with `[auto_review].policy` in Codex's
+`config.toml`, replaces the default policy instead of adding to it. Copy the
+full default policy before you edit it. Your organization's managed policy
+takes precedence over yours.
+
+### When Codex denies the review
+
+In the Codex CLI, run `/approve` and choose the denied `shaka review run`
+command. OpenAI documents that this approves that one action for one retry.
+Auto-review checks the retry again and can still deny it.
+
+Shaka has not verified an equivalent in the Codex desktop app. Its
+**Approve for me** control selects Auto-review for the chat; it does not
+approve one denied action. When the review stays denied, the agent records on
+the PR that the review did not run, unless Codex denies that command too.
+
 ## Codex desktop follow-up
 
 Shaka tells you who will handle later PR feedback. If automatic follow-up

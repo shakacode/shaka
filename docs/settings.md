@@ -191,6 +191,14 @@ A PR that passes still gets the agent's own judgment of risk and compatibility u
 Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
 something after merge, so the agent hands those PRs back on its own judgment.
 
+## `review.startup_check`
+
+**Optional. Default: true.** Before implementation, Shaka resolves consent and sends
+a tiny prompt to each selected local reviewer to check access. Covering standing
+consent needs no new question. The probe sends no source code and may consume quota.
+Set this to `false` to skip the probe; consent is still resolved early. A passing
+probe cannot preapprove a future code transfer.
+
 ## `review.required`
 
 **Required.** Values: `meaningful_changes`, `always`, or `none`.

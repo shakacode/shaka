@@ -2,6 +2,7 @@
 
 require_relative '../configuration'
 require_relative '../repository_config'
+require_relative '../prompt_section'
 
 module Shaka
   # Adds a repository's custom instructions after the trusted AGENTS.md criteria, whichever prompt applies.
@@ -19,14 +20,24 @@ module Shaka
 
     def custom_instructions_scope = 'review'
 
+    # The added rules as one section, or none when the repository supplies no file.
     def custom_instructions(marker)
-      return '' unless settings_ref
+      return [] unless settings_ref
 
       path, = custom_instructions_choice
       text = custom_instructions_text(path)
-      return '' unless text
+      return [] unless text
 
       @custom_instructions_source = path
+      [PromptSection.new(custom_instructions_label(path), custom_instructions_block(marker, path, text))]
+    end
+
+    def custom_instructions_label(path)
+      where = individual_prompt?(path) ? ' (individual settings, private)' : "@#{settings_ref}"
+      "custom instructions #{path}#{where}, after the built-in precedence note"
+    end
+
+    def custom_instructions_block(marker, path, text)
       scope = SCOPES.fetch(custom_instructions_scope)
       label = "TRUSTED #{scope.fetch(:heading)} RULES #{marker}"
       precedence = File.read(scope.fetch(:precedence), encoding: 'UTF-8')

@@ -16,7 +16,7 @@ module Shaka
                   id
                   isResolved
                   comments(first: 100) {
-                    nodes { author { login } }
+                    nodes { author { login } body }
                     pageInfo { hasNextPage }
                   }
                 }

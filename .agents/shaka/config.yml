@@ -11,6 +11,7 @@ repo_prefix: SHAKA # Default: derived from the repo name ("SHAK" here); we prefe
 # base_branch: main # Default: the repository's default branch.
 
 review:
+  startup_check: true # Default: check selected reviewers before implementation; may consume quota.
   # Required, no default; setup asks. meaningful_changes lets trivial prose skip review;
   # the others are always and none.
   required: meaningful_changes

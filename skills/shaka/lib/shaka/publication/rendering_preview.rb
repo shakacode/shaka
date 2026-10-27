@@ -2,6 +2,7 @@
 
 require 'open3'
 require_relative '../error'
+require_relative '../publication_settings_guard'
 
 module Shaka
   # Self-hosted previews keep evidence verification installed and load only reviewed renderers.
@@ -21,7 +22,7 @@ module Shaka
                       .map { |path| "skills/shaka/lib/shaka/#{path}" }.freeze
     # In load order: a renderer loads before the ones that call it.
     RENDERERS = %w[usage_details usage_pricing metrics verification_gates diff_buckets intent_verification
-                   task_source_line provenance publication]
+                   task_source_line provenance provenance_history settings_table settings publication]
                 .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
 
@@ -44,8 +45,18 @@ module Shaka
       raise Error, 'Rendering preview checkout does not name the live head.' unless git(root, 'rev-parse',
                                                                                         'HEAD').strip == head
 
-      sources(root, head).each { |path, source| load_renderer(path, source) }
+      load_renderers(root, head)
       "#{yield}\n<!-- shaka:rendering-preview #{head} -->\n"
+    end
+
+    # Loading reopens PublicationSettings, so a head that redefines its evidence or policy methods is refused.
+    def load_renderers(root, head)
+      installed = PublicationSettingsGuard.snapshot
+      sources(root, head).each { |path, source| load_renderer(path, source) }
+      return unless PublicationSettingsGuard.changed?(installed)
+
+      raise Error, 'Rendering preview refused: the PR head redefines settings verification or policy; ' \
+                   'rebase it onto the default branch.'
     end
 
     # This check belongs to Shaka's own PRs, not to projects that use Shaka.
@@ -107,6 +118,7 @@ module Shaka
       $VERBOSE = previous
     end
 
-    private_class_method :git, :sources, :load_renderer, :changed_renderers, :supported!, :rendering_path?
+    private_class_method :git, :sources, :load_renderers, :load_renderer, :changed_renderers, :supported!,
+                         :rendering_path?
   end
 end

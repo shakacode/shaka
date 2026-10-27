@@ -194,6 +194,37 @@ class ReposCatalogTest < Minitest::Test
   end
 end
 
+class ReposCatalogNamespaceTest < Minitest::Test
+  include ReposCatalogHelpers
+
+  ORIGINS = %w[https://gitlab.com/group/one/project.git https://gitlab.com/group/two/project.git
+               https://gitlab.example/group/one/project.git https://gitlab.example:8443/group/one/project.git].freeze
+
+  def test_refresh_preserves_nested_namespace_identity
+    with_home do |home|
+      root = registered_repository(home, name: 'renamed-checkout', origin: 'git@gitlab.com:group/subgroup/project.git')
+      catalog = refresh(home)
+
+      assert_equal [{ 'identity' => 'group/subgroup/project', 'url' => 'ssh://gitlab.com/group/subgroup/project',
+                      'root' => root, 'prefix' => 'PROJ', 'prefix_source' => 'fallback' }],
+                   catalog.fetch('repositories')
+    end
+  end
+
+  def test_refresh_does_not_conflate_namespace_host_or_port
+    with_home do |home|
+      ORIGINS.each_with_index { |origin, i| registered_repository(home, name: "repo-#{i}", prefix: 'PILOT', origin:) }
+      catalog, error, status = refresh_result(home)
+
+      refute_predicate status, :success?
+      assert_equal %w[gitlab.com/group/one/project gitlab.com/group/two/project
+                      gitlab.example/group/one/project gitlab.example:8443/group/one/project],
+                   catalog.dig('duplicate_prefixes', 'PILOT').sort
+      assert_includes error, 'duplicate repo_prefix PILOT'
+    end
+  end
+end
+
 class ReposCatalogOriginTest < Minitest::Test
   include ReposCatalogHelpers
 
