@@ -24,7 +24,7 @@ merges. A schema-valid file alone does not prove which Shaka release last review
 
 | Repository | Default branch | Target Shaka | Schema | State | Evidence or next action |
 | --- | --- | --- | ---: | --- | --- |
-| [`shakacode/shaka`](https://github.com/shakacode/shaka) | `main` | `0.1.0.pre.1` | 1 | Source | Defines and validates the current contract; trusted base `c191a8f`. |
+| [`shakacode/shaka`](https://github.com/shakacode/shaka) | `main` | `1.0.0` | 1 | Source | Defines and validates the current contract; trusted base `c191a8f`. |
 | [`shakacode/control-plane-flow`](https://github.com/shakacode/control-plane-flow) | `main` | `0.1.0.pre.1` | 1 | Merged | [PR #496](https://github.com/shakacode/control-plane-flow/pull/496), merge `3d16440`. |
 | [`shakacode/cypress-playwright-on-rails`](https://github.com/shakacode/cypress-playwright-on-rails) | `master` | `0.1.0.pre.1` | 1 | Merged | [PR #266](https://github.com/shakacode/cypress-playwright-on-rails/pull/266), merge `0af3983`. |
 | [`shakacode/react-on-rails-demo-flagship`](https://github.com/shakacode/react-on-rails-demo-flagship) | `main` | `0.1.0.pre.1` | 1 (PR) | Draft | [PR #60](https://github.com/shakacode/react-on-rails-demo-flagship/pull/60), head `4d90e4b`; hosted checks pass, but local full validation remains blocked by existing dependency-audit findings. |
