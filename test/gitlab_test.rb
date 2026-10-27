@@ -68,6 +68,15 @@ class GitLabTest < Minitest::Test
     end
   end
 
+  def test_default_revision_accepts_url_encoded_valid_branch_names
+    { 'release+stable' => 'release%2Bstable', 'développement' => 'd%C3%A9veloppement' }.each do |name, encoded|
+      info = project_info('default_branch' => name)
+      branch = branch_info('name' => name)
+      assert_equal 'a' * 40, client(info, branch, info, branch).default_revision.fetch('sha')
+      assert_equal "projects/7/repository/branches/#{encoded}", @calls[1].first[4]
+    end
+  end
+
   def test_api_uses_explicit_host_and_json_stdin_without_shell_interpolation
     instance = client({ 'id' => 7 })
     body = 'Text $(touch /tmp/unsafe), `commands`, @files and é.'

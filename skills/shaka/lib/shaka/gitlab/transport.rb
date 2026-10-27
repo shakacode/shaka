@@ -45,14 +45,18 @@ module Shaka
       end
 
       def validate_path(path)
-        raise Error, 'Expected an ASCII GitLab API endpoint.' unless path.is_a?(String) && path.ascii_only?
+        raise Error, 'Expected a relative ASCII GitLab API endpoint.' unless endpoint_text?(path)
 
         decoded = URI.decode_www_form_component(path)
-        valid = decoded.match?(%r{\A[A-Za-z][A-Za-z0-9._~/-]*\z}) &&
+        valid = decoded.valid_encoding? && !decoded.match?(/[[:cntrl:]]/) &&
                 !decoded.split('/', -1).intersect?(['', '.', '..'])
         raise Error, 'Expected a relative GitLab API endpoint without query parameters.' unless valid
       rescue ArgumentError
         raise Error, 'Invalid GitLab API endpoint encoding.'
+      end
+
+      def endpoint_text?(path)
+        path.is_a?(String) && path.ascii_only? && path.match?(%r{\A[A-Za-z][A-Za-z0-9._~/%-]*\z})
       end
 
       def request(path, method: 'GET', fields: {}, expected: Hash)
@@ -68,15 +72,21 @@ module Shaka
       def response_body(stdout, status)
         headers, body = utf8(stdout).split(/\r?\n\r?\n/, 2)
         http_status = headers&.[](%r{\AHTTP/\S+ (\d{3})\b}, 1)&.to_i
-        unless status.exitstatus.zero? && http_status && (200..299).cover?(http_status)
-          detail = http_status ? ", HTTP #{http_status}" : ''
-          raise Error.new("GitLab API request failed (exit #{status.exitstatus}#{detail}).", http_status:)
-        end
+        raise request_failure(status, http_status) unless status.exitstatus&.zero? && http_status &&
+                                                          (200..299).cover?(http_status)
 
         [headers, body]
       end
 
+      def request_failure(status, http_status)
+        detail = http_status ? ", HTTP #{http_status}" : ''
+        code = status.exitstatus || 'unavailable'
+        Error.new("GitLab API request failed (exit #{code}#{detail}).", http_status:)
+      end
+
       def parse_json(body, expected)
+        return nil if body.to_s.empty? && expected == NilClass
+
         result = JSON.parse(body.to_s)
         raise Error, 'GitLab API response has an unexpected type.' unless result.is_a?(expected)
 

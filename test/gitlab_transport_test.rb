@@ -85,6 +85,19 @@ class GitLabTransportTest < Minitest::Test
     refute_match(/private|stderr/, error.message)
   end
 
+  def test_signaled_cli_is_a_domain_failure_even_with_success_headers
+    error = assert_raises(Shaka::Error) do
+      client(response({ 'id' => 7 }, exitstatus: nil)).api('projects/7')
+    end
+    assert_match(/failed/, error.message)
+  end
+
+  def test_empty_success_requires_explicit_no_content_expectation
+    empty = ["HTTP/2.0 204 No Content\r\n\r\n", '', STATUS.new(0)]
+    assert_nil client(empty).api('projects/7/repository/branches/topic', method: 'DELETE', expected: NilClass)
+    assert_raises(Shaka::Error) { client(empty).api('projects/7') }
+  end
+
   def test_invalid_json_utf8_or_missing_http_envelope_is_a_domain_error
     ["HTTP/2.0 200 OK\r\n\r\nnot json", "HTTP/2.0 200 OK\r\n\r\n{\"name\":\"\xff\"}".b,
      '{}', "HTTP/2.0 200 OK\r\n\r\n", nil].each do |output|
