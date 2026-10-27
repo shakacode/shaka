@@ -54,23 +54,35 @@ coordination state. Nothing is reused.
    today's notice.
 
 2. **A per-machine list of the reviewers a developer expects to run.** An optional file
-   at `~/.agents/shaka/reviewers.yml` names the reviewers this machine is expected to run:
+   at `~/.agents/shaka/reviewers.yml` names the reviewers this machine is expected to run.
+   Entries take the shape of `review.local_review_agents` entries, so the same `model` and
+   `effort` rules and warnings apply:
 
    ```yaml
    version: 1
-   reviewers: [anthropic/claude, openai/codex]
+   reviewers:
+     - provider: anthropic
+       model_family: claude
+       model: claude-opus-5-5
+       effort: high
+     - provider: openai
+       model_family: codex
    ```
 
    When the file exists, `setup_notices` and `doctor` report a missing reviewer only if
    the file lists it or `provider_coverage` names its provider. Without coverage, that
    narrows today's notices to the reviewers the developer expects. With coverage, it turns
    decision 1's warning back on for an uncovered reviewer the developer relies on, such as
-   Grok. Either way, the file changes reporting only:
+   Grok. The file is bounded:
    - It cannot add a reviewer. A listed identity the repository does not configure is
      ignored, and `doctor` names it once as unused here. The repository's list stays the
      accepted set and its order stays the preference.
-   - It does not change selection. Selection already skips reviewers that are not set up
-     on the machine.
+   - Its `model` and `effort` fill only what the repository entry leaves unset. A task's
+     choice wins over both, and the repository's value wins over the machine's. In this
+     repository, the Claude entry names neither, so a developer could pin a Claude model
+     and effort for their own reviews; the Codex model the repository names stays fixed.
+   - It does not change which reviewer is selected. Selection already skips reviewers that
+     are not set up on the machine.
    - It cannot quiet a covered provider. Coverage gaps keep their warning and their place
      in the published review, because coverage is the repository's statement of who must
      review.
@@ -83,9 +95,12 @@ coordination state. Nothing is reused.
    malformed file is an error that `doctor` reports with the file path. An absent file keeps
    decision 1's behavior.
 
-3. **Neither changes review evidence.** Both decisions change warnings, not which reviewer
-   runs, so neither enters the settings fingerprint or the evidence result. Ruby reads the
-   file through `Dir.home`, and tests set `HOME` to a temporary directory.
+3. **Review evidence records machine-supplied model and effort.** Decision 1 and the
+   reporting part of decision 2 change warnings only, so they stay out of the settings
+   fingerprint. A machine `model` or `effort` changes what a review runs, so the review
+   result labels it as machine-supplied, and the published review shows the model and
+   effort each round used, as it does today. Ruby reads the file through `Dir.home`, and
+   tests set `HOME` to a temporary directory.
 
 ## Alternatives considered
 
@@ -97,6 +112,13 @@ coordination state. Nothing is reused.
 - **Let the per-machine file add reviewers.** A developer could review with a model the
   repository never accepted, and the published review would name a reviewer the
   repository's order does not contain. Deferred until someone asks for it.
+- **Let the machine's `model` and `effort` override the repository's.** It would help a
+  developer whose account cannot use the model the repository names. But any developer
+  could then lower the effort the team chose, and individual settings never override team
+  settings ([which settings apply](../../docs/settings.md#which-settings-apply)). A
+  developer without access can name a model for one task instead.
+- **A flat list of `provider/model_family` names.** It is shorter, but it has no place for
+  `model` and `effort` and reads differently from `local_review_agents`.
 - **Fold this into individual settings.** Individual setup is a whole repository
   configuration used only when no team settings exist
   ([which settings apply](../../docs/settings.md#which-settings-apply)), so it cannot
@@ -108,13 +130,16 @@ coordination state. Nothing is reused.
 
 - Decision 1: `CliInventory.setup_notices` takes only inventory entries today, so its two
   callers, `ReviewerClis#readiness` and `Reviewer#setup`, pass the coverage they already
-  read. Behavioral tests cover covered, uncovered, and no-coverage repositories. The comment above the optional entries in
-  `.agents/shaka/config.yml` and the `provider_coverage` section of `docs/settings.md`
-  change to say doctor no longer warns about them.
-- Decision 2 adds a home-directory file that Shaka reads, a loader with schema checks,
+  read. Behavioral tests cover covered, uncovered, and no-coverage repositories. The
+  comment above the optional entries in `.agents/shaka/config.yml` and the
+  `provider_coverage` section of `docs/settings.md` change to say doctor no longer warns
+  about them.
+- Decision 2 adds a home-directory file that Shaka reads, a loader that reuses the
+  `local_review_agents` entry schema, the model and effort merge in reviewer selection,
   and tests. `docs/settings.md` "Which settings apply?" changes to name a second
   home-directory exception, because it changes what the reader sees there. The
-  file is not in `defaults.yml`, because it is not a repository setting. `doctor` reports whether the file exists and what it lists.
+  file is not in `defaults.yml`, because it is not a repository setting. `doctor`
+  reports whether the file exists and what it lists.
 - Decision 1 alone loses one warning: a developer who relies on an uncovered reviewer
   learns that its setup broke only when a task names it and `shaka review run` reports
   `executable_missing` or `credentials_missing`. Decision 2 restores the earlier warning
@@ -130,6 +155,6 @@ this repository.
 ## Open question
 
 Should decision 2 ship with decision 1, or wait until a developer reports a missed warning
-or a repository without `provider_coverage` reports the same noise? Recommended: wait.
-Nothing yet shows either happens, and decision 2 adds a home-directory file Shaka must
-support across hosts.
+or a repository without `provider_coverage` reports the same noise? Recommended: ship it
+second, as its own PR, if a developer wants their own Claude model or effort now;
+otherwise wait. Decision 2 adds a home-directory file Shaka must support across hosts.
