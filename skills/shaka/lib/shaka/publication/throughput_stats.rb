@@ -77,7 +77,7 @@ module Shaka
       def fresh_state(content, timeline, carried)
         prompt = prompted_at(timeline)
         { 'spend' => spend(content), 't0' => stamp(timeline['task_started_at']) || carried['t0'],
-          't1' => prompt, 'first_push' => carried['first_push'] || prompt, 't3' => stamp(timeline['merged']) }
+          't1' => prompt, 'first_push' => carried['first_push'], 't3' => stamp(timeline['merged']) }
       end
 
       def prompted_at(timeline) = stamp(timeline['ci_started_at'])

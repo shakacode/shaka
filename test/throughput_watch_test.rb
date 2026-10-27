@@ -25,6 +25,11 @@ class ThroughputWatchTest < Minitest::Test
     assert_includes invented, '"first_push":"UNKNOWN"'
   end
 
+  def test_a_cut_off_history_on_first_publication_leaves_the_first_push_unknown
+    first = watch_cut_off(describe('$4.12', timeline: push_times, pull: head_pull))
+    assert_includes first, '"first_push":"UNKNOWN"'
+  end
+
   def test_pr_watch_fills_prompt_to_ci_from_the_check_suite_without_a_push_time
     body = "Intro.\n\n#{describe('$4.12', timeline: { 'task_started_at' => START }, pull: head_pull)}\n"
     prompted = ThroughputFakeGitHub.new(body, one_commit(nil, PUSH.iso8601), [check('validate', READY.iso8601)])
