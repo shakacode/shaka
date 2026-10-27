@@ -296,8 +296,14 @@ module Shaka
         block = summary && comment[section(summary)]
         next text.sub(line, '') unless block
 
-        timing_lines(block).reduce(text.sub(line) { "#{block}\n" }) { |rest, mark| rest.sub("#{mark}\n", '') }
+        # The standalone marker copies were appended after the section, so the last copy is the loose one.
+        timing_lines(block).reduce(text.sub(line) { "#{block}\n" }) { |rest, mark| drop_last(rest, "#{mark}\n") }
       end
+    end
+
+    def drop_last(text, line)
+      index = text.rindex(line)
+      index ? text[0...index] + text[(index + line.length)..] : text
     end
 
     def splice(body, comment)
@@ -353,6 +359,9 @@ module Shaka
     INTRO = 'These sections were moved out of the PR description so it stays within GitHub\'s 65,536-character limit.'
     RETIRED = 'The description is within GitHub\'s size limit, so these sections are in the description.'
     LIMIT_MESSAGE = "Body exceeds GitHub's 65536-character limit."
+    # Publishing without the moved sections would drop the usage records they hold.
+    UNREAD = 'The description says sections were moved, but this account has no usage and timing details ' \
+             'comment to read them from; publish from the account that wrote it.'
     COMMENT_LIMIT = "Usage and timing details comment exceeds GitHub's 65536-character limit."
     KINDS = %i[pricing timings records].freeze
 
@@ -373,10 +382,7 @@ module Shaka
       package = pull.is_a?(Hash) ? pull['shaka_overflow'] : nil
       return body unless package
 
-      url = post(github, package.fetch('comment'))
-      return body unless body.include?(PLACEHOLDER)
-
-      body.gsub(PLACEHOLDER, url)
+      body.gsub(PLACEHOLDER, post(github, package.fetch('comment')))
     end
 
     # Puts the moved sections and markers back when this description says they were moved.
@@ -385,7 +391,9 @@ module Shaka
       return body unless moved?(body)
 
       comment = find(github)
-      comment ? splice(unlink(body, comment['body'].to_s), comment['body'].to_s) : body
+      raise Error, UNREAD unless comment
+
+      splice(unlink(body, comment['body'].to_s), comment['body'].to_s)
     end
 
     def self.moved?(description) = description.to_s.match?(ACTIVE)

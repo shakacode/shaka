@@ -217,8 +217,18 @@ class DescriptionOverflowLifecycleTest < Minitest::Test
     restored = Shaka::DescriptionOverflow.restore(comment_github(package.fetch('comment')),
                                                   @pull.merge('body' => wrap(linked)))
 
-    assert_includes restored, '<summary>Timings'
+    assert_includes restored, rendered[Shaka::DescriptionOverflow.section('Timings')]
     refute_includes restored, 'Timings are in ['
+  end
+
+  def test_restore_refuses_when_this_account_has_no_details_comment
+    active = wrap("#{description.rstrip}\n\n<!-- shaka:overflow-active #{HEAD} -->\n")
+
+    error = assert_raises(Shaka::Error) do
+      Shaka::DescriptionOverflow.restore(FakeOverflowGitHub.new, @pull.merge('body' => active))
+    end
+
+    assert_equal Shaka::DescriptionOverflow::UNREAD, error.message
   end
 
   def test_a_comment_that_cannot_keep_every_usage_record_is_refused
