@@ -1,6 +1,6 @@
 # Predecessor retirement
 
-Shaka is the early `0.0.x` successor to [`shakacode/agent-workflows`](https://github.com/shakacode/agent-workflows).
+Shaka succeeds [`shakacode/agent-workflows`](https://github.com/shakacode/agent-workflows).
 Execute the legacy-repository work on
 [agent-workflows#857](https://github.com/shakacode/agent-workflows/issues/857);
 keep detailed backlog disposition there. This page is the Shaka-owned checklist

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require_relative '../skills/shaka/lib/shaka/version'
 require 'fileutils'
 require 'rbconfig'
 require 'json'
@@ -106,7 +107,7 @@ module InstallTestSupport
     assert_predicate status, :success?, output
     identity = JSON.parse(output)
     assert_equal 'development', identity.fetch('source').fetch('kind')
-    assert_equal '0.1.0.pre.1', identity.fetch('version')
+    assert_equal Shaka::VERSION, identity.fetch('version')
     report, = Open3.capture2e(*installed_helper, 'doctor', chdir: second_worktree)
     assert_includes report, "installation #{identity.fetch('version')} · development base UNKNOWN content"
   end
