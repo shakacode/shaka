@@ -25,7 +25,7 @@ module Shaka
       replacement = line(apply(state, changes))
       return original if original[BLOCK].to_s.gsub("\r\n", "\n") == replacement
 
-      original.sub(BLOCK, replacement)
+      original.sub(BLOCK) { replacement }
     end
 
     # A usage refresh must not fail on a damaged block; the next publish rewrites it.

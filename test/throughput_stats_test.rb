@@ -69,6 +69,11 @@ class ThroughputStatsTest < Minitest::Test
     assert_includes rendered, 'AI spend $4.12 · Prompt to CI 38m · CI to ready pending'
   end
 
+  def test_a_backslash_in_a_carried_value_survives_a_rewrite
+    once = Shaka::ThroughputStats.update(describe, 'spend' => 'a\x')
+    assert_equal 'a\x', Shaka::ThroughputStats.read(Shaka::ThroughputStats.update(once, 'rounds' => 1))['spend']
+  end
+
   def test_a_spend_refresh_leaves_a_damaged_block_alone
     damaged = "Keep.\n<!-- shaka:stats {not json} -->\nAI spend UNKNOWN\n"
     assert_equal damaged, Shaka::ThroughputStats.refresh_spend(damaged, '$1.00')
