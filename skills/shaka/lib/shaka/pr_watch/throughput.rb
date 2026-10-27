@@ -73,19 +73,24 @@ module Shaka
       def fields(commits, heads, ready, complete, carried)
         result = { 'head' => @head, 'rounds' => complete ? ThroughputStats.rounds(heads) : nil }
         result['t2'] = ready_time(ready, carried)
-        head = commits.find { |commit| commit.is_a?(Hash) && commit['oid'] == @head }
-        prompt = ThroughputStats.prompt_stamp(head)
-        result['t1'] = ThroughputStats.keep_earlier(prompt, carried, 't1', @head) if prompt
+        result['t1'] = prompt_time(commits.find { |commit| commit.is_a?(Hash) && commit['oid'] == @head }, carried)
         push = ThroughputStats.bounded_first_push(heads, complete, carried)
         result['first_push'] = push if push
         result
       end
 
-      # A ready time recorded for another head must not be relabelled as this head's.
+      # Times recorded for another head must not be relabelled as this head's.
       def ready_time(ready, carried)
         return ready_stamp(ready, carried) if ready
 
         carried['t2'] if carried['head'] == @head
+      end
+
+      def prompt_time(commit, carried)
+        prompt = ThroughputStats.prompt_stamp(commit)
+        return ThroughputStats.keep_earlier(prompt, carried, 't1', @head) if prompt
+
+        carried['t1'] if carried['head'] == @head
       end
 
       def ready_stamp(ready, carried)
