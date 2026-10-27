@@ -52,6 +52,19 @@ module Shaka
       "#{RELATIONS.fetch('fixes')} ##{spec['task_number']}"
     end
 
+    # What the line tells the closing-issue note: a fix claims its issue, and any other relation
+    # leaves the issue open, which the note reads as `Part of`.
+    def self.claims(spec)
+      return [] unless spec.is_a?(Hash) && RELATIONS.key?(spec['task_relation']) && spec['task_number'].is_a?(Integer)
+
+      [closing_claim(spec) || "Part of ##{spec['task_number']}"]
+    end
+
+    # A published Task line that leaves its issue open, read back as `Part of` for the merge handoff.
+    PUBLISHED_PARTIAL = /^\*\*Task:\*\* GitHub #(\d+) · (?:part of|follow-up|related)\r?$/
+
+    def self.published_claims(body) = body.scan(PUBLISHED_PARTIAL).map { |(number)| "Part of ##{number}" }
+
     # A prompt is named after the agent that took it, such as Claude Code's "Claude prompt".
     def self.render(spec, agent)
       return "**Task:** #{prompt(agent)}" if spec.fetch('task_source') == 'description'

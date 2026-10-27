@@ -34,7 +34,7 @@ module Shaka
     # The summary, intent, and Task line: the text a description's reader takes as the PR's claim.
     def texts(content)
       intent = content['intent'].is_a?(Hash) ? content['intent'] : {}
-      [content['summary'], *intent.values_at(*FIELDS), TaskSourceLine.closing_claim(content['provenance'])].grep(String)
+      [content['summary'], *intent.values_at(*FIELDS), *TaskSourceLine.claims(content['provenance'])].grep(String)
     end
 
     # Each issue the texts say this PR fixes, as OWNER/REPO#N.
@@ -93,7 +93,8 @@ module Shaka
       repository = github.repository
       linked = linked(github)
       closes = linked.empty? ? 'closes no issues' : "closes #{names(linked, repository)}"
-      task = left_open(published_task(body.to_s, repository), linked.map(&:downcase), [body.to_s], repository)
+      texts = [body.to_s, *TaskSourceLine.published_claims(body.to_s)]
+      task = left_open(published_task(body.to_s, repository), linked.map(&:downcase), texts, repository)
       task ? "#{closes}; task issue #{short(task, repository)} stays open" : closes
     rescue *FAILURES => e
       "closing issues unavailable: #{e.message}"
@@ -132,11 +133,9 @@ module Shaka
     end
 
     def task_note(task, repository)
-      return unless task
-
-      issue = short(task, repository)
-      "This PR comes from the task's issue #{issue}, but GitHub will not close it on merge. Set provenance " \
-        '`task_relation` to `fixes` when this PR resolves it, or `part_of` when it stays open.'
+      task && "This PR comes from the task's issue #{short(task, repository)}, but GitHub will not close it " \
+              'on merge. Set provenance `task_relation` to `fixes` when this PR resolves it, or ' \
+              '`part_of` when it stays open.'
     end
 
     def extra_note(extra, repository)
