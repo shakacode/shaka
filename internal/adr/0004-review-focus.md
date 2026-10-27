@@ -1,6 +1,6 @@
 # 0004: Mark the lines that need the closest reading
 
-Status: proposed; awaiting maintainer approval. Nothing here is shipped.
+Status: accepted on 2026-10-26; not yet implemented. Nothing here is shipped.
 Date: 2026-10-25. Tracks [issue #846](https://github.com/shakacode/shaka/issues/846).
 
 ## Context
@@ -85,18 +85,14 @@ Impact and frequency: UNKNOWN. The gap comes from one maintainer comment on
    `enforcement.yml` gains its entry in the same PR. `docs/pr-verification.md` extends
    the existing "How carefully should I review it?" row; no new guide.
 
-## Open question for the maintainer
+## Floors stay as they are
 
-**May a focus entry satisfy a floor?** Today one file under a level-4 floor raises the
-whole PR to 4. A whole-file focus entry at the floor's level on every matching file
-would keep that care for those files, so the PR rating could stay lower.
-
-- Recommended: **no, not in this change.** Floors are path-derived so that an agent
-  cannot argue its own PR down, and the issue says to keep the PR-wide rating. Shipping
-  focus entries first shows whether agents use them well before they can lower anything.
-- Alternative: allow it when entries cover every file that sets the floor, at that file's
-  level or higher. This touches `ReviewEffortFloor`, a level-4 trust path, and needs its
-  own tests for partial coverage and for files that match two floors.
+The maintainer decided on 2026-10-26 that a focus entry cannot satisfy a human review
+floor. One file under a level-4 floor still raises the whole PR rating to 4. Floors are
+path-derived so that an agent cannot argue its own PR down, and the issue keeps the
+PR-wide rating. Letting entries that cover every floor-setting file stand in for the
+floor was considered and rejected for this change: it would touch `ReviewEffortFloor`,
+a level-4 trust path, before anyone has seen how agents use focus entries.
 
 ## Alternatives considered
 
@@ -128,5 +124,4 @@ would keep that care for those files, so the PR rating could stay lower.
 ## Delivery
 
 After this ADR is approved, one implementation PR delivers decisions 1 to 7 and its
-docs row. If the maintainer chooses the floor alternative, it follows as a second PR so
-the trust-path change is reviewed on its own.
+docs row.
