@@ -62,8 +62,8 @@ module EvidenceFixture
 
   private
 
-  def verify(root, head, **paths)
-    args = ['verify', '--root', root, '--ref', head, '--repository', 'shakacode/shaka', '--head', head]
+  def verify(root, head, ref: head, **paths)
+    args = ['verify', '--root', root, '--ref', ref, '--repository', 'shakacode/shaka', '--head', head]
     paths.each { |kind, path| args.push("--#{kind}", path) }
     output, = capture_io { Shaka::Evidence::Command.run(args) }
     JSON.parse(output)

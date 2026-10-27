@@ -281,16 +281,12 @@ exclusion. If coverage cannot be expressed safely, keep validation blocked.
 Do not use `eval`, shell command strings, executable overrides, or external
 untracked mapping inputs.
 
-Inspect the script diff before execution. Run `evidence run --command validate`
-with the existing root, trusted ref, and repository flags, without trailing
-arguments. Commit the script with the candidate, bind the fresh result to that
-head, and obtain fresh review before verifying. Changed mappings or other candidate
-inputs invalidate earlier results. Do not edit historical evidence or infer
-merge authority from a passing check.
+Review the selector changes, then run `evidence run --command validate` with the
+task's existing root, trusted ref, and repository flags, without trailing arguments.
+Continue the workflow's Verify phase for current-head binding and review.
 
 If the repair requires changing the fixed validation wrapper, use a separate
-setup/migration PR; the feature configuration guard still applies to both
-`.agents/shaka/bin/validate` and `.agents/bin/validate`.
+setup/migration PR.
 
 ## Validate the configuration
 

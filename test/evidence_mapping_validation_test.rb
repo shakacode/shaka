@@ -38,18 +38,6 @@ class EvidenceMappingValidationTest < Minitest::Test
     end
   end
 
-  def test_existing_repository_script_can_supply_mappings_without_wrapper_changes
-    with_mapping_checkout do |root, base|
-      supply_default_mappings(root)
-      head = commit_changes(root)
-      assert_equal 'clear', Shaka::Configuration::FeatureGuard.check(root:, base:, head:).fetch('status')
-      validation = run_check(root, base, command: 'validate')
-      with_results(validation:, review: review_check(root, head)) do |paths|
-        assert_equal 'ready', verify(root, head, **paths).fetch('status')
-      end
-    end
-  end
-
   def test_required_check_failure_cannot_be_hidden_by_passing_mappings
     with_mapping_checkout(fixed: true) do |root, _ref|
       File.write(File.join(root, 'script/security.rb'), "exit 9\n")

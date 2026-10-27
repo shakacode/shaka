@@ -8,6 +8,17 @@ module EvidenceMappingFixture
 
   MAPPINGS = ['--spec-for', 'app/new.rb', 'spec/new_spec.rb',
               '--no-spec-for', 'README.md', 'documentation only'].freeze
+  DURABLE_SELECTOR = <<~RUBY_SCRIPT
+    require 'json'
+    JSON.parse(File.read('changed-files.json')).each do |path|
+      case path
+      when 'app/new.rb'
+        puts 'spec/new_spec.rb'
+      else
+        exit 64
+      end
+    end
+  RUBY_SCRIPT
 
   private
 
@@ -47,8 +58,8 @@ module EvidenceMappingFixture
     git(root, 'rev-parse', 'HEAD')
   end
 
-  def supply_default_mappings(root)
-    path = File.join(root, 'script/selector.rb')
-    File.write(path, "ARGV.replace(#{MAPPINGS.inspect}) if ARGV.empty?\n" + File.read(path))
+  def supply_durable_selector_rules(root)
+    File.write(File.join(root, 'changed-files.json'), JSON.generate(['app/new.rb']))
+    File.write(File.join(root, 'script/selector.rb'), DURABLE_SELECTOR)
   end
 end

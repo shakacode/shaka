@@ -45,7 +45,7 @@ module Shaka
 
         binding['reasons'] << 'repository validation used command arguments'
         binding['guidance'] = 'For required mappings, see ' \
-                              'skills/shaka/references/repository-setup.md#required-validation-inputs.'
+                              'references/repository-setup.md#required-validation-inputs in the installed Shaka skill.'
       end
 
       def check_kind(kind, original, binding)
