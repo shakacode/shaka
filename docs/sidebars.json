@@ -67,7 +67,8 @@
         "architecture",
         "repository-catalog",
         "control-towers",
-        "trying-pr-versions"
+        "trying-pr-versions",
+        "canary"
       ]
     }
   ]

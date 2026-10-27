@@ -57,5 +57,6 @@ Ask the agent to handle configuration. These guides explain your choices:
 - [Repository catalog](repository-catalog.md) — organize repositories across projects.
 - [Control towers](control-towers.md) — coordinate a batch across chats and decide which PRs to merge first.
 - [Try a Shaka PR](trying-pr-versions.md) — evaluate an unmerged change on real work.
+- [Canary runs](canary.md) — read the sandbox pull request opened after a merge to `main`.
 
 Development guidance lives in [Contributing](../CONTRIBUTING.md).
