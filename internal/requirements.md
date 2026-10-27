@@ -267,10 +267,10 @@ accepted changes; describe its uncertainty before making savings claims.
 
 Public source publication and reviewed, verified implementation PR merges are
 authorized. Runtime prerequisites are Ruby 3.4, Git, authenticated GitHub CLI,
-and GitHub PRs. Shaka's public product stage is `0.0.x`. The `0.1.0.pre.1` RubyGems
-prerelease only reserves the project name; stay on `0.1.0.pre.N` until a later
-approved release. Future registry releases and broader adoption require separate
-evidence and decisions.
+and GitHub PRs. The source prepares the `1.0.0` candidate; the published
+`0.1.0.pre.1` gem only reserves the project name. Registry publication and broader
+adoption require separate evidence and explicit decisions. Preparing a version
+does not establish the real-use acceptance criteria above.
 [Packaging](../contributing/packaging.md) describes the tested gem.
 Prospective features and retirement choices are recorded in this plan and in
 [predecessor retirement](retirement.md); website work lives

@@ -10,8 +10,8 @@ Three different identifiers appear in this work. They are not interchangeable:
 
 | Name | Current value | Meaning |
 | --- | --- | --- |
-| Product stage | `0.0.x` | Public identity: Shaka is the early successor to `agent-workflows`, not a second generation of that pack. |
-| Gem / skill version | `0.1.0.pre.1` | SemVer of the public skill and reserved RubyGem name; the published gem is only a package-name reservation and does not include the pilot seam CLI. Stay on `0.1.0.pre.N`; this is the fleet target. |
+| Product API line | `1.0.x` | Source candidate line; the version does not establish pilot acceptance. |
+| Gem / skill version | Source: `1.0.0`; published: `0.1.0.pre.1` | The source candidate is unpublished. The existing gem only reserves the name and lacks the current workflow. Consumer rows below retain their recorded target until separately upgraded. |
 | Seam contract | `version: 1` | Integer field in `.agents/agent-workflow.yml`. It identifies the typed contract, not the product stage or gem. |
 
 Predecessor seams have no schema version and use a different set of keys.
