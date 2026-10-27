@@ -74,13 +74,16 @@ coordination state. Nothing is reused.
    narrows today's notices to the reviewers the developer expects. With coverage, it turns
    decision 1's warning back on for an uncovered reviewer the developer relies on, such as
    Grok. The file is bounded:
-   - It cannot add a reviewer. A listed identity the repository does not configure is
-     ignored, and `doctor` names it once as unused here. The repository's list stays the
-     accepted set and its order stays the preference.
-   - Its `model` and `effort` fill only what the repository entry leaves unset. A task's
-     choice wins over both, and the repository's value wins over the machine's. In this
-     repository, the Claude entry names neither, so a developer could pin a Claude model
-     and effort for their own reviews; the Codex model the repository names stays fixed.
+   - A machine entry matches every repository entry with the same `provider` and
+     `model_family`; its `model` plays no part in matching. An entry that matches nothing is
+     ignored, and `doctor` names it once as unused here. So the file cannot add a reviewer:
+     the repository's list stays the accepted set and its order stays the preference.
+   - Its `model` and `effort` fill only what each matched repository entry leaves unset.
+     A task's choice wins over both, and the repository's value wins over the machine's.
+     An unset value counts as no team choice; a team that wants a fixed model or effort
+     names it. In this repository, the Claude entry names neither, so a developer could pin
+     a Claude model and effort for their own reviews; the Codex model the repository names
+     stays fixed.
    - It does not change which reviewer is selected. Selection already skips reviewers that
      are not set up on the machine.
    - It cannot quiet a covered provider. Coverage gaps keep their warning and their place
@@ -97,10 +100,13 @@ coordination state. Nothing is reused.
 
 3. **Review evidence records machine-supplied model and effort.** Decision 1 and the
    reporting part of decision 2 change warnings only, so they stay out of the settings
-   fingerprint. A machine `model` or `effort` changes what a review runs, so the review
-   result labels it as machine-supplied, and the published review shows the model and
-   effort each round used, as it does today. Ruby reads the file through `Dir.home`, and
-   tests set `HOME` to a temporary directory.
+   fingerprint. A machine `model` or `effort` changes what a review runs, so it enters
+   that review's settings record and fingerprint, labeled as machine-supplied. Two
+   developers whose files differ then produce distinguishable review evidence, and editing
+   the file supersedes earlier review evidence on that machine, as any settings change
+   does. The published review shows the model and effort each round used, as it does
+   today. Ruby reads the file through `Dir.home`, and tests set `HOME` to a temporary
+   directory.
 
 ## Alternatives considered
 
