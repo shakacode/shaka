@@ -4,7 +4,7 @@ require 'open3'
 require_relative 'error'
 
 module Shaka
-  # Parses a Git origin URL into owner/name without calling GitHub.
+  # Parses a Git origin URL while preserving its full namespace, without calling a provider.
   module GitOrigin
     URI_HOST_PATH = %r{\A(https?|ssh)://(?:[^/]*@)?([^/:@]+)(?::(\d+))?/(.+)}
     SCP_HOST_PATH = /\A(?:[^@]+@)?([^:@]+):(.+)/
@@ -77,7 +77,8 @@ module Shaka
 
     def repository_path(raw, origin)
       path = raw.split(/[?#]/, 2).first&.delete_suffix('/')&.delete_suffix('.git')
-      return path if path&.match?(%r{\A[A-Za-z0-9._~-]+/[A-Za-z0-9._~-]+\z})
+      return path if path&.match?(%r{\A[A-Za-z0-9._~-]+(?:/[A-Za-z0-9._~-]+)+\z}) &&
+                     !path.split('/').intersect?(%w[. ..])
 
       parse_error(origin)
     end
