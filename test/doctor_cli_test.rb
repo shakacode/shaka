@@ -60,6 +60,15 @@ class DoctorCliTest < Minitest::Test
     end
   end
 
+  def test_startup_probe_requires_trusted_ref_and_explicit_selection
+    ref = 'a' * 40
+    [%w[--startup-review], ['--startup-review', '--ref', ref],
+     ['--startup-review', '--probe-reviewers', '--ref', ref, '--reviewer', 'openai/codex'],
+     %w[--reviewer openai/codex], %w[--startup-review --ref HEAD --reviewer openai/codex]].each do |arguments|
+      assert_equal(1, silently { Shaka::Doctor.run(arguments) })
+    end
+  end
+
   private
 
   def capture_doctor(path, root)

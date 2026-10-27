@@ -28,7 +28,7 @@ module Shaka
       OPTIONAL_REVIEW_KEYS = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, ReviewSchema::PROMPT_FILE,
                               ReviewSchema::CUSTOM_INSTRUCTIONS,
                               ReviewSchema::LOCAL_REVIEW_COUNT, ReviewCoverage::KEY, ReviewLimit::KEY,
-                              'ci_review_wait'].freeze
+                              'ci_review_wait', 'startup_check'].freeze
 
       attr_reader :commands
 
@@ -102,10 +102,17 @@ module Shaka
         ReviewSchema.renamed!(review)
         keys!(review, ['required'], OPTIONAL_REVIEW_KEYS, 'review')
         ReviewSchema.new(review).validate
+        validate_review_options(review)
+        local_prompt_files!(PostImplementationSchema.fold(@data)) unless @available_commands
+      end
+
+      def validate_review_options(review)
+        if review.key?('startup_check')
+          enum!(review['startup_check'], [true, false], 'review.startup_check must be true or false')
+        end
         ReviewCoverage.validate!(review)
         count = ReviewSchema::LOCAL_REVIEW_COUNT
         positive_integer!(review[count], "review.#{count}") if review.key?(count)
-        local_prompt_files!(PostImplementationSchema.fold(@data)) unless @available_commands
       end
 
       def validate_checkpoint

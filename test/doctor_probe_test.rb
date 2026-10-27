@@ -248,3 +248,82 @@ class DoctorProbeTrustTest < Minitest::Test
     end
   end
 end
+
+# Startup selection keeps unused fallbacks out of billable checks.
+class DoctorStartupProbeTest < Minitest::Test
+  include DoctorHelper
+  include RepositoryConfigTestHelpers
+  include DoctorProbeFixture
+
+  def test_selected_probe_leaves_unused_fallbacks_unlaunched
+    with_probe do |root, path, trace|
+      write_codex(path, trace, success: true)
+      review = { 'local_review_agents' => [AGENT, { 'provider' => 'xai', 'model_family' => 'grok' }] }
+      subject = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: LAUNCH_TIMEOUT,
+                                                 reviewers: ['openai/codex'])
+      item = subject.call(review)
+
+      assert_equal 'healthy', item.fetch(:status)
+      assert_equal 1, JSON.parse(File.read(trace)).fetch('count')
+      refute_includes item.fetch(:summary), 'xai/grok'
+    end
+  end
+
+  def test_unconfigured_selection_fails_before_any_launch
+    with_probe do |root, path, trace|
+      write_codex(path, trace, success: true)
+      subject = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: LAUNCH_TIMEOUT,
+                                                 reviewers: %w[openai/codex anthropic/claude])
+      error = assert_raises(Shaka::Error) { subject.call('local_review_agents' => [AGENT]) }
+
+      assert_includes error.message, 'anthropic/claude'
+      refute_path_exists trace
+    end
+  end
+
+  def test_startup_switch_skips_launch
+    with_probe do |root, path, trace|
+      write_codex(path, trace, success: true)
+      review = { 'startup_check' => false, 'local_review_agents' => [AGENT] }
+      options = { root:, path:, timeout: LAUNCH_TIMEOUT, reviewers: ['openai/codex'] }
+      item = Shaka::Doctor::ReviewerProbe.new(**options, startup: true).call(review)
+
+      assert_equal 'healthy', item.fetch(:status)
+      assert_includes item.fetch(:summary), 'disabled'
+      refute_path_exists trace
+    end
+  end
+
+  def test_explicit_diagnostic_ignores_startup_opt_out
+    with_probe do |root, path, trace|
+      write_codex(path, trace, success: true)
+      review = { 'startup_check' => false, 'local_review_agents' => [AGENT] }
+      item = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: LAUNCH_TIMEOUT).call(review)
+      assert_equal 'healthy', item.fetch(:status)
+      assert_equal 1, JSON.parse(File.read(trace)).fetch('count')
+    end
+  end
+
+  def test_startup_probe_uses_trusted_default_instead_of_candidate_opt_out
+    with_probe do |root, path, trace|
+      ref = commit_probe_configuration(root)
+      disable_candidate_probe(root)
+      write_codex(path, trace, success: false)
+      subject = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: LAUNCH_TIMEOUT, ref:,
+                                                 reviewers: ['openai/codex'], startup: true)
+      item = subject.for_repository
+
+      assert_equal 'failed', item.fetch(:status)
+      assert_equal 1, JSON.parse(File.read(trace)).fetch('count')
+    end
+  end
+
+  private
+
+  def disable_candidate_probe(root)
+    candidate = File.join(root, '.agents/agent-workflow.yml')
+    config = YAML.safe_load_file(candidate)
+    config.fetch('review')['startup_check'] = false
+    File.write(candidate, YAML.dump(config))
+  end
+end

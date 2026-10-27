@@ -42,24 +42,21 @@ An account refusal establishes that the requested model failed for that account;
 not establish a provider outage. Keep configured settings and ask the user to choose before
 changing model or effort. Show current provider pricing when proposing a paid alternative.
 
-### Optional availability probe
+### Startup and diagnostic probes
 
-Run `shaka doctor --probe-reviewers --ref TRUSTED_SHA` only when the user requests a live availability check.
-Verify that full SHA against the default branch first, as for `seam check`. The probe reads
-reviewer choices from that commit, never from candidate checkout settings. It launches each
-configured supported reviewer once with its configured model and effort,
-using the same isolated CLI adapter as review. Omitted settings use CLI defaults.
-It sends a minimal prompt without repository content; it may consume quota or incur cost.
-Plain `doctor` launches no reviewer and does not establish account access.
+After planning resolves consent, run `doctor --startup-review --ref TRUSTED_SHA`
+with repeatable `--reviewer PROVIDER/FAMILY` flags for the selected CLI reviewers.
+The command reads `review.startup_check` from the verified default-branch commit;
+false skips launches. It refuses unconfigured reviewers before launching any.
+An explicit `doctor --probe-reviewers --ref TRUSTED_SHA` diagnostic probes all
+configured reviewers regardless of that switch; `--reviewer` limits it.
 
-The trusted schema rejects duplicate reviewer identities; at most the four supported adapters
-can launch. A probe failure makes doctor exit nonzero; unsupported adapters remain degraded.
-Each probe has a 30-second deadline. `--probe-timeout-seconds 1..120` changes that probe bound;
-it requires `--probe-reviewers`. Failures report the reason and local diagnostic path, without
-retrying or changing settings. Unsupported adapters remain unverified. A response establishes
-access at that moment, not a completed review or guaranteed future access. Do not publish raw
-diagnostics without checking for private account data. The closed Claude effort list requires
-a Shaka update to accept any additional level introduced by that CLI.
+Both modes use the review adapter and configured model/effort. Each gets one tiny
+prompt without repository content and a 30-second deadline, configurable with
+`--probe-timeout-seconds 1..120`. They may consume quota. Failures return nonzero
+without retries or substitutions; unsupported adapters remain unverified. Inspect
+local diagnostics for private account data before sharing them. Plain `doctor`
+launches no reviewer. A successful probe establishes access now, not future host approval.
 
 ## Run the selected reviewer
 
@@ -267,8 +264,8 @@ tests, then publishes the review after pushing.
 ## Host approval and denial
 
 If the host denies `shaka review run` before launch, follow
-[host-denied review recovery](host-denied-review.md). When Codex Auto-review guards
-commands, follow [review consent](review-consent.md) before launch. Read the
+[host-denied review recovery](host-denied-review.md). Reuse the
+[review consent](review-consent.md) resolved during planning; resolve changed scope before launch. Read the
 recovery procedure only after a denial; it covers permitted retries, honest not-run
 evidence, and a synthetic replay.
 

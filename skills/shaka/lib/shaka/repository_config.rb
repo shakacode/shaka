@@ -114,7 +114,8 @@ module Shaka
     end
 
     def with_default_review_wait(review)
-      { 'ci_review_wait' => CiReviewWait::DEFAULT, 'local_max_rounds' => ReviewLimit::DEFAULT }.merge(review)
+      { 'ci_review_wait' => CiReviewWait::DEFAULT, 'local_max_rounds' => ReviewLimit::DEFAULT,
+        'startup_check' => Defaults.fetch('review', 'startup_check') }.merge(review)
     end
   end
 end
