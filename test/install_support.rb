@@ -81,6 +81,8 @@ module InstallTestSupport
     FileUtils.mkdir_p(File.join(@source, 'scripts'))
     File.write(File.join(@source, 'scripts/shaka'), "#!/usr/bin/env ruby\n")
     File.chmod(0o755, File.join(@source, 'scripts/shaka'))
+    # Windows checks the helper by starting this entry point through Ruby instead of the launcher.
+    File.write(File.join(@source, 'scripts/shaka.rb'), '')
     File.write(File.join(@source, 'lib/shaka/version.rb'), "module Shaka\n  VERSION = '0.1.0.pre.1'\nend\n")
     File.write(File.join(@rct_source, 'SKILL.md'), 'rct version one')
   end

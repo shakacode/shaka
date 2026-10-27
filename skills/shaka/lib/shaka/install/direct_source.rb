@@ -3,6 +3,7 @@
 require 'rbconfig'
 require_relative 'source'
 require_relative 'directory_safety'
+require_relative '../executable_file'
 require_relative 'refusal'
 
 module Shaka
@@ -22,9 +23,11 @@ module Shaka
 
       private
 
+      # On Windows this starts the incoming shaka.rb with this revision's argv. Windows installs
+      # therefore refuse an update that moves the files it names; test/shaka_command_test.rb says so.
       def verify_helper
-        output, status = Open3.capture2e({ 'SHAKA_RUBY' => RbConfig.ruby },
-                                         File.join(@root, 'skills/shaka/scripts/shaka'), '--help', chdir: @root)
+        command = ExecutableFile.helper_command(File.join(@root, 'skills/shaka/scripts/shaka'))
+        output, status = Open3.capture2e({ 'SHAKA_RUBY' => RbConfig.ruby }, *command, '--help', chdir: @root)
         raise ArgumentError, "Incoming Shaka helper failed verification: #{output.strip}" unless status.success?
       end
 
