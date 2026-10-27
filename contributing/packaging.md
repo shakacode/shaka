@@ -104,7 +104,7 @@ the package. Existing installer tests cover repeat installation, collisions, and
 source updates. These checks validate the artifact; they do not establish host
 compatibility or authorize a registry release.
 
-The prerelease package is `shaka` version `0.1.0.pre.1`, distributed under the
+The package is distributed under the
 [MIT license](../LICENSE). The gem includes the license and declares it in its metadata.
 Future registry publication still requires separate maintainer approval and follows
 the [release process](releasing.md). Packaging uses
