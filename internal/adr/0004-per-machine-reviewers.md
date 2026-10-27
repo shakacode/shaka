@@ -1,6 +1,6 @@
 # 0004: Which local reviewers a machine is expected to run
 
-Status: proposed on 2026-10-25. Nothing here is shipped.
+Status: accepted on 2026-10-26; not yet implemented. Nothing here is shipped.
 Date: 2026-10-25. Tracks [issue #882](https://github.com/shakacode/shaka/issues/882).
 
 ## Context
@@ -77,8 +77,9 @@ coordination state. Nothing is reused.
    - A machine entry matches every repository entry with the same `provider` and
      `model_family`; its `model` plays no part in matching, and two machine entries with
      the same pair make the file malformed. An entry that matches nothing is
-     ignored, and `doctor` names it once as unused here. So the file cannot add a reviewer:
-     the repository's list stays the accepted set and its order stays the preference.
+     ignored, and `doctor` names it once as unused here. That note is informational: it
+     keeps `doctor` HEALTHY and never enters `setup_notices`. So the file cannot add a
+     reviewer: the repository's list stays the accepted set and its order stays the preference.
    - Its `model` and `effort` fill only what each matched repository entry leaves unset.
      A task's choice wins over both, and the repository's value wins over the machine's.
      An unset value counts as no team choice; a team that wants a fixed model or effort
@@ -106,9 +107,9 @@ coordination state. Nothing is reused.
    that review's settings record and fingerprint, labeled as machine-supplied. Two
    developers whose files differ then produce distinguishable review evidence, and changing
    a machine `model` or `effort` that a review uses supersedes earlier review evidence on
-   that machine, as any settings change does. The published review shows the model and effort each round used, as it does
-   today. Ruby reads the file through `Dir.home`, and tests set `HOME` to a temporary
-   directory.
+   that machine, as any settings change does. The published review shows the model and
+   effort each round used, as it does today. Ruby reads the file through `Dir.home`, and
+   tests set `HOME` to a temporary directory.
 
 ## Alternatives considered
 
@@ -147,7 +148,9 @@ coordination state. Nothing is reused.
   and tests. `docs/settings.md` "Which settings apply?" changes to name a second
   home-directory exception, because it changes what the reader sees there. The
   file is not in `defaults.yml`, because it is not a repository setting. `doctor`
-  reports whether the file exists and what it lists.
+  reports whether the file exists and what it lists. Because the file is machine-wide, a
+  malformed one stops local reviews in every repository on that machine until it is fixed;
+  that is the price of never dropping a developer's model or effort silently.
 - Decision 1 alone loses one warning: a developer who relies on an uncovered reviewer
   learns that its setup broke only when a task names it and `shaka review run` reports
   `executable_missing` or `credentials_missing`. Decision 2 restores the earlier warning
@@ -157,12 +160,7 @@ coordination state. Nothing is reused.
 
 ## Delivery
 
-Ship decision 1 as one PR after this ADR is approved; it fixes the reported symptom in
-this repository.
+The maintainer approved both decisions on 2026-10-26, as two PRs in order:
 
-## Open question
-
-Should decision 2 ship with decision 1, or wait until a developer reports a missed warning
-or a repository without `provider_coverage` reports the same noise? Recommended: ship it
-second, as its own PR, if a developer wants their own Claude model or effort now;
-otherwise wait. Decision 2 adds a home-directory file Shaka must support across hosts.
+1. Decision 1, which fixes the reported symptom in this repository.
+2. Decision 2, with machine `model` and `effort`, after decision 1 merges.
