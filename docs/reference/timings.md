@@ -7,14 +7,12 @@ checkpoint took to reach and how long each one waited for a person to respond.
 
 ## Throughput line
 
-The description opens with one line for AI spend and three intervals: prompt
-to CI, CI to ready, and ready to merged. Prompt to CI runs from the recorded
-task start to the push time of the current head. CI to ready runs from the
-first push until the required checks and the configured CI reviews are green.
-Each push that follows a failed CI run adds a round, and the clock keeps
-running from the first push. A value that is not known yet says `pending`.
-A value the records do not establish says `UNKNOWN`. Neither means zero.
-The timings section below still shows the checkpoint stretches.
+The description opens with AI spend and three intervals. Prompt to CI runs from
+the recorded task start to the earliest check-suite creation or check-run start
+on the current head, or to GitHub's push time when no check has started. CI to
+ready runs from the first of those starts until required checks and configured
+CI reviews are green. A later push adds a round only after a failed CI run.
+`pending` is not known yet. `UNKNOWN` is not established. Neither means zero.
 
 Here is an example:
 

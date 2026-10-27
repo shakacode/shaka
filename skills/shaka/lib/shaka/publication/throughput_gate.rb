@@ -4,6 +4,7 @@ module Shaka
   # Counts CI rounds and finds the GitHub time the gate turned green.
   module ThroughputGate
     FAILURES = %w[FAILURE TIMED_OUT STARTUP_FAILURE ACTION_REQUIRED].freeze
+    SUCCESS = %w[SUCCESS SKIPPED NEUTRAL].freeze
 
     def rounds(heads)
       count = 0
@@ -45,7 +46,6 @@ module Shaka
     private
 
     def kept_push?(value) = value.is_a?(String) && !value.empty? && value != 'UNKNOWN'
-
     def earlier_push(seen, kept) = kept_push?(kept) ? [seen, kept].min : seen
 
     def next_round(count, previous_failed, head)
@@ -63,7 +63,7 @@ module Shaka
     end
 
     def head_row(commit, sample)
-      { 'sha' => commit['oid'], 'pushed_at' => commit['pushedDate'], 'failed' => failed?(sample) }
+      { 'sha' => commit['oid'], 'pushed_at' => prompt_stamp(commit), 'failed' => failed?(sample) }
     end
 
     def selected_rows(rows, required, review_jobs, wait)
@@ -87,20 +87,18 @@ module Shaka
     def review_met?(chosen, jobs, wait) = wait.to_s == 'all' ? chosen.size == jobs.size : !chosen.empty?
 
     def earliest(chosen) = chosen.min_by { |row| row['completedAt'].to_s }
-
     def latest(rows, name) = rows.select { |row| row['name'] == name }.max_by { |row| row['completedAt'].to_s }
 
-    def passed?(row) = row.key?('bucket') ? row['bucket'] == 'pass' : row['conclusion'] == 'SUCCESS'
+    def passed?(row)
+      return row['bucket'] == 'pass' || skipped_bucket?(row) if row.key?('bucket')
 
-    def relevant(runs, names)
-      return [] if runs.empty?
-
-      names.empty? ? runs : runs.select { |run| names.include?(run['name']) }
+      SUCCESS.include?(row['conclusion'])
     end
 
-    def runs_of(commit)
-      return [Array(commit['runs']).grep(Hash), false] if commit['runs'].is_a?(Array)
+    def skipped_bucket?(row) = row['bucket'] == 'skipping' && %w[SKIPPED NEUTRAL].include?(row['state'])
+    def relevant(runs, names) = names.empty? ? runs : runs.select { |run| names.include?(run['name']) }
 
+    def runs_of(commit)
       runs, cut = suite_page(commit['checkSuites'])
       [runs + status_runs(commit['status']), cut]
     end
@@ -134,8 +132,6 @@ module Shaka
       [nodes, page.is_a?(Hash) && page.dig('pageInfo', 'hasNextPage') == true]
     end
 
-    def failed?(runs)
-      runs.any? { |run| run['status'] == 'COMPLETED' && FAILURES.include?(run['conclusion']) }
-    end
+    def failed?(runs) = runs.any? { |run| run['status'] == 'COMPLETED' && FAILURES.include?(run['conclusion']) }
   end
 end

@@ -162,6 +162,14 @@ class PrWatchTest < Minitest::Test
     assert_empty failed
   end
 
+  def test_a_skipped_required_check_records_throughput
+    ready = []
+    watch([frame(required: [check('validate', 'SKIPPED', 'skipping')],
+                 checks: [check('claude-review', 'SUCCESS', 'pass')])],
+          throughput: ->(**) { ready << :called })
+    refute_empty ready
+  end
+
   def test_a_throughput_write_failure_still_lets_the_watch_wake
     called = false
     result = watch([frame(required: [check('validate', 'SUCCESS', 'pass')],

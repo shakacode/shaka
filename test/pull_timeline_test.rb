@@ -70,6 +70,18 @@ class PullTimelineTest < Minitest::Test
     assert_nil read([page([])])['head_pushed_at']
   end
 
+  def test_records_the_earliest_check_start_when_the_push_time_is_missing
+    commit = { 'oid' => 'a' * 40, 'pushedDate' => nil, 'checkSuites' => { 'nodes' => [
+      { 'createdAt' => '2026-10-18T08:05:00Z',
+        'checkRuns' => { 'nodes' => [{ 'startedAt' => '2026-10-18T08:06:00Z' }] } },
+      { 'createdAt' => '0001-01-01T00:00:00Z', 'checkRuns' => { 'nodes' => [] } }
+    ] } }
+    pull = page([]).merge('headCommit' => { 'nodes' => [{ 'commit' => commit }] })
+    timeline = read([pull])
+    assert_equal Time.utc(2026, 10, 18, 8, 5), timeline['ci_started_at']
+    assert_nil timeline['head_pushed_at']
+  end
+
   def test_reports_the_first_commit_and_the_merge
     timeline = read([page([])])
     assert_equal [Time.utc(2026, 10, 18, 7, 30), Time.utc(2026, 10, 18, 9)],

@@ -13,24 +13,25 @@ module Shaka
     extend ThroughputGate
 
     KEYS = %w[head spend t0 t1 first_push t2 t3 rounds].freeze
-    BLOCK = /^<!-- shaka:stats (\{[^\n]*\}) -->\nAI spend [^\n]+$/
+    BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\nAI spend [^\r\n]+$/
 
-    def self.for_description(content, timeline = nil, pull = nil)
-      line(publish_state(content, timeline || {}, pull))
-    end
+    def self.for_description(content, timeline = nil, pull = nil) = line(publish_state(content, timeline || {}, pull))
 
     def self.update(body, changes)
-      text = body.to_s.gsub("\r\n", "\n")
-      state = read(text)
-      return text unless state
+      original = body.to_s
+      state = read(original)
+      return original unless state
 
-      text.sub(BLOCK) { line(apply(state, changes)) }
+      replacement = line(apply(state, changes))
+      return original if original[BLOCK].to_s.gsub("\r\n", "\n") == replacement
+
+      original.sub(BLOCK, replacement)
     end
 
     def self.refresh_spend(body, spend) = update(body, 'spend' => spend)
 
     def self.read(body)
-      hits = body.to_s.gsub("\r\n", "\n").to_enum(:scan, BLOCK).map { Regexp.last_match(1) }
+      hits = body.to_s.to_enum(:scan, BLOCK).map { Regexp.last_match(1) }
       return if hits.empty?
       raise Error, 'Description has more than one shaka:stats block.' if hits.size > 1
 
@@ -47,30 +48,24 @@ module Shaka
         raise Error, 'Description has an unreadable shaka:stats block.'
       end
 
-      def publish_state(content, timeline, pull)
-        carried = read(pull_body(pull)) || {}
-        state_for(content, timeline, carried, head_sha(pull))
-      end
-
+      def publish_state(content, timeline, pull) = state_for(content, timeline, carried_body(pull), head_sha(pull))
+      def carried_body(pull) = read(pull_body(pull)) || {}
       def pull_body(pull) = pull.is_a?(Hash) ? pull['body'] : nil
 
       def state_for(content, timeline, carried, head)
         base = fresh_state(content, timeline, carried)
         base['head'] = head if head
-        return base.compact unless head && carried['head'] == head
-
-        carried_state(base, carried).compact
+        same = head && carried['head'] == head
+        (same ? carried_state(base, carried) : base).compact
       end
 
       def fresh_state(content, timeline, carried)
-        {
-          'spend' => spend(content),
-          't0' => stamp(timeline['task_started_at']) || carried['t0'],
-          't1' => stamp(timeline['head_pushed_at']),
-          'first_push' => carried['first_push'] || stamp(timeline['head_pushed_at']),
-          't3' => stamp(timeline['merged'])
-        }
+        prompt = prompted_at(timeline)
+        { 'spend' => spend(content), 't0' => stamp(timeline['task_started_at']) || carried['t0'],
+          't1' => prompt, 'first_push' => carried['first_push'] || prompt, 't3' => stamp(timeline['merged']) }
       end
+
+      def prompted_at(timeline) = stamp(timeline['ci_started_at']) || stamp(timeline['head_pushed_at'])
 
       def carried_state(base, carried)
         base.merge('t1' => base['t1'] || carried['t1'], 't2' => carried['t2'],
@@ -79,9 +74,7 @@ module Shaka
 
       def spend(content)
         usage = content['usage']
-        return 'UNKNOWN' unless usage.is_a?(Hash)
-
-        UsageDetails.new(usage).detail.fetch('estimate')
+        usage.is_a?(Hash) ? UsageDetails.new(usage).detail.fetch('estimate') : 'UNKNOWN'
       end
 
       def head_sha(pull)
@@ -122,14 +115,9 @@ module Shaka
         text
       end
 
-      def one_line?(text)
-        !text.empty? && !text.match?(/[\r\n]/) && comment_safe?(text)
-      end
-
       # HTML comments can end with --> or --!>, so either string would close the stats marker early.
-      def comment_safe?(text)
-        !text.include?('<!--') && !text.include?('-->') && !text.include?('--!>')
-      end
+      def one_line?(text) = !text.empty? && !text.match?(/[\r\n]/) && comment_safe?(text)
+      def comment_safe?(text) = !text.include?('<!--') && !text.include?('-->') && !text.include?('--!>')
     end
   end
 end

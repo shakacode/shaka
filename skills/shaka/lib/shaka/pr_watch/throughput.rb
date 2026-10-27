@@ -9,30 +9,12 @@ module Shaka
       QUERY = <<~GRAPHQL
         query($owner: String!, $name: String!, $number: Int!) {
           repository(owner: $owner, name: $name) {
-            pullRequest(number: $number) {
-              headRefOid
-              commits(last: 50) {
-                totalCount
-                nodes {
-                  commit {
-                    oid
-                    pushedDate
-                    status { contexts { context state createdAt } }
-                    checkSuites(first: 8) {
-                      pageInfo { hasNextPage }
-                      nodes {
-                        checkRuns(first: 40) {
-                          pageInfo { hasNextPage }
-                          nodes { name conclusion status completedAt }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+            pullRequest(number: $number) { headRefOid
+              commits(last: 50) { totalCount nodes { commit { oid pushedDate
+                status { contexts { context state createdAt } }
+                checkSuites(first: 20) { pageInfo { hasNextPage } nodes { createdAt
+                  checkRuns(first: 40) { pageInfo { hasNextPage }
+                    nodes { name conclusion status startedAt completedAt } } } } } } } } } }
       GRAPHQL
 
       def self.watch(arguments, head, jobs, settings)
@@ -53,18 +35,24 @@ module Shaka
       end
 
       def call(required:)
-        pull = timeline
-        return unless pull['headRefOid'] == @head
+        2.times do
+          times = @github.check_times
+          next unless (pull = timeline) && same_head?(pull)
 
-        body = description_body
-        carried = ThroughputStats.read(body)
-        return unless carried
+          carried = ThroughputStats.read(body = description_body)
+          return unless carried
 
-        updated = ThroughputStats.update(body, changes(pull, required, carried))
-        write(updated) unless updated == body
+          updated = ThroughputStats.update(body, changes(pull, required, carried, times))
+          return if updated == body
+          next unless safe_to_write?(body)
+
+          return write(updated)
+        end
       end
 
       private
+
+      def safe_to_write?(body) = description_body == body && same_head?(timeline)
 
       def timeline
         owner, name = @github.repository.split('/')
@@ -74,22 +62,30 @@ module Shaka
         found
       end
 
-      def changes(pull, required, carried)
+      def changes(pull, required, carried, times)
         commits, total = commit_page(pull)
         heads, suites_complete = ThroughputStats.ci_heads(commits, required:, review_jobs: @review_jobs)
-        ready = ThroughputStats.ready_at(@github.check_times, required:, review_jobs: @review_jobs, wait: @wait)
-        fields(heads, ready, history_complete?(suites_complete, total, commits), carried)
+        ready = ThroughputStats.ready_at(times, required:, review_jobs: @review_jobs, wait: @wait)
+        fields(commits, heads, ready, history_complete?(suites_complete, total, commits), carried)
       end
 
-      def fields(heads, ready, complete, carried)
+      def fields(commits, heads, ready, complete, carried)
         result = { 'head' => @head, 'rounds' => complete ? ThroughputStats.rounds(heads) : nil }
-        result['t2'] = stamp(ready) if ready
+        result['t2'] = ready_stamp(ready, carried) if ready
+        head = commits.find { |commit| commit.is_a?(Hash) && commit['oid'] == @head }
+        prompt = ThroughputStats.prompt_stamp(head)
+        result['t1'] = ThroughputStats.keep_earlier(prompt, carried, 't1', @head) if prompt
         push = ThroughputStats.bounded_first_push(heads, complete, carried)
         result['first_push'] = push if push
         result
       end
 
-      def stamp(ready) = ready == :unknown ? 'UNKNOWN' : ready.utc.iso8601
+      def ready_stamp(ready, carried)
+        seen = ready == :unknown ? 'UNKNOWN' : ready.utc.iso8601
+        ThroughputStats.keep_earlier(seen, carried, 't2', @head)
+      end
+
+      def same_head?(pull) = pull.is_a?(Hash) && pull['headRefOid'] == @head
 
       def history_complete?(suites_complete, total, commits)
         suites_complete && total.is_a?(Integer) && total == commits.size

@@ -53,8 +53,12 @@ module Shaka
       def required_names(required) = required.filter_map { |row| row['name'] if row.is_a?(Hash) }
 
       def gate_green?(required, checks)
-        required.all? { |row| row.is_a?(Hash) && row['bucket'] == 'pass' } && review_green?(checks)
+        required.all? { |row| required_green?(row) } && review_green?(checks)
       end
+
+      # Merge treats a skipped or neutral required check as satisfied. A review job does not.
+      def required_green?(row) = row.is_a?(Hash) && (row['bucket'] == 'pass' || skipped_required?(row))
+      def skipped_required?(row) = row['bucket'] == 'skipping' && %w[SKIPPED NEUTRAL].include?(row['state'])
 
       def review_green?(checks)
         return true if @ci_jobs.empty? || @ci_wait == 'none'
