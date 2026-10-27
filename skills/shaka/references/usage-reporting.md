@@ -41,7 +41,7 @@ The full original note stays in the hidden record for later publication. A PR le
 a price change therefore shows which rows used which prices. To price every row with current rates, rerun `shaka usage` for each report and
 publish the new records.
 
-When that description would pass GitHub's 65,536-character limit, the helper moves the lowest-priority
+When that description would exceed GitHub's 65,536-character limit, the helper moves the lowest-priority
 collapsed sections into one comment titled "Usage and timing details for #N" and links to that comment
 from the description. It moves per-report pricing notes first, then timings, then the hidden usage
 records if the description is still too long. Each later publish updates that same comment. The comment
