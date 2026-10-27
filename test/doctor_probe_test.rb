@@ -106,6 +106,92 @@ module DoctorProbeFixture
   end
 end
 
+# Exercises the command parser, settings lookup, and probe adapter together.
+class DoctorStartupCommandTest < Minitest::Test
+  include DoctorHelper
+  include RepositoryConfigTestHelpers
+  include DoctorProbeFixture
+
+  def test_command_passes_selected_reviewers_to_the_adapter
+    with_startup_command(enabled: true) do |arguments, trace|
+      _out, error = capture_io { assert_equal 0, Shaka::Doctor.run(arguments) }
+      assert_empty error
+      assert_equal 1, JSON.parse(File.read(trace)).fetch('count')
+    end
+  end
+
+  def test_command_probes_a_padded_reviewer_identity
+    with_startup_command(enabled: true) do |arguments, trace|
+      arguments[arguments.index('openai/codex')] = ' openai / codex '
+      _out, error = capture_io { assert_equal 0, Shaka::Doctor.run(arguments) }
+      assert_empty error
+      assert_equal 1, JSON.parse(File.read(trace)).fetch('count')
+    end
+  end
+
+  def test_command_passes_disabled_startup_to_the_adapter
+    with_startup_command(enabled: false) do |arguments, trace|
+      out, error = capture_io { assert_equal 0, Shaka::Doctor.run(arguments) }
+      assert_empty error
+      assert_includes out, 'Startup probe disabled'
+      refute_path_exists trace
+    end
+  end
+
+  def test_startup_does_not_run_unrelated_doctor_checks
+    [true, false].each do |enabled|
+      with_startup_command(enabled:) do |arguments, _trace|
+        Shaka::Doctor::System.define_singleton_method(:default) { raise Shaka::Error, 'unrelated doctor failure' }
+        out, error = capture_io { assert_equal 0, Shaka::Doctor.run(arguments) }
+        assert_empty error
+        assert_equal 'healthy', JSON.parse(out).fetch('status')
+      end
+    end
+  end
+
+  def test_unverified_probe_has_a_nonzero_exit_status
+    with_startup_command(enabled: true, reviewer: 'custom/reviewer') do |arguments, trace|
+      out, error = capture_io { assert_equal 1, Shaka::Doctor.run(arguments) }
+      assert_empty error
+      assert_equal 'degraded', JSON.parse(out).fetch('status')
+      refute_path_exists trace
+    end
+  end
+
+  private
+
+  def with_startup_command(enabled:, reviewer: 'openai/codex')
+    with_probe do |root, path, trace|
+      configure_startup_command(root, enabled, reviewer)
+      ref = commit_probe_configuration(root)
+      write_codex(path, trace, success: true)
+      args = ['--root', root, '--host', 'codex', '--startup-review', '--ref', ref, '--reviewer', reviewer]
+      with_startup_system(path) { yield args, trace }
+    end
+  end
+
+  def configure_startup_command(root, enabled, reviewer)
+    path = File.join(root, '.agents/agent-workflow.yml')
+    config = YAML.safe_load_file(path)
+    config['review']['startup_check'] = enabled
+    config['review']['local_review_agents'] << { 'provider' => 'xai', 'model_family' => 'grok' }
+    config['review']['local_review_agents'] << Shaka::ReviewerSelection.parse(reviewer) if reviewer != 'openai/codex'
+    File.write(path, YAML.dump(config))
+  end
+
+  def with_startup_system(path)
+    original = ENV.fetch('PATH')
+    original_system = Shaka::Doctor::System.method(:default)
+    system = stub_system(DEFAULTS)
+    ENV['PATH'] = "#{path}:#{original}"
+    Shaka::Doctor::System.define_singleton_method(:default) { system }
+    yield
+  ensure
+    ENV['PATH'] = original
+    Shaka::Doctor::System.define_singleton_method(:default, original_system)
+  end
+end
+
 class DoctorProbeTest < Minitest::Test
   include DoctorHelper
   include RepositoryConfigTestHelpers
@@ -246,5 +332,84 @@ class DoctorProbeTrustTest < Minitest::Test
         assert_includes JSON.parse(File.read(trace)).fetch('args'), 'gpt-6-sol'
       end
     end
+  end
+end
+
+# Startup selection keeps unused fallbacks out of billable checks.
+class DoctorStartupProbeTest < Minitest::Test
+  include DoctorHelper
+  include RepositoryConfigTestHelpers
+  include DoctorProbeFixture
+
+  def test_selected_probe_leaves_unused_fallbacks_unlaunched
+    with_probe do |root, path, trace|
+      write_codex(path, trace, success: true)
+      review = { 'local_review_agents' => [AGENT, { 'provider' => 'xai', 'model_family' => 'grok' }] }
+      subject = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: LAUNCH_TIMEOUT,
+                                                 reviewers: ['openai/codex'])
+      item = subject.call(review)
+
+      assert_equal 'healthy', item.fetch(:status)
+      assert_equal 1, JSON.parse(File.read(trace)).fetch('count')
+      refute_includes item.fetch(:summary), 'xai/grok'
+    end
+  end
+
+  def test_unconfigured_selection_fails_before_any_launch
+    with_probe do |root, path, trace|
+      write_codex(path, trace, success: true)
+      subject = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: LAUNCH_TIMEOUT,
+                                                 reviewers: %w[openai/codex anthropic/claude])
+      error = assert_raises(Shaka::Error) { subject.call('local_review_agents' => [AGENT]) }
+
+      assert_includes error.message, 'anthropic/claude'
+      refute_path_exists trace
+    end
+  end
+
+  def test_startup_switch_skips_launch
+    with_probe do |root, path, trace|
+      write_codex(path, trace, success: true)
+      review = { 'startup_check' => false, 'local_review_agents' => [AGENT] }
+      options = { root:, path:, timeout: LAUNCH_TIMEOUT, reviewers: ['openai/codex'] }
+      item = Shaka::Doctor::ReviewerProbe.new(**options, startup: true).call(review)
+
+      assert_equal 'healthy', item.fetch(:status)
+      assert_includes item.fetch(:summary), 'disabled'
+      refute_path_exists trace
+    end
+  end
+
+  def test_explicit_diagnostic_ignores_startup_opt_out
+    with_probe do |root, path, trace|
+      write_codex(path, trace, success: true)
+      review = { 'startup_check' => false, 'local_review_agents' => [AGENT] }
+      item = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: LAUNCH_TIMEOUT).call(review)
+      assert_equal 'healthy', item.fetch(:status)
+      assert_equal 1, JSON.parse(File.read(trace)).fetch('count')
+    end
+  end
+
+  def test_startup_probe_uses_trusted_default_instead_of_candidate_opt_out
+    with_probe do |root, path, trace|
+      ref = commit_probe_configuration(root)
+      disable_candidate_probe(root)
+      write_codex(path, trace, success: false)
+      subject = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: LAUNCH_TIMEOUT, ref:,
+                                                 reviewers: ['openai/codex'], startup: true)
+      item = subject.for_repository
+
+      assert_equal 'failed', item.fetch(:status)
+      assert_equal 1, JSON.parse(File.read(trace)).fetch('count')
+    end
+  end
+
+  private
+
+  def disable_candidate_probe(root)
+    candidate = File.join(root, '.agents/agent-workflow.yml')
+    config = YAML.safe_load_file(candidate)
+    config.fetch('review')['startup_check'] = false
+    File.write(candidate, YAML.dump(config))
   end
 end
