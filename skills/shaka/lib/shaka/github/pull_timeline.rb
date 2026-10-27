@@ -14,7 +14,8 @@ module Shaka
           pullRequest(number: $number) {
             state createdAt mergedAt closedAt
             firstCommit: commits(first: 1) { nodes { commit { committedDate } } }
-            headCommit: commits(last: 1) { nodes { commit { oid checkSuites(first: 100) { nodes { createdAt checkRuns(first: 100) { nodes { startedAt } } } } } } }
+            headCommit: commits(last: 1) { nodes { commit { oid status { contexts { createdAt } }
+              checkSuites(first: 100) { nodes { createdAt checkRuns(first: 100) { nodes { startedAt } } } } } } }
             commits(last: 100) { nodes { commit { oid tree { oid } } } }
             timelineItems(first: 100, after: $cursor, itemTypes: [LABELED_EVENT, UNLABELED_EVENT]) {
               pageInfo { hasNextPage endCursor }
