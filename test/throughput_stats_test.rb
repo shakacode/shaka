@@ -74,6 +74,13 @@ class ThroughputStatsTest < Minitest::Test
     assert_equal 'a\x', Shaka::ThroughputStats.read(Shaka::ThroughputStats.update(once, 'rounds' => 1))['spend']
   end
 
+  def test_a_carried_value_that_ends_the_comment_is_not_written_back
+    hostile = "<!-- shaka:stats {\"head\":\"#{HEAD}\",\"t2\":\"--> **x**\",\"rounds\":0} -->\nAI spend UNKNOWN\n"
+    rendered = describe('$4.12', timeline: push_times, pull: { 'head' => { 'sha' => HEAD }, 'body' => hostile })
+    refute_includes rendered, '**x**'
+    assert_equal hostile, Shaka::ThroughputStats.refresh_spend(hostile, '$1.00')
+  end
+
   def test_a_spend_refresh_leaves_a_damaged_block_alone
     damaged = "Keep.\n<!-- shaka:stats {not json} -->\nAI spend UNKNOWN\n"
     assert_equal damaged, Shaka::ThroughputStats.refresh_spend(damaged, '$1.00')

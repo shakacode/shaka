@@ -48,7 +48,10 @@ module Shaka
 
       def parse_block(json)
         data = JSON.parse(json)
-        data if data.is_a?(Hash)
+        return unless data.is_a?(Hash)
+        raise Error, 'Description has an unreadable shaka:stats block.' unless sound?(data)
+
+        data
       rescue JSON::ParserError
         raise Error, 'Description has an unreadable shaka:stats block.'
       end
@@ -95,6 +98,13 @@ module Shaka
         nested = pull['head']
         sha = pull['headRefOid'] || (nested['sha'] if nested.is_a?(Hash))
         sha if sha.is_a?(String) && sha.match?(/\A[0-9a-f]{40}\z/)
+      end
+
+      # The body is editable by the pull request author, so a carried value must not close the marker.
+      def sound?(data)
+        values = data.except('rounds').values
+        values.all? { |value| value.nil? || (value.is_a?(String) && one_line?(value)) } &&
+          (data['rounds'].nil? || positive_round?(data['rounds']))
       end
 
       def apply(state, changes)
