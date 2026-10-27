@@ -52,7 +52,8 @@ module Shaka
 
       private
 
-      def safe_to_write?(body) = description_body == body && same_head?(timeline)
+      # Read the body last so the unconditional PATCH follows it as closely as possible.
+      def safe_to_write?(body) = same_head?(timeline) && description_body == body
 
       def timeline
         owner, name = @github.repository.split('/')
