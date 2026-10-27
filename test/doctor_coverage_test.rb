@@ -54,6 +54,18 @@ class DoctorCoverageTest < Minitest::Test
     end
   end
 
+  # Only uncovered entries go quiet: a covered reviewer selection would pick still warns.
+  def test_coverage_still_warns_about_a_covered_reviewer_without_setup
+    review = review_policy('provider_coverage' => %w[anthropic openai], 'local_review_agents' => agents + [deepseek])
+    with_repository('review' => review) do |root|
+      report, = doctor(root:, executable: ->(name, *) { name != 'codex' }, environment: {})
+
+      assert_includes report, '[DEGRADED] Reviewer CLIs'
+      assert_includes report, 'This repository configures openai/codex reviews, but local setup is incomplete.'
+      refute_includes report, 'This repository configures deepseek/openrouter reviews'
+    end
+  end
+
   # Without coverage, any listed reviewer can be a fallback, so its missing setup still warns.
   def test_without_coverage_a_reviewer_without_setup_still_warns
     review = review_policy('local_review_agents' => agents + [deepseek])
