@@ -208,12 +208,14 @@ module Shaka
     end
 
     def comment_text(rendered, moved, pull)
+      # The reply marker and its newline are posted ahead of the note.
+      budget = DescriptionOverflow::LIMIT - DescriptionOverflow::MARK.length - 1
       full = note(rendered, pull, DescriptionOverflow::INTRO, moved, extra: true)
-      return full if full.length <= DescriptionOverflow::LIMIT
+      return full if full.length <= budget
 
       # The duplicate usage copy can go; records that were themselves moved stay in `moved`.
       short = note(rendered, pull, DescriptionOverflow::INTRO, moved, extra: false)
-      return short if short.length <= DescriptionOverflow::LIMIT
+      return short if short.length <= budget
 
       raise Error, DescriptionOverflow::COMMENT_LIMIT
     end

@@ -156,10 +156,13 @@ end
 
 # Evidence is prepared first; a preview can only replace the rendering that follows it.
 def render_description(carried, version, pull, settings, timeline, options, github) # rubocop:disable Metrics/ParameterLists
-  pull = pull.merge('shaka_changed_files' => Shaka::FeaturePublication.files(github, pull))
-  Shaka::RenderingPreview.publish(options, pull, github) do
-    Shaka::Publication.description(carried, version, pull, settings, timeline)
+  rendering = pull.merge('shaka_changed_files' => Shaka::FeaturePublication.files(github, pull))
+  body = Shaka::RenderingPreview.publish(options, rendering, github) do
+    Shaka::Publication.description(carried, version, rendering, settings, timeline)
   end
+  # The overflow comment is posted from the caller's pull, so its package has to reach it.
+  Shaka::DescriptionOverflow.remember(pull, rendering['shaka_overflow'])
+  body
 end
 
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.
