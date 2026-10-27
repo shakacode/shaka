@@ -48,6 +48,7 @@ After planning resolves consent, run `doctor --startup-review --ref TRUSTED_SHA`
 with repeatable `--reviewer PROVIDER/FAMILY` flags for the selected CLI reviewers.
 The command reads `review.startup_check` from the verified default-branch commit;
 false skips launches. It refuses unconfigured reviewers before launching any.
+Startup reports only the probe as JSON and exits nonzero for failed or unverified results.
 An explicit `doctor --probe-reviewers --ref TRUSTED_SHA` diagnostic probes all
 configured reviewers regardless of that switch; `--reviewer` limits it.
 

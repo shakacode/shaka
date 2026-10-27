@@ -18,6 +18,12 @@ module Shaka
       GUIDANCE = 'Inspect local diagnostics. Keep configured model and effort; ask the user before changing them. ' \
                  'Timeouts and account model refusals do not establish a provider outage.'
 
+      def self.run(root:, **)
+        item = new(root:, path: ENV.fetch('PATH', ''), **).for_repository
+        puts JSON.pretty_generate(item)
+        item.fetch(:status) == 'healthy' ? 0 : 1
+      end
+
       def initialize(root:, path:, timeout:, ref: nil, **selection)
         @root = OpeningCheckout.root(root) || File.realpath(root)
         @path = LocalReviewPathGuard.safe_path(path, candidate_root: @root, drop_candidate: true)

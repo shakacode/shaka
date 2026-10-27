@@ -129,23 +129,44 @@ class DoctorStartupCommandTest < Minitest::Test
     end
   end
 
+  def test_startup_does_not_run_unrelated_doctor_checks
+    [true, false].each do |enabled|
+      with_startup_command(enabled:) do |arguments, _trace|
+        Shaka::Doctor::System.define_singleton_method(:default) { raise Shaka::Error, 'unrelated doctor failure' }
+        out, error = capture_io { assert_equal 0, Shaka::Doctor.run(arguments) }
+        assert_empty error
+        assert_equal 'healthy', JSON.parse(out).fetch('status')
+      end
+    end
+  end
+
+  def test_unverified_probe_has_a_nonzero_exit_status
+    with_startup_command(enabled: true, reviewer: 'custom/reviewer') do |arguments, trace|
+      out, error = capture_io { assert_equal 1, Shaka::Doctor.run(arguments) }
+      assert_empty error
+      assert_equal 'degraded', JSON.parse(out).fetch('status')
+      refute_path_exists trace
+    end
+  end
+
   private
 
-  def with_startup_command(enabled:)
+  def with_startup_command(enabled:, reviewer: 'openai/codex')
     with_probe do |root, path, trace|
-      configure_startup_command(root, enabled)
+      configure_startup_command(root, enabled, reviewer)
       ref = commit_probe_configuration(root)
       write_codex(path, trace, success: true)
-      args = ['--root', root, '--host', 'codex', '--startup-review', '--ref', ref, '--reviewer', 'openai/codex']
+      args = ['--root', root, '--host', 'codex', '--startup-review', '--ref', ref, '--reviewer', reviewer]
       with_startup_system(path) { yield args, trace }
     end
   end
 
-  def configure_startup_command(root, enabled)
+  def configure_startup_command(root, enabled, reviewer)
     path = File.join(root, '.agents/agent-workflow.yml')
     config = YAML.safe_load_file(path)
     config['review']['startup_check'] = enabled
     config['review']['local_review_agents'] << { 'provider' => 'xai', 'model_family' => 'grok' }
+    config['review']['local_review_agents'] << Shaka::ReviewerSelection.parse(reviewer) if reviewer != 'openai/codex'
     File.write(path, YAML.dump(config))
   end
 
