@@ -83,7 +83,8 @@ module Shaka
       def prompted_at(timeline) = stamp(timeline['ci_started_at'])
 
       def carried_state(base, carried)
-        base.merge('t1' => base['t1'] || carried['t1'], 't2' => carried['t2'],
+        t1 = base['t1'] ? keep_earlier(base['t1'], carried, 't1', carried['head']) : carried['t1']
+        base.merge('t1' => t1, 't2' => carried['t2'],
                    't3' => base['t3'] || carried['t3'], 'rounds' => carried['rounds'])
       end
 

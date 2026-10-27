@@ -53,6 +53,13 @@ class ThroughputWatchTest < Minitest::Test
     assert_empty moved.patches
   end
 
+  def test_a_ready_time_from_an_earlier_head_is_dropped_for_the_new_head
+    earlier = Shaka::ThroughputStats.update(filled_block, 'head' => NEXT)
+    github = ThroughputFakeGitHub.new("Intro.\n\n#{earlier}\n", history, [])
+    publish(github, [], 'none')
+    assert_includes github.patches.fetch(0), 'CI to ready pending'
+  end
+
   private
 
   def publish(github, jobs, wait)

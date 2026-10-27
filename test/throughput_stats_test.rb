@@ -95,6 +95,12 @@ class ThroughputStatsTest < Minitest::Test
     assert_equal damaged, Shaka::ThroughputStats.refresh_spend(damaged, '$1.00')
   end
 
+  def test_republishing_the_same_head_keeps_the_earlier_check_start
+    later = { 'task_started_at' => START, 'ci_started_at' => PUSH + 300 }
+    rendered = describe('$4.12', timeline: later, pull: { 'head' => { 'sha' => HEAD }, 'body' => filled_block })
+    assert_includes rendered, 'Prompt to CI 38m'
+  end
+
   def test_republishing_keeps_ready_time_only_for_the_same_head
     assert_includes republish(MERGED, HEAD, PUSH), 'CI to ready 41m (1 round)'
     assert_includes republish(MERGED, HEAD, PUSH), 'Ready to merged 2h 5m'
