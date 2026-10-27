@@ -42,7 +42,32 @@ class DoctorCoverageTest < Minitest::Test
     end
   end
 
+  # Coverage never selects DeepSeek here, so its missing key changes nothing that runs.
+  def test_an_uncovered_reviewer_without_setup_keeps_doctor_healthy
+    review = review_policy('provider_coverage' => %w[anthropic openai], 'local_review_agents' => agents + [deepseek])
+    with_repository('review' => review) do |root|
+      report, = doctor(root:, executable: ->(*) { true }, environment: {})
+
+      assert_includes report, '[HEALTHY] Reviewer CLIs'
+      assert_includes report, 'OPENROUTER_API_KEY missing (optional: runs only when a task names it)'
+      refute_includes report, 'local setup is incomplete'
+    end
+  end
+
+  # Without coverage, any listed reviewer can be a fallback, so its missing setup still warns.
+  def test_without_coverage_a_reviewer_without_setup_still_warns
+    review = review_policy('local_review_agents' => agents + [deepseek])
+    with_repository('review' => review) do |root|
+      report, = doctor(root:, executable: ->(*) { true }, environment: {})
+
+      assert_includes report, '[DEGRADED] Reviewer CLIs'
+      assert_includes report, 'This repository configures deepseek/openrouter reviews, but local setup is incomplete.'
+    end
+  end
+
   private
+
+  def deepseek = { 'provider' => 'deepseek', 'model_family' => 'openrouter', 'model' => 'deepseek/deepseek-v4.1-flash' }
 
   def agents
     [{ 'provider' => 'openai', 'model_family' => 'codex' },

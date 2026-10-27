@@ -3,6 +3,7 @@
 require_relative 'check'
 require_relative '../local_review/path_guard'
 require_relative '../reviewer_selection'
+require_relative '../review_coverage'
 
 module Shaka
   class Doctor
@@ -27,11 +28,13 @@ module Shaka
         configured = review && Array(review['local_review_agents']).map do |entry|
           entry.values_at('provider', 'model_family').join('/').downcase
         end
-        (SETUP.keys | Array(configured)).map { |identity| entry(identity, configured) }
+        covered = review ? ReviewCoverage.names(ReviewCoverage.setting(review, ReviewCoverage::KEY)) : []
+        (SETUP.keys | Array(configured)).map { |identity| entry(identity, configured, covered) }
       end
 
+      # Selection never picks an optional entry on its own, so its missing setup needs no notice.
       def self.setup_notices(entries)
-        entries.select { |entry| entry[:configured] && !entry[:installed] }.map do |entry|
+        entries.select { |entry| entry[:configured] && !entry[:optional] && !entry[:installed] }.map do |entry|
           { 'reviewer' => entry.fetch(:identity),
             'summary' => "This repository configures #{entry.fetch(:identity)} reviews, but local setup is incomplete.",
             'guidance' => entry[:guidance] || 'Ask the repository maintainer which supported reviewer to configure.' }
@@ -52,15 +55,21 @@ module Shaka
         LocalReviewPathGuard.safe_executable(path, name, root)
       end
 
-      def entry(identity, configured)
-        result = { identity:, provider: identity.split('/').first, configured: Array(configured).include?(identity) }
-        result.merge(lookup(identity, role(identity, configured)))
+      # With provider_coverage, a configured entry from a provider it does not name runs only when a
+      # task names it.
+      def entry(identity, configured, covered)
+        provider = identity.split('/').first
+        listed = Array(configured).include?(identity)
+        result = { identity:, provider:, configured: listed,
+                   optional: listed && !covered.empty? && !covered.include?(provider) }
+        result.merge(lookup(identity, role(result, configured)))
       end
 
-      def role(identity, configured)
+      def role(entry, configured)
         return 'configuration unavailable' unless configured
+        return 'optional' unless entry[:configured]
 
-        configured.include?(identity) ? 'configured' : 'optional'
+        entry[:optional] ? 'optional: runs only when a task names it' : 'configured'
       end
 
       def lookup(identity, role)
