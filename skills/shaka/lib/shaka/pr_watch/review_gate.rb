@@ -46,7 +46,8 @@ module Shaka
         return unless @throughput && gate_green?(required, checks)
 
         @throughput.call(required: required_names(required))
-      rescue Error
+      # Throughput is a side record; no failure in it may stop the watch from waking.
+      rescue StandardError
         nil
       end
 

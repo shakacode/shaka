@@ -63,6 +63,15 @@ class ThroughputStatsTest < Minitest::Test
     assert_equal "older\r\n", Shaka::ThroughputStats.update("older\r\n", 'spend' => '$1.00')
   end
 
+  def test_a_crlf_block_is_read_and_updated_with_its_line_endings
+    crlf = "Keep.\r\n#{filled_block.gsub("\n", "\r\n")}\r\nMore.\r\n"
+    assert_equal 1, Shaka::ThroughputStats.read(crlf)['rounds']
+    updated = Shaka::ThroughputStats.update(crlf, 'rounds' => 2)
+    assert_includes updated, "-->\r\nAI spend $4.12"
+    assert_includes updated, '(2 rounds)'
+    assert updated.end_with?("\r\nMore.\r\n")
+  end
+
   def test_a_damaged_block_in_the_body_does_not_stop_republication
     damaged = "<!-- shaka:stats {not json} -->\n"
     rendered = describe('$4.12', timeline: push_times, pull: { 'head' => { 'sha' => HEAD }, 'body' => damaged })

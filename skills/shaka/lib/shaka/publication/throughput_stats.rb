@@ -13,7 +13,7 @@ module Shaka
     extend ThroughputGate
 
     KEYS = %w[head spend t0 t1 first_push t2 t3 rounds].freeze
-    BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\nAI spend [^\r\n]+$/
+    BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\nAI spend [^\r\n]+(?=\r?\n|\z)/
 
     def self.for_description(content, timeline = nil, pull = nil) = line(publish_state(content, timeline || {}, pull))
 
@@ -25,7 +25,7 @@ module Shaka
       replacement = line(apply(state, changes))
       return original if original[BLOCK].to_s.gsub("\r\n", "\n") == replacement
 
-      original.sub(BLOCK) { replacement }
+      original.sub(BLOCK) { |found| found.include?("\r\n") ? replacement.gsub("\n", "\r\n") : replacement }
     end
 
     # A usage refresh must not fail on a damaged block; the next publish rewrites it.

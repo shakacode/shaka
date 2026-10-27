@@ -198,6 +198,13 @@ class PrWatchThroughputTest < Minitest::Test
     assert called
     assert_equal 'checks_terminal', result
   end
+
+  def test_an_unexpected_throughput_error_still_lets_the_watch_wake
+    result = watch([frame(required: [check('validate', 'SUCCESS', 'pass')],
+                          checks: [check('claude-review', 'SUCCESS', 'pass')])],
+                   throughput: ->(**) { {}.fetch('body') })
+    assert_equal 'checks_terminal', result
+  end
 end
 
 class PrWatchTransitionsTest < Minitest::Test
