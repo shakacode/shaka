@@ -133,9 +133,10 @@ stopped and handed this work to me. Keep merge policy ask. Go.
 Confirm that handoff before using this prompt. The agent reads **WIP Details**,
 checks live ownership and the PR's current revision, and continues the unfinished
 work. After updating WIP Details, a new chat posts a PR comment saying it took
-over, so the previous chat and reviewers see the handoff. Under Ask, it returns a verified PR for your merge decision, or explains
-the remaining blocker. See [resume unfinished work](#resume-unfinished-work)
-for recovery after a crash or when no PR exists.
+over, so the previous chat and reviewers see the handoff. Under Ask, it returns
+a verified PR for your merge decision, or explains the remaining blocker. See
+[resume unfinished work](#resume-unfinished-work) for recovery after a crash or
+when no PR exists.
 
 ### Configure a repository for your team
 
