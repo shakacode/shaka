@@ -50,8 +50,10 @@ Impact and frequency: UNKNOWN. The gap comes from one maintainer comment on
 3. **Ruby refuses entries that cannot help a reviewer.** Publication refuses an entry
    whose `level` is not a whole number above the PR's `review_effort` and at most 5, whose
    `path` is not among the PR's changed files or has no file at the head (a deleted file or
-   the old side of a rename), whose text is missing or ambiguous at the
-   head, or whose `reason` is empty or more than one line. An entry asks for more care; it
+   the old side of a rename), whose `from` text is missing or ambiguous at the head,
+   whose `to` text has no later match, or whose `reason` is empty or more than one line.
+   As in `code_links`, a range ends at the first later line containing `to`, so `to`
+   is never refused as ambiguous. An entry asks for more care; it
    never lowers the PR rating or a floor. The file check reads each file's `status` and
    `previous_filename` from the pull request file list that publication already fetches:
    a `removed` file and the old name of a rename have no file at the head. The changed-path
@@ -116,6 +118,10 @@ a level-4 trust path, before anyone has seen how agents use focus entries.
   request.
 - `workflow.yml` grows by one sentence, `post-implementation-adequacy.md` by a clause.
   `bin/report-instruction-growth` evidence goes with the implementation PR.
+- An entry cannot mark removed code: ranges are found at the head, and a deleted file
+  has none. A PR whose riskiest change is a deletion raises its PR rating or names the
+  deletion in the summary and walkthrough. Marking base-side lines would need a second
+  lookup and link form; it is left out until a PR shows the need.
 - The checkpoint packet validates intent without a pull request, so there it checks
   only `level` and `reason`; the description publication checks paths and text.
 - Older content files publish unchanged. Intent has no unknown-key refusal today, so an
