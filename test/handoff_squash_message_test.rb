@@ -3,6 +3,7 @@
 require_relative 'handoff_helper'
 require 'shaka/github/squash_comment'
 require 'shaka/publication/squash_message'
+require 'shaka/publication/provenance'
 
 # An Ask handoff stops for a GitHub merge click, so the squash commit message has to be on the PR first.
 class HandoffSquashMessageTest < Minitest::Test
@@ -22,6 +23,14 @@ class HandoffSquashMessageTest < Minitest::Test
   end
 
   def awaiting_merge(**pull) = handoff(labels: ['awaiting-merge-approval'], **pull)
+
+  # A published body whose provenance table names an issue task, as `description` renders it.
+  def task_body(number, summary = 'Adds the check.')
+    spec = { 'task_source' => 'issue', 'task_number' => number, 'initial_prompt' => 'EXCLUDED' }
+    spec.merge!(%w[requested recommended active].product(%w[model effort]).to_h { |a, b| ["#{a}_#{b}", 'UNKNOWN'] })
+    pull = { 'base' => { 'repo' => { 'full_name' => 'owner/repo' } } }
+    "#{description}\n#{summary}\n\n#{Shaka::ExecutionProvenance.new(spec, pull:).detail.fetch('body')}"
+  end
 
   def owed?(result, text) = result.fetch('owed').any? { |item| item.include?(text) }
 
@@ -43,6 +52,13 @@ class HandoffSquashMessageTest < Minitest::Test
     assert_includes awaiting_merge(closes: [839, 840])['status'], 'closes #839, #840'
     assert_includes awaiting_merge['status'], 'closes no issues'
     refute_includes handoff['status'], 'closes'
+  end
+
+  def test_a_merge_wait_names_the_task_issue_the_merge_leaves_open
+    assert_includes awaiting_merge(closes: [839], body: task_body(631))['status'],
+                    'closes #839; task issue #631 stays open'
+    refute_includes awaiting_merge(closes: [631], body: task_body(631))['status'], 'stays open'
+    refute_includes awaiting_merge(body: task_body(631, 'Part of #631.'))['status'], 'stays open'
   end
 
   def test_a_squash_message_for_an_older_head_is_owed

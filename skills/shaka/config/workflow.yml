@@ -520,6 +520,10 @@ phases:
         that it was not found and the PR treats only the symptom.
         Write `Fixes #N` once per issue the PR fully resolves and `Part of #N` for partial work.
         When `description` returns `closing_issues`, correct the wording it names once.
+        For a work item in another tracker, such as Linear, Jira, or Shortcut, check through the
+        connection Intake used whether the merge will link and complete it, and whether it will
+        complete an item the task may not close. Name each mismatch and the tracker rule behind
+        it in the handoff; report an item you cannot read as unverified.
         The helper writes the repository validation and local review line under Verification
         from `--validation-result` and `--review-result`, so leave those out of `checks`.
         An optional linked `verification.summary` gives a compact result. Keep material gaps visible
