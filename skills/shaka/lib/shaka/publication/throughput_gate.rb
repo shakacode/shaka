@@ -34,10 +34,12 @@ module Shaka
       nil
     end
 
-    # Time the gate turned green, :unknown when it is green without timestamps, or nil when it is not green.
+    # Time the gate turned green, :unknown when it is green without timestamps or with nothing gating it,
+    # or nil when it is not green.
     def ready_at(rows, required:, review_jobs:, wait:)
       selected = selected_rows(Array(rows).grep(Hash), required, review_jobs, wait)
-      return if selected.nil? || selected.empty?
+      return if selected.nil?
+      return :unknown if selected.empty?
 
       times = selected.map { |row| parse_time(row['completedAt']) }
       times.any?(&:nil?) ? :unknown : times.max

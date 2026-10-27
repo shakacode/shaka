@@ -45,6 +45,8 @@ class ThroughputHistoryTest < Minitest::Test
     assert_equal Time.utc(2026, 10, 26, 19, 19), at(rows, jobs, 'one')
     assert_nil at(rows, jobs, 'all')
     assert_equal :unknown, at([check('validate', nil)], [], 'none')
+    ungated = Shaka::ThroughputStats.ready_at([], required: [], review_jobs: [], wait: 'none')
+    assert_equal :unknown, ungated
   end
 
   def test_a_skipped_review_does_not_mark_the_ready_time

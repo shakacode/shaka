@@ -69,6 +69,11 @@ class ThroughputStatsTest < Minitest::Test
     assert_includes rendered, 'AI spend $4.12 · Prompt to CI 38m · CI to ready pending'
   end
 
+  def test_a_spend_refresh_leaves_a_damaged_block_alone
+    damaged = "Keep.\n<!-- shaka:stats {not json} -->\nAI spend UNKNOWN\n"
+    assert_equal damaged, Shaka::ThroughputStats.refresh_spend(damaged, '$1.00')
+  end
+
   def test_republishing_keeps_ready_time_only_for_the_same_head
     assert_includes republish(MERGED, HEAD, PUSH), 'CI to ready 41m (1 round)'
     assert_includes republish(MERGED, HEAD, PUSH), 'Ready to merged 2h 5m'

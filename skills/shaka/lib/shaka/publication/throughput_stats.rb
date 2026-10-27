@@ -28,7 +28,12 @@ module Shaka
       original.sub(BLOCK, replacement)
     end
 
-    def self.refresh_spend(body, spend) = update(body, 'spend' => spend)
+    # A usage refresh must not fail on a damaged block; the next publish rewrites it.
+    def self.refresh_spend(body, spend)
+      update(body, 'spend' => spend)
+    rescue Error
+      body
+    end
 
     def self.read(body)
       hits = body.to_s.to_enum(:scan, BLOCK).map { Regexp.last_match(1) }
