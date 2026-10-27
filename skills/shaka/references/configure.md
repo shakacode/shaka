@@ -17,15 +17,16 @@ shaka configure settings --root DIR --ref SHA
 Each row gives a setting's `effective` value, its packaged `default`, whether config.yml
 `set` it, and its `reference` section. `set_as` names an earlier setting name still in use.
 A `default` of null means Shaka packages none; the reference says what happens when the
-setting is unset. `matches_default: true` marks a value the repository could remove with
-no change. Report `source` and `settings_ref`; with a settings preview selected, settings
-come from the preview. `--local` reads an uncommitted edit as an untrusted draft.
+setting is unset. `matches_default: true` says only that the value equals the default.
+Do not call such a setting removable: some settings are required, and naming a file can
+make it required. Report `source` and `settings_ref`; with a settings preview selected,
+settings come from the preview. `--local` reads an uncommitted edit as an untrusted draft.
 
-Go through one topic at a time, in the report's order: merge, review, checkpoint and project
-guidance, PR description, then the rest. For each setting, give the effective value, mark
-it when it equals the default, and explain its effect from its reference section, with the
-link. Stop after each topic until the user asks for the next. A question about one setting
-gets only that setting.
+Group the settings by their first key, such as `merge`, `review`, or `pr_description`, and
+go through one group at a time. For each setting, give the effective value, mark it when it
+equals the default, and explain its effect from its reference section, with the link. Stop
+after each group until the user asks for the next. A question about one setting gets only
+that setting.
 
 ## Show a reviewer's prompt
 

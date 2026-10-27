@@ -54,7 +54,9 @@ module Shaka
       setting('pr_description.opening_check') { |context| context.config.opening_check },
       setting('prose_limits') { |context| context.config.prose_limits },
       setting('base_branch') { |context| context.config.base_branch },
-      setting('branches.name') { |context| context.config.to_h.dig('branches', 'name') || Claim::Names::DEFAULT },
+      setting('branches.name') do |context|
+        Claim::Names.new(query: nil, template: context.config.to_h.dig('branches', 'name')).reported
+      end,
       *%w[show_shaka_credit show_human_comments max_human_comments human_review_floors].map { |key| description(key) },
       setting('wip.include_checkout_path', aliases: ['wip.include_locations']) do |context|
         context.config.wip['include_checkout_path']
