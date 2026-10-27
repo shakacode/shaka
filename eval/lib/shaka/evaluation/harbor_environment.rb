@@ -49,7 +49,7 @@ module Shaka
       end
 
       def controls(config)
-        result = CONTROLS.to_h { [it, config.fetch(it)] }
+        result = CONTROLS.to_h { [it, it == 'Init' ? config.fetch(it, 'UNKNOWN') : config.fetch(it)] }
         raise ArgumentError unless valid_limits?(result)
 
         %w[CapDrop CapAdd SecurityOpt].each { |key| result[key] = result[key]&.sort }

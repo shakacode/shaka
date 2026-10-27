@@ -57,6 +57,21 @@ module Shaka
           skills.first['digest'] == package['harbor_digest']
       end
 
+      def bind_usage(usage, lock:, host:)
+        return usage unless host == 'claude-code'
+
+        models = usage.fetch('models')
+        return usage unless models.one?
+
+        row = models.first
+        return usage unless row['provider'] == 'anthropic'
+
+        fallback = launch_settings(lock, host).select do |key, value|
+          row[key] == 'UNKNOWN' && value.is_a?(String) && !value.strip.empty?
+        end
+        usage.merge('models' => [row.merge(fallback)])
+      end
+
       def model(capture, host)
         rows = capture.fetch('usage').fetch('models')
         settings = launch_settings(capture['lock'], host)
