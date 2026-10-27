@@ -49,7 +49,14 @@ module Shaka
       end
 
       def publish_state(content, timeline, pull) = state_for(content, timeline, carried_body(pull), head_sha(pull))
-      def carried_body(pull) = read(pull_body(pull)) || {}
+
+      # Republishing writes a fresh block, so a damaged one must not stop it.
+      def carried_body(pull)
+        read(pull_body(pull)) || {}
+      rescue Error
+        {}
+      end
+
       def pull_body(pull) = pull.is_a?(Hash) ? pull['body'] : nil
 
       def state_for(content, timeline, carried, head)
@@ -65,7 +72,7 @@ module Shaka
           't1' => prompt, 'first_push' => carried['first_push'] || prompt, 't3' => stamp(timeline['merged']) }
       end
 
-      def prompted_at(timeline) = stamp(timeline['ci_started_at']) || stamp(timeline['head_pushed_at'])
+      def prompted_at(timeline) = stamp(timeline['ci_started_at'])
 
       def carried_state(base, carried)
         base.merge('t1' => base['t1'] || carried['t1'], 't2' => carried['t2'],

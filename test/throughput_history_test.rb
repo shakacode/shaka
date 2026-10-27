@@ -47,6 +47,12 @@ class ThroughputHistoryTest < Minitest::Test
     assert_equal :unknown, at([check('validate', nil)], [], 'none')
   end
 
+  def test_a_skipped_review_does_not_mark_the_ready_time
+    rows = [check('validate', '2026-10-26T19:00:00Z'), check('claude-review', '2026-10-26T19:05:00Z', 'skipping'),
+            check('codex-review', '2026-10-26T19:40:00Z')]
+    assert_equal Time.utc(2026, 10, 26, 19, 40), at(rows, %w[claude-review codex-review], 'one')
+  end
+
   def test_a_skipped_required_check_is_ready_and_the_earlier_push_is_kept
     skipped = check('validate', READY.iso8601, 'skipping').merge('state' => 'SKIPPED')
     assert_equal READY, at([skipped], [], 'none')
@@ -68,7 +74,7 @@ class ThroughputHistoryTest < Minitest::Test
   end
 
   def status_then_fix
-    status = { 'oid' => '1' * 40, 'pushedDate' => START.iso8601, 'status' => { 'contexts' => [
+    status = { 'oid' => '1' * 40, 'status' => { 'contexts' => [
       { 'context' => 'validate', 'state' => 'FAILURE', 'createdAt' => START.iso8601 }
     ] } }
     [status, gql(HEAD, PUSH.iso8601, [check_run('validate', 'SUCCESS')])]

@@ -11,19 +11,12 @@ module Shaka
     def earliest_start(commit)
       return unless commit.is_a?(Hash)
 
-      starts = Array(commit.dig('checkSuites', 'nodes')).flat_map { |suite| suite_starts(suite) }
+      starts = Array(commit.dig('checkSuites', 'nodes')).flat_map { |suite| suite_starts(suite) } +
+               status_starts(commit['status'])
       starts.filter_map { |value| plausible_time(value) }.min
     end
 
-    def prompt_stamp(commit)
-      return unless commit.is_a?(Hash)
-
-      start = earliest_start(commit)
-      return start.utc.iso8601 if start
-
-      pushed = commit['pushedDate']
-      pushed if pushed.is_a?(String) && parse_time(pushed)
-    end
+    def prompt_stamp(commit) = earliest_start(commit)&.utc&.iso8601
 
     def keep_earlier(seen, carried, key, head)
       previous = carried['head'] == head ? carried[key] : nil
@@ -86,6 +79,10 @@ module Shaka
       Time.iso8601(value).utc
     rescue ArgumentError
       nil
+    end
+
+    def status_starts(status)
+      status.is_a?(Hash) ? Array(status['contexts']).filter_map { |row| row['createdAt'] if row.is_a?(Hash) } : []
     end
 
     def suite_starts(suite)

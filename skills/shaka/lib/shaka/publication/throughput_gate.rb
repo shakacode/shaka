@@ -78,7 +78,7 @@ module Shaka
       jobs = Array(jobs)
       return [] if jobs.empty? || wait.to_s == 'none'
 
-      chosen = jobs.filter_map { |name| latest(rows, name) }.select { |row| passed?(row) }
+      chosen = jobs.filter_map { |name| latest(rows, name) }.select { |row| review_passed?(row) }
       return unless review_met?(chosen, jobs, wait)
 
       wait.to_s == 'all' ? chosen : [earliest(chosen)]
@@ -94,6 +94,9 @@ module Shaka
 
       SUCCESS.include?(row['conclusion'])
     end
+
+    # A skipped review does not satisfy the review gate, so it cannot mark the ready time.
+    def review_passed?(row) = row.key?('bucket') ? row['bucket'] == 'pass' : row['conclusion'] == 'SUCCESS'
 
     def skipped_bucket?(row) = row['bucket'] == 'skipping' && %w[SKIPPED NEUTRAL].include?(row['state'])
     def relevant(runs, names) = names.empty? ? runs : runs.select { |run| names.include?(run['name']) }

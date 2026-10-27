@@ -10,7 +10,7 @@ module Shaka
         query($owner: String!, $name: String!, $number: Int!) {
           repository(owner: $owner, name: $name) {
             pullRequest(number: $number) { headRefOid
-              commits(last: 50) { totalCount nodes { commit { oid pushedDate
+              commits(last: 50) { totalCount nodes { commit { oid
                 status { contexts { context state createdAt } }
                 checkSuites(first: 20) { pageInfo { hasNextPage } nodes { createdAt
                   checkRuns(first: 40) { pageInfo { hasNextPage }

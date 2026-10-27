@@ -8,10 +8,10 @@ checkpoint took to reach and how long each one waited for a person to respond.
 ## Throughput line
 
 The description opens with AI spend and three intervals. Prompt to CI runs from
-the recorded task start to the earliest check-suite creation or check-run start
-on the current head, or to GitHub's push time when no check has started. CI to
-ready runs from the first of those starts until required checks and configured
-CI reviews are green. A later push adds a round only after a failed CI run.
+the recorded task start to the earliest check on the current head. CI to ready
+runs from the earliest check on the pull request's first checked head until
+required checks and configured CI reviews are green. A later push adds a round
+only after a failed CI run, so with more than one round the two intervals overlap.
 `pending` is not known yet. `UNKNOWN` is not established. Neither means zero.
 
 Here is an example:

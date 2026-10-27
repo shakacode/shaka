@@ -29,7 +29,7 @@ module ThroughputHelper
   end
 
   def head_pull = { 'head' => { 'sha' => HEAD } }
-  def push_times = { 'task_started_at' => START, 'head_pushed_at' => PUSH }
+  def push_times = { 'task_started_at' => START, 'ci_started_at' => PUSH }
 
   def describe(usd = 'UNKNOWN', timeline: nil, pull: nil)
     full = timeline && { 'opened' => START, 'labels' => [] }.merge(timeline)
@@ -48,8 +48,9 @@ module ThroughputHelper
   def check_run(name, conclusion) = { 'name' => name, 'status' => 'COMPLETED', 'conclusion' => conclusion }
   def check(name, completed_at, bucket = 'pass') = { 'name' => name, 'bucket' => bucket, 'completedAt' => completed_at }
 
-  def gql(oid, pushed, runs)
-    { 'oid' => oid, 'pushedDate' => pushed, 'checkSuites' => { 'nodes' => [{ 'checkRuns' => { 'nodes' => runs } }] } }
+  def gql(oid, started, runs)
+    suite = { 'createdAt' => started, 'checkRuns' => { 'nodes' => runs } }
+    { 'oid' => oid, 'checkSuites' => { 'nodes' => [suite] } }
   end
 end
 

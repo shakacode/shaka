@@ -18,16 +18,15 @@ class ThroughputStatsTest < Minitest::Test
     assert_includes describe('$0.00'), 'AI spend $0.00'
   end
 
-  def test_prompt_to_ci_uses_the_check_start_before_the_push_time
-    pushed = { 'task_started_at' => START, 'head_pushed_at' => PUSH }
+  def test_prompt_to_ci_runs_from_the_task_start_to_the_first_check_start
     started = { 'task_started_at' => START, 'ci_started_at' => PUSH }
-    assert_includes describe('$4.12', timeline: pushed), 'AI spend $4.12 · Prompt to CI 38m'
-    assert_includes describe('$4.12', timeline: pushed), '| openai | $4.12 |'
-    assert_includes describe('UNKNOWN', timeline: started), 'Prompt to CI 38m'
-    short = { 'task_started_at' => START, 'head_pushed_at' => START + 30 }
+    assert_includes describe('$4.12', timeline: started), 'AI spend $4.12 · Prompt to CI 38m'
+    assert_includes describe('$4.12', timeline: started), '| openai | $4.12 |'
+    short = { 'task_started_at' => START, 'ci_started_at' => START + 30 }
     assert_includes describe('UNKNOWN', timeline: short), 'Prompt to CI <1m'
-    assert_includes describe('UNKNOWN', timeline: { 'task_started_at' => PUSH, 'head_pushed_at' => START }),
+    assert_includes describe('UNKNOWN', timeline: { 'task_started_at' => PUSH, 'ci_started_at' => START }),
                     'Prompt to CI UNKNOWN'
+    assert_includes describe('UNKNOWN', timeline: { 'task_started_at' => START }), 'Prompt to CI UNKNOWN'
   end
 
   def test_the_publisher_note_stays_under_the_stats_line
@@ -64,19 +63,25 @@ class ThroughputStatsTest < Minitest::Test
     assert_equal "older\r\n", Shaka::ThroughputStats.update("older\r\n", 'spend' => '$1.00')
   end
 
+  def test_a_damaged_block_in_the_body_does_not_stop_republication
+    damaged = "<!-- shaka:stats {not json} -->\n"
+    rendered = describe('$4.12', timeline: push_times, pull: { 'head' => { 'sha' => HEAD }, 'body' => damaged })
+    assert_includes rendered, 'AI spend $4.12 · Prompt to CI 38m · CI to ready pending'
+  end
+
   def test_republishing_keeps_ready_time_only_for_the_same_head
     assert_includes republish(MERGED, HEAD, PUSH), 'CI to ready 41m (1 round)'
     assert_includes republish(MERGED, HEAD, PUSH), 'Ready to merged 2h 5m'
     assert_includes republish(nil, NEXT, READY), 'CI to ready pending'
     assert_includes republish(nil, NEXT, READY), 'Prompt to CI 1h 19m'
-    merged = { 'task_started_at' => START, 'head_pushed_at' => PUSH, 'merged' => MERGED }
+    merged = { 'task_started_at' => START, 'ci_started_at' => PUSH, 'merged' => MERGED }
     assert_includes describe('UNKNOWN', timeline: merged), 'Ready to merged UNKNOWN'
   end
 
   private
 
   def republish(merged, sha, pushed)
-    times = { 'task_started_at' => START, 'head_pushed_at' => pushed }
+    times = { 'task_started_at' => START, 'ci_started_at' => pushed }
     times['merged'] = merged if merged
     describe('$4.12', timeline: times, pull: { 'head' => { 'sha' => sha }, 'body' => filled_block })
   end

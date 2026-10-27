@@ -21,6 +21,19 @@ module PrWatchFixtures
       checks: current[:checks], comments: current[:comments], excluded: current[:excluded] }
   end
 
+  def watch(frames, timeout: 10, baseline: nil, throughput: nil)
+    github = PrWatchTest::FakeGitHub.new(frames)
+    now = 0
+    reader = -> { comments_packet(frames.fetch([now, frames.length - 1].min)) }
+    tick = lambda do |seconds|
+      now += seconds
+      github.advance
+    end
+    settings = { interval: 1, timeout: timeout, settle: 1, baseline: }
+    adapters = { clock: -> { now }, sleeper: tick, comments: reader, throughput: }
+    Shaka::PrWatch.new(github, head: HEAD, ci_jobs: ['claude-review'], settings:, adapters:).call
+  end
+
   def comments_packet(frame)
     { 'issue_comments' => frame[:comments].map { |id| { 'id' => id } },
       'review_summaries' => [], 'inline_comments' => [],
@@ -28,7 +41,6 @@ module PrWatchFixtures
   end
 end
 
-# rubocop:disable-next Metrics/ClassLength
 class PrWatchTest < Minitest::Test
   include PrWatchFixtures
 
@@ -147,6 +159,11 @@ class PrWatchTest < Minitest::Test
     assert_equal "SHAKA_WAKE error: Expected OWNER/REPO NUMBER and --head SHA --ref SHA.\n", output
     refute_predicate status, :success?
   end
+end
+
+# The watch hands throughput a green head once, and a failed write never blocks the wake.
+class PrWatchThroughputTest < Minitest::Test
+  include PrWatchFixtures
 
   def test_throughput_is_recorded_only_when_required_checks_and_reviews_pass
     ready = []
@@ -180,21 +197,6 @@ class PrWatchTest < Minitest::Test
                    })
     assert called
     assert_equal 'checks_terminal', result
-  end
-
-  private
-
-  def watch(frames, timeout: 10, baseline: nil, throughput: nil)
-    github = FakeGitHub.new(frames)
-    now = 0
-    reader = -> { comments_packet(frames.fetch([now, frames.length - 1].min)) }
-    tick = lambda do |seconds|
-      now += seconds
-      github.advance
-    end
-    settings = { interval: 1, timeout: timeout, settle: 1, baseline: }
-    adapters = { clock: -> { now }, sleeper: tick, comments: reader, throughput: }
-    Shaka::PrWatch.new(github, head: HEAD, ci_jobs: ['claude-review'], settings:, adapters:).call
   end
 end
 
