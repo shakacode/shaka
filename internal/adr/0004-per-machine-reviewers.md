@@ -75,7 +75,8 @@ coordination state. Nothing is reused.
    decision 1's warning back on for an uncovered reviewer the developer relies on, such as
    Grok. The file is bounded:
    - A machine entry matches every repository entry with the same `provider` and
-     `model_family`; its `model` plays no part in matching. An entry that matches nothing is
+     `model_family`; its `model` plays no part in matching, and two machine entries with
+     the same pair make the file malformed. An entry that matches nothing is
      ignored, and `doctor` names it once as unused here. So the file cannot add a reviewer:
      the repository's list stays the accepted set and its order stays the preference.
    - Its `model` and `effort` fill only what each matched repository entry leaves unset.
@@ -102,9 +103,9 @@ coordination state. Nothing is reused.
    reporting part of decision 2 change warnings only, so they stay out of the settings
    fingerprint. A machine `model` or `effort` changes what a review runs, so it enters
    that review's settings record and fingerprint, labeled as machine-supplied. Two
-   developers whose files differ then produce distinguishable review evidence, and editing
-   the file supersedes earlier review evidence on that machine, as any settings change
-   does. The published review shows the model and effort each round used, as it does
+   developers whose files differ then produce distinguishable review evidence, and changing
+   a machine `model` or `effort` that a review uses supersedes earlier review evidence on
+   that machine, as any settings change does. The published review shows the model and effort each round used, as it does
    today. Ruby reads the file through `Dir.home`, and tests set `HOME` to a temporary
    directory.
 
