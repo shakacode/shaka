@@ -80,15 +80,12 @@ class RenderingPreviewTest < Minitest::Test
   end
 
   # provenance.rb calls task_source_line.rb to render the line, so a PR changing either can preview its description.
-  def test_provenance_and_task_source_renderers_can_be_previewed
-    %w[provenance.rb task_source_line.rb].each do |name|
-      github = preview_github
-      github.define_singleton_method(:api_list) do |_path|
-        [{ 'filename' => "skills/shaka/lib/shaka/publication/#{name}" }]
-      end
-      result = rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->")
-
-      assert_empty result.fetch('owed'), name
+  # A PR changing the settings block or the provenance history can preview too, and owes one without a marker.
+  def test_provenance_task_source_settings_and_history_renderers_can_be_previewed
+    %w[provenance task_source_line provenance_history settings settings_table].each do |name|
+      github = preview_github([name])
+      assert_includes rendering_fact(github, nil).fetch('owed').join, 'description --rendering-preview-root', name
+      assert_empty rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->").fetch('owed'), name
     end
   end
 
@@ -104,11 +101,12 @@ class RenderingPreviewTest < Minitest::Test
 
   private
 
-  def preview_github
+  def preview_github(renderers = %w[metrics])
     github = Object.new
     def github.repository = 'shakacode/shaka'
     def github.number = 860
-    def github.api_list(_path) = [{ 'filename' => 'skills/shaka/lib/shaka/publication/metrics.rb' }]
+    files = renderers.map { |name| { 'filename' => "#{Shaka::RenderingPreview::DIRECTORY}#{name}.rb" } }
+    github.define_singleton_method(:api_list) { |_path| files }
     github
   end
 
