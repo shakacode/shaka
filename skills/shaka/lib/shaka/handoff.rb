@@ -13,6 +13,7 @@ require_relative 'handoff/walkthrough'
 require_relative 'handoff/wip_note'
 require_relative 'post_implementation/evidence'
 require_relative 'handoff/rendering'
+require_relative 'handoff/overflow'
 
 module Shaka
   # Reports what an agent still owes a PR before it ends a turn, and what a resumed session finds.
@@ -20,6 +21,7 @@ module Shaka
   class Handoff
     include MergeRequiredChecks
     include HandoffRendering
+    include HandoffOverflow
 
     OWED_EXIT = 2
     SHORT = 7
@@ -63,7 +65,7 @@ module Shaka
       checks = snapshot['requiredChecks']
       [attention_fact(checks, live), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
        comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live), squash_fact(snapshot, live),
-       closing_fact, wip_fact(live), rendering_fact(live)].compact
+       closing_fact, wip_fact(live), overflow_fact(live), rendering_fact(live)].compact
     end
 
     # An unsubmitted review by this account outranks every other wait, because only its author can see it.

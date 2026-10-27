@@ -5,6 +5,7 @@ require 'json'
 require_relative '../error'
 require_relative '../github'
 require_relative '../publication/usage_details'
+require_relative '../publication/publication'
 require_relative '../publication/rendering_preview'
 require_relative 'cursor_usage'
 require_relative 'cursor_usage_store'
@@ -296,7 +297,14 @@ module Shaka
 
       def publish(publication, usage)
         github = GitHub.new(publication['repository'], publication['number'])
-        github.description { |pull| refreshed_region(pull['body'], usage_for(pull, usage)) }
+        github.description { |pull| refreshed_description(github, pull, usage) }
+      end
+
+      def refreshed_description(github, pull, usage)
+        pull = pull.merge('body' => DescriptionOverflow.restore(github, pull))
+        body, package = DescriptionOverflow.prepare(refreshed_region(pull['body'], usage_for(pull, usage)), pull)
+        DescriptionOverflow.remember(pull, package)
+        DescriptionOverflow.deliver(github, pull, body)
       end
 
       def usage_for(pull, usage)

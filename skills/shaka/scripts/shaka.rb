@@ -375,9 +375,10 @@ begin
                described = resolved_description(attributed, github, options)
                usage_records = carried = nil
                published = github.description(prose:) do |pull|
+                 pull['body'] = Shaka::DescriptionOverflow.restore(github, pull)
                  rendered, carried, usage_records = rendered_description(described, github, pull, workflow_version,
                                                                          options.merge(root:))
-                 rendered
+                 Shaka::DescriptionOverflow.deliver(github, pull, rendered)
                end
                attention = Shaka::DecisionLabels.sync(github, carried)
                opening = opening_result(options.merge(root:), described['summary'])

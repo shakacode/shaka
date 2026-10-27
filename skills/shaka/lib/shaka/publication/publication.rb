@@ -25,9 +25,12 @@ module Shaka
     # With the pull request being replaced, the provenance history carries forward from its body.
     # Callers pass content as a bare hash, so a keyword here would swallow it; every argument is positional.
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil) # rubocop:disable Metrics/ParameterLists
-      new(content, description: true, workflow_version:, pull:, settings:, timeline:)
-        .render(%i[steps intent_verification sections evidence metrics wip credit],
-                lead: %i[lead]).tap { QuotedMarkers.refuse!(content) }
+      rendered = new(content, description: true, workflow_version:, pull:, settings:, timeline:)
+                 .render(%i[steps intent_verification sections evidence metrics wip credit], lead: %i[lead])
+      QuotedMarkers.refuse!(content)
+      body, package = DescriptionOverflow.prepare(rendered, pull)
+      DescriptionOverflow.remember(pull, package)
+      body
     end
 
     def self.comment(content) = new(content).render([])
@@ -154,5 +157,257 @@ module Shaka
       body = PublicationText.required(detail['body'], "details #{summary}")
       "<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"
     end
+  end
+
+  # Builds the one comment that holds sections a description can no longer fit, and puts
+  # those sections back on the next publish. Included into DescriptionOverflow.
+  module OverflowRelocation
+    def retire(text, pull)
+      stamped = stamp(text, pull, 'comment')
+      body = fits?(stamped, pull) ? stamped : text
+      [body, { 'comment' => note(text, pull, DescriptionOverflow::RETIRED) }]
+    end
+
+    def shed(text, pull)
+      body = text
+      moved = []
+      DescriptionOverflow::KINDS.each do |kind|
+        break if fits?(moved.empty? ? body : stamp(body, pull, 'active'), pull)
+
+        piece, body = send(kind, body, pull)
+        moved << piece if piece
+      end
+      [body, moved.compact]
+    end
+
+    def pricing(body, pull) = take(body, UsagePricing::SUMMARY, 'Per-report pricing notes', pull)
+
+    def timings(body, pull)
+      block, rest = take(body, 'Timings', 'Timings', pull)
+      return [nil, body] unless block
+
+      lines = timing_lines(block)
+      rest = "#{rest.rstrip}\n\n#{lines.join("\n")}\n" unless lines.empty?
+      [block, rest]
+    end
+
+    def records(body, pull)
+      blocks = usage_blocks(body)
+      return [nil, body] if blocks.empty?
+
+      rest = body.gsub(UsageRecords::BLOCK, '').gsub(/\n{3,}/, "\n\n")
+      ["#{blocks.join("\n\n")}\n", "#{rest.rstrip}\n\n#{link('Earlier usage reports', pull)}\n"]
+    end
+
+    def take(body, summary, label, pull)
+      pattern = %r{<details>\n<summary>#{Regexp.escape(summary)}[^<]*</summary>\n.*?\n</details>}m
+      block = body[pattern]
+      return [nil, body] unless block
+
+      [block, body.sub(block) { link(label, pull) }]
+    end
+
+    def comment_text(rendered, moved, pull)
+      full = note(rendered, pull, DescriptionOverflow::INTRO, moved, extra: true)
+      return full if full.length <= DescriptionOverflow::LIMIT
+
+      # The duplicate usage copy can go; records that were themselves moved stay in `moved`.
+      short = note(rendered, pull, DescriptionOverflow::INTRO, moved, extra: false)
+      return short if short.length <= DescriptionOverflow::LIMIT
+
+      raise Error, DescriptionOverflow::COMMENT_LIMIT
+    end
+
+    def note(rendered, pull, intro, moved = [], extra: false)
+      parts = [identity(rendered), "# #{title(pull)}", head_line(pull), intro, *moved]
+      parts.concat(usage_blocks(rendered)) if extra && !records_moved?(moved)
+      "#{parts.compact.join("\n\n")}\n"
+    end
+
+    def records_moved?(moved) = moved.any? { |piece| piece.include?('<!-- shaka:usage ') }
+    def identity(text) = text.to_s.lines.first.to_s.chomp.then { |line| line if line.start_with?('🤖 ') }
+
+    # scan would return only the fields capture; the comment has to keep the whole record.
+    def usage_blocks(text)
+      text.to_s.to_enum(:scan, UsageRecords::BLOCK).map { Regexp.last_match(0) }
+    end
+
+    def timing_lines(text) = text.to_s.scan(/<!-- (?:timeline-steps|task-timing) .* -->/)
+
+    def stamp(body, pull, tag)
+      digest = head_sha(pull)
+      return body unless digest
+
+      stripped = body.gsub(/<!-- shaka:overflow-(?:active|comment) [0-9a-f]{40} -->\n?/, '')
+      "#{stripped.rstrip}\n\n<!-- shaka:overflow-#{tag} #{digest} -->\n"
+    end
+
+    def link(label, pull) = "#{label} are in [#{title(pull)}](#{DescriptionOverflow::PLACEHOLDER})."
+
+    def title(pull)
+      return DescriptionOverflow::TITLE unless pull.is_a?(Hash) && pull['number']
+
+      "#{DescriptionOverflow::TITLE} for ##{pull['number']}"
+    end
+
+    def head_line(pull) = (digest = head_sha(pull)) && "<!-- shaka:usage-overflow #{digest} -->"
+
+    def head_sha(pull)
+      value = pull.is_a?(Hash) && pull.dig('head', 'sha').to_s
+      value if value&.match?(/\A[0-9a-f]{40}\z/)
+    end
+
+    def post(github, comment)
+      posted = github.reply(body: comment, key: DescriptionOverflow::KEY)
+      url = posted.is_a?(Hash) ? posted['html_url'] : nil
+      return url if url.is_a?(String) && url.start_with?('https://')
+
+      raise Error, 'Usage and timing details comment did not return a URL.'
+    end
+
+    def find(github)
+      return unless github
+
+      login = github.viewer_login
+      Array(github.issue_comments).find { |comment| DescriptionOverflow.ours?(comment, login) }
+    end
+
+    def splice(body, comment)
+      extra = usage_blocks(comment).reject { |block| body.include?(block) }
+      extra.concat(timing_lines(comment).reject { |line| body.include?(line) })
+      return body if extra.empty?
+
+      insertion = "#{extra.join("\n\n")}\n\n"
+      return body.sub(close_mark, "#{insertion}#{close_mark}") if body.include?(close_mark)
+
+      "#{body.rstrip}\n\n#{insertion}"
+    end
+  end
+
+  # Joins a rendered description with the prose a person already wrote around the managed region.
+  module OverflowMerge
+    def merge(existing, body)
+      managed = "#{open_mark}\n#{body}#{close_mark}"
+      return managed if existing.strip.empty?
+      return "#{prefix_of(existing)}#{managed}#{suffix_of(existing)}" if region?(existing)
+
+      "#{managed}\n\n#{existing}"
+    end
+
+    def region?(existing)
+      existing.scan(open_mark).one? && existing.scan(close_mark).one? &&
+        existing.index(open_mark) < existing.index(close_mark)
+    end
+
+    def prefix_of(existing) = existing.split(open_mark, 2).first
+    def suffix_of(existing) = existing.split(close_mark, 2).last
+    def open_mark = marks::OPEN_MARK
+    def close_mark = marks::CLOSE_MARK
+
+    def marks
+      require_relative 'publishing'
+      Publishing
+    end
+  end
+
+  # When a description would exceed GitHub's body limit, moves the lowest-priority collapsed
+  # sections into one comment: per-report pricing notes, then timings, then hidden usage records.
+  # The comment is updated in place and keeps the usage markers so the next publish can carry them.
+  class DescriptionOverflow
+    LIMIT = 65_536
+    KEY = 'usage-timing-details'
+    TITLE = 'Usage and timing details'
+    # Longer than a GitHub comment permalink, so substituting the real URL cannot grow the body.
+    PLACEHOLDER = "https://example.com/#{'o' * 160}".freeze
+    ACTIVE = /<!-- shaka:overflow-active ([0-9a-f]{40}) -->/
+    COMMENT_MARK = /<!-- shaka:overflow-comment ([0-9a-f]{40}) -->/
+    HEAD = /<!-- shaka:usage-overflow ([0-9a-f]{40}) -->/
+    MARK = "<!-- shaka:reply:#{KEY} -->".freeze
+    INTRO = 'These sections were moved out of the PR description so it stays within GitHub\'s 65,536-character limit.'
+    RETIRED = 'The description is within GitHub\'s size limit, so these sections are in the description.'
+    LIMIT_MESSAGE = "Body exceeds GitHub's 65536-character limit."
+    COMMENT_LIMIT = "Usage and timing details comment exceeds GitHub's 65536-character limit."
+    KINDS = %i[pricing timings records].freeze
+
+    def self.prepare(rendered, pull)
+      return [rendered, nil] if fits?(rendered, pull) && !previous?(pull)
+
+      text = rendered.to_s.gsub("\r\n", "\n")
+      return retire(text, pull) if fits?(text, pull)
+
+      relocated(text, pull)
+    end
+
+    def self.remember(pull, package)
+      pull['shaka_overflow'] = package if package && pull.is_a?(Hash)
+    end
+
+    def self.deliver(github, pull, body)
+      package = pull.is_a?(Hash) ? pull['shaka_overflow'] : nil
+      return body unless package
+
+      url = post(github, package.fetch('comment'))
+      return body unless body.include?(PLACEHOLDER)
+
+      body.gsub(PLACEHOLDER, url)
+    end
+
+    # Reads markers back from the comment when this description says they were moved.
+    def self.restore(github, pull)
+      body = pull.is_a?(Hash) ? pull['body'].to_s : ''
+      return body unless body.match?(ACTIVE)
+
+      comment = find(github)
+      comment ? splice(body, comment['body'].to_s) : body
+    end
+
+    def self.issue(description, comment, live)
+      described = marker_sha(description)
+      commented = comment.to_s[HEAD, 1]
+      return 'Publish the usage and timing details comment for this head.' if described && commented.nil?
+      return if agree?(described, commented, live)
+
+      'The usage and timing details comment does not match this head; publish the description again.'
+    end
+
+    def self.tracked?(description, comment) = marker_sha(description) || comment.to_s[HEAD, 1]
+
+    def self.ours?(comment, login)
+      body = comment.is_a?(Hash) ? comment['body'].to_s : ''
+      body.start_with?(MARK) && (login.nil? || login.to_s.empty? || comment.dig('user', 'login') == login)
+    end
+
+    def self.merged_length(rendered, pull)
+      existing = pull.is_a?(Hash) ? pull['body'].to_s : ''
+      merge(existing, rendered.to_s).length
+    end
+
+    def self.fits?(body, pull) = merged_length(body, pull) <= LIMIT
+    def self.previous?(pull) = pull.is_a?(Hash) && pull['body'].to_s.match?(/<!-- shaka:overflow-(?:active|comment) /)
+    def self.marker_sha(text) = text.to_s[ACTIVE, 1] || text.to_s[COMMENT_MARK, 1]
+
+    def self.agree?(described, commented, live)
+      return true if described.nil? && commented.nil?
+      return commented == live if described.nil?
+      return described == live if commented.nil?
+
+      described == live && commented == live
+    end
+
+    def self.relocated(text, pull)
+      body, moved = shed(text, pull)
+      raise Error, LIMIT_MESSAGE if moved.empty?
+
+      body = stamp(body, pull, 'active')
+      raise Error, LIMIT_MESSAGE unless fits?(body, pull)
+
+      [body, { 'comment' => comment_text(text, moved, pull) }]
+    end
+
+    class << self
+      include OverflowRelocation
+      include OverflowMerge
+    end
+    private_class_method :fits?, :previous?, :marker_sha, :agree?, :relocated
   end
 end
