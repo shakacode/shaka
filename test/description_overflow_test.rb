@@ -175,6 +175,28 @@ class DescriptionOverflowTest < Minitest::Test
     assert_includes carried.dig('usage', 'carried'), '<!-- shaka:usage '
   end
 
+  def test_handoff_owes_a_comment_that_does_not_match_the_head
+    result = handoff_for(OLD)
+
+    assert(result.fetch('owed').any? { |item| item.include?('does not match this head') })
+  end
+
+  def test_handoff_accepts_a_comment_for_the_current_head
+    result = handoff_for(HandoffFixtures::HEAD)
+
+    assert_empty result.fetch('owed')
+    assert_includes result.fetch('status'), 'usage details'
+  end
+end
+
+# The comment's later states: retired, read back, or refused when it would lose a record.
+class DescriptionOverflowLifecycleTest < Minitest::Test
+  include DescriptionOverflowExamples
+
+  def setup
+    @pull = { 'number' => 42, 'body' => '', 'head' => { 'sha' => HEAD } }
+  end
+
   def test_a_description_that_fits_again_retires_the_comment_but_keeps_its_records
     shrunk = description
     active = "#{shrunk.rstrip}\n\n<!-- shaka:overflow-active #{HEAD} -->\n"
@@ -199,24 +221,28 @@ class DescriptionOverflowTest < Minitest::Test
     refute_includes restored, 'Timings are in ['
   end
 
+  def test_a_comment_that_cannot_keep_every_usage_record_is_refused
+    rendered = inflate(description, 'How each report was measured and priced', 'Note. ' * 7_000)
+    rendered = rendered.sub('<!-- shaka:usage:end -->', "#{'x' * 30_000}\n<!-- shaka:usage:end -->")
+
+    error = assert_raises(Shaka::Error) { Shaka::DescriptionOverflow.prepare(rendered, @pull) }
+
+    assert_equal Shaka::DescriptionOverflow::COMMENT_LIMIT, error.message
+  end
+
+  def test_an_overflow_without_a_head_is_refused
+    rendered = inflate(description, 'How each report was measured and priced', 'Note. ' * 10_500)
+
+    error = assert_raises(Shaka::Error) { Shaka::DescriptionOverflow.prepare(rendered, nil) }
+
+    assert_includes error.message, '65536'
+  end
+
   def test_a_details_comment_is_not_read_back_without_the_viewer_login
     comment = { 'body' => "#{Shaka::DescriptionOverflow::MARK}\n", 'user' => { 'login' => 'someone' } }
 
     refute Shaka::DescriptionOverflow.ours?(comment, nil)
     refute Shaka::DescriptionOverflow.ours?(comment, '')
-  end
-
-  def test_handoff_owes_a_comment_that_does_not_match_the_head
-    result = handoff_for(OLD)
-
-    assert(result.fetch('owed').any? { |item| item.include?('does not match this head') })
-  end
-
-  def test_handoff_accepts_a_comment_for_the_current_head
-    result = handoff_for(HandoffFixtures::HEAD)
-
-    assert_empty result.fetch('owed')
-    assert_includes result.fetch('status'), 'usage details'
   end
 end
 

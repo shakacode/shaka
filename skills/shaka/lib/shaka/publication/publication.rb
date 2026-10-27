@@ -163,12 +163,12 @@ module Shaka
   # Included into DescriptionOverflow.
   module OverflowRelocation
     # The retired comment names no head, so handoff stops tracking it. It keeps a copy of the
-    # usage records until a later publish overwrites it, in case this description write fails.
+    # usage records in case this description write fails; when that copy cannot fit, the old
+    # comment is left as it is.
     def retire(text, pull)
       body = unstamp(text)
-      kept = [*usage_blocks(body), *timing_lines(body)]
-      comment = retired(body, pull, kept)
-      [body, { 'comment' => comment.length > comment_budget ? retired(body, pull, []) : comment }]
+      comment = retired(body, pull, [*usage_blocks(body), *timing_lines(body)])
+      [body, comment.length <= comment_budget ? { 'comment' => comment } : nil]
     end
 
     def shed(text, pull)
@@ -211,23 +211,19 @@ module Shaka
 
     def section(summary) = %r{<details>\n<summary>#{Regexp.escape(summary)}[^<]*</summary>\n.*?\n</details>}m
 
+    # The comment is written before the description, so it keeps every usage record: if the
+    # description write then fails, the old description still finds them here.
     def comment_text(rendered, moved, pull)
-      full = note(rendered, pull, DescriptionOverflow::INTRO, moved, extra: true)
-      return full if full.length <= comment_budget
-
-      # The duplicate usage copy can go; records that were themselves moved stay in `moved`.
-      short = note(rendered, pull, DescriptionOverflow::INTRO, moved, extra: false)
-      return short if short.length <= comment_budget
-
-      raise Error, DescriptionOverflow::COMMENT_LIMIT
+      text = note(rendered, pull, DescriptionOverflow::INTRO, moved)
+      text.length <= comment_budget ? text : raise(Error, DescriptionOverflow::COMMENT_LIMIT)
     end
 
     # The reply marker and its newline are posted ahead of the note.
     def comment_budget = DescriptionOverflow::LIMIT - DescriptionOverflow::MARK.length - 1
 
-    def note(rendered, pull, intro, moved = [], extra: false)
+    def note(rendered, pull, intro, moved)
       parts = [identity(rendered), "# #{title(pull)}", head_line(pull), intro, *moved]
-      parts.concat(usage_blocks(rendered)) if extra && !records_moved?(moved)
+      parts.concat(usage_blocks(rendered)) unless records_moved?(moved)
       "#{parts.compact.join("\n\n")}\n"
     end
 
@@ -265,7 +261,7 @@ module Shaka
     def head_line(pull) = (digest = head_sha(pull)) && "<!-- shaka:usage-overflow #{digest} -->"
 
     def head_sha(pull)
-      value = pull.is_a?(Hash) && pull.dig('head', 'sha').to_s
+      value = pull.dig('head', 'sha').to_s if pull.is_a?(Hash)
       value if value&.match?(/\A[0-9a-f]{40}\z/)
     end
 
@@ -417,7 +413,10 @@ module Shaka
 
     def self.fits?(body, pull) = merged_length(body, pull) <= LIMIT
 
+    # Without a head, nothing could mark the description for the next publish to restore.
     def self.relocated(text, pull)
+      raise Error, LIMIT_MESSAGE unless head_sha(pull)
+
       body, moved = shed(text, pull)
       raise Error, LIMIT_MESSAGE if moved.empty?
 
