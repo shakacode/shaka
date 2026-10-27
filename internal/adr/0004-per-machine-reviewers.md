@@ -82,9 +82,9 @@ coordination state. Nothing is reused.
    - Its `model` and `effort` fill only what each matched repository entry leaves unset.
      A task's choice wins over both, and the repository's value wins over the machine's.
      An unset value counts as no team choice; a team that wants a fixed model or effort
-     names it. In this repository, the Claude entry names neither, so a developer could pin
-     a Claude model and effort for their own reviews; the Codex model the repository names
-     stays fixed.
+     names it. In this repository, neither the Claude nor the Codex review entry names a
+     model or effort, so a developer could pin both for their own reviews. DeepSeek names
+     both, so the file cannot change them.
    - It does not change which reviewer is selected. Selection already skips reviewers that
      are not set up on the machine.
    - It cannot quiet a covered provider. Coverage gaps keep their warning and their place
@@ -96,8 +96,9 @@ coordination state. Nothing is reused.
    It sits beside `~/.agents/trusted-github-actors.yml` under the `.agents` settings
    convention. [ADR 0002](0002-install-locations-and-no-compatibility.md) keeps `~/.agents/`
    for settings and refuses it as an install directory, so the two do not collide. A
-   malformed file is an error that `doctor` reports with the file path. An absent file keeps
-   decision 1's behavior.
+   malformed file is an error: `doctor` reports it with the file path, and `shaka reviewer`
+   and `shaka review run` refuse to start until it is fixed, so a review never silently
+   drops a developer's model or effort. An absent file keeps decision 1's behavior.
 
 3. **Review evidence records machine-supplied model and effort.** Decision 1 and the
    reporting part of decision 2 change warnings only, so they stay out of the settings
