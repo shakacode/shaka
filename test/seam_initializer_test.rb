@@ -314,7 +314,8 @@ class SeamInitializerValidationTest < Minitest::Test
       output, error, status = Open3.capture3(*arguments)
 
       assert_predicate status, :success?, error
-      assert_equal({ 'required' => 'none', 'ci_review_wait' => 'one', 'local_max_rounds' => 5 },
+      assert_equal({ 'required' => 'none', 'ci_review_wait' => 'one', 'local_max_rounds' => 5,
+                     'startup_check' => true },
                    JSON.parse(output).fetch('review'))
     end
   end
