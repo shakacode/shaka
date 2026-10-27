@@ -37,6 +37,16 @@ module Shaka
         new(environment, host_name:).call.fetch(:status) == 'healthy' ? environment[VARIABLE] : nil
       end
 
+      # The disposition WIP collection may record, plus the alias when it is safe to name.
+      # A machine name and an invalid token are omitted so a diagnostic cannot repeat them.
+      def self.observation(environment, host_name: system_name)
+        new(environment, host_name:).observation
+      end
+
+      def self.machine_name?(environment, value, host_name: system_name)
+        value.is_a?(String) && new(environment, host_name:).machine_name?(value)
+      end
+
       def call
         value = @environment[VARIABLE]
         return unset if value.nil? || value.empty?
@@ -46,6 +56,17 @@ module Shaka
 
         check('Machine alias', 'healthy', "WIP Owner can publish #{value}")
       end
+
+      def observation
+        value = @environment[VARIABLE]
+        return { 'disposition' => 'unavailable' } if value.nil? || value.empty?
+        return { 'disposition' => 'invalid' } unless valid?(value)
+        return { 'disposition' => 'withheld' } if host_name?(value)
+
+        { 'disposition' => 'available', 'value' => value }
+      end
+
+      def machine_name?(value) = host_name?(value)
 
       private
 

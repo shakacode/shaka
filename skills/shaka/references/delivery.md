@@ -101,11 +101,21 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Next action | One step that continues the task; while `awaiting-resume`, the prompt that resumes it, such as `$shaka PR_URL` |
 
 The renderer and `handoff` check that Owner is `UNKNOWN` or contains three nonempty
-components separated by `·`. `handoff` reads the live GitHub description, so an edit
-after publication is checked too. These checks verify the supplied format; the agent
-verifies the machine alias, host, and tag against available metadata. Other WIP fields
-retain their existing checks; a successful handoff does not establish compliance with
-every instruction in this guide.
+components separated by `·`. `description` also reads the calling session before it
+renders the note. It compares the machine alias, the coding host, the owner tag, and
+a Codex thread id with the supplied Owner and Chat link. `UNKNOWN` is refused when
+that value was available and the content did not mark it withheld. Unavailable,
+withheld, and invalid are different outcomes. Diagnostics omit withheld, invalid, and
+machine-name values. The note carries the outcome for each field. `handoff` reads
+that record from the live GitHub description, including after an edit, and does not
+consult a runner's or a reviewer's environment. Other WIP fields retain their existing
+checks; a successful handoff does not establish compliance with every instruction in
+this guide.
+
+Pass `wip_disclosure` only for a field the user asked to keep off the PR. It is an
+object whose keys are `alias`, `host`, `tag`, and `thread`, and each value is
+`withheld`. Omit it otherwise. A machine-name alias is withheld even without that
+object, because publication would put the machine's own name in the PR.
 
 **Chat title:** before each WIP publication, read the current title through the
 host's session metadata when available. Review it for private content before
@@ -133,12 +143,21 @@ its publication time does not prove subsequent activity. Keep private operationa
 details, tracker links, prompts, credentials, and customer information out of it.
 
 **Session locators:** publish a raw URL, without Markdown or code formatting.
+`codex://threads/<thread-id>` identifies a local Codex chat. It is not a copy of
+the conversation, and it opens only in the owner's own app. A share or export link
+publishes conversation content. Do not create one to fill Chat link. If the host
+denies approval to share, leave that denial in place and do not retry it. Publish
+the local locator, or `UNKNOWN` with `wip_disclosure.thread` set to `withheld` when
+the user wants the locator off the PR.
+
 For Codex, require a UUID in `CODEX_THREAD_ID` and use `codex://threads/<thread-id>`.
-For Claude Code, require `CLAUDE_CODE_HOST_SESSION_ID`, ask the host for that
-session's metadata, and copy its `link` verbatim. The host session ID differs from
-`CLAUDE_CODE_SESSION_ID`, which identifies the usage transcript. Terminal sessions,
-disabled app links, and other hosts use `UNKNOWN` until a supported locator exists.
-A link's availability depends on the owner's machine being reachable.
+`description` reads that id in the calling session. A missing id is unavailable. A
+value that is not a UUID is invalid, so Chat link stays `UNKNOWN` and the diagnostic
+omits the raw id. For Claude Code, require `CLAUDE_CODE_HOST_SESSION_ID`, ask the
+host for that session's metadata, and copy its `link` verbatim. The host session ID
+differs from `CLAUDE_CODE_SESSION_ID`, which identifies the usage transcript. Terminal
+sessions, disabled app links, and other hosts use `UNKNOWN` until a supported locator
+exists. A link's availability depends on the owner's machine being reachable.
 Never create or publish a link that shares conversation content, such as a
 share or export URL, to fill this field.
 

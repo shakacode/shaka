@@ -76,8 +76,10 @@ module PrivateDeliveryEvidence
     path = File.join(@state, 'description.json')
     File.write(path, JSON.generate(description_content.merge('wip' => wip)))
     flags = opening ? ['--opening-reviewer', 'anthropic/claude'] : []
+    session = SESSION_ENV_CLEARED.merge(expected.delete(:env) || {})
     invoke('description', '--content-file', path,
-           '--validation-result', validation, '--review-result', review, *flags, **expected)
+           '--validation-result', validation, '--review-result', review, *flags,
+           env: session, **expected)
   end
 
   def assert_reviewer(expected)

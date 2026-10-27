@@ -263,7 +263,9 @@ shell profile to a short name such as `mini`. PRs may be public, so do not use
 the machine's own name; `$shaka doctor` suggests one that differs from it.
 
 The Chat link works when the owning chat is reachable. In Codex,
-`codex://threads/...` opens the original conversation. Before another agent takes
+`codex://threads/...` opens the original conversation on that machine. It identifies
+the local chat. A share or export link would publish the conversation, and that
+link is not what this field is for. Before another agent takes
 over, confirm the previous one has stopped or handed off; a timestamp cannot prove it.
 
 To recover after a crash or in a new chat, paste the **Next action** from WIP Details,

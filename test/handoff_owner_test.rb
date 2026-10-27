@@ -13,9 +13,22 @@ class HandoffOwnerTest < Minitest::Test
     assert_equal 2, Shaka::Handoff.exit_status(result)
   end
 
-  def test_unknown_owner_remains_recoverable
+  def test_replacing_a_collected_owner_with_unknown_is_owed
     edited = description.sub('| Owner | m5 · Claude Code · k7q2 |', '| Owner | UNKNOWN |')
+    owed = handoff(body: edited).fetch('owed')
 
-    assert_empty handoff(body: edited).fetch('owed')
+    assert(owed.any? { |item| item.include?('owner tag was available but is UNKNOWN') })
+    refute(owed.any? { |item| item.include?('k7q2') })
+  end
+
+  def test_unknown_owner_with_unavailable_metadata_remains_recoverable
+    assert_empty handoff(body: description(WIP.merge('owner' => 'UNKNOWN'))).fetch('owed')
+  end
+
+  def test_a_note_without_collection_evidence_is_owed
+    body = description.sub(/<!-- shaka:wip-metadata .* -->/, '')
+    owed = handoff(body:).fetch('owed')
+
+    assert(owed.any? { |item| item.include?('collection evidence is missing') })
   end
 end
