@@ -159,13 +159,16 @@ module Shaka
     end
   end
 
-  # Builds the one comment that holds sections a description can no longer fit, and puts
-  # those sections back on the next publish. Included into DescriptionOverflow.
+  # Builds the one comment that holds sections a description can no longer fit.
+  # Included into DescriptionOverflow.
   module OverflowRelocation
+    # The retired comment names no head, so handoff stops tracking it. It keeps a copy of the
+    # usage records until a later publish overwrites it, in case this description write fails.
     def retire(text, pull)
-      stamped = stamp(text, pull, 'comment')
-      body = fits?(stamped, pull) ? stamped : text
-      [body, { 'comment' => note(text, pull, DescriptionOverflow::RETIRED) }]
+      body = unstamp(text)
+      kept = [*usage_blocks(body), *timing_lines(body)]
+      comment = retired(body, pull, kept)
+      [body, { 'comment' => comment.length > comment_budget ? retired(body, pull, []) : comment }]
     end
 
     def shed(text, pull)
@@ -200,30 +203,36 @@ module Shaka
     end
 
     def take(body, summary, label, pull)
-      pattern = %r{<details>\n<summary>#{Regexp.escape(summary)}[^<]*</summary>\n.*?\n</details>}m
-      block = body[pattern]
+      block = body[section(summary)]
       return [nil, body] unless block
 
       [block, body.sub(block) { link(label, pull) }]
     end
 
+    def section(summary) = %r{<details>\n<summary>#{Regexp.escape(summary)}[^<]*</summary>\n.*?\n</details>}m
+
     def comment_text(rendered, moved, pull)
-      # The reply marker and its newline are posted ahead of the note.
-      budget = DescriptionOverflow::LIMIT - DescriptionOverflow::MARK.length - 1
       full = note(rendered, pull, DescriptionOverflow::INTRO, moved, extra: true)
-      return full if full.length <= budget
+      return full if full.length <= comment_budget
 
       # The duplicate usage copy can go; records that were themselves moved stay in `moved`.
       short = note(rendered, pull, DescriptionOverflow::INTRO, moved, extra: false)
-      return short if short.length <= budget
+      return short if short.length <= comment_budget
 
       raise Error, DescriptionOverflow::COMMENT_LIMIT
     end
+
+    # The reply marker and its newline are posted ahead of the note.
+    def comment_budget = DescriptionOverflow::LIMIT - DescriptionOverflow::MARK.length - 1
 
     def note(rendered, pull, intro, moved = [], extra: false)
       parts = [identity(rendered), "# #{title(pull)}", head_line(pull), intro, *moved]
       parts.concat(usage_blocks(rendered)) if extra && !records_moved?(moved)
       "#{parts.compact.join("\n\n")}\n"
+    end
+
+    def retired(body, pull, kept)
+      "#{[identity(body), "# #{title(pull)}", DescriptionOverflow::RETIRED, *kept].compact.join("\n\n")}\n"
     end
 
     def records_moved?(moved) = moved.any? { |piece| piece.include?('<!-- shaka:usage ') }
@@ -240,9 +249,10 @@ module Shaka
       digest = head_sha(pull)
       return body unless digest
 
-      stripped = body.gsub(/<!-- shaka:overflow-(?:active|comment) [0-9a-f]{40} -->\n?/, '')
-      "#{stripped.rstrip}\n\n<!-- shaka:overflow-#{tag} #{digest} -->\n"
+      "#{unstamp(body).rstrip}\n\n<!-- shaka:overflow-#{tag} #{digest} -->\n"
     end
+
+    def unstamp(body) = body.gsub(/#{DescriptionOverflow::ACTIVE}\n?/o, '')
 
     def link(label, pull) = "#{label} are in [#{title(pull)}](#{DescriptionOverflow::PLACEHOLDER})."
 
@@ -266,12 +276,32 @@ module Shaka
 
       raise Error, 'Usage and timing details comment did not return a URL.'
     end
+  end
+
+  # Reads the overflow comment back so the next publish starts from the full description.
+  module OverflowRestoration
+    # Each moved section's link label and the summary that opens it; usage records have no section.
+    MOVED = [['Per-report pricing notes', UsagePricing::SUMMARY], %w[Timings Timings],
+             ['Earlier usage reports', nil]].freeze
 
     def find(github)
       return unless github
 
       login = github.viewer_login
       Array(github.issue_comments).find { |comment| DescriptionOverflow.ours?(comment, login) }
+    end
+
+    # Puts each moved section back where its link stands, so every publish starts from a full body.
+    def unlink(body, comment)
+      MOVED.reduce(body) do |text, (label, summary)|
+        line = /#{Regexp.escape(label)} are in \[#{Regexp.escape(DescriptionOverflow::TITLE)}[^\]]*\]\([^)\s]+\)\.\n?/
+        next text unless text.match?(line)
+
+        block = summary && comment[section(summary)]
+        next text.sub(line, '') unless block
+
+        timing_lines(block).reduce(text.sub(line) { "#{block}\n" }) { |rest, mark| rest.sub("#{mark}\n", '') }
+      end
     end
 
     def splice(body, comment)
@@ -322,7 +352,6 @@ module Shaka
     # Longer than a GitHub comment permalink, so substituting the real URL cannot grow the body.
     PLACEHOLDER = "https://example.com/#{'o' * 160}".freeze
     ACTIVE = /<!-- shaka:overflow-active ([0-9a-f]{40}) -->/
-    COMMENT_MARK = /<!-- shaka:overflow-comment ([0-9a-f]{40}) -->/
     HEAD = /<!-- shaka:usage-overflow ([0-9a-f]{40}) -->/
     MARK = "<!-- shaka:reply:#{KEY} -->".freeze
     INTRO = 'These sections were moved out of the PR description so it stays within GitHub\'s 65,536-character limit.'
@@ -332,7 +361,7 @@ module Shaka
     KINDS = %i[pricing timings records].freeze
 
     def self.prepare(rendered, pull)
-      return [rendered, nil] if fits?(rendered, pull) && !previous?(pull)
+      return [rendered, nil] if fits?(rendered, pull) && !moved?(pull.is_a?(Hash) && pull['body'])
 
       text = rendered.to_s.gsub("\r\n", "\n")
       return retire(text, pull) if fits?(text, pull)
@@ -354,29 +383,31 @@ module Shaka
       body.gsub(PLACEHOLDER, url)
     end
 
-    # Reads markers back from the comment when this description says they were moved.
+    # Puts the moved sections and markers back when this description says they were moved.
     def self.restore(github, pull)
       body = pull.is_a?(Hash) ? pull['body'].to_s : ''
-      return body unless body.match?(ACTIVE)
+      return body unless moved?(body)
 
       comment = find(github)
-      comment ? splice(body, comment['body'].to_s) : body
+      comment ? splice(unlink(body, comment['body'].to_s), comment['body'].to_s) : body
     end
 
+    def self.moved?(description) = description.to_s.match?(ACTIVE)
+
     def self.issue(description, comment, live)
-      described = marker_sha(description)
+      described = description.to_s[ACTIVE, 1]
       commented = comment.to_s[HEAD, 1]
-      return 'Publish the usage and timing details comment for this head.' if described && commented.nil?
-      return if agree?(described, commented, live)
+      return unless described
+      return 'Publish the usage and timing details comment for this head.' unless commented
+      return if described == live && commented == live
 
       'The usage and timing details comment does not match this head; publish the description again.'
     end
 
-    def self.tracked?(description, comment) = marker_sha(description) || comment.to_s[HEAD, 1]
-
+    # Only this account's comment is read back; another author could otherwise plant usage records.
     def self.ours?(comment, login)
       body = comment.is_a?(Hash) ? comment['body'].to_s : ''
-      body.start_with?(MARK) && (login.nil? || login.to_s.empty? || comment.dig('user', 'login') == login)
+      body.start_with?(MARK) && !login.to_s.empty? && comment.dig('user', 'login') == login
     end
 
     def self.merged_length(rendered, pull)
@@ -385,16 +416,6 @@ module Shaka
     end
 
     def self.fits?(body, pull) = merged_length(body, pull) <= LIMIT
-    def self.previous?(pull) = pull.is_a?(Hash) && pull['body'].to_s.match?(/<!-- shaka:overflow-(?:active|comment) /)
-    def self.marker_sha(text) = text.to_s[ACTIVE, 1] || text.to_s[COMMENT_MARK, 1]
-
-    def self.agree?(described, commented, live)
-      return true if described.nil? && commented.nil?
-      return commented == live if described.nil?
-      return described == live if commented.nil?
-
-      described == live && commented == live
-    end
 
     def self.relocated(text, pull)
       body, moved = shed(text, pull)
@@ -408,8 +429,9 @@ module Shaka
 
     class << self
       include OverflowRelocation
+      include OverflowRestoration
       include OverflowMerge
     end
-    private_class_method :fits?, :previous?, :marker_sha, :agree?, :relocated
+    private_class_method :fits?, :relocated
   end
 end

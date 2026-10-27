@@ -7,23 +7,15 @@ module Shaka
   module HandoffOverflow
     private
 
+    # Only a description that says its sections were moved needs the comment read.
     def overflow_fact(live)
-      pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
-      recheck_head(pull.dig('head', 'sha'), live)
-      comment = overflow_comment
-      message = DescriptionOverflow.issue(pull['body'], comment, live)
-      return owe('usage details comment', message) if message
-      return "usage details #{live[0, Handoff::SHORT]}" if DescriptionOverflow.tracked?(pull['body'], comment)
+      return unless DescriptionOverflow.moved?(pull['body'])
 
-      nil
+      comment = DescriptionOverflow.find(@github)
+      message = DescriptionOverflow.issue(pull['body'], comment && comment['body'], live)
+      message ? owe('usage details comment', message) : "usage details #{live[0, Handoff::SHORT]}"
     rescue Error => e
       owe('usage details comment unread', e.message)
-    end
-
-    def overflow_comment
-      login = @github.viewer_login
-      found = Array(@github.issue_comments).find { |comment| DescriptionOverflow.ours?(comment, login) }
-      found && found['body']
     end
   end
 end

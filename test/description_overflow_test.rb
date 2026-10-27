@@ -175,6 +175,37 @@ class DescriptionOverflowTest < Minitest::Test
     assert_includes carried.dig('usage', 'carried'), '<!-- shaka:usage '
   end
 
+  def test_a_description_that_fits_again_retires_the_comment_but_keeps_its_records
+    shrunk = description
+    active = "#{shrunk.rstrip}\n\n<!-- shaka:overflow-active #{HEAD} -->\n"
+
+    body, package = Shaka::DescriptionOverflow.prepare(shrunk, @pull.merge('body' => wrap(active)))
+
+    refute Shaka::DescriptionOverflow.moved?(body)
+    refute_includes package.fetch('comment'), 'shaka:usage-overflow'
+    assert_includes package.fetch('comment'), '<!-- shaka:usage '
+    assert_nil Shaka::DescriptionOverflow.issue(body, package.fetch('comment'), HEAD)
+  end
+
+  def test_restore_puts_a_moved_timings_section_back_in_place_of_its_link
+    rendered = inflate(description(timeline:), 'Timings', 'Stretch. ' * 7_100)
+    body, package = Shaka::DescriptionOverflow.prepare(rendered, @pull)
+    linked = body.gsub(Shaka::DescriptionOverflow::PLACEHOLDER, URL)
+
+    restored = Shaka::DescriptionOverflow.restore(comment_github(package.fetch('comment')),
+                                                  @pull.merge('body' => wrap(linked)))
+
+    assert_includes restored, '<summary>Timings'
+    refute_includes restored, 'Timings are in ['
+  end
+
+  def test_a_details_comment_is_not_read_back_without_the_viewer_login
+    comment = { 'body' => "#{Shaka::DescriptionOverflow::MARK}\n", 'user' => { 'login' => 'someone' } }
+
+    refute Shaka::DescriptionOverflow.ours?(comment, nil)
+    refute Shaka::DescriptionOverflow.ours?(comment, '')
+  end
+
   def test_handoff_owes_a_comment_that_does_not_match_the_head
     result = handoff_for(OLD)
 
