@@ -6,7 +6,7 @@ class PublicationSettingsSummaryTest < Minitest::Test
   include SettingsSnapshotHelper
 
   COMMITTED = "Default-branch settings at `#{REVISION[0, 7]}`".freeze
-  POINTER = Shaka::PublicationSettings::COMMIT_POINTER
+  POINTER = Shaka::PublicationSettings::VERSION_POINTER
 
   def test_the_block_opens_on_its_status_then_the_current_settings
     status, _note, current = settings_block(current: snapshot).split("\n\n")
