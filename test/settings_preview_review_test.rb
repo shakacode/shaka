@@ -53,15 +53,12 @@ end
 class SettingsPreviewCheckpointTest < Minitest::Test
   include PostImplementationFixture
 
-  def test_explicitly_selected_preview_can_disable_the_checkpoint
-    with_repository do |root, base, _head, bin|
+  def test_a_preview_that_sets_enabled_is_refused
+    with_repository do |root, _base, _head, _bin|
       head = preview_checkpoint(root)
-      fake_checkpoint(bin, head)
-      Shaka::Configuration::SettingsPreview.new(root:).start(head)
-      result, status = run_checkpoint(root, base, head, bin)
-      assert_predicate status, :success?, result.inspect
-      assert_equal 'opted_out', result['status']
-      refute_path_exists File.join(root, 'trace.json')
+      error = assert_raises(Shaka::Error) { Shaka::Configuration::SettingsPreview.new(root:).start(head) }
+
+      assert_includes error.message, 'checkpoint.enabled was removed'
     end
   end
 

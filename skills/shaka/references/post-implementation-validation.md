@@ -303,8 +303,8 @@ A replacement prompt preserves the original-outcome comparison, actual maintenan
 cost, simpler alternatives, visible conclusion, and handling of substantive
 concerns. Replacing the prompt does not silently disable the checkpoint. An explicit
 checkpoint opt-out in trusted default-branch instructions or a direct user instruction
-uses `--opt-out REASON` and needs a visible note on the PR. Repository settings
-can explicitly opt out with `checkpoint.enabled: false`. The runner
+uses `--opt-out REASON` and needs a visible note on the PR. There is no settings
+switch that skips the checkpoint, and `checkpoint.enabled` is refused. The runner
 returns `opted_out`, not a completed review; publish that result on the existing PR.
 An opted-out run needs no packet and does not load an inactive prompt. Settings
 syntax and revision checks still apply; the repository seam still validates its
@@ -318,8 +318,8 @@ or explicitly opted out for the exact current head. `handoff` reports an owed ch
 when the PR awaits merge approval. A later blocked, failed, or malformed execution
 supersedes an earlier ready one. A new commit needs new evidence, including prose edits.
 
-Pass the trusted default-branch `--ref` to `squash-message` too. A trusted
-`checkpoint.enabled: false` disables the code gate. The owner verifies
+Pass the trusted default-branch `--ref` to `squash-message` too. No trusted
+setting disables the code gate. The owner verifies
 explicit task opt-out authority and resolves all earlier substantive concerns; changing
 settings or publishing an opt-out does not settle them. These checks establish what this
 account published, not independent proof of reviewer execution or judgment quality.

@@ -280,7 +280,7 @@ end
 class CheckpointKeyMigrationTest < Minitest::Test
   def test_migration_blocks_the_old_checkpoint_key_with_its_new_section
     data = { 'version' => 1, 'merge' => { 'preference' => 'ask' },
-             'review' => { 'required' => 'none', 'post_implementation' => { 'enabled' => false } } }
+             'review' => { 'required' => 'none', 'post_implementation' => { 'reviewer' => 'openai/codex' } } }
 
     assert_includes Shaka::Seam::FieldClassifier.new(data).call.blocking,
                     'review.post_implementation moved to the top-level checkpoint section'

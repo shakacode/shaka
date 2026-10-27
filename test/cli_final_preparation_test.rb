@@ -38,8 +38,10 @@ module FinalPreparationFixture
 
   private
 
-  def with_fixture(enabled: true)
-    with_repository('review' => review_policy, 'checkpoint' => { 'enabled' => enabled }) do |root|
+  def with_fixture(checkpoint: nil)
+    settings = { 'review' => review_policy }
+    settings['checkpoint'] = checkpoint if checkpoint
+    with_repository(settings) do |root|
       commit_root(root)
       ref = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
       Dir.mktmpdir do |bin|
@@ -63,9 +65,9 @@ module FinalPreparationFixture
     File.write(File.join(bin, 'message'), JSON.generate('title' => 'Fix', 'body' => 'Reason.'))
   end
 
-  def change_candidate(root, enabled:)
+  def change_candidate(root)
     File.write(File.join(root, '.agents/agent-workflow.yml'),
-               YAML.dump(seam('review' => review_policy, 'checkpoint' => { 'enabled' => enabled })))
+               YAML.dump(seam('review' => review_policy, 'checkpoint' => { 'enabled' => false })))
   end
 
   def write_comments(bin, head)
@@ -117,14 +119,12 @@ class CliFinalPreparationTest < Minitest::Test
     end
   end
 
-  def test_only_the_trusted_disabled_setting_can_skip_the_checkpoint
-    [true, false].each do |enabled|
-      with_fixture(enabled:) do |root, ref, bin|
-        change_candidate(root, enabled: !enabled)
-        _output, error, status = run_command(root, ref, bin, 'squash-message')
-        assert_equal !enabled, status.success?, error
-        assert_equal !enabled, File.exist?(File.join(bin, 'written'))
-      end
+  def test_trusted_enabled_is_refused_before_final_preparation
+    with_fixture(checkpoint: { 'enabled' => false }) do |root, ref, bin|
+      _output, error, status = run_command(root, ref, bin, 'squash-message')
+      refute_predicate status, :success?
+      assert_includes error, 'checkpoint.enabled was removed'
+      refute_path_exists File.join(bin, 'written')
     end
   end
 

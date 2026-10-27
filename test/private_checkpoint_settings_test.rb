@@ -12,10 +12,9 @@ class PrivateCheckpointSettingsTest < Minitest::Test
 
   def test_private_opt_out_is_recorded_then_accepted_by_final_preparation
     with_trial do
-      update_private { |data| data['checkpoint'] = { 'enabled' => false } }
-      result = run_checkpoint
+      result = run_checkpoint(extra: ['--opt-out', 'Maintainer decision for this task'])
       assert_equal 'opted_out', result['status']
-      assert_includes result['reason'], 'enabled is false'
+      assert_includes result['reason'], 'Maintainer decision for this task'
       record_on_pull(result)
       assert_equal 10, invoke('squash-message', '--head', @ref, '--content-file', message_file)['id']
     end
@@ -73,14 +72,14 @@ class PrivateCheckpointSettingsTest < Minitest::Test
     assert_includes trace['prompt'], 'PRIVATE CHECKPOINT RULES'
   end
 
-  def run_checkpoint(succeed: true)
+  def run_checkpoint(succeed: true, extra: [])
     Dir.mktmpdir('checkpoint-cli', @state) do |bin|
       write_executable(bin, 'claude', checkpoint_reviewer)
       environment = { 'PATH' => "#{bin}:#{ENV.fetch('PATH')}",
                       'REVIEW_TRACE' => File.join(@state, 'checkpoint-trace.json') }
       output, error, status = Open3.capture3(environment, *COMMAND, 'post-implementation', 'run', '--root', @root,
                                              '--base', @ref, '--head', @ref, '--ref', @ref,
-                                             '--content-file', state_file('packet.json', PACKET))
+                                             '--content-file', state_file('packet.json', PACKET), *extra)
       assert_equal succeed, status.success?, "#{output}\n#{error}"
       JSON.parse(output)
     end

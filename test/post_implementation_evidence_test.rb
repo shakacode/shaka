@@ -17,8 +17,8 @@ class PostImplementationEvidenceTest < Minitest::Test
 
   def next_id = @next_id = (@next_id || 0) + 1
 
-  def gate(comments, **)
-    Shaka::PostImplementationEvidence.new(Client.new(comments, 'test-author'), **)
+  def gate(comments)
+    Shaka::PostImplementationEvidence.new(Client.new(comments, 'test-author'))
   end
 
   def test_only_current_head_ready_or_explicit_opt_out_counts
@@ -75,10 +75,6 @@ class PostImplementationEvidenceTest < Minitest::Test
     assert_nil gate([planted]).recommendation(HEAD)
     assert_nil gate([recommended('Merge', state: 'blocked')]).recommendation(HEAD)
     assert_nil gate([recommended('Revise before merge', state: 'ready')]).recommendation(HEAD)
-  end
-
-  def test_trusted_disabled_setting_requires_no_review
-    assert_equal 'trusted_opt_out', gate(nil, enabled: false).call(HEAD)['basis']
   end
 
   def test_a_shared_short_prefix_cannot_satisfy_current_head_evidence

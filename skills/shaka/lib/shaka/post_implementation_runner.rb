@@ -28,7 +28,6 @@ module Shaka
 
       settings = (effective_review || {}).fetch('post_implementation', {})
       RepositoryConfig::PostImplementationSchema.new(settings).validate
-      @disabled = !settings.fetch('enabled') { RepositoryConfig::PostImplementationSchema::DEFAULTS.fetch('enabled') }
       choices = execution_choices(settings)
       validate_choices!(choices)
 
@@ -63,16 +62,15 @@ module Shaka
     end
 
     def run_report(prompt)
-      if @disabled || @options[:opt_out]
-        return { 'status' => 'opted_out', 'head' => head, 'ready' => false,
-                 'reason' => @options[:opt_out] || 'Selected checkpoint.enabled is false' }
+      if @options[:opt_out]
+        return { 'status' => 'opted_out', 'head' => head, 'ready' => false, 'reason' => @options[:opt_out] }
       end
 
       super
     end
 
     def review_prompt
-      return '' if @disabled || @options[:opt_out]
+      return '' if @options[:opt_out]
 
       marker = SecureRandom.hex(16)
       diff = capture(git_executable, '-C', root, 'diff', '--no-ext-diff', '--no-textconv',

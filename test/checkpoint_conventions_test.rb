@@ -41,12 +41,13 @@ class CheckpointConventionsTest < Minitest::Test
   include CheckpointInstructionsFixture
 
   def test_top_level_checkpoint_section_reaches_the_runner
-    @root_settings = { 'checkpoint' => { 'enabled' => false } }
+    @root_settings = { 'checkpoint' => { 'effort' => 'high' } }
     with_repository do |root, base, head, bin|
+      fake_checkpoint(bin, head)
       result, status = run_checkpoint(root, base, head, bin)
 
       assert_predicate status, :success?, result.inspect
-      assert_equal 'opted_out', result.fetch('status')
+      assert_equal 'high', result.fetch('effort')
     end
   end
 
@@ -158,10 +159,21 @@ class CheckpointSectionSchemaTest < Minitest::Test
   end
 
   def test_the_old_review_key_names_its_new_section
-    with_repository('review' => review_policy('post_implementation' => { 'enabled' => true })) do |root|
+    with_repository('review' => review_policy('post_implementation' => { 'reviewer' => 'openai/codex' })) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
       assert error.message.start_with?('review.post_implementation moved to the top-level checkpoint section.')
+    end
+  end
+
+  def test_checkpoint_enabled_is_refused
+    [false, true].each do |enabled|
+      with_repository('checkpoint' => { 'enabled' => enabled }) do |root|
+        error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+        assert_includes error.message, 'checkpoint.enabled was removed'
+        assert_includes error.message, 'post-implementation run --opt-out REASON'
+      end
     end
   end
 

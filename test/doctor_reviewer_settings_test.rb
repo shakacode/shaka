@@ -31,9 +31,8 @@ class DoctorReviewerSettingsTest < Minitest::Test
     assert_includes report, '[HEALTHY] Reviewer settings'
   end
 
-  def test_disabled_checks_are_not_reported
-    report, = doctor_with('pr_description' => opening('effort' => 'turbo', 'enabled' => false),
-                          **checkpoint('model' => 'claude-opus-5-6', 'enabled' => false))
+  def test_a_disabled_opening_check_is_not_reported
+    report, = doctor_with('pr_description' => opening('effort' => 'turbo', 'enabled' => false))
 
     assert_includes report, '[HEALTHY] Reviewer settings'
   end

@@ -52,19 +52,18 @@ end
 class SettingsPreviewFinalPreparationTest < Minitest::Test
   include FinalPreparationFixture
 
-  def test_preview_checkpoint_opt_out_allows_final_preparation
-    with_fixture do |root, ref, bin|
-      start_disabled_preview(root)
-      _output, error, status = run_command(root, ref, bin, 'squash-message')
-      assert_predicate status, :success?, error
-      assert_includes File.read(File.join(bin, 'written')), 'Reason.'
+  def test_a_preview_cannot_disable_the_checkpoint
+    with_fixture do |root, _ref, bin|
+      error = assert_raises(Shaka::Error) { start_disabled_preview(root) }
+      assert_includes error.message, 'checkpoint.enabled was removed'
+      refute_path_exists File.join(bin, 'written')
     end
   end
 
   private
 
   def start_disabled_preview(root)
-    change_candidate(root, enabled: false)
+    change_candidate(root)
     commit_root(root)
     preview = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
     Shaka::Configuration::SettingsPreview.new(root:).start(preview)

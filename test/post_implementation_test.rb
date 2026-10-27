@@ -170,30 +170,24 @@ class PostImplementationFailureTest < Minitest::Test
   end
 
   def test_opt_out_does_not_build_a_packet_or_load_an_inactive_prompt
-    [{ 'enabled' => false }, {}].each do |settings|
-      settings['replacement_prompt_file'] = '.agents/missing.md'
-      with_repository({ 'checkpoint' => settings }) do |root, base, head, bin|
-        options = settings.key?('enabled') ? [] : ['--opt-out', 'Maintainer decision']
-        result, status = run_checkpoint(root, base, head, bin, *options, :without_packet)
+    settings = { 'replacement_prompt_file' => '.agents/missing.md' }
+    with_repository({ 'checkpoint' => settings }) do |root, base, head, bin|
+      result, status = run_checkpoint(root, base, head, bin, '--opt-out', 'Maintainer decision', :without_packet)
 
-        assert_predicate status, :success?, result.inspect
-        assert_equal 'opted_out', result.fetch('status')
-        refute_path_exists File.join(root, 'trace.json')
-      end
+      assert_predicate status, :success?, result.inspect
+      assert_equal 'opted_out', result.fetch('status')
+      refute_path_exists File.join(root, 'trace.json')
     end
   end
 
-  def test_trusted_and_explicit_opt_outs_never_claim_successful_review
-    [{ 'enabled' => false }, {}].each do |settings|
-      with_repository({ 'checkpoint' => settings }) do |root, base, head, bin|
-        options = settings.empty? ? ['--opt-out', 'Maintainer opted out for this task'] : []
-        result, status = run_checkpoint(root, base, head, bin, *options)
+  def test_an_explicit_opt_out_never_claims_successful_review
+    with_repository do |root, base, head, bin|
+      result, status = run_checkpoint(root, base, head, bin, '--opt-out', 'Maintainer opted out for this task')
 
-        assert_predicate status, :success?
-        assert_equal 'opted_out', result.fetch('status')
-        refute result.fetch('ready')
-        refute_path_exists File.join(root, 'trace.json')
-      end
+      assert_predicate status, :success?
+      assert_equal 'opted_out', result.fetch('status')
+      refute result.fetch('ready')
+      refute_path_exists File.join(root, 'trace.json')
     end
   end
 end

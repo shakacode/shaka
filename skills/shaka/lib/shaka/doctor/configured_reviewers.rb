@@ -32,8 +32,6 @@ module Shaka
       # does not inherit the default reviewer's model.
       def checkpoint(settings)
         effective = CHECKPOINT::DEFAULTS.merge(settings)
-        return [] unless effective['enabled']
-
         reviewer = CHECKPOINT.reviewer(effective['reviewer'])
         inherited = !settings.key?('model') && reviewer != CHECKPOINT.reviewer(CHECKPOINT::DEFAULTS['reviewer'])
         labeled('Checkpoint', reviewer, effective.merge('model' => inherited ? nil : effective['model']))

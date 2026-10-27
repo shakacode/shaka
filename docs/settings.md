@@ -640,9 +640,11 @@ The PR records the conclusion, reasons, execution settings, and available native
 usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not merge”, or
 unresolved substantive concerns block readiness and Auto; green technical checks
 and changed settings do not clear them. Earlier executions stay visible on the PR.
-Setting `enabled: false` in the selected configuration opts out and
-requires a visible note. Individual setup applies these choices too. Final
-preparation accepts an individual opt-out only after its note is published on the PR.
+Every repository runs the checkpoint. To skip one task, the agent runs
+`post-implementation run --opt-out` with a reason, and Shaka publishes that note
+on the PR. Final preparation accepts the note only for that commit. A
+configuration key named `enabled` is refused. Reviewer, model, and effort
+choices still apply to individual setup.
 
 See [checkpoint terms and current report labels](pr-verification.md#checkpoint).
 The current automated gate concerns pre-merge readiness; these terms do not add

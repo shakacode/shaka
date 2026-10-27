@@ -42,6 +42,13 @@ module CliMergeFixture
       puts JSON.generate([{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }])
     elsif ARGV[0, 2] == ['api', 'repos/owner/repo/pulls/1/reviews/17']
       puts JSON.generate('id' => 17, 'commit_id' => head, 'state' => 'COMMENTED', 'body' => 'Walkthrough')
+    elsif ARGV[0] == 'api' && ARGV[1] == 'user'
+      puts JSON.generate('login' => 'agent')
+    elsif ARGV[0] == 'api' && ARGV[1].start_with?('repos/owner/repo/issues/1/comments')
+      puts JSON.generate([{ 'id' => 1, 'created_at' => '2026-10-01T00:00:00Z', 'html_url' => 'https://example.test/c/1',
+                            'user' => { 'login' => 'agent' },
+                            'body' => "<!-- shaka:reply:post-implementation-#{head[0, 7]}-abc12345 -->\nReport\n\n" \
+                                      "<!-- shaka:post-implementation #{head} ready -->" }])
     elsif ARGV[0] == 'api' && ARGV[1].start_with?('repos/owner/repo/pulls/1/commits?')
       puts JSON.generate([{ 'sha' => head, 'commit' => { 'message' => 'Fix' } }])
     else
@@ -54,8 +61,7 @@ module CliMergeFixture
 
   def with_merge_repository
     with_repository('merge' => merge_policy,
-                    'review' => review_policy('required' => 'none').except('ci_review_jobs'),
-                    'checkpoint' => { 'enabled' => false }) do |root|
+                    'review' => review_policy('required' => 'none').except('ci_review_jobs')) do |root|
       commit_repository(root)
       ref, = Open3.capture3('git', '-C', root, 'rev-parse', 'HEAD')
       ref = ref.strip

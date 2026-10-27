@@ -5,13 +5,11 @@ require_relative 'private_delivery_helper'
 class PrivateCheckpointTest < Minitest::Test
   include PrivateDeliveryFixture
 
-  def test_private_opt_out_cannot_bypass_final_preparation
+  def test_private_enabled_cannot_bypass_final_preparation
     with_trial do
-      prepare_private_opt_out
+      update_private { |data| data['checkpoint'] = { 'enabled' => false } }
       invoke('squash-message', '--head', @ref, '--content-file', message_file,
-             exit_code: 1, error: 'Checkpoint is missing')
-      resumed = invoke('handoff', exit_code: 2)
-      assert(resumed['owed'].any? { |item| item.include?('Checkpoint is missing') })
+             exit_code: 1, error: 'checkpoint.enabled was removed')
     end
   end
 
@@ -38,7 +36,6 @@ class PrivateCheckpointTest < Minitest::Test
   private
 
   def prepare_private_opt_out
-    update_private { |data| data['checkpoint'] = { 'enabled' => false } }
     publish_delivery
     alter_pull do |pull|
       pull['labels'] = [{ 'name' => 'awaiting-merge-approval' }]

@@ -26,14 +26,11 @@ module Shaka
                           "<!-- #{MARK} ([0-9a-f]{40}) (?:ready|blocked) -->\\s*\\z")
     def self.adequacy(verdict) = "<!-- #{MARK}-adequacy #{verdict.tr(' ', '_')} -->"
 
-    def initialize(github, enabled: true)
+    def initialize(github)
       @github = github
-      @enabled = enabled
     end
 
     def call(head)
-      return { 'basis' => 'trusted_opt_out' } if @enabled == false
-
       comment = latest
       reviewed, state = comment&.fetch('body', '').to_s.match(ATTESTATION)&.captures
       unless reviewed == head && %w[ready opted_out].include?(state)

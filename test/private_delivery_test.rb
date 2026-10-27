@@ -123,7 +123,6 @@ class PrivateDeliveryBoundaryTest < Minitest::Test
       data['merge'] = { 'preference' => 'auto', 'required_checks' => ['private-check'] }
       data['review'].delete('ci_review_jobs')
       data['review']['required'] = 'none'
-      data['checkpoint'] = { 'enabled' => false }
     end
   end
 

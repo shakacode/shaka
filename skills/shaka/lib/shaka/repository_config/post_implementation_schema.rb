@@ -14,7 +14,9 @@ module Shaka
       SECTION = 'checkpoint'
       REPLACEMENT = 'replacement_prompt_file'
       CUSTOM = 'custom_instructions_file'
-      KEYS = ['enabled', 'reviewer', 'model', 'effort', REPLACEMENT, CUSTOM].freeze
+      KEYS = ['reviewer', 'model', 'effort', REPLACEMENT, CUSTOM].freeze
+      REMOVED = 'was removed; every repository runs the checkpoint. Tell your agent: ' \
+                '"Remove checkpoint.enabled. Opt out of one task with post-implementation run --opt-out REASON."'
       EFFORTS = { 'openai/codex' => %w[low medium high xhigh max],
                   'anthropic/claude' => %w[low medium high xhigh max],
                   'xai/grok' => %w[low medium high] }.freeze
@@ -47,8 +49,8 @@ module Shaka
         label = @label
         mapping!(@settings, label)
         renamed_prompt_file!(@settings, label)
+        refuse_enabled!(label)
         keys!(@settings, [], KEYS, label)
-        validate_enabled(label)
         reviewer = self.class.reviewer(@settings.fetch('reviewer', DEFAULTS.fetch('reviewer')))
         raise Error, "#{label}.reviewer must be a supported provider/family" unless EFFORTS.key?(reviewer)
 
@@ -58,11 +60,10 @@ module Shaka
 
       private
 
-      def validate_enabled(label)
+      def refuse_enabled!(label)
         return unless @settings.key?('enabled')
-        return if [true, false].include?(@settings['enabled'])
 
-        raise Error, "#{label}.enabled must be true or false"
+        raise Error, "#{label}.enabled #{REMOVED}"
       end
 
       def validate_choices(label, reviewer)
