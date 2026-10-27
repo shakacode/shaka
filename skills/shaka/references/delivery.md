@@ -164,7 +164,10 @@ or outdated note after a crash is a reason to inspect live state, not to abandon
 **Take over in a new task:** require maintainer confirmation that the previous
 owner stopped or is handing over. An idle task, old timestamp, or missing note
 is insufficient. Then read the live head and publish a complete note with a new
-owner tag before other work. Recheck checks, review, and merge authority. Inspect
+owner tag before other work. Immediately after it, post a takeover comment with
+`reply --key takeover-OWNER_TAG`, copying the note's Owner, Chat link, Revision,
+Merge authority, and Next action. It grants no authority. A resume by
+the same owner posts none. Recheck checks, review, and merge authority. Inspect
 and preserve staged, unstaged, untracked, stashed, and unpushed work when the old
 checkout is reachable; record it as `UNKNOWN` when it is not.
 
