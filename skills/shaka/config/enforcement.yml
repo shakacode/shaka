@@ -18,6 +18,15 @@ version: 1
 # `rule` when that span does not read as a sentence on its own, as half of "Never A or B"
 # does not. A clause added to a sentence an entry already quotes is not detected either.
 rules:
+  - id: startup-review-before-implementation
+    phase: plan
+    quote: >-
+      Stop before implementation if consent is missing or declined, or a requested probe fails or is unverified.
+    enforced_by: agent
+    note: >-
+      Ruby validates the switch, ref format, configured probe identities, and probe outcome.
+      The agent resolves human consent and follows phase order; Ruby cannot authenticate consent
+      or prevent implementation tools from running.
   - id: github-writer-identifier
     phase: explain
     quote: >-

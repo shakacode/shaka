@@ -18,11 +18,19 @@ module Shaka
       GUIDANCE = 'Inspect local diagnostics. Keep configured model and effort; ask the user before changing them. ' \
                  'Timeouts and account model refusals do not establish a provider outage.'
 
-      def initialize(root:, path:, timeout:, ref: nil)
+      def self.run(root:, **)
+        item = new(root:, path: ENV.fetch('PATH', ''), **).for_repository
+        puts JSON.pretty_generate(item)
+        item.fetch(:status) == 'healthy' ? 0 : 1
+      end
+
+      def initialize(root:, path:, timeout:, ref: nil, **selection)
         @root = OpeningCheckout.root(root) || File.realpath(root)
         @path = LocalReviewPathGuard.safe_path(path, candidate_root: @root, drop_candidate: true)
         @timeout = timeout
         @ref = ref
+        @reviewers = selection[:reviewers]
+        @startup = selection[:startup]
       end
 
       def for_repository
@@ -38,16 +46,38 @@ module Shaka
 
       def call(review)
         return check('Reviewer availability', 'degraded', 'not probed: repository seam is not healthy') unless review
+        if startup_disabled?(review)
+          return check('Reviewer availability', 'healthy', 'Startup probe disabled by review.startup_check.')
+        end
 
-        entries = Array(review['local_review_agents'])
+        entries = selected_entries(Array(review['local_review_agents']))
         return check('Reviewer availability', 'degraded', 'No configured CLI reviewers to probe.') if entries.empty?
 
+        probe_entries(entries)
+      end
+
+      private
+
+      def startup_disabled?(review)
+        @startup && !review.fetch('startup_check') { Defaults.fetch('review', 'startup_check') }
+      end
+
+      def probe_entries(entries)
         results = entries.map { |entry| probe(entry) }
         status = results.map(&:first).max_by { |value| SEVERITY.fetch(value) }
         check('Reviewer availability', status, results.map(&:last).join("\n    "), guidance: GUIDANCE)
       end
 
-      private
+      def selected_entries(entries)
+        return entries unless @reviewers
+
+        selected = @reviewers.map(&:downcase).uniq
+        configured = entries.to_h { |entry| [entry.values_at('provider', 'model_family').join('/').downcase, entry] }
+        missing = selected - configured.keys
+        raise Shaka::Error, "Probe reviewers not configured: #{missing.join(', ')}" unless missing.empty?
+
+        selected.map { |id| configured.fetch(id) }
+      end
 
       def probe(entry)
         identity = entry.values_at('provider', 'model_family').join('/').downcase

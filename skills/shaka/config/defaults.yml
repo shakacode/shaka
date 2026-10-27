@@ -3,6 +3,7 @@
 # Reference: docs/settings.md. Editing this file changes Shaka's behavior for every repository.
 ---
 review:
+  startup_check: true # Probe selected local reviewers before implementation; may consume quota.
   ci_review_wait: one # Wait for one configured hosted review report before merge.
   local_max_rounds: 5 # Committed heads one local review ledger may review.
   local_review_count: 1 # Local reviewers run on each committed head; unused when provider_coverage lists providers.
