@@ -221,7 +221,7 @@ phases:
         Then run `doctor --startup-review --root DIR --ref TRUSTED_SHA`, passing
         `--reviewer PROVIDER/FAMILY` for each selected CLI reviewer. This honors
         `review.startup_check`; the tiny prompt sends no repository content and may consume quota.
-        Stop before implementation if consent is unresolved or the probe fails or is unverified.
+        Stop before implementation if consent is missing or declined, or the probe fails or is unverified.
         A successful probe establishes current access, not approval of a future code transfer.
       - Default to one PR. For larger tasks, read the
         [task-splitting section](<{{package_root}}/skills/shaka/references/delivery.md#when-a-task-needs-several-prs>).

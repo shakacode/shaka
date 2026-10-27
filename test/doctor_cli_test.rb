@@ -61,15 +61,24 @@ class DoctorCliTest < Minitest::Test
   end
 
   def test_startup_probe_requires_trusted_ref_and_explicit_selection
-    ref = 'a' * 40
-    [%w[--startup-review], ['--startup-review', '--ref', ref],
-     ['--startup-review', '--probe-reviewers', '--ref', ref, '--reviewer', 'openai/codex'],
-     %w[--reviewer openai/codex], %w[--startup-review --ref HEAD --reviewer openai/codex]].each do |arguments|
-      assert_equal(1, silently { Shaka::Doctor.run(arguments) })
+    startup_errors.each do |arguments, message|
+      _out, error = capture_io { assert_equal 1, Shaka::Doctor.run(arguments) }
+      assert_includes error, message
     end
   end
 
   private
+
+  def startup_errors
+    ref = 'a' * 40
+    {
+      %w[--startup-review] => 'Reviewer probes require --ref',
+      ['--startup-review', '--ref', ref] => '--startup-review requires --reviewer',
+      ['--startup-review', '--probe-reviewers', '--ref', ref, '--reviewer', 'openai/codex'] => 'cannot be combined',
+      %w[--reviewer openai/codex] => '--reviewer requires --probe-reviewers',
+      %w[--startup-review --ref HEAD --reviewer openai/codex] => 'Reviewer probes require --ref'
+    }
+  end
 
   def capture_doctor(path, root)
     Open3.capture3({ 'PATH' => path }, *COMMAND, 'doctor', '--root', root)

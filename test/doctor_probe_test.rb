@@ -106,6 +106,62 @@ module DoctorProbeFixture
   end
 end
 
+# Exercises the command parser, settings lookup, and probe adapter together.
+class DoctorStartupCommandTest < Minitest::Test
+  include DoctorHelper
+  include RepositoryConfigTestHelpers
+  include DoctorProbeFixture
+
+  def test_command_passes_selected_reviewers_to_the_adapter
+    with_startup_command(enabled: true) do |arguments, trace|
+      _out, error = capture_io { assert_equal 0, Shaka::Doctor.run(arguments) }
+      assert_empty error
+      assert_equal 1, JSON.parse(File.read(trace)).fetch('count')
+    end
+  end
+
+  def test_command_passes_disabled_startup_to_the_adapter
+    with_startup_command(enabled: false) do |arguments, trace|
+      out, error = capture_io { assert_equal 0, Shaka::Doctor.run(arguments) }
+      assert_empty error
+      assert_includes out, 'Startup probe disabled'
+      refute_path_exists trace
+    end
+  end
+
+  private
+
+  def with_startup_command(enabled:)
+    with_probe do |root, path, trace|
+      configure_startup_command(root, enabled)
+      ref = commit_probe_configuration(root)
+      write_codex(path, trace, success: true)
+      args = ['--root', root, '--host', 'codex', '--startup-review', '--ref', ref, '--reviewer', 'openai/codex']
+      with_startup_system(path) { yield args, trace }
+    end
+  end
+
+  def configure_startup_command(root, enabled)
+    path = File.join(root, '.agents/agent-workflow.yml')
+    config = YAML.safe_load_file(path)
+    config['review']['startup_check'] = enabled
+    config['review']['local_review_agents'] << { 'provider' => 'xai', 'model_family' => 'grok' }
+    File.write(path, YAML.dump(config))
+  end
+
+  def with_startup_system(path)
+    original = ENV.fetch('PATH')
+    original_system = Shaka::Doctor::System.method(:default)
+    system = stub_system(DEFAULTS)
+    ENV['PATH'] = "#{path}:#{original}"
+    Shaka::Doctor::System.define_singleton_method(:default) { system }
+    yield
+  ensure
+    ENV['PATH'] = original
+    Shaka::Doctor::System.define_singleton_method(:default, original_system)
+  end
+end
+
 class DoctorProbeTest < Minitest::Test
   include DoctorHelper
   include RepositoryConfigTestHelpers

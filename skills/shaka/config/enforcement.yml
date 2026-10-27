@@ -21,10 +21,10 @@ rules:
   - id: startup-review-before-implementation
     phase: plan
     quote: >-
-      Stop before implementation if consent is unresolved or the probe fails or is unverified.
+      Stop before implementation if consent is missing or declined, or the probe fails or is unverified.
     enforced_by: agent
     note: >-
-      Ruby validates the configured switch, trusted ref, reviewer selection, and probe outcome.
+      Ruby validates the switch, ref format, configured probe identities, and probe outcome.
       The agent resolves human consent and follows phase order; Ruby cannot authenticate consent
       or prevent implementation tools from running.
   - id: github-writer-identifier
