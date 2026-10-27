@@ -68,7 +68,8 @@ Three separate permissions apply:
 ### Give consent once
 
 Write a consent statement in the chat for one task, or in your own `AGENTS.md`
-for recurring reviews. Adjust the providers, repository, and exclusions:
+for recurring reviews. Adjust the providers, repository, and exclusions. For the
+DeepSeek reviewer, name OpenRouter too, because the request passes through it:
 
 ```text
 Shaka review consent: local reviews of OWNER/REPO may send the committed diff,

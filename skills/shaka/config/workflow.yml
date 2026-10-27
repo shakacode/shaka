@@ -215,11 +215,12 @@ phases:
         work item or an authorized linked document. Do not leave them only in chat.
         Reuse existing task-scoped write permission; reading alone grants none.
       - Before implementation with planned local review, select the reviewers with
-        `reviewer --root DIR --ref TRUSTED_SHA --implementer PROVIDER/FAMILY`.
+        `reviewer --root DIR --ref TRUSTED_SHA --implementer PROVIDER/FAMILY`, adding `--count N`
+        when this task asked for a different number of reviewers.
         Resolve [review consent](<{{package_root}}/skills/shaka/references/review-consent.md>)
         for those providers now, reusing covering standing consent without another question.
-        For selected configured CLI reviewers, run `doctor --startup-review --root DIR --ref TRUSTED_SHA`, passing
-        `--reviewer PROVIDER/FAMILY` for each selected CLI reviewer. This honors
+        For selected configured reviewers, run `doctor --startup-review --root DIR --ref TRUSTED_SHA`, passing
+        `--reviewer PROVIDER/FAMILY` for each one. This honors
         `review.startup_check`; the tiny prompt sends no repository content and may consume quota.
         A fresh-host fallback has no CLI probe: establish its review path before implementation
         and record the probe as not applicable.

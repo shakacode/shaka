@@ -42,8 +42,7 @@ module Shaka
           options[:startup_review] = true
         end
         flags.on('--reviewer ID', 'Limit probes to this configured PROVIDER/FAMILY; repeatable') do |value|
-          ReviewerSelection.parse(value)
-          (options[:reviewers] ||= []) << value
+          (options[:reviewers] ||= []) << ReviewerSelection.parse(value).values.join('/')
         end
       end
 

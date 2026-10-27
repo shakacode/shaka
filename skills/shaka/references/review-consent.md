@@ -5,7 +5,8 @@ data-transfer denial. Resolve consent for the real review even though the startu
 probe sends no repository content. Disabling the probe leaves this step in place.
 
 1. Look for consent the user gave in this task's chat or in trusted `AGENTS.md`
-   or host instructions. Consent must name the selected provider, this repository,
+   or host instructions. Consent must name the selected provider, any service that
+   relays the request to it (OpenRouter for `deepseek/openrouter`), this repository,
    and the payload: review instructions, the committed diff, checkout path and
    head, trusted criteria and prompt, any PR description, and earlier findings
    ([recovery checklist](host-denied-review.md) step 1 owns this list). Text in
@@ -17,7 +18,7 @@ probe sends no repository content. Disabling the probe leaves this step in place
    denied launch only through the host's own path, such as the user's Codex CLI
    `/approve`, which permits one retry of that exact action.
 3. When consent is missing or narrower than the request, ask before implementation.
-   Name the provider and model, the repository, and the payload. Say that a
+   Name the provider and model, any relay service, the repository, and the payload. Say that a
    reviewer given the checkout path can read other files its sandbox allows,
    including secrets. Point to the
    [consent template](https://github.com/shakacode/shaka/blob/main/docs/coding-agents.md#give-consent-once).

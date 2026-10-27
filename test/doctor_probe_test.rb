@@ -120,6 +120,15 @@ class DoctorStartupCommandTest < Minitest::Test
     end
   end
 
+  def test_command_probes_a_padded_reviewer_identity
+    with_startup_command(enabled: true) do |arguments, trace|
+      arguments[arguments.index('openai/codex')] = ' openai / codex '
+      _out, error = capture_io { assert_equal 0, Shaka::Doctor.run(arguments) }
+      assert_empty error
+      assert_equal 1, JSON.parse(File.read(trace)).fetch('count')
+    end
+  end
+
   def test_command_passes_disabled_startup_to_the_adapter
     with_startup_command(enabled: false) do |arguments, trace|
       out, error = capture_io { assert_equal 0, Shaka::Doctor.run(arguments) }
