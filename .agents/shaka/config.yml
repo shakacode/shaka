@@ -33,7 +33,7 @@ review:
     - provider: openai
       model_family: codex
     # Optional: provider_coverage never picks these, so they run only when a task names one.
-    # doctor warns on a machine without their setup.
+    # doctor warns about their missing setup only when ~/.agents/shaka/reviewers.yml lists them.
     - provider: deepseek # Needs OPENROUTER_API_KEY; deadline 600 seconds by default.
       model_family: openrouter
       model: deepseek/deepseek-v4.1-flash
