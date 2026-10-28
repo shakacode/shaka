@@ -538,6 +538,8 @@ review:
 
 When Claude writes the change, Codex reviews it, then a fresh Claude session. Reviewers listed
 in `local_review_agents` from other providers run only when a task asks for one by name.
+Shaka does not warn when one of them is not set up on your machine; `shaka doctor` lists it as
+optional.
 
 When a listed provider cannot review, the agent copies Shaka's gap report into the published
 review, which shows it near the top with the reason: that provider is not listed in `local_review_agents`, not set up on the machine, or
