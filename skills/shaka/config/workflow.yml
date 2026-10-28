@@ -333,7 +333,7 @@ phases:
         revalidate and review the new one.
       - Run the loop locally and keep it in one ledger: pass `review run --ledger PATH` with a
         path outside the checkout. Give every round the task's goal: write the plan
-        recommendation's `value` and `scope` lines, and any approved design summary, to a goal
+        recommendation's `value` and `scope` lines, and any public-safe design summary, to a goal
         file beside the ledger, pass it as `--description-file PATH`, and update it when the plan
         changes. The prompt asks the reviewer to class each finding as a
         `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
