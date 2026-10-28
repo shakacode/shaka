@@ -42,24 +42,24 @@ module Shaka
       end
     end
 
-    # Each report from a rebased head names only that head. When complete reports hold every response an
-    # earlier report counted, those sharing its responses take on its commits, so the usual rule replaces
-    # it and the surviving report still names all the work it counts.
+    # Each report from a rebased head names only that head. When reports that may replace an earlier
+    # one hold every response it counted, those sharing its responses take on its commits, so the
+    # usual rule replaces it and the surviving report still names all the work it counts.
     def with_inherited_commits(usage, fresh, earlier)
       return usage if fresh.empty?
 
-      complete = fresh.select { |new| new['complete'] == true }
-      covered = earlier.select { |old| UsageRecords.covered?(old, complete.select { |new| same_work?(old, new) }) }
-      records = usage['records'].zip(fresh).map do |record, new|
-        complete.include?(new) ? inherit(record, new, covered) : record
-      end
+      covered = earlier.select { |old| UsageRecords.covered?(old, fresh.select { |new| successor?(old, new) }) }
+      records = usage['records'].zip(fresh).map { |record, new| inherit(record, new, covered) }
       usage.merge('records' => records)
     end
 
     def inherit(record, new, covered)
-      commits = (new['commits'] + covered.select { |old| shares?(old, new) }.flat_map { |old| old['commits'] }).uniq
+      commits = (new['commits'] + covered.select { |old| successor?(old, new) && shares?(old, new) }
+                                         .flat_map { |old| old['commits'] }).uniq
       commits == new['commits'] ? record : record.merge('commits' => commits)
     end
+
+    def successor?(old, new) = same_work?(old, new) && UsageRecords.replaces?(old, new)
 
     def same_work?(old, new) = old['host'] == new['host'] && old['contribution'] == new['contribution']
     def shares?(old, new) = same_work?(old, new) && old['responses'].intersect?(new['responses'])
