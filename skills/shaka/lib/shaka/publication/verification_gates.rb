@@ -6,13 +6,16 @@ module Shaka
   module VerificationGates
     LABEL = '**Validation and review:**'
     UNKNOWN = "#{LABEL} UNKNOWN: no validation or review results were supplied for this revision.".freeze
+    GAPS = '**Setup gaps:**'
 
     module_function
 
-    # A reader needs to see a failure or a missing result; a routine run folds behind its summary.
-    # A completed review may still have reported findings, so the summary claims only that it ran.
-    def render(verdict, review_url = nil)
+    # A reader needs to see a failure, a missing result, or fewer reviewers than configured; a routine
+    # run folds behind its summary. A completed review may still have reported findings, so the
+    # summary claims only that it ran.
+    def render(verdict, review_url = nil, shortfall = nil)
       text = line(verdict, review_url)
+      return "#{text}\n\n#{setup_gaps(shortfall, review_url)}" if shortfall
       return text unless routine?(verdict)
 
       summary = "Validation passed; local review completed at #{short_head(verdict)}"
@@ -52,6 +55,14 @@ module Shaka
       end
     end
 
+    # The review comment names each reviewer that could not run and why.
+    def setup_gaps(shortfall, url)
+      text = "#{GAPS} #{shortfall['completed']} of #{shortfall['configured']} configured reviewers completed"
+      missing = shortfall['missing'].map { |provider| "`#{provider}`" }
+      text += "; #{missing.join(', ')} did not" unless missing.empty?
+      url ? "#{text} ([review comment](#{url}))." : "#{text}."
+    end
+
     # A host review is only reported by its attestation; a CLI review was launched by the helper.
     def review(results, url)
       reviewers = results.map do |result|
@@ -61,6 +72,6 @@ module Shaka
       url ? "#{text} ([attestation](#{url}))" : text
     end
 
-    private_class_method :routine?, :short_head, :results, :validations, :review
+    private_class_method :routine?, :short_head, :results, :validations, :setup_gaps, :review
   end
 end
