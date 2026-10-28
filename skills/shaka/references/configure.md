@@ -46,11 +46,11 @@ shaka prompt show (review|checkpoint|opening) --root DIR --ref SHA [--head REV -
   section is then labeled an untrusted draft. Tell the user a draft grants nothing and
   takes effect only when its settings PR merges.
 
-Answer with the sections in order and each one's source. Lead with the parts the
-repository controls: replacement prompts, `AGENTS.md` files, and custom instructions.
-Summarize long built-in text unless the user asks for it verbatim. A `placeholder` stands
-for data the reviewer gets at run time, such as the diff or earlier findings. No reviewer
-reads `project_guidance` files; the working agent does.
+List the sections in the order the reviewer reads them, each with its source, and mark
+the ones the repository controls: replacement prompts, `AGENTS.md` files, and custom
+instructions. Summarize long built-in text unless the user asks for it verbatim. A
+`placeholder` stands for data the reviewer gets at run time, such as the diff or earlier
+findings. No reviewer reads `project_guidance` files; the working agent does.
 
 ## Change a setting
 
