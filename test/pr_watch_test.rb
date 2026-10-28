@@ -141,8 +141,7 @@ class PrWatchTest < Minitest::Test
   end
 
   def test_cli_refuses_a_watch_without_a_trusted_ref
-    command = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
-    output, error, status = Open3.capture3(command, 'pr', 'watch', 'owner/repo', '42', '--head', HEAD)
+    output, error, status = Open3.capture3(*SHAKA_COMMAND, 'pr', 'watch', 'owner/repo', '42', '--head', HEAD)
     assert_equal '', error
     assert_equal "SHAKA_WAKE error: Expected OWNER/REPO NUMBER and --head SHA --ref SHA.\n", output
     refute_predicate status, :success?

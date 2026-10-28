@@ -4,10 +4,10 @@ require_relative 'test_helper'
 require 'json'
 
 class CliTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def test_help_explains_each_operation
-    output, error, status = Open3.capture3(COMMAND, '--help')
+    output, error, status = Open3.capture3(*COMMAND, '--help')
     assert_predicate status, :success?, error
     %w[pr comments description reply resolve walkthrough merge recommendation checkpoint seam doctor
        enforcement repos prefix attention handoff --head --issue --content-file --key --comment --thread
@@ -23,7 +23,7 @@ class CliTest < Minitest::Test
   end
 
   def test_missing_content_file_is_a_clear_error
-    _output, error, status = Open3.capture3(COMMAND, 'description', 'owner/repo', '1',
+    _output, error, status = Open3.capture3(*COMMAND, 'description', 'owner/repo', '1',
                                             '--content-file', '/missing/shaka-content.json')
     refute_predicate status, :success?
     assert_includes error, 'shaka-content.json'
@@ -67,7 +67,7 @@ class CliTest < Minitest::Test
   def run_offline(dir, body, *)
     path = File.join(dir, 'content.json')
     File.write(path, body)
-    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, COMMAND, *, '--content-file', path)
+    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, *COMMAND, *, '--content-file', path)
   end
 
   def test_a_reply_without_a_key_does_not_call_github
@@ -92,13 +92,13 @@ class CliTest < Minitest::Test
   end
 
   def test_invalid_operation_exits_without_a_github_call
-    _output, error, status = Open3.capture3(COMMAND, 'unexpected', 'owner/repo', '1')
+    _output, error, status = Open3.capture3(*COMMAND, 'unexpected', 'owner/repo', '1')
     refute_predicate status, :success?
     assert_includes error, 'Usage:'
   end
 
   def test_missing_walkthrough_file_is_a_clear_error
-    _output, error, status = Open3.capture3(COMMAND, 'walkthrough', 'owner/repo', '1',
+    _output, error, status = Open3.capture3(*COMMAND, 'walkthrough', 'owner/repo', '1',
                                             '--head', 'a' * 40, '--body-file', '/missing/shaka-body.md')
     refute_predicate status, :success?
     assert_includes error, 'shaka:'
@@ -106,13 +106,13 @@ class CliTest < Minitest::Test
   end
 
   def test_merge_without_head_does_not_call_github
-    _output, error, status = Open3.capture3(COMMAND, 'merge', 'owner/repo', '1')
+    _output, error, status = Open3.capture3(*COMMAND, 'merge', 'owner/repo', '1')
     refute_predicate status, :success?
     assert_includes error, 'head'
   end
 
   def test_pr_comment_reader_requires_an_expected_head
-    _output, error, status = Open3.capture3(COMMAND, 'comments', 'owner/repo', '1')
+    _output, error, status = Open3.capture3(*COMMAND, 'comments', 'owner/repo', '1')
     refute_predicate status, :success?
     assert_includes error, 'Expected a full PR head'
   end
@@ -120,7 +120,7 @@ end
 
 class CliMergeRefTest < Minitest::Test
   def test_merge_without_a_message_is_refused_before_github
-    _output, error, status = Open3.capture3(CliTest::COMMAND, 'merge', 'owner/repo', '1', '--head', 'a' * 40,
+    _output, error, status = Open3.capture3(*CliTest::COMMAND, 'merge', 'owner/repo', '1', '--head', 'a' * 40,
                                             '--base', 'main', '--walkthrough', '1', '--ref', 'HEAD')
     refute_predicate status, :success?
     assert_includes error, 'merge requires --squash-message'
@@ -132,7 +132,7 @@ class CliMergeRefTest < Minitest::Test
       File.write(stub = File.join(dir, 'gh'), "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
       File.chmod(0o755, stub)
       args = ['merge', 'owner/repo', '1', '--head', 'a' * 40, '--base', 'main', '--walkthrough', '1']
-      _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, CliTest::COMMAND, *args)
+      _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, *CliTest::COMMAND, *args)
       refute_predicate status, :success?
       assert_includes error, '--ref'
       refute_path_exists sentinel
@@ -143,7 +143,7 @@ end
 class CliReviewWaiverTest < Minitest::Test
   # Option parsing rejects the flag before any GitHub client exists.
   def test_review_waiver_is_only_for_merge
-    _output, error, status = Open3.capture3(CliTest::COMMAND, 'pr', 'owner/repo', '1', '--review-waiver', 'docs')
+    _output, error, status = Open3.capture3(*CliTest::COMMAND, 'pr', 'owner/repo', '1', '--review-waiver', 'docs')
 
     refute_predicate status, :success?
     assert_match(/--review-waiver is only for merge/, error)

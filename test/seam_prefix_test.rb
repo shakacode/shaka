@@ -6,7 +6,7 @@ require 'json'
 require 'yaml'
 
 module SeamPrefixHelpers
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def with_repository(extra = {})
     Dir.mktmpdir('shaka-prefix') do |root|
@@ -30,7 +30,7 @@ module SeamPrefixHelpers
   end
 
   def check_config(root, *)
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, *)
+    output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root, *)
     raise error unless status.success?
 
     JSON.parse(output)
@@ -66,7 +66,7 @@ class SeamPrefixTest < Minitest::Test
   def test_check_rejects_an_invalid_repo_prefix
     %w[cpf TOO_LONG A-B].each do |value|
       with_repository('repo_prefix' => value) do |root|
-        _output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root)
+        _output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root)
         refute_predicate status, :success?, value
         assert_includes error, 'repo_prefix'
       end
@@ -86,7 +86,7 @@ class SeamPrefixTest < Minitest::Test
     with_repository('repo_prefix' => 'PLAN') do |root|
       commit_repository(root)
       FileUtils.rm(File.join(root, '.agents/bin/setup'))
-      output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
+      output, error, status = Open3.capture3(*COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
 
       assert_predicate status, :success?, error
       assert_equal({ 'prefix' => 'PLAN', 'source' => 'seam' }, JSON.parse(output))
@@ -97,7 +97,7 @@ class SeamPrefixTest < Minitest::Test
     with_repository('repo_prefix' => 'PLAN') do |root|
       FileUtils.rm(File.join(root, '.agents/bin/setup'))
       commit_repository(root)
-      _output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
+      _output, error, status = Open3.capture3(*COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
 
       refute_predicate status, :success?
       assert_includes error, '.agents/bin/setup'
@@ -110,7 +110,7 @@ class SeamPrefixTest < Minitest::Test
       File.write(path, "#!/bin/sh\nexit 0\n")
       File.chmod(0o755, path)
       commit_repository(root)
-      _output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
+      _output, error, status = Open3.capture3(*COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
 
       refute_predicate status, :success?
       assert_includes error, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'

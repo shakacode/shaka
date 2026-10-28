@@ -8,7 +8,7 @@ require 'json'
 module CliMergeFixture
   include RepositoryConfigTestHelpers
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   HEAD = 'a' * 40
   FAKE_GH = <<~'RUBY_SCRIPT'
     #!/usr/bin/env ruby
@@ -54,8 +54,8 @@ module CliMergeFixture
 
   def with_merge_repository
     with_repository('merge' => merge_policy,
-                    'review' => review_policy('required' => 'none', 'post_implementation' => { 'enabled' => false })
-                                .except('ci_review_jobs')) do |root|
+                    'review' => review_policy('required' => 'none').except('ci_review_jobs'),
+                    'checkpoint' => { 'enabled' => false }) do |root|
       commit_repository(root)
       ref, = Open3.capture3('git', '-C', root, 'rev-parse', 'HEAD')
       ref = ref.strip
@@ -87,6 +87,6 @@ module CliMergeFixture
   end
 
   def run_command(*, root:, env: {})
-    Open3.capture3({ 'PATH' => "#{root}/fake-bin:#{ENV.fetch('PATH')}" }.merge(env), COMMAND, *)
+    Open3.capture3({ 'PATH' => "#{root}/fake-bin:#{ENV.fetch('PATH')}" }.merge(env), *COMMAND, *)
   end
 end

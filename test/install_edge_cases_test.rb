@@ -55,15 +55,6 @@ class InstallEdgeCasesTest < Minitest::Test
     assert_equal 'development', package_identity.fetch('source').fetch('kind')
   end
 
-  def test_rollback_rejects_flags_that_would_mix_skill_versions
-    install!
-    id = package_identity.fetch('package_id')
-    output, status = run_installer('--skills-dir', @skills_dir, '--rollback', id)
-
-    refute_predicate status, :success?, output
-    assert_includes output, 'Rollback flags must match'
-  end
-
   def test_upgrade_replaces_a_changed_old_package
     install!
     old_package = package_path
@@ -80,7 +71,7 @@ class InstallEdgeCasesTest < Minitest::Test
     output, status = run_installer('--skills-dir', @skills_dir)
     assert_predicate status, :success?, output
     corrupt_metadata
-    output, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor',
+    output, status = Open3.capture2e(*installed_helper, 'doctor',
                                      '--installation-json')
 
     refute_predicate status, :success?
@@ -104,7 +95,7 @@ class InstallEdgeCasesTest < Minitest::Test
   def skill_text = File.read(File.join(@destination, 'SKILL.md'))
 
   def assert_invalid_full_doctor_report
-    report, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor')
+    report, status = Open3.capture2e(*installed_helper, 'doctor')
     refute_predicate status, :success?
     assert_includes report, 'Shaka doctor: FAILED'
     assert_includes report, '[FAILED] Installation — Installed package metadata is invalid'

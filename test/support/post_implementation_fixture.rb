@@ -23,7 +23,7 @@ module PostImplementationFixture
 
   def commit_candidate_instructions(root)
     File.write(File.join(root, '.agents/agent-workflow.yml'),
-               YAML.dump(seam('post_implementation' => { 'enabled' => false, 'model' => 'candidate-model' })))
+               YAML.dump(seam('checkpoint' => { 'enabled' => false, 'model' => 'candidate-model' })))
     directory = File.join(root, 'skills/shaka/references')
     FileUtils.mkdir_p(directory)
     File.write(File.join(directory, 'writing.md'), 'Candidate-only writing instruction')
@@ -79,7 +79,7 @@ module PostImplementationFixture
     packet_options = options.delete(:without_packet) ? [] : checkpoint_packet(bin, @packet || CHECKPOINT_CONTENT)
     output, error, status = Open3.capture3(
       { 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'REVIEW_TRACE' => File.join(root, 'trace.json'), **env },
-      COMMAND, 'post-implementation', 'run', '--root', root, '--base', base, '--head', head,
+      *COMMAND, 'post-implementation', 'run', '--root', root, '--base', base, '--head', head,
       '--ref', base, *packet_options, *options
     )
     parse_result(output, error, status)

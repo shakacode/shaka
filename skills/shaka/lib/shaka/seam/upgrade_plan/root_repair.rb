@@ -72,17 +72,21 @@ module Shaka
 
         def root_lookup = "#{script_parent}|\"#{script_parent}\"|#{changed_parent}|\"#{changed_parent}\""
 
-        def inline_root_pattern = /^(?<indent>[ \t]*)cd (?:-P )?(?:-- )?"#{script_parent}"[ \t]*$/
+        def inline_root_pattern
+          /^(?<indent>[ \t]*)cd (?:-P )?(?:-- )?"(?:#{script_parent}|#{changed_parent})"[ \t]*$/
+        end
 
         def changed_parent = "\\$\\((?:CDPATH= )?cd (?:-P )?(?:-- )?\"#{script_parent}\" && pwd(?: -P)?\\)"
 
         # Two levels above the script; `$0` and `${BASH_SOURCE[0]}` agree for an executed wrapper.
         def script_parent = '\\$\\(dirname (?:--? )?"(?:\\$0|\\$\\{BASH_SOURCE\\[0\\]\\})"\\)/\\.\\./\\.\\.'
 
-        def ruby_root_pattern
+        def ruby_root_pattern = /^(?<indent>[ \t]*)root = (?<expression>#{ruby_root_expression})[ \t]*$/
+
+        def ruby_root_expression
           file = "File\\.expand_path\\(['\"]\\.\\./\\.\\.['\"], __dir__\\)"
           pathname = 'Pathname\\(__dir__\\)\\.parent\\.parent'
-          /^(?<indent>[ \t]*)root = (?<expression>#{file}|#{pathname})[ \t]*$/
+          /#{file}|#{pathname}/
         end
 
         # Names a replacement only where following it keeps the script's other variables intact.

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require_relative '../skills/shaka/lib/shaka/version'
 require 'fileutils'
 require 'rbconfig'
 require 'json'
@@ -16,12 +17,14 @@ module InstallTestSupport
     FileUtils.remove_entry(@directory)
   end
 
+  def installed_helper = shaka_command(File.join(@destination, 'scripts', 'shaka'))
+
   def install
     run_installer('--skills-dir', @skills_dir, '--with-rct')
   end
 
   def run_installer(*)
-    Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, @installer, *)
+    Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, @trial_installer, *)
   end
 
   def git(*)
@@ -50,6 +53,7 @@ module InstallTestSupport
     @source = File.join(@directory, 'source', 'skills', 'shaka')
     @rct_source = File.join(@directory, 'source', 'skills', 'rct')
     @installer = File.join(@directory, 'source', 'bin', 'install')
+    @trial_installer = File.join(@directory, 'source', 'bin', 'trial-install')
     @skills_dir = File.join(@directory, 'isolated profile', 'skills')
     @destination = File.join(@skills_dir, 'shaka')
     @rct_destination = File.join(@skills_dir, 'rct')
@@ -59,6 +63,7 @@ module InstallTestSupport
 
   def copy_installer
     FileUtils.cp(File.expand_path('../bin/install', __dir__), @installer)
+    FileUtils.cp(File.expand_path('support/trial_installer.rb', __dir__), @trial_installer)
     library = File.join(@source, 'lib', 'shaka')
     FileUtils.mkdir_p(library)
     copy_library(library)
@@ -76,6 +81,8 @@ module InstallTestSupport
     FileUtils.mkdir_p(File.join(@source, 'scripts'))
     File.write(File.join(@source, 'scripts/shaka'), "#!/usr/bin/env ruby\n")
     File.chmod(0o755, File.join(@source, 'scripts/shaka'))
+    # Windows checks the helper by starting this entry point through Ruby instead of the launcher.
+    File.write(File.join(@source, 'scripts/shaka.rb'), '')
     File.write(File.join(@source, 'lib/shaka/version.rb'), "module Shaka\n  VERSION = '0.1.0.pre.1'\nend\n")
     File.write(File.join(@rct_source, 'SKILL.md'), 'rct version one')
   end
@@ -85,6 +92,7 @@ module InstallTestSupport
     FileUtils.rm_rf(root)
     FileUtils.mkdir_p([File.dirname(@installer), File.dirname(@source)])
     FileUtils.cp(File.expand_path('../bin/install', __dir__), @installer)
+    FileUtils.cp(File.expand_path('support/trial_installer.rb', __dir__), @trial_installer)
     FileUtils.cp_r(File.expand_path('../skills/shaka', __dir__), @source)
   end
 
@@ -96,13 +104,13 @@ module InstallTestSupport
   def assert_installed_doctor_works_from_second_worktree
     second_worktree = File.join(@directory, 'worktree-b')
     FileUtils.mkdir_p(second_worktree)
-    output, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor',
+    output, status = Open3.capture2e(*installed_helper, 'doctor',
                                      '--installation-json', chdir: second_worktree)
     assert_predicate status, :success?, output
     identity = JSON.parse(output)
     assert_equal 'development', identity.fetch('source').fetch('kind')
-    assert_equal '0.1.0.pre.1', identity.fetch('version')
-    report, = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor', chdir: second_worktree)
+    assert_equal Shaka::VERSION, identity.fetch('version')
+    report, = Open3.capture2e(*installed_helper, 'doctor', chdir: second_worktree)
     assert_includes report, "installation #{identity.fetch('version')} · development base UNKNOWN content"
   end
 end

@@ -23,11 +23,12 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch branches wip pr_description repo_prefix opening_check prose_limits
-                    project_guidance].freeze
+      OPTIONAL = %w[base_branch branches wip pr_description repo_prefix prose_limits project_guidance
+                    checkpoint].freeze
       OPTIONAL_REVIEW_KEYS = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, ReviewSchema::PROMPT_FILE,
+                              ReviewSchema::CUSTOM_INSTRUCTIONS,
                               ReviewSchema::LOCAL_REVIEW_COUNT, ReviewCoverage::KEY, ReviewLimit::KEY,
-                              'ci_review_wait', 'post_implementation'].freeze
+                              'ci_review_wait', 'startup_check'].freeze
 
       attr_reader :commands
 
@@ -51,7 +52,7 @@ module Shaka
         keys!(@data, REQUIRED, OPTIONAL, @config_path)
         validate_header
         validate_commands
-        # Validate opening_check before review prompt collection reads its prompt_file.
+        # Validate pr_description.opening_check before review prompt collection reads its prompt_file.
         validate_optional
         ProjectGuidanceSchema.new(project_guidance).validate if @data.key?(ProjectGuidanceSchema::KEY)
         validate_review
@@ -60,7 +61,7 @@ module Shaka
       end
 
       def opening_check
-        @data.fetch('pr_description', {}).fetch('opening_check') { @data.fetch('opening_check', {}) }
+        @data.fetch('pr_description', {}).fetch('opening_check', {})
       end
 
       def project_guidance = ProjectGuidanceSchema.resolve(@data)
@@ -78,7 +79,6 @@ module Shaka
       def validate_optional
         BranchSchema.new(@data['branches'], root: @root).validate if @data.key?('branches')
         WipSchema.new(@data['wip']).validate if @data.key?('wip')
-        OpeningSchema.new(@data['opening_check']).validate if @data.key?('opening_check')
         validate_description
         RepoPrefix.validate!(@data['repo_prefix']) if @data.key?('repo_prefix')
       end
@@ -86,11 +86,7 @@ module Shaka
       def validate_description
         return unless @data.key?('pr_description')
 
-        description = @data['pr_description']
-        PrDescriptionSchema.new(description).validate
-        return unless @data.key?('opening_check') && description.key?('opening_check')
-
-        raise Error, 'Use pr_description.opening_check or opening_check, not both'
+        PrDescriptionSchema.new(@data['pr_description']).validate
       end
 
       def validate_commands
@@ -100,15 +96,29 @@ module Shaka
       end
 
       def validate_review
+        validate_checkpoint
         review = mapping!(@data['review'], 'review')
         ReviewSchema.retired!(review)
         ReviewSchema.renamed!(review)
         keys!(review, ['required'], OPTIONAL_REVIEW_KEYS, 'review')
         ReviewSchema.new(review).validate
+        validate_review_options(review)
+        local_prompt_files!(PostImplementationSchema.fold(@data)) unless @available_commands
+      end
+
+      def validate_review_options(review)
+        if review.key?('startup_check')
+          enum!(review['startup_check'], [true, false], 'review.startup_check must be true or false')
+        end
         ReviewCoverage.validate!(review)
         count = ReviewSchema::LOCAL_REVIEW_COUNT
         positive_integer!(review[count], "review.#{count}") if review.key?(count)
-        local_prompt_files!(review) unless @available_commands
+      end
+
+      def validate_checkpoint
+        PostImplementationSchema.fold(@data)
+        section = PostImplementationSchema::SECTION
+        PostImplementationSchema.new(@data[section], label: section).validate if @data.key?(section)
       end
 
       # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.

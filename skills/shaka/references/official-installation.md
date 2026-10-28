@@ -1,6 +1,6 @@
 # Official installation
 
-Use this procedure for everyday installation, update, verification, or migration.
+Use this procedure for everyday installation, update, and verification.
 Require Ruby 3.4 or later, Git, and authenticated GitHub CLI; see
 [prerequisite details](installation.md#prerequisites). Shaka records its own Ruby
 and ignores project Ruby and Bundler settings. Never edit the dedicated checkout.
@@ -56,6 +56,26 @@ paths you own, or select a protected location. Preserve file contents and execut
 
 ## Verify and update
 
+### Install a published release
+
+For an approved published version, use `bin/install --release VERSION --directory NEW`.
+The installer selects `refs/tags/vVERSION`, checks the declared version, and records
+its commit in a detached checkout. `--branch` and `--release` are mutually exclusive.
+Tags missing the release-installation module are refused before host links change.
+Source installations without either flag retain the pilot's `main` default.
+New gem installations select their own version. To reuse an existing custom installation,
+run its registered helper or pass `--directory DIR`; installation there keeps its source
+selection. An explicit repository or branch overrides the gem default.
+
+To change versions or roll back, use a separate directory with `--release VERSION --take-over`.
+The existing take-over procedure moves all registered host links and preserves both
+checkouts. Keep the previous helper for active chats. Release `install --update` checks
+that the remote tag still resolves to the recorded commit; it never advances to `main`
+or another release. A missing or moved tag fails. `update-check` reports the local pin,
+without checking for newer releases.
+
+### Maintain a branch installation
+
 The installer prints an update reminder for every host and custom skills directory.
 
 `update-check` compares the checkout's HEAD commit with its registered origin branch from any folder. `drift` means
@@ -76,10 +96,12 @@ registered helper's `install --status` (`--json` for tools) and relay its state,
 and next step. When the helper stops because its recorded Ruby is unavailable, run
 `ruby DIR/bin/install --status` with Ruby 3.4 or later instead. Status is read-only and
 offline; run the next command it names only with the user's approval.
+`install --repair` runs the next commands status names that repair can run, until a decision
+remains; run it only with the user's approval and relay its final state.
 Update validates the fetched tree before advancing the recorded origin branch. Dirty tracked or untracked files, unexpected checkout changes,
 and divergent updates stop it. After a manual pull of the registered branch,
 `install --update` records the pulled revision; local commits still stop it. Preserve changes in a development checkout;
-do not reset them to make installation succeed. Repair missing Ruby records by
+do not reset them to make installation succeed, except through the step status names or `install --repair`, which keep them on a branch first. Repair missing Ruby records by
 running `bin/install` with Ruby 3.4 or later. Maintenance uses registered selections;
 change hosts or towers through installation first. A known interrupted update
 completes on the next installation or update run.
@@ -87,31 +109,13 @@ completes on the next installation or update run.
 Finish active Shaka chats before updating this mutable path. Doctor reads recorded identity;
 verification rechecks it. Project settings use [repository migration](migration.md).
 
-## Migrate retained-copy installations
-
-When the user selects migration:
-
-1. Select the dedicated directory. Clone the current official source there, or
-   bring an existing clean, expected checkout to the current default branch before
-   first registration. Stop for local changes or an unexpected remote.
-2. Run its new `bin/install --directory DIR` with every selected `--agent`, or
-   the original custom `--skills-dir`. Recognized tower links migrate too.
-3. Run its helper's `install --verify` and confirm Shaka in a new chat.
-
-Canonical Codex installation retires verified `~/.codex/skills` aliases after
-`~/.agents/skills` links succeed. This covers the standard managed directory
-and selected checkout; inspect other duplicates and preserve intentional trials.
-Keep every older package: active chats may reference its absolute paths.
-
 ## Teams and forks
 
 Use the [fork guide](https://github.com/shakacode/shaka/blob/main/docs/fork-and-hack.md).
 Keep local `.git` installation records per machine. For forks or SSH origins, register the exact `--repository URL` and optional `--branch NAME`.
 Publish upstream integrations separately before updating.
 
-## PR trials and retained copies
+## PR trials
 
 Use [PR trials](https://github.com/shakacode/shaka/blob/main/docs/trying-pr-versions.md)
 for intentional evaluation without replacing the default links.
-`--skills-dir DIR` alone preserves the [legacy managed-copy procedure](installation.md).
-Keep all retained copies; this migration authorizes no deletion or automatic cleanup.

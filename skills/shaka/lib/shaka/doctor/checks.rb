@@ -9,6 +9,7 @@ require_relative 'check'
 require_relative 'configured_reviewers'
 require_relative 'git_runtime'
 require_relative 'machine_alias'
+require_relative 'merge_queue_defaults'
 require_relative 'usage_source'
 require_relative 'reviewer_clis'
 require_relative 'installation_state'
@@ -40,7 +41,10 @@ module Shaka
 
       # What a task start needs: whose settings the checkout holds, and whether the helper's own
       # prerequisites and the repository work. Reviewer and usage setup stay in the full report.
-      def brief = [repository_seam, ruby_runtime, GitRuntime.new(method(:run)).call, github_cli, repository_access]
+      def brief
+        [repository_seam, ruby_runtime, GitRuntime.new(method(:run)).call, github_cli, repository_access,
+         MergeQueueDefaults.new(->(argv) { run(argv, chdir: @root) }).call]
+      end
 
       private
 
@@ -99,7 +103,8 @@ module Shaka
       end
 
       def reviewer_settings(seam)
-        return seam_settings unless seam[:status] == 'healthy'
+        # A warning leaves the settings loadable; only a failed seam stops this check.
+        return seam_settings if seam[:status] == 'failed'
 
         notices = configured_notices
         return known_settings if notices.empty?
@@ -132,7 +137,10 @@ module Shaka
         return missing_seam unless Configuration.contract_entry?(@root)
 
         config = Configuration.worktree(root: @root)
-        check('Repository seam', 'healthy', SettingsSource.new(@root, @system.runner).summary(config.config_path))
+        summary = SettingsSource.new(@root, @system.runner).summary(config.config_path)
+        return check('Repository seam', 'healthy', summary) if config.warnings.empty?
+
+        check('Repository seam', 'degraded', "#{summary} #{config.warnings.join(' ')}")
       rescue Shaka::Error, SystemCallError => e
         check('Repository seam', 'failed', "repository configuration is not usable: #{first_line(e.message)}",
               guidance: 'Repair the contract, or let `shaka seam init` rewrite a valid one.')

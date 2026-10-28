@@ -13,7 +13,7 @@ module CliDescriptionDecisionsRun
     File.write(content, JSON.generate(description_content))
     options = ['--root', root, '--content-file', content, '--ref', fixture_ref(root)]
     Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }.merge(env),
-                   self.class::COMMAND, 'description', 'owner/repo', '1', *options)
+                   *self.class::COMMAND, 'description', 'owner/repo', '1', *options)
   end
 
   def description_content
@@ -28,7 +28,7 @@ class CliDescriptionDecisionsTest < Minitest::Test
   include CliOpeningCheckFakes
   include CliDescriptionDecisionsRun
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'Decisions stay with the label.'
 

@@ -10,13 +10,13 @@ class CliOpeningUnsupportedTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include CliOpeningCheckFakes
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'Pull requests explain the outcome first.'
 
   def test_listed_unsupported_reviewer_falls_back_with_a_clear_reason
     review = review_policy('local_review_agents' => [{ 'provider' => 'foo', 'model_family' => 'bar' }])
-    with_repository('opening_check' => { 'external_enabled' => true }, 'review' => review) do |root|
+    with_repository('pr_description' => { 'opening_check' => {} }, 'review' => review) do |root|
       commit(root)
       Dir.mktmpdir do |dir|
         output, error, status = run_description(dir, root:, reviewer: 'foo/bar')

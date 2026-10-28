@@ -71,7 +71,7 @@ class ReviewProviderCoverageTest < Minitest::Test
     with_repository do |root|
       set_review(root, 'provider_coverage' => BOTH)
       result = reviewer(root, '--implementer', 'anthropic/claude')
-      _, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root, '--implementer', 'anthropic/claude',
+      _, error, status = Open3.capture3(*COMMAND, 'reviewer', '--root', root, '--implementer', 'anthropic/claude',
                                         '--count', '1')
 
       assert_equal %w[openai/codex anthropic/claude], result.fetch('reviewers')
@@ -99,7 +99,7 @@ class ReviewProviderCoverageTest < Minitest::Test
   def test_the_command_refuses_a_seam_with_malformed_coverage
     with_repository do |root|
       set_review(root, 'provider_coverage' => ['openai/codex'])
-      _, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root, '--implementer', 'anthropic/claude')
+      _, error, status = Open3.capture3(*COMMAND, 'reviewer', '--root', root, '--implementer', 'anthropic/claude')
 
       refute_predicate status, :success?
       assert_includes error, 'review.provider_coverage must be a list of provider names'

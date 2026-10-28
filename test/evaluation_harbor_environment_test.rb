@@ -46,6 +46,24 @@ class EvaluationHarborEnvironmentTest < Minitest::Test
     refute_equal capture['digest'], capture(rows)['digest']
   end
 
+  def test_omitted_optional_init_keeps_other_observed_controls
+    rows = container_readbacks
+    rows[2]['HostConfig'].delete('Init')
+    result = capture(rows)
+    assert_match(/\Asha256:[a-f0-9]{64}\z/, result['digest'])
+    verifier = result.dig('manifest', 'containers').find { it.values_at('role', 'service') == %w[verifier main] }
+    assert_equal 'UNKNOWN', verifier.dig('controls', 'Init')
+    assert_equal 2_147_483_648, verifier.dig('controls', 'Memory')
+  end
+
+  def test_omitted_init_is_distinct_from_observed_false
+    rows = container_readbacks
+    rows[2]['HostConfig'].delete('Init')
+    omitted = capture(rows)['digest']
+    rows[2]['HostConfig']['Init'] = false
+    refute_equal omitted, capture(rows)['digest']
+  end
+
   def test_missing_verifier_stays_unknown
     assert_equal 'UNKNOWN', capture([])['digest']
     assert_equal 'UNKNOWN', capture(container_readbacks.take(2))['digest']

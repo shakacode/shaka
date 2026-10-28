@@ -18,6 +18,15 @@ version: 1
 # `rule` when that span does not read as a sentence on its own, as half of "Never A or B"
 # does not. A clause added to a sentence an entry already quotes is not detected either.
 rules:
+  - id: startup-review-before-implementation
+    phase: plan
+    quote: >-
+      Stop before implementation if consent is missing or declined, or a requested probe fails or is unverified.
+    enforced_by: agent
+    note: >-
+      Ruby validates the switch, ref format, configured probe identities, and probe outcome.
+      The agent resolves human consent and follows phase order; Ruby cannot authenticate consent
+      or prevent implementation tools from running.
   - id: github-writer-identifier
     phase: explain
     quote: >-
@@ -116,7 +125,8 @@ rules:
     phase: finish
     quote: >-
       After verification, supply the task owner's head-bound `disposition` in the checkpoint
-      publication: Merge, Revise before merge, Reconsider approach, or Do not merge,
+      publication: Merge, Merge after maintainer decision, Revise before merge, Reconsider approach,
+      or Do not merge,
       with a reason and, except for Merge, a concrete next action. Judge the finished PR against the original
       outcome; successful verification alone does not choose its disposition.
       A Merge recommendation grants no merge authority. Every other disposition blocks
@@ -128,8 +138,9 @@ rules:
       The owner supplies and judges the disposition. Ruby validates a supplied disposition's
       vocabulary, head, reason, and any next action, requires a next action except for Merge,
       rejects Merge against a blocking conclusion or a concern without a recorded
-      `accepted_concerns` decision,
-      and publishes other dispositions through the existing blocked attestation. It does not
+      `accepted_concerns` decision, accepts Merge after maintainer decision only while Merge is
+      refused and the verdict is not Do not merge, refuses a description without decisions
+      while its waiting banner names the current head, and publishes other dispositions through the existing blocked attestation. It does not
       infer merge authority, evaluate free-form prose, close a PR, or require the optional field.
   - id: post-implementation-merge-blocker
     phase: finish
@@ -439,8 +450,10 @@ rules:
     enforced_by: code
     detector: >-
       `ReviewThread#check_reply` ignores the thread's opening comment and refuses the
-      mutation until a later comment is from the authenticated account. A truncated
-      comment page that does not already show that reply fails closed.
+      mutation until a later comment from the authenticated account opens with the identity
+      line or a hidden marker, as `handoff` counts an agent post. An unmarked reply from that
+      account is the person's, so it does not count. A truncated comment page that does not
+      already show that reply fails closed.
   - id: resolve-only-when-settled
     phase: explain
     quote: >-

@@ -33,7 +33,9 @@ class PrivateOpeningSourceTest < Minitest::Test
     with_trial do
       prepare_tracked_prompt
       File.symlink('../../opening.md', File.join(@root, '.agents/shaka/opening.md'))
-      update_private { |data| data['opening_check']['prompt_file'] = '.agents/shaka/opening.md' }
+      update_private do |data|
+        data['pr_description']['opening_check']['replacement_prompt_file'] = '.agents/shaka/opening.md'
+      end
       result = opening
       assert_includes result['reason'], 'private settings tree'
     end
@@ -43,7 +45,7 @@ class PrivateOpeningSourceTest < Minitest::Test
     with_trial do
       File.write(File.join(@root, 'opening.md'), 'Candidate instructions.')
       commit(@root)
-      update_private { |data| data['opening_check']['prompt_file'] = 'opening.md' }
+      update_private { |data| data['pr_description']['opening_check']['replacement_prompt_file'] = 'opening.md' }
       result = opening
       assert_includes result['reason'], 'does not name a file'
       refute_includes result['prompt'], 'Candidate instructions.'
@@ -54,7 +56,7 @@ class PrivateOpeningSourceTest < Minitest::Test
     with_trial do
       path = '.agents/shaka/opening.md'
       File.write(File.join(@root, path), 'Nommez le sujet — pour le lecteur.')
-      update_private { |data| data['opening_check']['prompt_file'] = path }
+      update_private { |data| data['pr_description']['opening_check']['replacement_prompt_file'] = path }
       result = Shaka::OpeningPublication.new(root: @root, ref: @ref).call('La tâche est résolue.')
       assert_equal 'host_check', result['status']
       assert_includes result['prompt'], 'Nommez le sujet — pour le lecteur.'
@@ -86,7 +88,7 @@ class PrivateOpeningSourceTest < Minitest::Test
     File.write(File.join(@root, 'opening.md'), 'Trusted instructions. — é.')
     commit(@root)
     @ref = git(@root, 'rev-parse', 'HEAD')
-    update_private { |data| data['opening_check']['prompt_file'] = 'opening.md' }
+    update_private { |data| data['pr_description']['opening_check']['replacement_prompt_file'] = 'opening.md' }
   end
 
   def opening = Shaka::OpeningPublication.new(root: @root, ref: @ref).call('La tâche est résolue.')

@@ -12,8 +12,6 @@ module Shaka
 
       def ensure_managed_root = ensure_safe_directory(@root, 'Managed directory')
 
-      def verify_managed_root = verify_safe_directory(@root, 'Managed directory')
-
       def verified_metadata(path)
         raise ArgumentError, "Managed package root is invalid: #{path}" unless valid_container?(path)
 

@@ -52,12 +52,12 @@ module Shaka
         Refusal.command(File.join(root, 'bin/install'), '--directory', target, '--take-over')
       end
 
-      # A take-over keeps the old checkout's origin and branch, which the default install refuses to change.
+      # Recovery keeps the old source selection; different releases need an explicit version change.
       def same_source?(target, record)
         return true unless record
 
         current = Checkout.new(target).read_record
-        current && %w[repository branch].all? { |key| current[key] == record[key] }
+        current && %w[repository branch release].all? { |key| current[key] == record[key] }
       rescue ArgumentError
         false
       end

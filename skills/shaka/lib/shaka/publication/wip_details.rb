@@ -20,11 +20,6 @@ module Shaka
       'state' => 'State',
       'next_action' => 'Next action'
     }.freeze
-    # Keep notes published with Task and/or Thread readable during recovery.
-    PREVIOUS_LABELS = FIELDS.merge('task' => 'Task').freeze
-    RECOGNIZED_HEADINGS = [FIELDS, PREVIOUS_LABELS].flat_map do |fields|
-      [fields.values, fields.merge('thread' => 'Thread').values]
-    end.freeze
 
     # Shared with handoff, which reads the final GitHub note rather than trusting publication inputs.
     def self.owner_error(value)

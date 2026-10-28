@@ -10,6 +10,7 @@ require_relative 'issue_create'
 require_relative 'local_review'
 require_relative 'post_implementation'
 require_relative 'prefix'
+require_relative 'prompt_show'
 require_relative 'recommendation'
 require_relative 'repos'
 require_relative 'review_prompt'
@@ -44,6 +45,7 @@ module Shaka
       'issue-create' => entry { |arguments| IssueCreate.run(arguments) },
       'post-implementation' => entry(PostImplementation::ACTIONS) { |arguments| PostImplementation.run(arguments) },
       'prefix' => entry { |arguments| Prefix.run(arguments) },
+      'prompt' => entry(PromptShow::OPERATIONS) { |arguments| PromptShow.run(arguments) },
       'recommendation' => entry { |arguments| Recommendation.run(arguments) },
       'repos' => entry(Repos::OPERATIONS) { |arguments| Repos.run(arguments) },
       'review' => entry(LocalReview::ACTIONS) { |arguments| LocalReview.run(arguments) },

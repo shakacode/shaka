@@ -18,36 +18,31 @@ module Shaka
         DEFAULTS.merge(settings)
       end
 
-      def initialize(opening, label: 'opening_check')
+      def initialize(opening, label: 'pr_description.opening_check')
         @opening = opening
         @label = label
       end
 
       def validate
         mapping!(@opening, @label)
-        keys!(@opening, [], %w[enabled external_enabled reviewer model effort prompt_file], @label)
+        renamed_prompt_file!(@opening, @label)
+        keys!(@opening, [], ['enabled', 'reviewer', 'model', 'effort', ReviewSchema::PROMPT_FILE], @label)
         validate_enabled
         validate_reviewer
         validate_model
         ReviewSchema.effort_level!(@opening['effort'], "#{@label}.effort") if @opening.key?('effort')
         validate_provider_options
-        return unless @opening.key?('prompt_file')
+        return unless @opening.key?(ReviewSchema::PROMPT_FILE)
 
-        prompt_path!(@opening['prompt_file'], "#{@label}.prompt_file")
+        prompt_path!(@opening[ReviewSchema::PROMPT_FILE], "#{@label}.#{ReviewSchema::PROMPT_FILE}")
       end
 
       private
 
       def validate_enabled
-        if @opening.key?('enabled') && @opening.key?('external_enabled')
-          raise Error, "Use #{@label}.enabled; omit its older name external_enabled"
-        end
+        return unless @opening.key?('enabled')
 
-        %w[enabled external_enabled].each do |key|
-          next unless @opening.key?(key)
-
-          enum!(@opening[key], [true, false], "#{@label}.#{key} must be true or false")
-        end
+        enum!(@opening['enabled'], [true, false], "#{@label}.enabled must be true or false")
       end
 
       def validate_reviewer

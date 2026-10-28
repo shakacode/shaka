@@ -144,6 +144,9 @@ $shaka Resume https://github.com/OWNER/REPO/pull/N. The previous owner has
 stopped and handed this work to me. Keep merge policy ask. Go.
 ```
 
+The new chat comments on the PR that it took over, so the previous chat and
+reviewers see the handoff.
+
 ### Configure a repository for your team
 
 ```text

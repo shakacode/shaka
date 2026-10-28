@@ -7,7 +7,9 @@ class ReviewThreadTest < Minitest::Test
   include GitHubHelper
 
   THREAD = 'PRRT_kwDOExample'
-  SCRIPT = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  SCRIPT = SHAKA_COMMAND
+  AGENT_REPLY = "<!-- shaka:reply:fix -->\nFixed in abc1234."
+  IDENTITY_REPLY = "\u{1F916} Claude Code \u00B7 Anthropic \u00B7 claude-opus-5-5 \u00B7 medium\n\nFixed."
 
   def test_resolve_marks_an_unresolved_thread_after_this_account_replied
     github = client(user_response, thread_page, mutation_response(true))
@@ -18,8 +20,25 @@ class ReviewThreadTest < Minitest::Test
     assert_equal THREAD, sent(2).dig('variables', 'id')
   end
 
+  def test_resolve_accepts_a_reply_that_opens_with_the_identity_line
+    github = client(user_response, thread_page(comments: [%w[reviewer Fix], ['justin808', IDENTITY_REPLY]]),
+                    mutation_response(true))
+
+    assert_equal({ 'thread_id' => THREAD, 'is_resolved' => true }, github.resolve_thread(THREAD))
+    assert_includes sent(1)['query'], 'body'
+  end
+
+  def test_resolve_refuses_an_unmarked_reply_from_this_account
+    github = client(user_response, thread_page(comments: [%w[reviewer Fix], ['justin808', 'Fixed in abc1234.']]))
+
+    error = assert_raises(Shaka::Error) { github.resolve_thread(THREAD) }
+
+    assert_includes error.message, 'shaka reply'
+    assert_equal %w[user graphql], paths
+  end
+
   def test_resolve_refuses_a_thread_this_account_only_opened
-    github = client(user_response, thread_page(authors: ['justin808']))
+    github = client(user_response, thread_page(comments: [['justin808', AGENT_REPLY]]))
 
     error = assert_raises(Shaka::Error) { github.resolve_thread(THREAD) }
 
@@ -28,7 +47,7 @@ class ReviewThreadTest < Minitest::Test
   end
 
   def test_resolve_refuses_a_thread_before_this_account_replied
-    github = client(user_response, thread_page(authors: ['reviewer']))
+    github = client(user_response, thread_page(comments: [%w[reviewer Fix], ['teammate', AGENT_REPLY]]))
 
     error = assert_raises(Shaka::Error) { github.resolve_thread(THREAD) }
 
@@ -72,7 +91,7 @@ class ReviewThreadTest < Minitest::Test
   end
 
   def test_resolve_refuses_when_reply_evidence_is_incomplete
-    github = client(user_response, thread_page(authors: ['reviewer'], more_comments: true))
+    github = client(user_response, thread_page(comments: [%w[reviewer Fix]], more_comments: true))
 
     error = assert_raises(Shaka::Error) { github.resolve_thread(THREAD) }
 
@@ -81,7 +100,7 @@ class ReviewThreadTest < Minitest::Test
   end
 
   def test_resolve_command_requires_a_thread_id
-    output, status = Open3.capture2e(SCRIPT, 'resolve', 'owner/repo', '42')
+    output, status = Open3.capture2e(*SCRIPT, 'resolve', 'owner/repo', '42')
 
     assert_equal 1, status.exitstatus
     assert_includes output, '--thread'
@@ -91,24 +110,20 @@ class ReviewThreadTest < Minitest::Test
 
   def user_response = response({ 'login' => 'justin808' })
 
-  def thread_page(id: THREAD, resolved: false, authors: %w[reviewer justin808], more_comments: false)
+  def thread_page(id: THREAD, resolved: false, comments: [%w[reviewer Fix], ['justin808', AGENT_REPLY]],
+                  more_comments: false)
     response({ 'data' => { 'repository' => { 'pullRequest' => {
                'reviewThreads' => {
-                 'nodes' => [thread_node(id, resolved, authors, more_comments)],
+                 'nodes' => [thread_node(id, resolved, comments, more_comments)],
                  'pageInfo' => { 'hasNextPage' => false, 'endCursor' => nil }
                }
              } } } })
   end
 
-  def thread_node(id, resolved, authors, more_comments)
-    {
-      'id' => id,
-      'isResolved' => resolved,
-      'comments' => {
-        'nodes' => authors.map { |login| { 'author' => { 'login' => login } } },
-        'pageInfo' => { 'hasNextPage' => more_comments }
-      }
-    }
+  def thread_node(id, resolved, comments, more_comments)
+    nodes = comments.map { |login, body| { 'author' => { 'login' => login }, 'body' => body } }
+    { 'id' => id, 'isResolved' => resolved,
+      'comments' => { 'nodes' => nodes, 'pageInfo' => { 'hasNextPage' => more_comments } } }
   end
 
   def mutation_response(resolved)

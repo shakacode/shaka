@@ -5,6 +5,8 @@ module Shaka
     class UpgradePlan
       # Conservatively blocks old paths split across shell physical lines.
       module ContinuedReferences
+        include BareDirectories
+
         private
 
         def scan_complex_references(path, text)
@@ -33,28 +35,6 @@ module Shaka
           commands = names.map { |name| Regexp.escape(name) }.join('|')
           text.match?(%r{\bbin(?:/+(?:(?:\.{1,2}|bin)/+)*|['"\s,]+)(?:#{commands})\b}) ||
             text.match?(%r{['"]bin['"]\s*/\s*['"](?:#{commands})['"]})
-        end
-
-        def scan_bare_directory_dependency(path, text)
-          return unless bare_directory_dependency?(text)
-
-          @references << { 'path' => path, 'kind' => 'bare old-layout directory', 'paths' => [PATHS::DIRECTORY] }
-          @blockers << "#{path}: bare old-layout directory needs explicit repair"
-        end
-
-        def bare_directory_dependency?(text)
-          pattern = /(?<![\w-])(?:(?:cd|pushd)\s+|chdir\s*\()[^\n]*?#{Regexp.escape(PATHS::DIRECTORY)}(?![\w.-])/o
-          [text, normalize_shell_fragments(text)].any? do |source|
-            source.match?(pattern) || legacy_directory_command_pair?(source)
-          end
-        end
-
-        def legacy_directory_command_pair?(text)
-          bare = %r{(?<![\w.-])#{Regexp.escape(PATHS::DIRECTORY)}(?![\w.-]|/[[:alnum:]_-])}o
-          return false unless text.match?(bare)
-
-          names = command_paths.map { |command| Regexp.escape(File.basename(command)) }.join('|')
-          text.match?(%r{\bbin[/'"\s,]+(?:#{names})\b})
         end
 
         def scan_relative_helper_dependency(path, text)
@@ -103,8 +83,8 @@ module Shaka
 
         # Markdown is not executed, so a variable assigned the old directory there is not an alias.
         def alias_reference?(text, path = nil)
-          return true if bare_directory_dependency?(text)
-          return false if path.to_s.match?(/\.(?:md|markdown|mdx)\z/i)
+          return true if bare_directory_dependency?(text, path)
+          return false if markdown_path?(path)
 
           assignment = /\b[A-Za-z_]\w*\s*[+?:]?=[^\r\n]*#{aliased_value}/o
           mapping = %r{\b[A-Za-z_]\w*\s*:[ \t]+[^\r\n]*#{Regexp.escape(PATHS::DIRECTORY)}/?(?=[ \t\r\n#'";]|$)}o

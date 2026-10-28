@@ -5,9 +5,9 @@ require_relative 'private_setup_test'
 class PrivateOnboardingTest < Minitest::Test
   include PrivateSetupFixture
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
-  def cli(root, *) = Open3.capture3(COMMAND, *, '--root', root)
+  def cli(root, *) = Open3.capture3(*COMMAND, *, '--root', root)
 
   def test_private_check_reports_commands_without_granting_policy
     with_setup do |root, ref|

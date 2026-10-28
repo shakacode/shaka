@@ -4,6 +4,8 @@ require 'minitest/autorun'
 require 'tmpdir'
 require 'open3'
 require 'fileutils'
+require 'rbconfig'
+require_relative '../skills/shaka/lib/shaka/executable_file'
 
 # The helpers and fakes the tests spawn need only Ruby's standard library. Under bundle exec
 # RUBYOPT and BUNDLER_SETUP make each one load Bundler, several times its own startup.
@@ -45,7 +47,17 @@ ENV['GIT_CONFIG_GLOBAL'] = File.join(TEST_GIT_CONFIG_DIR, 'config').tap do |path
   File.write(path, TestGitConfig.text(ENV))
 end
 
-git_names = RUBY_PLATFORM.match?(/mswin|mingw/) ? %w[git.exe git] : %w[git]
+WINDOWS = RUBY_PLATFORM.match?(/mswin|mingw/)
+
+# The argv that starts a Shaka helper launcher, the same one the product uses; on Windows
+# that is the launcher's exec line. Elsewhere tests run the launcher itself, and
+# test/ruby_launcher_test.rb covers what it adds.
+def shaka_command(launcher = File.expand_path('../skills/shaka/scripts/shaka', __dir__), windows: WINDOWS)
+  Shaka::ExecutableFile.helper_command(launcher, windows:).freeze
+end
+SHAKA_COMMAND = shaka_command
+
+git_names = WINDOWS ? %w[git.exe git] : %w[git]
 candidates = ENV.fetch('PATH').split(File::PATH_SEPARATOR).product(git_names)
 candidates.map! { |dir, name| File.join(dir, name) }
 TEST_GIT = candidates.find { |path| File.file?(path) && File.executable?(path) }

@@ -4,10 +4,10 @@ require_relative 'test_helper'
 require_relative '../skills/shaka/lib/shaka/subcommands'
 
 class SubcommandsTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def test_usage_banner_lists_every_dispatched_command_and_operation
-    output, error, status = Open3.capture3(COMMAND, '--help')
+    output, error, status = Open3.capture3(*COMMAND, '--help')
     assert_predicate status, :success?, error
     assert_includes output, 'shaka pr watch OWNER/REPO NUMBER'
     Shaka::Subcommands.usage_lines.each { |line| assert_match(/^ +#{Regexp.escape(line)}$/, output) }

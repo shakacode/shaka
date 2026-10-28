@@ -39,14 +39,20 @@ module Shaka
           before?(finished, terminal.fetch('accepted_at'))
       end
 
+      def walkthrough_ready?(packet)
+        receipt = packet.fetch('walkthrough')
+        row = review(receipt, @plan.fetch('machine_actor'))
+        row.fetch('fullDatabaseId') != driver_review_id(packet) &&
+          before?(receipt.fetch('readback_finished_at'), packet.fetch('terminal').fetch('received_at')) &&
+          AskWalkthrough.valid?(row.fetch('body'), @plan, packet.fetch('changed_files'))
+      end
+
       def walkthrough?(packet)
         receipt = packet.fetch('walkthrough')
         current = packet.fetch('current_walkthrough')
         row = review(receipt, @plan.fetch('machine_actor'))
-        driver_id = driver_review_id(packet)
-        row == review(current, @plan.fetch('machine_actor')) && row.fetch('fullDatabaseId') != driver_id &&
-          walkthrough_timing?(receipt, current, packet.fetch('terminal')) &&
-          AskWalkthrough.valid?(row.fetch('body'), @plan, packet.fetch('changed_files'))
+        walkthrough_ready?(packet) && row == review(current, @plan.fetch('machine_actor')) &&
+          walkthrough_timing?(receipt, current, packet.fetch('terminal'))
       end
 
       def walkthrough_timing?(receipt, current, terminal)

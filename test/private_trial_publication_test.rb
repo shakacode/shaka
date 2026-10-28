@@ -6,7 +6,7 @@ require_relative 'cli_opening_check_fakes'
 require_relative 'handoff_helper'
 
 module PrivateTrialPublicationHelpers
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   SECRET = 'synthetic-credential-277'
   PRIVATE_LINK = 'https://private.example/prompt?token=synthetic-credential-277'
   CHECKOUT = '/synthetic/approved-checkout'
@@ -40,7 +40,7 @@ module PrivateTrialPublicationHelpers
   end
 
   def assert_unfinished_private(body, root)
-    assert_includes body, 'UNKNOWN: rerun missing evidence'
+    assert_includes body, 'No matching check records supplied'
     assert_includes body, '| wip.include_checkout_path | true |'
     assert_includes body, "| Workspace | #{CHECKOUT} |"
     assert_includes body, "| Chat link | #{SESSION} |"
@@ -65,7 +65,7 @@ module PrivateTrialPublicationHelpers
     write_fake_commands(dir)
     path = trial_content(dir)
     flags = result_flags(dir, validation, review)
-    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, COMMAND,
+    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, *COMMAND,
                                             'description', 'shakacode/shaka', '1', '--root', root, '--ref', ref,
                                             '--content-file', path, *flags)
     assert_predicate status, :success?, error
@@ -151,7 +151,7 @@ class PrivateTrialPublicationTest < Minitest::Test
   private
 
   def assert_public_settings(body, ref)
-    assert_includes body, 'Bound to the current candidate commit'
+    assert_includes body, 'Recorded checks match this PR’s current commit'
     assert_includes body, '| source.configuration | private/local | private/local | private/local |'
     assert_includes body, '| review.required | none | none | none |'
     assert_includes body, "| source.revision | #{([ref] * 3).join(' | ')} |"

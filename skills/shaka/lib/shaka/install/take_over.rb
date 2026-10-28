@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'English'
+require_relative 'locations'
 
 module Shaka
   module Install
@@ -11,7 +12,12 @@ module Shaka
       # A take-over clones the repository and branch the previous checkout follows unless told otherwise.
       def source_options(options)
         record = @owner&.read_record || {}
-        { repository: options[:repository] || record['repository'], branch: options[:branch] || record['branch'] }
+        { repository: options[:repository] || record['repository'], **source_selection(options, record) }
+      end
+
+      def source_selection(options, record)
+        selected = options.slice(:branch, :release).compact
+        selected.empty? ? record.slice('branch', 'release').transform_keys(&:to_sym) : selected
       end
 
       # Both checkout locks in path order, so two opposite take-overs cannot wait on each other.
@@ -22,7 +28,6 @@ module Shaka
           links = targets.map { |target| links_for(target, previous_source: @owner.root) }
           links.each { |entry| entry.check(@checkout.root) }
           move(targets, links)
-          links.each(&:retire_aliases)
           verify(targets)
         end
       end
@@ -39,9 +44,19 @@ module Shaka
       end
 
       def move(targets, links)
+        preserve_release_pin
         recorded = identity(targets)
         record_ruby
         with_host_locks(links) { move_links(links) { @checkout.save(targets, recorded) } }
+      end
+
+      def preserve_release_pin
+        previous = @owner.read_record
+        return unless previous['release'] && previous['release'] == @checkout.release &&
+                      previous['repository'] == @checkout.repository
+        return if previous['revision'] == @checkout.revision
+
+        raise ArgumentError, 'Release tag changed since the previous installation; keep its checkout and investigate'
       end
 
       def take_over_targets
@@ -100,7 +115,7 @@ module Shaka
       # Renames the previous record so its checkout stops claiming the links; the checkout itself stays.
       def retire_owner
         stamp = Time.now.utc.strftime('%Y%m%dT%H%M%SZ')
-        retired = File.join(@owner.root, '.git', "shaka-install.retired-#{stamp}.json")
+        retired = File.join(@owner.root, '.git', "#{Locations::RETIRED}#{stamp}.json")
         raise ArgumentError, "Retired installation record already exists: #{retired}" if File.exist?(retired)
 
         @retired = retired

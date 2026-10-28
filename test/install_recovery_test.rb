@@ -18,18 +18,6 @@ class InstallRecoveryTest < Minitest::Test
     assert_equal previous, File.readlink(@destination)
   end
 
-  def test_rollback_refuses_to_mix_a_shaka_only_package_with_a_linked_tower
-    output, status = run_installer('--skills-dir', @skills_dir)
-    assert_predicate status, :success?, output
-    shaka_only = package_identity.fetch('package_id')
-    output, status = install
-    assert_predicate status, :success?, output
-    output, status = run_installer('--skills-dir', @skills_dir, '--rollback', shaka_only)
-
-    refute_predicate status, :success?
-    assert_includes output, 'rct was omitted'
-  end
-
   def test_dangling_managed_link_can_be_reinstalled
     install!
     FileUtils.remove_entry(package_path)
@@ -65,7 +53,7 @@ class InstallRecoveryTest < Minitest::Test
     output, status = run_installer('--skills-dir', @skills_dir)
     assert_predicate status, :success?, output
     File.unlink(File.join(package_path, '.shaka-install.json'))
-    output, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor',
+    output, status = Open3.capture2e(*installed_helper, 'doctor',
                                      '--installation-json')
 
     refute_predicate status, :success?

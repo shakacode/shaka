@@ -65,6 +65,11 @@ module Shaka
       end
 
       def update_reminder
+        if @checkout.release?
+          return puts "Pinned Shaka release #{@checkout.record['release']}; install another version in a new " \
+                      'directory with --take-over, keeping this checkout for active chats and rollback.'
+        end
+
         puts "Keep Shaka updated: #{Shellwords.escape(File.join(@checkout.root, 'skills/shaka/scripts/shaka'))} " \
              'install --update (finish active Shaka chats first; start a new chat afterward).'
       end
@@ -76,10 +81,7 @@ module Shaka
       end
 
       def switch_links(links)
-        links.each do |entry|
-          entry.switch_all(@checkout.root)
-          entry.retire_aliases
-        end
+        links.each { |entry| entry.switch_all(@checkout.root) }
       end
 
       def registered_source(source) = (source if File.file?(File.join(source, '.git', Checkout::RECORD)))

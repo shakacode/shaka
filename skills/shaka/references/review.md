@@ -84,8 +84,8 @@ under [reviews after merge](#reviews-after-merge).
 ## Custom review instructions
 
 Put standing project review criteria in the trusted default-branch `AGENTS.md`.
-To replace the default review instructions, set `review.prompt_file`, or a
-`prompt_file` on one agent's `local_review_agents` entry. Pass the trusted commit as
+To replace the default review instructions, set `review.replacement_prompt_file`, or a
+`replacement_prompt_file` on one agent's `local_review_agents` entry. Pass the trusted commit as
 `shaka review run --criteria-ref SHA`; the runner includes root and applicable
 nested `AGENTS.md` criteria and the configured prompt file from that commit.
 For this PR's scope, use `--description-file PATH` to supply its description as
@@ -146,10 +146,14 @@ attestation for the head satisfies `merge`; note a reviewer that did not complet
 Move on immediately when an entry is unavailable; do not wait for credits or retry a blocked
 provider. Missing local credentials for a provider are not a problem to solve here — if you have no
 second provider at all, `same_model` is the answer, and the GitHub reviews still run once you push.
-For that fallback, start a new host chat with the implementation model, with no implementation
-conversation or Task/subagent context. Supply the diff and review prompt as data, save its report,
+On a host that can open one, the fallback is a new host chat with the implementation model, with no
+implementation conversation or Task/subagent context. Supply the diff and review prompt as data, save its report,
 then use `shaka review check --head SHA --reviewer ID --report PATH`. That result confirms the
 report's exact-head attestation, not a CLI launch; name this weaker evidence in the PR.
+A host that cannot open one, such as a cloud agent, stops review with
+`shaka review check --head SHA --not-run-reason TEXT` and hands it to a session that can start a
+reviewer. A `review_blocked` field in a `reviewer` or `review run` result says no configured
+reviewer can start on this machine; follow its `guidance` instead of trying the others.
 
 `shaka review run` invokes a listed CLI and returns `completed` only after a successful process
 and a nonempty report attesting to the requested commit and reviewer. A nonzero result says
@@ -160,7 +164,7 @@ untracked files returns `dirty_worktree` before any reviewer starts: commit the 
 remove the files, and run again. None of `report_validation`, `setup_failure`, and `dirty_worktree`
 permits a skip. The `skip_evidence` field says `confirmed`,
 `requires_cause_review`, or `not_eligible` accordingly. Do not publish raw diagnostics, which may
-contain secrets. If every CLI path fails, run the implementation model in a fresh host context and
+contain secrets. If every CLI path fails and the host can open a fresh context, run the implementation model there and
 use `shaka review check` on its report.
 That check labels the evidence `host_report`: it checks the attestation, not the host's launch
 transcript. If no review completed, run `shaka review check --head SHA --not-run-reason TEXT` so

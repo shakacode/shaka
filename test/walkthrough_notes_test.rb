@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'shaka/walkthrough/notes'
+require 'shaka/usage/publisher_attribution'
 require 'shaka/publication/human_comment_entries'
 require 'json'
 require 'open3'
@@ -94,7 +95,7 @@ class WalkthroughNotesTest < Minitest::Test
 end
 
 class WalkthroughNotesCommandTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   # The command hands walkthrough notes to Notes, which refuses a malformed list before GitHub.
   # A stub gh on PATH records any invocation.
@@ -114,7 +115,8 @@ class WalkthroughNotesCommandTest < Minitest::Test
     identity = { 'agent' => 'claude', 'provider' => 'anthropic', 'model' => 'UNKNOWN', 'effort' => 'UNKNOWN' }
     path = File.join(dir, 'content.json')
     File.write(path, JSON.generate({ 'identity' => identity, 'summary' => 'Done.', 'notes' => notes }))
-    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, COMMAND, 'walkthrough', 'owner/repo', '1',
-                   '--head', 'a' * 40, '--content-file', path)
+    environment = Shaka::PublisherAttribution::HOST_VARIABLES.to_h { |variable| [variable, nil] }
+    Open3.capture3(environment.merge('PATH' => "#{dir}:#{ENV.fetch('PATH')}"), *COMMAND,
+                   'walkthrough', 'owner/repo', '1', '--head', 'a' * 40, '--content-file', path)
   end
 end

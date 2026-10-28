@@ -368,6 +368,17 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
     end
   end
 
+  def test_reply_openings_skip_both_old_and_current_codex_publisher_notes
+    notes = ['Publisher model is configured; served model is UNKNOWN.',
+             Shaka::CodexPublisherSettings::NOTE]
+    notes.each do |note|
+      reply = REPLY.sub(IDENTITY, "#{IDENTITY}\n\n_#{note}_")
+      rendered = describe(packet(inline_comments: [inline(1, 'ann', 'Why?'), inline(2, 'ann', reply)]))
+      assert_includes cells(rendered).first[2], 'Removed both placeholders'
+      refute_includes cells(rendered).first[2], note
+    end
+  end
+
   def test_the_response_keeps_an_agent_s_own_italic_first_line
     assert_equal [["[“\\_UNKNOWN cause\\; unable to reproduce\\.\\_”](#{URL}#discussion_r2)"]],
                  columns(answered("#{IDENTITY}\n\n_UNKNOWN cause; unable to reproduce._"), 2)

@@ -11,6 +11,13 @@ module Shaka
 
       private
 
+      def pinned_release
+        return not_a_pull(checkout_head) if checkout_head != recorded
+
+        answer('custom', "Pinned release #{@release}; install another version in a new directory with --take-over. " \
+                         'Keep this checkout for active chats and rollback.', 'pinned_release')
+      end
+
       def current = answer('current', "This installed revision matches #{@target}.")
 
       def drift(head)
@@ -52,8 +59,8 @@ module Shaka
 
       def update_guidance
         unless @checkout
-          return "This is a retained copy; follow #{GUIDE} to migrate. " \
-                 'Keep trial and rollback copies for active chats.'
+          return "This copy is not a registered installation; install Shaka through #{GUIDE} to update it. " \
+                 'Keep PR trial copies for active chats.'
         end
 
         "Finish active Shaka chats, run #{Shellwords.escape(@helper)} install --update, then start a new chat. " \

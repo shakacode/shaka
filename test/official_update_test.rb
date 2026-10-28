@@ -30,6 +30,7 @@ class OfficialUpdateTest < Minitest::Test
     installed = cloned_installation
     before = git('-C', installed, 'rev-parse', 'HEAD')
     File.write(File.join(@source, 'scripts/shaka'), "#!/bin/sh\nexit 1\n")
+    File.write(File.join(@source, 'scripts/shaka.rb'), "exit 1\n")
     push_source
     output, status = invoke('--directory', installed, '--update')
     refute_predicate status, :success?

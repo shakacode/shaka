@@ -8,7 +8,7 @@ module FinalPreparationFixture
   include RepositoryConfigTestHelpers
 
   HEAD = 'a' * 40
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   FAKE_GH = <<~'RUBY'
     #!/usr/bin/env ruby
     require 'json'
@@ -39,7 +39,7 @@ module FinalPreparationFixture
   private
 
   def with_fixture(enabled: true)
-    with_repository('review' => review_policy('post_implementation' => { 'enabled' => enabled })) do |root|
+    with_repository('review' => review_policy, 'checkpoint' => { 'enabled' => enabled }) do |root|
       commit_root(root)
       ref = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
       Dir.mktmpdir do |bin|
@@ -65,7 +65,7 @@ module FinalPreparationFixture
 
   def change_candidate(root, enabled:)
     File.write(File.join(root, '.agents/agent-workflow.yml'),
-               YAML.dump(seam('review' => review_policy('post_implementation' => { 'enabled' => enabled }))))
+               YAML.dump(seam('review' => review_policy, 'checkpoint' => { 'enabled' => enabled })))
   end
 
   def write_comments(bin, head)
@@ -79,7 +79,7 @@ module FinalPreparationFixture
     flag = command == 'merge' ? '--squash-message' : '--content-file'
     env = { 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'FINAL_FIXTURE' => File.join(bin, 'fixture'),
             'FINAL_WRITTEN' => File.join(bin, 'written') }
-    Open3.capture3(env, COMMAND, command, 'owner/repo', '1', '--root', root, '--ref', ref, '--head', HEAD,
+    Open3.capture3(env, *COMMAND, command, 'owner/repo', '1', '--root', root, '--ref', ref, '--head', HEAD,
                    flag, File.join(bin, 'message'), '--base', 'main', '--walkthrough', '1')
   end
 end
@@ -129,7 +129,7 @@ class CliFinalPreparationTest < Minitest::Test
   end
 
   def test_squash_message_requires_a_trusted_ref
-    _output, error, status = Open3.capture3(COMMAND, 'squash-message', 'owner/repo', '1', '--head', HEAD)
+    _output, error, status = Open3.capture3(*COMMAND, 'squash-message', 'owner/repo', '1', '--head', HEAD)
     refute_predicate status, :success?
     assert_includes error, 'squash-message requires --ref'
   end

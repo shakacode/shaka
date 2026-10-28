@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'shellwords'
+require_relative 'locations'
+require_relative 'status_split'
 require_relative 'status_states'
 
 module Shaka
@@ -12,7 +14,8 @@ module Shaka
       end
 
       def findings
-        @inventory.checkouts.values.flat_map { |checkout| recorded(checkout) } + unreadable + [divergent_hosts]
+        @inventory.checkouts.values.flat_map { |checkout| recorded(checkout) } + unreadable +
+          [StatusSplit.new(@inventory).finding]
       end
 
       private
@@ -43,20 +46,34 @@ module Shaka
 
       def elsewhere(checkout, path, name, owner)
         expected = File.join(checkout.root, 'skills', name)
-        if owner == checkout.root
-          return finding('B9', path, "points to #{File.readlink(path)}, not #{expected}",
-                         command: "ln -sfn #{Shellwords.escape(expected)} #{Shellwords.escape(path)}")
-        end
+        return relink(path, expected, "is not #{expected}") if owner == checkout.root
+
+        dangling = !File.exist?(path) && !other_checkout_target?(checkout, path)
+        return relink(path, expected, 'does not exist') if dangling
 
         finding('B9', path, "points to #{File.readlink(path)}, which this checkout does not own",
                 decision: "Choose which install #{path} should use, then run that install's bin/install.")
       end
 
+      # A missing target inside another registered checkout is that checkout's to restore, not this one's.
+      def other_checkout_target?(checkout, path)
+        target = File.expand_path(File.readlink(path), File.dirname(path))
+        folder = @inventory.real(File.dirname(target)) || File.dirname(target)
+        (@inventory.checkouts.keys - [checkout.root]).any? { |root| "#{folder}/".start_with?("#{root}/") }
+      end
+
+      def relink(path, expected, reason)
+        finding('B9', path, "points to #{File.readlink(path)}, which #{reason}",
+                command: "ln -sfn #{Shellwords.escape(expected)} #{Shellwords.escape(path)}")
+      end
+
       def orphan(checkout, path)
-        record = Shellwords.escape(File.join(checkout.root, '.git', Checkout::RECORD))
+        git = File.join(checkout.root, '.git')
+        record = Shellwords.escape(File.join(git, Checkout::RECORD))
+        retired = "#{Shellwords.escape(File.join(git, Locations::RETIRED))}$(date -u +%Y%m%dT%H%M%SZ).json"
         finding('C1', checkout.root, "no link this record names reaches it (#{path} is #{describe(path)}); " \
                                      'another registered checkout serves the hosts',
-                command: "mv #{record} #{record}.retired-$(date -u +%Y%m%dT%H%M%SZ)")
+                command: "mv -n #{record} #{retired}")
       end
 
       def missing(checkout, path)
@@ -89,18 +106,6 @@ module Shaka
                   decision: "Inspect #{File.join(root, '.git', Checkout::RECORD)}; rename it aside when no install " \
                             'should use this checkout.')
         end
-      end
-
-      def divergent_hosts
-        owners = host_shaka_links.to_h { |entry| [entry['path'], @inventory.owner(entry) || entry['target']] }
-        return if owners.values.uniq.size < 2
-
-        finding('C5', @inventory.home, owners.map { |path, owner| "#{path} -> #{owner}" }.join('; '),
-                decision: 'Choose one install, then rerun its bin/install with every --agent you use.')
-      end
-
-      def host_shaka_links
-        @inventory.links.select { |entry| entry['name'] == 'shaka' }
       end
 
       def present?(path) = File.exist?(path) || File.symlink?(path)

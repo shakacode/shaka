@@ -11,7 +11,7 @@ class CliDescriptionHumanCommentsTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include CliOpeningCheckFakes
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'The description now lists what people wrote.'
   REPO = { 'repo' => { 'full_name' => 'owner/repo' } }.freeze
@@ -74,7 +74,7 @@ class CliDescriptionHumanCommentsTest < Minitest::Test
 
   def test_the_flag_belongs_to_description
     Dir.mktmpdir do |dir|
-      _output, error, status = Open3.capture3({ 'HOME' => dir }, COMMAND, 'resolve', 'owner/repo', '1',
+      _output, error, status = Open3.capture3({ 'HOME' => dir }, *COMMAND, 'resolve', 'owner/repo', '1',
                                               '--thread', 'T1', '--comments', File.join(dir, 'comments.json'))
 
       refute_predicate status, :success?
@@ -94,7 +94,7 @@ class CliDescriptionHumanCommentsTest < Minitest::Test
     write_fake_commands(dir)
     File.write(File.join(dir, 'content.json'), JSON.generate(description_content.merge(content)))
     File.write(File.join(dir, 'comments.json'), JSON.generate(comments))
-    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, COMMAND, 'description',
+    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, *COMMAND, 'description',
                    'owner/repo', '1', '--root', ROOT, '--content-file', File.join(dir, 'content.json'),
                    '--comments', File.join(dir, 'comments.json'))
   end

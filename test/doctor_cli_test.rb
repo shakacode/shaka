@@ -6,7 +6,7 @@ require_relative 'doctor_helper'
 require 'stringio'
 
 class DoctorCliTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def test_an_unexpected_argument_is_refused_rather_than_ignored
     assert_equal(1, silently { Shaka::Doctor.run(['unexpected']) })
@@ -60,10 +60,28 @@ class DoctorCliTest < Minitest::Test
     end
   end
 
+  def test_startup_probe_requires_trusted_ref_and_explicit_selection
+    startup_errors.each do |arguments, message|
+      _out, error = capture_io { assert_equal 1, Shaka::Doctor.run(arguments) }
+      assert_includes error, message
+    end
+  end
+
   private
 
+  def startup_errors
+    ref = 'a' * 40
+    {
+      %w[--startup-review] => 'Reviewer probes require --ref',
+      ['--startup-review', '--ref', ref] => '--startup-review requires --reviewer',
+      ['--startup-review', '--probe-reviewers', '--ref', ref, '--reviewer', 'openai/codex'] => 'cannot be combined',
+      %w[--reviewer openai/codex] => '--reviewer requires --probe-reviewers',
+      %w[--startup-review --ref HEAD --reviewer openai/codex] => 'Reviewer probes require --ref'
+    }
+  end
+
   def capture_doctor(path, root)
-    Open3.capture3({ 'PATH' => path }, COMMAND, 'doctor', '--root', root)
+    Open3.capture3({ 'PATH' => path }, *COMMAND, 'doctor', '--root', root)
   end
 
   def stub_gh

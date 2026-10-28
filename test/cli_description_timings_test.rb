@@ -22,7 +22,7 @@ class CliDescriptionTimingsTest < Minitest::Test
 
         assert_predicate status, :success?, error
         published = File.read(File.join(dir, 'published.md'))
-        assert_includes published, '**Totals:** 10m between checkpoints'
+        assert_includes published, '<summary>Timings · 10m between checkpoints ·'
         assert_match(/\| Waiting on a person: answer \| 2026-10-18 08:10 \| [^|]+ \(resumed\) \|/, published)
       end
     end
@@ -42,7 +42,48 @@ class CliDescriptionTimingsTest < Minitest::Test
     end
   end
 
+  def test_description_counts_work_before_the_first_commit_and_validation
+    @task_started_at = '2026-10-18T07:00:00Z'
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, decisions: [], env: steps_env(dir))
+
+        assert_predicate status, :success?, error
+        published = File.read(File.join(dir, 'published.md'))
+        assert_includes published, '**Before first recorded validation:** 1h 5m'
+      end
+    end
+  end
+
+  def test_publication_groups_metadata_but_leaves_change_evidence_and_cost_visible
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, decisions: [])
+        assert_predicate status, :success?, error
+        published = File.read(File.join(dir, 'published.md'))
+        assert_metrics_layout(published)
+      end
+    end
+  end
+
+  def description_content
+    super.merge('task_started_at' => @task_started_at,
+                'details' => [{ 'summary' => 'Capture limits', 'body' => 'Fixture capture evidence.' }])
+  end
+
   private
+
+  def assert_metrics_layout(published)
+    before, metrics = published.split("<details>\n<summary>Details</summary>", 2)
+    refute_nil metrics, 'one disclosure should group Shaka metadata'
+    assert_includes before, '**Estimated token costs:** UNKNOWN'
+    assert_includes before, '<summary>Capture limits</summary>'
+    ['Execution details', 'Skills used', 'Usage and cost', 'Timings', 'Shaka settings'].each do |title|
+      assert_includes metrics, "<summary>#{title}"
+    end
+  end
 
   # This machine logged a review of the pull request's commit.
   def steps_env(dir)

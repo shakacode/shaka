@@ -8,7 +8,7 @@ require_relative 'cli_opening_check_fakes'
 
 # Builds the empty report, the fake GitHub CLI, and the stop-hook environment.
 module CursorUsageRefreshFixture
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   HOOK = File.expand_path('../skills/shaka/scripts/cursor-usage-hook', __dir__)
   COMMIT = 'a' * 40
   SESSION = '11111111-1111-4111-8111-111111111111'
@@ -65,7 +65,7 @@ module CursorUsageRefreshFixture
   def failing_gh(directory) = write_gh(directory, "#!/bin/sh\nexit 1\n")
 
   def empty_usage(directory)
-    output, error, status = Open3.capture3(cursor_env(directory), COMMAND, 'usage', '--format', 'json',
+    output, error, status = Open3.capture3(cursor_env(directory), *COMMAND, 'usage', '--format', 'json',
                                            '--commit', COMMIT, '--contribution', 'implementation')
     assert_predicate status, :success?, error
     output
@@ -327,7 +327,7 @@ end
 class CursorUsageRefreshDescriptionTest < Minitest::Test
   include CliOpeningCheckFakes
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'The stop hook can fill this Cursor usage row.'
   SESSION = '11111111-1111-4111-8111-111111111111'
@@ -352,7 +352,7 @@ class CursorUsageRefreshDescriptionTest < Minitest::Test
   def publish_description(dir)
     content = File.join(dir, 'content.json')
     File.write(content, JSON.generate(description_content))
-    output, error, status = Open3.capture3(description_env(dir), COMMAND, 'description', 'owner/repo', '1',
+    output, error, status = Open3.capture3(description_env(dir), *COMMAND, 'description', 'owner/repo', '1',
                                            '--root', ROOT, '--content-file', content)
     assert_predicate status, :success?, error
     output

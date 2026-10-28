@@ -30,7 +30,8 @@ module Shaka
       end
 
       def checkout(entry)
-        "  checkout #{entry['root']} (#{entry['repository']} #{entry['branch']} #{entry['revision'][0, 7]})"
+        source = entry['release'] ? "release #{entry['release']}" : entry['branch']
+        "  checkout #{entry['root']} (#{entry['repository']} #{source} #{entry['revision'][0, 7]})"
       end
     end
   end

@@ -60,7 +60,7 @@ class ReviewerCountTest < Minitest::Test
 
   def test_command_rejects_a_count_that_is_not_an_integer
     with_repository do |root|
-      _, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root,
+      _, error, status = Open3.capture3(*COMMAND, 'reviewer', '--root', root,
                                         '--implementer', 'anthropic/claude', '--count', 'two')
 
       refute_predicate status, :success?
@@ -83,7 +83,7 @@ class ReviewerCountTest < Minitest::Test
   def test_the_seam_rejects_a_count_below_one
     with_repository do |root|
       set_count(root, 0)
-      _, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root, '--implementer', 'anthropic/claude')
+      _, error, status = Open3.capture3(*COMMAND, 'reviewer', '--root', root, '--implementer', 'anthropic/claude')
 
       refute_predicate status, :success?
       assert_includes error, 'review.local_review_count must be a whole number of at least 1'

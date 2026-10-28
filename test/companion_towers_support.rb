@@ -4,14 +4,14 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'rbconfig'
 
-# A source checkout holding Shaka and every tower skill, installed through a copied bin/install.
+# A source checkout holding Shaka and every tower skill, installed through the trial installer.
 module CompanionTowersSupport
   SKILLS = { 'shaka' => 'shaka source', 'rct' => 'rct source', 'mct' => 'codex mct source',
              'mct-claude' => 'mct source', 'rct-claude' => 'rct-claude source' }.freeze
 
   def setup
     @directory = Dir.mktmpdir('workflows-companion-towers')
-    @installer = File.join(@directory, 'source', 'bin', 'install')
+    @installer = File.join(@directory, 'source', 'bin', 'trial-install')
     @skills_dir = File.join(@directory, 'isolated profile', 'skills')
     @home = File.join(@directory, 'home')
     FileUtils.mkdir_p(File.dirname(@installer))
@@ -20,7 +20,7 @@ module CompanionTowersSupport
   end
 
   def copy_installer
-    FileUtils.cp(File.expand_path('../bin/install', __dir__), @installer)
+    FileUtils.cp(File.expand_path('support/trial_installer.rb', __dir__), @installer)
     library = File.join(@directory, 'source', 'skills', 'shaka', 'lib', 'shaka')
     FileUtils.mkdir_p(library)
     copy_library(library)
@@ -63,6 +63,8 @@ module CompanionTowersSupport
     FileUtils.mkdir_p(File.dirname(helper))
     File.write(helper, "#!/usr/bin/env ruby\n")
     File.chmod(0o755, helper)
+    # Windows checks the helper by starting this entry point through Ruby instead of the launcher.
+    File.write("#{helper}.rb", '')
   end
 
   def source(name)

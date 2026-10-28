@@ -51,7 +51,8 @@ module Shaka
 
       def selections(options)
         values = { '--repository' => options[:repository] && Refusal.url(options[:repository]),
-                   '--branch' => options[:branch], '--skills-dir' => options[:skills_dir] }
+                   '--branch' => options[:branch], '--release' => options[:release],
+                   '--skills-dir' => options[:skills_dir] }
         values.compact.flat_map { |flag, value| [flag, value] }
       end
 

@@ -11,7 +11,7 @@ require_relative '../skills/shaka/lib/shaka/local_review/cli'
 require_relative '../skills/shaka/lib/shaka/local_review/comment'
 
 class LocalReviewCodexTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   # Break caught: the agent can claim a completed local review without launching the CLI.
   def test_codex_run_invokes_the_cli_and_reports_the_reviewed_commit
@@ -84,7 +84,7 @@ class LocalReviewCodexTest < Minitest::Test
 
   def test_missing_reviewer_returns_structured_setup_failure
     with_repository do |root, base, head, _bin|
-      output, _error, status = Open3.capture3(COMMAND, 'review', 'run', '--root', root,
+      output, _error, status = Open3.capture3(*COMMAND, 'review', 'run', '--root', root,
                                               '--base', base, '--head', head)
       refute_predicate status, :success?
       assert_equal 'setup_failure', JSON.parse(output).fetch('failure_stage')
@@ -482,7 +482,7 @@ class LocalReviewEvidenceTest < Minitest::Test
     with_repository do |root, _base, head, _bin|
       report = File.join(root, 'invalid-review.md')
       File.binwrite(report, "\xFF")
-      output, _error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+      output, _error, status = Open3.capture3(*COMMAND, 'review', 'check', '--head', head,
                                               '--reviewer', 'openai/codex', '--report', report)
       refute_predicate status, :success?
       assert_equal 'not_completed', JSON.parse(output).fetch('status')
@@ -968,7 +968,7 @@ class LocalReviewStatusTest < Minitest::Test
       report = File.join(root, 'host-review.md')
       File.write(report, "no findings\nREVIEWED #{head} BY anthropic/claude EFFORT medium FINDINGS 0\n")
 
-      output, error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+      output, error, status = Open3.capture3(*COMMAND, 'review', 'check', '--head', head,
                                              '--reviewer', 'anthropic/claude', '--report', report)
 
       assert_predicate status, :success?, error
@@ -981,7 +981,7 @@ class LocalReviewStatusTest < Minitest::Test
     with_repository do |root, _base, head, _bin|
       report = File.join(root, 'host-review.md')
       File.write(report, "no findings\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n")
-      output, error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+      output, error, status = Open3.capture3(*COMMAND, 'review', 'check', '--head', head,
                                              '--reviewer', 'OpenAI/Codex', '--report', report)
       assert_predicate status, :success?, error
       result = JSON.parse(output)
@@ -993,7 +993,7 @@ class LocalReviewStatusTest < Minitest::Test
   # Break caught: no local review silently appears ready without a concrete explanation.
   def test_missing_review_reports_reason_and_same_model_fallback
     with_repository do |_root, _base, head, _bin|
-      output, _error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+      output, _error, status = Open3.capture3(*COMMAND, 'review', 'check', '--head', head,
                                               '--not-run-reason', 'Fresh host review was not started')
 
       refute_predicate status, :success?
@@ -1008,7 +1008,7 @@ class LocalReviewStatusTest < Minitest::Test
     with_repository do |root, _base, head, _bin|
       report = File.join(root, 'stale-review.md')
       File.write(report, "REVIEWED #{'0' * 40} BY anthropic/claude EFFORT medium FINDINGS 0\n")
-      output, _error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+      output, _error, status = Open3.capture3(*COMMAND, 'review', 'check', '--head', head,
                                               '--reviewer', 'anthropic/claude', '--report', report)
       refute_predicate status, :success?
       assert_equal 'not_completed', JSON.parse(output).fetch('status')
@@ -1019,7 +1019,7 @@ class LocalReviewStatusTest < Minitest::Test
     with_repository do |root, _base, head, _bin|
       report = File.join(root, 'review.md')
       File.write(report, "REVIEWED #{head} BY anthropic/claude EFFORT medium FINDINGS 0\n")
-      output, _error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head, '--report', report)
+      output, _error, status = Open3.capture3(*COMMAND, 'review', 'check', '--head', head, '--report', report)
       refute_predicate status, :success?
       assert_equal 'not_completed', JSON.parse(output).fetch('status')
     end
@@ -1028,7 +1028,7 @@ class LocalReviewStatusTest < Minitest::Test
   def test_missing_host_report_path_returns_structured_noncompletion
     with_repository do |root, _base, head, _bin|
       report = File.join(root, 'missing-review.md')
-      output, _error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+      output, _error, status = Open3.capture3(*COMMAND, 'review', 'check', '--head', head,
                                               '--reviewer', 'anthropic/claude', '--report', report)
       refute_predicate status, :success?
       result = JSON.parse(output)
@@ -1094,7 +1094,7 @@ class LocalReviewAttestationCaseTest < Minitest::Test
   private
 
   def codex_prompt(head, base)
-    prompt, error, status = Open3.capture3(COMMAND, 'review-prompt', '--head', head,
+    prompt, error, status = Open3.capture3(*COMMAND, 'review-prompt', '--head', head,
                                            '--base', base, '--reviewer', 'OpenAI/Codex')
     assert_predicate status, :success?, error
     prompt
@@ -1103,7 +1103,7 @@ class LocalReviewAttestationCaseTest < Minitest::Test
   def host_check(root, head, body, reviewer)
     path = File.join(root, 'host-review.md')
     File.write(path, body)
-    output, error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+    output, error, status = Open3.capture3(*COMMAND, 'review', 'check', '--head', head,
                                            '--reviewer', reviewer, '--report', path)
     [JSON.parse(output), error, status]
   end
@@ -1294,7 +1294,7 @@ module LocalReviewLoopSteps
       file.write(JSON.generate('findings' => findings, 'tokens' => '1,000'))
       file.close
       arguments = ['review', 'record', '--ledger', @ledger, '--content-file', file.path]
-      _out, error, status = Open3.capture3(self.class::COMMAND, *arguments)
+      _out, error, status = Open3.capture3(*self.class::COMMAND, *arguments)
       assert_equal expect, status.success?, error
     end
   end
@@ -1321,7 +1321,7 @@ module LocalReviewLoopSteps
     Tempfile.create(['record-', '.json']) do |file|
       file.write(JSON.generate('findings' => [finding]))
       file.close
-      Open3.capture3(self.class::COMMAND, 'review', 'record', '--ledger', @ledger, '--content-file', file.path)
+      Open3.capture3(*self.class::COMMAND, 'review', 'record', '--ledger', @ledger, '--content-file', file.path)
     end
   end
 
@@ -1611,7 +1611,7 @@ module LocalReviewArguments
   private
 
   def review_arguments(root, base, head, reviewer, options)
-    arguments = [self.class::COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
+    arguments = [*self.class::COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
                  '--reviewer', reviewer]
     append_review_options(arguments, reviewer, options)
   end
@@ -1851,7 +1851,7 @@ module LocalReviewClaudeModelFixture
     Tempfile.create(['record-', '.json']) do |file|
       file.write(JSON.generate('findings' => [], 'usage' => { 'anthropic/claude' => { 'model' => model } }))
       file.close
-      _output, error, status = Open3.capture3(self.class::COMMAND, 'review', 'record', '--ledger', ledger,
+      _output, error, status = Open3.capture3(*self.class::COMMAND, 'review', 'record', '--ledger', ledger,
                                               '--content-file', file.path)
       assert_predicate status, :success?, error
     end

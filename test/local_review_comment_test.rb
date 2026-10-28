@@ -99,16 +99,16 @@ class LocalReviewCommentTest < Minitest::Test
   end
 
   def test_names_missing_criteria_and_a_configured_prompt
-    body = render('rounds' => [round(criteria_ref: nil, prompt_source: 'review.prompt_file .agents/p.md')])
+    body = render('rounds' => [round(criteria_ref: nil, prompt_source: 'review.replacement_prompt_file .agents/p.md')])
 
-    assert_includes body, '**Prompt:** review.prompt_file .agents/p.md · criteria not supplied'
+    assert_includes body, '**Prompt:** review.replacement_prompt_file .agents/p.md · criteria not supplied'
   end
 
   def test_names_each_prompt_with_its_rounds_when_rounds_differ
-    body = render('rounds' => [round(EARLIER), round(prompt_source: 'review.prompt_file .agents/p.md')])
+    body = render('rounds' => [round(EARLIER), round(prompt_source: 'review.replacement_prompt_file .agents/p.md')])
 
     assert_includes body, '**Prompt:** Shaka default · criteria `ccccccc` (round 1); ' \
-                          'review.prompt_file .agents/p.md · criteria `ccccccc` (round 2)'
+                          'review.replacement_prompt_file .agents/p.md · criteria `ccccccc` (round 2)'
   end
 
   def test_explains_a_fallback_with_each_attempt_and_the_setup_guide

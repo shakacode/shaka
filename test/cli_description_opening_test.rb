@@ -9,11 +9,11 @@ class CliDescriptionOpeningTest < Minitest::Test
   include ConfigurationLayoutFixture
   include CliOpeningCheckFakes
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'Maintainers can choose how their PR opening is checked.'
   OPENING = { 'reviewer' => 'anthropic/claude', 'model' => 'chosen-model',
-              'effort' => 'high', 'prompt_file' => '.agents/opening.md' }.freeze
+              'effort' => 'high', 'replacement_prompt_file' => '.agents/opening.md' }.freeze
   CODE_REVIEWER = { 'provider' => 'anthropic', 'model_family' => 'claude',
                     'model' => 'code-review-model', 'effort' => 'high' }.freeze
 

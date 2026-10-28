@@ -16,9 +16,6 @@ is a Ruby script that uses only Ruby's standard library. It makes these changes:
 - **Installation records.** It writes the checkout's origin, branch, and selected
   agents, plus the path of the Ruby that ran it, inside the checkout's `.git`
   directory. Shaka then runs with that Ruby in every project.
-- **Older Codex links.** For Codex, it removes a `shaka` link from
-  `~/.codex/skills` when that link points at this checkout or at a Shaka copy an
-  earlier installer made. It leaves every other entry alone.
 - **Lock files.** It leaves an empty `.shaka-install.lock` file in each skills
   directory it links.
 
@@ -82,6 +79,22 @@ The commands above install ShakaCode's repository. To run a version you can
 change, follow [Fork Shaka and make it yours](fork-and-hack.md). Pass
 `--repository` with your fork's exact origin URL.
 
+## Keep a tested release
+
+Once a tested release is published, ask your agent:
+
+> Install Shaka VERSION and keep my previous version available for rollback.
+
+Replace VERSION with the published version you chose. Shaka keeps that release at
+its recorded commit, even when development continues on `main`. Changing versions
+uses a separate checkout and moves your skill links; the previous helper remains
+available to active chats. Rollback points the links back to the retained version.
+
+The source installer supports release selection. The published name-reservation
+gem predates it; the next approved gem will select its own release for new
+installations. Existing development installs retain their source selection.
+Release pinning refuses older tags that cannot maintain the installation record.
+
 ## Verify and update
 
 Check the installation at any time, using the directory you installed into.
@@ -120,6 +133,21 @@ or the decision you need to make. For example:
 
 Below the state it lists the links, checkouts, and PR trials it found.
 `shaka doctor` reports the same state.
+
+To have Shaka run those steps for you, ask it to repair the installation:
+
+```bash
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --repair
+```
+
+Repair handles a pull, an unfinished update, a removed Ruby, a missing or
+broken link, an install record nothing uses, local commits in the checkout, and
+links split between two checkouts. Split links move to the checkout whose install
+record changed last, which `install --status` names; when other steps run
+first, repair stops so you can check again. Local commits move to a
+`kept-<commit>` branch first, which you then decide what to do with, and a
+record it replaces is renamed aside, so nothing is deleted. It stops when a step
+needs your decision and shows that state. Running it again changes nothing.
 
 Shaka tells you when an update is available once your installation is three
 commits behind, or when the oldest change you lack is a day old, so a busy

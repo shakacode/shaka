@@ -6,7 +6,7 @@ require 'json'
 require 'yaml'
 
 module ReposCatalogHelpers
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
 
   def with_home
     Dir.mktmpdir('shaka-repos-home') do |home|
@@ -29,7 +29,7 @@ module ReposCatalogHelpers
   end
 
   def refresh_result(home)
-    output, error, status = Open3.capture3(env(home), COMMAND, 'repos', 'refresh')
+    output, error, status = Open3.capture3(env(home), *COMMAND, 'repos', 'refresh')
     path = File.join(home, 'catalog.json')
     catalog = File.file?(path) ? JSON.parse(File.read(path)) : {}
     [output.empty? ? catalog : JSON.parse(output), error, status]
@@ -37,7 +37,7 @@ module ReposCatalogHelpers
 
   def registered_repository(home, name:, prefix: nil, origin: nil)
     root = repository(name:, prefix:, origin:)
-    _output, error, status = Open3.capture3(env(home), COMMAND, 'repos', 'add', '--root', root)
+    _output, error, status = Open3.capture3(env(home), *COMMAND, 'repos', 'add', '--root', root)
     raise error unless status.success?
 
     root
@@ -132,7 +132,7 @@ class ReposCatalogTest < Minitest::Test
   def test_direct_prefix_lookup_does_not_need_the_catalog
     with_home do |home|
       root = repository(name: 'solo', prefix: 'SOLO')
-      output, error, status = Open3.capture3(env(home), COMMAND, 'prefix', '--root', root)
+      output, error, status = Open3.capture3(env(home), *COMMAND, 'prefix', '--root', root)
 
       assert_predicate status, :success?, error
       assert_equal({ 'prefix' => 'SOLO', 'source' => 'seam' }, JSON.parse(output))
@@ -157,7 +157,7 @@ class ReposCatalogTest < Minitest::Test
       first = registered_repository(home, name: 'alpha', prefix: 'ALP')
       second = File.join(@roots, 'alpha-checkout')
       FileUtils.cp_r(first, second)
-      _output, error, status = Open3.capture3(env(home), COMMAND, 'repos', 'add', '--root', second)
+      _output, error, status = Open3.capture3(env(home), *COMMAND, 'repos', 'add', '--root', second)
       raise error unless status.success?
 
       catalog = refresh(home)
@@ -190,6 +190,37 @@ class ReposCatalogTest < Minitest::Test
       assert_equal %w[ghe.example/acme/repo github.com/acme/repo], keys.sort
       assert_includes error, keys.first
       assert_equal %w[acme/repo acme/repo], identities(catalog)
+    end
+  end
+end
+
+class ReposCatalogNamespaceTest < Minitest::Test
+  include ReposCatalogHelpers
+
+  ORIGINS = %w[https://gitlab.com/group/one/project.git https://gitlab.com/group/two/project.git
+               https://gitlab.example/group/one/project.git https://gitlab.example:8443/group/one/project.git].freeze
+
+  def test_refresh_preserves_nested_namespace_identity
+    with_home do |home|
+      root = registered_repository(home, name: 'renamed-checkout', origin: 'git@gitlab.com:group/subgroup/project.git')
+      catalog = refresh(home)
+
+      assert_equal [{ 'identity' => 'group/subgroup/project', 'url' => 'ssh://gitlab.com/group/subgroup/project',
+                      'root' => root, 'prefix' => 'PROJ', 'prefix_source' => 'fallback' }],
+                   catalog.fetch('repositories')
+    end
+  end
+
+  def test_refresh_does_not_conflate_namespace_host_or_port
+    with_home do |home|
+      ORIGINS.each_with_index { |origin, i| registered_repository(home, name: "repo-#{i}", prefix: 'PILOT', origin:) }
+      catalog, error, status = refresh_result(home)
+
+      refute_predicate status, :success?
+      assert_equal %w[gitlab.com/group/one/project gitlab.com/group/two/project
+                      gitlab.example/group/one/project gitlab.example:8443/group/one/project],
+                   catalog.dig('duplicate_prefixes', 'PILOT').sort
+      assert_includes error, 'duplicate repo_prefix PILOT'
     end
   end
 end
@@ -307,12 +338,12 @@ class ReposCatalogSkipTest < Minitest::Test
   def test_prefix_and_refresh_use_origin_main_without_origin_head
     with_home do |home|
       root = repository(name: 'solo', prefix: 'SOLO', remote_head: false)
-      output, error, status = Open3.capture3(env(home), COMMAND, 'prefix', '--root', root)
+      output, error, status = Open3.capture3(env(home), *COMMAND, 'prefix', '--root', root)
 
       assert_predicate status, :success?, error
       assert_equal({ 'prefix' => 'SOLO', 'source' => 'seam' }, JSON.parse(output))
 
-      _added, add_error, add_status = Open3.capture3(env(home), COMMAND, 'repos', 'add', '--root', root)
+      _added, add_error, add_status = Open3.capture3(env(home), *COMMAND, 'repos', 'add', '--root', root)
       raise add_error unless add_status.success?
 
       assert_equal ['acme/solo'], identities(refresh(home))

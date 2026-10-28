@@ -10,7 +10,7 @@ class PrDescriptionAttributionTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include CliOpeningCheckFakes
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   SUMMARY = 'Reviewers can see the changed behavior.'
   CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
 
@@ -67,7 +67,7 @@ class PrDescriptionAttributionTest < Minitest::Test
       enable_candidate_attribution(root)
       body = published_body(root)
       refute_includes body, CREDIT
-      assert_includes body, 'Current merge input (not evidence): trusted/team at'
+      assert_includes body, 'Current settings: Repository settings at'
     end
   end
 

@@ -479,7 +479,7 @@ class SeamUpgradeApplyTest < Minitest::Test
 
   def assert_policy_sources(root)
     sha = git!(root, 'rev-parse', 'HEAD').strip
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, '--ref', sha)
+    output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root, '--ref', sha)
     assert_predicate status, :success?, error
     paths = JSON.parse(output).fetch('paths')
     assert_equal '.agents/agent-workflow.yml', paths.fetch('policy_configuration')
@@ -1436,11 +1436,13 @@ class SeamUpgradePatternSafetyTest < Minitest::Test
     end
   end
 
-  def test_command_directory_at_sentence_end_blocks
+  def test_command_directory_at_sentence_end_is_rewritten
     with_repository do |root|
-      File.write(File.join(root, 'README.md'), 'Wrappers live in .agents/bin.')
+      path = File.join(root, 'README.md')
+      File.write(path, 'Wrappers live in .agents/bin.')
       commit_fixture(root, 'directory sentence')
-      assert_blocked_with(root, 'old command-directory reference')
+      apply_upgrade(root)
+      assert_equal 'Wrappers live in .agents/shaka/bin.', File.read(path)
     end
   end
 
@@ -1482,7 +1484,7 @@ class SeamUpgradePatternSafetyTest < Minitest::Test
   end
 
   def init_fixture(root)
-    Open3.capture3(COMMAND, 'seam', 'init', '--root', root, '--setup-command', 'bin/probe',
+    Open3.capture3(*COMMAND, 'seam', 'init', '--root', root, '--setup-command', 'bin/probe',
                    '--test-command', 'bin/probe', '--validate-command', 'bin/probe', '--review-policy', 'none')
   end
 end

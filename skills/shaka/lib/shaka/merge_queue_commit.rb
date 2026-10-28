@@ -29,6 +29,15 @@ module Shaka
     # nil when the PR's base has no merge queue, so the caller keeps the prepared message.
     def self.for(github, pull) = (new(read(github)) if pull['isMergeQueueEnabled'] == true)
 
+    # A queue that copies the PR description would commit Shaka's sections and WIP Details, so
+    # Shaka adds no PR to one. Unread defaults might copy it too. The maintainer chose a fixed
+    # refusal over a setting (shakacode/shaka#824); a repository that wants its descriptions in
+    # commits can still use GitHub's queue button.
+    def self.refuse_copying!(github)
+      queue = new(read(github))
+      raise Error, queue.refusal if queue.copies_description?
+    end
+
     # A token that cannot read repository settings still gets the instruction to enqueue.
     def self.read(github)
       owner, name = github.repository.split('/')
@@ -43,6 +52,13 @@ module Shaka
       @title, @body = repository.values_at(*@style[:fields]) if @style
     end
 
+    # Unread defaults count as copying: a refused merge costs less than a description in history.
+    def copies_description? = @method != 'REBASE' && (@body == 'PR_BODY' || !BODIES.key?(@body))
+
+    # Whether this account read the commit defaults, and the GitHub setting that chooses them.
+    def defaults_read? = @method == 'REBASE' || BODIES.key?(@body)
+    def setting = @style && "**Settings → General → Pull Requests → #{@style[:setting]}** (`#{@style[:api]}`)"
+
     def checkpoint_section
       lead = '**Merge queue:** Add this PR to the merge queue; it takes no commit message to paste.'
       ["#{lead} #{outcome}", *(warning && "**Warning:** #{warning}")].join("\n\n")
@@ -53,12 +69,25 @@ module Shaka
        outcome, warning].compact.join(' ').delete('*').delete('`')
     end
 
+    # `merge` adds its own advice after this sentence, so it ends without a period.
+    def refusal
+      unless defaults_read?
+        return "Could not read this merge queue's commit defaults, which might copy the PR description " \
+               "into its commit. Merge as an account that can read this repository's pull request settings, " \
+               'or check Settings → General → Pull Requests, then merge again'
+      end
+
+      "This merge queue copies the PR description into its commit. Set #{setting.delete('*')} to " \
+        'Default message or Pull request title, then merge again'
+    end
+
     private
 
     def outcome
       return 'It rebases the branch commits onto the base, keeping their own messages.' if @method == 'REBASE'
       unless TITLES[@title] || BODIES[@body]
-        return "This account could not read the queue's commit defaults; check **Settings → General → Pull Requests**."
+        return "This account could not read the queue's commit defaults, so Shaka's merge refuses it; " \
+               'check **Settings → General → Pull Requests**.'
       end
 
       lead = @method ? "It #{@style[:verb]}" : 'If the queue squashes, it uses'
@@ -69,9 +98,9 @@ module Shaka
     def warning
       return unless @body == 'PR_BODY'
 
-      "That puts this description, including Shaka's sections and WIP Details, into git history. To keep it out, " \
-        "set **Settings → General → Pull Requests → #{@style[:setting]}** to **Default to pull request title** " \
-        "(`#{@style[:api]}`)."
+      "That puts this description, including Shaka's sections and WIP Details, into git history, and " \
+        "Shaka's merge refuses this queue. Before adding the PR, set #{setting} to **Default message** or " \
+        '**Pull request title**.'
     end
   end
 end

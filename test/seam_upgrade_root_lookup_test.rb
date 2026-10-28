@@ -15,7 +15,8 @@ class SeamUpgradeRootLookupTest < Minitest::Test
 
   INLINE_WRAPPERS = {
     'inline cd' => %(#!/bin/sh\nset -eu\ncd "$(dirname "$0")/../.."\n),
-    'inline cd with bash source' => %(#!/bin/bash\nset -e\ncd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."\n)
+    'inline cd with bash source' => %(#!/bin/bash\nset -e\ncd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."\n),
+    'inline cd and pwd' => %(#!/bin/sh\nset -eu\ncd "$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"\n)
   }.freeze
 
   def test_common_root_assignments_are_repaired

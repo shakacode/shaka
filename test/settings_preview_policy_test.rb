@@ -43,7 +43,7 @@ class SettingsPreviewPolicyTest < Minitest::Test
   private
 
   def check_report(root, trusted)
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, '--ref', trusted)
+    output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root, '--ref', trusted)
     assert_predicate status, :success?, error
     JSON.parse(output)
   end
@@ -119,8 +119,8 @@ class SettingsPreviewNativeMergeTest < Minitest::Test
 
   def select_without_review(root)
     data = settings(root)
-    data['review'] = { 'required' => 'none', 'ci_review_wait' => 'none',
-                       'post_implementation' => { 'enabled' => false } }
+    data['review'] = { 'required' => 'none', 'ci_review_wait' => 'none' }
+    data['checkpoint'] = { 'enabled' => false }
     select_preview(root, write_settings(root, data))
   end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'merge_queue_commit'
 
 module Shaka
   # Submits an already-verified pull request through its native GitHub path.
@@ -80,6 +81,7 @@ module Shaka
     end
 
     def enqueue(pull, head)
+      MergeQueueCommit.refuse_copying!(@github)
       result = @github.graphql(ENQUEUE_MUTATION, { 'id' => pull.fetch('id'), 'head' => head }, feature: 'merge_queue')
       payload = result['enqueuePullRequest']
       entry = payload['mergeQueueEntry'] if payload.is_a?(Hash)

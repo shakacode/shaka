@@ -4,6 +4,7 @@ require_relative '../error'
 require_relative 'run_summary'
 require_relative 'timeline_steps'
 require_relative 'timing_stretches'
+require_relative 'task_timing'
 
 module Shaka
   # Renders the time between checkpoints, how long each checkpoint waited on a person, and the
@@ -40,19 +41,23 @@ module Shaka
       # The reason can quote gh output, so it stays out of the public body.
       unavailable = @timeline.key?('unavailable')
       parts = unavailable ? [UNAVAILABLE] : stretches
+      parts << TaskTiming.summary(@timeline)
       parts.concat(measured(steps, dropped)) unless steps.empty?
       parts << GUIDE unless unavailable
       # The hidden line lets the next update, from any session, keep these steps.
-      parts << TimelineSteps.hidden(steps, dropped) unless steps.empty?
-      # A collapsed summary counts as visible description prose, so the totals stay inside.
-      { 'summary' => SUMMARY, 'body' => parts.compact.join("\n\n") }
+      { 'summary' => summary,
+        'body' => [*parts, TimelineSteps.hidden(steps, dropped), TaskTiming.hidden(@timeline)].compact.join("\n\n") }
     end
 
     private
 
+    def summary = "#{SUMMARY} · #{@timeline.key?('unavailable') ? 'timeline unavailable' : totals(timing_rows)}"
+
+    def timing_rows = @timing_rows ||= TimingStretches.new(@timeline, @now).rows
+
     def stretches
-      rows = TimingStretches.new(@timeline, @now).rows
-      [totals(rows), table(rows.last(MAX_ROWS)), omitted(rows), LEGEND]
+      rows = timing_rows
+      ["**Totals:** #{totals(rows)}", table(rows.last(MAX_ROWS)), omitted(rows), LEGEND]
     end
 
     def measured(steps, dropped)
@@ -101,7 +106,7 @@ module Shaka
       waited = rows.select { |row| row[:wait] }
       parts = ["#{duration(total(rows.reject { |row| row[:wait] }))} between checkpoints"]
       parts << "#{duration(total(waited))} waiting on a person in #{count(waited.size)}" unless waited.empty?
-      "**Totals:** #{parts.join(' · ')}"
+      parts.join(' · ')
     end
 
     def omitted(rows)

@@ -75,7 +75,7 @@ module Shaka
 
       def checkout_entry(checkout)
         { 'root' => checkout.root, 'repository' => StatusStates.redact(checkout.record['repository']),
-          **checkout.record.slice('branch', 'revision'),
+          **checkout.record.slice('branch', 'release', 'revision'),
           'targets' => checkout.record['targets'] }
       end
     end

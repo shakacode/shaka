@@ -34,11 +34,11 @@ class PublicationVerificationGatesTest < Minitest::Test
 
   # https://github.com/shakacode/shaka/issues/777: a reader looks for what failed, so a routine run folds.
   # A completed review can still report findings, so the summary does not call it a pass.
-  def test_a_passing_validation_and_completed_review_fold_behind_a_summary
-    folded = "## Verification\n\n<details>\n" \
-             "<summary>Validation passed; local review completed at abcdef1</summary>\n\n" \
-             '**Validation and review:**'
-    assert_includes render(bound), folded
+  def test_a_passing_validation_and_completed_review_have_a_compact_visible_summary
+    rendered = render(bound)
+    assert_includes rendered, "## Verification\n\nValidation passed; local review completed at abcdef1."
+    assert_operator rendered.index('<summary>Evidence and limitations</summary>'), :<,
+                    rendered.index('**Validation and review:**')
   end
 
   # A host-reported review is only attested, so its reviewer stays in view.

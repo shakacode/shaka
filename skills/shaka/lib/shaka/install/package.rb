@@ -46,18 +46,6 @@ module Shaka
         stage(source_root, identity, version)
       end
 
-      def existing(id)
-        verify_managed_root
-        raise ArgumentError, 'Invalid package identity' unless id.match?(ID_PATTERN)
-
-        path = File.join(@root, id)
-        metadata = verified_metadata(path)
-        recorded = metadata.fetch('skills')
-        raise ArgumentError, 'Rollback flags must match the package skills' unless recorded.sort == @names.sort
-
-        path
-      end
-
       def verify(path)
         verified_metadata(path)
         path

@@ -42,7 +42,7 @@ module PrivateDeliveryEvidence
   def run_review_cli(bin, reviewer, head, options)
     Open3.capture3(
       { 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'REVIEW_TRACE' => File.join(@state, 'reviewer.json') },
-      PrivateDeliveryFixture::COMMAND, 'review', 'run', '--root', @root, '--base', @ref, '--head', head,
+      *PrivateDeliveryFixture::COMMAND, 'review', 'run', '--root', @root, '--base', @ref, '--head', head,
       '--reviewer', reviewer, '--settings-ref', @ref, '--repository', 'owner/repo', *options
     )
   end
@@ -102,7 +102,7 @@ module PrivateDeliveryFixture
   include CliOpeningCheckFakes
   include PrivateDeliveryEvidence
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   SUMMARY = 'The feature now works.'
 
   private
@@ -141,7 +141,7 @@ module PrivateDeliveryFixture
     FileUtils.mkdir_p(File.join(@root, '.agents/shaka/bin'))
     create_new_commands(@root)
     data = config.merge('wip' => { 'include_checkout_path' => false },
-                        'opening_check' => { 'external_enabled' => false })
+                        'pr_description' => { 'opening_check' => {} })
     File.write(File.join(@root, '.agents/shaka/config.yml'), YAML.dump(data))
   end
 
@@ -162,7 +162,7 @@ module PrivateDeliveryFixture
   def invoke(command, *, exit_code: 0, error: nil, env: {})
     positional = command == 'reviewer' ? [] : ['owner/repo', '1']
     environment = { 'PATH' => "#{@state}:#{ReviewerCliStubs.path}", 'HOME' => @state }.merge(env)
-    output, stderr, status = Open3.capture3(environment, COMMAND, command, *positional,
+    output, stderr, status = Open3.capture3(environment, *COMMAND, command, *positional,
                                             '--root', @root, '--ref', @ref, *)
     assert_equal exit_code, status.exitstatus, stderr
     assert_includes stderr, error if error

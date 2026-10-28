@@ -53,7 +53,7 @@ class SettingsPreviewConsumersTest < Minitest::Test
 
   def select_publication_preview(root)
     data = settings(root)
-    data['opening_check'] = { 'external_enabled' => false, 'prompt_file' => '.agents/preview-opening.md' }
+    (data['pr_description'] ||= {})['opening_check'] = { 'replacement_prompt_file' => '.agents/preview-opening.md' }
     data['prose_limits'] = { 'max_sentence_words' => 19 }
     data['wip'] = { 'include_checkout_path' => false }
     File.write(File.join(root, '.agents/preview-opening.md'), 'Selected preview writing instructions.')
@@ -62,7 +62,7 @@ class SettingsPreviewConsumersTest < Minitest::Test
   end
 
   def reviewer(root, trusted, *)
-    output, error, status = Open3.capture3({ 'PATH' => ReviewerCliStubs.path }, COMMAND, 'reviewer',
+    output, error, status = Open3.capture3({ 'PATH' => ReviewerCliStubs.path }, *COMMAND, 'reviewer',
                                            '--root', root, '--ref', trusted,
                                            '--implementer', 'anthropic/claude', *)
     assert_predicate status, :success?, error

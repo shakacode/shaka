@@ -53,7 +53,7 @@ module PrivateSourceFixture
   end
 
   def write_review_prompt_policy(root)
-    policy = config.merge('review' => review_policy('prompt_file' => 'review.md'))
+    policy = config.merge('review' => review_policy('replacement_prompt_file' => 'review.md'))
     File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
   end
 
@@ -318,7 +318,7 @@ class PrivateSourceSafetyTest < Minitest::Test
 
   def test_missing_internal_prompt_is_partial
     with_private_repository do |root, ref|
-      policy = config.merge('review' => review_policy('prompt_file' => '.agents/shaka/review.md'))
+      policy = config.merge('review' => review_policy('replacement_prompt_file' => '.agents/shaka/review.md'))
       File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
       assert_equal 'partial', report(root, ref).status
     end
@@ -556,7 +556,7 @@ class PrivateSourceSymlinkChainTest < Minitest::Test
     FileUtils.mkdir_p(File.join(root, 'internal'))
     File.write(File.join(root, 'internal/review.md'), 'prompt')
     File.symlink('internal', File.join(root, 'docs'))
-    policy = config.merge('review' => review_policy('prompt_file' => 'docs/review.md'))
+    policy = config.merge('review' => review_policy('replacement_prompt_file' => 'docs/review.md'))
     File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
     commit_file(root, 'internal/review.md', 'prompt')
     commit_file(root, 'docs', 'directory link')
@@ -600,7 +600,7 @@ class PrivateSourceInputTest < Minitest::Test
 
   def test_nul_prompt_path_is_reported_as_partial
     with_private_repository do |root, ref|
-      policy = config.merge('review' => review_policy('prompt_file' => "bad\0.md"))
+      policy = config.merge('review' => review_policy('replacement_prompt_file' => "bad\0.md"))
       File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
       result = report(root, ref)
       assert_equal 'partial', result.status
@@ -626,7 +626,7 @@ class PrivateSourceInputTest < Minitest::Test
     with_private_repository do |root, _ref|
       path = 'révision.md'
       File.write(File.join(root, path), 'prompt')
-      policy = config.merge('review' => review_policy('prompt_file' => path))
+      policy = config.merge('review' => review_policy('replacement_prompt_file' => path))
       File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
       commit_file(root, path, 'unicode prompt')
       assert_equal 'complete', report(root, head(root)).status

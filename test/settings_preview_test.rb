@@ -55,7 +55,7 @@ class SettingsPreviewTest < Minitest::Test
       before = capture(root, trusted)
       select_preview(root, preview)
       refute_equal before, capture(root, trusted)
-      _, error, status = Open3.capture3(COMMAND, 'seam', 'preview', 'stop', '--root', root)
+      _, error, status = Open3.capture3(*COMMAND, 'seam', 'preview', 'stop', '--root', root)
       assert_predicate status, :success?, error
       assert_equal before, capture(root, trusted)
     end
@@ -87,7 +87,7 @@ class SettingsPreviewTest < Minitest::Test
   private
 
   def assert_fresh_reviewer(root, trusted)
-    output, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root, '--ref', trusted,
+    output, error, status = Open3.capture3(*COMMAND, 'reviewer', '--root', root, '--ref', trusted,
                                            '--implementer', 'anthropic/claude')
     assert_predicate status, :success?, error
     assert_equal(['openai/codex'], JSON.parse(output)['considered'].map { |entry| entry['reviewer'] })
