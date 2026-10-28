@@ -1,10 +1,8 @@
 # Configure
 
-Follow this procedure when the user asks what a reviewer receives, or asks to explain or
-review this repository's Shaka settings. Changing settings is not available yet; for a
-change, say so and link the
-[settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md).
-Stop after answering.
+Follow this procedure when the user asks what a reviewer receives, asks to explain or
+review this repository's Shaka settings, or asks to change a setting. Stop after answering,
+or after handing off the settings PR.
 
 ## Explain the settings
 
@@ -53,3 +51,38 @@ repository controls: replacement prompts, `AGENTS.md` files, and custom instruct
 Summarize long built-in text unless the user asks for it verbatim. A `placeholder` stands
 for data the reviewer gets at run time, such as the diff or earlier findings. No reviewer
 reads `project_guidance` files; the working agent does.
+
+## Change a setting
+
+A settings change is its own PR. Ruby refuses a feature PR that changes Shaka's
+configuration, and the description publisher refuses it too.
+
+1. Read the current value with `configure settings --ref`, then tell the maintainer, before
+   editing, whether installations must update after merge, as the next section decides.
+2. Start a branch from the fresh default branch. Edit the file the report names as
+   `config_path`, keeping its comments. Set only the keys the change needs.
+3. Show the result with `configure settings --root DIR --local`, and with `prompt show
+   NAME --local` when the change names a prompt or instructions file. Run
+   `seam check --root DIR --local`; a failure stops the change.
+4. Publish through the migration flow: `evidence guard --flow migration` before staging and
+   push, and `description --publication-flow migration`. List the update step from the next
+   section in `steps_besides_merging`, or `none` when that section says no update is needed.
+5. The change takes effect when its PR merges. To try it on one task first, follow
+   [settings preview](settings-preview.md).
+
+### Say when installations must update
+
+An installation older than a key, an option of a choice, or a nested shape refuses the
+whole settings file, so every task on it stops. An unneeded update costs one command.
+
+- No update is needed when every key path and value the change writes already appears in
+  the trusted `config_path` at `--ref` (`git show REF:CONFIG_PATH`). Every working
+  installation already loads those.
+- Otherwise list the update, and name when the key or value entered the reference, from
+  the saved helper's source: `git -C SOURCE log --reverse --format='%cs %h' -S 'TEXT' --
+  docs/settings.md`. The maintainer judges whether their team's installations are older.
+- List it whenever you cannot tell.
+
+List it as `after merge`: Update Shaka (`shaka install --update`), who: everyone running
+Shaka on this repository, where: each machine with an installation, verify: `shaka doctor
+--brief` reports Repository seam HEALTHY. Ruby checks none of this; the agent applies it.

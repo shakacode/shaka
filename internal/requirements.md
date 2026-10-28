@@ -76,6 +76,11 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   with the value Shaka applies, its packaged default, whether the repository sets it, and
   its reference section, using the resolvers that apply each setting. Mark values that
   equal the default. See [ADR 0003](adr/0003-configure-walkthrough.md).
+- **R22 — Change settings in their own PR.** A requested settings change becomes a
+  settings PR through the migration flow. Before editing, tell the maintainer whether
+  installations must update after merge, and list that step in the PR unless every key
+  and value the change writes already appears in the trusted settings. See
+  [ADR 0003](adr/0003-configure-walkthrough.md).
 
 ### Preserve control and recover work
 

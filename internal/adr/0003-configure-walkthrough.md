@@ -1,7 +1,6 @@
 # 0003: Configuration walkthrough
 
-Status: accepted on 2026-10-25. Steps 1 (`prompt show`) and 2 (`configure settings`) are implemented;
-step 3 is not.
+Status: accepted on 2026-10-25 and implemented: `prompt show`, `configure settings`, and settings changes.
 Date: 2026-10-21. Tracks [issue #817](https://github.com/shakacode/shaka/issues/817).
 
 ## Context
@@ -135,5 +134,6 @@ instructions. It replaces #818's step 5 `prompt show` work rather than duplicati
 
 ## Routing scope
 
-Step 1's routing line covers only requests to see what a reviewer receives; steps 2 and 3
-widen it. The procedure never promises a settings report that has not shipped.
+Step 1's routing line covered only requests to see what a reviewer receives; steps 2 and 3
+widened it to explaining and changing settings. The procedure never promised a step before
+it shipped.
