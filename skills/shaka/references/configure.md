@@ -75,9 +75,10 @@ configuration, and the description publisher refuses it too.
 An installation older than a key, an option of a choice, or a nested shape refuses the
 whole settings file, so every task on it stops. An unneeded update costs one command.
 
-- No update is needed when every key path and value the change writes already appears in
-  the trusted `config_path` at `--ref` (`git show REF:CONFIG_PATH`). Every working
-  installation already loads those.
+- No update is needed when each key path the change writes already appears at that path
+  in the trusted `config_path` at `--ref` (`git show REF:CONFIG_PATH`), holding the same
+  value or, for a setting that is not a choice among named options, a value of the same
+  type. A value seen only under another key proves nothing.
 - Otherwise list the update, and name when the key or value entered the reference, from
   the saved helper's source: `git -C SOURCE log --reverse --format='%cs %h' -S 'TEXT' --
   docs/settings.md`. The maintainer judges whether their team's installations are older.
