@@ -33,6 +33,11 @@ class ReviewFocusTest < Minitest::Test
     assert_empty client.requests
   end
 
+  # The renderer reads a null from as a whole-file entry, so the resolver must too.
+  def test_a_null_start_links_the_whole_file
+    assert_equal [{ 'url' => "#{BLOB}/bin/tool.py", 'lines' => nil }], resolve(entry('bin/tool.py', from: nil))
+  end
+
   def test_files_the_pr_leaves_absent_at_the_head_are_refused
     ['lib/gone.rb', 'bin/old.py', 'lib/untouched.rb'].each do |path|
       error = assert_raises(Shaka::Error) { resolve(entry(path)) }

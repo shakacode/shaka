@@ -30,7 +30,7 @@ module Shaka
       unless present.include?(path)
         raise Error, "Publication intent #{label}: #{path} is not present at the head among this PR's changed files."
       end
-      return { 'url' => links.permalink(path), 'lines' => nil } unless entry.key?('from')
+      return { 'url' => links.permalink(path), 'lines' => nil } if entry['from'].nil?
 
       lines = links.locate(label, entry)
       { 'url' => links.permalink(path, *lines), 'lines' => lines }

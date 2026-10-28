@@ -72,7 +72,8 @@ module Shaka
           link = @links[name]
           raise Error, "Walkthrough references undefined code link #{name}." unless link
 
-          permalink(link['path'], *range(name, link))
+          first, last = range(name, link)
+          permalink(link['path'], first, last)
         end
       end
 

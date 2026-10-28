@@ -160,6 +160,7 @@ class CodeLinksRefusalTest < Minitest::Test
      [{ 'x' => link.merge('to' => 'end', 'block' => true) }, '[x](code:x)', 'either to or block'],
      [{ 'x' => link.merge('path' => '../secret') }, '[x](code:x)', 'repository-relative path'],
      [{ 'x' => { 'path' => 'lib/package.rb' } }, '[x](code:x)', 'from text'],
+     [{ 'x' => 42 }, '[x](code:x)', 'code link x must be an object'],
      [[], '[x](code:x)', 'code_links must be an object']].each do |links, body, message|
       error = assert_raises(Shaka::Error) { resolved_body(links, body) }
       assert_includes error.message, message
