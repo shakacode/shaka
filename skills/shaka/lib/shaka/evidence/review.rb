@@ -67,10 +67,14 @@ module Shaka
         machine = reviewer && Configuration::MachineReviewers.load(home: Dir.home)
         return {} unless machine
 
-        agent = Array(review&.fetch('local_review_agents', nil)).grep(Hash).find do |entry|
+        applied = machine.fill(reviewer_entry(review, reviewer), reviewer).reject { |key, _| @task_overrides.key?(key) }
+        applied.transform_keys { |key| "machine_#{key}" }
+      end
+
+      def reviewer_entry(review, reviewer)
+        Array(review&.fetch('local_review_agents', nil)).grep(Hash).find do |entry|
           entry.values_at(*ReviewerSelection::IDENTITY).join('/').downcase == reviewer
         end
-        machine.fill(agent, reviewer).transform_keys { |key| "machine_#{key}" }
       end
 
       # The ledger's identity of the settings that make earlier review evidence superseded: the

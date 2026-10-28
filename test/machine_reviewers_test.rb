@@ -245,6 +245,18 @@ class MachineReviewersEvidenceTest < Minitest::Test
     end
   end
 
+  # A task choice wins, so the machine value it replaces is not recorded.
+  def test_review_evidence_skips_machine_values_the_task_replaces
+    with_checkout do |root, ref|
+      result = with_home([codex('model' => 'gpt-6-astra', 'effort' => 'high')]) do |home|
+        review_with_home(root, ref, home, model: 'gpt-6-sol')
+      end
+
+      assert_equal({ 'reviewer' => 'openai/codex', 'model' => 'gpt-6-sol', 'machine_effort' => 'high' },
+                   result.fetch('task_overrides'))
+    end
+  end
+
   # Evidence records only what the run applies: an unlisted reviewer gets no machine values.
   def test_review_evidence_records_nothing_for_an_unlisted_reviewer
     with_checkout do |root, ref|
@@ -256,9 +268,9 @@ class MachineReviewersEvidenceTest < Minitest::Test
 
   private
 
-  def review_with_home(root, ref, home, reviewer: 'openai/codex')
+  def review_with_home(root, ref, home, reviewer: 'openai/codex', model: nil)
     with_env_home(home) do
-      options = { root:, settings_ref: ref, repository: 'shakacode/shaka', reviewer: }
+      options = { root:, settings_ref: ref, repository: 'shakacode/shaka', reviewer:, model: }
       Shaka::Evidence::Review.start(options, action: 'run')
                              .finish('status' => 'completed', 'head' => ref, 'reviewer' => reviewer)
     end
