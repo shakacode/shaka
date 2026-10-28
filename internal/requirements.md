@@ -72,6 +72,10 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   replacement, `AGENTS.md`, or custom instructions with its path and commit. Read the
   trusted default-branch commit, or label a working-tree draft untrusted. See
   [ADR 0003](adr/0003-configure-walkthrough.md).
+- **R21 — Explain the current settings.** On request, report every repository setting
+  with the value Shaka applies, its packaged default, whether the repository sets it, and
+  its reference section, using the resolvers that apply each setting. Mark values that
+  equal the default. See [ADR 0003](adr/0003-configure-walkthrough.md).
 
 ### Preserve control and recover work
 

@@ -14,6 +14,7 @@ module Shaka
 
       REQUIRED_CHECKS = 'required_checks'
       REVIEW_FLOOR = 'auto_max_review_floor'
+      OPTIONAL = ['limits', REVIEW_FLOOR, REQUIRED_CHECKS].freeze
 
       def initialize(merge)
         @merge = merge
@@ -24,7 +25,7 @@ module Shaka
         retired = %w[method release].find { |key| @merge.key?(key) }
         raise Error, "merge.#{retired} is no longer configurable; see skills/shaka/references/migration.md" if retired
 
-        keys!(@merge, ['preference'], ['limits', REVIEW_FLOOR, REQUIRED_CHECKS], 'merge')
+        keys!(@merge, ['preference'], OPTIONAL, 'merge')
         enum!(@merge['preference'], %w[ask auto], 'merge.preference must be ask or auto')
         MergeLimits.validate!(@merge['limits']) if @merge.key?('limits')
         MergeReviewFloor.validate!(@merge[REVIEW_FLOOR]) if @merge.key?(REVIEW_FLOOR)

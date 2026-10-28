@@ -1,6 +1,7 @@
 # 0003: Configuration walkthrough
 
-Status: accepted on 2026-10-25. Step 1 (`prompt show`) is implemented; steps 2 and 3 are not.
+Status: accepted on 2026-10-25. Steps 1 (`prompt show`) and 2 (`configure settings`) are implemented;
+step 3 is not.
 Date: 2026-10-21. Tracks [issue #817](https://github.com/shakacode/shaka/issues/817).
 
 ## Context
