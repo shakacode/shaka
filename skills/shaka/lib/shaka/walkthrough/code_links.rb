@@ -56,6 +56,15 @@ module Shaka
         raise Error, "Walkthrough #{label}: #{e.message}"
       end
 
+      # The commit-pinned URL of path at the head, anchored to the first and last lines when given.
+      def permalink(path, first = nil, last = first)
+        anchor = if first.nil? then ''
+                 elsif first == last then "#L#{first}"
+                 else "#L#{first}-L#{last}"
+                 end
+        "https://github.com/#{@github.repository}/blob/#{@head}/#{encoded(path)}#{anchor}"
+      end
+
       private
 
       def url(name)
@@ -63,9 +72,7 @@ module Shaka
           link = @links[name]
           raise Error, "Walkthrough references undefined code link #{name}." unless link
 
-          first, last = range(name, link)
-          anchor = first == last ? "#L#{first}" : "#L#{first}-L#{last}"
-          "https://github.com/#{@github.repository}/blob/#{@head}/#{encoded(link['path'])}#{anchor}"
+          permalink(link['path'], *range(name, link))
         end
       end
 

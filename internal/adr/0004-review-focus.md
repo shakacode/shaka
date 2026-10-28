@@ -1,6 +1,6 @@
 # 0004: Mark the lines that need the closest reading
 
-Status: accepted on 2026-10-26; not yet implemented. Nothing here is shipped.
+Status: accepted on 2026-10-26; implemented.
 Date: 2026-10-25. Tracks [issue #846](https://github.com/shakacode/shaka/issues/846).
 
 ## Context

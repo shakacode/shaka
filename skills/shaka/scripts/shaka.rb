@@ -42,6 +42,7 @@ require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/guidance'
 require_relative '../lib/shaka/publication/publication'
 require_relative '../lib/shaka/publication/rendering_preview'
+require_relative '../lib/shaka/review_focus'
 require_relative '../lib/shaka/review_reply'
 require_relative '../lib/shaka/recommendation'
 require_relative '../lib/shaka/repos'
@@ -157,6 +158,7 @@ end
 # Evidence is prepared first; a preview can only replace the rendering that follows it.
 def render_description(carried, version, pull, settings, timeline, options, github) # rubocop:disable Metrics/ParameterLists
   pull = pull.merge('shaka_changed_files' => Shaka::FeaturePublication.files(github, pull))
+  pull = pull.merge('shaka_review_focus' => Shaka::ReviewFocus.resolve(carried, github, pull))
   Shaka::RenderingPreview.publish(options, pull, github) do
     Shaka::Publication.description(carried, version, pull, settings, timeline)
   end

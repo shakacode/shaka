@@ -4,6 +4,7 @@ require_relative '../error'
 require_relative 'text'
 require_relative 'verification_gates'
 require_relative 'diff_buckets'
+require_relative 'review_focus_list'
 
 module Shaka
   # Renders what a pull request is for and how it was proved, so a maintainer can decide whether to trust it.
@@ -39,15 +40,20 @@ module Shaka
     end
 
     def intent(spec, floor, pull)
+      lines = [*reasons(spec), review_effort(spec['review_effort'], floor), *ReviewFocusList.render(spec, pull),
+               *exclusions(spec['leaves_out']), *scope(spec, pull)]
+      "## Intent\n\n#{lines.join("\n\n")}"
+    end
+
+    # Why and safety, with a bug fix's root cause between them.
+    def reasons(spec)
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
       unless spec[ROOT_CAUSE].nil?
         lines.insert(1, "**Root cause:** #{PublicationText.single_line(spec[ROOT_CAUSE], "intent #{ROOT_CAUSE}")}")
       end
-      lines << review_effort(spec['review_effort'], floor)
-      lines.concat(exclusions(spec['leaves_out']))
-      "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
+      lines
     end
 
     def scope(spec, pull)
@@ -140,7 +146,7 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :scope, :exclusions, :diff_size,
+    private_class_method :intent, :reasons, :scope, :exclusions, :diff_size,
                          :review_effort, :floor_text, :floor_path, :verification,
                          :not_verified, :checks, :evidenced, :object
   end
