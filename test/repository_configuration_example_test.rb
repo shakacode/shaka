@@ -27,7 +27,11 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     'skills/shaka/lib/shaka/required_checks.rb' => 4, 'skills/shaka/lib/shaka/merge_review_floor.rb' => 4,
     'skills/shaka/lib/shaka/publication/review_effort_floor.rb' => 4,
     'skills/shaka/lib/shaka/repository_config/merge_schema.rb' => 4, 'docs/settings.md' => 5,
-    'skills/shaka/lib/AGENTS.md' => 3, 'test/AGENTS.md' => 3
+    'skills/shaka/lib/AGENTS.md' => 3, 'test/AGENTS.md' => 3,
+    'skills/shaka/lib/shaka/publication_settings_guard.rb' => 4,
+    'skills/shaka/lib/shaka/publication/rendering_preview.rb' => 4,
+    'skills/shaka/lib/shaka/gitlab/transport.rb' => 3, 'README.md' => 5,
+    'contributing/releasing.md' => 3, 'internal/requirements.md' => 3
   }.freeze
 
   def setup
