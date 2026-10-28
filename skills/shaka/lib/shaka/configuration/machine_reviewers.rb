@@ -78,11 +78,8 @@ module Shaka
       def fill(repository_entry, identity)
         return {} unless repository_entry
 
-        values(identity).reject { |key, _| repository_entry.key?(key) }
+        @entries.fetch(identity.downcase, {}).slice(*FILLS).reject { |key, _| repository_entry.key?(key) }
       end
-
-      # This machine's values for a reviewer, whether or not the repository sets them.
-      def values(identity) = @entries.fetch(identity.downcase, {}).slice(*FILLS)
 
       private
 

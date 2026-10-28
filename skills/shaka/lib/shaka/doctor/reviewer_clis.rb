@@ -57,7 +57,8 @@ module Shaka
         return [] unless machine
 
         configured = entries.select { |entry| entry[:configured] }.map { |entry| entry.fetch(:identity) }
-        lines = ["Machine reviewers: #{machine.identities.join(', ')} expected on this machine (#{machine.path})."]
+        listed = machine.identities.empty? ? 'none listed' : machine.identities.join(', ')
+        lines = ["Machine reviewers: #{listed} expected on this machine (#{machine.path})."]
         lines + (machine.identities - configured).map do |identity|
           "#{identity} in the machine reviewer list is not configured by this repository."
         end

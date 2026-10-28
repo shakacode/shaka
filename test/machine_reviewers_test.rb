@@ -245,13 +245,22 @@ class MachineReviewersEvidenceTest < Minitest::Test
     end
   end
 
+  # Evidence records only what the run applies: an unlisted reviewer gets no machine values.
+  def test_review_evidence_records_nothing_for_an_unlisted_reviewer
+    with_checkout do |root, ref|
+      result = with_home([grok]) { |home| review_with_home(root, ref, home, reviewer: 'xai/grok') }
+
+      assert_equal({ 'reviewer' => 'xai/grok' }, result.fetch('task_overrides'))
+    end
+  end
+
   private
 
-  def review_with_home(root, ref, home)
+  def review_with_home(root, ref, home, reviewer: 'openai/codex')
     with_env_home(home) do
-      options = { root:, settings_ref: ref, repository: 'shakacode/shaka', reviewer: 'openai/codex' }
+      options = { root:, settings_ref: ref, repository: 'shakacode/shaka', reviewer: }
       Shaka::Evidence::Review.start(options, action: 'run')
-                             .finish('status' => 'completed', 'head' => ref, 'reviewer' => 'openai/codex')
+                             .finish('status' => 'completed', 'head' => ref, 'reviewer' => reviewer)
     end
   end
 end
