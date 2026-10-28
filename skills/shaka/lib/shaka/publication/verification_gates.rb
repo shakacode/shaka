@@ -12,17 +12,19 @@ module Shaka
 
     module_function
 
-    # A reader needs to see a failure, a missing result, or a setup gap; a routine run folds behind
-    # its summary. A completed review may still have reported findings, so the summary claims only
-    # that it ran. unlabeled counts the PR author's comments with no identity line or marker.
+    # A reader needs to see a failure, a missing result, or fewer reviewers than configured; a routine
+    # run folds behind its summary. A completed review may still have reported findings, so the
+    # summary claims only that it ran. unlabeled counts the PR author's comments with no identity
+    # line or marker; it adds a Setup gaps line but says nothing about the run, so the run stays folded.
     def render(verdict, review_url = nil, shortfall = nil, unlabeled = 0)
-      text = line(verdict, review_url)
+      text = shortfall || !routine?(verdict) ? line(verdict, review_url) : summary(verdict, review_url)
       gaps = setup_gaps(shortfall, unlabeled, review_url)
-      return "#{text}\n\n#{gaps}" if gaps
-      return text unless routine?(verdict)
+      gaps ? "#{text}\n\n#{gaps}" : text
+    end
 
-      summary = "Validation passed; local review completed at #{short_head(verdict)}"
-      review_url ? "#{summary} ([evidence](#{review_url}))." : "#{summary}."
+    def summary(verdict, url)
+      text = "Validation passed; local review completed at #{short_head(verdict)}"
+      url ? "#{text} ([evidence](#{url}))." : "#{text}."
     end
 
     # Comments read at this head that are the author's by login, yet carry no agent identity line or
@@ -97,7 +99,7 @@ module Shaka
       url ? "#{text} ([attestation](#{url}))" : text
     end
 
-    private_class_method :routine?, :short_head, :results, :validations, :setup_gaps, :reviewer_gap,
-                         :unlabeled_gap, :review
+    private_class_method :routine?, :summary, :short_head, :results, :validations, :setup_gaps,
+                         :reviewer_gap, :unlabeled_gap, :review
   end
 end

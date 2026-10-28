@@ -42,6 +42,31 @@ class PublicationUnlabeledCommentsTest < Minitest::Test
     assert_includes rendered, "#{GAPS} 1 comment from the PR author"
   end
 
+  # The count is not about the checks, so a routine run keeps its folded summary above the gap.
+  def test_a_routine_run_stays_folded_above_the_unlabeled_count
+    check = ->(result) { [{ 'status' => 'bound', 'original' => result }] }
+    verdict = { 'status' => 'ready', 'head' => HEAD, 'checks' => {
+      'validation' => check.call({ 'command' => 'validate', 'status' => 'completed', 'exit_code' => 0 }),
+      'review' => check.call({ 'reviewer' => 'openai/codex', 'status' => 'completed', 'head' => HEAD })
+    } }
+    content = { 'human_comments' => packet(issue_comments: [issue_comment(3, 'ann', 'Applied.')]) }
+    rendered = Shaka::Publication.description(PublicationRegressionTest.new(name).description_content(**content),
+                                              nil, pull, Shaka::PublicationSettings.new(verdict:))
+
+    assert_includes rendered, "## Verification\n\nValidation passed; local review completed at ccccccc.\n\n" \
+                              "#{GAPS} 1 comment"
+  end
+
+  # A read taken before the latest push may count comments the author has since relabeled.
+  def test_a_read_from_an_earlier_head_is_not_counted
+    stale = packet(issue_comments: [issue_comment(3, 'ann', 'Applied.')]).merge('head' => 'd' * 40)
+
+    refute_includes Shaka::Publication.description(
+      PublicationRegressionTest.new(name).description_content('human_comments' => stale), nil, pull,
+      Shaka::PublicationSettings.new(current: { 'pr_description.show_human_comments' => false })
+    ), GAPS
+  end
+
   def test_a_reviewer_shortfall_and_unlabeled_comments_share_one_line
     settings = Shaka::PublicationSettings.new(reviewer_shortfall: SHORTFALL)
     content = { 'human_comments' => packet(issue_comments: [issue_comment(3, 'ann', 'Applied.')]) }
