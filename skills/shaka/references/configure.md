@@ -78,7 +78,8 @@ whole settings file, so every task on it stops. An unneeded update costs one com
 - No update is needed when each key path the change writes already appears at that path
   in the trusted `config_path` at `--ref` (`git show REF:CONFIG_PATH`), holding the same
   value or, for a setting that is not a choice among named options, a value of the same
-  type. A value seen only under another key proves nothing.
+  type. Each element of a list of named options counts as a choice. A value seen only
+  under another key proves nothing.
 - Otherwise list the update, and name when the key or value entered the reference, from
   the saved helper's source: `git -C SOURCE log --reverse --format='%cs %h' -S 'TEXT' --
   docs/settings.md`. The maintainer judges whether their team's installations are older.

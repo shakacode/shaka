@@ -78,8 +78,8 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   equal the default. See [ADR 0003](adr/0003-configure-walkthrough.md).
 - **R22 — Change settings in their own PR.** A requested settings change becomes a
   settings PR through the migration flow. Before editing, tell the maintainer whether
-  installations must update after merge, and list that step in the PR unless each key
-  path the change writes already holds that value in the trusted settings. See
+  installations must update after merge, and list that step in the PR unless the trusted
+  settings already show that installations accept what the change writes. See
   [ADR 0003](adr/0003-configure-walkthrough.md).
 
 ### Preserve control and recover work
