@@ -67,6 +67,14 @@ class PublicationUnlabeledCommentsTest < Minitest::Test
     ), GAPS
   end
 
+  # Without a head on either side there is no read of this revision to count from.
+  def test_a_read_without_a_head_is_not_counted
+    headless = packet(issue_comments: [issue_comment(3, 'ann', 'Applied.')]).except('head')
+    content = { 'human_comments' => headless }
+
+    assert_equal 0, Shaka::VerificationGates.unlabeled(content, pull.merge('head' => {}))
+  end
+
   def test_a_reviewer_shortfall_and_unlabeled_comments_share_one_line
     settings = Shaka::PublicationSettings.new(reviewer_shortfall: SHORTFALL)
     content = { 'human_comments' => packet(issue_comments: [issue_comment(3, 'ann', 'Applied.')]) }
