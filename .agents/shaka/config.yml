@@ -50,7 +50,9 @@ checkpoint: # Defaults: the final "did we build the right thing?" check before m
   custom_instructions_file: .agents/shaka/instructions/checkpoint.md
 
 merge:
-  preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.
+  # Required; setup suggests ask: you merge on GitHub. Ours: auto, so the agent merges PRs at or
+  # below auto_max_review_floor and within limits, and hands the rest back for a click.
+  preference: auto
   # required_checks: [validate] # Default: none; use when GitHub requires no checks.
   limits: # Defaults. A larger PR needs your confirmation before the agent merges it.
     max_changed_files: 29
@@ -58,7 +60,6 @@ merge:
     max_commits: 9
   # Default: 5, any human review floor (below). Ours: 2, so Auto would merge code and tests and
   # hand back docs, agent instructions, and settings, merge, trust, validation, and install code.
-  # While preference is ask, each ready checkpoint says whether Auto would merge the PR.
   auto_max_review_floor: 2
 
 branches:
@@ -83,7 +84,8 @@ pr_description:
     - level: 4
       reason: changes evidence or settings checks
       paths: ['skills/shaka/lib/shaka/{evidence,seam,repository_config,configuration}/**/*',
-              'skills/shaka/lib/shaka/{seam,repository_config,configuration}.rb']
+              'skills/shaka/lib/shaka/{seam,repository_config,configuration}.rb',
+              'skills/shaka/lib/shaka/publication_settings*.rb']
     - level: 5
       reason: changes Shaka's repository configuration
       paths: [.agents/shaka/**/*]
@@ -97,10 +99,10 @@ pr_description:
               credential]
       except: ['**/*.md', '**/*.{png,jpg,jpeg,gif,svg,webp}']
     - level: 3
-      reason: changes validation, install, update, or GitHub code
+      reason: changes validation, install, update, GitHub, or GitLab code
       paths: [bin/**/*, .rubocop.yml, .ruby-version, 'Gemfile{,.lock}', shaka.gemspec,
-              'skills/shaka/lib/shaka/{installer,update_check,github}.rb',
-              'skills/shaka/lib/shaka/{install,update_check,github}/**/*']
+              'skills/shaka/lib/shaka/{installer,update_check,github,gitlab}.rb',
+              'skills/shaka/lib/shaka/{install,update_check,github,gitlab}/**/*']
     - level: 3
       reason: changes agent instructions
       paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]
