@@ -42,10 +42,11 @@ module ReviewerCommandFixture
     JSON.parse(output)
   end
 
-  def rewrite_reviewers(root, reviewers)
+  def rewrite_reviewers(root, reviewers, coverage: nil)
     path = File.join(root, '.agents/agent-workflow.yml')
     config = YAML.safe_load_file(path)
     config['review']['local_review_agents'] = reviewers
+    config['review']['provider_coverage'] = coverage if coverage
     File.write(path, YAML.dump(config))
   end
 

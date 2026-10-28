@@ -10,14 +10,15 @@ module Shaka
     class PrDescriptionSchema
       include Validation
 
+      KEYS = %w[show_shaka_credit show_human_comments max_human_comments opening_check human_review_floors].freeze
+
       def initialize(description)
         @description = description
       end
 
       def validate
         mapping!(@description, 'pr_description')
-        keys!(@description, [], %w[show_shaka_credit show_human_comments max_human_comments opening_check
-                                   human_review_floors], 'pr_description')
+        keys!(@description, [], KEYS, 'pr_description')
         validate_credit
         validate_human_comments
         HumanReviewFloorSchema.new(@description['human_review_floors']).validate if

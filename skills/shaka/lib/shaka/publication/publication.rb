@@ -77,7 +77,8 @@ module Shaka
 
     # Intent and verification answer whether to trust the merge, so they come before any section.
     def intent_verification
-      IntentVerification.render(@content, @settings.verdict, @settings.review_effort_floor, @pull, task: task_line)
+      IntentVerification.render(@content, @settings.verdict, @settings.review_effort_floor, @pull,
+                                task: task_line, shortfall: @settings.reviewer_shortfall)
     end
 
     def evidence

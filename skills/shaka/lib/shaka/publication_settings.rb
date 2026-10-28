@@ -6,6 +6,7 @@ require_relative 'repository_config'
 require_relative 'publication/feature_guard'
 require_relative 'opening_publication'
 require_relative 'publication/review_effort_floor'
+require_relative 'review_coverage'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
@@ -26,9 +27,10 @@ module Shaka
       changed_paths = FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current, floors = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
+      current, floors, review = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
-          review_effort_floor: ReviewEffortFloor.for(changed_paths, floors))
+          review_effort_floor: ReviewEffortFloor.for(changed_paths, floors),
+          reviewer_shortfall: reviewer_shortfall(verdict, review))
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
@@ -42,18 +44,27 @@ module Shaka
       raise Error, 'Settings evidence is missing or stale; rerun affected validation/review'
     end
 
-    # Returns the public settings snapshot and the trusted review-effort floors.
+    # Returns the public settings snapshot, the trusted review-effort floors, and the trusted review settings.
     def self.current_settings(root:, ref:, repository:, required: false)
       OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
         config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
-        [current, config.pr_description['human_review_floors']]
+        [current, config.pr_description['human_review_floors'], config.review]
       end
     rescue Error, SystemCallError
       raise if required
     end
 
-    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil,
-                   review_effort_floor: nil)
+    # Only a completed or host-reported review reaches a ready verdict, so each bound one counts.
+    def self.reviewer_shortfall(verdict, review)
+      return unless verdict && review
+
+      reviewers = Array(verdict.dig('checks', 'review')).filter_map { |entry| entry.dig('original', 'reviewer') }
+      ReviewCoverage.shortfall(review, reviewers)
+    end
+
+    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil, # rubocop:disable Metrics/ParameterLists
+                   review_effort_floor: nil, reviewer_shortfall: nil)
+      @reviewer_shortfall = reviewer_shortfall
       @review_effort_floor = review_effort_floor
       @repository = repository
       @verdict = verdict

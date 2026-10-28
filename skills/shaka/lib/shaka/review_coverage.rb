@@ -36,6 +36,20 @@ module Shaka
     # A review setting, or its packaged default.
     def self.setting(review, key) = review.fetch(key) { Defaults.fetch('review', key) }
 
+    # How far the reviewers of the final commit fall short of `count`, or nil when they do not.
+    # With coverage, only a reviewer from a listed provider covers it. Configuration refuses a
+    # repeated reviewer, so a reviewer with several results counts once.
+    def self.shortfall(review, reviewers)
+      providers = names(setting(review, KEY))
+      missing = uncovered(providers, reviewers)
+      configured = count(review)
+      completed = providers.empty? ? reviewers.map(&:downcase).uniq.size : configured - missing.size
+      { 'configured' => configured, 'completed' => completed, 'missing' => missing } if completed < configured
+    end
+
+    # The listed providers no reviewer came from.
+    def self.uncovered(providers, reviewers) = names(providers) - reviewers.map { |id| provider(id) }
+
     # The entries selection chooses from: for each covered provider, its first listed entry that
     # can run here, or its first entry when none can, so the gap keeps that entry's reason.
     def self.candidates(entries, providers, usable)
@@ -91,9 +105,8 @@ module Shaka
       return [] if coverage.nil?
 
       providers = listed(coverage)
-      reviewed = reviewed.map { |id| provider(id) }
       reasons = reasons(coverage['gaps'], redact)
-      gaps = (providers - reviewed).map { |name| gap_text(name, reasons[name]) }
+      gaps = uncovered(providers, reviewed).map { |name| gap_text(name, reasons[name]) }
       gaps.empty? ? [] : ["**Review coverage gap:** #{gaps.join(' ')}"]
     end
 
@@ -118,7 +131,7 @@ module Shaka
     end
 
     def self.provider(id) = id.split('/').first.downcase
-    private_class_method :providers!, :name?, :listed_reasons, :reason, :listed, :reasons, :gap_text,
+    private_class_method :providers!, :name?, :uncovered, :listed_reasons, :reason, :listed, :reasons, :gap_text,
                          :provider
   end
 end

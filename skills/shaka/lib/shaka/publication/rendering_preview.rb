@@ -21,9 +21,14 @@ module Shaka
                          post_implementation/disposition.rb post_implementation/merge_warning.rb]
                       .map { |path| "skills/shaka/lib/shaka/#{path}" }.freeze
     # In load order: a renderer loads before the ones that call it.
-    RENDERERS = %w[usage_details usage_pricing metrics verification_gates diff_buckets intent_verification
-                   task_source_line provenance provenance_history settings_table settings publication]
+    RENDERERS = %w[usage_details usage_pricing throughput_gate throughput_line throughput_stats metrics
+                   verification_gates diff_buckets intent_verification task_source_line provenance
+                   provenance_history settings_table settings publication]
                 .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
+    # A listed renderer the default branch does not have yet. A head without it keeps the installed copy;
+    # every other listed renderer must be at the head, so a preview never stands in for a missing one.
+    NOT_YET_LANDED = %w[throughput_gate throughput_line throughput_stats]
+                     .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
 
     module_function
@@ -97,8 +102,13 @@ module Shaka
       end
     end
 
-    # Every listed renderer must be at the head, so a preview never stands in for a missing one.
-    def sources(root, head) = RENDERERS.to_h { |path| [path, git(root, 'show', "#{head}:#{path}")] }
+    def sources(root, head)
+      listed = RENDERERS.reject { |path| NOT_YET_LANDED.include?(path) && !present?(root, head, path) }
+      listed.to_h { |path| [path, git(root, 'show', "#{head}:#{path}")] }
+    end
+
+    # A read failure raises, so only a path the head truly lacks counts as absent.
+    def present?(root, head, path) = !git(root, 'ls-tree', '--name-only', head, '--', path).strip.empty?
 
     def git(root, *)
       output, error, status = Open3.capture3('git', '-C', root, *)
@@ -118,7 +128,7 @@ module Shaka
       $VERBOSE = previous
     end
 
-    private_class_method :git, :sources, :load_renderers, :load_renderer, :changed_renderers, :supported!,
+    private_class_method :git, :sources, :present?, :load_renderers, :load_renderer, :changed_renderers, :supported!,
                          :rendering_path?
   end
 end
