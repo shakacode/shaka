@@ -66,7 +66,7 @@ configuration, and the description publisher refuses it too.
    `seam check --root DIR --local`; a failure stops the change.
 4. Publish through the migration flow: `evidence guard --flow migration` before staging and
    push, and `description --publication-flow migration`. Put the update step from the next
-   section in `steps_besides_merging`, or `none` when the change only removes keys.
+   section in `steps_besides_merging`, or `none` when that section lists none.
 5. The change takes effect when its PR merges. To try it on one task first, follow
    [settings preview](settings-preview.md).
 
@@ -75,12 +75,21 @@ configuration, and the description publisher refuses it too.
 An installation older than a key, an option, or a nested shape refuses the whole settings
 file, so every task on it stops. Whether a teammate's installation is that old cannot be
 checked from the repository, so list the update on every settings PR that adds or changes
-a value. Only a change that just removes keys lists none.
+a setting's value. A change that only removes keys, or writes no setting, such as one that
+edits only a prompt file or a comment, lists none.
 
-For each key and value the change writes, name the date it entered the reference, from the
-saved helper's source: `git -C SOURCE log --reverse --format='%cs %h' -S 'TEXT' --
-docs/settings.md`. Say in the step that installations older than that date refuse the
-settings, so the maintainer can judge whether anyone needs it.
+Date each new key and each new named option, such as a new choice for a setting, by
+searching the saved helper's source for the key's heading or the option:
+
+```text
+git -C SOURCE log --reverse --format='%cs %h' -S '## `KEY`' -- docs/settings.md
+git -C SOURCE log --reverse --format='%cs %h' -S 'OPTION' -- docs/settings.md
+```
+
+Give the date as unknown when the search finds nothing or only an unrelated mention. Give no date for a new
+number, path, or text under a key the repository already sets. Say in the step that
+installations older than the date refuse the settings, so the maintainer can judge whether
+anyone needs it.
 
 List it as `after merge`: Update Shaka (`shaka install --update`), who: everyone running
 Shaka on this repository, where: each machine with an installation, verify: `shaka doctor

@@ -79,9 +79,10 @@ the opening check.
 
    The agent prepares the change as its own settings PR. An older Shaka refuses a
    settings file with a setting or option it does not know, so every task stops until it
-   updates. The PR therefore lists updating Shaka as a step after merge, with the date the
-   new setting or option first appeared, so you can tell whether anyone's copy is that
-   old. A PR that only removes settings lists no update. You can also edit
+   updates. The PR therefore lists updating Shaka as a step after merge, with the date
+   each new setting or option first appeared when Shaka can find it, so you can tell
+   whether anyone's copy is that old. A PR that only removes settings, or only edits a
+   prompt file, lists no update. You can also edit
    `.agents/shaka/config.yml` in a PR yourself.
 2. To try it before it merges, select it for your tasks. Teammates can select the
    same PR:

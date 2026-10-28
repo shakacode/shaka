@@ -79,7 +79,8 @@ must cite that evidence before claiming the pilot's real-use acceptance.
 - **R22 — Change settings in their own PR.** A requested settings change becomes a
   settings PR through the migration flow. Before editing, tell the maintainer that
   installations must update after merge, and list that step in the PR, with the date each
-  new key or value entered the reference, unless the change only removes keys. See
+  new key or named option entered the reference, unless the change only removes keys or
+  writes no setting. See
   [ADR 0003](adr/0003-configure-walkthrough.md).
 
 ### Preserve control and recover work

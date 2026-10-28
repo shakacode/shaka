@@ -83,7 +83,8 @@ as decision 3, but the code is tied to its own layout. Nothing is reused.
    `evidence guard --flow migration` and `description --publication-flow migration`.
    Before editing, it tells the maintainer that installations need `shaka install --update`
    after merge, and lists that as an after-merge step in the PR with the date each new key
-   or value entered the reference. Only a change that just removes keys lists none. This
+   or named option entered the reference, or unknown. A change that only removes keys or
+   writes no setting lists none. This
    rule replaces the narrower one in the human review floors procedure: step 3 moves it to
    one shared section that both procedures point to.
 
