@@ -85,7 +85,9 @@ coordination state. Nothing is reused.
      An unset value counts as no team choice; a team that wants a fixed model or effort
      names it. In this repository, neither the Claude nor the Codex review entry names a
      model or effort, so a developer could pin both for their own reviews. DeepSeek names
-     both, so the file cannot change them.
+     both, so the file cannot change them. The repository schema already refuses two
+     entries with the same provider and model family, so a fill never makes two entries
+     the same reviewer.
    - It does not change which reviewer is selected. Selection already skips reviewers that
      are not set up on the machine.
    - It cannot quiet a covered provider. Coverage gaps keep their warning and their place
@@ -103,13 +105,13 @@ coordination state. Nothing is reused.
 
 3. **Review evidence records machine-supplied model and effort.** Decision 1 and the
    reporting part of decision 2 change warnings only, so they stay out of the settings
-   fingerprint. A machine `model` or `effort` changes what a review runs, so it enters
-   that review's settings record and fingerprint, labeled as machine-supplied. Two
-   developers whose files differ then produce distinguishable review evidence, and changing
-   a machine `model` or `effort` that a review uses supersedes earlier review evidence on
-   that machine, as any settings change does. The published review shows the model and
-   effort each round used, as it does today. Ruby reads the file through `Dir.home`, and
-   tests set `HOME` to a temporary directory.
+   fingerprint. A machine `model` or `effort` changes what a review runs, so the review
+   records it with the task's own choices, labeled as machine-supplied, and evidence
+   checks replay the recorded values as they already do for a task's `--model` and
+   `--effort`. Another developer's file therefore never makes the review look stale, and
+   a later edit to the file does not supersede a review that already ran. The published
+   review shows the model and effort each round used, as it does today. Ruby reads the
+   file through `Dir.home`, and tests set `HOME` to a temporary directory.
 
 ## Alternatives considered
 
