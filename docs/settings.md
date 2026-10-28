@@ -507,7 +507,8 @@ can run, here Codex. The others follow the list order, so the second is Claude i
 fresh session, without the implementation conversation. If Codex had written the
 change, the order would be Claude, then Codex. When the agent finds a reviewer's CLI
 missing or signed out, fewer reviewers read that commit, and from the next commit the next
-listed reviewer takes its place.
+listed reviewer takes its place. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision)
+says how many completed.
 
 Each extra reviewer adds cost and may increase elapsed time. The PR's
 review comment shows every reviewer's rounds, and one review of the final commit is
@@ -543,7 +544,7 @@ optional.
 
 When a listed provider cannot review, the agent copies Shaka's gap report into the published
 review, which shows it near the top with the reason: that provider is not listed in `local_review_agents`, not set up on the machine, or
-unavailable. Shaka does not substitute another provider, and the gap never blocks merging.
+unavailable. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision) names the provider too. Shaka does not substitute another provider, and the gap never blocks merging.
 Writing the change does not count as reviewing it.
 
 To pay for one local review instead, leave this unset and set `local_review_count: 1`. With

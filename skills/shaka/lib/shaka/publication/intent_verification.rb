@@ -30,8 +30,9 @@ module Shaka
 
     # The verdict binds the validation and review results; nil when description received none.
     # The floor comes from the PR's changed paths; without a pull request there is none.
-    def render(content, verdict = nil, floor = nil, pull = nil)
-      gate_line = VerificationGates.render(verdict, content['review'])
+    # The shortfall compares the bound reviews with the trusted reviewer count; nil when none.
+    def render(content, verdict = nil, floor = nil, pull = nil, shortfall: nil)
+      gate_line = VerificationGates.render(verdict, content['review'], shortfall)
       spec = object(content, 'verification')
       evidence(spec, content['wip'].nil? ? CHECKS : (0..CHECKS.max))
       [intent(object(content, 'intent'), floor, pull),
