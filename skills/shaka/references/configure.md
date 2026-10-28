@@ -78,8 +78,8 @@ whole settings file, so every task on it stops. An unneeded update costs one com
 - Before editing, check the planned change against `configure settings --ref`; after
   editing, confirm it against `configure settings --local`. No update is needed when the
   change only removes keys, or when every key path it sets is already set in the trusted
-  report and each new value is a number or a file path. A new key, a new option, or new
-  text in a setting Shaka checks needs the update.
+  report and each new value is a number or a file path. A new key, a new option, new text
+  in a setting Shaka checks, or any change inside a list needs the update.
 - Otherwise list the update, and name when the key or value entered the reference, from
   the saved helper's source: `git -C SOURCE log --reverse --format='%cs %h' -S 'TEXT' --
   docs/settings.md`. The maintainer judges whether their team's installations are older.
