@@ -3,6 +3,7 @@
 require 'open3'
 require_relative '../workflow_version'
 require_relative '../local_review/path_guard'
+require_relative '../configuration/machine_reviewers'
 require_relative 'candidate_tree'
 require_relative 'inputs'
 require_relative 'result'
@@ -56,6 +57,17 @@ module Shaka
         @action = action
         @task_overrides = { 'reviewer' => options[:reviewer]&.downcase,
                             'model' => options[:model], 'effort' => options[:effort] }.compact
+        @task_overrides.merge!(machine_values)
+      end
+
+      # This machine's model and effort for the reviewer, recorded so evidence checks replay them
+      # instead of reading another machine's list.
+      def machine_values
+        reviewer = @task_overrides['reviewer']
+        machine = reviewer && Configuration::MachineReviewers.load(home: Dir.home)
+        return {} unless machine
+
+        machine.values(reviewer).transform_keys { |key| "machine_#{key}" }
       end
 
       # The ledger's identity of the settings that make earlier review evidence superseded: the
