@@ -4,7 +4,8 @@ require_relative '../publication/throughput_stats'
 
 module Shaka
   class PrWatch
-    # Fills CI to ready from GitHub check timestamps. It rewrites only the marked stats block.
+    # Fills the current head's check start and ready time from GitHub. It rewrites only the marked stats
+    # block and the spend after the model line.
     class ThroughputPublisher
       QUERY = <<~GRAPHQL.freeze
         query($owner: String!, $name: String!, $number: Int!) {

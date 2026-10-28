@@ -2,7 +2,7 @@
 
 require_relative 'throughput_helper'
 
-# Spend and build latency stay in one marked block, and unknown times are never zero.
+# Spend follows the model line, the intervals open Timings, and unknown times are never zero.
 class ThroughputStatsTest < Minitest::Test
   include ThroughputHelper
 

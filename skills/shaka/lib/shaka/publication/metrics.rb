@@ -18,7 +18,13 @@ module Shaka
       @content.fetch('provenance') { raise Error, 'Publication description requires execution provenance.' }
     end
 
-    def timings = TimingsDetails.for(@timeline, ThroughputStats.line(throughput)).map { |item| details_block(item) }
+    # The current head's intervals open the Timings section.
+    def timings
+      TimingsDetails.for(@timeline).map do |item|
+        details_block(item.merge('body' => "#{ThroughputStats.line(throughput)}\n\n#{item['body']}"))
+      end
+    end
+
     def throughput = @throughput ||= ThroughputStats.state(@content, @timeline, @pull)
 
     def provenance
