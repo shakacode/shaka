@@ -38,6 +38,12 @@ class ThroughputReadyTest < Minitest::Test
     assert_equal START.iso8601, Shaka::ThroughputStats.prompt_stamp(commit)
   end
 
+  def test_republishing_the_same_head_keeps_the_earlier_check_start
+    later = { 'task_started_at' => START, 'ci_started_at' => PUSH + 300 }
+    rendered = describe('$4.12', timeline: later, pull: { 'head' => { 'sha' => HEAD }, 'body' => filled_block })
+    assert_includes rendered, 'Prompt to CI 38m'
+  end
+
   private
 
   def at(rows, jobs, wait) = Shaka::ThroughputStats.ready_at(rows, required: ['validate'], review_jobs: jobs, wait:)

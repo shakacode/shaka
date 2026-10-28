@@ -50,9 +50,9 @@ module Shaka
       end
     end
 
-    # Reads the issue 899 stats line. A missing amount stays UNKNOWN, never zero.
+    # Reads the issue 899 spend after the model line. A missing amount stays UNKNOWN, never zero.
     module Spend
-      PATTERN = /AI spend\s+(\$[\d.]+|UNKNOWN|pending)/
+      PATTERN = /AI spend:\s+(\$[\d,.]+\+?|UNKNOWN)/
 
       module_function
 

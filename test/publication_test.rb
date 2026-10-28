@@ -3,8 +3,8 @@
 require_relative 'test_helper'
 require 'shaka/publication/publication'
 
-PENDING_STATS = 'AI spend UNKNOWN · Prompt to CI UNKNOWN · CI to ready pending · Ready to merged pending'
-MODEL_AND_STATS = "low\n\n<!-- shaka:stats {\"spend\":\"UNKNOWN\"} -->\n#{PENDING_STATS}\n\n[Code Walkthrough]".freeze
+PENDING_STATS = 'low - AI spend: UNKNOWN'
+MODEL_AND_STATS = "#{PENDING_STATS}\n\n[Code Walkthrough]".freeze
 
 PUBLIC_PROVENANCE = { 'task_source' => 'description', 'initial_prompt' => 'EXCLUDED',
                       'requested_model' => 'gpt-5.6-terra', 'requested_effort' => 'medium',
@@ -98,8 +98,9 @@ class PublicationRegressionTest < Minitest::Test
   def test_timings_follow_the_usage_details_when_the_timeline_was_read
     timeline = { 'opened' => Time.utc(2026, 10, 18, 8), 'merged' => Time.utc(2026, 10, 18, 9), 'labels' => [] }
     rendered = Shaka::Publication.description(description_content, nil, nil, nil, timeline)
-    assert_operator rendered.index('<summary>Usage'), :<,
-                    rendered.index("<summary>Timings · 1h 0m between checkpoints</summary>\n\n**Totals:** 1h 0m")
+    assert_operator rendered.index('<summary>Usage'), :<, rendered.index('<summary>Timings · 1h 0m between checkpoints')
+    intervals = '**This head:** Prompt to CI UNKNOWN · CI to ready UNKNOWN · Ready to merged UNKNOWN'
+    assert_includes rendered, "#{intervals}\n\n**Totals:** 1h 0m"
     refute_includes Shaka::Publication.description(description_content), '<summary>Timings'
   end
 
@@ -302,7 +303,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def test_a_description_without_a_walkthrough_link_reserves_the_placeholder
     rendered = render(walkthrough: nil)
 
-    assert_includes rendered, "Ready to merged pending\n\n_Not published yet._"
+    assert_includes rendered, "low - AI spend: UNKNOWN\n\n_Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
@@ -310,7 +311,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def test_a_blank_walkthrough_link_reserves_the_placeholder
     rendered = render(walkthrough: '  ')
 
-    assert_includes rendered, "Ready to merged pending\n\n_Not published yet._"
+    assert_includes rendered, "low - AI spend: UNKNOWN\n\n_Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
@@ -593,7 +594,7 @@ class PublicationUsageTableTest < Minitest::Test
   def test_renders_one_row_per_report_with_a_total
     rendered = render
     assert_includes rendered, RENDERED
-    assert_includes rendered, 'AI spend $3.58'
+    assert_includes rendered, 'AI spend: $3.58'
     assert_includes rendered, '<summary>Usage and cost</summary>'
     refute_includes rendered, 'Usage and cost ·'
     assert_includes rendered, '_— not reported._'
@@ -620,7 +621,7 @@ class PublicationUsageTableTest < Minitest::Test
     partial = COLUMN.merge('usd' => '$1234.5 (partial)')
     rendered = render(usage: usage_of(partial))
     assert_includes rendered, '| $1,234.50+ |'
-    assert_includes rendered, 'AI spend $1,234.50+'
+    assert_includes rendered, 'AI spend: $1,234.50+'
     refute_includes rendered, 'Usage and cost ·'
   end
 
@@ -891,7 +892,7 @@ class PublicationUsageSafetyTest < Minitest::Test
     record = USAGE_RECORD.merge('columns' => [COLUMN])
     repriced = record.merge('note' => 'Rate card: a later one.')
     rendered = render(usage: { 'note' => 'n', 'records' => [record, repriced] })
-    assert_includes rendered, 'AI spend $3.27'
+    assert_includes rendered, 'AI spend: $3.27'
     assert_includes rendered, '<summary>Usage and cost</summary>'
     refute_includes rendered, '×2'
   end
@@ -936,7 +937,7 @@ class PublicationUsageRecordTableTest < Minitest::Test
              "| USD estimate | $1.000000 |\n#{Shaka::UsageRecords::END_MARK}"
     rendered = render(usage: usage_of(COLUMN, REVIEW).merge('carried' => legacy))
     assert_operator rendered.index('| Report |'), :<, rendered.index('| USD estimate | $1.000000 |')
-    assert_includes rendered, 'AI spend $3.58+'
+    assert_includes rendered, 'AI spend: $3.58+'
     assert_includes rendered, '<summary>Usage and cost</summary>'
     assert_includes rendered, '| **Total** | $3.58+ |  |'
     assert_includes rendered, 'reports from before this table are listed below and not counted'

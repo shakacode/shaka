@@ -24,7 +24,7 @@ module ThroughputHelper
   def push_times = { 'task_started_at' => START, 'ci_started_at' => PUSH }
 
   def describe(usd = 'UNKNOWN', timeline: nil, pull: nil)
-    full = timeline && { 'opened' => START, 'labels' => [] }.merge(timeline)
+    full = { 'opened' => START, 'labels' => [] }.merge(timeline || {})
     Shaka::Publication.description(content(usd), nil, pull, nil, full)
   end
 

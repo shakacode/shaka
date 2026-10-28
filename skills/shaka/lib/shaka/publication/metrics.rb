@@ -8,7 +8,7 @@ module Shaka
     # Only helper-owned metadata belongs here; caller-supplied details remain with the change's evidence.
     def metrics
       usage_detail = UsageDetails.new(@content['usage']).detail
-      blocks = [details_block(usage_detail), *TimingsDetails.for(@timeline).map { |item| details_block(item) },
+      blocks = [details_block(usage_detail), *timings,
                 provenance, details_block(@settings.detail), *skills_used, *task_history]
       ['## Shaka metrics', UsageEstimate.markdown(usage_detail),
        details_block('summary' => 'Details', 'body' => blocks.join("\n\n"))]
@@ -17,6 +17,9 @@ module Shaka
     def provenance_spec
       @content.fetch('provenance') { raise Error, 'Publication description requires execution provenance.' }
     end
+
+    def timings = TimingsDetails.for(@timeline, ThroughputStats.line(throughput)).map { |item| details_block(item) }
+    def throughput = @throughput ||= ThroughputStats.state(@content, @timeline, @pull)
 
     def provenance
       execution = ExecutionProvenance.new(provenance_spec, workflow_version: @workflow_version, pull: @pull)

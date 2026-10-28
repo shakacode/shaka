@@ -8,7 +8,7 @@ class PublicationMetricsTest < Minitest::Test
     rendered = render(usd: '$1.25 (partial)')
     visible, metrics = rendered.split("<details>\n<summary>Details</summary>", 2)
     assert_includes visible, '**Estimated token costs:** $1.25+'
-    assert_includes visible, 'AI spend $1.25+'
+    assert_includes visible, 'AI spend: $1.25+'
     assert_includes metrics, '<summary>Usage and cost</summary>'
     refute_includes metrics, 'Usage and cost ·'
     assert_includes metrics, 'some usage not reported, so the amount is a minimum'

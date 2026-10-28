@@ -3,7 +3,7 @@
 require_relative 'cursor_usage_refresh_test'
 require 'cgi'
 
-PENDING_LINE = 'AI spend UNKNOWN · Prompt to CI UNKNOWN · CI to ready pending · Ready to merged pending'
+PENDING_LINE = '**This head:** Prompt to CI UNKNOWN · CI to ready pending · Ready to merged pending'
 
 # A stop hook must update the visible total alongside the nested usage report.
 class CursorUsageEstimateRefreshTest < Minitest::Test
@@ -26,7 +26,7 @@ class CursorUsageEstimateRefreshTest < Minitest::Test
 
   def published_metrics_pull(usage)
     pull = published_pull(usage)
-    stats = "<!-- shaka:stats {\"spend\":\"UNKNOWN\"} -->\n#{PENDING_LINE}\n"
+    stats = "🤖 Cursor - AI spend: UNKNOWN\n\n<!-- shaka:stats {\"spend\":\"UNKNOWN\"} -->\n#{PENDING_LINE}\n"
     pull['body'] = pull['body'].sub("<!-- shaka:begin -->\n", "<!-- shaka:begin -->\n#{stats}")
     pull['body'] = pull['body'].sub("<details>\n<summary>Usage and cost",
                                     "<!-- shaka:estimated-cost -->\n**Estimated cost:** UNKNOWN\n\n" \
@@ -39,7 +39,7 @@ class CursorUsageEstimateRefreshTest < Minitest::Test
   def assert_visible_estimate(updated)
     estimate = updated[/\*\*Estimated token costs:\*\* ([^\n]+)/, 1]
     refute_nil estimate
-    assert_includes updated, "AI spend #{CGI.unescapeHTML(estimate)}"
+    assert_includes updated, "AI spend: #{CGI.unescapeHTML(estimate)}"
     assert_includes updated, '<summary>Usage and cost</summary>'
     refute_includes updated, 'Usage and cost ·'
     assert_includes updated, '<summary>Shaka metrics</summary>'

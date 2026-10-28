@@ -24,7 +24,9 @@ class CanaryBodyTest < Minitest::Test
 
     ## Shaka metrics
 
-    AI spend $1.00 · Prompt to CI 5m · CI to ready 9m (1 round) · Ready to merged pending
+    🤖 Codex · OpenAI · gpt-test · low - AI spend: $1.00 · ready in 14m
+
+    **This head:** Prompt to CI 5m · CI to ready 9m · Ready to merged pending
 
     | Check | Result |
     | --- | --- |

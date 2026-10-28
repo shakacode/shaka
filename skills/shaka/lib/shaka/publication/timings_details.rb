@@ -28,11 +28,12 @@ module Shaka
       raise Error, 'Publication timings are read from the pull request timeline, not supplied as a details item.'
     end
 
-    def self.for(timeline) = timeline ? [new(timeline).detail] : []
+    def self.for(timeline, intervals = nil) = timeline ? [new(timeline, intervals:).detail] : []
 
-    def initialize(timeline, now: Time.now.utc)
+    def initialize(timeline, now: Time.now.utc, intervals: nil)
       @timeline = timeline
       @now = now.utc
+      @intervals = intervals
     end
 
     def detail
@@ -40,7 +41,7 @@ module Shaka
       dropped = @timeline.fetch('dropped_steps', 0)
       # The reason can quote gh output, so it stays out of the public body.
       unavailable = @timeline.key?('unavailable')
-      parts = unavailable ? [UNAVAILABLE] : stretches
+      parts = [*@intervals, *(unavailable ? [UNAVAILABLE] : stretches)]
       parts << TaskTiming.summary(@timeline)
       parts.concat(measured(steps, dropped)) unless steps.empty?
       parts << GUIDE unless unavailable

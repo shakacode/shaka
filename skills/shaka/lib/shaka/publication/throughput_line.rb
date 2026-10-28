@@ -4,14 +4,19 @@ require 'json'
 require 'time'
 
 module Shaka
-  # Renders the throughput line and reads the check start that begins it.
+  # Renders the spend after the model line, the intervals in Timings, and reads the check start that begins them.
   module ThroughputLine
     # The head-commit fields earliest_start reads. The description and the watcher share them so both
     # agree on when CI started.
     HEAD_CHECKS = 'oid status { contexts { createdAt } } ' \
                   'checkSuites(first: 100) { nodes { createdAt checkRuns(first: 100) { nodes { startedAt } } } }'
+    SPEND = ' - AI spend: '
+    INTERVALS = '**This head:** '
 
-    def line(state) = "#{marker(state)}\n#{visible(state)}"
+    def line(state) = "#{marker(state)}\n#{INTERVALS}#{intervals(state)}"
+
+    # Appended to the model line: the spend, then one overall time once it is measured.
+    def header(state) = "#{SPEND}#{shown_spend(state)}#{took(state)}"
 
     def earliest_start(commit)
       return unless commit.is_a?(Hash)
@@ -35,9 +40,15 @@ module Shaka
     def marker(state) = "<!-- shaka:stats #{JSON.generate(ordered(state))} -->"
     def ordered(state) = ThroughputStats::KEYS.filter_map { |key| [key, state[key]] if state.key?(key) }.to_h
 
-    def visible(state)
-      "AI spend #{shown_spend(state)} · Prompt to CI #{prompt(state)} · " \
-        "CI to ready #{ci(state)} · Ready to merged #{merged(state)}"
+    def intervals(state)
+      "Prompt to CI #{prompt(state)} · CI to ready #{ci(state)} · Ready to merged #{merged(state)}"
+    end
+
+    # Task start to merge once merged, otherwise to ready; nothing until that time is known.
+    def took(state)
+      ended, label = state['t3'] ? [state['t3'], 'merged'] : [state['t2'], 'ready']
+      span = state['t0'] && ended && ended != 'UNKNOWN' ? interval(state['t0'], ended) : 'UNKNOWN'
+      span == 'UNKNOWN' ? '' : " · #{label} in #{span}"
     end
 
     def shown_spend(state) = spend_text?(state['spend']) ? state['spend'] : 'UNKNOWN'

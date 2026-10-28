@@ -7,26 +7,27 @@ require_relative 'throughput_line'
 require_relative 'throughput_gate'
 
 module Shaka
-  # The spend and latency line under the model line. Later updates replace only this block.
+  # The spend after the model line and the intervals in Timings. Later updates replace only those two.
   class ThroughputStats
     extend ThroughputLine
     extend ThroughputGate
 
     KEYS = %w[head spend t0 t1 t2 t3].freeze
     TIMES = %w[t0 t1 t2 t3].freeze
-    BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\nAI spend [^\r\n]+(?=\r?\n|\z)/
+    BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\n\*\*This head:\*\* [^\r\n]+(?=\r?\n|\z)/
+    HEADER = /^(🤖 [^\r\n]*?) - AI spend: [^\r\n]*/
 
-    def self.for_description(content, timeline = nil, pull = nil) = line(publish_state(content, timeline || {}, pull))
+    def self.state(content, timeline = nil, pull = nil) = publish_state(content, timeline || {}, pull)
 
     def self.update(body, changes)
       original = body.to_s
       state = read(original)
       return original unless state
 
-      replacement = line(apply(state, changes))
-      return original if original[BLOCK].to_s.gsub("\r\n", "\n") == replacement
-
+      state = apply(state, changes)
+      replacement = line(state)
       original.sub(BLOCK) { |found| found.include?("\r\n") ? replacement.gsub("\n", "\r\n") : replacement }
+              .sub(HEADER) { "#{Regexp.last_match(1)}#{header(state)}" }
     end
 
     # A usage refresh must not fail on a damaged block; the next publish rewrites it.

@@ -6,21 +6,22 @@ require_relative 'throughput_helper'
 class ThroughputStatsTest < Minitest::Test
   include ThroughputHelper
 
-  PENDING = 'AI spend UNKNOWN · Prompt to CI UNKNOWN · CI to ready pending · Ready to merged pending'
+  PENDING = '**This head:** Prompt to CI UNKNOWN · CI to ready pending · Ready to merged pending'
 
-  def test_the_stats_line_leads_with_spend_and_pending_placeholders
+  def test_the_model_line_shows_spend_and_timings_shows_the_intervals
     rendered = describe
-    assert_match(/\A🤖 Codex · OpenAI · gpt-5\.6-terra · low\n\n<!-- shaka:stats \{/, rendered)
+    assert_match(/\A🤖 Codex · OpenAI · gpt-5\.6-terra · low - AI spend: UNKNOWN\n\n/, rendered)
     assert_includes rendered, PENDING
-    assert_operator rendered.index('AI spend'), :<, rendered.index('## Summary')
-    refute_includes rendered, 'AI spend $0'
+    assert_operator rendered.index('<summary>Timings'), :<, rendered.index(PENDING)
+    refute_includes rendered, 'AI spend: $0'
     refute_includes rendered, 'Usage and cost ·'
-    assert_includes describe('$0.00'), 'AI spend $0.00'
+    assert_includes describe('$0.00'), 'AI spend: $0.00'
   end
 
   def test_prompt_to_ci_runs_from_the_task_start_to_the_first_check_start
     started = { 'task_started_at' => START, 'ci_started_at' => PUSH }
-    assert_includes describe('$4.12', timeline: started), 'AI spend $4.12 · Prompt to CI 38m'
+    assert_includes describe('$4.12', timeline: started), "low - AI spend: $4.12\n"
+    assert_includes describe('$4.12', timeline: started), '**This head:** Prompt to CI 38m'
     assert_includes describe('$4.12', timeline: started), '| openai | $4.12 |'
     short = { 'task_started_at' => START, 'ci_started_at' => START + 30 }
     assert_includes describe('UNKNOWN', timeline: short), 'Prompt to CI <1m'
@@ -32,7 +33,7 @@ class ThroughputStatsTest < Minitest::Test
   def test_the_publisher_note_stays_under_the_stats_line
     noted = content.merge('publisher_note' => 'Served model unavailable.')
     rendered = Shaka::Publication.description(noted)
-    assert_operator rendered.index('AI spend'), :<, rendered.index('_Served model unavailable._')
+    assert_operator rendered.index('AI spend:'), :<, rendered.index('_Served model unavailable._')
   end
 
   def test_updating_the_block_is_idempotent_and_leaves_the_surrounding_text
@@ -42,6 +43,7 @@ class ThroughputStatsTest < Minitest::Test
     assert_equal updated, Shaka::ThroughputStats.update(updated, changes)
     assert updated.start_with?("Keep this.\n\n") && updated.end_with?("\nAnd this.\n")
     assert_includes updated, 'CI to ready 41m · Ready to merged pending'
+    assert_includes updated, "low - AI spend: $4.12 · ready in 1h 19m\n"
     assert_equal 1, updated.scan('<!-- shaka:stats ').size
   end
 
@@ -65,14 +67,15 @@ class ThroughputStatsTest < Minitest::Test
     crlf = "Keep.\r\n#{filled_block.gsub("\n", "\r\n")}\r\nMore.\r\n"
     assert_equal READY.iso8601, Shaka::ThroughputStats.read(crlf)['t2']
     updated = Shaka::ThroughputStats.update(crlf, 'spend' => '$5.00')
-    assert_includes updated, "-->\r\nAI spend $5.00"
+    assert_includes updated, "-->\r\n**This head:**"
+    assert_includes updated, "low - AI spend: $5.00 · ready in 1h 19m\r\n"
     assert updated.end_with?("\r\nMore.\r\n")
   end
 
   def test_a_damaged_block_in_the_body_does_not_stop_republication
     damaged = "<!-- shaka:stats {not json} -->\n"
     rendered = describe('$4.12', timeline: push_times, pull: { 'head' => { 'sha' => HEAD }, 'body' => damaged })
-    assert_includes rendered, 'AI spend $4.12 · Prompt to CI 38m · CI to ready pending'
+    assert_includes rendered, '**This head:** Prompt to CI 38m · CI to ready pending'
   end
 
   def test_a_backslash_in_a_carried_value_survives_a_rewrite
@@ -81,31 +84,26 @@ class ThroughputStatsTest < Minitest::Test
   end
 
   def test_a_carried_value_that_ends_the_comment_is_not_written_back
-    hostile = "<!-- shaka:stats {\"head\":\"#{HEAD}\",\"t2\":\"--> **x**\"} -->\nAI spend UNKNOWN\n"
+    hostile = "<!-- shaka:stats {\"head\":\"#{HEAD}\",\"t2\":\"--> **x**\"} -->\n**This head:** x\n"
     rendered = describe('$4.12', timeline: push_times, pull: { 'head' => { 'sha' => HEAD }, 'body' => hostile })
     refute_includes rendered, '**x**'
     assert_equal hostile, Shaka::ThroughputStats.refresh_spend(hostile, '$1.00')
   end
 
   def test_a_carried_time_that_does_not_parse_is_not_kept
-    edited = "<!-- shaka:stats {\"head\":\"#{HEAD}\",\"t1\":\"!\"} -->\nAI spend UNKNOWN\n"
+    edited = "<!-- shaka:stats {\"head\":\"#{HEAD}\",\"t1\":\"!\"} -->\n**This head:** x\n"
     rendered = describe('$4.12', timeline: push_times, pull: { 'head' => { 'sha' => HEAD }, 'body' => edited })
     assert_includes rendered, 'Prompt to CI 38m'
   end
 
   def test_a_spend_refresh_leaves_a_damaged_block_alone
-    damaged = "Keep.\n<!-- shaka:stats {not json} -->\nAI spend UNKNOWN\n"
+    damaged = "Keep.\n<!-- shaka:stats {not json} -->\n**This head:** x\n"
     assert_equal damaged, Shaka::ThroughputStats.refresh_spend(damaged, '$1.00')
-  end
-
-  def test_republishing_the_same_head_keeps_the_earlier_check_start
-    later = { 'task_started_at' => START, 'ci_started_at' => PUSH + 300 }
-    rendered = describe('$4.12', timeline: later, pull: { 'head' => { 'sha' => HEAD }, 'body' => filled_block })
-    assert_includes rendered, 'Prompt to CI 38m'
   end
 
   def test_republishing_keeps_ready_time_only_for_the_same_head
     assert_includes republish(MERGED, HEAD, PUSH), 'CI to ready 41m · Ready to merged 2h 5m'
+    assert_includes republish(MERGED, HEAD, PUSH), "low - AI spend: $4.12 · merged in 3h 24m\n"
     assert_includes republish(nil, NEXT, READY), 'Prompt to CI 1h 19m · CI to ready pending'
   end
 

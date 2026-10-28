@@ -4,9 +4,8 @@ Use a PR's **Usage and cost** section to see the reported model work and its
 estimated cost. Read the coverage note before comparing totals: a report may
 cover part of a session, omit tools, or lack attribution to individual commits.
 
-The top of the description shows that USD total beside how long the current
-head took to reach CI and to become ready. This section keeps the full table and does not
-repeat the total in its title. A missing total says `UNKNOWN`, which is not zero.
+The model line at the top of the description ends with that USD total. This
+section keeps the full table and does not repeat the total in its title. A missing total says `UNKNOWN`, which is not zero.
 
 ## What the columns mean
 
