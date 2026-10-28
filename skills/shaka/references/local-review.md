@@ -311,7 +311,8 @@ Repository editorial prompts do not replace those definitions. Handle each by cl
 | `risk` | Fix it when the fix is clearly correct; otherwise document it |
 | `nit` | Document it for a later decision; never fixed in the loop |
 
-Keep each fix inside the goal file's scope. A `defect` or `risk` stays out of the loop when
+Keep each fix inside the goal file's scope; this rule applies before the table. A `defect` or
+`risk` stays out of the loop when
 fixing it would widen the change past that scope, such as accepting an input form the task does
 not need, or when it concerns behavior this change does not alter and does not make worse.
 Record it as `decision_needed`, offering a follow-up among the options. When the maintainer
