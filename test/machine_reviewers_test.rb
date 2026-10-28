@@ -257,6 +257,17 @@ class MachineReviewersEvidenceTest < Minitest::Test
     end
   end
 
+  # Break caught: the runner strips a padded identity and applies the machine model; evidence did not.
+  def test_review_evidence_reads_a_padded_reviewer_like_the_run
+    with_checkout do |root, ref|
+      result = with_home([codex('model' => 'gpt-6-astra')]) do |home|
+        review_with_home(root, ref, home, reviewer: ' OpenAI / Codex ')
+      end
+
+      assert_equal 'gpt-6-astra', result.fetch('task_overrides').fetch('machine_model')
+    end
+  end
+
   # Evidence records only what the run applies: an unlisted reviewer gets no machine values.
   def test_review_evidence_records_nothing_for_an_unlisted_reviewer
     with_checkout do |root, ref|

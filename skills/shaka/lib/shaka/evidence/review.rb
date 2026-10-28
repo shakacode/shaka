@@ -63,7 +63,8 @@ module Shaka
       # The model and effort this machine fills in for the reviewer, by the rule the run applies.
       # Evidence checks replay these recorded values instead of reading another machine's list.
       def machine_values(review)
-        reviewer = @task_overrides['reviewer']
+        # The runner reads the identity through the same parser, so padding cannot split the two.
+        reviewer = @task_overrides['reviewer'] && ReviewerSelection.parse(@task_overrides['reviewer']).values.join('/')
         machine = reviewer && Configuration::MachineReviewers.load(home: Dir.home)
         return {} unless machine
 
