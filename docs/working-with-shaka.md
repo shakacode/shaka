@@ -5,20 +5,12 @@ checks required checks, review evidence, and size limits. The rest of the agent
 behavior here follows Shaka's instructions
 ([what is enforced](workflow.md#what-is-enforced)).
 
-Examples use `$shaka` from Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode
+Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode
 ([other agents](coding-agents.md)).
 
-## What you get
+<a id="what-you-get"></a>
 
-A PR built for your decision:
-
-- **Description**: the outcome, decisions left for you, how the change was
-  checked, and what was not.
-- **Code walkthrough**: each choice and its alternatives, linked to the code.
-- **Evidence**: tests, review findings, and screenshots of visible changes.
-- **Collapsed sections**: detail you can skip.
-
-See [where each answer lives](pr-verification.md#read-a-pr-for-your-decision).
+For what each PR shows, see [Why use Shaka](README.md#why-use-shaka).
 
 ## Give it an outcome
 

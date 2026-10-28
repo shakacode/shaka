@@ -3,7 +3,7 @@
 **Review the intent and the evidence, not every line.**
 
 Give your coding agent a task. Shaka has it build, test, and get an independent
-review. You get one pull request (PR) you can judge quickly.
+review. You get a pull request (PR) you can judge quickly.
 
 ## Why use Shaka
 
@@ -46,13 +46,13 @@ See [what a PR answers](pr-verification.md#answers-for-your-next-decision).
 
 1. [Working with Shaka](working-with-shaka.md): merge policy, feedback, waiting
    PRs, and other kinds of tasks.
-2. [FAQ](faq.md): planning first, picking settings, or understanding a pause.
+2. [FAQ](faq.md): pauses, merging, review, and where settings live.
 
 <a id="configure-and-understand"></a>
 
 ## Set up when you need to
 
-The agent handles setup. These guides explain the choices:
+The agent handles setup.
 
 - [Repository setup](configure-repository.md) — reuse your checks and review the setup PR.
 - [Choose your settings](settings-guide.md) — common choices and prompts for your agent.

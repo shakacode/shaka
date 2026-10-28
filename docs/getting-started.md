@@ -2,8 +2,8 @@
 
 Start with a small fix in a project you know.
 
-Examples use `$shaka` in Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode.
-In Pi, load the installed Shaka skill. See [coding agents](coding-agents.md).
+Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode
+([other agents](coding-agents.md)).
 
 <a id="getting-started"></a>
 
@@ -16,7 +16,6 @@ Install Shaka from https://github.com/shakacode/shaka.
 ```
 
 To run the commands yourself, follow [manual installation](manual-installation.md).
-Don't install the `shaka` gem. It only reserves the name.
 
 Check the install, and follow what the report says:
 
