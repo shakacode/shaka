@@ -75,11 +75,11 @@ configuration, and the description publisher refuses it too.
 An installation older than a key, an option of a choice, or a nested shape refuses the
 whole settings file, so every task on it stops. An unneeded update costs one command.
 
-- No update is needed when each key path the change writes already appears at that path
-  in the trusted `config_path` at `--ref` (`git show REF:CONFIG_PATH`), holding the same
-  value or, for a setting that is not a choice among named options, a value of the same
-  type. Each element of a list of named options counts as a choice. A value seen only
-  under another key proves nothing.
+- Before editing, check the planned change against `configure settings --ref`; after
+  editing, confirm it against `configure settings --local`. No update is needed when the
+  change only removes keys, or when every key path it sets is already set in the trusted
+  report and each new value is a number or a file path. A new key, a new option, or new
+  text in a setting Shaka checks needs the update.
 - Otherwise list the update, and name when the key or value entered the reference, from
   the saved helper's source: `git -C SOURCE log --reverse --format='%cs %h' -S 'TEXT' --
   docs/settings.md`. The maintainer judges whether their team's installations are older.
