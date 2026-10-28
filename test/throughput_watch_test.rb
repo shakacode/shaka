@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'throughput_helper'
+require 'shaka/github/pull_timeline'
 
 # pr watch fills the stats block once per head and never moves a known time later.
 class ThroughputWatchTest < Minitest::Test
