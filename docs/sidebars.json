@@ -33,7 +33,7 @@
       "collapsed": true,
       "items": [
         "pr-verification",
-        "release-watchers",
+        "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
         {

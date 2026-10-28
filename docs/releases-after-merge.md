@@ -1,7 +1,7 @@
 # Releases after merge
 
-Shaka's work on a change ends when its PR merges. Promoting a release, watching
-it in production, and deciding whether to roll back belong to your project.
+Shaka carries a change through its PR. Promoting a release, watching it in
+production, and deciding whether to roll back belong to your project.
 This page shows where the PR record stops and how to pass what your release
 process needs through it.
 
@@ -18,11 +18,10 @@ deployment does not show that its observation window completed.
 
 ## What Shaka records for your release
 
-- **Steps besides merging.** Each PR description lists work outside the code,
-  with when it happens, who does it, where, and how to verify it. Put a staging
-  check, backfill, or feature-flag change in an `after merge` row, so whoever
-  promotes the release finds it on the PR. After a merge, the agent lists the
-  rows still open. See [what you need to do](pr-verification.md#answers-for-your-next-decision).
+- **[Steps besides merging](pr-verification.md#answers-for-your-next-decision).**
+  Put a staging check, backfill, or feature-flag change in an `after merge` row,
+  so whoever promotes the release finds it on the PR. After a merge, the agent
+  lists the rows still open.
 - **Deployment link.** The description links the newest successful deployment
   or preview of the PR's current commit, or says none was found. It tells you
   which build the evidence came from, not whether production is healthy.
