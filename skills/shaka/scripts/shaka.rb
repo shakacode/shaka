@@ -43,6 +43,7 @@ require_relative '../lib/shaka/guidance'
 require_relative '../lib/shaka/publication/publication'
 require_relative '../lib/shaka/publication/rendering_preview'
 require_relative '../lib/shaka/review_reply'
+require_relative '../lib/shaka/task_start'
 require_relative '../lib/shaka/recommendation'
 require_relative '../lib/shaka/repos'
 require_relative '../lib/shaka/review_prompt'
@@ -77,7 +78,7 @@ if Shaka::Subcommands::TABLE.key?(ARGV.first)
   exit subcommand.run.call(ARGV)
 end
 
-COMMANDS = %w[pr comments description reply resolve walkthrough merge attention squash-message handoff].freeze
+COMMANDS = %w[pr comments description reply start resolve walkthrough merge attention squash-message handoff].freeze
 
 def content(path)
   parsed = JSON.parse(File.read(path, encoding: 'UTF-8'))
@@ -185,6 +186,14 @@ def opening_result(options, summary)
   Shaka::OpeningPublication.new(root: options[:root] || Dir.pwd, ref: options[:ref],
                                 reviewer: options[:opening_reviewer], model: options[:opening_model],
                                 effort: options[:opening_effort]).call(summary)
+end
+
+# The issue is as public as the repository, so the checkout path follows the same setting as WIP Details.
+def start_redaction(options, repository)
+  root = options[:root] || Dir.pwd
+  current, = Shaka::PublicationSettings.current_settings(root:, ref: options[:ref], repository:, required: true)
+  Shaka::PublicationSettings.new(current:, location_diagnostic: Shaka::PublicationSettings::UNAVAILABLE_SETTINGS)
+                            .path_redaction
 end
 
 def usage_banner
@@ -312,6 +321,9 @@ begin
   if command == 'handoff' && options[:ref].to_s.strip.empty?
     raise Shaka::Error, 'handoff requires --ref so seam-required checks come from a trusted commit.'
   end
+  if command == 'start' && options[:ref].to_s.strip.empty?
+    raise Shaka::Error, 'start requires --ref so the checkout-path setting comes from a trusted commit.'
+  end
   if command == 'squash-message' && options[:ref].to_s.strip.empty?
     raise Shaka::Error, 'squash-message requires --ref so checkpoint opt-outs come from a trusted commit.'
   end
@@ -395,6 +407,10 @@ begin
              publisher_note = attributed.delete('publisher_note')
              github.reply(body: Shaka::ReviewReply.compose(attributed, github, publisher_note:),
                           key: key, comment: options[:comment])
+           when 'start'
+             started = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
+             body = Shaka::TaskStart.compose(started, path_redaction: start_redaction(options, repository))
+             github.reply(body:, key: Shaka::TaskStart.key(started), issue: true)
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
            when 'walkthrough'
