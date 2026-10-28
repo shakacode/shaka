@@ -1,4 +1,4 @@
-# 0004: Which local reviewers a machine is expected to run
+# 0005: Which local reviewers a machine is expected to run
 
 Status: accepted on 2026-10-26; not yet implemented. Nothing here is shipped.
 Date: 2026-10-25. Tracks [issue #882](https://github.com/shakacode/shaka/issues/882).
