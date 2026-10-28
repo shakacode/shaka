@@ -82,11 +82,16 @@ as decision 3, but the code is tied to its own layout. Nothing is reused.
    `.agents/shaka/config.yml`, runs `seam check --local`, and publishes with
    `evidence guard --flow migration` and `description --publication-flow migration`.
    Before editing, it tells the maintainer that installations need `shaka install --update`
-   after merge when the change uses a key or value an older Shaka rejects: a new key, a
-   new enum option, or a new nested shape. It lists that as an after-merge step in the PR,
-   and lists it whenever it cannot tell. Switching between long-supported values lists no
-   update. This rule replaces the narrower one in the human review floors procedure:
-   step 3 moves it to one shared section that both procedures point to.
+   after merge, and lists that as an after-merge step in the PR with the date each new key
+   or value entered the reference. Only a change that just removes keys lists none. This
+   rule replaces the narrower one in the human review floors procedure: step 3 moves it to
+   one shared section that both procedures point to.
+
+   Step 3 first tried to skip the update when the trusted settings already showed that
+   installations accept a change. Five review rounds kept finding cases the agent could not
+   judge from prose, such as new options, checked text, list entries, and number ranges.
+   The maintainer chose to list the update every time instead: an unneeded update costs one
+   command, and a missed one stops every task on an older installation.
 5. **Reads are trusted; a draft is labeled.** Both commands read settings and prompt files
    at the `--ref` default-branch commit. With `--local` instead, as `seam check --local`
    does, they read the working tree and label every section as an untrusted draft, so a

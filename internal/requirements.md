@@ -77,9 +77,9 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   its reference section, using the resolvers that apply each setting. Mark values that
   equal the default. See [ADR 0003](adr/0003-configure-walkthrough.md).
 - **R22 — Change settings in their own PR.** A requested settings change becomes a
-  settings PR through the migration flow. Before editing, tell the maintainer whether
-  installations must update after merge, and list that step in the PR unless the trusted
-  settings already show that installations accept what the change writes. See
+  settings PR through the migration flow. Before editing, tell the maintainer that
+  installations must update after merge, and list that step in the PR, with the date each
+  new key or value entered the reference, unless the change only removes keys. See
   [ADR 0003](adr/0003-configure-walkthrough.md).
 
 ### Preserve control and recover work

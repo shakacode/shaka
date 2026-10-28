@@ -57,33 +57,30 @@ findings. No reviewer reads `project_guidance` files; the working agent does.
 A settings change is its own PR. Ruby refuses a feature PR that changes Shaka's
 configuration, and the description publisher refuses it too.
 
-1. Read the current value with `configure settings --ref`, then tell the maintainer, before
-   editing, whether installations must update after merge, as the next section decides.
+1. Read the current value with `configure settings --ref`. Before editing, tell the
+   maintainer whether installations must update after merge, as the next section says.
 2. Start a branch from the fresh default branch. Edit the file the report names as
    `config_path`, keeping its comments. Set only the keys the change needs.
 3. Show the result with `configure settings --root DIR --local`, and with `prompt show
    NAME --local` when the change names a prompt or instructions file. Run
    `seam check --root DIR --local`; a failure stops the change.
 4. Publish through the migration flow: `evidence guard --flow migration` before staging and
-   push, and `description --publication-flow migration`. List the update step from the next
-   section in `steps_besides_merging`, or `none` when that section says no update is needed.
+   push, and `description --publication-flow migration`. Put the update step from the next
+   section in `steps_besides_merging`, or `none` when the change only removes keys.
 5. The change takes effect when its PR merges. To try it on one task first, follow
    [settings preview](settings-preview.md).
 
 ### Say when installations must update
 
-An installation older than a key, an option of a choice, or a nested shape refuses the
-whole settings file, so every task on it stops. An unneeded update costs one command.
+An installation older than a key, an option, or a nested shape refuses the whole settings
+file, so every task on it stops. Whether a teammate's installation is that old cannot be
+checked from the repository, so list the update on every settings PR that adds or changes
+a value. Only a change that just removes keys lists none.
 
-- Before editing, check the planned change against `configure settings --ref`; after
-  editing, confirm it against `configure settings --local`. No update is needed when the
-  change only removes keys, or when every key path it sets already holds a number or a
-  file path in the trusted report and the new value is the same kind. A new key, a new option, new text
-  in a setting Shaka checks, or any change inside a list needs the update.
-- Otherwise list the update, and name when the key or value entered the reference, from
-  the saved helper's source: `git -C SOURCE log --reverse --format='%cs %h' -S 'TEXT' --
-  docs/settings.md`. The maintainer judges whether their team's installations are older.
-- List it whenever you cannot tell.
+For each key and value the change writes, name the date it entered the reference, from the
+saved helper's source: `git -C SOURCE log --reverse --format='%cs %h' -S 'TEXT' --
+docs/settings.md`. Say in the step that installations older than that date refuse the
+settings, so the maintainer can judge whether anyone needs it.
 
 List it as `after merge`: Update Shaka (`shaka install --update`), who: everyone running
 Shaka on this repository, where: each machine with an installation, verify: `shaka doctor
