@@ -10,13 +10,13 @@ class PublicationSettingsLayoutTest < Minitest::Test
     sha = 'a' * 40
     trusted = Shaka::SettingsTable.source({ 'source' => 'trusted/team', 'source.revision' => sha }, 'acme/widgets')
     local = Shaka::SettingsTable.source({ 'source' => 'private/local', 'source.revision' => sha }, 'acme/widgets')
-    assert_equal "Default-branch settings at [`aaaaaaa`](https://github.com/acme/widgets/commit/#{sha})", trusted
-    assert_equal 'Private local settings at `aaaaaaa`', local
+    assert_equal "Repository settings from commit [`aaaaaaa`](https://github.com/acme/widgets/commit/#{sha})", trusted
+    assert_equal 'Private local settings from commit `aaaaaaa`', local
   end
 
   def test_settings_kept_out_of_the_repository_keep_every_value_behind_a_second_disclosure
     summary, values = bound.split('<details>', 2)
-    assert_includes summary, "| Validation | Private local settings at `#{REVISION[0, 7]}` | validate |"
+    assert_includes summary, "| Validation | Private local settings from commit `#{REVISION[0, 7]}` | validate |"
     refute_includes summary, '| merge.preference |'
     assert_includes values, '| merge.preference | ask | ask | ask |'
     assert_includes summary, 'A local merge preference cannot authorize merging'
@@ -25,7 +25,7 @@ class PublicationSettingsLayoutTest < Minitest::Test
 
   def test_settings_from_an_unmerged_settings_pr_keep_their_table_too
     body = settings_block(current: snapshot(kind: 'preview/local'))
-    assert_includes body, 'Unmerged settings preview at'
+    assert_includes body, 'Unmerged settings preview from commit'
     assert_includes body, '| merge.preference | ask |'
     assert_includes body, 'Local files remain local'
   end

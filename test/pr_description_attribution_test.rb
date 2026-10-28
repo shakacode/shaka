@@ -67,7 +67,7 @@ class PrDescriptionAttributionTest < Minitest::Test
       enable_candidate_attribution(root)
       body = published_body(root)
       refute_includes body, CREDIT
-      assert_includes body, 'Current settings: Default-branch settings at'
+      assert_includes body, 'Current settings: Repository settings from commit'
     end
   end
 
