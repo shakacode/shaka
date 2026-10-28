@@ -12,7 +12,7 @@ module Shaka
     extend ThroughputLine
     extend ThroughputGate
 
-    KEYS = %w[head spend t0 t1 first_push t2 t3 rounds].freeze
+    KEYS = %w[head spend t0 t1 t2 t3].freeze
     BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\nAI spend [^\r\n]+(?=\r?\n|\z)/
 
     def self.for_description(content, timeline = nil, pull = nil) = line(publish_state(content, timeline || {}, pull))
@@ -77,15 +77,14 @@ module Shaka
       def fresh_state(content, timeline, carried)
         prompt = prompted_at(timeline)
         { 'spend' => spend(content), 't0' => stamp(timeline['task_started_at']) || carried['t0'],
-          't1' => prompt, 'first_push' => carried['first_push'], 't3' => stamp(timeline['merged']) }
+          't1' => prompt, 't3' => stamp(timeline['merged']) }
       end
 
       def prompted_at(timeline) = stamp(timeline['ci_started_at'])
 
       def carried_state(base, carried)
         t1 = base['t1'] ? keep_earlier(base['t1'], carried, 't1', carried['head']) : carried['t1']
-        base.merge('t1' => t1, 't2' => carried['t2'],
-                   't3' => base['t3'] || carried['t3'], 'rounds' => carried['rounds'])
+        base.merge('t1' => t1, 't2' => carried['t2'], 't3' => base['t3'] || carried['t3'])
       end
 
       def spend(content)
@@ -103,25 +102,14 @@ module Shaka
 
       # The body is editable by the pull request author, so a carried value must not close the marker.
       def sound?(data)
-        values = data.except('rounds').values
-        values.all? { |value| value.nil? || (value.is_a?(String) && one_line?(value)) } &&
-          (data['rounds'].nil? || positive_round?(data['rounds']))
+        data.slice(*KEYS).values.all? { |value| value.nil? || (value.is_a?(String) && one_line?(value)) }
       end
 
       def apply(state, changes)
         merged = state.dup
         changes.each { |key, value| assign(merged, key, value) }
-        checked_rounds(merged)
+        merged.slice(*KEYS)
       end
-
-      def checked_rounds(state)
-        rounds = state['rounds']
-        raise Error, 'CI rounds must be a positive integer.' unless rounds.nil? || positive_round?(rounds)
-
-        state
-      end
-
-      def positive_round?(rounds) = rounds.is_a?(Integer) && rounds >= 1
 
       def assign(state, key, value)
         return unless KEYS.include?(key)
@@ -130,8 +118,6 @@ module Shaka
       end
 
       def checked(key, value)
-        return value if key == 'rounds'
-
         text = value.to_s
         raise Error, "Throughput #{key} must be one line." unless one_line?(text)
 

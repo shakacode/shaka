@@ -15,17 +15,9 @@ module ThroughputHelper
 
   private
 
-  def heads_of(commits) = Shaka::ThroughputStats.ci_heads(commits, required: ['validate'], review_jobs: [])
-
   def filled_block
     first = describe('$4.12', timeline: push_times, pull: head_pull)
-    Shaka::ThroughputStats.update(first, 't2' => READY.iso8601, 'rounds' => 1, 'first_push' => PUSH.iso8601,
-                                         'head' => HEAD)
-  end
-
-  def commit_runs
-    [gql('1' * 40, START.iso8601, [check_run('validate', 'FAILURE')]),
-     gql(HEAD, PUSH.iso8601, [check_run('validate', 'SUCCESS')])]
+    Shaka::ThroughputStats.update(first, 't2' => READY.iso8601, 'head' => HEAD)
   end
 
   def head_pull = { 'head' => { 'sha' => HEAD } }

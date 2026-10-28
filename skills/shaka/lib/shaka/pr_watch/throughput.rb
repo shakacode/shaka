@@ -10,11 +10,8 @@ module Shaka
         query($owner: String!, $name: String!, $number: Int!) {
           repository(owner: $owner, name: $name) {
             pullRequest(number: $number) { headRefOid
-              commits(last: 50) { totalCount nodes { commit { oid
-                status { contexts { context state createdAt } }
-                checkSuites(first: 20) { pageInfo { hasNextPage } nodes { createdAt
-                  checkRuns(first: 40) { pageInfo { hasNextPage }
-                    nodes { name conclusion status startedAt completedAt } } } } } } } } } }
+              commits(last: 1) { nodes { commit { oid status { contexts { createdAt } }
+                checkSuites(first: 100) { nodes { createdAt checkRuns(first: 100) { nodes { startedAt } } } } } } } } } }
       GRAPHQL
 
       def self.watch(arguments, head, jobs, settings)
@@ -42,7 +39,7 @@ module Shaka
           carried = ThroughputStats.read(body = description_body)
           return unless carried
 
-          updated = ThroughputStats.update(body, changes(pull, required, carried, times))
+          updated = ThroughputStats.update(body, fields(pull, required, carried, times))
           return if updated == body
           next unless safe_to_write?(body)
 
@@ -63,20 +60,10 @@ module Shaka
         found
       end
 
-      def changes(pull, required, carried, times)
-        commits, total = commit_page(pull)
-        heads, suites_complete = ThroughputStats.ci_heads(commits, required:, review_jobs: @review_jobs)
+      def fields(pull, required, carried, times)
         ready = ThroughputStats.ready_at(times, required:, review_jobs: @review_jobs, wait: @wait)
-        fields(commits, heads, ready, history_complete?(suites_complete, total, commits), carried)
-      end
-
-      def fields(commits, heads, ready, complete, carried)
-        result = { 'head' => @head, 'rounds' => complete ? ThroughputStats.rounds(heads) : nil }
-        result['t2'] = ready_time(ready, carried)
-        result['t1'] = prompt_time(commits.find { |commit| commit.is_a?(Hash) && commit['oid'] == @head }, carried)
-        push = ThroughputStats.bounded_first_push(heads, complete, carried)
-        result['first_push'] = push if push
-        result
+        { 'head' => @head, 't1' => prompt_time(pull.dig('commits', 'nodes', 0, 'commit'), carried),
+          't2' => ready_time(ready, carried) }
       end
 
       # Times recorded for another head must not be relabelled as this head's.
@@ -99,18 +86,6 @@ module Shaka
       end
 
       def same_head?(pull) = pull.is_a?(Hash) && pull['headRefOid'] == @head
-
-      def history_complete?(suites_complete, total, commits)
-        suites_complete && total.is_a?(Integer) && total == commits.size
-      end
-
-      def commit_page(pull)
-        connection = pull['commits']
-        return [[], nil] unless connection.is_a?(Hash)
-
-        nodes = Array(connection['nodes'])
-        [nodes.filter_map { |node| node['commit'] if node.is_a?(Hash) }, connection['totalCount']]
-      end
 
       def description_body = @github.api(path).fetch('body').to_s
 

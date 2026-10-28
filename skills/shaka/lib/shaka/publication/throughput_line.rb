@@ -37,12 +37,17 @@ module Shaka
     def shown_spend(state) = spend_text?(state['spend']) ? state['spend'] : 'UNKNOWN'
     def spend_text?(text) = text.is_a?(String) && !text.strip.empty?
     def prompt(state) = state['t0'].nil? || state['t1'].nil? ? 'UNKNOWN' : interval(state['t0'], state['t1'])
-    def ci(state) = state['t2'].nil? ? 'pending' : "#{ci_span(state)} (#{round_label(state['rounds'])})"
-    def ci_span(state) = state['t2'] == 'UNKNOWN' ? 'UNKNOWN' : interval(anchor(state), state['t2'])
-    def anchor(state) = state['first_push'] || state['t1']
-    def round_label(rounds) = positive_rounds?(rounds) ? "#{rounds} #{round_noun(rounds)}" : 'UNKNOWN rounds'
-    def round_noun(rounds) = rounds == 1 ? 'round' : 'rounds'
-    def positive_rounds?(rounds) = rounds.is_a?(Integer) && rounds.positive?
+
+    # Once merged, a ready time nobody recorded can no longer arrive.
+    def ci(state)
+      if state['t2'].nil?
+        state['t3'].nil? ? 'pending' : 'UNKNOWN'
+      else
+        ci_span(state)
+      end
+    end
+
+    def ci_span(state) = state['t2'] == 'UNKNOWN' || state['t1'].nil? ? 'UNKNOWN' : interval(state['t1'], state['t2'])
     def merged(state) = state['t3'].nil? ? 'pending' : merge_span(state)
     def merge_span(state) = unknown_merge?(state) ? 'UNKNOWN' : interval(state['t2'], state['t3'])
     def unknown_merge?(state) = state['t2'].nil? || state['t2'] == 'UNKNOWN' || state['t3'] == 'UNKNOWN'

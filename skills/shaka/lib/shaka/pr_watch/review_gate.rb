@@ -47,7 +47,8 @@ module Shaka
 
         @throughput.call(required: required_names(required))
       # Throughput is a side record; no failure in it may stop the watch from waking.
-      rescue StandardError
+      rescue StandardError => e
+        warn "shaka: throughput not recorded: #{e.message.gsub(/[\r\n]+/, ' ')}"
         nil
       end
 

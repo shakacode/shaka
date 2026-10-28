@@ -200,9 +200,12 @@ class PrWatchThroughputTest < Minitest::Test
   end
 
   def test_an_unexpected_throughput_error_still_lets_the_watch_wake
-    result = watch([frame(required: [check('validate', 'SUCCESS', 'pass')],
-                          checks: [check('claude-review', 'SUCCESS', 'pass')])],
-                   throughput: ->(**) { {}.fetch('body') })
+    result = nil
+    assert_output(nil, /throughput not recorded: key not found: "body"/) do
+      result = watch([frame(required: [check('validate', 'SUCCESS', 'pass')],
+                            checks: [check('claude-review', 'SUCCESS', 'pass')])],
+                     throughput: ->(**) { {}.fetch('body') })
+    end
     assert_equal 'checks_terminal', result
   end
 end

@@ -36,19 +36,17 @@ class ThroughputStatsTest < Minitest::Test
   end
 
   def test_updating_the_block_is_idempotent_and_leaves_the_surrounding_text
-    body = "Keep this.\n\n#{describe}\nAnd this.\n"
-    changes = { 't2' => READY.iso8601, 'rounds' => 2, 'first_push' => START.iso8601, 'head' => HEAD }
+    body = "Keep this.\n\n#{describe('$4.12', timeline: push_times, pull: head_pull)}\nAnd this.\n"
+    changes = { 't2' => READY.iso8601, 'head' => HEAD }
     updated = Shaka::ThroughputStats.update(body, changes)
     assert_equal updated, Shaka::ThroughputStats.update(updated, changes)
     assert updated.start_with?("Keep this.\n\n") && updated.end_with?("\nAnd this.\n")
-    assert_includes updated, 'CI to ready 1h 19m (2 rounds)'
+    assert_includes updated, 'CI to ready 41m · Ready to merged pending'
     assert_equal 1, updated.scan('<!-- shaka:stats ').size
   end
 
-  def test_a_duplicate_block_or_a_zero_round_count_is_refused
+  def test_a_duplicate_block_is_refused
     assert_raises(Shaka::Error) { Shaka::ThroughputStats.update("#{describe}\n#{describe}", 'spend' => '$1.00') }
-    error = assert_raises(Shaka::Error) { Shaka::ThroughputStats.update(describe, 'rounds' => 0) }
-    assert_includes error.message, 'positive'
   end
 
   def test_a_value_that_ends_the_html_comment_is_refused
@@ -65,10 +63,9 @@ class ThroughputStatsTest < Minitest::Test
 
   def test_a_crlf_block_is_read_and_updated_with_its_line_endings
     crlf = "Keep.\r\n#{filled_block.gsub("\n", "\r\n")}\r\nMore.\r\n"
-    assert_equal 1, Shaka::ThroughputStats.read(crlf)['rounds']
-    updated = Shaka::ThroughputStats.update(crlf, 'rounds' => 2)
-    assert_includes updated, "-->\r\nAI spend $4.12"
-    assert_includes updated, '(2 rounds)'
+    assert_equal READY.iso8601, Shaka::ThroughputStats.read(crlf)['t2']
+    updated = Shaka::ThroughputStats.update(crlf, 'spend' => '$5.00')
+    assert_includes updated, "-->\r\nAI spend $5.00"
     assert updated.end_with?("\r\nMore.\r\n")
   end
 
@@ -80,11 +77,11 @@ class ThroughputStatsTest < Minitest::Test
 
   def test_a_backslash_in_a_carried_value_survives_a_rewrite
     once = Shaka::ThroughputStats.update(describe, 'spend' => 'a\x')
-    assert_equal 'a\x', Shaka::ThroughputStats.read(Shaka::ThroughputStats.update(once, 'rounds' => 1))['spend']
+    assert_equal 'a\x', Shaka::ThroughputStats.read(Shaka::ThroughputStats.update(once, 't2' => 'UNKNOWN'))['spend']
   end
 
   def test_a_carried_value_that_ends_the_comment_is_not_written_back
-    hostile = "<!-- shaka:stats {\"head\":\"#{HEAD}\",\"t2\":\"--> **x**\",\"rounds\":0} -->\nAI spend UNKNOWN\n"
+    hostile = "<!-- shaka:stats {\"head\":\"#{HEAD}\",\"t2\":\"--> **x**\"} -->\nAI spend UNKNOWN\n"
     rendered = describe('$4.12', timeline: push_times, pull: { 'head' => { 'sha' => HEAD }, 'body' => hostile })
     refute_includes rendered, '**x**'
     assert_equal hostile, Shaka::ThroughputStats.refresh_spend(hostile, '$1.00')
@@ -102,12 +99,13 @@ class ThroughputStatsTest < Minitest::Test
   end
 
   def test_republishing_keeps_ready_time_only_for_the_same_head
-    assert_includes republish(MERGED, HEAD, PUSH), 'CI to ready 41m (1 round)'
-    assert_includes republish(MERGED, HEAD, PUSH), 'Ready to merged 2h 5m'
-    assert_includes republish(nil, NEXT, READY), 'CI to ready pending'
-    assert_includes republish(nil, NEXT, READY), 'Prompt to CI 1h 19m'
+    assert_includes republish(MERGED, HEAD, PUSH), 'CI to ready 41m · Ready to merged 2h 5m'
+    assert_includes republish(nil, NEXT, READY), 'Prompt to CI 1h 19m · CI to ready pending'
+  end
+
+  def test_a_merged_pull_request_without_a_ready_time_shows_unknown
     merged = { 'task_started_at' => START, 'ci_started_at' => PUSH, 'merged' => MERGED }
-    assert_includes describe('UNKNOWN', timeline: merged), 'Ready to merged UNKNOWN'
+    assert_includes describe('UNKNOWN', timeline: merged), 'CI to ready UNKNOWN · Ready to merged UNKNOWN'
   end
 
   private

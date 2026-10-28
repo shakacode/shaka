@@ -7,12 +7,13 @@ checkpoint took to reach and how long each one waited for a person to respond.
 
 ## Throughput line
 
-The description opens with AI spend and three intervals. Prompt to CI runs from
-the recorded task start to the earliest check on the current head. CI to ready
-runs from the earliest check on the pull request's first checked head until
-required checks and configured CI reviews are green. A later push adds a round
-only after a failed CI run, so with more than one round the two intervals overlap.
-`pending` is not known yet. `UNKNOWN` is not established. Neither means zero.
+Under the model line, the description shows AI spend and three intervals.
+Prompt to CI runs from the recorded task start to the earliest check on the
+current head. CI to ready runs from that check until the head's required checks
+and configured CI reviews are green. Ready to merged runs from then until the
+merge. After a new push, the intervals measure the new head. `pending` is not
+known yet. `UNKNOWN` was not established, such as a ready time no watch
+recorded before the merge. Neither means zero.
 
 Here is an example:
 
