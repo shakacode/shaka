@@ -410,7 +410,7 @@ begin
            when 'start'
              started = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
              body = Shaka::TaskStart.compose(started, path_redaction: start_redaction(options, repository))
-             github.reply(body:, key: Shaka::TaskStart.key(started), issue: true)
+             github.start_comment(body:, key: Shaka::TaskStart.key(started))
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
            when 'walkthrough'

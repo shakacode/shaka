@@ -28,13 +28,12 @@ module Shaka
     end
 
     # `verbatim` names quoted text the rendering check leaves to the caller; see verify_rendering.
-    # `issue` posts on an issue, such as a task's start comment, which must not be a pull request.
-    def reply(body:, key:, comment: nil, trust_config: nil, verbatim: [], issue: false, # rubocop:disable Metrics/ParameterLists
+    def reply(body:, key:, comment: nil, trust_config: nil, verbatim: [], # rubocop:disable Metrics/ParameterLists
               machine_path: PublicComments::TrustConfig::MACHINE_PATH)
       mark = reply_mark(key)
       content = "#{mark}\n#{publishable(body)}"
       target = positive_integer(comment) if comment
-      issue ? require_issue : pull
+      pull
       existing = prepared_reply(target, mark, trust_config, machine_path)
       verify_rendering(content, verbatim:)
       confirmed(write_reply(existing, content, target), content)
@@ -138,13 +137,6 @@ module Shaka
     end
 
     def pull = api(pull_path)
-
-    def require_issue
-      return unless api("repos/#{@repository}/issues/#{@number}").key?('pull_request')
-
-      raise Error, 'A start comment belongs on an issue; a pull request carries WIP Details instead.'
-    end
-
     def pull_path = "repos/#{@repository}/pulls/#{@number}"
 
     def publishable(body)

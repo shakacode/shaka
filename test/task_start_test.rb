@@ -86,7 +86,7 @@ class TaskStartTest < Minitest::Test
                    '--content-file', path)
   end
 
-  def start(github, body) = github.reply(body:, key: 'start-k7q2', issue: true)['id']
+  def start(github, body) = github.start_comment(body:, key: 'start-k7q2')['id']
 
   def retry_client(posted)
     client(issue_response, viewer_response, response([]), html_response('<p>ok</p>'),
