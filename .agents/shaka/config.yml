@@ -73,14 +73,15 @@ pr_description:
   show_human_comments: true # Default: list comments people wrote on the PR.
   max_human_comments: 20 # Default: how many of those comments to list.
   # Default: Shaka's shipped floors. The lowest human review effort a PR may claim, from the
-  # files it changes. This list replaces the default one. Ours adds the first two floors and the
-  # validation and install floor, names merge-gate and trust code in the trust floor, and
-  # exempts Shaka's Ruby library code from the agent-instructions floor, so
-  # auto_max_review_floor can tell them apart. The rest are the defaults.
+  # files it changes. This list replaces the default one. Ours adds the first two floors, the
+  # validation and install floor, and the contributor-guide floor, names merge-gate and trust code
+  # in the trust floor, puts README.md with the docs, and exempts Shaka's Ruby library code from
+  # the agent-instructions floor, so auto_max_review_floor can tell them apart. The rest are the
+  # defaults.
   human_review_floors:
     - level: 5
       reason: changes docs for Shaka's users
-      paths: [docs/**/*]
+      paths: [docs/**/*, README.md]
     - level: 4
       reason: changes evidence or settings checks
       paths: ['skills/shaka/lib/shaka/{evidence,seam,repository_config,configuration}/**/*',
@@ -93,7 +94,7 @@ pr_description:
       reason: changes trust, merge, authentication, or release paths
       paths: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS,
               'skills/shaka/lib/shaka/{required_checks,ci_review_wait,review_coverage,public_comments,defaults}.rb',
-              'skills/shaka/lib/shaka/publication/{review_effort_floor,feature_guard,verification_gates}.rb',
+              'skills/shaka/lib/shaka/publication/{review_effort_floor,feature_guard,verification_gates,rendering_preview}.rb',
               skills/shaka/lib/shaka/public_comments/**/*]
       words: [auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
               credential]
@@ -103,6 +104,9 @@ pr_description:
       paths: [bin/**/*, .rubocop.yml, .ruby-version, 'Gemfile{,.lock}', shaka.gemspec,
               'skills/shaka/lib/shaka/{installer,update_check,github,gitlab}.rb',
               'skills/shaka/lib/shaka/{install,update_check,github,gitlab}/**/*']
+    - level: 3
+      reason: changes contributor guides, including releasing, or product requirements
+      paths: [contributing/**/*, internal/requirements.md]
     - level: 3
       reason: changes agent instructions
       paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]
