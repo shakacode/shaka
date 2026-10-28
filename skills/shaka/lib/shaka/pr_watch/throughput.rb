@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../publication/throughput_stats'
+require_relative '../publication/rendering_preview'
 
 module Shaka
   class PrWatch
@@ -89,7 +90,8 @@ module Shaka
 
       def description_body = @github.api(path).fetch('body').to_s
 
-      def write(body) = @github.api(path, method: 'PATCH', fields: { body: })
+      # The installed renderer wrote this change, so a branch's rendering preview no longer covers the body.
+      def write(body) = @github.api(path, method: 'PATCH', fields: { body: RenderingPreview.invalidate(body) })
 
       def path = "repos/#{@github.repository}/pulls/#{@github.number}"
     end

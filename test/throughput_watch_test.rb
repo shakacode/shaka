@@ -17,6 +17,14 @@ class ThroughputWatchTest < Minitest::Test
     assert_includes patched, "low - AI spend: $4.12 · ready in 1h 19m\n"
   end
 
+  def test_a_watcher_write_drops_the_rendering_preview_marker
+    marker = "<!-- shaka:rendering-preview #{HEAD} -->"
+    body = "Intro.\n\n#{describe('$4.12', timeline: push_times, pull: head_pull)}\n#{marker}\n"
+    github = ThroughputFakeGitHub.new(body, head_page(PUSH.iso8601), [check('validate', READY.iso8601)])
+    publish(github, [], 'none')
+    refute_includes github.patches.fetch(0), marker
+  end
+
   def test_pr_watch_fills_prompt_to_ci_from_the_check_suite
     body = "Intro.\n\n#{describe('$4.12', timeline: { 'task_started_at' => START }, pull: head_pull)}\n"
     prompted = ThroughputFakeGitHub.new(body, head_page(PUSH.iso8601), [check('validate', READY.iso8601)])
