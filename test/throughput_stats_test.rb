@@ -87,6 +87,12 @@ class ThroughputStatsTest < Minitest::Test
     assert_equal hostile, Shaka::ThroughputStats.refresh_spend(hostile, '$1.00')
   end
 
+  def test_a_carried_time_that_does_not_parse_is_not_kept
+    edited = "<!-- shaka:stats {\"head\":\"#{HEAD}\",\"t1\":\"!\"} -->\nAI spend UNKNOWN\n"
+    rendered = describe('$4.12', timeline: push_times, pull: { 'head' => { 'sha' => HEAD }, 'body' => edited })
+    assert_includes rendered, 'Prompt to CI 38m'
+  end
+
   def test_a_spend_refresh_leaves_a_damaged_block_alone
     damaged = "Keep.\n<!-- shaka:stats {not json} -->\nAI spend UNKNOWN\n"
     assert_equal damaged, Shaka::ThroughputStats.refresh_spend(damaged, '$1.00')

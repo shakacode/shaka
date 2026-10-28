@@ -13,6 +13,7 @@ module Shaka
     extend ThroughputGate
 
     KEYS = %w[head spend t0 t1 t2 t3].freeze
+    TIMES = %w[t0 t1 t2 t3].freeze
     BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\nAI spend [^\r\n]+(?=\r?\n|\z)/
 
     def self.for_description(content, timeline = nil, pull = nil) = line(publish_state(content, timeline || {}, pull))
@@ -101,9 +102,10 @@ module Shaka
       end
 
       # The body is editable by the pull request author, so a carried value must not close the marker.
-      def sound?(data)
-        data.slice(*KEYS).values.all? { |value| value.nil? || (value.is_a?(String) && one_line?(value)) }
-      end
+      def sound?(data) = data.slice(*KEYS).values.all? { |value| safe_value?(value) } && times?(data)
+      def safe_value?(value) = value.nil? || (value.is_a?(String) && one_line?(value))
+      def times?(data) = data.slice(*TIMES).values.all? { |value| time_value?(value) }
+      def time_value?(value) = [nil, 'UNKNOWN'].include?(value) || plausible_time(value)
 
       def apply(state, changes)
         merged = state.dup

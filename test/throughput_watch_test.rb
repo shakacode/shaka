@@ -43,14 +43,6 @@ class ThroughputWatchTest < Minitest::Test
     assert_includes github.patches.fetch(0), 'Prompt to CI pending'
   end
 
-  def test_pr_watch_builds_the_watcher_with_this_publisher_and_review_wait
-    settings = { ci_review_wait: 'all', interval: 1, timeout: 1, settle: 1 }
-    watcher = Shaka::PrWatch::ThroughputPublisher.watch(['owner/repo', '7'], HEAD, ['claude-review'], settings)
-    publisher = watcher.instance_variable_get(:@throughput)
-    assert_instance_of Shaka::PrWatch::ThroughputPublisher, publisher
-    assert_equal 'all', publisher.instance_variable_get(:@wait)
-  end
-
   def test_both_head_queries_ask_for_the_fields_the_check_start_reads
     [Shaka::PrWatch::ThroughputPublisher::QUERY, Shaka::PullTimeline::QUERY].each do |query|
       assert_includes query, Shaka::ThroughputLine::HEAD_CHECKS

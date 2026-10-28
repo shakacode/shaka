@@ -332,6 +332,17 @@ class PrWatchBaselineTest < Minitest::Test
     end
   end
 
+  def test_command_gives_the_watcher_a_throughput_publisher_with_the_review_wait
+    seam = Struct.new(:review, :merge).new({ 'ci_review_jobs' => ['claude-review'], 'ci_review_wait' => 'all' }, {})
+    with_trusted_config(seam) do
+      watcher = Shaka::PrWatch::Command.watcher(['owner/repo', '42'], { root: Dir.pwd, ref: 'a' * 40, head: 'b' * 40 })
+      publisher = watcher.instance_variable_get(:@throughput)
+
+      assert_instance_of Shaka::PrWatch::ThroughputPublisher, publisher
+      assert_equal 'all', publisher.instance_variable_get(:@wait)
+    end
+  end
+
   def test_task_review_wait_cannot_lower_the_trusted_setting
     seam = Struct.new(:review, :merge).new({ 'ci_review_wait' => 'one' }, {})
     options, = Shaka::PrWatch::Command.parse(['--ci-review-wait', 'none'])
