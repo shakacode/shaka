@@ -29,6 +29,14 @@ class ThroughputWatchTest < Minitest::Test
     assert_empty rerun.patches
   end
 
+  def test_an_earlier_time_with_another_offset_is_compared_as_a_time
+    later = Shaka::ThroughputStats.update(filled_block, 't2' => '2026-10-26T10:00:00-10:00')
+    github = ThroughputFakeGitHub.new("Intro.\n\n#{later}\n", head_page(PUSH.iso8601),
+                                      [check('validate', READY.iso8601)])
+    publish(github, [], 'none')
+    assert_includes github.patches.fetch(0), "\"t2\":\"#{READY.iso8601}\""
+  end
+
   def test_a_head_that_moves_before_the_write_is_not_patched
     moved = watch_github
     moved.moved_pull = head_page(PUSH.iso8601).merge('headRefOid' => NEXT)

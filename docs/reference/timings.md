@@ -5,16 +5,6 @@ PR's time went. It separates the stretches when the agent was working from
 the stretches when the PR was waiting for you. Use it to see how long each
 checkpoint took to reach and how long each one waited for a person to respond.
 
-## Throughput line
-
-Under the model line, the description shows AI spend and three intervals.
-Prompt to CI runs from the recorded task start to the earliest check on the
-current head. CI to ready runs from that check until the head's required checks
-and configured CI reviews are green. Ready to merged runs from then until the
-merge. After a new push, the intervals measure the new head. `pending` is not
-known yet. `UNKNOWN` was not established, such as a ready time no watch
-recorded before the merge. Neither means zero.
-
 Here is an example:
 
 | Stretch | From | To | Time |
@@ -28,6 +18,16 @@ Here is an example:
 The section opens with totals for both kinds of time, for example
 `Totals: 4h 18m between checkpoints · 11h 2m waiting on a person in 2 waits`.
 The first total includes the time before the PR opened.
+
+## Throughput line
+
+Under the model line, the description shows AI spend and three intervals.
+Prompt to CI runs from the recorded task start to the earliest check on the
+current head. CI to ready runs from that check until the head's required checks
+and configured CI reviews are green. Ready to merged runs from then until the
+merge. After a new push, the intervals measure the new head. `pending` is not
+known yet. `UNKNOWN` was not established, such as a ready time no watch
+recorded before the merge. Neither means zero.
 
 ## What each stretch means
 

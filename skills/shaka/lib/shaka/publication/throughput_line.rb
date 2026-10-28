@@ -25,7 +25,8 @@ module Shaka
 
     def keep_earlier(seen, carried, key, head)
       previous = carried['head'] == head ? carried[key] : nil
-      earlier = previous.is_a?(String) && previous != 'UNKNOWN' && (seen == 'UNKNOWN' || previous <= seen)
+      kept = parse_time(previous) if previous.is_a?(String) && previous != 'UNKNOWN'
+      earlier = kept && (seen == 'UNKNOWN' || kept <= parse_time(seen))
       earlier ? previous : seen
     end
 

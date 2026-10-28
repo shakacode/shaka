@@ -3,8 +3,6 @@
 module Shaka
   # Finds the GitHub time the current head's gate turned green.
   module ThroughputGate
-    SUCCESS = %w[SUCCESS SKIPPED NEUTRAL].freeze
-
     # Time the gate turned green, :unknown when it is green without timestamps, or nil when it is not green.
     def ready_at(rows, required:, review_jobs:, wait:)
       selected = selected_rows(Array(rows).grep(Hash), required, review_jobs, wait)
@@ -39,14 +37,10 @@ module Shaka
     def earliest(chosen) = chosen.min_by { |row| row['completedAt'].to_s }
     def latest(rows, name) = rows.select { |row| row['name'] == name }.max_by { |row| row['completedAt'].to_s }
 
-    def passed?(row)
-      return row['bucket'] == 'pass' || skipped_bucket?(row) if row.key?('bucket')
-
-      SUCCESS.include?(row['conclusion'])
-    end
+    def passed?(row) = row['bucket'] == 'pass' || skipped_bucket?(row)
 
     # A skipped review does not satisfy the review gate, so it cannot mark the ready time.
-    def review_passed?(row) = row.key?('bucket') ? row['bucket'] == 'pass' : row['conclusion'] == 'SUCCESS'
+    def review_passed?(row) = row['bucket'] == 'pass'
 
     def skipped_bucket?(row) = row['bucket'] == 'skipping' && %w[SKIPPED NEUTRAL].include?(row['state'])
   end
