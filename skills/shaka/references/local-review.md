@@ -283,9 +283,8 @@ LEDGER="$LEDGER_DIR/ledger.json"
 GOAL="$LEDGER_DIR/goal.md"
 ```
 
-Write the plan recommendation's `value` and `scope` lines to `$GOAL`, adding a public-safe
-summary of the approved design when there is one, and pass `--description-file "$GOAL"` to every
-round. This file tells the reviewer what the change is for; update it when the plan changes.
+Write the plan recommendation's `value` and `scope` lines to `$GOAL` and pass
+`--description-file "$GOAL"` to every round. This file tells the reviewer what the change is for; update it when the plan changes.
 
 Do not reuse another task's directory, and do not put the ledger in a temporary directory:
 `review run` adds `ledger_warning` to its result when it sits in one. Pass `--ledger "$LEDGER"`
