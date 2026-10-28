@@ -186,6 +186,15 @@ class MachineReviewersRunTest < Minitest::Test
     end
   end
 
+  # Break caught: a reviewer the repository does not list took the machine's model.
+  def test_an_unlisted_reviewer_gets_no_machine_values
+    with_repository do |*checkout|
+      with_home([codex('model' => 'gpt-6-astra')]) do |home|
+        refute_includes machine_arguments(checkout, home), '-m'
+      end
+    end
+  end
+
   def test_a_malformed_machine_file_refuses_to_start
     with_repository(codex_agent({})) do |*checkout|
       with_home([codex, codex]) do |home|

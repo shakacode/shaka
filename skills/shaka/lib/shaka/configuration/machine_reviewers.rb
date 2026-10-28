@@ -73,9 +73,12 @@ module Shaka
 
       def listed?(identity) = @entries.key?(identity.downcase)
 
-      # The machine values a repository entry leaves unset; the repository's own values win.
+      # The machine values a repository entry leaves unset; the repository's own values win, and a
+      # reviewer the repository does not list gets none.
       def fill(repository_entry, identity)
-        values(identity).reject { |key, _| repository_entry&.key?(key) }
+        return {} unless repository_entry
+
+        values(identity).reject { |key, _| repository_entry.key?(key) }
       end
 
       # This machine's values for a reviewer, whether or not the repository sets them.
