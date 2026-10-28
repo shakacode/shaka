@@ -82,7 +82,7 @@ module Shaka
       claimed = claimed(texts, repository)
       task = task_issue(content, repository)
       linked = linked(github).map(&:downcase)
-      [missing_note(claimed - linked, repository),
+      [missing_note(claimed - linked, repository, content, task),
        task_note(left_open(task, linked + claimed, texts, repository), repository),
        extra_note(linked - expected(claimed, task, texts, repository), repository)].compact
     end
@@ -94,7 +94,7 @@ module Shaka
       linked = linked(github)
       closes = linked.empty? ? 'closes no issues' : "closes #{names(linked, repository)}"
       texts = [body.to_s, *TaskSourceLine.published_claims(body.to_s)]
-      task = left_open(published_task(body.to_s, repository), linked.map(&:downcase), texts, repository)
+      task = left_open(TaskSourceLine.published_task(body.to_s, repository), linked.map(&:downcase), texts, repository)
       task ? "#{closes}; task issue #{short(task, repository)} stays open" : closes
     rescue *FAILURES => e
       "closing issues unavailable: #{e.message}"
@@ -108,13 +108,6 @@ module Shaka
       task unless task.nil? || [*expected, *claimed(texts, repository, PARTIAL)].include?(task)
     end
 
-    # The provenance row `description` renders for an issue task, read back from the published body.
-    def published_task(body, repository)
-      link = %r{\[#(\d+)\]\(https://github\.com/#{Regexp.escape(repository)}/issues/\1\)}i
-      number = body[/^\| Task source \| issue #{link} \|/, 1]
-      "#{repository}##{number}".downcase if number
-    end
-
     def normalize(reference, repository)
       reference = reference.sub(%r{\Ahttps://github\.com/([^/]+/[^/]+)/issues/}i, '\1#')
       (reference.start_with?('#') ? "#{repository}#{reference}" : reference).downcase
@@ -124,12 +117,14 @@ module Shaka
 
     def names(issues, repository) = issues.map { |issue| short(issue, repository) }.join(', ')
 
-    def missing_note(missing, repository)
+    # Only the task's own issue takes a task_relation; any other issue is named in prose.
+    def missing_note(missing, repository, content, task)
       return if missing.empty?
 
+      task = TaskSourceLine.fixes_issue(content, task, claimed(texts(content.merge('provenance' => nil)), repository))
       "The description says this PR fixes #{names(missing, repository)}, but GitHub will not close " \
-        "#{missing.one? ? 'it' : 'them'} on merge. Merge into the default branch with a keyword before each issue, " \
-        'as in `Fixes #1, fixes #2`, or use `task_relation` `part_of` or `Part of` when the issue stays open.'
+        "#{missing.one? ? 'it' : 'them'} on merge. Put a keyword before each issue, as in `Fixes #1, fixes #2`, " \
+        "or use #{TaskSourceLine.stays_open_advice(missing, task)} when the issue stays open."
     end
 
     def task_note(task, repository)

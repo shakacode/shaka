@@ -63,7 +63,28 @@ module Shaka
     # A published Task line that leaves its issue open, read back as `Part of` for the merge handoff.
     PUBLISHED_PARTIAL = /^\*\*Task:\*\* GitHub #(\d+) · (?:part of|follow-up|related)\r?$/
 
+    # The provenance row `description` renders for an issue task, read back from the published body.
+    def self.published_task(body, repository)
+      link = %r{\[#(\d+)\]\(https://github\.com/#{Regexp.escape(repository)}/issues/\1\)}i
+      number = body[/^\| Task source \| issue #{link} \|/, 1]
+      "#{repository}##{number}".downcase if number
+    end
+
     def self.published_claims(body) = body.scan(PUBLISHED_PARTIAL).map { |(number)| "Part of ##{number}" }
+
+    # The task's issue when only a fixes task_relation claims it; a prose claim is corrected in prose.
+    def self.fixes_issue(content, task, prose)
+      provenance = content['provenance']
+      task if provenance.is_a?(Hash) && provenance['task_relation'] == 'fixes' && !prose.include?(task)
+    end
+
+    # How to say an unlinked issue stays open: task_relation covers only the task's own issue.
+    def self.stays_open_advice(missing, task)
+      return '`Part of`' unless missing.include?(task)
+      return '`task_relation` `part_of`' if (missing - [task]).empty?
+
+      "`task_relation` `part_of` for the task's issue and `Part of` for the others"
+    end
 
     # A prompt is named after the agent that took it, such as Claude Code's "Claude prompt".
     def self.render(spec, agent)
