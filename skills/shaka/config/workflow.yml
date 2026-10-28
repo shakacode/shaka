@@ -332,16 +332,15 @@ phases:
         `review.required: always`. Fixing a finding changes the head, so
         revalidate and review the new one.
       - Run the loop locally and keep it in one ledger: pass `review run --ledger PATH` with a
-        path outside the checkout. Give every round the task's goal: write the plan
-        recommendation's `value` and `scope` lines, and any public-safe design summary, to a goal
-        file beside the ledger, pass it as `--description-file PATH`, and update it when the plan
-        changes. The prompt asks the reviewer to class each finding as a
+        path outside the checkout. Pass every round the task's goal file as `--description-file
+        PATH` and keep each fix inside its scope, as the
+        [ledger section](<{{package_root}}/skills/shaka/references/local-review.md#run-the-review-loop-with-a-ledger>)
+        describes. The prompt asks the reviewer to class each finding as a
         `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
         disposition with `review record`; the next `review run` refuses to start until they are
         recorded, and refuses a head the ledger already reviewed unless another reviewer joins
         it before that record or a settings change superseded its review evidence. Fix defects, and risks whose
-        fix is clearly correct, in new commits, then review the new head, keeping each fix inside
-        the goal file's scope as the local review guide's triage rule says. Document optional nits.
+        fix is clearly correct, in new commits, then review the new head. Document optional nits.
         Use `open` for unfinished agent work,
         `decision_needed` for a consequential choice the maintainer owns, `dismissed` for
         a finding disproved with evidence, and `accepted` for a consequence the maintainer
