@@ -76,7 +76,7 @@ class PublicationSettingsSummaryTest < Minitest::Test
   def test_redacted_source_labels_remain_publishable_without_exposing_invalid_values
     current = snapshot.merge('source' => 'private-secret', 'installation.source' => 'private-secret')
     body = settings_block(current:)
-    assert_includes body, "Current settings: REDACTED from commit `#{REVISION[0, 7]}`; " \
+    assert_includes body, "Current settings: REDACTED at `#{REVISION[0, 7]}`; " \
                           "Shaka installation: version 0.1.0, REDACTED (#{POINTER})"
     refute_includes body, 'private-secret'
   end

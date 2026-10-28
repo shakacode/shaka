@@ -27,14 +27,15 @@ module Shaka
     end
 
     # Where a result's settings came from. Only a trusted revision is known to be a commit in this repository,
-    # so only it is linked; a local revision is shown short.
+    # so only it is linked and called a commit; a local revision is shown short.
     def source(settings, repository)
       kind, revision = settings.values_at('source', 'source.revision')
       if kind == 'UNKNOWN'
         kind
       else
-        commit = PublicationText.commit(revision, (repository if kind == 'trusted/team'))
-        "#{SOURCES.fetch(kind, 'REDACTED')} from commit #{commit}"
+        committed = kind == 'trusted/team'
+        commit = PublicationText.commit(revision, (repository if committed))
+        "#{SOURCES.fetch(kind, 'REDACTED')} #{committed ? 'from commit' : 'at'} #{commit}"
       end
     end
 
