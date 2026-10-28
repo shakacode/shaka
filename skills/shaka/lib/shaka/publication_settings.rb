@@ -58,8 +58,8 @@ module Shaka
     def self.reviewer_shortfall(verdict, review)
       return unless verdict && review
 
-      reviews = Array(verdict.dig('checks', 'review')).map { |entry| entry['original'] }.uniq
-      ReviewCoverage.shortfall(review, reviews.filter_map { |result| result['reviewer'] })
+      reviewers = Array(verdict.dig('checks', 'review')).filter_map { |entry| entry.dig('original', 'reviewer') }
+      ReviewCoverage.shortfall(review, reviewers)
     end
 
     def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil, # rubocop:disable Metrics/ParameterLists

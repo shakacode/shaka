@@ -17,15 +17,20 @@ class PublicationReviewerShortfallTest < Minitest::Test
     assert_equal shortfall(2, 1, ['anthropic']), Shaka::ReviewCoverage.shortfall(COVERAGE, %w[openai/codex xai/grok])
   end
 
+  # A reviewer whose results were supplied twice still counts as one reviewer.
   def test_without_coverage_the_reviewer_count_is_compared
+    count = { 'local_review_count' => 2 }
+
     assert_nil Shaka::ReviewCoverage.shortfall({}, ['openai/codex'])
-    assert_equal shortfall(2, 1, []), Shaka::ReviewCoverage.shortfall({ 'local_review_count' => 2 }, ['openai/codex'])
+    assert_equal shortfall(2, 1, []), Shaka::ReviewCoverage.shortfall(count, ['openai/codex'])
+    assert_equal shortfall(2, 1, []), Shaka::ReviewCoverage.shortfall(count, %w[openai/codex OpenAI/Codex])
   end
 
   # The fixture's one bound review is a host-reported openai/codex review, which counts.
-  def test_publication_compares_the_bound_reviews_with_the_trusted_count
+  def test_publication_compares_the_bound_reviews_with_the_trusted_settings
     assert_nil prepared_shortfall({})
     assert_equal shortfall(2, 1, []), prepared_shortfall('local_review_count' => 2)
+    assert_equal shortfall(2, 1, ['anthropic']), prepared_shortfall(COVERAGE)
   end
 
   private

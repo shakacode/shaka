@@ -55,7 +55,7 @@ module Shaka
       end
     end
 
-    # The review comment names each reviewer that could not run and why.
+    # The review comment holds each reviewer's rounds and any gap or fallback notice.
     def setup_gaps(shortfall, url)
       text = "#{GAPS} #{shortfall['completed']} of #{shortfall['configured']} configured reviewers completed"
       missing = shortfall['missing'].map { |provider| "`#{provider}`" }

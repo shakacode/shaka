@@ -37,12 +37,13 @@ module Shaka
     def self.setting(review, key) = review.fetch(key) { Defaults.fetch('review', key) }
 
     # How far the reviewers of the final commit fall short of `count`, or nil when they do not.
-    # With coverage, only a reviewer from a listed provider covers it.
+    # With coverage, only a reviewer from a listed provider covers it. Configuration refuses a
+    # repeated reviewer, so a reviewer with several results counts once.
     def self.shortfall(review, reviewers)
       providers = names(setting(review, KEY))
       missing = uncovered(providers, reviewers)
       configured = count(review)
-      completed = providers.empty? ? reviewers.size : configured - missing.size
+      completed = providers.empty? ? reviewers.map(&:downcase).uniq.size : configured - missing.size
       { 'configured' => configured, 'completed' => completed, 'missing' => missing } if completed < configured
     end
 
