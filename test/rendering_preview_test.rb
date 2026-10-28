@@ -80,9 +80,11 @@ class RenderingPreviewTest < Minitest::Test
   end
 
   # provenance.rb calls task_source_line.rb to render the line, so a PR changing either can preview its description.
-  # A PR changing the settings block or the provenance history can preview too, and owes one without a marker.
-  def test_provenance_task_source_settings_and_history_renderers_can_be_previewed
-    %w[provenance task_source_line provenance_history settings settings_table].each do |name|
+  # A PR changing the settings block, the provenance history, or the throughput line can preview too, and owes
+  # one without a marker.
+  def test_provenance_task_source_settings_history_and_throughput_renderers_can_be_previewed
+    %w[provenance task_source_line provenance_history settings settings_table
+       throughput_gate throughput_line throughput_stats].each do |name|
       github = preview_github([name])
       assert_includes rendering_fact(github, nil).fetch('owed').join, 'description --rendering-preview-root', name
       assert_empty rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->").fetch('owed'), name
