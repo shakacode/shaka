@@ -6,12 +6,11 @@ module Shaka
   class PrWatch
     # Fills CI to ready from GitHub check timestamps. It rewrites only the marked stats block.
     class ThroughputPublisher
-      QUERY = <<~GRAPHQL
+      QUERY = <<~GRAPHQL.freeze
         query($owner: String!, $name: String!, $number: Int!) {
           repository(owner: $owner, name: $name) {
             pullRequest(number: $number) { headRefOid
-              commits(last: 1) { nodes { commit { oid status { contexts { createdAt } }
-                checkSuites(first: 100) { nodes { createdAt checkRuns(first: 100) { nodes { startedAt } } } } } } } } } }
+              commits(last: 1) { nodes { commit { #{ThroughputLine::HEAD_CHECKS} } } } } } }
       GRAPHQL
 
       def self.watch(arguments, head, jobs, settings)

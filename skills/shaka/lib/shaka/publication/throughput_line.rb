@@ -6,6 +6,11 @@ require 'time'
 module Shaka
   # Renders the throughput line and reads the check start that begins it.
   module ThroughputLine
+    # The head-commit fields earliest_start reads. The description and the watcher share them so both
+    # agree on when CI started.
+    HEAD_CHECKS = 'oid status { contexts { createdAt } } ' \
+                  'checkSuites(first: 100) { nodes { createdAt checkRuns(first: 100) { nodes { startedAt } } } }'
+
     def line(state) = "#{marker(state)}\n#{visible(state)}"
 
     def earliest_start(commit)
@@ -36,7 +41,13 @@ module Shaka
 
     def shown_spend(state) = spend_text?(state['spend']) ? state['spend'] : 'UNKNOWN'
     def spend_text?(text) = text.is_a?(String) && !text.strip.empty?
-    def prompt(state) = state['t0'].nil? || state['t1'].nil? ? 'UNKNOWN' : interval(state['t0'], state['t1'])
+
+    def prompt(state)
+      return 'UNKNOWN' if state['t0'].nil?
+      return state['t3'].nil? ? 'pending' : 'UNKNOWN' if state['t1'].nil?
+
+      interval(state['t0'], state['t1'])
+    end
 
     # Once merged, a ready time nobody recorded can no longer arrive.
     def ci(state)

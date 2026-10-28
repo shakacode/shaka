@@ -26,7 +26,7 @@ class ThroughputStatsTest < Minitest::Test
     assert_includes describe('UNKNOWN', timeline: short), 'Prompt to CI <1m'
     assert_includes describe('UNKNOWN', timeline: { 'task_started_at' => PUSH, 'ci_started_at' => START }),
                     'Prompt to CI UNKNOWN'
-    assert_includes describe('UNKNOWN', timeline: { 'task_started_at' => START }), 'Prompt to CI UNKNOWN'
+    assert_includes describe('UNKNOWN', timeline: { 'task_started_at' => START }), 'Prompt to CI pending'
   end
 
   def test_the_publisher_note_stays_under_the_stats_line

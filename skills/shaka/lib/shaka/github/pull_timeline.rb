@@ -8,14 +8,13 @@ require_relative '../publication/throughput_stats'
 module Shaka
   # Reads when the pull request opened, waited on a person, and closed, and its commits, for the description's timings.
   class PullTimeline
-    QUERY = <<~GRAPHQL
+    QUERY = <<~GRAPHQL.freeze
       query($owner: String!, $name: String!, $number: Int!, $cursor: String) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $number) {
             state createdAt mergedAt closedAt
             firstCommit: commits(first: 1) { nodes { commit { committedDate } } }
-            headCommit: commits(last: 1) { nodes { commit { oid status { contexts { createdAt } }
-              checkSuites(first: 100) { nodes { createdAt checkRuns(first: 100) { nodes { startedAt } } } } } } }
+            headCommit: commits(last: 1) { nodes { commit { #{ThroughputLine::HEAD_CHECKS} } } }
             commits(last: 100) { nodes { commit { oid tree { oid } } } }
             timelineItems(first: 100, after: $cursor, itemTypes: [LABELED_EVENT, UNLABELED_EVENT]) {
               pageInfo { hasNextPage endCursor }
