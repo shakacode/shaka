@@ -10,7 +10,7 @@ from working is a major version.
 
 ## [Unreleased]
 
-## [1.0.0] - Unpublished
+## [1.0.0] - 2026-10-26
 
 Deliver a task through a tested pull request with a code walkthrough, independent
 review, and an explicit Ask or Auto merge choice.
@@ -38,6 +38,6 @@ Reserved the `shaka` name on RubyGems. This prerelease does not include the
 current workflow; install from source as described in
 [getting started](docs/getting-started.md).
 
-[Unreleased]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...HEAD
-[1.0.0]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...HEAD
+[Unreleased]: https://github.com/shakacode/shaka/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...v1.0.0
 [0.1.0.pre.1]: https://github.com/shakacode/shaka/releases/tag/v0.1.0.pre.1

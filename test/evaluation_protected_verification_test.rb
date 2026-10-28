@@ -39,7 +39,7 @@ class EvaluationProtectedVerificationTest < Minitest::Test
     body = "File.write('verifier-pid', Process.pid); sleep 30"
     assert_raises(IOError) do
       run_child("File.write('pid', Process.pid); #{wait_for_verification}") do |event|
-        verify(body, seconds: 0.2) if event.dig('native', 'type') == 'turn.started'
+        verify(body) if event.dig('native', 'type') == 'turn.started'
       end
     end
     %w[pid verifier-pid].each { refute_process(Integer(File.read(File.join(@root, it)))) }

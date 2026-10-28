@@ -8,7 +8,8 @@ class EvaluationCodexCaptureFailuresTest < Minitest::Test
   include EvaluationCaptureFixture
 
   def test_deadline_reaps_a_process_that_closed_its_output
-    result = run_child("File.write('pid', Process.pid); STDOUT.close; STDERR.close; sleep 30", seconds: 0.3)
+    # Leave startup headroom so the child reaches the hang before cleanup is asserted.
+    result = run_child("File.write('pid', Process.pid); STDOUT.close; STDERR.close; sleep 30", seconds: 2.0)
     assert_equal 'timed_out', result.fetch('transport_status')
     assert_nil result.fetch('terminal')
     refute_process(Integer(File.read(File.join(@root, 'pid'))))
@@ -16,7 +17,7 @@ class EvaluationCodexCaptureFailuresTest < Minitest::Test
 
   def test_deadline_kills_and_reaps_a_child_that_ignores_term
     body = "Signal.trap('TERM', 'IGNORE'); File.write('pid', Process.pid); sleep 30"
-    result = run_child(body, seconds: 0.3)
+    result = run_child(body, seconds: 2.0)
     assert_equal 'timed_out', result.fetch('transport_status')
     assert_nil result.fetch('terminal')
     refute_process(Integer(File.read(File.join(@root, 'pid'))))
@@ -24,7 +25,7 @@ class EvaluationCodexCaptureFailuresTest < Minitest::Test
 
   def test_parent_exit_cleans_up_descendants_before_waiting_for_pipe_eof
     body = "fork { sleep 1; File.write('descendant-survived', 'bad') }; #{write_stream}"
-    result = run_child(body, seconds: 0.3)
+    result = run_child(body)
     assert_equal 'completed', result.fetch('transport_status')
     assert_equal 'completed', result.fetch('native_status')
     refute result.fetch('command_capture_complete')
