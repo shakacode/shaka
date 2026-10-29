@@ -103,8 +103,7 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    `review.ci_review_jobs`, `merge.*`, `project_guidance`,
    `pr_description.human_review_floors`, `repo_prefix`) and every prompt-file path, because
    a path in the personal file would name a file in a repository the file was not written
-   for. An invalid value stops setup the same way: the loader prefixes the schema's message
-   with the personal file's path, because the existing messages name only the key.
+   for. An invalid value stops setup the same way, through the merged validation below.
 
    `review.required` is excluded too, although the developer chooses it with
    `--review-policy`: it is coupled to the repository's CI review jobs.
@@ -115,7 +114,8 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
 3. **Explicit choices win, then the personal file, then setup's defaults.** A command-line
    flag for the same value, such as `--local-review-agent`, replaces the personal value.
    Keys the personal file omits keep what setup writes today. Lists replace, not append:
-   personal `local_review_agents` is the whole list unless a flag supplies one. `--from`
+   personal `local_review_agents` is the whole list unless a flag supplies one, and a
+   personal value a flag replaces is not validated in that run. `--from`
    ignores the personal file, because it copies this clone's own earlier settings; as today,
    it refuses every other option, including `--plan` and `--no-personal-file`.
 
@@ -191,8 +191,8 @@ consequence.
 ## Consequences
 
 - `PrivateSetup#config_hash` merges allowed personal values under explicit options; a small
-  loader validates the file against the allowlist and the existing sub-schemas, then the
-  merged result is validated whole. The loader lives in `PrivateSetup`, not the shared
+  loader checks the file against the allowlist and its reviewer identities, then the full
+  schema validates the merged result. The loader lives in `PrivateSetup`, not the shared
   `Initializer`, so `seam init` cannot reach it. `--plan` and `--no-personal-file` are
   the two new options on the private setup command. No new gem, no change to `Configuration`, `resolve_source`, or evidence
   fingerprints.
