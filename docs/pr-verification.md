@@ -37,7 +37,9 @@ Under Auto, every check on the commit has to pass, not only the required ones. A
 failing or unfinished optional job, such as a Windows build or a security scan,
 holds the merge. When one fails, the agent hands the PR back to you as it does
 under Ask. After an Auto merge, the PR carries the `auto-merged` label, so
-`is:merged label:auto-merged` lists every PR the agent merged on its own.
+`is:merged label:auto-merged` lists the PRs the agent merged on its own. Two
+cases go unlabeled, and the agent says so in its report: a PR it added to a
+merge queue, and one where GitHub refused the label after the merge.
 
 If GitHub requires a branch update, the agent rebases, revalidates, and reviews
 the new commit. Your merge decision carries forward when the change keeps the

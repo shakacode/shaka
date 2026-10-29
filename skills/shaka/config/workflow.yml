@@ -863,7 +863,7 @@ phases:
         confirmation's rebase rule applies to it. Wait when independent review is not yet
         satisfied, and follow the configured CI review wait. Wait for any user-requested review gate
         whether or not a local review already ran. With `ci_review_wait: none` or `one`, do not wait for optional checks to make
-        merge state CLEAN; `merge` accepts UNSTABLE once required checks pass, except under `--auto`. With `ci_review_wait: all`, wait
+        merge state CLEAN outside Auto; `merge` accepts UNSTABLE once required checks pass. With `ci_review_wait: all`, wait
         for every named job in `review.ci_review_jobs` on the current head and do not merge while the state is
         UNSTABLE. Pass `merge --ref` from intake and `--ci-review-wait MODE` only for a this-task override. Read
         completed feedback before merge and report pending optional reviews.
@@ -902,8 +902,10 @@ phases:
         on the PR resumes. Never set `awaiting-merge-approval` in Auto
         mode. In Auto mode, run `merge --auto` with the current head, walkthrough ID, and
         `--squash-message` content. `--auto` refuses unless every check on the head passed and
-        GitHub reports CLEAN, refuses the confirmation flags, and labels the PR `auto-merged`
-        once GitHub confirms the merge. When it refuses a red check, switch to Ask. A required
+        GitHub reports CLEAN, or a state the merge queue accepts on a queue base. It refuses the
+        confirmation flags and labels the PR `auto-merged` once GitHub confirms the merge; report
+        a failed or queue-deferred label in the handoff. When it refuses a failed check, hand
+        this PR back under Ask. A required
         native approval must arrive first, and do not ask for a second approval afterward.
       - Under Ask, the user may approve the labeled PR instead of clicking merge: in chat, or when the
         latest review for the labeled head, as `comments` reports it, from a GitHub login the user

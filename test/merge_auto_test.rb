@@ -48,6 +48,13 @@ class MergeAutoTest < Minitest::Test
     end
   end
 
+  def test_skipped_and_neutral_checks_count_as_passing
+    @client.head_checks = [passing('Validate'), { 'name' => 'docs', 'state' => 'SKIPPED', 'bucket' => 'skipping' },
+                           { 'name' => 'lint', 'state' => 'NEUTRAL', 'bucket' => 'skipping' }]
+
+    assert_equal 'applied', merge.fetch('auto_merged_label')
+  end
+
   def test_refuses_unstable_although_the_seam_waits_for_one_review
     @merge = Shaka::Merge.new(@client, seam_wait: 'one')
     @merge.auto = true
@@ -72,9 +79,10 @@ class MergeAutoTest < Minitest::Test
     assert(@client.api_calls.any? { |method, path, _| method == 'POST' && path == 'repos/owner/repo/labels' })
   end
 
+  # A queue base reports BLOCKED until the queue runs, so Auto enqueues there once every head check passed.
   def test_a_queued_pull_request_is_not_labeled_until_it_merges
     entry = queue_entry
-    ready = snapshot.merge('isMergeQueueEnabled' => true)
+    ready = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'BLOCKED')
     @client.snapshots = [ready, ready, ready.merge('isInMergeQueue' => true, 'mergeQueueEntry' => entry)]
     @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => entry } }
 

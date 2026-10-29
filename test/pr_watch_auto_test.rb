@@ -16,6 +16,13 @@ class PrWatchAutoTest < Minitest::Test
     assert_equal ['checks_terminal', 1], watch(frames, auto: false)
   end
 
+  def test_the_auto_flag_reaches_the_watcher_settings
+    seam = Struct.new(:review, :merge).new({ 'ci_review_wait' => 'one' }, {})
+    options, = Shaka::PrWatch::Command.parse(['--auto'])
+
+    assert Shaka::PrWatch::Command.watch_settings(options, seam)[:auto]
+  end
+
   private
 
   def watch(frames, auto:)
