@@ -4,6 +4,7 @@ require_relative '../error'
 require_relative 'text'
 require_relative 'verification_gates'
 require_relative 'diff_buckets'
+require_relative 'review_focus_list'
 
 module Shaka
   # Renders what a pull request is for and how it was proved, so a maintainer can decide whether to trust it.
@@ -47,7 +48,7 @@ module Shaka
       end
       lines.insert(1, *task, *root_cause(spec))
       lines << review_effort(spec['review_effort'], floor)
-      lines.concat(exclusions(spec['leaves_out']))
+      lines.concat(ReviewFocusList.render(spec, pull), exclusions(spec['leaves_out']))
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
     end
 

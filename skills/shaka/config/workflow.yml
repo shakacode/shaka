@@ -539,6 +539,9 @@ phases:
         1 for docs a reader can trust from the description, 5 for irreversible or security changes.
         The helper refuses a rating below the floor the changed files set; to choose or change the
         floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
+        When a few files or ranges need more care than that rating, list them in `review_focus`, each with
+        `path`, a `level` above `review_effort`, a one-line `reason`, and optional `from` with `to` or `block`
+        as `code_links` take them.
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
         Name the task in provenance as the
