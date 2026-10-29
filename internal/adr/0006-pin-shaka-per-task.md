@@ -45,7 +45,7 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
 
 1. **A task runs one fixed copy of Shaka from intake to outcome.** At intake, after
    resolving the installed skill to its trusted source, the agent runs that helper's new
-   `pin --task BRANCH` command, naming the feature branch `claim` reported. `pin` copies
+   `pin --task KEY` command, where decision 4 defines the key. `pin` copies
    the installed revision into its own folder and prints the copy's helper path, and the
    agent keeps that path for the whole task. The workflow already tells the agent to keep
    one absolute helper path, so only the path it keeps changes. Every later command, the
@@ -53,13 +53,13 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    of the source checkout does not change the code the task runs or the procedures it
    reads.
 
-   The host loads `SKILL.md` through the skill link, which still points at the source
-   checkout, so `pin` is the one helper call made before the task holds its copy, and
-   its interface stays stable. An update between that load and `pin` is harmless:
-   nothing has run yet, so the task pins the newer revision. After `pin`, the agent
-   follows the copy's own `SKILL.md`, so the entry point and the helper always match. A
-   host that rereads the source `SKILL.md` later in the chat could see commands the
-   pinned helper lacks; the copy's workflow says its own `SKILL.md` governs the task.
+   Intake calls made before `pin`, such as `update-check`, `seam check`, `doctor`, and
+   `claim`, still run from the source checkout. They record no evidence, so an update
+   during them changes nothing that later binds; the task simply pins the revision
+   current at `pin`. The host loads `SKILL.md` through the skill link, which still points
+   at the source checkout. After `pin`, the agent follows the copy's own `SKILL.md`, and
+   the copy's workflow says that entry point governs the task, so a host that rereads the
+   source `SKILL.md` mid-chat cannot route the task to commands its helper lacks.
 
 2. **Copies come from a fixed commit through the PR trial packager.** `pin` reads the
    source checkout's `HEAD`, checks out that commit in a temporary directory, and passes
@@ -81,20 +81,22 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    stop without weakening it, and a run in progress no longer reports `inputs_changed`
    from an install update.
 
-4. **A local record ties each task to its revision.** The key is the task's feature
-   branch name, which is unique per task, known at intake from `claim`, and recoverable
-   from the worktree or PR on resume; a later PR for the same issue gets a new branch and
-   a new record. `pin` records the revision it chose for that branch in local state
-   under `~/.local/share/shaka/revisions/`, outside every checkout. Running the same
-   command again, on resume in a new chat or before any PR exists, returns the recorded
-   revision's copy instead of the current install. `pin --task BRANCH --update` is the
-   one way to move a task: it records the current install's revision, and the agent runs
-   it only when the maintainer asks for a newer Shaka inside the task. Finish runs
-   `pin --task BRANCH --release` once GitHub confirms the PR's outcome, which deletes the
-   record. The revision never comes from PR or issue text, which a fork author or
-   commenter can edit. `pin` also accepts a recorded revision only when it is an
-   ancestor of the official branch the install tracks, so a tampered local record cannot
-   select a PR head or a fork commit.
+4. **A local record ties each task to its revision.** The key is the repository plus the
+   task's feature branch, such as `shakacode/shaka justin808-claude/956-pin-shaka-per-task`,
+   which `claim` reports at intake and the worktree or PR shows on resume. A review-only
+   task, which has no branch of its own, uses the repository plus its PR number. `pin`
+   records the revision it chose for that key in local state under
+   `~/.local/share/shaka/revisions/`, outside every checkout. Running the same command
+   again, on resume in a new chat or before any PR exists, returns the recorded
+   revision's copy instead of the current install. `pin --task KEY --update` is the one
+   way to move a task: it records the current install's revision, and the agent runs it
+   only when the maintainer asks for a newer Shaka inside the task. Finish runs
+   `pin --task KEY --release` once GitHub confirms the PR's outcome, which deletes the
+   record, so a later task on a reused branch name starts from the current install. The
+   revision never comes from PR or issue text, which a fork author or commenter can edit.
+   The record itself is the maintainer's own local state, which the
+   [trust model](../../docs/workflow.md#trust-model) does not defend against, so `pin`
+   rebuilds whatever commit it names.
 
    When the copy is gone, `pin` rebuilds it from the source checkout's history through
    decision 2's path. Earlier evidence binds again only when the rebuilt copy's
@@ -107,23 +109,19 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    copy's revision with official main, as it does for the source checkout, so it still
    reports when Shaka is behind. Its guidance adds that the update reaches the next task.
    A maintainer who needs a Shaka fix inside a running task asks for it, and the agent
-   runs `pin --task BRANCH --update`; that choice accepts one rerun of validation and
+   runs `pin --task KEY --update`; that choice accepts one rerun of validation and
    review. A copy has no Git checkout, so `update-check` reads the copy's revision from
    its `.shaka-install.json`.
 
-6. **Copies are removed only after they stop being used.** Every helper run from a copy
-   touches a marker for that copy in `~/.local/share/shaka/revisions/.last-used/`,
-   outside the package, so verifying a copy never sees it change. A task that keeps
-   working, including a long `pr watch`, keeps its copy fresh. `pin` removes copies with
-   no helper run for 14 days, never the one it returns; records stay until `--release`,
-   so an idle task can still rebuild its copy. It holds a lock in the revisions
-   directory while it removes or returns a copy, so cleanup and another session's `pin`
-   cannot interleave, and it rereads each marker under the lock before removing. A helper run that starts in the instant between that
-   reread and the removal fails on the missing path and recovers as below. When a task's
-   saved helper path is missing, the workflow tells the agent to run `pin --task BRANCH`
-   again from the installed skill; decision 4 then rebuilds or replaces the copy.
-   `install --verify` reports how many copies and records exist and the copies' total
-   size.
+6. **A copy stays while any record names it.** Each `pin` refreshes its record's
+   timestamp, then removes records untouched for 60 days, which covers tasks abandoned
+   before Finish, and then removes copies that no remaining record names. A running task
+   always has a record, so cleanup never removes a copy a helper is using, and helper
+   runs need no marker or lock. `pin` holds a lock in the revisions directory while it
+   reads or changes records and copies, so two sessions' `pin` calls cannot interleave. A
+   task idle past 60 days loses its record, pins the current install, and reruns
+   validation and review. `install --verify` reports how many records and copies exist
+   and the copies' total size.
 
 ## Alternatives considered
 
@@ -151,18 +149,19 @@ sessions on one machine, since any session can update.
   every in-progress run finishes against the code it started with.
 - A pinned task can run older Shaka than the source checkout for hours. `update-check`
   keeps that visible, and decision 5 gives the explicit way to move.
-- `SKILL.md` gains the `pin` step before `update-check`, and the workflow's intake line
-  that keeps the helper path names the pinned path. These are entry-point instructions
-  loaded on every task, so the implementation PR reports their growth.
+- `SKILL.md` gains the `pin` step after `claim` reports the branch, and the workflow's
+  intake line that keeps the helper path names the pinned path. These are entry-point
+  instructions loaded on every task, so the implementation PR reports their growth.
 - The implementation PR adds tests for both sides: evidence recorded by a pinned copy
   still binds after the source checkout fast-forwards, and evidence recorded before the
   agent repins to a newer revision is superseded. It also tests shared copies, a
   fast-forward during `pin`, rebuilding a removed copy with an equal and a changed
-  identity, resuming before a PR exists, refusing a recorded revision outside official
-  history, `--update` moving a task while plain resume does not, `--release` letting a
-  new task on the same branch start fresh, and that cleanup keeps a copy in use.
+  identity, resuming before a PR exists, the same branch name in two repositories and
+  review-only keys, `--update` moving a task while plain resume does not, `--release`
+  letting a new task on the same branch start fresh, and that cleanup keeps every copy a
+  record names.
 - Tasks in flight when pinning ships rerun validation and review once: their earlier
   evidence names the source checkout's identity, and their first `pin` records a copy's.
 - ADR 0002's reason for keeping scheduled updates opt-in no longer applies to running
-  tasks, apart from the `SKILL.md` windows in decision 1. Turning them on stays a
-  separate decision.
+  tasks once they pin; intake calls before `pin` still read the source checkout.
+  Turning scheduled updates on stays a separate decision.
