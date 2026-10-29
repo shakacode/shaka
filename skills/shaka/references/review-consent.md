@@ -24,15 +24,15 @@ probe sends no repository content. Disabling the probe leaves this step in place
    check that it needs no separate consent because the host already sends this data to
    that provider, and that the reviewer can read other files its sandbox allows,
    including secrets. When the host denies that reviewer's launch, it needs consent:
-   ask as step 3 describes.
+   ask then, as step 3 describes.
 2. When consent covers the request, quote it exactly, with its source, in a
    visible message before the startup check. Reuse it for covered reviews without
    asking again; surface it again with an escalation or native retry. Do not
    paraphrase or widen it. Consent does not replace the host's approval: retry a
    denied launch only through the host's own path, such as the user's Codex CLI
    `/approve`, which permits one retry of that exact action.
-3. When a reviewer that still needs consent lacks it, or has consent narrower than
-   the request, ask before implementation and name only those reviewers' providers,
+3. When reviewers that still need consent lack it, or have consent narrower than
+   the request, ask once before implementation and name only their providers,
    for example "Send the #846 review packet to OpenAI (Codex CLI, gpt-6.1-sol)?".
    Put the disclosure in the answer options' descriptions or preview when the
    host's question tool offers them, otherwise below the question: the provider
