@@ -146,6 +146,14 @@ class SeamUpgradeRetainedToolRoutingTest < Minitest::Test
     "#!/bin/sh\ncase \"$1\" in\n  *) run-parts .agents/bin ;;\nesac\n",
     "#!/bin/sh\ncase \"$1\" in\n  .agents/bin/*|\".agents/shaka/bin/*\") echo ci ;;\nesac\n",
     "#!/bin/sh\ncase \"$1\" in\n  .agents/shaka/*)\n    case \"$2\" in\n      x) : ;;\n    esac ;;\n  " \
+    ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  .agents/shaka/*)\n    case \"$2\" in # nested\n      x) : ;;\n    esac ;;\n  " \
+    ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  .agents/shaka/*)\n    case \"$2\" in x) : ;; esac ;;\n  " \
+    ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  \".agents/shaka/\"*) echo docs ;;\n  " \
+    ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  $DOCS_GLOB) echo docs ;;\n  " \
     ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n"
   ].freeze
 

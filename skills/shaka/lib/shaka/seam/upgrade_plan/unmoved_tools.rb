@@ -5,9 +5,7 @@ module Shaka
     class UpgradePlan
       # Tools that stay in the old command directory while its Shaka wrappers move.
       module UnmovedTools
-        # A glob reads slightly differently to a shell and to an ignore file, so a match counts as certain only when
-        # every reading agrees and as possible when any does.
-        GLOB_READINGS = [0, File::FNM_PATHNAME].freeze
+        include CaseArms
 
         private
 
@@ -43,67 +41,6 @@ module Shaka
           return line.match?(directory_creation) unless shell_scripts.key?(path) && line.match?(case_arm)
 
           unchanged_arm?(line, path)
-        end
-
-        # A quoted pattern matches literally in a shell, and the arm's body runs like any other code, so either one
-        # keeps the line blocking.
-        def unchanged_arm?(line, path)
-          patterns = arm_patterns(line)
-          return false if patterns.any? { |pattern| pattern.match?(/['"\\]/) } || line.match?(moved_command_name)
-          return false if command_directory_reference?(line.split(')', 2).last)
-
-          same_route?(patterns) && !captured_arms(path).include?(line.chomp)
-        end
-
-        def directory_creation
-          @directory_creation ||=
-            %r{\A\s*mkdir\s+(?:-\w+\s+)*(['"]?)(?:\./)?#{Regexp.escape(PATHS::COMMAND_DIRECTORY)}/?\1\s*$}
-        end
-
-        def arm_patterns(line) = line[/\A\s*\(?([^)]*)\)/, 1].split('|').map(&:strip)
-
-        # The arm matches each moved command at its new path wherever it matched it at the old one.
-        def same_route?(patterns)
-          moved_command_names.all? do |name|
-            !arm_matches?(patterns, old_command(name), :any?) || arm_matches?(patterns, new_command(name), :all?)
-          end
-        end
-
-        # A shell `case` takes the first arm that matches, so an earlier arm that newly matches a moved command
-        # takes it from every later arm in that `case`, nested ones aside. Arms compare by text, so a repeated arm
-        # counts if any copy is taken.
-        def captured_arms(path)
-          (@captured_arms ||= {})[path] ||= begin
-            cases = [[]]
-            shell_scripts.fetch(path).each_line.with_object([]) { |line, captured| note_arm(line, cases, captured) }
-          end
-        end
-
-        # `cases` holds the arms seen so far in each open `case`, innermost last.
-        def note_arm(line, cases, captured)
-          cases.push([]) if line.match?(/\bcase\b.*\bin\s*$/)
-          if line.match?(case_arm)
-            captured << line.chomp if takes_moved_command?(cases.last)
-            cases.last.concat(arm_patterns(line))
-          end
-          cases.pop if line.match?(/\besac\b/) && cases.size > 1
-        end
-
-        def takes_moved_command?(patterns)
-          moved_command_names.any? do |name|
-            arm_matches?(patterns, new_command(name), :any?) && !arm_matches?(patterns, old_command(name), :all?)
-          end
-        end
-
-        def old_command(name) = "#{PATHS::COMMAND_DIRECTORY}/#{name}"
-
-        def new_command(name) = "#{PATHS::NEW_COMMAND_DIRECTORY}/#{name}"
-
-        # `readings` is :any? or :all? of the GLOB_READINGS.
-        def arm_matches?(patterns, path, readings)
-          patterns.any? do |pattern|
-            GLOB_READINGS.public_send(readings) { |flags| File.fnmatch?(pattern, path, flags) }
-          end
         end
 
         def retained_code?(path)
