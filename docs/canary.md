@@ -11,9 +11,9 @@ rendering. They do not decide whether the change was a good idea. The
 pull request comment shows the body diff against the previous canary pull
 request, plus time and spend. A missing amount stays `UNKNOWN`.
 
-The description check requires the stats line from
-[issue 899](https://github.com/shakacode/shaka/issues/899). Until that
-line ships, this check fails on purpose.
+The description check requires the AI spend on the model line and the
+current head's intervals in Timings, from
+[issue 899](https://github.com/shakacode/shaka/issues/899).
 
 A run with the repository, model key, or token unset posts a notice and
 succeeds. Merging this workflow is safe before the setup below.

@@ -8,7 +8,9 @@ module Shaka
     # Checks a canary pull-request body for the rendering failures issue 900 names.
     module BodyCheck
       REQUIRED = ['## Summary', '## Intent', '## Verification', '## Shaka metrics'].freeze
-      STATS = /AI spend\s+\S+.*·\s*Prompt to CI\s+\S+.*·\s*CI to ready\s+.+·\s*Ready to merged\s+\S+/
+      # Issue 899: the spend after the model line, and the current head's intervals in Timings.
+      STATS = [/^🤖 .* - AI spend:\s+\S+/,
+               /\*\*This head:\*\*\s+Prompt to CI\s+\S+.*·\s*CI to ready\s+.+·\s*Ready to merged\s+\S+/].freeze
       TOKEN = /\{\{[^{}\n]+\}\}/
       LINK = /\[(?:[^\]]*)\]\(([^)\n]*)\)/
       SEPARATOR = /\A:?-+:?\z/
@@ -44,7 +46,7 @@ module Shaka
         REQUIRED.reject { |heading| lines.include?(heading) }.map { |heading| "missing section #{heading}" }
       end
 
-      def stats(text) = text.match?(STATS) ? [] : ['missing stats line (issue 899)']
+      def stats(text) = STATS.all? { |pattern| text.match?(pattern) } ? [] : ['missing stats line (issue 899)']
 
       def tables(text) = blocks(text).flat_map { |block| table(block) }
 

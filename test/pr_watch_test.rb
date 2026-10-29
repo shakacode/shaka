@@ -21,6 +21,19 @@ module PrWatchFixtures
       checks: current[:checks], comments: current[:comments], excluded: current[:excluded] }
   end
 
+  def watch(frames, timeout: 10, baseline: nil, throughput: nil)
+    github = PrWatchTest::FakeGitHub.new(frames)
+    now = 0
+    reader = -> { comments_packet(frames.fetch([now, frames.length - 1].min)) }
+    tick = lambda do |seconds|
+      now += seconds
+      github.advance
+    end
+    settings = { interval: 1, timeout: timeout, settle: 1, baseline: }
+    adapters = { clock: -> { now }, sleeper: tick, comments: reader, throughput: }
+    Shaka::PrWatch.new(github, head: HEAD, ci_jobs: ['claude-review'], settings:, adapters:).call
+  end
+
   def comments_packet(frame)
     { 'issue_comments' => frame[:comments].map { |id| { 'id' => id } },
       'review_summaries' => [], 'inline_comments' => [],
@@ -146,20 +159,54 @@ class PrWatchTest < Minitest::Test
     assert_equal "SHAKA_WAKE error: Expected OWNER/REPO NUMBER and --head SHA --ref SHA.\n", output
     refute_predicate status, :success?
   end
+end
 
-  private
+# The watch hands throughput a green head once, and a failed write never blocks the wake.
+class PrWatchThroughputTest < Minitest::Test
+  include PrWatchFixtures
 
-  def watch(frames, timeout: 10, baseline: nil)
-    github = FakeGitHub.new(frames)
-    now = 0
-    reader = -> { comments_packet(frames.fetch([now, frames.length - 1].min)) }
-    tick = lambda do |seconds|
-      now += seconds
-      github.advance
+  def test_throughput_is_recorded_only_when_required_checks_and_reviews_pass
+    ready = []
+    watch([frame(required: [check('validate', 'SUCCESS', 'pass')],
+                 checks: [check('claude-review', 'SUCCESS', 'pass')])],
+          throughput: ->(**) { ready << :called })
+    refute_empty ready
+
+    failed = []
+    watch([frame(required: [check('validate', 'FAILURE', 'fail')],
+                 checks: [check('claude-review', 'FAILURE', 'fail')])],
+          throughput: ->(**) { failed << :called })
+    assert_empty failed
+  end
+
+  def test_a_skipped_required_check_records_throughput
+    ready = []
+    watch([frame(required: [check('validate', 'SKIPPED', 'skipping')],
+                 checks: [check('claude-review', 'SUCCESS', 'pass')])],
+          throughput: ->(**) { ready << :called })
+    refute_empty ready
+  end
+
+  def test_a_throughput_write_failure_still_lets_the_watch_wake
+    called = false
+    result = watch([frame(required: [check('validate', 'SUCCESS', 'pass')],
+                          checks: [check('claude-review', 'SUCCESS', 'pass')])],
+                   throughput: lambda { |**|
+                     called = true
+                     raise Shaka::Error, 'patch refused'
+                   })
+    assert called
+    assert_equal 'checks_terminal', result
+  end
+
+  def test_an_unexpected_throughput_error_still_lets_the_watch_wake
+    result = nil
+    assert_output(nil, /throughput not recorded: key not found: "body"/) do
+      result = watch([frame(required: [check('validate', 'SUCCESS', 'pass')],
+                            checks: [check('claude-review', 'SUCCESS', 'pass')])],
+                     throughput: ->(**) { {}.fetch('body') })
     end
-    settings = { interval: 1, timeout: timeout, settle: 1, baseline: }
-    adapters = { clock: -> { now }, sleeper: tick, comments: reader }
-    Shaka::PrWatch.new(github, head: HEAD, ci_jobs: ['claude-review'], settings:, adapters:).call
+    assert_equal 'checks_terminal', result
   end
 end
 
@@ -282,6 +329,17 @@ class PrWatchBaselineTest < Minitest::Test
 
       assert_equal ['claude-review'], watcher.instance_variable_get(:@ci_jobs)
       assert_equal({ ci_review_wait: 'all', seam_required_checks: ['validate'] }, settings)
+    end
+  end
+
+  def test_command_gives_the_watcher_a_throughput_publisher_with_the_review_wait
+    seam = Struct.new(:review, :merge).new({ 'ci_review_jobs' => ['claude-review'], 'ci_review_wait' => 'all' }, {})
+    with_trusted_config(seam) do
+      watcher = Shaka::PrWatch::Command.watcher(['owner/repo', '42'], { root: Dir.pwd, ref: 'a' * 40, head: 'b' * 40 })
+      publisher = watcher.instance_variable_get(:@throughput)
+
+      assert_instance_of Shaka::PrWatch::ThroughputPublisher, publisher
+      assert_equal 'all', publisher.instance_variable_get(:@wait)
     end
   end
 
