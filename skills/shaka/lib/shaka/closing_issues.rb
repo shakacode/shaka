@@ -84,6 +84,7 @@ module Shaka
       linked = linked(github).map(&:downcase)
       [missing_note(claimed - linked, repository, content, task),
        task_note(left_open(task, linked + claimed, texts, repository), repository),
+       TaskSourceLine.contradiction(content, task, claimed),
        extra_note(linked - expected(claimed, task, texts, repository), repository)].compact
     end
 

@@ -39,6 +39,14 @@ class TaskSourceLineTest < Minitest::Test
     assert_equal '**Task:** [Jira PROJ-1234](https://acme.atlassian.net/browse/PROJ-1234) · part of', line(jira)
   end
 
+  # Refusing backslashes and hostless URLs still leaves an ordinary query and fragment linked.
+  def test_a_ticket_url_may_carry_a_query_and_fragment
+    url = 'https://acme.atlassian.net/browse/PROJ-1234?focusedCommentId=1#comment-1'
+    jira = LINEAR.merge('task_tracker' => 'jira', 'task_key' => 'PROJ-1234', 'task_url' => url)
+
+    assert_equal "**Task:** [Jira PROJ-1234](#{url})", line(jira)
+  end
+
   def test_a_task_in_another_github_repository_names_only_its_kind
     assert_equal '**Task:** issue', line(PUBLIC_PROVENANCE.merge('task_source' => 'issue'))
     assert_equal '**Task:** pull request', line(PUBLIC_PROVENANCE.merge('task_source' => 'pull_request'))
@@ -52,6 +60,15 @@ class TaskSourceLineTest < Minitest::Test
                LINEAR.merge('task_url' => 'http://linear.app/x'), LINEAR.merge('task_url' => 'https://x.test/a)(b')]
     invalid.each do |spec|
       assert_raises(Shaka::Error, spec.inspect) { line(spec) }
+    end
+  end
+
+  # A trailing backslash would escape the link's closing parenthesis, and a link needs a host that userinfo
+  # cannot hide.
+  def test_refuses_a_ticket_url_with_a_backslash_or_no_host
+    ['https://x.test/a\\', 'https:///x', 'https://:443/task', 'https://a@:443/task', 'https://a@/task',
+     'https://user@x.test/a'].each do |url|
+      assert_raises(Shaka::Error, url) { line(LINEAR.merge('task_url' => url)) }
     end
   end
 
