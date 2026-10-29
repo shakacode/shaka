@@ -2,6 +2,7 @@
 
 require_relative 'local_review_test'
 require_relative '../skills/shaka/lib/shaka/local_review/commit_export'
+require_relative '../skills/shaka/lib/shaka/post_implementation_runner'
 
 class LocalReviewCommitExportTest < Minitest::Test
   include LocalReviewFixture
@@ -195,5 +196,15 @@ class LocalReviewCommitExportUnitTest < Minitest::Test
       end
       assert_includes error.message, 'incomplete blob'
     end
+  end
+end
+
+class PostImplementationCommitExportTest < Minitest::Test
+  # Break caught: an opted-out Claude checkpoint exported the commit and could fail before saying opted_out.
+  def test_only_an_active_claude_checkpoint_exports
+    exports = [{ opt_out: 'Maintainer decision' }, {}].map do |options|
+      Shaka::PostImplementationRunner.new(options.merge(reviewer: 'anthropic/claude')).send(:commit_export?)
+    end
+    assert_equal [false, true], exports
   end
 end

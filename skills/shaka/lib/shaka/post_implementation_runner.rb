@@ -86,6 +86,9 @@ module Shaka
       super
     end
 
+    # An opted-out checkpoint launches no reviewer, so it needs no export that could fail.
+    def commit_export? = !(@disabled || @options[:opt_out]) && super
+
     def review_prompt
       return '' if @disabled || @options[:opt_out]
 

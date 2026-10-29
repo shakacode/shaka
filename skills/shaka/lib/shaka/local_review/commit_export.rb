@@ -16,7 +16,7 @@ module Shaka
     private
 
     def with_commit_export
-      return yield unless READERS.include?(reviewer)
+      return yield unless commit_export?
 
       Dir.mktmpdir('shaka-review-commit-') do |directory|
         export_commit(File.realpath(directory))
@@ -25,6 +25,8 @@ module Shaka
         @options.delete(:commit_export)
       end
     end
+
+    def commit_export? = READERS.include?(reviewer)
 
     # Raw blobs, not a checkout: checkout filters, which the candidate's attributes select, could
     # run commands or write decrypted or downloaded content that the commit does not hold.
