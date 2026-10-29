@@ -38,7 +38,8 @@ is a small scope extension the maintainer accepts by approving this record.
 
 ### Predecessor check
 
-Checked at `shakacode/agent-workflows` `d85eceae` (2026-09-28). It has one user-global
+Checked on 2026-10-28 against `shakacode/agent-workflows` `main`, freshly fetched, whose
+newest commit is `d85eceae` (2026-09-28). It has one user-global
 file, `~/.agents/agent-workflow.yml`, used for one key: `writing_style`
 (`docs/adoption.md`). It resolves at run time, repository then user-global then the packaged
 default, and an invalid user-global value warns and falls back. That is the "fourth
@@ -59,14 +60,16 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    and the same key paths, validated by the existing `RepositoryConfig` sub-schemas
    (`ReviewSchema`, `PrDescriptionSchema`, `OpeningSchema`, `WipSchema`, `BranchSchema`, and
    `PostImplementationSchema` for `checkpoint`) and by `ProseLimits` for `prose_limits`.
-   Allowed keys:
+   The allowlist names leaf keys, so a key added later under one of these sections is
+   refused until someone adds it here. Allowed keys:
 
    | Key | Why it is a preference |
    | --- | --- |
    | `review.local_review_agents`, `review.provider_coverage`, `review.local_review_count`, `review.local_max_rounds`, `review.startup_check` | Which local reviewers the developer runs and how often |
-   | `checkpoint` (without `custom_instructions_file`) | The developer's checkpoint reviewer, model, and effort |
-   | `pr_description.opening_check` (without prompt files), `pr_description.show_shaka_credit`, `pr_description.show_human_comments`, `pr_description.max_human_comments` | How the developer's PR descriptions read |
-   | `prose_limits` | Writing limits |
+   | `checkpoint.enabled`, `checkpoint.reviewer`, `checkpoint.model`, `checkpoint.effort` | The developer's checkpoint reviewer, model, and effort |
+   | `pr_description.opening_check.enabled`, `.reviewer`, `.model`, `.effort` | The developer's opening check |
+   | `pr_description.show_shaka_credit`, `pr_description.show_human_comments`, `pr_description.max_human_comments` | How the developer's PR descriptions read |
+   | `prose_limits.max_sentence_words`, `.max_paragraph_words`, `.max_description_words`, `.words_per_changed_line` | Writing limits |
    | `branches.name` | Branch naming |
    | `wip.include_checkout_path` | What WIP Details publish |
 
@@ -75,7 +78,8 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    `review.ci_review_jobs`, `merge.*`, `project_guidance`,
    `pr_description.human_review_floors`, `repo_prefix`) and every prompt-file path, because
    a path in the personal file would name a file in a repository the file was not written
-   for. An invalid value stops setup the same way, with the schema's own message.
+   for. An invalid value stops setup the same way: the loader prefixes the schema's message
+   with the personal file's path, because the existing messages name only the key.
 
    `review.required` is excluded too, although the developer chooses it with
    `--review-policy`: it is coupled to the repository's CI review jobs.
@@ -89,11 +93,19 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    personal `local_review_agents` is the whole list unless a flag supplies one. `--from`
    ignores the personal file, because it copies this clone's own earlier settings.
 
-4. **Setup reports what it used.** The setup result gains `prefilled_from` (the file path)
-   and `prefilled_keys` (the dotted keys it took), or omits both when the file is absent.
-   The private-setup procedure in `skills/shaka/references/repository-setup.md` tells the
-   agent to show those values with the inferred commands before running setup, so the
-   developer reviews one proposal. Without the file, setup's output and files are unchanged.
+   Some rules link keys, such as an opening-check `model` requiring a `reviewer`, so a flag
+   can leave a valid personal value inconsistent with the rest. Setup therefore validates
+   the whole merged configuration with `RepositoryConfig` before it writes anything, and a
+   failure names the personal file when a personal value took part.
+
+4. **Setup previews the proposal before writing.** `seam private setup --plan`, with the
+   same options as a real run, loads and merges the personal file, validates the result,
+   and prints the configuration it would write with `prefilled_from` (the file path) and
+   `prefilled_keys` (the dotted keys it took). It writes no settings, recovery copy, or Git
+   exclusion. The private-setup procedure in `skills/shaka/references/repository-setup.md`
+   tells the agent to run the plan and show it, beside the inferred commands, before the
+   real run, so the developer reviews one proposal. The real run reports the same two
+   fields. Without the file, both fields are omitted and the written files are unchanged.
 
 5. **No new repository setting and no configuration migration.** The personal file, like
    `local-reviewers.yml`, is not a key in `defaults.yml` and does not appear in
@@ -112,7 +124,10 @@ reviewer list, used only when that clone has no team settings. `local-reviewers.
 fills model and effort for matching entries at review time, in every repository, under the
 precedence ADR 0005 set. A developer who wants the same reviewers everywhere puts the list
 in the personal file and the model and effort in `local-reviewers.yml`; `docs/settings.md`
-says so beside both.
+says so beside both. A `model` or `effort` written on a personal reviewer entry is copied
+into the clone as a repository value, so under ADR 0005 it outranks `local-reviewers.yml`
+for that clone. That is allowed, because the schema allows it, and the docs name the
+consequence.
 
 ## Alternatives considered
 
@@ -137,14 +152,19 @@ says so beside both.
 ## Consequences
 
 - `PrivateSetup#config_hash` merges allowed personal values under explicit options; a small
-  loader validates the file against the allowlist and the existing sub-schemas. No new gem,
-  no change to `Configuration`, `resolve_source`, or evidence fingerprints.
+  loader validates the file against the allowlist and the existing sub-schemas, then the
+  merged result is validated whole. The loader lives in `PrivateSetup`, not the shared
+  `Initializer`, so `seam init` cannot reach it. `--plan` is one new option on the private
+  setup command. No new gem, no change to `Configuration`, `resolve_source`, or evidence
+  fingerprints.
 - Behavioral tests cover: a present file pre-filling allowed keys while commands come from
   flags; an absent file producing today's files byte for byte; a disallowed key and an
   invalid value each stopping setup with the file and key named and nothing written; a flag
-  overriding a personal value; `--from` ignoring the file; and task-time resolution not
-  reading the file when a clone has individual settings or the repository has team
-  settings.
+  overriding a personal value, including a combination that breaks a linked-key rule;
+  `--plan` returning the proposal while leaving settings, recovery storage, and exclusions
+  untouched; `--from` ignoring the file; `seam init` output unchanged with a personal file
+  present; and task-time resolution not reading the file when a clone has individual
+  settings or the repository has team settings.
 - `docs/settings-guide.md` and `docs/settings.md` describe the personal starting point, say
   it is read only when individual setup starts, and name it as a third home-directory file
   in "Which settings apply?". The private-setup procedure gains the proposal step in
