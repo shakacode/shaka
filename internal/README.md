@@ -11,6 +11,7 @@ instructions or private company plans.
 - [Install locations and no-compatibility decision record](adr/0002-install-locations-and-no-compatibility.md) — accepted install defaults, worktree refusal, opt-in updates, and no backward compatibility before 1.0; not yet shipped.
 - [Configuration walkthrough decision record](adr/0003-configure-walkthrough.md) — accepted `configure` entry, settings and prompt reports from Ruby, and migration-flow settings PRs; not yet shipped.
 - [Per-machine reviewers decision record](adr/0005-per-machine-reviewers.md) — accepted quieting of reviewer setup warnings that selection never needs, and an optional per-machine reviewer list with model and effort; not yet shipped.
+- [Per-task Shaka copy decision record](adr/0006-pin-shaka-per-task.md) — proposed fixed copy of Shaka for each task, so install updates stop superseding validation and review evidence.
 - [Experiment index](../eval/README.md) — retained repositories, outcomes, and the next proposed case.
 - [Review outcomes](review-outcomes.md) — proposed record of review decisions and later assessments, not shipped behavior.
 - [Improving Shaka](improving-shaka.md) — maintainer method for investigating observed workflow failures.
