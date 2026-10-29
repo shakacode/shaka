@@ -546,8 +546,9 @@ phases:
         that it was not found and the PR treats only the symptom.
         Name the task in provenance as the
         [usage guide](<{{package_root}}/skills/shaka/references/usage-reporting.md#pr-execution-provenance>)
-        describes, with an optional `task_relation`. The helper renders it as the Task line after
-        Why in Intent, so the summary need not repeat the task link.
+        describes, with an optional `task_relation`; use `fixes` when the PR fully resolves an
+        issue in this repository. The helper renders a numbered task as the Task line after Why in
+        Intent, so leave that task's link and its `Fixes` or `Part of` out of the summary.
         Write `Fixes #N` once per other issue the PR fully resolves and `Part of #N` for partial work.
         When `description` returns `closing_issues`, correct the wording it names once.
         For a work item in another tracker, such as Linear, Jira, or Shortcut, check through the
