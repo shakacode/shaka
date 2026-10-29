@@ -39,17 +39,26 @@ class LocalReviewCommitExportTest < Minitest::Test
 
   # Break caught: one of two colliding paths silently replaces the other in what Claude reads.
   def test_paths_that_collide_on_this_filesystem_stop_the_review
-    with_repository do |root, base, _head, bin|
-      skip 'this filesystem distinguishes case' unless case_insensitive?(bin)
-      head = commit_colliding_paths!(root)
-      fake_claude(bin, head)
-      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude')
-      refute_predicate status, :success?
-      assert_includes JSON.parse(output).fetch('reason'), 'cannot hold both colliding paths'
-    end
+    assert_collision_stops_review(%w[Same.txt same.txt])
+  end
+
+  # Break caught: two committed directories differing in case merged into one in the export.
+  def test_directories_that_collide_on_this_filesystem_stop_the_review
+    assert_collision_stops_review(%w[Dir/first.txt dir/second.txt])
   end
 
   private
+
+  def assert_collision_stops_review(paths)
+    with_repository do |root, base, _head, bin|
+      skip 'this filesystem distinguishes case' unless case_insensitive?(bin)
+      head = commit_colliding_paths!(root, paths)
+      fake_claude(bin, head)
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude')
+      refute_predicate status, :success?
+      assert_includes JSON.parse(output).fetch('reason'), 'collides with another committed path'
+    end
+  end
 
   def case_insensitive?(directory)
     File.write(File.join(directory, 'Probe'), '')
@@ -57,14 +66,15 @@ class LocalReviewCommitExportTest < Minitest::Test
   end
 
   # The index takes both names even where the filesystem cannot hold them.
-  def commit_colliding_paths!(root)
+  def commit_colliding_paths!(root, paths)
     blob = git!(root, 'hash-object', '-w', 'example.txt').strip
-    %w[Same.txt same.txt].each do |path|
-      git!(root, 'update-index', '--add', '--cacheinfo', "100644,#{blob},#{path}")
-    end
+    paths.each { |path| git!(root, 'update-index', '--add', '--cacheinfo', "100644,#{blob},#{path}") }
     git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'collide')
-    # One file on disk now stands for both names, so the checkout reads as clean.
-    FileUtils.cp(File.join(root, 'example.txt'), File.join(root, 'same.txt'))
+    # The filesystem folds the names together, so writing each one leaves the checkout clean.
+    paths.each do |path|
+      FileUtils.mkdir_p(File.dirname(File.join(root, path)))
+      FileUtils.cp(File.join(root, 'example.txt'), File.join(root, path))
+    end
     git!(root, 'rev-parse', 'HEAD').strip
   end
 
@@ -159,14 +169,16 @@ class LocalReviewCommitExportUnitTest < Minitest::Test
 
   # Break caught: File.expand_path read a leading ~ as a home directory.
   def test_tilde_names_stay_inside_the_export
-    Dir.mktmpdir do |directory|
+    Dir.mktmpdir do |temporary|
+      directory = File.realpath(temporary)
       Exporter.new("100644 blob #{ID}\t~$Report.docx\0", "#{ID} blob 1\nx\n").run(directory)
       assert_equal 'x', File.read(File.join(directory, '~$Report.docx'))
     end
   end
 
   def test_parent_components_are_refused
-    Dir.mktmpdir do |directory|
+    Dir.mktmpdir do |temporary|
+      directory = File.realpath(temporary)
       error = assert_raises(Shaka::Error) do
         Exporter.new("100644 blob #{ID}\tdir/../../escape\0", "#{ID} blob 1\nx\n").run(directory)
       end
@@ -176,7 +188,8 @@ class LocalReviewCommitExportUnitTest < Minitest::Test
 
   # Break caught: a short read wrote a truncated file as if it were the committed content.
   def test_truncated_blob_output_stops_the_export
-    Dir.mktmpdir do |directory|
+    Dir.mktmpdir do |temporary|
+      directory = File.realpath(temporary)
       error = assert_raises(Shaka::Error) do
         Exporter.new("100644 blob #{ID}\tfile.txt\0", "#{ID} blob 5\nab").run(directory)
       end

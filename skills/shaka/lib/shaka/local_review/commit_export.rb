@@ -62,16 +62,23 @@ module Shaka
       raise Shaka::Error, "Git returned an incomplete blob #{id} for the commit export"
     end
 
-    # Paths that collide on this filesystem, such as names differing only in case, stop the export.
+    # Paths that collide on this filesystem, such as names or directories differing only in case,
+    # stop the export: the file's real path must keep the spelling the commit gave it.
     def write_file(directory, path, content)
-      raise Shaka::Error, "Commit export path leaves the export: #{path.inspect}" if
-        path.start_with?('/') || path.split('/').intersect?(['', '.', '..'])
-
+      check_path!(path)
       target = File.join(directory.b, path)
       FileUtils.mkdir_p(File.dirname(target))
       File.open(target, File::WRONLY | File::CREAT | File::EXCL | File::BINARY) { |file| file.write(content) }
-    rescue Errno::EEXIST, Errno::ENOTDIR, Errno::EISDIR
-      raise Shaka::Error, "Commit export cannot hold both colliding paths for #{path.inspect} on this filesystem"
+      raise Errno::EEXIST, path unless File.realpath(target).b == target
+    rescue Errno::EEXIST, Errno::ENOTDIR, Errno::EISDIR, Errno::EILSEQ
+      raise Shaka::Error, "Commit export cannot hold #{path.inspect} on this filesystem: it collides with " \
+                          'another committed path or uses a name the filesystem refuses'
+    end
+
+    def check_path!(path)
+      return unless path.start_with?('/') || path.split('/').intersect?(['', '.', '..'])
+
+      raise Shaka::Error, "Commit export path leaves the export: #{path.inspect}"
     end
   end
 end
