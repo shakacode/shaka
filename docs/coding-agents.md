@@ -138,7 +138,8 @@ ask for consent each time.
    $shaka doctor
    ```
 
-   Doctor shows whether the `claude` CLI is on your `PATH`. On your next task,
+   Doctor marks Claude `configured` once the default branch lists it, and shows
+   whether the `claude` CLI is on your `PATH`. It does not check the sign-in. On your next task,
    Shaka quotes your statement instead of asking. It then sends Claude a tiny
    access check that contains no code but may use quota.
 
@@ -153,8 +154,8 @@ also stays in force.
 
 | What you see | What it means | What to do |
 | --- | --- | --- |
-| A Codex reviewer runs instead of Claude, and doctor does not list Claude | The default branch does not list Claude | Merge the setting from step 1 |
-| A Codex reviewer runs instead of Claude, and doctor lists it | The `claude` CLI is missing from your `PATH` or is not signed in | Repeat step 2 |
+| A Codex reviewer runs instead of Claude, and doctor marks Claude optional | The default branch does not list Claude | Merge the setting from step 1 |
+| A Codex reviewer runs instead of Claude, and doctor marks Claude configured | The `claude` CLI is missing from your `PATH` or is not signed in | Repeat step 2 |
 | `Not logged in · Please run /login` | The `claude` CLI is not signed in | Run `claude`, then `/login`, and retry the task. This is not a consent problem |
 | Shaka asks for consent again | No statement Codex reads names this provider, repository, and content. Codex skips `~/.codex/AGENTS.md` when an `AGENTS.override.md` sits beside it | Fix the statement or move it to the file Codex reads, or answer the question for this task |
 | Codex Auto-review denies `shaka review run` | Codex blocked the command before it started, so nothing reached Claude | Follow [When Codex denies the review](#when-codex-denies-the-review). Do not answer the consent question again or switch reviewers |
