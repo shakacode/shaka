@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require_relative '../skills/shaka/lib/shaka/version'
 require 'fileutils'
 require 'rbconfig'
 require 'json'
@@ -80,6 +81,8 @@ module InstallTestSupport
     FileUtils.mkdir_p(File.join(@source, 'scripts'))
     File.write(File.join(@source, 'scripts/shaka'), "#!/usr/bin/env ruby\n")
     File.chmod(0o755, File.join(@source, 'scripts/shaka'))
+    # Windows checks the helper by starting this entry point through Ruby instead of the launcher.
+    File.write(File.join(@source, 'scripts/shaka.rb'), '')
     File.write(File.join(@source, 'lib/shaka/version.rb'), "module Shaka\n  VERSION = '0.1.0.pre.1'\nend\n")
     File.write(File.join(@rct_source, 'SKILL.md'), 'rct version one')
   end
@@ -106,7 +109,7 @@ module InstallTestSupport
     assert_predicate status, :success?, output
     identity = JSON.parse(output)
     assert_equal 'development', identity.fetch('source').fetch('kind')
-    assert_equal '0.1.0.pre.1', identity.fetch('version')
+    assert_equal Shaka::VERSION, identity.fetch('version')
     report, = Open3.capture2e(*installed_helper, 'doctor', chdir: second_worktree)
     assert_includes report, "installation #{identity.fetch('version')} · development base UNKNOWN content"
   end

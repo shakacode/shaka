@@ -84,8 +84,8 @@ under [reviews after merge](#reviews-after-merge).
 ## Custom review instructions
 
 Put standing project review criteria in the trusted default-branch `AGENTS.md`.
-To replace the default review instructions, set `review.prompt_file`, or a
-`prompt_file` on one agent's `local_review_agents` entry. Pass the trusted commit as
+To replace the default review instructions, set `review.replacement_prompt_file`, or a
+`replacement_prompt_file` on one agent's `local_review_agents` entry. Pass the trusted commit as
 `shaka review run --criteria-ref SHA`; the runner includes root and applicable
 nested `AGENTS.md` criteria and the configured prompt file from that commit.
 For this PR's scope, use `--description-file PATH` to supply its description as

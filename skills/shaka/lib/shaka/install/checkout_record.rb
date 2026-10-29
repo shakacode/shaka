@@ -31,9 +31,23 @@ module Shaka
       private
 
       def valid_record?(value)
-        value.is_a?(Hash) && value['schema_version'] == 1 && value['directory'] == @root &&
-          %w[repository branch revision].all? { |key| value[key].is_a?(String) && !value[key].empty? } &&
+        valid_location?(value) &&
+          %w[repository revision].all? { |key| value[key].is_a?(String) && !value[key].empty? } &&
+          valid_source?(value) &&
           valid_targets?(value['targets'])
+      end
+
+      def valid_location?(value)
+        value.is_a?(Hash) && value['schema_version'] == 1 && value['directory'] == @root
+      end
+
+      def valid_source?(value)
+        if value.key?('release')
+          return value['branch'].nil? && value['release'].is_a?(String) &&
+                 value['release'].match?(ReleaseCheckout::VERSION)
+        end
+
+        value['branch'].is_a?(String) && !value['branch'].empty?
       end
 
       def valid_targets?(targets)

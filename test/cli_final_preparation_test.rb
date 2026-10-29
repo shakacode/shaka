@@ -39,7 +39,7 @@ module FinalPreparationFixture
   private
 
   def with_fixture(enabled: true)
-    with_repository('review' => review_policy('post_implementation' => { 'enabled' => enabled })) do |root|
+    with_repository('review' => review_policy, 'checkpoint' => { 'enabled' => enabled }) do |root|
       commit_root(root)
       ref = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
       Dir.mktmpdir do |bin|
@@ -65,7 +65,7 @@ module FinalPreparationFixture
 
   def change_candidate(root, enabled:)
     File.write(File.join(root, '.agents/agent-workflow.yml'),
-               YAML.dump(seam('review' => review_policy('post_implementation' => { 'enabled' => enabled }))))
+               YAML.dump(seam('review' => review_policy, 'checkpoint' => { 'enabled' => enabled })))
   end
 
   def write_comments(bin, head)

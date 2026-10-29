@@ -2,7 +2,9 @@
 
 require_relative 'evidence_fixture'
 require 'time'
+require 'shaka/configure_settings'
 require 'shaka/post_implementation'
+require 'shaka/prompt_show'
 require 'shaka/repos'
 require 'shaka/seam'
 require 'shaka/trial/command'
@@ -62,18 +64,6 @@ class CallLogTest < Minitest::Test
     end
   end
 
-  def test_recorded_check_names_are_the_fixed_evidence_commands
-    assert_equal Shaka::Evidence::Command::NAMES, Shaka::CallLog::CHECKS
-  end
-
-  def test_recorded_operations_are_the_dispatched_subcommands
-    # scripts/shaka.rb dispatches `pr watch` itself, before the other pr commands.
-    assert_equal({ 'evidence' => Shaka::Evidence::Command::ACTIONS.keys, 'pr' => %w[watch],
-                   'post-implementation' => Shaka::PostImplementation::ACTIONS, 'repos' => Shaka::Repos::OPERATIONS,
-                   'review' => Shaka::LocalReview::ACTIONS, 'seam' => Shaka::Seam::OPERATIONS,
-                   'trial' => Shaka::Trial::Command::ACTIONS }, Shaka::CallLog::OPERATIONS)
-  end
-
   def test_assess_migrate_report_and_refresh_operations_are_recorded
     calls = ['review assess', 'seam migrate', 'trial report', 'repos refresh']
     with_log do |log|
@@ -129,4 +119,21 @@ class CallLogTest < Minitest::Test
   end
 
   def records(log) = File.readlines(log).map { |line| JSON.parse(line) }
+end
+
+# The names the log may record match what the helper dispatches.
+class CallLogNamesTest < Minitest::Test
+  def test_recorded_check_names_are_the_fixed_evidence_commands
+    assert_equal Shaka::Evidence::Command::NAMES, Shaka::CallLog::CHECKS
+  end
+
+  def test_recorded_operations_are_the_dispatched_subcommands
+    # scripts/shaka.rb dispatches `pr watch` itself, before the other pr commands.
+    assert_equal({ 'configure' => Shaka::ConfigureSettings::OPERATIONS,
+                   'evidence' => Shaka::Evidence::Command::ACTIONS.keys, 'pr' => %w[watch],
+                   'post-implementation' => Shaka::PostImplementation::ACTIONS, 'prompt' => Shaka::PromptShow::OPERATIONS,
+                   'repos' => Shaka::Repos::OPERATIONS, 'review' => Shaka::LocalReview::ACTIONS,
+                   'seam' => Shaka::Seam::OPERATIONS,
+                   'trial' => Shaka::Trial::Command::ACTIONS }, Shaka::CallLog::OPERATIONS)
+  end
 end

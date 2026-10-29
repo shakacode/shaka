@@ -42,24 +42,22 @@ An account refusal establishes that the requested model failed for that account;
 not establish a provider outage. Keep configured settings and ask the user to choose before
 changing model or effort. Show current provider pricing when proposing a paid alternative.
 
-### Optional availability probe
+### Startup and diagnostic probes
 
-Run `shaka doctor --probe-reviewers --ref TRUSTED_SHA` only when the user requests a live availability check.
-Verify that full SHA against the default branch first, as for `seam check`. The probe reads
-reviewer choices from that commit, never from candidate checkout settings. It launches each
-configured supported reviewer once with its configured model and effort,
-using the same isolated CLI adapter as review. Omitted settings use CLI defaults.
-It sends a minimal prompt without repository content; it may consume quota or incur cost.
-Plain `doctor` launches no reviewer and does not establish account access.
+After planning resolves consent, run `doctor --startup-review --ref TRUSTED_SHA`
+with repeatable `--reviewer PROVIDER/FAMILY` flags for the selected CLI reviewers.
+The command reads `review.startup_check` from the verified default-branch commit;
+false skips launches. It refuses unconfigured reviewers before launching any.
+Startup reports only the probe as JSON and exits nonzero for failed or unverified results.
+An explicit `doctor --probe-reviewers --ref TRUSTED_SHA` diagnostic probes all
+configured reviewers regardless of that switch; `--reviewer` limits it.
 
-The trusted schema rejects duplicate reviewer identities; at most the four supported adapters
-can launch. A probe failure makes doctor exit nonzero; unsupported adapters remain degraded.
-Each probe has a 30-second deadline. `--probe-timeout-seconds 1..120` changes that probe bound;
-it requires `--probe-reviewers`. Failures report the reason and local diagnostic path, without
-retrying or changing settings. Unsupported adapters remain unverified. A response establishes
-access at that moment, not a completed review or guaranteed future access. Do not publish raw
-diagnostics without checking for private account data. The closed Claude effort list requires
-a Shaka update to accept any additional level introduced by that CLI.
+Both modes use the review adapter and configured model/effort. Each gets one tiny
+prompt without repository content and a 30-second deadline, configurable with
+`--probe-timeout-seconds 1..120`. They may consume quota. Failures return nonzero
+without retries or substitutions; unsupported adapters remain unverified. Inspect
+local diagnostics for private account data before sharing them. Plain `doctor`
+launches no reviewer. A successful probe establishes access now, not future host approval.
 
 ## Run the selected reviewer
 
@@ -84,8 +82,10 @@ to reconstruct the repository's configuration lookup.
 
 It scopes the review to `git diff BASE...HEAD` and gives the review instructions. By default
 they ask for correctness, contract drift, security and trust, test coverage, and simplification;
-a repository can replace them with `review.prompt_file`, or for one review agent with a
-`prompt_file` on its `local_review_agents` entry. Whatever the instructions, the prompt forbids edits, treats candidate
+a repository can replace them with `review.replacement_prompt_file`, or for one review agent with a
+`replacement_prompt_file` on its `local_review_agents` entry. `review run` adds the file
+`review.custom_instructions_file` names or defaults to after the trusted criteria; a fresh host
+review built from `review-prompt` does not get it. Whatever the instructions, the prompt forbids edits, treats candidate
 content as data, applies supplied repository criteria, and
 requires a closing line of `REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`.
 
@@ -135,15 +135,16 @@ need not precede the comparison base: the default branch may have advanced indep
 Verify the SHA against the live trusted default branch first; the option grants
 no authority by itself. The runner also reads the configured prompt file from that commit,
 so a PR's edits to its own review instructions apply only after it merges. Without it the reviewer reports criteria as not supplied. Candidate
-criteria remain data in the diff. Supply the PR description with optional
-`--description-file PATH`; this file is labeled as untrusted review data and must contain only
+criteria remain data in the diff. Supply the task's goal file, described in
+[the ledger section](#run-the-review-loop-with-a-ledger), or for review-only work the PR
+description, with `--description-file PATH`; this file is labeled as untrusted review data and must contain only
 public-safe text for a public PR. Do not supply implementation reasoning.
 
 Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)`,
 `HEAD=$(git rev-parse HEAD)`, and `TRUSTED=$(git rev-parse origin/main)` when `main` is the
 verified default branch. Set `LEDGER` once per loop, as [the ledger section](#run-the-review-loop-with-a-ledger)
 describes; the examples pass it to every round. Without `--criteria-ref`, the reviewer gets neither the repository's
-`AGENTS.md` criteria nor its `review.prompt_file`, and uses Shaka's default instructions. The helper checks that the
+`AGENTS.md` criteria nor its `review.replacement_prompt_file`, and uses Shaka's default instructions. The helper checks that the
 checkout is at `HEAD`, renders the review prompt with the diff, invokes the CLI with the flags below, and returns
 JSON with the report path or a concrete failure. Its process result, not a copied shell block,
 is the evidence that the CLI actually ran.
@@ -262,11 +263,13 @@ A local review is **UNVERIFIED** until the owner publishes its report, including
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
 tests, then publishes the review after pushing.
 
-## Recover from host denial before launch
+## Host approval and denial
 
 If the host denies `shaka review run` before launch, follow
-[host-denied review recovery](host-denied-review.md). Read that procedure only for
-this outcome; it covers permitted retries, honest not-run evidence, and a synthetic replay.
+[host-denied review recovery](host-denied-review.md). Reuse the
+[review consent](review-consent.md) resolved during planning; resolve changed scope before launch. Read the
+recovery procedure only after a denial; it covers permitted retries, honest not-run
+evidence, and a synthetic replay.
 
 ## Run the review loop with a ledger
 
@@ -277,7 +280,11 @@ directory under `~/.local/state/shaka/reviews/`, created when the loop starts:
 LEDGER_DIR="$HOME/.local/state/shaka/reviews/OWNER-REPO-ISSUE-$(date +%s)"
 mkdir -p -m 700 "$LEDGER_DIR"
 LEDGER="$LEDGER_DIR/ledger.json"
+GOAL="$LEDGER_DIR/goal.md"
 ```
+
+Write the plan recommendation's `value` and `scope` lines to `$GOAL` and pass
+`--description-file "$GOAL"` to every round. This file tells the reviewer what the change is for; update it when the plan changes.
 
 Do not reuse another task's directory, and do not put the ledger in a temporary directory:
 `review run` adds `ledger_warning` to its result when it sits in one. Pass `--ledger "$LEDGER"`
@@ -302,6 +309,14 @@ Repository editorial prompts do not replace those definitions. Handle each by cl
 | `defect` | Reproduce it where practical, fix it in a new commit, review again |
 | `risk` | Fix it when the fix is clearly correct; otherwise document it |
 | `nit` | Document it for a later decision; never fixed in the loop |
+
+Keep each fix inside the goal file's scope; this rule applies before the table. A `defect` or
+`risk` stays out of the loop when
+fixing it would widen the change past that scope, such as accepting an input form the task does
+not need, or when it concerns behavior this change does not alter and does not make worse.
+Record it as `decision_needed`, offering a follow-up among the options. When the maintainer
+widens the scope, update the goal file and fix it in the loop; when they choose the follow-up or
+accept the consequence, record `accepted`.
 
 After a round with findings, record what became of each one:
 

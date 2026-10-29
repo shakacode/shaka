@@ -14,7 +14,7 @@ class DefaultsTest < Minitest::Test
     %w[merge limits] => Shaka::MergeLimits::DEFAULTS,
     %w[prose_limits] => Shaka::ProseLimits::DEFAULTS,
     %w[pr_description opening_check] => Shaka::RepositoryConfig::OpeningSchema::DEFAULTS,
-    %w[review post_implementation] => Shaka::RepositoryConfig::PostImplementationSchema::DEFAULTS,
+    %w[checkpoint] => Shaka::RepositoryConfig::PostImplementationSchema::DEFAULTS,
     %w[wip] => Shaka::RepositoryConfig::DEFAULT_WIP,
     %w[pr_description] => Shaka::RepositoryConfig::DEFAULT_PR_DESCRIPTION,
     %w[review local_max_rounds] => Shaka::RepositoryConfig::ReviewLimit::DEFAULT,

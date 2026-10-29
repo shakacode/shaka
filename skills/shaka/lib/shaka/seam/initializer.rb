@@ -90,8 +90,7 @@ module Shaka
       end
 
       def config_source
-        config = config_hash
-        Configuration.generated_contract(marker: MARKER, data: config)
+        Configuration.generated_contract(marker: MARKER, data: config_hash, trailer: config_trailer)
       end
 
       # base_branch is omitted when it was not requested: an absent key means the

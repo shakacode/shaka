@@ -4,6 +4,7 @@ require_relative '../error'
 require_relative 'text'
 require_relative 'links'
 require_relative 'usage_details'
+require_relative 'throughput_stats'
 require_relative 'timings_details'
 require_relative 'provenance'
 require_relative 'provenance_history'
@@ -12,6 +13,7 @@ require_relative 'settings'
 require_relative 'steps_besides_merging'
 require_relative 'human_comments'
 require_relative 'skills_used'
+require_relative 'metrics'
 require_relative 'intent_verification'
 require_relative 'quoted_markers'
 require_relative '../publication_sections'
@@ -19,11 +21,13 @@ require_relative '../publication_sections'
 module Shaka
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
   class Publication
+    include PublicationMetrics
+
     # With the pull request being replaced, the provenance history carries forward from its body.
     # Callers pass content as a bare hash, so a keyword here would swallow it; every argument is positional.
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil) # rubocop:disable Metrics/ParameterLists
       new(content, description: true, workflow_version:, pull:, settings:, timeline:)
-        .render(%i[steps intent_verification sections table provenance skills_used details wip credit],
+        .render(%i[steps intent_verification sections evidence metrics wip credit],
                 lead: %i[lead]).tap { QuotedMarkers.refuse!(content) }
     end
 
@@ -48,7 +52,7 @@ module Shaka
     # A description leads with the maintainer's decision, so lead parts come before the summary.
     # Only a description names its summary, because there the decision line stands above it.
     def render(parts, title: false, lead: [])
-      blocks = [PublicationText.publisher_identity(@content)]
+      blocks = opening
       blocks << '# Code Walkthrough' if title
       lead.each { |part| blocks.concat(send(part)) }
       summary = PublicationText.required(@content['summary'], 'summary')
@@ -59,6 +63,12 @@ module Shaka
 
     private
 
+    # The spend follows the model line, before an optional publisher note; the intervals sit in Timings.
+    def opening
+      identity = PublicationText.publisher_identity(@content)
+      [@description ? identity.sub(/\A.*/) { "#{it}#{ThroughputStats.header(throughput)}" } : identity]
+    end
+
     # Only a description is rendered with its pull request, so only a description lists what people wrote.
     def sections = PublicationSections.render(@content, HumanComments.for(@content, @pull, @settings))
 
@@ -67,10 +77,23 @@ module Shaka
     # The steps besides merging sit right under the summary so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)
 
+    # The Task line names the prompt after the agent that wrote the description.
+    def task_line = ExecutionProvenance.new(provenance_spec, pull: @pull).line(@content.dig('identity', 'agent'))
+
     def credit = PublicationLinks.credit(@settings)
 
     # Intent and verification answer whether to trust the merge, so they come before any section.
-    def intent_verification = IntentVerification.render(@content, @settings.verdict, @settings.review_effort_floor)
+    def intent_verification
+      IntentVerification.render(@content, @settings.verdict, @settings.review_effort_floor, @pull,
+                                task: task_line, shortfall: @settings.reviewer_shortfall)
+    end
+
+    def evidence
+      spec = @content.fetch('verification')
+      body = [VerificationGates.line(@settings.verdict, @content['review']),
+              IntentVerification.evidence(spec, @content['wip'].nil? ? (1..3) : (0..3)), *table, *details]
+      [details_block('summary' => 'Evidence and limitations', 'body' => body.join("\n\n"))]
+    end
 
     # Verification carries the proof, so a table only adds facts that fit no check.
     def table
@@ -107,12 +130,8 @@ module Shaka
     def details
       items = PublicationText.list(@content['details'], 'details')
       validate_details(items) if @description
-      items = [*helper_details, *items] if @description
       items.map { |detail| details_block(detail) }
     end
-
-    # The helper renders these itself; timings follow usage, so cost and elapsed time sit together.
-    def helper_details = [UsageDetails.new(@content['usage']).detail, *TimingsDetails.for(@timeline), @settings.detail]
 
     def validate_details(items)
       UsageDetails.refuse_free_form!(items)
@@ -140,21 +159,6 @@ module Shaka
 
       raise Error, 'Publication provenance history is carried from the PR body, not supplied as a details item.'
     end
-
-    def provenance
-      spec = @content.fetch('provenance') do
-        raise Error, 'Publication description requires execution provenance.'
-      end
-      execution = ExecutionProvenance.new(spec, workflow_version: @workflow_version, pull: @pull)
-      return [details_block(execution.detail)] unless @pull
-
-      history = ProvenanceHistory.carry(@pull, execution.entry)
-      detail = execution.detail
-      marked = detail.merge('body' => "#{detail['body']}\n\n#{ProvenanceHistory.marker(history)}")
-      [details_block(marked), *ProvenanceHistory.detail(history)&.then { |item| details_block(item) }]
-    end
-
-    def skills_used = [details_block(SkillsUsed.new(@content['skills_used']).detail)]
 
     def details_block(detail)
       summary = PublicationText.summary_text(detail['summary'], 'details summary')

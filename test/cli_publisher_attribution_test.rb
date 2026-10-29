@@ -41,7 +41,8 @@ class CliPublisherAttributionTest < Minitest::Test
       run_publication(environment) do |dir, output, error, status|
         assert_predicate status, :success?, "#{output}\n#{error}"
         body = File.read(File.join(dir, 'published.md'))
-        assert_includes body, "🤖 Claude Code · Anthropic · claude-opus-5-5 · medium\n\n_Not published yet._"
+        assert_match(/🤖 Claude Code · Anthropic · claude-opus-5-5 · medium - AI spend: \S+\n\n_Not published yet\._/,
+                     body)
         assert_includes body, '| Active model / effort | claude-opus-5-5 / medium |'
       end
     end
@@ -64,7 +65,7 @@ class CliPublisherAttributionTest < Minitest::Test
         assert_predicate status, :success?, error
         body = File.read(File.join(dir, 'published.md'))
         assert_includes body, 'Codex · OpenAI · gpt-6.1-sol (configured) · medium'
-        assert_includes body, 'served model is UNKNOWN'
+        assert_includes body, 'Served model unavailable in saved Codex logs.'
       end
     end
   end

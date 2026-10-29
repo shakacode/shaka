@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'rbconfig'
-require 'tempfile'
 require_relative '../configuration'
+require_relative '../configuration/machine_reviewers'
+require_relative '../review_prompt'
 require_relative '../reviewer_settings'
 require_relative 'settings_source'
 
@@ -13,32 +13,29 @@ module Shaka
 
     private
 
+    # The heading, instructions, and fixed rules; a configured file replaces only the instructions.
     def review_instructions
-      script = File.expand_path('../../../scripts/shaka.rb', __dir__)
-      with_prompt_arguments do |arguments|
-        # The same isolation as scripts/shaka: a project's RUBYOPT and gems stay out of Shaka's Ruby.
-        capture(RbConfig.ruby, '--disable-gems', '--disable-rubyopt', script, 'review-prompt', '--head', head,
-                '--base', @options[:base], '--reviewer', reviewer, '--effort', effort, *arguments)
-      end
-    end
-
-    # Yields the `review-prompt` arguments that select the instructions for this reviewer.
-    def with_prompt_arguments
       text = trusted_prompt_text
-      return yield([]) unless text
-
-      Tempfile.create(['shaka-review-instructions-', '.md']) do |file|
-        file.write(text)
-        file.close
-        yield ['--prompt-file', file.path]
-      end
+      ReviewPrompt.sections({ head:, base: @options[:base], reviewer:, effort: },
+                            instructions: text, source: (replacement_label if text))
     end
 
-    # Effective model and effort apply where the task named none.
+    def replacement_label
+      where = @private_prompt ? ' (individual settings, private)' : "@#{settings_ref}"
+      setting, path = @replacement
+      "replacement #{path}#{where} (#{setting})"
+    end
+
+    # Effective model and effort apply where the task named none; this machine's list fills what
+    # the repository entry leaves unset.
     def apply_trusted_settings!
       agent = reviewer_settings(effective_review || {})
-      return unless agent
+      apply_repository_settings!(agent) if agent
+      machine = Configuration::MachineReviewers.load(home: Dir.home)
+      machine&.fill(agent, reviewer)&.each { |key, value| @options[key.to_sym] ||= value }
+    end
 
+    def apply_repository_settings!(agent)
       schema = RepositoryConfig::ReviewSchema
       { model: [schema::MODEL, :model_name!], effort: [schema::EFFORT, :effort_level!] }
         .each do |option, (key, check)|
@@ -62,7 +59,7 @@ module Shaka
       return unless review
 
       path = configured_prompt_path(review)
-      path && configured_prompt(path, 'review prompt_file')
+      path && configured_prompt(path, "review #{RepositoryConfig::ReviewSchema::PROMPT_FILE}")
     end
 
     # Individual setup keeps its own instructions in its untracked settings directory. Any other
@@ -94,11 +91,15 @@ module Shaka
     def configured_prompt_path(review)
       prompt_file = RepositoryConfig::ReviewSchema::PROMPT_FILE
       agent = reviewer_settings(review)
+      # This path reads the review section without the schema, so the old name must not be ignored.
+      RepositoryConfig::ReviewSchema.renamed!(review)
+      RepositoryConfig::ReviewSchema.renamed_agent_prompt_files!(review)
       owner, path = agent&.key?(prompt_file) ? ["#{reviewer} ", agent[prompt_file]] : ['review.', review[prompt_file]]
       return if path.nil?
       raise Shaka::Error, "review #{prompt_file} must be a repository path" unless path.is_a?(String)
 
-      @prompt_source = "#{owner}#{prompt_file} #{path}"
+      @replacement = ["#{owner}#{prompt_file}", path]
+      @prompt_source = @replacement.join(' ')
       path
     end
 

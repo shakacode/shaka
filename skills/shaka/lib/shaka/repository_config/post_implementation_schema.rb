@@ -11,26 +11,66 @@ module Shaka
       include Validation
 
       KEY = 'post_implementation'
-      KEYS = %w[enabled reviewer model effort prompt_file].freeze
+      SECTION = 'checkpoint'
+      REPLACEMENT = 'replacement_prompt_file'
+      CUSTOM = 'custom_instructions_file'
+      KEYS = ['enabled', 'reviewer', 'model', 'effort', REPLACEMENT, CUSTOM].freeze
       EFFORTS = { 'openai/codex' => %w[low medium high xhigh max],
                   'anthropic/claude' => %w[low medium high xhigh max],
                   'xai/grok' => %w[low medium high] }.freeze
-      DEFAULTS = Defaults.fetch('review', KEY)
+      DEFAULTS = Defaults.fetch(SECTION)
+      MOVED = "review.#{KEY} moved to the top-level #{SECTION} section".freeze
 
       def self.reviewer(identity) = ReviewerSelection.parse(identity).values.map(&:downcase).join('/')
 
-      def initialize(settings) = @settings = settings
+      # Internal readers keep finding the checkpoint under review; settings write it only as `checkpoint`.
+      def self.fold(data)
+        review = data.is_a?(Hash) && data['review'].is_a?(Hash) ? data['review'] : {}
+        if review.key?(KEY)
+          raise Error, "#{MOVED}. Tell your agent: " \
+                       '"Move review.post_implementation to checkpoint in the Shaka settings."'
+        end
+        return review unless data.is_a?(Hash) && data.key?(SECTION)
+
+        review.merge(KEY => data[SECTION])
+      end
+
+      # The settings a checkpoint runs with: packaged defaults, then the repository's, then this task's. The
+      # default model belongs to the default reviewer, so another reviewer chosen without a model drops it.
+      def self.effective(settings, overrides = {})
+        choices = DEFAULTS.merge(settings).merge(overrides)
+        choices['reviewer'] = reviewer(choices.fetch('reviewer'))
+        choices.delete('model') if discard_model?(settings, choices, overrides)
+        choices
+      end
+
+      def self.discard_model?(settings, choices, overrides)
+        return false if overrides.key?('model')
+        return true if choices['reviewer'] != reviewer(settings.fetch('reviewer', DEFAULTS.fetch('reviewer')))
+
+        choices['reviewer'] != DEFAULTS.fetch('reviewer') && !settings.key?('model')
+      end
+      private_class_method :discard_model?
+
+      # The custom instructions' path, and whether settings named it; a named file must exist, the default need not.
+      def self.custom_instructions(settings) = [settings.fetch(CUSTOM, DEFAULTS.fetch(CUSTOM)), settings.key?(CUSTOM)]
+
+      def initialize(settings, label: SECTION)
+        @settings = settings
+        @label = label
+      end
 
       def validate
-        label = "review.#{KEY}"
+        label = @label
         mapping!(@settings, label)
+        renamed_prompt_file!(@settings, label)
         keys!(@settings, [], KEYS, label)
         validate_enabled(label)
         reviewer = self.class.reviewer(@settings.fetch('reviewer', DEFAULTS.fetch('reviewer')))
         raise Error, "#{label}.reviewer must be a supported provider/family" unless EFFORTS.key?(reviewer)
 
         validate_choices(label, reviewer)
-        prompt_path!(@settings['prompt_file'], "#{label}.prompt_file") if @settings.key?('prompt_file')
+        prompt_paths!(@settings, [REPLACEMENT, CUSTOM], label)
       end
 
       private

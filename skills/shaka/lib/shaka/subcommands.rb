@@ -2,6 +2,7 @@
 
 require_relative 'checkpoint'
 require_relative 'claim'
+require_relative 'configure_settings'
 require_relative 'doctor'
 require_relative 'enforcement'
 require_relative 'evidence/command'
@@ -10,6 +11,7 @@ require_relative 'issue_create'
 require_relative 'local_review'
 require_relative 'post_implementation'
 require_relative 'prefix'
+require_relative 'prompt_show'
 require_relative 'recommendation'
 require_relative 'repos'
 require_relative 'review_prompt'
@@ -33,6 +35,7 @@ module Shaka
     TABLE = {
       'checkpoint' => entry { |arguments| Checkpoint.run(arguments) },
       'claim' => entry { |arguments| Claim.run(arguments) },
+      'configure' => entry(ConfigureSettings::OPERATIONS) { |arguments| ConfigureSettings.run(arguments) },
       'doctor' => entry { |arguments| Doctor.run(arguments) },
       'enforcement' => entry { |arguments| Enforcement.run(arguments) },
       'evidence' => entry(Evidence::Command::ACTIONS.keys) { |arguments| Evidence::Command.run(arguments) },
@@ -44,6 +47,7 @@ module Shaka
       'issue-create' => entry { |arguments| IssueCreate.run(arguments) },
       'post-implementation' => entry(PostImplementation::ACTIONS) { |arguments| PostImplementation.run(arguments) },
       'prefix' => entry { |arguments| Prefix.run(arguments) },
+      'prompt' => entry(PromptShow::OPERATIONS) { |arguments| PromptShow.run(arguments) },
       'recommendation' => entry { |arguments| Recommendation.run(arguments) },
       'repos' => entry(Repos::OPERATIONS) { |arguments| Repos.run(arguments) },
       'review' => entry(LocalReview::ACTIONS) { |arguments| LocalReview.run(arguments) },

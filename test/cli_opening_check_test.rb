@@ -15,7 +15,7 @@ class CliOpeningCheckTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = '`shaka merge` now checks the reviewed head.'
   FALLBACK_ROUTES = [
-    [{ 'prompt_file' => '.agents/missing.md' }, 'anthropic/claude'],
+    [{ 'replacement_prompt_file' => '.agents/missing.md' }, 'anthropic/claude'],
     [{}, 'anthropic/other-family'],
     [{}, 'unlisted/model']
   ].freeze
@@ -100,7 +100,8 @@ class CliOpeningCheckTest < Minitest::Test
   private
 
   def with_trusted_prompt
-    with_repository('pr_description' => { 'opening_check' => { 'prompt_file' => '.agents/opening.md' } }) do |root|
+    opening = { 'opening_check' => { 'replacement_prompt_file' => '.agents/opening.md' } }
+    with_repository('pr_description' => opening) do |root|
       File.write(File.join(root, '.agents/opening.md'), 'Name the reader-facing subject.')
       commit(root)
       yield root

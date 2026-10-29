@@ -19,15 +19,38 @@ The section opens with totals for both kinds of time, for example
 `Totals: 4h 18m between checkpoints · 11h 2m waiting on a person in 2 waits`.
 The first total includes the time before the PR opened.
 
+## Time to ready and merge
+
+The model line at the top of the description ends with the AI spend. Under
+Shaka metrics, the estimated cost adds how long the work took from the recorded
+task start once that is known: `ready in 1h 19m` while the PR is open, then
+`merged in 3h 24m`.
+
+The Timings section breaks that down for the current head. Prompt to CI runs
+from the task start to the head's earliest check. CI to ready runs from that
+check until the head's required checks and configured CI reviews are green.
+Ready to merged runs from then until the merge. After a new push, the intervals
+measure the new head. `pending` is not known yet. `UNKNOWN` was not established,
+such as a ready time no watch recorded before the merge. Neither means zero.
+
 ## What each stretch means
 
 | Stretch | Starts | Ends |
 | --- | --- | --- |
-| Before the pull request | The PR's first commit | The PR opens |
+| Before the pull request | Recorded task start, or the PR's first commit when unavailable | The PR opens |
 | Between checkpoints | The PR opens, or a wait ends | The next wait starts, the PR merges or closes, or this update |
 | Waiting on a person | The agent asks for your answer, your merge approval, or a manual resume | The agent resumes, or the PR merges or closes |
 
-Shaka reads these times from GitHub every time it updates the description. A
+The task start is agent-reported and retained across description updates. Shaka
+uses it to include planning and implementation before the first commit. The
+**Before first recorded validation** interval shows the elapsed wall-clock time
+from that start to the earliest recorded validation run, including a focused test.
+It overlaps the stretches and is not added to the totals again. Missing start or
+validation records are reported as unavailable.
+If a validation timestamp predates the reported start, the interval is unavailable
+and description publication continues.
+
+Shaka reads PR opening, closing, commit and label times from GitHub every time it updates the description. A
 wait is the time one of the attention labels stayed on the PR:
 `awaiting-answer`, `awaiting-merge-approval`, or `awaiting-resume`. The agent
 adds a label when it stops for you and removes it when work resumes.
@@ -38,8 +61,11 @@ adds a label when it stops for you and removes it when work resumes.
 - A wait ends when the agent resumes, which can be slightly after you replied.
 - Time between checkpoints includes the agent's work, checks running, and any
   wait the agent did not mark with a label.
-- The timeline starts at the first commit, so work before that is not counted.
-  A rebase can move that date; when it falls after the PR opened, the first row is omitted.
+- Without a recorded task start, the timeline starts at the first commit and
+  excludes earlier work. A rebase can move that date; when it falls after the PR
+  opened, the first row is omitted.
+- The task start is supplied by the agent; Ruby checks its timestamp and order,
+  but does not verify when work actually began.
 - Every labeled wait counts, however short. A wait of a few seconds can be a
   quick reply or the agent relabeling the PR; the label history cannot tell them apart.
 - When a PR has waited many times, the table shows the latest 30 stretches. The
@@ -91,5 +117,8 @@ Limits:
   The section notes either cut, and the totals then cover only the steps kept.
 - A step logged on a machine that never updated the description afterward is
   missing, so treat the totals as what was recorded, not the whole task.
+- The earliest recorded validation time survives the step retention limit once
+  published. If older steps were already dropped before that time was saved,
+  the interval stays unavailable.
 
 [Usage and cost](usage-and-cost.md) explains the section beside it.

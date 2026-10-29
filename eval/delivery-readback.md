@@ -22,7 +22,10 @@ Use the separate native IDs returned by GitHub when posting each review. A drive
 verification and an agent walkthrough need distinct receipts; this reader does
 not infer either role from review prose. The driver owns the expected repository,
 PR, commit and actor. The API accepts only an open PR at that commit, a matching
-COMMENT review, and complete ordered creation, submission and update timestamps.
+COMMENT review, and valid creation, submission and update timestamps. Creation
+and submission must be no later than the last update. Submission can precede
+creation: the live fixture returned that native ordering. Event ordering uses
+the controller monotonic clock, without rewriting GitHub timestamps.
 
 The receipt retains the review body, its SHA-256 digest, native identity and GitHub
 timestamps. It records `readback_finished_at` from the host monotonic clock after
@@ -40,11 +43,11 @@ instructions. Requests have a maximum 30-second deadline and a 1 MiB response
 limit; the owned subprocess group is killed and its child reaped on exit.
 CLI stderr is discarded rather than retained with possible credential details.
 GitHub's [review object](https://docs.github.com/en/graphql/reference/pulls#pullrequestreview)
-provides update timestamps and a string `fullDatabaseId`, including IDs beyond
-32 bits.
+defines creation, submission and update fields separately. Its string
+`fullDatabaseId` supports IDs beyond 32 bits.
 
 The [offline Ask grader](ask-grading.md) checks protected review receipts and
 the remaining delivery assertions. The [native snapshot reader](delivery-snapshots.md)
-captures PR/check identities and final-blob bounds. Terminal/tool capture, hidden
-verification execution, isolation, tier 3 D2 assembly and release decisions remain unbuilt. No repository
+captures PR/check identities and final-blob bounds. Complete activity capture,
+isolation, full delivery assembly and release decisions remain separate. No repository
 creation, model call, budget charge or recurring schedule is introduced here.

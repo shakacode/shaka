@@ -57,7 +57,10 @@ module Shaka
 
       def modified(root)
         status = git(root, 'status', '--porcelain', '--untracked-files=all', '--ignored', '--', '.')
-        status == 'UNKNOWN' ? status : !status.empty?
+        flags = git(root, 'ls-files', '-v', '-z', '--', '.')
+        return 'UNKNOWN' if [status, flags].include?('UNKNOWN')
+
+        !status.empty? || flags.split("\0").any? { !it.start_with?('H ') }
       end
 
       def git(root, *)

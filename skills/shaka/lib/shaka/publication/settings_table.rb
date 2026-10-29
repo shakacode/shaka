@@ -9,18 +9,33 @@ module Shaka
     SUMMARY = 'Setting values at validation, review, and merge'
     FOLDED = { 'UNKNOWN' => 'UNKNOWN in every column',
                'REDACTED' => 'Never published, so REDACTED in every column' }.freeze
+    SOURCES = { 'trusted/team' => 'Repository settings', 'private/local' => 'Private local settings',
+                'preview/local' => 'Unmerged settings preview' }.freeze
 
     module_function
 
+    def ran_with(settings)
+      command, reviewer, effort = settings.values_at('overrides.command', 'overrides.reviewer', 'overrides.effort')
+      parts = [command, reviewer, ("#{effort} effort" unless effort == 'UNKNOWN')].compact - ['UNKNOWN']
+      parts.empty? ? 'UNKNOWN' : parts.join(', ')
+    end
+
+    # Several reviewers would otherwise share one column title.
+    def column_title(title, settings)
+      reviewer = settings['overrides.reviewer']
+      reviewer == 'UNKNOWN' ? title : "#{title}: #{reviewer}"
+    end
+
     # Where a result's settings came from. Only a trusted revision is known to be a commit in this repository,
-    # so only it is linked; a local revision is shown short.
+    # so only it is linked and called a commit; a local revision is shown short.
     def source(settings, repository)
       kind, revision = settings.values_at('source', 'source.revision')
       if kind == 'UNKNOWN'
         kind
       else
-        "#{kind} at #{PublicationText.commit(revision,
-                                             (repository if kind == 'trusted/team'))}"
+        committed = kind == 'trusted/team'
+        commit = PublicationText.commit(revision, (repository if committed))
+        "#{SOURCES.fetch(kind, 'REDACTED')} #{committed ? 'from commit' : 'at'} #{commit}"
       end
     end
 

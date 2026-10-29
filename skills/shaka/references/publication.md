@@ -24,6 +24,21 @@
 
 ## Review evidence
 
+- Supply description `task_started_at` from the original task's initiating
+  instruction timestamp in UTC. Omit it when unavailable or later than PR opening.
+  The helper retains it across updates; a resumed chat's start is not a new task start.
+
+- Verification opens with bound validation/review status and an optional linked `summary`.
+  Put material merge-affecting gaps in `merge_limitations`; accepted gaps stay in `not_verified`.
+  Checks, tables, and PR-specific `details` share one Evidence and limitations disclosure.
+  Put the initiating request and useful decision history in optional `task_history`.
+- Intent ends with `scope`, GitHub's file/line totals, and path-based file buckets.
+  Count each current filename once: Tests, then Docs/instructions, Code, or Other.
+  Inspect the expandable paths for ambiguous classifications; buckets describe paths, not effort.
+  Supply `leaves_out` only for a deliberately deferred part readers would reasonably expect.
+- Shaka metrics keeps estimated token costs visible, then folds usage, timings, execution,
+  settings, skills, provenance history, and task history under Details, in that order.
+
 - Put the current-head recommendation, main reason, and next action before analysis.
 - Name model settings with their provenance; a configured model is not proof of a served model.
 - Name the user benefit, scope, and unfinished verification when they affect the decision.
@@ -45,6 +60,10 @@
   to the lines it explains.
 - Describe the result at this head. Review rounds belong in the description's
   collapsed history, not in its visible sections.
+- Keep prior-task outcomes in a PR description only when they help review this PR.
+  When earlier work is a dependency, link it and briefly explain the relationship.
+  Omit unrelated completion reports; retain useful verification and repair history
+  for the current PR.
 - `description` and `walkthrough` refuse text past the
   [prose limits](https://github.com/shakacode/shaka/blob/main/docs/settings.md#prose_limits):
   long sentences, long paragraphs, or more visible words than the change warrants.

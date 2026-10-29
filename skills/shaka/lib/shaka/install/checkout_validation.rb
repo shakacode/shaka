@@ -32,6 +32,8 @@ module Shaka
       end
 
       def validate_branch
+        return validate_release if release?
+
         current = git('branch', '--show-current')
         return if current == @branch
 
@@ -42,6 +44,8 @@ module Shaka
       end
 
       def validate_tracking
+        return if release?
+
         return if tracking == "origin/#{@branch}"
 
         raise ArgumentError, Refusal.message("Installation branch #{@branch} does not follow origin/#{@branch}",

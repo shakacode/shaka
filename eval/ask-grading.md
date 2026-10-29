@@ -44,6 +44,7 @@ receipts privately, identify actual executed merge attempts, and prove capture
 completeness. Agent text or agent-authored booleans cannot supply them. This
 API consumes that inventory; it does not scan shell commands or create it.
 The [native snapshot reader](delivery-snapshots.md) supplies PR/check observations
-and changed-file bounds. Terminal/tool capture, hidden verification execution,
-live qualification, tier 3 D2 assembly, judges, statistics and release gates remain separate work.
+and changed-file bounds. The [native approval acceptor](codex-approval.md) supplies a
+terminal acceptance receipt from a completed driver result. Complete terminal/tool
+capture, live qualification, tier 3 D2 assembly, judges, statistics and release gates remain separate work.
 Synthetic tests establish these predicates only. No paid trial or schedule runs.

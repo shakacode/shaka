@@ -49,11 +49,12 @@ module Shaka
         [nil, DECIDE]
       end
 
-      # A take-over follows the other checkout's origin and branch unless told otherwise, and the winner's
-      # installer refuses a source it was not registered with.
+      # The winner keeps its source selection instead of inheriting the other checkout's source.
       def take_over(winner)
+        flag = winner.record['release'] ? '--release' : '--branch'
+        source = winner.record['release'] || winner.record['branch']
         words = [File.join(winner.root, 'bin/install'), '--take-over', '--repository', winner.record['repository'],
-                 '--branch', winner.record['branch']]
+                 flag, source]
         words.map { |word| Shellwords.escape(word) }.join(' ')
       end
 

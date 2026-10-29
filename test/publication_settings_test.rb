@@ -12,8 +12,8 @@ class PublicationSettingsTest < Minitest::Test
       review = review_check(root, ref)
       with_results(validation, review) do |options|
         body = prepare(root, ref, options).detail.fetch('body')
-        assert_includes body, "| Before push: validation | trusted/team at [`#{ref[0, 7]}`]("
-        assert_includes body, "| Review | trusted/team at [`#{ref[0, 7]}`]("
+        assert_includes body, "| Validation | Repository settings from commit [`#{ref[0, 7]}`]("
+        assert_includes body, "| Review | Repository settings from commit [`#{ref[0, 7]}`]("
         refute_includes body, validation.dig('settings', 'digest')
       end
     end
@@ -49,8 +49,8 @@ class PublicationSettingsTest < Minitest::Test
       review = review_check(root, ref).except('public_settings')
       with_results(validation, review) do |options|
         body = prepare(root, ref, options).detail.fetch('body')
-        assert_match(/\| Before push: validation \| UNKNOWN \| UNKNOWN: \d+s \|/, body)
-        assert_includes body, "Current merge input (not evidence): trusted/team at [`#{ref[0, 7]}`]("
+        assert_match(/\| Validation \| UNKNOWN \| UNKNOWN: \d+s \|/, body)
+        assert_includes body, "Current settings: Repository settings from commit [`#{ref[0, 7]}`]("
       end
     end
   end
@@ -67,8 +67,8 @@ class PublicationSettingsTest < Minitest::Test
 
   def test_unknown_settings_are_visible_on_unfinished_descriptions
     body = Shaka::PublicationSettings.new.detail.fetch('body')
-    assert_includes body, 'UNKNOWN: rerun missing evidence'
-    assert_includes body, 'Current merge input (not evidence): UNKNOWN'
+    assert_includes body, 'No matching check records supplied'
+    assert_includes body, 'Current settings: UNKNOWN'
   end
 
   def test_unfinished_team_description_preserves_its_location_choice
@@ -76,7 +76,7 @@ class PublicationSettingsTest < Minitest::Test
       settings = prepare(root, ref, {})
       assert_predicate settings, :include_checkout_path?
       assert_includes settings.detail.fetch('body'),
-                      "Current merge input (not evidence): trusted/team at [`#{ref[0, 7]}`]("
+                      "Current settings: Repository settings from commit [`#{ref[0, 7]}`]("
     end
   end
 

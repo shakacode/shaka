@@ -30,8 +30,9 @@ Shaka uses its own default for it, never your individual setting. For example, i
 team settings leave out `prose_limits`, PR descriptions use the default limit of
 300 words, whatever your individual setup says.
 
-Shaka keeps no settings in your home directory. The one exception is your machine's
-comment allowlist, which adds people and bots whose public comments the agent may read.
+Shaka keeps no settings in your home directory, with two exceptions about your machine:
+the comment allowlist, which adds people and bots whose public comments the agent may read,
+and the [machine reviewer list](#choose-reviewers-for-your-machine).
 
 Omitted optional values use Shaka's defaults, all listed in
 [Shaka's defaults file](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/defaults.yml).
@@ -191,6 +192,34 @@ A PR that passes still gets the agent's own judgment of risk and compatibility u
 Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
 something after merge, so the agent hands those PRs back on its own judgment.
 
+## `merge.hold_labels`
+
+**Optional. Default: `[hold]`.** Put one of these labels on a PR to stop Shaka from merging it,
+whether the repository uses `auto` or you tell the agent to merge.
+
+```yaml
+merge:
+  preference: auto
+  hold_labels: [hold, do-not-merge]
+```
+
+`shaka merge` reads the PR's labels again on its last read of the PR before it submits, so a
+label added while the agent checks the PR still stops it. The agent then names the label and
+hands the PR back to you. No confirmation in chat gets past a hold; remove the label when the PR
+may merge. Label names match without regard to case.
+
+The hold governs only Shaka. GitHub does not know about it, so it does not stop anyone from
+clicking merge, and it does not take a PR out of a merge queue it has already joined. While
+`preference` is `ask`, the ready checkpoint's Auto merge preview names a hold label the PR carries.
+
+## `review.startup_check`
+
+**Optional. Default: true.** Before implementation, Shaka resolves consent and sends
+a tiny prompt to each selected local reviewer to check access. Covering standing
+consent needs no new question. The probe sends no source code and may consume quota.
+Set this to `false` to skip the probe; consent is still resolved early. A passing
+probe cannot preapprove a future code transfer.
+
 ## `review.required`
 
 **Required.** Values: `meaningful_changes`, `always`, or `none`.
@@ -200,7 +229,10 @@ This controls when configured CI review reports are required. Options:
 - `meaningful_changes`: implementation changes; trivial prose can skip with a reason.
 - `always`: every PR, including trivial changes.
 - `none`: no configured CI review backstop, and `shaka merge` does not check for a
-  local review. Omit `ci_review_jobs` with this setting.
+  local review. `shaka description` accepts a validation result without a review
+  result, and its settings block says the repository does not require review; when
+  no review ran, the Validation and review line says so too. A review that ran anyway
+  must still match the current commit. Omit `ci_review_jobs` with this setting.
 
 Meaningful implementation also gets a local adversarial review before push:
 
@@ -445,8 +477,8 @@ keeps your chosen model; it does not substitute another one.
 Most warnings allow the review to run. An unsupported Claude effort stops it;
 choose one of Claude’s listed effort values to continue.
 
-Put project-specific review criteria in `AGENTS.md`. To check reviewer settings,
-use the [availability prompt](getting-started.md#2-choose-individual-trial-or-team-setup).
+Put project-specific review criteria in `AGENTS.md`. To check that your AI accounts
+can run the chosen reviewers, ask `$shaka Probe this project's configured reviewers.`
 To choose how many hosted review reports to wait for, use
 [`review.ci_review_wait`](#reviewci_review_wait).
 
@@ -470,6 +502,43 @@ Then list that provider in `local_review_agents`. The next review picks it, and 
 published review names it in its summary table instead of the fallback notice.
 When you set up Shaka with the CLI already installed, the agent offers it and
 records your choice, so no edit is needed.
+
+### Choose reviewers for your machine
+
+A repository may list reviewers you never use. Without a machine list, Shaka warns about
+every listed reviewer that your machine is missing, except reviewers that
+[`provider_coverage`](#reviewprovider_coverage) never selects on its own. List the
+reviewers you run in `~/.agents/shaka/local-reviewers.yml`, and Shaka warns only about
+those and the providers `provider_coverage` names, in every repository:
+
+```yaml
+version: 1
+reviewers:
+  - provider: anthropic
+    model_family: claude
+    model: claude-opus-5-5
+    effort: high
+  - provider: openai
+    model_family: codex
+```
+
+A `model` or `effort` here applies only where the repository leaves that reviewer's
+value unset, and a model or effort you name for one task wins over both. The list cannot
+add a reviewer the repository does not list. `shaka doctor` shows the list and names
+entries the current repository does not use. If the file is malformed, `shaka doctor`
+names it and local reviews refuse to start until you fix it.
+
+### Run Codex reviews in a container
+
+On Linux, Codex's read-only sandbox needs unprivileged user namespaces. A container
+without them, such as a default Docker container, fails every command the Codex
+reviewer tries with `bwrap: No permissions to create a new namespace`. The reviewer
+still answers from the diff in its prompt, so it reads no callers, tests, or
+configuration. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision)
+then names it on the Setup gaps line.
+
+Run Codex reviews where its sandbox can start, such as on the host instead of in the
+container.
 
 ## `review.local_review_count`
 
@@ -499,7 +568,8 @@ can run, here Codex. The others follow the list order, so the second is Claude i
 fresh session, without the implementation conversation. If Codex had written the
 change, the order would be Claude, then Codex. When the agent finds a reviewer's CLI
 missing or signed out, fewer reviewers read that commit, and from the next commit the next
-listed reviewer takes its place.
+listed reviewer takes its place. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision)
+says how many completed.
 
 Each extra reviewer adds cost and may increase elapsed time. The PR's
 review comment shows every reviewer's rounds, and one review of the final commit is
@@ -530,46 +600,70 @@ review:
 
 When Claude writes the change, Codex reviews it, then a fresh Claude session. Reviewers listed
 in `local_review_agents` from other providers run only when a task asks for one by name.
+Shaka does not warn when one of them is not set up on your machine; `shaka doctor` lists it as
+optional.
 
 When a listed provider cannot review, the agent copies Shaka's gap report into the published
 review, which shows it near the top with the reason: that provider is not listed in `local_review_agents`, not set up on the machine, or
-unavailable. Shaka does not substitute another provider, and the gap never blocks merging.
+unavailable. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision) names the provider too. Shaka does not substitute another provider, and the gap never blocks merging.
 Writing the change does not count as reviewing it.
 
 To pay for one local review instead, leave this unset and set `local_review_count: 1`. With
 the [hosted Claude review](configure-repository.md#add-hosted-claude-review), a PR that only
 Codex reviewed locally still gets a full Claude review on GitHub.
 
-## `review.prompt_file`
+## `review.custom_instructions_file`
+
+**Optional. Default: `.agents/shaka/instructions/review.md`.** Add your own rules to the
+local code review without copying Shaka's prompt. Write them in that file. Shaka's
+[review instructions](../skills/shaka/config/review-prompt.md) still apply in full; the
+reviewer reads them, then your `AGENTS.md` files, then your file. For example:
+
+```markdown
+Check that every new setting has a test.
+```
+
+When your file conflicts with Shaka's instructions or your `AGENTS.md` criteria, the
+reviewer follows your file. Shaka tells the reviewer that your file cannot relax its
+safety rules, the finding classes, or the attestation line. Shaka checks the attestation;
+the reviewer is trusted with the rest. See Shaka's own
+[review instructions](https://github.com/shakacode/shaka/blob/main/.agents/shaka/instructions/review.md).
+
+To keep the file elsewhere, name it with a path relative to the repository root. A named
+file must exist; at the default path, a missing or empty file adds nothing. When the
+settings name another path but a file still sits at the default, `seam check` and `doctor`
+say it is ignored. The [checkpoint](#checkpoint) works the same way.
+
+## `review.replacement_prompt_file`
 
 **Optional. Default: Shaka's [review instructions](../skills/shaka/config/review-prompt.md).**
 A Markdown file in your repository that replaces what the local reviewer looks for
-and how it reports. Copy the default to start, or see Shaka's own
-[review prompt](https://github.com/shakacode/shaka/blob/main/.agents/shaka/review-prompt.md).
+and how it reports. Prefer [custom instructions](#reviewcustom_instructions_file); replace
+only to remove one of Shaka's rules, and copy the default to start.
 
 ```yaml
 review:
   required: meaningful_changes
   ci_review_jobs: [claude-review]
-  prompt_file: .agents/review-prompt.md
+  replacement_prompt_file: .agents/review-prompt.md
   local_review_agents:
     - provider: openai
       model_family: codex
-      prompt_file: .agents/review-prompt-codex.md
+      replacement_prompt_file: .agents/review-prompt-codex.md
     - provider: anthropic
       model_family: claude
 ```
 
-To give one review agent different instructions, set `prompt_file` on that
-agent's entry in `local_review_agents`. It replaces `review.prompt_file` when that
+To give one review agent different instructions, set `replacement_prompt_file` on that
+agent's entry in `local_review_agents`. It replaces `review.replacement_prompt_file` when that
 agent reviews. Here Codex reviews with `.agents/review-prompt-codex.md`, and Claude,
-which has no `prompt_file` on its entry, uses `.agents/review-prompt.md`.
+which has no `replacement_prompt_file` on its entry, uses `.agents/review-prompt.md`.
 
 ### Where Shaka reads a prompt file
 
-The [configuration source](#which-settings-apply) determines which `prompt_file`
-settings apply. This rule covers code-review, checkpoint, and opening prompts, and
-[project guidance](#project_guidance) files.
+The [configuration source](#which-settings-apply) determines which `replacement_prompt_file`
+and `custom_instructions_file` settings apply. This rule covers code-review, checkpoint, and
+opening prompts, custom instructions files, and [project guidance](#project_guidance) files.
 A settings preview reads each prompt at its selected commit. Without a preview:
 
 - **Shared team settings:** commit the prompt with the settings PR. Shaka uses
@@ -590,30 +684,26 @@ commit and prevent edits. See [what Shaka enforces](workflow.md#what-is-enforced
 The file configures local reviews. A CI review job gets its prompt from its own
 workflow; to give it the same instructions, have the workflow read this file.
 
-## `review.post_implementation`
+## `checkpoint`
 
 **Optional.** Choose who evaluates the result at the **checkpoint**:
 whether it solves the intended problem, earns its maintenance cost, and what to do
 next. This differs from the code walkthrough explaining the implementation.
 With no settings, Shaka invokes Codex (`gpt-6.1-sol`) at medium effort using its
-[default product prompt](../skills/shaka/config/post-implementation-prompt.md).
+built-in prompt.
 
 For example, to ask Claude Sonnet to reconsider each finished change with your
 project's audience in mind:
 
 ```yaml
-review:
-  required: meaningful_changes
-  ci_review_jobs: [claude-review]
-  post_implementation:
-    reviewer: anthropic/claude
-    model: sonnet
-    effort: high
-    prompt_file: .agents/shaka/product-checkpoint.md
+checkpoint:
+  reviewer: anthropic/claude
+  model: sonnet
+  effort: high
 ```
 
 Repository choices come from the [configuration source](#which-settings-apply),
-and the prompt file from [where Shaka reads prompt files](#where-shaka-reads-a-prompt-file).
+and prompt files from [where Shaka reads prompt files](#where-shaka-reads-a-prompt-file).
 A task's explicit choices take precedence. See
 [the checkpoint](pr-verification.md#checkpoint)
 for what the checkpoint means for your merge decision.
@@ -636,6 +726,41 @@ maintaining. The task owner supplies the original problem and evidence, resolves
 concerns, and establishes merge readiness. Final merge preparation
 requires a report for the current commit with no unresolved concerns, counting a concern
 you [accepted](pr-verification.md#checkpoint) as resolved, or an explicit opt-out.
+
+### Add your own checkpoint questions
+
+Write them in `.agents/shaka/instructions/checkpoint.md`. Shaka's
+[built-in checkpoint prompt](../skills/shaka/config/post-implementation-prompt.md)
+still applies in full. The reviewer reads it, then your `AGENTS.md` files, then your
+file. For example:
+
+```markdown
+Ask whether the change adds a step maintainers must remember.
+```
+
+When your file conflicts with a built-in question or your `AGENTS.md` criteria, the
+reviewer follows your file.
+Shaka tells the reviewer that your file cannot relax its safety rules or change the
+report format. Shaka checks the report's format; the reviewer is trusted to keep the
+other rules.
+
+That path is the default of `checkpoint.custom_instructions_file`. To keep the file elsewhere,
+name it with a path relative to the repository root:
+
+```yaml
+checkpoint:
+  custom_instructions_file: docs/review/checkpoint.md
+```
+
+| `custom_instructions_file` | File | Result |
+| --- | --- | --- |
+| Not set | Missing or empty at the default path | No added questions |
+| Not set | Present at the default path | The file is added |
+| Set | Missing or empty | Settings validation fails |
+| Set to another path | Also present at the default path | The named file is added; `seam check` and `doctor` warn that the default one is ignored |
+
+To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to replace the whole prompt;
+you then keep that copy in step with Shaka's changes.
 
 ## `project_guidance`
 
@@ -743,7 +868,7 @@ pr_description:
     reviewer: openai/codex
     model: gpt-6.1-sol
     effort: medium
-    # prompt_file: .agents/shaka/opening.md
+    # replacement_prompt_file: .agents/shaka/opening.md
 ```
 
 Choose the provider and model that works best for your writing. It can be the
@@ -760,7 +885,7 @@ its own model and effort choices. It does not copy those from code review.
 | `reviewer` | The agent chooses from your local AI code reviewers. An explicit `provider/family`, such as `openai/codex`, selects the opening reviewer independently. |
 | `model` | The selected CLI's default model for Codex or Claude. Grok requires a model; OpenRouter requires `deepseek/deepseek-v4.1-flash`. To name a model, also set `reviewer`. |
 | `effort` | `low`. Use a thinking level supported by the selected provider. |
-| `prompt_file` | Shaka's default opening instructions. |
+| `replacement_prompt_file` | Shaka's default opening instructions. |
 
 For example, `reviewer: openai/codex` with no `model` uses the Codex CLI's
 built-in default model. Shaka runs Codex with personal configuration disabled.
@@ -779,15 +904,15 @@ reviewer; the agent still follows your ordinary writing instructions.
 ### Customize the opening check
 
 Copy [Shaka's default opening prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/opening-prompt.md)
-and set `prompt_file` to your copy. The path is relative to the repository root,
+and set `replacement_prompt_file` to your copy. The path is relative to the repository root,
 not the configuration file's directory. For example,
-`prompt_file: .agents/shaka/opening.md` selects that file beneath the repository
+`replacement_prompt_file: .agents/shaka/opening.md` selects that file beneath the repository
 root. Both the separate AI session and the coding agent use those instructions.
 Leave the setting out to use Shaka's default.
 
 Shaka reads the file from [the same place as other prompt files](#where-shaka-reads-a-prompt-file).
 
-Prompt files must pass the [review prompt file checks](#reviewprompt_file).
+Prompt files must pass the [review prompt file checks](#reviewreplacement_prompt_file).
 Custom instructions cannot change the JSON fields Shaka expects in the response.
 Shaka treats the PR opening as text to assess, not as instructions to follow.
 

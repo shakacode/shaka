@@ -5,6 +5,7 @@ require 'yaml'
 require_relative 'initializer'
 require_relative 'initializer_destination'
 require_relative 'initializer_readme'
+require_relative '../executable_file'
 
 module Shaka
   class Seam
@@ -115,7 +116,8 @@ module Shaka
       end
 
       def verify_candidate(created)
-        output, error, status = Open3.capture3(shaka_command, 'seam', 'check', '--root', root, '--local')
+        output, error, status = Open3.capture3(*ExecutableFile.helper_command(shaka_command),
+                                               'seam', 'check', '--root', root, '--local')
         return if status.success?
 
         undo_apply(created)

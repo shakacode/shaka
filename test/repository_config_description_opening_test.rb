@@ -41,10 +41,10 @@ class RepositoryConfigDescriptionOpeningTest < Minitest::Test
   end
 
   def test_nested_prompt_is_checked_locally
-    settings = { 'prompt_file' => '.agents/missing.md' }
+    settings = { 'replacement_prompt_file' => '.agents/missing.md' }
     with_repository('pr_description' => { 'opening_check' => settings }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
-      assert_includes error.message, 'prompt_file does not exist'
+      assert_includes error.message, 'replacement_prompt_file does not exist'
     end
   end
 end

@@ -4,12 +4,14 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'json'
 require 'yaml'
+require 'shaka/merge_hold'
 require 'shaka/merge_limits'
 require 'shaka/merge_review_floor'
 require 'shaka/version'
 
 GENERATED_MERGE = { 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS,
-                    'auto_max_review_floor' => Shaka::MergeReviewFloor::DEFAULT }.freeze
+                    'auto_max_review_floor' => Shaka::MergeReviewFloor::DEFAULT,
+                    'hold_labels' => Shaka::MergeHold::DEFAULT }.freeze
 
 module SeamInitializerTestHelpers
   COMMAND = SHAKA_COMMAND
@@ -314,7 +316,8 @@ class SeamInitializerValidationTest < Minitest::Test
       output, error, status = Open3.capture3(*arguments)
 
       assert_predicate status, :success?, error
-      assert_equal({ 'required' => 'none', 'ci_review_wait' => 'one', 'local_max_rounds' => 5 },
+      assert_equal({ 'required' => 'none', 'ci_review_wait' => 'one', 'local_max_rounds' => 5,
+                     'startup_check' => true },
                    JSON.parse(output).fetch('review'))
     end
   end

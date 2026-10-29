@@ -235,8 +235,26 @@ observations and explicit operator evidence. Missing observations remain `UNKNOW
 requested version pins cannot substitute for observed versions. The
 [decision adapter](../../eval/decision-replays.md) reuses that capture for tier 1,
 sets inapplicable fields to `N/A`, and binds the expected actions and checker code
-in its criteria digest. Tier 3 capture, the diff card, statistics and release
-verdict remain proposed.
+in its criteria digest. The [workflow declaration reader](../../eval/delivery-workflows.md)
+supplies immutable fixture Action pins for D2. The [Codex event reader](../../eval/codex-events.md)
+retains bounded terminal/tool observations without capture-completeness evidence.
+Its [process connection](../../eval/codex-events.md#read-a-live-process) feeds live
+output through that reader with private logs, deadlines and owned-process cleanup.
+The [native controller](../../eval/codex-driver.md) connects observed head changes
+to protected verification and review readback. An
+[isolated Linux qualification](../../eval/reports/linux-codex-pushes.md) exercised
+actual Codex commits and pushes with FAIL then repair PASS. It still cannot prove
+a complete command inventory or qualify delivery success. The
+[approval acceptor](../../eval/codex-approval.md) records final native Ask requests
+from completed captures and protected prerequisites. The
+[final collector](../../eval/codex-ask.md) rereads the walkthrough and final PR
+state after acceptance, preserving preterminal checks. Explicit single-account
+mechanics cannot pass measured Ask grading. The
+[public fixture](https://github.com/shaka-eval-repos/shaka-linux-approval-870/pull/1)
+retains mechanics evidence. Live measured approval and complete activity inventory
+remain unqualified.
+Full tier 3 assembly, the diff card,
+statistics and release verdict remain proposed.
 
 ### D3. Three task tiers by cost, and most of the budget on the cheap two
 
@@ -720,11 +738,13 @@ What it does not provide, checked the same way:
   now retains native IDs, bodies, digests and timestamps and detects later changes.
   The [offline Ask grader](../../eval/ask-grading.md) now checks the six
   protected-evidence assertions. A [native snapshot reader](../../eval/delivery-snapshots.md)
-  captures PR/check identities and final-blob bounds. Terminal/tool capture and
-  executor qualification remain unbuilt. The proposal's driver
-  posts head-bound reviews during the run
-  and reads GitHub state back. Tier 3 stays on that driver, and the spike does not
-  test it.
+  captures PR/check identities and final-blob bounds. A [Codex JSONL reader](../../eval/codex-events.md)
+  retains terminal/tool observations. The [native controller](../../eval/codex-driver.md)
+  now connects observed heads to verification and readback;
+  [Linux mechanics qualification](../../eval/reports/linux-codex-pushes.md) covers
+  actual command-tool pushes. Complete activity and measured delivery qualification
+  remain unfinished. Tier 3 stays on the proposal's driver; the original Harbor
+  spike did not test it.
 
 Rules that hold whenever Harbor runs here. Proposed, enforced by the Ruby wrapper
 that launches it, and set by hand for the spike, which runs before the wrapper

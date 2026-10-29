@@ -20,7 +20,7 @@ the workflow reaches that decision:
 | Choose how much human review changed files need | [Human review floors](human-review-floors.md) |
 | Plan, split PRs, write updates, or recover work | [Delivery and communication](delivery.md) |
 | Take over a spec or use another installed skill | [Companion skills](companion-skills.md) |
-| Revise earlier human steering and restart | [Human attention checkpoints](return-points.md) |
+| Revise earlier human steering and restart | [Return points](return-points.md) |
 | Select reviewers and handle findings | [Review](review.md) |
 | Reconsider the finished result before merge | [Checkpoint](post-implementation-validation.md) |
 | Launch a reviewer CLI | [Local review](local-review.md) |

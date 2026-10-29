@@ -14,13 +14,14 @@ module Shaka
       include RepairFlags
 
       VALUES = { '--directory DIR' => :directory, '--repository URL' => :repository,
-                 '--branch NAME' => :branch, '--skills-dir DIR' => :skills_dir }.freeze
+                 '--branch NAME' => :branch, '--release VERSION' => :release, '--skills-dir DIR' => :skills_dir }.freeze
 
-      def initialize(source, program: 'bin/install')
+      def initialize(source, program: 'bin/install', packaged_release: nil)
         @source = source
         @program = program
         @options = { agents: [], names: ['shaka'] }
         @actions = []
+        @packaged_release = packaged_release
       end
 
       def run(arguments)
@@ -77,6 +78,14 @@ module Shaka
         validate_agents
         validate_action
         validate_take_over
+        validate_release
+      end
+
+      def validate_release
+        raise ArgumentError, 'Choose --branch or --release, not both' if @options[:branch] && @options[:release]
+        return unless @options[:release] && !@options[:release].match?(ReleaseCheckout::VERSION)
+
+        raise ArgumentError, 'Release must be a version such as 1.0.0.rc.1'
       end
 
       def validate_agents
@@ -91,7 +100,7 @@ module Shaka
 
       def validate_action
         validate_status
-        selected = @options[:agents].any? || @options.values_at(:skills_dir, :repository, :branch).any?
+        selected = @options[:agents].any? || @options.values_at(:skills_dir, :repository, :branch, :release).any?
         return if @actions.empty? || !(selected || @options[:names] != ['shaka'])
 
         raise ArgumentError, 'Use bin/install to change installation selections before maintenance'
@@ -105,7 +114,16 @@ module Shaka
       end
 
       def install
+        select_packaged_release
         SessionHook.around(@options, @actions.any?) { Official.new(@source, @options).run(@actions[0] || :install) }
+      end
+
+      def select_packaged_release
+        return unless @packaged_release && @actions.empty? && !@options[:take_over]
+        return if @options.values_at(:repository, :branch, :release).any?
+
+        directory = @options[:directory] || File.join(Dir.home, Locations::SOURCE)
+        @options[:release] = @packaged_release unless File.exist?(File.join(directory, '.git', Checkout::RECORD))
       end
     end
   end

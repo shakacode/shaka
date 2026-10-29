@@ -1,4 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-load File.expand_path('../bin/install', __dir__)
+require_relative '../skills/shaka/lib/shaka/ruby_requirement'
+require_relative '../skills/shaka/lib/shaka/version'
+require_relative '../skills/shaka/lib/shaka/install/command'
+
+exit Shaka::Install::Command.new(File.expand_path('..', __dir__), program: 'shaka-install',
+                                                                  packaged_release: Shaka::VERSION).run(ARGV)

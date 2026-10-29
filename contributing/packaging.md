@@ -4,14 +4,11 @@ The gem packages the same skills, workflow configuration, installer, and Ruby he
 as the source checkout. The `shaka` skill is a small trust bootstrap: `shaka workflow`
 strictly validates and renders its packaged `skills/shaka/config/workflow.yml` before
 an agent follows the procedure.
-It adds no runtime gems and does not install a global agent profile. Public product
-stage is `0.0.x`. Version
-`0.1.0.pre.1` is [published on RubyGems.org](https://rubygems.org/gems/shaka) to reserve the `shaka` name;
-later registry artifacts stay on `0.1.0.pre.N`. Do not publish a `0.0.x` gem:
-`gem install shaka --pre` would still prefer `0.1.0.pre.1` over any `0.0.x`
-version. The source
-installation remains the verified pilot path; registry publication does not establish
-broader host compatibility.
+It adds no runtime gems and does not install a global agent profile. The source
+prepares `1.0.0`; publication requires the checks and explicit approval in the
+[release process](releasing.md). The published `0.1.0.pre.1` gem only reserves the
+name and lacks the current workflow. Registry publication alone establishes neither
+real-use acceptance nor broader host compatibility.
 
 Build from the trusted source directory; RubyGems reads package files relative
 to the working directory. With the source installation from the first-use guide:
@@ -27,7 +24,7 @@ individual commands:
 
 ```bash
 shaka_gem_home=$(mktemp -d)
-GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" gem install --local --no-document ./shaka-0.1.0.pre.1.gem
+GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" gem install --local --no-document ./shaka-1.0.0.gem
 GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" "$shaka_gem_home/bin/shaka" --help
 GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" "$shaka_gem_home/bin/shaka" workflow
 ```
@@ -39,12 +36,11 @@ your application's shell or add the pilot to its Gemfile.
 
 ## Validate a consumer seam in CI
 
-Do not copy Shaka's Ruby modules or schema rules into the consumer repository. Pin one
-published `0.1.0.pre.N` release that includes `seam check --local` and validate the
-candidate checkout only. Public product stage remains `0.0.x`. The already-published
-`0.1.0.pre.1` artifact only reserved the RubyGems name and does not provide this CI
-mode; wait for a later `0.1.0.pre.N` that documents `--local`, then pin that exact
-version. Never install mutable `main`.
+Do not copy Shaka's Ruby modules or schema rules into the consumer repository.
+After publication, pin the exact `1.0.0` release and validate the candidate checkout
+only. The name-reservation gem does not provide `seam check --local`; keep the
+existing source path until a tested release is published. Never install mutable
+`main` in consumer CI.
 
 ```bash
 gem install shaka --version "$SHAKA_VERSION" --no-document
@@ -70,7 +66,10 @@ Applications that only need the experimental public-comment screen can load
 
 The package also contains `shaka-install`, which runs `bin/install`. It installs the
 official checkout, cloning it into `~/.local/share/shaka/source` unless `--directory DIR`
-names another place, and links the selected hosts to it. The
+names another place, and links the selected hosts to it. In the next approved gem,
+new installations select the tag matching that gem's version, rather than newer
+development code. Existing registered installations keep their source selection;
+an explicit repository or branch overrides the default. The
 [first-use guide](../docs/getting-started.md) explains the trusted source and host startup
 boundaries.
 
@@ -105,7 +104,7 @@ the package. Existing installer tests cover repeat installation, collisions, and
 source updates. These checks validate the artifact; they do not establish host
 compatibility or authorize a registry release.
 
-The prerelease package is `shaka` version `0.1.0.pre.1`, distributed under the
+The package is distributed under the
 [MIT license](../LICENSE). The gem includes the license and declares it in its metadata.
 Future registry publication still requires separate maintainer approval and follows
 the [release process](releasing.md). Packaging uses

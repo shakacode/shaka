@@ -56,7 +56,14 @@ module Shaka
         return false unless (File.stat(path).mode & 0o7777) == destination_mode(path)
 
         existing = Configuration.generated_text(root: @root, path:)
-        existing == content || previously_generated_readme?(path, existing)
+        existing == content || previously_generated_readme?(path, existing) ||
+          contract_without_trailer?(path, existing, content)
+      end
+
+      # A config.yml from a release before the commented defaults still matches a plain repeat of seam init.
+      def contract_without_trailer?(path, existing, content)
+        path == Configuration::Paths.at(@root, Initializer::LAYOUT.contract) &&
+          existing == content.delete_suffix(Configuration.comment_lines(config_trailer))
       end
 
       # The pointer records the generating skill version, so an upgrade changes its text while
@@ -71,7 +78,7 @@ module Shaka
         preflight_directories
         preflight_files(files)
         preflight_permissions(files)
-        FileUtils.mkdir_p(Configuration::Paths.at(@root, Initializer::LAYOUT.command_directory))
+        files.each_key { |path| FileUtils.mkdir_p(File.dirname(path)) }
         preflight_directories
         files.each do |path, content|
           preflight_directories

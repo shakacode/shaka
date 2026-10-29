@@ -137,7 +137,7 @@ module Shaka
     def parser(action)
       OptionParser.new do |flags|
         flags.banner = "Usage: shaka post-implementation #{action} [options]"
-        %w[root base head reviewer model effort prompt-file content-file squash-message timeout-seconds
+        %w[root base head reviewer model effort replacement-prompt-file content-file squash-message timeout-seconds
            opt-out].each do |key|
           flags.on("--#{key} VALUE") { |value| @options[key.tr('-', '_').to_sym] = value }
         end

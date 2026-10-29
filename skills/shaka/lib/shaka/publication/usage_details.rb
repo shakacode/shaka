@@ -54,6 +54,15 @@ module Shaka
     end
   end
 
+  # Marks the cost outside the disclosure so a usage-only refresh can update it too.
+  module UsageEstimate
+    MARKER = '<!-- shaka:estimated-cost -->'
+    BLOCK = /^#{Regexp.escape(MARKER)}\n\*\*Estimated (?:token costs|cost):\*\* [^\n]*$/
+
+    def self.markdown(detail) = "#{MARKER}\n**Estimated token costs:** #{detail.fetch('estimate')}"
+    def self.refresh(region, detail) = region.sub(BLOCK) { markdown(detail) }
+  end
+
   # Renders the PR usage table so every host publishes the same rows and alignment.
   class UsageDetails
     # Hand-written notes are what made each host publish a different shape.
@@ -82,7 +91,8 @@ module Shaka
       checked
       fresh = @records.flat_map { |entry| hosted(entry['columns'], entry['identity']) }
       rows = UsageRows.new(fresh + carried_columns, earlier: earlier_reports.any?)
-      { 'summary' => [SUMMARY, rows.summary].compact.join(' · '), 'body' => body(rows) }
+      { 'summary' => SUMMARY, 'body' => body(rows),
+        'estimate' => rows.summary&.delete_suffix(' estimated') || 'UNKNOWN' }
     end
 
     private
@@ -185,13 +195,14 @@ module Shaka
       { 'identity' => UsageRecordCarry.identity!(copied), 'columns' => columns(nested), 'note' => note }
     end
 
-    # Carried record blocks stay hidden and unchanged, so the next publish can read them again.
+    # Carried record blocks stay hidden and keep their identity and columns, so the next publish can read
+    # them again. Only where each note is written in full may move.
     def record_blocks
       fresh = @records.map do |entry|
         hidden = ["<!-- usage-columns #{JSON.generate(entry['columns'])} -->", UsagePricing.hidden(entry['note'])]
         "#{UsageRecords.begin_mark(entry['identity'])}\n#{hidden.compact.join("\n")}\n#{UsageRecords::END_MARK}"
       end
-      @carried.grep(HIDDEN) + fresh
+      UsagePricing.shared(@carried.grep(HIDDEN) + fresh)
     end
   end
 end

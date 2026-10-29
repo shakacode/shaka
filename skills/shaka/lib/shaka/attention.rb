@@ -48,8 +48,11 @@ module Shaka
       refuse_merge_label(current_labels)
     end
 
-    # The attention labels the PR carries now, in GitHub's order.
-    def current = current_labels.select { |name| attention?(name) }
+    # Every label the PR carries now, in GitHub's order.
+    def all = current_labels
+
+    # The attention labels among names, which default to the PR's current labels.
+    def current(names = all) = names.select { |name| attention?(name) }
 
     private
 

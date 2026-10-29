@@ -51,6 +51,5 @@ Read this only when a maintainer asks to choose, change, or explain
    ```
 
    Point out PRs the list would hold at 4 or 5 and ask whether that matches their intent.
-6. Publish the change as its own settings PR through the migration flow, and list the
-   `shaka install --update` step for every installation as an after-merge step when the
-   repository did not set this key before.
+6. Publish the change as the [configure procedure's settings change](configure.md#change-a-setting)
+   describes.

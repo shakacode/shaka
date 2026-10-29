@@ -63,6 +63,8 @@ module CompanionTowersSupport
     FileUtils.mkdir_p(File.dirname(helper))
     File.write(helper, "#!/usr/bin/env ruby\n")
     File.chmod(0o755, helper)
+    # Windows checks the helper by starting this entry point through Ruby instead of the launcher.
+    File.write("#{helper}.rb", '')
   end
 
   def source(name)

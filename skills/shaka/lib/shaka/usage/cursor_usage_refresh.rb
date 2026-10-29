@@ -5,6 +5,8 @@ require 'json'
 require_relative '../error'
 require_relative '../github'
 require_relative '../publication/usage_details'
+require_relative '../publication/throughput_stats'
+require_relative '../publication/rendering_preview'
 require_relative 'cursor_usage'
 require_relative 'cursor_usage_store'
 require_relative 'usage_records'
@@ -12,8 +14,9 @@ require_relative 'usage_records'
 module Shaka
   # Renders the usage details block the stop hook swaps into a published description.
   module UsageDetailsBlock
-    def self.markdown(spec)
-      rendered = UsageDetails.new(spec).detail
+    def self.markdown(spec) = from_detail(UsageDetails.new(spec).detail)
+
+    def self.from_detail(rendered)
       summary = PublicationText.summary_text(rendered['summary'], 'details summary')
       "<details>\n<summary>#{summary}</summary>\n\n#{rendered['body']}\n\n</details>"
     end
@@ -311,10 +314,13 @@ module Shaka
         region = Publishing.managed_region(body)
         raise Error, 'Cursor usage refresh found no managed description.' unless region
 
-        updated = replace_block(region, UsageDetailsBlock.markdown(usage))
+        detail = UsageDetails.new(usage).detail
+        updated = replace_block(region, UsageDetailsBlock.from_detail(detail))
         raise Error, 'Cursor usage refresh found no usage section.' unless updated
 
-        updated
+        updated = UsageEstimate.refresh(updated, detail)
+        updated = ThroughputStats.refresh_spend(updated, detail.fetch('estimate'))
+        updated == region ? updated : RenderingPreview.invalidate(updated)
       end
 
       def replace_block(region, block)

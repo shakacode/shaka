@@ -37,8 +37,23 @@ class PostImplementationPacketTest < Minitest::Test
      CHECKPOINT_CONTENT.merge('checkpoint' => { 'audience' => 'Maintainers' }),
      CHECKPOINT_CONTENT.merge('verification' => VERIFICATION.merge('checks' => [])),
      CHECKPOINT_CONTENT.merge('intent' => INTENT.except('safe_because')),
-     CHECKPOINT_CONTENT.except('summary'), own('evidence' => [''])].each do |packet|
+     CHECKPOINT_CONTENT.except('summary'), own('evidence' => ['']),
+     CHECKPOINT_CONTENT.merge('intent' => INTENT.merge('review_focus' => [{ 'path' => 'lib/a.rb', 'level' => 2,
+                                                                            'reason' => 'r.' }]))].each do |packet|
       assert_refused_before_invocation(packet)
+    end
+  end
+
+  # The packet has no pull request, so a focus entry gets the shape checks and reaches the judge as written.
+  def test_review_focus_reaches_the_reviewer
+    focus = [{ 'path' => 'lib/queue.rb', 'level' => 4, 'reason' => 'submits the queue entry.' }]
+    @packet = CHECKPOINT_CONTENT.merge('intent' => INTENT.merge('review_focus' => focus))
+    with_repository do |root, base, head, bin|
+      fake_checkpoint(bin, head)
+      result, status = run_checkpoint(root, base, head, bin)
+
+      assert_predicate status, :success?, result.inspect
+      assert_equal focus, reviewer_packet(root).dig('intent', 'review_focus')
     end
   end
 
@@ -55,7 +70,7 @@ class PostImplementationPacketTest < Minitest::Test
   end
 
   def test_a_repository_prompt_keeps_the_packaged_verdict_definitions
-    settings = { 'post_implementation' => { 'prompt_file' => '.agents/codex-prompt.md' } }
+    settings = { 'checkpoint' => { 'replacement_prompt_file' => '.agents/codex-prompt.md' } }
     with_repository(settings) do |root, base, head, bin|
       fake_checkpoint(bin, head)
       _, status = run_checkpoint(root, base, head, bin)

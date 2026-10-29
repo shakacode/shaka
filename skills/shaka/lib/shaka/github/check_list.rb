@@ -8,18 +8,10 @@ module Shaka
       NO_CHECKS = /\Ano checks reported on the '[^\r\n]+' branch(?:\r?\n)?\z/
       NO_REQUIRED_CHECKS = /\Ano required checks reported on the '[^\r\n]+' branch(?:\r?\n)?\z/
 
-      def checks(required: false)
-        stdout, stderr, exitstatus = fetch_check_streams(required)
-        if stdout.strip.empty?
-          return [] if empty_check_list?(stderr, required)
-          raise check_failure(exitstatus, stderr) unless exitstatus.zero?
-        end
+      def checks(required: false) = listed(required, 'name,state,bucket,link')
 
-        result = parse_json(stdout)
-        raise Error, 'GitHub checks response must be an array.' unless result.is_a?(Array)
-
-        result
-      end
+      # Completion timestamps for the throughput line. The default check read leaves them off.
+      def check_times = listed(false, 'name,state,bucket,completedAt')
 
       def required_checks
         checks(required: true)
@@ -31,10 +23,23 @@ module Shaka
 
       private
 
-      def fetch_check_streams(required)
+      def listed(required, json)
+        stdout, stderr, exitstatus = fetch_check_streams(required, json)
+        if stdout.strip.empty?
+          return [] if empty_check_list?(stderr, required)
+          raise check_failure(exitstatus, stderr) unless exitstatus.zero?
+        end
+
+        result = parse_json(stdout)
+        raise Error, 'GitHub checks response must be an array.' unless result.is_a?(Array)
+
+        result
+      end
+
+      def fetch_check_streams(required, json)
         argv = ['gh', 'pr', 'checks', @number.to_s, '--repo', @repository]
         argv << '--required' if required
-        argv.push('--json', 'name,state,bucket,link')
+        argv.push('--json', json)
         stdout, stderr, status = @runner.call(argv, stdin_data: '')
         raise check_failure(status.exitstatus, stderr) unless CHECK_EXITS.include?(status.exitstatus)
 

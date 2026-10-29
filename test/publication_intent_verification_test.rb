@@ -13,11 +13,12 @@ class PublicationIntentVerificationTest < Minitest::Test
   def test_intent_and_verification_render_each_field_on_its_own_line
     rendered = render
 
-    intent = "## Intent\n\n**Why:** #{INTENT['why']}\n\n**Scope:** #{INTENT['scope']}\n\n" \
-             "**Leaves out:** #{INTENT['leaves_out']}\n\n**Safe because:** #{INTENT['safe_because']}\n\n" \
-             '**Review effort:** 2 of 5, easy: skim the diff.'
+    intent = "## Intent\n\n**Why:** #{INTENT['why']}\n\n**Task:** Codex prompt\n\n" \
+             "**Safe because:** #{INTENT['safe_because']}\n\n" \
+             "**Review effort:** 2 of 5, easy: skim the diff.\n\n**Leaves out:** #{INTENT['leaves_out']}\n\n" \
+             "**Scope:** #{INTENT['scope']}"
     verification = "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n" \
-                   "- #{VERIFICATION['checks'].first}\n\n"
+                   "<details>\n<summary>Evidence and limitations</summary>"
     assert_includes rendered, intent
     assert_includes rendered, verification
   end
@@ -46,7 +47,7 @@ class PublicationIntentVerificationTest < Minitest::Test
   end
 
   def test_each_intent_field_is_required
-    INTENT.each_key do |field|
+    (INTENT.keys - ['leaves_out']).each do |field|
       error = assert_raises(Shaka::Error) { render('intent' => INTENT.except(field)) }
       assert_includes error.message, "intent #{field}"
     end
@@ -73,7 +74,8 @@ class PublicationIntentVerificationTest < Minitest::Test
     cause = 'The booking link covered the underlined price.'
     rendered = render('intent' => INTENT.merge('root_cause' => cause))
 
-    assert_includes rendered, "**Why:** #{INTENT['why']}\n\n**Root cause:** #{cause}\n\n**Scope:**"
+    assert_includes rendered, "**Why:** #{INTENT['why']}\n\n**Task:** Codex prompt\n\n" \
+                              "**Root cause:** #{cause}\n\n**Safe because:**"
   end
 
   def test_root_cause_is_optional_but_not_blank
@@ -102,8 +104,9 @@ class PublicationIntentVerificationTest < Minitest::Test
     rendered = render('wip' => HandoffFixtures::WIP,
                       'verification' => { 'checks' => [], 'not_verified' => 'Validation has not run yet.' })
 
-    assert_includes rendered, "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n" \
-                              '**Not verified:** Validation has not run yet.'
+    assert_includes rendered, '**Not verified:** Validation has not run yet.'
+    assert_operator rendered.index('<summary>Evidence and limitations</summary>'), :<,
+                    rendered.index('**Not verified:**')
   end
 
   def test_one_to_three_checks_are_allowed

@@ -17,7 +17,8 @@ module Shaka
       CI_REVIEW_JOBS = 'ci_review_jobs'
       LOCAL_REVIEW_AGENTS = 'local_review_agents'
       LOCAL_REVIEW_COUNT = 'local_review_count'
-      PROMPT_FILE = 'prompt_file'
+      PROMPT_FILE = 'replacement_prompt_file'
+      CUSTOM_INSTRUCTIONS = 'custom_instructions_file'
       MODEL = 'model'
       EFFORT = 'effort'
       # Codex reads the effort as configuration text, and every reviewer repeats it in the attestation.
@@ -28,7 +29,8 @@ module Shaka
         'check' => CI_REVIEW_JOBS,
         'github_action_check' => CI_REVIEW_JOBS,
         'reviewers' => LOCAL_REVIEW_AGENTS,
-        'local_reviewers' => LOCAL_REVIEW_AGENTS
+        'local_reviewers' => LOCAL_REVIEW_AGENTS,
+        'prompt_file' => PROMPT_FILE
       }.freeze
       RETIRED = %w[model_family provider draft].freeze
 
@@ -47,7 +49,15 @@ module Shaka
         old = RENAMED.keys.find { |key| review.key?(key) }
         return unless old
 
-        raise Error, "review.#{old} moved to review.#{RENAMED.fetch(old)}; see skills/shaka/references/migration.md"
+        new = "review.#{RENAMED.fetch(old)}"
+        raise Error, "review.#{old} moved to #{new}. #{Validation.rename_request("review.#{old}", new)}"
+      end
+
+      # The review section is also read without the schema, so each reviewer's old prompt name is refused here.
+      def self.renamed_agent_prompt_files!(review)
+        Array(review[LOCAL_REVIEW_AGENTS]).each_with_index do |entry, index|
+          Validation.renamed_prompt_file!(entry, "review.#{LOCAL_REVIEW_AGENTS}[#{index}]")
+        end
       end
 
       def self.effort_level!(value, label)
@@ -62,16 +72,6 @@ module Shaka
         raise Error, "#{label} must not contain whitespace" if value.match?(/\s/)
       end
 
-      # Every prompt file the review section names, repository-wide and per reviewer.
-      def self.prompt_files(review)
-        agents = Array(review[LOCAL_REVIEW_AGENTS])
-        ([["review.#{PROMPT_FILE}", review[PROMPT_FILE]]] +
-          agents.each_with_index.map do |entry, index|
-            ["review.#{LOCAL_REVIEW_AGENTS}[#{index}].#{PROMPT_FILE}", entry[PROMPT_FILE]]
-          end + [['review.post_implementation.prompt_file',
-                  review.dig('post_implementation', PROMPT_FILE)]]).select { |_, path| path }
-      end
-
       def initialize(review) = @review = review
 
       # A seam with no native gate still declares its reviewer order, because
@@ -81,9 +81,8 @@ module Shaka
         validate_check
         validate_review_wait
         ReviewLimit.from(@review)
-        PostImplementationSchema.new(@review['post_implementation']).validate if @review.key?('post_implementation')
         local_review_agents!(@review[LOCAL_REVIEW_AGENTS]) if @review.key?(LOCAL_REVIEW_AGENTS)
-        prompt_path!(@review[PROMPT_FILE], "review.#{PROMPT_FILE}") if @review.key?(PROMPT_FILE)
+        prompt_paths!(@review, [PROMPT_FILE, CUSTOM_INSTRUCTIONS], 'review')
       end
 
       private
@@ -118,6 +117,7 @@ module Shaka
         raise Error, "#{label} must be a list" unless reviewers.is_a?(Array)
         raise Error, "#{label} must not be empty" if reviewers.empty?
 
+        self.class.renamed_agent_prompt_files!(@review)
         reviewers.each_with_index { |entry, index| entry!(entry, index) }
         repeated!(reviewers)
       end

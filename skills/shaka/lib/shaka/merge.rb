@@ -8,15 +8,18 @@ require_relative 'required_checks'
 require_relative 'merge_review_evidence'
 require_relative 'merge_required_checks'
 require_relative 'merge_limits'
+require_relative 'auto_merged_label'
 
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
   class Merge
     include MergeRequiredChecks
 
-    # The head a user told the agent to merge although no required check gates it, and the
-    # MergeReviewFloor that sends PRs changing higher-floor paths back to the user.
-    attr_writer :empty_checks_confirmed_head, :review_floor
+    # The head a user told the agent to merge although no required check gates it, the
+    # MergeReviewFloor that sends PRs changing higher-floor paths back to the user, the MergeHold
+    # that stops a merge, and whether the agent merges under Auto, where every head check must
+    # pass and the merge is labeled.
+    attr_writer :empty_checks_confirmed_head, :review_floor, :hold, :auto
 
     # `review` takes MergeReviewEvidence's technical settings and final product checkpoint.
     def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
@@ -29,22 +32,21 @@ module Shaka
 
     # `squash_message` is a SquashMessage, or nil for the repository's squash default.
     def call(head:, base:, walkthrough:, limits: MergeLimits.new, squash_message: nil)
-      @target = MergeTarget.required!(head, base, limits, @review_floor)
+      @target = MergeTarget.required!(head, base, limits, @review_floor, @hold)
       @submission.message = squash_message
       @head = head
       initial = @github.snapshot
       verify_snapshot(initial, head, @target)
       gate = verify_gate
       evidence = verify_reviews(head, base, walkthrough, gate).merge(excused_checks(gate, head))
-      current = @github.snapshot
-      return reconcile_queued_replay(initial, current, head).merge(evidence) if initial['isInMergeQueue']
-
-      submit(initial, current, head).merge(evidence)
+      AutoMergedLabel.new(@github, enabled: @auto).mark(submit(initial, @github.snapshot, head)).merge(evidence)
     end
 
     private
 
     def submit(initial, current, head)
+      return reconcile_queued_replay(initial, current, head) if initial['isInMergeQueue']
+
       verify_snapshot(current, head)
       @target.unchanged!(initial, current, @github)
       @review_evidence.final_check(head)
@@ -120,7 +122,7 @@ module Shaka
 
     def verify_native_state(pull)
       unless pull['isInMergeQueue']
-        verify_merge_state(pull, CiReviewWait.allowed_merge_states(@ci_review_wait, pull['isMergeQueueEnabled']))
+        verify_merge_state(pull, CiReviewWait.allowed_merge_states(merge_state_wait, pull['isMergeQueueEnabled']))
       end
 
       verify_review_state(pull)

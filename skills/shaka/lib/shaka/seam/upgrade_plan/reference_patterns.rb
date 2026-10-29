@@ -44,10 +44,24 @@ module Shaka
           end
         end
 
+        # Every start is tried, and every `../` in a match, so a link after a traversal cannot hide it.
         def parent_traversal_reference?(line)
           return false unless line.include?("#{PATHS::DIRECTORY}/") && line.include?('/../')
 
-          line.match?(directory_pattern(PATHS::DIRECTORY, '/(?:[^/\s"\x27]+/)*\.\./'))
+          pattern = directory_pattern(PATHS::DIRECTORY, '/(?<segments>(?:[^/\s"\x27]+/)*)\.\./')
+          line.to_enum(:scan, /(?=#{pattern})/).any? { checkout_traversal?(::Regexp.last_match[:segments]) }
+        end
+
+        # Markdown puts `](` between a link's text and its target, so a segment holding it is a
+        # directory only where the checkout has one.
+        def checkout_traversal?(segments)
+          directory = File.join(@root, PATHS::DIRECTORY)
+          "#{segments}..".split('/').each do |segment|
+            return true if segment == '..'
+
+            directory = File.join(directory, segment)
+            return false if segment.include?('](') && !File.directory?(directory)
+          end
         end
 
         def directory_end = '(?=[^[:alnum:]_./-]|\\.(?![[:alnum:]_/-])|$)'

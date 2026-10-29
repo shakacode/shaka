@@ -71,6 +71,15 @@ class EvaluationDeliveryReadbackTest < Minitest::Test
     end
   end
 
+  def test_submission_can_precede_creation_as_observed_from_native_github
+    row = review.merge('createdAt' => '2026-10-23T09:29:03Z', 'submittedAt' => '2026-10-23T09:29:02Z',
+                       'updatedAt' => '2026-10-23T09:29:03Z')
+    write_review(row)
+    receipt = capture
+    assert_equal row, receipt.fetch('review').except('body_digest')
+    assert reader.unchanged?(receipt)
+  end
+
   def test_input_refusals_precede_the_native_call
     assert_raises(ArgumentError) { reader(head: 'main') }
     assert_raises(ArgumentError) { reader(seconds: Float::INFINITY) }

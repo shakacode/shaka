@@ -4,7 +4,9 @@ require_relative 'error'
 require_relative 'review_thread/lookup'
 
 module Shaka
-  # Marks one inline review thread resolved after the authenticated account has replied.
+  # Marks one inline review thread resolved after the agent has replied from the authenticated
+  # account. The agent posts under a person's login, so only a marked reply is the agent's, as
+  # `handoff` counts it; an unmarked reply is the person's and reads as theirs.
   class ReviewThread
     THREAD_ID = /\A[A-Za-z0-9_-]{1,200}\z/
     MUTATION = <<~GRAPHQL
@@ -53,17 +55,25 @@ module Shaka
       raise Error, 'The review thread is already resolved.' if thread['isResolved']
     end
 
+    # Walkthrough history loads this file, and AgentPost loads walkthrough history, so the
+    # reply check loads AgentPost only when it runs.
     def check_reply(thread)
-      return if replies(thread).include?(@account)
+      require_relative 'publication/agent_post'
+      replies = own_replies(thread)
+      return if replies.any? { |comment| AgentPost.marked?(comment['body']) }
       raise Error, 'Review-thread reply evidence is incomplete.' if more_comments?(thread)
+      if replies.any?
+        raise Error, "This account's reply has no AI identity line, so it counts as a person's. " \
+                     "Post the agent's answer with `shaka reply` before resolving."
+      end
 
       raise Error, 'Resolve a review thread only after this account has replied on it.'
     end
 
-    # The first comment opens the thread. A later comment from this account is the reply.
-    def replies(thread)
-      thread.dig('comments', 'nodes').drop(1).filter_map do |comment|
-        comment.dig('author', 'login') if comment.is_a?(Hash)
+    # The first comment opens the thread. A later comment from this account is a reply.
+    def own_replies(thread)
+      thread.dig('comments', 'nodes').drop(1).select do |comment|
+        comment.is_a?(Hash) && comment.dig('author', 'login') == @account
       end
     end
 

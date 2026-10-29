@@ -20,10 +20,16 @@ This index links comparison reports and harness attempts. It prevents a harness 
 successful skill evaluation or repeated without a changed hypothesis.
 Prepared tier 1 tasks can use the [native decision replay API](decision-replays.md)
 for accounting, fingerprint capture and exact ordered-action scoring.
+The [release behavioral gate](release-behavior.md) checks a complete 12-case native
+decision batch before publication approval; it does not run models or authorize a release.
+The expanded action vocabulary re-versions the shared merge-authority replay protocol.
+Keep original pins for historical reports; new comparisons require matching grading fingerprints.
 The future tier 3 driver can retain [protected review readbacks](delivery-readback.md);
 the [offline Ask grader](ask-grading.md) checks protected evidence. The
 [native snapshot reader](delivery-snapshots.md) captures PR/check identities and final-blob bounds.
-Native collection and driver qualification remain unbuilt.
+The [workflow declaration reader](delivery-workflows.md) supplies immutable Action pins for D2.
+The [Codex event reader](codex-events.md) retains bounded native terminal/tool
+observations. Complete native collection and driver qualification remain unbuilt.
 
 | Experiment | Evidence | Outcome |
 | --- | --- | --- |

@@ -29,6 +29,7 @@ module Shaka
       @head = head
       @ci_jobs = ci_jobs
       @ci_wait = CiReviewWait.normalize(settings[:ci_review_wait])
+      @auto = settings[:auto]
       @timing = timing(settings)
       configure_feedback(settings)
       configure_adapters(adapters)
@@ -74,25 +75,13 @@ module Shaka
       @clock = adapters.fetch(:clock) { -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) } }
       @sleeper = adapters.fetch(:sleeper) { ->(seconds) { sleep(seconds) } }
       @comments = adapters.fetch(:comments) { -> { PublicComments::Reader.new(@github).call(expected_head: @head) } }
+      @throughput = adapters[:throughput]
     end
 
     def observe
       @comments_only ? observe_feedback : observe_checks
     rescue Error => e
       changed_during_read(e)
-    end
-
-    def observe_checks
-      snapshot = @status.call
-      return 'head_moved' if snapshot['headRefOid'] != @head
-      return 'closed' unless snapshot['state'] == 'OPEN'
-      raise Error, snapshot['requiredChecksUnavailable'] if snapshot['requiredChecksUnavailable']
-
-      checks = @github.checks
-      return 'head_moved' if @github.snapshot['headRefOid'] != @head
-
-      update_pending(new_comments?, terminal_checks?(snapshot['requiredChecks'], checks))
-      nil
     end
 
     def new_comments?
@@ -105,7 +94,7 @@ module Shaka
     def terminal_checks?(required, checks)
       return false if required.empty? && (@ci_jobs.empty? || @ci_wait == 'none')
 
-      terminal?(required) && review_jobs_terminal?(checks)
+      terminal?(required) && review_jobs_terminal?(checks) && (!@auto || terminal?(checks))
     end
 
     def update_pending(new_comments, terminal)
@@ -135,3 +124,5 @@ module Shaka
     end
   end
 end
+
+require_relative 'pr_watch/throughput'
