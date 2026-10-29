@@ -16,6 +16,7 @@ module Shaka
     TIMES = %w[t0 t1 t2 t3].freeze
     BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\n\*\*This head:\*\* [^\r\n]+(?=\r?\n|\z)/
     HEADER = /^(🤖 [^\r\n]*?) - AI spend: [^\r\n]*/
+    COST = /^(\*\*Estimated (?:token costs|cost):\*\* [^\r\n·]+?)(?: · (?:ready|merged) in [^\r\n]*)?(?=\r?\n|\z)/
 
     def self.state(content, timeline = nil, pull = nil) = publish_state(content, timeline || {}, pull)
 
@@ -28,6 +29,7 @@ module Shaka
       replacement = line(state)
       original.sub(BLOCK) { |found| found.include?("\r\n") ? replacement.gsub("\n", "\r\n") : replacement }
               .sub(HEADER) { "#{Regexp.last_match(1)}#{header(state)}" }
+              .sub(COST) { "#{Regexp.last_match(1)}#{took(state)}" }
     end
 
     # A usage refresh must not fail on a damaged block; the next publish rewrites it.

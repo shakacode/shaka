@@ -14,7 +14,8 @@ class ThroughputWatchTest < Minitest::Test
     patched = github.patches.first
     assert patched.start_with?("Intro.\n\n") && patched.end_with?("\n\nOutro.\n")
     assert_includes patched, 'Prompt to CI 38m · CI to ready 41m'
-    assert_includes patched, "low - AI spend: $4.12 · ready in 1h 19m\n"
+    assert_includes patched, "low - AI spend: $4.12\n"
+    assert_includes patched, "**Estimated token costs:** $4.12 · ready in 1h 19m\n"
   end
 
   def test_a_watcher_write_drops_the_rendering_preview_marker

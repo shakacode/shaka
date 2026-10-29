@@ -43,7 +43,8 @@ class ThroughputStatsTest < Minitest::Test
     assert_equal updated, Shaka::ThroughputStats.update(updated, changes)
     assert updated.start_with?("Keep this.\n\n") && updated.end_with?("\nAnd this.\n")
     assert_includes updated, 'CI to ready 41m · Ready to merged pending'
-    assert_includes updated, "low - AI spend: $4.12 · ready in 1h 19m\n"
+    assert_includes updated, "low - AI spend: $4.12\n"
+    assert_includes updated, "**Estimated token costs:** $4.12 · ready in 1h 19m\n"
     assert_equal 1, updated.scan('<!-- shaka:stats ').size
   end
 
@@ -61,15 +62,6 @@ class ThroughputStatsTest < Minitest::Test
     crlf = "Keep.\r\n#{describe.gsub("\n", "\r\n")}"
     assert_equal crlf, Shaka::ThroughputStats.update(crlf, {})
     assert_equal "older\r\n", Shaka::ThroughputStats.update("older\r\n", 'spend' => '$1.00')
-  end
-
-  def test_a_crlf_block_is_read_and_updated_with_its_line_endings
-    crlf = "Keep.\r\n#{filled_block.gsub("\n", "\r\n")}\r\nMore.\r\n"
-    assert_equal READY.iso8601, Shaka::ThroughputStats.read(crlf)['t2']
-    updated = Shaka::ThroughputStats.update(crlf, 'spend' => '$5.00')
-    assert_includes updated, "-->\r\n**This head:**"
-    assert_includes updated, "low - AI spend: $5.00 · ready in 1h 19m\r\n"
-    assert updated.end_with?("\r\nMore.\r\n")
   end
 
   def test_a_damaged_block_in_the_body_does_not_stop_republication
@@ -96,14 +88,9 @@ class ThroughputStatsTest < Minitest::Test
     assert_includes rendered, 'Prompt to CI 38m'
   end
 
-  def test_a_spend_refresh_leaves_a_damaged_block_alone
-    damaged = "Keep.\n<!-- shaka:stats {not json} -->\n**This head:** x\n"
-    assert_equal damaged, Shaka::ThroughputStats.refresh_spend(damaged, '$1.00')
-  end
-
   def test_republishing_keeps_ready_time_only_for_the_same_head
     assert_includes republish(MERGED, HEAD, PUSH), 'CI to ready 41m · Ready to merged 2h 5m'
-    assert_includes republish(MERGED, HEAD, PUSH), "low - AI spend: $4.12 · merged in 3h 24m\n"
+    assert_includes republish(MERGED, HEAD, PUSH), "**Estimated token costs:** $4.12 · merged in 3h 24m\n"
     assert_includes republish(nil, NEXT, READY), 'Prompt to CI 1h 19m · CI to ready pending'
   end
 
@@ -118,5 +105,32 @@ class ThroughputStatsTest < Minitest::Test
     times = { 'task_started_at' => START, 'ci_started_at' => pushed }
     times['merged'] = merged if merged
     describe('$4.12', timeline: times, pull: { 'head' => { 'sha' => sha }, 'body' => filled_block })
+  end
+end
+
+# A refresh rewrites the spend and the time in place, keeping line endings and leaving a damaged block alone.
+class ThroughputRefreshTest < Minitest::Test
+  include ThroughputHelper
+
+  def test_a_usage_refresh_keeps_the_time_on_the_cost_line
+    refreshed = Shaka::UsageEstimate.refresh(filled_block, 'estimate' => '$9.00')
+    updated = Shaka::ThroughputStats.refresh_spend(refreshed, '$9.00')
+    assert_includes updated, "**Estimated token costs:** $9.00 · ready in 1h 19m\n"
+    assert_includes updated, "low - AI spend: $9.00\n"
+  end
+
+  def test_a_spend_refresh_leaves_a_damaged_block_alone
+    damaged = "Keep.\n<!-- shaka:stats {not json} -->\n**This head:** x\n"
+    assert_equal damaged, Shaka::ThroughputStats.refresh_spend(damaged, '$1.00')
+  end
+
+  def test_a_crlf_block_is_read_and_updated_with_its_line_endings
+    crlf = "Keep.\r\n#{filled_block.gsub("\n", "\r\n")}\r\nMore.\r\n"
+    assert_equal READY.iso8601, Shaka::ThroughputStats.read(crlf)['t2']
+    updated = Shaka::ThroughputStats.update(crlf, 'spend' => '$5.00')
+    assert_includes updated, "-->\r\n**This head:**"
+    assert_includes updated, "low - AI spend: $5.00\r\n"
+    assert_includes updated, "**Estimated token costs:** $4.12 · ready in 1h 19m\r\n"
+    assert updated.end_with?("\r\nMore.\r\n")
   end
 end

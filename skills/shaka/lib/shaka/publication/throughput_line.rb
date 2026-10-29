@@ -15,8 +15,16 @@ module Shaka
 
     def line(state) = "#{marker(state)}\n#{INTERVALS}#{intervals(state)}"
 
-    # Appended to the model line: the spend, then one overall time once it is measured.
-    def header(state) = "#{SPEND}#{shown_spend(state)}#{took(state)}"
+    # Appended to the model line.
+    def header(state) = "#{SPEND}#{shown_spend(state)}"
+
+    # Appended to the estimated cost line: task start to merge once merged, otherwise to ready;
+    # nothing until that time is known.
+    def took(state)
+      ended, label = state['t3'] ? [state['t3'], 'merged'] : [state['t2'], 'ready']
+      span = state['t0'] && ended && ended != 'UNKNOWN' ? interval(state['t0'], ended) : 'UNKNOWN'
+      span == 'UNKNOWN' ? '' : " · #{label} in #{span}"
+    end
 
     def earliest_start(commit)
       return unless commit.is_a?(Hash)
@@ -42,13 +50,6 @@ module Shaka
 
     def intervals(state)
       "Prompt to CI #{prompt(state)} · CI to ready #{ci(state)} · Ready to merged #{merged(state)}"
-    end
-
-    # Task start to merge once merged, otherwise to ready; nothing until that time is known.
-    def took(state)
-      ended, label = state['t3'] ? [state['t3'], 'merged'] : [state['t2'], 'ready']
-      span = state['t0'] && ended && ended != 'UNKNOWN' ? interval(state['t0'], ended) : 'UNKNOWN'
-      span == 'UNKNOWN' ? '' : " · #{label} in #{span}"
     end
 
     def shown_spend(state) = spend_text?(state['spend']) ? state['spend'] : 'UNKNOWN'

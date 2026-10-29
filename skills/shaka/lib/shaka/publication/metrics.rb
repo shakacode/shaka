@@ -10,7 +10,7 @@ module Shaka
       usage_detail = UsageDetails.new(@content['usage']).detail
       blocks = [details_block(usage_detail), *timings,
                 provenance, details_block(@settings.detail), *skills_used, *task_history]
-      ['## Shaka metrics', UsageEstimate.markdown(usage_detail),
+      ['## Shaka metrics', "#{UsageEstimate.markdown(usage_detail)}#{ThroughputStats.took(throughput)}",
        details_block('summary' => 'Details', 'body' => blocks.join("\n\n"))]
     end
 
