@@ -22,7 +22,7 @@ module Shaka
 
         # A quoted key in a hash or map names the directory as data, not a place to run from.
         def shell_directory_dependency?(text)
-          text = text.gsub(/(?:^|[{,])\s*\K(['"])#{Regexp.escape(PATHS::DIRECTORY)}\1(?=\s*(?:=>|:)\s)/o, '')
+          text = text.gsub(/[{,]\s*\K(['"])#{Regexp.escape(PATHS::DIRECTORY)}\1(?=\s*(?:=>|:)\s)/o, '')
           [text, normalize_shell_fragments(text)].any? do |source|
             source.match?(old_directory_change) || legacy_directory_command_pair?(source)
           end

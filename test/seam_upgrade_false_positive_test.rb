@@ -44,7 +44,8 @@ class SeamUpgradeFalsePositiveTest < Minitest::Test
     'spec/block_spec.rb' => %(Dir.chdir ".agents" do\n  system "bin/validate"\nend\n),
     'lib/back_out.rb' => %(cmd = File.join(root, ".agents", "shaka", "..", "bin", "validate")\n),
     'lib/back_out_inside.rb' => %(cmd = File.join(root, ".agents", "shaka/../bin/validate")\n),
-    'lib/ternary.rb' => %(Dir.chdir(ci ? ".agents" : ".") { system("bin/validate") }\n)
+    'lib/ternary.rb' => %(Dir.chdir(ci ? ".agents" : ".") { system("bin/validate") }\n),
+    'lib/wrapped_ternary.rb' => %(Dir.chdir(ci ?\n  ".agents" : ".") { system("bin/validate") }\n)
   }.freeze
 
   def test_nearby_real_references_still_block
@@ -154,6 +155,16 @@ class SeamUpgradeRetainedToolRoutingTest < Minitest::Test
     "#!/bin/sh\ncase \"$1\" in\n  \".agents/shaka/\"*) echo docs ;;\n  " \
     ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
     "#!/bin/sh\ncase \"$1\" in\n  $DOCS_GLOB) echo docs ;;\n  " \
+    ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  *shaka*) echo docs ;;\n  " \
+    ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  */shaka/*) echo docs ;;\n  " \
+    ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  .agents/shaka/* ) echo docs ;;\n  " \
+    ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  x) : ;; .agents/shaka/*) echo docs ;;\n  " \
+    ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
+    "#!/bin/bash\ncase \"$1\" in\n  @(.agents/shaka/*)) echo docs ;;\n  " \
     ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n"
   ].freeze
 

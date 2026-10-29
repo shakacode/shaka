@@ -6,9 +6,9 @@ module Shaka
       # Whether a shell `case` arm naming the old command directory routes each moved command the same way after
       # the move.
       module CaseArms
-        # A glob reads slightly differently to a shell and to an ignore file, so a match counts as certain only when
-        # every reading agrees and as possible when any does.
-        GLOB_READINGS = [0, File::FNM_PATHNAME].freeze
+        # A glob reads differently to a shell `case`, whose `*` also matches a leading dot, and to an ignore file, so a
+        # match counts as certain only when every reading agrees and as possible when any does.
+        GLOB_READINGS = [0, File::FNM_PATHNAME, File::FNM_DOTMATCH].freeze
 
         private
 
@@ -70,17 +70,23 @@ module Shaka
 
           starts = line.scan(/\bcase\b/).size
           ends = line.scan(/\besac\b/).size
-          return if starts + ends > 1 || (starts == 1 && !line.match?(case_header))
+          return if starts + ends > 1 || (starts == 1 && !line.match?(case_header)) || hidden_arm?(line)
 
           starts - ends
         end
+
+        # A second arm after `;;`, or an extglob arm, holds patterns this reader does not record.
+        def hidden_arm?(line) = line.match?(/;;\s*[^\s#]/) || line.match?(/\A\s*\(?\s*[@!+*?]\(/)
+
+        # Any line opening with a pattern list and `)`, spaced or not, is an arm whose patterns count.
+        def arm_line = /\A\s*\(?\s*[^\s()#][^()]*\)/
 
         def case_header = /\A\s*case\s.*\sin\s*$/
 
         # `cases` holds the arms seen so far in each open `case`, innermost last.
         def note_arm(line, cases, captured)
           cases.push([]) if line.match?(case_header)
-          if line.match?(case_arm)
+          if line.match?(arm_line)
             captured << line.chomp if takes_moved_command?(cases.last)
             cases.last.concat(arm_patterns(line))
           end
