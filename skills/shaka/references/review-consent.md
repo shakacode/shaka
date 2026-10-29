@@ -18,12 +18,13 @@ probe sends no repository content. Disabling the probe leaves this step in place
    and the reviewer CLI reach the provider by different routes, such as Amazon Bedrock
    or Google Vertex (`CLAUDE_CODE_USE_BEDROCK`, `CLAUDE_CODE_USE_VERTEX`), a gateway base
    URL, or a different Codex model provider on only one side; or when the CLI uses a
-   different account or organization, such as through an API key in its environment.
-   Other reviewers and any relay service still need consent. For a same-recipient
+   different account or organization, such as through an API key or login only the
+   CLI uses. Other reviewers and any relay service still need consent. For a same-recipient
    reviewer, whatever other consent exists, state in one visible line before the startup
    check that it needs no separate consent because the host already sends this data to
    that provider, and that the reviewer can read other files its sandbox allows,
-   including secrets.
+   including secrets. When the host denies that reviewer's launch, it needs consent:
+   ask as step 3 describes.
 2. When consent covers the request, quote it exactly, with its source, in a
    visible message before the startup check. Reuse it for covered reviews without
    asking again; surface it again with an escalation or native retry. Do not
