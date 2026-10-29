@@ -45,12 +45,12 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
 
 1. **A task runs one fixed copy of Shaka from intake to outcome.** At intake, after
    resolving the installed skill to its trusted source, the agent runs that helper's new
-   `pin` command. `pin` copies the installed revision into its own folder and prints the
-   copy's helper path, and the agent keeps that path for the whole task. The workflow
-   already tells the agent to keep one absolute helper path, so only the path it keeps
-   changes. Every later command, the workflow text, and the reference links it prints
-   come from the copy, so a later update of the source checkout does not change the code
-   the task runs or the procedures it reads.
+   `pin --task KEY` command. `pin` copies the installed revision into its own folder and
+   prints the copy's helper path, and the agent keeps that path for the whole task. The
+   workflow already tells the agent to keep one absolute helper path, so only the path it
+   keeps changes. Every later command, the workflow text, and the reference links it
+   prints come from the copy, so a later update of the source checkout does not change the
+   code the task runs or the procedures it reads.
 
    Two small windows stay. The host loads `SKILL.md` through the skill link, which still
    points at the source checkout, and an update can land between that load and `pin`.
@@ -78,16 +78,22 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    stop without weakening it, and a run in progress no longer reports `inputs_changed`
    from an install update.
 
-4. **Resuming reuses the task's revision.** A resumed task reads the revision its PR
-   description's workflow version line names and runs `pin --revision SHA`. That prints
-   the helper path of the existing copy of that revision after verifying it. When the
-   copy is gone, `pin` rebuilds it from the source checkout's history through decision 2's
-   path, so earlier evidence still binds. Only when the source checkout no longer has
-   that commit does `pin` copy the current revision instead and say that earlier evidence
-   will not bind; the agent then reruns validation and review, as it does today. The
-   public `installation.revision` field is not used here: it shows `REDACTED` unless the
-   install's repository is recorded as `shakacode/shaka`, and the source checkout records
-   its origin URL.
+4. **A local record ties each task to its revision.** The intake call is
+   `pin --task KEY`, where KEY names the work item, such as `shakacode/shaka#956` or a
+   claim description slug. `pin` records the revision it chose for that key in local
+   state under `~/.local/share/shaka/revisions/`, outside every checkout. Running the
+   same command again, on resume in a new chat or before any PR exists, returns the
+   recorded revision's copy instead of the current install. The revision never comes from
+   PR or issue text, which a fork author or commenter can edit. `pin` also accepts a
+   recorded revision only when it is an ancestor of the official branch the install
+   tracks, so a tampered local record cannot select a PR head or a fork commit.
+
+   When the copy is gone, `pin` rebuilds it from the source checkout's history through
+   decision 2's path. Earlier evidence binds again only when the rebuilt copy's
+   installation identity equals the recorded one; a changed origin URL spelling or a
+   newer packager changes it. When the identity differs, or the commit is no longer in
+   history, `pin` says that earlier evidence will not bind and the agent reruns
+   validation and review, as it does today.
 
 5. **Updates apply to the next task.** `update-check` from a pinned copy compares the
    copy's revision with official main, as it does for the source checkout, so it still
@@ -96,11 +102,15 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    runs `pin` again; that choice accepts one rerun of validation and review.
 
 6. **Copies are removed only after they stop being used.** Every helper run from a copy
-   touches that copy's `last-used` file, so a task that keeps working, including a
-   long `pr watch`, keeps its copy fresh. `pin` removes copies with no helper run for 14
-   days, never the one it returns. A task idle longer than that loses its copy and
-   decision 4 rebuilds it. `install --verify` reports how many copies exist and their
-   total size.
+   touches a marker for that copy in `~/.local/share/shaka/revisions/.last-used/`,
+   outside the package, so verifying a copy never sees it change. A task that keeps
+   working, including a long `pr watch`, keeps its copy fresh. `pin` removes copies with
+   no helper run for 14 days, never the one it returns, and holds a lock in the revisions
+   directory while it removes or returns a copy, so cleanup and another session's `pin`
+   cannot interleave. When a task's saved helper path is missing, the workflow tells the
+   agent to run `pin --task KEY` again from the installed skill; decision 4 then rebuilds
+   or replaces the copy. `install --verify` reports how many copies exist and their total
+   size.
 
 ## Alternatives considered
 
@@ -114,7 +124,7 @@ requiring each entry file adds under `skills/shaka/lib`.
 | Keep today's whole-revision identity | All | Nothing; this is the cost #956 reports |
 | Fingerprint only the Ruby files that validation and review load, plus `config/` | 106 of 264 (40%) | Nothing for Ruby, whose closure is computed. Prompts and data files under `config/` need a hand-kept list, and a missed file lets stale evidence bind |
 | Fingerprint a hand-picked list of evidence files | About 20% | Fails open: a new file that affects review but is missing from the list lets stale evidence bind |
-| Rebind when `git diff` between the recorded and current revisions touches no relevant path | Same as the chosen list | Needs Git history, so trial packages cannot use it, and it needs the same relevance list |
+| Rebind when `git diff` between the recorded and current revisions touches no relevant path | Same as whichever relevance list it uses (40% or about 20%) | Needs Git history, so trial packages cannot use it, and it needs the same relevance list |
 | Pin per task (chosen) | None from updates | A task does not get Shaka fixes until it ends unless the maintainer asks |
 
 The Ruby closure of `evidence/command.rb` and `local_review.rb` covers 232 of the 438
@@ -134,8 +144,11 @@ sessions on one machine, since any session can update.
 - The implementation PR adds tests for both sides: evidence recorded by a pinned copy
   still binds after the source checkout fast-forwards, and evidence recorded before the
   agent repins to a newer revision is superseded. It also tests shared copies, a
-  fast-forward during `pin`, rebuilding a removed copy, and that cleanup keeps a copy
-  in use.
+  fast-forward during `pin`, rebuilding a removed copy with an equal and a changed
+  identity, resuming before a PR exists, refusing a recorded revision outside official
+  history, and that cleanup keeps a copy in use.
+- Tasks in flight when pinning ships rerun validation and review once: their earlier
+  evidence names the source checkout's identity, and their first `pin` records a copy's.
 - ADR 0002's reason for keeping scheduled updates opt-in no longer applies to running
   tasks, apart from the `SKILL.md` windows in decision 1. Turning them on stays a
   separate decision.
