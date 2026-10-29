@@ -61,8 +61,9 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    So setup gains an eligibility check before it generates anything. When
    `Configuration.private_source` reports `complete`, setup does not read the personal
    file. A rerun there regenerates from flags alone, as today, and is refused as blocked
-   when the clone's files hold personal values. A clone set up before the personal file
-   existed still reruns as a no-op. Only a fresh setup (`absent`) or the resume of an
+   when the clone's files hold personal values; that refusal adds that the clone already
+   has settings and that changes go into its `.agents/shaka/config.yml` directly. A clone
+   set up before the personal file existed still reruns as a no-op. Only a fresh setup (`absent`) or the resume of an
    interrupted one (`partial`, or `absent` with a prepared recovery copy) reads the file.
 
    A resume regenerates the files and compares them with the prepared recovery copy. If the
@@ -116,7 +117,8 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    failure names the personal file when a personal value took part.
 
 4. **Setup previews the proposal before writing.** `seam private setup --plan`, with the
-   same options as a real run, loads and merges the personal file, validates the result,
+   same options as a real run and the same eligibility check from decision 1, loads and
+   merges the personal file when a real run would, validates the result,
    and prints the configuration it would write with `prefilled_from` (the file path) and
    `prefilled_keys` (the dotted keys it took). It writes no settings, recovery copy, or Git
    exclusion. The private-setup procedure in `skills/shaka/references/repository-setup.md`
@@ -188,7 +190,8 @@ consequence.
   `--plan` returning the proposal while leaving settings, recovery storage, and exclusions
   untouched; `--from` ignoring the file; `seam init` output unchanged with a personal file
   present; a prompt file on a personal reviewer entry being refused; a rerun on a completed
-  clone not reading the file, both with and without personal values in its settings; a
+  clone not reading the file, both with and without personal values in its settings, with
+  `--plan` matching the real run there and the refusal naming the next step; a
   resume after the personal file changed refusing and naming the file; and task-time
   resolution not reading
   the file when a clone has individual settings, the repository has team settings, or the
