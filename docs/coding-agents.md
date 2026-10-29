@@ -127,11 +127,11 @@ ask for consent each time.
    Codex, run `claude`, and sign in with `/login`. The review uses that sign-in.
    It does not need `ANTHROPIC_API_KEY`.
 3. **Record your consent.** Add the [consent statement](#give-consent-once),
-   naming Anthropic (Claude CLI) and this repository, to `~/.codex/AGENTS.md`.
-   That file belongs to you, not to any checkout, so a branch cannot change it.
-   If `~/.codex/AGENTS.md` sits next to an `AGENTS.override.md`, Codex reads the
-   override file and ignores the original. In that case, put the statement in
-   the override file.
+   naming Anthropic (Claude CLI) and this repository, to `~/.codex/AGENTS.md`,
+   or `$CODEX_HOME/AGENTS.md` if you set `CODEX_HOME`. That file belongs to
+   you, not to any checkout, so a branch cannot change it. If an
+   `AGENTS.override.md` sits beside it, Codex reads the override file and
+   ignores the original. In that case, put the statement in the override file.
 4. **Check the setup.** Start a fresh Codex chat in a checkout of the
    up-to-date default branch and ask:
 
@@ -140,7 +140,7 @@ ask for consent each time.
    ```
 
    Doctor reads the settings in that checkout. It marks Claude `configured`
-   when they list it, and shows whether the `claude` CLI is on your `PATH`. It
+   when they list it, otherwise `optional`, and shows whether the `claude` CLI is on your `PATH`. It
    does not check the sign-in.
    On your next task, Shaka quotes your statement instead of asking. It then
    sends Claude a tiny access check that contains no code but may use quota.
@@ -158,7 +158,7 @@ also stays in force.
 | --- | --- | --- |
 | A Codex reviewer runs instead of Claude | The default branch does not list Claude, or the `claude` CLI is not on your `PATH` | Run the step 4 check. If doctor marks Claude `optional`, merge the setting from step 1. If `claude` is missing, repeat step 2 |
 | `Not logged in · Please run /login` | The `claude` CLI is not signed in | Run `claude`, then `/login`, and retry the task. This is not a consent problem |
-| Shaka asks for consent again | Your statement in `~/.codex/AGENTS.md` does not name this provider, repository, and content, or Codex skips that file because an `AGENTS.override.md` sits beside it | Fix the statement or move it to the file Codex reads, or answer the question for this task |
+| Shaka asks for consent again | Your statement from step 3 does not name this provider, repository, and content, or Codex does not read the file that holds it | Fix the statement or move it to the file Codex reads, or answer the question for this task |
 | Codex Auto-review denies `shaka review run` | Codex blocked the command before it started, so nothing reached Claude | Follow [When Codex denies the review](#when-codex-denies-the-review). Do not answer the consent question again or switch reviewers |
 | A missing `ANTHROPIC_API_KEY` | Another tool, such as a repository script, needs an Anthropic API key. The Claude reviewer does not | Set the key for that tool. Without it, the agent reports that check as failed rather than skipping it |
 
