@@ -61,15 +61,19 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    So setup gains an eligibility check before it generates anything. When
    `Configuration.private_source` reports `complete`, setup does not read the personal
    file. A rerun there regenerates from flags alone, as today, and is refused as blocked
-   when the clone's files hold personal values; that refusal adds that the clone already
-   has settings and that changes go into its `.agents/shaka/config.yml` directly. A clone
-   set up before the personal file existed still reruns as a no-op. Only a fresh setup (`absent`) or the resume of an
+   whenever its files differ from the clone's, whether personal values or a later manual
+   edit caused the difference. Every such refusal adds that the clone already has settings
+   and that changes go into its `.agents/shaka/config.yml` directly. A clone set up before
+   the personal file existed, and never edited, still reruns as a no-op. Only a fresh setup (`absent`) or the resume of an
    interrupted one (`partial`, or `absent` with a prepared recovery copy) reads the file.
 
    A resume regenerates the files and compares them with the prepared recovery copy. If the
-   personal file changed in between, they differ and setup refuses with the "recovery copy
-   differs" error, which gains a sentence naming the personal file as a possible cause.
-   The developer restores the file or follows
+   personal file changed in between, or the resume's `--no-personal-file` choice differs
+   from the interrupted run's, they differ and setup refuses. Setup records neither, so the
+   refusal names both possible causes: when the resume read the file, that the file may
+   have changed or the interrupted run may have skipped it; when the resume skipped it, that
+   the interrupted run may have used it. The developer restores the file, repeats the
+   earlier choice, or follows
    [private setup recovery](../../skills/shaka/references/repository-setup.md#recover-private-setup).
 
 2. **The file may set only preference keys.** It uses the repository schema: `version: 1`
@@ -198,7 +202,8 @@ consequence.
   present; a prompt file on a personal reviewer entry being refused; a rerun on a completed
   clone not reading the file, both with and without personal values in its settings, with
   `--plan` matching the real run there and the refusal naming the next step; a
-  resume after the personal file changed refusing and naming the file; and task-time
+  resume after the personal file changed, and one with a different `--no-personal-file`
+  choice, each refusing with both causes named; and task-time
   resolution not reading
   the file when a clone has individual settings, the repository has team settings, or the
   clone has no settings at all.
