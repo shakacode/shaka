@@ -9,6 +9,8 @@ module Shaka
     LABEL = '**Validation and review:**'
     UNKNOWN = "#{LABEL} UNKNOWN: no validation or review results were supplied for this revision.".freeze
     GAPS = '**Setup gaps:**'
+    # GitHub's author_association values for an account that can push to the repository.
+    WRITERS = %w[OWNER MEMBER COLLABORATOR].freeze
 
     module_function
 
@@ -28,17 +30,18 @@ module Shaka
     end
 
     # Comments read at this head that are the author's by login, yet carry no agent identity line or
-    # marker. The count holds whether or not the repository shows the comment list. On a fork the
-    # author is an outside contributor, not the account the agent posts from, so nothing counts.
+    # marker. The count holds whether or not the repository shows the comment list. An agent posts
+    # from an account that can push to the repository, so an outside contributor's comments, which
+    # are their own words, do not count; neither does an author GitHub gives no association.
     def unlabeled(content, pull)
       packet = content[HumanComments::KEY]
       author = pull&.dig('user', 'login')
-      return 0 unless author.is_a?(String) && own_repository?(pull) && read_at?(packet, pull.dig('head', 'sha'))
+      return 0 unless author.is_a?(String) && writer?(pull) && read_at?(packet, pull.dig('head', 'sha'))
 
       HumanCommentEntries.new(packet).humans.count { |entry| !entry.unverified && entry.login.casecmp?(author) }
     end
 
-    def own_repository?(pull) = pull.dig('head', 'repo', 'full_name') == pull.dig('base', 'repo', 'full_name')
+    def writer?(pull) = WRITERS.include?(pull['author_association'])
 
     # A read without a head, or taken at another head, may count comments relabeled since.
     def read_at?(packet, head) = packet.is_a?(Hash) && packet['head'].is_a?(String) && packet['head'] == head
@@ -105,7 +108,7 @@ module Shaka
       url ? "#{text} ([attestation](#{url}))" : text
     end
 
-    private_class_method :own_repository?, :read_at?, :routine?, :summary, :short_head, :results, :validations,
+    private_class_method :writer?, :read_at?, :routine?, :summary, :short_head, :results, :validations,
                          :setup_gaps, :reviewer_gap, :unlabeled_gap, :review
   end
 end

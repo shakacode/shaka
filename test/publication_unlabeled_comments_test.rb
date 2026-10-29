@@ -10,6 +10,9 @@ class PublicationUnlabeledCommentsTest < Minitest::Test
   GAPS = '**Setup gaps:**'
   SHORTFALL = { 'configured' => 2, 'completed' => 1, 'missing' => ['openai'] }.freeze
 
+  # GitHub reports how the author relates to the repository; a member is who an agent posts as.
+  def pull(association: 'MEMBER', **) = super(**).merge('author_association' => association)
+
   def test_the_author_s_unlabeled_comments_are_counted_under_verification
     comments = packet(inline_comments: [inline(1, 'bot[bot]', 'Rename this.'), inline(2, 'ann', 'Renamed it.')],
                       issue_comments: [issue_comment(3, 'Ann', 'Applied in abc1234.')])
@@ -67,11 +70,13 @@ class PublicationUnlabeledCommentsTest < Minitest::Test
     ), GAPS
   end
 
-  # On a fork the PR author is an outside contributor, whose own words carry no agent label.
-  def test_a_fork_s_author_comments_are_not_counted
+  # An outside contributor's own words carry no agent label; a maintainer's fork still counts.
+  def test_only_an_author_who_can_push_is_counted
     content = { 'human_comments' => packet(issue_comments: [issue_comment(3, 'ann', 'Thanks for the review.')]) }
 
-    assert_equal 0, Shaka::VerificationGates.unlabeled(content, pull(fork: true))
+    assert_equal 0, Shaka::VerificationGates.unlabeled(content, pull(fork: true, association: 'CONTRIBUTOR'))
+    assert_equal 0, Shaka::VerificationGates.unlabeled(content, pull(association: nil))
+    assert_equal 1, Shaka::VerificationGates.unlabeled(content, pull(fork: true))
   end
 
   # Without a head on either side there is no read of this revision to count from.
@@ -79,7 +84,7 @@ class PublicationUnlabeledCommentsTest < Minitest::Test
     headless = packet(issue_comments: [issue_comment(3, 'ann', 'Applied.')]).except('head')
     content = { 'human_comments' => headless }
 
-    assert_equal 0, Shaka::VerificationGates.unlabeled(content, pull.merge('head' => {}))
+    assert_equal 0, Shaka::VerificationGates.unlabeled(content, pull.merge('head' => { 'repo' => REPO }))
   end
 
   def test_a_reviewer_shortfall_and_unlabeled_comments_share_one_line
