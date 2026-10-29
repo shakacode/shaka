@@ -7,6 +7,8 @@ require_relative 'result'
 module Shaka
   module Evidence
     # Checks supplied results at the proposed head; absence is explicit, never inferred.
+    # A trusted review.required of none drops review from the required kinds, matching merge;
+    # a review result supplied anyway must still bind.
     class Verification
       def initialize(root:, ref:, repository:, head:, paths:)
         @root = root
@@ -20,13 +22,17 @@ module Shaka
         config, = Inputs.capture(root: @root, ref: @ref, repository: @repository)
         @accepted = config.commands.key?('validate_local') ? %w[validate_local validate] : ['validate']
         checks = %w[validation review].to_h { |kind| [kind, entries(kind)] }
-        missing = checks.select { |_kind, values| values.empty? }.keys
-        ready = missing.empty? && checks.values.flatten.all? { |entry| entry['status'] == 'bound' }
-        { 'status' => ready ? 'ready' : 'not_ready', 'head' => @head,
-          'missing' => missing, 'checks' => checks }
+        required = required_kinds(config)
+        missing = required.select { |kind| checks[kind].empty? }
+        { 'status' => ready?(checks, missing) ? 'ready' : 'not_ready', 'head' => @head,
+          'missing' => missing, 'checks' => checks, 'review_required' => required.include?('review') }
       end
 
       private
+
+      def ready?(checks, missing) = missing.empty? && checks.values.flatten.all? { |entry| entry['status'] == 'bound' }
+
+      def required_kinds(config) = config.review['required'] == 'none' ? ['validation'] : %w[validation review]
 
       def entries(kind)
         Array(@paths[kind.to_sym]).map { |path| check(path, kind) }
