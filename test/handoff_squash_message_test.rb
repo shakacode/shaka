@@ -59,6 +59,7 @@ class HandoffSquashMessageTest < Minitest::Test
                     'closes #839; task issue #631 stays open'
     refute_includes awaiting_merge(closes: [631], body: task_body(631))['status'], 'stays open'
     refute_includes awaiting_merge(body: task_body(631, 'Part of #631.'))['status'], 'stays open'
+    refute_includes awaiting_merge(body: task_body(631, '**Task:** GitHub #631 · part of'))['status'], 'stays open'
   end
 
   def test_a_squash_message_for_an_older_head_is_owed
