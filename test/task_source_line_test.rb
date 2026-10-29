@@ -63,9 +63,11 @@ class TaskSourceLineTest < Minitest::Test
     end
   end
 
-  # A trailing backslash would escape the link's closing parenthesis, and a link needs a host.
+  # A trailing backslash would escape the link's closing parenthesis, and a link needs a host that userinfo
+  # cannot hide.
   def test_refuses_a_ticket_url_with_a_backslash_or_no_host
-    ['https://x.test/a\\', 'https:///x', 'https://:443/task', 'https://@x.test/a'].each do |url|
+    ['https://x.test/a\\', 'https:///x', 'https://:443/task', 'https://a@:443/task', 'https://a@/task',
+     'https://user@x.test/a'].each do |url|
       assert_raises(Shaka::Error, url) { line(LINEAR.merge('task_url' => url)) }
     end
   end

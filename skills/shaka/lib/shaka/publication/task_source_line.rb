@@ -10,9 +10,9 @@ module Shaka
     RELATIONS = { 'fixes' => 'fixes', 'part_of' => 'part of', 'follow_up' => 'follow-up', 'refs' => 'related' }.freeze
     TRACKERS = { 'jira' => 'Jira', 'linear' => 'Linear' }.freeze
     KEY = /\A[A-Z][A-Z0-9_]*-\d+\z/
-    # A link target starts its host with a letter or digit, and cannot close or escape the Markdown link
-    # around it, or open another.
-    URL = %r{\Ahttps://[A-Za-z0-9][^\s()<>\[\]\\/?#]*(?:[/?#][^\s()<>\[\]\\]*)?\z}
+    # A link target starts its host with a letter or digit, carries no userinfo that could hide an empty host
+    # or publish a credential, and cannot close or escape the Markdown link around it, or open another.
+    URL = %r{\Ahttps://[A-Za-z0-9][^\s()<>\[\]\\/?#@]*(?:[/?#][^\s()<>\[\]\\]*)?\z}
 
     # A relation names a numbered or keyed task, and only a GitHub issue can be closed by merging.
     def self.validate!(spec)

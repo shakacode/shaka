@@ -60,11 +60,21 @@ class ClosingIssuesTaskRelationTest < Minitest::Test
     assert_includes Shaka::ClosingIssues.note(data, FakeGitHub.new([]))['closing_issues'], '#9 stays open, but'
   end
 
-  def test_an_intent_fix_beside_a_refs_relation_names_the_contradiction
-    data = content('A summary.', task: 9).merge('intent' => { 'why' => 'It fixes #9.' })
-    data['provenance']['task_relation'] = 'refs'
+  def test_an_intent_fix_beside_any_partial_relation_names_the_contradiction
+    %w[follow_up refs].each do |relation|
+      data = content('A summary.', task: 9).merge('intent' => { 'why' => 'It fixes #9.' })
+      data['provenance']['task_relation'] = relation
 
-    assert_includes Shaka::ClosingIssues.note(data, FakeGitHub.new(['owner/repo#9']))['closing_issues'], 'stays open'
+      assert_includes Shaka::ClosingIssues.note(data, FakeGitHub.new(['owner/repo#9']))['closing_issues'], 'stays open'
+    end
+  end
+
+  # A fix relation agrees with a prose fix, so a linked issue leaves nothing to note.
+  def test_a_fixes_relation_beside_a_prose_fix_is_no_contradiction
+    data = content('Fixes #9.', task: 9)
+    data['provenance']['task_relation'] = 'fixes'
+
+    assert_equal({}, Shaka::ClosingIssues.note(data, FakeGitHub.new(['owner/repo#9'])))
   end
 
   # A prose claim on the task's issue is corrected in prose, because task_relation would not remove it.
