@@ -75,7 +75,36 @@ class ThroughputWatchTest < Minitest::Test
     assert_includes github.patches.fetch(0), 'CI to ready pending'
   end
 
+  def test_a_merge_during_the_watch_records_the_merge_time
+    github = MergingFakeGitHub.new("Intro.\n\n#{filled_block}\n", head_page(PUSH.iso8601))
+    assert_equal 'closed', watch_until_merged(github)
+    patched = github.patches.fetch(0)
+    assert_includes patched, 'Ready to merged 2h 5m'
+    assert_includes patched, '· merged in 3h 24m'
+  end
+
+  def test_a_pull_request_closed_without_merging_is_not_patched
+    github = MergingFakeGitHub.new("Intro.\n\n#{filled_block}\n", head_page(PUSH.iso8601), merged_at: nil)
+    assert_equal 'closed', watch_until_merged(github)
+    assert_empty github.patches
+  end
+
+  def test_a_merge_time_is_not_written_into_another_heads_block
+    earlier = Shaka::ThroughputStats.update(filled_block, 'head' => NEXT)
+    github = MergingFakeGitHub.new("Intro.\n\n#{earlier}\n", head_page(PUSH.iso8601))
+    assert_equal 'closed', watch_until_merged(github)
+    assert_empty github.patches
+  end
+
   private
+
+  def watch_until_merged(github)
+    publisher = Shaka::PrWatch::ThroughputPublisher.new(github, head: HEAD, review_jobs: [], wait: 'none')
+    adapters = { clock: -> { 0 }, sleeper: ->(_) { github.merge! }, throughput: publisher,
+                 comments: -> { { 'issue_comments' => [], 'review_summaries' => [], 'inline_comments' => [] } } }
+    Shaka::PrWatch.new(github, head: HEAD, ci_jobs: [], settings: { interval: 1, timeout: 10, settle: 1 },
+                               adapters:).call
+  end
 
   def publish(github, jobs, wait)
     Shaka::PrWatch::ThroughputPublisher.new(github, head: HEAD, review_jobs: jobs, wait:).call(required: ['validate'])
@@ -89,5 +118,23 @@ class ThroughputWatchTest < Minitest::Test
 
   def head_page(started)
     { 'headRefOid' => HEAD, 'commits' => { 'nodes' => [{ 'commit' => gql(HEAD, started, []) }] } }
+  end
+end
+
+# Serves pr watch an open head with a pending required check until GitHub merges or closes it.
+class MergingFakeGitHub < ThroughputFakeGitHub
+  def initialize(body, pull, merged_at: ThroughputHelper::MERGED.iso8601)
+    super(body, pull, [])
+    @merged_at = merged_at
+  end
+
+  def snapshot = { 'headRefOid' => ThroughputHelper::HEAD, 'state' => @state || 'OPEN' }
+  def required_checks = [{ 'name' => 'validate', 'state' => 'PENDING', 'bucket' => 'pending' }]
+  def configured_required_checks = []
+  def checks = []
+
+  def merge!
+    @state = @merged_at ? 'MERGED' : 'CLOSED'
+    @pull = @pull.merge('mergedAt' => @merged_at)
   end
 end
