@@ -66,14 +66,14 @@ module Shaka
 
         def snapshot
           { project: @project, members: member_evidence,
-            users: @users.transform_values { |user| user.slice('id', 'username', 'state', 'bot') } }
+            users: @users.transform_values { |user| user&.slice('id', 'username', 'state', 'bot') } }
         end
 
         private
 
         def read_members
           @users.values.filter_map do |user|
-            next unless user['state'] == 'active' && user['bot'] == false
+            next unless user && user['state'] == 'active' && user['bot'] == false
             next if @trusted_users.include?(user.slice('id', 'username'))
 
             read_member(user)
@@ -100,6 +100,10 @@ module Shaka
           raise Error, 'GitLab user ID does not match the requested actor.' unless pair['id'] == id
 
           user.slice('state', 'bot').merge(pair)
+        rescue Error => e
+          raise unless e.http_status == 404
+
+          nil
         end
 
         def project_metadata
@@ -155,6 +159,8 @@ module Shaka
       end
 
       def actor_trust(user, note, members)
+        return unless user
+
         pair = user.slice('id', 'username')
         return unless user['state'] == 'active' && pair == note['author'].slice('id', 'username')
         return bot_trust(pair) if user['bot'] == true

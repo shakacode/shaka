@@ -88,6 +88,28 @@ class GitLabActorTrustTest < Minitest::Test
     assert_includes @calls, 'users/42'
   end
 
+  def test_missing_profile_withholds_only_that_author_and_cannot_block_a_configured_author
+    @data['users/43'] = {}
+    @api_failures['users/43'] = 404
+    absent = note.merge('id' => 12, 'author' => { 'id' => 43, 'username' => 'missing-user' },
+                        'body' => 'Unverified prose must stay hidden.')
+    rows = [{ 'id' => DISCUSSION, 'notes' => [note, absent] }]
+    result = screen(rows, trusted_users: [{ 'id' => 42, 'username' => 'alice' }])
+    assert_equal [11], result.fetch('notes').map { |item| item.fetch('id') }
+    assert_equal [12], result.fetch('withheld').map { |item| item.fetch('id') }
+    refute_match(/Unverified prose/, result.to_json)
+    assert_equal 2, @counts['users/43']
+  end
+
+  def test_profile_appearing_or_disappearing_during_screening_aborts_the_packet
+    [[404, 200], [200, 404]].each do |statuses|
+      @counts.clear
+      @api_failures['users/42'] = ->(count) { statuses.fetch(count - 1) }
+      assert_raises(Shaka::Error) { screen(trusted_users: [{ 'id' => 42, 'username' => 'alice' }]) }
+      assert_equal 2, @counts['users/42']
+    end
+  end
+
   def test_native_active_developer_membership_trusts_a_verified_human
     @data['projects/7/members/all/42'] = user.merge('access_level' => 30)
     result = screen
@@ -198,7 +220,7 @@ class GitLabActorInputTest < Minitest::Test
   end
 
   def test_access_failures_never_return_partially_trusted_prose
-    [401, 403, 404, 429, 500].each do |status|
+    [401, 403, 429, 500].each do |status|
       @api_failures['users/42'] = status
       error = assert_raises(Shaka::Error) { screen(trusted_users: [{ 'id' => 42, 'username' => 'alice' }]) }
       assert_equal status, error.http_status
