@@ -31,6 +31,40 @@ module Shaka
           [resolved, "#{resolved}.rb"].any? { |candidate| moved_beneath(candidate).any? }
         end
 
+        # Beside the repository's own tools the command directory stays, so code naming it keeps its meaning, unless
+        # the line enters it, names a moved command, or globs over it without also reaching the new directory.
+        # Prose still describes where the wrappers live, so it keeps blocking.
+        def retained_command_directory?(line, path)
+          return false unless retained_code?(path)
+          return false if line.match?(command_directory_change) || line.match?(moved_command_name)
+
+          !line.match?(command_directory_glob) || line.match?(new_command_route)
+        end
+
+        def retained_code?(path)
+          !path.nil? && !markdown_path?(path) && @tracked_reference_paths && retained_command_file?
+        end
+
+        def moved_command_name
+          @moved_command_name ||= begin
+            names = @moves.filter_map do |move|
+              source = move.fetch('from')
+              Regexp.escape(File.basename(source)) if source.start_with?("#{PATHS::COMMAND_DIRECTORY}/")
+            end
+            names.empty? ? /(?!)/ : /(?<![[:alnum:]_.-])(?:#{names.join('|')})(?![[:alnum:]_-])/
+          end
+        end
+
+        def command_directory_glob
+          @command_directory_glob ||= directory_pattern(PATHS::COMMAND_DIRECTORY, '/[*?\\[]')
+        end
+
+        # The moved commands are reached by a route into the new command directory or a glob over the new layout.
+        def new_command_route
+          layout = Regexp.escape(File.dirname(PATHS::NEW_CONTRACT))
+          %r{#{layout}/(?:#{Regexp.escape(File.basename(PATHS::NEW_COMMAND_DIRECTORY))}/|\*)}o
+        end
+
         def relative_command_call?(text)
           @moves.any? do |move|
             source = move.fetch('from')

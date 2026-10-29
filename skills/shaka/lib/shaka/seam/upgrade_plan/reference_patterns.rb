@@ -6,6 +6,7 @@ module Shaka
       # Recognizes exact command paths and broader references needing explicit repair.
       module ReferencePatterns
         include WholeDirectoryGlobs
+        include LiteralPaths
 
         private
 
@@ -30,8 +31,12 @@ module Shaka
         end
 
         def directory_reference?(line, path = nil)
-          command_directory_reference?(line) || layout_glob_reference?(line, path) ||
+          moved_command_directory_reference?(line, path) || layout_glob_reference?(line, path) ||
             normalized_internal_reference?(line)
+        end
+
+        def moved_command_directory_reference?(line, path = nil)
+          command_directory_reference?(line) && !retained_command_directory?(line, path)
         end
 
         def normalized_internal_reference?(line)
@@ -66,22 +71,8 @@ module Shaka
 
         def directory_end = '(?=[^[:alnum:]_./-]|\\.(?![[:alnum:]_/-])|$)'
 
-        def segmented_reference?(text)
-          suffixes = ['bin', 'agent-workflow.yml', 'trusted-github-actors.yml'] +
-                     command_paths.map { |path| path.delete_prefix("#{PATHS::DIRECTORY}/") }
-          pattern = %r{
-            (['"])#{Regexp.escape(PATHS::DIRECTORY)}\1\s*\)?\s*(?:,|/|\+)\s*
-            (['"])(?:#{suffixes.map { |suffix| Regexp.escape(suffix) }.join('|')})\2
-          }x
-          text.match?(pattern) || shell_concatenated_reference?(text)
-        end
-
-        def shell_concatenated_reference?(text)
-          pattern = %r{(['"])#{Regexp.escape(PATHS::DIRECTORY)}\1/+(?:\./)*bin(?:/|#{directory_end})}o
-          text.match?(pattern)
-        end
-
         def matching_paths(text)
+          text = without_machine_paths(text)
           reference_mapping.keys.select do |old|
             text.match?(token_pattern(old)) || dynamic_reference?(text, old) || complex_reference?(text, old)
           end

@@ -10,7 +10,7 @@ module Shaka
         private
 
         def scan_complex_references(path, text)
-          note_workflow_filters(path, text)
+          note_glob_contexts(path, text)
           scan_bare_directory_dependency(path, text)
           scan_segmented_reference(path, text)
           scan_continued_reference(path, text)
@@ -31,10 +31,16 @@ module Shaka
           return false if path.start_with?("#{PATHS::COMMAND_DIRECTORY}/")
           return false unless invocation_relative?(text)
 
-          names = command_paths.map { |command| File.basename(command) }
-          commands = names.map { |name| Regexp.escape(name) }.join('|')
-          text.match?(%r{\bbin(?:/+(?:(?:\.{1,2}|bin)/+)*|['"\s,]+)(?:#{commands})\b}) ||
-            text.match?(%r{['"]bin['"]\s*/\s*['"](?:#{commands})['"]})
+          joined_command_path?(text)
+        end
+
+        # A bare bin/<command> runs from the working directory, which is the repository's own bin/; only a path
+        # joined onto something, such as the file's own directory, can reach the old command directory.
+        def joined_command_path?(text)
+          commands = command_paths.map { |command| Regexp.escape(File.basename(command)) }.join('|')
+          text.match?(%r{\S/+bin/+(?:(?:\.{1,2}|bin)/+)*(?:#{commands})\b}o) ||
+            text.match?(/,\s*(['"])bin\1\s*,\s*(['"])(?:#{commands})\2/o) ||
+            text.match?(%r{['"]bin['"]\s*/\s*['"](?:#{commands})['"]}o)
         end
 
         def scan_relative_helper_dependency(path, text)
@@ -88,14 +94,17 @@ module Shaka
 
           assignment = /\b[A-Za-z_]\w*\s*[+?:]?=[^\r\n]*#{aliased_value}/o
           mapping = %r{\b[A-Za-z_]\w*\s*:[ \t]+[^\r\n]*#{Regexp.escape(PATHS::DIRECTORY)}/?(?=[ \t\r\n#'";]|$)}o
+          text = resolved_joins(without_machine_paths(text))
           [text, normalize_shell_fragments(text)].any? { |source| source.match?(assignment) || source.match?(mapping) }
         end
 
         # The new layout also lives under the old directory, so only the directory itself or a moved path aliases it.
+        # The repository's own tools stay in the command directory, so naming one of them is not an alias. A regex
+        # or glob alternation lists the directory as a pattern to match, not a place to run from.
         def aliased_value
-          moved = [PATHS::CONTRACT, PATHS::REPOSITORY_ALLOWLIST].map { |old| Regexp.escape(old) }
-          commands = "#{Regexp.escape(PATHS::COMMAND_DIRECTORY)}(?:/[[:alnum:]_.-]*)*"
-          "(?:#{Regexp.escape(PATHS::DIRECTORY)}(?:/+\\.?)*|#{commands}|#{moved.join('|')})(?=[^[:alnum:]_./-]|$)"
+          moved = [PATHS::CONTRACT, PATHS::REPOSITORY_ALLOWLIST, *command_paths].map { |old| Regexp.escape(old) }
+          directories = "#{Regexp.escape(PATHS::DIRECTORY)}(?:/+\\.?)*|#{Regexp.escape(PATHS::COMMAND_DIRECTORY)}/*"
+          "(?<![\\\\|])(?:#{directories}|#{moved.join('|')})(?=[^[:alnum:]_./|-]|$)"
         end
 
         def scan_shell_fragmented_reference(path, text)
@@ -108,11 +117,19 @@ module Shaka
         def shell_fragmented_reference?(text, path = nil)
           return markdown_fragmented_reference?(text, path) if markdown_document?(text, path)
 
-          joined = normalize_shell_fragments(text)
-          return false if joined == text
-
-          matching_paths(joined).any? || directory_reference?(joined, path)
+          text.gsub(/\\\r?\n/, '').each_line.any? { |line| fragment_joins_reference?(line, path) }
         end
+
+        # Quotes and escapes around a whole path hide nothing; only a reference they split counts.
+        def fragment_joins_reference?(line, path)
+          joined = normalize_shell_fragments(line)
+          return false if joined == line || !layout_reference?(joined, path)
+
+          !layout_reference?(line, path) || (matching_paths(joined) - matching_paths(line)).any? ||
+            joined.scan(PATHS::DIRECTORY).size > line.scan(PATHS::DIRECTORY).size
+        end
+
+        def layout_reference?(text, path) = matching_paths(text).any? || directory_reference?(text, path)
 
         def normalize_shell_fragments(text)
           joined = text.gsub(/\\\r?\n/, '').delete(%q('"))
