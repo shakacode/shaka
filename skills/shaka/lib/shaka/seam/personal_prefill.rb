@@ -19,10 +19,16 @@ module Shaka
         "#{message}#{personal_hint}"
       end
 
+      # Setup records neither the file's contents nor the skip choice, so name both causes.
       def personal_hint
-        return '' unless @personal
-
-        ". #{@personal.path} may have changed since the interrupted setup; restore it or follow private setup recovery"
+        if @personal
+          ". #{@personal.path} may have changed since the interrupted setup, or that setup skipped it; " \
+            'restore the file, repeat its --no-personal-file choice, or follow private setup recovery'
+        elsif @options[:no_personal_file]
+          '. The interrupted setup may have used the personal settings file; rerun without --no-personal-file'
+        else
+          ''
+        end
       end
 
       def config_hash

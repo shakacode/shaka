@@ -48,6 +48,11 @@ module PersonalSettingsFixture
     assert_equal 'none', config['review']['required']
   end
 
+  def interrupt(setup)
+    setup.define_singleton_method(:write_new_file) { |file, _| raise Errno::EIO, file }
+    assert_raises(Shaka::Error) { setup.setup }
+  end
+
   def adopt_team_settings(root)
     Shaka::Seam::Initializer.new(root: File.realpath(root), options:).call
     refute written(root).key?('prose_limits')
@@ -140,31 +145,6 @@ class PrivatePersonalSettingsTest < Minitest::Test
       end
     end
   end
-
-  def test_a_rerun_on_a_pre_filled_clone_names_the_next_step
-    with_setup do |root, ref|
-      with_personal do
-        setup_with(root, ref).setup
-        [-> { setup_with(root, ref).setup }, -> { setup_with(root, ref).plan }].each do |run|
-          error = assert_raises(Shaka::Error) { run.call }
-          assert_includes error.message, 'change .agents/shaka/config.yml directly'
-        end
-      end
-    end
-  end
-
-  def test_a_resume_after_the_file_changed_names_the_file
-    with_setup do |root, ref|
-      with_personal do |path|
-        setup = setup_with(root, ref)
-        setup.define_singleton_method(:write_new_file) { |file, _| raise Errno::EIO, file }
-        assert_raises(Shaka::Error) { setup.setup }
-        File.write(path, YAML.dump(PREFERENCES.merge('prose_limits' => { 'max_sentence_words' => 20 })))
-        error = assert_raises(Shaka::Error) { setup_with(root, ref).setup }
-        assert_includes error.message, "#{path} may have changed"
-      end
-    end
-  end
 end
 
 # Places where Shaka must never read the personal file: each test makes it invalid YAML.
@@ -219,6 +199,55 @@ class PrivatePersonalSettingsBoundaryTest < Minitest::Test
       with_personal("not: [valid\n") do
         assert_equal 'complete', setup_with(root, ref).setup.fetch('status')
         assert_equal 'plan', setup_with(root, ref).plan.fetch('status')
+      end
+    end
+  end
+end
+
+# How setup explains a refusal the personal file may have caused, and the per-run skip.
+class PrivatePersonalSettingsRefusalTest < Minitest::Test
+  include PersonalSettingsFixture
+
+  def refusal(root, ref, run) = assert_raises(Shaka::Error) { setup_with(root, ref).public_send(run) }.message
+
+  def test_a_rerun_on_a_pre_filled_clone_names_the_next_step
+    with_setup do |root, ref|
+      with_personal do
+        setup_with(root, ref).setup
+        %i[setup plan].each do |run|
+          assert_includes refusal(root, ref, run), 'change .agents/shaka/config.yml directly'
+        end
+      end
+    end
+  end
+
+  def test_a_resume_after_the_file_changed_names_the_file_in_plan_and_setup
+    with_setup do |root, ref|
+      with_personal do |path|
+        interrupt(setup_with(root, ref))
+        File.write(path, YAML.dump(PREFERENCES.merge('prose_limits' => { 'max_sentence_words' => 20 })))
+        %i[setup plan].each do |run|
+          assert_includes refusal(root, ref, run), "#{path} may have changed"
+        end
+      end
+    end
+  end
+
+  def test_a_resume_with_a_different_skip_choice_names_that_cause
+    with_setup do |root, ref|
+      with_personal do
+        interrupt(setup_with(root, ref))
+        error = assert_raises(Shaka::Error) { setup_with(root, ref, no_personal_file: true).setup }
+        assert_includes error.message, 'rerun without --no-personal-file'
+      end
+    end
+  end
+
+  def test_the_skip_flag_passes_a_broken_file
+    with_setup do |root, ref|
+      with_personal("not: [valid\n") do
+        assert_equal 'plan', setup_with(root, ref, no_personal_file: true).plan.fetch('status')
+        assert_equal 'complete', setup_with(root, ref, no_personal_file: true).setup.fetch('status')
       end
     end
   end
