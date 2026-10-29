@@ -89,14 +89,15 @@ module Shaka
       "#{GAPS} #{gaps.join(' ')}" unless gaps.empty?
     end
 
-    # A Codex reviewer whose every command failed, as when its sandbox cannot start in a container,
-    # answered from the diff in its prompt alone.
+    # A Codex reviewer whose sandbox refused every command, as in a container without user
+    # namespaces, answered from the diff in its prompt alone.
     def blind_reviewers(verdict)
       return [] unless verdict
 
       results(verdict).last.filter_map do |result|
         commands = result['commands']
-        next unless commands.is_a?(Hash) && commands['ran'].to_i.positive? && commands['succeeded'].to_i.zero?
+        next unless commands.is_a?(Hash) && commands['ran'].to_i.positive? &&
+                    commands['sandbox_failed'].to_i == commands['ran'].to_i
 
         result['reviewer']
       end
@@ -104,10 +105,8 @@ module Shaka
 
     def blind_gap(reviewers)
       names = reviewers.map { |name| "`#{name}`" }.join(', ')
-      return "#{names} could not run any command, so it reviewed only the diff ([why](#{CONTAINER_GUIDE}))." if
-        reviewers.one?
-
-      "#{names} could not run any command, so they reviewed only the diff ([why](#{CONTAINER_GUIDE}))."
+      who, own = reviewers.one? ? %w[it its] : %w[they their]
+      "#{names} could not start #{own} sandbox, so #{who} reviewed only the diff ([why](#{CONTAINER_GUIDE}))."
     end
 
     # The review comment holds each reviewer's rounds and any gap or fallback notice.

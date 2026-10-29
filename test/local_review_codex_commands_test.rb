@@ -11,15 +11,25 @@ class LocalReviewCodexCommandsTest < Minitest::Test
 
   CAPTURE = File.expand_path('fixtures/codex_sandbox_failure.jsonl', __dir__)
 
-  def test_the_captured_sandbox_failure_ran_one_command_and_none_succeeded
-    assert_equal({ 'ran' => 1, 'succeeded' => 0 }, Shaka::LocalReviewCodexCommands.summary(File.read(CAPTURE)))
+  def test_the_captured_sandbox_failure_ran_one_command_the_sandbox_refused
+    assert_equal({ 'ran' => 1, 'succeeded' => 0, 'sandbox_failed' => 1 },
+                 Shaka::LocalReviewCodexCommands.summary(File.read(CAPTURE)))
+  end
+
+  # A search that finds nothing exits 1 and Codex marks it failed, but the sandbox ran it.
+  def test_a_command_that_exits_nonzero_inside_a_working_sandbox_is_not_a_sandbox_failure
+    miss = JSON.generate(type: 'item.completed',
+                         item: { type: 'command_execution', status: 'failed', exit_code: 1, aggregated_output: '' })
+
+    assert_equal({ 'ran' => 1, 'succeeded' => 0, 'sandbox_failed' => 0 },
+                 Shaka::LocalReviewCodexCommands.summary("#{miss}\n"))
   end
 
   # A review that chose to read only its prompt ran no command, which is not a failure.
   def test_a_completed_command_succeeds_and_a_review_without_commands_reports_nothing
     done = JSON.generate(type: 'item.completed', item: { type: 'command_execution', status: 'completed', exit_code: 0 })
 
-    assert_equal({ 'ran' => 2, 'succeeded' => 1 },
+    assert_equal({ 'ran' => 2, 'succeeded' => 1, 'sandbox_failed' => 1 },
                  Shaka::LocalReviewCodexCommands.summary("#{File.read(CAPTURE)}#{done}\n"))
     assert_nil Shaka::LocalReviewCodexCommands.summary("not json\n#{JSON.generate(type: 'turn.completed')}\n")
   end
@@ -32,7 +42,7 @@ class LocalReviewCodexCommandsTest < Minitest::Test
       result = JSON.parse(output)
       File.unlink(result.fetch('report'))
 
-      assert_equal({ 'ran' => 1, 'succeeded' => 0 }, result.fetch('commands'))
+      assert_equal({ 'ran' => 1, 'succeeded' => 0, 'sandbox_failed' => 1 }, result.fetch('commands'))
     end
   end
 
