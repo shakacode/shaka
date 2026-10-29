@@ -44,21 +44,21 @@ probe sends no repository content. Disabling the probe leaves this step in place
    secrets. Point to the
    [consent template](https://github.com/shakacode/shaka/blob/main/docs/coding-agents.md#give-consent-once)
    in the question itself.
-   Record the answer in the task.
-
-   Also offer to save the answer, with an option such as "Yes, and don't ask again".
-   Its preview, or the text below the question, shows the file and the template
-   with only its placeholders filled, no added heading or rewording. The template
-   names the providers and relay service asked about,
-   this repository (or `OWNER/*` when the user asks for every repository of the
-   owner), the user's name from `git config user.name`, and today's date. The file
-   is the host's user-level instructions: `~/.claude/CLAUDE.md` for Claude Code,
-   `~/.codex/AGENTS.md` for Codex, or the file the user names on another host.
-   Never save it to a file in the checkout. When the user chooses that option,
-   append the shown text to that file unchanged; a changed scope or name needs the
-   new text shown first. When the user declines, follow
+   Record the answer in the task. When the user declines, follow
    [recovery checklist](host-denied-review.md) step 4 with the user's refusal,
    not a host denial, as the not-run reason.
+
+   Also offer the answer "Yes, and don't ask again". Its preview, or the text below
+   the question, shows the target file and the template's exact wording with only
+   these parts replaced: the providers and relay service asked about, this repository
+   (or `OWNER/*` when the user asks for every repository of the owner), `NAME` with
+   `git config user.name`, and `DATE` with today's date. The file is the host's
+   user-level instructions: `CLAUDE.md` in `CLAUDE_CONFIG_DIR` or `~/.claude` for
+   Claude Code, `AGENTS.md` in `CODEX_HOME` or `~/.codex` for Codex, or the file the
+   user names on another host. Never save it to a file in the checkout. When the user
+   chooses that answer, append the shown text to that file unchanged; a changed scope
+   or name needs the new text shown first. If the write fails or is denied, say so
+   and give the user the text to add; the answer still covers this task.
 4. Do not change the reviewer, payload, or flags on your own to fit consent or
    avoid a denial; a reviewer the user names in answer to step 3 is a new request.
    Leave Codex approval and Auto-review policy settings to the user.
