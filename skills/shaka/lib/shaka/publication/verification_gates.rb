@@ -90,17 +90,17 @@ module Shaka
     end
 
     # A Codex reviewer whose sandbox refused every command, as in a container without user
-    # namespaces, answered from the diff in its prompt alone.
+    # namespaces, answered from the diff in its prompt alone. A later run of the same reviewer
+    # that read the code clears it.
     def blind_reviewers(verdict)
       return [] unless verdict
 
-      results(verdict).last.filter_map do |result|
-        commands = result['commands']
-        next unless commands.is_a?(Hash) && commands['ran'].to_i.positive? &&
-                    commands['sandbox_failed'].to_i == commands['ran'].to_i
+      reviews = results(verdict).last.group_by { |result| result['reviewer'] }
+      reviews.filter_map { |reviewer, runs| reviewer if runs.all? { |result| blind?(result['commands']) } }
+    end
 
-        result['reviewer']
-      end.uniq
+    def blind?(commands)
+      commands.is_a?(Hash) && commands['ran'].to_i.positive? && commands['sandbox_failed'].to_i == commands['ran'].to_i
     end
 
     def blind_gap(reviewers)
@@ -134,6 +134,6 @@ module Shaka
     end
 
     private_class_method :insider?, :read_at?, :routine?, :summary, :short_head, :results, :validations,
-                         :setup_gaps, :blind_reviewers, :blind_gap, :reviewer_gap, :unlabeled_gap, :review
+                         :setup_gaps, :blind_reviewers, :blind?, :blind_gap, :reviewer_gap, :unlabeled_gap, :review
   end
 end

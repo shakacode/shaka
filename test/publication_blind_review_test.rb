@@ -32,7 +32,7 @@ class PublicationBlindReviewTest < Minitest::Test
     some = CODEX.merge('commands' => { 'ran' => 3, 'succeeded' => 1, 'sandbox_failed' => 0 })
     misses = CODEX.merge('commands' => { 'ran' => 2, 'succeeded' => 0, 'sandbox_failed' => 0 })
 
-    [render(some), render(misses), render(CODEX)].each do |rendered|
+    [render(some), render(misses), render(CODEX), render(BLIND, some)].each do |rendered|
       assert_includes rendered, "## Verification\n\nValidation passed; local review completed at abcdef1."
       refute_includes rendered, GAPS
     end
