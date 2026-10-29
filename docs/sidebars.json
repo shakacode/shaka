@@ -33,6 +33,7 @@
       "collapsed": true,
       "items": [
         "pr-verification",
+        "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
         {
