@@ -1,7 +1,6 @@
 # 0003: Configuration walkthrough
 
-Status: accepted on 2026-10-25. Steps 1 (`prompt show`) and 2 (`configure settings`) are implemented;
-step 3 is not.
+Status: accepted on 2026-10-25 and implemented: `prompt show`, `configure settings`, and settings changes.
 Date: 2026-10-21. Tracks [issue #817](https://github.com/shakacode/shaka/issues/817).
 
 ## Context
@@ -83,11 +82,17 @@ as decision 3, but the code is tied to its own layout. Nothing is reused.
    `.agents/shaka/config.yml`, runs `seam check --local`, and publishes with
    `evidence guard --flow migration` and `description --publication-flow migration`.
    Before editing, it tells the maintainer that installations need `shaka install --update`
-   after merge when the change uses a key or value an older Shaka rejects: a new key, a
-   new enum option, or a new nested shape. It lists that as an after-merge step in the PR,
-   and lists it whenever it cannot tell. Switching between long-supported values lists no
-   update. This rule replaces the narrower one in the human review floors procedure:
-   step 3 moves it to one shared section that both procedures point to.
+   after merge, and lists that as an after-merge step in the PR with the date each new key
+   or named option entered the reference, or unknown. A change that only removes keys or
+   writes no setting lists none. This
+   rule replaces the narrower one in the human review floors procedure: step 3 moves it to
+   one shared section that both procedures point to.
+
+   Step 3 first tried to skip the update when the trusted settings already showed that
+   installations accept a change. Five review rounds kept finding cases the agent could not
+   judge from prose, such as new options, checked text, list entries, and number ranges.
+   The maintainer chose to list the update every time instead: an unneeded update costs one
+   command, and a missed one stops every task on an older installation.
 5. **Reads are trusted; a draft is labeled.** Both commands read settings and prompt files
    at the `--ref` default-branch commit. With `--local` instead, as `seam check --local`
    does, they read the working tree and label every section as an untrusted draft, so a
@@ -135,5 +140,6 @@ instructions. It replaces #818's step 5 `prompt show` work rather than duplicati
 
 ## Routing scope
 
-Step 1's routing line covers only requests to see what a reviewer receives; steps 2 and 3
-widen it. The procedure never promises a settings report that has not shipped.
+Step 1's routing line covered only requests to see what a reviewer receives; steps 2 and 3
+widened it to explaining and changing settings. The procedure never promised a step before
+it shipped.

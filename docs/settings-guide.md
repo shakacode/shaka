@@ -59,13 +59,29 @@ Settings changes get their own PR. Shaka's checks before push and its PR descrip
 publisher both refuse a feature PR that also changes files under `.agents/shaka/`, so a
 settings change never hides inside other work.
 
+To see where you stand first, ask your agent:
+
+```text
+$shaka Explain this repository's Shaka settings.
+```
+
+It goes through the settings a group at a time, with each value, whether it is the
+default, and a link to its [reference](settings.md) section. To see the full instructions a
+reviewer gets, ask `$shaka Show what my code reviewer receives.` or name the checkpoint or
+the opening check.
+
 1. Ask for the change, for example:
 
    ```text
    $shaka Propose using Codex first for local reviews in this repository.
    ```
 
-   The agent prepares the change as its own settings PR. You can also edit
+   The agent prepares the change as its own settings PR. An older Shaka refuses a
+   settings file with a setting or option it does not know, so every task stops until it
+   updates. The PR therefore lists updating Shaka as a step after merge, with the date
+   each new setting or option first appeared when Shaka can find it, so you can tell
+   whether anyone's copy is that old. A PR that only removes settings, or only edits a
+   prompt file, lists no update. You can also edit
    `.agents/shaka/config.yml` in a PR yourself.
 2. To try it before it merges, select it for your tasks. Teammates can select the
    same PR:
