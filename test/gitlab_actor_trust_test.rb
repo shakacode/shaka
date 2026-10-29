@@ -12,7 +12,7 @@ module GitLabActorFixtures
     @calls = []
     @counts = Hash.new(0)
     @data = { 'projects/group%2Fsub%2Frepo' => project,
-              'projects/7/members/all?per_page=100&page=1' => [], 'users/42' => user }
+              'projects/7/members/all/42' => nil, 'users/42' => user }
     @api_failures = {}
   end
 
@@ -45,7 +45,7 @@ module GitLabActorFixtures
   end
 
   def api_response(path, value)
-    code = @api_failures.fetch(path, 200)
+    code = @api_failures.fetch(path, value.nil? ? 404 : 200)
     code = code.call(@counts[path]) if code.respond_to?(:call)
     ["HTTP/2.0 #{code} Status\r\n\r\n#{JSON.generate(value)}", 'private token', STATUS.new(code == 200 ? 0 : 1)]
   end
@@ -58,6 +58,29 @@ end
 class GitLabActorTrustTest < Minitest::Test
   include GitLabActorFixtures
 
+  def test_configured_actor_does_not_depend_on_the_project_membership_list
+    @api_failures['projects/7/members/all?per_page=100&page=1'] = 403
+    result = screen(trusted_users: [{ 'id' => 42, 'username' => 'alice' }])
+    assert_equal 'configured_user', result.fetch('notes').first&.fetch('trust')
+    refute(@calls.any? { |path| path.include?('/members/') })
+  end
+
+  def test_only_the_discussion_author_is_looked_up_as_a_member
+    @api_failures['projects/7/members/all?per_page=100&page=1'] = 403
+    @data['projects/7/members/all/42'] = user.merge('access_level' => 30)
+    assert_equal 'writer', screen.fetch('notes').first&.fetch('trust')
+    assert_equal 2, @counts['projects/7/members/all/42']
+    refute_includes @calls, 'projects/7/members/all?per_page=100&page=1'
+  end
+
+  def test_unavailable_membership_evidence_aborts_instead_of_returning_a_partial_packet
+    [401, 403, 429, 500].each do |status|
+      @api_failures['projects/7/members/all/42'] = status
+      error = assert_raises(Shaka::Error) { screen }
+      assert_equal status, error.http_status
+    end
+  end
+
   def test_configured_human_requires_authoritative_id_username_and_human_flag
     result = screen(trusted_users: [{ 'id' => 42, 'username' => 'alice' }])
     assert_equal 'Use the verified revision.', result.fetch('notes').first&.fetch('body')
@@ -66,7 +89,7 @@ class GitLabActorTrustTest < Minitest::Test
   end
 
   def test_native_active_developer_membership_trusts_a_verified_human
-    @data['projects/7/members/all?per_page=100&page=1'] = [user.merge('access_level' => 30)]
+    @data['projects/7/members/all/42'] = user.merge('access_level' => 30)
     result = screen
     assert_equal 'writer', result.fetch('notes').first&.fetch('trust')
     assert_equal 'Use the verified revision.', result.fetch('notes').first&.fetch('body')
@@ -75,7 +98,7 @@ class GitLabActorTrustTest < Minitest::Test
   def test_pending_expired_or_inactive_memberships_do_not_expose_prose
     [{ 'membership_state' => 'awaiting' }, { 'membership_state' => 'pending' }, { 'state' => 'blocked' },
      { 'expires_at' => '2020-01-01' }, { 'expires_at' => 'invalid' }, { 'access_level' => 20 }].each do |changes|
-      @data['projects/7/members/all?per_page=100&page=1'] = [user.merge('access_level' => 30).merge(changes)]
+      @data['projects/7/members/all/42'] = user.merge('access_level' => 30).merge(changes)
       result = screen
       assert_empty result.fetch('notes'), changes.inspect
       refute_match(/Use the verified revision/, result.to_json)
@@ -84,7 +107,7 @@ class GitLabActorTrustTest < Minitest::Test
 
   def test_membership_expiring_on_the_current_utc_date_is_conservatively_withheld
     utc_today = Time.now.utc.to_date.iso8601
-    @data['projects/7/members/all?per_page=100&page=1'] = [user.merge('access_level' => 30, 'expires_at' => utc_today)]
+    @data['projects/7/members/all/42'] = user.merge('access_level' => 30, 'expires_at' => utc_today)
     result = screen
     assert_empty result.fetch('notes')
     assert_equal 'untrusted', result.fetch('withheld').first&.fetch('trust')
@@ -125,15 +148,14 @@ class GitLabActorTrustTest < Minitest::Test
   end
 
   def test_revoked_membership_aborts_instead_of_returning_stale_writer_prose
-    @data['projects/7/members/all?per_page=100&page=1'] = lambda do |count|
-      count == 1 ? [user.merge('access_level' => 30)] : []
+    @data['projects/7/members/all/42'] = lambda do |count|
+      count == 1 ? user.merge('access_level' => 30) : nil
     end
     assert_raises(Shaka::Error) { screen }
   end
 
-  def test_duplicate_member_ids_cannot_choose_the_more_privileged_record
-    @data['projects/7/members/all?per_page=100&page=1'] = [user.merge('access_level' => 20),
-                                                           user.merge('access_level' => 40)]
+  def test_member_response_cannot_substitute_another_numeric_account
+    @data['projects/7/members/all/42'] = user.merge('id' => 43, 'access_level' => 40)
     assert_raises(Shaka::Error) { screen }
   end
 end
@@ -168,13 +190,11 @@ class GitLabActorInputTest < Minitest::Test
     end
   end
 
-  def test_membership_can_be_found_on_a_later_page
-    @data['projects/7/members/all?per_page=100&page=1'] = Array.new(100) do |index|
-      { 'id' => 100 + index, 'username' => "reader#{index}", 'state' => 'active', 'access_level' => 20 }
-    end
-    @data['projects/7/members/all?per_page=100&page=2'] = [user.merge('access_level' => 40)]
-    assert_equal 'writer', screen.fetch('notes').first&.fetch('trust')
-    assert_equal 2, @counts['projects/7/members/all?per_page=100&page=2']
+  def test_missing_membership_withholds_prose_and_is_rechecked
+    result = screen
+    assert_empty result.fetch('notes')
+    assert_equal 'untrusted', result.fetch('withheld').first&.fetch('trust')
+    assert_equal 2, @counts['projects/7/members/all/42']
   end
 
   def test_access_failures_never_return_partially_trusted_prose

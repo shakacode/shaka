@@ -50,16 +50,17 @@ module Shaka
       class Evidence
         attr_reader :members, :users
 
-        def initialize(client, project_id, ids)
+        def initialize(client, project_id, ids, trusted_users)
           @client = client
           @project_id = project_id
+          @trusted_users = trusted_users
           @project = project_metadata
-          @members = read_members
           @users = ids.uniq.to_h { |id| [id, read_user(id)] }
+          @members = read_members
         end
 
         def verify!
-          current = self.class.new(@client, @project_id, @users.keys)
+          current = self.class.new(@client, @project_id, @users.keys, @trusted_users)
           raise Error, 'GitLab actor evidence changed during screening.' unless snapshot == current.snapshot
         end
 
@@ -71,13 +72,26 @@ module Shaka
         private
 
         def read_members
-          members = @client.api_list("projects/#{@project_id}/members/all").map do |member|
-            member.merge(Input.identity(member))
-          end
-          ids = members.map { |member| member.fetch('id') }
-          raise Error, 'GitLab membership returned duplicate user IDs.' unless ids.uniq.length == ids.length
+          @users.values.filter_map do |user|
+            next unless user['state'] == 'active' && user['bot'] == false
+            next if @trusted_users.include?(user.slice('id', 'username'))
 
-          members
+            read_member(user)
+          end
+        end
+
+        def read_member(user)
+          member = @client.api("projects/#{@project_id}/members/all/#{user.fetch('id')}")
+          pair = Input.identity(member)
+          unless pair == user.slice('id', 'username')
+            raise Error, 'GitLab membership does not match the requested actor.'
+          end
+
+          member.merge(pair)
+        rescue Error => e
+          raise unless e.http_status == 404
+
+          nil
         end
 
         def read_user(id)
@@ -115,7 +129,8 @@ module Shaka
 
       def screen(discussions)
         rows = Input.notes(discussions)
-        evidence = Evidence.new(@client, @project_id, rows.map { |_, note| note.fetch('author').fetch('id') })
+        ids = rows.map { |_, note| note.fetch('author').fetch('id') }
+        evidence = Evidence.new(@client, @project_id, ids, @trusted_users)
         result = { 'notes' => [], 'metadata_only' => [], 'withheld' => [] }
         rows.each { |discussion, note| record(result, discussion, note, evidence) }
         evidence.verify!
