@@ -27,7 +27,7 @@ module Shaka
                 .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     # A listed renderer the default branch does not have yet. A head without it keeps the installed copy;
     # every other listed renderer must be at the head, so a preview never stands in for a missing one.
-    NOT_YET_LANDED = %w[task_source_line throughput_gate throughput_line throughput_stats review_focus_list]
+    NOT_YET_LANDED = %w[throughput_gate throughput_line throughput_stats review_focus_list]
                      .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
 
