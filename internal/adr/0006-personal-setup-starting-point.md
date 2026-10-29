@@ -56,11 +56,20 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    later changes no existing clone. The one-source rule and the #715 precedence docs stay
    true.
 
-   Setup already refuses a clone whose private settings are not absent, so the file is
-   never read for a clone that has settings. Resuming an interrupted setup compares the
-   regenerated files with the prepared recovery copy; if the personal file changed in
-   between, the files differ and setup refuses with the existing "recovery copy differs"
-   error instead of mixing two versions.
+   Today's setup does not supply that gate: it generates files before any check, and a
+   rerun on a completed clone whose files still match its recovery copy passes as a no-op.
+   So setup gains an eligibility check before it generates anything. When
+   `Configuration.private_source` reports `complete`, setup does not read the personal
+   file. A rerun there regenerates from flags alone, as today, and is refused as blocked
+   when the clone's files hold personal values. A clone set up before the personal file
+   existed still reruns as a no-op. Only a fresh setup (`absent`) or the resume of an
+   interrupted one (`partial`, or `absent` with a prepared recovery copy) reads the file.
+
+   A resume regenerates the files and compares them with the prepared recovery copy. If the
+   personal file changed in between, they differ and setup refuses with the "recovery copy
+   differs" error, which gains a sentence naming the personal file as a possible cause.
+   The developer restores the file or follows
+   [private setup recovery](../../skills/shaka/references/repository-setup.md#recover-private-setup).
 
 2. **The file may set only preference keys.** It uses the repository schema: `version: 1`
    and the same key paths, validated by the existing `RepositoryConfig` sub-schemas
@@ -114,6 +123,13 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    tells the agent to run the plan and show it, beside the inferred commands, before the
    real run, so the developer reviews one proposal. The real run reports the same two
    fields. Without the file, both fields are omitted and the written files are unchanged.
+
+   The procedure's [offer local reviewers](../../skills/shaka/references/repository-setup.md#offer-local-reviewers)
+   step passes `--local-review-agent` for each reviewer the user accepts, and under
+   decision 3 that flag replaces the personal list. When the plan shows
+   `review.local_review_agents` among `prefilled_keys`, the agent shows that list
+   instead of offering reviewers, and passes the flag only when the developer asks to
+   change it.
 
 5. **No new repository setting and no configuration migration.** The personal file, like
    `local-reviewers.yml`, is not a key in `defaults.yml` and does not appear in
@@ -171,8 +187,10 @@ consequence.
   overriding a personal value, including a combination that breaks a linked-key rule;
   `--plan` returning the proposal while leaving settings, recovery storage, and exclusions
   untouched; `--from` ignoring the file; `seam init` output unchanged with a personal file
-  present; a prompt file on a personal reviewer entry being refused; setup refusing a clone
-  that already has settings without reading the file; and task-time resolution not reading
+  present; a prompt file on a personal reviewer entry being refused; a rerun on a completed
+  clone not reading the file, both with and without personal values in its settings; a
+  resume after the personal file changed refusing and naming the file; and task-time
+  resolution not reading
   the file when a clone has individual settings, the repository has team settings, or the
   clone has no settings at all.
 - `docs/settings-guide.md` and `docs/settings.md` describe the personal starting point, say
