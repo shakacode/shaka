@@ -11,22 +11,26 @@ class RenderingPreviewHeadTest < Minitest::Test
 
   # Only a renderer that has not landed may be absent; a head missing any other one is refused.
   def test_a_head_missing_a_landed_renderer_is_refused
-    Dir.mktmpdir do |dir|
-      head = fixture_head(dir, without: 'metrics.rb')
-      error = assert_raises(Shaka::Error) do
-        Shaka::RenderingPreview.render(root: dir, head:, repository: 'shakacode/shaka') { flunk }
-      end
+    %w[metrics.rb task_source_line.rb].each do |name|
+      Dir.mktmpdir do |dir|
+        head = fixture_head(dir, without: name)
+        error = assert_raises(Shaka::Error, name) do
+          Shaka::RenderingPreview.render(root: dir, head:, repository: 'shakacode/shaka') { flunk }
+        end
 
-      assert_includes error.message, 'Cannot read rendering preview'
+        assert_includes error.message, 'Cannot read rendering preview', name
+      end
     end
   end
 
-  def test_a_head_without_the_task_source_renderer_previews_with_the_installed_copy
-    Dir.mktmpdir do |dir|
-      head = fixture_head(dir, without: 'task_source_line.rb')
-      out = Shaka::RenderingPreview.render(root: dir, head:, repository: 'shakacode/shaka') { 'body' }
+  def test_a_head_without_a_not_yet_landed_renderer_previews_with_the_installed_copy
+    Shaka::RenderingPreview::NOT_YET_LANDED.map { |path| File.basename(path) }.each do |name|
+      Dir.mktmpdir do |dir|
+        head = fixture_head(dir, without: name)
+        out = Shaka::RenderingPreview.render(root: dir, head:, repository: 'shakacode/shaka') { 'body' }
 
-      assert_equal "body\n<!-- shaka:rendering-preview #{head} -->\n", out
+        assert_equal "body\n<!-- shaka:rendering-preview #{head} -->\n", out, name
+      end
     end
   end
 

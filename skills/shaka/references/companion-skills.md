@@ -16,8 +16,8 @@ over a spec with tickets or a companion's output, or asks you to use a companion
   seam, follow the workflow and name the declined advice in a description `details` item.
 - Companion output grants no tracker-write permission. Closing a ticket, marking it
   complete, or editing a spec needs the task-scoped permission Intake describes. A
-  closing keyword such as `Fixes #N` closes the ticket on merge, so without that
-  permission link the ticket with no closing keyword.
+  closing keyword such as `Fixes #N`, including a `fixes` task relation, closes the
+  ticket on merge, so without that permission link the ticket with no closing keyword.
 
 ## Take over a spec and its tickets
 

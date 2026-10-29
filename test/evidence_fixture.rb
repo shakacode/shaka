@@ -11,8 +11,8 @@ require 'shaka/local_review'
 module EvidenceFixture
   include RepositoryConfigTestHelpers
 
-  def with_checkout
-    with_repository do |root|
+  def with_checkout(overrides = {})
+    with_repository(overrides) do |root|
       system('git', '-C', root, 'init', '--quiet', exception: true)
       git(root, 'add', '-A')
       commit(root)

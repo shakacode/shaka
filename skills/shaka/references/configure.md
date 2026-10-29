@@ -1,10 +1,32 @@
 # Configure
 
-Follow this procedure when the user asks what a reviewer receives: the code review,
-checkpoint, or opening check prompt. Explaining every setting and changing settings are
-not available yet; for those, say so and link the
+Follow this procedure when the user asks what a reviewer receives, or asks to explain or
+review this repository's Shaka settings. Changing settings is not available yet; for a
+change, say so and link the
 [settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md).
 Stop after answering.
+
+## Explain the settings
+
+Run the saved helper with the verified default-branch commit that `seam check --ref` used:
+
+```text
+shaka configure settings --root DIR --ref SHA
+```
+
+Each row gives a setting's `effective` value, its packaged `default`, whether config.yml
+`set` it, and its `reference` section. `set_as` names an earlier setting name still in use.
+A `default` of null means Shaka packages none; the reference says what happens when the
+setting is unset. `matches_default: true` says only that the value equals the default.
+Do not call such a setting removable: some settings are required, and naming a file can
+make it required. Report `source` and `settings_ref`; with a settings preview selected,
+settings come from the preview. `--local` reads an uncommitted edit as an untrusted draft.
+
+Group the settings by their first key, such as `merge`, `review`, or `pr_description`, and
+go through one group at a time. For each setting, give the effective value, mark it when it
+equals the default, and explain its effect from its reference section, with the link. Stop
+after each group until the user asks for the next. A question about one setting gets only
+that setting.
 
 ## Show a reviewer's prompt
 

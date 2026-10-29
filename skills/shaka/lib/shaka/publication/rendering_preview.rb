@@ -21,12 +21,14 @@ module Shaka
                          post_implementation/disposition.rb post_implementation/merge_warning.rb]
                       .map { |path| "skills/shaka/lib/shaka/#{path}" }.freeze
     # In load order: a renderer loads before the ones that call it.
-    RENDERERS = %w[usage_details usage_pricing metrics verification_gates diff_buckets intent_verification
-                   task_source_line provenance provenance_history settings_table settings publication]
+    RENDERERS = %w[usage_details usage_pricing throughput_gate throughput_line throughput_stats metrics
+                   verification_gates diff_buckets review_focus_list intent_verification task_source_line provenance
+                   provenance_history settings_table settings publication]
                 .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     # A listed renderer the default branch does not have yet. A head without it keeps the installed copy;
     # every other listed renderer must be at the head, so a preview never stands in for a missing one.
-    NOT_YET_LANDED = ["#{DIRECTORY}task_source_line.rb"].freeze
+    NOT_YET_LANDED = %w[throughput_gate throughput_line throughput_stats review_focus_list]
+                     .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
 
     module_function

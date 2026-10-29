@@ -14,11 +14,12 @@ module Shaka
        details_block('summary' => 'Details', 'body' => blocks.join("\n\n"))]
     end
 
+    def provenance_spec
+      @content.fetch('provenance') { raise Error, 'Publication description requires execution provenance.' }
+    end
+
     def provenance
-      spec = @content.fetch('provenance') do
-        raise Error, 'Publication description requires execution provenance.'
-      end
-      execution = ExecutionProvenance.new(spec, workflow_version: @workflow_version, pull: @pull)
+      execution = ExecutionProvenance.new(provenance_spec, workflow_version: @workflow_version, pull: @pull)
       detail = execution.detail
       return details_block(detail) unless @pull
 
