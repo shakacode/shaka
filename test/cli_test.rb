@@ -164,6 +164,15 @@ class CliMergeAutoTest < Minitest::Test
     end
   end
 
+  # pr watch has its own parser, so the merge-only guard never sees its --auto.
+  def test_pr_watch_accepts_auto
+    output, error, status = Open3.capture3(*CliTest::COMMAND, 'pr', 'watch', 'owner/repo', '1', '--auto')
+
+    refute_predicate status, :success?
+    refute_match(/only for merge/, output + error)
+    assert_match(/--head SHA --ref SHA/, output)
+  end
+
   def test_auto_is_only_for_merge
     _output, error, status = Open3.capture3(*CliTest::COMMAND, 'pr', 'owner/repo', '1', '--auto')
 
