@@ -54,11 +54,13 @@ Shaka's local review sends your change to other AI providers, so Shaka asks
 before the first review of a task. Answer **Yes, and don't ask again** and
 Shaka saves a consent statement to your own instructions file, then reuses it
 on later tasks without asking. The question shows the exact statement and file
-before you choose.
+before you choose. If your agent can't write the file, it gives you the text to
+add yourself.
 
 You can also write the statement yourself: in the chat for one task, or in your
 user-level instructions for every task, `~/.claude/CLAUDE.md` for Claude Code
-and `~/.codex/AGENTS.md` for Codex. Adjust the providers, repository, and
+and `~/.codex/AGENTS.md` for Codex, or the same file under `CLAUDE_CONFIG_DIR` or
+`CODEX_HOME` when you set one. Adjust the providers, repository, and
 exclusions. Write `OWNER/*` in place of `OWNER/REPO` to cover every repository
 that owner has. For the DeepSeek reviewer, name OpenRouter too, because the
 request passes through it:
