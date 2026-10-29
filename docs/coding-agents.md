@@ -139,9 +139,9 @@ ask for consent each time.
    ```
 
    Doctor marks Claude `configured` once the default branch lists it, and shows
-   whether the `claude` CLI is on your `PATH`. It does not check the sign-in. On your next task,
-   Shaka quotes your statement instead of asking. It then sends Claude a tiny
-   access check that contains no code but may use quota.
+   whether the `claude` CLI is on your `PATH`. It does not check the sign-in.
+   On your next task, Shaka quotes your statement instead of asking. It then
+   sends Claude a tiny access check that contains no code but may use quota.
 
 Write a new statement before reviews send more than the old one covers. That
 includes a new provider or relay service such as OpenRouter, a repository the
