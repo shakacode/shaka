@@ -70,12 +70,15 @@ module Shaka
     # The steps besides merging sit right under the summary so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)
 
+    # The Task line names the prompt after the agent that wrote the description.
+    def task_line = ExecutionProvenance.new(provenance_spec, pull: @pull).line(@content.dig('identity', 'agent'))
+
     def credit = PublicationLinks.credit(@settings)
 
     # Intent and verification answer whether to trust the merge, so they come before any section.
     def intent_verification
       IntentVerification.render(@content, @settings.verdict, @settings.review_effort_floor, @pull,
-                                shortfall: @settings.reviewer_shortfall)
+                                task: task_line, shortfall: @settings.reviewer_shortfall)
     end
 
     def evidence

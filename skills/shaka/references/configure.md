@@ -1,10 +1,8 @@
 # Configure
 
-Follow this procedure when the user asks what a reviewer receives, or asks to explain or
-review this repository's Shaka settings. Changing settings is not available yet; for a
-change, say so and link the
-[settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md).
-Stop after answering.
+Follow this procedure when the user asks what a reviewer receives, asks to explain or
+review this repository's Shaka settings, or asks to change a setting. Stop after answering,
+or after handing off the settings PR.
 
 ## Explain the settings
 
@@ -48,8 +46,51 @@ shaka prompt show (review|checkpoint|opening) --root DIR --ref SHA [--head REV -
   section is then labeled an untrusted draft. Tell the user a draft grants nothing and
   takes effect only when its settings PR merges.
 
-Answer with the sections in order and each one's source. Lead with the parts the
-repository controls: replacement prompts, `AGENTS.md` files, and custom instructions.
-Summarize long built-in text unless the user asks for it verbatim. A `placeholder` stands
-for data the reviewer gets at run time, such as the diff or earlier findings. No reviewer
-reads `project_guidance` files; the working agent does.
+List the sections in the order the reviewer reads them, each with its source, and mark
+the ones the repository controls: replacement prompts, `AGENTS.md` files, and custom
+instructions. Summarize long built-in text unless the user asks for it verbatim. A
+`placeholder` stands for data the reviewer gets at run time, such as the diff or earlier
+findings. No reviewer reads `project_guidance` files; the working agent does.
+
+## Change a setting
+
+A settings change is its own PR. Ruby refuses a feature PR that changes Shaka's
+configuration, and the description publisher refuses it too.
+
+1. Read the current value with `configure settings --ref`. Before editing, tell the
+   maintainer whether installations must update after merge, as the next section says.
+2. Start a branch from the fresh default branch. Edit the file the report names as
+   `config_path`, keeping its comments. Set only the keys the change needs.
+3. Show the result with `configure settings --root DIR --local`, and with `prompt show
+   NAME --local` when the change names a prompt or instructions file. Run
+   `seam check --root DIR --local`; a failure stops the change.
+4. Publish through the migration flow: `evidence guard --flow migration` before staging and
+   push, and `description --publication-flow migration`. Put the update step from the next
+   section in `steps_besides_merging`, or `none` when that section lists none.
+5. The change takes effect when its PR merges. To try it on one task first, follow
+   [settings preview](settings-preview.md).
+
+### Say when installations must update
+
+An installation older than a key, an option, or a nested shape refuses the whole settings
+file, so every task on it stops. Whether a teammate's installation is that old cannot be
+checked from the repository, so list the update on every settings PR that adds or changes
+a setting's value. A change that only removes keys, or writes no setting, such as one that
+edits only a prompt file or a comment, lists none.
+
+Date each new key and each new named option, such as a new choice for a setting, by
+searching the saved helper's source for the key's heading or the option:
+
+```text
+git -C SOURCE log --reverse --format='%cs %h' -S '## `KEY`' -- docs/settings.md
+git -C SOURCE log --reverse --format='%cs %h' -S 'OPTION' -- docs/settings.md
+```
+
+Give the date as unknown when the search finds nothing or only an unrelated mention. Give no date for a new
+number, path, or text under a key the repository already sets. Say in the step that
+installations older than the date refuse the settings, so the maintainer can judge whether
+anyone needs it.
+
+List it as `after merge`: Update Shaka (`shaka install --update`), who: everyone running
+Shaka on this repository, where: each machine with an installation, verify: `shaka doctor
+--brief` reports Repository seam HEALTHY. Ruby checks none of this; the agent applies it.

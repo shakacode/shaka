@@ -337,7 +337,10 @@ phases:
         `review.required: always`. Fixing a finding changes the head, so
         revalidate and review the new one.
       - Run the loop locally and keep it in one ledger: pass `review run --ledger PATH` with a
-        path outside the checkout. The prompt asks the reviewer to class each finding as a
+        path outside the checkout. Pass every round the task's goal file as `--description-file
+        PATH` and keep each fix inside its scope, as the
+        [ledger section](<{{package_root}}/skills/shaka/references/local-review.md#run-the-review-loop-with-a-ledger>)
+        describes. The prompt asks the reviewer to class each finding as a
         `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
         disposition with `review record`; the next `review run` refuses to start until they are
         recorded, and refuses a head the ledger already reviewed unless another reviewer joins
@@ -538,7 +541,11 @@ phases:
         floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
-        Write `Fixes #N` once per issue the PR fully resolves and `Part of #N` for partial work.
+        Name the task in provenance as the
+        [usage guide](<{{package_root}}/skills/shaka/references/usage-reporting.md#pr-execution-provenance>)
+        describes, with an optional `task_relation`. The helper renders it as the Task line after
+        Why in Intent, so the summary need not repeat the task link.
+        Write `Fixes #N` once per other issue the PR fully resolves and `Part of #N` for partial work.
         When `description` returns `closing_issues`, correct the wording it names once.
         For a work item in another tracker, such as Linear, Jira, or Shortcut, check through the
         connection Intake used whether the merge will link and complete it, and whether it will
@@ -706,7 +713,7 @@ phases:
         uses `UNKNOWN`.
       - Description provenance has exactly eight flat keys: `task_source`, `initial_prompt`,
         `requested_model`, `requested_effort`, `recommended_model`, `recommended_effort`,
-        `active_model`, and `active_effort`, plus an optional `task_number` that the
+        `active_model`, and `active_effort`, plus the optional task keys that the
         [usage guide](<{{package_root}}/skills/shaka/references/usage-reporting.md#pr-execution-provenance>) defines.
         `initial_prompt` is `EXCLUDED`; the other values use
         allowlisted text or `UNKNOWN`, except that either requested field uses JSON `null`

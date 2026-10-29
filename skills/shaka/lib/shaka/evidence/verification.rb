@@ -40,12 +40,20 @@ module Shaka
         check_kind(kind, original, binding)
       end
 
+      def check_arguments(original, binding)
+        return if original.dig('task_overrides', 'arguments') == []
+
+        binding['reasons'] << 'repository validation used command arguments'
+        binding['guidance'] = 'Run repository validation without arguments. When it needs inputs such as ' \
+                              'spec mappings, see references/repository-setup.md#required-validation-inputs ' \
+                              'in the installed Shaka skill.'
+      end
+
       def check_kind(kind, original, binding)
         binding['reasons'] << "expected #{kind} result" unless original['kind'] == kind
         if kind == 'validation'
           binding['reasons'] << 'expected repository validation command' unless @accepted.include?(original['command'])
-          binding['reasons'] << 'repository validation used command arguments' unless
-            original.dig('task_overrides', 'arguments') == []
+          check_arguments(original, binding)
         end
         binding['status'] = 'superseded' unless binding['reasons'].empty?
         binding

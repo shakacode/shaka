@@ -1,6 +1,7 @@
 # 0005: Which local reviewers a machine is expected to run
 
-Status: accepted on 2026-10-26; not yet implemented. Nothing here is shipped.
+Status: accepted on 2026-10-26. Decision 1 shipped in #917; decisions 2 and 3 ship with
+the machine reviewer list.
 Date: 2026-10-25. Tracks [issue #882](https://github.com/shakacode/shaka/issues/882).
 
 ## Context
@@ -54,7 +55,7 @@ coordination state. Nothing is reused.
    today's notice.
 
 2. **A per-machine list of the reviewers a developer expects to run.** An optional file
-   at `~/.agents/shaka/reviewers.yml` names the reviewers this machine is expected to run.
+   at `~/.agents/shaka/local-reviewers.yml` names the reviewers this machine is expected to run.
    Entries take the shape of `review.local_review_agents` entries, so the same `model` and
    `effort` rules and warnings apply:
 
@@ -74,7 +75,7 @@ coordination state. Nothing is reused.
    narrows today's notices to the reviewers the developer expects. With coverage, it turns
    decision 1's warning back on for an uncovered reviewer the developer relies on, such as
    Grok. The file is bounded:
-   - A machine entry matches every repository entry with the same `provider` and
+   - A machine entry matches the repository entry with the same `provider` and
      `model_family`; its `model` plays no part in matching, and two machine entries with
      the same pair make the file malformed. An entry that matches nothing is
      ignored, and `doctor` names it once as unused here. That note is informational: it

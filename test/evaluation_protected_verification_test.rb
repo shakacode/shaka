@@ -4,9 +4,11 @@ require_relative 'test_helper'
 require_relative '../eval/lib/shaka/evaluation/codex_capture'
 require_relative '../eval/lib/shaka/evaluation/protected_verification'
 require_relative 'support/evaluation_capture_fixture'
+require_relative 'support/evaluation_deadline_clock'
 
 class EvaluationProtectedVerificationTest < Minitest::Test
   include EvaluationCaptureFixture
+  include EvaluationDeadlineClock
 
   def test_observer_runs_protected_verification_before_releasing_the_agent
     receipt = nil
@@ -37,12 +39,24 @@ class EvaluationProtectedVerificationTest < Minitest::Test
 
   def test_verifier_timeout_aborts_capture_and_reaps_both_processes
     body = "File.write('verifier-pid', Process.pid); sleep 30"
+    verifier_started = -> { File.size?(File.join(@root, 'verifier-pid')) }
     assert_raises(IOError) do
-      run_child("File.write('pid', Process.pid); #{wait_for_verification}") do |event|
-        verify(body, seconds: 0.2) if event.dig('native', 'type') == 'turn.started'
+      expire_deadlines_when(verifier_started) do
+        run_child("File.write('pid', Process.pid); #{wait_for_verification}", seconds: 60) do |event|
+          verify(body, seconds: 30) if event.dig('native', 'type') == 'turn.started'
+        end
       end
     end
     %w[pid verifier-pid].each { refute_process(Integer(File.read(File.join(@root, it)))) }
+  end
+
+  def test_termination_tolerates_a_group_left_with_only_zombies
+    with_zombie_only_group do |leader|
+      verifier = Shaka::Evaluation::ProtectedVerification.new(environment: {})
+      verifier.instance_variable_set(:@pid, leader)
+      verifier.send(:terminate)
+      assert_raises(Errno::ECHILD) { Process.waitpid(leader, Process::WNOHANG) }
+    end
   end
 
   def test_output_overflow_aborts_and_keeps_a_bounded_private_log

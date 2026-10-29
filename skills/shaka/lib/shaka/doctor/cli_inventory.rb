@@ -4,6 +4,7 @@ require_relative 'check'
 require_relative '../local_review/path_guard'
 require_relative '../reviewer_selection'
 require_relative '../review_coverage'
+require_relative '../configuration/machine_reviewers'
 
 module Shaka
   class Doctor
@@ -22,19 +23,24 @@ module Shaka
         @path = environment.fetch('PATH', '')
         @executable = system ? system.executable : method(:executable)
         @api_key_present = !environment.fetch('OPENROUTER_API_KEY', '').b.strip.empty?
+        @home = environment['HOME']
       end
 
-      def call(review)
+      # The machine reviewer list; a malformed file raises, so callers refuse rather than guess.
+      def machine = Configuration::MachineReviewers.load(home: @home)
+
+      def call(review, machine: self.machine)
         configured = review && Array(review['local_review_agents']).map do |entry|
           entry.values_at('provider', 'model_family').join('/').downcase
         end
         covered = review ? ReviewCoverage.names(ReviewCoverage.setting(review, ReviewCoverage::KEY)) : []
-        (SETUP.keys | Array(configured)).map { |identity| entry(identity, configured, covered) }
+        (SETUP.keys | Array(configured)).map { |identity| entry(identity, configured, covered, machine) }
       end
 
-      # Selection never picks an optional entry on its own, so its missing setup needs no notice.
+      # Notices cover the reviewers this machine needs: without a machine list, those selection can
+      # pick on its own; with one, those it lists plus every covered provider.
       def self.setup_notices(entries)
-        entries.select { |entry| entry[:configured] && !entry[:optional] && !entry[:installed] }.map do |entry|
+        entries.select { |entry| entry[:configured] && entry[:noticed] && !entry[:installed] }.map do |entry|
           { 'reviewer' => entry.fetch(:identity),
             'summary' => "This repository configures #{entry.fetch(:identity)} reviews, but local setup is incomplete.",
             'guidance' => entry[:guidance] || 'Ask the repository maintainer which supported reviewer to configure.' }
@@ -57,11 +63,12 @@ module Shaka
 
       # With provider_coverage, a configured entry from a provider it does not name runs only when a
       # task names it.
-      def entry(identity, configured, covered)
+      def entry(identity, configured, covered, machine)
         provider = identity.split('/').first
         listed = Array(configured).include?(identity)
-        result = { identity:, provider:, configured: listed,
-                   optional: listed && !covered.empty? && !covered.include?(provider) }
+        optional = listed && !covered.empty? && !covered.include?(provider)
+        noticed = machine ? machine.listed?(identity) || covered.include?(provider) : !optional
+        result = { identity:, provider:, configured: listed, optional:, noticed: }
         result.merge(lookup(identity, role(result, configured)))
       end
 
