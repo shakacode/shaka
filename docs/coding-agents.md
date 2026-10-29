@@ -59,11 +59,11 @@ add yourself.
 
 You can also write the statement yourself: in the chat for one task, or in your
 user-level instructions for every task, `~/.claude/CLAUDE.md` for Claude Code
-and `~/.codex/AGENTS.md` for Codex, or the same file under `CLAUDE_CONFIG_DIR` or
-`CODEX_HOME` when you set one. Adjust the providers, repository, and
-exclusions. Write `OWNER/*` in place of `OWNER/REPO` to cover every repository
-that owner has. For the DeepSeek reviewer, name OpenRouter too, because the
-request passes through it:
+and `~/.codex/AGENTS.md` for Codex (`AGENTS.override.md` there if you have one),
+or the same file under `CLAUDE_CONFIG_DIR` or `CODEX_HOME` when you set one.
+Adjust the providers, repository, and exclusions. Write `OWNER/*` in place of
+`OWNER/REPO` to cover every repository that owner has. For the DeepSeek
+reviewer, name OpenRouter too, because the request passes through it:
 
 ```text
 Shaka review consent: local reviews of OWNER/REPO may send the committed diff,
