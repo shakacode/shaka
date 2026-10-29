@@ -30,8 +30,9 @@ Shaka uses its own default for it, never your individual setting. For example, i
 team settings leave out `prose_limits`, PR descriptions use the default limit of
 300 words, whatever your individual setup says.
 
-Shaka keeps no settings in your home directory. The one exception is your machine's
-comment allowlist, which adds people and bots whose public comments the agent may read.
+Shaka keeps no settings in your home directory, with two exceptions about your machine:
+the comment allowlist, which adds people and bots whose public comments the agent may read,
+and the [machine reviewer list](#choose-reviewers-for-your-machine).
 
 Omitted optional values use Shaka's defaults, all listed in
 [Shaka's defaults file](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/defaults.yml).
@@ -453,8 +454,8 @@ keeps your chosen model; it does not substitute another one.
 Most warnings allow the review to run. An unsupported Claude effort stops it;
 choose one of Claude’s listed effort values to continue.
 
-Put project-specific review criteria in `AGENTS.md`. To check reviewer settings,
-use the [availability prompt](getting-started.md#2-choose-individual-trial-or-team-setup).
+Put project-specific review criteria in `AGENTS.md`. To check that your AI accounts
+can run the chosen reviewers, ask `$shaka Probe this project's configured reviewers.`
 To choose how many hosted review reports to wait for, use
 [`review.ci_review_wait`](#reviewci_review_wait).
 
@@ -478,6 +479,43 @@ Then list that provider in `local_review_agents`. The next review picks it, and 
 published review names it in its summary table instead of the fallback notice.
 When you set up Shaka with the CLI already installed, the agent offers it and
 records your choice, so no edit is needed.
+
+### Choose reviewers for your machine
+
+A repository may list reviewers you never use. Without a machine list, Shaka warns about
+every listed reviewer that your machine is missing, except reviewers that
+[`provider_coverage`](#reviewprovider_coverage) never selects on its own. List the
+reviewers you run in `~/.agents/shaka/local-reviewers.yml`, and Shaka warns only about
+those and the providers `provider_coverage` names, in every repository:
+
+```yaml
+version: 1
+reviewers:
+  - provider: anthropic
+    model_family: claude
+    model: claude-opus-5-5
+    effort: high
+  - provider: openai
+    model_family: codex
+```
+
+A `model` or `effort` here applies only where the repository leaves that reviewer's
+value unset, and a model or effort you name for one task wins over both. The list cannot
+add a reviewer the repository does not list. `shaka doctor` shows the list and names
+entries the current repository does not use. If the file is malformed, `shaka doctor`
+names it and local reviews refuse to start until you fix it.
+
+### Run Codex reviews in a container
+
+On Linux, Codex's read-only sandbox needs unprivileged user namespaces. A container
+without them, such as a default Docker container, fails every command the Codex
+reviewer tries with `bwrap: No permissions to create a new namespace`. The reviewer
+still answers from the diff in its prompt, so it reads no callers, tests, or
+configuration. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision)
+then names it on the Setup gaps line.
+
+Run Codex reviews where its sandbox can start, such as on the host instead of in the
+container.
 
 ## `review.local_review_count`
 
@@ -507,7 +545,8 @@ can run, here Codex. The others follow the list order, so the second is Claude i
 fresh session, without the implementation conversation. If Codex had written the
 change, the order would be Claude, then Codex. When the agent finds a reviewer's CLI
 missing or signed out, fewer reviewers read that commit, and from the next commit the next
-listed reviewer takes its place.
+listed reviewer takes its place. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision)
+says how many completed.
 
 Each extra reviewer adds cost and may increase elapsed time. The PR's
 review comment shows every reviewer's rounds, and one review of the final commit is
@@ -538,10 +577,12 @@ review:
 
 When Claude writes the change, Codex reviews it, then a fresh Claude session. Reviewers listed
 in `local_review_agents` from other providers run only when a task asks for one by name.
+Shaka does not warn when one of them is not set up on your machine; `shaka doctor` lists it as
+optional.
 
 When a listed provider cannot review, the agent copies Shaka's gap report into the published
 review, which shows it near the top with the reason: that provider is not listed in `local_review_agents`, not set up on the machine, or
-unavailable. Shaka does not substitute another provider, and the gap never blocks merging.
+unavailable. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision) names the provider too. Shaka does not substitute another provider, and the gap never blocks merging.
 Writing the change does not count as reviewing it.
 
 To pay for one local review instead, leave this unset and set `local_review_count: 1`. With

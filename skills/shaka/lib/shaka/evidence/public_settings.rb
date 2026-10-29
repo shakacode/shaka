@@ -18,6 +18,7 @@ module Shaka
         'review.ci_review_wait' => %w[none one all],
         'overrides.command' => %w[setup test validate validate_local trigger_hosted_ci],
         'overrides.effort' => %w[none minimal low medium high xhigh max ultra],
+        'overrides.machine_effort' => %w[none minimal low medium high xhigh max ultra],
         'overrides.reviewer' => %w[anthropic/claude openai/codex xai/grok deepseek/openrouter],
         'opening_check.reviewer' => %w[anthropic/claude openai/codex xai/grok deepseek/openrouter],
         'opening_check.effort' => %w[none minimal low medium high xhigh max ultra]
@@ -29,7 +30,8 @@ module Shaka
                    prose_limits.max_sentence_words prose_limits.max_paragraph_words prose_limits.max_description_words
                    prose_limits.words_per_changed_line pr_description.max_human_comments].freeze
       REDACTED = %w[commands paths review.prompts review.ci_review_jobs merge.required_checks branches base_branch
-                    overrides.arguments overrides.model opening_check.model local_changes defaults_changed].freeze
+                    overrides.arguments overrides.model overrides.machine_model opening_check.model local_changes
+                    defaults_changed].freeze
       FIELDS = (ENUMS.keys + BOOLEANS + NUMBERS + REDACTED +
                 %w[source.revision source.configuration installation.version installation.revision]).freeze
 

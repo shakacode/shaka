@@ -135,8 +135,9 @@ need not precede the comparison base: the default branch may have advanced indep
 Verify the SHA against the live trusted default branch first; the option grants
 no authority by itself. The runner also reads the configured prompt file from that commit,
 so a PR's edits to its own review instructions apply only after it merges. Without it the reviewer reports criteria as not supplied. Candidate
-criteria remain data in the diff. Supply the PR description with optional
-`--description-file PATH`; this file is labeled as untrusted review data and must contain only
+criteria remain data in the diff. Supply the task's goal file, described in
+[the ledger section](#run-the-review-loop-with-a-ledger), or for review-only work the PR
+description, with `--description-file PATH`; this file is labeled as untrusted review data and must contain only
 public-safe text for a public PR. Do not supply implementation reasoning.
 
 Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)`,
@@ -279,7 +280,11 @@ directory under `~/.local/state/shaka/reviews/`, created when the loop starts:
 LEDGER_DIR="$HOME/.local/state/shaka/reviews/OWNER-REPO-ISSUE-$(date +%s)"
 mkdir -p -m 700 "$LEDGER_DIR"
 LEDGER="$LEDGER_DIR/ledger.json"
+GOAL="$LEDGER_DIR/goal.md"
 ```
+
+Write the plan recommendation's `value` and `scope` lines to `$GOAL` and pass
+`--description-file "$GOAL"` to every round. This file tells the reviewer what the change is for; update it when the plan changes.
 
 Do not reuse another task's directory, and do not put the ledger in a temporary directory:
 `review run` adds `ledger_warning` to its result when it sits in one. Pass `--ledger "$LEDGER"`
@@ -304,6 +309,14 @@ Repository editorial prompts do not replace those definitions. Handle each by cl
 | `defect` | Reproduce it where practical, fix it in a new commit, review again |
 | `risk` | Fix it when the fix is clearly correct; otherwise document it |
 | `nit` | Document it for a later decision; never fixed in the loop |
+
+Keep each fix inside the goal file's scope; this rule applies before the table. A `defect` or
+`risk` stays out of the loop when
+fixing it would widen the change past that scope, such as accepting an input form the task does
+not need, or when it concerns behavior this change does not alter and does not make worse.
+Record it as `decision_needed`, offering a follow-up among the options. When the maintainer
+widens the scope, update the goal file and fix it in the loop; when they choose the follow-up or
+accept the consequence, record `accepted`.
 
 After a round with findings, record what became of each one:
 

@@ -23,13 +23,23 @@ class EvaluationCodexCaptureFailuresTest < Minitest::Test
   end
 
   def test_parent_exit_cleans_up_descendants_before_waiting_for_pipe_eof
-    body = "fork { sleep 1; File.write('descendant-survived', 'bad') }; #{write_stream}"
-    result = run_child(body, seconds: 0.3)
+    descendant = "3000.times { break if File.exist?('release-descendant'); sleep 0.01 }"
+    body = "fork { #{descendant}; File.write('descendant-survived', 'bad') }; #{write_stream}"
+    result = run_child(body)
     assert_equal 'completed', result.fetch('transport_status')
     assert_equal 'completed', result.fetch('native_status')
     refute result.fetch('command_capture_complete')
-    sleep 1
+    File.write(File.join(@root, 'release-descendant'), 'go')
+    sleep 0.3
     refute_path_exists File.join(@root, 'descendant-survived')
+  end
+
+  def test_termination_tolerates_a_group_left_with_only_zombies
+    with_zombie_only_group do |leader|
+      @capture.instance_variable_set(:@pid, leader)
+      @capture.send(:terminate)
+      assert_raises(Errno::ECHILD) { Process.waitpid(leader, Process::WNOHANG) }
+    end
   end
 
   def test_descendants_are_cleaned_up_after_success_even_with_closed_pipes

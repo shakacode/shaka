@@ -11,8 +11,8 @@ require 'shaka/local_review'
 module EvidenceFixture
   include RepositoryConfigTestHelpers
 
-  def with_checkout
-    with_repository do |root|
+  def with_checkout(overrides = {})
+    with_repository(overrides) do |root|
       system('git', '-C', root, 'init', '--quiet', exception: true)
       git(root, 'add', '-A')
       commit(root)
@@ -58,5 +58,26 @@ module EvidenceFixture
   def review_arguments(root, ref, report)
     ['check', '--head', ref, '--reviewer', 'openai/codex', '--report', report,
      '--root', root, '--settings-ref', ref, '--repository', 'shakacode/shaka']
+  end
+
+  private
+
+  def verify(root, head, ref: head, **paths)
+    args = ['verify', '--root', root, '--ref', ref, '--repository', 'shakacode/shaka', '--head', head]
+    paths.each { |kind, path| args.push("--#{kind}", path) }
+    output, = capture_io { Shaka::Evidence::Command.run(args) }
+    JSON.parse(output)
+  end
+
+  def with_results(validation:, review:)
+    Tempfile.create(['shaka-validation-', '.json']) do |validation_file|
+      Tempfile.create(['shaka-review-', '.json']) do |review_file|
+        validation_file.write(JSON.generate(validation))
+        review_file.write(JSON.generate(review))
+        validation_file.flush
+        review_file.flush
+        yield validation: validation_file.path, review: review_file.path
+      end
+    end
   end
 end

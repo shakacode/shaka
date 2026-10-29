@@ -16,6 +16,7 @@ module Shaka
       NEW_COMMAND_DIRECTORY = '.agents/shaka/bin'
       NEW_REPOSITORY_ALLOWLIST = '.agents/shaka/trusted-github-actors.yml'
       MACHINE_ALLOWLIST = '~/.agents/trusted-github-actors.yml'
+      MACHINE_REVIEWERS = '.agents/shaka/local-reviewers.yml' # Relative to the home directory.
 
       REQUIRED_COMMANDS = {
         'setup' => '.agents/bin/setup',

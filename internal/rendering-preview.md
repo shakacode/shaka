@@ -15,9 +15,12 @@ maintainer's one exception to the skill's rule against running a branch-provided
 3. Confirm `gh pr view --json headRefOid` still reports the reviewed head. For the description,
    rerun the installed `description` command with the same content and evidence arguments plus
    `--rendering-preview-root DIR`, where DIR is a checkout of that head. It verifies evidence
-   with the installed helper before loading the supported rendering modules from the
-   immutable commit. It leaves evidence checks, dependencies, policy, and installation identity
-   installed. Never copy installation metadata or rewrite evidence to force a match.
+   with the installed helper before loading every Ruby file in `skills/shaka/lib/shaka/publication/`
+   from the immutable commit, each after the files it requires. It leaves evidence checks,
+   dependencies, policy, and installation identity installed, and does not load the guard, write,
+   and merge-warning files `RenderingPreview::INSTALLED` names; `handoff` lists any of those the PR
+   changed. Head code still runs in the same process, so this is no boundary against the diff
+   you inspected. Never copy installation metadata or rewrite evidence to force a match.
    Other affected artifacts use `skills/shaka/scripts/shaka` from a detached checkout of that
    head; review their rendering code before running it. Mixed workflow changes do not excuse
    skipping the supported description preview.
@@ -28,8 +31,10 @@ maintainer's one exception to the skill's rule against running a branch-provided
    current-head preview marker for Shaka publication changes. For a review comment, confirm its last line is still the
    `REVIEWED` attestation that `merge` reads.
 5. If preview, `handoff`, or attestation checks fail, restore the installed rendering and
-   resolve the failure before handoff. Report an unsupported renderer as a blocker and extend
-   the reviewed renderer list before previewing it. Never claim a sample completes self-preview.
+   resolve the failure before handoff. Report an unsupported renderer as a blocker. A head
+   that lacks an installed renderer, or whose files require each other in a cycle, is refused:
+   rebase an older head or fix the cycle. A PR that deletes or renames a renderer cannot
+   preview until the installation has that change. Never claim a sample completes self-preview.
 
 Repeat after each new head and after any later installed-helper publication overwrites the
 preview. Usage refresh invalidates the marker when it replaces rendered usage. Handoff also

@@ -79,19 +79,22 @@ class RenderingPreviewTest < Minitest::Test
     refute Shaka::RenderingPreview.required?(github)
   end
 
-  # provenance.rb calls task_source_line.rb to render the line, so a PR changing either can preview its description.
-  # A PR changing the settings block or the provenance history can preview too, and owes one without a marker.
-  def test_provenance_task_source_settings_and_history_renderers_can_be_previewed
-    %w[provenance task_source_line provenance_history settings settings_table].each do |name|
+  # Any publication file previews without a list edit. A changed guard or GitHub write stays installed, and the
+  # handoff says the preview, owed or current, did not show it.
+  def test_any_publication_renderer_can_be_previewed
+    %w[provenance links metrics renderer_added_by_the_head feature_guard publishing].each do |name|
       github = preview_github([name])
       assert_includes rendering_fact(github, nil).fetch('owed').join, 'description --rendering-preview-root', name
-      assert_empty rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->").fetch('owed'), name
+      current = rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->")
+      assert_empty current.fetch('owed'), name
+      notes = Shaka::RenderingPreview::INSTALLED.grep(%r{/#{name}\.rb\z}) { "Kept installed, not previewed: #{it}." }
+      [rendering_fact(github, nil), current].each { |fact| assert_equal notes, fact.fetch('notes'), name }
     end
   end
 
   def test_unsupported_renderers_block_instead_of_publishing_an_incomplete_preview
     github = preview_github
-    def github.api_list(_path) = [{ 'filename' => 'skills/shaka/lib/shaka/publication/text.rb' }]
+    def github.api_list(_path) = [{ 'filename' => 'skills/shaka/lib/shaka/publication/nested/text.rb' }]
     pull = { 'head' => { 'repo' => { 'full_name' => github.repository } } }
     error = assert_raises(Shaka::Error) do
       Shaka::RenderingPreview.publish({ rendering_preview_root: ROOT }, pull, github) { flunk }
@@ -117,6 +120,6 @@ class RenderingPreviewTest < Minitest::Test
     handoff.instance_variable_set(:@owed, [])
     handoff.instance_variable_set(:@notes, [])
     fact = handoff.send(:rendering_fact, 'a' * 40)
-    { 'owed' => handoff.instance_variable_get(:@owed), 'fact' => fact }
+    %w[owed notes].to_h { [it, handoff.instance_variable_get(:"@#{it}")] }.merge('fact' => fact)
   end
 end

@@ -64,12 +64,25 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   evidenced unavailable. A fresh session of the implementation model is valid;
   a failed CLI still leaves a fresh host context as an option. `shaka review run`
   checks CLI execution and its report; `shaka review check` labels a fresh host report
-  or records a missing review with a nonzero result. Record each
+  or records a missing review with a nonzero result. Report missing reviewer setup only
+  for reviewers selection can pick without a task naming them; a machine reviewer list
+  narrows that to the reviewers it names plus covered providers, and fills a model or
+  effort the repository leaves unset. Record each
   reviewer and revision in chat and the PR. See [review](../skills/shaka/references/review.md#choose-a-local-reviewer).
 - **R20 — Show what reviewers receive.** On request, show the code review, checkpoint,
   or opening check prompt as its runner assembles it, each part labeled built-in,
   replacement, `AGENTS.md`, or custom instructions with its path and commit. Read the
   trusted default-branch commit, or label a working-tree draft untrusted. See
+  [ADR 0003](adr/0003-configure-walkthrough.md).
+- **R21 — Explain the current settings.** On request, report every repository setting
+  with the value Shaka applies, its packaged default, whether the repository sets it, and
+  its reference section, using the resolvers that apply each setting. Mark values that
+  equal the default. See [ADR 0003](adr/0003-configure-walkthrough.md).
+- **R22 — Change settings in their own PR.** A requested settings change becomes a
+  settings PR through the migration flow. Before editing, tell the maintainer that
+  installations must update after merge, and list that step in the PR, with the date each
+  new key or named option entered the reference, unless the change only removes keys or
+  writes no setting. See
   [ADR 0003](adr/0003-configure-walkthrough.md).
 
 ### Preserve control and recover work

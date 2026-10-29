@@ -10,6 +10,7 @@ module Shaka
     class BranchSchema
       include Validation
 
+      KEYS = ['name'].freeze
       # Each placeholder with a typical value, so Git can judge a name the template produces.
       SAMPLES = { 'login' => 'octocat', 'host' => 'codex', 'issue' => '123', 'description' => 'add-button' }.freeze
 
@@ -20,7 +21,7 @@ module Shaka
 
       def validate
         mapping = mapping!(@data, 'branches')
-        keys!(mapping, ['name'], [], 'branches')
+        keys!(mapping, KEYS, [], 'branches')
         name = string!(mapping['name'], 'branches.name')
         raise Error, 'branches.name must include {issue}' unless name.include?('{issue}')
 
