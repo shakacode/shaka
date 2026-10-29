@@ -77,9 +77,12 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    [private setup recovery](../../skills/shaka/references/repository-setup.md#recover-private-setup).
 
 2. **The file may set only preference keys.** It uses the repository schema: `version: 1`
-   and the same key paths, validated by the existing `RepositoryConfig` sub-schemas
-   (`ReviewSchema`, `PrDescriptionSchema`, `OpeningSchema`, `WipSchema`, `BranchSchema`, and
-   `PostImplementationSchema` for `checkpoint`) and by `ProseLimits` for `prose_limits`.
+   and the same key paths. The loader checks keys against the allowlist and parses the two
+   reviewer identities itself, because the schema's parse error names the value but not the
+   key. Values are then validated by the full `RepositoryConfig::Schema` on the merged
+   configuration (decision 3), not section by section: `ReviewSchema` alone would demand
+   `review.required`, which the file may not set. Schema messages name the key, and setup
+   prefixes them with the file path.
    The allowlist names leaf keys, so a key added later under one of these sections is
    refused until someone adds it here. Entries in `review.local_review_agents` may carry
    only `provider`, `model_family`, `model`, and `effort`; the entry schema also accepts a
@@ -113,7 +116,8 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    flag for the same value, such as `--local-review-agent`, replaces the personal value.
    Keys the personal file omits keep what setup writes today. Lists replace, not append:
    personal `local_review_agents` is the whole list unless a flag supplies one. `--from`
-   ignores the personal file, because it copies this clone's own earlier settings.
+   ignores the personal file, because it copies this clone's own earlier settings; as today,
+   it refuses every other option, including `--plan` and `--no-personal-file`.
 
    Some rules link keys, such as an opening-check `model` requiring a `reviewer`, so a flag
    can leave a valid personal value inconsistent with the rest. Setup therefore validates
