@@ -22,7 +22,7 @@ module Shaka
 
     def detail
       status = if @verdict
-                 'Recorded checks match this PR’s current commit.'
+                 ['Recorded checks match this PR’s current commit.', *review_not_required].join(' ')
                else
                  'No matching check records supplied. Rerun missing validation or review to record them.'
                end
@@ -35,6 +35,10 @@ module Shaka
     attr_reader :reviewer_shortfall
 
     private
+
+    def review_not_required
+      ['This repository’s settings do not require review.'] if @verdict['review_required'] == false
+    end
 
     def current_line
       settings = Evidence::PublicSettings.sanitize(@current)

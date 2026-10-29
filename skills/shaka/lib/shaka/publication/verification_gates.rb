@@ -9,6 +9,8 @@ module Shaka
     LABEL = '**Validation and review:**'
     UNKNOWN = "#{LABEL} UNKNOWN: no validation or review results were supplied for this revision.".freeze
     GAPS = '**Setup gaps:**'
+    # Verification reaches ready without a review only when the trusted review.required is none.
+    NOT_REQUIRED = 'review not required by this repository’s settings'
     CONTAINER_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#run-codex-reviews-in-a-container'
     # GitHub's author_association values for the owner, organization members, and collaborators.
     INSIDERS = %w[OWNER MEMBER COLLABORATOR].freeze
@@ -55,7 +57,8 @@ module Shaka
       return UNKNOWN unless verdict
 
       validation, reviews = results(verdict)
-      "#{LABEL} #{[*validations(validation), review(reviews, review_url)].join('; ')} at `#{short_head(verdict)}`."
+      reviewed = reviews.empty? && verdict['review_required'] == false ? NOT_REQUIRED : review(reviews, review_url)
+      "#{LABEL} #{[*validations(validation), reviewed].join('; ')} at `#{short_head(verdict)}`."
     end
 
     # Only a ready verdict reaches publication. A host-reported review rests on its attestation

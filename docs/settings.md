@@ -209,7 +209,9 @@ This controls when configured CI review reports are required. Options:
 - `meaningful_changes`: implementation changes; trivial prose can skip with a reason.
 - `always`: every PR, including trivial changes.
 - `none`: no configured CI review backstop, and `shaka merge` does not check for a
-  local review. Omit `ci_review_jobs` with this setting.
+  local review. A PR description can show passing validation alone, and its
+  Verification line says the repository does not require review. A review that ran
+  anyway must still match the current commit. Omit `ci_review_jobs` with this setting.
 
 Meaningful implementation also gets a local adversarial review before push:
 

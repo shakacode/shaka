@@ -55,10 +55,13 @@ module Shaka
     end
 
     # Only a completed or host-reported review reaches a ready verdict, so each bound one counts.
+    # A repository that requires no review falls short only when a review was run anyway.
     def self.reviewer_shortfall(verdict, review)
       return unless verdict && review
 
       reviewers = Array(verdict.dig('checks', 'review')).filter_map { |entry| entry.dig('original', 'reviewer') }
+      return if reviewers.empty? && verdict['review_required'] == false
+
       ReviewCoverage.shortfall(review, reviewers)
     end
 
