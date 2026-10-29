@@ -54,7 +54,7 @@ module Shaka
           bare = %r{(?<![\w.-])#{Regexp.escape(PATHS::DIRECTORY)}(?![\w.-]|/[[:alnum:]_-])}o
           names = command_paths.map { |command| Regexp.escape(File.basename(command)) }.join('|')
           # A bin/ inside a longer path, such as a full old or new command path, is not a command beside the directory.
-          command = %r{(?<![\w./-])bin[/'"\s,]+(?:#{names})\b}o
+          command = %r{(?<![\w./-])(?:\./)?bin[/'"\s,]+(?:#{names})\b}o
           sources = line_local ? text.each_line : [text]
           sources.any? { |source| source.match?(bare) && source.match?(command) }
         end

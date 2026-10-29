@@ -36,7 +36,8 @@ module Shaka
         # Prose still describes where the wrappers live, so it keeps blocking.
         def retained_command_directory?(line, path)
           return false unless retained_code?(path)
-          return false if line.match?(command_directory_change) || line.match?(moved_command_name)
+          return false if line.match?(command_directory_change) || line.match?(moved_command_name) ||
+                          line.match?(composed_command_path)
 
           !line.match?(command_directory_glob) || line.match?(new_command_route)
         end
@@ -55,14 +56,20 @@ module Shaka
           end
         end
 
+        # A name filled in at run time, or joined on as a variable, may be a moved command.
+        def composed_command_path
+          directory = Regexp.escape(PATHS::COMMAND_DIRECTORY)
+          @composed_command_path ||= %r{#{directory}(?:/(?:\#\{|\$)|['"]?\s*,\s*[^'"\s])}
+        end
+
         def command_directory_glob
           @command_directory_glob ||= directory_pattern(PATHS::COMMAND_DIRECTORY, '/[*?\\[]')
         end
 
-        # The moved commands are reached by a route into the new command directory or a glob over the new layout.
+        # Every moved command is reached only by a glob over the new command directory or the new layout.
         def new_command_route
           layout = Regexp.escape(File.dirname(PATHS::NEW_CONTRACT))
-          %r{#{layout}/(?:#{Regexp.escape(File.basename(PATHS::NEW_COMMAND_DIRECTORY))}/|\*)}o
+          %r{#{layout}/(?:#{Regexp.escape(File.basename(PATHS::NEW_COMMAND_DIRECTORY))}/)?[*?\[]}o
         end
 
         def relative_command_call?(text)

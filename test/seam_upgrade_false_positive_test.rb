@@ -30,6 +30,17 @@ end
 class SeamUpgradeFalsePositiveTest < Minitest::Test
   include SeamUpgradeFileBlockers
 
+  STILL_BLOCKED = {
+    'ci/notes.txt' => %(sh .agents/bin/test; sh .agents/bi""n/test\n),
+    '.agents/run.rb' => %(system(File.expand_path("bin/validate", __dir__))\n),
+    'lib/app.rb' => %(system(File.join(app_home, ".agents", "bin", "validate"))\n),
+    'ci/docker.sh' => %(docker run -w .agents image ./bin/validate\n)
+  }.freeze
+
+  def test_nearby_real_references_still_block
+    STILL_BLOCKED.each { |name, source| assert_file_blocked(name, source) }
+  end
+
   def test_join_that_resolves_inside_the_new_layout_does_not_block
     assert_unblocked('spec/trust_test.rb',
                      %(config = File.join(root, ".agents", "shaka", "trusted-github-actors.yml")\n))
@@ -127,7 +138,9 @@ class SeamUpgradeRetainedToolRoutingTest < Minitest::Test
   def test_real_aliases_of_the_command_directory_still_block
     [%(#!/bin/sh\nPATH=".agents/bin:$PATH"\nvalidate\n),
      %(#!/bin/sh\ncd .agents/bin && ./validate\n),
-     %(#!/bin/sh\ncd .agents/bin\n)].each do |source|
+     %(#!/bin/sh\ncd .agents/bin\n),
+     "#!/bin/sh\ncase \"$1\" in\n  .agents/bin/*|.agents/shaka/bin/lint) echo ci ;;\nesac\n",
+     %(#!/usr/bin/env ruby\nsystem(".agents/bin/\#{name}")\n)].each do |source|
       with_retained_tool do |root|
         write_executable(root, 'script/run', source)
         assert_includes(plan_for(root).blockers.join, 'script/run:', source)

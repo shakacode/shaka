@@ -35,10 +35,12 @@ module Shaka
         end
 
         # A bare bin/<command> runs from the working directory, which is the repository's own bin/; only a path
-        # joined onto something, such as the file's own directory, can reach the old command directory.
+        # joined onto something, or resolved against the file's own directory, can reach the old command directory.
         def joined_command_path?(text)
           commands = command_paths.map { |command| Regexp.escape(File.basename(command)) }.join('|')
-          text.match?(%r{\S/+bin/+(?:(?:\.{1,2}|bin)/+)*(?:#{commands})\b}o) ||
+          resolved = %r{(['"])bin/+(?:#{commands})\1}o
+          text.each_line.any? { |line| line.match?(resolved) && invocation_relative?(line) } ||
+            text.match?(%r{\S/+bin/+(?:(?:\.{1,2}|bin)/+)*(?:#{commands})\b}o) ||
             text.match?(/,\s*(['"])bin\1\s*,\s*(['"])(?:#{commands})\2/o) ||
             text.match?(%r{['"]bin['"]\s*/\s*['"](?:#{commands})['"]}o)
         end
@@ -125,8 +127,8 @@ module Shaka
           joined = normalize_shell_fragments(line)
           return false if joined == line || !layout_reference?(joined, path)
 
-          !layout_reference?(line, path) || (matching_paths(joined) - matching_paths(line)).any? ||
-            joined.scan(PATHS::DIRECTORY).size > line.scan(PATHS::DIRECTORY).size
+          !layout_reference?(line, path) ||
+            [PATHS::DIRECTORY, *reference_mapping.keys].any? { |old| joined.scan(old).size > line.scan(old).size }
         end
 
         def layout_reference?(text, path) = matching_paths(text).any? || directory_reference?(text, path)

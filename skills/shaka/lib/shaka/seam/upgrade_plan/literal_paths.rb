@@ -12,10 +12,12 @@ module Shaka
           return text unless text.include?('~') || text.match?(/home/i)
 
           directory = Regexp.escape(PATHS::DIRECTORY)
-          home = /(?:\w+_)?home(?:_dir|_path)?|Dir\.home|Path\.home\(\)|ENV\[\s*['"]HOME['"]\s*\]|
+          name = Regexp.escape(File.basename(PATHS::MACHINE_ALLOWLIST))
+          home = /\bhome|Dir\.home|Path\.home\(\)|ENV\[\s*['"]HOME['"]\s*\]|
                   ENV\.fetch\(\s*['"]HOME['"][^)]*\)|['"](?:home|~)['"]/x
-          text.gsub(%r{(?:~|\$HOME|\$\{HOME\})/#{directory}(?![[:alnum:]_.-])}o, '~/home')
-              .gsub(/(?<head>[(,]\s*(?:#{home})\s*,\s*)(?<quote>['"])#{directory}\k<quote>/o, '\\k<head>"home"')
+          text.gsub(%r{(?:~|\$HOME|\$\{HOME\})/#{directory}/#{name}(?![[:alnum:]_.-])}o, '~/home')
+              .gsub(/(?<head>[(,]\s*(?:#{home})\s*,\s*)(?<quote>['"])#{directory}\k<quote>(?=\s*,\s*['"]#{name}['"])/o,
+                    '\\k<head>"home"')
         end
 
         def segmented_reference?(text)
