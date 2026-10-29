@@ -53,6 +53,7 @@ module Shaka
         def initialize(client, project_id, ids, trusted_users)
           @client = client
           @project_id = project_id
+          @day = Time.now.utc.to_date
           @trusted_users = trusted_users
           @project = project_metadata
           @users = ids.uniq.to_h { |id| [id, read_user(id)] }
@@ -61,11 +62,12 @@ module Shaka
 
         def verify!
           current = self.class.new(@client, @project_id, @users.keys, @trusted_users)
-          raise Error, 'GitLab actor evidence changed during screening.' unless snapshot == current.snapshot
+          stable = snapshot == current.snapshot && @day == Time.now.utc.to_date
+          raise Error, 'GitLab actor evidence changed during screening.' unless stable
         end
 
         def snapshot
-          { project: @project, members: member_evidence,
+          { project: @project, day: @day, members: member_evidence,
             users: @users.transform_values { |user| user&.slice('id', 'username', 'state', 'bot') } }
         end
 

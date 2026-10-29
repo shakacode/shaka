@@ -53,6 +53,14 @@ module GitLabActorFixtures
   def screen(rows = discussions, **)
     Shaka::GitLab::ActorTrust.new(client:, project_id: 7, **).screen(rows)
   end
+
+  def with_actor_time(clock)
+    original = Time.method(:now)
+    Time.define_singleton_method(:now, &clock)
+    yield
+  ensure
+    Time.define_singleton_method(:now, original)
+  end
 end
 
 class GitLabActorTrustTest < Minitest::Test
@@ -162,6 +170,19 @@ end
 
 class GitLabActorProfileAvailabilityTest < Minitest::Test
   include GitLabActorFixtures
+
+  def test_utc_rollover_during_the_final_recheck_discards_writer_prose
+    now = Time.utc(2026, 1, 1, 23, 59, 59)
+    after = now + 2
+    @data['projects/7/members/all/42'] = user.merge('access_level' => 30, 'expires_at' => '2026-01-02')
+    @data['users/42'] = lambda do |count|
+      now = after if count == 2
+      user
+    end
+    with_actor_time(-> { now }) do
+      assert_raises(Shaka::Error) { screen }
+    end
+  end
 
   def test_missing_profile_withholds_only_that_author_and_cannot_block_a_configured_author
     @data['users/43'] = {}
