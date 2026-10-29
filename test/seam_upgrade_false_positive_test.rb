@@ -142,6 +142,10 @@ class SeamUpgradeRetainedToolRoutingTest < Minitest::Test
     ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
     "#!/bin/sh\ncase \"$1\" in\n  .agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n" \
     "case \"$2\" in\n  .agents/shaka/*) echo docs ;;\n  " \
+    ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  *) run-parts .agents/bin ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  .agents/bin/*|\".agents/shaka/bin/*\") echo ci ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  .agents/shaka/*)\n    case \"$2\" in\n      x) : ;;\n    esac ;;\n  " \
     ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n"
   ].freeze
 

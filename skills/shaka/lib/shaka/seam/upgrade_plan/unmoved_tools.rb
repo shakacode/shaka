@@ -45,10 +45,14 @@ module Shaka
           unchanged_arm?(line, path)
         end
 
+        # A quoted pattern matches literally in a shell, and the arm's body runs like any other code, so either one
+        # keeps the line blocking.
         def unchanged_arm?(line, path)
-          return false if line.match?(moved_command_name) || line.match?(composed_command_path)
+          patterns = arm_patterns(line)
+          return false if patterns.any? { |pattern| pattern.match?(/['"\\]/) } || line.match?(moved_command_name)
+          return false if command_directory_reference?(line.split(')', 2).last)
 
-          same_route?(arm_patterns(line)) && !captured_arms(path).include?(line)
+          same_route?(patterns) && !captured_arms(path).include?(line.chomp)
         end
 
         def directory_creation
@@ -66,19 +70,23 @@ module Shaka
         end
 
         # A shell `case` takes the first arm that matches, so an earlier arm that newly matches a moved command
-        # takes it from every later arm in that `case`. Arms compare by text, so a repeated arm counts if any copy is
-        # taken.
+        # takes it from every later arm in that `case`, nested ones aside. Arms compare by text, so a repeated arm
+        # counts if any copy is taken.
         def captured_arms(path)
           (@captured_arms ||= {})[path] ||= begin
-            earlier = []
-            shell_scripts.fetch(path).each_line.with_object([]) do |line, captured|
-              earlier = [] if line.match?(/\bcase\b.*\bin\s*$/)
-              next unless line.match?(case_arm)
-
-              captured << line if takes_moved_command?(earlier)
-              earlier.concat(arm_patterns(line))
-            end
+            cases = [[]]
+            shell_scripts.fetch(path).each_line.with_object([]) { |line, captured| note_arm(line, cases, captured) }
           end
+        end
+
+        # `cases` holds the arms seen so far in each open `case`, innermost last.
+        def note_arm(line, cases, captured)
+          cases.push([]) if line.match?(/\bcase\b.*\bin\s*$/)
+          if line.match?(case_arm)
+            captured << line.chomp if takes_moved_command?(cases.last)
+            cases.last.concat(arm_patterns(line))
+          end
+          cases.pop if line.match?(/\besac\b/) && cases.size > 1
         end
 
         def takes_moved_command?(patterns)
@@ -94,7 +102,7 @@ module Shaka
         # `readings` is :any? or :all? of the GLOB_READINGS.
         def arm_matches?(patterns, path, readings)
           patterns.any? do |pattern|
-            GLOB_READINGS.public_send(readings) { |flags| File.fnmatch?(pattern.delete(%q('")), path, flags) }
+            GLOB_READINGS.public_send(readings) { |flags| File.fnmatch?(pattern, path, flags) }
           end
         end
 
