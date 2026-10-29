@@ -32,7 +32,8 @@ module Shaka
     # The floor comes from the PR's changed paths; without a pull request there is none.
     # The shortfall compares the bound reviews with the trusted reviewer count; nil when none.
     def render(content, verdict = nil, floor = nil, pull = nil, task: nil, shortfall: nil) # rubocop:disable Metrics/ParameterLists
-      gate_line = VerificationGates.render(verdict, content['review'], shortfall)
+      gate_line = VerificationGates.render(verdict, content['review'], shortfall,
+                                           VerificationGates.unlabeled(content, pull))
       spec = object(content, 'verification')
       evidence(spec, content['wip'].nil? ? CHECKS : (0..CHECKS.max))
       [intent(object(content, 'intent'), floor, pull, task),
