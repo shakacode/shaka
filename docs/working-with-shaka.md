@@ -11,7 +11,8 @@ to the reviewed code. Tests, review findings, and screenshots help you evaluate
 the result. Expandable sections hold usage estimates, detailed checks, and
 **WIP Details** for unfinished work. When work on a GitHub issue starts, the agent
 comments on the issue with the same details, so everyone watching it can see who
-took it, on which branch, and how to resume.
+took it and how to resume. The branch is not pushed yet, so the comment names the
+machine that holds it, from the alias in **Owner**.
 
 Use that record to decide whether to merge, then return to it when evaluating
 the approach or how the work was checked. See

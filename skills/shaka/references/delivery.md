@@ -175,9 +175,10 @@ checkout is reachable; record it as `UNKNOWN` when it is not.
 
 Run `start OWNER/REPO ISSUE --content-file PATH --root DIR --ref TRUSTED_SHA` with
 `identity`, a one-line `summary` of the outcome this task will deliver, and a `wip`
-object holding every field above as work begins: Revision is the new branch at its
-base SHA, Unfinished work `none`, Stopped because `running`, State the current step,
-and Next action the resume prompt, such as `$shaka ISSUE_URL`. The helper renders the
+object holding every field above as work begins: Revision is the new local branch at
+its base SHA, Unfinished work `branch not pushed yet`, Stopped because `running`, State
+the current step, and Next action the resume prompt, such as `$shaka ISSUE_URL`. Until
+the first push, the branch exists only on the machine Owner names. The helper renders the
 fields as WIP Details, applies `wip.include_checkout_path`, refuses a PR number, and
 keys the comment by owner tag, so a rerun replaces it and a new owner posts its own.
 Post it once; after the PR exists, its WIP Details is the record.
