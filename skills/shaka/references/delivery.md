@@ -168,7 +168,7 @@ false. Unread or unavailable settings
 withhold Workspace and explain the recovery action:
 rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
 republishing when loading failed. No setting hides Chat link; supply `UNKNOWN`
-when the user asks to keep it off the PR. Unfinished publication remains possible without
+with `wip_disclosure.thread` set to `withheld` when the user asks to keep it off the PR. Unfinished publication remains possible without
 validation/review evidence; the diagnostic establishes no readiness. Retain the
 fields and public owner alias. Inspect all other supplied prose before publication.
 A repository where even the owner alias is sensitive should not publish these notes.

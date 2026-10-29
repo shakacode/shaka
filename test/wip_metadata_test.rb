@@ -167,3 +167,20 @@ class WipMetadataTest < Minitest::Test
     refute_includes error.message, 'publish'
   end
 end
+
+# The marker carries the collection record that handoff reads later.
+class WipMetadataMarkerTest < Minitest::Test
+  include WipMetadataFixture
+
+  # A hand edit can drop the marker's closing delimiter or split it across lines.
+  def test_a_truncated_or_split_marker_is_unreadable
+    dispositions = Shaka::WipMetadata::FIELDS.to_h { [it, 'available'] }
+    split = Shaka::WipMetadata.marker(dispositions).sub('{', "{\n")
+    truncated = Shaka::WipMetadata.marker(dispositions).delete_suffix(' -->')
+
+    [truncated, split].each do |note|
+      problem = Shaka::WipMetadata.handoff_problem(note, owner: 'm5 · Codex desktop · k7q2', thread: LOCATOR)
+      assert_equal Shaka::WipMetadata::UNREADABLE, problem
+    end
+  end
+end

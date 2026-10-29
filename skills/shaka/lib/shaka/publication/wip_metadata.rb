@@ -41,7 +41,8 @@ module Shaka
       return if text.scan(PREFIX).empty?
       return :broken unless text.scan(PREFIX).one?
 
-      JSON.parse(text[MARK, 1])
+      json = text[MARK, 1]
+      json ? JSON.parse(json) : :broken
     rescue JSON::ParserError
       :broken
     end
