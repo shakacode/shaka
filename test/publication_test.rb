@@ -486,7 +486,7 @@ class PublicationWipDetailsTest < Minitest::Test
     lines = note.lines.map(&:chomp)
     assert_equal ['| Field | Value |', '| --- | --- |'], lines.first(2)
     assert_equal Shaka::WipDetails::FIELDS.values, wip_labels(lines)
-    assert_includes note, 'Collection: alias unavailable; host unavailable; tag available; thread unavailable.'
+    assert_includes note, 'Collection: alias available; host available; tag available; thread unavailable.'
     assert_includes lines, '| Chat link | UNKNOWN |'
     assert_includes lines, '| Workspace | Withheld: settings not read; rerun description with --ref |'
     assert_includes lines, '| Stopped because | paused |'

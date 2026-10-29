@@ -32,6 +32,12 @@ module Shaka
       'WIP Owner must be machine alias · host · owner tag; use UNKNOWN for unavailable information.'
     end
 
+    def self.refuse_free_form!(items)
+      return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(SUMMARY) }
+
+      raise Error, 'Publication WIP Details must be supplied as the wip object, not a details item.'
+    end
+
     def initialize(spec, path_redaction: nil, session: {})
       @spec = spec
       @path_redaction = path_redaction

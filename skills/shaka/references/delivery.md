@@ -102,9 +102,11 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 
 The renderer and `handoff` check that Owner is `UNKNOWN` or contains three nonempty
 components separated by `·`. `description` also reads the calling session before it
-renders the note. It compares the machine alias, the coding host, the owner tag, and
-a Codex thread id with the supplied Owner and Chat link. `UNKNOWN` is refused when
-that value was available and the content did not mark it withheld. Unavailable,
+renders the note. It compares the machine alias, the coding host, and a Codex thread
+id with the supplied Owner and Chat link. `UNKNOWN` is refused when that value was
+available and the content did not mark it withheld. While the owner tag matches the
+previous note's, a field that note published cannot become `UNKNOWN` unless withheld;
+a new tag starts a takeover without that carry-over. Unavailable,
 withheld, and invalid are different outcomes. Diagnostics omit withheld, invalid, and
 machine-name values. The note carries the outcome for each field. `handoff` reads
 that record from the live GitHub description, including after an edit, and does not

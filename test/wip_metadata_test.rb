@@ -128,7 +128,7 @@ class WipMetadataTest < Minitest::Test
     environment = codex_env.merge('CURSOR_CONVERSATION_ID' => 'cursor-session')
     rendered = render(WIP.merge('thread' => 'UNKNOWN'), environment:)
 
-    assert_includes rendered, 'host unavailable'
+    assert_includes rendered, 'host available'
     assert_includes rendered, 'thread unavailable'
     refute_includes rendered, UUID
   end
@@ -182,5 +182,38 @@ class WipMetadataMarkerTest < Minitest::Test
       problem = Shaka::WipMetadata.handoff_problem(note, owner: 'm5 · Codex desktop · k7q2', thread: LOCATOR)
       assert_equal Shaka::WipMetadata::UNREADABLE, problem
     end
+  end
+end
+
+# A later publication reads the previous note, so a value survives a session that cannot observe it.
+class WipMetadataCarryOverTest < Minitest::Test
+  include WipMetadataFixture
+
+  def note(rendered) = rendered[%r{<details>\n<summary>WIP Details</summary>\n\n(.*?)\n\n</details>}m, 1]
+
+  def test_a_retained_value_stays_defended_after_a_session_without_its_environment
+    previous = wrapped(render(WIP, environment: codex_env))
+    republished = render(WIP, previous:)
+    assert_includes republished, 'Collection: alias available; host available; tag available; thread available.'
+
+    edited = note(republished).sub("| Chat link | #{LOCATOR} |", '| Chat link | UNKNOWN |')
+    problem = Shaka::WipMetadata.handoff_problem(edited, owner: WIP['owner'], thread: 'UNKNOWN')
+    assert_includes problem, 'chat link was available but is UNKNOWN'
+
+    blank = note(republished).sub("| Chat link | #{LOCATOR} |", '| Chat link |  |')
+    assert_includes Shaka::WipMetadata.handoff_problem(blank, owner: WIP['owner'], thread: nil),
+                    'chat link was available but is UNKNOWN'
+  end
+
+  def test_a_takeover_under_a_new_tag_does_not_inherit_the_previous_chat_link
+    previous = wrapped(render(WIP, environment: codex_env))
+    claude = { 'CLAUDE_CODE_SESSION_ID' => 'claude-session', 'SHAKA_MACHINE_ALIAS' => 'm5' }
+    takeover = WIP.merge('owner' => 'm5 · Claude Code desktop · tm2d', 'thread' => 'UNKNOWN')
+
+    assert_includes render(takeover, environment: claude, previous:), 'thread unavailable'
+    error = assert_raises(Shaka::Error) do
+      render(takeover.merge('owner' => 'm5 · Claude Code desktop · UNKNOWN'), environment: claude, previous:)
+    end
+    assert_includes error.message, 'owner tag was collected earlier'
   end
 end

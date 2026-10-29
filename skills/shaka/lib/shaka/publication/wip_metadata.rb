@@ -52,11 +52,11 @@ module Shaka
         packet.each_value.all? { |value| DISPOSITIONS.include?(value) }
     end
 
+    # A blank cell hides the value as surely as UNKNOWN does.
     def self.component(owner, thread, field)
-      return thread if field == 'thread'
-
       parts = owner == 'UNKNOWN' ? %w[UNKNOWN UNKNOWN UNKNOWN] : owner.to_s.split('·', -1).map(&:strip)
-      parts[FIELDS.index(field)]
+      value = field == 'thread' ? thread : parts[FIELDS.index(field)]
+      value.to_s.strip.empty? ? 'UNKNOWN' : value
     end
 
     def self.problem(field, value, disposition)

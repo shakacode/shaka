@@ -139,10 +139,8 @@ module Shaka
     end
 
     def validate_details(items)
-      UsageDetails.refuse_free_form!(items)
-      refuse_free_form_wip(items)
+      [UsageDetails, PublicationSettings, SkillsUsed, TimingsDetails, WipDetails].each { it.refuse_free_form!(items) }
       refuse_supplied_history(items)
-      [PublicationSettings, SkillsUsed, TimingsDetails].each { |validator| validator.refuse_free_form!(items) }
     end
 
     # The note is optional because it disappears once GitHub confirms the outcome.
@@ -152,12 +150,6 @@ module Shaka
       session = { environment: @environment, disclosure: @content['wip_disclosure'], pull: @pull,
                   host_name: @host_name }
       [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction, session:).detail)]
-    end
-
-    def refuse_free_form_wip(items)
-      return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(WipDetails::SUMMARY) }
-
-      raise Error, 'Publication WIP Details must be supplied as the wip object, not a details item.'
     end
 
     # Only the helper writes the history, from the previous body.

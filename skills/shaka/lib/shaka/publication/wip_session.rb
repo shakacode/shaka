@@ -73,8 +73,12 @@ module Shaka
       refuse('WIP chat link does not match the collected local Codex chat locator.')
     end
 
+    # A value the session cannot observe was still published, so handoff must defend it. Only the
+    # owner that published it carries it over; a takeover under a new tag starts fresh.
     def carried(field, published, label)
-      if published == 'UNKNOWN' && earlier?(field)
+      return 'available' unless published == 'UNKNOWN'
+
+      if earlier?(field) && same_owner?
         refuse("WIP #{label} was collected earlier and is now UNKNOWN. Publish it again, or withhold it.")
       end
 
@@ -160,6 +164,11 @@ module Shaka
     def earlier?(field)
       value = field == 'thread' ? @previous['thread'] : previous_part(field)
       value.is_a?(String) && !value.empty? && value != 'UNKNOWN'
+    end
+
+    def same_owner?
+      tag = current('tag')
+      tag == 'UNKNOWN' || tag == previous_part('tag')
     end
 
     def previous_part(field)
