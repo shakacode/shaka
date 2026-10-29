@@ -50,6 +50,16 @@ class ClosingIssuesTaskRelationTest < Minitest::Test
     end
   end
 
+  # The Task line says the issue stays open while the prose says this PR fixes it, even when GitHub links it.
+  def test_a_partial_task_relation_beside_a_prose_fix_names_the_contradiction
+    data = content('Fixes #9.', task: 9)
+    data['provenance']['task_relation'] = 'part_of'
+    note = Shaka::ClosingIssues.note(data, FakeGitHub.new(['owner/repo#9']))['closing_issues']
+
+    assert_includes note, 'The Task line says this PR is part of #9, but the summary or intent says it fixes #9.'
+    assert_includes Shaka::ClosingIssues.note(data, FakeGitHub.new([]))['closing_issues'], 'part of #9, but'
+  end
+
   # A prose claim on the task's issue is corrected in prose, because task_relation would not remove it.
   def test_a_prose_claim_on_the_task_issue_keeps_the_prose_advice
     note = Shaka::ClosingIssues.note(content('Fixes #9.', task: 9), FakeGitHub.new([]))['closing_issues']

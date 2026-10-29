@@ -39,6 +39,13 @@ class TaskSourceLineTest < Minitest::Test
     assert_equal '**Task:** [Jira PROJ-1234](https://acme.atlassian.net/browse/PROJ-1234) · part of', line(jira)
   end
 
+  # The URL pattern refuses a backslash and a missing host, not an ordinary query or fragment.
+  def test_a_ticket_url_may_carry_a_query_and_fragment
+    url = 'https://acme.atlassian.net/browse/PROJ-1234?focusedCommentId=1#comment-1'
+
+    assert_equal "**Task:** [Linear MKT-1234](#{url})", line(LINEAR.merge('task_url' => url))
+  end
+
   def test_a_task_in_another_github_repository_names_only_its_kind
     assert_equal '**Task:** issue', line(PUBLIC_PROVENANCE.merge('task_source' => 'issue'))
     assert_equal '**Task:** pull request', line(PUBLIC_PROVENANCE.merge('task_source' => 'pull_request'))
@@ -49,7 +56,8 @@ class TaskSourceLineTest < Minitest::Test
                ISSUE.merge('task_source' => 'pull_request', 'task_relation' => 'fixes'),
                LINEAR.merge('task_relation' => 'fixes'), LINEAR.merge('task_tracker' => 'trello'),
                LINEAR.merge('task_key' => 'mkt 1234'), LINEAR.merge('task_number' => 1234),
-               LINEAR.merge('task_url' => 'http://linear.app/x'), LINEAR.merge('task_url' => 'https://x.test/a)(b')]
+               LINEAR.merge('task_url' => 'http://linear.app/x'), LINEAR.merge('task_url' => 'https://x.test/a)(b'),
+               LINEAR.merge('task_url' => 'https://x.test/a\\'), LINEAR.merge('task_url' => 'https:///x')]
     invalid.each do |spec|
       assert_raises(Shaka::Error, spec.inspect) { line(spec) }
     end
