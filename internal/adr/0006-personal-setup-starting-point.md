@@ -127,8 +127,8 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
 
 4. **Setup previews the proposal before writing.** `seam private setup --plan`, with the
    same options as a real run and the same eligibility check from decision 1, loads and
-   merges the personal file when a real run would, validates the result,
-   and prints the configuration it would write with `prefilled_from` (the file path) and
+   merges the personal file when a real run would, validates the result, runs the same
+   refusal checks, including the resume comparison with a prepared recovery copy, and prints the configuration it would write with `prefilled_from` (the file path) and
    `prefilled_keys` (the dotted keys it took). It writes no settings, recovery copy, or Git
    exclusion. The private-setup procedure in `skills/shaka/references/repository-setup.md`
    tells the agent to run the plan and show it, beside the inferred commands, before the
@@ -203,7 +203,7 @@ consequence.
   clone not reading the file, both with and without personal values in its settings, with
   `--plan` matching the real run there and the refusal naming the next step; a
   resume after the personal file changed, and one with a different `--no-personal-file`
-  choice, each refusing with both causes named; and task-time
+  choice, each refusing with both causes named, with `--plan` refusing the same way; and task-time
   resolution not reading
   the file when a clone has individual settings, the repository has team settings, or the
   clone has no settings at all.
