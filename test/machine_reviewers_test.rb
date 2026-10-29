@@ -5,7 +5,7 @@ require_relative 'doctor_helper'
 require_relative 'repository_fixture'
 require 'shaka/configuration/machine_reviewers'
 
-# Builds a home directory holding ~/.agents/shaka/reviewers.yml.
+# Builds a home directory holding ~/.agents/shaka/ai-cli-reviewers.yml.
 module MachineReviewersFixture
   def with_home(reviewers, version: 1)
     Dir.mktmpdir('shaka-home') do |home|
@@ -16,7 +16,7 @@ module MachineReviewersFixture
   end
 
   def write_list(home, text)
-    path = File.join(home, '.agents/shaka/reviewers.yml')
+    path = File.join(home, '.agents/shaka/ai-cli-reviewers.yml')
     FileUtils.mkdir_p(File.dirname(path))
     File.write(path, text)
   end
@@ -85,7 +85,7 @@ class MachineReviewersTest < Minitest::Test
     with_home(reviewers, version:) do |home|
       error = assert_raises(Shaka::Error) { Machine.load(home:) }
       assert_includes error.message, message
-      assert_includes error.message, '.agents/shaka/reviewers.yml'
+      assert_includes error.message, '.agents/shaka/ai-cli-reviewers.yml'
     end
   end
 end
@@ -153,7 +153,7 @@ class MachineReviewersDoctorTest < Minitest::Test
         report, = doctor(root:, environment: { 'HOME' => home })
 
         assert_includes report, '[DEGRADED] Reviewer CLIs'
-        assert_includes report, "#{home}/.agents/shaka/reviewers.yml"
+        assert_includes report, "#{home}/.agents/shaka/ai-cli-reviewers.yml"
       end
     end
   end
@@ -201,7 +201,7 @@ class MachineReviewersRunTest < Minitest::Test
         output, _error, status = run_with_home(checkout, home)
 
         refute_predicate status, :success?
-        assert_includes JSON.parse(output).fetch('reason'), 'reviewers.yml'
+        assert_includes JSON.parse(output).fetch('reason'), 'ai-cli-reviewers.yml'
       end
     end
   end
