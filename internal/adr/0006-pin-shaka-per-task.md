@@ -47,14 +47,14 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    resolving the installed skill to its trusted source, the agent runs that source
    helper's new `pin --task KEY` command, where decision 4 defines the key. `pin` copies
    the installed revision into its own folder and prints the copy's helper path. The agent
-   keeps two paths for the task: the source helper, used only for `pin` and its variants,
-   and the copy's helper, used for every other command. The workflow already tells the
-   agent to keep the source helper path, so the copy's path is the one addition. The
-   workflow text and the reference links come from the copy, so a later update of the
-   source checkout does not change the code the task runs or the procedures it reads.
-   This holds for evidence because `InstallationIdentity.read` locates
-   `.shaka-install.json` relative to its own file, so the running copy reports its own
-   identity to `Evidence::Inputs.capture`.
+   keeps two paths for the task: the source helper, used after pinning only for `pin` and
+   its variants, and the copy's helper, used for every other command. The workflow already
+   tells the agent to keep the source helper path, so the copy's path is the one addition.
+   The workflow text and the reference links come from the copy, so a later update of the
+   source checkout does not change the code the task runs or the procedures it reads. This
+   holds for evidence because `InstallationIdentity.read` locates `.shaka-install.json`
+   relative to its own file, so the running copy reports its own identity to
+   `Evidence::Inputs.capture`.
 
    Intake calls made before `pin`, such as `update-check`, `seam check`, `doctor`, and
    `claim`, still run from the source checkout. They record no validation or review
@@ -72,11 +72,11 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    than the working tree means a fast-forward during `pin` cannot mix two revisions, and
    local edits in the source checkout never enter a copy. The packager already rechecks
    the source hash after copying and refuses a source that changed. The package ID is
-   content-addressed, so tasks on the same revision share one copy, and its atomic
-   rename handles two sessions pinning at once. The copy's `.shaka-install.json` records
-   the commit as a `revision` source, so `InstallationIdentity.read` and the
-   description's workflow version line name the code that actually ran. A copy is about
-   3 MB.
+   content-addressed, so tasks on the same revision share one copy, and its atomic rename
+   means an interrupted `pin` never leaves a partial copy. The copy's
+   `.shaka-install.json` records the commit as a `revision` source, so
+   `InstallationIdentity.read` and the description's workflow version line name the code
+   that actually ran. A copy is about 3 MB.
 
 3. **Evidence binding stays exact.** The fingerprint keeps the whole installation
    identity and the public snapshot keeps comparing it. Nothing in `Evidence::Result`
@@ -103,12 +103,12 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    [trust model](../../docs/workflow.md#trust-model) does not defend against, so `pin`
    rebuilds whatever commit it names.
 
-   When the copy is gone, as after `--prune`, `pin` rebuilds it from the source
-   checkout's history through decision 2's path. Earlier evidence binds again only when the rebuilt copy's
-   installation identity equals the recorded one; a changed origin URL spelling or a
-   newer packager changes it. When the identity differs, or the commit is no longer in
-   history, `pin` says that earlier evidence will not bind and the agent reruns
-   validation and review, as it does today.
+   When the copy is gone, as after `--prune`, `pin` rebuilds it from the source checkout's
+   history through decision 2's path. Earlier evidence binds again only when the rebuilt
+   copy's installation identity equals the recorded one; a changed origin URL spelling or
+   a newer packager changes it. When the identity differs, or the commit is no longer in
+   history, `pin` says that earlier evidence will not bind and the agent reruns validation
+   and review, as it does today.
 
 5. **Updates apply to the next task.** `update-check` stays an intake call of the source
    helper, and its guidance adds that an update reaches the next task. A maintainer who
@@ -122,10 +122,11 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    `pin` treats a record it cannot read as absent, so a format change costs one rerun
    rather than a wrong revision. `pin` holds a lock in the revisions directory while it
    reads or changes records and copies. Nothing removes a copy automatically, so no
-   running helper can lose its files. `pin --prune` removes copies that no record names
-   and records that `--release` never ended, after listing them; the maintainer runs it
-   between tasks. `install --verify` reports how many records and copies exist and the
-   copies' total size, and warns above 500 MB.
+   running helper can lose its files. `pin --prune` removes only copies that no record
+   names, so it is safe while tasks run. A record ends only through `--release`;
+   `install --verify` lists each record with its key and age, so the maintainer can
+   release one a task abandoned. It also reports the copies' total size and warns above
+   500 MB.
 
 ## Alternatives considered
 
@@ -167,5 +168,6 @@ sessions on one machine, since any session can update.
 - Tasks in flight when pinning ships rerun validation and review once: their earlier
   evidence names the source checkout's identity, and their first `pin` records a copy's.
 - ADR 0002's reason for keeping scheduled updates opt-in no longer applies to running
-  tasks once they pin; intake calls before `pin` still read the source checkout.
+  tasks once they pin. Intake calls before `pin` still read the source checkout, and a
+  host can reinject the source `SKILL.md`, limited by decision 1's rule.
   Turning scheduled updates on stays a separate decision.
