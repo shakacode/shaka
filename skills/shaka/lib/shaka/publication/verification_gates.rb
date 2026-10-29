@@ -9,18 +9,22 @@ module Shaka
     LABEL = '**Validation and review:**'
     UNKNOWN = "#{LABEL} UNKNOWN: no validation or review results were supplied for this revision.".freeze
     GAPS = '**Setup gaps:**'
+    CONTAINER_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#run-codex-reviews-in-a-container'
     # GitHub's author_association values for the owner, organization members, and collaborators.
     INSIDERS = %w[OWNER MEMBER COLLABORATOR].freeze
 
     module_function
 
-    # A reader needs to see a failure, a missing result, or fewer reviewers than configured; a routine
-    # run folds behind its summary. A completed review may still have reported findings, so the
-    # summary claims only that it ran. unlabeled counts the PR author's comments with no identity
-    # line or marker; it adds a Setup gaps line but says nothing about the run, so the run stays folded.
+    # A reader needs to see a failure, a missing result, fewer reviewers than configured, or a
+    # reviewer that read only the diff; a routine run folds behind its summary. A completed review
+    # may still have reported findings, so the summary claims only that it ran. unlabeled counts the
+    # PR author's comments with no identity line or marker; it says nothing about the run, so the run
+    # stays folded.
     def render(verdict, review_url = nil, shortfall = nil, unlabeled = 0)
-      text = shortfall || !routine?(verdict) ? line(verdict, review_url) : summary(verdict, review_url)
-      gaps = setup_gaps(shortfall, unlabeled, review_url)
+      blind = blind_reviewers(verdict)
+      folded = shortfall.nil? && blind.empty? && routine?(verdict)
+      text = folded ? summary(verdict, review_url) : line(verdict, review_url)
+      gaps = setup_gaps(shortfall, blind, unlabeled, review_url)
       gaps ? "#{text}\n\n#{gaps}" : text
     end
 
@@ -79,9 +83,31 @@ module Shaka
       end
     end
 
-    def setup_gaps(shortfall, unlabeled, url)
-      gaps = [(reviewer_gap(shortfall, url) if shortfall), (unlabeled_gap(unlabeled) if unlabeled.positive?)]
-      "#{GAPS} #{gaps.compact.join(' ')}" if gaps.any?
+    def setup_gaps(shortfall, blind, unlabeled, url)
+      gaps = [(reviewer_gap(shortfall, url) if shortfall), (blind_gap(blind) if blind.any?),
+              (unlabeled_gap(unlabeled) if unlabeled.positive?)].compact
+      "#{GAPS} #{gaps.join(' ')}" unless gaps.empty?
+    end
+
+    # A Codex reviewer whose every command failed, as when its sandbox cannot start in a container,
+    # answered from the diff in its prompt alone.
+    def blind_reviewers(verdict)
+      return [] unless verdict
+
+      results(verdict).last.filter_map do |result|
+        commands = result['commands']
+        next unless commands.is_a?(Hash) && commands['ran'].to_i.positive? && commands['succeeded'].to_i.zero?
+
+        result['reviewer']
+      end
+    end
+
+    def blind_gap(reviewers)
+      names = reviewers.map { |name| "`#{name}`" }.join(', ')
+      return "#{names} could not run any command, so it reviewed only the diff ([why](#{CONTAINER_GUIDE}))." if
+        reviewers.one?
+
+      "#{names} could not run any command, so they reviewed only the diff ([why](#{CONTAINER_GUIDE}))."
     end
 
     # The review comment holds each reviewer's rounds and any gap or fallback notice.
@@ -109,6 +135,6 @@ module Shaka
     end
 
     private_class_method :insider?, :read_at?, :routine?, :summary, :short_head, :results, :validations,
-                         :setup_gaps, :reviewer_gap, :unlabeled_gap, :review
+                         :setup_gaps, :blind_reviewers, :blind_gap, :reviewer_gap, :unlabeled_gap, :review
   end
 end
