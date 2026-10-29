@@ -47,8 +47,9 @@ probe sends no repository content. Disabling the probe leaves this step in place
    Record the answer in the task.
 
    Also offer to save the answer, with an option such as "Yes, and don't ask again".
-   Its preview, or the text below the question, shows the filled template and the
-   file it goes to. The template names the providers and relay service asked about,
+   Its preview, or the text below the question, shows the file and the template
+   with only its placeholders filled, no added heading or rewording. The template
+   names the providers and relay service asked about,
    this repository (or `OWNER/*` when the user asks for every repository of the
    owner), the user's name from `git config user.name`, and today's date. The file
    is the host's user-level instructions: `~/.claude/CLAUDE.md` for Claude Code,
