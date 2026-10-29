@@ -13,6 +13,7 @@ require_relative 'github/check_list'
 require_relative 'github/required_check_rules'
 require_relative 'github/review_evidence_reads'
 require_relative 'github/squash_comment'
+require_relative 'github/start_comment'
 require_relative 'github/prose_description'
 require_relative 'github/walkthrough_notes'
 

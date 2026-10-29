@@ -73,6 +73,10 @@ A label doesn't wake a chat. See [approval details](pr-verification.md#approval-
 
 ## Resume unfinished work
 
+When work on a GitHub issue starts, the agent comments on the issue with the same
+fields as **WIP Details**, so people watching it see who took it and how to resume.
+The branch isn't pushed yet, so **Owner** names the machine that holds it.
+
 Comment on any open PR. Wait for an answer before merging.
 
 A comment wakes the agent only while automatic follow-up is on. The handoff says

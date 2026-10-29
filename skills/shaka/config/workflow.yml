@@ -41,8 +41,8 @@ phases:
         ambiguous, whatever the task format. Obtain the task and its checkout before implementing.
       - Read the task through an available connection; if it is inaccessible, ask for its
         description and acceptance criteria. Keep requirements in the original tracker and
-        delivery state on GitHub. Reading a tracker does not authorize updating it; do not create
-        a duplicate issue. Link the work item from the PR only when sharing is authorized, and
+        delivery state on GitHub. Reading a tracker does not authorize updating it beyond the
+        issue start comment in Implement; do not create a duplicate issue. Link the work item from the PR only when sharing is authorized, and
         keep private task content and links out of public artifacts.
         On resume, read the current task plan, its recorded decisions, and linked PRs before
         choosing the next step. Reconcile them with live PR state and confirmed ownership;
@@ -263,6 +263,11 @@ phases:
         creating that worktree when the branch is not checked out. Pull or rebase an existing
         upstream. Edit in that worktree, and move the session into it before the first edit when the
         host can. Preserve user work. Run candidate code only in the authorized isolated checkout.
+      - When a new task answers a GitHub issue, post its start comment on that issue after
+        creating the branch and before the first edit, following
+        [announce the start](<{{package_root}}/skills/shaka/references/delivery.md#announce-the-start-on-the-issue>).
+        Skip it for a described task, another tracker, a private trial, a resumed or adopted
+        PR, or when the user asked not to comment.
       - Choose routine, reversible approaches yourself. Ask consequential questions with a
         recommendation, await required answers before dependent work, and continue independent work
         meanwhile. Retain decisions in the task or PR within its privacy; silence is not approval.
