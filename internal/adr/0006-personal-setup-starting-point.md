@@ -56,12 +56,20 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    later changes no existing clone. The one-source rule and the #715 precedence docs stay
    true.
 
+   Setup already refuses a clone whose private settings are not absent, so the file is
+   never read for a clone that has settings. Resuming an interrupted setup compares the
+   regenerated files with the prepared recovery copy; if the personal file changed in
+   between, the files differ and setup refuses with the existing "recovery copy differs"
+   error instead of mixing two versions.
+
 2. **The file may set only preference keys.** It uses the repository schema: `version: 1`
    and the same key paths, validated by the existing `RepositoryConfig` sub-schemas
    (`ReviewSchema`, `PrDescriptionSchema`, `OpeningSchema`, `WipSchema`, `BranchSchema`, and
    `PostImplementationSchema` for `checkpoint`) and by `ProseLimits` for `prose_limits`.
    The allowlist names leaf keys, so a key added later under one of these sections is
-   refused until someone adds it here. Allowed keys:
+   refused until someone adds it here. Entries in `review.local_review_agents` may carry
+   only `provider`, `model_family`, `model`, and `effort`; the entry schema also accepts a
+   prompt file, which is refused here for the reason below. Allowed keys:
 
    | Key | Why it is a preference |
    | --- | --- |
@@ -163,8 +171,10 @@ consequence.
   overriding a personal value, including a combination that breaks a linked-key rule;
   `--plan` returning the proposal while leaving settings, recovery storage, and exclusions
   untouched; `--from` ignoring the file; `seam init` output unchanged with a personal file
-  present; and task-time resolution not reading the file when a clone has individual
-  settings or the repository has team settings.
+  present; a prompt file on a personal reviewer entry being refused; setup refusing a clone
+  that already has settings without reading the file; and task-time resolution not reading
+  the file when a clone has individual settings, the repository has team settings, or the
+  clone has no settings at all.
 - `docs/settings-guide.md` and `docs/settings.md` describe the personal starting point, say
   it is read only when individual setup starts, and name it as a third home-directory file
   in "Which settings apply?". The private-setup procedure gains the proposal step in
