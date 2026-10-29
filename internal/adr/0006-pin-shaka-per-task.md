@@ -120,16 +120,19 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    variant runs from the source helper, so the current packager builds every copy and one
    revision at a time reads and writes the records. `pin` loads all the code it needs
    before copying, so a fast-forward of the source checkout during `pin` cannot mix
-   revisions in the running command. Records carry a format version; `pin` treats a record
-   it cannot read as absent, so a format change costs one rerun rather than a wrong
-   revision. `pin` holds a lock in the revisions directory while it reads or changes
-   records and copies. Nothing removes a copy automatically. `pin --prune` removes only
-   copies that no record names and that no record stopped naming in the last 24 hours.
-   When `--update` or `--release` stops a record naming a copy, `pin` notes the time, so a
-   validation or review run started before that change keeps its files; no single run
-   lasts a day. A record ends only through `--release`; `install --verify` lists each
-   record with its key and age, so the maintainer can release one a task abandoned. It
-   also reports the copies' total size and warns above 500 MB.
+   revisions in the running command. Records carry a format version. When resuming, `pin`
+   treats a record it cannot read as absent, so a format change costs one rerun rather
+   than a wrong revision. `pin` holds a lock in the revisions directory while it reads or
+   changes records and copies. Nothing removes a copy automatically. `pin --prune` removes
+   only copies that no record names and that no record stopped naming in the last 24
+   hours, and it refuses to run while any record is unreadable, so a format change never
+   exposes a running task's copy. When `--update` or `--release` stops a record naming a
+   copy, `pin` writes the time to a file for that copy beside the records, under the same
+   lock and format version, so a validation or review run started before that change keeps
+   its files; no single run lasts a day. A record ends only through `--release`; `install
+   --verify` lists each record with its key and age, and any unreadable ones, so the
+   maintainer can release one a task abandoned. It also reports the copies' total size and
+   warns above 500 MB.
 
 ## Alternatives considered
 
@@ -166,8 +169,9 @@ sessions on one machine, since any session can update.
   fast-forward during `pin`, rebuilding a removed copy with an equal and a changed
   identity, resuming before a PR exists, the same branch name in two repositories and
   review-only keys, `--update` moving a task while plain resume does not, `--release`
-  letting a new task on the same branch start fresh, an unreadable record format, and
-  that `--prune` keeps every copy a record names or stopped naming within 24 hours.
+  letting a new task on the same branch start fresh, resume and `--prune` with an
+  unreadable record, and that `--prune` keeps every copy a record names or stopped naming
+  within 24 hours.
 - Tasks in flight when pinning ships rerun validation and review once: their earlier
   evidence names the source checkout's identity, and their first `pin` records a copy's.
 - ADR 0002's reason for keeping scheduled updates opt-in no longer applies to running
