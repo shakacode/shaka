@@ -121,10 +121,11 @@ module Shaka
     def missing_note(missing, repository, content, task)
       return if missing.empty?
 
-      task = TaskSourceLine.fixes_issue(content, task, claimed(texts(content.merge('provenance' => nil)), repository))
+      prose = claimed(texts(content.merge('provenance' => nil)), repository)
       "The description says this PR fixes #{names(missing, repository)}, but GitHub will not close " \
         "#{missing.one? ? 'it' : 'them'} on merge. Put a keyword before each issue, as in `Fixes #1, fixes #2`, " \
-        "or use #{TaskSourceLine.stays_open_advice(missing, task)} when the issue stays open."
+        "or use #{TaskSourceLine.stays_open_advice(missing, TaskSourceLine.fixes_issue(content, task), prose)} " \
+        'when the issue stays open.'
     end
 
     def task_note(task, repository)

@@ -57,12 +57,13 @@ class ClosingIssuesTaskRelationTest < Minitest::Test
     assert_includes note, 'or use `Part of` when'
   end
 
-  def test_a_prose_claim_beside_a_fixes_relation_keeps_the_prose_advice
+  # Both the prose and the Task line claim the issue, so one correction must change both.
+  def test_a_prose_claim_beside_a_fixes_relation_names_both_places
     data = content('Fixes #9.', task: 9)
     data['provenance']['task_relation'] = 'fixes'
     note = Shaka::ClosingIssues.note(data, FakeGitHub.new([]))['closing_issues']
 
-    assert_includes note, 'or use `Part of` when'
+    assert_includes note, 'or use `task_relation` `part_of` and `Part of` in the prose when'
   end
 
   # The merge handoff reads the published body, so a partial Task line must read as Part of there too.
