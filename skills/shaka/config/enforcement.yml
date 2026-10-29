@@ -761,7 +761,8 @@ rules:
     enforced_by: agent
     note: >-
       `CiReviewWait.allowed_merge_states` returns UNSTABLE among the none and one states, so the command
-      accepts the merge once required checks pass. It cannot make an agent stop waiting.
+      accepts the merge once required checks pass. It cannot make an agent stop waiting. Under
+      `merge --auto` the command applies the all states instead and refuses UNSTABLE.
   - id: all-refuses-unstable
     phase: finish
     quote: do not merge while the state is UNSTABLE
