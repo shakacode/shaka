@@ -1013,18 +1013,15 @@ class PublicationCheckpointTest < Minitest::Test
     refute_includes body, 'Recommendation'
   end
 
-  def test_a_verdict_that_stops_merge_follows_the_recommendation
-    data = content
-    data['checkpoint']['verification_adequacy'] = 'cannot judge'
-    body = Shaka::Publication.description(data, nil, PULL)
-    assert_includes body, "Checkpoint: _Not published yet._\n\n" \
-                          "**Checkpoint on verification:** Cannot judge.\n\n**Next:**"
-    ['adequate', 'adequate with accepted gaps'].each do |verdict|
-      data['checkpoint']['verification_adequacy'] = verdict
-      refute_includes Shaka::Publication.description(data, nil, PULL), 'Checkpoint on verification'
+  def test_only_a_verdict_that_stops_merge_follows_the_recommendation
+    lead = lambda do |verdict|
+      data = content.tap { |fields| fields['checkpoint']['verification_adequacy'] = verdict }
+      Shaka::Publication.description(data, nil, PULL)
     end
-    data['checkpoint']['verification_adequacy'] = 'fine'
-    assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
+    assert_includes lead.call('cannot judge'), "Checkpoint: _Not published yet._\n\n" \
+                                               "**Checkpoint on verification:** Cannot judge.\n\n**Next:**"
+    assert_empty(['adequate', 'adequate with accepted gaps'].map(&lead).grep(/Checkpoint on verification/))
+    assert_raises(Shaka::Error) { lead.call('fine') }
   end
 
   def test_facts_only_the_checkpoint_reads_stay_out_of_the_description
