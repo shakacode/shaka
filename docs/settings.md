@@ -515,7 +515,7 @@ configuration. The PR description's [Verification](pr-verification.md#answers-fo
 then names it on the Setup gaps line.
 
 Run Codex reviews where its sandbox can start, such as on the host instead of in the
-container, or list another provider first in `local_review_agents`.
+container.
 
 ## `review.local_review_count`
 

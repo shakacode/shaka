@@ -19,8 +19,9 @@ class PublicationBlindReviewTest < Minitest::Test
     Shaka::Publication.description(PublicationRegressionTest.new(name).description_content, nil, nil, settings)
   end
 
+  # A second run that issued no command shows nothing about the sandbox, so the gap stays.
   def test_a_reviewer_whose_sandbox_refused_every_command_unfolds_the_line_and_is_named
-    rendered = render(BLIND, BLIND)
+    rendered = render(BLIND, BLIND, CODEX)
 
     assert_includes rendered, "## Verification\n\n**Validation and review:** `validate` passed (exit 0)"
     assert_includes rendered, "#{GAPS} `openai/codex` could not start its sandbox, so it reviewed only the diff ([why]("

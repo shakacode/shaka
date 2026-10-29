@@ -90,17 +90,19 @@ module Shaka
     end
 
     # A Codex reviewer whose sandbox refused every command, as in a container without user
-    # namespaces, answered from the diff in its prompt alone. A later run of the same reviewer
-    # that read the code clears it.
+    # namespaces, answered from the diff in its prompt alone. Only a run of that reviewer whose
+    # sandbox ran a command clears it; a run that issued none shows nothing about the sandbox.
     def blind_reviewers(verdict)
       return [] unless verdict
 
       reviews = results(verdict).last.group_by { |result| result['reviewer'] }
-      reviews.filter_map { |reviewer, runs| reviewer if runs.all? { |result| blind?(result['commands']) } }
+      reviews.filter_map { |reviewer, runs| reviewer if blind?(runs.map { |result| result['commands'] }) }
     end
 
-    def blind?(commands)
-      commands.is_a?(Hash) && commands['ran'].to_i.positive? && commands['sandbox_failed'].to_i == commands['ran'].to_i
+    # Runs that recorded commands decide, and each of them must have had every command refused.
+    def blind?(summaries)
+      counted = summaries.select { |commands| commands.is_a?(Hash) && commands['ran'].to_i.positive? }
+      counted.any? && counted.all? { |commands| commands['sandbox_failed'].to_i == commands['ran'].to_i }
     end
 
     def blind_gap(reviewers)
