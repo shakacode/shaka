@@ -48,28 +48,22 @@ session (use `$shaka` in Codex):
 /shaka https://github.com/OWNER/REPO/pull/123
 ```
 
-## Approve private-code reviews in Codex
+## Give consent once
 
-Shaka's local review sends your change to the reviewer you configured, such as
-Claude or Codex, using your own credentials. When Codex runs with
-[Auto-review](https://learn.chatgpt.com/docs/sandboxing/auto-review), a separate
-reviewer agent checks that command first. It can deny sending private code to
-another provider.
+When Shaka's local review would send your change to a provider other than your
+coding agent's, Shaka asks before the first review of a task. Answer **Yes, and don't ask again** and
+Shaka saves a consent statement to your own instructions file, then reuses it
+on later tasks without asking. The question shows the exact statement and file
+before you choose. If your agent can't write the file, it gives you the text to
+add yourself.
 
-Three separate permissions apply:
-
-- **The task.** Asking Shaka to deliver a task includes its local review.
-- **Your consent.** You agree that named providers may receive this
-  repository's code for review.
-- **Codex's decision.** Auto-review, or your organization's managed policy,
-  still decides each command. Your consent gives it context; it does not make
-  Codex run the command.
-
-### Give consent once
-
-Write a consent statement in the chat for one task, or in your own `AGENTS.md`
-for recurring reviews. Adjust the providers, repository, and exclusions. For the
-DeepSeek reviewer, name OpenRouter too, because the request passes through it:
+You can also write the statement yourself: in the chat for one task, or in your
+user-level instructions for every task, `~/.claude/CLAUDE.md` for Claude Code
+and `~/.codex/AGENTS.md` for Codex (`AGENTS.override.md` there if you have one),
+or the same file under `CLAUDE_CONFIG_DIR` or `CODEX_HOME` when you set one.
+Adjust the providers, repository, and exclusions. Write `OWNER/*` in place of
+`OWNER/REPO` to cover every repository that owner has. For the DeepSeek
+reviewer, name OpenRouter too, because the request passes through it:
 
 ```text
 Shaka review consent: local reviews of OWNER/REPO may send the committed diff,
@@ -91,7 +85,26 @@ Code, when that reviewer uses the same account and route: your agent already
 sends that provider the review packet. It then runs a tiny reviewer access check,
 enabled by
 [`review.startup_check`](settings.md#reviewstartup_check). Standing consent is
-reused without another question. Auto-review still decides each actual command.
+reused without another question. In Codex, Auto-review still decides each
+actual command.
+
+## Approve private-code reviews in Codex
+
+Shaka's local review sends your change to the reviewer you configured, such as
+Claude or Codex, using your own credentials. When Codex runs with
+[Auto-review](https://learn.chatgpt.com/docs/sandboxing/auto-review), a separate
+reviewer agent checks that command first. It can deny sending private code to
+another provider.
+
+Three separate permissions apply:
+
+- **The task.** Asking Shaka to deliver a task includes its local review.
+- **Your consent.** You agree that named providers may receive this
+  repository's code for review, as [Give consent once](#give-consent-once)
+  describes.
+- **Codex's decision.** Auto-review, or your organization's managed policy,
+  still decides each command. Your consent gives it context; it does not make
+  Codex run the command.
 
 A custom Auto-review policy, set with `[auto_review].policy` in Codex's
 `config.toml`, replaces the default policy instead of adding to it. Copy the
