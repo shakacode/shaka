@@ -14,13 +14,18 @@ module Shaka
       recheck_head(pull.dig('head', 'sha'), live)
       return note('rendering preview skipped', 'Fork PR: preview code stays unexecuted.') if fork_preview?(pull)
 
-      RenderingPreview.verify_supported!(@github)
+      kept_installed(RenderingPreview.verify_supported!(@github))
       return "rendering preview #{live[0, Handoff::SHORT]}" if RenderingPreview.current?(pull['body'], live)
 
       owe('rendering preview owed', 'Apply the reviewed rendering to this PR description with ' \
                                     '`description --rendering-preview-root DIR`, then inspect it on GitHub.')
     rescue Error => e
       owe('rendering preview unavailable', e.message)
+    end
+
+    # A changed guard or GitHub write stays installed, so the preview, current or owed, does not show its change.
+    def kept_installed(paths)
+      @notes << "Kept installed, not previewed: #{paths.join(', ')}." unless paths.empty?
     end
 
     def fork_preview?(pull)
