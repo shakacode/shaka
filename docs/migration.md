@@ -37,7 +37,7 @@ because the same line may hold a current instruction.
 
 The upgrade keeps your settings, script modes, and command arguments. Repaired
 scripts find the repository root with Git instead of counting parent directories,
-so a CI job that runs them inside a container must first
+so a CI job that runs them inside a container may first need to
 [mark the checkout safe](configure-repository.md#run-the-scripts-in-a-ci-container).
 Unrelated tools in `.agents/bin/` stay where they are. The upgrade command runs
 none of your repository's scripts, so check the result and run your validation before
