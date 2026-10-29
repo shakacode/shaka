@@ -8,9 +8,9 @@ module Shaka
   class Doctor
     # Reports whether this machine has an alias fit to publish.
     #
-    # The agent copies the alias into the WIP Details Owner field, which accepts any single
-    # line of text. So this check, not the renderer, is what stands between an unsafe value
-    # or the machine's own name and every public pull request it would appear in.
+    # The agent copies the alias into the WIP Details Owner field. This check warns before
+    # publication; `description` then refuses the machine's own name, and any other alias
+    # when SHAKA_MACHINE_ALIAS is valid and differs.
     class MachineAlias
       include Check
 
