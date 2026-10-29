@@ -34,7 +34,12 @@ class SeamUpgradeFalsePositiveTest < Minitest::Test
     'ci/notes.txt' => %(sh .agents/bin/test; sh .agents/bi""n/test\n),
     '.agents/run.rb' => %(system(File.expand_path("bin/validate", __dir__))\n),
     'lib/app.rb' => %(system(File.join(app_home, ".agents", "bin", "validate"))\n),
-    'ci/docker.sh' => %(docker run -w .agents image ./bin/validate\n)
+    'ci/docker.sh' => %(docker run -w .agents image ./bin/validate\n),
+    '.agents/skills/plan/run.rb' =>
+      %(system(File.expand_path(\n  "bin/validate",\n  File.expand_path("../..", __dir__)\n))\n),
+    '.agents/run.sh' => %(cd "$(dirname "$0")" && bin/validate\n),
+    'lib/wrapped.rb' => %(system("bin/validate",\n  chdir: ".agents")\n),
+    'lib/wrapped.py' => %(subprocess.run(["bin/validate"],\n    cwd=".agents")\n)
   }.freeze
 
   def test_nearby_real_references_still_block
@@ -110,10 +115,22 @@ end
 class SeamUpgradeRetainedToolRoutingTest < Minitest::Test
   include SeamUpgradeFileBlockers
 
+  REAL_ALIASES = [
+    %(#!/bin/sh\nPATH=".agents/bin:$PATH"\nvalidate\n),
+    %(#!/bin/sh\ncd .agents/bin && ./validate\n),
+    %(#!/bin/sh\ncd .agents/bin\n),
+    "#!/bin/sh\ncase \"$1\" in\n  .agents/bin/*|.agents/shaka/bin/lint) echo ci ;;\nesac\n",
+    "#!/bin/sh\ncase \"$1\" in\n  .agents/bin/*|.agents/shaka/bin/[l]*) echo ci ;;\nesac\n",
+    %(#!/usr/bin/env ruby\nsystem(".agents/bin/" + name)\n),
+    %(#!/usr/bin/env node\nexecSync('.agents/bin/' + process.argv[2])\n),
+    %(#!/usr/bin/env ruby\nsystem(".agents/bin/\#{name}")\n)
+  ].freeze
+
   DETECTOR = <<~SHELL
     #!/bin/sh
     # Keep this before the broader .agents/** arm.
     case "$1" in
+      .agents/bin/*.md|.agents/shaka/*.md) echo docs ;;
       .agents/bin/*|.agents/bin/**/*|.agents/shaka/bin/*|.agents/shaka/bin/**/*) echo ci ;;
       .agents/*|.agents/**/*) echo docs ;;
     esac
@@ -136,11 +153,7 @@ class SeamUpgradeRetainedToolRoutingTest < Minitest::Test
   end
 
   def test_real_aliases_of_the_command_directory_still_block
-    [%(#!/bin/sh\nPATH=".agents/bin:$PATH"\nvalidate\n),
-     %(#!/bin/sh\ncd .agents/bin && ./validate\n),
-     %(#!/bin/sh\ncd .agents/bin\n),
-     "#!/bin/sh\ncase \"$1\" in\n  .agents/bin/*|.agents/shaka/bin/lint) echo ci ;;\nesac\n",
-     %(#!/usr/bin/env ruby\nsystem(".agents/bin/\#{name}")\n)].each do |source|
+    REAL_ALIASES.each do |source|
       with_retained_tool do |root|
         write_executable(root, 'script/run', source)
         assert_includes(plan_for(root).blockers.join, 'script/run:', source)

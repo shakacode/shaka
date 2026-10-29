@@ -26,8 +26,8 @@ module Shaka
           end
         end
 
-        # In these languages a string only names a path; a change of directory is a call the check above already
-        # finds. So a directory and a command on separate lines are two strings, not a command run inside it.
+        # In these languages a string only names a path, so a directory and a command count together only inside
+        # one statement, such as a call with a working-directory option that a formatter wrapped over lines.
         def program_source?(text, path)
           path.to_s.match?(/\.(?:rb|py|js|cjs|mjs|ts)\z/) ||
             text.match?(%r{\A#!\S*(?:/|env\s+)(?:ruby|python3?|node)\b})
@@ -55,8 +55,17 @@ module Shaka
           names = command_paths.map { |command| Regexp.escape(File.basename(command)) }.join('|')
           # A bin/ inside a longer path, such as a full old or new command path, is not a command beside the directory.
           command = %r{(?<![\w./-])(?:\./)?bin[/'"\s,]+(?:#{names})\b}o
-          sources = line_local ? text.each_line : [text]
+          sources = line_local ? statements(text) : [text]
           sources.any? { |source| source.match?(bare) && source.match?(command) }
+        end
+
+        # Physical lines joined while a bracket stays open, so a wrapped call reads as one statement.
+        def statements(text)
+          depth = 0
+          text.each_line.chunk_while do |line, _|
+            depth = [depth + line.count('([{') - line.count(')]}'), 0].max
+            depth.positive?
+          end.map(&:join)
         end
       end
     end
