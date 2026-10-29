@@ -35,7 +35,7 @@ module Shaka
       def plan
         files = generated_files
         refuse_trusted_or_adopted!
-        source_available?(PrivateRecovery.new(root: @root, assign_identity: false), files)
+        preflight(PrivateRecovery.new(root: @root, assign_identity: false), files)
         { 'status' => 'plan', 'config' => files.fetch(Configuration::Paths.at(@root, LAYOUT.contract)) }
           .merge(prefill_report)
       end

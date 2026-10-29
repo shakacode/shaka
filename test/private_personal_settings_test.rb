@@ -171,6 +171,18 @@ class PrivatePersonalSettingsBoundaryTest < Minitest::Test
     end
   end
 
+  def test_private_setup_on_a_team_repository_refuses_without_reading_the_file
+    with_setup do |root, _ref|
+      adopt_team_settings(root)
+      with_personal("not: [valid\n") do
+        %i[setup plan].each do |run|
+          error = assert_raises(Shaka::Error) { setup_with(root, head(root)).public_send(run) }
+          assert_includes error.message, 'Trusted Shaka configuration already exists'
+        end
+      end
+    end
+  end
+
   def test_individual_settings_resolve_without_reading_the_file
     with_setup do |root, ref|
       with_personal { setup_with(root, ref).setup }
@@ -239,6 +251,28 @@ class PrivatePersonalSettingsRefusalTest < Minitest::Test
         interrupt(setup_with(root, ref))
         error = assert_raises(Shaka::Error) { setup_with(root, ref, no_personal_file: true).setup }
         assert_includes error.message, 'rerun without --no-personal-file'
+      end
+    end
+  end
+
+  def test_plan_refuses_an_unwritable_destination_like_setup
+    with_setup do |root, ref|
+      FileUtils.mkdir_p(File.join(root, '.agents'))
+      File.chmod(0o555, File.join(root, '.agents'))
+      with_personal do
+        %i[plan setup].each { |run| assert_includes refusal(root, ref, run), 'is not writable' }
+      end
+    ensure
+      File.chmod(0o755, File.join(root, '.agents'))
+    end
+  end
+
+  def test_plan_on_an_unchanged_interrupted_setup_can_resume
+    with_setup do |root, ref|
+      with_personal do
+        interrupt(setup_with(root, ref))
+        assert_equal 'plan', setup_with(root, ref).plan.fetch('status')
+        assert_equal 'complete', setup_with(root, ref).setup.fetch('status')
       end
     end
   end

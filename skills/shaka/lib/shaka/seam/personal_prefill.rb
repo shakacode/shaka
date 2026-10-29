@@ -19,7 +19,7 @@ module Shaka
         "#{message}#{personal_hint}"
       end
 
-      # Setup records neither the file's contents nor the skip choice, so name both causes.
+      # Setup records neither the file's contents nor the skip choice, so name each possible cause.
       def personal_hint
         if @personal
           ". #{@personal.path} may have changed since the interrupted setup, or that setup skipped it; " \
@@ -27,7 +27,7 @@ module Shaka
         elsif @options[:no_personal_file]
           '. The interrupted setup may have used the personal settings file; rerun without --no-personal-file'
         else
-          ''
+          ". If the interrupted setup read ~/#{Configuration::Paths::PERSONAL_SETTINGS}, restore that file"
         end
       end
 
@@ -36,8 +36,8 @@ module Shaka
         return base unless personal
 
         merged = deep_merge(base, personal.values)
-        reviewers = @options[:local_review_agents]
-        merged['review'] = merged['review'].merge('local_review_agents' => reviewers) if reviewers
+        flagged = base['review'].slice('local_review_agents') if @options[:local_review_agents]
+        merged['review'] = merged['review'].merge(flagged) if flagged
         validate_merged!(base, merged)
         merged
       end
@@ -49,7 +49,7 @@ module Shaka
       end
 
       def personal_eligible?
-        return false if @options[:no_personal_file]
+        return false if @options[:no_personal_file] || seeding?
 
         source = Configuration.private_source(root: @root, ref: @ref)
         source.trusted_source != 'present' && source.status != 'complete'
