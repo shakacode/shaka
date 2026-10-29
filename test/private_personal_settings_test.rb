@@ -121,6 +121,22 @@ class PrivatePersonalSettingsTest < Minitest::Test
     end
   end
 
+  MALFORMED_REVIEWERS = {
+    'checkpoint.reviewer' => { 'version' => 1, 'checkpoint' => { 'reviewer' => 'codex' } },
+    'pr_description.opening_check.reviewer' => { 'version' => 1,
+                                                 'pr_description' => { 'opening_check' => { 'reviewer' => 'codex' } } }
+  }.freeze
+
+  def test_a_malformed_reviewer_identity_names_its_key
+    with_setup do |root, ref|
+      MALFORMED_REVIEWERS.each do |key, settings|
+        with_personal(settings) do |path|
+          assert_includes assert_raises(Shaka::Error) { setup_with(root, ref).setup }.message, "#{path} #{key}:"
+        end
+      end
+    end
+  end
+
   def test_a_reviewer_flag_replaces_the_personal_reviewer_list
     with_setup do |root, ref|
       with_personal do
@@ -256,6 +272,7 @@ class PrivatePersonalSettingsRefusalTest < Minitest::Test
   end
 
   def test_plan_refuses_an_unwritable_destination_like_setup
+    skip 'root can write to any directory' if Process.uid.zero?
     with_setup do |root, ref|
       FileUtils.mkdir_p(File.join(root, '.agents'))
       File.chmod(0o555, File.join(root, '.agents'))

@@ -2,6 +2,7 @@
 
 require 'yaml'
 require_relative '../error'
+require_relative '../reviewer_selection'
 require_relative 'paths'
 
 module Shaka
@@ -22,6 +23,7 @@ module Shaka
         branches.name wip.include_checkout_path
       ].freeze
       REVIEWER_KEYS = %w[provider model_family model effort].freeze
+      REVIEWER_IDENTITIES = %w[checkpoint.reviewer pr_description.opening_check.reviewer].freeze
 
       # Nil when the file is absent or no home directory is known.
       def self.load(home:)
@@ -51,6 +53,7 @@ module Shaka
         @values = values
         @keys = leaves(values, '')
         reviewer_entries!
+        reviewer_identities!
       end
 
       private
@@ -63,6 +66,16 @@ module Shaka
 
           raise Error, "#{path} cannot set #{dotted}: personal settings hold preferences only, " \
                        'not repository facts or prompt files'
+        end
+      end
+
+      # The schema's own parse error names the value but not the key.
+      def reviewer_identities!
+        REVIEWER_IDENTITIES.each do |dotted|
+          value = @values.dig(*dotted.split('.'))
+          ReviewerSelection.parse(value) unless value.nil?
+        rescue Error => e
+          raise Error, "#{path} #{dotted}: #{e.message}"
         end
       end
 

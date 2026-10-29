@@ -16,7 +16,7 @@ module Shaka
         return "#{message}. This clone already has settings; change #{Configuration::Paths::NEW_CONTRACT} directly" if
           source.status == 'complete'
 
-        "#{message}#{personal_hint}"
+        "#{message}#{personal_hint if source.status == 'partial'}"
       end
 
       # Setup records neither the file's contents nor the skip choice, so name each possible cause.
