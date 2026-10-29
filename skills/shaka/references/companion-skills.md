@@ -67,11 +67,10 @@ A selected companion technique applies within the Shaka phase it concerns.
 
 ## Consume verification evidence
 
-Carry companion verification evidence into the existing verification record;
-Shaka's current-head requirements override a companion's verdict-reuse policy.
+Carry companion verification evidence into the existing verification record: the
+command, the commit it ran on, the observed result, its artifacts, and what it did not
+cover. Shaka's current-head requirements override a companion's verdict-reuse policy.
 Record applied skills through [skill attribution](skill-attribution.md).
-The [product guide](https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#hand-verification-evidence-back-to-shaka)
-lists what that record shows the user.
 
 ## Use PR-body advice inside the managed description
 
