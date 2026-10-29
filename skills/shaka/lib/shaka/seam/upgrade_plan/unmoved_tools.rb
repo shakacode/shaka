@@ -52,7 +52,7 @@ module Shaka
           text = shell_scripts[path]
           return false unless text
 
-          earlier = text[0, text.index(line) || 0].each_line.grep(case_arm).join
+          earlier = text[0, text.index(line) || text.size].each_line.grep(case_arm).join
           moved_command_names.any? { |name| glob_matches?(new_layout_globs(earlier), "bin/#{name}", :any?) }
         end
 
@@ -96,7 +96,8 @@ module Shaka
         # A name filled in at run time, or joined or appended as a variable, may be a moved command.
         def composed_command_path
           directory = Regexp.escape(PATHS::COMMAND_DIRECTORY)
-          @composed_command_path ||= %r{#{directory}(?:/(?:\#\{|\$|\{|%)|/?['"]?\s*(?:\+|,\s*[^'"\s])|['"]\)?\s*/\s*\w)}
+          @composed_command_path ||=
+            %r{#{directory}(?:/['"]?(?:\#\{|\$|\{|%)|/?['"]?\s*(?:\+|<<|,\s*(?:[^'"\s]|$))|['"]\)?\s*/\s*\w)}
         end
 
         def relative_command_call?(text)

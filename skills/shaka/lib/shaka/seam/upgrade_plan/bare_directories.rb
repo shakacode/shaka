@@ -41,7 +41,8 @@ module Shaka
         end
 
         def directory_change_pattern(directory)
-          change = /(?:(?:cd|pushd)\s+|chdir\s*\()[^\n]*?|env\s+(?:[^\n]*?\s)?(?:-[A-Za-z]*C\s*|--chdir[=\s]\s*)\S*?/
+          change = /(?:(?:cd|pushd)\s+|chdir(?:\s*\(|\s+))[^\n]*?|
+                    env\s+(?:[^\n]*?\s)?(?:-[A-Za-z]*C\s*|--chdir[=\s]\s*)\S*?/x
           /(?<![\w-])(?:#{change})(?<![\w.-])#{Regexp.escape(directory)}(?![\w.-])/
         end
 

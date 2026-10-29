@@ -42,7 +42,8 @@ class SeamUpgradeFalsePositiveTest < Minitest::Test
     'lib/wrapped.py' => %(subprocess.run(["bin/validate"],\n    cwd=".agents")\n),
     'lib/commented.py' => "subprocess.run([\"bin/validate\"],  # 1) validate files\n    cwd=\".agents\")\n",
     'spec/block_spec.rb' => %(Dir.chdir ".agents" do\n  system "bin/validate"\nend\n),
-    'lib/back_out.rb' => %(cmd = File.join(root, ".agents", "shaka", "..", "bin", "validate")\n)
+    'lib/back_out.rb' => %(cmd = File.join(root, ".agents", "shaka", "..", "bin", "validate")\n),
+    'lib/back_out_inside.rb' => %(cmd = File.join(root, ".agents", "shaka/../bin/validate")\n)
   }.freeze
 
   def test_nearby_real_references_still_block
@@ -128,6 +129,10 @@ class SeamUpgradeRetainedToolRoutingTest < Minitest::Test
     %(#!/usr/bin/env node\nexecSync('.agents/bin/' + process.argv[2])\n),
     %(#!/usr/bin/env ruby\nsystem(".agents/bin/\#{name}")\n),
     %(#!/usr/bin/env python3\nsubprocess.run([Path(".agents/bin") / cmd])\n),
+    %(#!/bin/sh\nexec .agents/bin/"$1"\n),
+    %(#!/usr/bin/env ruby\nsystem(".agents/bin/" << name)\n),
+    %(#!/usr/bin/env ruby\nsystem(File.join(".agents/bin",\n  ARGV[0]))\n),
+    %(#!/usr/bin/env ruby\nDir.chdir ".agents/bin" do\n  system "./validate"\nend\n),
     "#!/bin/sh\ncase \"$1\" in\n  .agents/shaka/*) echo docs ;;\n  " \
     ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n"
   ].freeze

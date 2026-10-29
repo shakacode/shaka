@@ -45,7 +45,8 @@ module Shaka
             line.gsub(joined) do |match|
               segments = ::Regexp.last_match(2).scan(segment).map(&:last)
               # A step back out of a directory is left for the traversal checks.
-              segments.intersect?(%w[. ..]) ? match : %("#{[PATHS::DIRECTORY, *segments].join('/')}")
+              steps = segments.flat_map { |part| part.split('/') }
+              steps.intersect?(%w[. ..]) ? match : %("#{[PATHS::DIRECTORY, *segments].join('/')}")
             end
           end
         end
