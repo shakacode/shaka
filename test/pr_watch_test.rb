@@ -208,6 +208,16 @@ class PrWatchThroughputTest < Minitest::Test
     end
     assert_equal 'checks_terminal', result
   end
+
+  def test_a_merge_time_failure_still_lets_the_closed_watch_wake
+    failing = Object.new
+    def failing.merged = raise(Shaka::Error, "patch\nrefused")
+    result = nil
+    assert_output(nil, "shaka: merge time not recorded: patch refused\n") do
+      result = watch([frame, frame(state: 'MERGED')], throughput: failing)
+    end
+    assert_equal 'closed', result
+  end
 end
 
 class PrWatchTransitionsTest < Minitest::Test

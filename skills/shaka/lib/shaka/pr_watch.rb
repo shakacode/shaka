@@ -37,10 +37,9 @@ module Shaka
     end
 
     def call
-      reason = pr_change_reason || seed_comments
-      return reason if reason
-
-      wait_until(@clock.call + @timing.fetch(:timeout))
+      reason = pr_change_reason || seed_comments || wait_until(@clock.call + @timing.fetch(:timeout))
+      record_merge if reason == 'closed'
+      reason
     end
 
     private

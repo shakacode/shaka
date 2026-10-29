@@ -5,13 +5,13 @@ require_relative '../publication/rendering_preview'
 
 module Shaka
   class PrWatch
-    # Fills the current head's check start and ready time from GitHub. It rewrites only the marked stats
+    # Fills the current head's check start, ready time, and merge time from GitHub. It rewrites only the marked stats
     # block and the spend after the model line.
     class ThroughputPublisher
       QUERY = <<~GRAPHQL.freeze
         query($owner: String!, $name: String!, $number: Int!) {
           repository(owner: $owner, name: $name) {
-            pullRequest(number: $number) { headRefOid
+            pullRequest(number: $number) { headRefOid mergedAt
               commits(last: 1) { nodes { commit { #{ThroughputLine::HEAD_CHECKS} } } } } } }
       GRAPHQL
 
@@ -45,6 +45,22 @@ module Shaka
           next unless safe_to_write?(body)
 
           return write(updated)
+        end
+      end
+
+      # Writes the merge time only into a block that already describes the merged head.
+      def merged
+        pull = timeline
+        return unless pull['mergedAt']
+
+        stamp = Time.iso8601(pull['mergedAt']).utc.iso8601
+        2.times do
+          body = description_body
+          return unless ThroughputStats.read(body)&.fetch('head', nil) == pull['headRefOid']
+
+          updated = ThroughputStats.update(body, 't3' => stamp)
+          return if updated == body
+          return write(updated) if description_body == body
         end
       end
 

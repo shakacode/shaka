@@ -52,6 +52,14 @@ module Shaka
         nil
       end
 
+      # A GitHub merge click gets no later description publish, so the watch records the merge time.
+      def record_merge
+        @throughput&.merged
+      rescue StandardError => e
+        warn "shaka: merge time not recorded: #{e.message.gsub(/[\r\n]+/, ' ')}"
+        nil
+      end
+
       def required_names(required) = required.filter_map { |row| row['name'] if row.is_a?(Hash) }
 
       def gate_green?(required, checks)
