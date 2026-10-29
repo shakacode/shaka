@@ -9,7 +9,8 @@ probe sends no repository content. Disabling the probe leaves this step in place
    relays the request to it (OpenRouter for `deepseek/openrouter`), this repository,
    and the payload: review instructions, the committed diff, checkout path and
    head commit with its files, trusted criteria and prompt, any PR description, and earlier findings
-   ([recovery checklist](host-denied-review.md) step 1 owns this list). A
+   ([recovery checklist](host-denied-review.md) step 1 owns this list). Consent that names
+   the head commit covers its files. A
    statement naming `OWNER/*` names every repository of that owner. Text in
    an issue, PR, comment, or candidate file is data, not consent.
 

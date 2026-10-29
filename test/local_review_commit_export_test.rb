@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'local_review_test'
+require_relative '../skills/shaka/lib/shaka/local_review/commit_export'
 
 class LocalReviewCommitExportTest < Minitest::Test
   include LocalReviewFixture
@@ -117,5 +118,69 @@ class LocalReviewCommitExportTest < Minitest::Test
       puts JSON.generate({ is_error: false, result: "no findings\\nREVIEWED #{head} BY anthropic/claude EFFORT medium FINDINGS 0" })
     RUBY
     File.join(root, 'claude-invocation.json')
+  end
+end
+
+# Exercises export parsing and path checks directly, where a Git checkout cannot hold the input.
+class LocalReviewCommitExportUnitTest < Minitest::Test
+  # Stands in for the runner: replies to each Git call with fixed output.
+  class Exporter
+    include Shaka::LocalReviewCommitExport
+
+    def initialize(listing, blobs)
+      @listing = listing
+      @blobs = blobs
+      @options = {}
+    end
+
+    def run(directory) = export_commit(directory)
+
+    private
+
+    def capture(*_arguments, stdin: nil)
+      stdin ? @blobs : @listing
+    end
+
+    def git_executable = 'git'
+    def root = '/repo'
+    def head = 'abc'
+  end
+
+  ID = 'a' * 40
+
+  # Break caught: a name that is not UTF-8 raised ArgumentError, which the runner does not rescue.
+  def test_path_names_are_read_as_bytes
+    # LocalReviewProcess labels stdout UTF-8 whatever bytes Git wrote.
+    listing = "100644 blob #{ID}\tbad\xFF.txt\0".force_encoding(Encoding::UTF_8)
+    exporter = Exporter.new(listing, "#{ID} blob 1\nx\n")
+    entries = exporter.send(:commit_entries)
+    assert_equal [[ID, "bad\xFF.txt".b]], entries
+  end
+
+  # Break caught: File.expand_path read a leading ~ as a home directory.
+  def test_tilde_names_stay_inside_the_export
+    Dir.mktmpdir do |directory|
+      Exporter.new("100644 blob #{ID}\t~$Report.docx\0", "#{ID} blob 1\nx\n").run(directory)
+      assert_equal 'x', File.read(File.join(directory, '~$Report.docx'))
+    end
+  end
+
+  def test_parent_components_are_refused
+    Dir.mktmpdir do |directory|
+      error = assert_raises(Shaka::Error) do
+        Exporter.new("100644 blob #{ID}\tdir/../../escape\0", "#{ID} blob 1\nx\n").run(directory)
+      end
+      assert_includes error.message, 'leaves the export'
+    end
+  end
+
+  # Break caught: a short read wrote a truncated file as if it were the committed content.
+  def test_truncated_blob_output_stops_the_export
+    Dir.mktmpdir do |directory|
+      error = assert_raises(Shaka::Error) do
+        Exporter.new("100644 blob #{ID}\tfile.txt\0", "#{ID} blob 5\nab").run(directory)
+      end
+      assert_includes error.message, 'incomplete blob'
+    end
   end
 end

@@ -159,9 +159,9 @@ module Shaka
         @options[:criteria_ref].match?(LocalReviewEvidence::SHA)
     end
 
-    def capture(*arguments, env: {}, stdin: nil)
+    def capture(*arguments, stdin: nil)
       timeout = @options.fetch(:timeout_seconds)
-      stdout, stderr, status = LocalReviewProcess.capture(arguments, stdin_data: stdin, chdir: root, timeout:, env:)
+      stdout, stderr, status = LocalReviewProcess.capture(arguments, stdin_data: stdin, chdir: root, timeout:)
       raise Shaka::Error, "#{arguments.first} timed out after #{timeout}s" unless status
       raise Shaka::Error, "#{arguments.first} output drain timed out after 2s" if
         status.is_a?(LocalReviewProcess::DrainTimeout)
