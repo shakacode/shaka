@@ -20,6 +20,7 @@ require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/github/pull_timeline'
 require_relative '../lib/shaka/publication/timeline_steps'
 require_relative '../lib/shaka/attention'
+require_relative '../lib/shaka/post_implementation/stale'
 require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
 require_relative '../lib/shaka/hosts/codex_wake'
@@ -404,6 +405,7 @@ begin
                notes = prose_note.merge(guide).merge(Shaka::ClosingIssues.note(described, github))
                published.merge('opening' => opening, 'usage_records' => usage_records).merge(notes).tap do |result|
                  result['attention'] = attention if attention
+                 result['stale_checkpoint'] = Shaka::PostImplementationStale.new(github).call
                  result['cursor_usage_refresh'] = refresh if refresh
                end
              end
@@ -441,7 +443,15 @@ begin
              merge.review_floor = Shaka::MergeReviewFloor.from(seam, confirmed_head: options[:confirmed_head])
              merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
                         limits: merge_limits(options, seam), squash_message:)
-           when 'attention' then Shaka::Attention.new(github).call(state: options.fetch(:state))
+           when 'attention'
+             state = options.fetch(:state)
+             labels = Shaka::Attention.new(github).call(state:)
+             # Leaving the merge wait means the PR changes; a checkpoint for an older head must not look ready.
+             if state == 'merge'
+               labels
+             else
+               labels.merge('stale_checkpoint' => Shaka::PostImplementationStale.new(github).call)
+             end
            when 'squash-message'
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))
              github.squash_comment(head: options.fetch(:head), message:)

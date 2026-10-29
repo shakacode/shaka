@@ -571,7 +571,10 @@ was explicitly skipped, the agent publishes a separate squash-message comment.
 
 Check that the message covers the commit in the handoff, then paste its title and
 body into GitHub's squash merge boxes. The agent refreshes the message when the
-commit changes. When the agent submits an authorized merge, it supplies that
+commit changes. After new commits land, Shaka marks the older checkpoint as outdated
+when the agent next takes the PR out of `awaiting-merge-approval` or updates its
+description, so GitHub hides that merge text until a checkpoint for the new commit
+appears. When the agent submits an authorized merge, it supplies that
 message itself.
 
 GitHub fills those boxes from a repository setting, by default with every branch
