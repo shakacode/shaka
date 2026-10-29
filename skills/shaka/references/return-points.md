@@ -1,11 +1,11 @@
-# Human attention checkpoints
+# Return points
 
-A human attention checkpoint saves human guidance and the code state it applies
+A return point saves human guidance and the code state it applies
 to. Use it when an attempt goes wrong: return to the earlier guidance, revise it,
 and produce a fresh result. This is an agent procedure using Git and existing task
 and PR records. Ruby does not capture snapshots, restore files, or verify human confirmation.
 The existing `checkpoint` command checks value, model/effort, and start authorization;
-it does not save these checkpoints or validate their snapshots.
+it does not save return points or validate their snapshots.
 
 ## Record human guidance
 
@@ -16,8 +16,8 @@ green checks, or an agent's proposed approach alone confirms nothing. Record exa
 what the human accepted: objective, approach, next action, or finished result.
 Existing `go` authorization can confirm intake without another confirmation turn.
 
-Keep one compact checkpoint in the existing task record. Once a PR exists, publish
-the public-safe checkpoint list described below. If the host cannot retain the record
+Keep one compact return point in the existing task record. Once a PR exists, publish
+the public-safe return point list described below. If the host cannot retain the record
 durably, save it outside
 disposable checkouts in approved private local storage and name that location in
 the owning chat. Keep private context out of public summaries, including details.
@@ -34,25 +34,25 @@ A clean committed revision identifies tracked code. For relevant uncommitted,
 untracked, or ignored work, preserve and inventory it separately in private storage.
 Verify the backup can recover those files, including deletions and staged state
 when they matter. A revision alone cannot recover them. Mark an incomplete
-checkpoint **not restorable** and explain the missing state; keep its guidance usable
+return point **not restorable** and explain the missing state; keep its guidance usable
 for discussion without promising a complete restore.
 
 Request human attention through the existing decision and WIP paths for a
 consequential choice, human-action blocker, or rejected product/architecture result.
 Ask returns a ready head; Auto continues when authorized and gates pass.
-A request for attention becomes a checkpoint only after human guidance arrives.
+A request for attention becomes a return point only after human guidance arrives.
 
-## Make checkpoint labels readable on the PR
+## Make return point labels readable on the PR
 
-Once a PR exists, keep a public-safe checkpoint list in its description. Pair each
+Once a PR exists, keep a public-safe return point list in its description. Pair each
 C-number with a name, a short account of the human guidance, and the full code
-revision it applies to. State which checkpoint the active attempt starts from.
+revision it applies to. State which return point the active attempt starts from.
 A bare “C2” or a revision alone does not explain what the reader is returning to.
 Keep private guidance and recovery locations in the private task record instead.
 
 For example, with real revision links substituted:
 
-| Checkpoint | Human guidance | Code revision |
+| Return point | Human guidance | Code revision |
 | --- | --- | --- |
 | C1 — Initial request | Fix escaped separators while preserving current syntax | FULL_REVISION_LINK |
 | C2 — Parser direction | Use the existing parser; retain the escaped-separator failing case | FULL_REVISION_LINK |
@@ -68,7 +68,7 @@ For example:
 > Return to C2 — Parser direction. Keep the acceptance criteria, use the existing parser, discard
 > the abstraction, and retain the failing edge case we discovered.
 
-1. Read the named checkpoint and new instruction. Identify the active attempt and
+1. Read the named return point and new instruction. Identify the active attempt and
    what the human wants to keep. If the identifier, snapshot, or instruction is
    missing, inaccessible, or ambiguous, preserve available work and ask for the
    specific missing fact before changing code. Establish replacement guidance
@@ -80,13 +80,13 @@ For example:
    conflicts. An old timestamp is not proof that a writer stopped.
 3. Preserve the abandoned attempt in a recoverable local branch or other verified
    snapshot before changing the active tree. Include its dirty work and evidence
-   links. Record the preserved revision and backup location in the checkpoint.
+   links. Record the preserved revision and backup location in the return point.
    Local references alone are insufficient if that checkout will be discarded.
 4. Default to a new corrective commit on the existing PR branch that restores the
-   checkpoint's owned code. Keep the newer commits in branch history; do not
+   return point's owned code. Keep the newer commits in branch history; do not
    force-push just to remove the rejected attempt. Preserve unrelated changes and
    restore additional saved state before applying revised guidance. Verify owned
-   files against the checkpoint, including deletions and relevant staged state.
+   files against the return point, including deletions and relevant staged state.
    If restoration is incomplete, stop and report the exact limitation.
    A separately preserved new branch or history rewrite is an alternative only
    with explicit human direction and verified recoverability; it still requires
@@ -130,7 +130,7 @@ an expandable history entry in the description's existing `details` list:
 
 Replace the example links with accessible, public-safe revision and review links.
 For an unpublished attempt, identify its revision as local-only and omit nonexistent
-public links. Keep its recovery location in the private checkpoint; publishing a
+public links. Keep its recovery location in the private return point; publishing a
 summary grants no permission to disclose the snapshot. Verify published links remain
 accessible, and report missing history explicitly rather than claiming it is linked.
 Keep surviving material findings visible outside that entry until settled.
