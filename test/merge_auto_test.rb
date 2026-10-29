@@ -72,6 +72,15 @@ class MergeAutoTest < Minitest::Test
     assert_match(/\Afailed: HTTP 403/, result.fetch('auto_merged_label'))
   end
 
+  def test_an_unexpected_label_error_still_reports_the_merge
+    @client.define_singleton_method(:api) { |*, **| raise Errno::ECONNRESET }
+
+    result = merge
+
+    assert_equal 'MERGED', result.fetch('state')
+    assert_match(/\Afailed: /, result.fetch('auto_merged_label'))
+  end
+
   def test_creates_the_repository_label_when_missing
     @client.failing = { ['GET', 'repos/owner/repo/labels/auto-merged'] => 404 }
 

@@ -33,7 +33,8 @@ and review findings are settled. Under **Auto**, it already has that authority
 for eligible work. Both paths preserve repository protection and required approvals;
 a checkpoint recommendation alone grants no merge authority.
 
-Under Auto, every check on the commit has to pass, not only the required ones. A
+Under Auto, every check on the commit has to pass, not only the required ones.
+Skipped and neutral results count as passing, as they do on GitHub. A
 failing or unfinished optional job, such as a Windows build or a security scan,
 holds the merge. When one fails, the agent hands the PR back to you as it does
 under Ask. After an Auto merge, the PR carries the `auto-merged` label, so

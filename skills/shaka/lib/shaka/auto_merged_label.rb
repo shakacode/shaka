@@ -33,7 +33,7 @@ module Shaka
       path = "repos/#{@github.repository}/issues/#{@github.number}/labels"
       @github.api(path, method: 'POST', fields: { labels: [NAME] }, expected: Array)
       'applied'
-    rescue Error => e
+    rescue StandardError => e
       "failed: #{e.message}"
     end
 
