@@ -23,7 +23,7 @@ module Shaka
     # In load order: a renderer loads before the ones that call it.
     RENDERERS = %w[usage_details usage_pricing throughput_gate throughput_line throughput_stats metrics
                    verification_gates diff_buckets review_focus_list intent_verification task_source_line provenance
-                   provenance_history settings_table settings publication]
+                   provenance_history settings_table settings links publication]
                 .map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     # A listed renderer the default branch does not have yet. A head without it keeps the installed copy;
     # every other listed renderer must be at the head, so a preview never stands in for a missing one.
