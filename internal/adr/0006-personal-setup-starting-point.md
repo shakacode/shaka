@@ -1,6 +1,6 @@
 # 0006: Start new individual setups from personal preferences
 
-Status: proposed.
+Status: accepted on 2026-10-28, with the per-run `--no-personal-file` option.
 Date: 2026-10-28. Tracks [issue #936](https://github.com/shakacode/shaka/issues/936).
 
 ## Context
@@ -116,6 +116,11 @@ Nothing is reused; the shared idea is only the `~/.agents/` home for personal fi
    the whole merged configuration with `RepositoryConfig` before it writes anything, and a
    failure names the personal file when a personal value took part.
 
+   `--no-personal-file` skips the file for one run, plan or real. A developer whose flag
+   conflicts with a linked personal key that has no flag of its own uses it for that clone
+   instead of editing the machine-wide file. A resume needs the same choice as the run it
+   resumes, or its files differ from the recovery copy and setup refuses as above.
+
 4. **Setup previews the proposal before writing.** `seam private setup --plan`, with the
    same options as a real run and the same eligibility check from decision 1, loads and
    merges the personal file when a real run would, validates the result,
@@ -180,15 +185,16 @@ consequence.
 - `PrivateSetup#config_hash` merges allowed personal values under explicit options; a small
   loader validates the file against the allowlist and the existing sub-schemas, then the
   merged result is validated whole. The loader lives in `PrivateSetup`, not the shared
-  `Initializer`, so `seam init` cannot reach it. `--plan` is one new option on the private
-  setup command. No new gem, no change to `Configuration`, `resolve_source`, or evidence
+  `Initializer`, so `seam init` cannot reach it. `--plan` and `--no-personal-file` are
+  the two new options on the private setup command. No new gem, no change to `Configuration`, `resolve_source`, or evidence
   fingerprints.
 - Behavioral tests cover: a present file pre-filling allowed keys while commands come from
   flags; an absent file producing today's files byte for byte; a disallowed key and an
   invalid value each stopping setup with the file and key named and nothing written; a flag
   overriding a personal value, including a combination that breaks a linked-key rule;
   `--plan` returning the proposal while leaving settings, recovery storage, and exclusions
-  untouched; `--from` ignoring the file; `seam init` output unchanged with a personal file
+  untouched; `--no-personal-file` producing today's files with a personal file present;
+  `--from` ignoring the file; `seam init` output unchanged with a personal file
   present; a prompt file on a personal reviewer entry being refused; a rerun on a completed
   clone not reading the file, both with and without personal values in its settings, with
   `--plan` matching the real run there and the refusal naming the next step; a
@@ -206,3 +212,5 @@ consequence.
 ## Delivery
 
 Two PRs in order: this record, then the implementation after the maintainer approves it.
+The maintainer approved the design on 2026-10-28 and chose to add `--no-personal-file`,
+answering the last local-review finding.
