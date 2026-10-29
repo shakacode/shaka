@@ -5,8 +5,8 @@ module Shaka
     class UpgradePlan
       # Tools that stay in the old command directory while its Shaka wrappers move.
       module UnmovedTools
-        # A glob means slightly different things to a shell and to an ignore file, so the old directory routes a
-        # moved command when any reading matches it, and the new one reaches it only when every reading does.
+        # A glob reads slightly differently to a shell and to an ignore file, so a match counts as certain only when
+        # every reading agrees and as possible when any does.
         GLOB_READINGS = [0, File::FNM_PATHNAME].freeze
 
         private
@@ -35,41 +35,67 @@ module Shaka
           [resolved, "#{resolved}.rb"].any? { |candidate| moved_beneath(candidate).any? }
         end
 
-        # Beside the repository's own tools the command directory stays, so code naming it keeps its meaning, unless
-        # the line enters it, names a moved command, or globs over moved commands without also reaching them in the
-        # new directory. Prose still describes where the wrappers live, so it keeps blocking.
+        # Beside the repository's own tools the command directory stays, so two shapes keep their meaning: a line
+        # that only creates the directory, and a shell `case` arm that routes each moved command the same way after
+        # the move. Every other mention, and all prose, keeps blocking.
         def retained_command_directory?(line, path)
           return false unless retained_code?(path)
-          return false if line.match?(command_directory_change) || line.match?(moved_command_name) ||
-                          line.match?(composed_command_path)
+          return line.match?(directory_creation) unless shell_scripts.key?(path) && line.match?(case_arm)
 
-          !routes_moved_command?(line) || (reaches_every_moved_command?(line) && !earlier_arm_captures?(line, path))
+          unchanged_arm?(line, path)
         end
 
-        # A shell `case` takes the first arm that matches, so an earlier arm over the new layout can take a moved
-        # command before this one reaches it.
-        def earlier_arm_captures?(line, path)
-          text = shell_scripts[path]
-          return false unless text
+        def unchanged_arm?(line, path)
+          return false if line.match?(moved_command_name) || line.match?(composed_command_path)
 
-          earlier = text[0, text.index(line) || text.size].each_line.grep(case_arm).join
-          moved_command_names.any? { |name| glob_matches?(new_layout_globs(earlier), "bin/#{name}", :any?) }
+          same_route?(arm_patterns(line)) && !captured_arms(path).include?(line)
         end
 
-        def routes_moved_command?(line)
-          globs = line.scan(glob_under(PATHS::COMMAND_DIRECTORY)).flatten
-          moved_command_names.any? { |name| glob_matches?(globs, name, :any?) }
+        def directory_creation
+          @directory_creation ||=
+            %r{\A\s*mkdir\s+(?:-\w+\s+)*(['"]?)(?:\./)?#{Regexp.escape(PATHS::COMMAND_DIRECTORY)}/?\1\s*$}
         end
 
-        def reaches_every_moved_command?(line)
-          moved_command_names.all? { |name| glob_matches?(new_layout_globs(line), "bin/#{name}", :all?) }
+        def arm_patterns(line) = line[/\A\s*\(?([^)]*)\)/, 1].split('|').map(&:strip)
+
+        # The arm matches each moved command at its new path wherever it matched it at the old one.
+        def same_route?(patterns)
+          moved_command_names.all? do |name|
+            !arm_matches?(patterns, old_command(name), :any?) || arm_matches?(patterns, new_command(name), :all?)
+          end
         end
 
-        def new_layout_globs(text) = text.scan(glob_under(File.dirname(PATHS::NEW_CONTRACT))).flatten
+        # A shell `case` takes the first arm that matches, so an earlier arm that newly matches a moved command
+        # takes it from every later arm in that `case`. Arms compare by text, so a repeated arm counts if any copy is
+        # taken.
+        def captured_arms(path)
+          (@captured_arms ||= {})[path] ||= begin
+            earlier = []
+            shell_scripts.fetch(path).each_line.with_object([]) do |line, captured|
+              earlier = [] if line.match?(/\bcase\b.*\bin\s*$/)
+              next unless line.match?(case_arm)
+
+              captured << line if takes_moved_command?(earlier)
+              earlier.concat(arm_patterns(line))
+            end
+          end
+        end
+
+        def takes_moved_command?(patterns)
+          moved_command_names.any? do |name|
+            arm_matches?(patterns, new_command(name), :any?) && !arm_matches?(patterns, old_command(name), :all?)
+          end
+        end
+
+        def old_command(name) = "#{PATHS::COMMAND_DIRECTORY}/#{name}"
+
+        def new_command(name) = "#{PATHS::NEW_COMMAND_DIRECTORY}/#{name}"
 
         # `readings` is :any? or :all? of the GLOB_READINGS.
-        def glob_matches?(globs, path, readings)
-          globs.any? { |glob| GLOB_READINGS.public_send(readings) { |flags| File.fnmatch?(glob, path, flags) } }
+        def arm_matches?(patterns, path, readings)
+          patterns.any? do |pattern|
+            GLOB_READINGS.public_send(readings) { |flags| File.fnmatch?(pattern.delete(%q('")), path, flags) }
+          end
         end
 
         def retained_code?(path)
@@ -88,16 +114,9 @@ module Shaka
           @moved_command_name ||= names.empty? ? /(?!)/ : /(?<![[:alnum:]_.-])(?:#{names.join('|')})(?![[:alnum:]_-])/
         end
 
-        # The pattern part of each glob written under a directory, such as `*.md` or `**/*`.
-        def glob_under(directory)
-          %r{(?<![[:alnum:]_.-])#{Regexp.escape(directory)}/([^\s|)'"(]*[*?\[][^\s|)'"(]*)}
-        end
-
-        # A name filled in at run time, or joined or appended as a variable, may be a moved command.
+        # A name filled in at run time may be a moved command.
         def composed_command_path
-          directory = Regexp.escape(PATHS::COMMAND_DIRECTORY)
-          @composed_command_path ||=
-            %r{#{directory}(?:/['"]?(?:\#\{|\$|\{|%)|/?['"]?\s*(?:\+|<<|,\s*(?:[^'"\s]|$))|['"]\)?\s*/\s*\w)}
+          @composed_command_path ||= %r{#{Regexp.escape(PATHS::COMMAND_DIRECTORY)}/['"]?(?:\$|\{)}
         end
 
         def relative_command_call?(text)
