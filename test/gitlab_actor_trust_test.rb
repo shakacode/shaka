@@ -88,28 +88,6 @@ class GitLabActorTrustTest < Minitest::Test
     assert_includes @calls, 'users/42'
   end
 
-  def test_missing_profile_withholds_only_that_author_and_cannot_block_a_configured_author
-    @data['users/43'] = {}
-    @api_failures['users/43'] = 404
-    absent = note.merge('id' => 12, 'author' => { 'id' => 43, 'username' => 'missing-user' },
-                        'body' => 'Unverified prose must stay hidden.')
-    rows = [{ 'id' => DISCUSSION, 'notes' => [note, absent] }]
-    result = screen(rows, trusted_users: [{ 'id' => 42, 'username' => 'alice' }])
-    assert_equal [11], result.fetch('notes').map { |item| item.fetch('id') }
-    assert_equal [12], result.fetch('withheld').map { |item| item.fetch('id') }
-    refute_match(/Unverified prose/, result.to_json)
-    assert_equal 2, @counts['users/43']
-  end
-
-  def test_profile_appearing_or_disappearing_during_screening_aborts_the_packet
-    [[404, 200], [200, 404]].each do |statuses|
-      @counts.clear
-      @api_failures['users/42'] = ->(count) { statuses.fetch(count - 1) }
-      assert_raises(Shaka::Error) { screen(trusted_users: [{ 'id' => 42, 'username' => 'alice' }]) }
-      assert_equal 2, @counts['users/42']
-    end
-  end
-
   def test_native_active_developer_membership_trusts_a_verified_human
     @data['projects/7/members/all/42'] = user.merge('access_level' => 30)
     result = screen
@@ -179,6 +157,31 @@ class GitLabActorTrustTest < Minitest::Test
   def test_member_response_cannot_substitute_another_numeric_account
     @data['projects/7/members/all/42'] = user.merge('id' => 43, 'access_level' => 40)
     assert_raises(Shaka::Error) { screen }
+  end
+end
+
+class GitLabActorProfileAvailabilityTest < Minitest::Test
+  include GitLabActorFixtures
+
+  def test_missing_profile_withholds_only_that_author_and_cannot_block_a_configured_author
+    @data['users/43'] = {}
+    @api_failures['users/43'] = 404
+    absent = note.merge('id' => 12, 'author' => { 'id' => 43, 'username' => 'missing-user' },
+                        'body' => 'Unverified prose must stay hidden.')
+    rows = [{ 'id' => DISCUSSION, 'notes' => [note, absent] }]
+    result = screen(rows, trusted_users: [{ 'id' => 42, 'username' => 'alice' }])
+    assert_equal 11, result.fetch('notes').first.fetch('id')
+    assert_equal 12, result.fetch('withheld').first.fetch('id')
+    refute_match(/Unverified prose/, result.to_json)
+  end
+
+  def test_profile_appearing_or_disappearing_during_screening_aborts_the_packet
+    [[404, 200], [200, 404]].each do |statuses|
+      @counts.clear
+      @api_failures['users/42'] = ->(count) { statuses.fetch(count - 1) }
+      assert_raises(Shaka::Error) { screen(trusted_users: [{ 'id' => 42, 'username' => 'alice' }]) }
+      assert_equal 2, @counts['users/42']
+    end
   end
 end
 
