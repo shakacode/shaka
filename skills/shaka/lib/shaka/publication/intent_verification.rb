@@ -31,25 +31,30 @@ module Shaka
     # The verdict binds the validation and review results; nil when description received none.
     # The floor comes from the PR's changed paths; without a pull request there is none.
     # The shortfall compares the bound reviews with the trusted reviewer count; nil when none.
-    def render(content, verdict = nil, floor = nil, pull = nil, shortfall: nil)
+    def render(content, verdict = nil, floor = nil, pull = nil, task: nil, shortfall: nil) # rubocop:disable Metrics/ParameterLists
       gate_line = VerificationGates.render(verdict, content['review'], shortfall,
                                            VerificationGates.unlabeled(content, pull))
       spec = object(content, 'verification')
       evidence(spec, content['wip'].nil? ? CHECKS : (0..CHECKS.max))
-      [intent(object(content, 'intent'), floor, pull),
+      [intent(object(content, 'intent'), floor, pull, task),
        verification(spec, gate_line)]
     end
 
-    def intent(spec, floor, pull)
+    # The task follows Why, so a reader sees the problem and then where the work came from.
+    def intent(spec, floor, pull, task = nil)
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
-      unless spec[ROOT_CAUSE].nil?
-        lines.insert(1, "**Root cause:** #{PublicationText.single_line(spec[ROOT_CAUSE], "intent #{ROOT_CAUSE}")}")
-      end
+      lines.insert(1, *task, *root_cause(spec))
       lines << review_effort(spec['review_effort'], floor)
       lines.concat(exclusions(spec['leaves_out']))
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
+    end
+
+    def root_cause(spec)
+      return [] if spec[ROOT_CAUSE].nil?
+
+      ["**Root cause:** #{PublicationText.single_line(spec[ROOT_CAUSE], "intent #{ROOT_CAUSE}")}"]
     end
 
     def scope(spec, pull)

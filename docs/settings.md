@@ -30,8 +30,9 @@ Shaka uses its own default for it, never your individual setting. For example, i
 team settings leave out `prose_limits`, PR descriptions use the default limit of
 300 words, whatever your individual setup says.
 
-Shaka keeps no settings in your home directory. The one exception is your machine's
-comment allowlist, which adds people and bots whose public comments the agent may read.
+Shaka keeps no settings in your home directory, with two exceptions about your machine:
+the comment allowlist, which adds people and bots whose public comments the agent may read,
+and the [machine reviewer list](#choose-reviewers-for-your-machine).
 
 Omitted optional values use Shaka's defaults, all listed in
 [Shaka's defaults file](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/defaults.yml).
@@ -453,8 +454,8 @@ keeps your chosen model; it does not substitute another one.
 Most warnings allow the review to run. An unsupported Claude effort stops it;
 choose one of Claude’s listed effort values to continue.
 
-Put project-specific review criteria in `AGENTS.md`. To check reviewer settings,
-use the [availability prompt](getting-started.md#2-choose-individual-trial-or-team-setup).
+Put project-specific review criteria in `AGENTS.md`. To check that your AI accounts
+can run the chosen reviewers, ask `$shaka Probe this project's configured reviewers.`
 To choose how many hosted review reports to wait for, use
 [`review.ci_review_wait`](#reviewci_review_wait).
 
@@ -478,6 +479,31 @@ Then list that provider in `local_review_agents`. The next review picks it, and 
 published review names it in its summary table instead of the fallback notice.
 When you set up Shaka with the CLI already installed, the agent offers it and
 records your choice, so no edit is needed.
+
+### Choose reviewers for your machine
+
+A repository may list reviewers you never use. Without a machine list, Shaka warns about
+every listed reviewer that your machine is missing, except reviewers that
+[`provider_coverage`](#reviewprovider_coverage) never selects on its own. List the
+reviewers you run in `~/.agents/shaka/reviewers.yml`, and Shaka warns only about those and
+the providers `provider_coverage` names, in every repository:
+
+```yaml
+version: 1
+reviewers:
+  - provider: anthropic
+    model_family: claude
+    model: claude-opus-5-5
+    effort: high
+  - provider: openai
+    model_family: codex
+```
+
+A `model` or `effort` here applies only where the repository leaves that reviewer's
+value unset, and a model or effort you name for one task wins over both. The list cannot
+add a reviewer the repository does not list. `shaka doctor` shows the list and names
+entries the current repository does not use. If the file is malformed, `shaka doctor`
+names it and local reviews refuse to start until you fix it.
 
 ## `review.local_review_count`
 
