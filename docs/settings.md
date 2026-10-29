@@ -485,7 +485,7 @@ records your choice, so no edit is needed.
 A repository may list reviewers you never use. Without a machine list, Shaka warns about
 every listed reviewer that your machine is missing, except reviewers that
 [`provider_coverage`](#reviewprovider_coverage) never selects on its own. List the
-reviewers you run in `~/.agents/shaka/ai-cli-reviewers.yml`, and Shaka warns only about
+reviewers you run in `~/.agents/shaka/local-reviewers.yml`, and Shaka warns only about
 those and the providers `provider_coverage` names, in every repository:
 
 ```yaml

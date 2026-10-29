@@ -7,7 +7,7 @@ require_relative 'paths'
 
 module Shaka
   module Configuration
-    # The reviewers one machine expects to run, from ~/.agents/shaka/ai-cli-reviewers.yml. It
+    # The reviewers one machine expects to run, from ~/.agents/shaka/local-reviewers.yml. It
     # narrows setup notices and fills a model or effort the repository leaves unset; it never adds
     # a reviewer.
     class MachineReviewers

@@ -55,7 +55,7 @@ coordination state. Nothing is reused.
    today's notice.
 
 2. **A per-machine list of the reviewers a developer expects to run.** An optional file
-   at `~/.agents/shaka/ai-cli-reviewers.yml` names the reviewers this machine is expected to run.
+   at `~/.agents/shaka/local-reviewers.yml` names the reviewers this machine is expected to run.
    Entries take the shape of `review.local_review_agents` entries, so the same `model` and
    `effort` rules and warnings apply:
 
