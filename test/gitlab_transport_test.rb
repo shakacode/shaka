@@ -187,3 +187,53 @@ class GitLabPaginationTest < Minitest::Test
     assert_equal 100, calls
   end
 end
+
+class GitLabQueryFiltersTest < Minitest::Test
+  include GitLabTransportHelper
+
+  def test_get_fields_are_encoded_as_query_parameters_instead_of_a_request_body
+    fields = { ref: 'feature+policy/日本語 & config' }
+    instance = client(response({ 'file_path' => 'policy.yml' }))
+    instance.api('projects/7/repository/files/policy.yml', fields:)
+    argv, input = @calls.first
+    assert_equal "projects/7/repository/files/policy.yml?#{URI.encode_www_form(fields)}", argv[4]
+    assert_equal 'GET', argv[6]
+    assert_equal({}, JSON.parse(input))
+    assert_equal({ ref: 'feature+policy/日本語 & config' }, fields)
+  end
+
+  def test_write_fields_remain_json_payloads
+    fields = { body: 'Keep + and & in the note.' }
+    instance = client(response({ 'id' => 41 }))
+    instance.api('projects/7/notes', method: 'POST', fields:)
+    argv, input = @calls.first
+    assert_equal 'projects/7/notes', argv[4]
+    assert_equal 'POST', argv[6]
+    assert_equal({ 'body' => fields[:body] }, JSON.parse(input))
+  end
+
+  def test_filters_are_preserved_and_encoded_on_every_native_list_page
+    fields = { state: 'all', source_branch: 'feature+config/path & other' }
+    instance = client(response([{ 'id' => 1 }], next_page: '2'), response([{ 'id' => 2 }], next_page: ''))
+    assert_equal [{ 'id' => 1 }, { 'id' => 2 }], instance.api_list('projects/7/merge_requests', fields:)
+    prefix = "projects/7/merge_requests?#{URI.encode_www_form(fields)}&per_page=100&page="
+    paths = @calls.map { |argv, _input| argv[4] }
+    assert_equal ["#{prefix}1", "#{prefix}2"], paths
+    assert_equal({ state: 'all', source_branch: 'feature+config/path & other' }, fields)
+  end
+
+  def test_list_filters_cannot_override_reserved_pagination_fields
+    [{ page: 5 }, { 'page' => 5 }, { per_page: 1 }, { 'per_page' => 1 }, nil, []].each do |fields|
+      instance = client
+      assert_raises(Shaka::Error) { instance.api_list('projects/7/merge_requests', fields:) }
+      assert_empty @calls
+    end
+  end
+
+  def test_later_filtered_page_failure_returns_no_partial_list
+    instance = client(response([{ 'id' => 1 }], next_page: '2'), response({}, code: 403, exitstatus: 1))
+    error = assert_raises(Shaka::Error) { instance.api_list('projects/7/merge_requests', fields: { state: 'all' }) }
+    assert_equal 403, error.http_status
+    assert_equal 2, @calls.length
+  end
+end

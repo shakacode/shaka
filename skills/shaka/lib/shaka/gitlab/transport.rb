@@ -12,14 +12,19 @@ module Shaka
         validate_path(path)
         raise Error, 'Invalid GitLab HTTP method.' unless %w[GET POST PUT PATCH DELETE].include?(method)
 
+        if method == 'GET' && !fields.empty?
+          path = "#{path}?#{URI.encode_www_form(fields)}"
+          fields = {}
+        end
         request(path, method:, fields:, expected:).value
       end
 
-      def api_list(path)
+      def api_list(path, fields: {})
         validate_path(path)
+        validate_filters(fields)
         results = []
         (1..MAX_PAGES).each do |page|
-          response = request("#{path}?per_page=#{PAGE_SIZE}&page=#{page}", expected: Array)
+          response = request(page_path(path, fields, page), expected: Array)
           validate_records(response.value)
           results.concat(response.value)
           return results if last_page?(response, page)
@@ -28,6 +33,16 @@ module Shaka
       end
 
       private
+
+      def page_path(path, fields, page)
+        "#{path}?#{URI.encode_www_form(fields.merge('per_page' => PAGE_SIZE, 'page' => page))}"
+      end
+
+      def validate_filters(fields)
+        return if fields.is_a?(Hash) && !fields.keys.map(&:to_s).intersect?(%w[page per_page])
+
+        raise Error, 'GitLab list filters must be a mapping without pagination overrides.'
+      end
 
       def validate_records(records)
         return if records.length <= PAGE_SIZE && records.all?(Hash)
