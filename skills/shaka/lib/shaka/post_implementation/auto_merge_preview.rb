@@ -16,13 +16,16 @@ module Shaka
     module_function
 
     # seam is the trusted RepositoryConfig; pull is the snapshot with GitHub's size counts; verdict is the
-    # checkpoint's verification verdict. Returns nil unless the repository is on Ask with a floor below the top level.
+    # checkpoint's verification verdict. Returns nil unless the repository is on Ask with a floor below the top
+    # level or a hold label on the PR.
     def line(seam, github, pull, head, verdict = nil)
-      floor = MergeReviewFloor.from(seam)
-      return unless seam&.merge&.fetch('preference') == 'ask' && floor.holds_any?
+      return unless seam&.merge&.fetch('preference') == 'ask'
 
-      reasons = [label_hold(seam, pull), limits_hold(seam, pull), floor_hold(floor, github, head),
-                 verdict_hold(verdict)].compact
+      floor = MergeReviewFloor.from(seam)
+      label = label_hold(seam, pull)
+      return unless floor.holds_any? || label
+
+      reasons = [label, limits_hold(seam, pull), floor_hold(floor, github, head), verdict_hold(verdict)].compact
       unless reasons.empty?
         return "#{LABEL} with `merge.preference: auto`, the agent would hand this PR back: #{reasons.join('; ')}."
       end
@@ -52,6 +55,8 @@ module Shaka
     end
 
     def floor_hold(floor, github, head)
+      return unless floor.holds_any?
+
       floor.hold(floor.paths(github, head))
     rescue Error
       'Shaka could not read its changed files from GitHub'

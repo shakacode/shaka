@@ -74,6 +74,8 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
                                              merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2,
                                                       'hold_labels' => ['do-not-merge'] }),
                     'it carries the hold label `do-not-merge`'
+    assert_includes body_for(%w[skills/shaka/SKILL.md], labels: ['hold'], merge: { 'preference' => 'ask' }),
+                    'would hand this PR back: it carries the hold label `hold`.'
   end
 
   def test_counts_merge_limits

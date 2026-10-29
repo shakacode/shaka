@@ -203,14 +203,14 @@ merge:
   hold_labels: [hold, do-not-merge]
 ```
 
-`shaka merge` reads the PR's labels again just before it submits, so a label added while the
-agent checks the PR still stops it. The agent then names the label and hands the PR back to
-you. No confirmation in chat gets past a hold; remove the label when the PR may merge. Label
-names match without regard to case.
+`shaka merge` reads the PR's labels again on its last read of the PR before it submits, so a
+label added while the agent checks the PR still stops it. The agent then names the label and
+hands the PR back to you. No confirmation in chat gets past a hold; remove the label when the PR
+may merge. Label names match without regard to case.
 
 The hold governs only Shaka. GitHub does not know about it, so it does not stop anyone from
-clicking merge. While `preference` is `ask`, the ready checkpoint's Auto merge preview names a
-hold label the PR carries.
+clicking merge, and it does not take a PR out of a merge queue it has already joined. While
+`preference` is `ask`, the ready checkpoint's Auto merge preview names a hold label the PR carries.
 
 ## `review.startup_check`
 
