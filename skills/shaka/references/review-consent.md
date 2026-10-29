@@ -29,8 +29,8 @@ probe sends no repository content. Disabling the probe leaves this step in place
    paraphrase or widen it. Consent does not replace the host's approval: retry a
    denied launch only through the host's own path, such as the user's Codex CLI
    `/approve`, which permits one retry of that exact action.
-3. When consent is missing or narrower than the request, ask before implementation,
-   naming only the providers that still need it, for example "Send the #846 review
+3. When consent is missing or narrower than the request for a reviewer that still
+   needs it, ask before implementation, naming only those providers, for example "Send the #846 review
    packet to OpenAI (Codex CLI, gpt-6.1-sol)?". Put the disclosure in the answer
    options' descriptions or preview when the host's question tool offers them,
    otherwise below the question: the provider and model, any relay service, the
