@@ -29,7 +29,7 @@ module Shaka
           line.gsub(case_arm_glob, '')
         end
 
-        def case_arm = /\A\s*\(?[^\s()]+(?:\s*\|\s*[^\s()]+)*\)(?:\s|$)/
+        def case_arm = /\A\s*\(?[^\s()|]+(?:\s*\|\s*[^\s()|]+)*\)(?:\s|$)/
 
         def case_arm_glob = %r{(?<![[:alnum:]_./-])#{Regexp.escape(PATHS::DIRECTORY)}/\*\*?(?:/\*)?(?=\s*[|)])}o
 

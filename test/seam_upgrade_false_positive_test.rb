@@ -45,7 +45,8 @@ class SeamUpgradeFalsePositiveTest < Minitest::Test
     'lib/back_out.rb' => %(cmd = File.join(root, ".agents", "shaka", "..", "bin", "validate")\n),
     'lib/back_out_inside.rb' => %(cmd = File.join(root, ".agents", "shaka/../bin/validate")\n),
     'lib/ternary.rb' => %(Dir.chdir(ci ? ".agents" : ".") { system("bin/validate") }\n),
-    'lib/wrapped_ternary.rb' => %(Dir.chdir(ci ?\n  ".agents" : ".") { system("bin/validate") }\n)
+    'lib/wrapped_ternary.rb' => %(Dir.chdir(ci ?\n  ".agents" : ".") { system("bin/validate") }\n),
+    'lib/pieces.rb' => %(cmd = ".agents/bin/val" + "idate"\nsystem(cmd)\n)
   }.freeze
 
   def test_nearby_real_references_still_block
@@ -165,6 +166,8 @@ class SeamUpgradeRetainedToolRoutingTest < Minitest::Test
     "#!/bin/sh\ncase \"$1\" in\n  x) : ;; .agents/shaka/*) echo docs ;;\n  " \
     ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
     "#!/bin/bash\ncase \"$1\" in\n  @(.agents/shaka/*)) echo docs ;;\n  " \
+    ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n",
+    "#!/bin/bash\ncase \"$1\" in\n  x|@(.agents/shaka/*)) echo docs ;;\n  " \
     ".agents/bin/*|.agents/shaka/bin/*) echo ci ;;\nesac\n"
   ].freeze
 
@@ -191,6 +194,17 @@ class SeamUpgradeRetainedToolRoutingTest < Minitest::Test
     with_retained_tool do |root|
       write_executable(root, 'script/detector', "#!/bin/sh\ncase \"$1\" in\n  .agents/bin/*) echo ci ;;\nesac\n")
       assert_blocked_with(root, 'script/detector: old command-directory reference')
+    end
+  end
+
+  # CodeQL found that a line of repeated `!|` could make the case-arm pattern backtrack exponentially. Ruby 3.2
+  # and later cache regex backtracking, so this guards the shape rather than reproducing the slowdown.
+  def test_long_alternation_line_previews_quickly
+    with_retained_tool do |root|
+      write_executable(root, 'script/run', "#!/bin/sh\n# .agents/ tools\n#{'!|' * 50_000}x\n")
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      plan_for(root)
+      assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 10
     end
   end
 

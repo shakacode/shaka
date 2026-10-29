@@ -75,8 +75,9 @@ module Shaka
           starts - ends
         end
 
-        # A second arm after `;;`, or an extglob arm, holds patterns this reader does not record.
-        def hidden_arm?(line) = line.match?(/;;\s*[^\s#]/) || line.match?(/\A\s*\(?\s*[@!+*?]\(/)
+        # A second arm after `;;`, or an extglob anywhere in an arm's patterns, holds patterns this reader does not
+        # record.
+        def hidden_arm?(line) = line.match?(/;;\s*[^\s#]/) || line.match?(/\A\s*\(?\s*[^\s)='"]*[@!+*?]\(/)
 
         # Any line opening with a pattern list and `)`, spaced or not, is an arm whose patterns count.
         def arm_line = /\A\s*\(?\s*[^\s()#][^()]*\)/

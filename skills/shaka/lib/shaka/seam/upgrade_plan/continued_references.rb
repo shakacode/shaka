@@ -71,7 +71,15 @@ module Shaka
           assignment = /\b[A-Za-z_]\w*\s*[+?:]?=[^\r\n]*#{aliased_value}/o
           mapping = %r{\b[A-Za-z_]\w*\s*:[ \t]+[^\r\n]*#{Regexp.escape(PATHS::DIRECTORY)}/?(?=[ \t\r\n#'";]|$)}o
           text = resolved_joins(without_machine_paths(text))
-          [text, normalize_shell_fragments(text)].any? { |source| source.match?(assignment) || source.match?(mapping) }
+          [text, normalize_shell_fragments(text)].any? do |source|
+            source.match?(assignment) || source.match?(mapping) || source.match?(composed_assignment)
+          end
+        end
+
+        # A command-directory prefix with more appended may spell a moved command, such as the prefix plus `val`
+        # joined to `idate`.
+        def composed_assignment
+          %r{\b[A-Za-z_]\w*\s*[+?:]?=[^\r\n]*#{Regexp.escape(PATHS::COMMAND_DIRECTORY)}/[[:alnum:]_.-]*['"]?\s*(?:\+|<<)}o
         end
 
         # The new layout also lives under the old directory, so only the directory itself or a moved path aliases it.
