@@ -13,8 +13,8 @@ module Shaka
     # Returns one { url, lines } per entry in content order, or nil when there is no well-formed
     # list for ReviewFocusList to refuse first. pull carries the head and its complete file list.
     def resolve(content, github, pull)
-      entries = content.dig('intent', 'review_focus')
-      return unless entries.is_a?(Array) && !entries.empty? && entries.all?(Hash)
+      entries = entries(content['intent'])
+      return unless entries
 
       head = pull.dig('head', 'sha')
       links = Walkthrough::CodeLinks.new({}, github, head)
@@ -23,6 +23,12 @@ module Shaka
       entries.each_with_index.map do |entry, index|
         located(links, entry, "review_focus #{index + 1}", present, blob)
       end
+    end
+
+    # The entries to resolve, or nil when intent or its list is malformed and the renderer refuses it.
+    def entries(intent)
+      listed = intent['review_focus'] if intent.is_a?(Hash)
+      listed if listed.is_a?(Array) && !listed.empty? && listed.all?(Hash)
     end
 
     # A removed file and the old name of a rename have no file at the head.
@@ -46,6 +52,6 @@ module Shaka
     # description's rendering preview can still load.
     def encoded(path) = path.split('/').map { |segment| URI.encode_uri_component(segment) }.join('/')
 
-    private_class_method :present_paths, :located, :encoded
+    private_class_method :entries, :present_paths, :located, :encoded
   end
 end

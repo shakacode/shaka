@@ -46,10 +46,11 @@ class ReviewFocusTest < Minitest::Test
     end
   end
 
-  def test_missing_or_ambiguous_start_text_is_refused_as_an_intent_error
-    [entry('lib/package.rb', from: 'def missing'), entry('lib/package.rb', from: '(root)')].each do |focus|
+  def test_missing_ambiguous_or_non_text_anchors_are_refused_as_intent_errors
+    [entry('lib/package.rb', from: 'def missing'), entry('lib/package.rb', from: '(root)'),
+     entry('lib/package.rb', from: 5), entry('lib/package.rb', from: 'def stage', to: 'no such line')].each do |focus|
       error = assert_raises(Shaka::Error) { resolve(entry('bin/tool.py'), focus) }
-      assert_match(/\APublication intent review_focus 2: /, error.message)
+      assert_match(/\APublication intent review_focus 2[: ]/, error.message)
     end
   end
 
@@ -57,6 +58,7 @@ class ReviewFocusTest < Minitest::Test
     pull = { 'head' => { 'sha' => HEAD }, 'shaka_changed_files' => FILES }
 
     assert_nil Shaka::ReviewFocus.resolve({ 'intent' => {} }, github, pull)
+    assert_nil Shaka::ReviewFocus.resolve({ 'intent' => 'not an object' }, github, pull)
     assert_nil Shaka::ReviewFocus.resolve({ 'intent' => { 'review_focus' => ['x'] } }, github, pull)
   end
 end
