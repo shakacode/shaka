@@ -32,11 +32,15 @@ module Shaka
               .sub(COST) { "#{Regexp.last_match(1)}#{took(state)}" }
     end
 
-    # A usage refresh must not fail on a damaged block; the next publish rewrites it.
+    # A usage refresh must not fail on a damaged block; the next publish rewrites it. The model-line spend
+    # follows the refreshed cost even then.
     def self.refresh_spend(body, spend)
-      update(body, 'spend' => spend)
-    rescue Error
-      body
+      updated = begin
+        update(body, 'spend' => spend)
+      rescue Error
+        body.to_s
+      end
+      updated.sub(HEADER) { "#{Regexp.last_match(1)}#{header('spend' => spend)}" }
     end
 
     def self.read(body)

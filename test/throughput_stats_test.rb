@@ -124,6 +124,11 @@ class ThroughputRefreshTest < Minitest::Test
     assert_equal damaged, Shaka::ThroughputStats.refresh_spend(damaged, '$1.00')
   end
 
+  def test_a_spend_refresh_updates_the_model_line_even_with_a_damaged_block
+    damaged = "🤖 Codex - AI spend: $4.12\n\n<!-- shaka:stats {not json} -->\n**This head:** x\n"
+    assert_includes Shaka::ThroughputStats.refresh_spend(damaged, '$9.00'), "🤖 Codex - AI spend: $9.00\n"
+  end
+
   def test_a_crlf_block_is_read_and_updated_with_its_line_endings
     crlf = "Keep.\r\n#{filled_block.gsub("\n", "\r\n")}\r\nMore.\r\n"
     assert_equal READY.iso8601, Shaka::ThroughputStats.read(crlf)['t2']
