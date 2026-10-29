@@ -3,6 +3,7 @@
 require_relative '../error'
 require_relative '../local_review/bot_history'
 require_relative '../publication/comment_history'
+require_relative 'evidence'
 require_relative 'history'
 
 module Shaka
@@ -10,8 +11,6 @@ module Shaka
   # for commits it never judged. GitHub keeps the body behind its disclosure, and the next checkpoint still
   # folds it into history.
   class PostImplementationStale
-    HEAD = /\A<!-- shaka:reply:post-implementation-([0-9a-f]{7})-/
-
     def initialize(github) = @github = github
 
     def call
@@ -22,7 +21,9 @@ module Shaka
       return { 'state' => 'none' } unless latest
 
       id = latest['id']
-      return { 'state' => 'current', 'comment' => id } if pull['headRefOid'].to_s.start_with?(latest['body'][HEAD, 1])
+      # A checkpoint without its full-head attestation cannot vouch for the live head either.
+      reviewed = latest['body'].to_s[PostImplementationEvidence::ATTESTATION, 1]
+      return { 'state' => 'current', 'comment' => id } if reviewed && reviewed == pull['headRefOid']
 
       { 'state' => minimize(latest['node_id']), 'comment' => id }
     rescue Error => e

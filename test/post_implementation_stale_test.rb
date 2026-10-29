@@ -56,6 +56,13 @@ class PostImplementationStaleTest < Minitest::Test
     assert_empty github.mutations
   end
 
+  def test_compares_the_full_attested_head_not_its_short_prefix
+    github = GitHub.new([checkpoint(2, "abcdef0#{'1' * 33}")])
+    github.head = "abcdef0#{'2' * 33}"
+
+    assert_equal 'minimized', Shaka::PostImplementationStale.new(github).call['state']
+  end
+
   def test_repeat_run_does_not_minimize_again
     github = GitHub.new([checkpoint(2, OLD)])
     github.minimized['N_2'] = true
@@ -91,7 +98,8 @@ class PostImplementationStaleTest < Minitest::Test
   def checkpoint(id, head, login: 'ada')
     { 'id' => id, 'node_id' => "N_#{id}", 'user' => { 'login' => login },
       'created_at' => "2026-10-0#{id}T00:00:00Z",
-      'body' => "<!-- shaka:reply:post-implementation-#{head[0, 7]}-0123abcd -->\n🤖 Checkpoint\n" }
+      'body' => "<!-- shaka:reply:post-implementation-#{head[0, 7]}-0123abcd -->\n🤖 Checkpoint\n" \
+                "<!-- shaka:post-implementation #{head} ready -->\n" }
   end
 end
 
@@ -123,7 +131,8 @@ class PostImplementationStaleCliTest < Minitest::Test
     elsif path.start_with?('repos/owner/repo/issues/1/labels')
       puts JSON.generate([{ 'name' => 'awaiting-merge-approval' }])
     elsif path.start_with?('repos/owner/repo/issues/1/comments')
-      body = "<!-- shaka:reply:post-implementation-\#{'a' * 7}-0123abcd -->\\n🤖 Checkpoint\\n"
+      body = "<!-- shaka:reply:post-implementation-\#{'a' * 7}-0123abcd -->\\n🤖 Checkpoint\\n" \\
+             "<!-- shaka:post-implementation \#{'a' * 40} ready -->\\n"
       puts JSON.generate([{ 'id' => 2, 'node_id' => 'N_2', 'user' => { 'login' => 'ada' },
                             'created_at' => '2026-10-02T00:00:00Z', 'body' => body }])
     else abort "unexpected gh request: \#{ARGV.inspect}"
