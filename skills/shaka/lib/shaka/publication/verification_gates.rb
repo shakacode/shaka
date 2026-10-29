@@ -100,7 +100,7 @@ module Shaka
                     commands['sandbox_failed'].to_i == commands['ran'].to_i
 
         result['reviewer']
-      end
+      end.uniq
     end
 
     def blind_gap(reviewers)
