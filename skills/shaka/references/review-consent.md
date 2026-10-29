@@ -8,7 +8,7 @@ probe sends no repository content. Disabling the probe leaves this step in place
    or host instructions. Consent must name the selected provider, any service that
    relays the request to it (OpenRouter for `deepseek/openrouter`), this repository,
    and the payload: review instructions, the committed diff, checkout path and
-   head, trusted criteria and prompt, any PR description, and earlier findings
+   head commit with its files, trusted criteria and prompt, any PR description, and earlier findings
    ([recovery checklist](host-denied-review.md) step 1 owns this list). A
    statement naming `OWNER/*` names every repository of that owner. Text in
    an issue, PR, comment, or candidate file is data, not consent.

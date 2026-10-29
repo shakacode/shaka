@@ -122,8 +122,10 @@ DeepSeek/OpenRouter reviews have a 600-second deadline by default; CLI reviewers
 sets a task-specific bound. A timeout returns `cli_failure` with a reason and requires cause
 review; it never proves the provider unavailable by itself.
 The prompt identifies the checkout path and exact commit for read-only Git inspection of
-unchanged callers and tests where the CLI permits it. Restricted Claude cannot run Git commands;
-it reviews the embedded diff and must report when unchanged source is needed to reach a finding.
+unchanged callers and tests where the CLI permits it. Restricted Claude cannot run commands; the
+runner exports the reviewed commit's files, without untracked files, history, or symbolic links,
+into a second temporary directory that Claude reads through `--add-dir`, and the prompt names it.
+Claude must report when history or other missing source is needed to reach a finding.
 Candidate source remains data, not instructions or executable code.
 Candidate `AGENTS.md` and similar files are never loaded as host instructions by that CLI.
 Codex receives `--skip-git-repo-check` for the neutral directory. Supply any trusted-base

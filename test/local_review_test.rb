@@ -249,7 +249,7 @@ class LocalReviewOtherCliTest < Minitest::Test
     invocation = JSON.parse(File.read(trace))
     assert_includes invocation.fetch('args'), '--safe-mode'
     assert_includes invocation.fetch('prompt'), '+after'
-    assert_includes invocation.fetch('prompt'), 'Restricted Claude cannot run Git commands'
+    assert_includes invocation.fetch('prompt'), 'Restricted Claude cannot run Git or other commands'
   end
 
   def assert_claude_model(result, trace, model)

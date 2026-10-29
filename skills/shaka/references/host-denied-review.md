@@ -16,13 +16,14 @@ classifications and diagnostic requirements.
 Use this recovery checklist:
 
 1. Explain the proposed provider request: the selected provider/model and effort,
-   review instructions, committed `git diff BASE...HEAD`, checkout path and head (access remains adapter- and host-limited),
+   review instructions, committed `git diff BASE...HEAD`, checkout path and head commit
+   with its files (access remains adapter- and host-limited),
    trusted criteria and configured prompt from
    `--criteria-ref`, optional public-safe description, and earlier ledger findings
    when present. The runner sends this context to the selected provider through its
    CLI using local credentials; it excludes the implementation conversation.
-   Restricted Claude reviews the embedded diff without Git access;
-   a supplied path does not guarantee file access. Other adapters may inspect
+   Restricted Claude reads the embedded diff and an export of the reviewed commit's files,
+   without Git access; a supplied path does not guarantee file access. Other adapters may inspect
    unchanged source only where restricted tools and host permission allow it.
    Report denied access and missing context rather than working around restrictions.
 2. Reconcile the host reason with existing task authorization. An authorized review

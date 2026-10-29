@@ -10,6 +10,7 @@ require_relative '../defaults'
 require_relative '../reviewer_selection'
 require_relative '../reviewer_settings'
 require_relative 'cli'
+require_relative 'commit_export'
 require_relative 'criteria'
 require_relative 'evidence'
 require_relative 'launch_block'
@@ -41,7 +42,11 @@ module Shaka
 
     def coverage
       return 'Supplied diff only; unchanged source and test execution are unavailable to this reviewer.' if
-        %w[anthropic/claude deepseek/openrouter].include?(reviewer)
+        reviewer == 'deepseek/openrouter'
+      if reviewer == 'anthropic/claude'
+        return 'Read-only file lookup in an export of the reviewed commit; actual inspection coverage is UNKNOWN. ' \
+               'Git history and test execution are unavailable.'
+      end
 
       'Read-only source lookup permitted; actual inspection coverage is UNKNOWN. Test execution is prohibited.'
     end
@@ -63,11 +68,18 @@ module Shaka
       return 'The API has no filesystem or tools; review the supplied diff and report missing context.' if
         reviewer == 'deepseek/openrouter'
 
-      return 'Restricted Claude cannot run Git commands; review the supplied diff and report missing context.' if
-        reviewer == 'anthropic/claude'
+      return claude_lookup_instruction if reviewer == 'anthropic/claude'
 
       'For unchanged callers, contracts, and tests, use read-only Git reads against that commit ' \
         '(for example, git -C the-checkout show COMMIT:path).'
+    end
+
+    # The checkout path above stays for orientation; restricted file tools reach only the export.
+    def claude_lookup_instruction
+      export = @options[:commit_export]&.to_json || 'a temporary export of the pinned commit'
+      'Restricted Claude cannot run Git or other commands. For unchanged callers, contracts, and tests, read ' \
+        "the pinned commit's files at #{export} with the Read, Grep, and Glob tools; it holds no untracked " \
+        'files, history, or symbolic links. Report missing context.'
     end
 
     def description_context(marker)
@@ -147,9 +159,9 @@ module Shaka
         @options[:criteria_ref].match?(LocalReviewEvidence::SHA)
     end
 
-    def capture(*arguments)
+    def capture(*arguments, env: {})
       timeout = @options.fetch(:timeout_seconds)
-      stdout, stderr, status = LocalReviewProcess.capture(arguments, stdin_data: nil, chdir: root, timeout: timeout)
+      stdout, stderr, status = LocalReviewProcess.capture(arguments, stdin_data: nil, chdir: root, timeout:, env:)
       raise Shaka::Error, "#{arguments.first} timed out after #{timeout}s" unless status
       raise Shaka::Error, "#{arguments.first} output drain timed out after 2s" if
         status.is_a?(LocalReviewProcess::DrainTimeout)
@@ -348,6 +360,7 @@ module Shaka
     include LocalReviewRounds
     include LocalReviewCheckout
     include LocalReviewTiming
+    include LocalReviewCommitExport
 
     def initialize(options) = @options = options
 
@@ -358,7 +371,7 @@ module Shaka
       git_executable
       validate!
       validate_tempdir!
-      run_report(open_ledger { review_prompt })
+      with_commit_export { run_report(open_ledger { review_prompt }) }
     rescue Shaka::Error, SystemCallError, JSON::ParserError => e
       setup_failure(e)
     end
