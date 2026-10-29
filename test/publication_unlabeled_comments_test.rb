@@ -71,7 +71,7 @@ class PublicationUnlabeledCommentsTest < Minitest::Test
   end
 
   # An outside contributor's own words carry no agent label; a maintainer's fork still counts.
-  def test_only_an_author_who_can_push_is_counted
+  def test_only_an_owner_member_or_collaborator_is_counted
     content = { 'human_comments' => packet(issue_comments: [issue_comment(3, 'ann', 'Thanks for the review.')]) }
 
     assert_equal 0, Shaka::VerificationGates.unlabeled(content, pull(fork: true, association: 'CONTRIBUTOR'))
