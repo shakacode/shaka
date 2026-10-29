@@ -101,7 +101,7 @@ consumer trial.
 
 Use the [resume guide](working-with-shaka.md#resume-unfinished-work).
 Recovery copies protect captured configuration, not feature changes or the agent
-conversation. A [checkpoint](working-with-shaka.md#revise-earlier-guidance-and-try-again)
+conversation. A [return point](pr-verification.md#return-points)
 needs recorded guidance and recoverable work state. It is a separate agent procedure;
 the Ruby `checkpoint` command does not capture or restore snapshots.
 Tests in fresh processes do not establish genuine fresh-chat recovery.

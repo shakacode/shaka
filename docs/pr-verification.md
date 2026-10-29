@@ -385,9 +385,8 @@ stubs that caller, would be **Inadequate**, with the next check naming a run thr
 
 Use **Recommendation** for the proposal and **Recorded decision** for
 accepted guidance. Once a direction is chosen, the agent records that guidance
-and recoverable work state for a later return. This uses the existing
-[recovery procedure](working-with-shaka.md#revise-earlier-guidance-and-try-again),
-not an automatic Ruby snapshot or an extra human approval at every return point.
+and recoverable work state as a [return point](#return-points). This is not an
+automatic Ruby snapshot or an extra human approval.
 The PR description opens with **Decisions to make** while you have questions to answer.
 Until you answer them, the links below the questions show **Decisions to make** as the
 checkpoint, and the code walkthrough waits, because your answers may change the code it
@@ -416,6 +415,22 @@ users never need. The agent can recommend extending an existing setting instead
 before more work builds around that page. Maintainers can customize the
 [checkpoint settings](settings.md#checkpoint)
 with their audience and architectural priorities.
+
+## Return points
+
+A **return point** saves guidance you gave during a task, such as your first request
+or a later change of direction, with the code it applies to. The PR description lists
+them as C1, C2, and so on, each with a name, your guidance, and a code revision:
+
+| Return point | Human guidance | Code revision |
+| --- | --- | --- |
+| C1 — Initial request | Fix escaped separators while keeping the current syntax | `3f2a9c1` |
+| C2 — Parser direction | Use the existing parser; keep the escaped-separator test | `8d41e07` |
+
+To go back to one, see
+[revise earlier guidance and try again](working-with-shaka.md#revise-earlier-guidance-and-try-again).
+A return point records your guidance; the [checkpoint](#checkpoint) recommends whether
+to merge.
 
 ## Change one behavior at a time
 

@@ -48,7 +48,8 @@ Don't both write at once.
 
 ### Revise earlier guidance and try again
 
-The PR description lists your instructions as C1, C2, and so on. To go back to one:
+The PR description lists your instructions as [return points](pr-verification.md#return-points)
+C1, C2, and so on. To go back to one:
 
 ```text
 $shaka Return to C2. Use the simpler approach.
