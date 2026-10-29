@@ -441,6 +441,7 @@ begin
              merge.empty_checks_confirmed_head = options[:empty_checks_confirmed_head]
              merge.auto = options[:auto]
              merge.review_floor = Shaka::MergeReviewFloor.from(seam, confirmed_head: options[:confirmed_head])
+             merge.hold = Shaka::MergeHold.from(seam)
              merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention'
@@ -457,6 +458,7 @@ begin
              github.squash_comment(head: options.fetch(:head), message:)
            when 'handoff'
              Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint)
+                           .tap { |handoff| handoff.hold = Shaka::MergeHold.from(seam) }
                            .call(head: options[:head], woken_by: options[:woken_by])
            end
   if native_wake

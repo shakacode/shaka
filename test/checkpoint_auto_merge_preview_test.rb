@@ -5,10 +5,12 @@ require_relative 'repository_fixture'
 
 # Answers the size and changed-file reads the preview makes beside the checkpoint's own.
 class PreviewGitHub < PostImplementationPublicationFixture::GitHub
-  attr_accessor :files, :changed_files
+  attr_accessor :files, :changed_files, :labels
 
   def snapshot
-    super.merge('changedFiles' => files.length, 'additions' => 40, 'deletions' => 10)
+    names = labels || []
+    super.merge('changedFiles' => files.length, 'additions' => 40, 'deletions' => 10,
+                'labels' => { 'totalCount' => names.length, 'nodes' => names.map { |name| { 'name' => name } } })
   end
 
   def api(path, **)
@@ -28,13 +30,14 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
   include PostImplementationPublicationFixture
   include RepositoryConfigTestHelpers
 
-  def body_for(files, merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2 }, changed_files: nil, verdict: nil)
+  # client sets PreviewGitHub's changed_files or labels.
+  def body_for(files, merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2 }, verdict: nil, **client)
     with_repository('merge' => merge) do |root|
       trust!(root)
       with_result do |result, path|
         change_verdict(result, verdict) if verdict
         github = PreviewGitHub.new('a' * 40).tap { |client| client.files = files }
-        github.changed_files = changed_files
+        client.each { |key, value| github.public_send("#{key}=", value) }
         publish_at(root, result, path, github)
         return github.bodies.first.first
       end
@@ -62,6 +65,17 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
   def test_names_the_file_that_would_hand_the_pr_back
     assert_includes body_for(%w[lib/fix.rb skills/shaka/SKILL.md]),
                     'would hand this PR back: skills/shaka/SKILL.md sets review floor 3 (changes agent instructions)'
+  end
+
+  def test_names_a_hold_label_whatever_the_files
+    assert_includes body_for(%w[lib/fix.rb], labels: %w[bug Hold]),
+                    'would hand this PR back: it carries the hold label `Hold`.'
+    assert_includes body_for(%w[lib/fix.rb], labels: ['do-not-merge'],
+                                             merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2,
+                                                      'hold_labels' => ['do-not-merge'] }),
+                    'it carries the hold label `do-not-merge`'
+    assert_includes body_for(%w[skills/shaka/SKILL.md], labels: ['hold'], merge: { 'preference' => 'ask' }),
+                    'would hand this PR back: it carries the hold label `hold`.'
   end
 
   def test_counts_merge_limits

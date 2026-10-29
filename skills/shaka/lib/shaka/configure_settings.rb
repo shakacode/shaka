@@ -7,6 +7,7 @@ require_relative 'configuration'
 require_relative 'defaults'
 require_relative 'error'
 require_relative 'git_origin'
+require_relative 'merge_hold'
 require_relative 'repo_prefix'
 require_relative 'review_coverage'
 
@@ -38,6 +39,7 @@ module Shaka
     # In the order docs/settings.md explains them.
     SETTINGS = [
       merge('preference'), merge('required_checks'), merge('limits'), merge('auto_max_review_floor'),
+      setting('merge.hold_labels') { |context| MergeHold.from(context.config).labels },
       review('startup_check'), review('required'), review('ci_review_jobs'), review('ci_review_wait'),
       review('local_max_rounds'), review('local_review_agents'),
       *%w[local_review_count provider_coverage].map do |key|

@@ -60,6 +60,7 @@ merge:
   # hand back docs, agent instructions, and settings, merge, trust, validation, and install code.
   # While preference is ask, each ready checkpoint says whether Auto would merge the PR.
   auto_max_review_floor: 2
+  hold_labels: [hold] # Default. Shaka never merges a PR carrying one of these; remove it to merge.
 
 branches:
   name: '{login}-{host}/{issue}-{description}' # Default branch-name template.

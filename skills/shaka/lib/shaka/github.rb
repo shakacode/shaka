@@ -33,6 +33,7 @@ module Shaka
             baseCommit { oid }
           }
           headRepository { nameWithOwner } baseRepository { nameWithOwner }
+          labels(first: 100) { totalCount nodes { name } }
         }
       }
     }

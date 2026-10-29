@@ -21,6 +21,8 @@ module CliMergeFixture
              'mergeStateStatus' => 'CLEAN', 'reviewDecision' => 'APPROVED',
              'changedFiles' => 1, 'additions' => 1, 'deletions' => 0,
              'commits' => { 'totalCount' => 1 } }
+    labels = ENV.fetch('PR_LABELS', '').split(',').map { |name| { 'name' => name } }
+    pull['labels'] = { 'totalCount' => labels.length, 'nodes' => labels }
     if ARGV[0, 2] == ['api', 'graphql']
       request = JSON.parse($stdin.read)
       if request.fetch('query').include?('mergePullRequest')
@@ -52,8 +54,8 @@ module CliMergeFixture
 
   private
 
-  def with_merge_repository
-    with_repository('merge' => merge_policy,
+  def with_merge_repository(merge = merge_policy)
+    with_repository('merge' => merge,
                     'review' => review_policy('required' => 'none').except('ci_review_jobs'),
                     'checkpoint' => { 'enabled' => false }) do |root|
       commit_repository(root)
