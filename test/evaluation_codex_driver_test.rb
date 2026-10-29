@@ -3,9 +3,11 @@
 require_relative 'test_helper'
 require_relative '../eval/lib/shaka/evaluation/codex_driver'
 require_relative 'support/evaluation_codex_driver_fixture'
+require_relative 'support/evaluation_deadline_clock'
 
 class EvaluationCodexDriverTest < Minitest::Test
   include EvaluationCodexDriverFixture
+  include EvaluationDeadlineClock
 
   def test_observed_head_transitions_run_once_each_and_preserve_private_receipts
     result = run_driver(sequence: [HEAD, 'c' * 40, 'c' * 40, HEAD])
@@ -52,10 +54,13 @@ class EvaluationCodexDriverTest < Minitest::Test
   end
 
   def test_shared_deadline_stops_verification_and_reaps_its_process
+    path = File.join(@directory, 'pid')
     assert_raises(IOError) do
-      run_driver(verifier: "File.write('pid', Process.pid); sleep 30", seconds: 0.8)
+      expire_deadlines_when(-> { File.size?(path) }) do
+        run_driver(verifier: "File.write('pid', Process.pid); sleep 30", seconds: 60)
+      end
     end
-    pid = Integer(File.read(File.join(@directory, 'pid')))
+    pid = Integer(File.read(path))
     assert_raises(Errno::ESRCH) { Process.kill(0, pid) }
     assert_empty posts
     assert_equal 'failed', ledger.last.fetch('state')
