@@ -1,20 +1,22 @@
 # Releasing the Gem
 
-Shaka uses a small, explicit RubyGems release flow adapted from
-`shakacode/control-plane-flow`. Public product stage is `0.0.x`; the gem identifier
-stays on `0.1.0.pre.N` because `0.1.0.pre.1` is already published. Do not publish a
-`0.0.x` gem: RubyGems would still treat `0.1.0.pre.1` as newer for `--pre` installs.
-A release starts from an approved version on `main`,
-validates the packaged artifact, tags the exact source commit, publishes the gem, and
-creates the matching GitHub release. Registry publication requires explicit maintainer
-approval because a published version cannot be replaced.
+Shaka uses an explicit RubyGems release flow adapted from
+`shakacode/control-plane-flow`. The source prepares `1.0.0`; it is not published.
+The existing `0.1.0.pre.1` gem only reserves the name and lacks the current workflow.
+A release starts from an approved version on `main`, validates the packaged artifact,
+tags that exact commit, publishes the gem, and creates the matching GitHub release.
+Registry publication requires explicit maintainer approval because a published version
+cannot be replaced. A version change does not close pilot acceptance or qualify a host.
 
 ## Release process
 
 1. Change `Shaka::VERSION` in `skills/shaka/lib/shaka/version.rb` through a reviewed pull
    request and merge it. The gemspec reads that constant, and `shaka seam init` stamps it
-   into the `.agents/shaka.md` it generates.
-2. Start from a clean, current `main` checkout.
+   into the `.agents/shaka.md` it generates. Before selecting the release commit,
+   finalize the changelog heading with the publication date and compare the previous
+   tag to the intended release tag. Set `Unreleased` to compare the intended tag to
+   `HEAD`. Merge these source edits through a reviewed preparation PR.
+2. Start from a clean, current `main` checkout after those preparation edits land.
 3. Install dependencies and run the repository validation:
 
    ```bash
@@ -63,7 +65,7 @@ approval because a published version cannot be replaced.
    should report that the target does not exist:
 
    ```bash
-   shaka_version=0.1.0.pre.2
+   shaka_version=1.0.0
    gem list shaka --remote --all --exact --prerelease
    gh release view "v$shaka_version" --repo shakacode/shaka
    git ls-remote --exit-code --tags https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
@@ -98,7 +100,7 @@ approval because a published version cannot be replaced.
    ruby -rdigest -e 'abort "Notes differ from approval" unless
      Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' \
      /outside/checkout/RELEASE_NOTES.md APPROVED_NOTES_SHA256 &&
-     gh release create "v$shaka_version" --repo shakacode/shaka --verify-tag --prerelease \
+     gh release create "v$shaka_version" --repo shakacode/shaka --verify-tag \
        --title "shaka $shaka_version" --notes-file /outside/checkout/RELEASE_NOTES.md --generate-notes
    ```
 

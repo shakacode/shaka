@@ -41,8 +41,8 @@ phases:
         ambiguous, whatever the task format. Obtain the task and its checkout before implementing.
       - Read the task through an available connection; if it is inaccessible, ask for its
         description and acceptance criteria. Keep requirements in the original tracker and
-        delivery state on GitHub. Reading a tracker does not authorize updating it; do not create
-        a duplicate issue. Link the work item from the PR only when sharing is authorized, and
+        delivery state on GitHub. Reading a tracker does not authorize updating it beyond the
+        issue start comment in Implement; do not create a duplicate issue. Link the work item from the PR only when sharing is authorized, and
         keep private task content and links out of public artifacts.
         On resume, read the current task plan, its recorded decisions, and linked PRs before
         choosing the next step. Reconcile them with live PR state and confirmed ownership;
@@ -92,8 +92,8 @@ phases:
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>).
       - Before writing to an unfinished PR, whether resuming or adopting it, follow the
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>).
-      - Record a named initial human attention checkpoint after an unambiguous initiating instruction,
-        following [human attention checkpoints](<{{package_root}}/skills/shaka/references/return-points.md>).
+      - Record a named initial return point after an unambiguous initiating instruction,
+        following [return points](<{{package_root}}/skills/shaka/references/return-points.md>).
         Capture the revision and recoverable worktree state alongside the scope the human
         confirmed; mark incomplete snapshots not restorable. Existing start authorization
         needs no extra confirmation.
@@ -214,12 +214,27 @@ phases:
         Keep the current plan, consequential discussion, and later corrections in the original
         work item or an authorized linked document. Do not leave them only in chat.
         Reuse existing task-scoped write permission; reading alone grants none.
+      - Before implementation with planned local review, select the reviewers with
+        `reviewer --root DIR --ref TRUSTED_SHA --implementer PROVIDER/FAMILY`, adding `--count N`
+        when this task asked for a different number of reviewers.
+        Resolve [review consent](<{{package_root}}/skills/shaka/references/review-consent.md>)
+        for those providers now, reusing covering standing consent without another question.
+        For selected configured reviewers, run `doctor --startup-review --root DIR --ref TRUSTED_SHA`, passing
+        `--reviewer PROVIDER/FAMILY` for each one. This honors
+        `review.startup_check`; the tiny prompt sends no repository content and may consume quota.
+        A fresh-host fallback has no CLI probe: establish its review path before implementation
+        and record the probe as not applicable.
+        Stop before implementation if consent is missing or declined, or a requested probe fails or is unverified.
+        A successful probe establishes current access, not approval of a future code transfer.
       - Default to one PR. For larger tasks, read the
         [task-splitting section](<{{package_root}}/skills/shaka/references/delivery.md#when-a-task-needs-several-prs>).
         Keep one owner and each PR's own tests, review, and authority; every split PR repeats phases
         3 through 7. Use sequential ordinary PRs for dependencies; native stacks are outside this
         pilot, so do not create or merge them.
-    done_when: The seam, settings, and PR shape are settled and the checkpoint says proceed.
+    done_when: >-
+      The seam, settings, and PR shape are settled, review consent is resolved,
+      selected CLI reviewers passed the startup probe or it is disabled, any fresh-host fallback
+      has an established review path, and the checkpoint says proceed.
   - id: implement
     title: Implement
     body: |-
@@ -248,6 +263,11 @@ phases:
         creating that worktree when the branch is not checked out. Pull or rebase an existing
         upstream. Edit in that worktree, and move the session into it before the first edit when the
         host can. Preserve user work. Run candidate code only in the authorized isolated checkout.
+      - When a new task answers a GitHub issue, post its start comment on that issue after
+        creating the branch and before the first edit, following
+        [announce the start](<{{package_root}}/skills/shaka/references/delivery.md#announce-the-start-on-the-issue>).
+        Skip it for a described task, another tracker, a private trial, a resumed or adopted
+        PR, or when the user asked not to comment.
       - Choose routine, reversible approaches yourself. Ask consequential questions with a
         recommendation, await required answers before dependent work, and continue independent work
         meanwhile. Retain decisions in the task or PR within its privacy; silence is not approval.
@@ -317,7 +337,10 @@ phases:
         `review.required: always`. Fixing a finding changes the head, so
         revalidate and review the new one.
       - Run the loop locally and keep it in one ledger: pass `review run --ledger PATH` with a
-        path outside the checkout. The prompt asks the reviewer to class each finding as a
+        path outside the checkout. Pass every round the task's goal file as `--description-file
+        PATH` and keep each fix inside its scope, as the
+        [ledger section](<{{package_root}}/skills/shaka/references/local-review.md#run-the-review-loop-with-a-ledger>)
+        describes. The prompt asks the reviewer to class each finding as a
         `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
         disposition with `review record`; the next `review run` refuses to start until they are
         recorded, and refuses a head the ledger already reviewed unless another reviewer joins
@@ -516,10 +539,22 @@ phases:
         1 for docs a reader can trust from the description, 5 for irreversible or security changes.
         The helper refuses a rating below the floor the changed files set; to choose or change the
         floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
+        When a few files or ranges need more care than that rating, list them in `review_focus`, each with
+        `path`, a `level` above `review_effort`, a one-line `reason`, and optional `from` with `to` or `block`
+        as `code_links` take them.
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
-        Write `Fixes #N` once per issue the PR fully resolves and `Part of #N` for partial work.
+        Name the task in provenance as the
+        [usage guide](<{{package_root}}/skills/shaka/references/usage-reporting.md#pr-execution-provenance>)
+        describes, with an optional `task_relation`; use `fixes` when the PR fully resolves an
+        issue in this repository. The helper renders a numbered task as the Task line after Why in
+        Intent, so leave that task's link and its `Fixes` or `Part of` out of the summary.
+        Write `Fixes #N` once per other issue the PR fully resolves and `Part of #N` for partial work.
         When `description` returns `closing_issues`, correct the wording it names once.
+        For a work item in another tracker, such as Linear, Jira, or Shortcut, check through the
+        connection Intake used whether the merge will link and complete it, and whether it will
+        complete an item the task may not close. Name each mismatch and the tracker rule behind
+        it in the handoff; report an item you cannot read as unverified.
         The helper writes the repository validation and local review line under Verification
         from `--validation-result` and `--review-result`, so leave those out of `checks`.
         An optional linked `verification.summary` gives a compact result. Keep material gaps visible
@@ -550,8 +585,8 @@ phases:
         published local review comment URL, and Checkpoint, using `post_implementation` for the
         published PR comment URL or a named placeholder until publication. Supply `checkpoint`
         with the live full `head`; the helper reads the recommendation that opens the links line
-        from this head's published checkpoint `disposition`, with its verification verdict on the
-        next line, and non-empty `decisions` head the description instead. Add a one-sentence `next_action` only for a dependency, check, or
+        from this head's published checkpoint `disposition`, with an `inadequate` or `cannot judge`
+        verification verdict on the next line, and non-empty `decisions` head the description instead. Add a one-sentence `next_action` only for a dependency, check, or
         approval the recommendation does not already say, such as `Merge after #570 lands.`
         The renderer rejects a stale
         head, so neither line names the commit; leave checks and any table without a commit
@@ -571,7 +606,7 @@ phases:
         pr OWNER/REPO NUMBER --root DIR --ref SHA
         pr watch OWNER/REPO NUMBER --head SHA --root DIR --ref SHA
           [--baseline COMMENTS_JSON] [--interval SECONDS] [--timeout SECONDS] [--settle SECONDS]
-          [--ci-review-wait none|one|all] [--ci-review-not-required]
+          [--ci-review-wait none|one|all] [--ci-review-not-required] [--auto]
         comments OWNER/REPO NUMBER --head SHA
         comments OWNER/REPO ISSUE_NUMBER --issue
         description OWNER/REPO NUMBER --content-file PATH [--root DIR --ref SHA] [--comments COMMENTS_JSON]
@@ -584,7 +619,7 @@ phases:
         handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
-          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--limits-confirmed-head SHA]
+          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto] [--limits-confirmed-head SHA]
           [--empty-checks-confirmed-head SHA] [--adequacy-confirmed-head SHA] [--review-waiver REASON]
         usage --commit SHA --contribution CATEGORY [--since-time TASK_START_UTC]
         ```
@@ -682,7 +717,7 @@ phases:
         uses `UNKNOWN`.
       - Description provenance has exactly eight flat keys: `task_source`, `initial_prompt`,
         `requested_model`, `requested_effort`, `recommended_model`, `recommended_effort`,
-        `active_model`, and `active_effort`, plus an optional `task_number` that the
+        `active_model`, and `active_effort`, plus the optional task keys that the
         [usage guide](<{{package_root}}/skills/shaka/references/usage-reporting.md#pr-execution-provenance>) defines.
         `initial_prompt` is `EXCLUDED`; the other values use
         allowlisted text or `UNKNOWN`, except that either requested field uses JSON `null`
@@ -837,7 +872,7 @@ phases:
         confirmation's rebase rule applies to it. Wait when independent review is not yet
         satisfied, and follow the configured CI review wait. Wait for any user-requested review gate
         whether or not a local review already ran. With `ci_review_wait: none` or `one`, do not wait for optional checks to make
-        merge state CLEAN; `merge` accepts UNSTABLE once required checks pass. With `ci_review_wait: all`, wait
+        merge state CLEAN outside Auto; `merge` accepts UNSTABLE once required checks pass. With `ci_review_wait: all`, wait
         for every named job in `review.ci_review_jobs` on the current head and do not merge while the state is
         UNSTABLE. Pass `merge --ref` from intake and `--ci-review-wait MODE` only for a this-task override. Read
         completed feedback before merge and report pending optional reviews.
@@ -874,8 +909,13 @@ phases:
         `requiredChecksSource` is `seam`, GitHub will not stop that click, so name each seam-declared
         check and its state at that SHA in the handoff. Run `attention` with `--state none` when work
         on the PR resumes. Never set `awaiting-merge-approval` in Auto
-        mode. In Auto mode, run `merge` with the current head, walkthrough ID, and
-        `--squash-message` content. A required
+        mode. In Auto mode, run `merge --auto` with the current head, walkthrough ID, and
+        `--squash-message` content. `--auto` refuses unless every check reported on the head passed and
+        GitHub reports CLEAN, or a state the merge queue accepts on a queue base. It refuses the
+        confirmation flags and labels the PR `auto-merged` once GitHub confirms the merge; report
+        a failed or queue-deferred label in the handoff. When it refuses a failed check, hand
+        this PR back under Ask. A head the user confirms past a gate is an Ask merge: run `merge`
+        with the confirmation and without `--auto`. A required
         native approval must arrive first, and do not ask for a second approval afterward.
       - Under Ask, the user may approve the labeled PR instead of clicking merge: in chat, or when the
         latest review for the labeled head, as `comments` reports it, from a GitHub login the user
@@ -923,7 +963,7 @@ always: |-
   changes distinct from accepted direction; do not turn a proposal into human approval.
 
   When the human confirms new direction worth returning to, record the next named
-  human attention checkpoint through [human attention checkpoints](<{{package_root}}/skills/shaka/references/return-points.md>).
+  return point through [return points](<{{package_root}}/skills/shaka/references/return-points.md>).
   A request for attention alone confirms nothing. For a requested rewind, preserve
   the abandoned attempt before restoring owned code and context, retain applicable
   discoveries, refresh live authority, and verify the replacement through this workflow.
@@ -972,6 +1012,7 @@ always: |-
   the command keeps the stricter of that value and the trusted seam setting. When the trusted
   `review.required: meaningful_changes` rule permits omitting CI review for this task, record
   that decision and pass `--ci-review-not-required` so the watcher waits only for required checks.
+  In Auto mode, add `--auto` so it also waits for every other check on the head.
   Its one `SHAKA_WAKE`
   line gives the reason to refresh the PR. On an error wake, inspect the error, refresh the PR,
   and restart the watcher or use the resume path above. By default it polls every 60 seconds,

@@ -35,8 +35,8 @@ module Shaka
         raise Error, 'Private trial settings changed during watcher setup.' unless review_source
 
         settings = watch_settings(options, seam, review: review_source.review)
-        PrWatch.new(GitHub.new(*arguments), head: options[:head],
-                                            ci_jobs: review_jobs(options, review_source), settings:)
+        jobs = review_jobs(options, review_source)
+        ThroughputPublisher.watch(arguments, options[:head], jobs, settings)
       end
 
       def review_jobs(options, seam)
@@ -50,7 +50,7 @@ module Shaka
       end
 
       def watch_settings(options, seam, review: seam&.review)
-        settings = options.slice(:interval, :timeout, :settle, :comments_only, :owner)
+        settings = options.slice(:interval, :timeout, :settle, :comments_only, :owner, :auto)
         settings[:ci_review_wait] = CiReviewWait.effective(
           seam: review&.fetch('ci_review_wait', nil), override: options[:ci_review_wait]
         )
@@ -89,6 +89,7 @@ module Shaka
       def review_wait_option(flags, options)
         flags.on('--ci-review-wait MODE', CiReviewWait::VALUES) { |value| options[:ci_review_wait] = value }
         flags.on('--ci-review-not-required') { options[:ci_review_not_required] = true }
+        flags.on('--auto', 'Also wait for every check on the head, as merge --auto requires') { options[:auto] = true }
       end
 
       def timing_options(flags, options)

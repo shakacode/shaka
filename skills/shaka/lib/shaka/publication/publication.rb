@@ -4,6 +4,7 @@ require_relative '../error'
 require_relative 'text'
 require_relative 'links'
 require_relative 'usage_details'
+require_relative 'throughput_stats'
 require_relative 'timings_details'
 require_relative 'provenance'
 require_relative 'provenance_history'
@@ -56,7 +57,7 @@ module Shaka
     # A description leads with the maintainer's decision, so lead parts come before the summary.
     # Only a description names its summary, because there the decision line stands above it.
     def render(parts, title: false, lead: [])
-      blocks = [PublicationText.publisher_identity(@content)]
+      blocks = opening
       blocks << '# Code Walkthrough' if title
       lead.each { |part| blocks.concat(send(part)) }
       summary = PublicationText.required(@content['summary'], 'summary')
@@ -67,6 +68,12 @@ module Shaka
 
     private
 
+    # The spend follows the model line, before an optional publisher note; the intervals sit in Timings.
+    def opening
+      identity = PublicationText.publisher_identity(@content)
+      [@description ? identity.sub(/\A.*/) { "#{it}#{ThroughputStats.header(throughput)}" } : identity]
+    end
+
     # Only a description is rendered with its pull request, so only a description lists what people wrote.
     def sections = PublicationSections.render(@content, HumanComments.for(@content, @pull, @settings))
 
@@ -75,11 +82,15 @@ module Shaka
     # The steps besides merging sit right under the summary so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)
 
+    # The Task line names the prompt after the agent that wrote the description.
+    def task_line = ExecutionProvenance.new(provenance_spec, pull: @pull).line(@content.dig('identity', 'agent'))
+
     def credit = PublicationLinks.credit(@settings)
 
     # Intent and verification answer whether to trust the merge, so they come before any section.
     def intent_verification
-      IntentVerification.render(@content, @settings.verdict, @settings.review_effort_floor, @pull)
+      IntentVerification.render(@content, @settings.verdict, @settings.review_effort_floor, @pull,
+                                task: task_line, shortfall: @settings.reviewer_shortfall)
     end
 
     def evidence

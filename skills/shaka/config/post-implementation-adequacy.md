@@ -1,5 +1,5 @@
 Judge `verification_adequacy` by whether the packet's `verification` proves what its
-`intent` rests on, weighed against `review_effort`:
+`intent` rests on, weighed against `review_effort` and any `review_focus` levels:
 
 - `adequate`: the checks reach what `safe_because` rests on, and `not_verified` leaves
   nothing material.

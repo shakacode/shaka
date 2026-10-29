@@ -5,6 +5,7 @@ require 'open3'
 require 'tempfile'
 require_relative '../repository_config/review_schema'
 require_relative '../usage/codex_usage'
+require_relative 'codex_commands'
 require_relative '../usage/claude_usage'
 require_relative 'path_guard'
 require_relative 'process'
@@ -164,6 +165,7 @@ module Shaka
       return process_failure('codex exec', status, stderr, stdout) unless status&.success?
 
       @options[:usage] = CodexUsage.announced_session(stdout) if @options.fetch(:capture_usage, true)
+      @options[:commands] = LocalReviewCodexCommands.summary(stdout)
       invalid('codex exec returned no review', stdout) unless File.size?(@report)
     end
 

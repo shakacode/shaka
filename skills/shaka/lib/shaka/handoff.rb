@@ -7,6 +7,7 @@ require_relative 'merge_queue_commit'
 require_relative 'merge_required_checks'
 require_relative 'status'
 require_relative 'handoff/conversation'
+require_relative 'handoff/hold'
 require_relative 'handoff/review_threads'
 require_relative 'handoff/squash_note'
 require_relative 'handoff/walkthrough'
@@ -20,6 +21,7 @@ module Shaka
   class Handoff
     include MergeRequiredChecks
     include HandoffRendering
+    include HandoffHold
 
     OWED_EXIT = 2
     SHORT = 7
@@ -59,16 +61,17 @@ module Shaka
     end
 
     def open_facts(snapshot, live)
+      @pull = nil
       checks = snapshot['requiredChecks']
-      [attention_fact(checks, live), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
-       comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live), squash_fact(snapshot, live),
-       closing_fact, wip_fact(live), rendering_fact(live)].compact
+      [attention_fact(checks, live), hold_fact, checks_fact(checks, snapshot['requiredChecksUnavailable']),
+       threads_fact, comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live),
+       squash_fact(snapshot, live), closing_fact, wip_fact(live), rendering_fact(live)].compact
     end
 
     # An unsubmitted review by this account outranks every other wait, because only its author can see it.
     # GitHub refuses only a new review beside it, so a merge wait with a current walkthrough just names it.
     def attention_fact(checks, live)
-      @labels = Attention.new(@github).current
+      read_labels
       return label_fact(checks) unless walkthrough_reader.pending?
       return note(label_fact(checks), PendingReview::MESSAGE) if merge_requested? && walkthrough_reader.revision == live
 
@@ -122,7 +125,7 @@ module Shaka
     end
 
     # The person clicking merge sees which issues it closes before they click.
-    def closing_fact = (ClosingIssues.fact(@github) if merge_requested?)
+    def closing_fact = (ClosingIssues.fact(@github, pull['body']) if merge_requested?)
 
     def checkpoint_fact(live)
       return unless @checkpoint && merge_requested?
@@ -133,8 +136,9 @@ module Shaka
       owe('checkpoint owed', e.message)
     end
 
+    def pull = @pull ||= @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
+
     def wip_fact(live)
-      pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
       recheck_head(pull.dig('head', 'sha'), live)
       revision = WipNote.revision(pull['body'])
       return owe('no WIP', 'WIP Details is missing; publish it before stopping.') unless revision

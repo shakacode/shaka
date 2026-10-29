@@ -10,7 +10,7 @@ class PublicationSettingsLayoutTest < Minitest::Test
     sha = 'a' * 40
     trusted = Shaka::SettingsTable.source({ 'source' => 'trusted/team', 'source.revision' => sha }, 'acme/widgets')
     local = Shaka::SettingsTable.source({ 'source' => 'private/local', 'source.revision' => sha }, 'acme/widgets')
-    assert_equal "Repository settings at [`aaaaaaa`](https://github.com/acme/widgets/commit/#{sha})", trusted
+    assert_equal "Repository settings from commit [`aaaaaaa`](https://github.com/acme/widgets/commit/#{sha})", trusted
     assert_equal 'Private local settings at `aaaaaaa`', local
   end
 

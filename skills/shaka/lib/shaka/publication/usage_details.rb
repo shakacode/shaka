@@ -91,7 +91,7 @@ module Shaka
       checked
       fresh = @records.flat_map { |entry| hosted(entry['columns'], entry['identity']) }
       rows = UsageRows.new(fresh + carried_columns, earlier: earlier_reports.any?)
-      { 'summary' => [SUMMARY, rows.summary].compact.join(' · '), 'body' => body(rows),
+      { 'summary' => SUMMARY, 'body' => body(rows),
         'estimate' => rows.summary&.delete_suffix(' estimated') || 'UNKNOWN' }
     end
 

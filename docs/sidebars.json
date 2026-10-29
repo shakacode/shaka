@@ -33,6 +33,7 @@
       "collapsed": true,
       "items": [
         "pr-verification",
+        "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
         {
@@ -67,7 +68,8 @@
         "architecture",
         "repository-catalog",
         "control-towers",
-        "trying-pr-versions"
+        "trying-pr-versions",
+        "canary"
       ]
     }
   ]

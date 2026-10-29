@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../prompt_section'
+
 module Shaka
   # Loads only review criteria present at the separately verified trusted commit.
   module LocalReviewCriteria
@@ -70,23 +72,28 @@ module Shaka
 
     private
 
+    # One section per applicable AGENTS.md, shallowest first.
     def trusted_criteria(marker)
       ref = @options[:criteria_ref]
-      return '' unless ref
+      return [] unless ref
 
       entries = trusted_tree(ref)
       sources = applicable_criteria(entries)
       @criteria_supplied = sources.any? { |_path, source| source }
-      sources.map { |path, source| criteria_block(ref, marker, path, source && entries.fetch(source).last) }.join
+      sources.map { |path, source| criteria_block(ref, marker, path, source && entries.fetch(source).last) }
     end
 
     def criteria_block(ref, marker, origin, object)
       label = "TRUSTED CRITERIA #{marker}"
-      return "--- #{label} NOT SUPPLIED: #{ref}:#{origin} does not resolve to a file in the repository ---\n\n" unless
-        object
+      unless object
+        return PromptSection.new("AGENTS.md #{origin}@#{ref} (not a file; reported as not supplied)",
+                                 "--- #{label} NOT SUPPLIED: #{ref}:#{origin} does not resolve to a file " \
+                                 "in the repository ---\n\n")
+      end
 
       text = capture(git_executable, '-C', root, 'cat-file', 'blob', object)
-      "--- BEGIN #{label} FROM #{ref}:#{origin} ---\n#{text}\n--- END #{label} ---\n\n"
+      PromptSection.new("AGENTS.md #{origin}@#{ref}",
+                        "--- BEGIN #{label} FROM #{ref}:#{origin} ---\n#{text}\n--- END #{label} ---\n\n")
     end
 
     # Pairs each applicable AGENTS.md with the regular file it resolves to at the trusted commit, or nil.

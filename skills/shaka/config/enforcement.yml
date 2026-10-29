@@ -18,6 +18,15 @@ version: 1
 # `rule` when that span does not read as a sentence on its own, as half of "Never A or B"
 # does not. A clause added to a sentence an entry already quotes is not detected either.
 rules:
+  - id: startup-review-before-implementation
+    phase: plan
+    quote: >-
+      Stop before implementation if consent is missing or declined, or a requested probe fails or is unverified.
+    enforced_by: agent
+    note: >-
+      Ruby validates the switch, ref format, configured probe identities, and probe outcome.
+      The agent resolves human consent and follows phase order; Ruby cannot authenticate consent
+      or prevent implementation tools from running.
   - id: github-writer-identifier
     phase: explain
     quote: >-
@@ -441,8 +450,10 @@ rules:
     enforced_by: code
     detector: >-
       `ReviewThread#check_reply` ignores the thread's opening comment and refuses the
-      mutation until a later comment is from the authenticated account. A truncated
-      comment page that does not already show that reply fails closed.
+      mutation until a later comment from the authenticated account opens with the identity
+      line or a hidden marker, as `handoff` counts an agent post. An unmarked reply from that
+      account is the person's, so it does not count. A truncated comment page that does not
+      already show that reply fails closed.
   - id: resolve-only-when-settled
     phase: explain
     quote: >-
@@ -750,7 +761,8 @@ rules:
     enforced_by: agent
     note: >-
       `CiReviewWait.allowed_merge_states` returns UNSTABLE among the none and one states, so the command
-      accepts the merge once required checks pass. It cannot make an agent stop waiting.
+      accepts the merge once required checks pass. It cannot make an agent stop waiting. Under
+      `merge --auto` the command applies the all states instead and refuses UNSTABLE.
   - id: all-refuses-unstable
     phase: finish
     quote: do not merge while the state is UNSTABLE

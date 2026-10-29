@@ -353,3 +353,23 @@ class RepositoryConfigRequiredChecksTest < Minitest::Test
     end
   end
 end
+
+class RepositoryStartupCheckTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+
+  def test_startup_check_defaults_on_and_can_be_disabled
+    with_repository do |root|
+      assert Shaka::RepositoryConfig.load(root:).review.fetch('startup_check')
+    end
+    with_repository('review' => review_policy('startup_check' => false)) do |root|
+      refute Shaka::RepositoryConfig.load(root:).review.fetch('startup_check')
+    end
+  end
+
+  def test_startup_check_rejects_non_boolean_values
+    with_repository('review' => review_policy('startup_check' => 'false')) do |root|
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+      assert_includes error.message, 'review.startup_check must be true or false'
+    end
+  end
+end

@@ -27,6 +27,7 @@ module ConfigurationBoundaryFileIO
     install/status_checkout.rb install/status_inventory.rb install/checkout_record.rb install/take_over.rb
     update_check/cache.rb install/session_hook.rb ruby_requirement.rb startup_notice/marks.rb
     evidence/machine_facts.rb local_review/custom_instructions.rb
+    canary/body.rb canary/cli.rb canary/gate.rb canary/run.rb canary/text.rb
   ].freeze
 end
 
@@ -37,7 +38,7 @@ class ConfigurationBoundaryTest < Minitest::Test
   ROOT = File.expand_path('../skills/shaka/lib/shaka', __dir__)
   INTERNAL = %w[configuration.rb repository_config.rb trusted_config_source.rb].freeze
   OTHER_PATHS = %w[install/locations.rb install/official.rb install/official_links.rb install/status_inventory.rb
-                   merge_review_comparison.rb seam/initializer_readme.rb seam/pointer.rb].freeze
+                   merge_review_comparison.rb seam/initializer_readme.rb seam/pointer.rb canary/run.rb].freeze
   # Preview reads pinned renderer source; configuration still goes through its existing owner.
   OTHER_GIT_READ = %w[local_review/criteria.rb seam/upgrade_plan/indexed_references.rb
                       publication/rendering_preview.rb].freeze

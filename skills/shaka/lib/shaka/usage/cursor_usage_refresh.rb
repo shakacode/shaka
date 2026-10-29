@@ -5,6 +5,7 @@ require 'json'
 require_relative '../error'
 require_relative '../github'
 require_relative '../publication/usage_details'
+require_relative '../publication/throughput_stats'
 require_relative '../publication/rendering_preview'
 require_relative 'cursor_usage'
 require_relative 'cursor_usage_store'
@@ -318,6 +319,7 @@ module Shaka
         raise Error, 'Cursor usage refresh found no usage section.' unless updated
 
         updated = UsageEstimate.refresh(updated, detail)
+        updated = ThroughputStats.refresh_spend(updated, detail.fetch('estimate'))
         updated == region ? updated : RenderingPreview.invalidate(updated)
       end
 

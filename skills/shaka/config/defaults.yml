@@ -3,6 +3,7 @@
 # Reference: docs/settings.md. Editing this file changes Shaka's behavior for every repository.
 ---
 review:
+  startup_check: true # Probe selected local reviewers before implementation; may consume quota.
   ci_review_wait: one # Wait for one configured hosted review report before merge.
   local_max_rounds: 5 # Committed heads one local review ledger may review.
   local_review_count: 1 # Local reviewers run on each committed head; unused when provider_coverage lists providers.
@@ -27,6 +28,7 @@ merge:
   # The highest human review floor (pr_description.human_review_floors) a PR may set and still
   # merge without a person confirming its head. 5 holds nothing back.
   auto_max_review_floor: 5
+  hold_labels: [hold] # A PR carrying any of these never merges through Shaka until a person removes it.
 
 branches:
   name: '{login}-{host}/{issue}-{description}' # Feature branch-name template.

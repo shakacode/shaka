@@ -79,22 +79,22 @@ class RenderingPreviewTest < Minitest::Test
     refute Shaka::RenderingPreview.required?(github)
   end
 
-  # provenance.rb calls task_source_line.rb to render the line, so a PR changing either can preview its description.
-  def test_provenance_and_task_source_renderers_can_be_previewed
-    %w[provenance.rb task_source_line.rb].each do |name|
-      github = preview_github
-      github.define_singleton_method(:api_list) do |_path|
-        [{ 'filename' => "skills/shaka/lib/shaka/publication/#{name}" }]
-      end
-      result = rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->")
-
-      assert_empty result.fetch('owed'), name
+  # Any publication file previews without a list edit. A changed guard or GitHub write stays installed, and the
+  # handoff says the preview, owed or current, did not show it.
+  def test_any_publication_renderer_can_be_previewed
+    %w[provenance links metrics renderer_added_by_the_head feature_guard publishing].each do |name|
+      github = preview_github([name])
+      assert_includes rendering_fact(github, nil).fetch('owed').join, 'description --rendering-preview-root', name
+      current = rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->")
+      assert_empty current.fetch('owed'), name
+      notes = Shaka::RenderingPreview::INSTALLED.grep(%r{/#{name}\.rb\z}) { "Kept installed, not previewed: #{it}." }
+      [rendering_fact(github, nil), current].each { |fact| assert_equal notes, fact.fetch('notes'), name }
     end
   end
 
   def test_unsupported_renderers_block_instead_of_publishing_an_incomplete_preview
     github = preview_github
-    def github.api_list(_path) = [{ 'filename' => 'skills/shaka/lib/shaka/publication/text.rb' }]
+    def github.api_list(_path) = [{ 'filename' => 'skills/shaka/lib/shaka/publication/nested/text.rb' }]
     pull = { 'head' => { 'repo' => { 'full_name' => github.repository } } }
     error = assert_raises(Shaka::Error) do
       Shaka::RenderingPreview.publish({ rendering_preview_root: ROOT }, pull, github) { flunk }
@@ -104,11 +104,12 @@ class RenderingPreviewTest < Minitest::Test
 
   private
 
-  def preview_github
+  def preview_github(renderers = %w[metrics])
     github = Object.new
     def github.repository = 'shakacode/shaka'
     def github.number = 860
-    def github.api_list(_path) = [{ 'filename' => 'skills/shaka/lib/shaka/publication/metrics.rb' }]
+    files = renderers.map { |name| { 'filename' => "#{Shaka::RenderingPreview::DIRECTORY}#{name}.rb" } }
+    github.define_singleton_method(:api_list) { |_path| files }
     github
   end
 
@@ -119,6 +120,6 @@ class RenderingPreviewTest < Minitest::Test
     handoff.instance_variable_set(:@owed, [])
     handoff.instance_variable_set(:@notes, [])
     fact = handoff.send(:rendering_fact, 'a' * 40)
-    { 'owed' => handoff.instance_variable_get(:@owed), 'fact' => fact }
+    %w[owed notes].to_h { [it, handoff.instance_variable_get(:"@#{it}")] }.merge('fact' => fact)
   end
 end

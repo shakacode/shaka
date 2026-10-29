@@ -17,7 +17,8 @@ same host, label, provider, configured and routed model, and effort, such as eig
 review runs of one model, share a row marked `×8`; rows that share only a label also
 show their host, model, and effort. With more than one row, a total row adds the USD
 and credit estimates; it leaves token counts blank, because hosts count input
-differently. The collapsed summary shows the USD total. Columns are USD, Codex
+differently. The model line at the top of the description shows the USD total, so the
+collapsed summary does not repeat it. Columns are USD, Codex
 credits, Input, Cached input, Output, Reasoning, and Cache writes; a column no report
 measured is left out. The table links to the reader-facing [usage and cost guide](https://shaka.shakacode.com/docs/reference/usage-and-cost)
 for column definitions and accounting rules. Report names keep their hyphens from breaking the line. Dollar amounts are
@@ -340,7 +341,26 @@ evidence keeps the row too. All eight keys remain required.
 
 Add the optional integer `task_number` when `task_source` is `issue` or `pull_request`
 and that issue or PR is in the PR's own repository; the helper links it in the Task
-source row. Omit it for a task in another repository or tracker, which may be private.
+source row. Omit it for a task in another GitHub repository, which may be private.
+
+For a Jira or Linear ticket whose key may appear in this PR, set `task_source` to
+`issue`, `task_tracker` to `jira` or `linear`, and `task_key` to its key, such as
+`MKT-1234`; for a private tracker, omit the tracker keys so the line reads `issue`. Add an
+https `task_url` only when the ticket's address may appear too; without it the key is
+shown unlinked.
+
+With a number or key, the optional `task_relation` says how this PR relates to the
+task: `fixes`, `part_of`, `follow_up`, or `refs`. Only a GitHub issue number takes `fixes`.
+
+The helper renders the Task line after Why in Intent:
+
+| Provenance | Task line |
+| --- | --- |
+| `description` | `Claude prompt` or `Codex prompt`, from the writer's identity |
+| issue `1234`, `part_of` | `GitHub #1234 · part of` |
+| issue `1234`, `fixes` | `GitHub · fixes #1234`, which closes the issue when the PR merges into the default branch |
+| `linear`, `MKT-1234` | `Linear MKT-1234` |
+| issue or PR with no number or key | `issue` or `pull request` |
 
 Carry those values from intake; recommendations and host settings do not establish
 a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not
@@ -370,9 +390,9 @@ no commit can be found, the row shows the release version instead, such as
 The table shows the latest publication, so `description` also keeps a history in a hidden
 marker in the PR body. It adds an entry, recording the PR head, whenever the Shaka skill version
 cell or a route differs from the last entry; republishing the same values adds nothing. Once
-there are two entries, a collapsed **Provenance history** block lists them oldest first. It
+there are two entries, **Execution details** lists them oldest first below its table. It
 keeps the first entry and the 20 most recent, and says how many it omitted. The helper writes
-this history; a details item with that summary is refused, and so is a marker it cannot
+this history; a details item titled `Provenance history` is refused, and so is a marker it cannot
 validate, which publishes nothing until the marker is restored or removed. A PR published
 before this history existed starts one at its next publication, and a fork's history is never
 carried, because the fork author can edit it.

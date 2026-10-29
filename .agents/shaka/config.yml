@@ -11,6 +11,7 @@ repo_prefix: SHAKA # Default: derived from the repo name ("SHAK" here); we prefe
 # base_branch: main # Default: the repository's default branch.
 
 review:
+  startup_check: true # Default: check selected reviewers before implementation; may consume quota.
   # Required, no default; setup asks. meaningful_changes lets trivial prose skip review;
   # the others are always and none.
   required: meaningful_changes
@@ -32,7 +33,7 @@ review:
     - provider: openai
       model_family: codex
     # Optional: provider_coverage never picks these, so they run only when a task names one.
-    # doctor warns on a machine without their setup.
+    # doctor warns about their missing setup only when ~/.agents/shaka/local-reviewers.yml lists them.
     - provider: deepseek # Needs OPENROUTER_API_KEY; deadline 600 seconds by default.
       model_family: openrouter
       model: deepseek/deepseek-v4.1-flash
@@ -59,6 +60,7 @@ merge:
   # hand back docs, agent instructions, and settings, merge, trust, validation, and install code.
   # While preference is ask, each ready checkpoint says whether Auto would merge the PR.
   auto_max_review_floor: 2
+  hold_labels: [hold] # Default. Shaka never merges a PR carrying one of these; remove it to merge.
 
 branches:
   name: '{login}-{host}/{issue}-{description}' # Default branch-name template.

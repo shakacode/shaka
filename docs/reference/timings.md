@@ -19,6 +19,20 @@ The section opens with totals for both kinds of time, for example
 `Totals: 4h 18m between checkpoints · 11h 2m waiting on a person in 2 waits`.
 The first total includes the time before the PR opened.
 
+## Time to ready and merge
+
+The model line at the top of the description ends with the AI spend. Under
+Shaka metrics, the estimated cost adds how long the work took from the recorded
+task start once that is known: `ready in 1h 19m` while the PR is open, then
+`merged in 3h 24m`.
+
+The Timings section breaks that down for the current head. Prompt to CI runs
+from the task start to the head's earliest check. CI to ready runs from that
+check until the head's required checks and configured CI reviews are green.
+Ready to merged runs from then until the merge. After a new push, the intervals
+measure the new head. `pending` is not known yet. `UNKNOWN` was not established,
+such as a ready time no watch recorded before the merge. Neither means zero.
+
 ## What each stretch means
 
 | Stretch | Starts | Ends |
