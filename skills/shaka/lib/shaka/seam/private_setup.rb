@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'initializer'
+require_relative 'personal_prefill'
 require_relative 'private_recovery'
 require_relative 'private_seed'
 
@@ -9,6 +10,7 @@ module Shaka
     # Prepares local recovery and exclusion before placing generated private files.
     class PrivateSetup < Initializer
       include PrivateSeed
+      include PersonalPrefill
 
       def initialize(root:, ref:, options:)
         super(root:, options:)
@@ -24,9 +26,18 @@ module Shaka
         activate(recovery, files, resumable)
         verify_complete!(recovery)
         recovery.mark_activated!
-        recovery.inspect_checkout.merge({ 'status' => 'complete', 'seeded_from' => @options[:from] }.compact)
+        completed(recovery)
       rescue SystemCallError => e
         raise interrupted_error(e, recovery)
+      end
+
+      # The configuration a real run would write, refused the same way; writes nothing.
+      def plan
+        files = generated_files
+        refuse_trusted_or_adopted!
+        preflight(PrivateRecovery.new(root: @root, assign_identity: false), files)
+        { 'status' => 'plan', 'config' => files.fetch(Configuration::Paths.at(@root, LAYOUT.contract)) }
+          .merge(prefill_report)
       end
 
       private
@@ -62,20 +73,21 @@ module Shaka
         resumable
       end
 
+      # A plan has no assigned identity, and so no recovery copy, until setup first runs.
       def source_available?(recovery, files)
         source = Configuration.private_source(root: @root, ref: @ref)
-        resumable = recovery.prepared_matches?(files)
+        resumable = recovery.storage && recovery.prepared_matches?(files)
         refuse_copy_replacement!(source, recovery, resumable)
-        raise Error, "Private setup blocked (#{source.status}): #{source.blockers.join('; ')}" unless
-          source.status == 'absent' || resumable
+        raise Error, blocked_message(source) unless source.status == 'absent' || resumable
 
         resumable
       end
 
       def refuse_copy_replacement!(source, recovery, resumable)
-        return unless source.status == 'absent' && recovery.recovery_copy? && !resumable
+        return unless source.status == 'absent' && recovery.storage && recovery.recovery_copy? && !resumable
 
-        raise Error, "Existing recovery copy differs from proposed setup: #{recovery.storage}; compare before retrying"
+        raise Error, "Existing recovery copy differs from proposed setup: #{recovery.storage}; " \
+                     "compare before retrying#{personal_hint}"
       end
 
       def refuse_adoption!(recovery)

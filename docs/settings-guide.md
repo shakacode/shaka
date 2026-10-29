@@ -19,6 +19,7 @@ repository without changing it, and adopt it as a team later through an ordinary
 | --- | --- | --- |
 | Shaka itself | Your Shaka installation, linked into your coding agent | You, when you install or update |
 | Individual settings | `.agents/shaka/` in your copy of the repository, kept out of commits | You, until the team adopts Shaka |
+| Your starting point for individual setup | `~/.agents/shaka/config.yml`, read only when an individual setup starts | You |
 | Team settings | `.agents/shaka/`, committed on the default branch | Your team, through settings PRs |
 
 Each task uses one of these settings sources, never a mix. See
@@ -39,6 +40,11 @@ Individual settings support the same choices as shared settings: reviewers, cust
 code-review instructions, checkpoint choices, writing limits, opening instructions,
 and WIP preferences.
 See [current experience and recovery limits](expected-experience.md#individual-setup).
+
+If you try Shaka on several repositories, write those preferences once in
+`~/.agents/shaka/config.yml`. Each new individual setup starts from them, and you
+still review the proposal before Shaka writes it. See
+[start individual setups from your preferences](settings.md#start-individual-setups-from-your-preferences).
 
 For shared team settings:
 
