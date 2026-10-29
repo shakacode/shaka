@@ -1,13 +1,11 @@
 # frozen_string_literal: true
 
 require_relative 'evidence_fixture'
-require 'shellwords'
 
 module EvidenceMappingFixture
   include EvidenceFixture
 
-  MAPPINGS = ['--spec-for', 'app/new.rb', 'spec/new_spec.rb',
-              '--no-spec-for', 'README.md', 'documentation only'].freeze
+  MAPPINGS = ['--spec-for', 'app/new.rb', 'spec/new_spec.rb'].freeze
   DURABLE_SELECTOR = <<~RUBY_SCRIPT
     require 'json'
     JSON.parse(File.read('changed-files.json')).each do |path|
@@ -22,28 +20,21 @@ module EvidenceMappingFixture
 
   private
 
-  def with_mapping_checkout(fixed: false)
+  def with_mapping_checkout
     with_checkout do |root, _ref|
-      write_mapping_commands(root, fixed:)
+      write_mapping_commands(root)
       yield root, commit_changes(root)
     end
   end
 
-  def write_mapping_commands(root, fixed:)
+  def write_mapping_commands(root)
     FileUtils.mkdir_p(File.join(root, 'script'))
     write_mapping_selector(root)
-    File.write(File.join(root, 'script/security.rb'), "exit 0\n")
-    mappings = fixed ? MAPPINGS.shelljoin : '"$@"'
-    File.write(File.join(root, '.agents/bin/validate'), <<~SH)
-      #!/bin/sh
-      set -eu
-      ruby script/selector.rb #{mappings}
-      ruby script/security.rb
-    SH
+    File.write(File.join(root, '.agents/bin/validate'), "#!/bin/sh\nset -eu\nruby script/selector.rb \"$@\"\n")
   end
 
   def write_mapping_selector(root)
-    File.write(File.join(root, 'changed-files.json'), JSON.generate(['app/new.rb', 'README.md']))
+    File.write(File.join(root, 'changed-files.json'), JSON.generate(['app/new.rb']))
     File.write(File.join(root, 'script/selector.rb'), <<~RUBY_SCRIPT)
       require 'json'
       changed = JSON.parse(File.read('changed-files.json'))
@@ -59,7 +50,6 @@ module EvidenceMappingFixture
   end
 
   def supply_durable_selector_rules(root)
-    File.write(File.join(root, 'changed-files.json'), JSON.generate(['app/new.rb']))
     File.write(File.join(root, 'script/selector.rb'), DURABLE_SELECTOR)
   end
 end

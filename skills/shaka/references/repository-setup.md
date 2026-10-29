@@ -276,8 +276,7 @@ app/new.rb)
 
 Keep unknown changed files fail-closed and preserve every required lint, security,
 and other check. Review each coverage rule against the changed files. Do not
-persist task-specific `--no-spec-for` defaults: a later change could inherit an
-exclusion. If coverage cannot be expressed safely, keep validation blocked.
+persist task-specific exclusions such as `--no-spec-for` defaults. If coverage cannot be expressed safely, keep validation blocked.
 Do not use `eval`, shell command strings, executable overrides, or external
 untracked mapping inputs.
 

@@ -12,7 +12,8 @@ class EvidenceMappingSelectorTest < Minitest::Test
       assert_equal 'clear', Shaka::Configuration::FeatureGuard.check(root:, base:, head:).fetch('status')
       validation = run_check(root, base, command: 'validate')
       with_results(validation:, review: review_check(root, head)) do |paths|
-        assert_equal 'ready', verify(root, head, ref: base, **paths).fetch('status')
+        verdict = verify(root, head, ref: base, **paths)
+        assert_equal ['ready', nil], [verdict['status'], verdict.dig('checks', 'validation', 0, 'guidance')]
       end
     end
   end
