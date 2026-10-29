@@ -106,7 +106,7 @@ pr_description:
               'skills/shaka/lib/shaka/{install,update_check,github,gitlab}/**/*']
     - level: 3
       reason: changes contributor guides, including releasing, or product requirements
-      paths: [contributing/**/*, internal/requirements.md]
+      paths: [CONTRIBUTING.md, contributing/**/*, internal/requirements.md]
     - level: 3
       reason: changes agent instructions
       paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]

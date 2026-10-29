@@ -31,7 +31,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     'skills/shaka/lib/shaka/publication_settings_guard.rb' => 4,
     'skills/shaka/lib/shaka/publication/rendering_preview.rb' => 4,
     'skills/shaka/lib/shaka/gitlab/transport.rb' => 3, 'README.md' => 5,
-    'contributing/releasing.md' => 3, 'internal/requirements.md' => 3
+    'CONTRIBUTING.md' => 3, 'contributing/releasing.md' => 3, 'internal/requirements.md' => 3
   }.freeze
 
   def setup
