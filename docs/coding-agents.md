@@ -153,15 +153,15 @@ also stays in force.
 
 | What you see | What it means | What to do |
 | --- | --- | --- |
-| A Codex reviewer runs instead of Claude | The default branch does not list Claude, or Claude is not set up on this machine | Merge the setting from step 1 and run `$shaka doctor` |
+| A Codex reviewer runs instead of Claude, and doctor does not list Claude | The default branch does not list Claude | Merge the setting from step 1 |
+| A Codex reviewer runs instead of Claude, and doctor lists it | The `claude` CLI is missing from your `PATH` or is not signed in | Repeat step 2 |
 | `Not logged in · Please run /login` | The `claude` CLI is not signed in | Run `claude`, then `/login`, and retry the task. This is not a consent problem |
-| Shaka asks for consent again | No statement in the chat or `~/.codex/AGENTS.md` names this provider, repository, and content | Fix the statement, or answer the question for this task |
-| Codex Auto-review denies `shaka review run` | Codex blocked the command before it started, so nothing reached Claude | In the Codex CLI, run `/approve` for that command. Do not answer the consent question again or switch reviewers |
-| A missing `ANTHROPIC_API_KEY` | Another tool, such as a repository script, needs an Anthropic API key. The Claude reviewer does not | Set the key for that tool, or let the agent report its check as failed. The agent must not skip that check |
+| Shaka asks for consent again | No statement Codex reads names this provider, repository, and content. Codex skips `~/.codex/AGENTS.md` when an `AGENTS.override.md` sits beside it | Fix the statement or move it to the file Codex reads, or answer the question for this task |
+| Codex Auto-review denies `shaka review run` | Codex blocked the command before it started, so nothing reached Claude | Follow [When Codex denies the review](#when-codex-denies-the-review). Do not answer the consent question again or switch reviewers |
+| A missing `ANTHROPIC_API_KEY` | Another tool, such as a repository script, needs an Anthropic API key. The Claude reviewer does not | Set the key for that tool. Without it, the agent reports that check as failed rather than skipping it |
 
-Shaka cannot get around your organization's managed Codex policy. When the
-policy keeps denying the review, the agent records on the PR that the review
-did not run. A denied review does not count as one of its rounds.
+Shaka cannot get around your organization's managed Codex policy. A denied
+review does not count as one of its rounds.
 
 ## Codex desktop follow-up
 
