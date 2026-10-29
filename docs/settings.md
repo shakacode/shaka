@@ -454,8 +454,8 @@ keeps your chosen model; it does not substitute another one.
 Most warnings allow the review to run. An unsupported Claude effort stops it;
 choose one of Claude’s listed effort values to continue.
 
-Put project-specific review criteria in `AGENTS.md`. To check reviewer settings,
-use the [availability prompt](getting-started.md#2-choose-individual-trial-or-team-setup).
+Put project-specific review criteria in `AGENTS.md`. To check that your AI accounts
+can run the chosen reviewers, ask `$shaka Probe this project's configured reviewers.`
 To choose how many hosted review reports to wait for, use
 [`review.ci_review_wait`](#reviewci_review_wait).
 
@@ -485,8 +485,8 @@ records your choice, so no edit is needed.
 A repository may list reviewers you never use. Without a machine list, Shaka warns about
 every listed reviewer that your machine is missing, except reviewers that
 [`provider_coverage`](#reviewprovider_coverage) never selects on its own. List the
-reviewers you run in `~/.agents/shaka/reviewers.yml`, and Shaka warns only about those and
-the providers `provider_coverage` names, in every repository:
+reviewers you run in `~/.agents/shaka/local-reviewers.yml`, and Shaka warns only about
+those and the providers `provider_coverage` names, in every repository:
 
 ```yaml
 version: 1

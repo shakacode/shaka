@@ -41,4 +41,31 @@ module EvaluationCaptureFixture
   def refute_process(pid)
     assert_raises(Errno::ESRCH) { Process.kill(0, pid) }
   end
+
+  # Yields a dead, unreaped group leader whose group keeps one zombie that this process owns.
+  def with_zombie_only_group
+    leader = Process.spawn('/bin/sleep', '30', pgroup: true)
+    member = Process.spawn('/usr/bin/true', pgroup: leader)
+    wait_for_zombie(member)
+    Process.kill('KILL', leader)
+    wait_for_zombie(leader)
+    yield leader
+  ensure
+    [leader, member].compact.each { reap(it) }
+  end
+
+  def reap(pid)
+    Process.waitpid(pid)
+  rescue Errno::ECHILD
+    nil
+  end
+
+  def wait_for_zombie(pid)
+    3000.times do
+      return if IO.popen(['ps', '-o', 'stat=', '-p', pid.to_s], &:read).start_with?('Z')
+
+      sleep 0.01
+    end
+    flunk "Process #{pid} did not become a zombie"
+  end
 end

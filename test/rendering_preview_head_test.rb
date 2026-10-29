@@ -11,13 +11,15 @@ class RenderingPreviewHeadTest < Minitest::Test
 
   # Only a renderer that has not landed may be absent; a head missing any other one is refused.
   def test_a_head_missing_a_landed_renderer_is_refused
-    Dir.mktmpdir do |dir|
-      head = fixture_head(dir, without: 'metrics.rb')
-      error = assert_raises(Shaka::Error) do
-        Shaka::RenderingPreview.render(root: dir, head:, repository: 'shakacode/shaka') { flunk }
-      end
+    %w[metrics.rb task_source_line.rb].each do |name|
+      Dir.mktmpdir do |dir|
+        head = fixture_head(dir, without: name)
+        error = assert_raises(Shaka::Error, name) do
+          Shaka::RenderingPreview.render(root: dir, head:, repository: 'shakacode/shaka') { flunk }
+        end
 
-      assert_includes error.message, 'Cannot read rendering preview'
+        assert_includes error.message, 'Cannot read rendering preview', name
+      end
     end
   end
 

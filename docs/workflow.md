@@ -51,6 +51,7 @@ They do not restrict maintainers.
 | Which public comment bodies an agent reads | Ruby allowlist and provenance checks |
 | Reviewed commit and required GitHub merge conditions | Ruby merge helper and GitHub protection |
 | Posted review evidence covering the merged commit, or a stated waiver | Ruby merge helper, when the agent merges and review is required |
+| PR size within [`merge.limits`](settings.md#mergelimits), or a person's confirmation of that commit | Ruby merge helper, when the agent merges |
 | Sentence, paragraph, and total length of PR descriptions and walkthroughs | Ruby publication helpers, using [`prose_limits`](settings.md#prose_limits) |
 | Adequate tests, useful screenshots, and how thorough the review was | Agent judgment and review |
 | Keeping private information out of publications | Agent inspection; no automated privacy scan |

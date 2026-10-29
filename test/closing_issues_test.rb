@@ -55,6 +55,7 @@ class ClosingIssuesTest < Minitest::Test
     note = Shaka::ClosingIssues.note(content('Adds the check.', task: 631), FakeGitHub.new([]))['closing_issues']
 
     assert_includes note, "task's issue #631, but GitHub will not close it"
+    assert_includes note, '`task_relation` to `fixes`'
   end
 
   def test_part_of_the_task_issue_or_a_linked_task_issue_adds_no_note
