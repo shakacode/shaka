@@ -50,8 +50,8 @@ session (use `$shaka` in Codex):
 
 ## Give consent once
 
-Shaka's local review sends your change to other AI providers, so Shaka asks
-before the first review of a task. Answer **Yes, and don't ask again** and
+When Shaka's local review would send your change to a provider other than your
+coding agent's, Shaka asks before the first review of a task. Answer **Yes, and don't ask again** and
 Shaka saves a consent statement to your own instructions file, then reuses it
 on later tasks without asking. The question shows the exact statement and file
 before you choose. If your agent can't write the file, it gives you the text to
