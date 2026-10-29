@@ -20,7 +20,9 @@ module Shaka
           shell_directory_dependency?(text)
         end
 
+        # A quoted key in a hash or map names the directory as data, not a place to run from.
         def shell_directory_dependency?(text)
+          text = text.gsub(/[{,]\s*\K(['"])#{Regexp.escape(PATHS::DIRECTORY)}\1(?=\s*(?:=>|:)\s)/o, '')
           [text, normalize_shell_fragments(text)].any? do |source|
             source.match?(old_directory_change) || legacy_directory_command_pair?(source)
           end
@@ -42,8 +44,8 @@ module Shaka
           return false unless text.match?(bare)
 
           names = command_paths.map { |command| Regexp.escape(File.basename(command)) }.join('|')
-          # A full old command path is rewritten whole, so its bin/ part is not a command beside the directory.
-          text.match?(%r{(?<!#{Regexp.escape(PATHS::DIRECTORY)}/)\bbin[/'"\s,]+(?:#{names})\b})
+          # A bin/ inside a longer path, such as a full old or new command path, is not a command beside the directory.
+          text.match?(%r{(?<![\w./-])(?:\./)?bin[/'"\s,]+(?:#{names})(?![\w-])}o)
         end
       end
     end

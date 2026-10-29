@@ -96,7 +96,7 @@ module Shaka
         end
 
         def block_directory_reference(path, line)
-          reason = if command_directory_reference?(line)
+          reason = if moved_command_directory_reference?(line, path)
                      'old command-directory reference'
                    elsif normalized_internal_reference?(line)
                      'normalized old-layout reference'

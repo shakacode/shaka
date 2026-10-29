@@ -426,7 +426,7 @@ class SeamUpgradeHiddenIndexReviewTest < Minitest::Test
   def test_executable_markdown_keeps_whole_file_fragment_check
     with_repository do |root|
       path = File.join(root, 'check.md')
-      File.write(path, "Don't run .agents/bin/test\n")
+      File.write(path, "Don't run .age\"\"nts/bin/test\n")
       File.chmod(0o755, path)
       commit_fixture(root, 'executable markdown')
       assert_includes report(root).fetch('blockers').join, 'fragmented old-layout reference'
