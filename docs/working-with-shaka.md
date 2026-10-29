@@ -186,14 +186,25 @@ $shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N. Go.
 Tickets stay open unless you add "Close each ticket when its PR merges."
 
 <a id="use-a-technique-skill-during-delivery"></a>
+<a id="use-pstack-for-a-bounded-part-of-delivery"></a>
 
-[pstack](https://github.com/cursor/plugins/tree/main/pstack)'s poteto mode adds
-engineering principles and parallel workers:
+[pstack](https://github.com/cursor/plugins/tree/main/pstack) can build a harness
+that drives your app the way a user does, to prove what tests alone can't:
 
 ```text
-$shaka Fix https://github.com/OWNER/REPO/issues/N in poteto mode. You may use
-subagents for swarm and arena. Go.
+$shaka Fix https://github.com/OWNER/REPO/issues/N. Use pstack's
+create-verification-skill to prove searching for O'Brien finds the order. Go.
 ```
+
+Shaka uses pstack's techniques inside its own steps. pstack's Shipping, Babysit,
+and Autopilot playbooks run their own delivery, so Shaka leaves them out and
+offers to try one separately. On Codex, install a community port of pstack.
+
+<a id="hand-verification-evidence-back-to-shaka"></a>
+
+The PR's verification lists the harness command, the commit it ran on, what it
+showed, its screenshots or logs, and what it didn't cover. After a later commit,
+the agent reruns any check that commit affects.
 
 <a id="try-a-new-skill-pack-with-shaka"></a>
 

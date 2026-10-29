@@ -70,8 +70,8 @@ A selected companion technique applies within the Shaka phase it concerns.
 Carry companion verification evidence into the existing verification record;
 Shaka's current-head requirements override a companion's verdict-reuse policy.
 Record applied skills through [skill attribution](skill-attribution.md).
-Use the [worked handoff](https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#hand-verification-evidence-back-to-shaka)
-as an example.
+The [product guide](https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#hand-verification-evidence-back-to-shaka)
+lists what that record shows the user.
 
 ## Use PR-body advice inside the managed description
 
