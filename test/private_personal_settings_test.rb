@@ -124,7 +124,7 @@ class PrivatePersonalSettingsTest < Minitest::Test
   MALFORMED_REVIEWERS = {
     'checkpoint.reviewer' => { 'version' => 1, 'checkpoint' => { 'reviewer' => 'codex' } },
     'pr_description.opening_check.reviewer' => { 'version' => 1,
-                                                 'pr_description' => { 'opening_check' => { 'reviewer' => 'codex' } } }
+                                                 'pr_description' => { 'opening_check' => { 'reviewer' => nil } } }
   }.freeze
 
   def test_a_malformed_reviewer_identity_names_its_key

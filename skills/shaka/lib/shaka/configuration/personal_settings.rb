@@ -72,8 +72,9 @@ module Shaka
       # The schema's own parse error names the value but not the key.
       def reviewer_identities!
         REVIEWER_IDENTITIES.each do |dotted|
-          value = @values.dig(*dotted.split('.'))
-          ReviewerSelection.parse(value) unless value.nil?
+          *sections, key = dotted.split('.')
+          section = @values.dig(*sections)
+          ReviewerSelection.parse(section[key]) if section.is_a?(Hash) && section.key?(key)
         rescue Error => e
           raise Error, "#{path} #{dotted}: #{e.message}"
         end
