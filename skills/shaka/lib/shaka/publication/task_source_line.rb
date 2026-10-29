@@ -10,8 +10,9 @@ module Shaka
     RELATIONS = { 'fixes' => 'fixes', 'part_of' => 'part of', 'follow_up' => 'follow-up', 'refs' => 'related' }.freeze
     TRACKERS = { 'jira' => 'Jira', 'linear' => 'Linear' }.freeze
     KEY = /\A[A-Z][A-Z0-9_]*-\d+\z/
-    # A link target names a host and cannot close or escape the Markdown link around it, or open another.
-    URL = %r{\Ahttps://[^\s()<>\[\]\\/?#]+(?:[/?#][^\s()<>\[\]\\]*)?\z}
+    # A link target starts its host with a letter or digit, and cannot close or escape the Markdown link
+    # around it, or open another.
+    URL = %r{\Ahttps://[A-Za-z0-9][^\s()<>\[\]\\/?#]*(?:[/?#][^\s()<>\[\]\\]*)?\z}
 
     # A relation names a numbered or keyed task, and only a GitHub issue can be closed by merging.
     def self.validate!(spec)
@@ -86,9 +87,8 @@ module Shaka
       return unless task && RELATIONS.key?(relation) && relation != 'fixes' && claimed.include?(task)
 
       issue = task[/#\d+\z/]
-      "The Task line says this PR is #{RELATIONS.fetch(relation)} #{issue}, but the summary or intent says it " \
-        "fixes #{issue}. Set provenance `task_relation` to `fixes` when this PR resolves it, or write " \
-        "`Part of #{issue}` in the prose when it stays open."
+      "The Task line says #{issue} stays open, but the summary or intent says this PR fixes it. Set provenance " \
+        '`task_relation` to `fixes` when this PR resolves it, or remove the closing keyword when it stays open.'
     end
 
     # How to say an unlinked issue stays open: task_relation covers only the task's own issue.

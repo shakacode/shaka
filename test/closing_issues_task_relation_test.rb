@@ -56,8 +56,15 @@ class ClosingIssuesTaskRelationTest < Minitest::Test
     data['provenance']['task_relation'] = 'part_of'
     note = Shaka::ClosingIssues.note(data, FakeGitHub.new(['owner/repo#9']))['closing_issues']
 
-    assert_includes note, 'The Task line says this PR is part of #9, but the summary or intent says it fixes #9.'
-    assert_includes Shaka::ClosingIssues.note(data, FakeGitHub.new([]))['closing_issues'], 'part of #9, but'
+    assert_includes note, 'The Task line says #9 stays open, but the summary or intent says this PR fixes it.'
+    assert_includes Shaka::ClosingIssues.note(data, FakeGitHub.new([]))['closing_issues'], '#9 stays open, but'
+  end
+
+  def test_an_intent_fix_beside_a_refs_relation_names_the_contradiction
+    data = content('A summary.', task: 9).merge('intent' => { 'why' => 'It fixes #9.' })
+    data['provenance']['task_relation'] = 'refs'
+
+    assert_includes Shaka::ClosingIssues.note(data, FakeGitHub.new(['owner/repo#9']))['closing_issues'], 'stays open'
   end
 
   # A prose claim on the task's issue is corrected in prose, because task_relation would not remove it.
