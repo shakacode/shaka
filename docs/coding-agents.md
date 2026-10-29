@@ -85,7 +85,11 @@ A reviewer given the checkout path can read other files its own sandbox allows,
 so keep secrets out of the checkout.
 
 Before implementation, Shaka checks for covering consent and asks only when it
-is missing. It then runs a tiny reviewer access check, enabled by
+is missing. It doesn't ask about the reviewer from your coding agent's own
+provider, such as the Codex reviewer in Codex or the Claude reviewer in Claude
+Code, when that reviewer uses the same account and route: your agent already
+sends that provider the review packet. It then runs a tiny reviewer access check,
+enabled by
 [`review.startup_check`](settings.md#reviewstartup_check). Standing consent is
 reused without another question. Auto-review still decides each actual command.
 
