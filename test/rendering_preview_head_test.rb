@@ -5,58 +5,76 @@ require 'fileutils'
 require 'tmpdir'
 require 'shaka/publication/rendering_preview'
 
-# A preview renders with the head's own renderers, falling back only for one the default branch lacks.
+# A preview renders with every publication file at the head, except the guards and writes that stay installed.
 class RenderingPreviewHeadTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
+  DIRECTORY = Shaka::RenderingPreview::DIRECTORY
 
-  # Only a renderer that has not landed may be absent; a head missing any other one is refused.
-  def test_a_head_missing_a_landed_renderer_is_refused
+  # A head missing an installed renderer was not rebased; the installed copy never stands in for it.
+  def test_a_head_missing_an_installed_renderer_is_refused
     %w[metrics.rb task_source_line.rb].each do |name|
-      Dir.mktmpdir do |dir|
-        head = fixture_head(dir, without: name)
-        error = assert_raises(Shaka::Error, name) do
-          Shaka::RenderingPreview.render(root: dir, head:, repository: 'shakacode/shaka') { flunk }
-        end
-
-        assert_includes error.message, 'Cannot read rendering preview', name
-      end
+      error = assert_raises(Shaka::Error, name) { preview(without: name) }
+      assert_includes error.message, "lacks #{DIRECTORY}#{name}", name
     end
   end
 
-  def test_a_head_without_a_not_yet_landed_renderer_previews_with_the_installed_copy
-    Shaka::RenderingPreview::NOT_YET_LANDED.map { |path| File.basename(path) }.each do |name|
-      Dir.mktmpdir do |dir|
-        head = fixture_head(dir, without: name)
-        out = Shaka::RenderingPreview.render(root: dir, head:, repository: 'shakacode/shaka') { 'body' }
-
-        assert_equal "body\n<!-- shaka:rendering-preview #{head} -->\n", out, name
-      end
-    end
+  def test_a_new_renderer_previews_without_a_list_edit
+    preview(files: { 'head_probe.rb' => "module Shaka\n  module HeadProbe\n    VALUE = :head\n  end\nend\n" })
+    assert_equal :head, Shaka::HeadProbe::VALUE
   end
 
-  # The exemption must end when the file lands, or a PR deleting it would preview with the installed copy.
-  def test_a_landed_renderer_is_no_longer_exempt
-    landed = Shaka::RenderingPreview::NOT_YET_LANDED.select { |path| File.exist?(File.join(ROOT, path)) }
+  # A head that changes a guard or the GitHub write cannot have its own description checked or stored by that change.
+  def test_a_changed_guard_or_write_stays_installed
+    guards = Shaka::RenderingPreview::INSTALLED.to_h { |path| [File.basename(path), "\nraise 'head copy loaded'\n"] }
+    assert_includes guards.keys, 'feature_guard.rb'
+    assert_includes guards.keys, 'review_effort_floor.rb'
+    assert_includes guards.keys, 'publishing.rb'
+    assert_match(/body\n<!-- shaka:rendering-preview [0-9a-f]{40} -->/, preview(appends: guards))
+  end
 
-    assert_empty landed, 'Remove these from RenderingPreview::NOT_YET_LANDED now that they have landed.'
+  # Sorted by name the caller would load first; its require_relative line puts its callee ahead of it.
+  def test_a_callee_loads_before_its_caller
+    preview(files: { 'aa_order_caller.rb' => "require_relative 'zz_order_callee'\n\n" \
+                                             "module Shaka\n  OrderCaller = OrderCallee\nend\n",
+                     'zz_order_callee.rb' => "module Shaka\n  module OrderCallee; end\nend\n" })
+    assert_same Shaka::OrderCallee, Shaka::OrderCaller
+  end
+
+  def test_a_require_cycle_or_a_missing_sibling_is_refused
+    cycle = { 'cycle_a.rb' => "require_relative 'cycle_b'\n", 'cycle_b.rb' => "require_relative 'cycle_a'\n" }
+    error = assert_raises(Shaka::Error) { preview(files: cycle) }
+    assert_includes error.message, "require_relative cycle #{DIRECTORY}cycle_a.rb -> #{DIRECTORY}cycle_b.rb -> " \
+                                   "#{DIRECTORY}cycle_a.rb"
+
+    error = assert_raises(Shaka::Error) { preview(files: { 'lonely.rb' => "require_relative 'absent'\n" }) }
+    assert_includes error.message, "#{DIRECTORY}lonely.rb requires #{DIRECTORY}absent.rb, absent at the head"
   end
 
   private
 
-  # A commit holding this checkout's listed renderers, less one.
-  def fixture_head(dir, without:)
+  # Renders a commit holding this checkout's publication files, less one, plus new files and appended lines.
+  def preview(without: nil, files: {}, appends: {})
+    Dir.mktmpdir do |dir|
+      head = fixture_head(dir, without:, files:, appends:)
+      Shaka::RenderingPreview.render(root: dir, head:, repository: 'shakacode/shaka') { 'body' }
+    end
+  end
+
+  def fixture_head(dir, without:, files:, appends:)
     git(dir, 'init', '-q')
-    Shaka::RenderingPreview::RENDERERS.each { |path| copy(dir, path) unless path.end_with?("/#{without}") }
+    write_files(File.join(dir, DIRECTORY), without:, files:, appends:)
     git(dir, 'add', '-A')
-    git(dir, '-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '-m', 'fixture')
+    git(dir, '-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false',
+        'commit', '-q', '-m', 'fixture')
     git(dir, 'rev-parse', 'HEAD').strip
   end
 
-  def copy(dir, path)
-    return unless File.exist?(File.join(ROOT, path))
-
-    FileUtils.mkdir_p(File.dirname(File.join(dir, path)))
-    FileUtils.cp(File.join(ROOT, path), File.join(dir, path))
+  def write_files(target, without:, files:, appends:)
+    FileUtils.mkdir_p(target)
+    Dir[File.join(ROOT, DIRECTORY, '*.rb')].each { |path| FileUtils.cp(path, target) }
+    FileUtils.rm(File.join(target, without)) if without
+    files.each { |name, source| File.write(File.join(target, name), source) }
+    appends.each { |name, source| File.write(File.join(target, name), source, mode: 'a') }
   end
 
   def git(dir, *)
