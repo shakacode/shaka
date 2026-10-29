@@ -80,15 +80,15 @@ class RenderingPreviewTest < Minitest::Test
   end
 
   # Any publication file previews without a list edit. A changed guard or GitHub write stays installed, and the
-  # handoff says the preview did not show it.
+  # handoff says the preview, owed or current, did not show it.
   def test_any_publication_renderer_can_be_previewed
     %w[provenance links metrics renderer_added_by_the_head feature_guard publishing].each do |name|
       github = preview_github([name])
       assert_includes rendering_fact(github, nil).fetch('owed').join, 'description --rendering-preview-root', name
       current = rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->")
       assert_empty current.fetch('owed'), name
-      kept = Shaka::RenderingPreview::INSTALLED.select { it.end_with?("/#{name}.rb") }
-      assert_equal kept.map { "Kept installed, not previewed: #{it}." }, current.fetch('notes'), name
+      notes = Shaka::RenderingPreview::INSTALLED.grep(%r{/#{name}\.rb\z}) { "Kept installed, not previewed: #{it}." }
+      [rendering_fact(github, nil), current].each { |fact| assert_equal notes, fact.fetch('notes'), name }
     end
   end
 
