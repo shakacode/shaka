@@ -7,6 +7,7 @@ require_relative '../reviewer_selection'
 require_relative '../reviewer_settings'
 require_relative '../local_review/cli'
 require_relative '../opening_publication'
+require_relative '../configuration/machine_reviewers'
 
 module Shaka
   class Doctor
@@ -53,13 +54,22 @@ module Shaka
         entries = selected_entries(Array(review['local_review_agents']))
         return check('Reviewer availability', 'degraded', 'No configured CLI reviewers to probe.') if entries.empty?
 
-        probe_entries(entries)
+        probe_entries(with_machine_settings(entries))
       end
 
       private
 
       def startup_disabled?(review)
         @startup && !review.fetch('startup_check') { Defaults.fetch('review', 'startup_check') }
+      end
+
+      # Probe the model and effort a review would use, including what this machine fills in. A
+      # malformed machine list stops review runs, so it stops the probe too.
+      def with_machine_settings(entries)
+        machine = Configuration::MachineReviewers.load(home: Dir.home)
+        return entries unless machine
+
+        entries.map { |entry| entry.merge(machine.fill(entry, entry.values_at('provider', 'model_family').join('/'))) }
       end
 
       def probe_entries(entries)

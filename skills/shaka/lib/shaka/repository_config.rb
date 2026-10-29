@@ -81,6 +81,9 @@ module Shaka
                   'opening_check' => opening_check, 'prose_limits' => prose_limits, 'pr_description' => pr_description)
     end
 
+    # The settings exactly as config.yml states them, before any default applies.
+    def explicit_settings = @data
+
     def prompt_files = self.class.prompt_files(review:, opening: opening_check, guidance: project_guidance)
 
     def warnings = PromptFiles.warnings(root: @root, sha:, review:)

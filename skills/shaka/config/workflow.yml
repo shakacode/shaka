@@ -332,7 +332,10 @@ phases:
         `review.required: always`. Fixing a finding changes the head, so
         revalidate and review the new one.
       - Run the loop locally and keep it in one ledger: pass `review run --ledger PATH` with a
-        path outside the checkout. The prompt asks the reviewer to class each finding as a
+        path outside the checkout. Pass every round the task's goal file as `--description-file
+        PATH` and keep each fix inside its scope, as the
+        [ledger section](<{{package_root}}/skills/shaka/references/local-review.md#run-the-review-loop-with-a-ledger>)
+        describes. The prompt asks the reviewer to class each finding as a
         `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
         disposition with `review record`; the next `review run` refuses to start until they are
         recorded, and refuses a head the ledger already reviewed unless another reviewer joins
