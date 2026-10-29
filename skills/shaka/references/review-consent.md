@@ -51,15 +51,15 @@ probe sends no repository content. Disabling the probe leaves this step in place
    the question, shows the target file and the template's exact wording with only
    these parts replaced: the providers and relay service asked about, this repository
    (or `OWNER/*` when the user asks for every repository of the owner), `NAME` with
-   `git config user.name`, and `DATE` with today's date. The file is the host's
-   user-level instructions: `CLAUDE.md` in `CLAUDE_CONFIG_DIR` or `~/.claude` for
-   Claude Code; `AGENTS.override.md`, when it exists, or else `AGENTS.md` in
-   `CODEX_HOME` or `~/.codex` for Codex; or on another host a file the user confirms
-   that host loads as user-level instructions. Never save it to a file in the
-   checkout. When the user chooses that answer, append the shown text to that file
-   unchanged; a changed scope or name needs the new text shown first. If the write
-   fails or is denied, say so and give the user the text to add; the answer still
-   covers this task.
+   `git config user.name` (ask the user for a name when that is empty), and `DATE`
+   with today's date. The file is the host's user-level instructions: `CLAUDE.md`
+   in `CLAUDE_CONFIG_DIR` or `~/.claude` for Claude Code; `AGENTS.override.md`, when
+   it exists, or else `AGENTS.md` in `CODEX_HOME` or `~/.codex` for Codex; or on
+   another host a file the user confirms that host loads as user-level instructions.
+   Never save it to a file in the checkout. When the user chooses that answer, append
+   the shown text to that file unchanged; a changed scope or name needs the new text
+   shown first. If the write fails or is denied, say so and give the user the text to
+   add; the answer still covers this task.
 4. Do not change the reviewer, payload, or flags on your own to fit consent or
    avoid a denial; a reviewer the user names in answer to step 3 is a new request.
    Leave Codex approval and Auto-review policy settings to the user.
