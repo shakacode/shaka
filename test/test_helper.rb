@@ -57,6 +57,12 @@ def shaka_command(launcher = File.expand_path('../skills/shaka/scripts/shaka', _
 end
 SHAKA_COMMAND = shaka_command
 
+# `description` reads the calling session. A canned Owner must not be judged against whichever
+# chat happens to run the suite, so these spawns clear that session. Nil deletes the variable.
+SESSION_ENV_CLEARED = %w[CODEX_THREAD_ID CLAUDE_CODE_SESSION_ID CLAUDE_CODE_HOST_SESSION_ID
+                         CURSOR_CONVERSATION_ID OPENCODE_SESSION_ID PI_CODING_AGENT
+                         SHAKA_MACHINE_ALIAS].to_h { |key| [key, nil] }.freeze
+
 git_names = WINDOWS ? %w[git.exe git] : %w[git]
 candidates = ENV.fetch('PATH').split(File::PATH_SEPARATOR).product(git_names)
 candidates.map! { |dir, name| File.join(dir, name) }

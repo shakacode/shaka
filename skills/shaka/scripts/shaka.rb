@@ -162,7 +162,7 @@ def render_description(carried, version, pull, settings, timeline, options, gith
   pull = pull.merge('shaka_changed_files' => Shaka::FeaturePublication.files(github, pull))
   pull = pull.merge('shaka_review_focus' => Shaka::ReviewFocus.resolve(carried, github, pull))
   Shaka::RenderingPreview.publish(options, pull, github) do
-    Shaka::Publication.description(carried, version, pull, settings, timeline)
+    Shaka::Publication.description(carried, version, pull, settings, timeline, environment: ENV)
   end
 end
 

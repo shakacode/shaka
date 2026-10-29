@@ -65,7 +65,9 @@ module PrivateTrialPublicationHelpers
     write_fake_commands(dir)
     path = trial_content(dir)
     flags = result_flags(dir, validation, review)
-    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, *COMMAND,
+    # description reads the calling session. A fixture owner is not this developer's chat.
+    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir,
+                                              **SESSION_ENV_CLEARED }, *COMMAND,
                                             'description', 'shakacode/shaka', '1', '--root', root, '--ref', ref,
                                             '--content-file', path, *flags)
     assert_predicate status, :success?, error

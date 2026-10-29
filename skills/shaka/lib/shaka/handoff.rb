@@ -143,8 +143,8 @@ module Shaka
       revision = WipNote.revision(pull['body'])
       return owe('no WIP', 'WIP Details is missing; publish it before stopping.') unless revision
 
-      problem = WipDetails.owner_error(WipNote.value(pull['body'], 'owner'))
-      return owe('WIP owner incomplete', problem) if problem
+      problem = WipNote.problem(pull['body'])
+      return owe('WIP incomplete', problem) if problem
       return "WIP #{live[0, SHORT]}" if WipNote.head(revision) == live
 
       owe('WIP stale', "WIP Details names #{revision}, not #{live}; refresh it.")

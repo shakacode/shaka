@@ -9,6 +9,7 @@ require_relative 'timings_details'
 require_relative 'provenance'
 require_relative 'provenance_history'
 require_relative 'wip_details'
+require_relative '../handoff/wip_note'
 require_relative 'settings'
 require_relative 'steps_besides_merging'
 require_relative 'human_comments'
@@ -25,8 +26,9 @@ module Shaka
 
     # With the pull request being replaced, the provenance history carries forward from its body.
     # Callers pass content as a bare hash, so a keyword here would swallow it; every argument is positional.
-    def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil) # rubocop:disable Metrics/ParameterLists
-      new(content, description: true, workflow_version:, pull:, settings:, timeline:)
+    def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil, # rubocop:disable Metrics/ParameterLists
+                         environment: nil, host_name: nil)
+      new(content, description: true, workflow_version:, pull:, settings:, timeline:, environment:, host_name:)
         .render(%i[steps intent_verification sections evidence metrics wip credit],
                 lead: %i[lead]).tap { QuotedMarkers.refuse!(content) }
     end
@@ -38,7 +40,8 @@ module Shaka
         "#{PublicationLinks.walkthrough_footer(content['head'], repository)}\n"
     end
 
-    def initialize(content, description: false, workflow_version: nil, pull: nil, settings: nil, timeline: nil) # rubocop:disable Metrics/ParameterLists
+    def initialize(content, description: false, workflow_version: nil, pull: nil, settings: nil, timeline: nil, # rubocop:disable Metrics/ParameterLists
+                   environment: nil, host_name: nil)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
 
       @content = content
@@ -47,6 +50,8 @@ module Shaka
       @pull = pull
       @settings = settings || PublicationSettings.new
       @timeline = timeline
+      @environment = environment
+      @host_name = host_name
     end
 
     # A description leads with the maintainer's decision, so lead parts come before the summary.
@@ -134,22 +139,17 @@ module Shaka
     end
 
     def validate_details(items)
-      UsageDetails.refuse_free_form!(items)
-      refuse_free_form_wip(items)
+      [UsageDetails, PublicationSettings, SkillsUsed, TimingsDetails, WipDetails].each { it.refuse_free_form!(items) }
       refuse_supplied_history(items)
-      [PublicationSettings, SkillsUsed, TimingsDetails].each { |validator| validator.refuse_free_form!(items) }
     end
 
     # The note is optional because it disappears once GitHub confirms the outcome.
     def wip
-      spec = @content['wip']
-      spec.nil? ? [] : [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction).detail)]
-    end
+      return [] unless (spec = @content['wip'])
 
-    def refuse_free_form_wip(items)
-      return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(WipDetails::SUMMARY) }
-
-      raise Error, 'Publication WIP Details must be supplied as the wip object, not a details item.'
+      session = { environment: @environment, disclosure: @content['wip_disclosure'], pull: @pull,
+                  host_name: @host_name }
+      [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction, session:).detail)]
     end
 
     # Only the helper writes the history, from the previous body.

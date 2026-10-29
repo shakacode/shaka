@@ -482,15 +482,19 @@ class PublicationWipDetailsTest < Minitest::Test
   end
 
   def test_wip_renders_every_field_as_one_table_in_workflow_order
-    rendered = render(WIP)
-    note = rendered[%r{<details>\n<summary>WIP Details</summary>\n\n(.*?)\n\n</details>}m, 1]
+    note = render(WIP)[%r{<details>\n<summary>WIP Details</summary>\n\n(.*?)\n\n</details>}m, 1]
     lines = note.lines.map(&:chomp)
     assert_equal ['| Field | Value |', '| --- | --- |'], lines.first(2)
-    labels = lines.drop(2).map { |line| line.split(' | ').first.delete_prefix('| ') }
-    assert_equal Shaka::WipDetails::FIELDS.values, labels
+    assert_equal Shaka::WipDetails::FIELDS.values, wip_labels(lines)
+    assert_includes note, 'Collection: alias available; host available; tag available; thread unavailable.'
     assert_includes lines, '| Chat link | UNKNOWN |'
     assert_includes lines, '| Workspace | Withheld: settings not read; rerun description with --ref |'
     assert_includes lines, '| Stopped because | paused |'
+  end
+
+  def wip_labels(lines)
+    width = Shaka::WipDetails::FIELDS.size
+    lines.drop(2).first(width).map { |line| line.split(' | ').first.delete_prefix('| ') }
   end
 
   def test_unknown_policy_withholds_the_checkout_path_without_claiming_redaction

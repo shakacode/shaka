@@ -1178,10 +1178,19 @@ A supported chat locator, such as `codex://threads/...` or `claude://...`, is an
 identifier, not a copy of the conversation. It opens the chat only in the owner's
 own app, so a reader who sees one on a public PR cannot read the conversation with it.
 
-Shaka does not check the value. The agent supplies a supported locator or
-`UNKNOWN`, and never a link that shares conversation content. Links from other
-hosts can have different access rules. To keep a chat locator off a PR, tell the
-agent before it publishes.
+`codex://threads/<thread-id>` names that local Codex chat. A share or export link
+is a different kind of URL: it publishes the conversation. Shaka does not create
+one. If sharing was denied, that denial stays in place. The local locator can still
+be published, or the field can stay `UNKNOWN` when you asked to keep the chat link
+off the PR.
+
+`description` reads the calling session's public machine alias, coding host, and
+Codex thread id. It refuses `UNKNOWN` when that value was available and was not
+withheld. An invalid alias, a machine's own name, and a thread id that is not a
+UUID stay `UNKNOWN`, and the message omits those values. The note records each
+field as available, unavailable, withheld, or invalid, so a later handoff does not
+need the original session. Links from other hosts can have different access rules. Tell
+the agent before it publishes when a chat locator should stay off the PR.
 
 This setting controls the Workspace field only. It does not remove private
 information elsewhere in a PR, and expandable sections on public PRs are public too.
