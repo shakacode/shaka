@@ -103,12 +103,12 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    [trust model](../../docs/workflow.md#trust-model) does not defend against, so `pin`
    rebuilds whatever commit it names.
 
-   When the copy is gone, as after `--prune`, `pin` rebuilds it from the source checkout's
-   history through decision 2's path. Earlier evidence binds again only when the rebuilt
-   copy's installation identity equals the recorded one; a changed origin URL spelling or
-   a newer packager changes it. When the identity differs, or the commit is no longer in
-   history, `pin` says that earlier evidence will not bind and the agent reruns validation
-   and review, as it does today.
+   When the copy is gone, as after someone deletes it by hand, `pin` rebuilds it from the
+   source checkout's history through decision 2's path. Earlier evidence binds again only
+   when the rebuilt copy's installation identity equals the recorded one; a changed origin
+   URL spelling or a newer packager changes it. When the identity differs, or the commit
+   is no longer in history, `pin` says that earlier evidence will not bind and the agent
+   reruns validation and review, as it does today.
 
 5. **Updates apply to the next task.** `update-check` stays an intake call of the source
    helper, and its guidance adds that an update reaches the next task. A maintainer who
@@ -117,16 +117,19 @@ copies only for hosts that cannot load installed skills. Nothing is reused.
    review.
 
 6. **Only the source helper changes records, and pruning is explicit.** Every `pin`
-   variant runs from the source helper, so the current packager builds every copy and
-   one revision at a time reads and writes the records. Records carry a format version;
-   `pin` treats a record it cannot read as absent, so a format change costs one rerun
-   rather than a wrong revision. `pin` holds a lock in the revisions directory while it
-   reads or changes records and copies. Nothing removes a copy automatically, so no
-   running helper can lose its files. `pin --prune` removes only copies that no record
-   names, so it is safe while tasks run. A record ends only through `--release`;
-   `install --verify` lists each record with its key and age, so the maintainer can
-   release one a task abandoned. It also reports the copies' total size and warns above
-   500 MB.
+   variant runs from the source helper, so the current packager builds every copy and one
+   revision at a time reads and writes the records. `pin` loads all the code it needs
+   before copying, so a fast-forward of the source checkout during `pin` cannot mix
+   revisions in the running command. Records carry a format version; `pin` treats a record
+   it cannot read as absent, so a format change costs one rerun rather than a wrong
+   revision. `pin` holds a lock in the revisions directory while it reads or changes
+   records and copies. Nothing removes a copy automatically. `pin --prune` removes only
+   copies that no record names and that no record stopped naming in the last 24 hours.
+   When `--update` or `--release` stops a record naming a copy, `pin` notes the time, so a
+   validation or review run started before that change keeps its files; no single run
+   lasts a day. A record ends only through `--release`; `install --verify` lists each
+   record with its key and age, so the maintainer can release one a task abandoned. It
+   also reports the copies' total size and warns above 500 MB.
 
 ## Alternatives considered
 
@@ -164,7 +167,7 @@ sessions on one machine, since any session can update.
   identity, resuming before a PR exists, the same branch name in two repositories and
   review-only keys, `--update` moving a task while plain resume does not, `--release`
   letting a new task on the same branch start fresh, an unreadable record format, and
-  that `--prune` keeps every copy a record names.
+  that `--prune` keeps every copy a record names or stopped naming within 24 hours.
 - Tasks in flight when pinning ships rerun validation and review once: their earlier
   evidence names the source checkout's identity, and their first `pin` records a copy's.
 - ADR 0002's reason for keeping scheduled updates opt-in no longer applies to running
