@@ -17,8 +17,8 @@ maintainer's one exception to the skill's rule against running a branch-provided
    `--rendering-preview-root DIR`, where DIR is a checkout of that head. It verifies evidence
    with the installed helper before loading every Ruby file in `skills/shaka/lib/shaka/publication/`
    from the immutable commit, each after the files it requires. It leaves evidence checks,
-   dependencies, policy, and installation identity installed, and does not load the guard and
-   GitHub write files `RenderingPreview::INSTALLED` names; `handoff` lists any of those the PR
+   dependencies, policy, and installation identity installed, and does not load the guard, write,
+   and merge-warning files `RenderingPreview::INSTALLED` names; `handoff` lists any of those the PR
    changed. Head code still runs in the same process, so this is no boundary against the diff
    you inspected. Never copy installation metadata or rewrite evidence to force a match.
    Other affected artifacts use `skills/shaka/scripts/shaka` from a detached checkout of that

@@ -139,7 +139,7 @@ module Shaka
     # Dependencies, evidence checks, and installation identity stay installed. Only these
     # class/module bodies come from the reviewed commit, never the candidate CLI or policy.
     def load_renderer(path, source)
-      code = source.lines.map { |line| line.match?(/\Arequire(?:_relative)? /) ? "\n" : line }.join
+      code = source.lines.map { |line| line.match?(RenderingLoadOrder::REQUIRE) ? "\n" : line }.join
       previous = $VERBOSE
       $VERBOSE = nil
       eval(code, TOPLEVEL_BINDING, path, 1) # rubocop:disable Security/Eval

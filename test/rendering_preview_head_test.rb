@@ -52,14 +52,19 @@ class RenderingPreviewHeadTest < Minitest::Test
     assert_same Shaka::OrderCallee, Shaka::OrderCaller
   end
 
-  def test_a_require_cycle_or_a_missing_sibling_is_refused
+  def test_a_require_cycle_a_missing_sibling_or_an_unordered_form_is_refused
     cycle = { 'cycle_a.rb' => "require_relative 'cycle_b'\n", 'cycle_b.rb' => "require_relative 'cycle_a'\n" }
     error = assert_raises(Shaka::Error) { preview(files: cycle) }
     assert_includes error.message, "require_relative cycle #{DIRECTORY}cycle_a.rb -> #{DIRECTORY}cycle_b.rb -> " \
                                    "#{DIRECTORY}cycle_a.rb"
 
-    error = assert_raises(Shaka::Error) { preview(files: { 'lonely.rb' => "require_relative 'absent'\n" }) }
+    error = assert_raises(Shaka::Error) { preview(files: { 'lonely.rb' => "require_relative\t'absent'\n" }) }
     assert_includes error.message, "#{DIRECTORY}lonely.rb requires #{DIRECTORY}absent.rb, absent at the head"
+
+    ["require_relative('text')\n", "if true\n  require_relative 'text'\nend\n"].each do |source|
+      error = assert_raises(Shaka::Error, source) { preview(files: { 'odd.rb' => source }) }
+      assert_includes error.message, 'has a require_relative it cannot order', source
+    end
   end
 
   private
