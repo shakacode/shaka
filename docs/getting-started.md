@@ -37,9 +37,6 @@ set Shaka up just for you or for your team.
 - **For your team:** the agent opens a setup PR for you to review. See
   [repository setup](configure-repository.md).
 
-To check that your AI accounts can run the chosen reviewers, ask
-`$shaka Probe this project's configured reviewers.`
-
 ## 3. Start a task
 
 ```text
@@ -54,17 +51,6 @@ Other kinds of tasks:
 - [Review an existing PR](working-with-shaka.md#review-an-existing-pr).
 - [Resume a PR](working-with-shaka.md#resume-a-pr-you-already-started) or
   [recover unfinished work](working-with-shaka.md#resume-unfinished-work).
-- [Set up a repository for your team](working-with-shaka.md#configure-a-repository-for-your-team).
 
 Under **Ask**, the default, you decide whether to merge the PR.
 [Working with Shaka](working-with-shaka.md) covers what comes next.
-
-### Use a personal fork
-
-To change Shaka itself and install that version:
-
-```text
-Fork https://github.com/shakacode/shaka and install my fork.
-```
-
-See [Fork Shaka and make it yours](fork-and-hack.md).
