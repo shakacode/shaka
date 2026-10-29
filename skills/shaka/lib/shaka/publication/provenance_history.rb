@@ -8,11 +8,15 @@ require_relative 'provenance'
 module Shaka
   # Keeps one entry per change of workflow commit or route across a PR's publications, since
   # the provenance table shows only the latest. Entries live in a hidden marker from the first
-  # publication, so the head of the original route is known when it first changes.
+  # publication, so the head of the original route is known when it first changes. The entries
+  # render inside Execution details, below the table they extend.
   module ProvenanceHistory
     PREFIX = '<!-- shaka:provenance '
     MARK = /#{Regexp.escape(PREFIX)}(.*?) -->/
+    # A details item with this summary is refused, since only the helper writes the history.
     SUMMARY = 'Provenance history'
+    LEAD = 'One row per head that published a different Shaka skill version or model / effort, ' \
+           'oldest first; the last row holds the values in the table above.'
     FIELDS = %w[head workflow requested recommended active].freeze
     ROUTES = %w[requested recommended active].freeze
     # The entries after the first that a long-lived PR keeps.
@@ -38,11 +42,11 @@ module Shaka
     def marker(history) = "#{PREFIX}#{JSON.generate(history)} -->"
 
     # A PR whose provenance never changed keeps its single table.
-    def detail(history)
+    def section(history)
       entries = history.fetch('entries')
       return if entries.size < 2
 
-      { 'summary' => SUMMARY, 'body' => [omission(history.fetch('omitted')), table(entries)].compact.join("\n\n") }
+      [LEAD, omission(history.fetch('omitted')), table(entries)].compact.join("\n\n")
     end
 
     def head(pull)

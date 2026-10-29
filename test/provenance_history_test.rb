@@ -35,7 +35,8 @@ module ProvenanceHistoryFixture
   end
 
   def history_rows(rendered)
-    history = rendered[%r{<summary>Provenance history</summary>\n\n(.*?)\n\n</details>}m, 1]
+    execution = rendered[%r{<summary>Execution details</summary>\n\n(.*?)\n\n</details>}m, 1].to_s
+    _table, history = execution.split(Shaka::ProvenanceHistory::LEAD, 2)
     history ? history.lines.map(&:chomp).grep(/\A\| `\h{7}`/) : []
   end
 
@@ -67,7 +68,7 @@ class ProvenanceHistoryTest < Minitest::Test
     rendered = publish(HEADS[1])
 
     assert_empty history_rows(rendered)
-    refute_includes rendered, 'Provenance history'
+    refute_includes rendered, Shaka::ProvenanceHistory::LEAD
   end
 
   def test_a_description_links_its_task_without_adding_a_history_entry
@@ -84,6 +85,7 @@ class ProvenanceHistoryTest < Minitest::Test
     end
 
     assert_rows(STEPS.zip(HEADS).map { |step, head| [head, step.last] })
+    refute_includes @body, '<summary>Provenance history</summary>'
   end
 
   def test_history_survives_a_publication_that_carries_usage
@@ -170,7 +172,7 @@ class ProvenanceHistoryRefusalTest < Minitest::Test
     publish(HEADS[0])
     rendered = publish(HEADS[1], fork: true, 'active_effort' => 'high')
 
-    refute_includes rendered, 'Provenance history'
+    refute_includes rendered, Shaka::ProvenanceHistory::LEAD
     assert_includes rendered, %("head":"#{HEADS[1]}")
     refute_includes rendered, HEADS[0]
   end

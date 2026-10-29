@@ -8,9 +8,8 @@ module Shaka
     # Only helper-owned metadata belongs here; caller-supplied details remain with the change's evidence.
     def metrics
       usage_detail = UsageDetails.new(@content['usage']).detail
-      execution, *history = provenance
       blocks = [details_block(usage_detail), *TimingsDetails.for(@timeline).map { |item| details_block(item) },
-                execution, details_block(@settings.detail), *skills_used, *history, *task_history]
+                provenance, details_block(@settings.detail), *skills_used, *task_history]
       ['## Shaka metrics', UsageEstimate.markdown(usage_detail),
        details_block('summary' => 'Details', 'body' => blocks.join("\n\n"))]
     end
@@ -21,12 +20,12 @@ module Shaka
 
     def provenance
       execution = ExecutionProvenance.new(provenance_spec, workflow_version: @workflow_version, pull: @pull)
-      return [details_block(execution.detail)] unless @pull
+      detail = execution.detail
+      return details_block(detail) unless @pull
 
       history = ProvenanceHistory.carry(@pull, execution.entry)
-      detail = execution.detail
-      marked = detail.merge('body' => "#{detail['body']}\n\n#{ProvenanceHistory.marker(history)}")
-      [details_block(marked), *ProvenanceHistory.detail(history)&.then { |item| details_block(item) }]
+      body = [detail['body'], ProvenanceHistory.section(history), ProvenanceHistory.marker(history)].compact
+      details_block(detail.merge('body' => body.join("\n\n")))
     end
 
     def skills_used = [details_block(SkillsUsed.new(@content['skills_used']).detail)]
