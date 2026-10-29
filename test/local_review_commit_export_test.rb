@@ -15,7 +15,7 @@ class LocalReviewCommitExportTest < Minitest::Test
       output, error, status = run_review(root, base, head, bin, env: { 'REVIEW_TRACE' => trace },
                                                                 reviewer: 'anthropic/claude')
       result = assert_successful_review(output, error, status, head, 'anthropic/claude')
-      assert_export_seen(JSON.parse(File.read(trace)), result)
+      assert_export_seen(JSON.parse(File.read(trace)), result, root)
     ensure
       cleanup_artifacts(result)
     end
@@ -44,7 +44,7 @@ class LocalReviewCommitExportTest < Minitest::Test
       fake_claude(bin, head)
       output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude')
       refute_predicate status, :success?
-      assert_includes JSON.parse(output).fetch('reason'), 'already exists, no checkout'
+      assert_includes JSON.parse(output).fetch('reason'), 'cannot hold both colliding paths'
     end
   end
 
@@ -55,7 +55,7 @@ class LocalReviewCommitExportTest < Minitest::Test
     File.exist?(File.join(directory, 'probe'))
   end
 
-  # The index takes both names even where the checkout cannot hold them.
+  # The index takes both names even where the filesystem cannot hold them.
   def commit_colliding_paths!(root)
     blob = git!(root, 'hash-object', '-w', 'example.txt').strip
     %w[Same.txt same.txt].each do |path|
@@ -67,10 +67,12 @@ class LocalReviewCommitExportTest < Minitest::Test
     git!(root, 'rev-parse', 'HEAD').strip
   end
 
+  # The smudge filter would rewrite caller.rb and leave a marker if the export ran checkout filters.
   def commit_caller_and_link!(root)
     File.write(File.join(root, 'caller.rb'), "call_example\n")
-    File.write(File.join(root, '.gitattributes'), "caller.rb export-ignore\n")
-    File.symlink('/etc/hosts', File.join(root, 'outside-link'))
+    File.write(File.join(root, '.gitattributes'), "caller.rb export-ignore filter=upcase\n")
+    git!(root, 'config', 'filter.upcase.smudge', "touch #{smudge_marker(root)}; tr a-z A-Z")
+    write_nested_link(root)
     # Ignored and untracked, so the checkout stays clean while the file stays out of the commit.
     File.write(File.join(root, 'pr-description.txt'), "ignored secret\n")
     git!(root, 'add', '.')
@@ -78,14 +80,29 @@ class LocalReviewCommitExportTest < Minitest::Test
     git!(root, 'rev-parse', 'HEAD').strip
   end
 
-  def assert_export_seen(invocation, result)
+  def write_nested_link(root)
+    FileUtils.mkdir_p(File.join(root, 'dir'))
+    File.write(File.join(root, 'dir', 'inner.txt'), "inner\n")
+    File.symlink('/etc/hosts', File.join(root, 'dir', 'outside-link'))
+  end
+
+  def smudge_marker(root) = "#{root}.smudged"
+
+  def assert_export_seen(invocation, result, root)
     args = invocation.fetch('args')
     assert_includes args, '--safe-mode'
     export = args.fetch(args.index('--add-dir') + 1)
-    assert_equal %w[.gitattributes AGENTS.md caller.rb example.txt], invocation.fetch('files')
     assert_includes invocation.fetch('prompt'), export.to_json
     refute_path_exists export
     assert_includes result.fetch('coverage'), 'export of the reviewed commit'
+    assert_exported_bytes(invocation, root)
+  end
+
+  # Raw committed bytes: no export-ignore, no smudge filter run, no link, no untracked file.
+  def assert_exported_bytes(invocation, root)
+    assert_equal %w[.gitattributes AGENTS.md caller.rb dir dir/inner.txt example.txt], invocation.fetch('files')
+    assert_equal "call_example\n", invocation.fetch('caller')
+    refute_path_exists smudge_marker(root)
   end
 
   # Records what the export holds while the reviewer runs; the runner removes it afterward.
@@ -94,8 +111,9 @@ class LocalReviewCommitExportTest < Minitest::Test
       #!/usr/bin/env ruby
       require 'json'
       export = ARGV.fetch(ARGV.index('--add-dir') + 1)
-      files = Dir.children(export).sort
-      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, files: files }))
+      files = Dir.glob('**/*', File::FNM_DOTMATCH, base: export).reject { |path| File.basename(path) == '.' }.sort
+      caller = File.read(File.join(export, 'caller.rb'))
+      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, files:, caller: }))
       puts JSON.generate({ is_error: false, result: "no findings\\nREVIEWED #{head} BY anthropic/claude EFFORT medium FINDINGS 0" })
     RUBY
     File.join(root, 'claude-invocation.json')
