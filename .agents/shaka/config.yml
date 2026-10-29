@@ -86,7 +86,7 @@ pr_description:
       reason: changes evidence or settings checks
       paths: ['skills/shaka/lib/shaka/{evidence,seam,repository_config,configuration}/**/*',
               'skills/shaka/lib/shaka/{seam,repository_config,configuration}.rb',
-              'skills/shaka/lib/shaka/publication_settings*.rb']
+              'skills/shaka/lib/shaka/publication_settings*.rb', 'skills/shaka/lib/shaka/publication_settings/**/*']
     - level: 5
       reason: changes Shaka's repository configuration
       paths: [.agents/shaka/**/*]
