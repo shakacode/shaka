@@ -155,7 +155,7 @@ Ask for separate PRs, such as "Update React first, then the code that needs it."
   `Use Sol, medium effort. Go.` A prompt can't switch models.
 - **Hide your checkout path.** Public PRs show it in WIP Details. To hide it, ask
   the agent to turn off [`wip.include_checkout_path`](settings.md#wipinclude_checkout_path).
-  The chat link stays, and only your own coding tool opens it.
+  The chat link stays.
 - **Name your machines.** If you work on more than one, set `SHAKA_MACHINE_ALIAS`
   to a short public name, such as `mini`. WIP Details then shows which machine
   holds the chat. `$shaka doctor` suggests a name.
