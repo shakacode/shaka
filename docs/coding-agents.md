@@ -105,6 +105,64 @@ Shaka has not verified an equivalent in the Codex desktop app. Its
 approve one denied action. When the review stays denied, the agent records on
 the PR that the review did not run, unless Codex denies that command too.
 
+### Set up Claude reviews from Codex
+
+Set this up once so that Codex tasks have Claude review the change and do not
+ask for consent each time.
+
+1. **Choose Claude as the reviewer.** In the repository's
+   `.agents/shaka/config.yml`, list Claude in
+   [`review.local_review_agents`](settings.md#reviewlocal_review_agents):
+
+   ```yaml
+   review:
+     local_review_agents:
+       - provider: anthropic
+         model_family: claude
+   ```
+
+   Shaka reads this file from the default branch, so merge the change before
+   relying on it. A change on a task's own branch does not choose its reviewer.
+2. **Sign in to Claude Code.** Install the `claude` CLI on the machine that runs
+   Codex, run `claude`, and sign in with `/login`. The review uses that sign-in.
+   It does not need `ANTHROPIC_API_KEY`.
+3. **Record your consent.** Add the [consent statement](#give-consent-once),
+   naming Anthropic (Claude CLI) and this repository, to `~/.codex/AGENTS.md`.
+   That file belongs to you, not to any checkout, so a branch cannot change it.
+   If `~/.codex/AGENTS.md` sits next to an `AGENTS.override.md`, Codex reads the
+   override file and ignores the original. In that case, put the statement in
+   the override file.
+4. **Check the setup.** Start a fresh Codex chat in the repository and ask:
+
+   ```text
+   $shaka doctor
+   ```
+
+   Doctor shows whether the `claude` CLI is on your `PATH`. On your next task,
+   Shaka quotes your statement instead of asking. It then sends Claude a tiny
+   access check that contains no code but may use quota.
+
+Write a new statement before reviews send more than the old one covers. That
+includes a new provider or relay service such as OpenRouter, a repository the
+statement does not name, or more content than it lists. Changing the Claude
+model or effort needs no new statement.
+
+Consent does not let Shaka merge. With [Ask](settings.md#mergepreference), the PR
+still waits for you. The [review round limit](settings.md#reviewlocal_max_rounds)
+also stays in force.
+
+| What you see | What it means | What to do |
+| --- | --- | --- |
+| A Codex reviewer runs instead of Claude | The default branch does not list Claude, or Claude is not set up on this machine | Merge the setting from step 1 and run `$shaka doctor` |
+| `Not logged in · Please run /login` | The `claude` CLI is not signed in | Run `claude`, then `/login`, and retry the task. This is not a consent problem |
+| Shaka asks for consent again | No statement in the chat or `~/.codex/AGENTS.md` names this provider, repository, and content | Fix the statement, or answer the question for this task |
+| Codex Auto-review denies `shaka review run` | Codex blocked the command before it started, so nothing reached Claude | In the Codex CLI, run `/approve` for that command. Do not answer the consent question again or switch reviewers |
+| A missing `ANTHROPIC_API_KEY` | Another tool, such as a repository script, needs an Anthropic API key. The Claude reviewer does not | Set the key for that tool, or let the agent report its check as failed. The agent must not skip that check |
+
+Shaka cannot get around your organization's managed Codex policy. When the
+policy keeps denying the review, the agent records on the PR that the review
+did not run. A denied review does not count as one of its rounds.
+
 ## Codex desktop follow-up
 
 Shaka tells you who will handle later PR feedback. If automatic follow-up
