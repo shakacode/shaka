@@ -27,6 +27,11 @@ module Shaka
       { 'summary' => SUMMARY, 'body' => [status, NOTE, current_line, *operations_table, *values].join("\n\n") }
     end
 
+    # What prepare found when the bound reviews number fewer than the trusted settings configure.
+    # Read here, beside the renderers a preview loads from the PR head, so an installed helper
+    # that never sets it previews with no shortfall instead of failing.
+    attr_reader :reviewer_shortfall
+
     private
 
     def current_line

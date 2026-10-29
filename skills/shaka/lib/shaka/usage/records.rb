@@ -99,10 +99,13 @@ module Shaka
     # A replacement must also keep the old report's contribution and every commit it named.
     def superseded?(old, fresh)
       same_host = fresh.select do |new|
-        new['host'] == old['host'] && new['complete'] == true && same_attribution?(old, new)
+        new['host'] == old['host'] && replaces?(old, new) && same_attribution?(old, new)
       end
-      covered?(old, same_host) || same_host.any? { |new| fallback_match?(old, new) }
+      covered?(old, same_host) || same_host.any? { |new| new['complete'] == true && fallback_match?(old, new) }
     end
+
+    # A partial report may replace only another partial one; a complete report keeps what it measured.
+    def replaces?(old, new) = new['complete'] == true || (new['complete'] == false && old['complete'] == false)
 
     def same_attribution?(old, new)
       old['contribution'] == new['contribution'] && (Array(old['commits']) - Array(new['commits'])).empty?
