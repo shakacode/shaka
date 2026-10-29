@@ -7,6 +7,12 @@ has no Shaka seam, run `seam private inspect --root DIR` at intake and after
 outside Git updates. Infer commands from project instructions, scripts, and CI.
 Show each proposed command with its source; ask only for consequential unknowns.
 Use the saved absolute installed helper path throughout, with no PATH edit.
+When `~/.agents/shaka/config.yml` exists, run the setup command below with `--plan`
+first and show its `config` and `prefilled_keys` with the commands; it writes nothing.
+If `prefilled_keys` lists `review.local_review_agents`, show that list in place of
+[offering local reviewers](#offer-local-reviewers), and pass `--local-review-agent`
+only when the user asks to change it. Add `--no-personal-file` to both runs when the
+user asks to skip that file. Setup refuses a personal key it cannot use and names it.
 Generate local settings:
 
 ```bash

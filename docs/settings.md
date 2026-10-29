@@ -32,7 +32,10 @@ team settings leave out `prose_limits`, PR descriptions use the default limit of
 
 Shaka keeps no settings in your home directory, with two exceptions about your machine:
 the comment allowlist, which adds people and bots whose public comments the agent may read,
-and the [machine reviewer list](#choose-reviewers-for-your-machine).
+and the [machine reviewer list](#choose-reviewers-for-your-machine). Your
+[starting point for individual setup](#start-individual-setups-from-your-preferences) also
+lives there, but it is not a settings source: setup copies it into a new copy of a
+repository once, and no task reads it.
 
 Omitted optional values use Shaka's defaults, all listed in
 [Shaka's defaults file](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/defaults.yml).
@@ -50,6 +53,46 @@ Individual setup honors the same settings as shared setup: reviewers, custom
 code-review instructions, checkpoint choices, writing limits, opening checks, and
 WIP reporting. [Prompt files](#where-shaka-reads-a-prompt-file) are the one
 setting whose location matters.
+
+## Start individual setups from your preferences
+
+Put the preferences you use everywhere in `~/.agents/shaka/config.yml`. When you start
+individual setup in a repository without Shaka settings, the agent shows a proposal that
+combines them with the commands and checks it found in that repository. After you
+approve it, Shaka writes the result to that copy's `.agents/shaka/config.yml`.
+
+```yaml
+version: 1
+review:
+  local_review_agents:
+    - provider: openai
+      model_family: codex
+    - provider: anthropic
+      model_family: claude
+prose_limits:
+  max_description_words: 250
+pr_description:
+  opening_check:
+    enabled: false
+```
+
+The file uses the same keys as a repository's settings, limited to your own
+preferences: local reviewers and how often they run, checkpoint and opening-check
+reviewers, how PR descriptions read, writing limits, branch names, and WIP reporting.
+Setup stops and names the file and key when the file holds anything that describes a
+repository instead, such as commands, CI review jobs, merge policy, project guidance,
+human review floors, or a prompt file, or when a value is invalid.
+
+- **Read once.** Shaka reads the file only while a new individual setup runs. Editing it
+  later changes no repository you already set up; change that copy's
+  `.agents/shaka/config.yml` instead. Team settings, task settings, and `shaka seam
+  init` never read it.
+- **Your choices for one repository win.** A reviewer list you give during setup replaces
+  the file's list. To set up one repository without the file, ask the agent to skip your
+  personal starting point.
+- **Reviewer models.** The machine reviewer list still fills a reviewer's model and
+  effort at review time. A `model` or `effort` written in this file becomes that
+  repository's own value, which the machine list cannot change.
 
 ## Preview settings before adopting them
 
