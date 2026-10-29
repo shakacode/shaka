@@ -114,5 +114,18 @@ reviewing the setup PR.
 The scripts usually wrap existing commands. In Shaka's repository, `.agents/shaka/bin/setup`
 installs development dependencies; `bin/install` installs the skill.
 
+### Run the scripts in a CI container
+
+The scripts Shaka writes ask Git for the repository root before they run your
+command. When a CI job runs inside a container, Git may refuse the checkout because
+another user owns it, and the script exits with status 128. Mark the checkout safe in an
+earlier step, before any Shaka script or command runs:
+
+```yaml
+- run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+```
+
+Jobs that run directly on a GitHub-hosted runner need no change.
+
 Shaka's own [configuration](https://github.com/shakacode/shaka/tree/main/.agents/shaka)
 provides working examples of the required files.
