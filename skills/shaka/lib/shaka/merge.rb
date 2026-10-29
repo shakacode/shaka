@@ -16,9 +16,10 @@ module Shaka
     include MergeRequiredChecks
 
     # The head a user told the agent to merge although no required check gates it, the
-    # MergeReviewFloor that sends PRs changing higher-floor paths back to the user, and whether
-    # the agent merges under Auto, where every head check must pass and the merge is labeled.
-    attr_writer :empty_checks_confirmed_head, :review_floor, :auto
+    # MergeReviewFloor that sends PRs changing higher-floor paths back to the user, the MergeHold
+    # that stops a merge, and whether the agent merges under Auto, where every head check must
+    # pass and the merge is labeled.
+    attr_writer :empty_checks_confirmed_head, :review_floor, :hold, :auto
 
     # `review` takes MergeReviewEvidence's technical settings and final product checkpoint.
     def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
@@ -31,7 +32,7 @@ module Shaka
 
     # `squash_message` is a SquashMessage, or nil for the repository's squash default.
     def call(head:, base:, walkthrough:, limits: MergeLimits.new, squash_message: nil)
-      @target = MergeTarget.required!(head, base, limits, @review_floor)
+      @target = MergeTarget.required!(head, base, limits, @review_floor, @hold)
       @submission.message = squash_message
       @head = head
       initial = @github.snapshot

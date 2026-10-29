@@ -14,6 +14,14 @@ class HandoffTest < Minitest::Test
                  "walkthrough #{HEAD[0, 7]} · WIP #{HEAD[0, 7]}", result['status']
   end
 
+  def test_a_hold_label_is_reported_without_owing_anything
+    result = handoff(labels: %w[awaiting-resume hold])
+
+    assert_includes result.fetch('status'), 'held by hold'
+    assert_empty result.fetch('owed')
+    assert(result.fetch('notes').any? { |note| note.include?('`merge` refuses it until a person removes the label') })
+  end
+
   def test_an_open_pr_without_an_attention_label_owes_one
     result = handoff(labels: ['bug'])
 

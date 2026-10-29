@@ -192,6 +192,26 @@ A PR that passes still gets the agent's own judgment of risk and compatibility u
 Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
 something after merge, so the agent hands those PRs back on its own judgment.
 
+## `merge.hold_labels`
+
+**Optional. Default: `[hold]`.** Put one of these labels on a PR to stop Shaka from merging it,
+whether the repository uses `auto` or you tell the agent to merge.
+
+```yaml
+merge:
+  preference: auto
+  hold_labels: [hold, do-not-merge]
+```
+
+`shaka merge` reads the PR's labels again just before it submits, so a label added while the
+agent checks the PR still stops it. The agent then names the label and hands the PR back to
+you. No confirmation in chat gets past a hold; remove the label when the PR may merge. Label
+names match without regard to case.
+
+The hold governs only Shaka. GitHub does not know about it, so it does not stop anyone from
+clicking merge. While `preference` is `ask`, the ready checkpoint's Auto merge preview names a
+hold label the PR carries.
+
 ## `review.startup_check`
 
 **Optional. Default: true.** Before implementation, Shaka resolves consent and sends

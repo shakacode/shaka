@@ -883,6 +883,9 @@ phases:
         Ask approval of it, is that confirmation. A confirmation carries to the head a clean rebase produces, or a
         conflict resolution that changes no behavior the walkthrough describes. Any other new
         commit needs a new confirmation.
+      - `merge` also refuses a PR carrying a label from the trusted `merge.hold_labels`, reading
+        the labels again just before it submits, and no confirmation passes it. That refusal
+        switches Auto to Ask: name the label in the handoff and leave it for a person to remove.
       - `merge` also refuses a head whose checkpoint verdict on verification is `inadequate` or
         `cannot judge`. That refusal switches Auto to Ask the same way, and
         `--adequacy-confirmed-head SHA` follows the limits confirmation rule. The verdict leaves

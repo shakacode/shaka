@@ -20,7 +20,7 @@ module CliMergeFixture
              'mergeQueueEntry' => nil, 'autoMergeRequest' => nil,
              'mergeStateStatus' => 'CLEAN', 'reviewDecision' => 'APPROVED',
              'changedFiles' => 1, 'additions' => 1, 'deletions' => 0,
-             'commits' => { 'totalCount' => 1 } }
+             'commits' => { 'totalCount' => 1 }, 'labels' => { 'totalCount' => 0, 'nodes' => [] } }
     if ARGV[0, 2] == ['api', 'graphql']
       request = JSON.parse($stdin.read)
       if request.fetch('query').include?('mergePullRequest')

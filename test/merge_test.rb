@@ -91,7 +91,8 @@ module MergeFixtures
       'viewerCanMergeAsAdmin' => false, 'isMergeQueueEnabled' => false, 'isInMergeQueue' => false,
       'mergeQueueEntry' => nil,
       'autoMergeRequest' => nil, 'mergeStateStatus' => 'CLEAN', 'reviewDecision' => nil,
-      'changedFiles' => 3, 'additions' => 40, 'deletions' => 10, 'commits' => { 'totalCount' => 2 } }
+      'changedFiles' => 3, 'additions' => 40, 'deletions' => 10, 'commits' => { 'totalCount' => 2 },
+      'labels' => { 'totalCount' => 0, 'nodes' => [] } }
   end
 
   def assert_blocked(pattern)

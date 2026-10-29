@@ -1,13 +1,15 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative '../merge_hold'
 require_relative '../merge_limits'
 require_relative '../merge_review_floor'
 require_relative '../post_implementation_report'
 
 module Shaka
   # Tells a maintainer on Ask whether Auto would have merged a ready PR, so they can try
-  # merge.auto_max_review_floor on real PRs before switching to auto.
+  # merge.auto_max_review_floor on real PRs before switching to auto. A hold label is named
+  # too, because merge refuses it whatever the floor.
   module AutoMergePreview
     LABEL = '**Auto merge preview:**'
 
@@ -19,7 +21,8 @@ module Shaka
       floor = MergeReviewFloor.from(seam)
       return unless seam&.merge&.fetch('preference') == 'ask' && floor.holds_any?
 
-      reasons = [limits_hold(seam, pull), floor_hold(floor, github, head), verdict_hold(verdict)].compact
+      reasons = [label_hold(seam, pull), limits_hold(seam, pull), floor_hold(floor, github, head),
+                 verdict_hold(verdict)].compact
       unless reasons.empty?
         return "#{LABEL} with `merge.preference: auto`, the agent would hand this PR back: #{reasons.join('; ')}."
       end
@@ -31,6 +34,14 @@ module Shaka
     def verdict_hold(verdict)
       "the checkpoint's verdict on its verification is #{verdict}" if
         PostImplementationReport::STOPS_AGENT_MERGE.include?(verdict)
+    end
+
+    def label_hold(seam, pull)
+      hold = MergeHold.from(seam)
+      label = hold.label(hold.names(pull))
+      "it carries the hold label `#{label}`" if label
+    rescue Error
+      'Shaka could not read its labels from GitHub'
     end
 
     def limits_hold(seam, pull)

@@ -7,14 +7,15 @@ require_relative 'validation'
 
 module Shaka
   class RepositoryConfig
-    # Validates merge authority, size limits, the Auto review floor, and the checks that gate merge
-    # when GitHub enforces none.
+    # Validates merge authority, size limits, the Auto review floor, hold labels, and the checks that
+    # gate merge when GitHub enforces none.
     class MergeSchema
       include Validation
 
       REQUIRED_CHECKS = 'required_checks'
       REVIEW_FLOOR = 'auto_max_review_floor'
-      OPTIONAL = ['limits', REVIEW_FLOOR, REQUIRED_CHECKS].freeze
+      HOLD_LABELS = 'hold_labels'
+      OPTIONAL = ['limits', REVIEW_FLOOR, REQUIRED_CHECKS, HOLD_LABELS].freeze
 
       def initialize(merge)
         @merge = merge
@@ -29,7 +30,15 @@ module Shaka
         enum!(@merge['preference'], %w[ask auto], 'merge.preference must be ask or auto')
         MergeLimits.validate!(@merge['limits']) if @merge.key?('limits')
         MergeReviewFloor.validate!(@merge[REVIEW_FLOOR]) if @merge.key?(REVIEW_FLOOR)
-        name_list!(@merge[REQUIRED_CHECKS], "merge.#{REQUIRED_CHECKS}", 'check names') if @merge.key?(REQUIRED_CHECKS)
+        name_lists!
+      end
+
+      private
+
+      def name_lists!
+        { REQUIRED_CHECKS => 'check names', HOLD_LABELS => 'label names' }.each do |key, noun|
+          name_list!(@merge[key], "merge.#{key}", noun) if @merge.key?(key)
+        end
       end
     end
   end
