@@ -569,8 +569,8 @@ phases:
         published local review comment URL, and Checkpoint, using `post_implementation` for the
         published PR comment URL or a named placeholder until publication. Supply `checkpoint`
         with the live full `head`; the helper reads the recommendation that opens the links line
-        from this head's published checkpoint `disposition`, with its verification verdict on the
-        next line, and non-empty `decisions` head the description instead. Add a one-sentence `next_action` only for a dependency, check, or
+        from this head's published checkpoint `disposition`, with an `inadequate` or `cannot judge`
+        verification verdict on the next line, and non-empty `decisions` head the description instead. Add a one-sentence `next_action` only for a dependency, check, or
         approval the recommendation does not already say, such as `Merge after #570 lands.`
         The renderer rejects a stale
         head, so neither line names the commit; leave checks and any table without a commit

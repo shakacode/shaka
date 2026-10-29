@@ -1013,12 +1013,16 @@ class PublicationCheckpointTest < Minitest::Test
     refute_includes body, 'Recommendation'
   end
 
-  def test_the_verification_verdict_follows_the_recommendation
+  def test_a_verdict_that_stops_merge_follows_the_recommendation
     data = content
-    data['checkpoint']['verification_adequacy'] = 'adequate with accepted gaps'
+    data['checkpoint']['verification_adequacy'] = 'cannot judge'
     body = Shaka::Publication.description(data, nil, PULL)
     assert_includes body, "Checkpoint: _Not published yet._\n\n" \
-                          "**Checkpoint on verification:** Adequate with accepted gaps.\n\n**Next:**"
+                          "**Checkpoint on verification:** Cannot judge.\n\n**Next:**"
+    ['adequate', 'adequate with accepted gaps'].each do |verdict|
+      data['checkpoint']['verification_adequacy'] = verdict
+      refute_includes Shaka::Publication.description(data, nil, PULL), 'Checkpoint on verification'
+    end
     data['checkpoint']['verification_adequacy'] = 'fine'
     assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
   end

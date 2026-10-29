@@ -32,6 +32,7 @@ module Shaka
     end
 
     # The checkpoint's verdict on whether the verification below proves the intent; the report says why.
+    # Only a verdict that stops an agent merge earns the lead; the checkpoint comment shows every verdict.
     def adequacy(verdict)
       return [] if verdict.nil?
 
@@ -39,6 +40,7 @@ module Shaka
       unless verdicts.include?(verdict)
         raise Error, "Description checkpoint verification_adequacy must be one of: #{verdicts.join(', ')}."
       end
+      return [] unless PostImplementationReport::STOPS_AGENT_MERGE.include?(verdict)
 
       ["**Checkpoint on verification:** #{verdict.capitalize}."]
     end
