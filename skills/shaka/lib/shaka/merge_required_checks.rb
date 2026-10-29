@@ -15,6 +15,7 @@ module Shaka
 
     # confirmed_head names the head a user told the agent to merge knowing no check gates it.
     def verify_checks(checks, head: nil, confirmed_head: nil)
+      verify_all_checks(@github.checks) if @auto
       raise Error, 'No observable required checks; native readiness is unknown' unless checks.is_a?(Array)
       return verify_empty_confirmation(head, confirmed_head) if checks.empty?
 
@@ -23,6 +24,21 @@ module Shaka
 
         raise Error, "Required check is not passing or is malformed: #{check.inspect}"
       end
+    end
+
+    # Under Auto, GitHub has to report CLEAN, as with ci_review_wait: all.
+    def merge_state_wait = @auto ? 'all' : @ci_review_wait
+
+    # Auto merges also need every reported check on the head, required or not, to have passed.
+    def verify_all_checks(checks)
+      raise Error, 'Head checks are unknown; Auto cannot merge' unless checks.is_a?(Array)
+
+      waiting = checks.reject { |check| passing_check?(check) }
+      return if waiting.empty?
+
+      names = waiting.map { |check| check.is_a?(Hash) ? "#{check['name']} (#{check['state']})" : check.inspect }
+      raise Error, "Auto merges only when every check on the head passed; not passing: #{names.join(', ')}. " \
+                   'Wait with pr watch --auto, or hand the PR back under Ask'
     end
 
     def verify_empty_confirmation(head, confirmed_head)

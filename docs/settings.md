@@ -485,8 +485,8 @@ records your choice, so no edit is needed.
 A repository may list reviewers you never use. Without a machine list, Shaka warns about
 every listed reviewer that your machine is missing, except reviewers that
 [`provider_coverage`](#reviewprovider_coverage) never selects on its own. List the
-reviewers you run in `~/.agents/shaka/reviewers.yml`, and Shaka warns only about those and
-the providers `provider_coverage` names, in every repository:
+reviewers you run in `~/.agents/shaka/local-reviewers.yml`, and Shaka warns only about
+those and the providers `provider_coverage` names, in every repository:
 
 ```yaml
 version: 1
@@ -504,6 +504,18 @@ value unset, and a model or effort you name for one task wins over both. The lis
 add a reviewer the repository does not list. `shaka doctor` shows the list and names
 entries the current repository does not use. If the file is malformed, `shaka doctor`
 names it and local reviews refuse to start until you fix it.
+
+### Run Codex reviews in a container
+
+On Linux, Codex's read-only sandbox needs unprivileged user namespaces. A container
+without them, such as a default Docker container, fails every command the Codex
+reviewer tries with `bwrap: No permissions to create a new namespace`. The reviewer
+still answers from the diff in its prompt, so it reads no callers, tests, or
+configuration. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision)
+then names it on the Setup gaps line.
+
+Run Codex reviews where its sandbox can start, such as on the host instead of in the
+container.
 
 ## `review.local_review_count`
 

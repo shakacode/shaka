@@ -171,12 +171,24 @@ by the same owner posts none. Recheck checks, review, and merge authority. Inspe
 and preserve staged, unstaged, untracked, stashed, and unpushed work when the old
 checkout is reachable; record it as `UNKNOWN` when it is not.
 
+### Announce the start on the issue
+
+Run `start OWNER/REPO ISSUE --content-file PATH --root DIR --ref TRUSTED_SHA` with
+`identity`, a one-line `summary` of the outcome this task will deliver, and a `wip`
+object holding every field above as work begins: Revision is the new local branch at
+its base SHA, Unfinished work `branch not pushed yet`, Stopped because `running`, State
+the current step, and Next action the resume prompt, such as `$shaka ISSUE_URL`. Until
+the first push, the branch exists only on the machine Owner names. The helper renders the
+fields as WIP Details, applies `wip.include_checkout_path`, refuses a PR number, and
+keys the comment by owner tag, so a rerun replaces it and a new owner posts its own.
+Post it once; after the PR exists, its WIP Details is the record.
+
 The note records state. It is not a lock or authorization, and the read/write gap
 still allows a race. Maintainer confirmation prevents competing owners.
 
 ## Reject an approach and restart
 
-Use [human attention checkpoints](return-points.md) to identify earlier human guidance,
+Use [return points](return-points.md) to identify earlier human guidance,
 preserve the abandoned code and context, and resume with new steering. Requesting
 attention alone records no human guidance. Keep the existing Ask/Auto decision path
 and WIP note; summarize superseded attempts in the description's details while
@@ -226,7 +238,7 @@ to write the work item, ask for it or offer the design PR.
 Then stop and wait for the user to approve the design in chat, or, for a design PR,
 for an approving review as `comments` reports it from a GitHub login the user named
 in this task as a design approver. A design PR is not ready to merge until then;
-after approval, merging it follows the task's merge preference. Record the approval as a human attention checkpoint. If the user
+after approval, merging it follows the task's merge preference. Record the approval as a return point. If the user
 asks for changes, revise the design and wait again. Summarize and link the approved
 design in the implementation PR's description, and pass the description to every
 local review round with `--description-file`, so the reviewer compares the code with

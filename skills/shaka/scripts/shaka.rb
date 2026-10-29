@@ -44,6 +44,7 @@ require_relative '../lib/shaka/publication/publication'
 require_relative '../lib/shaka/publication/rendering_preview'
 require_relative '../lib/shaka/review_focus'
 require_relative '../lib/shaka/review_reply'
+require_relative '../lib/shaka/task_start'
 require_relative '../lib/shaka/recommendation'
 require_relative '../lib/shaka/repos'
 require_relative '../lib/shaka/review_prompt'
@@ -78,7 +79,7 @@ if Shaka::Subcommands::TABLE.key?(ARGV.first)
   exit subcommand.run.call(ARGV)
 end
 
-COMMANDS = %w[pr comments description reply resolve walkthrough merge attention squash-message handoff].freeze
+COMMANDS = %w[pr comments description reply start resolve walkthrough merge attention squash-message handoff].freeze
 
 def content(path)
   parsed = JSON.parse(File.read(path, encoding: 'UTF-8'))
@@ -189,6 +190,14 @@ def opening_result(options, summary)
                                 effort: options[:opening_effort]).call(summary)
 end
 
+# The issue is as public as the repository, so the checkout path follows the same setting as WIP Details.
+def start_redaction(options, repository)
+  root = options[:root] || Dir.pwd
+  current, = Shaka::PublicationSettings.current_settings(root:, ref: options[:ref], repository:, required: true)
+  Shaka::PublicationSettings.new(current:, location_diagnostic: Shaka::PublicationSettings::UNAVAILABLE_SETTINGS)
+                            .path_redaction
+end
+
 def usage_banner
   lines = ["shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]", 'shaka pr watch OWNER/REPO NUMBER [options]']
   lines += Shaka::Subcommands.usage_lines
@@ -201,6 +210,7 @@ def merge_flags(flags, options)
   flags.on('--review-waiver REASON', 'Merge without review evidence') { |value| options[:review_waiver] = value }
   flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
   confirmation_flags(flags, options)
+  flags.on('--auto', 'Merge under Auto: every head check must pass; label auto-merged') { options[:auto] = true }
   flags.on('--woken-by WHAT', 'For handoff: what will wake this session') { |value| options[:woken_by] = value }
   flags.on('--codex-wake PATH', 'For handoff: native Codex registration evidence as JSON') do |path|
     options[:codex_wake] = path
@@ -305,6 +315,10 @@ begin
   if options[:adequacy_confirmed_head] && command != 'merge'
     raise OptionParser::InvalidArgument, '--adequacy-confirmed-head is only for merge'
   end
+  raise OptionParser::InvalidArgument, '--auto is only for merge' if options[:auto] && command != 'merge'
+  if options[:auto] && options.values_at(:confirmed_head, :empty_checks_confirmed_head, :adequacy_confirmed_head).any?
+    raise OptionParser::InvalidArgument, '--auto refuses user confirmations: a confirmed head is an Ask merge'
+  end
   raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
   raise Shaka::Error, '--woken-by is only for handoff.' if options[:woken_by] && command != 'handoff'
   raise Shaka::Error, '--comments is only for description.' if options[:comments] && command != 'description'
@@ -313,6 +327,9 @@ begin
   end
   if command == 'handoff' && options[:ref].to_s.strip.empty?
     raise Shaka::Error, 'handoff requires --ref so seam-required checks come from a trusted commit.'
+  end
+  if command == 'start' && options[:ref].to_s.strip.empty?
+    raise Shaka::Error, 'start requires --ref so the checkout-path setting comes from a trusted commit.'
   end
   if command == 'squash-message' && options[:ref].to_s.strip.empty?
     raise Shaka::Error, 'squash-message requires --ref so checkpoint opt-outs come from a trusted commit.'
@@ -397,6 +414,10 @@ begin
              publisher_note = attributed.delete('publisher_note')
              github.reply(body: Shaka::ReviewReply.compose(attributed, github, publisher_note:),
                           key: key, comment: options[:comment])
+           when 'start'
+             started = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
+             body = Shaka::TaskStart.compose(started, path_redaction: start_redaction(options, repository))
+             github.start_comment(body:, key: Shaka::TaskStart.key(started))
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
            when 'walkthrough'
@@ -416,6 +437,7 @@ begin
                                               seam_wait: seam&.review&.fetch('ci_review_wait'), review:,
                                               seam_required_checks:)
              merge.empty_checks_confirmed_head = options[:empty_checks_confirmed_head]
+             merge.auto = options[:auto]
              merge.review_floor = Shaka::MergeReviewFloor.from(seam, confirmed_head: options[:confirmed_head])
              merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
                         limits: merge_limits(options, seam), squash_message:)

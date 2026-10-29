@@ -33,6 +33,17 @@ and review findings are settled. Under **Auto**, it already has that authority
 for eligible work. Both paths preserve repository protection and required approvals;
 a checkpoint recommendation alone grants no merge authority.
 
+Under Auto, every check reported on the commit has to pass, not only the
+required ones. Skipped and neutral results count as passing, as they do on
+GitHub. A job that hasn't started when the agent merges isn't seen, so make a
+check required if it must always gate the merge. A
+failing or unfinished optional job, such as a Windows build or a security scan,
+holds the merge. When one fails, the agent hands the PR back to you as it does
+under Ask. After an Auto merge, the PR carries the `auto-merged` label, so
+`is:merged label:auto-merged` lists the PRs the agent merged on its own. Two
+cases go unlabeled, and the agent says so in its report: a PR it added to a
+merge queue, and one where GitHub refused the label after the merge.
+
 If GitHub requires a branch update, the agent rebases, revalidates, and reviews
 the new commit. Your merge decision carries forward when the change keeps the
 approved behavior. A branch rule may still require fresh GitHub approval.
@@ -64,7 +75,7 @@ input. You can approve the approach, request revisions, or settle an open questi
 | What is it for, and what does it leave out? | **Intent** in the description: the problem, the **Task** it came from (a ticket such as GitHub #1234 or Linear MKT-1234, with this PR's relation to it, or the agent prompt), the scope, what was deliberately left out, and why the change is safe. A bug fix also names its **Root cause**, or says it was not found and the PR treats only the symptom. |
 | How carefully should I review it? | **Review effort** under Intent, from 1 (read the description) to 5 (review every line, reproduce it, and ask a second reviewer), based on what a mistake could reach. When a few files or lines need more care than the rest, **Closer reading** lists each with its own level and reason, linked to the code. Shaka sets a minimum from the files the PR changes and names the file that set it, unless that name contains unusual characters. Each repository chooses those minimums with [`pr_description.human_review_floors`](settings.md#pr_descriptionhuman_review_floors). |
 | Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
-| How was it checked? | **Verification** in the description. Its first line, written by Shaka from the recorded results, says whether repository validation passed and who reviewed the current revision; when validation passed and a local review ran through Shaka, it is folded under a one-line summary so a failure or a missing review stands out. When fewer local reviewers completed than [`review.local_review_count`](settings.md#reviewlocal_review_count) or [`review.provider_coverage`](settings.md#reviewprovider_coverage) asks for, the line stays unfolded. A **Setup gaps** line below it says how many completed, names each listed provider that did not, and links the review comment. Up to three checks follow, each showing what ran against this change's behavior, its outcome, and a link to the evidence or the command itself. **Not verified** names a claim this PR makes that went unproven and why that is acceptable; Shaka leaves the line out when the agent reports nothing unproven. |
+| How was it checked? | **Verification** in the description. Its first line, written by Shaka from the recorded results, says whether repository validation passed and who reviewed the current revision; when validation passed and a local review ran through Shaka, it is folded under a one-line summary so a failure or a missing review stands out. When fewer local reviewers completed than [`review.local_review_count`](settings.md#reviewlocal_review_count) or [`review.provider_coverage`](settings.md#reviewprovider_coverage) asks for, the line stays unfolded. A **Setup gaps** line below it says how many completed, names each listed provider that did not, and links the review comment. Comments with no AI identity line from a PR author whom GitHub lists as the owner, an organization member, or a collaborator also add a Setup gaps line with their count. That is how an agent's reply looks when it was posted without `shaka reply`. They leave a passing summary folded. A Codex reviewer whose sandbox could not start, so that every command failed with a `bwrap:` error, also unfolds the line and is named there, because it read only the diff. Up to three checks follow, each showing what ran against this change's behavior, its outcome, and a link to the evidence or the command itself. **Not verified** names a claim this PR makes that went unproven and why that is acceptable; Shaka leaves the line out when the agent reports nothing unproven. |
 | Which skills contributed? | **Skills used** lists the reported skills, their contributions, and evidence labels. |
 | What did people say? | **Human comments** in the description: each comment a person wrote, its reply, and whether it is still open. |
 | What happened to concerns? | Review findings, replies, and recorded fixes or reasons for declining a suggestion. |
@@ -374,9 +385,8 @@ stubs that caller, would be **Inadequate**, with the next check naming a run thr
 
 Use **Recommendation** for the proposal and **Recorded decision** for
 accepted guidance. Once a direction is chosen, the agent records that guidance
-and recoverable work state for a later return. This uses the existing
-[recovery procedure](working-with-shaka.md#revise-earlier-guidance-and-try-again),
-not an automatic Ruby snapshot or an extra human approval at every return point.
+and recoverable work state as a [return point](#return-points). This is not an
+automatic Ruby snapshot or an extra human approval.
 The PR description opens with **Decisions to make** while you have questions to answer.
 Until you answer them, the links below the questions show **Decisions to make** as the
 checkpoint, and the code walkthrough waits, because your answers may change the code it
@@ -405,6 +415,22 @@ users never need. The agent can recommend extending an existing setting instead
 before more work builds around that page. Maintainers can customize the
 [checkpoint settings](settings.md#checkpoint)
 with their audience and architectural priorities.
+
+## Return points
+
+A **return point** saves guidance you gave during a task, such as your first request
+or a later change of direction, with the code it applies to. The PR description lists
+them as C1, C2, and so on, each with a name, your guidance, and a code revision:
+
+| Return point | Human guidance | Code revision |
+| --- | --- | --- |
+| C1 — Initial request | Fix escaped separators while keeping the current syntax | `3f2a9c1` |
+| C2 — Parser direction | Use the existing parser; keep the escaped-separator test | `8d41e07` |
+
+To go back to one, see
+[revise earlier guidance and try again](working-with-shaka.md#revise-earlier-guidance-and-try-again).
+A return point records your guidance; the [checkpoint](#checkpoint) recommends whether
+to merge.
 
 ## Change one behavior at a time
 

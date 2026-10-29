@@ -48,7 +48,8 @@ Don't both write at once.
 
 ### Revise earlier guidance and try again
 
-The PR description lists your instructions as C1, C2, and so on. To go back to one:
+The PR description lists your instructions as [return points](pr-verification.md#return-points)
+C1, C2, and so on. To go back to one:
 
 ```text
 $shaka Return to C2. Use the simpler approach.
@@ -72,6 +73,10 @@ Search your PR list on GitHub:
 A label doesn't wake a chat. See [approval details](pr-verification.md#approval-and-attention-labels).
 
 ## Resume unfinished work
+
+When work on a GitHub issue starts, the agent comments on the issue with the same
+fields as **WIP Details**, so people watching it see who took it and how to resume.
+The branch isn't pushed yet, so **Owner** names the machine that holds it.
 
 Comment on any open PR. Wait for an answer before merging.
 

@@ -110,7 +110,8 @@ alternative, a short `summary`, the task owner's `next_action`, and a required
 `inadequate`, or `cannot judge`, the `weakest_claim`, and the `next_check`, judged by the
 packaged [verdict definitions](../config/post-implementation-adequacy.md) whatever prompt
 is configured. The checkpoint
-comment shows all three, and the description lead shows the verdict for the current head.
+comment shows all three, and the description lead shows an `inadequate` or `cannot judge`
+verdict for the current head.
 The verdict leaves `ready` unchanged; `inadequate` or `cannot judge` only makes `merge`
 refuse the head until the user approves it with `--adequacy-confirmed-head SHA`. A report without `summary` or `next_action`
 remains publishable using the first reason and a conclusion-based next action; one

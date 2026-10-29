@@ -29,6 +29,7 @@ module Shaka
       @head = head
       @ci_jobs = ci_jobs
       @ci_wait = CiReviewWait.normalize(settings[:ci_review_wait])
+      @auto = settings[:auto]
       @timing = timing(settings)
       configure_feedback(settings)
       configure_adapters(adapters)
@@ -105,7 +106,7 @@ module Shaka
     def terminal_checks?(required, checks)
       return false if required.empty? && (@ci_jobs.empty? || @ci_wait == 'none')
 
-      terminal?(required) && review_jobs_terminal?(checks)
+      terminal?(required) && review_jobs_terminal?(checks) && (!@auto || terminal?(checks))
     end
 
     def update_pending(new_comments, terminal)

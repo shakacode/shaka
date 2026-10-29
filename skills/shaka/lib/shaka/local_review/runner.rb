@@ -436,7 +436,8 @@ module Shaka
 
       { 'status' => 'completed', 'head' => head, 'reviewer' => reviewer, 'report' => path,
         'prompt_source' => prompt_source, 'criteria_ref' => (@options[:criteria_ref] if @criteria_supplied),
-        'model' => @options[:observed_model], 'usage' => @options[:usage], 'coverage' => coverage }.compact
+        'model' => @options[:observed_model], 'usage' => @options[:usage], 'coverage' => coverage,
+        'commands' => @options[:commands] }.compact
     end
 
     def incomplete(reason, report)

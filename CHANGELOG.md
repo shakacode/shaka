@@ -10,6 +10,11 @@ from working is a major version.
 
 ## [Unreleased]
 
+### Added
+
+- Announce a task's start on its GitHub issue with the WIP Details fields: owner,
+  chat, branch, state, and the prompt that resumes it.
+
 ## [1.0.0] - Unpublished
 
 Deliver a task through a tested pull request with a code walkthrough, independent
