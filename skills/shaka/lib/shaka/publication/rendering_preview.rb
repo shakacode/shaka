@@ -4,6 +4,7 @@ require 'open3'
 require_relative '../error'
 require_relative '../publication_settings_guard'
 require_relative '../rendering_load_order'
+require_relative 'text'
 
 module Shaka
   # Self-hosted previews keep evidence verification, guards, and GitHub writes installed and load the other renderers.
@@ -24,7 +25,8 @@ module Shaka
     # Every other Ruby file directly in DIRECTORY previews from the head. These stay installed because they guard
     # the PR or run after its description renders, inside the GitHub write or a refusal of it: the loader, the
     # configuration and review-effort guards, the write with its region markers and rendering check, and the merge
-    # warning and decisions check that follow rendering.
+    # warning and decisions check that follow rendering. Ruby keeps these files from loading; another head file
+    # could still reopen their modules, which is why only same-repository heads whose diff was inspected preview.
     INSTALLED = %w[rendering_preview feature_guard review_effort_floor publishing managed_region rendered_prose
                    merge_warning_region checkpoint_recommendation].map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
@@ -38,7 +40,7 @@ module Shaka
         raise Error, 'Rendering preview requires a same-repository PR.'
       end
 
-      supported!(github)
+      verify_supported!(github)
       render(root:, head: pull.dig('head', 'sha'), repository: github.repository, &)
     end
 
@@ -48,13 +50,17 @@ module Shaka
       raise Error, 'Rendering preview checkout does not name the live head.' unless git(root, 'rev-parse',
                                                                                         'HEAD').strip == head
 
+      prose = PublicationText.method(:prose)
       load_renderers(root, head)
       "#{yield}\n<!-- shaka:rendering-preview #{head} -->\n"
+    ensure
+      # The write's table check follows rendering; it counts tables with the installed filter, not the head's.
+      PublicationText.define_singleton_method(:prose, prose) if prose
     end
 
     # Loading reopens PublicationSettings, so a head that redefines its evidence or policy methods is refused.
     def load_renderers(root, head)
-      # The CLI loads every installed renderer; the head copies, stripped of requires, rely on their dependencies.
+      # Load every installed renderer as the CLI does: the head copies are stripped of requires and rely on them.
       installed_files.each { |path| require File.join(__dir__, File.basename(path)) }
       installed = PublicationSettingsGuard.snapshot
       sources(root, head).each { |path, source| load_renderer(path, source) }
@@ -69,10 +75,8 @@ module Shaka
 
     # A description marker cannot attest to another artifact's rendering. Fail closed
     # until that renderer has a reviewed preview and artifact-specific evidence check.
-    def verify_supported!(github) = supported!(github)
-
     # Returns the changed files the preview keeps installed, so a handoff can say they were not previewed.
-    def supported!(github)
+    def verify_supported!(github)
       changed = changed_renderers(github)
       unsupported = changed.reject { |path| previewable?(path) }
       return changed & INSTALLED if unsupported.empty?
@@ -107,12 +111,11 @@ module Shaka
 
     def previewable?(path) = File.dirname(path) == DIRECTORY.chomp('/') && path.end_with?('.rb')
 
-    # A head missing an installed renderer was not rebased, and a preview never stands in for a missing renderer.
+    # The installed copy never stands in for a renderer the head lacks.
     def sources(root, head)
       present = head_files(root, head)
       missing = installed_files - present
-      raise Error, "Rendering preview refused: the PR head lacks #{missing.join(', ')}; rebase it." unless
-        missing.empty?
+      raise Error, "Rendering preview refused: the head lacks installed #{missing.join(', ')}." unless missing.empty?
 
       code = (present - INSTALLED).to_h { |path| [path, git(root, 'show', "#{head}:#{path}")] }
       RenderingLoadOrder.call(code, present, DIRECTORY).to_h { |path| [path, code.fetch(path)] }
@@ -120,11 +123,10 @@ module Shaka
 
     def installed_files = Dir[File.join(__dir__, '*.rb')].map { |file| "#{DIRECTORY}#{File.basename(file)}" }
 
+    # Regular files only: ls-tree also lists subdirectories and symbolic links.
     def head_files(root, head)
-      git(root, 'ls-tree', '-z', head, '--', DIRECTORY).split("\0").filter_map do |entry|
-        mode, path = entry.split("\t", 2)
-        path if mode.start_with?('100') && previewable?(path)
-      end
+      entries = git(root, 'ls-tree', '-z', head, '--', DIRECTORY).split("\0").map { it.split("\t", 2) }
+      entries.filter_map { |mode, path| path if mode.start_with?('100') && previewable?(path) }
     end
 
     def git(root, *)
@@ -146,6 +148,6 @@ module Shaka
     end
 
     private_class_method :git, :sources, :installed_files, :head_files, :load_renderers,
-                         :load_renderer, :changed_renderers, :supported!, :previewable?, :rendering_path?
+                         :load_renderer, :changed_renderers, :previewable?, :rendering_path?
   end
 end

@@ -14,7 +14,7 @@ class RenderingPreviewHeadTest < Minitest::Test
   def test_a_head_missing_an_installed_renderer_is_refused
     %w[metrics.rb task_source_line.rb].each do |name|
       error = assert_raises(Shaka::Error, name) { preview(without: name) }
-      assert_includes error.message, "lacks #{DIRECTORY}#{name}", name
+      assert_includes error.message, "lacks installed #{DIRECTORY}#{name}", name
     end
   end
 
@@ -30,6 +30,18 @@ class RenderingPreviewHeadTest < Minitest::Test
     assert_includes guards.keys, 'review_effort_floor.rb'
     assert_includes guards.keys, 'publishing.rb'
     assert_match(/body\n<!-- shaka:rendering-preview [0-9a-f]{40} -->/, preview(appends: guards))
+  end
+
+  # The write's table check follows rendering, so it counts separators with the installed prose filter.
+  def test_a_previewed_text_helper_cannot_weaken_the_write_check
+    original = Shaka::PublicationText.method(:prose)
+    prose = "module Shaka\n  module PublicationText\n    def self.prose(_) = ''\n  end\nend\n"
+    preview(appends: { 'text.rb' => "\n#{prose}" })
+    assert_equal '| a |', Shaka::PublicationText.prose('| a |')
+    error = assert_raises(Shaka::Error) { Shaka::RenderedProse.check!("| a |\n| --- |\n", '<p>a</p>') }
+    assert_includes error.message, 'rendered 0 of 1 table'
+  ensure
+    Shaka::PublicationText.define_singleton_method(:prose, original)
   end
 
   # Sorted by name the caller would load first; its require_relative line puts its callee ahead of it.

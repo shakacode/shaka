@@ -27,7 +27,7 @@ module Shaka
 
     # Requires outside the directory stay installed. A sibling the head lacks would leave its caller undefined.
     def siblings(path, source, present, directory)
-      source.scan(/^require_relative ['"]([^'"]+)['"]/).flatten.filter_map do |name|
+      source.scan(/^require_relative\s+['"]([^'"]+)['"]/).flatten.filter_map do |name|
         sibling = Pathname(File.dirname(path)).join("#{name.delete_suffix('.rb')}.rb").cleanpath.to_s
         next unless File.dirname(sibling) == directory.chomp('/')
         raise Error, "Rendering preview refused: #{path} requires #{sibling}, absent at the head." unless
