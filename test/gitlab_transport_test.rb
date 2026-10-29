@@ -191,6 +191,22 @@ end
 class GitLabQueryFiltersTest < Minitest::Test
   include GitLabTransportHelper
 
+  def test_ambiguous_or_composite_filters_cannot_return_a_successful_incomplete_list
+    [{ iids: [1, 2] }, { filter: { id: 1 } }, { state: nil }, { 'state' => 'opened', state: 'closed' }].each do |fields|
+      instance = client(response([]))
+      assert_raises(Shaka::Error) { instance.api_list('projects/7/merge_requests', fields:) }
+      assert_empty @calls
+    end
+  end
+
+  def test_get_query_fields_reject_composites_before_requesting
+    [{ iids: [1, 2] }, { filter: { id: 1 } }].each do |fields|
+      instance = client(response({}))
+      assert_raises(Shaka::Error) { instance.api('projects/7/merge_requests', fields:) }
+      assert_empty @calls
+    end
+  end
+
   def test_get_fields_are_encoded_as_query_parameters_instead_of_a_request_body
     fields = { ref: 'feature+policy/日本語 & config' }
     instance = client(response({ 'file_path' => 'policy.yml' }))
