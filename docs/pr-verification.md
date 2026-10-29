@@ -33,6 +33,12 @@ and review findings are settled. Under **Auto**, it already has that authority
 for eligible work. Both paths preserve repository protection and required approvals;
 a checkpoint recommendation alone grants no merge authority.
 
+Under Auto, every check on the commit has to pass, not only the required ones. A
+failing or unfinished optional job, such as a Windows build or a security scan,
+holds the merge. When one fails, the agent hands the PR back to you as it does
+under Ask. After an Auto merge, the PR carries the `auto-merged` label, so
+`is:merged label:auto-merged` lists every PR the agent merged on its own.
+
 If GitHub requires a branch update, the agent rebases, revalidates, and reviews
 the new commit. Your merge decision carries forward when the change keeps the
 approved behavior. A branch rule may still require fresh GitHub approval.

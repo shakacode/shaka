@@ -199,6 +199,7 @@ def merge_flags(flags, options)
   flags.on('--review-waiver REASON', 'Merge without review evidence') { |value| options[:review_waiver] = value }
   flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
   confirmation_flags(flags, options)
+  flags.on('--auto', 'Merge under Auto: every head check must pass; label auto-merged') { options[:auto] = true }
   flags.on('--woken-by WHAT', 'For handoff: what will wake this session') { |value| options[:woken_by] = value }
   flags.on('--codex-wake PATH', 'For handoff: native Codex registration evidence as JSON') do |path|
     options[:codex_wake] = path
@@ -302,6 +303,10 @@ begin
   end
   if options[:adequacy_confirmed_head] && command != 'merge'
     raise OptionParser::InvalidArgument, '--adequacy-confirmed-head is only for merge'
+  end
+  raise OptionParser::InvalidArgument, '--auto is only for merge' if options[:auto] && command != 'merge'
+  if options[:auto] && options.values_at(:confirmed_head, :empty_checks_confirmed_head, :adequacy_confirmed_head).any?
+    raise OptionParser::InvalidArgument, '--auto refuses user confirmations: a confirmed head is an Ask merge'
   end
   raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
   raise Shaka::Error, '--woken-by is only for handoff.' if options[:woken_by] && command != 'handoff'
@@ -414,6 +419,7 @@ begin
                                               seam_wait: seam&.review&.fetch('ci_review_wait'), review:,
                                               seam_required_checks:)
              merge.empty_checks_confirmed_head = options[:empty_checks_confirmed_head]
+             merge.auto = options[:auto]
              merge.review_floor = Shaka::MergeReviewFloor.from(seam, confirmed_head: options[:confirmed_head])
              merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
                         limits: merge_limits(options, seam), squash_message:)

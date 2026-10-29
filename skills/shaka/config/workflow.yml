@@ -597,7 +597,7 @@ phases:
         pr OWNER/REPO NUMBER --root DIR --ref SHA
         pr watch OWNER/REPO NUMBER --head SHA --root DIR --ref SHA
           [--baseline COMMENTS_JSON] [--interval SECONDS] [--timeout SECONDS] [--settle SECONDS]
-          [--ci-review-wait none|one|all] [--ci-review-not-required]
+          [--ci-review-wait none|one|all] [--ci-review-not-required] [--auto]
         comments OWNER/REPO NUMBER --head SHA
         comments OWNER/REPO ISSUE_NUMBER --issue
         description OWNER/REPO NUMBER --content-file PATH [--root DIR --ref SHA] [--comments COMMENTS_JSON]
@@ -610,7 +610,7 @@ phases:
         handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
-          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--limits-confirmed-head SHA]
+          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto] [--limits-confirmed-head SHA]
           [--empty-checks-confirmed-head SHA] [--adequacy-confirmed-head SHA] [--review-waiver REASON]
         usage --commit SHA --contribution CATEGORY [--since-time TASK_START_UTC]
         ```
@@ -863,7 +863,7 @@ phases:
         confirmation's rebase rule applies to it. Wait when independent review is not yet
         satisfied, and follow the configured CI review wait. Wait for any user-requested review gate
         whether or not a local review already ran. With `ci_review_wait: none` or `one`, do not wait for optional checks to make
-        merge state CLEAN; `merge` accepts UNSTABLE once required checks pass. With `ci_review_wait: all`, wait
+        merge state CLEAN; `merge` accepts UNSTABLE once required checks pass, except under `--auto`. With `ci_review_wait: all`, wait
         for every named job in `review.ci_review_jobs` on the current head and do not merge while the state is
         UNSTABLE. Pass `merge --ref` from intake and `--ci-review-wait MODE` only for a this-task override. Read
         completed feedback before merge and report pending optional reviews.
@@ -900,8 +900,10 @@ phases:
         `requiredChecksSource` is `seam`, GitHub will not stop that click, so name each seam-declared
         check and its state at that SHA in the handoff. Run `attention` with `--state none` when work
         on the PR resumes. Never set `awaiting-merge-approval` in Auto
-        mode. In Auto mode, run `merge` with the current head, walkthrough ID, and
-        `--squash-message` content. A required
+        mode. In Auto mode, run `merge --auto` with the current head, walkthrough ID, and
+        `--squash-message` content. `--auto` refuses unless every check on the head passed and
+        GitHub reports CLEAN, refuses the confirmation flags, and labels the PR `auto-merged`
+        once GitHub confirms the merge. When it refuses a red check, switch to Ask. A required
         native approval must arrive first, and do not ask for a second approval afterward.
       - Under Ask, the user may approve the labeled PR instead of clicking merge: in chat, or when the
         latest review for the labeled head, as `comments` reports it, from a GitHub login the user
@@ -998,6 +1000,7 @@ always: |-
   the command keeps the stricter of that value and the trusted seam setting. When the trusted
   `review.required: meaningful_changes` rule permits omitting CI review for this task, record
   that decision and pass `--ci-review-not-required` so the watcher waits only for required checks.
+  In Auto mode, add `--auto` so it also waits for every other check on the head.
   Its one `SHAKA_WAKE`
   line gives the reason to refresh the PR. On an error wake, inspect the error, refresh the PR,
   and restart the watcher or use the resume path above. By default it polls every 60 seconds,

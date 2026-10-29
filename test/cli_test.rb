@@ -149,3 +149,25 @@ class CliReviewWaiverTest < Minitest::Test
     assert_match(/--review-waiver is only for merge/, error)
   end
 end
+
+class CliMergeAutoTest < Minitest::Test
+  HEAD = 'a' * 40
+
+  # A confirmed head is the user's approval, so it cannot ride along with an Auto merge.
+  def test_auto_refuses_each_user_confirmation
+    %w[--limits-confirmed-head --empty-checks-confirmed-head --adequacy-confirmed-head].each do |flag|
+      _output, error, status = Open3.capture3(*CliTest::COMMAND, 'merge', 'owner/repo', '1', '--head', HEAD,
+                                              '--ref', HEAD, '--auto', flag, HEAD)
+
+      refute_predicate status, :success?
+      assert_match(/--auto refuses user confirmations/, error)
+    end
+  end
+
+  def test_auto_is_only_for_merge
+    _output, error, status = Open3.capture3(*CliTest::COMMAND, 'pr', 'owner/repo', '1', '--auto')
+
+    refute_predicate status, :success?
+    assert_match(/--auto is only for merge/, error)
+  end
+end
