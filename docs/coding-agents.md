@@ -67,7 +67,7 @@ reviewer, name OpenRouter too, because the request passes through it:
 
 ```text
 Shaka review consent: local reviews of OWNER/REPO may send the committed diff,
-its head commit and checkout path, the review instructions and criteria, the
+its head commit with its files and checkout path, the review instructions and criteria, the
 repository's review prompt, the PR description, and earlier review findings to
 Anthropic (Claude CLI) and OpenAI (Codex CLI).
 Never send secrets, credentials, .env files, or private data unrelated to the
@@ -76,7 +76,9 @@ change. Approved by NAME on DATE.
 
 The exclusions are your instruction to the agent, not a limit on the reviewer.
 A reviewer given the checkout path can read other files its own sandbox allows,
-so keep secrets out of the checkout.
+so keep secrets out of the checkout. The Claude reviewer reads a copy of the
+reviewed commit's files instead, so it never sees untracked files such as `.env`;
+the Codex reviewer can.
 
 Before implementation, Shaka checks for covering consent and asks only when it
 is missing. It doesn't ask about the reviewer from your coding agent's own

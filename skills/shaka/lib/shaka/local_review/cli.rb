@@ -193,6 +193,8 @@ module Shaka
     def claude_process(executable, prompt)
       args = [executable, '-p', '--permission-mode', 'plan', '--permission-prompts', 'none', '--restricted',
               '--safe-mode', '--strict-mcp-config']
+      # --safe-mode keeps CLAUDE.md, skills, commands, settings, hooks, and MCP files in the export from loading.
+      args.push('--add-dir', @options[:commit_export]) if @options[:commit_export]
       args.push('--model', @options[:model]) if @options[:model]
       args.push('--effort', effort) if effort
       args.push('--output-format', 'json', '-')
