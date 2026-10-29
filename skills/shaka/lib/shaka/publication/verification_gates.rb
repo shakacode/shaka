@@ -28,14 +28,17 @@ module Shaka
     end
 
     # Comments read at this head that are the author's by login, yet carry no agent identity line or
-    # marker. The count holds whether or not the repository shows the comment list.
+    # marker. The count holds whether or not the repository shows the comment list. On a fork the
+    # author is an outside contributor, not the account the agent posts from, so nothing counts.
     def unlabeled(content, pull)
       packet = content[HumanComments::KEY]
       author = pull&.dig('user', 'login')
-      return 0 unless author.is_a?(String) && read_at?(packet, pull.dig('head', 'sha'))
+      return 0 unless author.is_a?(String) && own_repository?(pull) && read_at?(packet, pull.dig('head', 'sha'))
 
       HumanCommentEntries.new(packet).humans.count { |entry| !entry.unverified && entry.login.casecmp?(author) }
     end
+
+    def own_repository?(pull) = pull.dig('head', 'repo', 'full_name') == pull.dig('base', 'repo', 'full_name')
 
     # A read without a head, or taken at another head, may count comments relabeled since.
     def read_at?(packet, head) = packet.is_a?(Hash) && packet['head'].is_a?(String) && packet['head'] == head
@@ -102,7 +105,7 @@ module Shaka
       url ? "#{text} ([attestation](#{url}))" : text
     end
 
-    private_class_method :read_at?, :routine?, :summary, :short_head, :results, :validations, :setup_gaps,
-                         :reviewer_gap, :unlabeled_gap, :review
+    private_class_method :own_repository?, :read_at?, :routine?, :summary, :short_head, :results, :validations,
+                         :setup_gaps, :reviewer_gap, :unlabeled_gap, :review
   end
 end

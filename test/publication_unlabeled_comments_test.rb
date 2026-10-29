@@ -67,6 +67,13 @@ class PublicationUnlabeledCommentsTest < Minitest::Test
     ), GAPS
   end
 
+  # On a fork the PR author is an outside contributor, whose own words carry no agent label.
+  def test_a_fork_s_author_comments_are_not_counted
+    content = { 'human_comments' => packet(issue_comments: [issue_comment(3, 'ann', 'Thanks for the review.')]) }
+
+    assert_equal 0, Shaka::VerificationGates.unlabeled(content, pull(fork: true))
+  end
+
   # Without a head on either side there is no read of this revision to count from.
   def test_a_read_without_a_head_is_not_counted
     headless = packet(issue_comments: [issue_comment(3, 'ann', 'Applied.')]).except('head')
