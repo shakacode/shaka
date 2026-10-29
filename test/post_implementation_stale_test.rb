@@ -10,7 +10,7 @@ class PostImplementationStaleTest < Minitest::Test
 
   class GitHub < Shaka::GitHub
     attr_reader :minimized, :mutations
-    attr_accessor :head, :state, :comments, :permission, :failure
+    attr_accessor :head, :state, :comments, :permission, :failure, :moved_to
 
     def initialize(comments)
       super('example/test', 1)
@@ -22,7 +22,11 @@ class PostImplementationStaleTest < Minitest::Test
       @mutations = []
     end
 
-    def snapshot = { 'state' => state, 'headRefOid' => head }
+    def snapshot
+      pull = { 'state' => state, 'headRefOid' => head }
+      @head = moved_to if moved_to
+      pull
+    end
 
     def viewer_login = 'ada'
 
@@ -61,6 +65,16 @@ class PostImplementationStaleTest < Minitest::Test
     github.head = "abcdef0#{'2' * 33}"
 
     assert_equal 'minimized', Shaka::PostImplementationStale.new(github).call['state']
+  end
+
+  def test_head_moving_before_the_write_leaves_the_checkpoint_visible
+    github = GitHub.new([checkpoint(2, OLD)])
+    github.moved_to = OLD
+
+    result = Shaka::PostImplementationStale.new(github).call
+    assert_equal 'unavailable', result['state']
+    assert_match(/head changed/, result['reason'])
+    assert_empty github.mutations
   end
 
   def test_repeat_run_does_not_minimize_again

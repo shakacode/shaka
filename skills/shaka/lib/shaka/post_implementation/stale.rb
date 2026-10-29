@@ -25,7 +25,7 @@ module Shaka
       reviewed = latest['body'].to_s[PostImplementationEvidence::ATTESTATION, 1]
       return { 'state' => 'current', 'comment' => id } if reviewed && reviewed == pull['headRefOid']
 
-      { 'state' => minimize(latest['node_id']), 'comment' => id }
+      { 'state' => minimize(latest['node_id'], pull['headRefOid']), 'comment' => id }
     rescue Error => e
       { 'state' => 'unavailable', 'reason' => e.message }
     end
@@ -40,11 +40,14 @@ module Shaka
       checkpoints.max_by { |comment| CommentHistory.order(comment) }
     end
 
-    def minimize(id)
+    def minimize(id, head)
       node = read(id)
       return 'already_minimized' if node['isMinimized']
       raise Error, 'GitHub does not permit this account to minimize the stale checkpoint.' unless
         node['viewerCanMinimize']
+      # A checkpoint for a newer head may have landed after the first read; never hide that one.
+      raise Error, 'PR head changed before minimizing; rerun to judge the newest checkpoint.' unless
+        @github.snapshot['headRefOid'] == head
 
       @github.graphql(BotReviewHistory::MUTATION, id:)
       raise Error, 'GitHub did not confirm the stale checkpoint was minimized.' unless read(id)['isMinimized']
