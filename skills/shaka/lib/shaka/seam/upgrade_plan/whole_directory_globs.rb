@@ -37,7 +37,7 @@ module Shaka
         # value. A matrix value, a `run:` script, YAML aliases, or a parse failure keeps it blocking.
         def note_glob_contexts(path, text)
           filtered_workflows << path if workflow_file?(path) && every_glob_filtered?(text)
-          shell_scripts << path if shell_script?(path, text)
+          shell_scripts[path] = text if shell_script?(path, text)
         end
 
         def shell_script?(path, text)
@@ -66,7 +66,7 @@ module Shaka
 
         def filtered_workflows = (@filtered_workflows ||= [])
 
-        def shell_scripts = (@shell_scripts ||= [])
+        def shell_scripts = (@shell_scripts ||= {})
 
         def workflow_file?(path) = path.to_s.match?(%r{\A\.github/workflows/[^/]+\.ya?ml\z})
 

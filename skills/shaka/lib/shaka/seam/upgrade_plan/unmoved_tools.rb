@@ -43,21 +43,33 @@ module Shaka
           return false if line.match?(command_directory_change) || line.match?(moved_command_name) ||
                           line.match?(composed_command_path)
 
-          !routes_moved_command?(line) || reaches_every_moved_command?(line)
+          !routes_moved_command?(line) || (reaches_every_moved_command?(line) && !earlier_arm_captures?(line, path))
+        end
+
+        # A shell `case` takes the first arm that matches, so an earlier arm over the new layout can take a moved
+        # command before this one reaches it.
+        def earlier_arm_captures?(line, path)
+          text = shell_scripts[path]
+          return false unless text
+
+          earlier = text[0, text.index(line) || 0].each_line.grep(case_arm).join
+          moved_command_names.any? { |name| glob_matches?(new_layout_globs(earlier), "bin/#{name}", :any?) }
         end
 
         def routes_moved_command?(line)
           globs = line.scan(glob_under(PATHS::COMMAND_DIRECTORY)).flatten
-          moved_command_names.any? do |name|
-            globs.any? { |glob| GLOB_READINGS.any? { |flags| File.fnmatch?(glob, name, flags) } }
-          end
+          moved_command_names.any? { |name| glob_matches?(globs, name, :any?) }
         end
 
         def reaches_every_moved_command?(line)
-          globs = line.scan(glob_under(File.dirname(PATHS::NEW_CONTRACT))).flatten
-          moved_command_names.all? do |name|
-            globs.any? { |glob| GLOB_READINGS.all? { |flags| File.fnmatch?(glob, "bin/#{name}", flags) } }
-          end
+          moved_command_names.all? { |name| glob_matches?(new_layout_globs(line), "bin/#{name}", :all?) }
+        end
+
+        def new_layout_globs(text) = text.scan(glob_under(File.dirname(PATHS::NEW_CONTRACT))).flatten
+
+        # `readings` is :any? or :all? of the GLOB_READINGS.
+        def glob_matches?(globs, path, readings)
+          globs.any? { |glob| GLOB_READINGS.public_send(readings) { |flags| File.fnmatch?(glob, path, flags) } }
         end
 
         def retained_code?(path)
@@ -84,7 +96,7 @@ module Shaka
         # A name filled in at run time, or joined or appended as a variable, may be a moved command.
         def composed_command_path
           directory = Regexp.escape(PATHS::COMMAND_DIRECTORY)
-          @composed_command_path ||= %r{#{directory}(?:/(?:\#\{|\$|\{|%)|/?['"]?\s*(?:\+|,\s*[^'"\s]))}
+          @composed_command_path ||= %r{#{directory}(?:/(?:\#\{|\$|\{|%)|/?['"]?\s*(?:\+|,\s*[^'"\s])|['"]\)?\s*/\s*\w)}
         end
 
         def relative_command_call?(text)

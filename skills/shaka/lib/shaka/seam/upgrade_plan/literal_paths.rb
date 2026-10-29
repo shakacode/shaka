@@ -42,8 +42,10 @@ module Shaka
           segment = /(['"])([^'"\r\n]*)\1/
           joined = /(['"])#{Regexp.escape(PATHS::DIRECTORY)}\1((?:\s*,\s*#{segment})+)/o
           text.gsub(/^.*\bjoin\s*\(.*$/) do |line|
-            line.gsub(joined) do
-              %("#{[PATHS::DIRECTORY, *::Regexp.last_match(2).scan(segment).map(&:last)].join('/')}")
+            line.gsub(joined) do |match|
+              segments = ::Regexp.last_match(2).scan(segment).map(&:last)
+              # A step back out of a directory is left for the traversal checks.
+              segments.intersect?(%w[. ..]) ? match : %("#{[PATHS::DIRECTORY, *segments].join('/')}")
             end
           end
         end

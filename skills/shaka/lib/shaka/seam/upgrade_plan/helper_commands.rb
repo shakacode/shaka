@@ -12,26 +12,15 @@ module Shaka
           return false if path.start_with?("#{PATHS::COMMAND_DIRECTORY}/")
           return false unless invocation_relative?(text)
 
-          joined_command_path?(text) || own_directory_command?(text)
+          commands = command_paths.map { |command| Regexp.escape(File.basename(command)) }.join('|')
+          code = without_recorded_commands(text)
+          code.match?(%r{\bbin(?:/+(?:(?:\.{1,2}|bin)/+)*|['"\s,]+)(?:#{commands})(?![\w-])}o) ||
+            code.match?(%r{['"]bin['"]\s*/\s*['"](?:#{commands})['"]}o)
         end
 
-        # A file that changes into its own directory runs a bare bin/<command> from there.
-        def own_directory_command?(text)
-          own = /(?:\bcd|\bpushd)\s+["']?\$\(\s*dirname\s|
-                 chdir\(\s*(?:__dir__|__dirname|File\.dirname|os\.path\.dirname)/x
-          commands = command_paths.map { |command| Regexp.escape(File.basename(command)) }.join('|')
-          text.match?(own) && text.match?(%r{(?<![\w./-])(?:\./)?bin/+(?:#{commands})\b}o)
-        end
-
-        # A bare bin/<command> runs from the working directory, which is the repository's own bin/; only a path
-        # joined onto something, or resolved against the file's own directory, can reach the old command directory.
-        def joined_command_path?(text)
-          commands = command_paths.map { |command| Regexp.escape(File.basename(command)) }.join('|')
-          resolved = %r{(['"])bin/+(?:#{commands})\1}o
-          statements(text).any? { |line| line.match?(resolved) && invocation_relative?(line) } ||
-            text.match?(%r{\S/+bin/+(?:(?:\.{1,2}|bin)/+)*(?:#{commands})\b}o) ||
-            text.match?(/,\s*(['"])bin\1\s*,\s*(['"])(?:#{commands})\2/o) ||
-            text.match?(%r{['"]bin['"]\s*/\s*['"](?:#{commands})['"]}o)
+        # A comment, or a value in a hash or mapping, records a command line as data; it does not run it.
+        def without_recorded_commands(text)
+          text.gsub(%r{^\s*(?:#|//).*$}, '').gsub(%r{(?:=>\s*|^\s*[\w-]+:\s+)(['"]?)bin/[^\s'",]*\1}, '')
         end
 
         def scan_relative_helper_dependency(path, text)
