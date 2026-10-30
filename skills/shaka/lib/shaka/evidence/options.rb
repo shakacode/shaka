@@ -7,6 +7,11 @@ module Shaka
   module Evidence
     # Parses the local evidence operations without repeating result logic.
     module Options
+      # Each action accepts only the flags it reads, so a flag meant for another action
+      # is refused instead of silently ignored.
+      VALUE_FLAGS = { 'run' => %w[command], 'bind' => %w[result head], 'verify' => %w[head],
+                      'guard' => %w[base head flow] }.freeze
+
       private
 
       def action!
@@ -22,15 +27,17 @@ module Shaka
                      'verify' => '--head SHA --validation PATH --review PATH',
                      'guard' => '--base REF --head SHA [--flow feature|setup|migration]' }.fetch(action)
           flags.banner = "Usage: shaka evidence #{action} --root DIR --ref SHA --repository OWNER/REPO #{suffix}"
-          add_value_flags(flags)
+          add_value_flags(flags, action)
           flags.on('-h', '--help') { @options[:help] = true }
         end
       end
 
-      def add_value_flags(flags)
-        %w[root ref repository command result head base flow].each do |name|
+      def add_value_flags(flags, action)
+        (%w[root ref repository] + VALUE_FLAGS.fetch(action)).each do |name|
           flags.on("--#{name} VALUE") { |value| CallLog.tag(name => @options[name.to_sym] = value) }
         end
+        return unless action == 'verify'
+
         %w[validation review].each do |name|
           flags.on("--#{name} PATH") { |value| (@options[name.to_sym] ||= []) << value }
         end

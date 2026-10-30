@@ -21,6 +21,18 @@ class EvidenceCliTest < Minitest::Test
     end
   end
 
+  def test_each_action_rejects_another_actions_flag
+    with_checkout do |root, ref|
+      common = ['--root', root, '--ref', ref, '--repository', 'shakacode/shaka']
+      { 'run' => ['--command', 'validate', '--result', File.join(Dir.tmpdir, 'ignored.json')],
+        'bind' => ['--command', 'validate'], 'verify' => ['--base', 'main'],
+        'guard' => ['--validation', 'result.json'] }.each do |action, flags|
+        _output, error = capture_io { assert_equal 1, Shaka::Evidence::Command.run([action, *common, *flags]) }
+        assert_includes error, 'invalid option', action
+      end
+    end
+  end
+
   def test_bind_rejects_result_inside_candidate_checkout
     with_checkout do |root, ref|
       path = File.join(root, 'result.json')
