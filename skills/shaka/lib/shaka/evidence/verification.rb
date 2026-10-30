@@ -41,7 +41,7 @@ module Shaka
       def check(path, kind)
         return { 'status' => 'missing', 'path' => path, 'reasons' => ['result file missing'] } unless File.file?(path)
 
-        original = JSON.parse(File.read(Result.local_file!(@root, path), encoding: 'UTF-8'))
+        original = Result.original(JSON.parse(File.read(Result.local_file!(@root, path), encoding: 'UTF-8')))
         binding = Result.bind(original, root: @root, head: @head, ref: @ref, repository: @repository)
         check_kind(kind, original, binding)
       end
