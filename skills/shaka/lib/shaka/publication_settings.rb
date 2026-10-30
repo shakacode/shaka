@@ -3,6 +3,7 @@
 require_relative 'evidence/verification'
 require_relative 'evidence/public_settings'
 require_relative 'repository_config'
+require_relative 'configuration/personal_settings'
 require_relative 'publication/feature_guard'
 require_relative 'opening_publication'
 require_relative 'publication/review_effort_floor'
@@ -28,10 +29,10 @@ module Shaka
       changed_paths = FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current, floors, review = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
+      current, floors, review, zone = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
           review_effort_floor: ReviewEffortFloor.for(changed_paths, floors),
-          reviewer_shortfall: reviewer_shortfall(verdict, review))
+          reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: (time_zone(zone) if current))
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
@@ -69,14 +70,22 @@ module Shaka
                                                                      reviewer: result['reviewer']).map(&:downcase)
     end
 
-    # Returns the public settings snapshot, the trusted review-effort floors, and the trusted review settings.
+    # Returns the public settings snapshot, the trusted review-effort floors, the trusted review
+    # settings, and the time zone the settings state.
     def self.current_settings(root:, ref:, repository:, required: false)
       OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
         config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
-        [current, config.pr_description['human_review_floors'], config.review]
+        [current, config.pr_description['human_review_floors'], config.review,
+         config.explicit_settings.dig('pr_description', 'time_zone')]
       end
     rescue Error, SystemCallError
       raise if required
+    end
+
+    # The repository's choice wins, then the user's, then the shipped default.
+    def self.time_zone(configured, home: Dir.home)
+      configured || Configuration::PersonalSettings.time_zone(home:) ||
+        RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('time_zone')
     end
 
     # Only a completed or host-reported review reaches a ready verdict, so each bound one counts.
@@ -91,8 +100,9 @@ module Shaka
     end
 
     def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil, # rubocop:disable Metrics/ParameterLists
-                   review_effort_floor: nil, reviewer_shortfall: nil)
+                   review_effort_floor: nil, reviewer_shortfall: nil, time_zone: nil)
       @reviewer_shortfall = reviewer_shortfall
+      @time_zone = time_zone
       @review_effort_floor = review_effort_floor
       @repository = repository
       @verdict = verdict

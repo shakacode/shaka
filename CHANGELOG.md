@@ -12,6 +12,8 @@ from working is a major version.
 
 ### Added
 
+- Show PR timings in a chosen time zone with `pr_description.time_zone`. A repository
+  that sets none uses the zone in your `~/.agents/shaka/config.yml`, then UTC.
 - Announce a task's start on its GitHub issue with the WIP Details fields: owner,
   chat, branch, state, and the prompt that resumes it.
 

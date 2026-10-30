@@ -64,6 +64,17 @@ end
 class PrivatePersonalSettingsTest < Minitest::Test
   include PersonalSettingsFixture
 
+  def test_setup_leaves_the_users_time_zone_in_their_file_so_later_changes_reach_this_clone
+    settings = PREFERENCES.merge('pr_description' => { 'time_zone' => 'America/Los_Angeles' })
+    with_setup do |root, ref|
+      with_personal(settings) do
+        result = setup_with(root, ref).setup
+        refute written(root).fetch('pr_description', {}).key?('time_zone')
+        refute_includes result.fetch('prefilled_keys'), 'pr_description.time_zone'
+      end
+    end
+  end
+
   def test_personal_preferences_pre_fill_setup_while_commands_come_from_flags
     with_setup do |root, ref|
       with_personal do |path|

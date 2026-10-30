@@ -3,6 +3,7 @@
 require_relative '../error'
 require_relative 'timeline_steps'
 require_relative 'run_summary'
+require_relative 'time_zone'
 
 module Shaka
   # Retains the agent-reported task start separately from GitHub's first commit.
@@ -57,19 +58,19 @@ module Shaka
       nil
     end
 
-    def summary(timeline)
+    def summary(timeline, zone = TimeZone::UTC)
       started, first = timeline.values_at('task_started_at', 'first_validation_at')
       return 'Time before first recorded validation: unavailable; task start was not recorded.' unless started
 
-      origin = "Task start (agent-reported): #{clock(started)} UTC."
+      origin = "Task start (agent-reported): #{clock(started, zone)}."
       return "#{origin} First recorded validation: unavailable." unless first
       return "#{origin} First recorded validation predates task start; interval unavailable." if first < started
 
       "**Before first recorded validation:** #{RunSummary.duration((first - started) * 1000)} · #{origin} " \
-        "Validation started: #{clock(first)} UTC. This interval overlaps the stretches above."
+        "Validation started: #{clock(first, zone)}. This interval overlaps the stretches above."
     end
 
-    def clock(time) = time.strftime('%Y-%m-%d %H:%M')
+    def clock(time, zone) = TimeZone.strftime(time, zone, '%Y-%m-%d %H:%M %Z')
 
     def hidden(timeline)
       data = timeline.slice(*FIELDS).compact.transform_values(&:iso8601)

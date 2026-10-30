@@ -3,6 +3,7 @@
 require_relative 'opening_schema'
 require_relative 'human_review_floor_schema'
 require_relative 'validation'
+require_relative '../publication/time_zone'
 
 module Shaka
   class RepositoryConfig
@@ -10,7 +11,8 @@ module Shaka
     class PrDescriptionSchema
       include Validation
 
-      KEYS = %w[show_shaka_credit show_human_comments max_human_comments opening_check human_review_floors].freeze
+      KEYS = %w[show_shaka_credit show_human_comments max_human_comments time_zone opening_check
+                human_review_floors].freeze
 
       def initialize(description)
         @description = description
@@ -21,6 +23,7 @@ module Shaka
         keys!(@description, [], KEYS, 'pr_description')
         validate_credit
         validate_human_comments
+        validate_time_zone
         HumanReviewFloorSchema.new(@description['human_review_floors']).validate if
           @description.key?('human_review_floors')
         return unless @description.key?('opening_check')
@@ -44,6 +47,10 @@ module Shaka
         return if rows.is_a?(Integer) && rows.positive?
 
         raise Error, 'pr_description.max_human_comments must be a positive integer'
+      end
+
+      def validate_time_zone
+        TimeZone.validate!(@description['time_zone'], 'pr_description.time_zone') if @description.key?('time_zone')
       end
     end
   end

@@ -40,6 +40,7 @@ pr_description:
   show_shaka_credit: true # Show a quiet Shaka website credit below the PR summary.
   show_human_comments: true # List the comments people wrote on the PR.
   max_human_comments: 20 # Rows that list shows, open comments first.
+  time_zone: UTC # Zone of the times in the Timings section; a repository that sets none uses the user's.
   # The lowest human review effort a PR may claim, from the files it changes.
   # Matching rules: skills/shaka/references/human-review-floors.md.
   human_review_floors:

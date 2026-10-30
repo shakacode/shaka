@@ -59,7 +59,8 @@ module Shaka
       setting('branches.name') do |context|
         Claim::Names.new(query: nil, template: context.config.to_h.dig('branches', 'name')).reported
       end,
-      *%w[show_shaka_credit show_human_comments max_human_comments human_review_floors].map { |key| description(key) },
+      *%w[show_shaka_credit show_human_comments max_human_comments time_zone human_review_floors]
+        .map { |key| description(key) },
       setting('wip.include_checkout_path', aliases: ['wip.include_locations']) do |context|
         context.config.wip['include_checkout_path']
       end,

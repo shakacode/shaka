@@ -5,6 +5,7 @@ require_relative 'run_summary'
 require_relative 'timeline_steps'
 require_relative 'timing_stretches'
 require_relative 'task_timing'
+require_relative 'time_zone'
 
 module Shaka
   # Renders the time between checkpoints, how long each checkpoint waited on a person, and the
@@ -14,7 +15,7 @@ module Shaka
     UNAVAILABLE = 'GitHub did not supply the timeline; the next update tries again.'
     OPEN = ['still waiting', 'this update'].freeze
     GUIDE = '[Understand the timings](https://shaka.shakacode.com/docs/reference/timings).'
-    LEGEND = 'Times are UTC wall-clock time. A wait runs from when an attention label goes on until it ' \
+    LEGEND = 'Times are %s wall-clock time. A wait runs from when an attention label goes on until it ' \
              'comes off or the pull request merges or closes.'
     STEPS_LEGEND = 'Each measured step is a helper run recorded on the machine that ran it. A step ' \
                    'logged on a machine that never updated this description is missing, so the totals ' \
@@ -28,11 +29,12 @@ module Shaka
       raise Error, 'Publication timings are read from the pull request timeline, not supplied as a details item.'
     end
 
-    def self.for(timeline) = timeline ? [new(timeline).detail] : []
+    def self.for(timeline, time_zone = nil) = timeline ? [new(timeline, time_zone:).detail] : []
 
-    def initialize(timeline, now: Time.now.utc)
+    def initialize(timeline, now: Time.now.utc, time_zone: nil)
       @timeline = timeline
       @now = now.utc
+      @zone = TimeZone.renderable(time_zone)
     end
 
     def detail
@@ -41,7 +43,7 @@ module Shaka
       # The reason can quote gh output, so it stays out of the public body.
       unavailable = @timeline.key?('unavailable')
       parts = unavailable ? [UNAVAILABLE] : stretches
-      parts << TaskTiming.summary(@timeline)
+      parts << TaskTiming.summary(@timeline, @zone)
       parts.concat(measured(steps, dropped)) unless steps.empty?
       parts << GUIDE unless unavailable
       # The hidden line lets the next update, from any session, keep these steps.
@@ -57,7 +59,7 @@ module Shaka
 
     def stretches
       rows = timing_rows
-      ["**Totals:** #{totals(rows)}", table(rows.last(MAX_ROWS)), omitted(rows), LEGEND]
+      ["**Totals:** #{totals(rows)}", table(rows.last(MAX_ROWS)), omitted(rows), format(LEGEND, @zone)]
     end
 
     def measured(steps, dropped)
@@ -127,7 +129,7 @@ module Shaka
     def to_cell(row) = row[:ending] ? "#{clock(row[:to])} (#{row[:ending]})" : clock(row[:to])
     # A stretch still running when this update rendered keeps growing until the next one.
     def length(row) = "#{duration(row[:to] - row[:from])}#{' so far' if OPEN.include?(row[:ending])}"
-    def clock(time) = time.strftime('%Y-%m-%d %H:%M')
+    def clock(time) = TimeZone.strftime(time, @zone, '%Y-%m-%d %H:%M')
 
     def duration(seconds)
       minutes = (seconds / 60).floor
