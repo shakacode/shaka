@@ -19,6 +19,12 @@ module Shaka
         new(result, root:, head:, ref:, repository:).bind
       end
 
+      # A bind output wraps the result it checked; checking it again checks that original.
+      def self.original(result)
+        bound = result.is_a?(Hash) && result.key?('commit_tree') && result['original'].is_a?(Hash)
+        bound ? result['original'] : result
+      end
+
       def initialize(result, root:, head:, ref:, repository:)
         @result = result
         @root = root

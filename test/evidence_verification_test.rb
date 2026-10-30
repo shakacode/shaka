@@ -39,6 +39,18 @@ class EvidenceVerificationTest < Minitest::Test
     end
   end
 
+  def test_bind_output_checks_the_result_it_wraps
+    with_checkout do |root, ref|
+      validation = bind(root, ref, ref, run_check(root, ref, command: 'validate'))
+      review = bind(root, ref, ref, review_check(root, ref))
+      with_results(validation:, review:) do |paths|
+        assert_equal 'ready', verify(root, ref, **paths).fetch('status')
+        File.write(File.join(root, '.agents/bin/validate'), "#!/bin/sh\nexit 1\n")
+        assert_equal 'superseded', validation_status(verify(root, ref, **paths))
+      end
+    end
+  end
+
   def test_validate_with_arguments_cannot_satisfy_repository_validation
     with_checkout do |root, ref|
       validation = run_check(root, ref, command: 'validate', arguments: ['test/one_test.rb'])
@@ -48,4 +60,8 @@ class EvidenceVerificationTest < Minitest::Test
       end
     end
   end
+
+  private
+
+  def validation_status(verdict) = verdict.fetch('checks').fetch('validation').first.fetch('status')
 end
