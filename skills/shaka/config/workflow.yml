@@ -155,7 +155,8 @@ phases:
         established. Pass that base to `merge --base`. Read the `baseRefName` the merge mutation reports and treat a surprise there as a post-merge finding.
       - Assess scope and risk, then select a specific available model and effort and explain how the
         assessment led there. Choose neither more nor less effort than the task justifies; waiting
-        and tool failures do not by themselves justify more. Minimize total work; avoiding rework is the saving. Honor explicit
+        and tool failures do not by themselves justify more. Minimize total work: effort is not
+        priced per token, input volume dominates spend, and avoiding rework is the saving. Honor explicit
         settings. Render the checkpoint with `recommendation --content-file PATH`,
         supplying one-line `value`, `scope`, `risk`, `model`, `effort`, and `reason`; the helper
         chooses no settings and judges no claim. `value` follows the packaged
@@ -464,7 +465,7 @@ phases:
         repository writing preferences. Keep decisions, risks, and evidence gaps visible. Name
         specific things in summaries and sections. Keep blockers visible; put checks beyond
         `verification`, review history, and rollback in `details`, and usage in the `usage` object. Avoid repeated status updates. Store useful
-        evidence once and retrieve it as needed.
+        evidence once and retrieve it as needed; collapsing does not save tokens.
       - Point reviewers to the code instead of retelling it: the description links the walkthrough,
         and the walkthrough links each step to its lines. Keep the text in proportion to the change.
         `description` and `walkthrough` refuse visible prose past the trusted
