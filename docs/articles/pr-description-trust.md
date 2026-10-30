@@ -52,7 +52,7 @@ into Shaka.
   at `8af1165`.
 - The adoption count covers PRs merged from 2026-10-22 through 2026-10-29 UTC.
   It was run on 2026-10-30 at 03:00 UTC, after the window closed:
-  `gh pr list --state merged --search "merged:2026-10-22..2026-10-29"`.
+  `gh pr list --repo shakacode/shaka --state merged --search "merged:2026-10-22..2026-10-29" --limit 300 --json number,author,mergedAt,body`.
 - Each description was matched by its text:
   - an `## Intent` heading, or `## Change and review`, its name from #860 until
     #888 restored Intent;
@@ -114,9 +114,10 @@ Related changes outside those ten:
   found collapsed usage data at 65 to 70% of the body in #539, #542, and #543.
   The visible decision content was 8 to 14%.
 - **Change:** #553 made `intent` and `verification` required content. Shaka
-  refuses to publish without Why, Scope, Leaves out, Safe because, a review effort
-  of 1 to 5, and a Not verified line. Each of the one to three checks must cite a
-  link or a command.
+  refused to publish without Why, Scope, Leaves out, Safe because, a review effort
+  of 1 to 5, and a Not verified line. Each of the one to three checks had to cite
+  a link or a command. Leaves out became optional in #860. Since #810, a Not
+  verified answer of `Nothing.` is hidden.
 - **Result:** 110 of 115 PRs in the window carry the Intent block.
 - **Limit:** Shaka checks presence and form. Whether a Why line is true is left
   to the agent, the reviewers, and the checkpoint.
