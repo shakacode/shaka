@@ -157,7 +157,8 @@ phases:
         assessment led there. Choose neither more nor less effort than the task justifies; waiting
         and tool failures do not by themselves justify more. Minimize total work; avoiding rework is the saving. Honor explicit
         settings. Render the checkpoint with `recommendation --content-file PATH`,
-        supplying one-line `value`, `scope`, `risk`, `model`, `effort`, and `reason`. `value` follows the packaged
+        supplying one-line `value`, `scope`, `risk`, `model`, `effort`, and `reason`; the helper
+        chooses no settings and judges no claim. `value` follows the packaged
         [planning guide](<{{package_root}}/skills/shaka/references/delivery.md#say-what-the-work-is-worth>).
       - When that assessment finds design choices the request leaves open, such as several
         components that depend on one design or more than one reasonable approach, name those
@@ -300,7 +301,7 @@ phases:
       - Before push and publication, use `shaka evidence verify --root DIR --ref TRUSTED_SHA
         --repository OWNER/REPO --head SHA --validation PATH --review PATH` with the actual
         repository validation and review JSON results. Missing or superseded results need the affected
-        operation rerun.
+        operation rerun; the helper does not infer earlier execution from current settings.
         Supply those results to `description` with `--validation-result PATH --review-result PATH`,
         plus `--root DIR --ref TRUSTED_SHA`.
         For a separate configuration PR, also pass `--publication-flow setup` or `migration`. Unfinished
@@ -531,7 +532,7 @@ phases:
         `not_verified` line names a claim this PR makes that went unproven and why that is
         acceptable; work outside the change's scope stays out. Write `Nothing.` when every claim
         was proved, and the helper omits the line. An unfinished PR may list no checks
-        yet.
+        yet. The helper cannot tell whether a check ran.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
         text, and either `to` text or `block: true`; write `[label](code:NAME)` in the prose.
         The helper finds `from` on exactly one line of the file at the head. It ends the range
@@ -928,7 +929,9 @@ always: |-
   [native wake boundary](<{{package_root}}/skills/shaka/references/codex-wake.md>).
   Do not infer a native Codex wake from SHAKA_WAKE or process completion.
   Codex `--woken-by` handoffs require `--codex-wake PATH` with successful native
-  heartbeat registration and matching same-chat readback for the exact PR/head. Record the registration ID, expiry, manual owner, and resume prompt;
+  heartbeat registration and matching same-chat readback for the exact PR/head.
+  Ruby checks supplied registration fields and schedule bounds, not scheduler execution
+  or live resumption. Record the registration ID, expiry, manual owner, and resume prompt;
   claim observed resumption only after a native-started turn is recorded. Without available,
   authorized, successful registration, use the named manual handoff.
 

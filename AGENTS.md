@@ -129,7 +129,10 @@ breaks it, and say which reason applies.
 - `skills/shaka/references/` holds companion procedures referenced by the workflow.
 - `docs/` is the canonical source for the docs site at shaka.shakacode.com
   (`shakacode/shaka-shakacode-com`), which syncs it on every build. Write docs
-  content here, never in the site repository.
+  content here, never in the site repository. Once the docs-dispatch secrets are
+  set here, the docs-dispatch App is installed on the site repository, and the
+  site listens for `docs-updated`, a push to `main` that changes `docs/`
+  triggers a site rebuild.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
 - `bin/install` registers a dedicated official checkout and links selected host skills directly into it. PR trials copy a revision into a managed package.
 - `.agents/shaka/config.yml` is the machine-readable repository contract. It
