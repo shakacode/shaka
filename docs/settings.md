@@ -272,16 +272,16 @@ This controls when configured CI review reports are required. Options:
 - `meaningful_changes`: every PR except trivial prose, such as a typo fix, and no-op
   changes. Those can skip review with a recorded reason. The agent decides what is
   trivial; Shaka does not check that decision.
-- `always`: every PR, including trivial changes.
+- `always`: every PR, including trivial changes. The agent follows this for local
+  review too, but `shaka merge` still accepts a waiver reason, described below.
 - `none`: no configured CI review backstop, and `shaka merge` does not check for a
   local review. `shaka description` accepts a validation result without a review
   result, and its settings block says the repository does not require review; when
   no review ran, the Validation and review line says so too. A review that ran anyway
   must still match the current commit. Omit `ci_review_jobs` with this setting.
 
-Whatever the value, the agent also reviews the same changes locally before push.
-`always` removes the trivial-prose exception, and `none` turns off the CI review and
-merge checks, not this local review:
+Every value, `none` included, keeps a local review before push. Only trivial
+changes may skip it, and not under `always`:
 
 - Use a separate session without the implementation conversation.
 - Prefer a different provider and model. If other reviewers are unavailable, the
