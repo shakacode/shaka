@@ -74,4 +74,5 @@ do not establish the same behavior in other images, network policies, or CLI ver
 | Codex credentials | With only `OPENAI_API_KEY` set, `codex exec` sent no key (`401 Missing bearer`). With `CODEX_API_KEY` set, it sent the key and OpenAI judged it (`401 invalid_api_key` for a fake key). |
 | Codex sandbox | `codex sandbox` ran `git log` in the checkout and refused a write with `Read-only file system`. |
 | GitHub | `gh api repos/shakacode/shaka` succeeded with push permission. Every GraphQL call returned `HTTP 403: GitHub GraphQL is not available from Claude Code sessions`, so `shaka pr` failed and doctor's Repository access check failed. |
-| Not tested | A real OpenAI key, a ChatGPT sign-in with `codex login --device-auth`, a limited network policy, `/shaka` in a session started after the setup script, and whether a saved review consent survives into a new session. |
+| ChatGPT sign-in | `codex login --device-auth` printed `https://auth.openai.com/codex/device` and a one-time code that expires in 15 minutes. |
+| Not tested | A real OpenAI key, completing the ChatGPT sign-in and reviewing on it, a limited network policy, `/shaka` in a session started after the setup script, and whether a saved review consent survives into a new session. |

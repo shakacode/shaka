@@ -36,13 +36,15 @@ reviewer. A cloud machine usually has no signed-in reviewer tools, and it can't
 open the fresh chat Shaka otherwise uses as a fallback reviewer. Your local
 sign-ins and environment variables don't reach it.
 
-A reviewer that signs in with an API key needs only outbound HTTPS and a secret in
-the cloud environment:
+Two reviewers can run there:
 
-- Codex: install its CLI and set `CODEX_API_KEY`, as shown for
-  [Claude Code on the web](#claude-code-on-the-web).
-- DeepSeek: add it to your reviewer list and set `OPENROUTER_API_KEY`. Shaka's
-  Ruby adapter calls the API, so no CLI is needed.
+- Codex: install its CLI and sign in with your ChatGPT plan in each session, as
+  shown for [Claude Code on the web](#claude-code-on-the-web).
+- DeepSeek: add it to your reviewer list and set an `OPENROUTER_API_KEY` secret.
+  Shaka's Ruby adapter calls the API, so no CLI is needed.
+
+Prefer a subscription sign-in for Codex and Claude. Their API keys bill each
+review at API prices, which cost far more than a subscription.
 
 Try one review there before relying on it, since Shaka's tests don't run in your
 cloud environment.
@@ -62,8 +64,9 @@ Shaka's PR commands, so finish the PR from a local session.
 
 - **Claude reviewer:** works with no setup. The `claude` CLI comes installed and
   signed in. For a change Claude wrote, this is a same-provider review in a fresh context.
-- **Codex reviewer:** works after the setup below. A trial confirmed every step
-  except a review with a real OpenAI key.
+- **Codex reviewer:** runs after the setup below and a ChatGPT sign-in in each
+  session. A trial confirmed every step up to the sign-in code, but not yet a
+  review on a ChatGPT sign-in.
 - **Shaka's PR commands:** fail. Commands such as `shaka pr`, `shaka comments`,
   and `shaka merge` use GitHub's GraphQL API, and Claude Code cloud sessions
   allow only GitHub's REST API. `shaka doctor` reports a failed Repository access
@@ -90,15 +93,23 @@ title bar, then choose Edit:
    The default image ships an older Ruby, so the script builds Ruby 3.4 in a few
    minutes. The installer records that Ruby for later Shaka commands. See
    [manual installation](manual-installation.md) for what the installer changes.
-2. Under environment variables, set `CODEX_API_KEY` to an OpenAI API key. Shaka's
-   review runs `codex exec`, which reads `CODEX_API_KEY` and ignores `OPENAI_API_KEY`.
-   OpenAI bills that key for API usage, separately from a ChatGPT plan.
-3. When the environment limits network access, add `api.openai.com` under
-   **Allowed domains**.
+2. When the environment limits network access, add `auth.openai.com`,
+   `chatgpt.com`, and `api.openai.com` under **Allowed domains**.
 
 Start a new session to pick up the changes. Then ask the agent to run
 `shaka doctor`. The Reviewer CLIs check should find `codex`, and Repository access
 still fails.
+
+Before the first Codex review in a session, sign Codex in to your ChatGPT plan:
+
+```text
+Sign Codex in with device code authorization and show me the code.
+```
+
+The agent runs `codex login --device-auth` and shows a link and a one-time code.
+Open the link, sign in to ChatGPT, and enter the code within 15 minutes. The
+sign-in lasts until the cloud discards the session's container, so a new session
+needs a new code.
 
 Before the first Codex review of a task, Shaka asks for consent to send the change
 to OpenAI. A cloud session may not keep the answer saved by **Yes, and don't ask
