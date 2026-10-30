@@ -895,9 +895,10 @@ phases:
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
         stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge
         click, run `attention OWNER/REPO NUMBER --state merge --root DIR --ref SHA` to label the PR
-        `awaiting-merge-approval`. It refuses while the published local review reports open findings
-        or nothing published covers the head; pass `--review-waiver REASON` when review was
-        deliberately skipped, which excuses no published finding. Verify the checkpoint contains the current head
+        `awaiting-merge-approval`; every `--state merge` takes those flags when trusted settings exist,
+        because `review.required` comes from them. It refuses while the published local review reports
+        open findings or nothing published covers the head; pass `--review-waiver REASON` when review
+        was deliberately skipped, which excuses no published finding. Verify the checkpoint contains the current head
         and copyable commit title and body. For an opted-out checkpoint, run `squash-message`
         for that head instead. On a merge-queue base, tell the user to add the PR to the queue
         instead and relay `handoff`'s note on what the queue will write. Name the expected head SHA

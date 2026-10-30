@@ -52,7 +52,9 @@ class CliAttentionReviewTest < Minitest::Test
 
   def review_comment(outcome)
     { 'user' => { 'login' => 'shaka-agent' }, 'html_url' => 'https://example.test/c/1',
-      'body' => "# Local Adversarial Review\n\n**Outcome:** #{outcome}\n\n" \
+      'body' => "<!-- shaka:reply:local-review-loop-abc-def -->\n# Local Adversarial Review\n\n" \
+                "<!-- shaka:local-reviewers #{HEAD} openai/codex -->\n\n" \
+                "**Reviewed revision:** #{HEAD}\n\n**Outcome:** #{outcome}\n\n" \
                 "REVIEWED #{HEAD} BY openai/codex EFFORT high FINDINGS 3\n" }
   end
 
@@ -114,5 +116,23 @@ class CliAttentionReviewTest < Minitest::Test
 
     refute_predicate status, :success?
     assert_includes error, '--review-waiver is only for merge and attention --state merge'
+  end
+end
+
+# The no-settings and first-setup paths leave out --ref, so no setting can excuse the review.
+class CliAttentionWithoutSettingsTest < Minitest::Test
+  include CliMergeFixture
+
+  def test_no_review_needs_a_stated_reason
+    with_repository('review' => review_policy('required' => 'none').except('ci_review_jobs')) do |root|
+      FileUtils.mkdir_p(File.join(root, 'fake-bin'))
+      File.write(File.join(root, 'fake-bin', 'gh'), CliAttentionReviewTest::FAKE, perm: 0o755)
+      env = { 'PR_COMMENTS' => '[]', 'LABEL_FILE' => (written = File.join(root, 'label-written')) }
+      _output, error, status = run_command('attention', 'owner/repo', '1', '--state', 'merge', root:, env:)
+
+      refute_predicate status, :success?
+      assert_includes error, '--review-waiver'
+      refute_path_exists written
+    end
   end
 end

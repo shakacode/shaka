@@ -7,10 +7,15 @@ module Shaka
     # The effort and finding count an attestation closes with.
     CLOSING = /EFFORT (\S+) FINDINGS (\d+)\s*\z/
 
-    # What a published review says still needs attention, read from the first Outcome line, which the
-    # comment writes above every report so a report cannot restate it. Nil when the comment has none.
+    # A main review comment's header down to its Outcome line. Anchored at the start so no report,
+    # and no continuation comment of earlier reports, can write or restate that line.
+    OUTCOME = Regexp.new('\A(?:<!-- shaka:reply:[^\n]* -->\n)?# Local Adversarial Review\n\n' \
+                         '<!-- shaka:local-reviewers [^\n]* -->\n\n' \
+                         '\*\*Reviewed revision:\*\* [^\n]*\n\n\*\*Outcome:\*\* ([^\n]*)$').freeze
+
+    # How many findings a published review says need attention, or nil when body is not a main review comment.
     def self.pending_count(body)
-      outcome = body[/^\*\*Outcome:\*\* (.*)$/, 1]
+      outcome = body[OUTCOME, 1]
       outcome && outcome[/\A(\d+) findings? needs? attention/, 1].to_i
     end
 

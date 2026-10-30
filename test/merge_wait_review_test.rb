@@ -75,7 +75,6 @@ class MergeWaitReviewTest < Minitest::Test
     error = assert_raises(Shaka::MergeWaitReview::OpenFindings) { gate.check!(snapshot) }
 
     assert_includes error.message, '2 findings'
-    assert_equal 2, Shaka::MergeReviewEvidence.new(@client).call(HEAD)['pending']
     assert_includes error.message, 'review record'
   end
 
@@ -151,6 +150,36 @@ class MergeWaitReviewTest < Minitest::Test
   def test_a_review_of_an_earlier_commit_keeps_its_open_findings_across_a_markdown_only_change
     @client.comments = [published([finding('open')], head: EARLIER)]
     @client.comparisons[EARLIER] = { 'status' => 'ahead', 'files' => [{ 'filename' => 'docs/guide.md' }] }
+
+    assert_raises(Shaka::MergeWaitReview::OpenFindings) { gate.check!(snapshot) }
+  end
+
+  def test_a_stated_reason_does_not_excuse_open_findings_published_for_an_earlier_commit
+    @client.comments = [published([finding('open')], head: EARLIER)]
+    @client.comparisons[EARLIER] = { 'status' => 'ahead', 'files' => [{ 'filename' => 'lib/fix.rb' }] }
+
+    assert_raises(Shaka::MergeWaitReview::OpenFindings) { gate(waiver: 'Skip review.').check!(snapshot) }
+  end
+
+  def test_a_continuation_comment_does_not_hide_the_main_comments_open_findings
+    continuation = "# Local Adversarial Review · earlier commits (1)\n\n**Outcome:** No open findings.\n\n" \
+                   "REVIEWED #{EARLIER} BY openai/codex EFFORT high FINDINGS 0\n"
+    main = published([finding('open')])
+    @client.comments = [main, main.merge('body' => continuation)]
+
+    assert_raises(Shaka::MergeWaitReview::OpenFindings) { gate.check!(snapshot) }
+  end
+
+  def test_a_newer_clean_ledger_speaks_for_the_review
+    @client.comments = [published([finding('open')], head: EARLIER), published([])]
+
+    assert_equal 'current_head', gate.check!(snapshot)['basis']
+  end
+
+  def test_the_comment_github_stores_is_read_with_its_reply_key
+    comment = published([finding('open')])
+    comment['body'] = "<!-- shaka:reply:local-review-loop-abc-def -->\n#{comment['body']}"
+    @client.comments = [comment]
 
     assert_raises(Shaka::MergeWaitReview::OpenFindings) { gate.check!(snapshot) }
   end

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'error'
-require_relative 'local_review/evidence'
 require_relative 'reviewer_selection'
 require_relative 'merge_review_comparison'
 require_relative 'merge_tree_proof'
@@ -97,8 +96,7 @@ module Shaka
       return unless sha && reviewer_identity?(reviewer)
 
       { 'reviewed' => sha, 'reviewer' => reviewer, 'effort' => effort,
-        'findings' => findings.to_i, 'pending' => LocalReviewEvidence.pending_count(comment['body'].to_s),
-        'comment' => comment['html_url'] }.compact
+        'findings' => findings.to_i, 'comment' => comment['html_url'] }.compact
     end
 
     def reviewer_identity?(text)
