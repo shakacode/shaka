@@ -59,17 +59,14 @@ session (use `$shaka` in Codex):
 Claude Code on the web can run Shaka's Codex and Claude reviewers. It can't yet run
 Shaka's PR commands, so finish the PR from a local session.
 
-These results come from one cloud session on 2026-10-30 with Codex CLI 0.166.0:
-
 - **Claude reviewer:** works with no setup. The `claude` CLI comes installed and
   signed in. For a change Claude wrote, this is a same-provider review in a fresh context.
-- **Codex reviewer:** works after the setup below. Codex reached OpenAI and ran
-  its read-only sandbox. Without a valid key it stops with `401 Unauthorized`.
+- **Codex reviewer:** works after the setup below. A trial confirmed every step
+  except a review with a real OpenAI key.
 - **Shaka's PR commands:** fail. Commands such as `shaka pr`, `shaka comments`,
   and `shaka merge` use GitHub's GraphQL API, and Claude Code cloud sessions
-  allow only GitHub's REST API. `shaka doctor` reports this as a failed
-  Repository access check, with the message
-  `GitHub GraphQL is not available from Claude Code sessions`.
+  allow only GitHub's REST API. `shaka doctor` reports a failed Repository access
+  check and shows the GitHub CLI's error from that environment.
 
 To set up a cloud environment, open the cloud environment menu in the session's
 title bar, then choose Edit:
@@ -89,7 +86,9 @@ title bar, then choose Edit:
    npm install -g @openai/codex
    ```
 
-   The default image ships Ruby 3.3, and building Ruby 3.4 took about four minutes.
+   The default image ships an older Ruby, so the script builds Ruby 3.4 in a few
+   minutes. The installer records that Ruby for later Shaka commands. See
+   [manual installation](manual-installation.md) for what the installer changes.
 2. Under environment variables, set `CODEX_API_KEY` to an OpenAI API key. Shaka's
    review runs `codex exec`, which reads `CODEX_API_KEY` and ignores `OPENAI_API_KEY`.
    OpenAI bills that key for API usage, separately from a ChatGPT plan.
