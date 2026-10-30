@@ -40,4 +40,24 @@ class EvidenceCliTest < Minitest::Test
       assert_raises(Shaka::Error) { Shaka::Evidence::Result.local_file!(root, path) }
     end
   end
+
+  def test_bind_of_a_bind_output_binds_the_wrapped_result
+    with_checkout do |root, ref|
+      raw = run_check(root, ref)
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'bound.json')
+        File.write(path, JSON.generate(bind(root, ref, ref, raw)))
+        assert_equal raw, cli_bind(root, ref, path).fetch('original')
+      end
+    end
+  end
+
+  private
+
+  def cli_bind(root, ref, path)
+    arguments = ['bind', '--root', root, '--ref', ref, '--repository', 'shakacode/shaka', '--head', ref, '--result',
+                 path]
+    output, = capture_io { assert_equal 0, Shaka::Evidence::Command.run(arguments) }
+    JSON.parse(output)
+  end
 end
