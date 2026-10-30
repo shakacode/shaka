@@ -33,12 +33,18 @@ code separate from the shared workflow.
 A cloud agent, such as a Cursor cloud agent, can implement a task and open its
 pull request. It runs no local adversarial review unless its environment provides a
 reviewer. A cloud machine usually has no signed-in reviewer tools, and it can't
-open the fresh chat Shaka otherwise uses as a fallback reviewer.
+open the fresh chat Shaka otherwise uses as a fallback reviewer. Your local
+sign-ins and environment variables don't reach it.
 
-The DeepSeek reviewer is the one option that needs only outbound HTTPS. Add it to
-your reviewer list and give the cloud agent an `OPENROUTER_API_KEY` secret; your
-local environment variables don't reach a cloud machine. Try one review there
-before relying on it, since Shaka's tests don't run in your cloud environment.
+A reviewer that signs in with an API key needs only its CLI, outbound HTTPS, and a
+secret in the cloud environment:
+
+- Codex: install the CLI and set `CODEX_API_KEY`, as shown for
+  [Claude Code on the web](#claude-code-on-the-web).
+- DeepSeek: add it to your reviewer list and set `OPENROUTER_API_KEY`.
+
+Try one review there before relying on it, since Shaka's tests don't run in your
+cloud environment.
 
 Without a reviewer, Shaka's review command reports after one attempt that no
 reviewer can start, and the agent stops the review. Finish it from a local
@@ -47,6 +53,52 @@ session (use `$shaka` in Codex):
 ```text
 /shaka https://github.com/OWNER/REPO/pull/123
 ```
+
+### Claude Code on the web
+
+Claude Code on the web can run Shaka's Codex and Claude reviewers. It can't yet run
+Shaka's PR commands, so finish the PR from a local session.
+
+These results come from one cloud session on 2026-10-30 with Codex CLI 0.166.0:
+
+- **Claude reviewer:** works with no setup. The `claude` CLI comes installed and
+  signed in. For a change Claude wrote, this is a same-provider review in a fresh context.
+- **Codex reviewer:** works after the setup below. Codex reached OpenAI and ran
+  its read-only sandbox. Without a valid key it stops with `401 Unauthorized`.
+- **Shaka's PR commands:** fail. Commands such as `shaka pr`, `shaka comments`,
+  and `shaka merge` use GitHub's GraphQL API, and Claude Code cloud sessions
+  allow only GitHub's REST API. `shaka doctor` reports this as a failed
+  Repository access check, with the message
+  `GitHub GraphQL is not available from Claude Code sessions`.
+
+To set up a cloud environment, open the cloud environment menu in the session's
+title bar, then choose Edit:
+
+1. Under **Setup script**, install Ruby 3.4, Shaka, and Codex:
+
+   ```bash
+   #!/bin/bash
+   set -e
+   rbenv install --skip-existing 3.4.6
+   export PATH="$(rbenv root)/versions/3.4.6/bin:$PATH"
+   umask 022
+   mkdir -p "$HOME/.local/share/shaka"
+   [ -d "$HOME/.local/share/shaka/source" ] ||
+     git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
+   "$HOME/.local/share/shaka/source/bin/install" --agent claude
+   npm install -g @openai/codex
+   ```
+
+   The default image ships Ruby 3.3, and building Ruby 3.4 took about four minutes.
+2. Under environment variables, set `CODEX_API_KEY` to an OpenAI API key. Shaka's
+   review runs `codex exec`, which reads `CODEX_API_KEY` and ignores `OPENAI_API_KEY`.
+   OpenAI bills that key for API usage, separately from a ChatGPT plan.
+3. When the environment limits network access, add `api.openai.com` under
+   **Allowed domains**.
+
+Start a new session to pick up the changes. Then ask the agent to run
+`shaka doctor`. The Reviewer CLIs check should find `codex`. Repository access
+stays failed until Shaka's PR commands stop depending on GraphQL.
 
 ## Give consent once
 
