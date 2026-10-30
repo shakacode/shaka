@@ -93,8 +93,8 @@ consumer trial.
 
 | Scenario | Expected experience and recovery limit |
 | --- | --- |
-| Resume the same task with a PR | The workflow directs the agent to refresh PR state and evidence. Open WIP Details and return to the owner, or give a new chat the PR URL after the previous owner stops. Fresh-chat acceptance remains untested. |
-| Resume before a PR exists | Supply the task and checkout. The intended path is local inspection; there is no PR record from which to recover missing choices. Fresh-chat acceptance remains untested. |
+| Resume the same task with a PR | The workflow directs the agent to refresh PR state and evidence. Open WIP Details and return to the owner, or give a new chat the PR URL after the previous owner stops. A maintainer-run fresh chat has taken over a labeled PR this way ([#277](https://github.com/shakacode/shaka/issues/277)); new-user acceptance remains open. |
+| Resume before a PR exists | Supply the task and checkout. The intended path is local inspection; there is no PR record from which to recover missing choices. A maintainer-run fresh chat has resumed a committed branch this way ([#277](https://github.com/shakacode/shaka/issues/277)); new-user acceptance remains open. |
 | Use a linked worktree with individual settings | Each worktree has its own local settings identity and recovery copy in the common Git directory. Host permissions must allow the required writes. |
 | An outside pull adds team settings | Inspect adoption and compare saved individual settings. Default-branch team policy governs; do not overwrite it with the local copy. |
 | Clean or delete a worktree with individual settings | Previously captured settings may be restored outside a checkout for comparison. Uncaptured edits and deletion of the common Git directory cannot be recovered from those copies. |
