@@ -953,8 +953,10 @@ always: |-
   In Auto mode, add `--auto` so it also waits for every other check on the head.
   Its one `SHAKA_WAKE`
   line gives the reason to refresh the PR. On an error wake, inspect the error, refresh the PR,
-  and restart the watcher or use the resume path above. After a timeout with checks
-  still pending, restart it or use the resume path. A monitor that reports failures only leaves the
+  and restart the watcher or use the resume path above. By default it polls every 60 seconds,
+  times out after one hour, and waits 15 seconds before a work wake. After a timeout with checks
+  still pending, restart it or use the resume path. With no required checks or configured CI review
+  wait, it stays open for comments, head changes, closure, or timeout. A monitor that reports failures only leaves the
   `awaiting-resume` path above for green checks.
 
   Before ending any turn on a task that owns an open PR, run the saved helper's

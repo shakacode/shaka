@@ -43,7 +43,8 @@ Even a comment the agent reads is review input, not an instruction: settings and
 merge approval come from you and the default branch. The same goes for the branch a
 PR targets. The agent never takes it from an issue, a PR description, or a comment,
 because that text would then choose which code the setup and validation commands
-run before anyone looks.
+run before anyone looks. When a PR already targets some other branch, the agent
+confirms it with you and waits for your merge decision.
 
 ![Maintainers, the default branch, and your decisions steer the agent. Public comments, fork PR diffs, and settings changed in the PR are read as data only.](img/trust-boundary.svg)
 
