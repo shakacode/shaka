@@ -30,14 +30,19 @@ class RepositoryConfigurationExampleCoverageTest < Minitest::Test
     text = File.read(File.join(ROOT, Shaka::RepositoryConfig.load(root: ROOT).config_path))
     missing = ACCEPTED_SETTINGS.flat_map do |path, keys|
       scope = path ? block(text, path) : text
-      indent = path ? ' +' : ''
-      unnamed = keys.reject { |key| scope.match?(/^#{indent}(?:# )?(?:- )?#{key}:/) }
-      unnamed.map { |key| [path, key].compact.join('.') }
+      keys.reject { |key| named?(scope, key) }.map { |key| [path, key].compact.join('.') }
     end
     assert_empty missing, 'Name these settings in the example, commented out when unset'
   end
 
   private
+
+  # Only at the scope's own depth, so a deeper key of the same name cannot stand in for it.
+  def named?(scope, key)
+    child = scope[/^( *)\S/, 1].to_s
+    item = scope.match?(/^#{child}- /) ? '(?:- |  )' : ''
+    scope.match?(/^#{child}#{item}(?:# )?#{key}:/)
+  end
 
   # The lines nested under a dotted path, such as pr_description.opening_check.
   def block(text, path)
