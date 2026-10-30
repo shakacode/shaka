@@ -147,7 +147,7 @@ Related changes outside those ten:
   ([review comment](https://github.com/shakacode/shaka/pull/757#discussion_r4331436333)).
 - **Result:** 106 of 115 PRs name a floor. The 4 other PRs with an Intent block
   changed only design records under `internal/`, which no floor covers.
-  Ratings were 2 in 9 PRs, 3 in 30,
+  Across all 110 PRs with Intent, ratings were 2 in 9 PRs, 3 in 30,
   4 in 24, and 5 in 47. Of the 47 at 5, the docs floor set 45 and the Shaka
   settings floor set 2. 20 PRs rated above their floor, and 86 rated at it.
 - **Limit:** A path floor misses one risky line inside a low-floor file. #922 added
