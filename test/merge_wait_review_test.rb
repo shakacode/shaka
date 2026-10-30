@@ -171,9 +171,18 @@ class MergeWaitReviewTest < Minitest::Test
   end
 
   def test_a_newer_clean_ledger_speaks_for_the_review
-    @client.comments = [published([finding('open')], head: EARLIER), published([])]
+    @client.comments = [published([finding('open')], head: EARLIER).merge('updated_at' => '2026-10-30T01:00:00Z'),
+                        published([]).merge('updated_at' => '2026-10-30T02:00:00Z')]
 
     assert_equal 'current_head', gate.check!(snapshot)['basis']
+  end
+
+  # Republishing an older ledger edits its comment in place, so it stays first in GitHub's listing.
+  def test_an_older_ledger_republished_with_open_findings_speaks_for_the_review
+    @client.comments = [published([finding('open')]).merge('updated_at' => '2026-10-30T03:00:00Z'),
+                        published([], head: EARLIER).merge('updated_at' => '2026-10-30T02:00:00Z')]
+
+    assert_raises(Shaka::MergeWaitReview::OpenFindings) { gate.check!(snapshot) }
   end
 
   def test_the_comment_github_stores_is_read_with_its_reply_key

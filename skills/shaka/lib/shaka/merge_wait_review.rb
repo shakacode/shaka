@@ -32,13 +32,15 @@ module Shaka
 
     private
 
-    # A later ledger's comment speaks for the review; a comment with no Outcome line says nothing about it.
+    # The review published last speaks for the loop. Republishing keeps a comment's place in GitHub's
+    # listing, so its update time decides. A comment with no Outcome line says nothing about the review.
     def published_open_findings
       account = @github.viewer_login
-      counts = @github.issue_comments.reverse.lazy.filter_map do |comment|
-        LocalReviewEvidence.pending_count(comment['body'].to_s) if comment.dig('user', 'login') == account
+      reviews = @github.issue_comments.select do |comment|
+        comment.dig('user', 'login') == account && LocalReviewEvidence.pending_count(comment['body'].to_s)
       end
-      counts.first.to_i
+      newest = reviews.max_by { |comment| [comment['updated_at'].to_s, comment['id'].to_i] }
+      newest ? LocalReviewEvidence.pending_count(newest['body'].to_s) : 0
     end
 
     def refuse_open(count)
