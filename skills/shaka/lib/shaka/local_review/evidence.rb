@@ -7,6 +7,13 @@ module Shaka
     # The effort and finding count an attestation closes with.
     CLOSING = /EFFORT (\S+) FINDINGS (\d+)\s*\z/
 
+    # What a published review says still needs attention, read from the first Outcome line, which the
+    # comment writes above every report so a report cannot restate it. Nil when the comment has none.
+    def self.pending_count(body)
+      outcome = body[/^\*\*Outcome:\*\* (.*)$/, 1]
+      outcome && outcome[/\A(\d+) findings? needs? attention/, 1].to_i
+    end
+
     def self.valid?(text, head:, reviewer:, effort: nil)
       return false unless text.valid_encoding?
 

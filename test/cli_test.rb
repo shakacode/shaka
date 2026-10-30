@@ -146,7 +146,7 @@ class CliReviewWaiverTest < Minitest::Test
     _output, error, status = Open3.capture3(*CliTest::COMMAND, 'pr', 'owner/repo', '1', '--review-waiver', 'docs')
 
     refute_predicate status, :success?
-    assert_match(/--review-waiver is only for merge/, error)
+    assert_match(/--review-waiver is only for merge and attention --state merge/, error)
   end
 end
 
