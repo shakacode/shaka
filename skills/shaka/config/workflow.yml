@@ -288,7 +288,8 @@ phases:
       - Never defer always-on required, security, or trust checks.
       - Record commands, results, and the tested revision. After committing, use `shaka evidence bind
         --root DIR --ref TRUSTED_SHA --repository OWNER/REPO --head SHA --result PATH` for each
-        earlier result. Rerun an affected check when binding
+        earlier result. Only an exact candidate tree and unchanged material settings components
+        bind it; retain the original tested tree in the result. Rerun an affected check when binding
         reports superseded evidence. Fix failures and reverify changed heads. When the same
         failure is reproduced on the immutable trusted base and the task leaves its affected
         inputs unchanged, follow [publish a draft blocked by a base failure](<{{package_root}}/skills/shaka/references/base-validation-failure.md>).
@@ -418,7 +419,10 @@ phases:
         (`gh pr create --body ''`) and let `description` fill it; any text outside the managed
         region stays in the body. When a local review ran, publish it right after that with
         `review publish OWNER/REPO NUMBER --content-file PATH`, passing the ledger, or a content
-        file for a fresh host review; nothing from the loop reaches GitHub before the push, and publishing again updates its one comment in place. Inspect reported cleanup failures before retrying. Copy the returned loop summary into the description's review
+        file for a fresh host review; nothing from the loop reaches GitHub before the push, and publishing again updates its one comment in place.
+        Publication then collapses older owned review comments from its ledger, including earlier
+        per-commit comments; other reports stay visible for assessment. Inspect reported cleanup
+        failures before retrying. Copy the returned loop summary into the description's review
         history details; keep native usage in `usage.records`. Use trusted `gh` for authorized
         issue and PR reads and for publication. Publish only within the task's scope; without a PR,
         put supporting tables and checks in the final report, and link from chats that cannot
@@ -942,7 +946,8 @@ always: |-
   it with `--baseline PATH` so comments arriving between that read and watcher startup count.
   Without a baseline, watching starts with the comments already present. It polls the named
   head and exits when required checks finish and the trusted none/one/all CI review job threshold
-  is terminal, or on a new trusted comment, a moved head, closure, or timeout. Pass a recorded task override with `--ci-review-wait`. When the trusted
+  is terminal, or on a new trusted comment, a moved head, closure, or timeout. It ignores non-required
+  checks outside the configured CI review jobs. Pass a recorded task override with `--ci-review-wait`. When the trusted
   `review.required: meaningful_changes` rule permits omitting CI review for this task, record
   that decision and pass `--ci-review-not-required` so the watcher waits only for required checks.
   In Auto mode, add `--auto` so it also waits for every other check on the head.

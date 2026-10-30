@@ -153,7 +153,9 @@ breaks it, and say which reason applies.
   document them where they are used.
 - `skills/shaka/config/enforcement.yml` records what enforces each rule `workflow.yml`
   states with never, must, do not, or only when, and `shaka enforcement` prints it.
-  A rule added inside a passage an entry already
+  Loading it fails when a quote leaves the workflow, and when one of those forms appears
+  outside every classified quote, so a rule added in a new passage has to declare whether
+  anything but the agent enforces it. A rule added inside a passage an entry already
   quotes is caught by review, not by the loader; the file's header says so.
 - `.agents/shaka/trusted-github-actors.yml` is the repository-level public-comment allowlist.
   The installed `skills/shaka/scripts/shaka comments` command combines it with the
