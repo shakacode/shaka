@@ -39,7 +39,8 @@ module Shaka
         new(path, read(path))
       end
 
-      # The user's zone, or nil. Reads only this key, so the file's other settings cannot stop a publication.
+      # The user's zone, or nil. A display preference never stops a publication, so a broken file
+      # counts as none and a name the machine cannot render shows as UTC.
       def self.time_zone(home:)
         return if home.nil? || home.empty?
 
@@ -47,14 +48,9 @@ module Shaka
         return unless File.exist?(path)
 
         section = read(path)['pr_description']
-        checked_time_zone(section, path) if section.is_a?(Hash)
-      end
-
-      def self.checked_time_zone(section, path)
-        return unless section.key?('time_zone')
-
-        TimeZone.validate!(section['time_zone'], "#{path} #{TIME_ZONE}")
-        section['time_zone']
+        section['time_zone'] if section.is_a?(Hash)
+      rescue Error
+        nil
       end
 
       def self.read(path)
@@ -73,7 +69,7 @@ module Shaka
       def initialize(path, values)
         @path = path
         @keys = leaves(values, '') - [TIME_ZONE]
-        self.class.checked_time_zone(values['pr_description'], path) if values['pr_description'].is_a?(Hash)
+        time_zone!(values['pr_description'])
         @values = values.merge('pr_description' => values['pr_description']&.except('time_zone')).compact
         reviewer_entries!
         reviewer_identities!
@@ -90,6 +86,12 @@ module Shaka
           raise Error, "#{path} cannot set #{dotted}: personal settings hold preferences only, " \
                        'not repository facts or prompt files'
         end
+      end
+
+      def time_zone!(section)
+        return unless section.is_a?(Hash) && section.key?('time_zone')
+
+        TimeZone.validate!(section['time_zone'], "#{path} #{TIME_ZONE}")
       end
 
       # The schema's own parse error names the value but not the key.

@@ -30,17 +30,8 @@ class CliDescriptionTimeZoneTest < Minitest::Test
     assert_match(/\| Waiting on a person: answer \| 2026-10-18 17:10 \|/, published)
   end
 
-  def test_description_names_the_users_file_when_its_time_zone_is_invalid
-    with_repository do |root|
-      commit(root)
-      Dir.mktmpdir do |dir|
-        write_user_zone(dir, 'Pacific Time')
-        _output, error, status = run_description(dir, root:, decisions: [])
-
-        refute_predicate status, :success?
-        assert_includes error, '.agents/shaka/config.yml pr_description.time_zone'
-      end
-    end
+  def test_description_still_publishes_in_utc_when_the_users_time_zone_is_unusable
+    assert_includes publish(user_zone: 'Pacific Time'), 'Times are UTC wall-clock time.'
   end
 
   private

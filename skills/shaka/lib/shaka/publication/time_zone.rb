@@ -18,7 +18,7 @@ module Shaka
       raise Error, "#{label} must be a time zone name such as America/Los_Angeles" unless well_formed?(value)
     end
 
-    # The user's own file is checked against this machine, unless it has no zone data to judge by.
+    # Setup checks the user's own file against this machine, unless it has no zone data to judge by.
     def validate!(value, label)
       well_formed!(value, label)
       return if value == UTC || known?(value) || !File.directory?(database)

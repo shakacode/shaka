@@ -51,11 +51,13 @@ class TimeZoneSettingTest < Minitest::Test
     with_home(nil) { |home| assert_equal 'UTC', resolved(nil, home) }
   end
 
-  def test_an_invalid_user_zone_is_refused_by_name
-    with_home('Pacific Time') do |home|
-      error = assert_raises(Shaka::Error) { resolved(nil, home) }
-      assert_includes error.message, Shaka::Configuration::Paths::PERSONAL_SETTINGS
-      assert_includes error.message, 'pr_description.time_zone'
+  def test_a_broken_personal_file_counts_as_no_choice
+    ['not: [valid', "review: {}\n", "- a list\n"].each do |content|
+      Dir.mktmpdir do |home|
+        write_personal(home, {})
+        File.write(File.join(home, Shaka::Configuration::Paths::PERSONAL_SETTINGS), content)
+        assert_equal 'UTC', resolved(nil, home)
+      end
     end
   end
 
@@ -73,7 +75,8 @@ class TimeZoneSettingTest < Minitest::Test
       assert_nil personal.values.dig('pr_description', 'time_zone')
     end
     with_home('Pacific Time') do |home|
-      assert_raises(Shaka::Error) { Shaka::Configuration::PersonalSettings.load(home:) }
+      error = assert_raises(Shaka::Error) { Shaka::Configuration::PersonalSettings.load(home:) }
+      assert_includes error.message, 'pr_description.time_zone'
     end
   end
 

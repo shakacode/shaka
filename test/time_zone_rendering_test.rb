@@ -54,13 +54,13 @@ class TimeZoneRenderingTest < Minitest::Test
   end
 
   def test_the_stored_times_stay_utc_and_the_process_zone_is_restored
+    skip 'this machine has no zone data' unless File.directory?(Shaka::TimeZone.database)
+
     assert_includes timings(LOS_ANGELES), '"task_started_at":"2026-07-01T18:00:00Z"'
-    original = ENV.fetch('TZ', nil)
-    ENV['TZ'] = 'Asia/Tokyo'
-    timings(LOS_ANGELES)
-    assert_equal 'Asia/Tokyo', ENV.fetch('TZ', nil)
-  ensure
-    ENV['TZ'] = original
+    with_process_zone('Asia/Tokyo') do
+      timings(LOS_ANGELES)
+      assert_equal 'Asia/Tokyo', ENV.fetch('TZ', nil)
+    end
   end
 
   private
@@ -69,6 +69,14 @@ class TimeZoneRenderingTest < Minitest::Test
     timeline = { 'opened' => WINTER + 60, 'first_commit' => SUMMER, 'labels' => [],
                  'task_started_at' => SUMMER, 'first_validation_at' => WINTER }
     Shaka::TimingsDetails.new(timeline, now: WINTER + 120, time_zone: zone).detail['body']
+  end
+
+  def with_process_zone(zone)
+    original = ENV.fetch('TZ', nil)
+    ENV['TZ'] = zone
+    yield
+  ensure
+    ENV['TZ'] = original
   end
 
   def with_zone_database(path)
