@@ -44,19 +44,19 @@ module EvidenceFixture
     Shaka::Evidence::Result.bind(result, root:, ref:, head:, repository: 'shakacode/shaka')
   end
 
-  def review_check(root, ref)
+  def review_check(root, ref, reviewer: 'openai/codex')
     Tempfile.create(['shaka-review-evidence-', '.md']) do |report|
-      report.write("Findings: none\nREVIEWED #{ref} BY openai/codex EFFORT medium FINDINGS 0\n")
+      report.write("Findings: none\nREVIEWED #{ref} BY #{reviewer} EFFORT medium FINDINGS 0\n")
       report.flush
       output, _error = capture_io do
-        assert_equal 0, Shaka::LocalReview.run(review_arguments(root, ref, report.path))
+        assert_equal 0, Shaka::LocalReview.run(review_arguments(root, ref, report.path, reviewer:))
       end
       JSON.parse(output)
     end
   end
 
-  def review_arguments(root, ref, report)
-    ['check', '--head', ref, '--reviewer', 'openai/codex', '--report', report,
+  def review_arguments(root, ref, report, reviewer: 'openai/codex')
+    ['check', '--head', ref, '--reviewer', reviewer, '--report', report,
      '--root', root, '--settings-ref', ref, '--repository', 'shakacode/shaka']
   end
 

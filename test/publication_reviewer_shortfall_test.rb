@@ -29,8 +29,26 @@ class PublicationReviewerShortfallTest < Minitest::Test
   # The fixture's one bound review is a host-reported openai/codex review, which counts.
   def test_publication_compares_the_bound_reviews_with_the_trusted_settings
     assert_nil prepared_shortfall({})
-    assert_equal shortfall(2, 1, []), prepared_shortfall('local_review_count' => 2)
+    assert_equal shortfall(2, 1, []), prepared_shortfall({ 'local_review_count' => 2 })
     assert_equal shortfall(2, 1, ['anthropic']), prepared_shortfall(COVERAGE)
+  end
+
+  # https://github.com/shakacode/shaka/pull/955 passed only Codex's result after Claude reviewed the same
+  # commit, and its description said Claude had not.
+  def test_publication_refuses_results_that_leave_out_a_reviewer_of_the_same_batch
+    rounds = [['anthropic/claude', :head, 'now'], ['openai/codex', :head, 'now']]
+    error = assert_raises(Shaka::Error) { prepared_shortfall(COVERAGE, rounds:) }
+
+    assert_includes error.message, 'anthropic/claude'
+    assert_nil prepared_shortfall(COVERAGE, rounds:, supplied: %w[openai/codex anthropic/claude])
+  end
+
+  # A review of another commit, or one under settings since replaced, belongs to another batch.
+  def test_publication_keeps_the_gap_for_rounds_outside_the_supplied_batch
+    rounds = [['anthropic/claude', 'b' * 40, 'now'], ['anthropic/claude', :head, 'before'],
+              ['openai/codex', :head, 'now']]
+
+    assert_equal shortfall(2, 1, ['anthropic']), prepared_shortfall(COVERAGE, rounds:)
   end
 
   private
@@ -39,14 +57,37 @@ class PublicationReviewerShortfallTest < Minitest::Test
     { 'configured' => configured, 'completed' => completed, 'missing' => missing }
   end
 
-  def prepared_shortfall(review)
+  # Each round is [reviewer, head, settings]; a supplied reviewer's result names its round at :head.
+  def prepared_shortfall(review, rounds: [], supplied: ['openai/codex'])
     with_checkout('review' => review_policy(review)) do |root, ref|
-      with_results(run_check(root, ref, command: 'validate'), review_check(root, ref)) do |options|
-        pull = { 'changed_files' => 0, 'head' => { 'sha' => ref }, 'base' => { 'sha' => ref } }
-        return Shaka::PublicationSettings.prepare(root:, ref:, pull:, options: options.merge(root:),
-                                                  github: empty_diff).reviewer_shortfall
+      Dir.mktmpdir do |directory|
+        ledger = ledger_file(directory, rounds, ref)
+        reviews = supplied.map { |reviewer| in_ledger(review_check(root, ref, reviewer:), ledger, ref) }
+        with_results(directory, run_check(root, ref, command: 'validate'), reviews) do |options|
+          return prepare(root, ref, options).reviewer_shortfall
+        end
       end
     end
+  end
+
+  def prepare(root, ref, options)
+    pull = { 'changed_files' => 0, 'head' => { 'sha' => ref }, 'base' => { 'sha' => ref } }
+    Shaka::PublicationSettings.prepare(root:, ref:, pull:, options: options.merge(root:), github: empty_diff)
+  end
+
+  def ledger_file(directory, rounds, ref)
+    path = File.join(directory, 'ledger.json')
+    entries = rounds.map do |reviewer, head, settings|
+      { 'head' => head == :head ? ref : head, 'reviewer' => reviewer, 'settings' => settings }
+    end
+    File.write(path, JSON.generate('version' => 3, 'rounds' => entries))
+    path
+  end
+
+  def in_ledger(result, ledger, head)
+    rounds = JSON.parse(File.read(ledger)).fetch('rounds')
+    index = rounds.index { |round| round == { 'head' => head, 'reviewer' => result['reviewer'], 'settings' => 'now' } }
+    index ? result.merge('ledger' => ledger, 'round' => index + 1) : result
   end
 
   def empty_diff
@@ -57,15 +98,10 @@ class PublicationReviewerShortfallTest < Minitest::Test
     end
   end
 
-  def with_results(validation, review)
-    Tempfile.create(['validation-', '.json']) do |first|
-      Tempfile.create(['review-', '.json']) do |second|
-        first.write(JSON.generate(validation))
-        second.write(JSON.generate(review))
-        first.flush
-        second.flush
-        yield validation: [first.path], review: [second.path]
-      end
+  def with_results(directory, validation, reviews)
+    paths = [validation, *reviews].each_with_index.map do |result, index|
+      File.join(directory, "result-#{index}.json").tap { |path| File.write(path, JSON.generate(result)) }
     end
+    yield validation: paths.take(1), review: paths.drop(1)
   end
 end
