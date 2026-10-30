@@ -50,7 +50,7 @@ module Shaka
       end
 
       def validate_time_zone
-        TimeZone.validate!(@description['time_zone'], 'pr_description.time_zone') if @description.key?('time_zone')
+        TimeZone.well_formed!(@description['time_zone'], 'pr_description.time_zone') if @description.key?('time_zone')
       end
     end
   end

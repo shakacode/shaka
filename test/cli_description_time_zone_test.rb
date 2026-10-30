@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'cli_description_decisions_test'
+require 'shaka/publication/time_zone'
 
 # The published Timings section follows the repository's time zone, then the user's.
 class CliDescriptionTimeZoneTest < Minitest::Test
@@ -13,12 +14,16 @@ class CliDescriptionTimeZoneTest < Minitest::Test
   SUMMARY = 'Timings read in the chosen zone.'
 
   def test_description_shows_the_users_time_zone_when_the_repository_sets_none
+    skip 'this machine has no zone data' unless File.directory?(Shaka::TimeZone.database)
+
     published = publish(user_zone: 'America/Los_Angeles')
     assert_includes published, 'Times are America/Los_Angeles wall-clock time.'
     assert_match(/\| Waiting on a person: answer \| 2026-10-18 01:10 \|/, published)
   end
 
   def test_description_prefers_the_repository_time_zone_to_the_users
+    skip 'this machine has no zone data' unless File.directory?(Shaka::TimeZone.database)
+
     published = publish(user_zone: 'America/Los_Angeles',
                         settings: { 'pr_description' => { 'time_zone' => 'Asia/Tokyo' } })
     assert_includes published, 'Times are Asia/Tokyo wall-clock time.'

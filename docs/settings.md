@@ -1162,10 +1162,12 @@ Shaka looks for a zone in this order:
    here to keep UTC whatever a contributor prefers.
 2. `pr_description.time_zone` in your `~/.agents/shaka/config.yml`, read each time you
    update a PR description. The zone's name then appears on that PR, including a public
-   one. A name Shaka does not recognize stops the update until you fix the file.
+   one. A name your machine does not recognize stops the update until you fix the file.
 3. `UTC`.
 
-A machine without that zone's data shows UTC and labels it UTC. Only the display changes:
+A misspelled repository value, or one the machine has no data for, shows UTC and labels it
+UTC, as does any update that cannot read the repository's settings. `shaka configure settings`
+reports the zone that applies, so you can check a new value. Only the display changes:
 Shaka still stores UTC, and other commands' timestamps stay in UTC.
 
 ## `pr_description.human_review_floors`

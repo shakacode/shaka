@@ -3,7 +3,6 @@
 require_relative 'evidence/verification'
 require_relative 'evidence/public_settings'
 require_relative 'repository_config'
-require_relative 'configuration/personal_settings'
 require_relative 'publication/feature_guard'
 require_relative 'opening_publication'
 require_relative 'publication/review_effort_floor'
@@ -29,10 +28,10 @@ module Shaka
       changed_paths = FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current, floors, review, zone = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
+      current, floors, review, config = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
           review_effort_floor: ReviewEffortFloor.for(changed_paths, floors),
-          reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: (time_zone(zone) if current))
+          reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone)
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
@@ -71,21 +70,14 @@ module Shaka
     end
 
     # Returns the public settings snapshot, the trusted review-effort floors, the trusted review
-    # settings, and the time zone the settings state.
+    # settings, and the loaded settings. A bad personal time zone must not lose the first three.
     def self.current_settings(root:, ref:, repository:, required: false)
       OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
         config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
-        [current, config.pr_description['human_review_floors'], config.review,
-         config.explicit_settings.dig('pr_description', 'time_zone')]
+        [current, config.pr_description['human_review_floors'], config.review, config]
       end
     rescue Error, SystemCallError
       raise if required
-    end
-
-    # The repository's choice wins, then the user's, then the shipped default.
-    def self.time_zone(configured, home: Dir.home)
-      configured || Configuration::PersonalSettings.time_zone(home:) ||
-        RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('time_zone')
     end
 
     # Only a completed or host-reported review reaches a ready verdict, so each bound one counts.

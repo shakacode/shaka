@@ -22,7 +22,7 @@ repository without changing it, and adopt it as a team later through an ordinary
 | Your starting point for individual setup | `~/.agents/shaka/config.yml`, read when an individual setup starts, and for your time zone when a PR's repository sets none | You |
 | Team settings | `.agents/shaka/`, committed on the default branch | Your team, through settings PRs |
 
-Each task uses one of these settings sources, never a mix. See
+Each task uses one of these settings sources, never a mix, apart from your time zone. See
 [which settings apply](settings.md#which-settings-apply).
 
 ## Use individual or team settings
