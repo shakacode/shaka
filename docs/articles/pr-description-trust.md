@@ -25,16 +25,16 @@ where it fell short.
   show the work is correct, matches the intent, and is quicker to review than the
   whole PR. The #421 plan cites that post. 110 of 115 PRs now carry Intent and
   Verification.
-- Tan's advice to fix the environment had the clearest measured effect. When agents
-  chose all three checks, 11 of 12 PRs spent two restating passes. After Shaka wrote
-  that line itself, 32 of 101 spent one and none spent two.
+- Tan's advice to fix the environment showed the largest before-and-after change.
+  When agents chose all three checks, 11 of 12 PRs spent two restating passes. After
+  Shaka wrote that line itself, 32 of 101 spent one and none spent two.
 - Osmani's load-bearing paths fit this repository's data. In a study of 309 PRs,
   what a PR changed predicted a person's feedback better than its size. Shaka now
   computes a review floor from the changed paths, and 106 PRs name theirs.
-- Osmani's verbatim gate line showed a limit once Shaka automated it. 6 of the 8
-  PRs that reported a missing reviewer were wrong. Both reviewers had run, and the
-  agent passed Shaka one result file
-  ([#984](https://github.com/shakacode/shaka/pull/984)).
+- A result line written by a tool still depends on its inputs. Shaka's line goes
+  further than factory's verbatim quote, yet 6 of the 8 lines reporting a missing
+  reviewer were wrong. Both reviewers had run, and the agent passed Shaka one result
+  file ([#984](https://github.com/shakacode/shaka/pull/984)).
 - One prompt sentence changed what the checkpoint reviewer reported about blast
   radius, across 30 runs on three real PRs
   ([#743](https://github.com/shakacode/shaka/pull/743)).
@@ -66,9 +66,11 @@ where it fell short.
   - a `**Validation and review:**` line;
   - `Floor N:` in the Review effort line;
   - a `**Setup gaps:**` line naming configured reviewers.
-- **Restated checks:** found by a keyword search for a validation or review pass
-  in the Verification bullets, then read by eye. A few matches also prove something
-  about the change.
+- **Restated checks:** "11 of 12" is #740's own count of the PRs merged after #553.
+  "32 of 101" comes from the window above, where 101 descriptions list check bullets
+  under Verification. Those bullets were searched for terms such as `bin/validate`,
+  `--command validate`, `0 failures`, and `RuboCop clean`, then read by eye. A few
+  matches also prove something about the change.
 - **Not in the count:** 5 of the 115 have no Intent block: 4 Dependabot PRs and one
   that Shaka did not publish. The count has no comparison group from another
   repository, and descriptions are read as they are now.
@@ -208,7 +210,8 @@ every merge and every load-bearing change. agent-skills is a general skill pack.
   own. factory has the same rule against an agent rewriting its own constraints.
 - **Result:** a [study of 309 PRs](one-shot-pr-study.md) supports paths over size.
   A person gave feedback on 65, and 64 of those changed docs or agent instructions.
-  0 of 73 PRs that left those files and Shaka's settings alone drew feedback.
+  Within the size limits, 0 of 73 PRs that left those files and Shaka's settings
+  alone drew feedback.
   - Ratings here were 2 in 9 PRs, 3 in 30, 4 in 24, and 5 in 47, across the 110 PRs
     with Intent.
   - This repository's docs floor set 45 of the 47 at 5, by the
@@ -309,7 +312,8 @@ In Claude Code, start the prompt with `/shaka` instead of `$shaka`.
 
 ## The ten PRs
 
-Merge dates are UTC.
+These ten built the two jobs and tested the prompt sentence. Later PRs cited above
+refined the result. Merge dates are UTC.
 
 | Merged | PR | What changed |
 | --- | --- | --- |
