@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 820" width="520" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 866" width="520" role="img" aria-labelledby="t d">
 <title id="t">One PR description before and after the #421 work</title>
-<desc id="d">Visible text of two real descriptions, abbreviated. Before: #543, merged 2026-10-15. It has a summary, a checkpoint status saying ready for review with no open findings, links to the walkthrough and checkpoint, and a free-form Area and Result table with rows for rebased commits, evidence, local tests and full validation. Provenance, skills, usage and cost of $9.85, settings and WIP details are collapsed. Not on the page: the problem, what was left out, how closely to review, and what went unproven. After: #974, merged 2026-10-29. It has a recommendation of Merge with links to the walkthrough, code review and checkpoint, a summary, and an Intent block. Intent, added by #553, gives Why, a Task line added by #885, a Root cause line added by #633, Safe because, Review effort 2 of 5 with floor 2 from pr_watch.rb added by #757, and Scope with size, ordered by #888. Verification opens with a validation and review line Shaka writes, added by #740, then a Setup gaps line saying 1 of 2 configured reviewers completed, added by #923. The checks and Not verified line are folded under Evidence and limitations, added by #810. Shaka metrics are collapsed.</desc>
+<desc id="d">Visible text of two real descriptions, abbreviated. Before: #543, merged 2026-10-15. It has a summary, a checkpoint status saying ready for review with no open findings, links to the walkthrough and checkpoint, and a free-form Area and Result table with rows for rebased commits, evidence, local tests and full validation. Provenance, skills, usage and cost of $9.85, settings and WIP details are collapsed. Not on the page: the problem, what was left out, how closely to review, and what went unproven. After: #974, merged 2026-10-29. It has a recommendation of Merge with links to the walkthrough, code review and checkpoint, a summary, and an Intent block. Intent, added by #553, gives Why, a Task line added by #885, a Root cause line added by #633, Safe because, Review effort 2 of 5 with floor 2 from pr_watch.rb added by #757, and Scope with size, ordered by #888. Verification opens with a validation and review line Shaka writes, added by #740, then a Setup gaps line saying 1 of 2 configured reviewers completed, added by #923. The checks and Not verified line are folded under Evidence and limitations, added by #810. Shaka metrics are collapsed. A note says the Setup gaps line was wrong here: both reviewers ran, and the agent passed Shaka one result file, as #984 later found. Tags mark Intent as matching Tan's work, and the review floor and validation line as matching Osmani's.</desc>
 <style>
 .bg{fill:#fff;stroke:#d9e0e7}
 text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
@@ -31,9 +31,9 @@ text{fill:#e6edf5}
 .wbox{fill:#2b2212;stroke:#8a6420}
 }
 </style>
-<rect class="bg" x="0.5" y="0.5" width="519" height="819" rx="8"/>
+<rect class="bg" x="0.5" y="0.5" width="519" height="865" rx="8"/>
 <text class="h" x="16" y="28">One PR description, before and after the #421 work</text>
-<text class="u m" x="16" y="48">Visible text, abbreviated. Tags name the PR that added each part.</text>
+<text class="u m" x="16" y="48">Visible text, abbreviated. Tags name the PR and, on three, whose work it matches.</text>
 
 <text class="p" x="16" y="80">Before: #543, merged 2026-10-15</text>
 <rect class="page" x="16" y="90" width="488" height="248" rx="6"/>
@@ -69,7 +69,7 @@ text{fill:#e6edf5}
 <text class="u" x="28" y="486">A PR merged with GitHub's merge button now shows its merge</text>
 <text class="u" x="28" y="500">time in Timings.</text>
 <text class="u b" x="28" y="524">Intent</text>
-<rect class="tag" x="452" y="512" width="44" height="16" rx="8"/><text class="tt" x="474" y="524">#553</text>
+<rect class="tag" x="420" y="512" width="76" height="16" rx="8"/><text class="tt" x="458" y="524">#553 · Tan</text>
 <text class="u" x="28" y="542"><tspan class="b">Why:</tspan> Under Ask, nothing republished the description after a</text>
 <text class="u" x="28" y="556">GitHub merge click, so its merge time stayed pending.</text>
 <text class="u" x="28" y="574"><tspan class="b">Task:</tspan> GitHub · fixes #963</text>
@@ -78,12 +78,12 @@ text{fill:#e6edf5}
 <rect class="tag" x="452" y="580" width="44" height="16" rx="8"/><text class="tt" x="474" y="592">#633</text>
 <text class="u" x="28" y="610"><tspan class="b">Safe because:</tspan> The write reuses the ready-time path.</text>
 <text class="u" x="28" y="628"><tspan class="b">Review effort:</tspan> 2 of 5. Floor 2: changes code (pr_watch.rb)</text>
-<rect class="tag" x="452" y="616" width="44" height="16" rx="8"/><text class="tt" x="474" y="628">#757</text>
+<rect class="tag" x="404" y="616" width="92" height="16" rx="8"/><text class="tt" x="450" y="628">#757 · Osmani</text>
 <text class="u" x="28" y="646"><tspan class="b">Scope:</tspan> pr watch records the merge time. (5 files, +86 / −6)</text>
 <rect class="tag" x="452" y="634" width="44" height="16" rx="8"/><text class="tt" x="474" y="646">#888</text>
 <text class="u b" x="28" y="670">Verification</text>
 <text class="u" x="28" y="688"><tspan class="b">Validation and review:</tspan> validate passed (exit 0); local</text>
-<rect class="tag" x="452" y="676" width="44" height="16" rx="8"/><text class="tt" x="474" y="688">#740</text>
+<rect class="tag" x="404" y="676" width="92" height="16" rx="8"/><text class="tt" x="450" y="688">#740 · Osmani</text>
 <text class="u" x="28" y="702">review by openai/codex at 570d2ad.</text>
 <text class="u" x="28" y="720"><tspan class="b">Setup gaps:</tspan> 1 of 2 configured reviewers completed;</text>
 <rect class="tag" x="452" y="708" width="44" height="16" rx="8"/><text class="tt" x="474" y="720">#923</text>
@@ -91,4 +91,7 @@ text{fill:#e6edf5}
 <text class="u" x="28" y="758">▸ Evidence and limitations: three checks and Not verified</text>
 <rect class="tag" x="452" y="746" width="44" height="16" rx="8"/><text class="tt" x="474" y="758">#810</text>
 <text class="u m" x="28" y="782">▸ Shaka metrics: usage and cost $6.20 · timings · settings</text>
+<rect class="wbox" x="16" y="810" width="488" height="40" rx="6"/>
+<text class="u warn b" x="28" y="827">Setup gaps was wrong here: both reviewers ran, and the agent</text>
+<text class="u warn b" x="28" y="842">passed Shaka one result file (found later, in #984).</text>
 </svg>
