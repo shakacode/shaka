@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 820" width="520" role="img" aria-labelledby="t d">
+<title id="t">One PR description before and after the #421 work</title>
+<desc id="d">Visible text of two real descriptions, abbreviated. Before: #543, merged 2026-10-15. It has a summary, a checkpoint status saying ready for review with no open findings, links to the walkthrough and checkpoint, and a free-form Area and Result table with rows for rebased commits, evidence, local tests and full validation. Provenance, skills, usage and cost of $9.85, settings and WIP details are collapsed. Not on the page: the problem, what was left out, how closely to review, and what went unproven. After: #974, merged 2026-10-29. It has a recommendation of Merge with links to the walkthrough, code review and checkpoint, a summary, and an Intent block. Intent, added by #553, gives Why, a Task line added by #885, a Root cause line added by #633, Safe because, Review effort 2 of 5 with floor 2 from pr_watch.rb added by #757, and Scope with size, ordered by #888. Verification opens with a validation and review line Shaka writes, added by #740, then a Setup gaps line saying 1 of 2 configured reviewers completed, added by #923. The checks and Not verified line are folded under Evidence and limitations, added by #810. Shaka metrics are collapsed.</desc>
+<style>
+.bg{fill:#fff;stroke:#d9e0e7}
+text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
+.h{font-size:15px;font-weight:600}
+.p{font-size:13px;font-weight:600}
+.u{font-size:12px}
+.b{font-weight:600}
+.m{fill:#516074}
+.page{fill:#fff;stroke:#8a99ad}
+.bar{fill:#f1f4f8}
+.ln{stroke:#d9e0e7;stroke-width:1}
+.lnk{fill:#2f6fd1}
+.tag{fill:#e7effb;stroke:#9bb8e6}
+.tt{fill:#1f4fa3;font-size:11px;font-weight:700;text-anchor:middle}
+.warn{fill:#9a5b00}
+.wbox{fill:#fdf3df;stroke:#d9a441}
+@media (prefers-color-scheme:dark){
+.bg{fill:#0f1724;stroke:#2a3648}
+text{fill:#e6edf5}
+.m{fill:#9fb0c3}
+.page{fill:#131d2b;stroke:#3a4a60}
+.bar{fill:#1b2738}
+.ln{stroke:#2a3648}
+.lnk{fill:#7fb0ff}
+.tag{fill:#1d2f4d;stroke:#3d5f99}
+.tt{fill:#a9c8ff}
+.warn{fill:#e0a13a}
+.wbox{fill:#2b2212;stroke:#8a6420}
+}
+</style>
+<rect class="bg" x="0.5" y="0.5" width="519" height="819" rx="8"/>
+<text class="h" x="16" y="28">One PR description, before and after the #421 work</text>
+<text class="u m" x="16" y="48">Visible text, abbreviated. Tags name the PR that added each part.</text>
+
+<text class="p" x="16" y="80">Before: #543, merged 2026-10-15</text>
+<rect class="page" x="16" y="90" width="488" height="248" rx="6"/>
+<text class="u" x="28" y="110">Every commit SHA in a local review comment now links to GitHub,</text>
+<text class="u" x="28" y="124">including commits reviewed before a rebase and never pushed.</text>
+<text class="u b" x="28" y="148">Checkpoint</text>
+<text class="u" x="28" y="166"><tspan class="b">Status:</tspan> Ready for review; local review loop closed with no</text>
+<text class="u" x="28" y="180">open findings.</text>
+<text class="u lnk" x="28" y="198">Code Walkthrough · Checkpoint</text>
+<rect class="bar" x="24" y="208" width="472" height="20"/>
+<text class="u b" x="30" y="222">Area</text>
+<text class="u b" x="146" y="222">Result</text>
+<text class="u" x="30" y="244">Rebased commits</text>
+<text class="u" x="146" y="244">Matched by subject, author date, and exact change</text>
+<line class="ln" x1="24" y1="251" x2="496" y2="251"/>
+<text class="u" x="30" y="266">Evidence</text>
+<text class="u" x="146" y="266">On #539, all 7 rebased-away commits resolved</text>
+<line class="ln" x1="24" y1="273" x2="496" y2="273"/>
+<text class="u" x="30" y="288">Local tests</text>
+<text class="u" x="146" y="288">Local review suites: 380 runs, 0 failures</text>
+<line class="ln" x1="24" y1="295" x2="496" y2="295"/>
+<text class="u" x="30" y="310">Full validation</text>
+<text class="u" x="146" y="310">Hosted validate, CodeQL, and claude-review pass</text>
+<text class="u m" x="28" y="329">▸ Provenance · skills · usage and cost $9.85 · settings · WIP</text>
+<rect class="wbox" x="16" y="348" width="488" height="40" rx="6"/>
+<text class="u warn b" x="28" y="365">Not on the page: the problem, what was left out, how closely</text>
+<text class="u warn b" x="28" y="380">to review, and what went unproven.</text>
+
+<text class="p" x="16" y="414">After: #974, merged 2026-10-29</text>
+<rect class="page" x="16" y="424" width="488" height="376" rx="6"/>
+<text class="u" x="28" y="446"><tspan class="b">Recommendation: Merge</tspan> · <tspan class="lnk">Code Walkthrough · Code Review · Checkpoint</tspan></text>
+<text class="u b" x="28" y="470">Summary</text>
+<text class="u" x="28" y="486">A PR merged with GitHub's merge button now shows its merge</text>
+<text class="u" x="28" y="500">time in Timings.</text>
+<text class="u b" x="28" y="524">Intent</text>
+<rect class="tag" x="452" y="512" width="44" height="16" rx="8"/><text class="tt" x="474" y="524">#553</text>
+<text class="u" x="28" y="542"><tspan class="b">Why:</tspan> Under Ask, nothing republished the description after a</text>
+<text class="u" x="28" y="556">GitHub merge click, so its merge time stayed pending.</text>
+<text class="u" x="28" y="574"><tspan class="b">Task:</tspan> GitHub · fixes #963</text>
+<rect class="tag" x="452" y="562" width="44" height="16" rx="8"/><text class="tt" x="474" y="574">#885</text>
+<text class="u" x="28" y="592"><tspan class="b">Root cause:</tspan> Only shaka description wrote the merge time.</text>
+<rect class="tag" x="452" y="580" width="44" height="16" rx="8"/><text class="tt" x="474" y="592">#633</text>
+<text class="u" x="28" y="610"><tspan class="b">Safe because:</tspan> The write reuses the ready-time path.</text>
+<text class="u" x="28" y="628"><tspan class="b">Review effort:</tspan> 2 of 5. Floor 2: changes code (pr_watch.rb)</text>
+<rect class="tag" x="452" y="616" width="44" height="16" rx="8"/><text class="tt" x="474" y="628">#757</text>
+<text class="u" x="28" y="646"><tspan class="b">Scope:</tspan> pr watch records the merge time. (5 files, +86 / −6)</text>
+<rect class="tag" x="452" y="634" width="44" height="16" rx="8"/><text class="tt" x="474" y="646">#888</text>
+<text class="u b" x="28" y="670">Verification</text>
+<text class="u" x="28" y="688"><tspan class="b">Validation and review:</tspan> validate passed (exit 0); local</text>
+<rect class="tag" x="452" y="676" width="44" height="16" rx="8"/><text class="tt" x="474" y="688">#740</text>
+<text class="u" x="28" y="702">review by openai/codex at 570d2ad.</text>
+<text class="u" x="28" y="720"><tspan class="b">Setup gaps:</tspan> 1 of 2 configured reviewers completed;</text>
+<rect class="tag" x="452" y="708" width="44" height="16" rx="8"/><text class="tt" x="474" y="720">#923</text>
+<text class="u" x="28" y="734">anthropic did not.</text>
+<text class="u" x="28" y="758">▸ Evidence and limitations: three checks and Not verified</text>
+<rect class="tag" x="452" y="746" width="44" height="16" rx="8"/><text class="tt" x="474" y="758">#810</text>
+<text class="u m" x="28" y="782">▸ Shaka metrics: usage and cost $6.20 · timings · settings</text>
+</svg>
