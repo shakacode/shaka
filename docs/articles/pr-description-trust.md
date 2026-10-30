@@ -145,7 +145,9 @@ Related changes outside those ten:
   that set it. This repository puts `docs/**` at 5. The maintainer reviews docs
   for external users most closely
   ([review comment](https://github.com/shakacode/shaka/pull/757#discussion_r4331436333)).
-- **Result:** 106 of 115 PRs name a floor. Ratings were 2 in 9 PRs, 3 in 30,
+- **Result:** 106 of 115 PRs name a floor. The 4 other PRs with an Intent block
+  changed only design records under `internal/`, which no floor covers.
+  Ratings were 2 in 9 PRs, 3 in 30,
   4 in 24, and 5 in 47. Of the 47 at 5, the docs floor set 45 and the Shaka
   settings floor set 2. 20 PRs rated above their floor, and 86 rated at it.
 - **Limit:** A path floor misses one risky line inside a low-floor file. #922 added
@@ -185,7 +187,10 @@ Related changes outside those ten:
   way.
 - **Change:** #810 folds the validation-and-review line when validation passed
   and every review ran through Shaka. Not verified is limited to claims the PR
-  makes, and left out when there are none.
+  makes, and left out when there are none. Since #923, the line also stays
+  unfolded when a configured reviewer did not finish. The
+  [verification guide](../pr-verification.md#answers-for-your-next-decision)
+  has the current rules.
 - **Limit:** One reader and one PR. How often the noise mattered elsewhere is
   unknown.
 
