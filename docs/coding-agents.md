@@ -36,12 +36,13 @@ reviewer. A cloud machine usually has no signed-in reviewer tools, and it can't
 open the fresh chat Shaka otherwise uses as a fallback reviewer. Your local
 sign-ins and environment variables don't reach it.
 
-A reviewer that signs in with an API key needs only its CLI, outbound HTTPS, and a
-secret in the cloud environment:
+A reviewer that signs in with an API key needs only outbound HTTPS and a secret in
+the cloud environment:
 
-- Codex: install the CLI and set `CODEX_API_KEY`, as shown for
+- Codex: install its CLI and set `CODEX_API_KEY`, as shown for
   [Claude Code on the web](#claude-code-on-the-web).
-- DeepSeek: add it to your reviewer list and set `OPENROUTER_API_KEY`.
+- DeepSeek: add it to your reviewer list and set `OPENROUTER_API_KEY`. Shaka's
+  Ruby adapter calls the API, so no CLI is needed.
 
 Try one review there before relying on it, since Shaka's tests don't run in your
 cloud environment.
@@ -56,7 +57,7 @@ session (use `$shaka` in Codex):
 
 ### Claude Code on the web
 
-Claude Code on the web can run Shaka's Codex and Claude reviewers. It can't yet run
+Claude Code on the web can run Shaka's Codex and Claude reviewers. It can't run
 Shaka's PR commands, so finish the PR from a local session.
 
 - **Claude reviewer:** works with no setup. The `claude` CLI comes installed and
@@ -96,8 +97,13 @@ title bar, then choose Edit:
    **Allowed domains**.
 
 Start a new session to pick up the changes. Then ask the agent to run
-`shaka doctor`. The Reviewer CLIs check should find `codex`. Repository access
-stays failed until Shaka's PR commands stop depending on GraphQL.
+`shaka doctor`. The Reviewer CLIs check should find `codex`, and Repository access
+still fails.
+
+Before the first Codex review of a task, Shaka asks for consent to send the change
+to OpenAI. A cloud session may not keep the answer saved by **Yes, and don't ask
+again**. To skip the question, have the setup script add the consent statement to
+`~/.claude/CLAUDE.md`, as described in [Give consent once](#give-consent-once).
 
 ## Give consent once
 
