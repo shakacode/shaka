@@ -13,7 +13,7 @@ Agents wrote 111 of the 115 PRs merged in this repository from 2026-10-22 to
 It shows what the PR is trying to do. It shows that the verification is adequate
 for that goal.
 
-Two people's public work covers how to do those jobs. Lauren Tan's pstack and
+Two people's public work shaped how Shaka does those jobs. Lauren Tan's pstack and
 posts treat proof as the limiting step of agent work. Addy Osmani's factory
 defines what proof a human receives and where human attention goes. This report
 takes nine of their ideas. Each one says what Shaka built, how it held up, and
@@ -28,21 +28,22 @@ where it fell short.
 - Tan's advice to fix the environment showed the largest before-and-after change.
   When agents chose all three checks, 11 of 12 PRs spent two restating passes. After
   Shaka wrote that line itself, 32 of 101 spent one and none spent two.
-- Osmani's load-bearing paths fit this repository's data. In a study of 309 PRs,
-  what a PR changed predicted a person's feedback better than its size. Shaka now
-  computes a review floor from the changed paths, and 106 PRs name theirs.
-- A result line written by a tool still depends on its inputs. Shaka's line goes
-  further than factory's verbatim quote, yet 6 of the 8 lines reporting a missing
-  reviewer were wrong. Both reviewers had run, and the agent passed Shaka one result
-  file ([#984](https://github.com/shakacode/shaka/pull/984)).
+- Osmani's load-bearing paths led to Shaka's review floors, and they fit this
+  repository's data. In a study of 309 PRs, what a PR changed predicted a person's
+  feedback better than its size. 106 PRs now name their floor.
+- Factory's rule against paraphrasing a gate result led Shaka to write that line
+  itself. A tool-written line still depends on its inputs: 6 of the 8 lines reporting
+  a missing reviewer were wrong. Both reviewers had run, and the agent passed Shaka
+  one result file ([#984](https://github.com/shakacode/shaka/pull/984)).
 - One prompt sentence changed what the checkpoint reviewer reported about blast
   radius, across 30 runs on three real PRs
   ([#743](https://github.com/shakacode/shaka/pull/743)).
-- Not in Shaka: restating the goal before work starts (Tan), a fixed verification
-  table, and a standing bias to reject (Osmani).
+- Not in Shaka: restating the goal before work starts, which both recommend, and
+  factory's fixed verification table and script proving a new test fails without the
+  fix.
 - Not measured: whether maintainers now decide faster or better.
 
-![Before and after. #543, merged 2026-10-15, shows a summary, a checkpoint status, and a free-form table of areas and results; nothing states the problem, what was left out, or what went untested. #974, merged 2026-10-29, shows a recommendation with links, a summary, an Intent block with Why, Task, Root cause, Safe because, Review effort 2 of 5 with its floor, and Scope, then Verification with a Shaka-written validation and review line and a Setup gaps line saying 1 of 2 configured reviewers completed. Its checks and Not verified line are folded under Evidence and limitations. A note says #984 later found the Setup gaps line wrong: both reviewers ran, and the agent passed one result. Tags mark Intent as matching Tan's work, and the review floor and validation line as matching Osmani's.](../img/pr-description-before-after.svg)
+![Before and after. #543, merged 2026-10-15, shows a summary, a checkpoint status, and a free-form table of areas and results; nothing states the problem, what was left out, or what went untested. #974, merged 2026-10-29, shows a recommendation with links, a summary, an Intent block with Why, Task, Root cause, Safe because, Review effort 2 of 5 with its floor, and Scope, then Verification with a Shaka-written validation and review line and a Setup gaps line saying 1 of 2 configured reviewers completed. Its checks and Not verified line are folded under Evidence and limitations. A note says #984 later found the Setup gaps line wrong: both reviewers ran, and the agent passed one result. Tags mark Intent as shaped by Tan's work, and the review floor and validation line as shaped by Osmani's.](../img/pr-description-before-after.svg)
 
 ## Data and limits
 
@@ -52,10 +53,11 @@ where it fell short.
   [factory](https://github.com/addyosmani/factory/tree/8af116567166a0a16588b7ab1b9934ece0b775bc)
   at `8af1165` and
   [agent-skills](https://github.com/addyosmani/agent-skills/tree/eb07f19f52c2669f2364897aaa293e2aaddd7b1c)
-  at `eb07f19`.
-- **Attribution:** the #421 plan cites Tan's work directly. No Shaka PR or issue
-  cites Osmani's. The research for this work read it, so the Osmani part compares
-  designs and claims no adoption.
+  at `eb07f19`, plus two Osmani posts named below.
+- **Attribution:** the #421 plan cites Tan's work directly. No public Shaka record
+  cites Osmani's. The agent session that orchestrated this work reports reading
+  factory, agent-skills, and both posts on 2026-10-18. It then cited factory in its
+  brief for #740 and #757. That account is first-hand and can't be checked on GitHub.
 - **Count:** PRs merged from 2026-10-22 through 2026-10-29 UTC, run on 2026-10-30
   at 03:00 UTC, after the window closed:
   `gh pr list --repo shakacode/shaka --state merged --search "merged:2026-10-22..2026-10-29" --limit 300 --json number,author,mergedAt,body`.
@@ -172,6 +174,7 @@ production line. pstack is Tan's public skill set in `cursor/plugins`.
 
 - **Idea:** [`/in-your-own-words`](https://x.com/poteto/status/2110047236369547621)
   has the agent say what it thinks the goal and problem are before it starts.
+  Osmani's Agentic Verification recommends the same habit.
 - **In Shaka:** not built. #742 left out this plan-time restatement.
 - **Limit:** Intent is written at publication, after the work. It records a
   misunderstanding and cannot catch one early.
@@ -181,14 +184,24 @@ production line. pstack is Tan's public skill set in `cursor/plugins`.
 factory is a reference setup for running agents on a GitHub repository. Humans keep
 every merge and every load-bearing change. agent-skills is a general skill pack.
 
+[The Code Nobody Reads](https://addyo.substack.com/p/the-code-nobody-reads)
+(2026-09-28) argues that line-by-line reading is ending for much code, so checks must
+replace the trust that reading gave.
+[Agentic Verification](https://addyo.substack.com/p/agentic-verification)
+(2026-10-14) names verification as the bottleneck and credits Tan on giving agents a
+way to drive the real system.
+
+Ideas 7 and 8 led to #740 and #757. Idea 9 predates this work.
+
 ### 7. Report the gate result in a form the agent can't soften
 
-- **Idea:** factory's contract makes the agent quote the gate script's final
-  `FACTORY_GATES:` line verbatim. A misconfigured gate or a skipped required gate
-  doesn't count as green. Its verifier reruns the gates and treats a mismatch as a
+- **Idea:** factory's [implement skill](https://github.com/addyosmani/factory/blob/8af116567166a0a16588b7ab1b9934ece0b775bc/template/.claude/skills/factory-implement/SKILL.md)
+  makes the agent quote the gate script's final `FACTORY_GATES:` line verbatim, and
+  forbids restating it. A misconfigured gate or a skipped required gate doesn't count
+  as green. Its verifier reruns the gates and treats a mismatch as a
   finding.
-- **In Shaka:** the helper writes the line from results bound to the head (#740). No
-  agent types it. Any exit code other than 0 shows as failed, and missing results
+- **In Shaka:** this rule led to #740. The helper writes the line from results bound
+  to the head, and no agent types it. Any exit code other than 0 shows as failed, and missing results
   show as UNKNOWN. Hosted `validate` reruns the suite on GitHub.
 - **Result:** of 110 lines, 96 report recorded results and 14 report UNKNOWN. In 4
   of those, the installed Shaka updated during the run. In another 4, heavy machine
@@ -201,13 +214,17 @@ every merge and every load-bearing change. agent-skills is a general skill pack.
 
 ### 8. Send human attention to load-bearing paths
 
-- **Idea:** factory's charter lists paths that always get the deepest gates and a
-  human read, and that are never auto-merged. Its verifier reports whether a human
-  read is required. People read flagged PRs closely and glance at the rest.
-- **In Shaka:** #757 computes a review floor from the changed paths.
-  [#812](https://github.com/shakacode/shaka/pull/812) lets Auto merge only PRs at or
-  below a chosen floor. Floors come from the default branch, so a PR can't lower its
-  own. factory has the same rule against an agent rewriting its own constraints.
+- **Idea:** factory's [charter](https://github.com/addyosmani/factory/blob/8af116567166a0a16588b7ab1b9934ece0b775bc/template/docs/factory/CHARTER.md) lists paths that always
+  get the deepest gates and a human read, and are never auto-merged. Its PR template
+  has a Human read required section. The Code Nobody Reads sizes human attention to
+  blast radius: a lighter pass for small changes to less sensitive code, and careful
+  review for core paths.
+- **In Shaka:** these led to #757, which computes a review floor from the changed
+  paths. Agents may rate higher, never lower. Tan's `correct` ladder pointed the same
+  way. Floors come from the default branch, so a PR can't lower its own. factory has
+  the same rule against an agent rewriting its own constraints.
+  [#812](https://github.com/shakacode/shaka/pull/812) later let Auto merge only PRs at
+  or below a chosen floor. That came from #780 and the study below, not from factory.
 - **Result:** a [study of 309 PRs](one-shot-pr-study.md) supports paths over size.
   A person gave feedback on 65, and 64 of those changed docs or agent instructions.
   Within the size limits, 0 of 73 PRs that left those files and Shaka's settings
@@ -228,9 +245,10 @@ every merge and every load-bearing change. agent-skills is a general skill pack.
 - **Idea:** factory's contract says "The writer does not grade the work." A fresh
   verifier reads the diff cold. agent-skills'
   [doubt-driven-development](https://github.com/addyosmani/agent-skills/blob/eb07f19f52c2669f2364897aaa293e2aaddd7b1c/skills/doubt-driven-development/SKILL.md)
-  asks a fresh-context reviewer to disprove a claim. Tan's skills also use a second
-  model family.
-- **In Shaka:** this predates #421. A reviewer from another provider reads each
+  asks a fresh-context reviewer to disprove a claim. The Code Nobody Reads adds that a
+  second copy of the same model shares the first one's blind spots. Tan's skills also
+  use a second model family.
+- **In Shaka:** this predates the reading. A reviewer from another provider reads each
   commit before push. The Verification line names who reviewed the head.
 - **Result:** Codex reported 37 of the 102 defects that local review found, defects
   Claude did not report ([review process study](review-process-study.md)).
@@ -246,6 +264,31 @@ every merge and every load-bearing change. agent-skills is a general skill pack.
 - **Unattended edits to existing tests:** factory bans them. Shaka has no such rule.
 - **Agents never merge:** factory reserves every merge for a human. Shaka's Auto can
   merge within trusted limits.
+- **Proving a new test fails:** factory's
+  [`prove-test.sh`](https://github.com/addyosmani/factory/blob/8af116567166a0a16588b7ab1b9934ece0b775bc/template/.factory/scripts/prove-test.sh) removes the fix and confirms
+  the new test fails. Shaka asks agents to observe the failure, and no script checks
+  it.
+- **A verifier kept from the writer's account:** factory's verifier ignores any
+  narrative it receives. Shaka's reviewers receive the task's stated goal.
+- **Stop rules:** factory halts a run when gates fail twice on one item. In Shaka, two
+  repair rounds without convergence prompt a reassessment, and a cap limits reviewed
+  commits.
+
+## Where Tan and Osmani agree and differ
+
+- **Agree on the constraint:** both name verification as the limit on agent work.
+- **Agree on repeated mistakes:** Tan's `correct` skill and Osmani's Agentic
+  Verification both put the fix in the repository: a check, a hook, or shared config.
+- **Agree on checking the writer:** both use a fresh reviewer, ideally another model.
+- **Agree on restating the goal:** both recommend it before coding. Shaka hasn't built
+  it.
+- **Differ on instruction length:** Tan
+  [expects skills to compress](https://x.com/poteto/status/2110496830429839869) into
+  short principles. Two pstack principle skills run 209 and 324 words. Three
+  agent-skills skills run 2,474 to 3,334 words. The #421 plan chose the short form.
+- **Also matches:** The Code Nobody Reads tells authors to say in the PR description
+  what they did not review. #553's Not verified line predates Shaka's reading of that
+  post.
 
 ## Other dead ends
 
