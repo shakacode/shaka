@@ -16,8 +16,9 @@ instructions costs time and money on later tasks, so we ask reviewers to judge
 whether new instructions are worth that cost, not only whether they are correct.
 
 - **Code review.** [instructions/review.md](instructions/review.md) adds that cost
-  check to the [default review prompt](../../skills/shaka/config/review-prompt.md), and
-  checks that people can reach any new procedure from the skill.
+  check to the [default review prompt](../../skills/shaka/config/review-prompt.md),
+  flags trims that lose a guarantee, and checks that people can reach any new procedure
+  from the skill.
 - **Final check before merge.** [instructions/checkpoint.md](instructions/checkpoint.md)
   adds the same cost check to the
   [default checkpoint prompt](../../skills/shaka/config/post-implementation-prompt.md).
