@@ -40,7 +40,16 @@ class PublicationReviewerShortfallTest < Minitest::Test
     error = assert_raises(Shaka::Error) { prepared_shortfall(COVERAGE, rounds:) }
 
     assert_includes error.message, 'anthropic/claude'
+    assert_includes error.message, '`review check`'
     assert_nil prepared_shortfall(COVERAGE, rounds:, supplied: %w[openai/codex anthropic/claude])
+  end
+
+  # A lost result rebuilt with `review check` names no ledger round, yet still covers its reviewer.
+  def test_publication_accepts_a_rebuilt_result_for_a_reviewer_of_the_batch
+    rounds = [['anthropic/claude', :head, 'now'], ['openai/codex', :head, 'now']]
+
+    assert_nil prepared_shortfall(COVERAGE, rounds:, supplied: %w[openai/codex anthropic/claude],
+                                            rebuilt: ['anthropic/claude'])
   end
 
   # A review of another commit, or one under settings since replaced, belongs to another batch.
@@ -57,12 +66,13 @@ class PublicationReviewerShortfallTest < Minitest::Test
     { 'configured' => configured, 'completed' => completed, 'missing' => missing }
   end
 
-  # Each round is [reviewer, head, settings]; a supplied reviewer's result names its round at :head.
-  def prepared_shortfall(review, rounds: [], supplied: ['openai/codex'])
+  # Each round is [reviewer, head, settings]; a supplied reviewer's result names its round at :head
+  # unless it was rebuilt.
+  def prepared_shortfall(review, rounds: [], supplied: ['openai/codex'], rebuilt: [])
     with_checkout('review' => review_policy(review)) do |root, ref|
       Dir.mktmpdir do |directory|
         ledger = ledger_file(directory, rounds, ref)
-        reviews = supplied.map { |reviewer| in_ledger(review_check(root, ref, reviewer:), ledger, ref) }
+        reviews = supplied.map { |reviewer| in_ledger(review_check(root, ref, reviewer:), ledger, ref, rebuilt) }
         with_results(directory, run_check(root, ref, command: 'validate'), reviews) do |options|
           return prepare(root, ref, options).reviewer_shortfall
         end
@@ -84,7 +94,9 @@ class PublicationReviewerShortfallTest < Minitest::Test
     path
   end
 
-  def in_ledger(result, ledger, head)
+  def in_ledger(result, ledger, head, rebuilt)
+    return result if rebuilt.include?(result['reviewer'])
+
     rounds = JSON.parse(File.read(ledger)).fetch('rounds')
     index = rounds.index { |round| round == { 'head' => head, 'reviewer' => result['reviewer'], 'settings' => 'now' } }
     index ? result.merge('ledger' => ledger, 'round' => index + 1) : result

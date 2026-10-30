@@ -51,19 +51,22 @@ module Shaka
     # commit under the same settings, so leaving one's result out would publish it as not reviewing.
     def self.omitted_reviewers!(verdict)
       results = Array(verdict.dig('checks', 'review')).map { |entry| entry['original'] }
-      omitted = results.flat_map { |result| batch_reviewers(result) }.uniq - results.map { |result| result['reviewer'] }
+      omitted = results.flat_map { |result| batch_reviewers(result) }.uniq -
+                results.map { |result| result['reviewer'].to_s.downcase }
       return if omitted.empty?
 
       raise Error, "#{omitted.join(', ')} also reviewed this commit in the review ledger; pass each " \
-                   "reviewer's saved result with its own --review-result."
+                   "reviewer's saved result with its own --review-result. For a lost result, run " \
+                   '`review check` with that reviewer and its report from the ledger.'
     end
 
+    # Reviewer ids fold case, as the ledger compares them.
     def self.batch_reviewers(result)
       ledger = result['ledger']
       return [] unless ledger.is_a?(String) && File.file?(ledger)
 
       LocalReviewLedger.new(ledger).batch_reviewers(result['round'], head: result['head'],
-                                                                     reviewer: result['reviewer'])
+                                                                     reviewer: result['reviewer']).map(&:downcase)
     end
 
     # Returns the public settings snapshot, the trusted review-effort floors, and the trusted review settings.
