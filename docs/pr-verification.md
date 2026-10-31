@@ -19,6 +19,13 @@ decision. You can tell it in chat to merge that commit, or merge it yourself
 through GitHub's offered control. For example: “Merge the commit in your handoff.”
 Saying “Go” to start the task does not grant this later merge authority.
 
+`awaiting-merge-approval` means only the merge is left, so Shaka won't let the
+agent set it while the PR's local review has findings needing attention, or when no
+published review covers the current commit. To skip review on purpose, such as for a
+typo fix, the agent gives a reason, which appears in the command's result. Repositories
+with `review.required: none` don't need one. If findings were published, a reason
+doesn't clear them: someone has to fix them or record a decision.
+
 An **Approve** review on GitHub also grants Ask authority when it comes from a
 login you named to the agent as a merge approver for this task. For example:
 “Treat `maria` as a merge approver for this task.” That review can also satisfy
