@@ -6,8 +6,10 @@ Use `shaka seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA` to preview a
 migration of `.agents/shaka/config.yml` at that commit. A repository without that
 file at the commit first needs an older Shaka release to move its settings there.
 Inspect every retained, moved, retired, and blocking field before
-adding `--apply`. It does not infer missing commands, review policy, or merge
-authority. See the [migration checklist](https://github.com/shakacode/shaka/blob/main/internal/fleet.md#migration-checklist).
+adding `--apply`. Settings the current contract accepts carry over unchanged, but
+`--apply` rewrites the YAML, so restore any comments before committing. An existing
+`.agents/shaka.md` stays as it is. It does not infer missing commands, review policy,
+or merge authority. See the [migration checklist](https://github.com/shakacode/shaka/blob/main/internal/fleet.md#migration-checklist).
 
 Older keys are deliberately rejected during this pilot:
 

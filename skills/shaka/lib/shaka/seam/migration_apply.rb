@@ -71,25 +71,22 @@ module Shaka
       end
 
       def typed_contract(established)
-        {
-          'version' => 1,
-          'base_branch' => established['base_branch'],
-          'review' => established.fetch('review'),
-          'merge' => established.fetch('merge'),
-          'branches' => established['branches'],
-          'wip' => established['wip'],
-          'repo_prefix' => established['repo_prefix']
-        }.compact
+        { 'version' => 1, **established.except('version') }
       end
 
       def preflight_migration_files(files)
         files.each do |path, content|
           next unless File.exist?(path) || File.symlink?(path)
-          next if contract_replaceable?(path)
+          next if contract_replaceable?(path) || pointer_file?(path)
           next if matching_destination?(path, content)
 
           raise Error, "Refusing existing destination: #{path.delete_prefix("#{root}/")}"
         end
+      end
+
+      # A repository keeps its own pointer; only a missing one is written.
+      def pointer_file?(path)
+        path == Configuration.path(root, :POINTER) && File.file?(path) && !File.symlink?(path)
       end
 
       def contract_replaceable?(path)

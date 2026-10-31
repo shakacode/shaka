@@ -207,12 +207,12 @@ class SeamMigrateApplyTest < Minitest::Test
   def test_apply_is_atomic_when_a_destination_already_exists
     with_predecessor_repository('control_plane_flow_shape.yml') do |root, sha|
       yaml = File.read(File.join(root, '.agents/shaka/config.yml'))
-      File.write(File.join(root, '.agents/shaka.md'), "repository owned pointer\n")
+      File.symlink('elsewhere', File.join(root, '.agents/shaka.md'))
       _output, error, status = migrate(root, sha, '--apply')
 
       refute_predicate status, :success?
       assert_includes error, '.agents/shaka.md'
-      assert_equal "repository owned pointer\n", File.read(File.join(root, '.agents/shaka.md'))
+      assert_equal 'elsewhere', File.readlink(File.join(root, '.agents/shaka.md'))
       assert_equal yaml, File.read(File.join(root, '.agents/shaka/config.yml'))
     end
   end
@@ -669,42 +669,6 @@ class SeamMigrateRecoveryLocationsTest < Minitest::Test
     end
   end
 
-  def test_settings_at_the_removed_path_block_the_migration
-    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
-      FileUtils.mv(File.join(root, '.agents/shaka/config.yml'), File.join(root, '.agents/agent-workflow.yml'))
-      system('git', '-C', root, 'add', '-A', exception: true)
-      system('git', '-C', root, '-c', 'user.name=T', '-c', 'user.email=t@example.com', 'commit', '-qm', 'old',
-             exception: true)
-      sha = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
-
-      _output, error, status = migrate(root, sha)
-
-      refute_predicate status, :success?
-      assert_includes error, 'Cannot read .agents/shaka/config.yml'
-    end
-  end
-
-  def test_the_earlier_wip_location_key_moves_to_the_checkout_path_setting
-    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
-      sha = rewrite_yaml(root) { |data| data.merge('wip' => { 'include_locations' => false }) }
-      report = migrate_report(root, sha)
-
-      assert_equal({ 'include_checkout_path' => false }, report.fetch('established').fetch('wip'))
-      assert_includes report.fetch('retained'), 'wip.include_checkout_path'
-    end
-  end
-
-  def test_the_earlier_wip_location_key_beside_the_current_one_blocks
-    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
-      sha = rewrite_yaml(root) do |data|
-        data.merge('wip' => { 'include_locations' => false, 'include_checkout_path' => true })
-      end
-
-      assert_includes migrate_report(root, sha).fetch('blocking'),
-                      'wip.include_locations must be the only boolean wip setting'
-    end
-  end
-
   def test_conflicting_location_keys_block_instead_of_selecting_a_value
     with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) do |data|
@@ -750,6 +714,70 @@ class SeamMigrateReviewWaitTest < Minitest::Test
       sha = rewrite_yaml(root) { |data| data.merge('review' => data.fetch('review').merge('pace' => 'fast')) }
 
       assert_includes migrate_report(root, sha).fetch('blocking'), 'review.pace must be swift or thorough'
+    end
+  end
+end
+
+class SeamMigrateCurrentLayoutTest < Minitest::Test
+  include SeamMigrateHelpers
+
+  CURRENT_SETTINGS = {
+    'version' => 1, 'repo_prefix' => 'CUR',
+    'review' => { 'required' => 'always', 'ci_review_jobs' => ['review'], 'startup_check' => false,
+                  'local_max_rounds' => 3 },
+    'merge' => { 'preference' => 'ask', 'limits' => { 'max_commits' => 9 }, 'hold_labels' => ['hold'] },
+    'checkpoint' => { 'enabled' => false }, 'pr_description' => { 'show_shaka_credit' => false },
+    'prose_limits' => { 'max_sentence_words' => 35 }
+  }.freeze
+
+  def test_current_settings_carry_over_and_the_pointer_stays
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      pointer = File.join(root, '.agents/shaka.md')
+      File.write(pointer, "our notes\n")
+      sha = rewrite_yaml(root) { CURRENT_SETTINGS }
+      assert_empty migrate_report(root, sha).fetch('blocking')
+
+      _output, error, status = migrate(root, sha, '--apply')
+
+      assert_predicate status, :success?, error
+      assert_equal CURRENT_SETTINGS, YAML.safe_load_file(File.join(root, '.agents/shaka/config.yml'))
+      assert_equal "our notes\n", File.read(pointer)
+    end
+  end
+
+  def test_settings_at_the_removed_path_block_the_migration
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      FileUtils.mv(File.join(root, '.agents/shaka/config.yml'), File.join(root, '.agents/agent-workflow.yml'))
+      system('git', '-C', root, 'add', '-A', exception: true)
+      system('git', '-C', root, '-c', 'user.name=T', '-c', 'user.email=t@example.com', 'commit', '-qm', 'old',
+             exception: true)
+      sha = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
+
+      _output, error, status = migrate(root, sha)
+
+      refute_predicate status, :success?
+      assert_includes error, 'Cannot read .agents/shaka/config.yml'
+    end
+  end
+
+  def test_the_earlier_wip_location_key_moves_to_the_checkout_path_setting
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('wip' => { 'include_locations' => false }) }
+      report = migrate_report(root, sha)
+
+      assert_equal({ 'include_checkout_path' => false }, report.fetch('established').fetch('wip'))
+      assert_includes report.fetch('retained'), 'wip.include_checkout_path'
+    end
+  end
+
+  def test_the_earlier_wip_location_key_beside_the_current_one_blocks
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) do |data|
+        data.merge('wip' => { 'include_locations' => false, 'include_checkout_path' => true })
+      end
+
+      assert_includes migrate_report(root, sha).fetch('blocking'),
+                      'wip.include_locations must be the only boolean wip setting'
     end
   end
 end
