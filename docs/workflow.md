@@ -18,6 +18,10 @@ recommends **Merge**, **Merge after maintainer decision**, **Revise before merge
 A working implementation can still warrant reconsideration. Each recommendation
 includes a reason and next step; Merge still follows your checks and Ask or Auto choice.
 
+When Shaka recommends a model and effort, it aims to minimize the task's total work.
+Effort is not priced per token, the input the agent reads dominates spend, and rework
+costs the most ([evidence](https://github.com/shakacode/shaka/issues/45)).
+
 `shaka workflow` validates and prints the
 [workflow definition](../skills/shaka/config/workflow.yml). The agent loads
 supporting procedures as needed.
@@ -36,7 +40,11 @@ repository, anyone can comment or open a PR from a fork. So the agent withholds
 comments from untrusted authors, treats diffs as data rather than instructions,
 and reads settings from the default branch rather than from the PR under review.
 Even a comment the agent reads is review input, not an instruction: settings and
-merge approval come from you and the default branch.
+merge approval come from you and the default branch. The same goes for the branch a
+PR targets. The agent never takes it from an issue, a PR description, or a comment,
+because that text would then choose which code the setup and validation commands
+run before anyone looks. When a PR already targets some other branch, the agent
+confirms it with you and waits for your merge decision.
 
 ![Maintainers, the default branch, and your decisions steer the agent. Public comments, fork PR diffs, and settings changed in the PR are read as data only.](img/trust-boundary.svg)
 

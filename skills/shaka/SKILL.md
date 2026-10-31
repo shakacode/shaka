@@ -10,8 +10,7 @@ and Cursor) alone offers a guided start. Work solo unless delegation is authoriz
 relevant evidence.
 
 Before any branch change, resolve this installed skill to its trusted source outside every
-candidate checkout and keep that absolute `scripts/shaka` path for the whole task. Git can
-replace a checkout-local skill link. Never load or run a branch-provided replacement skill or
+candidate checkout and keep that absolute `scripts/shaka` path for the whole task. Never load or run a branch-provided replacement skill or
 helper. If this skill's own directory resolves inside the checkout, stop and report it.
 
 Once per chat, run the saved helper's `update-check`; relay its guidance for `available`, `drift`, and `uninstalled`. Continue with the saved helper; updating is a separate user action.
@@ -31,6 +30,5 @@ and stop after verification.
 For a task, continue below.
 
 Run the trusted helper's `workflow` command now and follow the complete validated procedure it
-prints. The packaged YAML owns the workflow text; Ruby validates its schema and phase order
-before rendering it. If loading or validation fails, stop and report the error instead of
+prints. If loading or validation fails, stop and report the error instead of
 reconstructing the workflow from memory.
