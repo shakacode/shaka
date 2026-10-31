@@ -60,7 +60,10 @@ module Shaka
     def response_record(id, response)
       @selected_responses = { id => response }
       @responses = [response]
-      json_document.fetch('record')
+      record = json_document.fetch('record')
+      # A recorded price with no token counter is still distinct work, so it keeps its identity.
+      priced = record['columns'].any? { |column| column.values_at('usd', 'credits').any? { |cell| cell != 'UNKNOWN' } }
+      priced ? record.merge('responses' => [response_digest(id)]) : record
     end
 
     def json_note(estimate, data, with_count: true)

@@ -1,7 +1,35 @@
 # frozen_string_literal: true
 
 require_relative 'claude_usage_test'
+require_relative 'pi_usage_test'
 require 'shaka/usage/usage'
+require 'shaka/usage/journal_records'
+
+# Pi can record a nominal cost on a response with no token counters.
+class UsageJournalCostOnlyTest < Minitest::Test
+  include PiUsageFixture
+  include PiUsageMutationFixture
+
+  def test_cost_only_responses_stay_distinct_and_are_counted_once_each
+    Dir.mktmpdir do |directory|
+      records = cost_only_session
+      usage = Shaka::Usage.new(host: 'pi', files: [write_session(directory, records)], turns: [], all_turns: true,
+                               commit: 'a' * 40, contribution: 'implementation')
+      combined = Shaka::UsageJournalRecords.combine(usage.response_records)
+      assert_equal 2, combined.size
+      assert_equal 2, combined.flat_map { |record| record['responses'] }.uniq.size
+    end
+  end
+
+  private
+
+  def cost_only_session
+    records = [header, user('u1', nil), assistant('a1', 'u1', 'one', 100, CURRENT_ROUTE),
+               assistant('a2', 'a1', 'two', 200, CURRENT_ROUTE)]
+    current_messages(records).each { |message| message[:usage] = { cost: { total: 0.1 } } }
+    records
+  end
+end
 
 class UsageJournalCurrentReadersTest < Minitest::Test
   include ClaudeUsageFixture
