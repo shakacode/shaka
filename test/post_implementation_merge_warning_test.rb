@@ -49,7 +49,7 @@ class PostImplementationMergeWarningTest < Minitest::Test
       assert_equal 0, status
       assert github.snapshot['isDraft']
       assert_includes banner, "Not ready to merge — waiting for the maintainer's decision."
-      assert_includes banner, 'Maintainer: make the decision the linked checkpoint asks for.'
+      assert_includes banner, 'Maintainer: answer under Decisions to make.'
       refute_includes banner, 'Do not merge'
     end
   end
@@ -95,6 +95,20 @@ class PostImplementationMergeWarningTest < Minitest::Test
 
       assert_republished(result, path, github, 'Merge')
       refute_includes github.description_body, 'Not ready to merge'
+    end
+  end
+
+  def test_merge_waits_for_open_decisions_unless_it_answers_a_waiting_warning
+    with_result do |result, path|
+      github = PostImplementationPublicationFixture::GitHub.new(result['head'])
+      github.api('pull', method: 'PATCH', fields: { body: "<!-- shaka:begin -->\n<!-- shaka:decisions -->\n" \
+                                                          "- Which base?\n<!-- shaka:end -->\n" })
+      recommend(result, 'Merge')
+      assert_equal 1, publish(result, path, github:)[1]
+      assert_empty github.bodies
+
+      assert_republished(result, path, github, Shaka::PostImplementationReport::AWAITING_DECISION)
+      assert_republished(result, path, github, 'Merge')
     end
   end
 

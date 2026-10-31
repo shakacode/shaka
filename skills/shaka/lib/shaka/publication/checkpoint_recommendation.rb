@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require_relative '../decision_labels'
 require_relative '../error'
 require_relative '../post_implementation/evidence'
 require_relative 'merge_warning_region'
+require_relative 'publishing'
 
 module Shaka
   # Reads the description's recommendation and verification verdict from the checkpoint published for its head,
@@ -43,6 +45,17 @@ module Shaka
       raise Error, "This head's checkpoint recommends Merge. Before asking, publish the same result again with " \
                    "#{PostImplementationReport::AWAITING_DECISION}, and with Merge once answered. " \
                    'When only merge approval remains, run `attention --state merge` instead of listing a decision.'
+    end
+
+    # The same contradiction from the other side. A waiting warning for this head is the way back: Merge settles it,
+    # and the decisions clear next.
+    def refuse_merge_over_decisions!(github, head)
+      body = github.api("repos/#{github.repository}/pulls/#{github.number}")['body'].to_s
+      return unless DecisionLabels.asks_for_decisions?(Publishing.managed_region(body.gsub("\r\n", "\n")).to_s)
+      return if MergeWarningRegion.awaiting?(body, github.repository, head)
+
+      raise Error, 'The description still lists decisions. Publish an empty list once they are answered, or ' \
+                   "recommend #{PostImplementationReport::AWAITING_DECISION}."
     end
 
     def open_decisions?(content)

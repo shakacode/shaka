@@ -140,7 +140,8 @@ rules:
       rejects Merge against a blocking conclusion or a concern without a recorded
       `accepted_concerns` decision, accepts Merge after maintainer decision unless the verdict is
       Do not merge, refuses a description without decisions while its waiting banner names the
-      current head, refuses open decisions while this head's checkpoint recommends Merge,
+      current head, refuses open decisions while this head's checkpoint recommends Merge and the
+      reverse unless that banner answers them,
       and publishes other dispositions through the existing blocked attestation. It does not
       infer merge authority, evaluate free-form prose, close a PR, or require the optional field.
   - id: post-implementation-merge-blocker
