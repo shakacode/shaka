@@ -2,95 +2,68 @@
 
 **Review the intent and the evidence, not every line.**
 
-Give your coding agent a task. Shaka guides it through implementation,
-verification, independent review, and PR delivery. Each PR shows:
-
-- **Intent:** why the change exists, what it leaves out, and why it is safe.
-- **Verification:** the checks that prove the change and any claim left unproven.
-  Each check links to its result or names the command that ran.
-- **UI evidence:** for a UI change, annotated before-and-after screenshots, plus
-  a video when timing matters.
-- **Review effort:** how carefully to read the code, from the description alone
-  to every line. When a few lines need a closer look, walkthrough notes can
-  point them out.
-
-Then you approve the change, request revisions, or resolve an open question.
+Give your coding agent a task. It builds, tests, and gets an independent review.
+You get one PR that says what changed, how it was checked, and what is left for
+you to decide.
 
 ![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](docs/img/task-to-pr.svg)
-
-The agent builds, verifies, and reviews, fixing what it can. Then you review one clear
-PR: what changed, how it was checked, and what is still open. At the
-[checkpoint](docs/pr-verification.md#checkpoint), decide what happens next.
-
-[Read the Shaka documentation](https://shaka.shakacode.com/).
 
 [Watch the 52-second demo](https://www.youtube.com/watch?v=T6Fstx2fGJI):
 a homepage cleanup from a Claude prompt to a PR with intent, screenshots, and a checkpoint.
 
-<a id="example-prompts"></a>
+## Why use it?
+
+- **Review faster.** Each PR says why the change exists, how it was checked, and
+  how closely to read the code.
+- **See the proof and the cost.** Each check links to its result, unproven claims
+  stay visible, and the PR shows available usage and cost. UI changes add
+  before-and-after screenshots.
+- **Catch problems before CI.** Tests and an independent review run before the
+  push, so you repeat fewer CI runs.
+- **Spend less time directing the process.** Describe the outcome, and Shaka
+  supplies the steps.
+- **Keep control of merging.** You merge by default, or
+  [let the agent merge](docs/working-with-shaka.md#choose-a-merge-policy) after
+  required checks and approvals.
+- **Reduce prompt-injection exposure.** On public repositories, Shaka keeps comments
+  from untrusted authors away from the agent. [Review safety](docs/workflow.md#trust-model)
+  explains the boundary.
+- **Use one workflow across projects.** Each repository
+  [keeps its own](docs/configure-repository.md#use-shaka-across-projects) checks,
+  reviewers, and merge policy.
+
+[See what a Shaka PR gives you](docs/pr-verification.md#answers-for-your-next-decision).
+
 <a id="get-started"></a>
+<a id="requirements"></a>
 
-## Start with a small task
+## Install
 
-[Install Shaka](docs/getting-started.md), then give it a task:
+Ask your coding agent:
 
 ```text
-$shaka <task or issue link>
+Install Shaka from https://github.com/shakacode/shaka.
 ```
 
-Examples use Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode; in Pi,
-load the installed skill. You can describe an outcome or provide an issue link.
-If setup is missing, Shaka asks whether you want individual or team settings,
-finds your existing checks, and defaults to Ask.
-`Go` starts with your agent's current model and effort settings.
-[Working with Shaka](docs/working-with-shaka.md) covers practical prompts,
-merge choices, feedback, and resuming work.
-
+See [what you need](docs/getting-started.md#1-install-shaka).
 New to branches and pull requests? [Shaka in pictures](docs/shaka-in-pictures.md)
 explains them and walks you through a practice task.
 
-## Why use it?
+<a id="example-prompts"></a>
 
-- **Catch problems before hitting CI.** Test and review locally, including
-  adversarial review, then fix problems before pushing. Fewer repeat CI runs can
-  lower costs and shorten CI queues.
-- **Make review easier.** Get a clear PR description, screenshots showing visible
-  changes, and a code walkthrough explaining implementation choices and alternatives.
-- **See what was checked and what it cost.** Find the tested revision, review
-  findings, verification gaps, and available model, usage, and cost information.
-- **Reduce prompt-injection exposure in open source.** Shaka’s comment reader
-  withholds untrusted authors’ comments from the agent for maintainer triage.
-  [Review safety](docs/workflow.md#trust-model) explains the boundary.
-- **Use one workflow across projects.** Each repository configures its own checks,
-  reviewers, and merge policy. [Repository setup](docs/configure-repository.md#use-shaka-across-projects)
-  connects Shaka to your existing tools.
-- **Control merging.** Choose **Ask** to merge yourself or approve the agent's merge,
-  or **Auto** to let it merge after required checks and approvals.
-  Consequential changes need human review.
-- **Spend less time directing the process.** Describe the outcome. Shaka supplies
-  the steps using your coding agent, repository scripts, and GitHub. WIP Details
-  identify unfinished work and the next action when you need to resume.
+## All you need to know
 
-[See what a Shaka PR gives you](docs/pr-verification.md#read-a-pr-for-your-decision).
+| Say | What happens |
+| --- | --- |
+| `/shaka <task or issue link>` | Delivers the task as a PR. |
+| `/shaka doctor` | Checks your setup. If it reports a problem, tell your agent to fix it. |
+| `/shaka settings` | Explains this repository's settings. Ask it to change one. |
+| Anything else | Ask your agent how to get Shaka to do it. |
 
-<a id="requirements"></a>
+Use `$shaka` in Codex ([other agents](docs/coding-agents.md)).
 
-## What you need
-
-Ruby 3.4 or later, Git, an authenticated [GitHub CLI](https://cli.github.com/), and
-[a coding agent](docs/coding-agents.md) that can load skills and run commands.
-The installation prompt lets your agent check these for you.
-
-See [what to expect from Shaka](docs/expected-experience.md) for setup choices,
-verification gaps, and help resuming work when checks or access fail.
-
-## Documentation
-
-- [Start here](docs/getting-started.md) — install, configure, and run a first task.
-- [Working with Shaka](docs/working-with-shaka.md) — results, decisions, and useful tips.
-- [Workflow and review safety](docs/workflow.md) — the process, trusted feedback, and what checks enforce.
-- [FAQ](docs/faq.md) — answers to common questions.
-- [Documentation index](docs/README.md) — setup, verification, settings, and advanced guides.
+You don't need to read the docs to use Shaka. They are mostly reference for your
+agent, and you can [browse them](https://shaka.shakacode.com/) anytime.
 
 [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
 
