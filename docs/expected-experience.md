@@ -93,8 +93,8 @@ consumer trial.
 
 | Scenario | Expected experience and recovery limit |
 | --- | --- |
-| Resume the same task with a PR | The workflow directs the agent to refresh PR state and evidence. Open WIP Details and return to the owner, or give a new chat the PR URL after the previous owner stops. Fresh-chat acceptance remains untested. |
-| Resume before a PR exists | Supply the task and checkout. The intended path is local inspection; there is no PR record from which to recover missing choices. Fresh-chat acceptance remains untested. |
+| Resume the same task with a PR | The workflow directs the agent to refresh PR state and evidence. Open WIP Details and return to the owner, or give a new chat the PR URL after the previous owner stops. Fresh chats given only the PR URL read WIP Details and refreshed PR state in a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011). |
+| Resume before a PR exists | Supply the task and checkout, plus the branch, head, and paths of saved validation and review results if you have them. The workflow directs the agent to rerun a check whose result is missing before it pushes and publishes. The intended path is local inspection; there is no PR record from which to recover missing choices. A fresh chat given those inputs found them and named the next step in a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513172691). |
 | Use a linked worktree with individual settings | Each worktree has its own local settings identity and recovery copy in the common Git directory. Host permissions must allow the required writes. |
 | An outside pull adds team settings | Inspect adoption and compare saved individual settings. Default-branch team policy governs; do not overwrite it with the local copy. |
 | Clean or delete a worktree with individual settings | Previously captured settings may be restored outside a checkout for comparison. Uncaptured edits and deletion of the common Git directory cannot be recovered from those copies. |
@@ -125,3 +125,5 @@ records a verified consumer feature PR and separates passed, partial, and untest
 cases for the evaluated installation. It includes supplemental recovery and
 migration checks. Use the report to understand that evaluation's coverage;
 newer versions need their own evidence for previously untested scenarios.
+[Issue #277](https://github.com/shakacode/shaka/issues/277) tracks what is still
+to verify.
