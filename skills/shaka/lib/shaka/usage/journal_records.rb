@@ -94,7 +94,9 @@ module Shaka
       return true if old['responses'].intersect?(record['responses'])
       return false unless old['responses'].empty? && record['responses'].empty?
 
-      old.values_at('sources', 'contribution', 'commits') == record.values_at('sources', 'contribution', 'commits')
+      # Nothing identifies a response without counters, so only a record identical in route is a copy.
+      key = %w[sources contribution commits columns]
+      old.values_at(*key) == record.values_at(*key)
     end
 
     def merge_copy(old, record)
@@ -130,7 +132,9 @@ module Shaka
     end
 
     # A response's prices and the note explaining them stay together, from the first snapshot that priced it.
-    def pricing_note(old, record) = priced?(old) ? old['note'] : record['note']
+    def pricing_note(old, record)
+      !priced?(old) && priced?(record) ? record['note'] : old['note'] || record['note']
+    end
 
     def priced?(record) = record['columns'].first.values_at(*PRICED).any? { |value| value != 'UNKNOWN' }
 

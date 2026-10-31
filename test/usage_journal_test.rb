@@ -5,6 +5,9 @@ require 'shaka/usage/journal'
 require 'shaka/publication/managed_region'
 
 module UsageJournalFixture
+  def reader(github) = Shaka::UsageJournal.new(github, identity: 'id')
+  def notes(journal) = journal.collect['records'].map { |entry| entry['note'] }.uniq
+
   def record(response, model: 'gpt-6.1-sol', effort: 'medium', commits: ['a' * 40])
     USAGE_RECORD.merge('host' => 'codex', 'responses' => [response], 'commits' => commits, 'note' => 'Native sample.',
                        'columns' => [{ 'label' => 'implementation', 'provider' => 'openai', 'model' => model,
@@ -355,8 +358,6 @@ class UsageJournalRoundTripTest < Minitest::Test
 
   private
 
-  def reader(github) = Shaka::UsageJournal.new(github, identity: 'id')
-
   def github_with_extra_author(login)
     github = UsageJournalTest::GitHub.new
     reader(github).publish([record('r1')], event: 'commit')
@@ -369,8 +370,6 @@ class UsageJournalRoundTripTest < Minitest::Test
     "<!-- shaka:begin -->\nS\n<details>\n<summary>Usage and cost</summary>\n\n#{detail['body']}\n" \
       "</details>\n<!-- shaka:end -->"
   end
-
-  def notes(journal) = journal.collect['records'].map { |entry| entry['note'] }.uniq
 
   def covers(journal)
     journal.collect['records'].to_h { |entry| [entry['responses'].first, entry['covers_task']] }
@@ -407,5 +406,32 @@ class UsageJournalPricingTest < Minitest::Test
   def priced(usd, credits)
     entry = record('r1')
     entry.merge('columns' => [entry['columns'][0].merge('usd' => usd, 'credits' => credits)])
+  end
+end
+
+class UsageJournalEdgeCaseTest < Minitest::Test
+  include UsageJournalFixture
+
+  def test_unreadable_responses_across_a_model_switch_stay_separate
+    placeholders = %w[model-a model-b].map do |model|
+      entry = record('r1').merge('responses' => [], 'complete' => false)
+      entry.merge('columns' => [entry['columns'][0].merge('model' => model)])
+    end
+    assert_equal 2, Shaka::UsageJournalRecords.combine(placeholders).size
+  end
+
+  def test_a_comment_edited_on_the_web_still_counts
+    github = UsageJournalTest::GitHub.new
+    reader(github).publish([record('r1')], event: 'commit')
+    github.comments[0]['body'] = github.comments[0]['body'].gsub("\n", "\r\n")
+    assert_equal ['Native sample.'], notes(reader(github))
+  end
+
+  def test_an_unpriced_response_is_not_republished_when_only_its_note_changes
+    github = UsageJournalTest::GitHub.new
+    unpriced = record('r1')
+    unpriced['columns'] = [unpriced['columns'][0].merge('usd' => 'UNKNOWN', 'credits' => 'UNKNOWN')]
+    reader(github).publish([unpriced], event: 'commit')
+    assert_empty reader(github).publish([unpriced.merge('note' => 'Another scope.')], event: 'commit')
   end
 end

@@ -82,15 +82,17 @@ module Shaka
 
     def stored_records
       comments.flat_map do |comment|
-        next [] unless comment['body'].to_s.start_with?("#{MARK}\n") && writer?(comment)
+        # GitHub's web editor stores CRLF line endings.
+        body = comment['body'].to_s.gsub("\r\n", "\n")
+        next [] unless body.start_with?("#{MARK}\n") && writer?(comment)
 
-        parsed(comment)
+        parsed(comment, body)
       end
     end
 
     # One unreadable comment stops every read, so name it: its owner has to repair or delete it.
-    def parsed(comment)
-      UsageJournalRecords.parse(comment['body'])
+    def parsed(comment, body)
+      UsageJournalRecords.parse(body)
     rescue Error => e
       raise Error, "#{e.message} Comment: #{comment['html_url'] || comment['id']}."
     end
