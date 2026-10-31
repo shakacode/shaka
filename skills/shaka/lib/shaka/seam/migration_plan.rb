@@ -154,10 +154,10 @@ module Shaka
 
       def rollback_recipe
         restore = "git -C #{Shellwords.escape(root)} checkout #{@sha} -- #{Configuration::Paths::CONTRACT}"
-        pointer = Configuration::Paths::POINTER
-        return "#{restore} #{pointer}" if command_present?(pointer)
+        pointer = Configuration.path(root, :POINTER)
+        return restore if File.exist?(pointer) || File.symlink?(pointer)
 
-        "#{restore} && rm -f #{Shellwords.escape(Configuration.path(root, :POINTER))}"
+        "#{restore} && rm -f #{Shellwords.escape(pointer)}"
       end
 
       def validation_notes

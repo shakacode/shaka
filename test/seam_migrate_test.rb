@@ -730,10 +730,8 @@ class SeamMigrateCurrentLayoutTest < Minitest::Test
     'prose_limits' => { 'max_sentence_words' => 35 }
   }.freeze
 
-  def test_current_settings_carry_over_and_the_pointer_stays
+  def test_current_settings_carry_over_on_apply
     with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
-      pointer = File.join(root, '.agents/shaka.md')
-      File.write(pointer, "our notes\n")
       sha = rewrite_yaml(root) { CURRENT_SETTINGS }
       assert_empty migrate_report(root, sha).fetch('blocking')
 
@@ -741,6 +739,17 @@ class SeamMigrateCurrentLayoutTest < Minitest::Test
 
       assert_predicate status, :success?, error
       assert_equal CURRENT_SETTINGS, YAML.safe_load_file(File.join(root, '.agents/shaka/config.yml'))
+    end
+  end
+
+  def test_an_existing_pointer_stays_and_rollback_leaves_it_alone
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      pointer = File.join(root, '.agents/shaka.md')
+      File.write(pointer, "our notes\n")
+      sha = rewrite_yaml(root) { CURRENT_SETTINGS }
+      refute_includes migrate_report(root, sha).fetch('rollback'), '.agents/shaka.md'
+
+      assert_predicate migrate(root, sha, '--apply').last, :success?
       assert_equal "our notes\n", File.read(pointer)
     end
   end
