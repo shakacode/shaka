@@ -97,16 +97,6 @@ module Shaka
     def length(row) = "#{duration(row[:to] - row[:from])}#{' so far' if OPEN.include?(row[:ending])}"
     def clock(time) = TimeZone.strftime(time, @zone, '%Y-%m-%d %H:%M')
 
-    def duration(seconds)
-      minutes = (seconds / 60).floor
-      return '<1m' if minutes < 1
-      return "#{minutes}m" if minutes < 60
-
-      hours, minutes = minutes.divmod(60)
-      return "#{hours}h #{minutes}m" if hours < 24
-
-      days, hours = hours.divmod(24)
-      "#{days}d #{hours}h"
-    end
+    def duration(seconds) = RunSummary.elapsed(seconds)
   end
 end

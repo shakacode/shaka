@@ -24,7 +24,7 @@ module Shaka
 
     # The time at a column's left edge, or nil inside a cut, which has no time of its own.
     def time_at(target)
-      return if @cuts.any? { |from, _to| target > column(from) && target <= column(from) + CUT_CELLS }
+      return if @cuts.any? { |from, _to| target > column(from) && target < column(from) + CUT_CELLS }
 
       passed = @cuts.select { |from, _to| column(from) < target }
       @start + (target * @per_cell) + passed.sum { |from, to| to - from - (CUT_CELLS * @per_cell) }

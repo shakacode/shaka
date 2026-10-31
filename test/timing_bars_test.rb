@@ -3,8 +3,8 @@
 require_relative 'evidence_fixture'
 require 'shaka/publication/timings_details'
 
-# The bars put a pull request's stretches and steps on one axis without hiding work or failures.
-class TimingBarsTest < Minitest::Test
+# Builds the rows and steps the bars draw.
+module TimingBarsFixture
   OPENED = Time.utc(2026, 10, 18, 8, 0)
 
   def step(command, minute, seconds, **extra)
@@ -22,6 +22,11 @@ class TimingBarsTest < Minitest::Test
     lines = chart.lines(chomp: true)[3..].take_while { |line| !line.empty? }
     lines.to_h { |line| [line[/\A\D+?(?=\s{2}|\s+[<\d])/], line[(Shaka::TimingBars::TOTAL_WIDTH + 2)..]] }
   end
+end
+
+# The bars put a pull request's stretches and steps on one axis without hiding work or failures.
+class TimingBarsTest < Minitest::Test
+  include TimingBarsFixture
 
   def test_reviewers_that_ran_together_get_their_own_lanes_starting_in_the_same_column
     bars = lanes([row(0, 60)], [review(10, 300, 'openai'), review(10, 300, 'anthropic')])
@@ -125,6 +130,26 @@ class TimingBarsTest < Minitest::Test
 
     assert_match(/x+ #+/, bars['Validation'])
     assert_match(/-+=+/, bars['PR'])
+  end
+
+  def test_overlapping_runs_in_a_lane_stay_joined
+    bars = lanes([row(0, 60)], [validation(0, 1200), validation(5, 600)])
+
+    assert_match(/#{'#' * 10}/, bars['Validation'])
+  end
+
+  def test_the_ruler_shows_the_time_right_after_a_cut
+    rows = [row(0, 10), row(10, 1000, wait: true), row(1000, 1070)]
+    ruler = Shaka::TimingBars.new(rows, [], 'UTC').render.lines(chomp: true)[2].split
+
+    assert_equal 4, ruler.size
+  end
+
+  def test_a_pr_lasting_days_reads_in_days_like_the_totals_line
+    chart = Shaka::TimingBars.new([row(0, 3000)], [], 'UTC').render
+
+    assert_includes chart, '(2d 2h)'
+    assert_match(/^PR\s+2d 2h\s/, chart)
   end
 
   def test_the_chart_is_plain_ascii_inside_one_fence

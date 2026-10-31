@@ -73,7 +73,7 @@ module Shaka
 
     def pad = @pad ||= ['PR', *spans.map { |span| span[:lane] }].map(&:size).max
 
-    def pr_total = RunSummary.duration((@rows.map { |row| row[:to] }.max - @rows.map { |row| row[:from] }.min) * 1000)
+    def pr_total = RunSummary.elapsed(@rows.map { |row| row[:to] }.max - @rows.map { |row| row[:from] }.min)
 
     def step_total(name)
       RunSummary.duration(spans.select { |span| span[:lane] == name }.sum { |span| span[:to] - span[:from] } * 1000)
@@ -99,9 +99,10 @@ module Shaka
       mark_cuts(cells, axis) { '//' }
     end
 
-    # A blank cell keeps back-to-back runs apart, unless the earlier run has only that one cell.
+    # A blank cell keeps back-to-back runs apart, unless they overlap or the earlier run has only one cell.
     def part_from_previous(cells, start)
-      cells[start - 1] = ' ' if start > 1 && cells[start - 1] != ' ' && cells[start - 2] != ' '
+      touching = cells[start + 1] == ' ' && cells[start - 1] != ' ' && cells[start - 2] != ' '
+      cells[start - 1] = ' ' if start > 1 && touching
     end
 
     def paint(cells, axis, span, glyph)
@@ -127,8 +128,7 @@ module Shaka
     end
 
     def header(first, last)
-      span = RunSummary.duration((last - first) * 1000)
-      "#{clock(first, '%m-%d %H:%M')} to #{clock(last, '%m-%d %H:%M %Z')} (#{span})"
+      "#{clock(first, '%m-%d %H:%M')} to #{clock(last, '%m-%d %H:%M %Z')} (#{RunSummary.elapsed(last - first)})"
     end
 
     # Clock times along the axis, so a reader need not work out when a run happened.

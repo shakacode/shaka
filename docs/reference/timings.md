@@ -24,8 +24,8 @@ The first total includes the time before the PR opened.
 Above the stretches, a chart puts the PR and its measured steps on one time axis:
 
 ```text
-10-26 01:16 to 10-27 01:57 PDT (24h 41m)
-                          01:16        02:47                     00:25
+10-26 01:16 to 10-27 01:57 PDT (1d 0h)
+                          01:16        02:47        22:54        00:25
 PR                23h 6m               =.===.//19h//......====....============
 Validation         2h 5m  ####       ### ### //            x xxx     xx #####
 Review anthropic     13m     x # #   #   ##  //            # #       #
