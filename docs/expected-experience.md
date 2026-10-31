@@ -87,8 +87,8 @@ Privacy still requires the agent to inspect the publication.
 
 See [merge choices](working-with-shaka.md#choose-a-merge-policy) for Ask, Auto,
 and required approvals. The workflow instructs the agent to retain explicit task
-merge authorization within its scope, but an Auto choice doesn't carry into a fresh
-chat. In a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011),
+merge authorization within its scope, but a task's Auto choice doesn't carry into a
+fresh chat. In a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011),
 the new chat read `Merge authority: auto` in WIP Details as a record, not permission,
 and held at Ask. To keep Auto, say so again in the new chat.
 
