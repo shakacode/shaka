@@ -23,7 +23,6 @@ module ConfigurationBoundaryFileIO
     seam/private_recovery/preparation.rb seam/private_recovery/rotation.rb seam/private_recovery/identity.rb defaults.rb
     seam/upgrade_plan/reference_dependencies.rb seam/upgrade_plan/continued_references.rb seam/upgrader/recovery.rb
     seam/upgrade_plan/symlink_chain.rb seam/private_recovery/exclusion.rb seam/upgrader.rb seam/upgrader/filesystem.rb
-    usage/journal_command.rb
     seam/private_recovery/seed.rb seam/private_seed.rb ui_check.rb install/refusal.rb install/ruby_record.rb
     install/status_checkout.rb install/status_inventory.rb install/checkout_record.rb install/take_over.rb
     update_check/cache.rb install/session_hook.rb ruby_requirement.rb startup_notice/marks.rb

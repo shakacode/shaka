@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'usage_test'
+require 'shaka/usage/usage'
 
 class UsageFormatTest < Minitest::Test
   include UsageFixture
@@ -65,7 +66,15 @@ class UsageFormatTest < Minitest::Test
     changed = context('second')
     changed[:payload].merge!(model: 'gpt-6.1-sol', effort: 'medium')
     records = [context('first'), usage('one', 'first', 100), changed, usage('two', 'second', 200)]
-    JSON.parse(run_report(records, '--all-turns', '--format', 'json')).fetch('records')
+    report_records(records)
+  end
+
+  def report_records(records)
+    Dir.mktmpdir do |directory|
+      file = write_records(directory, records, {})
+      Shaka::Usage.new(host: 'codex', files: [file], turns: [], all_turns: true, commit: COMMIT,
+                       contribution: 'implementation').response_records
+    end
   end
 
   def sample_routes(samples)

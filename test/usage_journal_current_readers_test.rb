@@ -11,9 +11,9 @@ class UsageJournalCurrentReadersTest < Minitest::Test
   def test_response_export_keeps_main_and_advisor_models_and_counters_separate
     Dir.mktmpdir do |directory|
       file = transcript(directory, 'session.jsonl', [prompt('turn'), advised_reply])
-      document = usage(file).json_document
-      assert_advisor_samples(document.fetch('records'))
-      refute_includes JSON.generate(document), 'SENSITIVE'
+      records = usage(file).response_records
+      assert_advisor_samples(records)
+      refute_includes JSON.generate(records), 'SENSITIVE'
     end
   end
 
@@ -21,10 +21,10 @@ class UsageJournalCurrentReadersTest < Minitest::Test
     Dir.mktmpdir do |directory|
       file = print_result_file(directory, shaka_usage_scope: 'independent_call', total_cost_usd: 0.42,
                                           usage: PRINT_USAGE.except(:speed))
-      document = usage(file).json_document
-      assert_equal '$0.420000', document.fetch('columns')[0]['usd']
-      assert_empty document.fetch('records')
-      assert_includes document.fetch('usage_gap'), 'aggregate'
+      source = usage(file)
+      assert_equal '$0.420000', source.json_document.fetch('columns')[0]['usd']
+      error = assert_raises(Shaka::Error) { source.response_records }
+      assert_includes error.message, 'aggregate'
     end
   end
 

@@ -12,17 +12,25 @@ class UsageJournalCliTest < Minitest::Test
 
   def test_publish_then_collect_recovers_the_response_on_another_host_without_duplicates
     Dir.mktmpdir do |directory|
-      file = transcript(directory, 'session.jsonl', [prompt('turn'), priced_reply('main', 100)])
+      file = session_transcript(directory)
       env = fake_github(directory)
       2.times { assert_command(env, *publish_arguments(file)) }
       assert_equal 1, comments(directory).size
-      assert_collected(JSON.parse(assert_command(env.merge('CLAUDE_CODE_SESSION_ID' => ''), 'collect', *TARGET)))
+      assert_collected(JSON.parse(assert_command(env.merge('CLAUDE_CODE_SESSION_ID' => nil), 'collect', *TARGET)))
+    end
+  end
+
+  def test_the_comment_names_its_writer_from_native_settings
+    Dir.mktmpdir do |directory|
+      file = session_transcript(directory)
+      assert_command(fake_github(directory), *publish_arguments(file))
+      assert_equal '🤖 Claude Code · Anthropic · claude-opus-5 · high', comments(directory)[0]['body'].lines[1].strip
     end
   end
 
   def test_an_outside_marker_is_ignored_while_the_writer_still_counts
     Dir.mktmpdir do |directory|
-      file = transcript(directory, 'session.jsonl', [prompt('turn'), priced_reply('main', 100)])
+      file = session_transcript(directory)
       env = fake_github(directory)
       assert_command(env, *publish_arguments(file))
       original = comments(directory).first
@@ -34,6 +42,11 @@ class UsageJournalCliTest < Minitest::Test
   end
 
   private
+
+  def session_transcript(directory)
+    records = [prompt('turn'), priced_reply('main', 100)].map { |record| record.merge(isSidechain: false) }
+    transcript(directory, "#{SESSION}.jsonl", records)
+  end
 
   def publish_arguments(file)
     ['publish', *TARGET, '--host', 'claude-code', '--file', file, '--all-turns', '--commit', COMMIT,
@@ -62,7 +75,9 @@ class UsageJournalCliTest < Minitest::Test
     save_comments(directory, [])
     File.write(File.join(bin, 'gh'), gh_script(File.join(directory, 'comments.json')))
     File.chmod(0o755, File.join(bin, 'gh'))
-    { 'PATH' => "#{bin}#{File::PATH_SEPARATOR}#{ENV.fetch('PATH')}" }
+    { 'PATH' => "#{bin}#{File::PATH_SEPARATOR}#{ENV.fetch('PATH')}", 'CLAUDE_CONFIG_DIR' => directory,
+      'CLAUDE_CODE_SESSION_ID' => SESSION, 'CODEX_THREAD_ID' => nil, 'CURSOR_CONVERSATION_ID' => nil,
+      'OPENCODE_SESSION_ID' => nil, 'PI_CODING_AGENT' => nil }
   end
 
   def gh_script(store)

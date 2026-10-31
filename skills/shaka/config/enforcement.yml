@@ -420,7 +420,7 @@ rules:
     note: >-
       `comments` screens what it returns and marks what it excluded, so using it satisfies the
       rule. Nothing observes a read the agent makes through another route.
-  - id: aggregate-usage-only
+  - id: allowlisted-usage-metadata
     phase: explain
     quote: publish only allowlisted usage metadata
     enforced_by: agent

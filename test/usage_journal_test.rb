@@ -48,13 +48,16 @@ class UsageJournalTest < Minitest::Test
 
     def permission(path)
       login = path.split('/')[-2]
+      raise Shaka::Error.new('gh api failed.', http_status: 404) if login == 'gone'
+      raise Shaka::Error.new('gh api failed.', http_status: 502) if login == 'flaky'
+
       { 'permission' => %w[writer writer[bot]].include?(login) ? 'write' : 'read', 'user' => { 'login' => login } }
     end
   end
 
   def test_overlapping_snapshots_and_host_handoffs_count_each_response_once
     github = GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     publish(journal, %w[r1 r2], 'commit')
     switched = record('r3', model: 'gpt-6-astra', effort: 'high')
     journal.publish([record('r2'), switched], event: 'testing')
@@ -65,8 +68,8 @@ class UsageJournalTest < Minitest::Test
 
   def test_concurrent_stale_readers_append_and_duplicates_do_not_inflate_totals
     github = GitHub.new
-    first = Shaka::UsageJournal.new(github)
-    second = Shaka::UsageJournal.new(github)
+    first = Shaka::UsageJournal.new(github, identity: 'id')
+    second = Shaka::UsageJournal.new(github, identity: 'id')
     concurrent_publish(github, first, second)
     assert_equal %w[r1 r2], responses(first)
     assert_equal 2, github.writes.size
@@ -76,7 +79,7 @@ class UsageJournalTest < Minitest::Test
 
   def test_reassociation_keeps_commits_without_recounting_tokens
     github = GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     journal.publish([record('r1')], event: 'commit')
     journal.publish([record('r1', commits: ['b' * 40])], event: 'commit')
     records = journal.collect['records']
@@ -87,14 +90,14 @@ class UsageJournalTest < Minitest::Test
   def test_malformed_or_untrusted_comments_do_not_become_evidence
     github = GitHub.new
     github.comments << { 'body' => "#{Shaka::UsageJournal::MARK}\nSENSITIVE", 'user' => { 'login' => 'outsider' } }
-    assert_empty Shaka::UsageJournal.new(github).collect['records']
+    assert_empty Shaka::UsageJournal.new(github, identity: 'id').collect['records']
     github.comments[0]['user']['login'] = 'writer'
-    assert_raises(Shaka::Error) { Shaka::UsageJournal.new(github).collect }
+    assert_raises(Shaka::Error) { Shaka::UsageJournal.new(github, identity: 'id').collect }
   end
 
   def test_a_failed_chunk_is_retryable_without_republishing_confirmed_records
     github = GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     def journal.body_length(records) = records.size > 1 ? 60_001 : 1
 
     github.fail_after = 1
@@ -122,13 +125,13 @@ class UsageJournalTest < Minitest::Test
   def test_aggregate_reports_cannot_silently_double_count_partial_overlap
     github = GitHub.new
     aggregate = record('r1').merge('responses' => %w[r1 r2])
-    assert_raises(Shaka::Error) { Shaka::UsageJournal.new(github).publish([aggregate], event: 'commit') }
+    assert_raises(Shaka::Error) { Shaka::UsageJournal.new(github, identity: 'id').publish([aggregate], event: 'commit') }
     assert_empty github.writes
   end
 
   def test_a_different_host_survives_the_handoff
     github = GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     publish(journal, ['r1'], 'commit')
     journal.publish([record('c1').merge('host' => 'claude-code')], event: 'handoff')
     assert_equal %w[r1 c1], responses(journal)
@@ -158,7 +161,7 @@ class UsageJournalRecoveryTest < Minitest::Test
 
   def test_bot_authors_still_require_verified_write_permission
     github = GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     journal.publish([record('r1')], event: 'commit')
     github.comments[0]['user']['login'] = 'writer[bot]'
     assert_equal(['r1'], journal.collect['records'].flat_map { |entry| entry['responses'] })
@@ -166,7 +169,7 @@ class UsageJournalRecoveryTest < Minitest::Test
 
   def test_conflicts_and_enrichment_are_checked_before_render_deduplication
     github = GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     changed = record('r1')
     changed['columns'][0]['input'] = '999'
     assert_raises(Shaka::Error) { journal.publish([record('r1'), changed], event: 'commit') }
@@ -175,7 +178,7 @@ class UsageJournalRecoveryTest < Minitest::Test
 
   def test_enrichment_survives_identical_record_identities
     github = GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     changed = record('r1')
     changed['columns'][0]['input'] = 'UNKNOWN'
     journal.publish([changed, record('r1')], event: 'commit')
@@ -184,7 +187,7 @@ class UsageJournalRecoveryTest < Minitest::Test
 
   def test_shared_categories_are_stable_on_retries_and_preserve_a_new_role
     github = GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     %w[implementation review integration].each do |role|
       journal.publish([record('r1').merge('contribution' => role)], event: 'review')
     end
@@ -196,7 +199,7 @@ class UsageJournalRecoveryTest < Minitest::Test
 
   def test_changed_notes_do_not_republish_all_earlier_responses
     github = GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     journal.publish([record('r1')], event: 'commit')
     journal.publish([record('r1').merge('note' => 'Later task scope.')], event: 'comment')
     assert_equal 1, github.writes.size
@@ -262,19 +265,6 @@ class UsageJournalPublicationBoundaryTest < Minitest::Test
     Shaka::UsageJournal.new(github, identity:).publish([record('response')], event: 'review')
     assert_equal identity, github.writes.first[1][:body].lines[1].strip
   end
-
-  def test_print_only_cli_results_report_the_named_gap_without_posting
-    require 'shaka/usage/journal_command'
-    Tempfile.create(['print-only', '.json']) do |file|
-      file.write(JSON.generate(usage_records: [], usage_gap: 'Only the call summary survives.'))
-      file.close
-      _output, error = capture_io do
-        assert_equal 1, Shaka::UsageJournalCommand.run(['publish', 'owner/repo', '12', '--content-file', file.path])
-      end
-      assert_includes error, 'Only the call summary survives.'
-      refute_includes error, 'malformed'
-    end
-  end
 end
 
 class UsageJournalRoundTripTest < Minitest::Test
@@ -282,7 +272,7 @@ class UsageJournalRoundTripTest < Minitest::Test
 
   def test_records_sharing_a_note_keep_it_and_do_not_republish
     github = UsageJournalTest::GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     pair = [record('r1'), record('r2')]
     journal.publish(pair, event: 'commit')
     assert_includes github.writes.first[1][:body], 'usage-note-ref'
@@ -292,21 +282,74 @@ class UsageJournalRoundTripTest < Minitest::Test
 
   def test_a_whole_task_report_still_dates_the_task_after_collection
     github = UsageJournalTest::GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     journal.publish([record('r1').merge('covers_task' => true), record('r2')], event: 'commit')
     assert_equal({ 'r1' => true, 'r2' => nil }, covers(journal))
   end
 
   def test_a_later_whole_task_selection_upgrades_a_response_already_published
     github = UsageJournalTest::GitHub.new
-    journal = Shaka::UsageJournal.new(github)
+    journal = Shaka::UsageJournal.new(github, identity: 'id')
     journal.publish([record('r1')], event: 'commit')
     journal.publish([record('r1').merge('covers_task' => true)], event: 'finish')
     assert_equal 2, github.writes.size
     assert_equal({ 'r1' => true }, covers(journal))
   end
 
+  def test_a_known_price_brings_its_own_note
+    unpriced = record('r1').merge('note' => 'Unsupported model.')
+    unpriced['columns'] = [unpriced['columns'][0].merge('usd' => 'UNKNOWN')]
+    merged = Shaka::UsageJournalRecords.combine([unpriced, record('r1')]).first
+    assert_equal '$0.10', merged['columns'][0]['usd']
+    assert_equal 'Native sample.', merged['note']
+  end
+
+  def test_the_first_measured_price_keeps_its_note
+    later = record('r1').merge('note' => 'Later card.')
+    later['columns'] = [later['columns'][0].merge('usd' => '$0.20')]
+    merged = Shaka::UsageJournalRecords.combine([record('r1'), later]).first
+    assert_equal ['$0.10', 'Native sample.'], [merged['columns'][0]['usd'], merged['note']]
+  end
+
+  def test_a_conflict_names_the_response
+    changed = record('r1')
+    changed['columns'] = [changed['columns'][0].merge('input' => '999')]
+    error = assert_raises(Shaka::Error) { Shaka::UsageJournalRecords.combine([record('r1'), changed]) }
+    assert_includes error.message, 'r1'
+  end
+
+  def test_shared_attribution_replaces_a_report_from_a_rebased_commit
+    rebased = record('r1', commits: ['b' * 40])
+    collected = Shaka::UsageJournalRecords.combine([rebased, rebased.merge('contribution' => 'review')])
+    content, stats = Shaka::UsageRecords.carry({ 'usage' => { 'note' => '', 'records' => collected } },
+                                               described_body(record('r1')))
+    assert_equal [1, ['a' * 40, 'b' * 40]], [stats['replaced'], content['usage']['records'][0]['commits'].sort]
+  end
+
+  def test_an_unresolvable_author_is_not_a_writer
+    assert_equal ['Native sample.'], notes(reader(github_with_extra_author('gone')))
+  end
+
+  def test_a_failed_permission_lookup_stops_collection
+    assert_raises(Shaka::Error) { reader(github_with_extra_author('flaky')).collect }
+  end
+
   private
+
+  def reader(github) = Shaka::UsageJournal.new(github, identity: 'id')
+
+  def github_with_extra_author(login)
+    github = UsageJournalTest::GitHub.new
+    reader(github).publish([record('r1')], event: 'commit')
+    github.comments << github.comments[0].merge('user' => { 'login' => login })
+    github
+  end
+
+  def described_body(earlier)
+    detail = Shaka::UsageDetails.new('note' => '', 'records' => [earlier]).detail
+    "<!-- shaka:begin -->\nS\n<details>\n<summary>Usage and cost</summary>\n\n#{detail['body']}\n" \
+      "</details>\n<!-- shaka:end -->"
+  end
 
   def notes(journal) = journal.collect['records'].map { |entry| entry['note'] }.uniq
 

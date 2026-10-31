@@ -97,11 +97,18 @@ module Shaka
       login = comment.dig('user', 'login')
       return false unless login.is_a?(String) && login.match?(/\A[A-Za-z0-9][A-Za-z0-9-]{0,38}(?:\[bot\])?\z/)
 
-      @writers.fetch(login) do
-        result = @github.api("repos/#{@github.repository}/collaborators/#{login}/permission")
-        @writers[login] = result.dig('user', 'login').to_s.casecmp?(login) &&
-                          %w[admin maintain write].include?(result['permission'])
-      end
+      @writers.fetch(login) { @writers[login] = write_permission?(login) }
+    end
+
+    # An account GitHub cannot resolve holds no verified access; any other failure stops the read,
+    # because dropping a real writer's comments would undercount silently.
+    def write_permission?(login)
+      result = @github.api("repos/#{@github.repository}/collaborators/#{login}/permission")
+      result.dig('user', 'login').to_s.casecmp?(login) && %w[admin maintain write].include?(result['permission'])
+    rescue Error => e
+      raise unless e.http_status == 404
+
+      false
     end
 
     def chunks(records)

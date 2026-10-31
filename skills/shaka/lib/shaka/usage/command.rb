@@ -118,8 +118,10 @@ module Shaka
       @responses = @selected_responses.values
     end
 
+    # A response export prices each response separately, and selecting a card can start Git.
     def selected_rate_card
-      RateCard.select(contribution: @options[:contribution], explicit_root: @options[:rate_root])
+      @selected_rate_card ||= RateCard.select(contribution: @options[:contribution],
+                                              explicit_root: @options[:rate_root])
     end
 
     def turn_scope

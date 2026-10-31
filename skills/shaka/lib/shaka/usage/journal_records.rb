@@ -27,6 +27,7 @@ module Shaka
 
   # Reduces immutable response snapshots, preserving attribution without counting copies again.
   module UsageJournalRecords
+    PRICED = %w[usd credits].freeze
     OBSERVED = %w[provider model routed effort input cached_input output reasoning_output cache_writes].freeze
 
     module_function
@@ -102,7 +103,7 @@ module Shaka
     end
 
     def merged_fields(old, record)
-      columns = merge_column(old['columns'].first, record['columns'].first)
+      columns = merge_column(old, record)
       shared_label(columns, old, record)
       { 'columns' => [columns], 'commits' => (old['commits'] + record['commits']).uniq,
         'complete' => old['complete'] || record['complete'] }
@@ -120,11 +121,20 @@ module Shaka
 
     def attribution(old, record)
       categories = (categories(old) + categories(record)).uniq.sort
-      return old.slice('note', 'contribution') if categories == categories(old).sort
+      note = pricing_note(old, record)
+      return { 'note' => note, 'contribution' => old['contribution'] } if categories == categories(old).sort
 
-      note = old['note'].to_s.sub(/\n\nAttribution categories: [^\n]*\.\z/, '')
+      note = note.to_s.sub(/\n\nAttribution categories: [^\n]*\.\z/, '')
       { 'contribution' => 'shared-planning',
         'note' => "#{note}\n\nAttribution categories: #{categories.join(', ')}." }
+    end
+
+    # A price stays with the note explaining it: the first measured one, or the copy that first supplies it.
+    def pricing_note(old, record)
+      priced = PRICED.any? do |key|
+        old['columns'].first[key] == 'UNKNOWN' && record['columns'].first[key] != 'UNKNOWN'
+      end
+      priced ? record['note'] : old['note']
     end
 
     def categories(record)
@@ -134,11 +144,13 @@ module Shaka
       prior.split(', ').intersection(UsageRecordCarry::CONTRIBUTIONS)
     end
 
-    def merge_column(old, fresh)
-      old.to_h do |key, value|
+    def merge_column(old, record)
+      fresh = record['columns'].first
+      old['columns'].first.to_h do |key, value|
         incoming = fresh.fetch(key)
         if OBSERVED.include?(key) && ![value, incoming].include?('UNKNOWN') && value != incoming
-          raise Error, 'Usage journal has conflicting native response evidence; inspect its snapshots.'
+          raise Error, "Usage journal has conflicting #{key} for response #{old['responses'].first}; " \
+                       'inspect the PR comments holding that response.'
         end
 
         [key, value == 'UNKNOWN' ? incoming : value]

@@ -20,7 +20,7 @@ module Shaka
 
       puts JSON.pretty_generate(execute(action, repository, number, parse(arguments)))
       0
-    rescue OptionParser::ParseError, Error, JSON::ParserError, SystemCallError => e
+    rescue OptionParser::ParseError, Error => e
       warn UsageErrors.message(e)
       1
     end
@@ -49,27 +49,13 @@ module Shaka
       parser = Usage.parser(options)
       parser.banner = 'Usage: shaka usage publish|collect OWNER/REPO NUMBER [options]'
       parser.on('--event NAME', UsageJournal::EVENTS) { |value| options[:event] = value }
-      parser.on('--content-file PATH', 'Saved response records') { |value| options[:content_file] = value }
       parser
     end
 
     def records(options)
-      return saved_records(options[:content_file]) if options[:content_file]
       raise OptionParser::InvalidArgument unless Usage.valid_mapping?(options)
 
       Usage.new(options).response_records
-    end
-
-    def saved_records(path)
-      document = JSON.parse(File.read(path, encoding: 'UTF-8'))
-      raise Error, 'Usage publication requires a JSON object.' unless document.is_a?(Hash)
-
-      records = document.fetch('records') { document.fetch('usage_records') }
-      raise Error, document.fetch('usage_gap', 'No native response records to publish.') if records == []
-
-      records
-    rescue KeyError
-      raise Error, 'Usage publication requires response records from shaka usage --format json.'
     end
   end
 end
