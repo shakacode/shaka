@@ -70,6 +70,8 @@ how each held up. For the short version, read
   of $9.22 and code-only PRs (61) $10.54. PRs changing both (40) had a median of
   $21.87, and they are larger. Per 100 changed lines, the mixed and code-only
   groups cost about the same, $10.79 and $9.68.
+- **Visible Verification text:** the median was 75 words for PRs merged 10-22 and 10-23
+  and 11 words for PRs merged 10-29, not counting link targets.
 - **Where `Not verified` appears**, by merge date. #860 merged on 10-25.
 
 | Merged | Visible | Folded | Absent |

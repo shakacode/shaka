@@ -28,8 +28,8 @@ agent.
 the work matches what you intended.
 [Osmani argues](https://addyo.substack.com/p/the-code-nobody-reads) the expensive
 failures sit upstream, in asking for the wrong thing. Both recommend
-having the agent restate the goal before it starts. Shaka planned that step in #421
-and hasn't built it.
+having the agent restate the goal before it starts. Shaka planned that step in
+[#421](https://github.com/shakacode/shaka/issues/421) and hasn't built it.
 
 ## People here spend their attention on words
 
@@ -55,8 +55,10 @@ within 30 minutes of first being ready.
 The description's second job is to show the proof. On 10-22 and 10-23, all 36
 `Not verified` lines were visible. On 10-29, 3 were visible and 23 sat inside a
 collapsed section. [#860](https://github.com/shakacode/shaka/pull/860) made that
-change while grouping metadata. The visible Verification section now has a median of
-27 words.
+change while grouping metadata. The visible Verification section went from a median
+of 75 words to 11.
+
+![Stacked bars of Not verified lines by merge date. 10-22: 28 visible. 10-23: 8 visible. 10-24: no merges. 10-25, when #860 merged: 3 visible, 2 folded. 10-26: 2 folded. 10-27: 2 visible, 10 folded. 10-28: 1 visible, 8 folded. 10-29: 3 visible, 23 folded.](../img/pr-description-not-verified.svg)
 
 The agent that wrote the PR decides which gaps are material enough to stay visible.
 
@@ -92,3 +94,18 @@ reviewers had run, and the agent passed the tool one result file
   for a whole PR.
 - Watch how often each signal changes. A verdict that almost never varies tells a
   reader very little.
+
+## What this changed in Shaka
+
+- [#999](https://github.com/shakacode/shaka/issues/999): keep `Not verified` visible.
+- [#1000](https://github.com/shakacode/shaka/issues/1000): stop calling model-judged
+  gaps accepted.
+- [#1001](https://github.com/shakacode/shaka/issues/1001): stop a small docs edit from
+  rating a whole code PR at the maximum.
+- [#1002](https://github.com/shakacode/shaka/issues/1002): stop unrelated merges from
+  voiding evidence mid-task. One cost this PR a 20-minute validation run.
+- [#1003](https://github.com/shakacode/shaka/issues/1003): let docs images skip the full
+  test suite.
+- [A comment on #421](https://github.com/shakacode/shaka/issues/421#issuecomment-6550360529)
+  adds this case to the plan for restating the goal before work starts.
+
