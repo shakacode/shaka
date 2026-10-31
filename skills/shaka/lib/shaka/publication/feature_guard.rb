@@ -29,8 +29,8 @@ module Shaka
     def files(github, pull)
       files = PublicComments::BoundedList.new(github, max_pages: 30, label: 'PR files')
                                          .call("repos/#{github.repository}/pulls/#{github.number}/files")
-      complete!(files, pull)
-      files
+      # GitHub can split a type change into removal/addition; retain the half present at the head.
+      complete!(files, pull).map { |entries| entries.find { |file| file['status'] == 'added' } || entries.first }
     end
 
     def unchanged!(github, existing, original)
@@ -42,15 +42,31 @@ module Shaka
     end
 
     def valid_file?(file)
-      file['filename'].is_a?(String) && !file['filename'].empty? &&
+      file.is_a?(Hash) && file['filename'].is_a?(String) && !file['filename'].empty? &&
         (file['previous_filename'].nil? || file['previous_filename'].is_a?(String))
     end
 
     def complete!(files, pull)
       count = pull['changed_files']
-      valid = count.is_a?(Integer) && count.between?(0, 3000) && files.size == count &&
-              files.all? { |file| valid_file?(file) }
+      raise Error, 'Cannot verify complete PR configuration diff' unless files.all? { |file| valid_file?(file) }
+
+      grouped = files.group_by { |file| file['filename'] }.values
+      valid = complete_count?(count, grouped) &&
+              grouped.all? { |entries| valid_group?(entries) }
       raise Error, 'Cannot verify complete PR configuration diff' unless valid
+
+      grouped
+    end
+
+    def complete_count?(count, grouped)
+      count.is_a?(Integer) && count.between?(0, 3000) && grouped.size == count
+    end
+
+    def valid_group?(entries) = entries.one? || type_change?(entries)
+
+    def type_change?(entries)
+      entries.map { |file| file['status'] }.tally == { 'added' => 1, 'removed' => 1 } &&
+        entries.none? { |file| file['previous_filename'] }
     end
   end
 end
