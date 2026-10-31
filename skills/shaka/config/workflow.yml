@@ -299,7 +299,8 @@ phases:
       - Commit the validated change, or the change with that verified base-failure comparison,
         before reviewing it. The push waits for Explain.
         Pass `--settings-ref TRUSTED_SHA --repository OWNER/REPO` to `review run`, and also
-        `--root DIR` to `review check`.
+        `--root DIR` to `review check`. A `review check` from a dirty checkout stays provisional
+        because the reviewer did not see those edits.
       - Before push and publication, use `shaka evidence verify --root DIR --ref TRUSTED_SHA
         --repository OWNER/REPO --head SHA --validation PATH --review PATH` with the actual
         repository validation and review JSON results. Missing or superseded results need the affected
@@ -853,7 +854,8 @@ phases:
         check and its state at that SHA in the handoff. Run `attention` with `--state none` when work
         on the PR resumes. Never set `awaiting-merge-approval` in Auto
         mode. In Auto mode, run `merge --auto` with the current head, walkthrough ID, and
-        `--squash-message` content. Report a failed or queue-deferred `auto-merged` label in the handoff. When `--auto` refuses a failed check, hand
+        `--squash-message` content. It labels the PR `auto-merged` once GitHub confirms the merge;
+        report a failed or queue-deferred label in the handoff. When `--auto` refuses a failed check, hand
         this PR back under Ask. A head the user confirms past a gate is an Ask merge: run `merge`
         with the confirmation and without `--auto`. A required
         native approval must arrive first, and do not ask for a second approval afterward.
