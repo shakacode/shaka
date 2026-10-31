@@ -52,7 +52,8 @@ class UsageJournalTest < Minitest::Test
       raise Shaka::Error.new('gh api failed.', http_status: 404) if login == 'gone'
       raise Shaka::Error.new('gh api failed.', http_status: 502) if login == 'flaky'
 
-      { 'permission' => %w[writer writer[bot]].include?(login) ? 'write' : 'read', 'user' => { 'login' => login } }
+      writer = %w[writer writer[bot] writer_corp].include?(login)
+      { 'permission' => writer ? 'write' : 'read', 'user' => { 'login' => login } }
     end
   end
 
@@ -297,28 +298,6 @@ class UsageJournalRoundTripTest < Minitest::Test
     assert_equal({ 'r1' => true }, covers(journal))
   end
 
-  def test_a_known_price_brings_its_own_note
-    unpriced = record('r1').merge('note' => 'Unsupported model.')
-    unpriced['columns'] = [unpriced['columns'][0].merge('usd' => 'UNKNOWN', 'credits' => 'UNKNOWN')]
-    merged = Shaka::UsageJournalRecords.combine([unpriced, record('r1')]).first
-    assert_equal '$0.10', merged['columns'][0]['usd']
-    assert_equal 'Native sample.', merged['note']
-  end
-
-  def test_the_first_measured_price_keeps_its_note
-    later = record('r1').merge('note' => 'Later card.')
-    later['columns'] = [later['columns'][0].merge('usd' => '$0.20')]
-    merged = Shaka::UsageJournalRecords.combine([record('r1'), later]).first
-    assert_equal ['$0.10', 'Native sample.'], [merged['columns'][0]['usd'], merged['note']]
-  end
-
-  def test_mixed_enrichment_keeps_the_first_measured_prices_and_note_together
-    later = priced('$0.20', '9 credits').merge('note' => 'Later card.')
-    merged = Shaka::UsageJournalRecords.combine([priced('$0.10', 'UNKNOWN'), later]).first
-    assert_equal ['$0.10', 'UNKNOWN', 'Native sample.'],
-                 [*merged['columns'][0].values_at('usd', 'credits'), merged['note']]
-  end
-
   def test_publishing_without_write_access_reports_that_collection_ignores_it
     github = UsageJournalTest::GitHub.new
     github.author = 'outsider'
@@ -332,6 +311,23 @@ class UsageJournalRoundTripTest < Minitest::Test
                          'body' => "#{Shaka::UsageJournal::MARK}\nno records" }
     error = assert_raises(Shaka::Error) { reader(github).collect }
     assert_includes error.message, 'https://example.test/c7'
+  end
+
+  def test_a_comment_failing_the_record_shape_is_named
+    github = UsageJournalTest::GitHub.new
+    reader(github).publish([record('r1')], event: 'commit')
+    comment = github.comments[0]
+    comment['html_url'] = 'https://example.test/c1'
+    comment['body'] = comment['body'].sub(/<!-- usage-columns .* -->/, '<!-- usage-columns {} -->')
+    error = assert_raises(Shaka::Error) { reader(github).collect }
+    assert_includes error.message, 'https://example.test/c1'
+  end
+
+  def test_an_enterprise_managed_login_counts_as_a_writer_when_github_says_so
+    github = UsageJournalTest::GitHub.new
+    github.author = 'writer_corp'
+    reader(github).publish([record('r1')], event: 'commit')
+    assert_equal ['Native sample.'], notes(reader(github))
   end
 
   def test_a_conflict_names_the_response
@@ -359,11 +355,6 @@ class UsageJournalRoundTripTest < Minitest::Test
 
   private
 
-  def priced(usd, credits)
-    entry = record('r1')
-    entry.merge('columns' => [entry['columns'][0].merge('usd' => usd, 'credits' => credits)])
-  end
-
   def reader(github) = Shaka::UsageJournal.new(github, identity: 'id')
 
   def github_with_extra_author(login)
@@ -383,5 +374,38 @@ class UsageJournalRoundTripTest < Minitest::Test
 
   def covers(journal)
     journal.collect['records'].to_h { |entry| [entry['responses'].first, entry['covers_task']] }
+  end
+end
+
+class UsageJournalPricingTest < Minitest::Test
+  include UsageJournalFixture
+
+  def test_a_known_price_brings_its_own_note
+    unpriced = record('r1').merge('note' => 'Unsupported model.')
+    unpriced['columns'] = [unpriced['columns'][0].merge('usd' => 'UNKNOWN', 'credits' => 'UNKNOWN')]
+    merged = Shaka::UsageJournalRecords.combine([unpriced, record('r1')]).first
+    assert_equal '$0.10', merged['columns'][0]['usd']
+    assert_equal 'Native sample.', merged['note']
+  end
+
+  def test_the_first_measured_price_keeps_its_note
+    later = record('r1').merge('note' => 'Later card.')
+    later['columns'] = [later['columns'][0].merge('usd' => '$0.20')]
+    merged = Shaka::UsageJournalRecords.combine([record('r1'), later]).first
+    assert_equal ['$0.10', 'Native sample.'], [merged['columns'][0]['usd'], merged['note']]
+  end
+
+  def test_mixed_enrichment_keeps_the_first_measured_prices_and_note_together
+    later = priced('$0.20', '9 credits').merge('note' => 'Later card.')
+    merged = Shaka::UsageJournalRecords.combine([priced('$0.10', 'UNKNOWN'), later]).first
+    assert_equal ['$0.10', 'UNKNOWN', 'Native sample.'],
+                 [*merged['columns'][0].values_at('usd', 'credits'), merged['note']]
+  end
+
+  private
+
+  def priced(usd, credits)
+    entry = record('r1')
+    entry.merge('columns' => [entry['columns'][0].merge('usd' => usd, 'credits' => credits)])
   end
 end

@@ -104,7 +104,7 @@ module Shaka
     # Comment authors need current write access. A marker from an outside commenter is not evidence.
     def writer?(comment)
       login = comment.dig('user', 'login')
-      return false unless login.is_a?(String) && login.match?(/\A[A-Za-z0-9][A-Za-z0-9-]{0,38}(?:\[bot\])?\z/)
+      return false unless login.is_a?(String) && login.match?(/\A[A-Za-z0-9][A-Za-z0-9_-]{0,38}(?:\[bot\])?\z/)
 
       @writers.fetch(login) { @writers[login] = write_permission?(login) }
     end

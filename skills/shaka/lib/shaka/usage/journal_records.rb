@@ -55,7 +55,7 @@ module Shaka
       raise Error, 'Usage journal contains an invalid record.' unless identity && UsageRecordShape.report_shape?(block)
 
       columns = JSON.parse(block[UsageDetails::HIDDEN, 1].to_s)
-      identity.merge('columns' => columns, 'note' => UsagePricing.from_block(block))
+      identity.merge('columns' => columns, 'note' => UsagePricing.from_block(block)).tap { |record| validate(record) }
     end
 
     def combine(records)

@@ -6,6 +6,7 @@ require 'shaka/configure_settings'
 require 'shaka/post_implementation'
 require 'shaka/prompt_show'
 require 'shaka/repos'
+require 'shaka/subcommands'
 require 'shaka/seam'
 require 'shaka/trial/command'
 
@@ -134,6 +135,7 @@ class CallLogNamesTest < Minitest::Test
                    'post-implementation' => Shaka::PostImplementation::ACTIONS, 'prompt' => Shaka::PromptShow::OPERATIONS,
                    'repos' => Shaka::Repos::OPERATIONS, 'review' => Shaka::LocalReview::ACTIONS,
                    'seam' => Shaka::Seam::OPERATIONS,
-                   'trial' => Shaka::Trial::Command::ACTIONS }, Shaka::CallLog::OPERATIONS)
+                   'trial' => Shaka::Trial::Command::ACTIONS,
+                   'usage' => Shaka::Subcommands::TABLE['usage'].operations }, Shaka::CallLog::OPERATIONS)
   end
 end
