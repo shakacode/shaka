@@ -322,8 +322,9 @@ phases:
         `.env` contents. Take any you find out of the tree and every unpushed commit. Tell the
         user in chat which file held it, and never repeat the value in chat, commits, or PR text.
         If it already reached a remote or a review provider, or you noticed it elsewhere in the
-        repository, also ask the user to rotate it. Until they do, keep its location out of public
-        artifacts; a review report that names it holds `review publish` and merge readiness.
+        repository, also ask the user to rotate it. Until they do or accept the exposure, keep its
+        location out of public artifacts; a review report that names it holds `review publish` and
+        merge readiness.
       - Before push and publication, use `shaka evidence verify --root DIR --ref TRUSTED_SHA
         --repository OWNER/REPO --head SHA --validation PATH --review PATH` with the actual
         repository validation and review JSON results. Missing or superseded results need the affected
