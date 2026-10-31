@@ -1,6 +1,6 @@
 ---
 name: shaka
-description: Deliver a task through verified GitHub PRs, or help get started and diagnose setup with doctor. Publish walkthroughs, address review, and honor merge authority.
+description: Deliver a task through verified GitHub PRs, help get started and diagnose setup with doctor, or answer questions about using Shaka. Publish walkthroughs, address review, and honor merge authority.
 ---
 
 # Shaka
@@ -22,8 +22,10 @@ follow the [retrospective procedure](references/retrospective.md) and stop at it
 For a request to review documentation together, one topic at a time, follow the
 [guided documentation review](references/guided-documentation-review.md) and stop after each
 topic.
-For a request to see what a reviewer receives, or to explain or change this repository's
-settings, follow the [configure procedure](references/configure.md).
+For `settings` alone, a request to see what a reviewer receives, or a request to explain or
+change this repository's settings, follow the [configure procedure](references/configure.md).
+For a question about how to use Shaka, answer from the
+[product docs](https://github.com/shakacode/shaka/blob/main/docs/README.md) and stop.
 For a request to install or update Shaka itself, follow
 [official installation](references/official-installation.md), or for a fork install or
 its update, the [fork procedure](references/installation.md#install-from-a-personal-fork),

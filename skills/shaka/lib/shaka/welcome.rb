@@ -17,6 +17,10 @@ module Shaka
         $shaka https://github.com/OWNER/REPO/pull/123
       Check your setup:
         $shaka doctor
+      See or change settings:
+        $shaka settings
+
+      Anything else: ask your agent how to get Shaka to do it. You don't need to read the docs.
 
       Terminal commands:
         shaka doctor             Check this machine and repository; get setup advice.

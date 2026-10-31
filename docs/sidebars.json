@@ -3,51 +3,63 @@
     "README",
     {
       "type": "doc",
+      "id": "getting-started",
+      "label": "Start here"
+    },
+    {
+      "type": "doc",
       "id": "shaka-in-pictures",
       "label": "Shaka in pictures"
     },
     {
-      "type": "doc",
-      "id": "getting-started",
-      "label": "Start here"
-    },
-    "working-with-shaka",
-    "faq",
-    {
       "type": "category",
-      "label": "Setup",
+      "label": "Reference: your agent reads these",
       "collapsed": true,
       "items": [
-        "configure-repository",
-        "settings-guide",
-        "coding-agents",
-        "linear",
-        "manual-installation",
-        "fork-and-hack",
-        "migration"
-      ]
-    },
-    {
-      "type": "category",
-      "label": "Reference",
-      "collapsed": true,
-      "items": [
+        "working-with-shaka",
+        "faq",
         "pr-verification",
-        "releases-after-merge",
-        "reference/usage-and-cost",
-        "reference/timings",
         {
           "type": "doc",
           "id": "expected-experience",
           "label": "What to expect from Shaka"
         },
+        "releases-after-merge",
+        "reference/usage-and-cost",
+        "reference/timings",
         {
-          "type": "doc",
-          "id": "settings",
-          "label": "Settings reference"
+          "type": "category",
+          "label": "Set up and configure",
+          "collapsed": true,
+          "items": [
+            "configure-repository",
+            "settings-guide",
+            {
+              "type": "doc",
+              "id": "settings",
+              "label": "Settings reference"
+            },
+            "writing-preferences",
+            "coding-agents",
+            "linear",
+            "manual-installation",
+            "fork-and-hack",
+            "migration"
+          ]
         },
-        "writing-preferences",
-        "workflow"
+        {
+          "type": "category",
+          "label": "Understand and extend",
+          "collapsed": true,
+          "items": [
+            "workflow",
+            "architecture",
+            "repository-catalog",
+            "control-towers",
+            "trying-pr-versions",
+            "canary"
+          ]
+        }
       ]
     },
     {
@@ -58,18 +70,6 @@
         "articles/review-process-study",
         "articles/checkpoint-sentence-eval",
         "articles/one-shot-pr-study"
-      ]
-    },
-    {
-      "type": "category",
-      "label": "Advanced",
-      "collapsed": true,
-      "items": [
-        "architecture",
-        "repository-catalog",
-        "control-towers",
-        "trying-pr-versions",
-        "canary"
       ]
     }
   ]
