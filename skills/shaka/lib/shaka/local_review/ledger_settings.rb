@@ -12,6 +12,16 @@ module Shaka
     # The digest of the review under way, which its round records.
     attr_writer :settings
 
+    # The reviewers of the batch holding round NUMBER, counted from 1, when that round is REVIEWER's
+    # review of HEAD; otherwise none, since the round belongs to some other result.
+    def batch_reviewers(number, head:, reviewer:)
+      round = rounds[number - 1] if number.is_a?(Integer) && number.positive?
+      return [] unless round&.values_at('head', 'reviewer') == [head, reviewer]
+
+      key = round.values_at('head', 'settings')
+      rounds.select { |other| other.values_at('head', 'settings') == key }.map { |other| other['reviewer'] }
+    end
+
     private
 
     def with_settings(round) = @settings ? round.merge('settings' => @settings) : round

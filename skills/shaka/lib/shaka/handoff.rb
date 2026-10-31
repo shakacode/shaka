@@ -8,6 +8,7 @@ require_relative 'merge_required_checks'
 require_relative 'status'
 require_relative 'handoff/conversation'
 require_relative 'handoff/hold'
+require_relative 'handoff/merge_wait'
 require_relative 'handoff/review_threads'
 require_relative 'handoff/squash_note'
 require_relative 'handoff/walkthrough'
@@ -22,6 +23,7 @@ module Shaka
     include MergeRequiredChecks
     include HandoffRendering
     include HandoffHold
+    include HandoffMergeWait
 
     OWED_EXIT = 2
     SHORT = 7
@@ -29,10 +31,11 @@ module Shaka
     # A Stop hook or script can refuse to end the turn on this status without parsing the report.
     def self.exit_status(result) = result.fetch('owed').empty? ? 0 : OWED_EXIT
 
-    def initialize(github, seam_required_checks: nil, post_implementation: nil)
+    def initialize(github, seam_required_checks: nil, post_implementation: nil, review: nil)
       @github = github
       @status = Status.new(github, seam_required_checks:)
       @checkpoint = PostImplementationEvidence.new(github, **post_implementation) if post_implementation
+      @review = MergeWaitReview.new(github, **review) if review
     end
 
     # woken_by names what will wake this session, such as a host PR monitor or a background watcher;
@@ -64,7 +67,7 @@ module Shaka
       @pull = nil
       checks = snapshot['requiredChecks']
       [attention_fact(checks, live), hold_fact, checks_fact(checks, snapshot['requiredChecksUnavailable']),
-       threads_fact, comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live),
+       threads_fact, comment_fact(snapshot), walkthrough_fact(live), review_fact(snapshot), checkpoint_fact(live),
        squash_fact(snapshot, live), closing_fact, wip_fact(live), rendering_fact(live)].compact
     end
 
@@ -126,15 +129,6 @@ module Shaka
 
     # The person clicking merge sees which issues it closes before they click.
     def closing_fact = (ClosingIssues.fact(@github, pull['body']) if merge_requested?)
-
-    def checkpoint_fact(live)
-      return unless @checkpoint && merge_requested?
-
-      @checkpoint.call(live)
-      "checkpoint #{live[0, SHORT]}"
-    rescue Error => e
-      owe('checkpoint owed', e.message)
-    end
 
     def pull = @pull ||= @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
 

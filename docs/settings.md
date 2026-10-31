@@ -274,9 +274,10 @@ This controls when configured CI review reports are required. Options:
   trivial; Shaka does not check that decision.
 - `always`: every PR, including trivial changes. The agent follows this for local
   review too, but `shaka merge` still accepts a waiver reason, described below.
-- `none`: no configured CI review backstop, and `shaka merge` does not check for a
-  local review. `shaka description` accepts a validation result without a review
-  result, and its settings block says the repository does not require review; when
+- `none`: no configured CI review backstop, and neither `shaka merge` nor the
+  `awaiting-merge-approval` label needs a local review. `shaka description` accepts a
+  validation result without a review result, and its settings block says the repository
+  does not require review; when
   no review ran, the Validation and review line says so too. A review that ran anyway
   must still match the current commit. Omit `ci_review_jobs` with this setting.
 

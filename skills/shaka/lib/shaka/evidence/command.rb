@@ -120,7 +120,7 @@ module Shaka
         raise Error, 'bind accepts no command arguments' unless @arguments.empty?
 
         path = Result.local_file!(root, @options.fetch(:result))
-        original = JSON.parse(File.read(path, encoding: 'UTF-8'))
+        original = Result.original(JSON.parse(File.read(path, encoding: 'UTF-8')))
         Result.bind(original, root:, head: @options.fetch(:head), ref:, repository:)
       end
 
