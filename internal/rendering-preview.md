@@ -8,6 +8,10 @@ Read it from the default branch with `git show REF:internal/rendering-preview.md
 The maintainer wants to see the change applied on the PR itself. This is the
 maintainer's one exception to the skill's rule against running a branch-provided helper.
 
+A PR whose only changed publication files are those `RenderingPreview::INSTALLED` names skips
+this procedure: a preview keeps them installed, so it cannot show their change. `handoff` owes
+no preview for them and lists them as not previewed.
+
 1. Confirm `gh pr view` reports `isCrossRepository` false. Only accounts with write
    access can push such a branch. Otherwise, skip the republish.
 2. Publish with the installed helper as usual. After its last publication for a reviewed

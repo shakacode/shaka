@@ -70,16 +70,18 @@ module Shaka
                    'rebase it onto the default branch.'
     end
 
-    # This check belongs to Shaka's own PRs, not to projects that use Shaka.
-    def required?(github) = !changed_renderers(github).empty?
+    # This check belongs to Shaka's own PRs, not to projects that use Shaka. A preview cannot show a file it keeps
+    # installed, so such a file owes none on its own.
+    def required?(github) = !(changed_renderers(github) - INSTALLED).empty?
+
+    # The changed files a preview, owed or not, leaves unseen, so a handoff can name them.
+    def kept_installed(github) = changed_renderers(github) & INSTALLED
 
     # A description marker cannot attest to another artifact's rendering. Fail closed
     # until that renderer has a reviewed preview and artifact-specific evidence check.
-    # Returns the changed files the preview keeps installed, so a handoff can say they were not previewed.
     def verify_supported!(github)
-      changed = changed_renderers(github)
-      unsupported = changed.reject { |path| previewable?(path) }
-      return changed & INSTALLED if unsupported.empty?
+      unsupported = changed_renderers(github).reject { |path| previewable?(path) }
+      return if unsupported.empty?
 
       raise Error, "Rendering preview does not yet load: #{unsupported.join(', ')}. " \
                    "It previews only the Ruby files directly in #{DIRECTORY}."
