@@ -58,7 +58,9 @@ checkpoint: # Defaults: the final "did we build the right thing?" check before m
   # replacement_prompt_file: .agents/shaka/checkpoint-prompt.md
 
 merge:
-  preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.
+  # Required; setup suggests ask: you merge on GitHub. Ours: auto, so the agent merges PRs at or
+  # below auto_max_review_floor and within limits, and hands the rest back for a click.
+  preference: auto
   # required_checks: [validate] # Default: none; use when GitHub requires no checks.
   limits: # Defaults. A larger PR needs your confirmation before the agent merges it.
     max_changed_files: 29
@@ -66,7 +68,6 @@ merge:
     max_commits: 9
   # Default: 5, any human review floor (below). Ours: 2, so Auto would merge code and tests and
   # hand back docs, agent instructions, and settings, merge, trust, validation, and install code.
-  # While preference is ask, each ready checkpoint says whether Auto would merge the PR.
   auto_max_review_floor: 2
   hold_labels: [hold] # Default. Shaka never merges a PR carrying one of these; remove it to merge.
 
@@ -82,18 +83,20 @@ pr_description:
   max_human_comments: 20 # Default: how many of those comments to list.
   time_zone: America/Los_Angeles # Ours: the PR timings' readers. Default: UTC, or the user's zone when set.
   # Default: Shaka's shipped floors. The lowest human review effort a PR may claim, from the
-  # files it changes. This list replaces the default one. Ours adds the first two floors and the
-  # validation and install floor, names merge-gate and trust code in the trust floor, and
-  # exempts Shaka's Ruby library code from the agent-instructions floor, so
-  # auto_max_review_floor can tell them apart. The rest are the defaults.
+  # files it changes. This list replaces the default one. Ours adds the first two floors, the
+  # validation and install floor, and the contributor-guide floor, names merge-gate and trust code
+  # in the trust floor, puts README.md with the docs, and exempts Shaka's Ruby library code from
+  # the agent-instructions floor, so auto_max_review_floor can tell them apart. The rest are the
+  # defaults.
   human_review_floors:
     - level: 5
       reason: changes docs for Shaka's users
-      paths: [docs/**/*]
+      paths: [docs/**/*, README.md]
     - level: 4
       reason: changes evidence or settings checks
       paths: ['skills/shaka/lib/shaka/{evidence,seam,repository_config,configuration}/**/*',
-              'skills/shaka/lib/shaka/{seam,repository_config,configuration}.rb']
+              'skills/shaka/lib/shaka/{seam,repository_config,configuration}.rb',
+              'skills/shaka/lib/shaka/publication_settings*.rb', 'skills/shaka/lib/shaka/publication_settings/**/*']
     - level: 5
       reason: changes Shaka's repository configuration
       paths: [.agents/shaka/**/*]
@@ -101,16 +104,19 @@ pr_description:
       reason: changes trust, merge, authentication, or release paths
       paths: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS,
               'skills/shaka/lib/shaka/{required_checks,ci_review_wait,review_coverage,public_comments,defaults}.rb',
-              'skills/shaka/lib/shaka/publication/{review_effort_floor,feature_guard,verification_gates}.rb',
+              'skills/shaka/lib/shaka/publication/{review_effort_floor,feature_guard,verification_gates,rendering_preview}.rb',
               skills/shaka/lib/shaka/public_comments/**/*]
       words: [auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
               credential]
       except: ['**/*.md', '**/*.{png,jpg,jpeg,gif,svg,webp}']
     - level: 3
-      reason: changes validation, install, update, or GitHub code
+      reason: changes validation, install, update, GitHub, or GitLab code
       paths: [bin/**/*, .rubocop.yml, .ruby-version, 'Gemfile{,.lock}', shaka.gemspec,
-              'skills/shaka/lib/shaka/{installer,update_check,github}.rb',
-              'skills/shaka/lib/shaka/{install,update_check,github}/**/*']
+              'skills/shaka/lib/shaka/{installer,update_check,github,gitlab}.rb',
+              'skills/shaka/lib/shaka/{install,update_check,github,gitlab}/**/*']
+    - level: 3
+      reason: changes contributor guides, including releasing, or product requirements
+      paths: [CONTRIBUTING.md, contributing/**/*, internal/requirements.md]
     - level: 3
       reason: changes agent instructions
       paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]
