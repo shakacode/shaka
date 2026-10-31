@@ -206,7 +206,7 @@ predates this work.
   show as UNKNOWN. Hosted `validate` reruns the suite on GitHub.
 - **Result:** of 110 lines, 96 report recorded results and 14 report UNKNOWN. In 4
   of those, the installed Shaka updated during the run. In another 4, heavy machine
-  load broke timing tests.
+  load broke timing tests. The other 6 were not traced.
 - **Limit:** [#923](https://github.com/shakacode/shaka/pull/923) added a line for
   missing reviewers, and it counted only the result files the agent passed. #984
   traced all 8 such lines: 6 were false, and on 2 the agent never ran the second
@@ -249,8 +249,8 @@ predates this work.
   asks a fresh-context reviewer to disprove a claim. The Code Nobody Reads adds that a
   second copy of the same model shares the first one's blind spots. Tan's skills also
   use a second model family.
-- **In Shaka:** this predates the reading. A reviewer from another provider reads each
-  commit before push. The Verification line names who reviewed the head.
+- **In Shaka:** this predates the reading. Shaka prefers a reviewer from another provider, who reads
+  each commit before push. The Verification line names who reviewed the head.
 - **Result:** Codex reported 37 of the 102 defects that local review found, defects
   Claude did not report ([review process study](review-process-study.md)).
 - **Limit:** #984 found 2 PRs where the agent ran one reviewer, because the helper's
