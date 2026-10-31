@@ -58,7 +58,7 @@ module PromptShowFixture
   # A commit on another branch whose settings drop the replacement prompt.
   def preview_commit(root, review)
     git!(root, 'switch', '--quiet', '-c', 'settings-preview')
-    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(review)))
+    File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(seam(review)))
     commit!(root, 'preview settings')
     git!(root, 'rev-parse', 'HEAD').strip.tap { git!(root, 'switch', '--quiet', '-') }
   end

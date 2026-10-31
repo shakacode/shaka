@@ -32,18 +32,13 @@ module Shaka
 
       attr_reader :commands
 
-      def initialize(root:, data:, available_commands: nil, candidate_commands: true,
-                     selection: Configuration::Layout::Selection.new(policy: Configuration::Layout::LEGACY,
-                                                                     candidate: Configuration::Layout::LEGACY),
-                     &prompt_validator)
+      def initialize(root:, data:, available_commands: nil, candidate_commands: true, &prompt_validator)
         @root = root
         @data = data
         @available_commands = available_commands
         @candidate_commands = candidate_commands
         @prompt_validator = prompt_validator
-        @layout = selection.policy
-        @candidate_layout = selection.candidate
-        @config_path = @layout.contract
+        @config_path = Configuration::Paths::CONTRACT
       end
 
       def validate
@@ -91,8 +86,7 @@ module Shaka
 
       def validate_commands
         @commands = CommandSchema.new(root: @root, available_commands: @available_commands,
-                                      candidate_commands: @candidate_commands, layout: @layout,
-                                      candidate_layout: @candidate_layout).validate
+                                      candidate_commands: @candidate_commands).validate
       end
 
       def validate_review

@@ -21,26 +21,26 @@ module SeamMigrateHelpers
     JSON.parse(output)
   end
 
-  def with_legacy_repository(fixture)
+  def with_predecessor_repository(fixture)
     Dir.mktmpdir('shaka-seam-migrate') do |root|
       install_wrappers(root)
-      File.write(File.join(root, '.agents/agent-workflow.yml'), File.read(File.join(FIXTURES, fixture)))
+      File.write(File.join(root, '.agents/shaka/config.yml'), File.read(File.join(FIXTURES, fixture)))
       sha = commit_repository(root)
       yield root, sha, snapshot(root)
     end
   end
 
   def install_wrappers(root)
-    FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+    FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
     %w[setup validate test].each do |name|
-      path = File.join(root, '.agents/bin', name)
+      path = File.join(root, '.agents/shaka/bin', name)
       File.write(path, "#!/bin/sh\nexit 0\n")
       File.chmod(0o755, path)
     end
   end
 
   def rewrite_yaml(root)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     data = YAML.safe_load_file(path)
     File.write(path, YAML.dump(yield(data)))
     commit_repository(root)
@@ -80,7 +80,7 @@ class SeamMigrateHelpTest < Minitest::Test
   end
 
   def test_plan_and_apply_cannot_be_combined
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, sha|
       _output, error, status = migrate(root, sha, '--plan', '--apply')
 
       refute_predicate status, :success?
@@ -93,7 +93,7 @@ class SeamMigratePlanTest < Minitest::Test
   include SeamMigrateHelpers
 
   def test_plan_is_the_default_and_writes_nothing
-    with_legacy_repository('react_on_rails_shape.yml') do |root, sha, before|
+    with_predecessor_repository('react_on_rails_shape.yml') do |root, sha, before|
       report = migrate_report(root, sha)
       validation = report.fetch('validation')
 
@@ -106,7 +106,7 @@ class SeamMigratePlanTest < Minitest::Test
   end
 
   def test_react_on_rails_shape_classifies_fields_without_inferring_review_or_merge
-    with_legacy_repository('react_on_rails_shape.yml') do |root, sha|
+    with_predecessor_repository('react_on_rails_shape.yml') do |root, sha|
       report = migrate_report(root, sha)
 
       assert_ror_classification(report)
@@ -116,7 +116,7 @@ class SeamMigratePlanTest < Minitest::Test
   end
 
   def test_control_plane_flow_shape_retires_github_facts_and_keeps_typed_policy
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, sha|
       report = migrate_report(root, sha)
 
       assert_cpf_classification(report)
@@ -126,7 +126,7 @@ class SeamMigratePlanTest < Minitest::Test
   end
 
   def test_seam_required_checks_are_retained
-    with_legacy_repository('control_plane_flow_shape.yml') do |root|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root|
       sha = rewrite_yaml(root) { |data| data.merge('merge' => data['merge'].merge('required_checks' => ['checks'])) }
       report = migrate_report(root, sha)
 
@@ -136,7 +136,7 @@ class SeamMigratePlanTest < Minitest::Test
   end
 
   def test_plan_blocks_invalid_seam_required_checks
-    with_legacy_repository('control_plane_flow_shape.yml') do |root|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root|
       sha = rewrite_yaml(root) { |data| data.merge('merge' => data['merge'].merge('required_checks' => [])) }
 
       assert_includes migrate_report(root, sha).fetch('blocking'), 'merge.required_checks must not be empty'
@@ -144,13 +144,13 @@ class SeamMigratePlanTest < Minitest::Test
   end
 
   def test_command_role_collision_chooses_the_stricter_temporary_behavior
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('commands' => swapped_commands) }
       collision = migrate_report(root, sha).fetch('command_collisions').find { |item| item.fetch('role') == 'test' }
 
       refute_nil collision
       assert_includes collision.fetch('temporary_behavior'), 'stricter'
-      assert_includes collision.fetch('temporary_behavior'), '.agents/bin/validate'
+      assert_includes collision.fetch('temporary_behavior'), '.agents/shaka/bin/validate'
     end
   end
 
@@ -175,7 +175,8 @@ class SeamMigratePlanTest < Minitest::Test
   end
 
   def swapped_commands
-    { 'setup' => '.agents/bin/setup', 'validate' => '.agents/bin/test', 'test' => '.agents/bin/validate' }
+    { 'setup' => '.agents/shaka/bin/setup', 'validate' => '.agents/shaka/bin/test',
+      'test' => '.agents/shaka/bin/validate' }
   end
 end
 
@@ -183,7 +184,7 @@ class SeamMigrateApplyTest < Minitest::Test
   include SeamMigrateHelpers
 
   def test_unknown_keys_block_rather_than_guess
-    with_legacy_repository('react_on_rails_shape.yml') do |root, _sha|
+    with_predecessor_repository('react_on_rails_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('mystery_policy' => 'do-not-guess') }
 
       assert_includes migrate_report(root, sha).fetch('blocking'), 'mystery_policy'
@@ -194,7 +195,7 @@ class SeamMigrateApplyTest < Minitest::Test
   end
 
   def test_apply_refuses_when_review_or_merge_cannot_be_established
-    with_legacy_repository('react_on_rails_shape.yml') do |root, sha, before|
+    with_predecessor_repository('react_on_rails_shape.yml') do |root, sha, before|
       _output, error, status = migrate(root, sha, '--apply')
 
       refute_predicate status, :success?
@@ -204,38 +205,23 @@ class SeamMigrateApplyTest < Minitest::Test
   end
 
   def test_apply_is_atomic_when_a_destination_already_exists
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
-      yaml = File.read(File.join(root, '.agents/agent-workflow.yml'))
-      File.write(File.join(root, '.agents/shaka.md'), "repository owned pointer\n")
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, sha|
+      yaml = File.read(File.join(root, '.agents/shaka/config.yml'))
+      File.symlink('elsewhere', File.join(root, '.agents/shaka.md'))
       _output, error, status = migrate(root, sha, '--apply')
 
       refute_predicate status, :success?
       assert_includes error, '.agents/shaka.md'
-      assert_equal "repository owned pointer\n", File.read(File.join(root, '.agents/shaka.md'))
-      assert_equal yaml, File.read(File.join(root, '.agents/agent-workflow.yml'))
-    end
-  end
-
-  def test_apply_refuses_a_new_configuration_beside_the_legacy_destination
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
-      modern = File.join(root, '.agents/shaka/config.yml')
-      FileUtils.mkdir_p(File.dirname(modern))
-      File.write(modern, "version: 1\n")
-      before = snapshot(root)
-
-      _output, error, status = migrate(root, sha, '--apply')
-
-      refute_predicate status, :success?
-      assert_match(%r{\.agents/agent-workflow.yml.*\.agents/shaka/config.yml}, error)
-      assert_equal before, snapshot(root)
+      assert_equal 'elsewhere', File.readlink(File.join(root, '.agents/shaka.md'))
+      assert_equal yaml, File.read(File.join(root, '.agents/shaka/config.yml'))
     end
   end
 
   def test_apply_restores_original_contract_mode
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
-      yaml = File.join(root, '.agents/agent-workflow.yml')
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, sha|
+      yaml = File.join(root, '.agents/shaka/config.yml')
       File.chmod(0o600, yaml)
-      File.chmod(0o644, File.join(root, '.agents/bin/validate'))
+      File.chmod(0o644, File.join(root, '.agents/shaka/bin/validate'))
       migrate(root, sha, '--apply')
 
       assert_equal 0o600, File.stat(yaml).mode & 0o777
@@ -243,10 +229,10 @@ class SeamMigrateApplyTest < Minitest::Test
   end
 
   def test_apply_writes_a_typed_seam_and_keeps_repository_wrappers
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
-      wrapper = File.read(File.join(root, '.agents/bin/validate'))
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, sha|
+      wrapper = File.read(File.join(root, '.agents/shaka/bin/validate'))
       report = migrate_report(root, sha, '--apply')
-      config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
+      config = YAML.safe_load_file(File.join(root, '.agents/shaka/config.yml'))
 
       assert_typed_apply(root, report, config, wrapper)
     end
@@ -275,7 +261,7 @@ class SeamMigrateApplyTest < Minitest::Test
     assert_includes File.read(File.join(root, '.agents/shaka.md')), 'Generated by shaka seam migrate.'
     refute_includes File.read(File.join(root, '.agents/shaka.md')), 'Generated by `shaka seam init`'
     refute_includes File.read(File.join(root, '.agents/shaka.md')), '.agents/README.md'
-    assert_equal wrapper, File.read(File.join(root, '.agents/bin/validate'))
+    assert_equal wrapper, File.read(File.join(root, '.agents/shaka/bin/validate'))
   end
 end
 
@@ -283,7 +269,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   include SeamMigrateHelpers
 
   def test_matching_policy_flags_keep_established_reviewers
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, sha|
       report = migrate_report(root, sha, '--review-policy', 'none', '--merge-preference', 'ask')
       reviewers = report.dig('established', 'review', 'local_review_agents')
 
@@ -294,7 +280,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 
   def test_policy_flags_cannot_override_established_merge_preference
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, sha|
       _output, error, status = migrate(root, sha, '--apply', '--merge-preference', 'auto')
 
       refute_predicate status, :success?
@@ -303,7 +289,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 
   def test_non_hash_branches_block
-    with_legacy_repository('react_on_rails_shape.yml') do |root, _sha|
+    with_predecessor_repository('react_on_rails_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('branches' => '{login}-cursor/1-demo') }
 
       assert_includes migrate_report(root, sha).fetch('blocking'), 'branches'
@@ -311,7 +297,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 
   def test_unsupported_predecessor_version_blocks
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('version' => 2) }
 
       assert_includes migrate_report(root, sha).fetch('blocking'), 'version'
@@ -319,7 +305,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 
   def test_missing_review_check_blocks_before_apply
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) do |data|
         data.merge('review' => { 'required' => 'always' })
       end
@@ -329,7 +315,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 
   def test_review_check_flag_clears_blocking
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => always_review_without_check(data)) }
       report = migrate_report(root, sha, *review_check_flags)
 
@@ -339,10 +325,10 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 
   def test_review_check_flag_applies_the_named_check
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => always_review_without_check(data)) }
       applied = migrate_report(root, sha, '--apply', *review_check_flags)
-      config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
+      config = YAML.safe_load_file(File.join(root, '.agents/shaka/config.yml'))
 
       assert_equal 'apply', applied.fetch('mode')
       assert_equal ['example-review'], config.dig('review', 'ci_review_jobs')
@@ -350,7 +336,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 
   def test_old_and_new_spellings_of_one_review_field_block
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => colliding_review(data)) }
       blocking = migrate_report(root, sha).fetch('blocking')
 
@@ -360,7 +346,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 
   def test_setup_collision_names_the_setup_adapter
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('commands' => setup_collision_commands) }
       collision = migrate_report(root, sha).fetch('command_collisions').find { |item| item.fetch('role') == 'setup' }
 
@@ -371,18 +357,18 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 
   def test_non_mapping_yaml_reports_blocking_without_a_stack_trace
-    with_legacy_repository('react_on_rails_shape.yml') do |root, _sha|
-      File.write(File.join(root, '.agents/agent-workflow.yml'), "---\n- not-a-mapping\n")
+    with_predecessor_repository('react_on_rails_shape.yml') do |root, _sha|
+      File.write(File.join(root, '.agents/shaka/config.yml'), "---\n- not-a-mapping\n")
       sha = commit_repository(root)
       output, error, status = migrate(root, sha)
 
       assert_predicate status, :success?, error
-      assert_includes JSON.parse(output).fetch('blocking'), '.agents/agent-workflow.yml'
+      assert_includes JSON.parse(output).fetch('blocking'), '.agents/shaka/config.yml'
     end
   end
 
   def setup_collision_commands
-    { 'setup' => 'bin/bootstrap', 'validate' => '.agents/bin/validate', 'test' => '.agents/bin/test' }
+    { 'setup' => 'bin/bootstrap', 'validate' => '.agents/shaka/bin/validate', 'test' => '.agents/shaka/bin/test' }
   end
 
   def colliding_review(data)
@@ -404,7 +390,7 @@ class SeamMigratePreviousCiJobKeyTest < Minitest::Test
   include SeamMigrateHelpers
 
   def test_previous_ci_agent_list_becomes_ci_jobs
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) do |data|
         data.merge('review' => { 'required' => 'always', 'ci_review_agents' => ['claude-review'],
                                  'reviewers' => data.dig('review', 'reviewers') })
@@ -417,7 +403,7 @@ class SeamMigratePreviousCiJobKeyTest < Minitest::Test
   end
 
   def test_previous_ci_agent_scalar_names_the_required_list_shape
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) do |data|
         data.merge('review' => { 'required' => 'always', 'ci_review_agents' => 'claude-review',
                                  'reviewers' => data.dig('review', 'reviewers') })
@@ -434,7 +420,7 @@ class SeamMigrateCiJobListTest < Minitest::Test
   include SeamMigrateHelpers
 
   def test_a_string_under_the_current_ci_key_blocks
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => scalar_current_review(data)) }
       report = migrate_report(root, sha)
 
@@ -444,7 +430,7 @@ class SeamMigrateCiJobListTest < Minitest::Test
   end
 
   def test_a_legacy_check_string_becomes_one_list_entry
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_check_review(data, 'check')) }
       report = migrate_report(root, sha)
 
@@ -454,7 +440,7 @@ class SeamMigrateCiJobListTest < Minitest::Test
   end
 
   def test_a_string_ci_key_still_blocks_when_review_is_not_required
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => unrequired_scalar_review(data)) }
       blocking = migrate_report(root, sha).fetch('blocking')
 
@@ -463,7 +449,7 @@ class SeamMigrateCiJobListTest < Minitest::Test
   end
 
   def test_a_blank_ci_job_name_blocks_the_plan
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => blank_ci_review(data)) }
       blocking = migrate_report(root, sha).fetch('blocking')
 
@@ -472,7 +458,7 @@ class SeamMigrateCiJobListTest < Minitest::Test
   end
 
   def test_ci_review_jobs_block_when_review_is_not_required
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => unrequired_ci_review(data)) }
       blocking = migrate_report(root, sha).fetch('blocking')
 
@@ -481,7 +467,7 @@ class SeamMigrateCiJobListTest < Minitest::Test
   end
 
   def test_an_array_under_a_legacy_check_key_blocks
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_array_review(data)) }
       report = migrate_report(root, sha)
 
@@ -491,7 +477,7 @@ class SeamMigrateCiJobListTest < Minitest::Test
   end
 
   def test_a_legacy_key_listed_first_names_that_key_in_the_collision
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_first_collision(data)) }
       blocking = migrate_report(root, sha).fetch('blocking')
 
@@ -501,7 +487,7 @@ class SeamMigrateCiJobListTest < Minitest::Test
   end
 
   def test_a_legacy_github_action_check_string_becomes_one_list_entry
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_check_review(data, 'github_action_check')) }
       report = migrate_report(root, sha)
 
@@ -547,24 +533,24 @@ class SeamMigrateOptionalCommandTest < Minitest::Test
   include SeamMigrateHelpers
 
   def test_optional_command_collision_names_the_hyphenated_entry
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('commands' => optional_collision_commands) }
       collisions = migrate_report(root, sha).fetch('command_collisions')
       collision = collisions.find { |item| item.fetch('role') == 'validate_local' }
 
       refute_nil collision
       assert_includes collision.fetch('temporary_behavior'), 'script/fast'
-      assert_includes collision.fetch('temporary_behavior'), '.agents/bin/validate-local'
+      assert_includes collision.fetch('temporary_behavior'), '.agents/shaka/bin/validate-local'
     end
   end
 
   def test_missing_optional_entry_point_blocks_apply
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('commands' => optional_collision_commands) }
       before = snapshot(root)
       report = migrate_report(root, sha)
 
-      assert_includes report.fetch('blocking'), '.agents/bin/validate-local'
+      assert_includes report.fetch('blocking'), '.agents/shaka/bin/validate-local'
       _output, error, status = migrate(root, sha, '--apply')
       refute_predicate status, :success?
       assert_includes error, 'validate-local'
@@ -573,49 +559,49 @@ class SeamMigrateOptionalCommandTest < Minitest::Test
   end
 
   def test_worktree_optional_entry_clears_blocking
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('commands' => optional_collision_commands) }
       install_optional_wrapper(root)
       report = migrate_report(root, sha)
 
-      refute_includes report.fetch('blocking'), '.agents/bin/validate-local'
+      refute_includes report.fetch('blocking'), '.agents/shaka/bin/validate-local'
       assert_equal 'apply', migrate_report(root, sha, '--apply').fetch('mode')
     end
   end
 
   def test_from_ref_optional_entry_does_not_replace_the_worktree
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       install_optional_wrapper(root)
       sha = rewrite_yaml(root) { |data| data.merge('commands' => optional_collision_commands) }
-      File.delete(File.join(root, '.agents/bin/validate-local'))
+      File.delete(File.join(root, '.agents/shaka/bin/validate-local'))
 
-      assert_includes migrate_report(root, sha).fetch('blocking'), '.agents/bin/validate-local'
+      assert_includes migrate_report(root, sha).fetch('blocking'), '.agents/shaka/bin/validate-local'
     end
   end
 
   def test_operational_command_paths_are_not_removable
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('commands' => operational_commands) }
 
-      refute_includes migrate_report(root, sha).fetch('adapters_eligible_for_removal'), '.agents/bin/docs'
+      refute_includes migrate_report(root, sha).fetch('adapters_eligible_for_removal'), '.agents/shaka/bin/docs'
     end
   end
 
   def optional_collision_commands
     {
-      'setup' => '.agents/bin/setup',
-      'validate' => '.agents/bin/validate',
-      'test' => '.agents/bin/test',
+      'setup' => '.agents/shaka/bin/setup',
+      'validate' => '.agents/shaka/bin/validate',
+      'test' => '.agents/shaka/bin/test',
       'validate_local' => 'script/fast'
     }
   end
 
   def operational_commands
-    optional_collision_commands.merge('docs' => '.agents/bin/docs')
+    optional_collision_commands.merge('docs' => '.agents/shaka/bin/docs')
   end
 
   def install_optional_wrapper(root)
-    path = File.join(root, '.agents/bin/validate-local')
+    path = File.join(root, '.agents/shaka/bin/validate-local')
     File.write(path, "#!/bin/sh\nexit 0\n")
     File.chmod(0o755, path)
   end
@@ -625,7 +611,7 @@ class SeamMigrateRecoveryLocationsTest < Minitest::Test
   include SeamMigrateHelpers
 
   def test_previous_privacy_choice_survives_the_rename
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('recovery' => { 'workspace_path' => false }) }
       report = migrate_report(root, sha)
 
@@ -635,7 +621,7 @@ class SeamMigrateRecoveryLocationsTest < Minitest::Test
   end
 
   def test_empty_previous_group_keeps_default_location_behavior
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('recovery' => {}) }
       report = migrate_report(root, sha)
 
@@ -645,7 +631,7 @@ class SeamMigrateRecoveryLocationsTest < Minitest::Test
   end
 
   def test_intermediate_location_name_preserves_the_privacy_choice
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('recovery' => { 'publish_locations' => false }) }
       report = migrate_report(root, sha)
 
@@ -655,7 +641,7 @@ class SeamMigrateRecoveryLocationsTest < Minitest::Test
   end
 
   def test_two_old_location_names_block_instead_of_choosing_one
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) do |data|
         data.merge('recovery' => { 'workspace_path' => false, 'publish_locations' => true })
       end
@@ -665,7 +651,7 @@ class SeamMigrateRecoveryLocationsTest < Minitest::Test
   end
 
   def test_plan_moves_to_agent_instructions_instead_of_being_silently_discarded
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('plan' => 'requirements.md') }
       report = migrate_report(root, sha)
 
@@ -675,16 +661,16 @@ class SeamMigrateRecoveryLocationsTest < Minitest::Test
   end
 
   def test_applied_migration_keeps_locations_private
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, sha|
       migrate_report(root, sha, '--apply')
-      config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
+      config = YAML.safe_load_file(File.join(root, '.agents/shaka/config.yml'))
 
       assert_equal({ 'include_checkout_path' => false }, config.fetch('wip'))
     end
   end
 
   def test_conflicting_location_keys_block_instead_of_selecting_a_value
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) do |data|
         data.merge('recovery' => { 'workspace_path' => false }, 'wip' => { 'include_locations' => true })
       end
@@ -700,10 +686,10 @@ class SeamMigrateReviewWaitTest < Minitest::Test
 
   def test_migration_preserves_all_and_conservatively_maps_swift_to_one
     { 'swift' => 'one', 'thorough' => 'all' }.each do |pace, expected|
-      with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
         sha = rewrite_yaml(root) { |data| data.merge('review' => data.fetch('review').merge('pace' => pace)) }
         migrate_report(root, sha, '--apply')
-        config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
+        config = YAML.safe_load_file(File.join(root, '.agents/shaka/config.yml'))
 
         assert_equal expected, config.dig('review', 'ci_review_wait')
         refute config.fetch('review').key?('pace')
@@ -714,7 +700,7 @@ class SeamMigrateReviewWaitTest < Minitest::Test
   def test_conflicting_wait_keys_block_in_either_order
     [{ 'pace' => 'thorough', 'ci_review_wait' => 'none' },
      { 'ci_review_wait' => 'none', 'pace' => 'thorough' }].each do |settings|
-      with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
         sha = rewrite_yaml(root) { |data| data.merge('review' => data.fetch('review').merge(settings)) }
 
         assert_includes migrate_report(root, sha).fetch('blocking'),
@@ -724,10 +710,110 @@ class SeamMigrateReviewWaitTest < Minitest::Test
   end
 
   def test_unknown_pace_blocks_instead_of_disabling_the_wait
-    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => data.fetch('review').merge('pace' => 'fast')) }
 
       assert_includes migrate_report(root, sha).fetch('blocking'), 'review.pace must be swift or thorough'
+    end
+  end
+end
+
+class SeamMigrateCurrentLayoutTest < Minitest::Test
+  include SeamMigrateHelpers
+
+  CURRENT_SETTINGS = {
+    'version' => 1, 'repo_prefix' => 'CUR',
+    'review' => { 'required' => 'always', 'ci_review_jobs' => ['review'], 'startup_check' => false,
+                  'local_max_rounds' => 3 },
+    'merge' => { 'preference' => 'ask', 'limits' => { 'max_commits' => 9 }, 'hold_labels' => ['hold'] },
+    'checkpoint' => { 'enabled' => false }, 'pr_description' => { 'show_shaka_credit' => false },
+    'prose_limits' => { 'max_sentence_words' => 35 }
+  }.freeze
+
+  def test_current_settings_carry_over_on_apply
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { CURRENT_SETTINGS }
+      assert_empty migrate_report(root, sha).fetch('blocking')
+
+      _output, error, status = migrate(root, sha, '--apply')
+
+      assert_predicate status, :success?, error
+      assert_equal CURRENT_SETTINGS, YAML.safe_load_file(File.join(root, '.agents/shaka/config.yml'))
+    end
+  end
+
+  def test_an_invalid_current_setting_blocks_in_the_plan
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { CURRENT_SETTINGS.merge('checkpoint' => { 'enabled' => 'yes' }) }
+
+      assert(migrate_report(root, sha).fetch('blocking').any? { |entry| entry.include?('checkpoint.enabled') })
+    end
+  end
+
+  def test_a_missing_prompt_file_blocks_in_the_plan
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      review = CURRENT_SETTINGS.fetch('review').merge('replacement_prompt_file' => '.agents/missing.md')
+      sha = rewrite_yaml(root) { CURRENT_SETTINGS.merge('review' => review) }
+
+      assert(migrate_report(root, sha).fetch('blocking').any? { |entry| entry.include?('.agents/missing.md') })
+    end
+  end
+
+  def test_an_empty_optional_setting_is_dropped
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { CURRENT_SETTINGS.merge('repo_prefix' => nil) }
+
+      assert_empty migrate_report(root, sha).fetch('blocking')
+      assert_predicate migrate(root, sha, '--apply').last, :success?
+      refute YAML.safe_load_file(File.join(root, '.agents/shaka/config.yml')).key?('repo_prefix')
+    end
+  end
+
+  def test_an_existing_pointer_stays_and_rollback_leaves_it_alone
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      pointer = File.join(root, '.agents/shaka.md')
+      File.write(pointer, "our notes\n")
+      sha = rewrite_yaml(root) { CURRENT_SETTINGS }
+      refute_includes migrate_report(root, sha).fetch('rollback'), '.agents/shaka.md'
+
+      assert_predicate migrate(root, sha, '--apply').last, :success?
+      assert_equal "our notes\n", File.read(pointer)
+    end
+  end
+
+  def test_settings_at_the_removed_path_block_the_migration
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      FileUtils.mv(File.join(root, '.agents/shaka/config.yml'), File.join(root, '.agents/agent-workflow.yml'))
+      system('git', '-C', root, 'add', '-A', exception: true)
+      system('git', '-C', root, '-c', 'user.name=T', '-c', 'user.email=t@example.com', 'commit', '-qm', 'old',
+             exception: true)
+      sha = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
+
+      _output, error, status = migrate(root, sha)
+
+      refute_predicate status, :success?
+      assert_includes error, 'Cannot read .agents/shaka/config.yml'
+    end
+  end
+
+  def test_the_earlier_wip_location_key_moves_to_the_checkout_path_setting
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('wip' => { 'include_locations' => false }) }
+      report = migrate_report(root, sha)
+
+      assert_equal({ 'include_checkout_path' => false }, report.fetch('established').fetch('wip'))
+      assert_includes report.fetch('retained'), 'wip.include_checkout_path'
+    end
+  end
+
+  def test_the_earlier_wip_location_key_beside_the_current_one_blocks
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) do |data|
+        data.merge('wip' => { 'include_locations' => false, 'include_checkout_path' => true })
+      end
+
+      assert_includes migrate_report(root, sha).fetch('blocking'),
+                      'wip.include_locations must be the only boolean wip setting'
     end
   end
 end

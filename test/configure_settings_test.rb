@@ -27,7 +27,7 @@ class ConfigureSettingsCoverageTest < Minitest::Test
            { 'review' => ['required', *SCHEMA::Schema::OPTIONAL_REVIEW_KEYS],
              'merge' => ['preference', *SCHEMA::MergeSchema::OPTIONAL],
              'pr_description' => SCHEMA::PrDescriptionSchema::KEYS, 'branches' => SCHEMA::BranchSchema::KEYS,
-             'wip' => SCHEMA::WipSchema::KEYS }.flat_map { |section, names| names.map { |name| "#{section}.#{name}" } }
+             'wip' => [SCHEMA::WipSchema::KEY] }.flat_map { |section, names| names.map { |name| "#{section}.#{name}" } }
 
     assert_empty(keys.reject { |key| covered?(key) })
   end
@@ -42,7 +42,7 @@ class ConfigureSettingsCoverageTest < Minitest::Test
 
   # A key is covered by its own setting, a setting it falls under, or, for a section, a setting inside it.
   def covered?(key)
-    SETTINGS.flat_map { |setting| [setting.key, *setting.aliases] }.any? do |name|
+    SETTINGS.map(&:key).any? do |name|
       key == name || key.start_with?("#{name}.") || name.start_with?("#{key}.")
     end
   end
@@ -75,14 +75,6 @@ class ConfigureSettingsCommandTest < Minitest::Test
     end
   end
 
-  def test_an_earlier_setting_name_reports_as_set
-    with_trusted('wip' => { 'include_locations' => false }) do |root, ref|
-      row = rows(report(root, '--ref', ref)).fetch('wip.include_checkout_path')
-
-      assert_equal [true, 'wip.include_locations', false], row.values_at('set', 'set_as', 'effective')
-    end
-  end
-
   def test_a_selected_settings_preview_supplies_the_settings
     with_trusted do |root, ref|
       preview = preview_commit(root, 'repo_prefix' => 'PREV')
@@ -96,7 +88,7 @@ class ConfigureSettingsCommandTest < Minitest::Test
 
   def test_a_local_draft_reads_the_working_tree
     with_trusted do |root, _ref|
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam('repo_prefix' => 'DRFT')))
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(seam('repo_prefix' => 'DRFT')))
       document = report(root, '--local')
 
       assert_equal ['untrusted draft', true], document.values_at('source', 'draft')
@@ -127,7 +119,7 @@ class ConfigureSettingsCommandTest < Minitest::Test
 
   def preview_commit(root, overrides)
     git!(root, 'switch', '--quiet', '-c', 'settings-preview')
-    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(overrides)))
+    File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(seam(overrides)))
     commit!(root, 'preview')
     git!(root, 'rev-parse', 'HEAD').strip.tap { git!(root, 'switch', '--quiet', '-') }
   end

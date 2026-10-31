@@ -9,33 +9,25 @@ require_relative 'private_git_paths'
 
 module Shaka
   module Configuration
-    # One source snapshot chooses the contract and its complete command directory.
+    # Names the contract and its complete command directory, and checks they are real files.
     class Layout
-      Selection = Data.define(:policy, :candidate)
+      attr_reader :contract, :command_directory, :required, :optional
 
-      attr_reader :contract, :command_directory, :required, :optional, :legacy_optional
-
-      def initialize(contract:, command_directory:, required:, optional:, legacy_optional:)
+      def initialize(contract:, command_directory:, required:, optional:)
         @contract = contract
         @command_directory = command_directory
         @required = required
         @optional = optional
-        @legacy_optional = legacy_optional
       end
 
       def commands = required.merge(optional)
 
-      LEGACY = new(contract: Paths::CONTRACT, command_directory: Paths::COMMAND_DIRECTORY,
-                   required: Paths::REQUIRED_COMMANDS, optional: Paths::OPTIONAL_COMMANDS,
-                   legacy_optional: Paths::LEGACY_OPTIONAL_COMMANDS).freeze
-      NEW = new(contract: Paths::NEW_CONTRACT, command_directory: Paths::NEW_COMMAND_DIRECTORY,
-                required: Paths::NEW_REQUIRED_COMMANDS, optional: Paths::NEW_OPTIONAL_COMMANDS,
-                legacy_optional: Paths::NEW_LEGACY_OPTIONAL_COMMANDS).freeze
+      CURRENT = new(contract: Paths::CONTRACT, command_directory: Paths::COMMAND_DIRECTORY,
+                    required: Paths::REQUIRED_COMMANDS, optional: Paths::OPTIONAL_COMMANDS).freeze
 
       def self.worktree(root:, allow_missing: false)
         validate_root_directory!(root)
-        present = [LEGACY, NEW].select { |layout| entry?(File.join(root, layout.contract)) }
-        chosen = select(present, allow_missing:)
+        chosen = select(entry?(File.join(root, CURRENT.contract)), allow_missing:)
         validate_worktree!(root, chosen) if chosen
         chosen
       end
@@ -84,11 +76,8 @@ module Shaka
       end
 
       def self.commit_layout(root, sha, allow_missing, git)
-        present = [LEGACY, NEW].select do |layout|
-          _out, _error, status = git.call('-C', root, 'cat-file', '-e', "#{sha}:#{layout.contract}")
-          status.success?
-        end
-        chosen = select(present, allow_missing:)
+        _out, _error, status = git.call('-C', root, 'cat-file', '-e', "#{sha}:#{CURRENT.contract}")
+        chosen = select(status.success?, allow_missing:)
         validate_commit!(root, sha, chosen, git) if chosen
         chosen
       end
@@ -103,11 +92,10 @@ module Shaka
       end
 
       def self.select(present, allow_missing:)
-        raise Error, "Both #{LEGACY.contract} and #{NEW.contract} exist" if present.length == 2
-        return present.first if present.any?
+        return CURRENT if present
         return if allow_missing
 
-        raise Error, "Cannot find #{LEGACY.contract} or #{NEW.contract}"
+        raise Error, "Cannot find #{CURRENT.contract}"
       end
 
       def self.entry?(path)

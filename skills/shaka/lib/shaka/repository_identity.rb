@@ -3,7 +3,7 @@
 require_relative 'gitlab'
 
 module Shaka
-  # Legacy GitHub identity or an explicitly host-qualified GitLab evidence identity.
+  # Earlier GitHub identity or an explicitly host-qualified GitLab evidence identity.
   module RepositoryIdentity
     def self.valid?(value)
       return false unless value.is_a?(String)

@@ -48,13 +48,11 @@ module Shaka
     end
 
     def select_paths
-      @layout = sha ? Configuration::Layout.commit(root: @root, sha:) : Configuration::Layout.worktree(root: @root)
+      layout = sha ? Configuration::Layout.commit(root: @root, sha:) : Configuration::Layout.worktree(root: @root)
       @candidate_detected = if @candidate_commands
-                              sha ? Configuration::Layout.worktree(root: @root, allow_missing: true) : @layout
+                              sha ? Configuration::Layout.worktree(root: @root, allow_missing: true) : layout
                             end
-      @candidate_layout = @candidate_detected || @layout
-      @selection = Configuration::Layout::Selection.new(policy: @layout, candidate: @candidate_layout)
-      @config_path = @layout.contract
+      @config_path = layout.contract
     end
 
     private :select_paths
@@ -78,8 +76,8 @@ module Shaka
       @data.merge('commands' => commands, 'review' => review, 'merge' => merge, 'wip' => wip,
                   'paths' => { 'policy_configuration' => config_path,
                                'candidate_configuration' => @candidate_detected&.contract,
-                               'trusted_command_directory' => @layout.command_directory,
-                               'candidate_command_directory' => @candidate_layout.command_directory },
+                               'trusted_command_directory' => Configuration::Paths::COMMAND_DIRECTORY,
+                               'candidate_command_directory' => Configuration::Paths::COMMAND_DIRECTORY },
                   'opening_check' => opening_check, 'prose_limits' => prose_limits, 'pr_description' => pr_description)
     end
 
@@ -100,7 +98,7 @@ module Shaka
 
     def apply_schema
       schema = Schema.new(root: @root, data: @data, available_commands: @available_commands,
-                          candidate_commands: @candidate_commands, selection: @selection,
+                          candidate_commands: @candidate_commands,
                           &@prompt_validator)
       schema.validate
       @commands = schema.commands

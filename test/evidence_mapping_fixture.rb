@@ -30,7 +30,7 @@ module EvidenceMappingFixture
   def write_mapping_commands(root)
     FileUtils.mkdir_p(File.join(root, 'script'))
     write_mapping_selector(root)
-    File.write(File.join(root, '.agents/bin/validate'), "#!/bin/sh\nset -eu\nruby script/selector.rb \"$@\"\n")
+    File.write(File.join(root, '.agents/shaka/bin/validate'), "#!/bin/sh\nset -eu\nruby script/selector.rb \"$@\"\n")
   end
 
   def write_mapping_selector(root)

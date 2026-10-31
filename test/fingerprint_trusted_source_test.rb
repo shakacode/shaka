@@ -7,10 +7,10 @@ require 'fileutils'
 class FingerprintTrustedSourceTest < Minitest::Test
   def setup
     @root = Dir.mktmpdir('fingerprint-trusted')
-    FileUtils.mkdir_p(File.join(@root, '.agents/bin'))
-    File.write(File.join(@root, '.agents/bin/test'), 'test')
-    @settings = { 'commands' => { 'test' => '.agents/bin/test' }, 'review' => {}, 'opening_check' => {},
-                  'paths' => { 'policy_configuration' => '.agents/agent-workflow.yml' } }
+    FileUtils.mkdir_p(File.join(@root, '.agents/shaka/bin'))
+    File.write(File.join(@root, '.agents/shaka/bin/test'), 'test')
+    @settings = { 'commands' => { 'test' => '.agents/shaka/bin/test' }, 'review' => {}, 'opening_check' => {},
+                  'paths' => { 'policy_configuration' => '.agents/shaka/config.yml' } }
     @installation = { 'schema_version' => 1, 'version' => '1', 'source' => { 'kind' => 'uninstalled' } }
     system('git', '-C', @root, 'init', '--quiet', exception: true)
   end
@@ -18,8 +18,8 @@ class FingerprintTrustedSourceTest < Minitest::Test
   def teardown = FileUtils.remove_entry(@root)
 
   def commit_config(body)
-    File.write(File.join(@root, '.agents/agent-workflow.yml'), body)
-    system('git', '-C', @root, 'add', '.agents/agent-workflow.yml', exception: true)
+    File.write(File.join(@root, '.agents/shaka/config.yml'), body)
+    system('git', '-C', @root, 'add', '.agents/shaka/config.yml', exception: true)
     system('git', '-C', @root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
            'commit', '--quiet', '-m', 'config', exception: true)
     Open3.capture2('git', '-C', @root, 'rev-parse', 'HEAD').first.strip

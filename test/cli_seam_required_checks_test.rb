@@ -57,7 +57,7 @@ class CliSeamRequiredChecksTest < Minitest::Test
   end
 
   def drop_candidate_list(root)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     data = YAML.safe_load_file(path)
     data['merge'].delete('required_checks')
     File.write(path, YAML.dump(data))

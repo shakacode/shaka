@@ -13,7 +13,7 @@ shaka configure settings --root DIR --ref SHA
 ```
 
 Each row gives a setting's `effective` value, its packaged `default`, whether config.yml
-`set` it, and its `reference` section. `set_as` names an earlier setting name still in use.
+`set` it, and its `reference` section.
 A `default` of null means Shaka packages none; the reference says what happens when the
 setting is unset. `matches_default: true` says only that the value equals the default.
 Do not call such a setting removable: some settings are required, and naming a file can

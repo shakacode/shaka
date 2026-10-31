@@ -54,8 +54,8 @@ that names it and supersedes the old references before retriaging the earlier ba
 If an older helper has already broken a reference, publication names it as unavailable.
 
 `review record` preserves replaced findings as ordered `earlier_findings` snapshots
-and stamps the new findings. Public history projects supported fields and marks\nomitted metadata; complete legacy snapshots stay in the private ledger. Supply optional top-level `by` when recording an actor
-is supported by evidence. Legacy missing actors and times stay unknown. Use current
+and stamps the new findings. Public history projects supported fields and marks\nomitted metadata; complete earlier snapshots stay in the private ledger. Supply optional top-level `by` when recording an actor
+is supported by evidence. Earlier missing actors and times stay unknown. Use current
 Shaka to read or publish version 3 ledgers. Version 2 ledger writers refuse them,
 but their publishers can omit later assessments. Current readers refuse newer
 formats. Older unversioned writers cannot preserve triage history they were never

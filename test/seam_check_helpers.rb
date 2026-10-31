@@ -11,9 +11,9 @@ module SeamCheckHelpers
 
   def with_repository
     Dir.mktmpdir('shaka-seam') do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
       write_commands(root)
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config))
       yield root
     end
   end
@@ -23,7 +23,7 @@ module SeamCheckHelpers
   end
 
   def write_command(root, name)
-    path = File.join(root, '.agents/bin', name)
+    path = File.join(root, '.agents/shaka/bin', name)
     File.write(path, "#!/bin/sh\nexit 0\n")
     File.chmod(0o755, path)
   end

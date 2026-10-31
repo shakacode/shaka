@@ -18,11 +18,9 @@ module ConfigurationBoundaryFileIO
     merge_tree_proof.rb opening_parse.rb opening_check.rb local_review/bundle.rb call_log.rb install/directory_safety.rb
     opening_verdict_cache.rb recommendation.rb repos/home.rb review_prompt.rb usage/claude_usage.rb usage/codex_usage.rb
     usage/cursor_usage_store.rb usage/opencode_usage.rb usage/pi_usage.rb usage/rate_card.rb pr_watch/command.rb
-    checkpoint.rb workflow_config.rb seam/upgrade_plan.rb seam/upgrade_plan/inventory.rb seam/upgrade_plan/references.rb
-    seam/upgrade_plan/reference_patterns.rb seam/private_recovery.rb seam/private_recovery/copies.rb update_check.rb
+    checkpoint.rb workflow_config.rb seam/private_recovery.rb seam/private_recovery/copies.rb update_check.rb
     seam/private_recovery/preparation.rb seam/private_recovery/rotation.rb seam/private_recovery/identity.rb defaults.rb
-    seam/upgrade_plan/reference_dependencies.rb seam/upgrade_plan/continued_references.rb seam/upgrader/recovery.rb
-    seam/upgrade_plan/symlink_chain.rb seam/private_recovery/exclusion.rb seam/upgrader.rb seam/upgrader/filesystem.rb
+    seam/private_recovery/exclusion.rb
     seam/private_recovery/seed.rb seam/private_seed.rb ui_check.rb install/refusal.rb install/ruby_record.rb
     install/status_checkout.rb install/status_inventory.rb install/checkout_record.rb install/take_over.rb
     update_check/cache.rb install/session_hook.rb ruby_requirement.rb startup_notice/marks.rb
@@ -40,23 +38,23 @@ class ConfigurationBoundaryTest < Minitest::Test
   OTHER_PATHS = %w[install/locations.rb install/official.rb install/official_links.rb install/status_inventory.rb
                    merge_review_comparison.rb seam/initializer_readme.rb seam/pointer.rb canary/run.rb].freeze
   # Preview reads pinned renderer source; configuration still goes through its existing owner.
-  OTHER_GIT_READ = %w[local_review/criteria.rb local_review/commit_export.rb seam/upgrade_plan/indexed_references.rb
+  OTHER_GIT_READ = %w[local_review/criteria.rb local_review/commit_export.rb
                       publication/rendering_preview.rb].freeze
 
   def test_public_paths_remain_concrete_and_independent
     paths = Shaka::Configuration::Paths
-    assert_equal '.agents/agent-workflow.yml', paths::CONTRACT
-    assert_equal %w[.agents .agents/bin], [paths::DIRECTORY, paths::COMMAND_DIRECTORY]
+    assert_equal '.agents/shaka/config.yml', paths::CONTRACT
+    assert_equal %w[.agents .agents/shaka/bin], [paths::DIRECTORY, paths::COMMAND_DIRECTORY]
     assert_equal '.agents/shaka.md', paths::POINTER
     assert_equal '~/.agents/trusted-github-actors.yml', paths::MACHINE_ALLOWLIST
-    assert_equal '.agents/trusted-github-actors.yml', paths::REPOSITORY_ALLOWLIST
-    assert_equal '.agents/bin/validate', paths::REQUIRED_COMMANDS.fetch('validate')
-    assert_equal '.agents/bin/validate-local', paths::OPTIONAL_COMMANDS.fetch('validate_local')
-    assert_equal '.agents/bin/trigger-hosted-ci', paths::OPTIONAL_COMMANDS.fetch('trigger_hosted_ci')
+    assert_equal '.agents/shaka/trusted-github-actors.yml', paths::REPOSITORY_ALLOWLIST
+    assert_equal '.agents/shaka/bin/validate', paths::REQUIRED_COMMANDS.fetch('validate')
+    assert_equal '.agents/shaka/bin/validate-local', paths::OPTIONAL_COMMANDS.fetch('validate_local')
+    assert_equal '.agents/shaka/bin/trigger-hosted-ci', paths::OPTIONAL_COMMANDS.fetch('trigger_hosted_ci')
   end
 
   def test_repository_path_lookup_rejects_machine_and_command_collections
-    assert_equal '/repo/.agents/agent-workflow.yml', Shaka::Configuration.path('/repo', :CONTRACT)
+    assert_equal '/repo/.agents/shaka/config.yml', Shaka::Configuration.path('/repo', :CONTRACT)
     assert_raises(KeyError) { Shaka::Configuration.path('/repo', :MACHINE_ALLOWLIST) }
     assert_raises(KeyError) { Shaka::Configuration.path('/repo', :COMMANDS) }
   end
@@ -78,13 +76,13 @@ class ConfigurationBoundaryTest < Minitest::Test
 
       error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: 'HEAD') }
 
-      assert_includes error.message, 'Cannot read .agents/agent-workflow.yml'
+      assert_includes error.message, 'Cannot read .agents/shaka/config.yml'
     end
   end
 
   def test_invalid_trusted_contract_does_not_use_valid_worktree
     with_repository do |root|
-      contract = File.join(root, '.agents/agent-workflow.yml')
+      contract = File.join(root, '.agents/shaka/config.yml')
       valid = File.read(contract)
       File.write(contract, "review: [invalid\n")
       commit_fixture(root, '.')
@@ -92,7 +90,7 @@ class ConfigurationBoundaryTest < Minitest::Test
 
       assert_instance_of Shaka::RepositoryConfig, Shaka::Configuration.worktree(root:)
       error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: 'HEAD') }
-      assert_includes error.message, 'Invalid .agents/agent-workflow.yml'
+      assert_includes error.message, 'Invalid .agents/shaka/config.yml'
     end
   end
 

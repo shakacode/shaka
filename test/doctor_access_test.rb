@@ -104,7 +104,7 @@ class DoctorAccessTest < Minitest::Test
     Dir.mktmpdir do |dir|
       report, blocked = doctor(root: dir)
       assert_includes report, 'FAILED'
-      assert_includes report, '.agents/agent-workflow.yml'
+      assert_includes report, '.agents/shaka/config.yml'
       refute_includes report, 'rb_sysopen'
       assert blocked
     end
@@ -113,7 +113,7 @@ class DoctorAccessTest < Minitest::Test
   # Reading a FIFO would block the whole report, so the seam must be a regular file.
   def test_a_seam_path_that_is_not_a_regular_file_blocks
     Dir.mktmpdir do |dir|
-      FileUtils.mkdir_p(File.join(dir, '.agents', 'agent-workflow.yml'))
+      FileUtils.mkdir_p(File.join(dir, '.agents', 'shaka', 'config.yml'))
       report, blocked = doctor(root: dir)
       assert_includes report, 'FAILED'
       assert blocked
@@ -122,8 +122,8 @@ class DoctorAccessTest < Minitest::Test
 
   def test_an_unreadable_seam_blocks_with_its_validation_error
     Dir.mktmpdir do |dir|
-      FileUtils.mkdir_p(File.join(dir, '.agents'))
-      File.write(File.join(dir, '.agents', 'agent-workflow.yml'), "version: 99\n")
+      FileUtils.mkdir_p(File.join(dir, '.agents/shaka'))
+      File.write(File.join(dir, '.agents', 'shaka', 'config.yml'), "version: 99\n")
       report, blocked = doctor(root: dir)
       assert_includes report, 'FAILED'
       assert blocked

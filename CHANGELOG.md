@@ -10,6 +10,13 @@ from working is a major version.
 
 ## [Unreleased]
 
+### Breaking
+
+- Shaka reads settings only from `.agents/shaka/`. A repository that still has
+  `.agents/agent-workflow.yml` or `.agents/bin/` must run `shaka seam upgrade` with an
+  earlier Shaka and merge the result before updating. That command and
+  `wip.include_locations` are gone; set `wip.include_checkout_path` instead.
+
 ### Fixed
 
 - Show `ready in` and `merged in` on more PRs. The description now reads the task

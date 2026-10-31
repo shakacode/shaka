@@ -148,8 +148,7 @@ module Shaka
 
       # A missing contract is distinct from a present but unusable file.
       def missing_seam
-        paths = [Configuration::Paths::CONTRACT, Configuration::Paths::NEW_CONTRACT].join(' or ')
-        check('Repository seam', 'failed', "this root has no #{paths} regular file",
+        check('Repository seam', 'failed', "this root has no #{Configuration::Paths::CONTRACT} regular file",
               guidance: 'Choose a setup before the task. For a private trial in this clone, ask your coding ' \
                         'agent: Set up Shaka just for me. For team settings in a setup PR, ask: Configure this ' \
                         'repository for Shaka using its existing checks and merge policy ask. Or point `--root` ' \
