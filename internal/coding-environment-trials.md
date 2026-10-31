@@ -62,7 +62,7 @@ action the agent's own GitHub account performed in place of a maintainer.
 
 These observations were made on October 30, 2026, in one Claude Code cloud session
 at Shaka revision `3a95ad8a7bf22cf8eb7a6cdcb7e355878f8479f3`. They back the
-[Claude Code on the web guide](../docs/coding-agents.md#claude-code-on-the-web) and
+[Cloud agents guide](../docs/coding-agents.md#cloud-agents) and
 do not establish the same behavior in other images, network policies, or CLI versions.
 
 | Fact | Observed |
@@ -75,4 +75,4 @@ do not establish the same behavior in other images, network policies, or CLI ver
 | Codex sandbox | `codex sandbox` ran `git log` in the checkout and refused a write with `Read-only file system`. |
 | GitHub | `gh api repos/shakacode/shaka` succeeded with push permission. Every GraphQL call returned `HTTP 403: GitHub GraphQL is not available from Claude Code sessions`, so `shaka pr` failed and doctor's Repository access check failed. |
 | ChatGPT sign-in | `codex login --device-auth` printed `https://auth.openai.com/codex/device` and a one-time code that expires in 15 minutes. |
-| Not tested | A real OpenAI key, completing the ChatGPT sign-in and reviewing on it, a limited network policy, `/shaka` in a session started after the setup script, and whether a saved review consent survives into a new session. |
+| Not tested | A real OpenAI key, completing the ChatGPT sign-in and reviewing on it, a limited network policy, `/shaka` in a session started after a setup script, and whether a saved review consent survives into a new session. [Issue 277](https://github.com/shakacode/shaka/issues/277#issuecomment-6541487155) tracks the pending checks. |
