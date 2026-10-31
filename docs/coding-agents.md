@@ -48,13 +48,13 @@ session (use `$shaka` in Codex):
 /shaka https://github.com/OWNER/REPO/pull/123
 ```
 
-Claude Code on the web blocks GitHub's GraphQL API, which Shaka uses to read a
-pull request's state. `shaka pr` and doctor's repository check fail there, so use
-this prompt in a local session to finish the pull request. The session's `claude`
-CLI comes signed in, and a Claude review completed in a
-[one-session trial](https://github.com/shakacode/shaka/issues/277#issuecomment-6541487155)
-after Ruby 3.4 and Shaka were installed. For a change Claude wrote, that's a
-same-provider review.
+A [one-session trial](https://github.com/shakacode/shaka/issues/277#issuecomment-6541487155)
+of Claude Code on the web found GitHub's GraphQL API blocked. Shaka uses that API to
+read a pull request's state, so `shaka pr` and doctor's repository check failed. The
+cloud session's `claude` CLI came signed in, and a Claude review completed there
+after the session installed Shaka and Ruby 3.4, because its Ruby was older. For a
+change Claude wrote, that's a same-provider review. To finish the pull request, use
+the prompt above in a local session.
 
 ## Give consent once
 
