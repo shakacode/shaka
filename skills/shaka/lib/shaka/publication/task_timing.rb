@@ -3,9 +3,10 @@
 require_relative '../error'
 require_relative 'timeline_steps'
 require_relative 'run_summary'
+require_relative 'time_zone'
 
 module Shaka
-  # Retains the agent-reported task start separately from GitHub's first commit.
+  # Retains the task start, supplied or read from a usage report, separately from GitHub's first commit.
   module TaskTiming
     MARKER = /^<!-- task-timing (\{.*\}) -->$/
     FIELDS = %w[task_started_at first_validation_at].freeze
@@ -14,7 +15,7 @@ module Shaka
 
     def attach(timeline, content, pull, now: Time.now.utc)
       saved = TimelineSteps.same_repository?(pull) ? read(pull['body'], now) : {}
-      started = start(content['task_started_at'], saved, timeline, now)
+      started = start(content['task_started_at'], saved, timeline, now) || usage_start(content, timeline, now)
       first = first_validation(timeline, saved, now)
       timeline.merge('task_started_at' => started, 'first_validation_at' => first)
     end
@@ -27,6 +28,17 @@ module Shaka
 
       raise Error, 'Publication task_started_at needs an ISO 8601 timestamp no later than PR opening or now.'
     end
+
+    # A report covering the whole task opens when the work did, so it stands in for a start nobody supplied.
+    # One that opens after the pull request came from a later chat and cannot date the task.
+    def usage_start(content, timeline, now)
+      usage = content['usage']
+      records = usage.is_a?(Hash) ? Array(usage['records']).grep(Hash) : []
+      started = records.filter_map { |record| timestamp(record['from'], now) if whole_task?(record) }.min
+      started unless started && timeline['opened'] && started > timeline['opened']
+    end
+
+    def whole_task?(record) = record['covers_task'] == true && record['contribution'] == 'implementation'
 
     def first_validation(timeline, saved, now)
       previous = saved['first_validation_at']
@@ -57,19 +69,19 @@ module Shaka
       nil
     end
 
-    def summary(timeline)
+    def summary(timeline, zone = TimeZone::UTC)
       started, first = timeline.values_at('task_started_at', 'first_validation_at')
       return 'Time before first recorded validation: unavailable; task start was not recorded.' unless started
 
-      origin = "Task start (agent-reported): #{clock(started)} UTC."
+      origin = "Task start (agent-reported): #{clock(started, zone)}."
       return "#{origin} First recorded validation: unavailable." unless first
       return "#{origin} First recorded validation predates task start; interval unavailable." if first < started
 
       "**Before first recorded validation:** #{RunSummary.duration((first - started) * 1000)} · #{origin} " \
-        "Validation started: #{clock(first)} UTC. This interval overlaps the stretches above."
+        "Validation started: #{clock(first, zone)}. This interval overlaps the stretches above."
     end
 
-    def clock(time) = time.strftime('%Y-%m-%d %H:%M')
+    def clock(time, zone) = TimeZone.strftime(time, zone, '%Y-%m-%d %H:%M %Z')
 
     def hidden(timeline)
       data = timeline.slice(*FIELDS).compact.transform_values(&:iso8601)

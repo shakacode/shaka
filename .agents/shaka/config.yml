@@ -1,4 +1,5 @@
-# Shaka's settings for its own repository, kept short so you can copy it as an example.
+# Shaka's settings for its own repository, a browsable example of every setting.
+# A setting this repository leaves unset appears commented out with its default.
 # You rarely need to edit it; ask your agent: `$shaka Wait for all configured CI reviewers.`
 # Each comment gives the default; where this repository chooses otherwise, it says why.
 # All of Shaka's defaults in one place: skills/shaka/config/defaults.yml.
@@ -19,17 +20,21 @@ review:
     - claude-review
   ci_review_wait: one # Default. A word, not a number: none, one, or all CI review reports.
   local_max_rounds: 5 # Default: most commits one local review covers before the agent asks you.
-  # Default: none, so local_review_count (default 1) sets how many review. Ours: Claude and Codex
+  # Default: none, so local_review_count sets how many review. Ours: Claude and Codex
   # both review every commit, because a mistake in Shaka weakens checks on every project.
   provider_coverage: [anthropic, openai]
+  # local_review_count: 1 # Default: reviewers per commit. Set this or provider_coverage, not both.
   # Default: added after Shaka's code review prompt when it exists. Ours weighs the cost of
   # instruction changes (README.md); naming it here makes a missing file an error.
   custom_instructions_file: .agents/shaka/instructions/review.md
+  # Default: Shaka's review prompt. A file here replaces it; prefer custom_instructions_file.
+  # replacement_prompt_file: .agents/shaka/review-prompt.md
   # Default: none, so the implementing model reviews in a fresh session.
   # Ours: reviewers from other providers first, in this order.
   local_review_agents:
     - provider: anthropic
       model_family: claude # No model or effort: use the Claude CLI's defaults.
+      # replacement_prompt_file: .agents/shaka/review-prompt-claude.md # Default: review.replacement_prompt_file.
     - provider: openai
       model_family: codex
     # Optional: provider_coverage never picks these, so they run only when a task names one.
@@ -42,12 +47,15 @@ review:
       model_family: grok
 
 checkpoint: # Defaults: the final "did we build the right thing?" check before merge.
+  enabled: true # false skips the checkpoint; the PR then needs a visible opt-out note.
   reviewer: openai/codex
   model: gpt-6.1-sol
   effort: medium
   # Default: added after Shaka's checkpoint prompt when it exists. Ours holds the instruction-cost
   # check (README.md); naming it here makes a missing file an error.
   custom_instructions_file: .agents/shaka/instructions/checkpoint.md
+  # Default: Shaka's checkpoint prompt. A file here replaces it; prefer custom_instructions_file.
+  # replacement_prompt_file: .agents/shaka/checkpoint-prompt.md
 
 merge:
   preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.
@@ -72,6 +80,7 @@ pr_description:
   show_shaka_credit: true # Default: a small Shaka link under the PR summary.
   show_human_comments: true # Default: list comments people wrote on the PR.
   max_human_comments: 20 # Default: how many of those comments to list.
+  time_zone: America/Los_Angeles # Ours: the PR timings' readers. Default: UTC, or the user's zone when set.
   # Default: Shaka's shipped floors. The lowest human review effort a PR may claim, from the
   # files it changes. This list replaces the default one. Ours adds the first two floors and the
   # validation and install floor, names merge-gate and trust code in the trust floor, and
@@ -116,6 +125,7 @@ pr_description:
     # reviewer: openai/codex # Default: chosen like the code reviewers above.
     # Set reviewer with model; Grok and OpenRouter need a model.
     # model: gpt-6.1-sol # Default: the reviewer's CLI default.
+    # replacement_prompt_file: .agents/shaka/opening.md # Default: Shaka's opening prompt.
 
 # Default: none. Repository instructions the agent reads at three moments of each task.
 project_guidance:
@@ -129,5 +139,7 @@ prose_limits: # Defaults: word limits for PR descriptions and walkthroughs.
   max_description_words: 300
   words_per_changed_line: 4 # Text may use 150 words plus this many per changed line.
 
-# Commands live in bin/ beside this file: setup, test, and validate.
+# Commands live in bin/ beside this file: setup, test, and validate. Optional, unused here:
+# validate-local (faster checks before local review) and trigger-hosted-ci (needs validate-local).
+# Review timeouts and pr watch timing are command flags, not settings (runtime in defaults.yml).
 # Whose public comments the agent may read: trusted-github-actors.yml.

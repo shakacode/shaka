@@ -10,6 +10,7 @@ require_relative 'merge_review_floor'
 require_relative 'prose_limits'
 require_relative 'configuration/paths'
 require_relative 'configuration/layout'
+require_relative 'configuration/personal_settings'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
 require_relative 'repository_config/prompt_files'
@@ -80,6 +81,12 @@ module Shaka
                                'trusted_command_directory' => @layout.command_directory,
                                'candidate_command_directory' => @candidate_layout.command_directory },
                   'opening_check' => opening_check, 'prose_limits' => prose_limits, 'pr_description' => pr_description)
+    end
+
+    # The repository's choice wins, then the user's, then the shipped default.
+    def time_zone(home: Dir.home)
+      explicit_settings.dig('pr_description', 'time_zone') || Configuration::PersonalSettings.time_zone(home:) ||
+        pr_description['time_zone']
     end
 
     # The settings exactly as config.yml states them, before any default applies.

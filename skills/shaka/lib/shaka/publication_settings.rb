@@ -7,6 +7,8 @@ require_relative 'publication/feature_guard'
 require_relative 'opening_publication'
 require_relative 'publication/review_effort_floor'
 require_relative 'review_coverage'
+require_relative 'ready_time'
+require_relative 'local_review/ledger'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
@@ -27,10 +29,11 @@ module Shaka
       changed_paths = FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current, floors, review = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
+      current, floors, review, config = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
           review_effort_floor: ReviewEffortFloor.for(changed_paths, floors),
-          reviewer_shortfall: reviewer_shortfall(verdict, review))
+          reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone,
+          ready_gate: ReadyTime.gate(config, override: options[:ci_review_wait]))
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
@@ -39,16 +42,41 @@ module Shaka
       raise Error, 'Settings publication requires --ref and --root' unless ref && options[:root]
 
       verdict = Evidence::Verification.new(root:, ref:, repository:, head: pull.dig('head', 'sha'), paths:).run
-      return verdict if verdict['status'] == 'ready'
+      raise Error, 'Settings evidence is missing or stale; rerun affected validation/review' unless
+        verdict['status'] == 'ready'
 
-      raise Error, 'Settings evidence is missing or stale; rerun affected validation/review'
+      omitted_reviewers!(verdict)
+      verdict
     end
 
-    # Returns the public settings snapshot, the trusted review-effort floors, and the trusted review settings.
+    # A review run's result names its ledger round. Every reviewer of that round's batch read the same
+    # commit under the same settings, so leaving one's result out would publish it as not reviewing.
+    def self.omitted_reviewers!(verdict)
+      results = Array(verdict.dig('checks', 'review')).map { |entry| entry['original'] }
+      omitted = results.flat_map { |result| batch_reviewers(result) }.uniq -
+                results.map { |result| result['reviewer'].to_s.downcase }
+      return if omitted.empty?
+
+      raise Error, "#{omitted.join(', ')} also reviewed this commit in the review ledger; pass each " \
+                   "reviewer's saved result with its own --review-result. For a lost result, run " \
+                   '`review check` with that reviewer and its report from the ledger.'
+    end
+
+    # Reviewer ids fold case, as the ledger compares them.
+    def self.batch_reviewers(result)
+      ledger = result['ledger']
+      return [] unless ledger.is_a?(String) && File.file?(ledger)
+
+      LocalReviewLedger.new(ledger).batch_reviewers(result['round'], head: result['head'],
+                                                                     reviewer: result['reviewer']).map(&:downcase)
+    end
+
+    # Returns the public settings snapshot, the trusted review-effort floors, the trusted review
+    # settings, and the loaded settings. A bad personal time zone must not lose the first three.
     def self.current_settings(root:, ref:, repository:, required: false)
       OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
         config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
-        [current, config.pr_description['human_review_floors'], config.review]
+        [current, config.pr_description['human_review_floors'], config.review, config]
       end
     rescue Error, SystemCallError
       raise if required
@@ -66,8 +94,10 @@ module Shaka
     end
 
     def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil, # rubocop:disable Metrics/ParameterLists
-                   review_effort_floor: nil, reviewer_shortfall: nil)
+                   review_effort_floor: nil, reviewer_shortfall: nil, time_zone: nil, ready_gate: nil)
+      @ready_gate = ready_gate
       @reviewer_shortfall = reviewer_shortfall
+      @time_zone = time_zone
       @review_effort_floor = review_effort_floor
       @repository = repository
       @verdict = verdict
@@ -97,7 +127,8 @@ module Shaka
       rows.is_a?(Integer) && rows.positive? ? rows : RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('max_human_comments')
     end
 
-    # The bound results Verification reports and the floor the changed paths set; nil when not read.
-    attr_reader :verdict, :review_effort_floor
+    # The bound results Verification reports, the floor the changed paths set, and what gates readiness;
+    # nil when not read.
+    attr_reader :verdict, :review_effort_floor, :ready_gate
   end
 end

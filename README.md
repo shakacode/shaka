@@ -24,6 +24,9 @@ PR: what changed, how it was checked, and what is still open. At the
 
 [Read the Shaka documentation](https://shaka.shakacode.com/).
 
+[Watch the 52-second demo](https://www.youtube.com/watch?v=T6Fstx2fGJI):
+a homepage cleanup from a Claude prompt to a PR with intent, screenshots, and a checkpoint.
+
 <a id="example-prompts"></a>
 <a id="get-started"></a>
 

@@ -16,10 +16,13 @@ instructions costs time and money on later tasks, so we ask reviewers to judge
 whether new instructions are worth that cost, not only whether they are correct.
 
 - **Code review.** [instructions/review.md](instructions/review.md) adds that cost
-  check to the [default review prompt](../../skills/shaka/config/review-prompt.md), and
-  checks that people can reach any new procedure from the skill.
+  check to the [default review prompt](../../skills/shaka/config/review-prompt.md),
+  makes reviewers account for every removed or shortened passage, and checks that people
+  can reach any new procedure from the skill.
 - **Final check before merge.** [instructions/checkpoint.md](instructions/checkpoint.md)
   adds the same cost check to the
   [default checkpoint prompt](../../skills/shaka/config/post-implementation-prompt.md).
 - **Two reviewers.** Claude and Codex both read each reviewed commit; the default
   is one. A mistake here can weaken the checks Shaka runs on every project.
+- **Pacific time.** PR timings read in `America/Los_Angeles` for this project's
+  readers; the default is UTC.

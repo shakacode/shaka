@@ -20,6 +20,7 @@ require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/github/pull_timeline'
 require_relative '../lib/shaka/publication/timeline_steps'
 require_relative '../lib/shaka/attention'
+require_relative '../lib/shaka/merge_wait_review'
 require_relative '../lib/shaka/post_implementation/stale'
 require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
@@ -148,13 +149,18 @@ def rendered_description(described, github, pull, workflow_version, options)
   root = options.fetch(:root)
   carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
   settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
-  timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
-  timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
-  timeline = Shaka::TaskTiming.attach(timeline, carried, pull)
+  timeline = description_timeline(carried, github, pull, settings)
   rendered = render_description(carried, workflow_version, pull, settings, timeline, options, github)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
   Shaka::CheckpointRecommendation.require_decisions!(carried, pull, github.repository)
   [rendered, carried, usage_records]
+end
+
+def description_timeline(carried, github, pull, settings)
+  timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
+  timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
+  timeline = Shaka::TaskTiming.attach(timeline, carried, pull)
+  Shaka::ReadyTime.attach(timeline, github, settings.ready_gate)
 end
 
 # Evidence is prepared first; a preview can only replace the rendering that follows it.
@@ -208,7 +214,9 @@ def usage_banner
 end
 
 def merge_flags(flags, options)
-  flags.on('--review-waiver REASON', 'Merge without review evidence') { |value| options[:review_waiver] = value }
+  flags.on('--review-waiver REASON', 'Merge or label merge-ready without review evidence') do |value|
+    options[:review_waiver] = value
+  end
   flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
   confirmation_flags(flags, options)
   flags.on('--auto', 'Merge under Auto: every head check must pass; label auto-merged') { options[:auto] = true }
@@ -304,8 +312,8 @@ begin
     options.fetch(:head)
     require_merge_ref!(options)
   end
-  if options[:review_waiver] && command != 'merge'
-    raise OptionParser::InvalidArgument, '--review-waiver is only for merge'
+  if options[:review_waiver] && !(command == 'merge' || (command == 'attention' && options[:state] == 'merge'))
+    raise OptionParser::InvalidArgument, '--review-waiver is only for merge and attention --state merge'
   end
   if options[:empty_checks_confirmed_head] && command != 'merge'
     raise OptionParser::InvalidArgument, '--empty-checks-confirmed-head is only for merge'
@@ -354,7 +362,7 @@ begin
   native_wake = Shaka::CodexWake.check(options, repository, number) if command == 'handoff'
 
   github = Shaka::GitHub.new(repository, number)
-  if %w[pr walkthrough handoff squash-message].include?(command) && options[:ref]
+  if %w[pr walkthrough handoff squash-message attention].include?(command) && options[:ref]
     seam = Shaka::Configuration.resolve_source(root: options[:root] || Dir.pwd, ref: options[:ref]).first
   elsif command == 'merge'
     # Private trial settings grant no policy, so merge applies defaults and GitHub's gates under them.
@@ -367,6 +375,7 @@ begin
   end
 
   checkpoint = { enabled: !seam&.sha || seam.review.dig('post_implementation', 'enabled') != false }
+  merge_wait = { required: (seam.review['required'] if seam&.sha), root: options[:root] || Dir.pwd }
   if %w[merge squash-message].include?(command)
     head = options.fetch(:head)
     Shaka::PostImplementationEvidence.new(github, **checkpoint).call(head)
@@ -446,10 +455,14 @@ begin
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention'
              state = options.fetch(:state)
+             review = if state == 'merge'
+                        Shaka::MergeWaitReview.new(github, **merge_wait, waiver: options[:review_waiver])
+                                              .check!(github.snapshot)
+                      end
              labels = Shaka::Attention.new(github).call(state:)
              # Leaving the merge wait means the PR changes; a checkpoint for an older head must not look ready.
              if state == 'merge'
-               labels
+               labels.merge('review' => review)
              else
                labels.merge('stale_checkpoint' => Shaka::PostImplementationStale.new(github).call)
              end
@@ -457,7 +470,7 @@ begin
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))
              github.squash_comment(head: options.fetch(:head), message:)
            when 'handoff'
-             Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint)
+             Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint, review: merge_wait)
                            .tap { |handoff| handoff.hold = Shaka::MergeHold.from(seam) }
                            .call(head: options[:head], woken_by: options[:woken_by])
            end

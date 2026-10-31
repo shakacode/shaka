@@ -133,7 +133,7 @@ Three outcomes, none of them an error:
 [`review.local_review_count`](https://github.com/shakacode/shaka/blob/main/docs/settings.md#reviewlocal_review_count)
 reviewers for the same head, one by default, in `reviewers` in run order; `--count N` overrides that
 for one task. With `review.provider_coverage`, it lists one per covered provider instead, and
-refuses `--count`. The first is the reviewer above, and `outcome` and `note` describe only it; the rest
+refuses `--count`. The first is the reviewer above, and `outcome` describes only it; `note` names them all. The rest
 are the other available entries in the seam's list order, so a Claude implementation with the
 default list gets Codex, then Claude in a fresh context. Fewer come back when fewer are available.
 Run them all on one committed head, wait for each to finish or record its `not_completed` result,

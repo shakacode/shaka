@@ -31,9 +31,10 @@ When a later task starts in a new worktree, the agent copies your individual
 settings into it. Edits you made after setup come along while the earlier
 checkout still exists.
 
-The agent should find your existing commands and go on with your task. We haven't
-yet tested this with a new user working alone; see the
-[acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759).
+The agent should find your existing commands and go on with your task. In a
+[maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011)
+on a disposable repository, a series of fresh chats went from individual setup to
+a merged PR.
 
 To try repository settings for one task before adopting them, use a
 [settings preview](settings.md#preview-settings-before-adopting-them). Trying an
@@ -72,7 +73,7 @@ review happened.
 | --- | --- |
 | Validation fails | Fix the demonstrated problem, then rerun the affected checks. The PR stays unverified until they complete. |
 | The candidate changes after tests or review | Check whether the evidence still covers the candidate; rerun affected work when it is stale. |
-| Material command or review settings change | The workflow requires reassessing affected evidence. Live consumer settings transitions remain untested; do not assume an earlier pass is current. |
+| Material command or review settings change | The workflow requires reassessing affected evidence; do not assume an earlier pass is current. Editing your validate script also marks the earlier review out of date, so expect validation and review to rerun, as a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011) with individual settings showed. |
 | A result is missing, a reviewer is unavailable, or CI is still running | Show the gap explicitly. Missing or stale evidence cannot satisfy a required gate. |
 | An optional reviewer is pending | Disclose it and follow the configured waiting choice; required gates still apply. |
 
@@ -86,15 +87,17 @@ Privacy still requires the agent to inspect the publication.
 
 See [merge choices](working-with-shaka.md#choose-a-merge-policy) for Ask, Auto,
 and required approvals. The workflow instructs the agent to retain explicit task
-merge authorization within its scope; that persistence remains untested in a live
-consumer trial.
+merge authorization within its scope, but a task's Auto choice doesn't carry into a
+fresh chat. In a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011),
+the new chat read `Merge authority: auto` in WIP Details as a record, not permission,
+and held at Ask. To keep Auto, say so again in the new chat.
 
 ## Resume or change your checkout
 
 | Scenario | Expected experience and recovery limit |
 | --- | --- |
-| Resume the same task with a PR | The workflow directs the agent to refresh PR state and evidence. Open WIP Details and return to the owner, or give a new chat the PR URL after the previous owner stops. Fresh-chat acceptance remains untested. |
-| Resume before a PR exists | Supply the task and checkout. The intended path is local inspection; there is no PR record from which to recover missing choices. Fresh-chat acceptance remains untested. |
+| Resume the same task with a PR | The workflow directs the agent to refresh PR state and evidence. Open WIP Details and return to the owner, or give a new chat the PR URL after the previous owner stops. Fresh chats given only the PR URL read WIP Details and refreshed PR state in a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011). |
+| Resume before a PR exists | Supply the task and checkout, plus the branch, head, and paths of saved validation and review results if you have them. The workflow directs the agent to rerun a check whose result is missing before it pushes and publishes. The intended path is local inspection; there is no PR record from which to recover missing choices. A fresh chat given those inputs found them and named the next step in a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513172691). |
 | Use a linked worktree with individual settings | Each worktree has its own local settings identity and recovery copy in the common Git directory. Host permissions must allow the required writes. |
 | An outside pull adds team settings | Inspect adoption and compare saved individual settings. Default-branch team policy governs; do not overwrite it with the local copy. |
 | Clean or delete a worktree with individual settings | Previously captured settings may be restored outside a checkout for comparison. Uncaptured edits and deletion of the common Git directory cannot be recovered from those copies. |
@@ -104,7 +107,6 @@ Recovery copies protect captured configuration, not feature changes or the agent
 conversation. A [return point](pr-verification.md#return-points)
 needs recorded guidance and recoverable work state. It is a separate agent procedure;
 the Ruby `checkpoint` command does not capture or restore snapshots.
-Tests in fresh processes do not establish genuine fresh-chat recovery.
 
 ## When the coding agent denies access
 
@@ -125,3 +127,5 @@ records a verified consumer feature PR and separates passed, partial, and untest
 cases for the evaluated installation. It includes supplemental recovery and
 migration checks. Use the report to understand that evaluation's coverage;
 newer versions need their own evidence for previously untested scenarios.
+[Issue #277](https://github.com/shakacode/shaka/issues/277) tracks what is still
+to verify.

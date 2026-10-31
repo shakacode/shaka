@@ -297,10 +297,17 @@ phases:
         That verified comparison permits committing and publishing a blocked draft while the
         separate repair proceeds; it does not turn failed validation into passing evidence.
       - Commit the validated change, or the change with that verified base-failure comparison,
-        before reviewing it. The push waits for Explain.
+        before reviewing it. The reviewer reads `git diff BASE...HEAD`; the push waits for Explain.
         Pass `--settings-ref TRUSTED_SHA --repository OWNER/REPO` to `review run`, and also
         `--root DIR` to `review check`. A `review check` from a dirty checkout stays provisional
         because the reviewer did not see those edits.
+      - Before each review, read that diff for real credentials: keys, tokens, passwords, and
+        `.env` contents. Take any you find out of the tree and every unpushed commit. Tell the
+        user in chat which file held it, and never repeat the value in chat, commits, or PR text.
+        If it already reached a remote or a review provider, or you noticed it elsewhere in the
+        repository, also ask the user to rotate it. Until they do or accept the exposure, keep its
+        location out of public artifacts; a review report that names it holds `review publish` and
+        merge readiness.
       - Before push and publication, use `shaka evidence verify --root DIR --ref TRUSTED_SHA
         --repository OWNER/REPO --head SHA --validation PATH --review PATH` with the actual
         repository validation and review JSON results. Missing or superseded results need the affected
@@ -583,7 +590,7 @@ phases:
         resolve OWNER/REPO NUMBER --thread THREAD_ID
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
           [--opening-reviewer PROVIDER/FAMILY] [--opening-model MODEL] [--opening-effort LEVEL]
-        attention OWNER/REPO NUMBER --state answer|merge|resume|none
+        attention OWNER/REPO NUMBER --state answer|merge|resume|none [--root DIR --ref SHA] [--review-waiver REASON]
         handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
@@ -838,8 +845,11 @@ phases:
       - In Ask mode, after that refresh, the walkthrough, and required gates, finish remaining
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
         stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge
-        click, run `attention OWNER/REPO NUMBER --state merge` to label the PR
-        `awaiting-merge-approval`, verify the checkpoint contains the current head
+        click, run `attention OWNER/REPO NUMBER --state merge --root DIR --ref SHA` to label the PR
+        `awaiting-merge-approval`; every `--state merge` takes those flags when trusted settings exist,
+        because `review.required` comes from them. It refuses while the published local review reports
+        open findings or nothing published covers the head; pass `--review-waiver REASON` when review
+        was deliberately skipped, which excuses no published finding. Verify the checkpoint contains the current head
         and copyable commit title and body. For an opted-out checkpoint, run `squash-message`
         for that head instead. On a merge-queue base, tell the user to add the PR to the queue
         instead and relay `handoff`'s note on what the queue will write. Name the expected head SHA

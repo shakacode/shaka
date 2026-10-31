@@ -28,14 +28,16 @@ settings with shared team settings.
 Sources never fill each other's gaps. When the chosen source leaves out a value,
 Shaka uses its own default for it, never your individual setting. For example, if
 team settings leave out `prose_limits`, PR descriptions use the default limit of
-300 words, whatever your individual setup says.
+300 words, whatever your individual setup says. The one exception is
+[`pr_description.time_zone`](#pr_descriptiontime_zone), a display choice that falls
+back to your personal file when the repository sets none.
 
 Shaka keeps no settings in your home directory, with two exceptions about your machine:
 the comment allowlist, which adds people and bots whose public comments the agent may read,
 and the [machine reviewer list](#choose-reviewers-for-your-machine). Your
 [starting point for individual setup](#start-individual-setups-from-your-preferences) also
 lives there, but it is not a settings source: setup copies it into a new copy of a
-repository once, and no task reads it.
+repository once, and tasks read only its time zone.
 
 Omitted optional values use Shaka's defaults, all listed in
 [Shaka's defaults file](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/defaults.yml).
@@ -86,7 +88,8 @@ human review floors, or a prompt file, or when a value is invalid.
 - **Read once.** Shaka reads the file only while a new individual setup runs. Editing it
   later changes no repository you already set up; change that copy's
   `.agents/shaka/config.yml` instead. Team settings, task settings, and `shaka seam
-  init` never read it.
+  init` never read it. [`pr_description.time_zone`](#pr_descriptiontime_zone) is the
+  exception: setup leaves it in your file, and every PR description update reads it there.
 - **Your choices for one repository win.** A reviewer list you give during setup replaces
   the file's list. To set up one repository without the file, ask the agent to skip your
   personal starting point.
@@ -269,15 +272,20 @@ probe cannot preapprove a future code transfer.
 
 This controls when configured CI review reports are required. Options:
 
-- `meaningful_changes`: implementation changes; trivial prose can skip with a reason.
-- `always`: every PR, including trivial changes.
-- `none`: no configured CI review backstop, and `shaka merge` does not check for a
-  local review. `shaka description` accepts a validation result without a review
-  result, and its settings block says the repository does not require review; when
+- `meaningful_changes`: every PR except trivial prose, such as a typo fix, and no-op
+  changes. Those can skip review with a recorded reason. The agent decides what is
+  trivial; Shaka does not check that decision.
+- `always`: every PR, including trivial changes. The agent follows this for local
+  review too, but `shaka merge` still accepts a waiver reason, described below.
+- `none`: no configured CI review backstop, and neither `shaka merge` nor the
+  `awaiting-merge-approval` label needs a local review. `shaka description` accepts a
+  validation result without a review result, and its settings block says the repository
+  does not require review; when
   no review ran, the Validation and review line says so too. A review that ran anyway
   must still match the current commit. Omit `ci_review_jobs` with this setting.
 
-Meaningful implementation also gets a local adversarial review before push:
+Every value, `none` included, keeps a local review before push. Only trivial prose
+and no-op changes may skip it, and not under `always`:
 
 - Use a separate session without the implementation conversation.
 - Prefer a different provider and model. If other reviewers are unavailable, the
@@ -330,6 +338,11 @@ comments GitHub cannot list. With `review.required: none`, `merge` skips this ch
 The merge result shows the review it relied on, or the waiver reason, under
 `review_evidence`. That records what the posted line says. It does not prove a
 reviewer process ran or that its findings were fixed.
+
+When Shaka merges under `auto`, it also stops while the PR's local review reports
+findings needing attention. Neither a waiver nor `review.required: none` changes that,
+and it also stops when GitHub can't list the comments. Fix the findings, or have a
+maintainer accept them so the agent can record that decision.
 
 ## `review.ci_review_jobs`
 
@@ -1138,6 +1151,35 @@ only when it has at most 12 words and 90 characters, leaving out any code. A lon
 one is already on the PR, so the list shows the agent's one-line summary and links
 to it. So does a short comment with a list beside code, where code is hard to tell
 from prose.
+
+## `pr_description.time_zone`
+
+**Optional. Default: `UTC`.**
+
+Shows the times in a PR description's Timings section in this zone. Use a name from the
+[time zone database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), so
+daylight saving follows the date. With `America/Los_Angeles`, the task start reads
+`11:00 PDT` in summer and `10:00 PST` in winter, and the tables name the zone below them:
+
+```yaml
+pr_description:
+  time_zone: America/Los_Angeles
+```
+
+Shaka looks for a zone in this order:
+
+1. The repository's settings, so everyone reading its PRs sees the same zone. Set `UTC`
+   here to keep UTC whatever a contributor prefers.
+2. `pr_description.time_zone` in your `~/.agents/shaka/config.yml`, read each time you
+   update a PR description. The zone's name then appears on that PR, including a public
+   one.
+3. `UTC`.
+
+A misspelled value, one the machine has no data for, or an unreadable personal file shows
+UTC and labels it UTC, as does any update that cannot read the repository's settings. A time
+zone never stops a PR update. `shaka configure settings`
+reports the zone that applies, so you can check a new value. Only the display changes:
+Shaka still stores UTC, and other commands' timestamps stay in UTC.
 
 ## `pr_description.human_review_floors`
 

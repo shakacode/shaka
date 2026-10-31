@@ -6,6 +6,7 @@ require_relative 'merge_submission'
 require_relative 'ci_review_wait'
 require_relative 'required_checks'
 require_relative 'merge_review_evidence'
+require_relative 'merge_wait_review'
 require_relative 'merge_required_checks'
 require_relative 'merge_limits'
 require_relative 'auto_merged_label'
@@ -50,6 +51,8 @@ module Shaka
       verify_snapshot(current, head)
       @target.unchanged!(initial, current, @github)
       @review_evidence.final_check(head)
+      # Under Auto no person looked at the findings, so open ones stop it however late they were published.
+      MergeWaitReview.new(@github).refuse_open_findings! if @auto
       @submission.call(current, head)
     end
 

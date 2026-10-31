@@ -12,10 +12,8 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   POLICY_KEYS = %w[
     required ci_review_jobs local_review_agents local_review_count post_implementation replacement_prompt_file
     provider_coverage custom_instructions_file
-    human_review_floors auto_max_review_floor
+    human_review_floors auto_max_review_floor time_zone
   ].freeze
-  # Defaults the example leaves out because nobody needs to change them.
-  OMITTED = { 'checkpoint' => %w[enabled] }.freeze
   # The only files this repository removes from a shipped floor: its Ruby library code leaves the
   # agent-instructions floor so merge.auto_max_review_floor can merge it.
   FLOOR_EXEMPTIONS = { 'changes agent instructions' => %w[skills/shaka/lib/**/*.rb] }.freeze
@@ -40,7 +38,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
 
   def test_example_includes_effective_default_sections
     @defaults.except('version', 'commands', 'paths', 'review', 'merge').each do |section, defaults|
-      defaults = defaults.except('human_review_floors') if section == 'pr_description'
+      defaults = defaults.except('human_review_floors', 'time_zone') if section == 'pr_description'
       assert_equal defaults, example_section(section), "Update the #{section} example when defaults change"
     end
   end
@@ -55,14 +53,14 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   end
 
   def test_example_post_implementation_defaults_match
-    assert_equal Shaka::Defaults.fetch('checkpoint').except(*OMITTED.fetch('checkpoint')),
+    assert_equal Shaka::Defaults.fetch('checkpoint'),
                  @example.fetch('checkpoint').except('replacement_prompt_file')
   end
 
   def test_example_matches_packaged_defaults_without_changing_repository_choices
     Shaka::Defaults.data.except('runtime').each do |section, defaults|
       defaults.each do |key, value|
-        next if POLICY_KEYS.include?(key) || key == 'preference' || OMITTED.fetch(section, []).include?(key)
+        next if POLICY_KEYS.include?(key) || key == 'preference'
 
         assert_equal value, @example.fetch(section).fetch(key), "Update the #{section}.#{key} example"
       end
@@ -122,7 +120,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   def example_section(section)
     case section
     when 'opening_check' then @example.fetch('pr_description').fetch(section)
-    when 'pr_description' then @example.fetch(section).except('opening_check', 'human_review_floors')
+    when 'pr_description' then @example.fetch(section).except('opening_check', 'human_review_floors', 'time_zone')
     else @example.fetch(section)
     end
   end

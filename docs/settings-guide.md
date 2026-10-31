@@ -19,10 +19,10 @@ repository without changing it, and adopt it as a team later through an ordinary
 | --- | --- | --- |
 | Shaka itself | Your Shaka installation, linked into your coding agent | You, when you install or update |
 | Individual settings | `.agents/shaka/` in your copy of the repository, kept out of commits | You, until the team adopts Shaka |
-| Your starting point for individual setup | `~/.agents/shaka/config.yml`, read only when an individual setup starts | You |
+| Your starting point for individual setup | `~/.agents/shaka/config.yml`, read when an individual setup starts, and for your time zone when a PR's repository sets none | You |
 | Team settings | `.agents/shaka/`, committed on the default branch | Your team, through settings PRs |
 
-Each task uses one of these settings sources, never a mix. See
+Each task uses one of these settings sources, never a mix, apart from your time zone. See
 [which settings apply](settings.md#which-settings-apply).
 
 ## Use individual or team settings

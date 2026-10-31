@@ -44,6 +44,30 @@ class ThroughputReadyTest < Minitest::Test
     assert_includes rendered, 'Prompt to CI 38m'
   end
 
+  def test_an_update_after_the_gate_turned_green_shows_the_time_to_ready
+    rendered = describe('$4.12', timeline: push_times.merge('ready_at' => READY), pull: head_pull)
+    assert_includes rendered, '· ready in 1h 19m'
+    assert_includes rendered, 'CI to ready 41m'
+  end
+
+  def test_republishing_the_same_head_keeps_the_earlier_ready_time
+    later = push_times.merge('ready_at' => LATER)
+    rendered = describe('$4.12', timeline: later, pull: head_pull.merge('body' => filled_block))
+    assert_includes rendered, '· ready in 1h 19m'
+  end
+
+  def test_a_ready_time_replaces_one_no_timestamps_could_establish
+    body = Shaka::ThroughputStats.update(filled_block, 't2' => 'UNKNOWN')
+    rendered = describe('$4.12', timeline: push_times.merge('ready_at' => READY), pull: head_pull.merge('body' => body))
+    assert_includes rendered, '· ready in 1h 19m'
+  end
+
+  def test_a_new_head_does_not_keep_the_old_heads_ready_time
+    pull = { 'head' => { 'sha' => NEXT }, 'body' => filled_block }
+    assert_includes describe('$4.12', timeline: push_times, pull:), 'CI to ready pending'
+    assert_includes describe('$4.12', timeline: push_times.merge('ready_at' => LATER), pull:), '· ready in 2h 0m'
+  end
+
   private
 
   def at(rows, jobs, wait) = Shaka::ThroughputStats.ready_at(rows, required: ['validate'], review_jobs: jobs, wait:)

@@ -3,13 +3,15 @@
 require 'yaml'
 require_relative '../error'
 require_relative '../reviewer_selection'
+require_relative '../publication/time_zone'
 require_relative 'paths'
 
 module Shaka
   module Configuration
-    # Preferences from ~/.agents/shaka/config.yml that pre-fill a new clone's private setup. Only
-    # setup reads the file; it is never a settings source. It may set only the preference leaves
-    # below, so commands, CI review jobs, merge policy, and prompt-file paths stay repository facts.
+    # Preferences from ~/.agents/shaka/config.yml that pre-fill a new clone's private setup. It may
+    # set only the preference leaves below, so commands, CI review jobs, merge policy, and
+    # prompt-file paths stay repository facts. Only setup reads the file, except for the time zone:
+    # publication reads that for a repository that sets none, so setup leaves it out of the clone.
     class PersonalSettings
       ALLOWED = %w[
         review.local_review_agents review.provider_coverage review.local_review_count
@@ -18,12 +20,14 @@ module Shaka
         pr_description.opening_check.enabled pr_description.opening_check.reviewer
         pr_description.opening_check.model pr_description.opening_check.effort
         pr_description.show_shaka_credit pr_description.show_human_comments pr_description.max_human_comments
+        pr_description.time_zone
         prose_limits.max_sentence_words prose_limits.max_paragraph_words prose_limits.max_description_words
         prose_limits.words_per_changed_line
         branches.name wip.include_checkout_path
       ].freeze
       REVIEWER_KEYS = %w[provider model_family model effort].freeze
       REVIEWER_IDENTITIES = %w[checkpoint.reviewer pr_description.opening_check.reviewer].freeze
+      TIME_ZONE = 'pr_description.time_zone'
 
       # Nil when the file is absent or no home directory is known.
       def self.load(home:)
@@ -33,6 +37,20 @@ module Shaka
         return unless File.exist?(path)
 
         new(path, read(path))
+      end
+
+      # The user's zone, or nil. A display preference never stops a publication, so a broken file
+      # counts as none and a name the machine cannot render shows as UTC.
+      def self.time_zone(home:)
+        return if home.nil? || home.empty?
+
+        path = File.join(home, Paths::PERSONAL_SETTINGS)
+        return unless File.exist?(path)
+
+        section = read(path)['pr_description']
+        section['time_zone'] if section.is_a?(Hash)
+      rescue Error
+        nil
       end
 
       def self.read(path)
@@ -50,8 +68,9 @@ module Shaka
 
       def initialize(path, values)
         @path = path
-        @values = values
-        @keys = leaves(values, '')
+        @keys = leaves(values, '') - [TIME_ZONE]
+        time_zone!(values['pr_description'])
+        @values = values.merge('pr_description' => values['pr_description']&.except('time_zone')).compact
         reviewer_entries!
         reviewer_identities!
       end
@@ -67,6 +86,12 @@ module Shaka
           raise Error, "#{path} cannot set #{dotted}: personal settings hold preferences only, " \
                        'not repository facts or prompt files'
         end
+      end
+
+      def time_zone!(section)
+        return unless section.is_a?(Hash) && section.key?('time_zone')
+
+        TimeZone.validate!(section['time_zone'], "#{path} #{TIME_ZONE}")
       end
 
       # The schema's own parse error names the value but not the key.

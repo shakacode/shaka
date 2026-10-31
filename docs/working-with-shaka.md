@@ -55,8 +55,9 @@ C1, C2, and so on. To go back to one:
 $shaka Return to C2. Use the simpler approach.
 ```
 
-The agent rewinds with Git and task records, not snapshots, and this is untested in
-real use. Ask what it can restore first. It can't undo deployments.
+The agent rewinds with Git and task records, not snapshots, so work that was never
+committed or saved may not come back. Ask what it can restore first. It can't undo
+deployments.
 
 ## Find PRs waiting on you
 
