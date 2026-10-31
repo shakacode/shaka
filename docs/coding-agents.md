@@ -83,8 +83,8 @@ the Codex reviewer can.
 Shaka tells the agent to read each diff for real credentials before review and to
 report any it finds in chat. No scanner backs that instruction, so an unusual key
 can slip through. Give your agent its own limited keys rather than admin ones. If
-a key reaches a commit, replace it with a new one, because deleting it from the
-file leaves it in Git history.
+a key is pushed or sent to a reviewer, replace it with a new one, because deleting
+it from the file leaves it in Git history and with whoever received it.
 
 Before implementation, Shaka checks for covering consent and asks only when it
 is missing. It doesn't ask about the reviewer from your coding agent's own
