@@ -27,6 +27,9 @@ from working is a major version.
 
 ### Added
 
+- Show a PR's Timings as text bars, so you can see where the time went, what ran
+  together, and when the PR waited on a person. Steps that passed or finished now
+  appear only in the bars, and the table keeps a row for each step that did not.
 - Show PR timings in a chosen time zone with `pr_description.time_zone`. A repository
   that sets none uses the zone in your `~/.agents/shaka/config.yml`, then UTC.
 - Announce a task's start on its GitHub issue with the WIP Details fields: owner,
