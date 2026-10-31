@@ -15,8 +15,9 @@ is the reusable default.
 
 - `README.md`, `docs/README.md`, `docs/getting-started.md`, and
   `docs/shaka-in-pictures.md` are for people. Assume the reader is new to Shaka and
-  keep to what they need: why to use Shaka, install, a task, `doctor`, `settings`,
-  and asking their agent for the rest. Give the reasons, not each step the code takes.
+  keep to what they need: what Shaka is and works with, why to use it, install, a
+  task, `doctor`, `settings`, and asking their agent for the rest. Give the reasons,
+  not each step the code takes. Test the README on a reader with no project context.
 - Every other page under `docs/` is reference that the reader's agent mostly reads
   for them, still written so a person who opens it can follow it. Add new detail
   there, not to those four pages.
