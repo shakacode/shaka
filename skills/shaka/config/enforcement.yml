@@ -352,6 +352,14 @@ rules:
     note: >-
       `reviewer` computes the preferred reviewer, but nothing compares the reviewer that
       actually ran against the one it returned.
+  - id: credentials-stay-out-of-published-text
+    phase: verify
+    quote: never repeat the value in chat, commits, or PR text
+    rule: Never repeat a credential's value in chat, commits, or PR text.
+    enforced_by: agent
+    note: >-
+      Nothing scans a diff or published text for credentials. The agent reads the diff, keeps the
+      value out of what it writes, and keeps the location out of public artifacts until rotation.
   - id: reviewer-setting-choice
     phase: verify
     quote: >-

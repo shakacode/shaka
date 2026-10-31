@@ -1,7 +1,7 @@
 Report on:
 - Correctness: name the input or state that makes it wrong, not a general worry.
 - Contract drift: does a document, comment, or config restate a rule that the code now implements differently?
-- Security and trust: does it weaken a gate, widen permissions, or trust candidate content?
+- Security and trust: does it weaken a gate, widen permissions, trust candidate content, or add a real credential? Name a credential's file and line, never its value.
 - Tests: is there a test that fails if this change is reverted? Name what is untested.
 - Technical evidence (when relevant): does the claimed reproduction fail before and pass after? Identify the tested boundary, affected callers, evidence gaps, and residual risk; distinguish observed cause from inference and documented concerns from resolved or trusted human-accepted consequences.
 - Simplicity: what could be deleted without losing behavior?
