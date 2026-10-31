@@ -19,8 +19,8 @@ class TimingBarsTest < Minitest::Test
 
   def lanes(rows, steps, zone = 'UTC')
     chart = Shaka::TimingBars.new(rows, steps, zone).render
-    lines = chart.lines(chomp: true)[2..].take_while { |line| !line.empty? }
-    lines.to_h { |line| [line[/\A\D+?(?=\s{2})/], line] }
+    lines = chart.lines(chomp: true)[3..].take_while { |line| !line.empty? }
+    lines.to_h { |line| [line[/\A\D+?(?=\s{2}|\s+[<\d])/], line[(Shaka::TimingBars::TOTAL_WIDTH + 2)..]] }
   end
 
   def test_reviewers_that_ran_together_get_their_own_lanes_starting_in_the_same_column
@@ -42,7 +42,7 @@ class TimingBarsTest < Minitest::Test
 
     assert_includes bars['PR'], '//19h//'
     assert_includes bars['Validation'], '//'
-    assert_operator bars['Validation'].count('#'), :>=, 20
+    assert_operator bars['Validation'].count('#'), :>=, 15
     assert_includes Shaka::TimingBars.new(rows, [], 'UTC').render, '// idle wait cut'
   end
 
@@ -73,7 +73,7 @@ class TimingBarsTest < Minitest::Test
   def test_a_wait_filling_the_whole_timeline_is_drawn_without_dividing_by_zero
     chart = Shaka::TimingBars.new([row(0, 600, wait: true)], [], 'UTC').render
 
-    assert_match(/^PR\s+\.{60}$/, chart)
+    assert_includes chart, '.' * Shaka::TimingBars::WIDTH
   end
 
   def test_nothing_to_draw_returns_nil
@@ -85,7 +85,7 @@ class TimingBarsTest < Minitest::Test
   def test_every_line_stays_inside_the_width_with_several_cuts
     chart = Shaka::TimingBars.new(three_long_waits, [validation(1, 60)], 'UTC').render
 
-    assert_operator chart.lines(chomp: true)[1..-4].map(&:size).max, :<=, 12 + Shaka::TimingBars::WIDTH
+    assert_operator chart.lines(chomp: true)[2..-4].map(&:size).max, :<=, 20 + Shaka::TimingBars::WIDTH
     assert_equal 3, chart[/^PR.*$/].scan(%r{//\d+h//}).size
   end
 
@@ -104,7 +104,27 @@ class TimingBarsTest < Minitest::Test
 
     chart = Shaka::TimingBars.new([row(0, 60)], [], 'America/Los_Angeles').render
 
-    assert_match(/10-18 01:00\s+10-18 02:00 PDT/, chart)
+    assert_includes chart, '10-18 01:00 to 10-18 02:00 PDT (1h 0m)'
+    assert_match(/^\s+01:00\s+01:1\d/, chart)
+  end
+
+  def test_each_lane_shows_its_total_and_the_ruler_skips_a_cut
+    rows = [row(0, 30), row(30, 1200, wait: true), row(1200, 1230)]
+    chart = Shaka::TimingBars.new(rows, [validation(5, 600), validation(1205, 600)], 'UTC').render
+
+    assert_match(/^Validation\s+20m\s/, chart)
+    assert_match(/^PR\s+20h 30m\s/, chart)
+    ruler = chart.lines(chomp: true)[2].split
+    assert_equal '08:00', ruler.first
+    assert_equal '04:12', ruler.last
+  end
+
+  def test_back_to_back_runs_keep_a_gap_and_the_before_pr_stretch_has_its_own_glyph
+    before = row(0, 30).merge(name: Shaka::TimingStretches::BEFORE)
+    bars = lanes([before, row(30, 60)], [validation(0, 600, exit: 1), validation(10, 600)])
+
+    assert_match(/x+ #+/, bars['Validation'])
+    assert_match(/-+=+/, bars['PR'])
   end
 
   def test_the_chart_is_plain_ascii_inside_one_fence

@@ -24,33 +24,38 @@ The first total includes the time before the PR opened.
 Above the stretches, a chart puts the PR and its measured steps on one time axis:
 
 ```text
-                  10-26 01:16                                  10-27 01:57 PDT
-PR                               ==.====.//19h//......======...===============
-Validation        ####         ######### //            xxxxxx       xxx######
-Review anthropic      x####    #   # #   //             x##        #
-Review openai         xxxxxx   #   xx#   //                        #
-Checkpoint                         #   # //                       #         #
+10-26 01:16 to 10-27 01:57 PDT (24h 41m)
+                          01:16        02:47                     00:25
+PR                23h 6m               =.===.//19h//......====....============
+Validation         2h 5m  ####       ### ### //            x xxx     xx #####
+Review anthropic     13m     x # #   #   ##  //            # #       #
+Review openai        28m     x # xx  #   x#  //                      #
+Checkpoint        2m 54s                #   #//                    ##       ##
 
-= between checkpoints  . waiting on a person  # step  x failed  // idle wait cut
+- before the PR  = PR open  . waiting on a person  # step  x failed  // idle wait cut
 ```
 
-- **Where the time went:** read each lane left to right. Long runs of `#` are the
-  steps that took longest.
-- **What ran at the same time:** marks in the same column overlapped, such as the
-  two reviewers above. Each reviewer provider gets its own lane.
-- **When the PR waited on you:** `.` on the PR lane marks a wait.
+- **Where the time went:** the number beside each lane adds up its runs. The PR lane's
+  number is the time from its first stretch to its last.
+- **When something ran:** read the clock times above the bars. The first line gives the
+  dates and the time zone.
+- **What ran at the same time:** marks in the same column overlapped. Each reviewer
+  provider gets its own lane.
+- **When the PR opened and waited on you:** on the PR lane, `-` turns to `=` when the PR
+  opens, and `.` marks a wait.
 - **What failed:** `x` marks a validation that failed or a review or checkpoint that
   did not finish. Those steps keep a row in the table below, with their exit codes.
 
 A wait that fills more than a quarter of the timeline with nothing running is cut from
 the axis, so one long night does not flatten everything else. `//19h//` on the PR lane
 says how much idle time was removed, and `//` crosses the other lanes at the same
-place. Compare positions only on one side of a cut. A wait with a step running during it
-is cut only around that step, so the label can be shorter than the wait.
+place. Clock times jump across a cut. A wait with a step running during it is cut only
+around that step, so the label can be shorter than the wait.
 
 Each column covers the same length of time, so a run shorter than a column still takes
-a full one. When two runs share a column in one lane, the later one shows. The table
-below still lists a failure that a retry drew over.
+a full one. A blank cell separates back-to-back runs, which can make a run look a column
+shorter. When two runs share a column in one lane, the later one shows. The table below
+still lists a failure that a retry drew over.
 
 ## Time to ready and merge
 
