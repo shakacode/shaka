@@ -17,6 +17,8 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   # The only files this repository removes from a shipped floor: its Ruby library code leaves the
   # agent-instructions floor so merge.auto_max_review_floor can merge it.
   FLOOR_EXEMPTIONS = { 'changes agent instructions' => %w[skills/shaka/lib/**/*.rb] }.freeze
+  # Floor paths held before their files exist, so code moved there later still goes to a person.
+  RESERVED_FLOOR_PATHS = %w[skills/shaka/lib/shaka/publication_settings/**/*].freeze
   # Where this repository's floors put its files; Auto merges only those at 2 or below.
   FLOOR_LEVELS = {
     'skills/shaka/lib/shaka/doctor/checks.rb' => 2, 'test/doctor_test.rb' => 2,
@@ -25,7 +27,12 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     'skills/shaka/lib/shaka/required_checks.rb' => 4, 'skills/shaka/lib/shaka/merge_review_floor.rb' => 4,
     'skills/shaka/lib/shaka/publication/review_effort_floor.rb' => 4,
     'skills/shaka/lib/shaka/repository_config/merge_schema.rb' => 4, 'docs/settings.md' => 5,
-    'skills/shaka/lib/AGENTS.md' => 3, 'test/AGENTS.md' => 3
+    'skills/shaka/lib/AGENTS.md' => 3, 'test/AGENTS.md' => 3,
+    'skills/shaka/lib/shaka/publication_settings_guard.rb' => 4,
+    'skills/shaka/lib/shaka/publication_settings/checks.rb' => 4,
+    'skills/shaka/lib/shaka/publication/rendering_preview.rb' => 4,
+    'skills/shaka/lib/shaka/gitlab/transport.rb' => 3, 'README.md' => 5,
+    'CONTRIBUTING.md' => 3, 'contributing/releasing.md' => 3, 'internal/requirements.md' => 3
   }.freeze
 
   def setup
@@ -77,7 +84,8 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   # A misspelled path would let that code fall to floor 2 and merge without a person.
   def test_example_floor_paths_this_repository_adds_name_real_files
     shipped = Shaka::Defaults.fetch('pr_description', 'human_review_floors').flat_map { |floor| floor['paths'] }
-    added = @example.fetch('pr_description').fetch('human_review_floors').flat_map { |floor| floor['paths'] } - shipped
+    floors = @example.fetch('pr_description').fetch('human_review_floors')
+    added = floors.flat_map { |floor| floor['paths'] } - shipped - RESERVED_FLOOR_PATHS
     added.flat_map { |glob| alternatives(glob) }.each { |glob| refute_empty Dir.glob(glob, base: ROOT), glob }
   end
 
