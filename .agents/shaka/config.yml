@@ -80,6 +80,7 @@ pr_description:
   show_shaka_credit: true # Default: a small Shaka link under the PR summary.
   show_human_comments: true # Default: list comments people wrote on the PR.
   max_human_comments: 20 # Default: how many of those comments to list.
+  time_zone: America/Los_Angeles # Ours: the PR timings' readers. Default: UTC, or the user's zone when set.
   # Default: Shaka's shipped floors. The lowest human review effort a PR may claim, from the
   # files it changes. This list replaces the default one. Ours adds the first two floors and the
   # validation and install floor, names merge-gate and trust code in the trust floor, and

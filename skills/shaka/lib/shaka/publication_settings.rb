@@ -28,10 +28,10 @@ module Shaka
       changed_paths = FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current, floors, review = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
+      current, floors, review, config = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
           review_effort_floor: ReviewEffortFloor.for(changed_paths, floors),
-          reviewer_shortfall: reviewer_shortfall(verdict, review))
+          reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone)
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
@@ -69,11 +69,12 @@ module Shaka
                                                                      reviewer: result['reviewer']).map(&:downcase)
     end
 
-    # Returns the public settings snapshot, the trusted review-effort floors, and the trusted review settings.
+    # Returns the public settings snapshot, the trusted review-effort floors, the trusted review
+    # settings, and the loaded settings. A bad personal time zone must not lose the first three.
     def self.current_settings(root:, ref:, repository:, required: false)
       OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
         config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
-        [current, config.pr_description['human_review_floors'], config.review]
+        [current, config.pr_description['human_review_floors'], config.review, config]
       end
     rescue Error, SystemCallError
       raise if required
@@ -91,8 +92,9 @@ module Shaka
     end
 
     def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil, # rubocop:disable Metrics/ParameterLists
-                   review_effort_floor: nil, reviewer_shortfall: nil)
+                   review_effort_floor: nil, reviewer_shortfall: nil, time_zone: nil)
       @reviewer_shortfall = reviewer_shortfall
+      @time_zone = time_zone
       @review_effort_floor = review_effort_floor
       @repository = repository
       @verdict = verdict

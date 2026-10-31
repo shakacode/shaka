@@ -57,7 +57,8 @@ adds a label when it stops for you and removes it when work resumes.
 
 ## Read the limits
 
-- Times are UTC wall-clock time and include nights and weekends.
+- Times are wall-clock time in the [configured time zone](../settings.md#pr_descriptiontime_zone),
+  UTC by default, and include nights and weekends.
 - A wait ends when the agent resumes, which can be slightly after you replied.
 - Time between checkpoints includes the agent's work, checks running, and any
   wait the agent did not mark with a label.

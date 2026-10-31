@@ -23,3 +23,5 @@ whether new instructions are worth that cost, not only whether they are correct.
   [default checkpoint prompt](../../skills/shaka/config/post-implementation-prompt.md).
 - **Two reviewers.** Claude and Codex both read each reviewed commit; the default
   is one. A mistake here can weaken the checks Shaka runs on every project.
+- **Pacific time.** PR timings read in `America/Los_Angeles` for this project's
+  readers; the default is UTC.

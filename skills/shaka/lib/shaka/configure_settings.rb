@@ -10,6 +10,7 @@ require_relative 'git_origin'
 require_relative 'merge_hold'
 require_relative 'repo_prefix'
 require_relative 'review_coverage'
+require_relative 'publication/time_zone'
 
 module Shaka
   # `shaka configure settings`: each repository setting with the value Shaka applies, its packaged
@@ -59,7 +60,9 @@ module Shaka
       setting('branches.name') do |context|
         Claim::Names.new(query: nil, template: context.config.to_h.dig('branches', 'name')).reported
       end,
-      *%w[show_shaka_credit show_human_comments max_human_comments human_review_floors].map { |key| description(key) },
+      *%w[show_shaka_credit show_human_comments max_human_comments].map { |key| description(key) },
+      setting('pr_description.time_zone') { |context| TimeZone.renderable(context.config.time_zone) },
+      description('human_review_floors'),
       setting('wip.include_checkout_path', aliases: ['wip.include_locations']) do |context|
         context.config.wip['include_checkout_path']
       end,

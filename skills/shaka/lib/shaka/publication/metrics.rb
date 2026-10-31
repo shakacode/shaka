@@ -20,7 +20,7 @@ module Shaka
 
     # The current head's intervals open the Timings section.
     def timings
-      TimingsDetails.for(@timeline).map do |item|
+      TimingsDetails.for(@timeline, @settings.time_zone).map do |item|
         details_block(item.merge('body' => "#{ThroughputStats.line(throughput)}\n\n#{item['body']}"))
       end
     end
