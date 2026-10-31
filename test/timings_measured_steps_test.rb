@@ -22,19 +22,51 @@ class TimingsMeasuredStepsTest < Minitest::Test
     body = Shaka::TimingsDetails.new(timeline).detail['body']
 
     assert_includes body, '**Measured steps:** Validation 13m (1 run) · Local review 58s (1 run)'
-    assert_includes body, '| Validation: validate | 2026-10-18 08:05 | 13m | passed | — | m5 |'
-    assert_includes body, '| Local review | 2026-10-18 08:20 | 58s | not completed (exit 1) | ' \
-                          'openai · gpt-6.1-sol · medium | UNKNOWN |'
     assert_equal STEPS, carried(body)
     assert_operator body.index('Between checkpoints'), :<, body.index('Measured steps')
   end
 
-  # A review or checkpoint exits 0 whatever it concluded, so a finished one is never called passed.
-  def test_a_finished_review_or_checkpoint_reads_completed_not_passed
-    checkpoint = STEPS.last.merge('command' => 'post-implementation run', 'exit' => 0)
+  # The bars show when each step ran, so only a step the reader must act on keeps its row.
+  def test_the_bars_replace_rows_except_for_failed_steps_and_settings_move_to_one_line
+    timeline = { 'opened' => OPENED, 'merged' => OPENED + 3600, 'labels' => [], 'steps' => STEPS }
+    body = Shaka::TimingsDetails.new(timeline).detail['body']
+
+    assert_operator body.index('```text'), :<, body.index('| Stretch |')
+    assert_includes body, '**Failed or unfinished steps:**'
+    assert_includes body, '| Local review | 2026-10-18 08:20 | 58s | not completed (exit 1) | ' \
+                          'openai · gpt-6.1-sol · medium | UNKNOWN |'
+    refute_includes body, '| Validation: validate |'
+    assert_includes body, '**Models:** openai · gpt-6.1-sol · medium · **Machines:** m5, UNKNOWN'
+  end
+
+  def test_all_passing_steps_leave_no_step_table
+    timeline = { 'opened' => OPENED, 'merged' => OPENED + 3600, 'labels' => [], 'steps' => [STEPS.first] }
+    body = Shaka::TimingsDetails.new(timeline).detail['body']
+
+    refute_includes body, '| Step |'
+    refute_includes body, 'Failed or unfinished'
+  end
+
+  def test_a_chart_that_cannot_render_keeps_every_step_row
+    timeline = { 'opened' => OPENED, 'merged' => OPENED + 3600, 'labels' => [], 'steps' => STEPS }
+    broken = Class.new(Shaka::TimingsDetails) do
+      private
+
+      def draw_bars(_rows, _steps) = raise(ArgumentError, 'bad')
+    end
+    body = broken.new(timeline).detail['body']
+
+    refute_includes body, '```text'
+    assert_includes body, '| Validation: validate | 2026-10-18 08:05 | 13m | passed | — | m5 |'
+    assert_includes body, '| Local review | 2026-10-18 08:20 | 58s | not completed (exit 1) |'
+  end
+
+  # A review or checkpoint exits 0 whatever it concluded, so an unfinished one never reads failed or passed.
+  def test_an_unfinished_review_or_checkpoint_reads_not_completed
+    checkpoint = STEPS.last.merge('command' => 'post-implementation run')
     body = Shaka::TimingsDetails.new({ 'unavailable' => 'x', 'steps' => [checkpoint] }).detail['body']
 
-    assert_includes body, '| Product checkpoint | 2026-10-18 08:20 | 58s | completed |'
+    assert_includes body, '| Product checkpoint | 2026-10-18 08:20 | 58s | not completed (exit 1) |'
     refute_includes body, 'passed'
   end
 
@@ -43,6 +75,7 @@ class TimingsMeasuredStepsTest < Minitest::Test
     body = Shaka::TimingsDetails.new({ 'unavailable' => 'gh failed', 'steps' => STEPS }).detail['body']
 
     assert body.start_with?(Shaka::TimingsDetails::UNAVAILABLE)
+    assert_includes body, '```text'
     assert_equal STEPS, carried(body)
   end
 
@@ -50,7 +83,7 @@ class TimingsMeasuredStepsTest < Minitest::Test
     many = (1..35).map { |index| STEPS.last.merge('id' => format('%016x', index)) }
     body = Shaka::TimingsDetails.new({ 'unavailable' => 'x', 'steps' => many, 'dropped_steps' => 4 }).detail['body']
 
-    assert_includes body, 'Showing the latest 30 of 35 steps. ' \
+    assert_includes body, 'Showing the latest 30 of 35 failed or unfinished steps. ' \
                           'The totals cover the latest 35; 4 older steps are no longer kept.'
     assert_equal [many, 4], Shaka::TimelineSteps.read("<!-- shaka:begin -->\n#{body}\n<!-- shaka:end -->")
   end
