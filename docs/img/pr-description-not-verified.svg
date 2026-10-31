@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 286" width="520" role="img" aria-labelledby="t d">
 <title id="t">Where Not verified lines appear, by merge date</title>
-<desc id="d">Stacked bars for PRs merged 2026-10-22 to 2026-10-29, counting Not verified lines. 10-22: 28 visible, 0 folded. 10-23: 8 visible, 0 folded. 10-24: no merges. 10-25, when #860 merged: 3 visible, 2 folded. 10-26: 0 visible, 2 folded. 10-27: 2 visible, 10 folded. 10-28: 1 visible, 8 folded. 10-29: 3 visible, 23 folded.</desc>
+<desc id="d">Stacked bars for PRs merged 2026-10-22 to 2026-10-29, counting Not verified lines. 10-22: 28 visible, 0 folded. 10-23: 8 visible, 0 folded. 10-24: no merges. 10-25, when #860 merged: 3 visible, 2 folded. 10-26: 0 visible, 5 folded. 10-27: 2 visible, 10 folded. 10-28: 1 visible, 8 folded. 10-29: 3 visible, 27 folded.</desc>
 <style>
 .bg{fill:#fff;stroke:#d9e0e7}
 text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
@@ -47,8 +47,8 @@ text{fill:#e6edf5}
 <path class="fold" d="M224.8 238.6V231.0Q224.8 227.0 228.8 227.0H246.8Q250.8 227.0 250.8 231.0V238.6Z"/>
 <text class="n" x="254.8" y="236.8">2</text>
 <text class="s m c" x="237.8" y="276.0">10-25</text>
-<path class="fold" d="M283.3 258.0V250.4Q283.3 246.4 287.3 246.4H305.3Q309.3 246.4 309.3 250.4V258.0Z"/>
-<text class="n" x="313.3" y="256.2">2</text>
+<path class="fold" d="M283.3 258.0V233.0Q283.3 229.0 287.3 229.0H305.3Q309.3 229.0 309.3 233.0V258.0Z"/>
+<text class="n" x="313.3" y="247.5">5</text>
 <text class="s m c" x="296.3" y="276.0">10-26</text>
 <rect class="vis" x="341.8" y="246.4" width="26.0" height="11.6"/>
 <text class="n" x="371.8" y="256.2">2</text>
@@ -62,8 +62,8 @@ text{fill:#e6edf5}
 <text class="s m c" x="413.3" y="276.0">10-28</text>
 <rect class="vis" x="458.8" y="240.6" width="26.0" height="17.4"/>
 <text class="n" x="488.8" y="253.3">3</text>
-<path class="fold" d="M458.8 238.6V109.2Q458.8 105.2 462.8 105.2H480.8Q484.8 105.2 484.8 109.2V238.6Z"/>
-<text class="n" x="488.8" y="175.9">23</text>
+<path class="fold" d="M458.8 238.6V86.0Q458.8 82.0 462.8 82.0H480.8Q484.8 82.0 484.8 86.0V238.6Z"/>
+<text class="n" x="488.8" y="164.3">27</text>
 <text class="s m c" x="471.8" y="276.0">10-29</text>
 <line class="axis" x1="40.0" y1="258.0" x2="508.0" y2="258.0"/>
 </svg>

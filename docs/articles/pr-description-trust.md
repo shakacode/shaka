@@ -53,12 +53,12 @@ within 30 minutes of first being ready.
 ## The proof got folded away
 
 The description's second job is to show the proof. On 10-22 and 10-23, all 36
-`Not verified` lines were visible. On 10-29, 3 were visible and 23 sat inside a
+`Not verified` lines were visible. On 10-29, 3 were visible and 27 sat inside a
 collapsed section. [#860](https://github.com/shakacode/shaka/pull/860) made that
 change while grouping metadata. The visible Verification section went from a median
 of 75 words to 11.
 
-![Stacked bars of Not verified lines by merge date. 10-22: 28 visible. 10-23: 8 visible. 10-24: no merges. 10-25, when #860 merged: 3 visible, 2 folded. 10-26: 2 folded. 10-27: 2 visible, 10 folded. 10-28: 1 visible, 8 folded. 10-29: 3 visible, 23 folded.](../img/pr-description-not-verified.svg)
+![Stacked bars of Not verified lines by merge date. 10-22: 28 visible. 10-23: 8 visible. 10-24: no merges. 10-25, when #860 merged: 3 visible, 2 folded. 10-26: 5 folded. 10-27: 2 visible, 10 folded. 10-28: 1 visible, 8 folded. 10-29: 3 visible, 27 folded.](../img/pr-description-not-verified.svg)
 
 The agent that wrote the PR decides which gaps are material enough to stay visible.
 

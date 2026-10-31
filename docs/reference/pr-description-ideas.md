@@ -72,17 +72,18 @@ how each held up. For the short version, read
   groups cost about the same, $10.79 and $9.68.
 - **Visible Verification text:** the median was 75 words for PRs merged 10-22 and 10-23
   and 11 words for PRs merged 10-29, not counting link targets.
-- **Where `Not verified` appears**, by merge date. #860 merged on 10-25.
+- **Where `Not verified` appears**, anywhere in the description, by merge date. Across
+  the 110 PRs, 45 were visible, 52 folded, and 13 absent. #860 merged on 10-25.
 
 | Merged | Visible | Folded | Absent |
 | --- | ---: | ---: | ---: |
 | 10-22 | 28 | 0 | 2 |
 | 10-23 | 8 | 0 | 1 |
 | 10-25 | 3 | 2 | 0 |
-| 10-26 | 0 | 2 | 6 |
+| 10-26 | 0 | 5 | 3 |
 | 10-27 | 2 | 10 | 0 |
 | 10-28 | 1 | 8 | 1 |
-| 10-29 | 3 | 23 | 10 |
+| 10-29 | 3 | 27 | 6 |
 
 ## Lauren Tan: proof is the limiting step
 
@@ -96,7 +97,7 @@ production line. pstack is Tan's public skill set in `cursor/plugins`.
   artifact. It should show the work is correct, matches the intent, and is easier
   to review than the whole PR
   ([post, 2026-10-11](https://x.com/poteto/status/2109436202554372476)).
-- **In Shaka:** the two jobs, set four days later.
+- **In Shaka:** the two jobs, in the #421 plan four days later.
   [#553](https://github.com/shakacode/shaka/pull/553) added Intent and Verification
   to every description.
 - **Result:** 110 of 115 PRs carry both. Before #553, only a summary was required.
