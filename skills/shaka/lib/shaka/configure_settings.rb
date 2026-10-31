@@ -63,7 +63,7 @@ module Shaka
       *%w[show_shaka_credit show_human_comments max_human_comments].map { |key| description(key) },
       setting('pr_description.time_zone') { |context| TimeZone.renderable(context.config.time_zone) },
       description('human_review_floors'),
-      setting('wip.include_checkout_path', aliases: ['wip.include_locations']) do |context|
+      setting('wip.include_checkout_path') do |context|
         context.config.wip['include_checkout_path']
       end,
       setting('repo_prefix') do |context|

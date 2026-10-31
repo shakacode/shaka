@@ -2,7 +2,7 @@
 
 module Shaka
   # A presentation of retained findings, not a new decision or a recommendation-quality judgment.
-  # Legacy documented defects and risks remain visible even after a clean round or reclassification.
+  # Earlier documented defects and risks remain visible even after a clean round or reclassification.
   class LocalReviewAttention
     def initialize(rounds, links, assessments: nil)
       @assessments = assessments

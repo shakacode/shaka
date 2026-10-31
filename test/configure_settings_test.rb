@@ -27,7 +27,7 @@ class ConfigureSettingsCoverageTest < Minitest::Test
            { 'review' => ['required', *SCHEMA::Schema::OPTIONAL_REVIEW_KEYS],
              'merge' => ['preference', *SCHEMA::MergeSchema::OPTIONAL],
              'pr_description' => SCHEMA::PrDescriptionSchema::KEYS, 'branches' => SCHEMA::BranchSchema::KEYS,
-             'wip' => SCHEMA::WipSchema::KEYS }.flat_map { |section, names| names.map { |name| "#{section}.#{name}" } }
+             'wip' => [SCHEMA::WipSchema::KEY] }.flat_map { |section, names| names.map { |name| "#{section}.#{name}" } }
 
     assert_empty(keys.reject { |key| covered?(key) })
   end
@@ -72,14 +72,6 @@ class ConfigureSettingsCommandTest < Minitest::Test
       assert_equal 'anthropic/claude', checkpoint.dig('effective', 'reviewer')
       refute checkpoint.fetch('effective').key?('model')
       refute checkpoint.fetch('matches_default')
-    end
-  end
-
-  def test_an_earlier_setting_name_reports_as_set
-    with_trusted('wip' => { 'include_locations' => false }) do |root, ref|
-      row = rows(report(root, '--ref', ref)).fetch('wip.include_checkout_path')
-
-      assert_equal [true, 'wip.include_locations', false], row.values_at('set', 'set_as', 'effective')
     end
   end
 

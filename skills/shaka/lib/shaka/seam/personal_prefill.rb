@@ -13,7 +13,7 @@ module Shaka
 
       def blocked_message(source)
         message = "Private setup blocked (#{source.status}): #{source.blockers.join('; ')}"
-        return "#{message}. This clone already has settings; change #{Configuration::Paths::NEW_CONTRACT} directly" if
+        return "#{message}. This clone already has settings; change #{Configuration::Paths::CONTRACT} directly" if
           source.status == 'complete'
 
         "#{message}#{personal_hint if source.status == 'partial'}"
@@ -82,10 +82,8 @@ module Shaka
 
       def validate_contract(data)
         optional = %w[validate_local trigger_hosted_ci].select { |name| @options.key?(:"#{name}_command") }
-        RepositoryConfig::Schema.new(
-          root: @root, data:, available_commands: optional, candidate_commands: false,
-          selection: Configuration::Layout::Selection.new(policy: Initializer::LAYOUT, candidate: Initializer::LAYOUT)
-        ).validate
+        RepositoryConfig::Schema.new(root: @root, data:, available_commands: optional,
+                                     candidate_commands: false).validate
       end
     end
   end

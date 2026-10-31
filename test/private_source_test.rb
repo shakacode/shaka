@@ -101,24 +101,15 @@ class PrivateSourceStateTest < Minitest::Test
     end
   end
 
-  def test_legacy_only_checkout_has_no_private_source
-    with_git_repository do |root|
-      ref = commit_project(root)
-      FileUtils.mkdir_p(File.join(root, '.agents'))
-      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config))
-      assert_equal 'absent', report(root, ref).status
-    end
-  end
-
-  def test_trusted_legacy_policy_does_not_become_private
+  def test_trusted_team_policy_does_not_become_private
     with_git_repository do |root|
       commit_project(root)
-      FileUtils.mkdir_p(File.join(root, '.agents'))
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
       File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config))
       system('git', '-C', root, 'add', '.agents/shaka/config.yml', exception: true)
       system('git', '-C', root, 'commit', '--quiet', '-m', 'team seam', exception: true)
       result = report(root, head(root))
-      assert_equal 'absent', result.status
+      assert_equal 'conflicting', result.status
       assert_equal 'present', result.trusted_source
     end
   end
@@ -179,13 +170,6 @@ class PrivateSourceStateTest < Minitest::Test
       assert_equal 'partial', report(root, ref).status
       add_optional(root, 'trigger-hosted-ci')
       assert_equal 'complete', report(root, ref).status
-    end
-  end
-
-  def test_legacy_candidate_conflicts
-    with_private_repository do |root, ref|
-      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config))
-      assert_equal 'conflicting', report(root, ref).status
     end
   end
 
@@ -650,7 +634,7 @@ class PrivateSourceTrustedTreeTest < Minitest::Test
 
   def commit_trusted_policy(root)
     commit_project(root)
-    FileUtils.mkdir_p(File.join(root, '.agents'))
+    FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
     File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config))
     commit_file(root, '.agents/shaka/config.yml', 'trusted policy')
     head(root)

@@ -56,12 +56,12 @@ module Shaka
       def inventory_index(entries) = entries.to_h { |entry| [entry.fetch('path'), entry] }
 
       def complete_tree?
-        required = [Configuration::Paths::NEW_CONTRACT, *Configuration::Paths::NEW_REQUIRED_COMMANDS.values,
+        required = [Configuration::Paths::CONTRACT, *Configuration::Paths::REQUIRED_COMMANDS.values,
                     *required_optional_paths]
         required.all? do |relative|
           path = File.join(@root, relative)
           File.file?(path) && !File.symlink?(path) &&
-            (relative == Configuration::Paths::NEW_CONTRACT || File.executable?(path))
+            (relative == Configuration::Paths::CONTRACT || File.executable?(path))
         end && valid_contract?
       end
 
@@ -73,7 +73,7 @@ module Shaka
       end
 
       def required_optional_paths
-        optional = Configuration::Paths::NEW_OPTIONAL_COMMANDS.values
+        optional = Configuration::Paths::OPTIONAL_COMMANDS.values
         present = optional.select { |relative| File.file?(File.join(@root, relative)) }
         return optional if present.any?
         return [] if File.file?(File.join(@storage, 'activated'))
@@ -85,7 +85,7 @@ module Shaka
         previous = File.join(@storage, 'previous')
         snapshot = current_inventory || (File.directory?(previous) ? inventory_for(previous) : [])
         installed = snapshot.map { |entry| File.join(PRIVATE_DIRECTORY, entry.fetch('path')) }
-        Configuration::Paths::NEW_OPTIONAL_COMMANDS.values & installed
+        Configuration::Paths::OPTIONAL_COMMANDS.values & installed
       end
 
       def hidden_untracked(adopted)

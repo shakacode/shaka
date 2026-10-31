@@ -123,7 +123,7 @@ class CiReviewWaitSeamTest < Minitest::Test
     end
   end
 
-  def test_legacy_key_requires_migration
+  def test_retired_key_requires_migration
     with_repository('review' => review_policy('pace' => 'thorough')) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 

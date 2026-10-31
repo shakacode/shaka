@@ -67,13 +67,13 @@ module Shaka
       # Review instructions intentionally tolerate unrelated, incomplete seam fields.
       def review_at_commit(root:, ref:, git:, capture:, probe:)
         sha = capture.call(git, '-C', root, 'rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}").strip
-        layout = Layout.commit(root:, sha:, allow_missing: true, git: probe) || Layout::LEGACY
-        source = capture.call(git, '-C', root, 'show', "#{sha}:#{layout.contract}")
-        RepositoryConfig::DuplicateKeys.check(source, filename: layout.contract)
+        Layout.commit(root:, sha:, allow_missing: true, git: probe)
+        source = capture.call(git, '-C', root, 'show', "#{sha}:#{Paths::CONTRACT}")
+        RepositoryConfig::DuplicateKeys.check(source, filename: Paths::CONTRACT)
         data = YAML.safe_load(source, permitted_classes: [], permitted_symbols: [], aliases: false)
         RepositoryConfig::PostImplementationSchema.fold(data)
       rescue Psych::Exception => e
-        raise Error, "Invalid #{layout.contract} at #{sha}: #{e.message}"
+        raise Error, "Invalid #{Paths::CONTRACT} at #{sha}: #{e.message}"
       end
 
       def prompt_at_commit(root:, ref:, path:, git_access:)

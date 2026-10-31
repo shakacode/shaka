@@ -68,7 +68,7 @@ class TrustedConfigSourceSymlinkTest < Minitest::Test
 
   def test_accepts_a_trusted_optional_target_through_a_directory_symlink
     with_repository do |root|
-      File.symlink('bin', File.join(root, '.agents/current'))
+      File.symlink('bin', File.join(root, '.agents/shaka/current'))
       File.symlink('../current/validate', File.join(root, '.agents/shaka/bin/validate-local'))
       commit_repository(root)
 
@@ -83,7 +83,7 @@ class TrustedConfigSourceSymlinkTest < Minitest::Test
       FileUtils.mkdir_p(File.join(root, 'tools/bin'))
       File.write(File.join(root, 'tools/bin/.keep'), '')
       File.symlink('tools/bin', File.join(root, 'alias'))
-      File.symlink('../../alias/../validate', File.join(root, '.agents/shaka/bin/validate-local'))
+      File.symlink('../../../alias/../validate', File.join(root, '.agents/shaka/bin/validate-local'))
       commit_repository(root)
 
       config = Shaka::TrustedConfigSource.new(root:).load('HEAD')
@@ -95,7 +95,7 @@ class TrustedConfigSourceSymlinkTest < Minitest::Test
     with_repository do |root|
       write_executable(root, 'tools/validate')
       File.symlink('tools', File.join(root, 'alias'))
-      File.symlink('../../alias/../alias/validate', File.join(root, '.agents/shaka/bin/validate-local'))
+      File.symlink('../../../alias/../alias/validate', File.join(root, '.agents/shaka/bin/validate-local'))
       commit_repository(root)
 
       config = Shaka::TrustedConfigSource.new(root:).load('HEAD')
@@ -152,7 +152,7 @@ class TrustedConfigSourceSymlinkTest < Minitest::Test
 
   def test_rejects_a_trusted_optional_symlink_target_above_the_repository
     with_repository do |root|
-      File.symlink('../../../validate', File.join(root, '.agents/shaka/bin/validate-local'))
+      File.symlink('../../../../validate', File.join(root, '.agents/shaka/bin/validate-local'))
       commit_repository(root)
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
@@ -187,33 +187,6 @@ class TrustedConfigSourceCommandEntryTest < Minitest::Test
     end
   end
 
-  def test_rejects_a_legacy_optional_path_missing_its_standard_entry_point_on_the_trusted_ref
-    with_repository do |root|
-      legacy = File.join(root, '.agents/shaka/bin/validate_local')
-      write_executable(root, '.agents/shaka/bin/validate_local')
-      commit_repository(root)
-      FileUtils.rm(legacy)
-
-      message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
-      assert_includes message,
-                      '.agents/shaka/bin/validate_local requires the standard entry point .agents/shaka/bin/validate-local'
-      assert_includes message, 'at trusted ref'
-    end
-  end
-
-  def test_rejects_a_legacy_hosted_ci_path_missing_its_standard_entry_point_on_the_trusted_ref
-    with_repository do |root|
-      legacy = File.join(root, '.agents/shaka/bin/trigger_hosted_ci')
-      write_executable(root, '.agents/shaka/bin/trigger_hosted_ci')
-      commit_repository(root)
-      FileUtils.rm(legacy)
-
-      message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
-      assert_includes message, '.agents/shaka/bin/trigger_hosted_ci requires the standard entry point'
-      assert_includes message, '.agents/shaka/bin/trigger-hosted-ci at trusted ref'
-    end
-  end
-
   def test_rejects_a_directory_at_a_trusted_optional_path
     with_repository do |root|
       path = File.join(root, '.agents/shaka/bin/validate-local')
@@ -228,9 +201,9 @@ class TrustedConfigSourceCommandEntryTest < Minitest::Test
 
   def test_rejects_a_symlinked_trusted_command_directory
     with_repository do |root|
-      agents = File.join(root, '.agents')
+      agents = File.join(root, '.agents/shaka')
       FileUtils.mv(File.join(agents, 'bin'), File.join(root, 'scripts'))
-      File.symlink('../scripts', File.join(agents, 'bin'))
+      File.symlink('../../scripts', File.join(agents, 'bin'))
       commit_repository(root)
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message

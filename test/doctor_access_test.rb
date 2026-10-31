@@ -122,7 +122,7 @@ class DoctorAccessTest < Minitest::Test
 
   def test_an_unreadable_seam_blocks_with_its_validation_error
     Dir.mktmpdir do |dir|
-      FileUtils.mkdir_p(File.join(dir, '.agents'))
+      FileUtils.mkdir_p(File.join(dir, '.agents/shaka'))
       File.write(File.join(dir, '.agents', 'shaka', 'config.yml'), "version: 99\n")
       report, blocked = doctor(root: dir)
       assert_includes report, 'FAILED'

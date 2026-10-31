@@ -9,16 +9,14 @@ require_relative 'claim_helpers'
 class SettingsPreviewPolicyTest < Minitest::Test
   include SettingsPreviewFixture
 
-  def test_selected_configuration_reaches_policy_readers_in_both_layouts
-    %i[legacy new].each do |layout|
-      with_preview_repository(layout:) do |root, trusted, preview|
-        select_preview(root, preview)
-        policy = Shaka::TrustedConfigSource.from_ref(root:, ref: trusted)
-        report = check_report(root, trusted)
-        assert_equal policy.to_h, report.except('validation')
-        assert_equal({ 'mode' => 'preview/local', 'ref' => trusted, 'sha' => preview,
-                       'grants_policy' => true, 'grants_merge_authority' => false }, report['validation'])
-      end
+  def test_selected_configuration_reaches_policy_readers
+    with_preview_repository do |root, trusted, preview|
+      select_preview(root, preview)
+      policy = Shaka::TrustedConfigSource.from_ref(root:, ref: trusted)
+      report = check_report(root, trusted)
+      assert_equal policy.to_h, report.except('validation')
+      assert_equal({ 'mode' => 'preview/local', 'ref' => trusted, 'sha' => preview,
+                     'grants_policy' => true, 'grants_merge_authority' => false }, report['validation'])
     end
   end
 

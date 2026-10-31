@@ -107,8 +107,7 @@ is active, and remove the exact
 settings. Keep any other exclusion lines.
 The common Git directory is the recovery boundary: deleting it loses the copies.
 Direct edits overwritten by an outside Git update before `inspect` sees them may
-also be lost. An ignored private destination blocks the existing `seam upgrade`
-layout migration; compare it with the recovery copy before adopting team settings.
+also be lost.
 If a required wrapper is missing, or an optional pair is incomplete during setup,
 `private inspect` reports `partial` and leaves the last complete recovery copy
 untouched. Compare and save any new edits separately before `git clean -fdx`;
@@ -163,10 +162,7 @@ and standard script; keep those definitions there.
    completes before merging. Offer the same template to replace an existing Claude review
    workflow that lacks its `depth` step.
 4. Prepare the files with the trusted installed helper. `seam init` creates
-   version-one configuration in `.agents/shaka/`. When the repository already has
-   `.agents/agent-workflow.yml`, `seam init` refuses and names the
-   [layout upgrade procedure](migration.md#upgrade-the-configuration-layout); that
-   configuration keeps working without the upgrade.
+   version-one configuration in `.agents/shaka/`.
    For an older contract shape, use the [migration procedure](migration.md#migrate-an-older-contract).
 5. Inspect the generated diff, run its checks, and commit it. When the default
    branch has no seam yet, follow [the first setup PR](#review-and-merge-the-first-setup-pr)
@@ -208,7 +204,7 @@ is installed or the user declines.
 ## Review and merge the first setup PR
 
 When the default branch has no Shaka configuration, every `--ref` command stops
-with `Cannot find .agents/agent-workflow.yml or .agents/shaka/config.yml`. That includes
+with `Cannot find .agents/shaka/config.yml`. That includes
 `seam check`, `reviewer`, and `merge`. The refusal is correct: the setup PR must not
 grant itself review or merge policy. Do not work around it with the candidate's
 own YAML. Handle that one PR this way:
@@ -252,9 +248,7 @@ The initializer writes `.agents/shaka/config.yml`, the three required wrappers i
 `review`, `merge`, the default `branches.name`, and `wip.include_checkout_path: true`.
 Each wrapper finds the repository root with Git, so it runs the same from any
 directory and from a linked worktree; `--root` must therefore be the Git worktree
-root. The initializer refuses Shaka command names left in `.agents/bin/` without
-their configuration, leaves other `.agents/bin/` tools alone, and checks write
-access before writing anything. It defaults to Ask. Add `--merge-preference auto`
+root. The initializer checks write access before writing anything. It defaults to Ask. Add `--merge-preference auto`
 only with established authority, `--base-branch` for another base, and
 `--required-check` for seam-declared checks, and `--local-review-agent` for each
 accepted reviewer. Add reviewer models, efforts, prompt files, and `repo_prefix`

@@ -86,7 +86,7 @@ class RepositoryConfigTest < Minitest::Test
       File.chmod(0o755, target)
       path = File.join(root, '.agents/shaka/bin/validate')
       FileUtils.rm(path)
-      File.symlink('../../bin/validate', path)
+      File.symlink('../../../bin/validate', path)
 
       assert_equal '.agents/shaka/bin/validate', Shaka::RepositoryConfig.load(root:).command('validate')
     end
@@ -165,17 +165,6 @@ class RepositoryConfigOptionalCommandTest < Minitest::Test
     end
   end
 
-  def test_a_legacy_optional_path_requires_its_standard_entry_point
-    with_repository do |root|
-      legacy = File.join(root, '.agents/shaka/bin/validate_local')
-      File.write(legacy, "#!/bin/sh\nexit 0\n")
-      File.chmod(0o755, legacy)
-
-      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-      assert_includes message, '.agents/shaka/bin/validate_local requires the standard entry point .agents/shaka/bin/validate-local'
-    end
-  end
-
   def test_candidate_only_optional_commands_must_still_form_a_valid_interface
     with_repository do |root|
       create_command(root, 'trigger_hosted_ci')
@@ -204,7 +193,7 @@ class RepositoryConfigOptionalCommandTest < Minitest::Test
   def test_rejects_a_dangling_optional_command_symlink
     with_repository do |root|
       path = File.join(root, '.agents/shaka/bin/validate-local')
-      File.symlink('../../bin/missing-validate-local', path)
+      File.symlink('../../../bin/missing-validate-local', path)
 
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
       assert_includes message, '.agents/shaka/bin/validate-local does not exist'
@@ -234,22 +223,6 @@ class RepositoryConfigWipTest < Minitest::Test
     end
   end
 
-  def test_the_earlier_location_setting_now_sets_the_checkout_path
-    [true, false].each do |value|
-      with_repository('wip' => { 'include_locations' => value }) do |root|
-        assert_equal({ 'include_checkout_path' => value }, Shaka::RepositoryConfig.load(root:).wip)
-      end
-    end
-  end
-
-  def test_rejects_both_names_for_the_checkout_path_setting
-    with_repository('wip' => { 'include_locations' => false, 'include_checkout_path' => true }) do |root|
-      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
-
-      assert_includes error.message, 'set only wip.include_checkout_path'
-    end
-  end
-
   def test_plan_requires_migration_to_agent_instructions
     with_repository('plan' => 'requirements.md') do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
@@ -275,10 +248,10 @@ class RepositoryConfigWipTest < Minitest::Test
   end
 
   def test_rejects_a_wip_value_that_is_not_a_boolean
-    with_repository('wip' => { 'include_locations' => 'yes' }) do |root|
+    with_repository('wip' => { 'include_checkout_path' => 'yes' }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'wip.include_locations must be true or false'
+      assert_includes error.message, 'wip.include_checkout_path must be true or false'
     end
   end
 

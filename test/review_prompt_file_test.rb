@@ -55,7 +55,9 @@ module ReviewPromptFileFixture
     git!(root, 'init')
     FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
     if commands
-      %w[setup validate test].each { |name| write_executable(File.join(root, '.agents/shaka/bin'), name, "#!/bin/sh\n") }
+      %w[setup validate test].each do |name|
+        write_executable(File.join(root, '.agents/shaka/bin'), name, "#!/bin/sh\n")
+      end
     end
     write_trusted_files(root, review)
     commit!(root, 'trusted')

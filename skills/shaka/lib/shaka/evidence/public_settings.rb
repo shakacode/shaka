@@ -10,7 +10,6 @@ module Shaka
     module PublicSettings
       ENUMS = {
         'source' => %w[private/local preview/local trusted/team],
-        'source.layout' => %w[legacy new],
         'installation.source' => %w[revision development uninstalled],
         'merge.preference' => %w[ask auto],
         'merge.private_trial_default' => %w[ask],
@@ -39,7 +38,7 @@ module Shaka
 
       def capture(config:, kind:, ref:, task_overrides:, installation: Doctor::InstallationIdentity.read)
         snapshot = setting_values(config.to_h)
-        snapshot.merge!(source_values(kind, ref, config.config_path), installation_values(installation))
+        snapshot.merge!(source_values(kind, ref), installation_values(installation))
         task_overrides.each { |key, value| snapshot["overrides.#{key}"] = value }
         snapshot['merge.private_trial_default'] = 'ask' if kind == 'private/local'
         REDACTED.each { |field| snapshot[field] = 'REDACTED' }
@@ -51,9 +50,8 @@ module Shaka
         (ENUMS.keys + BOOLEANS + NUMBERS).to_h { |field| [field, values.dig(*field.split('.'))] }
       end
 
-      def source_values(kind, ref, path)
+      def source_values(kind, ref)
         { 'source' => kind, 'source.revision' => ref,
-          'source.layout' => path == Configuration::Paths::NEW_CONTRACT ? 'new' : 'legacy',
           'source.configuration' => kind }
       end
 

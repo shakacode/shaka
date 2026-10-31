@@ -27,7 +27,7 @@ class ClaimMissingSeamTest < Minitest::Test
 
   def test_cli_fails_when_the_seam_is_malformed
     Dir.mktmpdir do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents'))
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
       File.write(File.join(root, '.agents', 'shaka', 'config.yml'), "version: [\n")
       stdout, status, stderr = run_claim(root, prs: [], branches: '')
 
@@ -50,7 +50,7 @@ class ClaimMissingSeamTest < Minitest::Test
 
   def test_cli_fails_when_the_seam_is_a_broken_symlink
     Dir.mktmpdir do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents'))
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
       File.symlink('missing.yml', File.join(root, '.agents', 'shaka', 'config.yml'))
       stdout, status, stderr = run_claim(root, prs: [], branches: '')
 

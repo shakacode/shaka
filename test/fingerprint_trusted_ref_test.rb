@@ -7,7 +7,7 @@ require 'fileutils'
 class FingerprintTrustedRefTest < Minitest::Test
   def setup
     @root = Dir.mktmpdir('fingerprint-ref')
-    FileUtils.mkdir_p(File.join(@root, '.agents'))
+    FileUtils.mkdir_p(File.join(@root, '.agents/shaka'))
     File.write(File.join(@root, '.agents/shaka/config.yml'), 'config')
     system('git', '-C', @root, 'init', '--quiet', exception: true)
     commit

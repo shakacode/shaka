@@ -31,7 +31,7 @@ class FeatureGuardTest < Minitest::Test
     end
   end
 
-  def test_rename_out_of_configuration_and_untracked_legacy_seam_are_blocked
+  def test_rename_out_of_configuration_is_blocked
     with_checkout do |root, ref|
       git(root, 'mv', '.agents/shaka/bin/test', 'renamed-test')
       assert_raises(Shaka::Error) { guard(root, ref) }

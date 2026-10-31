@@ -44,7 +44,7 @@ module Shaka
 
       def private_path_ignored?
         _output, error, status = Configuration::PrivateGitPaths.capture(
-          @root, 'check-ignore', '--no-index', '--quiet', '--', Configuration::Paths::NEW_CONTRACT
+          @root, 'check-ignore', '--no-index', '--quiet', '--', Configuration::Paths::CONTRACT
         )
         raise Error, "Cannot inspect Git exclusion: #{error.strip}" unless [0, 1].include?(status.exitstatus)
 

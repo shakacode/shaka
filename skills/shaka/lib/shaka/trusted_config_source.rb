@@ -14,6 +14,8 @@ module Shaka
   class TrustedConfigSource
     include Configuration::Sources
 
+    LAYOUT = Configuration::Layout::CURRENT
+
     def self.load(root:, ref: nil, candidate_commands: true)
       ref ? new(root:, candidate_commands:).load(ref) : RepositoryConfig.load(root:)
     end
@@ -37,9 +39,9 @@ module Shaka
 
     def load(ref)
       sha = resolve(ref)
-      layout = Configuration::Layout.commit(root: @root, sha:, allow_missing: true) || Configuration::Layout::LEGACY
-      source = read_at_commit(root: @root, sha:, path: layout.contract, display_ref: ref)
-      config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha, layout), sha:,
+      Configuration::Layout.commit(root: @root, sha:, allow_missing: true)
+      source = read_at_commit(root: @root, sha:, display_ref: ref)
+      config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:,
                                      candidate_commands: @candidate_commands)
       validate_prompt_files(config, sha)
       config
@@ -83,13 +85,12 @@ module Shaka
 
     def resolve(ref) = resolve_commit(root: @root, ref:, label: 'trusted ref')
 
-    def optional_commands(sha, layout)
-      validate_command_directory(sha, layout)
+    def optional_commands(sha)
+      validate_command_directory(sha)
       resolver = TrustedPathResolver.new(root: @root, sha:)
-      validate_required_commands(resolver, sha, layout)
-      entries = command_entries(resolver, layout)
-      validate_legacy_command_entries(resolver, entries, sha, layout)
-      layout.optional.filter_map do |name, path|
+      validate_required_commands(resolver, sha)
+      entries = command_entries(resolver)
+      LAYOUT.optional.filter_map do |name, path|
         next unless entries.key?(path)
 
         validate_command_entry(entries.fetch(path), path, sha, resolver)
@@ -97,8 +98,8 @@ module Shaka
       end
     end
 
-    def validate_required_commands(resolver, sha, layout)
-      layout.required.each_value do |path|
+    def validate_required_commands(resolver, sha)
+      LAYOUT.required.each_value do |path|
         entry = resolver.entry(path)
         raise Error, "#{path} is missing at trusted ref #{sha}" unless entry
 
@@ -106,8 +107,8 @@ module Shaka
       end
     end
 
-    def validate_command_directory(sha, layout)
-      directory = layout.command_directory
+    def validate_command_directory(sha)
+      directory = LAYOUT.command_directory
       type, error, status = Configuration::GitMemo.capture([:object_type, @root, sha, directory], sha) do
         Open3.capture3('git', '-C', @root, 'cat-file', '-t', "#{sha}:#{directory}")
       end
@@ -117,17 +118,8 @@ module Shaka
       raise Error, "Cannot inspect #{directory} at #{sha}: #{error.strip}"
     end
 
-    def command_entries(resolver, layout)
-      layout.optional.values.to_h { |path| [path, resolver.entry(path)] }.compact
-    end
-
-    def validate_legacy_command_entries(resolver, entries, sha, layout)
-      layout.legacy_optional.each do |name, legacy_path|
-        fixed_path = layout.optional.fetch(name)
-        next unless resolver.entry(legacy_path) && !entries.key?(fixed_path)
-
-        raise Error, "#{legacy_path} requires the standard entry point #{fixed_path} at trusted ref #{sha}"
-      end
+    def command_entries(resolver)
+      LAYOUT.optional.values.to_h { |path| [path, resolver.entry(path)] }.compact
     end
 
     def validate_command_entry(entry, path, sha, resolver)

@@ -8,7 +8,7 @@ module Shaka
   module Configuration
     # Lists every entry without following directory symlinks or changing Git state.
     class PrivateInventory
-      DIRECTORY = File.dirname(Paths::NEW_CONTRACT)
+      DIRECTORY = File.dirname(Paths::CONTRACT)
       Result = Data.define(:entries, :blockers, :unsafe)
 
       def self.private_path?(root:, path:)
@@ -80,7 +80,7 @@ module Shaka
       def inspect_entry(path, relative, stat, entry)
         if stat.symlink?
           entry[:target] = File.readlink(path)
-          if relative == Paths::NEW_CONTRACT
+          if relative == Paths::CONTRACT
             unsafe!(relative, 'must be a regular file, not a symlink')
           else
             inspect_link(path, relative, entry)

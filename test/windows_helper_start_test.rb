@@ -4,7 +4,7 @@ require_relative 'test_helper'
 require_relative '../skills/shaka/lib/shaka/install/direct_source'
 require_relative '../skills/shaka/lib/shaka/seam'
 
-# On Windows, install and seam upgrade start Shaka's helper through Ruby, never the sh launcher.
+# On Windows, install starts Shaka's helper through Ruby, never the sh launcher.
 # Each fixture launcher exits 1 silently, so a pass or a helper message proves it never ran.
 class WindowsHelperStartTest < Minitest::Test
   SKILL = File.expand_path('../skills/shaka', __dir__)

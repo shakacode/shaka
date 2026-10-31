@@ -17,7 +17,7 @@ class EvidenceGuardCommandTest < Minitest::Test
   def test_untracked_configuration_is_blocked_with_explicit_setup_flow_supported
     with_checkout do |root, ref|
       args = arguments(root, ref) + ['--base', ref]
-      File.write(File.join(root, '.agents/shaka.md'), 'legacy')
+      File.write(File.join(root, '.agents/shaka.md'), 'pointer')
       capture_io { assert_equal 1, Shaka::Evidence::Command.run(args) }
       capture_io { assert_equal 0, Shaka::Evidence::Command.run(args + ['--flow', 'setup']) }
     end

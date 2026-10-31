@@ -24,16 +24,14 @@ class PrivateDeliverySettingsTest < Minitest::Test
     end
   end
 
-  def test_trusted_team_settings_win_in_both_layouts_after_adoption
-    %i[new legacy].each do |layout|
-      with_trial do
-        adopt_team(layout)
-        publish_delivery
-        update_team_candidate
-        assert_reviewer('anthropic/claude')
-        assert_empty invoke('handoff')['owed']
-        assert_equal 'seam', invoke('pr')['requiredChecksSource']
-      end
+  def test_trusted_team_settings_win_after_adoption
+    with_trial do
+      adopt_team
+      publish_delivery
+      update_team_candidate
+      assert_reviewer('anthropic/claude')
+      assert_empty invoke('handoff')['owed']
+      assert_equal 'seam', invoke('pr')['requiredChecksSource']
     end
   end
 
@@ -48,12 +46,9 @@ class PrivateDeliverySettingsTest < Minitest::Test
     update_private { |data| data['pr_description']['opening_check'] = { 'replacement_prompt_file' => path } }
   end
 
-  def adopt_team(layout)
+  def adopt_team
     update_private { |data| data['merge']['required_checks'] = ['team-gate'] }
     git(@root, 'add', '-f', '.agents/shaka')
-    FileUtils.mkdir_p(File.join(@root, '.agents/shaka/bin'))
-    move_to_legacy_layout(@root) if layout == :legacy
-    git(@root, 'add', '-A') if layout == :legacy
     commit(@root)
     @ref = git(@root, 'rev-parse', 'HEAD')
     alter_pull { |pull| pull['snapshot']['headRefOid'] = @ref }
