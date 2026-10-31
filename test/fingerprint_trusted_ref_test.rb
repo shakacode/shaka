@@ -8,7 +8,7 @@ class FingerprintTrustedRefTest < Minitest::Test
   def setup
     @root = Dir.mktmpdir('fingerprint-ref')
     FileUtils.mkdir_p(File.join(@root, '.agents'))
-    File.write(File.join(@root, '.agents/agent-workflow.yml'), 'config')
+    File.write(File.join(@root, '.agents/shaka/config.yml'), 'config')
     system('git', '-C', @root, 'init', '--quiet', exception: true)
     commit
   end
@@ -24,7 +24,7 @@ class FingerprintTrustedRefTest < Minitest::Test
 
   def fingerprint(ref)
     settings = { 'commands' => {}, 'review' => {}, 'opening_check' => {},
-                 'paths' => { 'policy_configuration' => '.agents/agent-workflow.yml' } }
+                 'paths' => { 'policy_configuration' => '.agents/shaka/config.yml' } }
     installation = { 'schema_version' => 1, 'version' => '1', 'source' => { 'kind' => 'uninstalled' } }
     Shaka::Configuration::Fingerprint.build(root: @root, effective_settings: settings,
                                             repository: 'shakacode/shaka', installation:, trusted_ref: ref)
@@ -37,7 +37,7 @@ class FingerprintTrustedRefTest < Minitest::Test
   end
 
   def test_trusted_configuration_symlink_is_rejected
-    config = File.join(@root, '.agents/agent-workflow.yml')
+    config = File.join(@root, '.agents/shaka/config.yml')
     File.write(File.join(@root, '.agents/real.yml'), 'config')
     File.delete(config)
     File.symlink('real.yml', config)

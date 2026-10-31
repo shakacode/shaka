@@ -50,9 +50,9 @@ module PackageTestHelpers
 
   def with_consumer_seam
     Dir.mktmpdir('shaka-consumer-seam') do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
       %w[setup validate test].each do |name|
-        path = File.join(root, '.agents/bin', name)
+        path = File.join(root, '.agents/shaka/bin', name)
         File.write(path, "#!/bin/sh\nexit 0\n")
         File.chmod(0o755, path)
       end
@@ -62,7 +62,7 @@ module PackageTestHelpers
   end
 
   def write_consumer_yaml(root, data)
-    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(data))
+    File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(data))
   end
 
   def consumer_seam

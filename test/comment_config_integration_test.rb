@@ -43,7 +43,7 @@ module CommentConfigIntegrationFixture
   end
 
   def assert_base_expression(call)
-    assert_equal "#{BASE}:.agents/trusted-github-actors.yml",
+    assert_equal "#{BASE}:.agents/shaka/trusted-github-actors.yml",
                  JSON.parse(call.last).dig('variables', 'expression')
   end
 

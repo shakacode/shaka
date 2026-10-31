@@ -53,9 +53,9 @@ module ReviewPromptFileFixture
 
   def trusted_commit(root, review, commands)
     git!(root, 'init')
-    FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+    FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
     if commands
-      %w[setup validate test].each { |name| write_executable(File.join(root, '.agents/bin'), name, "#!/bin/sh\n") }
+      %w[setup validate test].each { |name| write_executable(File.join(root, '.agents/shaka/bin'), name, "#!/bin/sh\n") }
     end
     write_trusted_files(root, review)
     commit!(root, 'trusted')
@@ -66,7 +66,7 @@ module ReviewPromptFileFixture
     File.write(File.join(root, '.agents/review-prompt.md'), "Trusted repository instructions\n")
     File.write(File.join(root, '.agents/codex-prompt.md'), "Codex-only instructions\n")
     File.write(File.join(root, '.agents/empty-prompt.md'), "\n")
-    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(review)))
+    File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(seam(review)))
   end
 
   # A `checkpoint` entry is its own top-level section, beside the review overrides.

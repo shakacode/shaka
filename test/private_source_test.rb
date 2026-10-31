@@ -105,7 +105,7 @@ class PrivateSourceStateTest < Minitest::Test
     with_git_repository do |root|
       ref = commit_project(root)
       FileUtils.mkdir_p(File.join(root, '.agents'))
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config))
       assert_equal 'absent', report(root, ref).status
     end
   end
@@ -114,8 +114,8 @@ class PrivateSourceStateTest < Minitest::Test
     with_git_repository do |root|
       commit_project(root)
       FileUtils.mkdir_p(File.join(root, '.agents'))
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
-      system('git', '-C', root, 'add', '.agents/agent-workflow.yml', exception: true)
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config))
+      system('git', '-C', root, 'add', '.agents/shaka/config.yml', exception: true)
       system('git', '-C', root, 'commit', '--quiet', '-m', 'team seam', exception: true)
       result = report(root, head(root))
       assert_equal 'absent', result.status
@@ -184,7 +184,7 @@ class PrivateSourceStateTest < Minitest::Test
 
   def test_legacy_candidate_conflicts
     with_private_repository do |root, ref|
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config))
       assert_equal 'conflicting', report(root, ref).status
     end
   end
@@ -651,8 +651,8 @@ class PrivateSourceTrustedTreeTest < Minitest::Test
   def commit_trusted_policy(root)
     commit_project(root)
     FileUtils.mkdir_p(File.join(root, '.agents'))
-    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
-    commit_file(root, '.agents/agent-workflow.yml', 'trusted policy')
+    File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config))
+    commit_file(root, '.agents/shaka/config.yml', 'trusted policy')
     head(root)
   end
 

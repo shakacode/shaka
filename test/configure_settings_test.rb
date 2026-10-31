@@ -96,7 +96,7 @@ class ConfigureSettingsCommandTest < Minitest::Test
 
   def test_a_local_draft_reads_the_working_tree
     with_trusted do |root, _ref|
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam('repo_prefix' => 'DRFT')))
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(seam('repo_prefix' => 'DRFT')))
       document = report(root, '--local')
 
       assert_equal ['untrusted draft', true], document.values_at('source', 'draft')
@@ -127,7 +127,7 @@ class ConfigureSettingsCommandTest < Minitest::Test
 
   def preview_commit(root, overrides)
     git!(root, 'switch', '--quiet', '-c', 'settings-preview')
-    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(overrides)))
+    File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(seam(overrides)))
     commit!(root, 'preview')
     git!(root, 'rev-parse', 'HEAD').strip.tap { git!(root, 'switch', '--quiet', '-') }
   end

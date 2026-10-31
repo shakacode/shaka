@@ -24,7 +24,7 @@ class SettingsPreviewPolicyTest < Minitest::Test
 
   def test_unselected_candidate_cannot_change_policy
     with_preview_repository do |root, trusted, preview|
-      git(root, 'checkout', preview, '--', '.agents/agent-workflow.yml')
+      git(root, 'checkout', preview, '--', '.agents/shaka/config.yml')
       assert_equal 'ask', Shaka::TrustedConfigSource.from_ref(root:, ref: trusted).merge['preference']
       assert_equal 'trusted/team', Shaka::Evidence::Inputs.resolve_source(root, trusted).last
     end
@@ -56,7 +56,7 @@ class SettingsPreviewNamingTest < Minitest::Test
   def test_selected_prefix_does_not_override_another_tasks_branch_template
     with_preview_repository do |root, trusted, _preview|
       select_naming(root, trusted)
-      FileUtils.rm(File.join(root, '.agents/bin/test'))
+      FileUtils.rm(File.join(root, '.agents/shaka/bin/test'))
       assert_equal 'TRY', Shaka::Prefix.new(root:, ref: trusted).call['prefix']
       output, status = capture_cli(['1', '--root', root], prs: [], branches: '')
       assert_equal 0, status
@@ -69,7 +69,7 @@ class SettingsPreviewNamingTest < Minitest::Test
       select_naming(root, trusted)
       absent = remove_trusted_setup(root)
       git(root, 'update-ref', 'refs/remotes/origin/main', absent)
-      File.write(File.join(root, '.agents/agent-workflow.yml'),
+      File.write(File.join(root, '.agents/shaka/config.yml'),
                  YAML.dump(seam('branches' => { 'name' => 'individual/{issue}' })))
       output, status = capture_cli(['2', '--root', root], prs: [], branches: '')
       assert_equal 0, status

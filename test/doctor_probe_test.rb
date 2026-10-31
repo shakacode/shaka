@@ -45,7 +45,7 @@ module DoctorProbeFixture
 
   def change_candidate_model(root)
     config = seam('review' => review_policy('local_review_agents' => [AGENT.merge('model' => 'gpt-6-astra')]))
-    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
+    File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config))
   end
 
   def with_probe
@@ -171,7 +171,7 @@ class DoctorStartupCommandTest < Minitest::Test
   end
 
   def configure_startup_command(root, enabled, reviewer)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     config = YAML.safe_load_file(path)
     config['review']['startup_check'] = enabled
     config['review']['local_review_agents'] << { 'provider' => 'xai', 'model_family' => 'grok' }
@@ -407,7 +407,7 @@ class DoctorStartupProbeTest < Minitest::Test
   private
 
   def disable_candidate_probe(root)
-    candidate = File.join(root, '.agents/agent-workflow.yml')
+    candidate = File.join(root, '.agents/shaka/config.yml')
     config = YAML.safe_load_file(candidate)
     config.fetch('review')['startup_check'] = false
     File.write(candidate, YAML.dump(config))

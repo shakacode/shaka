@@ -61,7 +61,7 @@ class CliDescriptionProseLimitsTest < Minitest::Test
   end
 
   def break_candidate_layout(root)
-    contract = File.join(root, '.agents/agent-workflow.yml')
+    contract = File.join(root, '.agents/shaka/config.yml')
     File.delete(contract)
     File.symlink(File.join(root, 'missing.yml'), contract)
   end

@@ -27,7 +27,7 @@ class StartupNoticeRemindersTest < Minitest::Test
 
   # A private trial keeps its settings ignored in the working tree, so it counts like team settings.
   def test_settings_in_the_working_tree_in_either_layout_are_quiet
-    %w[.agents/shaka/config.yml .agents/agent-workflow.yml].each do |contract|
+    %w[.agents/shaka/config.yml .agents/shaka/config.yml].each do |contract|
       path = File.join(@repository, contract)
       FileUtils.mkdir_p(File.dirname(path))
       File.write(path, "version: 1\n")

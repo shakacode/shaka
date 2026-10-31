@@ -51,7 +51,7 @@ class PrivateDeliverySettingsTest < Minitest::Test
   def adopt_team(layout)
     update_private { |data| data['merge']['required_checks'] = ['team-gate'] }
     git(@root, 'add', '-f', '.agents/shaka')
-    FileUtils.mkdir_p(File.join(@root, '.agents/bin'))
+    FileUtils.mkdir_p(File.join(@root, '.agents/shaka/bin'))
     move_to_legacy_layout(@root) if layout == :legacy
     git(@root, 'add', '-A') if layout == :legacy
     commit(@root)

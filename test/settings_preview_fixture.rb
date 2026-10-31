@@ -51,15 +51,15 @@ module SettingsPreviewFixture
   def remove_trusted_setup(root)
     git(root, 'rm', '-r', '.agents')
     absent = commit(root)
-    FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+    FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
     create_commands(root)
     absent
   end
 
   def use_new_layout(root)
     FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
-    FileUtils.mv(File.join(root, '.agents/bin'), File.join(root, '.agents/shaka/bin'))
-    FileUtils.mv(File.join(root, '.agents/agent-workflow.yml'), File.join(root, '.agents/shaka/config.yml'))
+    FileUtils.mv(File.join(root, '.agents/shaka/bin'), File.join(root, '.agents/shaka/bin'))
+    FileUtils.mv(File.join(root, '.agents/shaka/config.yml'), File.join(root, '.agents/shaka/config.yml'))
   end
 
   def commit(root)

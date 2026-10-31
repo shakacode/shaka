@@ -8,13 +8,13 @@ class FeatureGuardTest < Minitest::Test
 
   def test_staged_and_tracked_changes_leave_unrelated_index_entries_untouched
     with_checkout do |root, ref|
-      File.write(File.join(root, '.agents/agent-workflow.yml'), 'changed')
+      File.write(File.join(root, '.agents/shaka/config.yml'), 'changed')
       File.write(File.join(root, 'feature.rb'), 'feature')
       git(root, 'add', 'feature.rb')
       before = git(root, 'ls-files', '--stage')
       assert_raises(Shaka::Error) { guard(root, ref) }
       assert_equal before, git(root, 'ls-files', '--stage')
-      git(root, 'add', '.agents/agent-workflow.yml')
+      git(root, 'add', '.agents/shaka/config.yml')
       assert_raises(Shaka::Error) { guard(root, ref) }
     end
   end
@@ -33,7 +33,7 @@ class FeatureGuardTest < Minitest::Test
 
   def test_rename_out_of_configuration_and_untracked_legacy_seam_are_blocked
     with_checkout do |root, ref|
-      git(root, 'mv', '.agents/bin/test', 'renamed-test')
+      git(root, 'mv', '.agents/shaka/bin/test', 'renamed-test')
       assert_raises(Shaka::Error) { guard(root, ref) }
       assert_raises(Shaka::Error) { guard(root, ref, flow: 'other') }
     end

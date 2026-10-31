@@ -39,7 +39,7 @@ module CommentTrustConfigFixture
 
   def assert_config_provenance(result)
     assert_equal(%w[machine repository], result[:sources].map { |source| source['scope'] })
-    assert_equal "#{HEAD}:.agents/trusted-github-actors.yml",
+    assert_equal "#{HEAD}:.agents/shaka/trusted-github-actors.yml",
                  JSON.parse(@calls.first.last).dig('variables', 'expression')
     assert_equal "#{HEAD}:.agents/shaka/trusted-github-actors.yml",
                  JSON.parse(@calls.first.last).dig('variables', 'newExpression')
@@ -55,7 +55,7 @@ class CommentTrustConfigLegacyTest < Minitest::Test
       result = Shaka::PublicComments::TrustConfig.new(github, machine_path: path).load(base_oid: HEAD)
       assert_combined_actors(result)
       assert_config_provenance(result)
-      assert_equal '.agents/trusted-github-actors.yml', result[:sources].last.fetch('path')
+      assert_equal '.agents/shaka/trusted-github-actors.yml', result[:sources].last.fetch('path')
     end
   end
 end
@@ -78,7 +78,7 @@ class CommentTrustConfigLayoutTest < Minitest::Test
         Shaka::PublicComments::TrustConfig.new(client(blob(LOCAL, new_contents: LOCAL)), machine_path: path)
                                           .load(base_oid: HEAD)
       end
-      assert_includes error.message, '.agents/trusted-github-actors.yml'
+      assert_includes error.message, '.agents/shaka/trusted-github-actors.yml'
       assert_includes error.message, '.agents/shaka/trusted-github-actors.yml'
     end
   end

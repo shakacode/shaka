@@ -60,7 +60,7 @@ class ReviewEffortFloorSettingTest < Minitest::Test
   private
 
   def lower_floors_in_candidate(root)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     config = YAML.safe_load_file(path)
     config['pr_description']['human_review_floors'] = [EVIDENCE.first.merge('level' => 1)]
     File.write(path, YAML.dump(config))

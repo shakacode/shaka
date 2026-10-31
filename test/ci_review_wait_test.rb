@@ -139,7 +139,7 @@ class CiReviewWaitSeamTest < Minitest::Test
   end
 
   def weaken_candidate_policy(root)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     data = YAML.load_file(path)
     data['review']['ci_review_wait'] = 'none'
     data['merge'].delete('required_checks')
