@@ -137,7 +137,7 @@ module Shaka
       def reject_invalid_contract(classified)
         return unless classified.blocking.empty?
 
-        RepositoryConfig::Schema.new(root:, data: typed_contract(classified.established), available_commands: [],
+        RepositoryConfig::Schema.new(root:, data: typed_contract(classified.established),
                                      candidate_commands: false).validate
       rescue Error => e
         classified.blocking << e.message

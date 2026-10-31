@@ -204,7 +204,7 @@ is installed or the user declines.
 ## Review and merge the first setup PR
 
 When the default branch has no Shaka configuration, every `--ref` command stops
-with `Cannot find .agents/shaka/config.yml`. That includes
+with `Cannot read .agents/shaka/config.yml at REF`. That includes
 `seam check`, `reviewer`, and `merge`. The refusal is correct: the setup PR must not
 grant itself review or merge policy. Do not work around it with the candidate's
 own YAML. Handle that one PR this way:

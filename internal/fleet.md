@@ -173,7 +173,7 @@ Repository-specific script notes found during the predecessor audit:
 
 For each selected repository:
 
-1. Read the default-branch predecessor YAML, `AGENTS.md`, `.agents/shaka/README.md`, every wrapper
+1. Read the default-branch predecessor YAML, `AGENTS.md`, `.agents/shaka.md`, every wrapper
    selected for the typed seam, and live GitHub protection.
 2. Classify every predecessor key using the table above. Record repository-specific behavior in
    the PR; preserve it in the typed seam, `AGENTS.md`, or its dedicated config, or explain why it is

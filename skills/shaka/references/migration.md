@@ -13,13 +13,11 @@ or merge authority. See the [migration checklist](https://github.com/shakacode/s
 
 Older keys are deliberately rejected during this pilot:
 
-| Old field or flag | Replacement |
+| Old field | Replacement |
 | --- | --- |
 | `review.ci_review_agents`, `review.check`, `review.github_action_check` | `review.ci_review_jobs` |
 | `review.reviewers`, `review.local_reviewers` | `review.local_review_agents` |
-| `--ci-review-agent`, `--review-check`, `--github-action-check` | `--ci-review-job` |
 | `review.pace` | `review.ci_review_wait`; `swift` becomes `one`, `thorough` becomes `all` |
-| `--pace swift` / `--pace thorough` | `--ci-review-wait one` / `--ci-review-wait all` |
 | `recovery.workspace_path`, `recovery.publish_locations`, `wip.include_locations` | `wip.include_checkout_path`; migration preserves the boolean value |
 | `plan` | Point to the requirements document from `AGENTS.md` |
 | YAML `commands` mapping | Fixed `.agents/shaka/bin/` scripts |

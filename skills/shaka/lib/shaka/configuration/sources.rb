@@ -67,6 +67,7 @@ module Shaka
       # Review instructions intentionally tolerate unrelated, incomplete seam fields.
       def review_at_commit(root:, ref:, git:, capture:, probe:)
         sha = capture.call(git, '-C', root, 'rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}").strip
+        # Refuses a contract that is a symlink or not a file.
         Layout.commit(root:, sha:, allow_missing: true, git: probe)
         source = capture.call(git, '-C', root, 'show', "#{sha}:#{Paths::CONTRACT}")
         RepositoryConfig::DuplicateKeys.check(source, filename: Paths::CONTRACT)

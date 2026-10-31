@@ -750,6 +750,15 @@ class SeamMigrateCurrentLayoutTest < Minitest::Test
     end
   end
 
+  def test_a_missing_prompt_file_blocks_in_the_plan
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      review = CURRENT_SETTINGS.fetch('review').merge('replacement_prompt_file' => '.agents/missing.md')
+      sha = rewrite_yaml(root) { CURRENT_SETTINGS.merge('review' => review) }
+
+      assert(migrate_report(root, sha).fetch('blocking').any? { |entry| entry.include?('.agents/missing.md') })
+    end
+  end
+
   def test_an_empty_optional_setting_is_dropped
     with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { CURRENT_SETTINGS.merge('repo_prefix' => nil) }

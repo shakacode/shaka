@@ -39,6 +39,7 @@ module Shaka
 
     def load(ref)
       sha = resolve(ref)
+      # Refuses a contract that is a symlink or not a file.
       Configuration::Layout.commit(root: @root, sha:, allow_missing: true)
       source = read_at_commit(root: @root, sha:, display_ref: ref)
       config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:,
