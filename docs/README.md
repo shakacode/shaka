@@ -22,8 +22,9 @@ you to decide.
 - **Keep control of merging.** You merge by default, or
   [let the agent merge](working-with-shaka.md#choose-a-merge-policy) after
   required checks and approvals.
-- **Reduce prompt-injection exposure.** Shaka keeps comments from untrusted authors
-  away from the agent. [Review safety](workflow.md#trust-model) explains the boundary.
+- **Reduce prompt-injection exposure.** On public repositories, Shaka keeps comments
+  from untrusted authors away from the agent. [Review safety](workflow.md#trust-model)
+  explains the boundary.
 - **Use one workflow across projects.** Each repository
   [keeps its own](configure-repository.md#use-shaka-across-projects) checks,
   reviewers, and merge policy.

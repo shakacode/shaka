@@ -16,9 +16,9 @@ Ask your coding agent:
 Install Shaka from https://github.com/shakacode/shaka.
 ```
 
-You need Ruby 3.4 or later, Git, an authenticated [GitHub CLI](https://cli.github.com/),
-and a coding agent that can load skills and run commands. Your agent checks these
-for you. To run the commands yourself, follow [manual installation](manual-installation.md).
+You need Ruby 3.4 or later, Git 2.41 or later, an authenticated
+[GitHub CLI](https://cli.github.com/), and a coding agent that can load skills and
+run commands. To run the commands yourself, follow [manual installation](manual-installation.md).
 
 Check the install:
 
@@ -26,8 +26,8 @@ Check the install:
 /shaka doctor
 ```
 
-If it reports a problem, tell your agent to fix it. If the Shaka skill doesn't
-appear, start a new chat and try again.
+It checks Ruby, Git, and GitHub access. If it reports a problem, tell your agent to
+fix it. If the Shaka skill doesn't appear, start a new chat and try again.
 
 <a id="2-choose-private-trial-or-team-setup"></a>
 <a id="2-choose-individual-trial-or-team-setup"></a>

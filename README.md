@@ -25,8 +25,9 @@ a homepage cleanup from a Claude prompt to a PR with intent, screenshots, and a 
 - **Keep control of merging.** You merge by default, or
   [let the agent merge](docs/working-with-shaka.md#choose-a-merge-policy) after
   required checks and approvals.
-- **Reduce prompt-injection exposure.** Shaka keeps comments from untrusted authors
-  away from the agent. [Review safety](docs/workflow.md#trust-model) explains the boundary.
+- **Reduce prompt-injection exposure.** On public repositories, Shaka keeps comments
+  from untrusted authors away from the agent. [Review safety](docs/workflow.md#trust-model)
+  explains the boundary.
 - **Use one workflow across projects.** Each repository
   [keeps its own](docs/configure-repository.md#use-shaka-across-projects) checks,
   reviewers, and merge policy.
@@ -44,7 +45,7 @@ Ask your coding agent:
 Install Shaka from https://github.com/shakacode/shaka.
 ```
 
-It checks [what you need](docs/getting-started.md#1-install-shaka) for you.
+See [what you need](docs/getting-started.md#1-install-shaka).
 New to branches and pull requests? [Shaka in pictures](docs/shaka-in-pictures.md)
 explains them and walks you through a practice task.
 
