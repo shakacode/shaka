@@ -17,7 +17,7 @@ module Shaka
       raise Error, 'Merge disposition cannot override a blocking conclusion or unresolved concerns' if
         merge?(content) && !ready
 
-      awaiting!(content, report, ready)
+      awaiting!(content, report)
 
       content.slice('head', 'recommendation', 'reason', 'next_action').merge('accepted_concerns' => accepted)
     end
@@ -43,12 +43,13 @@ module Shaka
         !entry['decision'].match?(/[\r\n<`]/)
     end
 
-    # Only a verdict the maintainer can settle leaves the owner recommending merge after that decision.
-    def awaiting!(content, report, ready)
-      return unless awaiting?(content) && (ready || report.fetch('conclusion') == 'Do not merge')
+    # The owner may wait on a question the reviewer never raised, and the waiting banner makes the description
+    # list it. A Do not merge verdict leaves no merge for that decision to unlock.
+    def awaiting!(content, report)
+      return unless awaiting?(content) && report.fetch('conclusion') == 'Do not merge'
 
-      raise Error, "#{PostImplementationReport::AWAITING_DECISION} needs unaccepted concerns or a " \
-                   'Simplify/reframe verdict; use Merge or another recommendation'
+      raise Error, "#{PostImplementationReport::AWAITING_DECISION} cannot override a Do not merge verdict; " \
+                   'use another recommendation'
     end
 
     def awaiting?(content) = content['recommendation'] == PostImplementationReport::AWAITING_DECISION
