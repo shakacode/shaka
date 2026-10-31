@@ -31,7 +31,7 @@ you to decide. See [what a PR answers](pr-verification.md#answers-for-your-next-
 | --- | --- |
 | `/shaka <task or issue link>` | Delivers the task as a PR. |
 | `/shaka doctor` | Checks your setup. If it reports a problem, tell your agent to fix it. |
-| `/shaka settings` | Explains this repository's settings and changes them. |
+| `/shaka settings` | Explains this repository's settings. Ask it to change one. |
 | Anything else | Ask your agent how to get Shaka to do it. |
 
 Use `$shaka` in Codex ([other agents](coding-agents.md)).

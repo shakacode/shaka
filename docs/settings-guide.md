@@ -10,8 +10,6 @@ If the project has no Shaka setup, the agent asks whether to prepare individual
 or team settings. It finds your existing checks, explains the AI review choices,
 and defaults to Ask. The [settings reference](settings.md) owns the options and defaults.
 
-To have the agent explain this repository's current settings, use `$shaka settings`.
-
 ## Where Shaka keeps things
 
 Using Shaka is separate from your team adopting it. You can use Shaka on any

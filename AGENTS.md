@@ -17,8 +17,9 @@ is the reusable default.
   `docs/shaka-in-pictures.md` are for people. Assume the reader is new to Shaka and
   keep to what they need: install, a task, `doctor`, `settings`, and asking their
   agent for the rest.
-- Every other page under `docs/` is reference that the reader's agent reads for them.
-  Add new detail there, not to those four pages.
+- Every other page under `docs/` is reference that the reader's agent mostly reads
+  for them, still written so a person who opens it can follow it. Add new detail
+  there, not to those four pages.
 - In product guides, explain outcomes, choices, and examples. Put agent execution
   details with the skill and development records under `internal/`.
 - `bin/check-docs-navigation` refuses `docs/` links and URLs that point into
