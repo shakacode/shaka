@@ -359,7 +359,7 @@ rules:
     enforced_by: agent
     note: >-
       Nothing scans a diff or published text for credentials. The agent reads the diff, reports
-      what it finds, and keeps the value out of what it writes.
+      what it finds, and keeps the value, and the location until rotation, out of what it writes.
   - id: reviewer-setting-choice
     phase: verify
     quote: >-
