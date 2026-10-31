@@ -25,8 +25,10 @@
 ## Review evidence
 
 - Supply description `task_started_at` from the original task's initiating
-  instruction timestamp in UTC. Omit it when unavailable or later than PR opening.
+  instruction timestamp in UTC. Omit it when unavailable or later than PR opening; the helper
+  then uses the earliest `--all-turns` or `--since-time` implementation usage report.
   The helper retains it across updates; a resumed chat's start is not a new task start.
+  Pass a recorded `--ci-review-wait` task override to `description` too.
 
 - Verification opens with bound validation/review status and an optional linked `summary`.
   Put material merge-affecting gaps in `merge_limitations`; accepted gaps stay in `not_verified`.

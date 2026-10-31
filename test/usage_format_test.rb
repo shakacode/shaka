@@ -30,8 +30,15 @@ class UsageFormatTest < Minitest::Test
     assert_includes note, 'Cached input is part of input; reasoning output is part of output.'
   end
 
-  def json_report
-    JSON.parse(run_report([context('current'), usage('current', 'current', 100)], '--format', 'json'))
+  def json_report(*flags)
+    JSON.parse(run_report([context('current'), usage('current', 'current', 100)], '--format', 'json', *flags))
+  end
+
+  # A latest-turn report's first response says nothing about when the task began.
+  def test_the_record_says_whether_it_covers_the_whole_task
+    refute json_report.dig('record', 'covers_task')
+    assert json_report('--all-turns').dig('record', 'covers_task')
+    assert json_report('--since-time', '2020-01-01T00:00:00Z').dig('record', 'covers_task')
   end
 
   def test_json_with_no_responses_uses_unknown_not_zero

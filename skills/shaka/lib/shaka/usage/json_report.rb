@@ -27,7 +27,8 @@ module Shaka
       columns = json_columns(estimate, data)
       # The record keeps prices and coverage gaps, so a carried report keeps both. It leaves out the
       # response count, which its identity already lists, so repeated runs share one note.
-      record = record_identity.merge('columns' => columns, 'note' => json_note(estimate, data, with_count: false))
+      record = record_identity.merge('columns' => columns, 'note' => json_note(estimate, data, with_count: false),
+                                     'covers_task' => @options[:all_turns] == true || @options.key?(:since_time))
       { 'note' => json_note(estimate, data), 'columns' => columns, 'record' => record }
     end
 

@@ -155,6 +155,8 @@ DESCRIPTION_GH = <<~'RUBY'
                          'base' => { 'repo' => { 'full_name' => 'owner/repo' } }, 'changed_files' => 0)
     end
   when %r{pulls/1/files\?} then puts '[]'
+  when 'checks' then puts ENV.fetch('PR_CHECKS') { abort 'no checks' }
+  when %r{rules/branches/} then puts '[]'
   when 'markdown' then puts JSON.generate('<table></table>' * 10)
   when 'graphql'
     if request['query'].to_s.include?('timelineItems')
@@ -168,7 +170,7 @@ DESCRIPTION_GH = <<~'RUBY'
       puts JSON.generate('data' => { 'repository' => { 'pullRequest' => pull } })
     else
       state = ENV.fetch('PR_STATE', 'OPEN')
-      puts JSON.generate('data' => { 'repository' => { 'pullRequest' => { 'state' => state } } })
+      puts JSON.generate('data' => { 'repository' => { 'pullRequest' => { 'state' => state, 'baseRefName' => 'main' } } })
     end
   when %r{issues/1/labels\?}
     name = ENV['PR_LABEL'].to_s
