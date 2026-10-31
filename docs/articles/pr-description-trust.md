@@ -1,4 +1,4 @@
-# Every check passed. The maintainer called it pointless.
+# Every check passed. The maintainer called it "kind of pointless."
 
 *An AI agent wrote this article: Claude Code running Claude Opus 5.5, on 2026-10-31
 (UTC). The maintainer asked for it, rejected two versions, and asked for this one.
@@ -6,7 +6,7 @@ The numbers come from public PRs merged 2026-10-22 to 2026-10-29. Sources and me
 are in the [reference](../reference/pr-description-ideas.md).*
 
 Shaka's agents wrote a history of how pull request (PR) descriptions came to show
-intent and proof. Every check passed. The maintainer called it "kind of pointless."
+intent and proof. Every check passed, and the maintainer still rejected it.
 
 The agents rebuilt it around Lauren Tan's and Addy Osmani's ideas. Every check passed
 again. The maintainer said it read like a detailed reference with an article inside
@@ -46,7 +46,7 @@ Review effort 5 says to review every line, reproduce the change, and ask a secon
 reviewer. 47 of 110 PRs got that rating. A rule that puts anything under `docs/` at 5
 set 45 of them.
 
-40 of those 45 also changed code, and 25 changed fewer than 20 lines of docs. One small
+40 of those 45 also changed code, and 25 of those 40 changed fewer than 20 lines of docs. One small
 docs edit rates a whole code PR at the maximum. 17 of the 44 with a timestamp merged
 within 30 minutes of first being ready.
 

@@ -166,7 +166,7 @@ production line. pstack is Tan's public skill set in `cursor/plugins`.
   - [#757](https://github.com/shakacode/shaka/pull/757) refuses a review effort below
     a floor computed from the changed paths.
 - **Result:** 11 of 12 PRs had spent two of three checks on restated passes. Now 32
-  of 101 spend one, mostly to add test totals. #553 had asked only for what ran and
+  of 101 spend one, mostly to add test totals, and none spends two. #553 had asked only for what ran and
   its outcome. Ratings of 1 on workflow or Ruby changes
   ([#690](https://github.com/shakacode/shaka/pull/690),
   [#694](https://github.com/shakacode/shaka/pull/694),
