@@ -64,8 +64,9 @@ merge:
     max_changed_files: 29
     max_changed_lines: 999 # Additions plus deletions.
     max_commits: 9
-  # Default: 5, any human review floor (below). Ours: 2, so Auto would merge code and tests and
-  # hand back docs, agent instructions, and settings, merge, trust, validation, and install code.
+  # Default: 5, any human review floor (below). Ours: 2, so Auto would merge code, tests, and reference
+  # pages and hand back other docs, agent instructions, and settings, merge, trust, validation, and
+  # install code.
   # While preference is ask, each ready checkpoint says whether Auto would merge the PR.
   auto_max_review_floor: 2
   hold_labels: [hold] # Default. Shaka never merges a PR carrying one of these; remove it to merge.
