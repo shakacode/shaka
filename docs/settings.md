@@ -281,8 +281,8 @@ This controls when configured CI review reports are required. Options:
   no review ran, the Validation and review line says so too. A review that ran anyway
   must still match the current commit. Omit `ci_review_jobs` with this setting.
 
-Every value, `none` included, keeps a local review before push. Only trivial
-changes may skip it, and not under `always`:
+Every value, `none` included, keeps a local review before push. Only trivial prose
+and no-op changes may skip it, and not under `always`:
 
 - Use a separate session without the implementation conversation.
 - Prefer a different provider and model. If other reviewers are unavailable, the
