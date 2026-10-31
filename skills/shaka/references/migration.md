@@ -4,7 +4,7 @@
 
 Use `shaka seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA` to preview a
 migration of `.agents/shaka/config.yml` at that commit. A repository without that
-file at the commit first needs an older Shaka release to move its settings there.
+file at the commit first converts with the steps in the changelog's breaking-changes entry.
 Inspect every retained, moved, retired, and blocking field before
 adding `--apply`. Settings the current contract accepts carry over unchanged, but
 `--apply` rewrites the YAML, so restore any comments before committing. An existing
