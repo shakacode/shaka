@@ -25,14 +25,14 @@ where it fell short.
   show the work is correct, matches the intent, and is quicker to review than the
   whole PR. The #421 plan cites that post. 110 of 115 PRs now carry Intent and
   Verification.
-- Tan's advice to fix the environment showed the largest before-and-after change.
+- Fixing the environment, as Tan advises, showed the largest before-and-after change.
   When agents chose all three checks, 11 of 12 PRs spent two restating passes. After
   Shaka wrote that line itself, 32 of 101 spent one and none spent two.
-- Osmani's load-bearing paths led to Shaka's review floors, and they fit this
-  repository's data. In a study of 309 PRs, what a PR changed predicted a person's
+- By the orchestrating session's account, Osmani's load-bearing paths led to Shaka's
+  review floors. They also fit this repository's data. In a study of 309 PRs, what a PR changed predicted a person's
   feedback better than its size. 106 PRs now name their floor.
-- Factory's rule against paraphrasing a gate result led Shaka to write that line
-  itself. A tool-written line still depends on its inputs: 6 of the 8 lines reporting
+- By the same account, factory's rule against paraphrasing a gate result led to the
+  Shaka-written line. A tool-written line still depends on its inputs: 6 of the 8 lines reporting
   a missing reviewer were wrong. Both reviewers had run, and the agent passed Shaka
   one result file ([#984](https://github.com/shakacode/shaka/pull/984)).
 - One prompt sentence changed what the checkpoint reviewer reported about blast
@@ -43,7 +43,7 @@ where it fell short.
   fix.
 - Not measured: whether maintainers now decide faster or better.
 
-![Before and after. #543, merged 2026-10-15, shows a summary, a checkpoint status, and a free-form table of areas and results; nothing states the problem, what was left out, or what went untested. #974, merged 2026-10-29, shows a recommendation with links, a summary, an Intent block with Why, Task, Root cause, Safe because, Review effort 2 of 5 with its floor, and Scope, then Verification with a Shaka-written validation and review line and a Setup gaps line saying 1 of 2 configured reviewers completed. Its checks and Not verified line are folded under Evidence and limitations. A note says #984 later found the Setup gaps line wrong: both reviewers ran, and the agent passed one result. Tags mark Intent as shaped by Tan's work, and the review floor and validation line as shaped by Osmani's.](../img/pr-description-before-after.svg)
+![Before and after. #543, merged 2026-10-15, shows a summary, a checkpoint status, and a free-form table of areas and results; nothing states the problem, what was left out, or what went untested. #974, merged 2026-10-29, shows a recommendation with links, a summary, an Intent block with Why, Task, Root cause, Safe because, Review effort 2 of 5 with its floor, and Scope, then Verification with a Shaka-written validation and review line and a Setup gaps line saying 1 of 2 configured reviewers completed. Its checks and Not verified line are folded under Evidence and limitations. A note says #984 later found the Setup gaps line wrong: both reviewers ran, and the agent passed one result. Tags name Tan as the source for Intent, and Osmani as the source for the review floor and validation line, by the orchestrating session's account.](../img/pr-description-before-after.svg)
 
 ## Data and limits
 
@@ -191,7 +191,8 @@ replace the trust that reading gave.
 (2026-10-14) names verification as the bottleneck and credits Tan on giving agents a
 way to drive the real system.
 
-Ideas 7 and 8 led to #740 and #757. Idea 9 predates this work.
+By the orchestrating session's account, ideas 7 and 8 led to #740 and #757. Idea 9
+predates this work.
 
 ### 7. Report the gate result in a form the agent can't soften
 
@@ -200,7 +201,7 @@ Ideas 7 and 8 led to #740 and #757. Idea 9 predates this work.
   forbids restating it. A misconfigured gate or a skipped required gate doesn't count
   as green. Its verifier reruns the gates and treats a mismatch as a
   finding.
-- **In Shaka:** this rule led to #740. The helper writes the line from results bound
+- **In Shaka:** by that account, this rule led to #740. The helper writes the line from results bound
   to the head, and no agent types it. Any exit code other than 0 shows as failed, and missing results
   show as UNKNOWN. Hosted `validate` reruns the suite on GitHub.
 - **Result:** of 110 lines, 96 report recorded results and 14 report UNKNOWN. In 4
@@ -219,7 +220,7 @@ Ideas 7 and 8 led to #740 and #757. Idea 9 predates this work.
   has a Human read required section. The Code Nobody Reads sizes human attention to
   blast radius: a lighter pass for small changes to less sensitive code, and careful
   review for core paths.
-- **In Shaka:** these led to #757, which computes a review floor from the changed
+- **In Shaka:** by that account, these led to #757, which computes a review floor from the changed
   paths. Agents may rate higher, never lower. Tan's `correct` ladder pointed the same
   way. Floors come from the default branch, so a PR can't lower its own. factory has
   the same rule against an agent rewriting its own constraints.
