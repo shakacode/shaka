@@ -661,7 +661,7 @@ phases:
         that run's `--file` or host context, rather than from the implementation session. Use
         `--all-turns` only when the session holds solely this task. Include
         available retry and contributor records, label shared intervals and UNKNOWN fields, and
-        publish only aggregate metadata. Read the packaged
+        publish only allowlisted usage metadata. Read the packaged
         [usage guide](<{{package_root}}/skills/shaka/references/usage-reporting.md>) for selection and overlap rules.
       - Every PR description published before outcome includes its current
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>)

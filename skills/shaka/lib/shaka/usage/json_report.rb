@@ -20,7 +20,7 @@ module Shaka
       %w[cache_writes cache_write_input_tokens]
     ].freeze
 
-    def json_document
+    def json_document(samples: true)
       estimate = CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT,
                                                   rate_card: selected_rate_card)
       data = estimate.snapshot
@@ -29,10 +29,47 @@ module Shaka
       # response count, which its identity already lists, so repeated runs share one note.
       record = record_identity.merge('columns' => columns, 'note' => json_note(estimate, data, with_count: false),
                                      'covers_task' => @options[:all_turns] == true || @options.key?(:since_time))
-      { 'note' => json_note(estimate, data), 'columns' => columns, 'record' => record }
+      document = { 'note' => json_note(estimate, data), 'columns' => columns, 'record' => record }
+      journal_document(document) if samples
+      document
+    end
+
+    # Price each response with its own model and effort, so overlapping snapshots can be unioned.
+    def response_records
+      validate_journal_selection!
+
+      return [json_document(samples: false).fetch('record')] if @selected_responses.empty?
+
+      original = @selected_responses
+      original_responses = @responses
+      original.map { |id, response| response_record(id, response) }
+    ensure
+      if original
+        @selected_responses = original
+        @responses = original_responses
+      end
     end
 
     private
+
+    def validate_journal_selection!
+      raise Error, 'Selected usage turns matched no native responses.' unless unmatched_turns.empty?
+      raise Error, 'Session aggregates cannot become response journal records.' if aggregate_selected?
+    end
+
+    def aggregate_selected? = @selected_responses.values.any? { |record| record['aggregate'] }
+
+    def journal_document(document)
+      document['records'] = aggregate_selected? ? [] : response_records
+      document['usage_gap'] = 'Session aggregate retained as a call summary; native response journal unavailable.' if
+        aggregate_selected?
+    end
+
+    def response_record(id, response)
+      @selected_responses = { id => response }
+      @responses = [response]
+      json_document(samples: false).fetch('record').merge('responses' => [response_digest(id)])
+    end
 
     def json_note(estimate, data, with_count: true)
       scope = with_count ? "#{count}. Scope: #{turn_scope}." : "Scope: #{turn_scope}."

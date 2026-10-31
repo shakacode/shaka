@@ -52,4 +52,25 @@ class UsageFormatTest < Minitest::Test
     assert_includes report, '<!-- shaka:usage '
     refute_includes report, '"columns"'
   end
+
+  def test_response_records_keep_model_and_effort_changes_with_exact_counts
+    samples = switched_samples
+    assert_equal 2, samples.size
+    assert_equal %w[100 200], sample_values(samples, 'input')
+    assert_equal ['gpt-test high', 'gpt-6.1-sol medium'], sample_routes(samples)
+    assert_equal 2, samples.flat_map { |record| record['responses'] }.uniq.size
+  end
+
+  def switched_samples
+    changed = context('second')
+    changed[:payload].merge!(model: 'gpt-6.1-sol', effort: 'medium')
+    records = [context('first'), usage('one', 'first', 100), changed, usage('two', 'second', 200)]
+    JSON.parse(run_report(records, '--all-turns', '--format', 'json')).fetch('records')
+  end
+
+  def sample_routes(samples)
+    samples.map { |record| record['columns'][0].values_at('model', 'effort').join(' ') }
+  end
+
+  def sample_values(samples, key) = samples.map { |record| record['columns'][0][key] }
 end

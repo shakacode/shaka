@@ -422,11 +422,11 @@ rules:
       rule. Nothing observes a read the agent makes through another route.
   - id: aggregate-usage-only
     phase: explain
-    quote: publish only aggregate metadata
+    quote: publish only allowlisted usage metadata
     enforced_by: agent
     note: >-
-      `usage` renders aggregate rows and no per-response detail, so reporting through it
-      satisfies the rule. Nothing screens a body the agent writes by hand.
+      `usage` publishes numeric metadata and hashed response identities, without prompts,
+      transcripts, or raw source identifiers. Nothing screens a body the agent writes by hand.
   - id: helper-owns-the-body
     phase: explain
     quote: Do not rewrite the rendered GitHub body

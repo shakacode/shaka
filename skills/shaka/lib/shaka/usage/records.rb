@@ -108,7 +108,8 @@ module Shaka
     def replaces?(old, new) = new['complete'] == true || (new['complete'] == false && old['complete'] == false)
 
     def same_attribution?(old, new)
-      old['contribution'] == new['contribution'] && (Array(old['commits']) - Array(new['commits'])).empty?
+      (old['contribution'] == new['contribution'] || new['contribution'] == 'shared-planning') &&
+        (Array(old['commits']) - Array(new['commits'])).empty?
     end
 
     def covered?(old, same_host)

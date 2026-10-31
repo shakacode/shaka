@@ -6,7 +6,8 @@ Report available usage for each task's commits and contributions:
 shaka usage --commit FULL_COMMIT_SHA --contribution implementation --format json
 ```
 
-`--format json` prints `note`, `columns`, and `record`. Markdown stays the default.
+`--format json` prints `note`, `columns`, `record`, and each native response in `records`.
+A session aggregate has empty `records` and names the gap in `usage_gap`. Markdown stays the default.
 Put each report's `record`, which includes its `columns` and its `note`, into the description
 `usage.records` list, and one report's `note` into `usage.note`. The table is built
 from those records, so everything it shows can be carried by a later publish. A
@@ -46,6 +47,30 @@ Put that `usage` object in the PR, or the JSON report in the final response when
 there is no PR. **Native** figures come from the host's records. **Estimated** figures apply a
 rate card to those records. `UNKNOWN` means the records do not establish a value;
 it never means zero.
+
+## Save usage on the PR
+
+Append native response records to the PR when work may change hands. A later owner
+recovers them from GitHub without the earlier machine's transcripts.
+
+```text
+shaka usage publish OWNER/REPO NUMBER --commit SHA --contribution implementation --event commit --all-turns
+shaka usage publish OWNER/REPO NUMBER --content-file SAVED_JSON --event review
+shaka usage collect OWNER/REPO NUMBER
+```
+
+`publish` takes the source, host, commit, and contribution options of `usage`; keep the
+task's `--since-time` or `--turn` selection on every publication. `--event` is `commit`,
+`comment`, `testing`, `review`, `handoff`, `checkpoint`, or `finish`. A saved file supplies
+`records` from `usage --format json`, or `usage_records` from a saved result. A legacy aggregate
+`record` is refused: rerun the native reader. On any failure keep the JSON and retry; confirmed
+records are skipped.
+
+Only the task owner puts `collect` output in the description `usage` object. Other contributors
+publish and leave the description alone. `collect` counts each native response once, unions its
+commits, marks several contribution categories as shared, and stops on conflicting counters
+or routes: inspect the comments it names rather than choosing a total. It reads only comments
+from accounts with current write access. Keep a legacy report until its source is published.
 
 ## Select the work being reported
 

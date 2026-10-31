@@ -1,0 +1,56 @@
+# frozen_string_literal: true
+
+require_relative 'claude_usage_test'
+require 'shaka/usage/usage'
+
+class UsageJournalCurrentReadersTest < Minitest::Test
+  include ClaudeUsageFixture
+
+  ZERO_SPLIT = { ephemeral_5m_input_tokens: 0, ephemeral_1h_input_tokens: 0 }.freeze
+
+  def test_response_export_keeps_main_and_advisor_models_and_counters_separate
+    Dir.mktmpdir do |directory|
+      file = transcript(directory, 'session.jsonl', [prompt('turn'), advised_reply])
+      document = usage(file).json_document
+      assert_advisor_samples(document.fetch('records'))
+      refute_includes JSON.generate(document), 'SENSITIVE'
+    end
+  end
+
+  def test_scoped_call_cost_stays_available_without_becoming_a_response_sample
+    Dir.mktmpdir do |directory|
+      file = print_result_file(directory, shaka_usage_scope: 'independent_call', total_cost_usd: 0.42,
+                                          usage: PRINT_USAGE.except(:speed))
+      document = usage(file).json_document
+      assert_equal '$0.420000', document.fetch('columns')[0]['usd']
+      assert_empty document.fetch('records')
+      assert_includes document.fetch('usage_gap'), 'aggregate'
+    end
+  end
+
+  private
+
+  def assert_advisor_samples(samples)
+    assert_equal %w[100 823], sample_values(samples, 'input')
+    assert_equal %w[claude-opus-5 claude-opus-5-5], sample_values(samples, 'routed')
+    assert_equal 2, samples.flat_map { |record| record['responses'] }.uniq.size
+  end
+
+  def sample_values(samples, key) = samples.map { |record| record['columns'][0][key] }
+
+  def advised_reply
+    entry = priced_reply('main', 100)
+    executor = { type: 'message', input_tokens: 100, output_tokens: 20,
+                 cache_creation_input_tokens: 0 }
+    advisor = executor.merge(type: 'advisor_message', model: 'claude-opus-5-5',
+                             input_tokens: 823, output_tokens: 1612)
+    entry[:message][:usage].merge!(iterations: [executor, advisor], cache_creation_input_tokens: 0,
+                                   cache_creation: ZERO_SPLIT)
+    entry
+  end
+
+  def usage(file)
+    Shaka::Usage.new(host: 'claude-code', files: [file], turns: [], all_turns: true,
+                     commit: COMMIT, contribution: 'review')
+  end
+end

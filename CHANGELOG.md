@@ -18,6 +18,9 @@ from working is a major version.
 
 ### Added
 
+- Keep usage on the PR with `shaka usage publish` and `shaka usage collect`. Each
+  response is appended as its own comment, so contributors cannot overwrite each other,
+  and a new owner recovers it without the earlier machine's transcripts.
 - Show PR timings in a chosen time zone with `pr_description.time_zone`. A repository
   that sets none uses the zone in your `~/.agents/shaka/config.yml`, then UTC.
 - Announce a task's start on its GitHub issue with the WIP Details fields: owner,
