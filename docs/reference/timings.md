@@ -19,6 +19,44 @@ The section opens with totals for both kinds of time, for example
 `Totals: 4h 18m between checkpoints · 11h 2m waiting on a person in 2 waits`.
 The first total includes the time before the PR opened.
 
+## Read the bars
+
+Above the stretches, a chart puts the PR and its measured steps on one time axis:
+
+```text
+10-26 01:16 to 10-27 01:57 PDT (1d 0h)
+                          01:16        02:47        22:54        00:25
+PR                23h 6m               =.===.//19h//......====....============
+Validation         2h 5m  ####       ### ### //            x xxx     xx #####
+Review anthropic     13m     x # #   #   ##  //            # #       #
+Review openai        28m     x # xx  #   x#  //                      #
+Checkpoint        2m 54s                #   #//                    ##       ##
+
+- before the PR  = PR open  . waiting on a person  # step  x failed  // idle wait cut
+```
+
+- **Where the time went:** the number beside each lane adds up its runs. The PR lane's
+  number is the time from its first stretch to its last.
+- **When something ran:** read the clock times above the bars. The first line gives the
+  dates and the time zone.
+- **What ran at the same time:** marks in the same column overlapped. Each reviewer
+  provider gets its own lane.
+- **When the PR opened and waited on you:** on the PR lane, `-` turns to `=` when the PR
+  opens, and `.` marks a wait.
+- **What failed:** `x` marks a validation that failed or a review or checkpoint that
+  did not finish. Those steps keep a row in the table below, with their exit codes.
+
+A wait that fills more than a quarter of the timeline with nothing running is cut from
+the axis, so one long night does not flatten everything else. `//19h//` on the PR lane
+says how much idle time was removed, and `//` crosses the other lanes at the same
+place. Clock times jump across a cut. A wait with a step running during it is cut only
+around that step, so the label can be shorter than the wait.
+
+Each column covers the same length of time, so a run shorter than a column still takes
+a full one. A blank cell separates back-to-back runs, which can make a run look a column
+shorter. When two runs share a column in one lane, the later one shows. The table below
+still lists a failure that a retry drew over.
+
 ## Time to ready and merge
 
 The model line at the top of the description ends with the AI spend. Under
@@ -86,28 +124,31 @@ description still publishes. The next update tries again.
 
 ## Measured steps
 
-Below the stretches, the section lists how long each validation run, local
-review, and product checkpoint took. Each row also shows the reviewer's provider,
-model, and effort, the machine alias that ran it, and a result. A validation run
-reads `passed` or `failed`. A review or checkpoint reads `completed` or
+Below the stretches, the section adds up each kind of step, for example
+`Measured steps: Validation 13m (1 run) · Local review 58s (1 run)`. With the bars,
+a second line names the models and machines that ran them. The machine reads
+`UNKNOWN` when `SHAKA_MACHINE_ALIAS` is not set; setting it is described in
+[Getting started](../getting-started.md).
+
+Steps that passed or finished appear only in the bars. A step that did not gets a
+row with its exit code. A validation run reads `failed`. A review or checkpoint reads
 `not completed`, because its result says only whether it finished; its findings and
 recommendation are in its own PR comment.
 For example:
 
 | Step | Started | Time | Result | Model | Machine |
 | --- | --- | ---: | --- | --- | --- |
-| Validation: validate | 2026-10-18 08:05 | 13m | passed | — | m5 |
-| Local review | 2026-10-18 08:20 | 58s | completed | openai · gpt-6.1-sol · medium | m5 |
+| Validation: validate | 2026-10-18 08:05 | 13m | failed (exit 1) | — | m5 |
+| Local review | 2026-10-18 08:20 | 58s | not completed (exit 1) | openai · gpt-6.1-sol · medium | m5 |
 
-Above the table, a totals line such as
-`Measured steps: Validation 13m (1 run) · Local review 58s (1 run)` adds up each kind of step.
+If the bars cannot be drawn, the section lists every step in this table instead, and
+the rest of the description still publishes.
 
 The steps come from Shaka's timing log on the machine that ran them. A step
 belongs to the PR when it reviewed one of the PR's commits, or, for a validation
 run, when it tested exactly the files a commit holds. Each description update keeps
 the steps earlier updates published, so steps from another session or machine
-stay listed. The machine column reads `UNKNOWN` when `SHAKA_MACHINE_ALIAS` is
-not set; setting it is described in [Getting started](../getting-started.md).
+stay listed.
 
 Limits:
 
@@ -120,8 +161,8 @@ Limits:
 - Only the PR's latest 100 commits are matched.
 - On a PR from a fork, whose author can edit its description, earlier updates'
   steps are not kept. Only steps logged on the machine making the update appear.
-- The table shows the latest 30 steps, and the description keeps the latest 50.
-  The section notes either cut, and the totals then cover only the steps kept.
+- The description keeps the latest 50 steps, and the bars and totals cover only
+  those. The table shows the latest 30 of its rows. The section notes either cut.
 - A step logged on a machine that never updated the description afterward is
   missing, so treat the totals as what was recorded, not the whole task.
 - The earliest recorded validation time survives the step retention limit once
