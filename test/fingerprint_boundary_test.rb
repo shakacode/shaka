@@ -6,7 +6,7 @@ require 'shaka/configuration/fingerprint'
 require 'fileutils'
 require 'find'
 
-class FingerprintBoundaryTest < Minitest::Test
+module FingerprintBoundaryFixture
   include ConfigurationLayoutFixture
 
   def setup
@@ -35,6 +35,10 @@ class FingerprintBoundaryTest < Minitest::Test
                                             installation: options.fetch(:installation, @installation),
                                             private_source: @source)
   end
+end
+
+class FingerprintBoundaryTest < Minitest::Test
+  include FingerprintBoundaryFixture
 
   def test_private_source_command_override_outside_inventory_is_hashed
     path = File.join(@root, 'ci.sh')
@@ -123,5 +127,28 @@ class FingerprintBoundaryTest < Minitest::Test
     builder = Shaka::Configuration::Fingerprint
     assert_raises(Shaka::Error) { builder.build(**options) }
     assert_raises(Shaka::Error) { builder.build(**options, private_source: @source, trusted_ref: 'a' * 40) }
+  end
+end
+
+class FingerprintGitLabIdentityTest < Minitest::Test
+  include FingerprintBoundaryFixture
+
+  def test_gitlab_evidence_identity_includes_provider_host_port_and_full_namespace
+    first = fingerprint(repository: 'gitlab:gitlab.example/group/sub/repo')
+    assert_equal first.digest, fingerprint(repository: 'gitlab:gitlab.example/group/sub/repo').digest
+    ['gitlab:other.example/group/sub/repo', 'gitlab:gitlab.example:8443/group/sub/repo',
+     'gitlab:gitlab.example/group/repo', 'group/repo'].each do |repository|
+      refute_equal first.digest, fingerprint(repository:).digest
+    end
+  end
+
+  def test_malformed_gitlab_evidence_identity_is_rejected
+    ['gitlab:gitlab.example/repo', 'gitlab:gitlab.example/group//repo',
+     'gitlab:gitlab.example/group/../repo', 'gitlab:user@host/group/repo',
+     'gitlab:gitlab.example:99999/group/repo', 'gitlab:gitlab.example/group/repo?token=secret',
+     'gitlab:GitLab.Example/group/repo',
+     'gitlab:https://gitlab.example/group/repo', 'other:host/group/repo'].each do |repository|
+      assert_raises(Shaka::Error) { fingerprint(repository:) }
+    end
   end
 end
