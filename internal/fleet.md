@@ -110,14 +110,14 @@ the defaults are equivalent.
 | Predecessor setting | Typed seam destination | Migration rule |
 | --- | --- | --- |
 | `base_branch` | `base_branch` | Omit it when the predecessor named the live default branch; carry it forward only when the repository really bases work elsewhere. |
-| Command descriptions and `.agents/bin/*` | Fixed `.agents/bin/` interface | Provide executable `.agents/bin/setup`, `.agents/bin/validate`, and `.agents/bin/test`; add `.agents/bin/validate-local` and `.agents/bin/trigger-hosted-ci` only when those optional capabilities exist. Do not repeat these paths in YAML. |
+| Command descriptions and `.agents/shaka/bin/*` | Fixed `.agents/shaka/bin/` interface | Provide executable `.agents/shaka/bin/setup`, `.agents/shaka/bin/validate`, and `.agents/shaka/bin/test`; add `.agents/shaka/bin/validate-local` and `.agents/shaka/bin/trigger-hosted-ci` only when those optional capabilities exist. Do not repeat these paths in YAML. |
 | `review_gate`, `automation_reviewers` | `review` | Translate the actual required review and ordered available reviewers. Keep richer human conditions in `AGENTS.md`. |
 | `merge_submission`, `autonomous_merge`, `approval_exempt` | `merge` plus `AGENTS.md` | Choose `ask` or authorized `auto`. Shaka follows live native state: it submits an immediate squash on a queue-disabled base or enqueues the reviewed head when Merge Queue is already enabled. Repository-specific autonomous or approval-exempt paths remain outside the portable seam. |
 | `recovery.workspace_path` or `recovery.publish_locations` | `wip.include_checkout_path` | Preserve the existing boolean. It controls publication of the checkout path; the session link stays. |
 | Branch naming and `repo_prefix` | `branches.name` | Record the real branch template. Do not carry a coordination prefix forward unless the repository still needs it. |
 | Live branch rules | GitHub | Read required checks and mutation rules from GitHub. Do not copy them into the typed seam or infer them from workflow filenames. |
 | `trusted_actions` | Existing security tooling or workflow review | Preserve an operational allowlist where a repository actually consumes it. Do not copy it into the typed seam as inert metadata. |
-| `hosted_ci_trigger`, `ci_change_detector`, `ci_parity_environment` | `.agents/bin/validate-local`, `.agents/bin/trigger-hosted-ci`, other wrappers, and `AGENTS.md` | Keep executable routing in scripts and human decision rules in instructions. Do not reduce full validation to the fast local subset. |
+| `hosted_ci_trigger`, `ci_change_detector`, `ci_parity_environment` | `.agents/shaka/bin/validate-local`, `.agents/shaka/bin/trigger-hosted-ci`, other wrappers, and `AGENTS.md` | Keep executable routing in scripts and human decision rules in instructions. Do not reduce full validation to the fast local subset. |
 | Changelog, benchmark, release-QA, hosted-QA, security-preflight, contributor-intake, secret-redaction, trusted-actor, and QA-stress settings | Existing dedicated files or `AGENTS.md` | These remain repository policy. The typed seam's narrower YAML does not retire the behavior. |
 | Coordination backend, claim labels, lane limits, follow-up prefixes, and predecessor fleet controls | No typed-seam key | Retire them only when the repository no longer uses the predecessor coordination system. Do not import that system into Shaka. |
 
@@ -127,17 +127,17 @@ Shaka applies the “Scripts to Rule Them All” philosophy: every repository ex
 same small, predictable interface, while each script adapts that interface to the
 repository's own toolchain. The three required entry points are:
 
-- `.agents/bin/setup`: prepare the checkout without inventing a new toolchain;
-- `.agents/bin/validate`: run the local or CI-equivalent gate used before review.
+- `.agents/shaka/bin/setup`: prepare the checkout without inventing a new toolchain;
+- `.agents/shaka/bin/validate`: run the local or CI-equivalent gate used before review.
   It runs no test or lint suites when a fail-closed classifier proves every change is a regular,
   non-executable `README.md` or `docs/**/*.md` file; ambiguous cases run the full gate,
   whitespace checks still apply, and always-on security checks remain;
-- `.agents/bin/test`: run focused tests when the task supplies paths or arguments.
+- `.agents/shaka/bin/test`: run focused tests when the task supplies paths or arguments.
 
-`.agents/bin/validate-local` is an optional faster subset.
-`.agents/bin/trigger-hosted-ci` is an optional explicit hosted-CI entrance and requires
+`.agents/shaka/bin/validate-local` is an optional faster subset.
+`.agents/shaka/bin/trigger-hosted-ci` is an optional explicit hosted-CI entrance and requires
 `validate-local`. Existing `build`, `docs`, `lint`, `ci-detect`, database, server, and
-QA scripts may remain in `.agents/bin`; the typed seam does not expose them as top-level contract
+QA scripts may remain in `.agents/shaka/bin`; the typed seam does not expose them as top-level contract
 keys. Compose them behind the standard entry points when they are part of delivery.
 
 Prefer a small wrapper script when adapting an existing command. A wrapper can anchor
@@ -146,7 +146,7 @@ forward arguments deliberately, and replace itself with the real command using `
 A symlink is acceptable when a stable, tracked executable already has exactly the
 required invocation semantics and lives inside the repository. Do not use a symlink to
 hide a semantic mismatch between the standard name and its target. Keep `.agents` and
-`.agents/bin` as real tracked directories; only individual command entries may be symlinks.
+`.agents/shaka/bin` as real tracked directories; only individual command entries may be symlinks.
 
 Repository-specific script notes found during the predecessor audit:
 
@@ -157,15 +157,15 @@ Repository-specific script notes found during the predecessor audit:
   gate unreachable.
 - `react-on-rails-demo-marketplace-rsc` has install, serve, seed, reset, and QA-stress
   scripts. They stay repository-owned operational tools.
-- Several predecessor consumers have no `.agents/bin/setup`; each needs a truthful no-op or real
+- Several predecessor consumers have no `.agents/shaka/bin/setup`; each needs a truthful no-op or real
   setup wrapper before its typed seam can validate.
-- The tutorial must move its full CI-equivalent run behind `.agents/bin/validate`, its
-  RuboCop-only fast path behind `.agents/bin/validate-local`, and its test entry point
-  behind `.agents/bin/test`. Retain existing implementation scripts behind wrappers or
+- The tutorial must move its full CI-equivalent run behind `.agents/shaka/bin/validate`, its
+  RuboCop-only fast path behind `.agents/shaka/bin/validate-local`, and its test entry point
+  behind `.agents/shaka/bin/test`. Retain existing implementation scripts behind wrappers or
   safe symlinks rather than inverting the standard interface names. Its old seam maps
   full validation to `test` and fast validation to `validate`, so a literal compatibility
-  adapter cannot satisfy both contracts. During the seam PR, make both `.agents/bin/test`
-  and `.agents/bin/validate` run the full suite; the old fast step becomes slower but stays
+  adapter cannot satisfy both contracts. During the seam PR, make both `.agents/shaka/bin/test`
+  and `.agents/shaka/bin/validate` run the full suite; the old fast step becomes slower but stays
   safe. After the fixed interface is trusted, restore focused behavior to `test` and put
   the RuboCop-only path at `validate-local`.
 
@@ -173,7 +173,7 @@ Repository-specific script notes found during the predecessor audit:
 
 For each selected repository:
 
-1. Read the default-branch predecessor YAML, `AGENTS.md`, `.agents/bin/README.md`, every wrapper
+1. Read the default-branch predecessor YAML, `AGENTS.md`, `.agents/shaka/README.md`, every wrapper
    selected for the typed seam, and live GitHub protection.
 2. Classify every predecessor key using the table above. Record repository-specific behavior in
    the PR; preserve it in the typed seam, `AGENTS.md`, or its dedicated config, or explain why it is

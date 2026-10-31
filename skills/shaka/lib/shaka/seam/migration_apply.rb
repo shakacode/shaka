@@ -71,7 +71,7 @@ module Shaka
       end
 
       def typed_contract(established)
-        { 'version' => 1, **established.except('version') }
+        { 'version' => 1, **established.except('version') }.compact
       end
 
       def preflight_migration_files(files)

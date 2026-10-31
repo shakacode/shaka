@@ -388,10 +388,6 @@ class SeamInitializerValidationTest < Minitest::Test
   end
 end
 
-class SeamInitializerRetiredFlagTest < Minitest::Test
-  include SeamInitializerTestHelpers
-end
-
 class SeamInitializerCommandContractTest < Minitest::Test
   include SeamInitializerTestHelpers
 

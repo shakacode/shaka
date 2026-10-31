@@ -42,7 +42,7 @@ class ConfigureSettingsCoverageTest < Minitest::Test
 
   # A key is covered by its own setting, a setting it falls under, or, for a section, a setting inside it.
   def covered?(key)
-    SETTINGS.flat_map { |setting| [setting.key, *setting.aliases] }.any? do |name|
+    SETTINGS.map(&:key).any? do |name|
       key == name || key.start_with?("#{name}.") || name.start_with?("#{key}.")
     end
   end

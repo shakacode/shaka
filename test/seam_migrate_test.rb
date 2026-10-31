@@ -742,6 +742,24 @@ class SeamMigrateCurrentLayoutTest < Minitest::Test
     end
   end
 
+  def test_an_invalid_current_setting_blocks_in_the_plan
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { CURRENT_SETTINGS.merge('checkpoint' => { 'enabled' => 'yes' }) }
+
+      assert(migrate_report(root, sha).fetch('blocking').any? { |entry| entry.include?('checkpoint.enabled') })
+    end
+  end
+
+  def test_an_empty_optional_setting_is_dropped
+    with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { CURRENT_SETTINGS.merge('repo_prefix' => nil) }
+
+      assert_empty migrate_report(root, sha).fetch('blocking')
+      assert_predicate migrate(root, sha, '--apply').last, :success?
+      refute YAML.safe_load_file(File.join(root, '.agents/shaka/config.yml')).key?('repo_prefix')
+    end
+  end
+
   def test_an_existing_pointer_stays_and_rollback_leaves_it_alone
     with_predecessor_repository('control_plane_flow_shape.yml') do |root, _sha|
       pointer = File.join(root, '.agents/shaka.md')

@@ -25,13 +25,13 @@ module Shaka
     # What a resolver reads: the loaded settings, config.yml as written, and the checkout.
     Context = Data.define(:config, :raw, :root)
 
-    # One documented setting: its key, earlier names that still set it, and how Shaka resolves it.
-    Setting = Data.define(:key, :aliases, :resolve) do
+    # One documented setting: its key and how Shaka resolves it.
+    Setting = Data.define(:key, :resolve) do
       def anchor = key.delete('.')
       def path = key.split('.')
     end
 
-    def self.setting(key, aliases: [], &resolve) = Setting.new(key:, aliases:, resolve:)
+    def self.setting(key, &resolve) = Setting.new(key:, resolve:)
 
     def self.review(key) = setting("review.#{key}") { |context| context.config.review[key] }
     def self.merge(key) = setting("merge.#{key}") { |context| context.config.merge[key] }
@@ -87,19 +87,16 @@ module Shaka
 
     # One report row. A compound setting matches when each part the repository sets equals its default.
     def self.row(setting, context)
-      set_as = set_as(setting, context.raw)
-      value = set_as && context.raw.dig(*set_as.split('.'))
+      set = explicit?(context.raw, setting.path)
+      value = context.raw.dig(*setting.path) if set
       default = packaged_default(setting)
-      { 'key' => setting.key, 'set' => !set_as.nil?, 'set_as' => (set_as unless set_as == setting.key),
-        'value' => value, 'effective' => setting.resolve.call(context), 'default' => default,
-        'matches_default' => matches_default(set_as, value, default), 'reference' => "#{REFERENCE}##{setting.anchor}" }
+      { 'key' => setting.key, 'set' => set, 'value' => value, 'effective' => setting.resolve.call(context),
+        'default' => default, 'matches_default' => matches_default(set, value, default),
+        'reference' => "#{REFERENCE}##{setting.anchor}" }
     end
 
-    # The name config.yml sets the setting under, or nil when it relies on the default.
-    def self.set_as(setting, raw) = [setting.key, *setting.aliases].find { |key| explicit?(raw, key.split('.')) }
-
-    def self.matches_default(set_as, value, default)
-      return if set_as.nil? || default.nil?
+    def self.matches_default(set, value, default)
+      return if !set || default.nil?
       return value == default unless value.is_a?(Hash) && default.is_a?(Hash)
 
       value.all? { |key, part| default.key?(key) && default[key] == part }

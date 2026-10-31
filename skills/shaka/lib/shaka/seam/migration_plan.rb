@@ -110,6 +110,7 @@ module Shaka
         reject_invalid_review(classified)
         reject_invalid_merge(classified)
         require_optional_entry_points(classified)
+        reject_invalid_contract(classified)
         report_body(classified)
       end
 
@@ -128,6 +129,16 @@ module Shaka
         return unless merge.is_a?(Hash) && merge.key?('preference')
 
         RepositoryConfig::MergeSchema.new(merge).validate
+      rescue Error => e
+        classified.blocking << e.message
+      end
+
+      # Keeps the plan honest about what apply's candidate check would refuse.
+      def reject_invalid_contract(classified)
+        return unless classified.blocking.empty?
+
+        RepositoryConfig::Schema.new(root:, data: typed_contract(classified.established), available_commands: [],
+                                     candidate_commands: false).validate
       rescue Error => e
         classified.blocking << e.message
       end

@@ -4,7 +4,6 @@ require_relative '../configuration/paths'
 require_relative '../repository_config/review_schema'
 require_relative '../repository_config/schema'
 require_relative '../repository_config/post_implementation_schema'
-require_relative '../review_coverage'
 
 module Shaka
   class Seam
