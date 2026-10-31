@@ -10,6 +10,12 @@ from working is a major version.
 
 ## [Unreleased]
 
+### Fixed
+
+- Show `ready in` and `merged in` on more PRs. The description now reads the task
+  start from a usage report that covers the whole task, and records the ready time
+  each time it updates instead of only while a watch runs.
+
 ### Added
 
 - Show PR timings in a chosen time zone with `pr_description.time_zone`. A repository

@@ -7,6 +7,7 @@ require_relative 'publication/feature_guard'
 require_relative 'opening_publication'
 require_relative 'publication/review_effort_floor'
 require_relative 'review_coverage'
+require_relative 'ready_time'
 require_relative 'local_review/ledger'
 
 module Shaka
@@ -31,7 +32,8 @@ module Shaka
       current, floors, review, config = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
           review_effort_floor: ReviewEffortFloor.for(changed_paths, floors),
-          reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone)
+          reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone,
+          ready_gate: ReadyTime.gate(config))
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
@@ -92,7 +94,8 @@ module Shaka
     end
 
     def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil, # rubocop:disable Metrics/ParameterLists
-                   review_effort_floor: nil, reviewer_shortfall: nil, time_zone: nil)
+                   review_effort_floor: nil, reviewer_shortfall: nil, time_zone: nil, ready_gate: nil)
+      @ready_gate = ready_gate
       @reviewer_shortfall = reviewer_shortfall
       @time_zone = time_zone
       @review_effort_floor = review_effort_floor
@@ -124,7 +127,8 @@ module Shaka
       rows.is_a?(Integer) && rows.positive? ? rows : RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('max_human_comments')
     end
 
-    # The bound results Verification reports and the floor the changed paths set; nil when not read.
-    attr_reader :verdict, :review_effort_floor
+    # The bound results Verification reports, the floor the changed paths set, and what gates readiness;
+    # nil when not read.
+    attr_reader :verdict, :review_effort_floor, :ready_gate
   end
 end

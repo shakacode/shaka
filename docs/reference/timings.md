@@ -31,7 +31,7 @@ from the task start to the head's earliest check. CI to ready runs from that
 check until the head's required checks and configured CI reviews are green.
 Ready to merged runs from then until the merge. After a new push, the intervals
 measure the new head. `pending` is not known yet. `UNKNOWN` was not established,
-such as a ready time no watch recorded before the merge. Neither means zero.
+such as a ready time no update recorded before the merge. Neither means zero.
 
 ## What each stretch means
 
@@ -41,8 +41,9 @@ such as a ready time no watch recorded before the merge. Neither means zero.
 | Between checkpoints | The PR opens, or a wait ends | The next wait starts, the PR merges or closes, or this update |
 | Waiting on a person | The agent asks for your answer, your merge approval, or a manual resume | The agent resumes, or the PR merges or closes |
 
-The task start is agent-reported and retained across description updates. Shaka
-uses it to include planning and implementation before the first commit. The
+The task start comes from the agent, or otherwise from the earliest implementation
+usage report that covers the whole task, and is retained across description
+updates. Shaka uses it to include planning and implementation before the first commit. The
 **Before first recorded validation** interval shows the elapsed wall-clock time
 from that start to the earliest recorded validation run, including a focused test.
 It overlaps the stretches and is not added to the totals again. Missing start or
@@ -65,8 +66,13 @@ adds a label when it stops for you and removes it when work resumes.
 - Without a recorded task start, the timeline starts at the first commit and
   excludes earlier work. A rebase can move that date; when it falls after the PR
   opened, the first row is omitted.
-- The task start is supplied by the agent; Ruby checks its timestamp and order,
-  but does not verify when work actually began.
+- Ruby checks the task start's timestamp and order, but does not verify when work
+  actually began. A start read from a usage report is the agent's first response in
+  that report, moments after the request. A task that moved to a new chat before
+  its PR opened shows only the new chat's time.
+- The ready time appears once a description update or a watch sees the gate green,
+  so it can be missing until the description next updates. It stays missing when
+  the configured CI review did not run, such as a review skipped for a small change.
 - Every labeled wait counts, however short. A wait of a few seconds can be a
   quick reply or the agent relabeling the PR; the label history cannot tell them apart.
 - When a PR has waited many times, the table shows the latest 30 stretches. The

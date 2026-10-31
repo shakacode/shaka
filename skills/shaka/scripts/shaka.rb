@@ -149,13 +149,18 @@ def rendered_description(described, github, pull, workflow_version, options)
   root = options.fetch(:root)
   carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
   settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
-  timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
-  timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
-  timeline = Shaka::TaskTiming.attach(timeline, carried, pull)
+  timeline = description_timeline(carried, github, pull, settings)
   rendered = render_description(carried, workflow_version, pull, settings, timeline, options, github)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
   Shaka::CheckpointRecommendation.require_decisions!(carried, pull, github.repository)
   [rendered, carried, usage_records]
+end
+
+def description_timeline(carried, github, pull, settings)
+  timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
+  timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
+  timeline = Shaka::TaskTiming.attach(timeline, carried, pull)
+  Shaka::ReadyTime.attach(timeline, github, settings.ready_gate)
 end
 
 # Evidence is prepared first; a preview can only replace the rendering that follows it.
