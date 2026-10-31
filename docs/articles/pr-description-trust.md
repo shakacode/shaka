@@ -210,8 +210,8 @@ predates this work.
 - **Limit:** [#923](https://github.com/shakacode/shaka/pull/923) added a line for
   missing reviewers, and it counted only the result files the agent passed. #984
   traced all 8 such lines: 6 were false, and on 2 the agent never ran the second
-  reviewer. `description` now refuses results that leave out a reviewer of the same
-  commit.
+  reviewer. `description` now refuses results from one ledger batch that leave out a reviewer.
+  A result rebuilt with `review check`, as on #974, still gets through.
 
 ### 8. Send human attention to load-bearing paths
 
@@ -326,7 +326,7 @@ predates this work.
   restatement (idea 6) and an evaluation of how implementing agents verify are not
   done.
 - [#780](https://github.com/shakacode/shaka/issues/780): this repository previews
-  Auto at floor 2 and still runs Ask. A later settings PR switches
+  Auto at floor 2 and still runs Ask. A planned settings PR would switch
   `merge.preference` to `auto`.
 - [#976](https://github.com/shakacode/shaka/issues/976): usage records that survive
   model switches, restarts, and host handoffs.

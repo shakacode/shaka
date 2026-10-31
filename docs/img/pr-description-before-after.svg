@@ -33,7 +33,7 @@ text{fill:#e6edf5}
 </style>
 <rect class="bg" x="0.5" y="0.5" width="519" height="865" rx="8"/>
 <text class="h" x="16" y="28">One PR description, before and after the #421 work</text>
-<text class="u m" x="16" y="48">Visible text, abbreviated. Tags name the PR and, on three, the source (see Attribution).</text>
+<text class="u m" x="16" y="48">Visible text, abbreviated. Tags: the PR and, on three, the source (see Attribution).</text>
 
 <text class="p" x="16" y="80">Before: #543, merged 2026-10-15</text>
 <rect class="page" x="16" y="90" width="488" height="248" rx="6"/>
