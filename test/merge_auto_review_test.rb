@@ -32,6 +32,13 @@ class MergeAutoReviewTest < Minitest::Test
     end
   end
 
+  def test_refuses_findings_published_after_the_evidence_was_read
+    reads = [[attestation_comment], [published_review(finding('open'))]]
+    @client.define_singleton_method(:issue_comments) { reads.length > 1 ? reads.shift : reads.first }
+
+    assert_blocked(/1 finding needing attention/)
+  end
+
   def test_merges_once_a_maintainer_accepted_the_finding
     @client.comments = [published_review(finding('accepted', note: 'Known.', decision: 'Maintainer accepted it.'))]
 

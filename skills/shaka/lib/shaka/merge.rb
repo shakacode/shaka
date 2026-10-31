@@ -51,6 +51,8 @@ module Shaka
       verify_snapshot(current, head)
       @target.unchanged!(initial, current, @github)
       @review_evidence.final_check(head)
+      # Under Auto no person looked at the findings, so open ones stop it however late they were published.
+      MergeWaitReview.new(@github).refuse_open_findings! if @auto
       @submission.call(current, head)
     end
 
@@ -61,11 +63,9 @@ module Shaka
     end
 
     # The walkthrough explains the change; the attestation records that a separate review ran.
-    # Under Auto no person looked at the findings, so open ones stop it before any evidence counts.
     # GitHub cannot catch a seam check that fails while these are read, so it is read again.
     def verify_reviews(head, base, walkthrough, gate)
       verify_walkthrough(@github.review(walkthrough), head, walkthrough)
-      MergeWaitReview.new(@github).refuse_open_findings! if @auto
       evidence = { 'review_evidence' => @review_evidence.call(head, base:) }
       verify_gate if gate['source'] == 'seam'
       evidence
