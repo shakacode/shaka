@@ -13,6 +13,7 @@ module Shaka
              'logged on a machine that never updated this description is missing, so the totals ' \
              'can be partial. A step can overlap the stretches above.'
     FAILED_HEADING = '**Failed or unfinished steps:**'
+    # Thirty rows keep the body far below GitHub's size limit however often a pull request waits.
     MAX_ROWS = 30
 
     def initialize(zone)

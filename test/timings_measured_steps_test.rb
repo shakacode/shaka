@@ -48,17 +48,22 @@ class TimingsMeasuredStepsTest < Minitest::Test
   end
 
   def test_a_chart_that_cannot_render_keeps_every_step_row
-    timeline = { 'opened' => OPENED, 'merged' => OPENED + 3600, 'labels' => [], 'steps' => STEPS }
-    broken = Class.new(Shaka::TimingsDetails) do
-      private
-
-      def draw_bars(_rows, _steps) = raise(ArgumentError, 'bad')
-    end
-    body = broken.new(timeline).detail['body']
+    finished = STEPS.last.merge('id' => 'c' * 16, 'command' => 'post-implementation run', 'exit' => 0)
+    timeline = { 'opened' => OPENED, 'merged' => OPENED + 3600, 'labels' => [], 'steps' => [*STEPS, finished] }
+    body = broken_chart.new(timeline).detail['body']
 
     refute_includes body, '```text'
     assert_includes body, '| Validation: validate | 2026-10-18 08:05 | 13m | passed | — | m5 |'
     assert_includes body, '| Local review | 2026-10-18 08:20 | 58s | not completed (exit 1) |'
+    assert_includes body, '| Product checkpoint | 2026-10-18 08:20 | 58s | completed |'
+  end
+
+  def broken_chart
+    Class.new(Shaka::TimingsDetails) do
+      private
+
+      def draw_bars(_rows, _steps) = raise(ArgumentError, 'bad')
+    end
   end
 
   # A review or checkpoint exits 0 whatever it concluded, so an unfinished one never reads failed or passed.

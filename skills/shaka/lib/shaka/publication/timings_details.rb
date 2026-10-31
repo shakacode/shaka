@@ -18,8 +18,7 @@ module Shaka
     GUIDE = '[Understand the timings](https://shaka.shakacode.com/docs/reference/timings).'
     LEGEND = 'Times are %s wall-clock time. A wait runs from when an attention label goes on until it ' \
              'comes off or the pull request merges or closes.'
-    # Thirty rows keep the body far below GitHub's size limit however often a pull request waits.
-    MAX_ROWS = 30
+    MAX_ROWS = MeasuredSteps::MAX_ROWS
 
     def self.refuse_free_form!(items)
       return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.match?(/\Atimings\b/i) }

@@ -120,9 +120,9 @@ description still publishes. The next update tries again.
 ## Measured steps
 
 Below the stretches, the section adds up each kind of step, for example
-`Measured steps: Validation 13m (1 run) · Local review 58s (1 run)`. A second line
-names the models and machines that ran them. The machine reads `UNKNOWN` when
-`SHAKA_MACHINE_ALIAS` is not set; setting it is described in
+`Measured steps: Validation 13m (1 run) · Local review 58s (1 run)`. With the bars,
+a second line names the models and machines that ran them. The machine reads
+`UNKNOWN` when `SHAKA_MACHINE_ALIAS` is not set; setting it is described in
 [Getting started](../getting-started.md).
 
 Steps that passed or finished appear only in the bars. A step that did not gets a
