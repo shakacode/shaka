@@ -339,6 +339,18 @@ class OpencodeV2UsageTest < Minitest::Test
     end
   end
 
+  def test_skips_an_interrupted_response_that_reports_no_tokens
+    Dir.mktmpdir do |directory|
+      document = v2_fixture
+      interrupted = v2_assistant('resp-interrupted', 1_789_660_292_360, 1_789_660_292_361, tokens(0, 0, 0))
+      interrupted = interrupted.except('tokens').merge('finish' => 'error', 'error' => { 'type' => 'aborted' })
+      document['data']['messages'].push(interrupted)
+      output = report('--host', 'opencode', '--file', write_export(directory, document))
+      assert_includes output, V2_ROW
+      assert_includes output, '1 responses'
+    end
+  end
+
   def test_a_v2_export_without_a_message_list_is_unreadable
     Dir.mktmpdir do |directory|
       output = report('--host', 'opencode', '--file', write_export(directory, { 'data' => { 'messages' => 'x' } }))

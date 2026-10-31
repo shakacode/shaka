@@ -36,12 +36,18 @@ module Shaka
 
     def with_turns(messages)
       turn = nil
-      messages.map do |message|
+      messages.reject { |message| interrupted?(message) }.map do |message|
         next message unless message.is_a?(Hash)
 
         turn = message['id'] if message['type'] == 'user'
         { 'info' => info(message, turn) }
       end
+    end
+
+    # A response interrupted before any usage arrived ends in error with no tokens; 1.x
+    # recorded it with zero tokens, so it is not counted.
+    def interrupted?(message)
+      message.is_a?(Hash) && message['type'] == 'assistant' && message['error'] && message['tokens'].nil?
     end
 
     # A compaction that reports tokens is a billed model call, as 1.x recorded it with an
