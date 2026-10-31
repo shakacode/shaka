@@ -45,6 +45,8 @@ Install Shaka from https://github.com/shakacode/shaka.
 ```
 
 It checks [what you need](docs/getting-started.md#1-install-shaka) for you.
+New to branches and pull requests? [Shaka in pictures](docs/shaka-in-pictures.md)
+explains them and walks you through a practice task.
 
 <a id="example-prompts"></a>
 

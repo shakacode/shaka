@@ -24,8 +24,9 @@ For a request to review documentation together, one topic at a time, follow the
 topic.
 For `settings` alone, a request to see what a reviewer receives, or a request to explain or
 change this repository's settings, follow the [configure procedure](references/configure.md).
-For a question about how to use Shaka, answer from the
-[product docs](https://github.com/shakacode/shaka/blob/main/docs/README.md) and stop.
+For a question about how to use Shaka, answer from the `docs/` directory two levels above this
+skill's resolved directory, or the [published docs](https://github.com/shakacode/shaka/blob/main/docs/README.md)
+when that copy is absent, and stop.
 For a request to install or update Shaka itself, follow
 [official installation](references/official-installation.md), or for a fork install or
 its update, the [fork procedure](references/installation.md#install-from-a-personal-fork),
