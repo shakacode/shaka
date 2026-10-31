@@ -4,12 +4,33 @@
 
 Give your coding agent a task. It builds, tests, and gets an independent review.
 You get one PR that says what changed, how it was checked, and what is left for
-you to decide. See [what a PR answers](pr-verification.md#answers-for-your-next-decision).
+you to decide.
 
 ![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](img/task-to-pr.svg)
 
+## Why use Shaka
+
+- **Review faster.** Each PR says why the change exists, how it was checked, and
+  how closely to read the code.
+- **See the proof and the cost.** Each check links to its result, unproven claims
+  stay visible, and the PR shows available usage and cost. UI changes add
+  before-and-after screenshots.
+- **Catch problems before CI.** Tests and an independent review run before the
+  push, so you repeat fewer CI runs.
+- **Spend less time directing the process.** Describe the outcome, and Shaka
+  supplies the steps.
+- **Keep control of merging.** You merge by default, or
+  [let the agent merge](working-with-shaka.md#choose-a-merge-policy) after
+  required checks and approvals.
+- **Reduce prompt-injection exposure.** Shaka keeps comments from untrusted authors
+  away from the agent. [Review safety](workflow.md#trust-model) explains the boundary.
+- **Use one workflow across projects.** Each repository
+  [keeps its own](configure-repository.md#use-shaka-across-projects) checks,
+  reviewers, and merge policy.
+
+See [what a PR answers](pr-verification.md#answers-for-your-next-decision).
+
 <a id="start-here"></a>
-<a id="why-use-shaka"></a>
 
 ## What to do first
 
@@ -36,8 +57,8 @@ you to decide. See [what a PR answers](pr-verification.md#answers-for-your-next-
 
 Use `$shaka` in Codex ([other agents](coding-agents.md)).
 
-You don't need to read the rest of these pages. They are a reference for your
-agent. Open one when you want the detail.
+You don't need to read the rest of these pages to use Shaka. They are mostly
+reference for your agent. Open one when you want the detail.
 
 <a id="configure-and-understand"></a>
 

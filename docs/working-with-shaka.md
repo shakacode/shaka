@@ -9,7 +9,7 @@ Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode
 
 <a id="what-you-get"></a>
 
-For what each PR shows, see [what a PR answers](pr-verification.md#answers-for-your-next-decision).
+For what each PR shows, see [Why use Shaka](README.md#why-use-shaka).
 
 ## Give it an outcome
 

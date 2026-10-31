@@ -11,6 +11,28 @@ you to decide.
 [Watch the 52-second demo](https://www.youtube.com/watch?v=T6Fstx2fGJI):
 a homepage cleanup from a Claude prompt to a PR with intent, screenshots, and a checkpoint.
 
+## Why use it?
+
+- **Review faster.** Each PR says why the change exists, how it was checked, and
+  how closely to read the code.
+- **See the proof and the cost.** Each check links to its result, unproven claims
+  stay visible, and the PR shows available usage and cost. UI changes add
+  before-and-after screenshots.
+- **Catch problems before CI.** Tests and an independent review run before the
+  push, so you repeat fewer CI runs.
+- **Spend less time directing the process.** Describe the outcome, and Shaka
+  supplies the steps.
+- **Keep control of merging.** You merge by default, or
+  [let the agent merge](docs/working-with-shaka.md#choose-a-merge-policy) after
+  required checks and approvals.
+- **Reduce prompt-injection exposure.** Shaka keeps comments from untrusted authors
+  away from the agent. [Review safety](docs/workflow.md#trust-model) explains the boundary.
+- **Use one workflow across projects.** Each repository
+  [keeps its own](docs/configure-repository.md#use-shaka-across-projects) checks,
+  reviewers, and merge policy.
+
+[See what a Shaka PR gives you](docs/pr-verification.md#answers-for-your-next-decision).
+
 <a id="get-started"></a>
 <a id="requirements"></a>
 
@@ -35,11 +57,10 @@ It checks [what you need](docs/getting-started.md#1-install-shaka) for you.
 | `/shaka settings` | Explains this repository's settings. Ask it to change one. |
 | Anything else | Ask your agent how to get Shaka to do it. |
 
-Use `$shaka` in Codex ([other agents](docs/coding-agents.md)). By default, you
-decide whether to merge ([Ask or Auto](docs/working-with-shaka.md#choose-a-merge-policy)).
+Use `$shaka` in Codex ([other agents](docs/coding-agents.md)).
 
-You don't need to read the docs. They are a reference for your agent, and you can
-[browse them](https://shaka.shakacode.com/) anytime.
+You don't need to read the docs to use Shaka. They are mostly reference for your
+agent, and you can [browse them](https://shaka.shakacode.com/) anytime.
 
 [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
 
