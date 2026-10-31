@@ -318,6 +318,12 @@ phases:
         `--root DIR` to `review check`. A review result captures the committed tree and settings.
         `review run` refuses a dirty checkout as `dirty_worktree`; a `review check` from one stays
         provisional because the reviewer did not see those edits.
+      - Before each review, read that diff for real credentials: keys, tokens, passwords, and
+        `.env` contents. Take any you find out of every unpushed commit. Tell the user in chat
+        which file held it, and never repeat the value in chat, commits, or PR text. If it
+        already reached a remote or a review provider, or you noticed it elsewhere in the
+        repository, also tell the user to rotate it, because deleting it leaves it in Git history.
+        Keep its location out of public artifacts until the user has rotated it.
       - Before push and publication, use `shaka evidence verify --root DIR --ref TRUSTED_SHA
         --repository OWNER/REPO --head SHA --validation PATH --review PATH` with the actual
         repository validation and review JSON results. Missing or superseded results need the affected
