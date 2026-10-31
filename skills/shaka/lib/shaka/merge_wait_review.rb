@@ -22,12 +22,22 @@ module Shaka
     def check!(snapshot)
       return unless snapshot['state'] == 'OPEN'
 
-      refuse_open(published_open_findings)
+      refuse_open_findings!
       @evidence.call(snapshot.fetch('headRefOid'), base: snapshot['baseRefName'])
     rescue MergeReviewEvidence::Missing
       raise unless @required == 'none'
 
       { 'basis' => 'not_required' }
+    end
+
+    # No waiver or review.required value excuses a published open finding, and an unreadable list refuses.
+    def refuse_open_findings!
+      count = published_open_findings
+      return if count.zero?
+
+      noun = count == 1 ? '1 finding' : "#{count} findings"
+      raise OpenFindings, "The local review still has #{noun} needing attention. Fix and review them, or settle " \
+                          'each with `review record`, then `review publish`.'
     end
 
     private
@@ -41,15 +51,6 @@ module Shaka
         [comment['updated_at'].to_s, count] if count
       end
       reviews.max&.last.to_i
-    end
-
-    def refuse_open(count)
-      return if count.zero?
-
-      noun = count == 1 ? '1 finding' : "#{count} findings"
-      raise OpenFindings, "The local review still has #{noun} needing attention, so this PR is not waiting only " \
-                          'on a merge. Fix and review them, or settle each with `review record`, then ' \
-                          '`review publish`.'
     end
   end
 end

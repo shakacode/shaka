@@ -339,6 +339,11 @@ The merge result shows the review it relied on, or the waiver reason, under
 `review_evidence`. That records what the posted line says. It does not prove a
 reviewer process ran or that its findings were fixed.
 
+When Shaka merges under `auto`, it also stops while the PR's local review reports
+findings needing attention. Neither a waiver nor `review.required: none` changes that,
+and it also stops when GitHub can't list the comments. Fix the findings, or have a
+maintainer accept them so the agent can record that decision.
+
 ## `review.ci_review_jobs`
 
 **Required unless `review.required` is `none`.** List the GitHub job names that

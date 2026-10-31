@@ -6,6 +6,7 @@ require_relative 'merge_submission'
 require_relative 'ci_review_wait'
 require_relative 'required_checks'
 require_relative 'merge_review_evidence'
+require_relative 'merge_wait_review'
 require_relative 'merge_required_checks'
 require_relative 'merge_limits'
 require_relative 'auto_merged_label'
@@ -60,9 +61,11 @@ module Shaka
     end
 
     # The walkthrough explains the change; the attestation records that a separate review ran.
+    # Under Auto no person looked at the findings, so open ones stop it before any evidence counts.
     # GitHub cannot catch a seam check that fails while these are read, so it is read again.
     def verify_reviews(head, base, walkthrough, gate)
       verify_walkthrough(@github.review(walkthrough), head, walkthrough)
+      MergeWaitReview.new(@github).refuse_open_findings! if @auto
       evidence = { 'review_evidence' => @review_evidence.call(head, base:) }
       verify_gate if gate['source'] == 'seam'
       evidence
