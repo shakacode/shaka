@@ -129,13 +129,10 @@ module Shaka
         'note' => "#{note}\n\nAttribution categories: #{categories.join(', ')}." }
     end
 
-    # A price stays with the note explaining it: the first measured one, or the copy that first supplies it.
-    def pricing_note(old, record)
-      priced = PRICED.any? do |key|
-        old['columns'].first[key] == 'UNKNOWN' && record['columns'].first[key] != 'UNKNOWN'
-      end
-      priced ? record['note'] : old['note']
-    end
+    # A response's prices and the note explaining them stay together, from the first snapshot that priced it.
+    def pricing_note(old, record) = priced?(old) ? old['note'] : record['note']
+
+    def priced?(record) = record['columns'].first.values_at(*PRICED).any? { |value| value != 'UNKNOWN' }
 
     def categories(record)
       prior = record['note'].to_s[/Attribution categories: ([^\n]*)\.\z/, 1]
@@ -146,15 +143,18 @@ module Shaka
 
     def merge_column(old, record)
       fresh = record['columns'].first
-      old['columns'].first.to_h do |key, value|
-        incoming = fresh.fetch(key)
-        if OBSERVED.include?(key) && ![value, incoming].include?('UNKNOWN') && value != incoming
-          raise Error, "Usage journal has conflicting #{key} for response #{old['responses'].first}; " \
-                       'inspect the PR comments holding that response.'
-        end
+      old['columns'].first.to_h { |key, value| [key, merged_value(key, value, fresh.fetch(key), old)] }
+    end
 
-        [key, value == 'UNKNOWN' ? incoming : value]
+    def merged_value(key, value, incoming, old)
+      return priced?(old) ? value : incoming if PRICED.include?(key)
+
+      if OBSERVED.include?(key) && ![value, incoming].include?('UNKNOWN') && value != incoming
+        raise Error, "Usage journal has conflicting #{key} for response #{old['responses'].first}; " \
+                     'inspect the PR comments holding that response.'
       end
+
+      value == 'UNKNOWN' ? incoming : value
     end
   end
 end

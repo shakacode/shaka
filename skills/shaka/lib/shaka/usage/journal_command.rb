@@ -17,6 +17,7 @@ module Shaka
 
       action, repository, number = arguments.shift(3)
       raise Error, 'Usage: shaka usage publish|collect OWNER/REPO NUMBER [options]' unless valid_action?(action)
+      raise Error, 'shaka usage collect takes no options.' if action == 'collect' && !arguments.empty?
 
       puts JSON.pretty_generate(execute(action, repository, number, parse(arguments)))
       0

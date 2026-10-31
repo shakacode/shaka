@@ -28,6 +28,16 @@ class UsageJournalCurrentReadersTest < Minitest::Test
     end
   end
 
+  def test_a_response_without_a_readable_counter_claims_no_measured_identity
+    Dir.mktmpdir do |directory|
+      unread = priced_reply('main', 'unreadable')
+      unread[:message][:usage] = {}
+      file = transcript(directory, 'session.jsonl', [prompt('turn'), unread])
+      records = usage(file).response_records
+      assert_equal([[]], records.map { |record| record['responses'] })
+    end
+  end
+
   private
 
   def assert_advisor_samples(samples)

@@ -19,13 +19,14 @@ class UsageJournalTest < Minitest::Test
 
   class GitHub
     attr_reader :repository, :number, :comments, :writes
-    attr_accessor :stale, :fail_after
+    attr_accessor :stale, :fail_after, :author
 
     def initialize
       @repository = 'owner/repo'
       @number = 12
       @comments = []
       @writes = []
+      @author = 'writer'
     end
 
     def api_list(_path) = @stale ? [] : @comments.dup
@@ -41,7 +42,7 @@ class UsageJournalTest < Minitest::Test
 
       @writes << [path, fields]
       comment = fields.transform_keys(&:to_s).merge('id' => @comments.size + 1, 'html_url' => 'https://github.com/owner/repo/pull/12#issuecomment-1',
-                                                    'user' => { 'login' => 'writer' })
+                                                    'user' => { 'login' => author })
       @comments << comment
       comment
     end
@@ -298,7 +299,7 @@ class UsageJournalRoundTripTest < Minitest::Test
 
   def test_a_known_price_brings_its_own_note
     unpriced = record('r1').merge('note' => 'Unsupported model.')
-    unpriced['columns'] = [unpriced['columns'][0].merge('usd' => 'UNKNOWN')]
+    unpriced['columns'] = [unpriced['columns'][0].merge('usd' => 'UNKNOWN', 'credits' => 'UNKNOWN')]
     merged = Shaka::UsageJournalRecords.combine([unpriced, record('r1')]).first
     assert_equal '$0.10', merged['columns'][0]['usd']
     assert_equal 'Native sample.', merged['note']
@@ -309,6 +310,28 @@ class UsageJournalRoundTripTest < Minitest::Test
     later['columns'] = [later['columns'][0].merge('usd' => '$0.20')]
     merged = Shaka::UsageJournalRecords.combine([record('r1'), later]).first
     assert_equal ['$0.10', 'Native sample.'], [merged['columns'][0]['usd'], merged['note']]
+  end
+
+  def test_mixed_enrichment_keeps_the_first_measured_prices_and_note_together
+    later = priced('$0.20', '9 credits').merge('note' => 'Later card.')
+    merged = Shaka::UsageJournalRecords.combine([priced('$0.10', 'UNKNOWN'), later]).first
+    assert_equal ['$0.10', 'UNKNOWN', 'Native sample.'],
+                 [*merged['columns'][0].values_at('usd', 'credits'), merged['note']]
+  end
+
+  def test_publishing_without_write_access_reports_that_collection_ignores_it
+    github = UsageJournalTest::GitHub.new
+    github.author = 'outsider'
+    error = assert_raises(Shaka::Error) { reader(github).publish([record('r1')], event: 'commit') }
+    assert_includes error.message, 'write access'
+  end
+
+  def test_an_unreadable_comment_is_named
+    github = UsageJournalTest::GitHub.new
+    github.comments << { 'id' => 7, 'html_url' => 'https://example.test/c7', 'user' => { 'login' => 'writer' },
+                         'body' => "#{Shaka::UsageJournal::MARK}\nno records" }
+    error = assert_raises(Shaka::Error) { reader(github).collect }
+    assert_includes error.message, 'https://example.test/c7'
   end
 
   def test_a_conflict_names_the_response
@@ -335,6 +358,11 @@ class UsageJournalRoundTripTest < Minitest::Test
   end
 
   private
+
+  def priced(usd, credits)
+    entry = record('r1')
+    entry.merge('columns' => [entry['columns'][0].merge('usd' => usd, 'credits' => credits)])
+  end
 
   def reader(github) = Shaka::UsageJournal.new(github, identity: 'id')
 

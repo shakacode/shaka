@@ -60,7 +60,7 @@ module Shaka
     def response_record(id, response)
       @selected_responses = { id => response }
       @responses = [response]
-      json_document.fetch('record').merge('responses' => [response_digest(id)])
+      json_document.fetch('record')
     end
 
     def json_note(estimate, data, with_count: true)

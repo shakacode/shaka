@@ -61,6 +61,8 @@ module Shaka
     def append(text)
       created = @github.api(comment_path, method: 'POST', fields: { body: text })
       raise Error, 'Stored usage snapshot differs; inspect the PR before retrying.' unless created['body'] == text
+      raise Error, 'This account lacks write access, so collection will ignore its usage comments.' unless
+        writer?(created)
 
       created.slice('id', 'html_url')
     end
@@ -82,8 +84,15 @@ module Shaka
       comments.flat_map do |comment|
         next [] unless comment['body'].to_s.start_with?("#{MARK}\n") && writer?(comment)
 
-        UsageJournalRecords.parse(comment['body'])
+        parsed(comment)
       end
+    end
+
+    # One unreadable comment stops every read, so name it: its owner has to repair or delete it.
+    def parsed(comment)
+      UsageJournalRecords.parse(comment['body'])
+    rescue Error => e
+      raise Error, "#{e.message} Comment: #{comment['html_url'] || comment['id']}."
     end
 
     def comment_path = "repos/#{@github.repository}/issues/#{@github.number}/comments"
