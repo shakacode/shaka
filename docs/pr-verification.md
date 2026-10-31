@@ -24,7 +24,8 @@ agent set it while the PR's local review has findings needing attention, or when
 published review covers the current commit. To skip review on purpose, such as for a
 typo fix, the agent gives a reason, which appears in the command's result. Repositories
 with `review.required: none` don't need one. If findings were published, a reason
-doesn't clear them: someone has to fix them or record a decision.
+doesn't clear them: someone has to fix them or record a decision. Under **Auto**, the
+agent's merge stops for the same open findings.
 
 An **Approve** review on GitHub also grants Ask authority when it comes from a
 login you named to the agent as a merge approver for this task. For example:

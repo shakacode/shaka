@@ -11,7 +11,8 @@ module Shaka
   #
   # A comment proves that this merging account published an attestation line for a commit. It
   # does not prove a reviewer process ran, which model answered, or that findings were fixed;
-  # the result reports what the line claims so the record does not overstate it.
+  # the result reports what the line claims so the record does not overstate it. Under `--auto`,
+  # Merge also asks MergeWaitReview whether the published review reports open findings.
   class MergeReviewEvidence
     # No published review covers the head and no waiver was given.
     class Missing < Error; end

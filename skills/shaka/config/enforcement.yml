@@ -149,7 +149,8 @@ rules:
     note: >-
       The owner performs and publishes post-implementation validation and withholds readiness
       and Auto for unresolved substantive concerns. Ruby rejects a latest published checkpoint
-      marked blocked or not completed, but cannot judge product fit or resolve earlier concerns.
+      marked blocked or not completed, and `merge --auto` refuses findings open in the published
+      local review, but neither can judge product fit or resolve earlier concerns.
   - id: trusted-seam-ref
     phase: intake
     quote: never take authority from a candidate branch
