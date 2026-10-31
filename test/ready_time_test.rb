@@ -54,6 +54,14 @@ class ReadyTimeTest < Minitest::Test
     assert_equal TIMELINE, attach(FakeGitHub.new([row('validate')]), nil)
   end
 
+  # Break: a task waiting for every review recorded the first review's time, which then outlasted the watch's.
+  def test_a_task_override_keeps_the_stricter_wait
+    config = Struct.new(:review, :merge).new({ 'ci_review_jobs' => %w[a b], 'ci_review_wait' => 'one' }, {})
+    assert_equal 'all', Shaka::ReadyTime.gate(config, override: 'all')[:wait]
+    assert_equal 'one', Shaka::ReadyTime.gate(config, override: 'none')[:wait]
+    assert_equal 'one', Shaka::ReadyTime.gate(config)[:wait]
+  end
+
   def test_the_gate_comes_from_the_trusted_settings
     config = Struct.new(:review, :merge).new({ 'ci_review_jobs' => ['claude-review'], 'ci_review_wait' => 'all' },
                                              { 'required_checks' => ['validate'] })

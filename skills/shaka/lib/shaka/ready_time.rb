@@ -10,13 +10,13 @@ module Shaka
   module ReadyTime
     module_function
 
-    # Nil until trusted settings say which checks and reviews make up the gate.
-    def gate(config)
+    # Nil until trusted settings say which checks and reviews make up the gate. A task override may only raise the wait.
+    def gate(config, override: nil)
       return unless config
 
       review = config.review
       { jobs: Array(review['ci_review_jobs']),
-        wait: CiReviewWait.effective(seam: review['ci_review_wait'], override: nil),
+        wait: CiReviewWait.effective(seam: review['ci_review_wait'], override:),
         seam_required_checks: config.merge['required_checks'] }
     end
 

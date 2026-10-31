@@ -33,7 +33,7 @@ module Shaka
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
           review_effort_floor: ReviewEffortFloor.for(changed_paths, floors),
           reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone,
-          ready_gate: ReadyTime.gate(config))
+          ready_gate: ReadyTime.gate(config, override: options[:ci_review_wait]))
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
