@@ -161,6 +161,15 @@ class MergeWaitReviewTest < Minitest::Test
     assert_raises(Shaka::MergeWaitReview::OpenFindings) { gate(waiver: 'Skip review.').check!(snapshot) }
   end
 
+  def test_a_closed_pr_is_left_to_the_label_command
+    assert_nil gate.check!(snapshot.merge('state' => 'MERGED'))
+  end
+end
+
+# Which published comment speaks for the review, and what can't change its answer.
+class MergeWaitReviewPublishedCommentTest < Minitest::Test
+  include MergeWaitReviewFixtures
+
   def test_a_continuation_comment_does_not_hide_the_main_comments_open_findings
     continuation = "# Local Adversarial Review · earlier commits (1)\n\n**Outcome:** No open findings.\n\n" \
                    "REVIEWED #{EARLIER} BY openai/codex EFFORT high FINDINGS 0\n"
@@ -185,15 +194,26 @@ class MergeWaitReviewTest < Minitest::Test
     assert_raises(Shaka::MergeWaitReview::OpenFindings) { gate.check!(snapshot) }
   end
 
+  def test_a_tie_between_published_reviews_reads_as_open
+    same = { 'updated_at' => '2026-10-30T03:00:00Z' }
+    @client.comments = [published([finding('open')]).merge(same), published([], head: EARLIER).merge(same)]
+
+    assert_raises(Shaka::MergeWaitReview::OpenFindings) { gate.check!(snapshot) }
+  end
+
+  def test_a_comment_saved_with_crlf_line_endings_keeps_its_open_findings
+    comment = published([finding('open')])
+    comment['body'] = comment['body'].gsub("\n", "\r\n")
+    @client.comments = [comment]
+
+    assert_raises(Shaka::MergeWaitReview::OpenFindings) { gate.check!(snapshot) }
+  end
+
   def test_the_comment_github_stores_is_read_with_its_reply_key
     comment = published([finding('open')])
     comment['body'] = "<!-- shaka:reply:local-review-loop-abc-def -->\n#{comment['body']}"
     @client.comments = [comment]
 
     assert_raises(Shaka::MergeWaitReview::OpenFindings) { gate.check!(snapshot) }
-  end
-
-  def test_a_closed_pr_is_left_to_the_label_command
-    assert_nil gate.check!(snapshot.merge('state' => 'MERGED'))
   end
 end

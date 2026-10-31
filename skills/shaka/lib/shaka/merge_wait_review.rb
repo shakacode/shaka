@@ -33,14 +33,14 @@ module Shaka
     private
 
     # The review published last speaks for the loop. Republishing keeps a comment's place in GitHub's
-    # listing, so its update time decides. A comment with no Outcome line says nothing about the review.
+    # listing, so its update time decides, and a tie reads as the larger count.
     def published_open_findings
       account = @github.viewer_login
-      reviews = @github.issue_comments.select do |comment|
-        comment.dig('user', 'login') == account && LocalReviewEvidence.pending_count(comment['body'].to_s)
+      reviews = @github.issue_comments.filter_map do |comment|
+        count = LocalReviewEvidence.pending_count(comment['body'].to_s) if comment.dig('user', 'login') == account
+        [comment['updated_at'].to_s, count] if count
       end
-      newest = reviews.max_by { |comment| [comment['updated_at'].to_s, comment['id'].to_i] }
-      newest ? LocalReviewEvidence.pending_count(newest['body'].to_s) : 0
+      reviews.max&.last.to_i
     end
 
     def refuse_open(count)

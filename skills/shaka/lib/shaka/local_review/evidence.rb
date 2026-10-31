@@ -15,7 +15,8 @@ module Shaka
 
     # How many findings a published review says need attention, or nil when body is not a main review comment.
     def self.pending_count(body)
-      outcome = body[OUTCOME, 1]
+      # GitHub's web editor stores CRLF, and the attestation that goes with this line tolerates it.
+      outcome = body.gsub("\r\n", "\n")[OUTCOME, 1]
       outcome && outcome[/\A(\d+) findings? needs? attention/, 1].to_i
     end
 
