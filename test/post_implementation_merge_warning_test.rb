@@ -73,6 +73,31 @@ class PostImplementationMergeWarningTest < Minitest::Test
     end
   end
 
+  def recommend(result, recommendation)
+    result['disposition'] = { 'head' => result['head'], 'recommendation' => recommendation,
+                              'reason' => 'The fix meets the request.', 'next_action' => 'Ask Justin.' }
+  end
+
+  def assert_republished(result, path, github, recommendation)
+    recommend(result, recommendation)
+    assert_equal 0, publish(result, path, github:)[1]
+    assert_equal recommendation, Shaka::PostImplementationEvidence.new(github).recommendation(result['head'])
+  end
+
+  def test_a_question_after_a_merge_checkpoint_moves_the_same_result_to_waiting_and_back
+    with_result do |result, path|
+      recommend(result, 'Merge')
+      github, = publish(result, path)
+
+      assert_republished(result, path, github, Shaka::PostImplementationReport::AWAITING_DECISION)
+      assert github.snapshot['isDraft']
+      assert_includes github.description_body, 'Not ready to merge'
+
+      assert_republished(result, path, github, 'Merge')
+      refute_includes github.description_body, 'Not ready to merge'
+    end
+  end
+
   def test_blocked_report_makes_the_pr_draft_and_puts_the_reason_before_the_feature_summary
     with_result do |result, path|
       domain_block(result)

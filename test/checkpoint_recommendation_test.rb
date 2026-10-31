@@ -76,6 +76,28 @@ class CheckpointRecommendationTest < Minitest::Test
      'Feature summary'].each { |body| assert_nil require_decisions({}, body) }
   end
 
+  def refuse_under_merge(content, comments, head: HEAD)
+    pull = { 'head' => { 'sha' => head } }
+    Shaka::CheckpointRecommendation.refuse_decisions_under_merge!(content, pull, Client.new(comments, 'agent'))
+  end
+
+  def test_an_open_decision_is_refused_while_this_heads_checkpoint_recommends_merge
+    error = assert_raises(Shaka::Error) { refuse_under_merge({ 'decisions' => ['Accept?'] }, [checkpoint('Merge')]) }
+    assert_includes error.message, Shaka::PostImplementationReport::AWAITING_DECISION
+    assert_includes error.message, 'attention --state merge'
+  end
+
+  def test_decisions_need_no_new_checkpoint_when_none_recommends_merging_this_head
+    open = { 'decisions' => ['Accept?'] }
+    assert_nil refuse_under_merge(open, [])
+    assert_nil refuse_under_merge(open, [checkpoint(Shaka::PostImplementationReport::AWAITING_DECISION)])
+    assert_nil refuse_under_merge(open, [checkpoint('Merge')], head: 'b' * 40)
+  end
+
+  def test_answering_a_decision_after_the_merge_checkpoint_is_allowed
+    [{}, { 'decisions' => [] }].each { |content| assert_nil refuse_under_merge(content, [checkpoint('Merge')]) }
+  end
+
   def test_content_without_a_checkpoint_is_unchanged
     content = { 'summary' => 'Done.' }
     assert_same content, resolve(content, [])

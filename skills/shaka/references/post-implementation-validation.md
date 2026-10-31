@@ -170,7 +170,7 @@ Choose one fixed value; Ruby parses these values, so they are not configurable:
 | Recommendation | Meaning and next step |
 | --- | --- |
 | Merge | The result is appropriate to ship. Complete required checks, reviews, and the task's Ask or Auto path. |
-| Merge after maintainer decision | You would merge, but unaccepted concerns or a Simplify/reframe verdict wait on the maintainer. Ask in description `decisions`. After the answer, record each accepted concern, or run the checkpoint again with the decision in its evidence packet. A recommendation inside a decision agrees with this disposition. |
+| Merge after maintainer decision | You would merge, but unaccepted concerns, a Simplify/reframe verdict, or another question waits on the maintainer. Ask in description `decisions`. After the answer, record each accepted concern, or run the checkpoint again with the decision in its evidence packet. For a question that arises after a Merge checkpoint, publish that same result with this recommendation before asking, and with Merge after the answer. A recommendation inside a decision agrees with this disposition. |
 | Revise before merge | The direction is sound. Name the specific changes, make them, then repeat affected verification and review. |
 | Reconsider approach | Working code revealed a wrong or disproportionate solution. Explain why and propose an alternative through the existing maintainer decision path. |
 | Do not merge | Recommend abandoning or replacing this PR, with the reason and next step. The maintainer decides whether to close it. |
@@ -209,9 +209,10 @@ concern and the change behind it is unchanged; ask again when the concern differ
 Ruby checks the disposition's head, vocabulary, reason, and next-action field, which only Merge may omit.
 It rejects **Merge** when verification has a blocking conclusion, or lists a concern
 without a matching `accepted_concerns` entry, and never verifies who made a decision.
-It accepts **Merge after maintainer decision** only while Merge is refused and the verdict
-is not Do not merge, and `description` refuses an empty `decisions` list while the PR's waiting warning names the
-current head. A later Merge checkpoint for that head removes the waiting warning.
+It accepts **Merge after maintainer decision** unless the verdict is Do not merge. `description`
+refuses an empty `decisions` list while the PR's waiting warning names the current head, and a
+non-empty list while this head's latest checkpoint recommends Merge. A later Merge checkpoint
+for that head removes the waiting warning.
 The other three values publish the existing `blocked` attestation, including when
 verification says **Proceed**. A disposition for an older head cannot publish. A failed
 or opted-out execution has no completed verification to attach a disposition to;

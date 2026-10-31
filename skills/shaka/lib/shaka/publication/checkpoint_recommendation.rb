@@ -29,11 +29,25 @@ module Shaka
     # A waiting banner sends the maintainer to the description, so that description must list the question,
     # whether or not it carries a checkpoint object.
     def require_decisions!(content, pull, repository)
-      decisions = content['decisions']
-      return if decisions.is_a?(Array) && decisions.any?
+      return if open_decisions?(content)
       return unless MergeWarningRegion.awaiting?(pull['body'].to_s, repository, pull.dig('head', 'sha'))
 
       raise Error, 'The checkpoint waits for a maintainer decision; list that question in decisions.'
+    end
+
+    # An open question contradicts a checkpoint that still recommends merging this head.
+    def refuse_decisions_under_merge!(content, pull, github)
+      return unless open_decisions?(content)
+      return unless PostImplementationEvidence.new(github).recommendation(pull.dig('head', 'sha')) == 'Merge'
+
+      raise Error, "This head's checkpoint recommends Merge. Before asking, publish the same result again with " \
+                   "#{PostImplementationReport::AWAITING_DECISION}, and with Merge once answered. " \
+                   'When only merge approval remains, run `attention --state merge` instead of listing a decision.'
+    end
+
+    def open_decisions?(content)
+      decisions = content['decisions']
+      decisions.is_a?(Array) && decisions.any?
     end
   end
 end
