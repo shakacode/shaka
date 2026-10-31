@@ -24,7 +24,7 @@ class WindowsHelperStartTest < Minitest::Test
     end
   end
 
-  def test_seam_upgrade_checks_the_candidate_without_the_launcher
+  def test_seam_migrate_checks_the_candidate_without_the_launcher
     with_unrunnable_launcher do |root, launcher|
       apply = Object.new.extend(Shaka::Seam::MigrationApply)
       apply.define_singleton_method(:root) { root }
