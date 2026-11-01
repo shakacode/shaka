@@ -16,7 +16,8 @@
 - Instead of: “It stays under Human comments, and reviewer-shortfall and sandbox gaps
   still appear under Setup gaps. `shaka resolve` still refuses to treat one as the
   agent’s answer, so it gains no authority.”
-- Write:
+- Write: “Your own comments on your PR no longer appear as a setup problem in its
+  description.” Then:
   - “Your comments stay under Human comments.”
   - “Setup gaps still lists reviewer shortfalls and sandbox problems.”
   - “`shaka resolve` still won’t accept a raw `gh` reply as the agent’s answer.”
