@@ -16,9 +16,15 @@ module Shaka
       observed = PublisherAttribution.prepare({})['identity']
       return native_identity unless observed
 
-      PublicationText.identity(observed.merge('provider' => native_settings.first))
+      PublicationText.identity(observed.merge('provider' => native_provider))
     rescue StandardError
       PublicationText.identity({})
+    end
+
+    def native_provider
+      native_settings.first
+    rescue StandardError
+      nil
     end
 
     def native_identity

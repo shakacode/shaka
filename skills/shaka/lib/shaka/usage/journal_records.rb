@@ -42,11 +42,17 @@ module Shaka
     def merged_value(key, value, incoming, old)
       # Nothing identifies a response without counters, so one source's unreadable responses share one
       # record: it holds no amounts, and a route they do not agree on is unknown.
-      return value == incoming ? value : 'UNKNOWN' if old['responses'].empty?
+      return disagreeing(key, value, incoming, old) if old['responses'].empty?
       return priced?(old) ? value : incoming if PRICED.include?(key)
 
       check_conflict(key, value, incoming, old)
       value == 'UNKNOWN' ? incoming : value
+    end
+
+    def disagreeing(key, value, incoming, old)
+      return value if value == incoming
+
+      key == 'label' ? old['contribution'] : 'UNKNOWN'
     end
 
     def check_conflict(key, value, incoming, old)
@@ -137,7 +143,12 @@ module Shaka
       columns = UsageJournalColumns.merge(old, record)
       shared_label(columns, old, record)
       { 'columns' => [columns], 'commits' => (old['commits'] + record['commits']).uniq,
-        'complete' => old['complete'] || record['complete'] }
+        'complete' => merged_complete(old, record) }
+    end
+
+    # A copy can add counters to a response, but one source's unreadable response stays incomplete.
+    def merged_complete(old, record)
+      old['responses'].empty? ? old['complete'] && record['complete'] : old['complete'] || record['complete']
     end
 
     def shared_label(columns, old, record)

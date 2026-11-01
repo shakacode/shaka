@@ -418,6 +418,22 @@ class UsageJournalEdgeCaseTest < Minitest::Test
     assert_equal [['UNKNOWN', false]], routes(journal.collect['records'])
   end
 
+  def test_a_disagreeing_route_leaves_the_contribution_as_the_row_label
+    pair = %w[model-a model-b].map do |model|
+      entry = unreadable(model)
+      entry.merge('columns' => [entry['columns'][0].merge('label' => "#{model} implementation")])
+    end
+    merged = Shaka::UsageJournalRecords.combine(pair)
+    assert_equal(['implementation'], merged.map { |entry| entry['columns'][0]['label'] })
+  end
+
+  def test_an_empty_read_does_not_mark_an_unreadable_response_complete
+    empty = unreadable('model-a').merge('complete' => true)
+    stored = Shaka::UsageJournalRecords.combine([empty, unreadable('model-a')])
+    merged = Shaka::UsageJournalRecords.combine(stored + [record('r2')])
+    assert_includes(merged.map { |entry| entry['complete'] }, false)
+  end
+
   def test_settled_unreadable_responses_are_not_published_again
     journal = reader(UsageJournalTest::GitHub.new)
     journal.publish(unreadable_pair, event: 'commit')
