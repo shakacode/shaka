@@ -1688,7 +1688,7 @@ module LocalReviewClaudeFixtureHelper
     write_executable(bin, 'claude', <<~RUBY)
       #!/usr/bin/env ruby
       require 'json'
-      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, env: ENV.to_h })) if ENV['REVIEW_TRACE']
+      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, env: ENV.slice('CLAUDE_CODE_REMOTE_SESSION_ID') })) if ENV['REVIEW_TRACE']
       puts JSON.generate({ is_error: false, result: "#{options.fetch(:findings, 'no findings')}\\nREVIEWED #{head} BY anthropic/claude EFFORT #{options.fetch(:effort, 'medium')} FINDINGS 0",
                            model: #{options[:model].inspect},
                            modelUsage: #{options[:model_usage].inspect} })

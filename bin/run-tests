@@ -4,7 +4,7 @@
 # Runs Minitest files in several worker processes. Every worker loads every file,
 # then keeps every Nth test class, so each test runs exactly once. Set
 # SHAKA_TEST_WORKERS to choose the count; 1 runs the suite in one process.
-# Workers run under C.UTF-8 when the shell sets no locale, as GitHub's runners do.
+# When the shell sets no locale, workers run under C.UTF-8, the locale GitHub's runners set.
 require 'etc'
 require 'tempfile'
 
