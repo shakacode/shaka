@@ -79,6 +79,7 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
 - Every head in the "change broke a test" row was followed by a new push.
 - None of the 32 hosted review failures said anything about the code.
 - Cancelled runs are excluded. A new push on a branch cancels its older runs.
+- The `Windows` workflow had no failed attempts.
 
 ## What hosted Claude review led to
 
@@ -101,12 +102,12 @@ The 10 code bugs:
 | PR | Bug | Fix |
 | --- | --- | --- |
 | [#381](https://github.com/shakacode/shaka/pull/381) | `shaka pr watch` still broke for private trials | [`9f014cc`](https://github.com/shakacode/shaka/commit/9f014cc6497a3ba6aa9cba7cf39a2e7bfba6d533) |
-| [#398](https://github.com/shakacode/shaka/pull/398) | Review comments showed a collation mapping for solo reviews | [`58eb970`](https://github.com/shakacode/shaka/commit/58eb970) |
-| [#398](https://github.com/shakacode/shaka/pull/398) | Reviewer text reached the visible comment without escaping | [`a217ed5`](https://github.com/shakacode/shaka/commit/a217ed5) |
-| [#420](https://github.com/shakacode/shaka/pull/420) | Private settings could disable the checkpoint gate | [`8a2289c`](https://github.com/shakacode/shaka/commit/8a2289cc) |
-| [#462](https://github.com/shakacode/shaka/pull/462) | A valid `ssh://` official origin was classed as custom | [`00e7946`](https://github.com/shakacode/shaka/commit/00e79469) |
+| [#398](https://github.com/shakacode/shaka/pull/398) | Review comments showed a collation mapping for solo reviews | [`58eb970`](https://github.com/shakacode/shaka/commit/58eb9709a54738218de02651150fe180155b322d) |
+| [#398](https://github.com/shakacode/shaka/pull/398) | Reviewer text reached the visible comment without escaping | [`a217ed5`](https://github.com/shakacode/shaka/commit/a217ed5ab2e66b7b3aa0c6c5848192be97a626c6) |
+| [#420](https://github.com/shakacode/shaka/pull/420) | Private settings could disable the checkpoint gate | [`8a2289c`](https://github.com/shakacode/shaka/commit/8a2289cc624637c73900de1bfe5a3c9a7dce6c97) |
+| [#462](https://github.com/shakacode/shaka/pull/462) | A valid `ssh://` official origin was classed as custom | [`00e7946`](https://github.com/shakacode/shaka/commit/00e7946921b6ea813e47686f823fe1f2636f6b02) |
 | [#463](https://github.com/shakacode/shaka/pull/463) | An `ssh://` origin password could reach the install record | [`a43ad7f`](https://github.com/shakacode/shaka/commit/a43ad7f32d009737ba592059d58846f628eb85cc) |
-| [#577](https://github.com/shakacode/shaka/pull/577) | `handoff` could report answered threads as owed for app accounts | [`5b47a4d`](https://github.com/shakacode/shaka/commit/5b47a4d9) |
+| [#577](https://github.com/shakacode/shaka/pull/577) | `handoff` could report answered threads as owed for app accounts | [`5b47a4d`](https://github.com/shakacode/shaka/commit/5b47a4d9b6c62607f35c0bed13343640c8ce4584) |
 | [#634](https://github.com/shakacode/shaka/pull/634) | Unrelated refusals got an error naming the wrong cause | [`1059594`](https://github.com/shakacode/shaka/commit/1059594476a51a6eaf187184556d17e7a680dfdf) |
 | [#634](https://github.com/shakacode/shaka/pull/634) | A maintainer's answered note could be resolved | [`1059594`](https://github.com/shakacode/shaka/commit/1059594476a51a6eaf187184556d17e7a680dfdf) |
 | [#642](https://github.com/shakacode/shaka/pull/642) | `repos refresh` could drop a repository without shared settings | [#645](https://github.com/shakacode/shaka/pull/645) |
@@ -172,8 +173,8 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
 
 - **Observed:** the last hosted Claude finding came at 05:07 UTC on 2026-10-18.
   [#640](https://github.com/shakacode/shaka/pull/640) merged at 05:13 UTC. All 446
-  later reports found nothing, including 96 full reviews where no local Claude
-  review had run.
+  later reports found nothing. That count includes 96 full reviews, and 78 of those
+  commits had no published local Claude review.
 - **Limit:** the timing does not prove the prompt caused the drop. The two periods
   reviewed different PRs. The [earlier review study](review-process-study.md) named
   local review as a likely reason for zero-finding reports, and these full reviews
@@ -184,7 +185,7 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
   findings led to no push.
 - **Maintenance:** a prompt edit and one measured rerun.
 
-### 3. Hosted review back-and-forth moved to CodeRabbit
+### 3. CodeRabbit fix replies rose while hosted Claude fell to zero
 
 - **Observed:** CodeRabbit fix replies rose from 17 to 49 while hosted Claude fell to
   zero. Pushes per PR stayed flat.
