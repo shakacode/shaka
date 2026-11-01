@@ -102,7 +102,10 @@ module CliOpeningCheckFakes
       sentence = { 'character' => 'shaka merge', 'reader_facing' => false, 'character_can_act' => true,
                    'action' => 'checks',
                    'object' => 'head', 'hidden_actions' => [], 'internal_terms' => [] }
-      puts JSON.generate('is_error' => false, 'result' => JSON.generate('sentences' => [sentence]))
+      terms = File.join(ENV.fetch('HOME'), 'unclear-terms.json')
+      unclear_terms = File.file?(terms) ? JSON.parse(File.read(terms)) : []
+      puts JSON.generate('is_error' => false,
+                         'result' => JSON.generate('sentences' => [sentence], 'unclear_terms' => unclear_terms))
     RUBY
   end
 end

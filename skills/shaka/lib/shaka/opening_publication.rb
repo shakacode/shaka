@@ -11,11 +11,11 @@ module Shaka
   # Reads the opening settings and any replacement instructions the check uses, from the trusted commit.
   module OpeningPromptSettings
     # What the opening reviewer would read for `opening`, or nil when the check is disabled.
-    def prompt_sections(opening)
+    def prompt_sections(opening, prose: nil)
       validate_ref!
       self.class.with_safe_path(root: @root, select_gh: false) do
         config = settings
-        OpeningCheck.prompt_sections(opening, prompt: @prompt, source: @prompt_source) if
+        OpeningCheck.prompt_sections(opening, prompt: @prompt, source: @prompt_source, prose:) if
           config.opening_check.fetch('enabled')
       end
     end
@@ -96,8 +96,10 @@ module Shaka
       @effort = effort
     end
 
-    def call(summary)
+    # A description also passes its visible prose; a walkthrough checks its opening alone.
+    def call(summary, prose: nil)
       @prompt = nil
+      @prose = prose
       validate_ref!
 
       self.class.with_safe_path(root: @root, select_gh: false) do |candidate_root|
@@ -116,7 +118,7 @@ module Shaka
       select_reviewer(config.opening_check)
       validate_reviewer!(config) if @reviewer
       OpeningCheck.new(summary:, candidate_root:, reviewer: @reviewer, model: @model,
-                       effort: @effort, prompt: @prompt).call
+                       effort: @effort, prompt: @prompt, prose: @prose).call
     end
 
     def select_reviewer(settings)
@@ -152,7 +154,7 @@ module Shaka
     end
 
     def fallback(summary, error, prompt)
-      result = OpeningCheck.new(summary:, candidate_root: OpeningCheckout.root(@root), prompt:).call
+      result = OpeningCheck.new(summary:, candidate_root: OpeningCheckout.root(@root), prompt:, prose: @prose).call
       result.merge('reason' => "Opening check unavailable: #{error.message}")
     end
   end

@@ -487,7 +487,8 @@ phases:
         phrasing. Keep exact commands, identifiers, domain terms, risks, and evidence. Skip chatbot
         wrappers and inflated significance. A reply leads with the decision and uses the thread's
         shared context.
-      - `description` and `walkthrough` report an advisory `opening` result for the `summary`.
+      - `description` and `walkthrough` report an advisory `opening` result for the `summary`;
+        `description` adds its visible Intent and Verification prose.
         Pass the verified default-branch full commit SHA with `--ref SHA`. Opening settings live under
         `pr_description.opening_check`. When `enabled` is false, the command skips the check. Otherwise, a configured `reviewer`, `model`,
         and `effort` select this check independently of code review; the same provider as the
@@ -502,7 +503,8 @@ phases:
         A `host_check` or `not_checked` result carries the prompt for a check in the current model. Preserve a
         configured model when its CLI fails; report the reason and apply the returned prompt.
         A `flagged` result means the first sentence has an internal subject or gives a thing a
-        person's action. Rewrite it as its `reason` says, then publish again.
+        person's action, or the prose uses a term a maintainer new to Shaka would not follow.
+        Rewrite it as its `reason` says, then publish again.
       - Supply meaning as content JSON and let the helper render it. Self-edit those summaries before
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,

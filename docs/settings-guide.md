@@ -160,8 +160,9 @@ and code walkthroughs, including with individual settings. Recommendations and
 review replies follow agent instructions; code does not check their length.
 
 An [opening check](settings.md#opening_check) advises whether the first sentence
-of a description or walkthrough leads with what improves for the reader. It does
-not verify the whole text.
+of a description or walkthrough leads with what improves for the reader, and
+suggests plainer words for terms in a description that a maintainer new to Shaka
+would not follow. It does not verify the whole text.
 You can choose its reviewer, model, and effort separately from code review, or
 turn it off, in team or individual settings.
 

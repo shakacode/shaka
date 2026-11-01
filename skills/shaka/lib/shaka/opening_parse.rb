@@ -9,6 +9,7 @@ module Shaka
   module OpeningParse
     MAX_REPORT_BYTES = 20_000
     FIELDS = %w[character reader_facing character_can_act action object hidden_actions internal_terms].freeze
+    TERM_FIELDS = %w[term where plain_wording].freeze
 
     private
 
@@ -23,10 +24,21 @@ module Shaka
     def judge(result)
       sentences = result.is_a?(Hash) && result['sentences']
       sentences = sentences.first(self.class::SENTENCE_LIMIT) if sentences.is_a?(Array)
-      return not_checked('the model returned no usable parse') unless valid_sentences?(sentences)
+      terms = unclear_terms(result)
+      return not_checked('the model returned no usable parse') unless valid_sentences?(sentences) && terms
 
-      self.class.verdict(sentences)
+      self.class.verdict(sentences, terms)
     end
+
+    # Only description prose asks for terms, so an opening alone has none to read.
+    def unclear_terms(result)
+      return [] unless @prose
+
+      terms = result.is_a?(Hash) && result['unclear_terms']
+      terms.first(self.class::TERM_LIMIT) if terms.is_a?(Array) && terms.all? { |entry| valid_term?(entry) }
+    end
+
+    def valid_term?(entry) = entry.is_a?(Hash) && TERM_FIELDS.all? { |key| entry[key].is_a?(String) }
 
     def valid_sentences?(sentences)
       sentences.is_a?(Array) && !sentences.empty? && sentences.all? do |sentence|

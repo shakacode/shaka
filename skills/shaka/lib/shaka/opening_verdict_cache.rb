@@ -6,7 +6,7 @@ require 'digest'
 require 'fileutils'
 
 module Shaka
-  # Reuses only successful verdicts for the same opening, model, and prompt.
+  # Reuses only successful verdicts for the same opening, model, and prompt, which holds any description prose.
   class OpeningVerdictCache
     def initialize(opening:, model:, prompt:, directory:)
       key = Digest::SHA256.hexdigest([model, prompt, opening].join("\0"))
@@ -19,7 +19,7 @@ module Shaka
       status = File.read(@path).strip
       return { 'status' => 'passed' } if status == 'passed'
       if status == 'flagged'
-        return { 'status' => 'flagged', 'reason' => 'The unchanged opening was previously flagged.',
+        return { 'status' => 'flagged', 'reason' => 'The unchanged text was previously flagged.',
                  'prompt' => @prompt }
       end
 
