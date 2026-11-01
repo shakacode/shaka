@@ -153,6 +153,7 @@ def rendered_description(described, github, pull, workflow_version, options)
   rendered = render_description(carried, workflow_version, pull, settings, timeline, options, github)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
   Shaka::CheckpointRecommendation.require_decisions!(carried, pull, github.repository)
+  Shaka::CheckpointRecommendation.refuse_decisions_under_merge!(carried, pull, github)
   [rendered, carried, usage_records]
 end
 

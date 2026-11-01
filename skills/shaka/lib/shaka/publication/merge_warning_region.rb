@@ -12,8 +12,7 @@ module Shaka
                'Task owner: resolve the linked concerns and publish a new checkpoint for the current head.'].freeze
     # An owner who would merge after the maintainer's decision is not told the PR must never merge.
     AWAITING = ["⛔ Not ready to merge — waiting for the maintainer's decision.",
-                'Maintainer: make the decision the linked checkpoint asks for. ' \
-                'Task owner: then publish a new checkpoint.'].freeze
+                'Maintainer: answer under Decisions to make. Task owner: then publish a new checkpoint.'].freeze
 
     module_function
 
