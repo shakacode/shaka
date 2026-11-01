@@ -241,6 +241,21 @@ class LocalReviewOtherCliTest < Minitest::Test
     end
   end
 
+  # Break caught: in a Claude Code cloud session the reviewer saved its transcript under the parent's
+  # session ID, so the implementation session's usage source stopped resolving to one file.
+  def test_claude_reviewer_does_not_inherit_the_cloud_session_id
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'claude-invocation.json')
+      fake_claude(bin, head)
+      env = { 'REVIEW_TRACE' => trace, 'CLAUDE_CODE_REMOTE_SESSION_ID' => 'parent' }
+      output, error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude', env:)
+      result = assert_successful_review(output, error, status, head, 'anthropic/claude')
+      refute JSON.parse(File.read(trace)).fetch('env').key?('CLAUDE_CODE_REMOTE_SESSION_ID')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
   private
 
   def assert_claude_artifacts(result, trace, head)
@@ -1673,7 +1688,7 @@ module LocalReviewClaudeFixtureHelper
     write_executable(bin, 'claude', <<~RUBY)
       #!/usr/bin/env ruby
       require 'json'
-      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read })) if ENV['REVIEW_TRACE']
+      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, env: ENV.to_h })) if ENV['REVIEW_TRACE']
       puts JSON.generate({ is_error: false, result: "#{options.fetch(:findings, 'no findings')}\\nREVIEWED #{head} BY anthropic/claude EFFORT #{options.fetch(:effort, 'medium')} FINDINGS 0",
                            model: #{options[:model].inspect},
                            modelUsage: #{options[:model_usage].inspect} })
