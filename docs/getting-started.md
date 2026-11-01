@@ -1,8 +1,9 @@
 # Start here
 
-Start with a small fix in a project you know.
+Install Shaka, then give it a small fix in a project you know. You don't need to
+read anything else first.
 
-Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode
+Use `/shaka` in Claude Code, Cursor, or OpenCode and `$shaka` in Codex
 ([other agents](coding-agents.md)).
 
 <a id="getting-started"></a>
@@ -15,15 +16,18 @@ Ask your coding agent:
 Install Shaka from https://github.com/shakacode/shaka.
 ```
 
-To run the commands yourself, follow [manual installation](manual-installation.md).
+You need Ruby 3.4 or later, Git 2.41 or later, an authenticated
+[GitHub CLI](https://cli.github.com/), and a coding agent that can load skills and
+run commands. To run the commands yourself, follow [manual installation](manual-installation.md).
 
-Check the install, and follow what the report says:
+Check the install:
 
 ```text
-$shaka doctor
+/shaka doctor
 ```
 
-If the Shaka skill doesn't appear, start a new chat and try again.
+It checks Ruby, Git, and GitHub access. If it reports a problem, tell your agent to
+fix it. If the Shaka skill doesn't appear, start a new chat and try again.
 
 <a id="2-choose-private-trial-or-team-setup"></a>
 <a id="2-choose-individual-trial-or-team-setup"></a>
@@ -40,17 +44,26 @@ set Shaka up just for you or for your team.
 ## 3. Start a task
 
 ```text
-$shaka Fix search when the query contains an apostrophe. Go.
+/shaka Fix search when the query contains an apostrophe. Go.
 ```
 
 Use your own small outcome or an issue link. The agent asks when it needs you.
-
-Other kinds of tasks:
-
-- [Plan before implementing](working-with-shaka.md#get-a-plan-before-implementing).
-- [Review an existing PR](working-with-shaka.md#review-an-existing-pr).
-- [Resume a PR](working-with-shaka.md#resume-a-pr-you-already-started) or
-  [recover unfinished work](working-with-shaka.md#resume-unfinished-work).
-
 Under **Ask**, the default, you decide whether to merge the PR.
-[Working with Shaka](working-with-shaka.md) covers what comes next.
+
+## 4. Ask your agent for the rest
+
+To see or change this repository's settings:
+
+```text
+/shaka settings
+```
+
+For anything else, ask your agent, such as:
+
+```text
+How do I get Shaka to review an existing PR?
+```
+
+Your agent reads the [reference pages](README.md#reference), so you don't have to.
+[Working with Shaka](working-with-shaka.md) is the one to open if you want to browse
+the prompts for plans, reviews, and resuming work.

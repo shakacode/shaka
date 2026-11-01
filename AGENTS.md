@@ -13,7 +13,14 @@ descriptions, code walkthroughs, and review replies. They do not set code style
 or require other repositories to copy them. The [Shaka skill's writing guidance](skills/shaka/references/writing.md)
 is the reusable default.
 
-- Assume the reader is new to Shaka and wants to get useful work done.
+- `README.md`, `docs/README.md`, `docs/getting-started.md`, and
+  `docs/shaka-in-pictures.md` are for people. Assume the reader is new to Shaka and
+  keep to what they need: what Shaka is and works with, why to use it, install, a
+  task, `doctor`, `settings`, and asking their agent for the rest. Give the reasons,
+  not each step the code takes. Test the README on a reader with no project context.
+- Every other page under `docs/` is reference that the reader's agent mostly reads
+  for them, still written so a person who opens it can follow it. Add new detail
+  there, not to those four pages.
 - In product guides, explain outcomes, choices, and examples. Put agent execution
   details with the skill and development records under `internal/`.
 - `bin/check-docs-navigation` refuses `docs/` links and URLs that point into
