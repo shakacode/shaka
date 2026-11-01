@@ -18,7 +18,7 @@ class CliDescriptionKeptResultsTest < Minitest::Test
     published, result = republish("<!-- shaka:begin -->\n#{LINE}\n<!-- shaka:end -->")
 
     assert_includes published, "#{LINE} Kept from this commit’s earlier description"
-    assert_includes published, "\n#{LINE}\n"
+    refute_includes published, "\n#{LINE}\n"
     refute_includes published, 'UNKNOWN: no validation or review results'
     assert_includes result.fetch('evidence_kept'), KEPT
   end

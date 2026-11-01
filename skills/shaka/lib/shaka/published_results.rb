@@ -13,22 +13,25 @@ module Shaka
 
     module_function
 
-    # A fork's author can edit its description, so only a same-repository one counts.
+    # A fork's author can edit its description, so only a same-repository one counts. `head` lets a
+    # rendering preview of an older branch, whose renderer knows no kept line, still render.
     def read(pull, repository)
       return unless pull.dig('head', 'repo', 'full_name').to_s.casecmp?(repository)
 
       region = Publishing.managed_region(pull['body'])
       head = pull.dig('head', 'sha').to_s
       line = region && region[verified_line(head[0, 7])]
-      line && { 'status' => 'kept', 'head' => head, 'kept_line' => line,
-                'kept_gaps' => region[GAPS] }
+      line && { 'head' => head, 'kept_line' => line, 'kept_gaps' => region[GAPS] }
     end
 
+    # Every required result was supplied, none reports a failure, and only settings keep some from binding.
     def settings_drift?(verdict)
-      return false if verdict['status'] == 'ready'
+      return false if verdict['status'] == 'ready' || verdict['missing'].any?
 
-      verdict['checks'].values.flatten.reject { |entry| entry['status'] == 'bound' }.all? do |entry|
-        entry['reasons'].all? { |reason| reason.match?(Evidence::Result::SETTINGS_DRIFT) }
+      verdict['checks'].values.flatten.all? do |entry|
+        entry.dig('original', 'exit_code').to_i.zero? &&
+          (entry['status'] == 'bound' ||
+            entry['reasons'].all? { |reason| reason.match?(Evidence::Result::SETTINGS_DRIFT) })
       end
     end
 

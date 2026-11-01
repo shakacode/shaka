@@ -27,7 +27,7 @@ module Shaka
       gaps ? "#{text}\n\n#{gaps}" : text
     end
 
-    def kept(verdict) = ["#{verdict['kept_line']} #{KEPT}", *verdict['kept_gaps']].join("\n\n")
+    def kept(verdict) = [line(verdict), *verdict['kept_gaps']].join("\n\n")
 
     def summary(verdict, url)
       text = "Validation passed; local review completed at #{short_head(verdict)}"
@@ -37,7 +37,7 @@ module Shaka
     # Binding accepts a completed run whatever its exit, so the exit code decides the wording here.
     def line(verdict, review_url = nil)
       return UNKNOWN unless verdict
-      return verdict['kept_line'] if verdict.key?('kept_line')
+      return "#{verdict['kept_line']} #{KEPT}" if verdict.key?('kept_line')
 
       validation, reviews = results(verdict)
       reviewed = reviews.empty? && verdict['review_required'] == false ? NOT_REQUIRED : review(reviews, review_url)

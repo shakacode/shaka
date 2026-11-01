@@ -63,10 +63,9 @@ class PublicationKeptResultsTest < Minitest::Test
     with_checkout do |root, ref|
       settings = prepare(root, ref, {}, body: body(ref))
 
-      assert_equal published_line(ref), Shaka::VerificationGates.line(settings.verdict)
-      rendered = Shaka::VerificationGates.render(settings.verdict, URL)
-      assert_includes rendered, published_line(ref)
-      assert_includes rendered, Shaka::VerificationGates::KEPT
+      kept = "#{published_line(ref)} #{Shaka::VerificationGates::KEPT}"
+      assert_equal kept, Shaka::VerificationGates.line(settings.verdict)
+      assert_equal kept, Shaka::VerificationGates.render(settings.verdict, URL)
     end
   end
 
@@ -75,7 +74,7 @@ class PublicationKeptResultsTest < Minitest::Test
       with_results(run_check(root, ref, command: 'validate'), review_check(root, ref)) do |options|
         changed_relevant_code do
           settings = prepare(root, ref, options, body: body(ref))
-          assert_equal published_line(ref), Shaka::VerificationGates.line(settings.verdict)
+          assert_includes Shaka::VerificationGates.line(settings.verdict), published_line(ref)
         end
       end
     end
@@ -126,6 +125,29 @@ class PublicationKeptResultsTest < Minitest::Test
       review = review_check(root, ref)
       failed = run_check(root, ref, command: 'validate').merge('status' => 'not_completed')
       with_results(failed, review) do |options|
+        assert_raises(Shaka::Error) { prepare(root, ref, options, body: body(ref)) }
+      end
+    end
+  end
+
+  # A republish that supplies only some results is not a wording change, so it still needs them all.
+  def test_a_missing_required_result_still_refuses_publication
+    with_checkout do |root, ref|
+      with_results(run_check(root, ref, command: 'validate'), review_check(root, ref)) do |options|
+        assert_raises(Shaka::Error) { prepare(root, ref, options.except(:review), body: body(ref)) }
+        changed_relevant_code do
+          assert_raises(Shaka::Error) { prepare(root, ref, options.except(:review), body: body(ref)) }
+        end
+      end
+    end
+  end
+
+  def test_a_supplied_failure_is_not_dropped_for_the_earlier_pass
+    with_checkout do |root, ref|
+      failed = run_check(root, ref, command: 'validate').merge('exit_code' => 1)
+      stale = review_check(root, ref)
+      stale.fetch('public_settings')['merge.preference'] = 'ask'
+      with_results(failed, stale) do |options|
         assert_raises(Shaka::Error) { prepare(root, ref, options, body: body(ref)) }
       end
     end

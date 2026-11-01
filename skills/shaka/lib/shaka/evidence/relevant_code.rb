@@ -8,9 +8,11 @@ module Shaka
     # The installed files that decide how validation and review run and how their results are
     # checked. A result stays bound through any update that leaves these files alone. Rendering
     # code only shows results, and settings code reaches them through its fingerprinted output.
+    # The built-in defaults count because the review runner reads its timeouts from them directly.
     module RelevantCode
       ROOT = File.expand_path('../../..', __dir__)
       PATTERNS = %w[
+        config/defaults.yml
         config/review-prompt.md
         config/review-instructions-precedence.md
         lib/shaka/evidence/*.rb
@@ -18,7 +20,7 @@ module Shaka
         lib/shaka/local_review/*.rb
         lib/shaka/configuration/fingerprint.rb
         lib/shaka/configuration/fingerprint/*.rb
-        lib/shaka/{call_log,error,pr_template,prompt_section,repository_identity}.rb
+        lib/shaka/{call_log,defaults,error,pr_template,prompt_section,repository_identity}.rb
         lib/shaka/{review_prompt,reviewer_selection,reviewer_settings,version,workflow_version}.rb
       ].freeze
 
