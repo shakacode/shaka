@@ -154,7 +154,7 @@ def rendered_description(described, github, pull, workflow_version, options)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
   Shaka::CheckpointRecommendation.require_decisions!(carried, pull, github.repository)
   Shaka::CheckpointRecommendation.refuse_decisions_under_merge!(carried, pull, github)
-  [rendered, carried, usage_records]
+  [rendered, carried, usage_records, settings.verdict&.key?('kept_line')]
 end
 
 def description_timeline(carried, github, pull, settings)
@@ -403,16 +403,17 @@ begin
                end)
                attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
                described = resolved_description(attributed, github, options)
-               usage_records = carried = nil
+               usage_records = carried = kept = nil
                published = github.description(prose:) do |pull|
-                 rendered, carried, usage_records = rendered_description(described, github, pull, workflow_version,
-                                                                         options.merge(root:))
+                 rendered, carried, usage_records, kept = rendered_description(described, github, pull,
+                                                                               workflow_version, options.merge(root:))
                  rendered
                end
                attention = Shaka::DecisionLabels.sync(github, carried)
                opening = opening_result(options.merge(root:), described['summary'])
                refresh = Shaka::CursorUsageRefresh.bind(repository, number, carried['usage']) if carried.is_a?(Hash)
                notes = prose_note.merge(guide).merge(Shaka::ClosingIssues.note(described, github))
+               notes['evidence_kept'] = Shaka::VerificationGates::KEPT if kept
                published.merge('opening' => opening, 'usage_records' => usage_records).merge(notes).tap do |result|
                  result['attention'] = attention if attention
                  result['stale_checkpoint'] = Shaka::PostImplementationStale.new(github).call

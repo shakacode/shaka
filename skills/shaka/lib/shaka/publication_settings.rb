@@ -3,6 +3,7 @@
 require_relative 'evidence/verification'
 require_relative 'evidence/public_settings'
 require_relative 'repository_config'
+require_relative 'published_results'
 require_relative 'publication/feature_guard'
 require_relative 'opening_publication'
 require_relative 'publication/review_effort_floor'
@@ -29,24 +30,34 @@ module Shaka
       changed_paths = FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current, floors, review, config = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
+      required = verdict&.key?('checks')
+      current, floors, review, config = (current_settings(root:, ref:, repository:, required:) if ref)
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
           review_effort_floor: ReviewEffortFloor.for(changed_paths, floors),
           reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone,
           ready_gate: ReadyTime.gate(config, override: options[:ci_review_wait]))
     end
 
+    # Current results win. Failing those, a commit whose description already shows verified results
+    # keeps them, because nothing a reader relied on has changed; only settings drift falls back.
     def self.verify(root:, ref:, repository:, pull:, options:)
+      kept = kept_results(pull, repository, options)
       paths = { validation: options[:validation], review: options[:review] }
-      return unless paths.values.any?
+      return kept unless paths.values.any?
       raise Error, 'Settings publication requires --ref and --root' unless ref && options[:root]
 
       verdict = Evidence::Verification.new(root:, ref:, repository:, head: pull.dig('head', 'sha'), paths:).run
+      return kept if kept && PublishedResults.settings_drift?(verdict)
       raise Error, 'Settings evidence is missing or stale; rerun affected validation/review' unless
         verdict['status'] == 'ready'
 
       omitted_reviewers!(verdict)
       verdict
+    end
+
+    # A rendering preview loads the head's renderers, and one older than this code cannot render a kept line.
+    def self.kept_results(pull, repository, options)
+      PublishedResults.read(pull, repository) unless options[:rendering_preview_root]
     end
 
     # A review run's result names its ledger round. Every reviewer of that round's batch read the same
@@ -85,7 +96,7 @@ module Shaka
     # Only a completed or host-reported review reaches a ready verdict, so each bound one counts.
     # A repository that requires no review falls short only when a review was run anyway.
     def self.reviewer_shortfall(verdict, review)
-      return unless verdict && review
+      return unless verdict&.key?('checks') && review
 
       reviewers = Array(verdict.dig('checks', 'review')).filter_map { |entry| entry.dig('original', 'reviewer') }
       return if reviewers.empty? && verdict['review_required'] == false

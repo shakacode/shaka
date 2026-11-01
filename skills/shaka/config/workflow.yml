@@ -315,7 +315,9 @@ phases:
         Supply those results to `description` with `--validation-result PATH --review-result PATH`,
         plus `--root DIR --ref TRUSTED_SHA`.
         For a separate configuration PR, also pass `--publication-flow setup` or `migration`. Unfinished
-        descriptions without results show UNKNOWN and cannot establish readiness. For the
+        descriptions without results show UNKNOWN and cannot establish readiness. A wording-only
+        republish at the same head needs no rerun: `description` keeps a verified line from a
+        same-repository description and reports `evidence_kept`. For the
         verified base-failure draft path, retain the nonzero verification result and publish
         without those result flags, recording the failed check and comparison in the PR.
         That path permits publication, not readiness; all unaffected gates still apply.

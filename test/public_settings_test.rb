@@ -30,6 +30,17 @@ class PublicSettingsTest < Minitest::Test
     assert_equal 'UNKNOWN', public['source']
   end
 
+  # https://github.com/shakacode/shaka/issues/956: every update changes the revision, so the
+  # fingerprint alone decides whether an update matters.
+  def test_a_new_installed_revision_alone_leaves_the_snapshot_matching
+    snapshot = { 'source.revision' => 'a' * 40, 'installation.revision' => 'b' * 40, 'merge.preference' => 'ask' }
+    moved = snapshot.merge('installation.revision' => 'c' * 40)
+
+    assert_empty Shaka::Evidence::PublicSettings.binding_reasons(snapshot, moved, 'a' * 40)
+    refute_empty Shaka::Evidence::PublicSettings.binding_reasons(snapshot, moved.merge('merge.preference' => 'auto'),
+                                                                 'a' * 40)
+  end
+
   def test_private_trial_reports_ask_and_public_installation_identity_only
     with_checkout do |root, ref|
       config = Shaka::Configuration.trusted(root:, ref:)
