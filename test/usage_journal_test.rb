@@ -412,12 +412,21 @@ end
 class UsageJournalEdgeCaseTest < Minitest::Test
   include UsageJournalFixture
 
-  def test_unreadable_responses_across_a_model_switch_stay_separate
-    placeholders = %w[model-a model-b].map do |model|
-      entry = record('r1').merge('responses' => [], 'complete' => false)
-      entry.merge('columns' => [entry['columns'][0].merge('model' => model)])
-    end
-    assert_equal 2, Shaka::UsageJournalRecords.combine(placeholders).size
+  def test_unreadable_responses_across_a_model_switch_settle_as_one_unknown_route
+    journal = reader(UsageJournalTest::GitHub.new)
+    journal.publish(unreadable_pair, event: 'commit')
+    assert_equal [['UNKNOWN', false]], routes(journal.collect['records'])
+  end
+
+  def test_settled_unreadable_responses_are_not_published_again
+    journal = reader(UsageJournalTest::GitHub.new)
+    journal.publish(unreadable_pair, event: 'commit')
+    assert_empty journal.publish(unreadable_pair, event: 'commit')
+  end
+
+  def test_an_unknown_route_stays_unknown_when_a_later_unreadable_copy_names_one
+    merged = Shaka::UsageJournalRecords.combine([unreadable('model-a'), unreadable('model-b'), unreadable('model-c')])
+    assert_equal(['UNKNOWN'], merged.map { |entry| entry['columns'][0]['model'] })
   end
 
   def test_a_readable_response_keeps_an_unreadable_one_from_the_same_session
@@ -445,5 +454,15 @@ class UsageJournalEdgeCaseTest < Minitest::Test
     unpriced['columns'] = [unpriced['columns'][0].merge('usd' => 'UNKNOWN', 'credits' => 'UNKNOWN')]
     reader(github).publish([unpriced], event: 'commit')
     assert_empty reader(github).publish([unpriced.merge('note' => 'Another scope.')], event: 'commit')
+  end
+
+  private
+
+  def unreadable_pair = %w[model-a model-b].map { |model| unreadable(model) }
+  def routes(records) = records.map { |entry| [entry['columns'][0]['model'], entry['complete']] }
+
+  def unreadable(model)
+    entry = record('r1').merge('responses' => [], 'complete' => false)
+    entry.merge('columns' => [entry['columns'][0].merge('model' => model, 'usd' => 'UNKNOWN', 'credits' => 'UNKNOWN')])
   end
 end

@@ -25,11 +25,40 @@ module Shaka
     end
   end
 
+  # Merges one response's cells from two snapshots, keeping its prices and their note together.
+  module UsageJournalColumns
+    OBSERVED = %w[provider model routed effort input cached_input output reasoning_output cache_writes].freeze
+    PRICED = %w[usd credits].freeze
+
+    module_function
+
+    def priced?(record) = record['columns'].first.values_at(*PRICED).any? { |value| value != 'UNKNOWN' }
+
+    def merge(old, record)
+      fresh = record['columns'].first
+      old['columns'].first.to_h { |key, value| [key, merged_value(key, value, fresh.fetch(key), old)] }
+    end
+
+    def merged_value(key, value, incoming, old)
+      # Nothing identifies a response without counters, so one source's unreadable responses share one
+      # record: it holds no amounts, and a route they do not agree on is unknown.
+      return value == incoming ? value : 'UNKNOWN' if old['responses'].empty?
+      return priced?(old) ? value : incoming if PRICED.include?(key)
+
+      check_conflict(key, value, incoming, old)
+      value == 'UNKNOWN' ? incoming : value
+    end
+
+    def check_conflict(key, value, incoming, old)
+      return unless OBSERVED.include?(key) && ![value, incoming].include?('UNKNOWN') && value != incoming
+
+      raise Error, "Usage journal has conflicting #{key} for response #{old['responses'].first}; " \
+                   'inspect the PR comments holding that response.'
+    end
+  end
+
   # Reduces immutable response snapshots, preserving attribution without counting copies again.
   module UsageJournalRecords
-    PRICED = %w[usd credits].freeze
-    OBSERVED = %w[provider model routed effort input cached_input output reasoning_output cache_writes].freeze
-
     module_function
 
     def parse(body)
@@ -95,8 +124,7 @@ module Shaka
       return true if old['responses'].intersect?(record['responses'])
       return false unless old['responses'].empty? && record['responses'].empty?
 
-      # Nothing identifies a response without counters, so only a record identical in route is a copy.
-      key = %w[sources contribution commits columns]
+      key = %w[sources contribution commits]
       old.values_at(*key) == record.values_at(*key)
     end
 
@@ -106,7 +134,7 @@ module Shaka
     end
 
     def merged_fields(old, record)
-      columns = merge_column(old, record)
+      columns = UsageJournalColumns.merge(old, record)
       shared_label(columns, old, record)
       { 'columns' => [columns], 'commits' => (old['commits'] + record['commits']).uniq,
         'complete' => old['complete'] || record['complete'] }
@@ -134,32 +162,15 @@ module Shaka
 
     # A response's prices and the note explaining them stay together, from the first snapshot that priced it.
     def pricing_note(old, record)
-      !priced?(old) && priced?(record) ? record['note'] : old['note'] || record['note']
+      adopted = !UsageJournalColumns.priced?(old) && UsageJournalColumns.priced?(record)
+      adopted ? record['note'] : old['note'] || record['note']
     end
-
-    def priced?(record) = record['columns'].first.values_at(*PRICED).any? { |value| value != 'UNKNOWN' }
 
     def categories(record)
       prior = record['note'].to_s[/Attribution categories: ([^\n]*)\.\z/, 1]
       return [record['contribution']] unless record['contribution'] == 'shared-planning' && prior
 
       prior.split(', ').intersection(UsageRecordCarry::CONTRIBUTIONS)
-    end
-
-    def merge_column(old, record)
-      fresh = record['columns'].first
-      old['columns'].first.to_h { |key, value| [key, merged_value(key, value, fresh.fetch(key), old)] }
-    end
-
-    def merged_value(key, value, incoming, old)
-      return priced?(old) ? value : incoming if PRICED.include?(key)
-
-      if OBSERVED.include?(key) && ![value, incoming].include?('UNKNOWN') && value != incoming
-        raise Error, "Usage journal has conflicting #{key} for response #{old['responses'].first}; " \
-                     'inspect the PR comments holding that response.'
-      end
-
-      value == 'UNKNOWN' ? incoming : value
     end
   end
 end
