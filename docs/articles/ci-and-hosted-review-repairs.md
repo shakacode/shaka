@@ -7,6 +7,11 @@ running code reviews locally first removes most back-and-forth with reviews on
 GitHub. The agent collected the data, classified each record, and drafted the
 text.*
 
+Two terms recur below:
+
+- Local review is the review an agent runs through Shaka before pushing a commit.
+- Hosted Claude review is the GitHub Actions job that reviews each pushed commit.
+
 All sources are public GitHub data: Actions runs and logs, PR comments, and
 review threads. The window is 2026-10-02 to 2026-10-31 UTC.
 
@@ -73,7 +78,7 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
 | Hosted Claude review | 32 | Claude stopped within half a second with no model usage; the log gives no reason | 14 | 2026-10-05 and 2026-10-22 |
 | | | Action produced no review; 10 of the 11 were on PRs editing that workflow | 11 | 7 branches |
 | | | Action refused to run for the Cursor bot until [#805](https://github.com/shakacode/shaka/pull/805) | 7 | [#775](https://github.com/shakacode/shaka/pull/775) |
-| CodeQL | 2 | Paired action bumps ran mismatched versions | 2 | [#534](https://github.com/shakacode/shaka/pull/534), [#535](https://github.com/shakacode/shaka/pull/535) |
+| CodeQL | 2 | Paired Dependabot action bumps ran mismatched versions | 2 | [#534](https://github.com/shakacode/shaka/pull/534), [#535](https://github.com/shakacode/shaka/pull/535) |
 
 - `Validate` on PRs ran 878 times, and 36 runs ended failed (4.1%).
 - Every head in the "change broke a test" row was followed by a new push.
@@ -154,14 +159,14 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
 - A push costs about 11 minutes of workflow time when every workflow runs.
 - The 27 hosted Claude fixes came in 22 commits. At most 22 pushes come to about
   4 hours, or 2% of the total.
-- The 14 failed heads on regular PRs each led to a new push. Those pushes come to
-  about 2.6 hours, or 1%.
+- The 14 failures on regular PRs were on 14 distinct commits, and each led to a new
+  push. Those pushes come to about 2.6 hours, or 1%.
 - Repairs used little of this repository's CI time in this window. The window has
   no period without local review to compare against.
 
 ## Findings
 
-### 1. Local review finds most defects first
+### 1. Local review recorded most of the fixed defects
 
 - **Observed:** 328 local defects were recorded as fixed, against 10 hosted Claude
   code bugs.
@@ -173,12 +178,15 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
 
 - **Observed:** the last hosted Claude finding came at 05:07 UTC on 2026-10-18.
   [#640](https://github.com/shakacode/shaka/pull/640) merged at 05:13 UTC. All 446
-  later reports found nothing. That count includes 96 full reviews, and 78 of those
-  commits had no published local Claude review.
+  later reports found nothing. The workflow runs a full review when it finds no local
+  Claude review of that commit. All 96 full reviews found nothing. On 78 of them, the
+  commit never got a published local Claude review. Those commits span 39 PRs with a
+  median of 503 changed lines, and none came from Dependabot.
 - **Limit:** the timing does not prove the prompt caused the drop. The two periods
-  reviewed different PRs. The [earlier review study](review-process-study.md) named
-  local review as a likely reason for zero-finding reports, and these full reviews
-  point toward the prompt.
+  reviewed different PRs, and earlier commits on those 39 PRs may have had local
+  review. The [earlier review study](review-process-study.md) named local review as a
+  likely reason for zero-finding reports. These full reviews make the prompt the
+  stronger candidate.
 - **Proposed change:** rerun the current prompt and the old prompt on the 29 commits
   above. Loosen the current prompt if it misses problems its rules include.
 - **Guarantee at risk:** a looser prompt brings back nits. Before #640, about 83% of
