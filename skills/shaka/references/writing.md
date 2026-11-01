@@ -10,17 +10,6 @@
 - Prefer lists for instructions, findings, and explanations with multiple points.
   Use numbered lists when order matters or readers need to refer to individual points.
 - Lead with the outcome its reader notices.
-- Write a PR description `summary` as one outcome sentence, a blank line, then at most
-  four bullets, each one fact a maintainer needs to decide on merging. Omit the bullets
-  when that sentence covers the change. Leave out what the diff shows. Put a safety
-  argument in `intent.safe_because` and issue history in `task_history`.
-  - Instead of: “It stays under Human comments, and reviewer-shortfall and sandbox gaps
-    still appear under Setup gaps. `shaka resolve` still refuses to treat one as the
-    agent’s answer, so it gains no authority.”
-  - Write:
-    - “Your comments stay under Human comments.”
-    - “Setup gaps still lists reviewer shortfalls and sandbox problems.”
-    - “`shaka resolve` still won’t accept a raw `gh` reply as the agent’s answer.”
 - Make each sentence readable alone. Name its subject with a short noun, and start no
   sentence with it, this, that, or such. Move a long qualifier into its own sentence.
 - Give each sentence one main idea and a clear subject and verb.
