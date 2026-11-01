@@ -62,7 +62,9 @@ class RepositoryConfigurationExampleTest < Minitest::Test
       defaults.each do |key, value|
         next if POLICY_KEYS.include?(key) || key == 'preference'
 
-        assert_equal value, @example.fetch(section).fetch(key), "Update the #{section}.#{key} example"
+        example = @example.fetch(section).fetch(key)
+        example = example.except('reviewer') if key == 'opening_check' # This repository's choice.
+        assert_equal value, example, "Update the #{section}.#{key} example"
       end
     end
   end
@@ -119,7 +121,8 @@ class RepositoryConfigurationExampleTest < Minitest::Test
 
   def example_section(section)
     case section
-    when 'opening_check' then @example.fetch('pr_description').fetch(section)
+    # The opening reviewer is this repository's choice, like the code reviewers.
+    when 'opening_check' then @example.fetch('pr_description').fetch(section).except('reviewer')
     when 'pr_description' then @example.fetch(section).except('opening_check', 'human_review_floors', 'time_zone')
     else @example.fetch(section)
     end
