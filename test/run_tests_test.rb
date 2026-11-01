@@ -43,7 +43,31 @@ class RunTestsTest < Minitest::Test
     assert_includes output, 'cannot load'
   end
 
+  # Break caught: without a shell locale, workers ran as US-ASCII and the runner crashed
+  # reading their UTF-8 output.
+  def test_workers_without_a_shell_locale_run_and_report_as_utf8
+    output, status = run_tests([locale_fixture], workers: 1, env: { 'LANG' => nil, 'LC_ALL' => nil, 'LC_CTYPE' => nil })
+
+    assert_predicate status, :success?, output
+    assert_includes output, 'Total: 1 runs'
+  end
+
   private
+
+  def locale_fixture
+    File.join(@directory, 'locale_test.rb').tap do |path|
+      File.write(path, <<~RUBY)
+        require 'minitest/autorun'
+
+        class LocaleFixtureTest < Minitest::Test
+          def test_utf8
+            puts 'café'
+            assert_equal Encoding::UTF_8, Encoding.default_external
+          end
+        end
+      RUBY
+    end
+  end
 
   def fixture(name, tests, failing: false)
     path = File.join(@directory, "#{name}_test.rb")
@@ -63,9 +87,9 @@ class RunTestsTest < Minitest::Test
   end
 
   # bin/validate starts the runner under bundle exec, so its workers load the bundle's Minitest.
-  def run_tests(files, workers:)
+  def run_tests(files, workers:, env: {})
     env = { 'MARKER' => @marker, 'SHAKA_TEST_WORKERS' => workers.to_s,
-            'BUNDLE_GEMFILE' => File.expand_path('../Gemfile', __dir__) }
+            'BUNDLE_GEMFILE' => File.expand_path('../Gemfile', __dir__) }.merge(env)
     Open3.capture2e(env, 'bundle', 'exec', RbConfig.ruby, RUNNER, *files)
   end
 end
