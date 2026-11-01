@@ -39,6 +39,7 @@ require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/merge_limits'
 require_relative '../lib/shaka/opening_publication'
+require_relative '../lib/shaka/opening_prose'
 require_relative '../lib/shaka/publication/squash_message'
 require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/guidance'
@@ -192,10 +193,10 @@ def walkthrough_parts(options, github)
 end
 
 # The opening check runs after GitHub has the text, so its advice never blocks publication.
-def opening_result(options, summary)
+def opening_result(options, summary, prose: nil)
   Shaka::OpeningPublication.new(root: options[:root] || Dir.pwd, ref: options[:ref],
                                 reviewer: options[:opening_reviewer], model: options[:opening_model],
-                                effort: options[:opening_effort]).call(summary)
+                                effort: options[:opening_effort]).call(summary, prose:)
 end
 
 # The issue is as public as the repository, so the checkout path follows the same setting as WIP Details.
@@ -410,7 +411,8 @@ begin
                  rendered
                end
                attention = Shaka::DecisionLabels.sync(github, carried)
-               opening = opening_result(options.merge(root:), described['summary'])
+               opening = opening_result(options.merge(root:), described['summary'],
+                                        prose: Shaka::OpeningProse.call(described))
                refresh = Shaka::CursorUsageRefresh.bind(repository, number, carried['usage']) if carried.is_a?(Hash)
                notes = prose_note.merge(guide).merge(Shaka::ClosingIssues.note(described, github))
                published.merge('opening' => opening, 'usage_records' => usage_records).merge(notes).tap do |result|
