@@ -37,7 +37,7 @@ module Shaka
 
     # Nothing can settle these, so they are never owed. Fork file names stay out: a note reads as the helper's words.
     def note_no_preview(paths)
-      @notes << "No preview exists for #{paths.join(', ')}. Say on the PR how you checked its rendering." if paths.any?
+      @notes << "No preview exists for #{paths.join(', ')}. Say on the PR how you checked the rendering." if paths.any?
     end
 
     # A deleted fork reports no head repository; only a named match counts as the same repository.

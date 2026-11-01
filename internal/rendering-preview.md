@@ -12,10 +12,12 @@ A PR whose only changed publication files are those `RenderingPreview::INSTALLED
 this procedure: a preview keeps them installed, so it cannot show their change. `handoff` owes
 no preview for them and lists them as not previewed.
 
-A preview also cannot load walkthrough, review-comment, or checkpoint renderers, or a file below
-the publication directory. A description marker cannot attest to them. `handoff` owes nothing for
-them on a same-repository PR; it names them in a note. Say on the PR how you checked their
-rendering, such as a live round trip with the PR's own helper.
+A PR that changes no file a preview loads, and at least one it cannot load, also skips this
+procedure, and `description --rendering-preview-root` refuses it. The files it cannot load are
+walkthrough, review-comment, and checkpoint renderers, and files below the publication directory.
+A description marker cannot attest to them. On a same-repository PR, `handoff` names them in a note
+and owes nothing for them. Say on the PR how you checked their rendering, such as a live round trip
+with the PR's own helper.
 
 1. Confirm `gh pr view` reports `isCrossRepository` false. Only accounts with write
    access can push such a branch. Otherwise, skip the republish.

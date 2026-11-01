@@ -152,9 +152,21 @@ class RenderingPreviewNoPathTest < Minitest::Test
       result = rendering_fact(github, body)
       assert_empty result.fetch('owed'), path
       assert_nil result.fetch('fact'), path
-      assert_equal ["No preview exists for #{path}. Say on the PR how you checked its rendering."],
+      assert_equal ["No preview exists for #{path}. Say on the PR how you checked the rendering."],
                    result.fetch('notes')
     end
+  end
+
+  def test_an_installed_file_beside_a_no_preview_renderer_gives_nothing_to_preview
+    github = changed_files_github("#{Shaka::RenderingPreview::DIRECTORY}feature_guard.rb", WALKTHROUGH)
+    result = rendering_fact(github, nil)
+    assert_empty result.fetch('owed')
+    assert_equal 2, result.fetch('notes').size
+    pull = { 'head' => { 'repo' => { 'full_name' => github.repository } } }
+    error = assert_raises(Shaka::Error) do
+      Shaka::RenderingPreview.publish({ rendering_preview_root: ROOT }, pull, github) { flunk }
+    end
+    assert_includes error.message, 'does not yet load'
   end
 
   def test_a_mixed_change_still_owes_the_description_preview_and_names_the_rest
