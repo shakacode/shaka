@@ -4,7 +4,6 @@ require 'json'
 require_relative 'check'
 require_relative '../error'
 require_relative '../git_origin'
-require_relative '../graphql_blocked'
 
 module Shaka
   class Doctor
@@ -17,8 +16,8 @@ module Shaka
       REST_ROLES = { 'admin' => 'ADMIN', 'maintain' => 'MAINTAIN', 'push' => 'WRITE', 'triage' => 'TRIAGE',
                      'pull' => 'READ' }.freeze
 
-      GRAPHQL_GUIDANCE = 'Finish pull requests from a session where GitHub GraphQL works. ' \
-                         'shaka pr, comments, merge, and walkthrough still need it.'
+      GRAPHQL_GUIDANCE = "Finish pull requests from a session where GitHub GraphQL works; Shaka's " \
+                         'pull request commands still need it.'
 
       # `run` takes an argv and a chdir keyword and returns stdout, stderr, and success, like Checks#run.
       def initialize(root:, run:)
@@ -34,7 +33,7 @@ module Shaka
       def call
         out, error, ok = @run.call(['gh', 'repo', 'view', '--json', 'nameWithOwner,viewerPermission'], chdir: @root)
         return [permission(JSON.parse(out))] if ok
-        return [rest_repository_access, graphql_refused] if GraphqlBlocked.gh_stderr?(error)
+        return [rest_repository_access, graphql_refused] if graphql_refused?(error)
 
         [unreachable_repository(first_line(error))]
       rescue JSON::ParserError
@@ -43,13 +42,18 @@ module Shaka
 
       private
 
+      # The refusal Claude Code cloud sessions return: gh names the GraphQL endpoint beside the
+      # status, while REST still answers.
+      def graphql_refused?(stderr) = stderr.include?('HTTP 403') && stderr.include?('api.github.com/graphql')
+
       # `gh repo view` needs GraphQL, so the origin remote names the repository instead.
       def rest_repository_access
         origin = GitOrigin.from(root: @root)
         return unreachable_repository("origin is not on github.com: #{origin[:host]}") unless
           origin[:host].casecmp?('github.com')
 
-        out, error, ok = @run.call(['gh', 'api', "repos/#{origin[:identity]}"], chdir: @root)
+        out, error, ok = @run.call(['gh', 'api', '--hostname', 'github.com', "repos/#{origin[:identity]}"],
+                                   chdir: @root)
         ok ? rest_permission(JSON.parse(out)) : unreachable_repository(first_line(error))
       rescue JSON::ParserError
         unreachable_repository('gh returned a response that is not repository JSON')
@@ -69,7 +73,7 @@ module Shaka
       end
 
       def graphql_refused
-        check('GitHub GraphQL', 'failed', 'GitHub refuses GraphQL here; REST works', guidance: GRAPHQL_GUIDANCE)
+        check('GitHub GraphQL', 'failed', 'GitHub refuses GraphQL here', guidance: GRAPHQL_GUIDANCE)
       end
 
       def unreachable_repository(reason)
