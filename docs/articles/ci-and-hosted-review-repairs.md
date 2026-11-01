@@ -12,27 +12,26 @@ review threads. The window is 2026-10-02 to 2026-10-31 UTC.
 
 ## Main results
 
-- CI failed 88 times in 4,291 runs. The change itself caused 14 of those
-  failures, on 10 of 442 PRs.
+- CI failed 88 times in 4,291 runs. The change on the branch caused 30 of those
+  failures: 14 on 10 regular PRs, 9 on a Windows port, and 7 on Dependabot bumps.
+  Flaky tests caused 15, and the hosted review job itself failed 32 times.
 - Hosted Claude review led to 10 code bug fixes on 8 PRs. All 10 came in the
   first 16 days. The review also led to 10 docs or instruction fixes and 7
   cleanups.
-- Hosted Claude reported zero findings on all 446 reports after 2026-10-18.
-  The count fell to zero when [#640](https://github.com/shakacode/shaka/pull/640)
-  changed the review prompt. Local review had been running before and after that
-  change.
+- Hosted Claude reported zero findings on all 446 reports after
+  [#640](https://github.com/shakacode/shaka/pull/640) merged on 2026-10-18. That PR
+  changed the review prompt. Local review was running before and after it.
 - Back-and-forth continued. CodeRabbit, another hosted reviewer, led to 49
-  fix replies on 26 PRs after 2026-10-18. Hosted Claude had reported zero findings
-  on the same commit for 47 of them.
+  fix replies on 26 PRs after #640 merged. Hosted Claude had reported zero findings
+  on the same commit for 47 of those replies, across 29 commits.
 - Pushes per PR held steady. PRs got a mean of 0.97 pushes after their first
   hosted Claude report before #640, and 0.96 after.
 - Local review carried the most fixes. Local reviewers had 328 defects recorded
   as fixed, compared with 10 hosted Claude code bugs. The two counts use different
   standards.
 
-The claim holds for hosted Claude alone. The data does not show local review
-causing the drop, and it does not show that hosted review stopped asking for
-changes.
+After #640, hosted Claude asked for no changes. The data does not show local review
+as the cause, and CodeRabbit kept asking for changes on GitHub.
 
 ## Data and limits
 
@@ -152,9 +151,10 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
 | All workflows | | 265.1 |
 
 - A push costs about 11 minutes of workflow time when every workflow runs.
-- The 27 pushes after hosted Claude findings come to about 5 hours, or 2% of the
-  total.
-- The 14 pushes after change-caused CI failures come to about 2.6 hours, or 1%.
+- The 27 hosted Claude fixes came in 22 commits. At most 22 pushes come to about
+  4 hours, or 2% of the total.
+- The 14 failed heads on regular PRs each led to a new push. Those pushes come to
+  about 2.6 hours, or 1%.
 - Repairs used little of this repository's CI time in this window. The window has
   no period without local review to compare against.
 
@@ -168,14 +168,18 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
 - **Limit:** reviewers class their own local findings, while this report classed the
   hosted ones. Some local fixes came after a PR was public.
 
-### 2. The prompt change explains the drop to zero
+### 2. The drop to zero lines up with the prompt change
 
 - **Observed:** the last hosted Claude finding came at 05:07 UTC on 2026-10-18.
   [#640](https://github.com/shakacode/shaka/pull/640) merged at 05:13 UTC. All 446
   later reports found nothing, including 96 full reviews where no local Claude
   review had run.
-- **Proposed change:** rerun the current prompt on the 47 commits above, then loosen
-  it if it misses problems its rules include.
+- **Limit:** the timing does not prove the prompt caused the drop. The two periods
+  reviewed different PRs. The [earlier review study](review-process-study.md) named
+  local review as a likely reason for zero-finding reports, and these full reviews
+  point toward the prompt.
+- **Proposed change:** rerun the current prompt and the old prompt on the 29 commits
+  above. Loosen the current prompt if it misses problems its rules include.
 - **Guarantee at risk:** a looser prompt brings back nits. Before #640, about 83% of
   findings led to no push.
 - **Maintenance:** a prompt edit and one measured rerun.
@@ -191,14 +195,15 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
 
 ### 4. Most CI errors were not defects in the change
 
-- **Observed:** 14 of 88 failed attempts came from a change breaking a test or lint.
-  Flaky tests caused 15, and 32 came from the hosted review job itself.
+- **Observed:** 58 of 88 failed attempts had another cause. Flaky tests caused 15,
+  the hosted review job 32, the runner image 5, and merged PRs that failed only
+  together 6, counting one PR that inherited the break.
 - **Evidence:** the most frequent flaky tests stopped failing after
   [#553](https://github.com/shakacode/shaka/pull/553) merged on 2026-10-16. Pinning
   the runner in [#854](https://github.com/shakacode/shaka/pull/854) ended the Ruby
   failures.
-- **Proposed change:** report a hosted review job failure as "review unavailable"
-  and keep it out of counts of failing code.
+- **Proposed change:** leave hosted review job failures out of counts of failing
+  code. The workflow already labels them `Claude review UNAVAILABLE`.
 - **Maintenance:** none for the fixes already merged.
 
 ### 5. PRs that passed alone still broke `main`
@@ -210,7 +215,8 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
   until [#845](https://github.com/shakacode/shaka/pull/845) merged.
 - **Proposed change:** for the maintainer to decide. Requiring an up-to-date branch
   or a merge queue would catch these failures. Each option adds a wait to every
-  merge.
+  merge. `Validate` already runs on `merge_group`, so a merge queue needs no workflow
+  change.
 - **Expected benefit:** about 2 fewer `main` breaks a month, going by this window.
 
 ## Run the same study on your repository
