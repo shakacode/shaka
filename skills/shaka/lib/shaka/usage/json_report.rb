@@ -32,7 +32,39 @@ module Shaka
       { 'note' => json_note(estimate, data), 'columns' => columns, 'record' => record }
     end
 
+    # Price each response with its own model and effort, so overlapping snapshots can be unioned.
+    def response_records
+      validate_journal_selection!
+
+      return [json_document.fetch('record')] if @selected_responses.empty?
+
+      original = @selected_responses
+      original_responses = @responses
+      original.map { |id, response| response_record(id, response) }
+    ensure
+      if original
+        @selected_responses = original
+        @responses = original_responses
+      end
+    end
+
     private
+
+    def validate_journal_selection!
+      raise Error, 'Selected usage turns matched no native responses.' unless unmatched_turns.empty?
+      raise Error, 'Session aggregates cannot become response journal records.' if aggregate_selected?
+    end
+
+    def aggregate_selected? = @selected_responses.values.any? { |record| record['aggregate'] }
+
+    def response_record(id, response)
+      @selected_responses = { id => response }
+      @responses = [response]
+      record = json_document.fetch('record')
+      # A recorded price with no token counter is still distinct work, so it keeps its identity.
+      priced = record['columns'].any? { |column| column.values_at('usd', 'credits').any? { |cell| cell != 'UNKNOWN' } }
+      priced ? record.merge('responses' => [response_digest(id)]) : record
+    end
 
     def json_note(estimate, data, with_count: true)
       scope = with_count ? "#{count}. Scope: #{turn_scope}." : "Scope: #{turn_scope}."

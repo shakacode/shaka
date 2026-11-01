@@ -25,7 +25,7 @@ module Shaka
                    'repos' => %w[add refresh],
                    'review' => %w[run check record assess publish collapse],
                    'seam' => %w[check init pointer migrate private preview],
-                   'trial' => %w[prepare report] }.freeze
+                   'trial' => %w[prepare report], 'usage' => %w[publish collect] }.freeze
     # The fixed commands `evidence run` accepts; any other `--command` value is not recorded.
     CHECKS = %w[setup test validate validate_local trigger_hosted_ci].freeze
     # Task and reviewer values a command may add to its record; a validation run's `tree` is the

@@ -47,6 +47,26 @@ there is no PR. **Native** figures come from the host's records. **Estimated** f
 rate card to those records. `UNKNOWN` means the records do not establish a value;
 it never means zero.
 
+## Save usage on the PR
+
+Append native response records to the PR when work may change hands. A later owner
+recovers them from GitHub without the earlier machine's transcripts.
+
+```text
+shaka usage publish OWNER/REPO NUMBER --commit SHA --contribution implementation --event commit --all-turns
+shaka usage collect OWNER/REPO NUMBER
+```
+
+`publish` takes the source options of `usage`; keep the task's `--since-time` or `--turn`
+selection on every publication. After a failure, rerun it. Collection ignores comments from
+accounts without write access, so `publish` fails for one. A comment `collect` names as unreadable
+stops every read until its owner repairs or deletes it.
+
+Only the task owner puts `collect` output in the description `usage` object. Other contributors
+publish and leave the description alone. On a conflict `collect` names the response: inspect
+the comments holding it rather than choosing a total. Keep a legacy report until its source
+is published.
+
 ## Select the work being reported
 
 The helper supports Codex, Claude Code, Cursor, OpenCode, and Pi. It normally
@@ -325,8 +345,8 @@ Keep the coverage note visible; do not replace unknown reviewer usage with zero.
 
 Check task coverage before publishing. Sources can contain unrelated work even
 when a launcher began with a single task. Select relevant turns rather than using
-`--all-turns` in that case. The reader prints aggregate metadata only and does not
-modify sessions. It does not publish to GitHub. The Cursor stop hook can update a
+`--all-turns` in that case. The report prints aggregate metadata only and does not
+modify sessions; only `usage publish` writes to GitHub. The Cursor stop hook can update a
 description this conversation already published, as the Cursor section describes.
 
 Never publish raw sessions, prompts, tool output, source paths, or turn/response

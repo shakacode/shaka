@@ -74,6 +74,16 @@ A partially priced report keeps the known estimate with a `+` marker and a
 reason for the missing amount. The PR's original pricing references apply to
 its recorded estimate; current provider prices may differ.
 
+## Keep usage when work changes hands
+
+Usage saved as comments on the PR survives a change of model or coding tool. A new owner
+reads those comments instead of the earlier machine's records, and each response counts
+once even if two agents saved it. Comments from accounts without write access are ignored.
+
+Ask the agent:
+
+> Save this task's usage on the PR before handing it over.
+
 ## Read the limitations beside the numbers
 
 **PARTIAL** means the native records do not establish complete task usage.

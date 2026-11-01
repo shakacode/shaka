@@ -61,7 +61,12 @@ module Shaka
 
     def successor?(old, new) = same_work?(old, new) && UsageRecords.replaces?(old, new)
 
-    def same_work?(old, new) = old['host'] == new['host'] && old['contribution'] == new['contribution']
+    # A journal response worked on in several roles is shared, and still the work its earlier report counted.
+    def same_work?(old, new)
+      old['host'] == new['host'] && (old['contribution'] == new['contribution'] ||
+        new['contribution'] == 'shared-planning')
+    end
+
     def shares?(old, new) = same_work?(old, new) && old['responses'].intersect?(new['responses'])
 
     # A report that read no source records nothing about its commits. Once a complete report from

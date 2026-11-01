@@ -21,6 +21,7 @@ require_relative 'trial/command'
 require_relative 'ui_check'
 require_relative 'update_check'
 require_relative 'usage/usage'
+require_relative 'usage/journal_command'
 require_relative 'work'
 require_relative 'workflow'
 
@@ -57,7 +58,7 @@ module Shaka
       'trial' => entry(Trial::Command::ACTIONS) { |arguments| Trial::Command.run(arguments) },
       'ui-check' => entry { |arguments| UiCheck.run(arguments) },
       'update-check' => entry { |arguments| UpdateCheck.run(arguments) },
-      'usage' => entry { |arguments| Usage.run(arguments) },
+      'usage' => entry(%w[publish collect]) { |arguments| UsageJournalCommand.dispatch(arguments) },
       'work' => entry { |arguments| Work.run(arguments) },
       'workflow' => entry { |arguments| Workflow.run(arguments) }
     }.freeze

@@ -96,7 +96,7 @@ module Shaka
     # partial overlap nor an empty snapshot of an unreadable source deletes measured usage. An old
     # report without response IDs is replaced by a new one from the same source over an
     # overlapping or unknown interval, since nothing shows them to be different work.
-    # A replacement must also keep the old report's contribution and every commit it named.
+    # A replacement must also keep the old report's contribution, or mark it shared, and every commit it named.
     def superseded?(old, fresh)
       same_host = fresh.select do |new|
         new['host'] == old['host'] && replaces?(old, new) && same_attribution?(old, new)
@@ -108,7 +108,8 @@ module Shaka
     def replaces?(old, new) = new['complete'] == true || (new['complete'] == false && old['complete'] == false)
 
     def same_attribution?(old, new)
-      old['contribution'] == new['contribution'] && (Array(old['commits']) - Array(new['commits'])).empty?
+      (old['contribution'] == new['contribution'] || new['contribution'] == 'shared-planning') &&
+        (Array(old['commits']) - Array(new['commits'])).empty?
     end
 
     def covered?(old, same_host)
