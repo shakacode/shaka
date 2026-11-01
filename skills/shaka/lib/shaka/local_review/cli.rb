@@ -59,10 +59,10 @@ module Shaka
       status.signaled? ? "killed by signal #{status.termsig}" : "exited #{status.exitstatus}"
     end
 
-    def reviewer_process(args, input = nil)
+    def reviewer_process(args, input = nil, env: {})
       LocalReviewProcess.capture(args, stdin_data: input, chdir: @root,
                                        timeout: @options.fetch(:timeout_seconds),
-                                       env: @path ? { 'PATH' => @path } : {})
+                                       env: (@path ? { 'PATH' => @path } : {}).merge(env))
     rescue LocalReviewProcess::CleanupError => e
       ['', e.message, e]
     end
@@ -198,7 +198,9 @@ module Shaka
       args.push('--model', @options[:model]) if @options[:model]
       args.push('--effort', effort) if effort
       args.push('--output-format', 'json', '-')
-      reviewer_process(args, prompt)
+      # In a Claude Code cloud session, a child claude adopts this ID and saves its transcript under the
+      # parent's session, so the parent's usage source is no longer one file.
+      reviewer_process(args, prompt, env: { 'CLAUDE_CODE_REMOTE_SESSION_ID' => nil })
     end
 
     def claude_result(output)
