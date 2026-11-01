@@ -41,7 +41,7 @@ module Shaka
     # Current results win. Failing those, a commit whose description already shows verified results
     # keeps them, because nothing a reader relied on has changed; only settings drift falls back.
     def self.verify(root:, ref:, repository:, pull:, options:)
-      kept = PublishedResults.read(pull, repository)
+      kept = kept_results(pull, repository, options)
       paths = { validation: options[:validation], review: options[:review] }
       return kept unless paths.values.any?
       raise Error, 'Settings publication requires --ref and --root' unless ref && options[:root]
@@ -53,6 +53,11 @@ module Shaka
 
       omitted_reviewers!(verdict)
       verdict
+    end
+
+    # A rendering preview loads the head's renderers, and one older than this code cannot render a kept line.
+    def self.kept_results(pull, repository, options)
+      PublishedResults.read(pull, repository) unless options[:rendering_preview_root]
     end
 
     # A review run's result names its ledger round. Every reviewer of that round's batch read the same

@@ -113,6 +113,12 @@ class PublicationKeptResultsTest < Minitest::Test
     end
   end
 
+  def test_a_rendering_preview_keeps_nothing_because_its_renderer_may_predate_kept_lines
+    with_checkout do |root, ref|
+      assert_nil prepare(root, ref, { rendering_preview_root: root }, body: body(ref)).verdict
+    end
+  end
+
   # A fork's author can edit its description, so the text there proves nothing.
   def test_a_fork_description_is_not_read_as_evidence
     with_checkout do |root, ref|
