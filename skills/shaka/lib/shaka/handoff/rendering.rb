@@ -40,10 +40,8 @@ module Shaka
       @notes << "No preview exists for #{paths.join(', ')}. Say on the PR how you checked its rendering." if paths.any?
     end
 
-    def fork_preview?(pull)
-      source = pull.dig('head', 'repo', 'full_name')
-      source && !source.casecmp?(@github.repository)
-    end
+    # A deleted fork reports no head repository; only a named match counts as the same repository.
+    def fork_preview?(pull) = !pull.dig('head', 'repo', 'full_name').to_s.casecmp?(@github.repository)
 
     # Every final read checks the head so an intervening push cannot pass as current.
     def recheck_head(moved, live)
