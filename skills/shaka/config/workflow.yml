@@ -503,8 +503,9 @@ phases:
         A `host_check` or `not_checked` result carries the prompt for a check in the current model. Preserve a
         configured model when its CLI fails; report the reason and apply the returned prompt.
         A `flagged` result means the first sentence has an internal subject or gives a thing a
-        person's action, or the prose uses a term a maintainer new to Shaka would not follow.
-        Rewrite it as its `reason` says, then publish again.
+        person's action; rewrite it as its `reason` says, then publish again. For a listed term,
+        judge whether a maintainer new to Shaka would stumble on it: reword and publish again if
+        so, otherwise keep it.
       - Supply meaning as content JSON and let the helper render it. Self-edit those summaries before
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,

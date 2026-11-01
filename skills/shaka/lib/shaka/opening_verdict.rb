@@ -27,7 +27,8 @@ module Shaka
       return if terms.empty?
 
       listed = terms.map { "\"#{it['term']}\" in #{it['where']} (plainer: \"#{it['plain_wording']}\")" }
-      "A maintainer new to this tool may not follow #{listed.join('; ')}. Reword them, then publish again."
+      "A maintainer new to this tool may not follow #{listed.join('; ')}. " \
+        'Reword any they would stumble on, then publish again.'
     end
   end
 end

@@ -18,8 +18,8 @@ class OpeningTermsTest < Minitest::Test
     with_claude(parse('Pull requests', true).merge(unclear_terms: [term])) do |root, trace|
       result = check(OUTCOME, root:, prose: 'Safe because: the path keeps its blocked attestation.')
       assert_equal 'flagged', result.fetch('status'), result.inspect
-      assert_includes result.fetch('reason'), '"blocked attestation" in Safe because'
-      assert_includes result.fetch('reason'), '"a checkpoint marked blocked"'
+      ['"blocked attestation" in Safe because', '"a checkpoint marked blocked"',
+       'Reword any they would stumble on'].each { assert_includes result.fetch('reason'), it }
       assert_includes JSON.parse(File.read(trace)).fetch('prompt'), 'its blocked attestation'
     end
   end

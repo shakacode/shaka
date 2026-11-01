@@ -915,7 +915,7 @@ one that gives a thing something only a person does, such as "A repository can n
 see when a reviewer could not run."
 On a description, it also reads the Intent and Verification text you see without
 opening anything. For each term it flags, it suggests plainer words: "that commit"
-for "that head", for example.
+for "that head", for example. The agent decides whether a term needs changing.
 A failed check does not block publication or merging. With an opening reviewer
 configured, each description with new text and each walkthrough with a new opening
 adds one call to it.
