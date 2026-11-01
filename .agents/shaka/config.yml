@@ -127,7 +127,9 @@ pr_description:
   opening_check:
     enabled: true # Default: check that the PR description's first sentence leads with the outcome.
     effort: low # Default.
-    # reviewer: openai/codex # Default: chosen like the code reviewers above.
+    # This repository's choice. Without a reviewer, the agent checks its own opening unless
+    # it passes --opening-reviewer.
+    reviewer: openai/codex
     # Set reviewer with model; Grok and OpenRouter need a model.
     # model: gpt-6.1-sol # Default: the reviewer's CLI default.
     # replacement_prompt_file: .agents/shaka/opening.md # Default: Shaka's opening prompt.
