@@ -94,7 +94,7 @@ class ReviewAgentSettingsTest < Minitest::Test
   # Break caught: a PR picks the model that reviews it by editing its own seam.
   def test_candidate_settings_do_not_choose_the_reviewer_model
     with_repository do |root, base, _head, bin|
-      File.write(File.join(root, '.agents/agent-workflow.yml'),
+      File.write(File.join(root, '.agents/shaka/config.yml'),
                  YAML.dump(seam(codex_agent('model' => 'candidate-model'))))
       commit!(root, 'candidate settings')
       head = git!(root, 'rev-parse', 'HEAD').strip

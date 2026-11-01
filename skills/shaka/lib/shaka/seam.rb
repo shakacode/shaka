@@ -7,7 +7,6 @@ require_relative 'repository_config'
 require_relative 'seam/check_report'
 require_relative 'seam/initializer'
 require_relative 'seam/migrator'
-require_relative 'seam/upgrader'
 require_relative 'seam/pointer'
 require_relative 'seam/policy_options'
 require_relative 'seam/private_command'
@@ -20,7 +19,7 @@ module Shaka
     include PolicyOptions
 
     # Operations whose own command reads the arguments after the operation name.
-    COMMANDS = { 'migrate' => Migrator, 'upgrade' => Upgrader, 'private' => PrivateCommand,
+    COMMANDS = { 'migrate' => Migrator, 'private' => PrivateCommand,
                  'preview' => PreviewCommand }.freeze
     REPORTS = %w[check init pointer].freeze
     OPERATIONS = [*REPORTS, *COMMANDS.keys].freeze
@@ -104,7 +103,6 @@ module Shaka
       "Usage: shaka seam check [--root DIR] [--local | --ref REF]\n       " \
         "shaka seam init --root DIR [options]\n       " \
         "shaka seam migrate --root DIR --from-ref SHA [--plan | --apply]\n       " \
-        "shaka seam upgrade --root DIR [--apply --digest PREVIEW_DIGEST | --recover]\n       " \
         "shaka seam private setup|check|inspect|list|restore --root DIR [options]\n       " \
         'shaka seam pointer'
     end

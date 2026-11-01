@@ -24,7 +24,7 @@ module Shaka
                    'post-implementation' => %w[run publish], 'pr' => %w[watch], 'prompt' => %w[show],
                    'repos' => %w[add refresh],
                    'review' => %w[run check record assess publish collapse],
-                   'seam' => %w[check init pointer migrate upgrade private preview],
+                   'seam' => %w[check init pointer migrate private preview],
                    'trial' => %w[prepare report], 'usage' => %w[publish collect] }.freeze
     # The fixed commands `evidence run` accepts; any other `--command` value is not recorded.
     CHECKS = %w[setup test validate validate_local trigger_hosted_ci].freeze

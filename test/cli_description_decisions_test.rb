@@ -138,6 +138,42 @@ class CliDescriptionDecisionsTest < Minitest::Test
   def fake_gh = DESCRIPTION_GH
 end
 
+class CliDescriptionDecisionsUnderMergeTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+  include CliOpeningCheckFakes
+  include CliDescriptionDecisionsRun
+
+  COMMAND = SHAKA_COMMAND
+  ROOT = File.expand_path('..', __dir__)
+  SUMMARY = 'Decisions stay with the label.'
+
+  def test_description_refuses_decisions_while_this_heads_checkpoint_recommends_merge
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, env: { 'PR_COMMENTS' => merge_checkpoint })
+
+        refute_predicate status, :success?
+        assert_includes error, 'Merge after maintainer decision'
+        refute_path_exists File.join(dir, 'published.md')
+        refute_path_exists File.join(dir, 'labeled')
+      end
+    end
+  end
+
+  private
+
+  def merge_checkpoint
+    body = "<!-- shaka:reply:post-implementation-ccccccc-abc12345 -->\nReport\n\n" \
+           "<!-- shaka:post-implementation-disposition Merge -->\n" \
+           "<!-- shaka:post-implementation #{'c' * 40} ready -->"
+    JSON.generate([{ 'id' => 1, 'created_at' => '2026-10-29T18:33:08Z', 'user' => { 'login' => 'agent' },
+                     'body' => body }])
+  end
+
+  def fake_gh = DESCRIPTION_GH
+end
+
 DESCRIPTION_GH = <<~'RUBY'
   require 'json'
   raw = STDIN.read
@@ -155,6 +191,8 @@ DESCRIPTION_GH = <<~'RUBY'
                          'base' => { 'repo' => { 'full_name' => 'owner/repo' } }, 'changed_files' => 0)
     end
   when %r{pulls/1/files\?} then puts '[]'
+  when %r{issues/1/comments\?} then puts ENV.fetch('PR_COMMENTS', '[]')
+  when 'user' then puts JSON.generate('login' => 'agent')
   when 'checks' then puts ENV.fetch('PR_CHECKS') { abort 'no checks' }
   when %r{rules/branches/} then puts '[]'
   when 'markdown' then puts JSON.generate('<table></table>' * 10)

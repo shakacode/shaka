@@ -62,14 +62,14 @@ module ReposCatalogHelpers
   private
 
   def write_seam(root, prefix)
-    FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+    FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
     %w[setup validate test].each do |bin|
-      path = File.join(root, '.agents/bin', bin)
+      path = File.join(root, '.agents/shaka/bin', bin)
       File.write(path, "#!/bin/sh\nexit 0\n")
       File.chmod(0o755, path)
     end
     extra = prefix ? { 'repo_prefix' => prefix } : {}
-    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam_config.merge(extra)))
+    File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(seam_config.merge(extra)))
   end
 
   def git_origin!(root, name, origin: nil, remote_head: true)
@@ -95,7 +95,7 @@ module ReposCatalogHelpers
   end
 
   def omit_trusted_setup(root)
-    FileUtils.rm(File.join(root, '.agents/bin/setup'))
+    FileUtils.rm(File.join(root, '.agents/shaka/bin/setup'))
     git!(root, 'add', '-A')
     git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'omit setup')
     git!(root, 'update-ref', 'refs/remotes/origin/main', 'HEAD')
@@ -143,7 +143,7 @@ class ReposCatalogTest < Minitest::Test
   def test_refresh_ignores_a_candidate_seam_and_reads_the_trusted_ref
     with_home do |home|
       root = registered_repository(home, name: 'alpha', prefix: 'TRUST')
-      path = File.join(root, '.agents/agent-workflow.yml')
+      path = File.join(root, '.agents/shaka/config.yml')
       File.write(path, File.read(path).sub('TRUST', 'DIRTY'))
       catalog = refresh(home)
 
@@ -371,7 +371,7 @@ class ReposCatalogSkipTest < Minitest::Test
 
       refute_predicate status, :success?
       assert_includes error, broken
-      assert_includes error, '.agents/bin/setup'
+      assert_includes error, '.agents/shaka/bin/setup'
       assert_equal [expected_row('alpha', kept, prefix: 'ALP', source: 'seam')], catalog.fetch('repositories')
     end
   end

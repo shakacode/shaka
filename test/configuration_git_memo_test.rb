@@ -52,7 +52,7 @@ class ConfigurationGitMemoTest < Minitest::Test
       assert_nil Shaka::Configuration::Layout.commit(root:, sha:, allow_missing: true)
 
       git(root, 'fetch', '--quiet', source, sha)
-      assert_equal Shaka::Configuration::Layout::NEW,
+      assert_equal Shaka::Configuration::Layout::CURRENT,
                    Shaka::Configuration::Layout.commit(root:, sha:, allow_missing: true)
     end
   end
@@ -65,7 +65,7 @@ class ConfigurationGitMemoTest < Minitest::Test
     end
     2.times { Shaka::Configuration::Layout.commit(root: '/repo', sha: SHA, allow_missing: true, git: runner) }
 
-    assert_equal 4, calls
+    assert_equal 2, calls
   end
 
   private

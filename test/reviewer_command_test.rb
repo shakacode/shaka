@@ -42,14 +42,11 @@ class ReviewerCommandTest < Minitest::Test
   end
 
   def test_validates_optional_command_migration_in_the_candidate_checkout
-    { 'validate-local' => '.agents/bin/validate-local does not exist',
-      'validate_local' => '.agents/bin/validate_local requires the standard entry point' }.each do |name, expected|
-      with_repository do |root|
-        write_command(root, name)
-        commit_repository(root)
-        FileUtils.rm(File.join(root, '.agents/bin/validate-local')) if name == 'validate-local'
-        assert_reviewer_rejects(root, expected)
-      end
+    with_repository do |root|
+      write_command(root, 'validate-local')
+      commit_repository(root)
+      FileUtils.rm(File.join(root, '.agents/shaka/bin/validate-local'))
+      assert_reviewer_rejects(root, '.agents/shaka/bin/validate-local does not exist')
     end
   end
 

@@ -239,7 +239,7 @@ models and unreadable records stay unknown.
 
 `PI_SESSION_FILE` must point to a v3 session whose nonempty header ID matches
 `PI_SESSION_ID`. Missing, ephemeral, older, malformed, or mismatched evidence
-produces `UNKNOWN`. Saved evidence can use `--host pi --file PATH`; legacy sessions
+produces `UNKNOWN`. Saved evidence can use `--host pi --file PATH`; earlier sessions
 need reopening or export with current Pi.
 
 The reader validates entry IDs and parent links, then walks from the active leaf

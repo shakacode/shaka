@@ -49,7 +49,7 @@ class PostImplementationMergeWarningTest < Minitest::Test
       assert_equal 0, status
       assert github.snapshot['isDraft']
       assert_includes banner, "Not ready to merge — waiting for the maintainer's decision."
-      assert_includes banner, 'Maintainer: make the decision the linked checkpoint asks for.'
+      assert_includes banner, 'Maintainer: answer under Decisions to make.'
       refute_includes banner, 'Do not merge'
     end
   end
@@ -70,6 +70,45 @@ class PostImplementationMergeWarningTest < Minitest::Test
 
       assert_equal 0, publish(result, path, github:)[1]
       refute_includes github.description_body, 'Not ready to merge'
+    end
+  end
+
+  def recommend(result, recommendation)
+    result['disposition'] = { 'head' => result['head'], 'recommendation' => recommendation,
+                              'reason' => 'The fix meets the request.', 'next_action' => 'Ask Justin.' }
+  end
+
+  def assert_republished(result, path, github, recommendation)
+    recommend(result, recommendation)
+    assert_equal 0, publish(result, path, github:)[1]
+    assert_equal recommendation, Shaka::PostImplementationEvidence.new(github).recommendation(result['head'])
+  end
+
+  def test_a_question_after_a_merge_checkpoint_moves_the_same_result_to_waiting_and_back
+    with_result do |result, path|
+      recommend(result, 'Merge')
+      github, = publish(result, path)
+
+      assert_republished(result, path, github, Shaka::PostImplementationReport::AWAITING_DECISION)
+      assert github.snapshot['isDraft']
+      assert_includes github.description_body, 'Not ready to merge'
+
+      assert_republished(result, path, github, 'Merge')
+      refute_includes github.description_body, 'Not ready to merge'
+    end
+  end
+
+  def test_merge_waits_for_open_decisions_unless_it_answers_a_waiting_warning
+    with_result do |result, path|
+      github = PostImplementationPublicationFixture::GitHub.new(result['head'])
+      github.api('pull', method: 'PATCH', fields: { body: "<!-- shaka:begin -->\n<!-- shaka:decisions -->\n" \
+                                                          "- Which base?\n<!-- shaka:end -->\n" })
+      recommend(result, 'Merge')
+      assert_equal 1, publish(result, path, github:)[1]
+      assert_empty github.bodies
+
+      assert_republished(result, path, github, Shaka::PostImplementationReport::AWAITING_DECISION)
+      assert_republished(result, path, github, 'Merge')
     end
   end
 

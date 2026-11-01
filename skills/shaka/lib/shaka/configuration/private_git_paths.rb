@@ -44,9 +44,7 @@ module Shaka
       def verify_trusted_tree!(root:, sha:, git:)
         GitMemo.fetch([:private_trusted_tree, root, sha]) do
           paths = parse(git.call('ls-tree', '-r', '-z', '--name-only', sha, Paths::DIRECTORY))
-          [Paths::CONTRACT, Paths::NEW_CONTRACT].each do |path|
-            git.call('cat-file', '-e', "#{sha}:#{path}") if paths.include?(path)
-          end
+          git.call('cat-file', '-e', "#{sha}:#{Paths::CONTRACT}") if paths.include?(Paths::CONTRACT)
         end
       end
     end

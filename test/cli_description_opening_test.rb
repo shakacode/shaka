@@ -17,10 +17,8 @@ class CliDescriptionOpeningTest < Minitest::Test
   CODE_REVIEWER = { 'provider' => 'anthropic', 'model_family' => 'claude',
                     'model' => 'code-review-model', 'effort' => 'high' }.freeze
 
-  def test_nested_settings_and_trusted_prompt_reach_the_reviewer_in_both_layouts
-    %i[legacy current].each do |layout|
-      with_nested_prompt(layout) { |root, dir| assert_trusted_selection(dir, root) }
-    end
+  def test_nested_settings_and_trusted_prompt_reach_the_reviewer
+    with_nested_prompt { |root, dir| assert_trusted_selection(dir, root) }
   end
 
   def test_opening_defaults_do_not_inherit_the_code_review_model_or_effort
@@ -59,10 +57,9 @@ class CliDescriptionOpeningTest < Minitest::Test
 
   private
 
-  def with_nested_prompt(layout)
+  def with_nested_prompt
     with_repository('pr_description' => { 'opening_check' => OPENING }) do |root|
       File.write(File.join(root, '.agents/opening.md'), 'Trusted opening instructions.')
-      move_to_new_layout(root) if layout == :current
       commit(root)
       File.write(File.join(root, '.agents/opening.md'), 'Candidate prompt replacement.')
       Dir.mktmpdir { |dir| yield root, dir }

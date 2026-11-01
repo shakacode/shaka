@@ -61,7 +61,7 @@ class ProseLimitsConfigTest < Minitest::Test
   end
 
   def loosen_candidate_limits(root)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     data = YAML.load_file(path)
     data['prose_limits'] = { 'max_sentence_words' => 500 }
     File.write(path, YAML.dump(data))

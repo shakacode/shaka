@@ -8,23 +8,27 @@ module Shaka
     private
 
     def rendering_fact(live)
-      return unless RenderingPreview.required?(@github)
-
-      pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
-      recheck_head(pull.dig('head', 'sha'), live)
-      return note('rendering preview skipped', 'Fork PR: preview code stays unexecuted.') if fork_preview?(pull)
-
-      kept_installed(RenderingPreview.verify_supported!(@github))
-      return "rendering preview #{live[0, Handoff::SHORT]}" if RenderingPreview.current?(pull['body'], live)
-
-      owe('rendering preview owed', 'Apply the reviewed rendering to this PR description with ' \
-                                    '`description --rendering-preview-root DIR`, then inspect it on GitHub.')
+      note_kept_installed
+      preview_fact(live) if RenderingPreview.required?(@github)
     rescue Error => e
       owe('rendering preview unavailable', e.message)
     end
 
+    def preview_fact(live)
+      pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
+      recheck_head(pull.dig('head', 'sha'), live)
+      return note('rendering preview skipped', 'Fork PR: preview code stays unexecuted.') if fork_preview?(pull)
+
+      RenderingPreview.verify_supported!(@github)
+      return "rendering preview #{live[0, Handoff::SHORT]}" if RenderingPreview.current?(pull['body'], live)
+
+      owe('rendering preview owed', 'Apply the reviewed rendering to this PR description with ' \
+                                    '`description --rendering-preview-root DIR`, then inspect it on GitHub.')
+    end
+
     # A changed guard or GitHub write stays installed, so the preview, current or owed, does not show its change.
-    def kept_installed(paths)
+    def note_kept_installed
+      paths = RenderingPreview.kept_installed(@github)
       @notes << "Kept installed, not previewed: #{paths.join(', ')}." unless paths.empty?
     end
 

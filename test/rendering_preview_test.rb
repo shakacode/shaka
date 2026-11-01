@@ -4,8 +4,33 @@ require_relative 'test_helper'
 require 'shaka/publication/rendering_preview'
 require 'shaka/handoff'
 
+module RenderingPreviewFacts
+  private
+
+  def preview_github(renderers = %w[metrics])
+    github = Object.new
+    def github.repository = 'shakacode/shaka'
+    def github.number = 860
+    files = renderers.map { |name| { 'filename' => "#{Shaka::RenderingPreview::DIRECTORY}#{name}.rb" } }
+    github.define_singleton_method(:api_list) { |_path| files }
+    github
+  end
+
+  def rendering_fact(github, body, source: github.repository)
+    head = { 'sha' => 'a' * 40, 'repo' => { 'full_name' => source } }
+    github.define_singleton_method(:api) { |_path| { 'body' => body, 'head' => head } }
+    handoff = Shaka::Handoff.new(github)
+    handoff.instance_variable_set(:@owed, [])
+    handoff.instance_variable_set(:@notes, [])
+    fact = handoff.send(:rendering_fact, 'a' * 40)
+    %w[owed notes].to_h { [it, handoff.instance_variable_get(:"@#{it}")] }.merge('fact' => fact)
+  end
+end
+
 # A self-preview must not change the installation that verifies the existing evidence.
 class RenderingPreviewTest < Minitest::Test
+  include RenderingPreviewFacts
+
   ROOT = File.expand_path('..', __dir__)
 
   SCRIPT = <<~RUBY
@@ -79,17 +104,36 @@ class RenderingPreviewTest < Minitest::Test
     refute Shaka::RenderingPreview.required?(github)
   end
 
-  # Any publication file previews without a list edit. A changed guard or GitHub write stays installed, and the
-  # handoff says the preview, owed or current, did not show it.
+  # Any publication file previews without a list edit.
   def test_any_publication_renderer_can_be_previewed
-    %w[provenance links metrics renderer_added_by_the_head feature_guard publishing].each do |name|
+    %w[provenance links metrics renderer_added_by_the_head].each do |name|
       github = preview_github([name])
       assert_includes rendering_fact(github, nil).fetch('owed').join, 'description --rendering-preview-root', name
       current = rendering_fact(github, "<!-- shaka:rendering-preview #{'a' * 40} -->")
       assert_empty current.fetch('owed'), name
-      notes = Shaka::RenderingPreview::INSTALLED.grep(%r{/#{name}\.rb\z}) { "Kept installed, not previewed: #{it}." }
-      [rendering_fact(github, nil), current].each { |fact| assert_equal notes, fact.fetch('notes'), name }
+      assert_empty current.fetch('notes'), name
     end
+  end
+
+  # A changed guard or GitHub write stays installed, so a preview cannot show it and none is owed for it alone.
+  def test_a_pr_changing_only_installed_files_owes_no_preview_and_says_what_went_unseen
+    %w[feature_guard publishing].each do |name|
+      github = preview_github([name])
+      refute Shaka::RenderingPreview.required?(github), name
+      fact = rendering_fact(github, nil)
+      assert_empty fact.fetch('owed'), name
+      assert_nil fact.fetch('fact'), name
+      assert_equal ["Kept installed, not previewed: #{Shaka::RenderingPreview::DIRECTORY}#{name}.rb."],
+                   fact.fetch('notes'), name
+    end
+  end
+
+  def test_an_installed_file_beside_a_renderer_still_owes_the_preview
+    github = preview_github(%w[feature_guard metrics])
+    fact = rendering_fact(github, nil)
+    assert_includes fact.fetch('owed').join, 'description --rendering-preview-root'
+    assert_equal ["Kept installed, not previewed: #{Shaka::RenderingPreview::DIRECTORY}feature_guard.rb."],
+                 fact.fetch('notes')
   end
 
   def test_unsupported_renderers_block_instead_of_publishing_an_incomplete_preview
@@ -100,26 +144,5 @@ class RenderingPreviewTest < Minitest::Test
       Shaka::RenderingPreview.publish({ rendering_preview_root: ROOT }, pull, github) { flunk }
     end
     assert_includes error.message, 'does not yet load'
-  end
-
-  private
-
-  def preview_github(renderers = %w[metrics])
-    github = Object.new
-    def github.repository = 'shakacode/shaka'
-    def github.number = 860
-    files = renderers.map { |name| { 'filename' => "#{Shaka::RenderingPreview::DIRECTORY}#{name}.rb" } }
-    github.define_singleton_method(:api_list) { |_path| files }
-    github
-  end
-
-  def rendering_fact(github, body, source: github.repository)
-    head = { 'sha' => 'a' * 40, 'repo' => { 'full_name' => source } }
-    github.define_singleton_method(:api) { |_path| { 'body' => body, 'head' => head } }
-    handoff = Shaka::Handoff.new(github)
-    handoff.instance_variable_set(:@owed, [])
-    handoff.instance_variable_set(:@notes, [])
-    fact = handoff.send(:rendering_fact, 'a' * 40)
-    %w[owed notes].to_h { [it, handoff.instance_variable_get(:"@#{it}")] }.merge('fact' => fact)
   end
 end

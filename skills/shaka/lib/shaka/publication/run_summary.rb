@@ -35,6 +35,19 @@ module Shaka
       "#{hours}h #{minutes}m"
     end
 
+    # A whole pull request's time, which can run for days, in the form its Timings section uses.
+    def elapsed(seconds)
+      minutes = (seconds / 60).floor
+      return '<1m' if minutes < 1
+      return "#{minutes}m" if minutes < 60
+
+      hours, minutes = minutes.divmod(60)
+      return "#{hours}h #{minutes}m" if hours < 24
+
+      days, hours = hours.divmod(24)
+      "#{days}d #{hours}h"
+    end
+
     def machine(facts)
       cpu, cores, total, free = facts.values_at('cpu_model', 'cpu_cores', 'memory_total_gb', 'memory_free_gb_at_start')
       [cpu, ("#{cores} cores" if cores), ("#{total} GB RAM" if total), ("#{free} GB free" if free),

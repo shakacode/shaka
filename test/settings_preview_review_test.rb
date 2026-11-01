@@ -23,7 +23,7 @@ class SettingsPreviewReviewTest < Minitest::Test
   private
 
   def preview_review(root)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     data = YAML.safe_load_file(path)
     data['review']['local_max_rounds'] = 20
     data['review']['local_review_agents'] = [{ 'provider' => 'openai', 'model_family' => 'codex',
@@ -68,7 +68,7 @@ class SettingsPreviewCheckpointTest < Minitest::Test
   private
 
   def preview_checkpoint(root)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     data = YAML.safe_load_file(path)
     data['checkpoint'] = { 'enabled' => false, 'model' => 'preview-model',
                            'replacement_prompt_file' => '.agents/private-checkpoint.md' }

@@ -7,6 +7,25 @@ require 'shaka/configuration'
 class ConfigurationLayoutTest < Minitest::Test
   include ConfigurationLayoutFixture
 
+  def test_settings_at_the_removed_path_are_not_read
+    with_removed_layout do |root|
+      error = assert_raises(Shaka::Error) { Shaka::Configuration.worktree(root:) }
+      assert_includes error.message, 'Cannot find .agents/shaka/config.yml'
+      commit_fixture(root)
+      error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: 'HEAD') }
+      assert_includes error.message, '.agents/shaka/config.yml'
+    end
+  end
+
+  def with_removed_layout
+    Dir.mktmpdir do |root|
+      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
+      create_commands_at(root, '.agents/bin')
+      yield root
+    end
+  end
+
   def test_new_layout_loads_from_worktree_and_trusted_commit
     with_new_layout do |root|
       local = Shaka::Configuration.worktree(root:)
@@ -18,102 +37,10 @@ class ConfigurationLayoutTest < Minitest::Test
       assert_equal '.agents/shaka/config.yml', trusted.config_path
     end
   end
-
-  def test_both_contracts_fail_without_precedence
-    with_new_layout do |root|
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
-      assert_both_paths { Shaka::Configuration.worktree(root:) }
-      commit_fixture(root)
-      assert_both_paths { Shaka::Configuration.trusted(root:, ref: 'HEAD') }
-    end
-  end
-
-  private
-
-  def assert_both_paths(&)
-    error = assert_raises(Shaka::Error, &)
-    assert_includes error.message, '.agents/agent-workflow.yml'
-    assert_includes error.message, '.agents/shaka/config.yml'
-  end
-end
-
-class ConfigurationCandidateLayoutTest < Minitest::Test
-  include ConfigurationLayoutFixture
-
-  def test_new_config_never_uses_legacy_required_command
-    with_new_layout do |root|
-      FileUtils.mv(File.join(root, '.agents/shaka/bin/validate'), File.join(root, '.agents/bin/validate'))
-      error = assert_raises(Shaka::Error) { Shaka::Configuration.worktree(root:) }
-      assert_includes error.message, '.agents/shaka/bin/validate'
-    end
-  end
-
-  def test_trusted_legacy_policy_uses_new_candidate_commands
-    with_repository do |root|
-      commit_fixture(root)
-      move_to_new_layout(root)
-
-      assert_legacy_policy_new_candidate(Shaka::Configuration.trusted(root:, ref: 'HEAD'))
-      FileUtils.rm(File.join(root, '.agents/shaka/bin/validate'))
-      error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: 'HEAD') }
-      assert_includes error.message, '.agents/shaka/bin/validate'
-    end
-  end
-
-  def test_trusted_new_policy_uses_legacy_candidate_commands
-    with_new_layout do |root|
-      commit_fixture(root)
-      move_to_legacy_layout(root)
-
-      trusted = Shaka::Configuration.trusted(root:, ref: 'HEAD')
-      assert_equal '.agents/shaka/config.yml', trusted.to_h.dig('paths', 'policy_configuration')
-      assert_equal '.agents/agent-workflow.yml', trusted.to_h.dig('paths', 'candidate_configuration')
-      assert_equal '.agents/bin/validate', trusted.command('validate')
-    end
-  end
-
-  private
-
-  def assert_legacy_policy_new_candidate(trusted)
-    paths = trusted.to_h.fetch('paths')
-    assert_equal '.agents/agent-workflow.yml', paths.fetch('policy_configuration')
-    assert_equal '.agents/shaka/config.yml', paths.fetch('candidate_configuration')
-    assert_equal '.agents/bin', paths.fetch('trusted_command_directory')
-    assert_equal '.agents/shaka/bin', paths.fetch('candidate_command_directory')
-    assert_equal '.agents/shaka/bin/validate', trusted.command('validate')
-  end
 end
 
 class ConfigurationLayoutSafetyTest < Minitest::Test
   include ConfigurationLayoutFixture
-
-  def test_unselected_optional_commands_are_not_discovered
-    with_new_layout do |root|
-      path = File.join(root, '.agents/bin/validate-local')
-      File.write(path, "#!/bin/sh\nexit 0\n")
-      File.chmod(0o755, path)
-      refute Shaka::Configuration.worktree(root:).commands.key?('validate_local')
-    end
-  end
-
-  def test_legacy_config_does_not_use_new_command_directory
-    with_repository do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
-      FileUtils.mv(File.join(root, '.agents/bin'), File.join(root, '.agents/shaka/bin'))
-      error = assert_raises(Shaka::Error) { Shaka::Configuration.worktree(root:) }
-      assert_includes error.message, '.agents/bin/setup'
-    end
-  end
-
-  def test_new_layout_preserves_legacy_optional_name_validation
-    with_new_layout do |root|
-      path = File.join(root, '.agents/shaka/bin/validate_local')
-      File.write(path, "#!/bin/sh\nexit 0\n")
-      File.chmod(0o755, path)
-      error = assert_raises(Shaka::Error) { Shaka::Configuration.worktree(root:) }
-      assert_includes error.message, '.agents/shaka/bin/validate-local'
-    end
-  end
 
   def test_new_layout_fixture_commands_execute_from_repository_root
     with_new_layout do |root|
@@ -171,14 +98,6 @@ class ConfigurationLayoutSafetyTest < Minitest::Test
     end
   end
 
-  def test_no_configuration_does_not_select_commands_from_both_directories
-    Dir.mktmpdir do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
-      FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
-      assert_raises(Shaka::Error) { Shaka::Configuration.worktree(root:) }
-    end
-  end
-
   def test_read_operations_do_not_change_files
     with_new_layout do |root|
       before = Dir.glob(File.join(root, '**/*'), File::FNM_DOTMATCH).select { |path| File.file?(path) }.to_h do |path|
@@ -202,13 +121,6 @@ class ConfigurationInvalidLayoutTest < Minitest::Test
       error = assert_raises(Shaka::Error) { Shaka::Configuration.worktree(root:) }
       assert_includes error.message, 'must be a regular file'
       refute_includes error.message, 'symlink'
-    end
-  end
-
-  def test_unrelated_file_at_new_layout_parent_keeps_legacy_config_usable
-    with_repository do |root|
-      File.write(File.join(root, '.agents/shaka'), "unrelated tool\n")
-      assert_equal '.agents/bin/validate', Shaka::Configuration.worktree(root:).command('validate')
     end
   end
 end

@@ -388,20 +388,6 @@ class SeamInitializerValidationTest < Minitest::Test
   end
 end
 
-class SeamInitializerRetiredFlagTest < Minitest::Test
-  include SeamInitializerTestHelpers
-
-  def test_old_ci_review_agent_flag_names_replacement
-    with_repository do |root|
-      _output, error, status = Open3.capture3(*init_arguments(root), '--ci-review-agent', 'old-job')
-
-      refute_predicate status, :success?
-      assert_includes error, '--ci-review-agent moved to --ci-review-job'
-      refute_path_exists File.join(root, '.agents')
-    end
-  end
-end
-
 class SeamInitializerCommandContractTest < Minitest::Test
   include SeamInitializerTestHelpers
 
@@ -533,20 +519,7 @@ module SeamInitializerPointerAssertions
     File.chmod(0o644, path)
   end
 
-  def plant_legacy_readme(root)
-    path = File.join(root, '.agents/README.md')
-    original = "#{readme_marker_line}\nlegacy pointer from Shaka 0.0.1.pre.0\n"
-    File.write(path, original)
-    [path, original]
-  end
-
   def readme_marker_line = "<!-- #{SeamInitializerTestHelpers::GENERATED_MARKER} -->"
-
-  def assert_legacy_readme_report(error)
-    assert_includes error, '.agents/README.md'
-    assert_includes error, '.agents/shaka.md'
-    assert_includes error, 'will not delete it'
-  end
 
   def assert_pointer_file(path)
     pointer = File.read(path)
@@ -645,44 +618,12 @@ class SeamInitializerReadmeCoexistenceTest < Minitest::Test
 
       assert_predicate status, :success?, error
       assert_equal "owner: repository\n", File.read(path)
-      refute_includes error, 'legacy'
       assert_path_exists File.join(root, '.agents/shaka.md')
       assert_complete_seam(root, output)
     end
   end
 
-  # Break: a leftover Shaka README would be deleted or overwritten, or would
-  # block init, instead of remaining as a recognized legacy artifact.
-  def test_reports_a_legacy_generated_readme_without_deleting_it
-    with_repository do |root|
-      assert_predicate init(root).last, :success?
-      path, original = plant_legacy_readme(root)
-
-      _output, error, status = init(root)
-
-      assert_predicate status, :success?, error
-      assert_equal original, File.read(path)
-      assert_legacy_readme_report(error)
-    end
-  end
-
-  def test_first_init_keeps_a_legacy_generated_readme
-    with_repository do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents'))
-      path, original = plant_legacy_readme(root)
-
-      output, error, status = init(root)
-
-      assert_predicate status, :success?, error
-      assert_equal original, File.read(path)
-      assert_legacy_readme_report(error)
-      assert_path_exists File.join(root, '.agents/shaka.md')
-      assert_complete_seam(root, output)
-    end
-  end
-
-  # Break: an unreadable leftover README raises during the post-write advisory
-  # and leaves a complete seam behind a failed init.
+  # Break: reading an unrelated README would turn it into a failure of init.
   def test_init_succeeds_when_an_existing_readme_is_unreadable
     with_repository do |root|
       with_unreadable(write_foreign_readme(root)) do

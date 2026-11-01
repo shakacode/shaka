@@ -1221,7 +1221,8 @@ only. For example, the default floor 4 covers `docs/merge-guide.md` by its name 
 Markdown, so the guide falls to the next floor that covers it, or to 1. The same guide under
 `skills/` still gets 3 from the agent-instructions floor.
 
-Your list replaces the default one. This repository adds two floors ahead of the defaults:
+Your list replaces the default one. This repository adds three floors ahead of the defaults,
+so a guide gets the closest review and a page under `docs/reference/` gets a skim:
 
 ```yaml
 pr_description:
@@ -1229,6 +1230,10 @@ pr_description:
     - level: 5
       reason: changes docs for Shaka's users
       paths: [docs/**/*]
+      except: [docs/reference/**/*]
+    - level: 2
+      reason: changes a reference page
+      paths: [docs/reference/**/*]
     - level: 4
       reason: changes evidence or settings checks
       paths: [skills/shaka/lib/shaka/evidence/**/*, skills/shaka/lib/shaka/seam/**/*]

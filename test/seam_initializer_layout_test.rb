@@ -189,36 +189,9 @@ class SeamInitializerExistingLayoutTest < Minitest::Test
   include SeamInitializerTestHelpers
   include SeamInitializerLayoutHelpers
 
-  def test_legacy_configuration_points_to_the_upgrade
-    with_repository do |root|
-      write_file(root, '.agents/agent-workflow.yml', "version: 1\n", mode: 0o644)
-
-      assert_refused_without_writes(root, '.agents/agent-workflow.yml', 'shaka seam upgrade')
-    end
-  end
-
-  def test_both_layouts_are_refused
-    with_repository do |root|
-      write_file(root, '.agents/agent-workflow.yml', "version: 1\n", mode: 0o644)
-      write_file(root, '.agents/shaka/config.yml', "version: 1\n", mode: 0o644)
-
-      assert_refused_without_writes(root, 'Both .agents/agent-workflow.yml and .agents/shaka/config.yml exist')
-    end
-  end
-
-  def test_legacy_command_without_configuration_is_a_partial_layout
-    %w[.agents/bin/test .agents/bin/validate-local .agents/bin/validate_local].each do |relative|
-      with_repository do |root|
-        write_file(root, relative)
-
-        assert_refused_without_writes(root, relative, '.agents/shaka/bin/')
-      end
-    end
-  end
-
   def test_unrelated_agent_tools_stay_in_place
     with_repository do |root|
-      tool = write_file(root, '.agents/bin/lint', "#!/bin/sh\necho lint\n")
+      tool = write_file(root, '.agents/shaka/bin/lint', "#!/bin/sh\necho lint\n")
 
       output, error, status = init(root)
 

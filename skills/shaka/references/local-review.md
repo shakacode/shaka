@@ -349,7 +349,7 @@ Use these dispositions:
 | `fixed` | A fix commit exists; publication waits for its review | Fixed, in history |
 | `dismissed` | Evidence disproves the finding; explain it in `note` | Dismissed, in history |
 | `accepted` | The maintainer explicitly accepts the consequence | Accepted, in history |
-| `documented` | Legacy records or optional nits | Unassessed for defects/risks; nits in history |
+| `documented` | Earlier records or optional nits | Unassessed for defects/risks; nits in history |
 
 For `decision_needed`, give the options, tradeoffs, and recommendation in `note`.
 Copy the question into the PR description's `decisions` and wait before dependent work.
@@ -461,7 +461,7 @@ with the ledger round. Supply the saved review results through description's `--
 inputs to include every ledger round in the canonical PR usage table automatically, even after
 temporary source cleanup. Retain saved results for description publication; keep the ledger
 for findings and reports.
-Legacy rounds without captured records still accept `model`, `tokens`, `cost`, and
+Earlier rounds without captured records still accept `model`, `tokens`, `cost`, and
 `estimate`; subscription estimates belong in `estimate`, never `cost`.
 When `shaka reviewer` did not return `different_provider`, add
 `fallback` with its `outcome` and one `attempts` entry per reviewer tried, copying each
@@ -497,7 +497,7 @@ loop. The comment opens with the newest reviewed revision, its outcome, a compac
 findings needing attention, and coverage limits, each shown once. A table of reviewed commits
 gives every reviewer's finding count and what became of those findings. Each finding lists
 every reviewer that reported its ID. Explicitly fixed, dismissed, and accepted findings move
-into evidence history; legacy documented defects and risks remain visibly unassessed.
+into evidence history; earlier documented defects and risks remain visibly unassessed.
 
 One closed disclosure holds finding details, disposition explanations, decision records,
 preserved triage, and execution metadata. Each reviewed commit then has its own closed
@@ -521,7 +521,7 @@ usage records still belong in `usage.records`.
 After every successful publication, `review publish` collapses older owned Shaka
 review comments from the ledger: its continuation comments and any comment the earlier
 per-commit publisher posted for an earlier commit holding only the ledger's reports.
-Other reports, including legacy reports at the same revision, stay visible for explicit assessment.
+Other reports, including earlier reports at the same revision, stay visible for explicit assessment.
 Cleanup also skips when the current PR head has no report in that publication.
 Its `cleanup` result lists confirmed edits, unavailable cleanup,
 or a skip when no visible owned current-head report exists. A cleanup failure
@@ -543,7 +543,7 @@ The standalone command also lists confirmed edits and unavailable cleanup. A fai
 edit returns a nonzero exit; inspect the failure before retrying.
 Without a visible owned current-head report, cleanup skips without failing. If the
 PR returns to a previously archived head, republish its report before cleanup.
-Legacy, per-commit, and loop Shaka review keys are all recognized. Cleanup can run
+Earlier, per-commit, and loop Shaka review keys are all recognized. Cleanup can run
 independently after publishing.
 
 After assessing completed CI feedback, also minimize obsolete bot review reports

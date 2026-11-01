@@ -22,9 +22,8 @@ module SettingsPreviewFixture
     assert_equal 'active', JSON.parse(output)['status']
   end
 
-  def with_preview_repository(layout: :legacy)
+  def with_preview_repository
     with_repository('merge' => { 'preference' => 'ask', 'required_checks' => ['trusted-gate'] }) do |root|
-      use_new_layout(root) if layout == :new
       git(root, 'init', '-q', '-b', 'main')
       trusted = commit(root)
       git(root, 'checkout', '-qb', 'settings')
@@ -51,15 +50,9 @@ module SettingsPreviewFixture
   def remove_trusted_setup(root)
     git(root, 'rm', '-r', '.agents')
     absent = commit(root)
-    FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+    FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
     create_commands(root)
     absent
-  end
-
-  def use_new_layout(root)
-    FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
-    FileUtils.mv(File.join(root, '.agents/bin'), File.join(root, '.agents/shaka/bin'))
-    FileUtils.mv(File.join(root, '.agents/agent-workflow.yml'), File.join(root, '.agents/shaka/config.yml'))
   end
 
   def commit(root)

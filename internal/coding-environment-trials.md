@@ -57,3 +57,22 @@ action the agent's own GitHub account performed in place of a maintainer.
 | Confirmed ownership transfer | Not yet run |
 | PR closure | Not yet run |
 | Unavailable resumption names a person and resume prompt | Not yet run |
+
+## October 2026 Claude Code on the web trial
+
+These observations were made on October 30, 2026, in one Claude Code cloud session
+at Shaka revision `3a95ad8a7bf22cf8eb7a6cdcb7e355878f8479f3`. They back the
+[Cloud agents guide](../docs/coding-agents.md#cloud-agents) and
+do not establish the same behavior in other images, network policies, or CLI versions.
+
+| Fact | Observed |
+| --- | --- |
+| Ruby | The image's `ruby` was 3.3.6. `rbenv install 3.4.6` built Ruby 3.4.6 in 3 minutes 35 seconds. |
+| Installation | `bin/install --agent claude` with Ruby 3.4.6 linked `~/.claude/skills/shaka`; doctor then reported Install state A1. |
+| Claude reviewer | The preinstalled `claude` CLI answered `claude -p` without sign-in. `shaka review run --reviewer anthropic/claude` completed. |
+| Codex CLI | `npm install -g @openai/codex` installed 0.166.0. `codex exec` reached `api.openai.com/v1/responses`. |
+| Codex credentials | With only `OPENAI_API_KEY` set, `codex exec` sent no key (`401 Missing bearer`). With `CODEX_API_KEY` set, it sent the key and OpenAI judged it (`401 invalid_api_key` for a fake key). |
+| Codex sandbox | `codex sandbox` ran `git log` in the checkout and refused a write with `Read-only file system`. |
+| GitHub | `gh api repos/shakacode/shaka` succeeded with push permission. Every GraphQL call returned `HTTP 403: GitHub GraphQL is not available from Claude Code sessions`, so `shaka pr` failed and doctor's Repository access check failed. |
+| ChatGPT sign-in | `codex login --device-auth` printed `https://auth.openai.com/codex/device` and a one-time code that expires in 15 minutes. |
+| Not tested | A real OpenAI key, completing the ChatGPT sign-in and reviewing on it, a limited network policy, `/shaka` in a session started after a setup script, and whether a saved review consent survives into a new session. [Issue 277](https://github.com/shakacode/shaka/issues/277#issuecomment-6541487155) tracks the pending checks. |
