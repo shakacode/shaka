@@ -17,6 +17,9 @@ module Shaka
       REST_ROLES = { 'admin' => 'ADMIN', 'maintain' => 'MAINTAIN', 'push' => 'WRITE', 'triage' => 'TRIAGE',
                      'pull' => 'READ' }.freeze
 
+      GRAPHQL_GUIDANCE = 'Finish pull requests from a session where GitHub GraphQL works. ' \
+                         'shaka pr, comments, merge, and walkthrough still need it.'
+
       # `run` takes an argv and a chdir keyword and returns stdout, stderr, and success, like Checks#run.
       def initialize(root:, run:)
         @root = root
@@ -26,15 +29,16 @@ module Shaka
       # This answers authentication and permission together, for the one repository that
       # matters, so a stale credential on an unrelated host cannot block a usable setup.
       # Any unresolved repository is a failure: doctor must never pass write access it did
-      # not establish.
+      # not establish. When GitHub refuses GraphQL, a second check reports the refusal, which
+      # still stops the commands that need GraphQL.
       def call
         out, error, ok = @run.call(['gh', 'repo', 'view', '--json', 'nameWithOwner,viewerPermission'], chdir: @root)
-        return permission(JSON.parse(out)) if ok
-        return rest_repository_access if GraphqlBlocked.gh_stderr?(error)
+        return [permission(JSON.parse(out))] if ok
+        return [rest_repository_access, graphql_refused] if GraphqlBlocked.gh_stderr?(error)
 
-        unreachable_repository(first_line(error))
+        [unreachable_repository(first_line(error))]
       rescue JSON::ParserError
-        unreachable_repository('gh returned a response that is not repository JSON')
+        [unreachable_repository('gh returned a response that is not repository JSON')]
       end
 
       private
@@ -46,18 +50,26 @@ module Shaka
           origin[:host].casecmp?('github.com')
 
         out, error, ok = @run.call(['gh', 'api', "repos/#{origin[:identity]}"], chdir: @root)
-        return unreachable_repository(first_line(error)) unless ok
+        ok ? rest_permission(JSON.parse(out)) : unreachable_repository(first_line(error))
+      rescue JSON::ParserError
+        unreachable_repository('gh returned a response that is not repository JSON')
+      rescue Error, SystemCallError => e
+        unreachable_repository(first_line(e.message))
+      end
 
-        parsed = JSON.parse(out)
+      def rest_permission(parsed)
+        parsed = {} unless parsed.is_a?(Hash)
         permission({ 'nameWithOwner' => parsed['full_name'], 'viewerPermission' => rest_role(parsed) },
-                   source: ' (read over REST: GitHub GraphQL is unavailable here)')
-      rescue Error => e
-        unreachable_repository(e.message)
+                   source: ' (read over REST)')
       end
 
       def rest_role(parsed)
-        permissions = parsed['permissions'] if parsed.is_a?(Hash)
+        permissions = parsed['permissions']
         REST_ROLES.find { |key, _| permissions[key] == true }&.last if permissions.is_a?(Hash)
+      end
+
+      def graphql_refused
+        check('GitHub GraphQL', 'failed', 'GitHub refuses GraphQL here; REST works', guidance: GRAPHQL_GUIDANCE)
       end
 
       def unreachable_repository(reason)

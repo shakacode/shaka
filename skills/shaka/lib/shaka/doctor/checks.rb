@@ -43,7 +43,7 @@ module Shaka
       # prerequisites and the repository work. Reviewer and usage setup stay in the full report.
       def brief
         [repository_seam, ruby_runtime, GitRuntime.new(method(:run)).call, github_cli,
-         RepositoryAccess.new(root: @root, run: method(:run)).call,
+         *RepositoryAccess.new(root: @root, run: method(:run)).call,
          MergeQueueDefaults.new(->(argv) { run(argv, chdir: @root) }).call]
       end
 
