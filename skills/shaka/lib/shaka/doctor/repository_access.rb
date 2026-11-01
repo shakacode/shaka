@@ -32,8 +32,8 @@ module Shaka
       # still stops the commands that need GraphQL.
       def call
         out, error, ok = @run.call(['gh', 'repo', 'view', '--json', 'nameWithOwner,viewerPermission'], chdir: @root)
-        return [permission(JSON.parse(out))] if ok
-        return [rest_repository_access, graphql_refused] if graphql_refused?(error)
+        return [graphql_permission(JSON.parse(out))] if ok
+        return [rest_repository_access, graphql_refused(error)] if graphql_refused?(error)
 
         [unreachable_repository(first_line(error))]
       rescue JSON::ParserError
@@ -61,19 +61,22 @@ module Shaka
         unreachable_repository(first_line(e.message))
       end
 
+      def graphql_permission(parsed) = permission(stated(parsed, 'nameWithOwner'), stated(parsed, 'viewerPermission'))
+
       def rest_permission(parsed)
-        parsed = {} unless parsed.is_a?(Hash)
-        permission({ 'nameWithOwner' => parsed['full_name'], 'viewerPermission' => rest_role(parsed) },
-                   source: ' (read over REST)')
+        permission(stated(parsed, 'full_name'), rest_role(parsed), source: ' (read over REST)')
       end
 
       def rest_role(parsed)
-        permissions = parsed['permissions']
+        permissions = parsed['permissions'] if parsed.is_a?(Hash)
         REST_ROLES.find { |key, _| permissions[key] == true }&.last if permissions.is_a?(Hash)
       end
 
-      def graphql_refused
-        check('GitHub GraphQL', 'failed', 'GitHub refuses GraphQL here', guidance: GRAPHQL_GUIDANCE)
+      # GitHub's own reason, up to the first clause, so a refusal for another cause such as SSO
+      # enforcement reads as that cause.
+      def graphql_refused(error)
+        check('GitHub GraphQL', 'failed', "GitHub refused GraphQL here: #{first_line(error).split(/;\s/, 2).first}",
+              guidance: GRAPHQL_GUIDANCE)
       end
 
       def unreachable_repository(reason)
@@ -83,9 +86,7 @@ module Shaka
 
       # Healthy has to name the repository and the permission it actually saw; a response
       # missing either one establishes nothing, however well-formed its JSON is.
-      def permission(parsed, source: '')
-        repository = stated(parsed, 'nameWithOwner')
-        level = stated(parsed, 'viewerPermission')
+      def permission(repository, level, source: '')
         return unreachable_repository('gh did not report a repository and a permission') unless repository && level
         if WRITER.include?(level)
           return check('Repository access', 'healthy', "#{repository} is writable as #{level}#{source}")

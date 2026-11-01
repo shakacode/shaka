@@ -20,7 +20,9 @@ class DoctorRestAccessTest < Minitest::Test
       report, = doctor(root:, runner: rest_runner(calls, permissions: { 'admin' => false, 'push' => true }))
       assert_includes line(report, 'Repository access'), '[HEALTHY]'
       assert_includes line(report, 'Repository access'), 'owner/repo is writable as WRITE (read over REST)'
-      assert_includes line(report, 'GitHub GraphQL'), '[FAILED]'
+      assert_includes line(report, 'GitHub GraphQL'),
+                      '[FAILED] GitHub GraphQL — GitHub refused GraphQL here: HTTP 403: GitHub GraphQL is not ' \
+                      "available from Claude Code sessions\n"
       assert_includes calls, [*REST, 'repos/owner/repo']
     end
   end
@@ -55,6 +57,16 @@ class DoctorRestAccessTest < Minitest::Test
     end
   end
 
+  # A 403 from another endpoint is not the GraphQL refusal.
+  def test_a_forbidden_failure_without_the_graphql_endpoint_does_not_try_rest
+    in_checkout do |root|
+      calls = []
+      report, = doctor(root:, runner: rest_runner(calls, view: ['', "HTTP 403: Must have admin rights\n", false]))
+      assert_includes line(report, 'Repository access'), 'Must have admin rights'
+      assert_empty rest_calls(calls)
+    end
+  end
+
   def test_an_origin_outside_github_blocks_without_rest
     in_checkout(origin: 'https://gitlab.com/owner/repo.git') do |root|
       calls = []
@@ -76,7 +88,8 @@ class DoctorRestAccessTest < Minitest::Test
     in_checkout do |root|
       report, = doctor(root:, runner: rest_runner([], rest: ['', "HTTP 403: Resource not accessible\n", false]))
       assert_includes line(report, 'Repository access'), 'Resource not accessible'
-      assert_equal "[FAILED] GitHub GraphQL — GitHub refuses GraphQL here\n", line(report, 'GitHub GraphQL')
+      assert_includes line(report, 'GitHub GraphQL'), '[FAILED]'
+      refute_includes line(report, 'GitHub GraphQL'), 'REST'
     end
   end
 
