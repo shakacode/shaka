@@ -126,6 +126,20 @@ class PublicationKeptResultsTest < Minitest::Test
     end
   end
 
+  def test_the_settings_block_says_the_results_were_kept_rather_than_rechecked
+    with_checkout do |root, ref|
+      detail = prepare(root, ref, {}, body: body(ref)).detail.fetch('body')
+      assert_includes detail, 'not rechecked'
+      refute_includes detail, 'match this PR’s current commit'
+    end
+  end
+end
+
+# Stale or partial results that are not a wording change still stop publication.
+class PublicationKeptResultsRefusalTest < Minitest::Test
+  include EvidenceFixture
+  include KeptResultsFixture
+
   def test_results_that_failed_for_another_reason_still_refuse_publication
     with_checkout do |root, ref|
       review = review_check(root, ref)
@@ -166,14 +180,6 @@ class PublicationKeptResultsTest < Minitest::Test
           assert_raises(Shaka::Error) { prepare(root, ref, options, body: nil) }
         end
       end
-    end
-  end
-
-  def test_the_settings_block_says_the_results_were_kept_rather_than_rechecked
-    with_checkout do |root, ref|
-      detail = prepare(root, ref, {}, body: body(ref)).detail.fetch('body')
-      assert_includes detail, 'not rechecked'
-      refute_includes detail, 'match this PR’s current commit'
     end
   end
 end
