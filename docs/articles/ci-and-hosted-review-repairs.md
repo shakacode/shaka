@@ -10,7 +10,8 @@ text.*
 Two terms recur below:
 
 - Local review is the review an agent runs through Shaka before pushing a commit.
-- Hosted Claude review is the GitHub Actions job that reviews each pushed commit.
+- Hosted Claude review is the GitHub Actions job that reviews pushed commits on
+  ready PRs from this repository, except Dependabot's.
 
 All sources are public GitHub data: Actions runs and logs, PR comments, and
 review threads. The window is 2026-10-02 to 2026-10-31 UTC.
@@ -181,14 +182,15 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
   later reports found nothing. The workflow runs a full review when it finds no local
   Claude review of that commit. All 96 full reviews found nothing. On 78 of them, the
   commit never got a published local Claude review. Those commits span 39 PRs with a
-  median of 503 changed lines, and none came from Dependabot.
+  median of 503 changed lines.
 - **Limit:** the timing does not prove the prompt caused the drop. The two periods
   reviewed different PRs, and earlier commits on those 39 PRs may have had local
   review. The [earlier review study](review-process-study.md) named local review as a
   likely reason for zero-finding reports. These full reviews make the prompt the
   stronger candidate.
 - **Proposed change:** rerun the current prompt and the old prompt on the 29 commits
-  above. Loosen the current prompt if it misses problems its rules include.
+  where CodeRabbit later led to a fix. Loosen the current prompt if it misses problems
+  its rules include.
 - **Guarantee at risk:** a looser prompt brings back nits. Before #640, about 83% of
   findings led to no push.
 - **Maintenance:** a prompt edit and one measured rerun.
