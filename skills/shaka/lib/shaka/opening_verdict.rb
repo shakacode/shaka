@@ -5,10 +5,11 @@ module Shaka
   # action only a person can perform, and any term the model listed as unclear.
   module OpeningVerdict
     def verdict(sentences, terms = [])
-      reasons = [flag_reason(sentences.first), terms_reason(terms)].compact
+      first = flag_reason(sentences.first)
+      reasons = [first, terms_reason(terms)].compact
       return { 'status' => 'passed', 'parse' => sentences } if reasons.empty?
 
-      { 'status' => 'flagged', 'parse' => sentences, 'reason' => reasons.join(' ') }
+      { 'status' => 'flagged', 'parse' => sentences, 'reason' => reasons.join(' '), 'terms_only' => first.nil? }
     end
 
     private

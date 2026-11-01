@@ -33,6 +33,25 @@ class OpeningTermsTest < Minitest::Test
     end
   end
 
+  def test_a_repeat_of_kept_terms_says_nothing_more_is_needed
+    term = { term: 'that head', where: 'Why', plain_wording: 'that commit' }
+    with_claude(parse('Pull requests', true).merge(unclear_terms: [term])) do |root, _trace|
+      check(OUTCOME, root:, prose: 'Why: that head failed.')
+      repeat = check(OUTCOME, root:, prose: 'Why: that head failed.')
+      assert_equal 'flagged', repeat.fetch('status')
+      assert_includes repeat.fetch('reason'), 'found no first-sentence problem'
+    end
+  end
+
+  def test_a_repeat_with_a_first_sentence_problem_stays_a_plain_flag
+    term = { term: 'that head', where: 'Why', plain_wording: 'that commit' }
+    with_claude(parse('shaka merge', false).merge(unclear_terms: [term])) do |root, _trace|
+      check(COMMAND, root:, prose: 'Why: that head failed.')
+      assert_equal 'The unchanged text was previously flagged.',
+                   check(COMMAND, root:, prose: 'Why: that head failed.').fetch('reason')
+    end
+  end
+
   def test_passes_description_prose_with_no_unclear_terms
     with_claude(parse('Pull requests', true).merge(unclear_terms: [])) do |root, _trace|
       assert_equal 'passed', check(OUTCOME, root:, prose: 'Why: a reviewer asked.').fetch('status')
