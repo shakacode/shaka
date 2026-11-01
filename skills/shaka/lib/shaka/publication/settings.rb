@@ -21,7 +21,9 @@ module Shaka
     UNCOMMITTED = %w[private/local preview/local].freeze
 
     def detail
-      status = if @verdict
+      status = if @verdict&.key?('kept_line')
+                 'Recorded checks kept from this commit’s earlier description; not rechecked.'
+               elsif @verdict
                  ['Recorded checks match this PR’s current commit.', *review_not_required].join(' ')
                else
                  'No matching check records supplied. Rerun missing validation or review to record them.'

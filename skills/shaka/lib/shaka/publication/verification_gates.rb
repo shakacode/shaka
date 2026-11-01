@@ -9,6 +9,7 @@ module Shaka
     GAPS = '**Setup gaps:**'
     # Verification reaches ready without a review only when the trusted review.required is none.
     NOT_REQUIRED = 'review not required by this repository’s settings'
+    KEPT = 'Kept from this commit’s earlier description; not rechecked under the current Shaka or settings.'
     CONTAINER_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#run-codex-reviews-in-a-container'
 
     module_function
@@ -17,12 +18,16 @@ module Shaka
     # reviewer that read only the diff; a routine run folds behind its summary. A completed review
     # may still have reported findings, so the summary claims only that it ran.
     def render(verdict, review_url = nil, shortfall = nil)
+      return kept(verdict) if verdict&.key?('kept_line')
+
       blind = blind_reviewers(verdict)
       folded = shortfall.nil? && blind.empty? && routine?(verdict)
       text = folded ? summary(verdict, review_url) : line(verdict, review_url)
       gaps = setup_gaps(shortfall, blind, review_url)
       gaps ? "#{text}\n\n#{gaps}" : text
     end
+
+    def kept(verdict) = ["#{verdict['kept_line']} #{KEPT}", *verdict['kept_gaps']].join("\n\n")
 
     def summary(verdict, url)
       text = "Validation passed; local review completed at #{short_head(verdict)}"
@@ -32,6 +37,7 @@ module Shaka
     # Binding accepts a completed run whatever its exit, so the exit code decides the wording here.
     def line(verdict, review_url = nil)
       return UNKNOWN unless verdict
+      return verdict['kept_line'] if verdict.key?('kept_line')
 
       validation, reviews = results(verdict)
       reviewed = reviews.empty? && verdict['review_required'] == false ? NOT_REQUIRED : review(reviews, review_url)
@@ -107,7 +113,7 @@ module Shaka
       url ? "#{text} ([attestation](#{url}))" : text
     end
 
-    private_class_method :routine?, :summary, :short_head, :results, :validations,
+    private_class_method :routine?, :kept, :summary, :short_head, :results, :validations,
                          :setup_gaps, :blind_reviewers, :blind?, :blind_gap, :reviewer_gap, :review
   end
 end

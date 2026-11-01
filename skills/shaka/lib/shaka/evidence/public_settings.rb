@@ -63,10 +63,12 @@ module Shaka
           'installation.version' => installation['version'], 'installation.revision' => revision }
       end
 
+      # The installed revision moves with every update; the fingerprint decides whether that update matters.
       def binding_reasons(snapshot, current, source_ref)
         return [] unless snapshot
 
-        unchanged = snapshot.is_a?(Hash) && snapshot.except('source.revision') == current.except('source.revision') &&
+        moving = %w[source.revision installation.revision]
+        unchanged = snapshot.is_a?(Hash) && snapshot.except(*moving) == current.except(*moving) &&
                     snapshot['source.revision'] == source_ref
         unchanged ? [] : ['public settings snapshot differs from settings checked']
       end

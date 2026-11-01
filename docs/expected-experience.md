@@ -74,6 +74,8 @@ review happened.
 | Validation fails | Fix the demonstrated problem, then rerun the affected checks. The PR stays unverified until they complete. |
 | The candidate changes after tests or review | Check whether the evidence still covers the candidate; rerun affected work when it is stale. |
 | Material command or review settings change | The workflow requires reassessing affected evidence; do not assume an earlier pass is current. Editing your validate script also marks the earlier review out of date, so expect validation and review to rerun, as a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011) with individual settings showed. |
+| Shaka updates during a task | Earlier validation and review still count unless the update changes the Shaka code that runs them or checks their results. A new Shaka version also counts as such a change. |
+| The description is reworded for the same commit | Results already shown as verified stay, marked as not rechecked. A pull request from a fork is the exception: its author can edit the description, so its results need to be supplied again. |
 | A result is missing, a reviewer is unavailable, or CI is still running | Show the gap explicitly. Missing or stale evidence cannot satisfy a required gate. |
 | An optional reviewer is pending | Disclose it and follow the configured waiting choice; required gates still apply. |
 

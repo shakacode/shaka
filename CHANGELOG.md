@@ -21,6 +21,9 @@ from working is a major version.
 
 ### Fixed
 
+- Keep validation and review results valid when Shaka updates during a task, unless the
+  update changes the code that runs or checks them. Rewording a description for the same
+  commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.
 - Show `ready in` and `merged in` on more PRs. The description now reads the task
   start from a usage report that covers the whole task, and records the ready time
   each time it updates instead of only while a watch runs.

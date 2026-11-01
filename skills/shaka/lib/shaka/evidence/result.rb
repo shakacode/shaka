@@ -11,6 +11,7 @@ module Shaka
     # Compares a result without rewriting the identity it originally recorded.
     class Result
       SHA = /\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/
+      SETTINGS_DRIFT = /\A(?:settings components differ: |public settings snapshot differs)/
 
       def self.bind(result, root:, head:, ref:, repository:)
         raise Error, 'Evidence result must be an object' unless result.is_a?(Hash)
