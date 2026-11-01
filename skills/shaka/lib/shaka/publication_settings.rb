@@ -2,8 +2,8 @@
 
 require_relative 'evidence/verification'
 require_relative 'evidence/public_settings'
-require_relative 'evidence/published_results'
 require_relative 'repository_config'
+require_relative 'published_results'
 require_relative 'publication/feature_guard'
 require_relative 'opening_publication'
 require_relative 'publication/review_effort_floor'
@@ -41,13 +41,13 @@ module Shaka
     # Current results win. Failing those, a commit whose description already shows verified results
     # keeps them, because nothing a reader relied on has changed; only settings drift falls back.
     def self.verify(root:, ref:, repository:, pull:, options:)
-      kept = Evidence::PublishedResults.read(pull, repository)
+      kept = PublishedResults.read(pull, repository)
       paths = { validation: options[:validation], review: options[:review] }
       return kept unless paths.values.any?
       raise Error, 'Settings publication requires --ref and --root' unless ref && options[:root]
 
       verdict = Evidence::Verification.new(root:, ref:, repository:, head: pull.dig('head', 'sha'), paths:).run
-      return kept if kept && Evidence::PublishedResults.settings_drift?(verdict)
+      return kept if kept && PublishedResults.settings_drift?(verdict)
       raise Error, 'Settings evidence is missing or stale; rerun affected validation/review' unless
         verdict['status'] == 'ready'
 

@@ -12,8 +12,8 @@ module EvidenceRequireGraph
   # Rendering and GitHub calls show results without changing them, and settings code reaches
   # evidence only through its output, which the fingerprint already covers.
   OUTSIDE = %r{\A(?:publication|github|public_comments|walkthrough|post_implementation|handoff|opening_|hosts/|merge|
-                 attention|ready_time|review_thread|review_coverage|pending_review|usage|gitlab|install/|
-                 repository_config|configuration(?!/fingerprint)|defaults|trusted_|doctor/)}x
+                 attention|ready_time|review_thread|review_coverage|pending_review|published_results|usage|gitlab|
+                 install/|repository_config|configuration(?!/fingerprint)|defaults|trusted_|doctor/)}x
 
   module_function
 
@@ -100,8 +100,9 @@ class EvidenceRelevantCodeTest < Minitest::Test
     end
   end
 
-  def test_the_review_prompts_count_as_relevant
+  def test_the_review_prompts_count_as_relevant_and_description_republishing_does_not
     files = Shaka::Evidence::RelevantCode.files
+    refute_includes files, 'lib/shaka/published_results.rb'
     assert_includes files, 'config/review-prompt.md'
     assert_includes files, 'config/review-instructions-precedence.md'
   end
