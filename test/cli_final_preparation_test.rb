@@ -64,7 +64,7 @@ module FinalPreparationFixture
   end
 
   def change_candidate(root, enabled:)
-    File.write(File.join(root, '.agents/agent-workflow.yml'),
+    File.write(File.join(root, '.agents/shaka/config.yml'),
                YAML.dump(seam('review' => review_policy, 'checkpoint' => { 'enabled' => enabled })))
   end
 

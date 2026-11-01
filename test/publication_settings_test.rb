@@ -37,7 +37,7 @@ class PublicationSettingsTest < Minitest::Test
       validation = run_check(root, ref, command: 'validate')
       with_results(validation, review_check(root, ref)) do |options|
         assert_raises(Shaka::Error) { prepare(root, ref, options.except(:validation)) }
-        File.write(File.join(root, '.agents/bin/validate'), "#!/bin/sh\nexit 0\n# changed\n")
+        File.write(File.join(root, '.agents/shaka/bin/validate'), "#!/bin/sh\nexit 0\n# changed\n")
         assert_raises(Shaka::Error) { prepare(root, ref, options) }
       end
     end

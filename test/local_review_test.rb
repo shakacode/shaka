@@ -1545,7 +1545,7 @@ class LocalReviewCapRunnerTest < Minitest::Test
     in_loop do |_head|
       settings_sha = cap_settings_sha
       loop_round(settings_sha, findings: 0, criteria_ref: settings_sha)
-      File.write(File.join(@root, '.agents/agent-workflow.yml'), "review:\n  local_max_rounds: 99\n")
+      File.write(File.join(@root, '.agents/shaka/config.yml'), "review:\n  local_max_rounds: 99\n")
       head = fix_commit
       FileUtils.rm(@trace)
       output, _error, status = run_review(@root, @base, head, @bin, ledger: @ledger, criteria_ref: settings_sha)
@@ -1566,7 +1566,7 @@ class LocalReviewCapRunnerTest < Minitest::Test
   end
 
   def cap_settings_sha
-    path = File.join(@root, '.agents/agent-workflow.yml')
+    path = File.join(@root, '.agents/shaka/config.yml')
     FileUtils.mkdir_p(File.dirname(path))
     File.write(path, "review:\n  local_max_rounds: 1\n")
     git!(@root, 'add', '.')

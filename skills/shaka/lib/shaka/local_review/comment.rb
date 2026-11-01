@@ -179,7 +179,7 @@ module Shaka
         "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n#{after}</details>"
       end
 
-      # Lift only explicitly labeled report coverage; free-form legacy reports remain UNKNOWN.
+      # Lift only explicitly labeled report coverage; free-form older reports remain UNKNOWN.
       def reported_coverage = LocalReviewCoverage.new(@report).text
 
       def attestation = @report.strip.lines.last.strip

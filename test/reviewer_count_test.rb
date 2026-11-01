@@ -103,7 +103,7 @@ class ReviewerCountTest < Minitest::Test
   private
 
   def set_count(root, count)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     settings = YAML.safe_load_file(path)
     settings['review']['local_review_count'] = count
     File.write(path, YAML.dump(settings))

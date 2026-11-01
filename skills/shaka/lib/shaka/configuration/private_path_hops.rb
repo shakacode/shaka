@@ -8,7 +8,7 @@ module Shaka
     # Finds uncommitted symlinks traversed by a candidate worktree path.
     class PrivatePathHops
       MAX_LINKS = 40
-      DIRECTORY = File.dirname(Paths::NEW_CONTRACT)
+      DIRECTORY = File.dirname(Paths::CONTRACT)
       class EscapedRoot < StandardError; end
 
       def self.uncommitted(root:, path:, committed:)

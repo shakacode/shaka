@@ -48,8 +48,8 @@ class DoctorInventoryTest < Minitest::Test
 
   def test_an_invalid_configuration_does_not_hide_the_inventory
     Dir.mktmpdir do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents'))
-      File.write(File.join(root, '.agents/agent-workflow.yml'), "version: invalid\n")
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
+      File.write(File.join(root, '.agents/shaka/config.yml'), "version: invalid\n")
       report, blocked = doctor(root:, executable: ->(name, *) { "/tools/#{name}" })
 
       assert blocked

@@ -43,7 +43,7 @@ module ReviewerCommandFixture
   end
 
   def rewrite_reviewers(root, reviewers, coverage: nil)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     config = YAML.safe_load_file(path)
     config['review']['local_review_agents'] = reviewers
     config['review']['provider_coverage'] = coverage if coverage
@@ -52,15 +52,15 @@ module ReviewerCommandFixture
 
   def with_repository
     Dir.mktmpdir('shaka-reviewer') do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
       %w[setup validate test].each { |name| write_command(root, name) }
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config))
       yield root
     end
   end
 
   def write_command(root, name)
-    path = File.join(root, '.agents/bin', name)
+    path = File.join(root, '.agents/shaka/bin', name)
     File.write(path, "#!/bin/sh\nexit 0\n")
     File.chmod(0o755, path)
   end

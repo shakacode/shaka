@@ -18,7 +18,7 @@ class RepositoryConfigTest < Minitest::Test
       config = Shaka::RepositoryConfig.load(root:)
 
       assert_equal 'main', config.base_branch
-      assert_equal '.agents/bin/validate', config.command('validate')
+      assert_equal '.agents/shaka/bin/validate', config.command('validate')
       assert_equal %w[setup test validate], config.commands.keys.sort
       assert_equal 'auto', config.merge.fetch('preference')
     end
@@ -28,7 +28,7 @@ class RepositoryConfigTest < Minitest::Test
     with_repository('surprise' => true) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'unknown .agents/agent-workflow.yml key: surprise'
+      assert_includes error.message, 'unknown .agents/shaka/config.yml key: surprise'
     end
   end
 
@@ -41,7 +41,7 @@ class RepositoryConfigTest < Minitest::Test
 
   def test_rejects_duplicate_keys_before_yaml_discards_them
     with_repository do |root|
-      path = File.join(root, '.agents/agent-workflow.yml')
+      path = File.join(root, '.agents/shaka/config.yml')
       File.write(path, File.read(path).sub('base_branch: main', "base_branch: main\nbase_branch: trunk"))
 
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
@@ -52,7 +52,7 @@ class RepositoryConfigTest < Minitest::Test
 
   def test_external_policy_source_requires_trusted_command_availability
     with_repository do |root|
-      source = File.read(File.join(root, '.agents/agent-workflow.yml'))
+      source = File.read(File.join(root, '.agents/shaka/config.yml'))
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:, source:) }
 
       assert_includes error.message, 'available_commands is required'
@@ -61,11 +61,11 @@ class RepositoryConfigTest < Minitest::Test
 
   def test_rejects_a_missing_command
     with_repository do |root|
-      FileUtils.rm(File.join(root, '.agents/bin/validate'))
+      FileUtils.rm(File.join(root, '.agents/shaka/bin/validate'))
 
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, '.agents/bin/validate does not exist'
+      assert_includes error.message, '.agents/shaka/bin/validate does not exist'
     end
   end
 
@@ -73,7 +73,7 @@ class RepositoryConfigTest < Minitest::Test
     with_repository do |root|
       with_outside_validate_symlink(root) do
         message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-        assert_includes message, '.agents/bin/validate must resolve inside the repository'
+        assert_includes message, '.agents/shaka/bin/validate must resolve inside the repository'
       end
     end
   end
@@ -84,11 +84,11 @@ class RepositoryConfigTest < Minitest::Test
       FileUtils.mkdir_p(File.dirname(target))
       File.write(target, "#!/bin/sh\nexit 0\n")
       File.chmod(0o755, target)
-      path = File.join(root, '.agents/bin/validate')
+      path = File.join(root, '.agents/shaka/bin/validate')
       FileUtils.rm(path)
-      File.symlink('../../bin/validate', path)
+      File.symlink('../../../bin/validate', path)
 
-      assert_equal '.agents/bin/validate', Shaka::RepositoryConfig.load(root:).command('validate')
+      assert_equal '.agents/shaka/bin/validate', Shaka::RepositoryConfig.load(root:).command('validate')
     end
   end
 
@@ -113,7 +113,7 @@ class RepositoryConfigTest < Minitest::Test
     with_repository do |root|
       create_command(root, 'trigger_hosted_ci')
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-      assert_includes message, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
+      assert_includes message, '.agents/shaka/bin/trigger-hosted-ci requires .agents/shaka/bin/validate-local'
     end
   end
 end
@@ -125,7 +125,7 @@ class RepositoryConfigRetiredSettingTest < Minitest::Test
     with_repository('commands' => { 'validate' => '../validate' }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'unknown .agents/agent-workflow.yml key: commands'
+      assert_includes error.message, 'unknown .agents/shaka/config.yml key: commands'
     end
   end
 
@@ -165,49 +165,38 @@ class RepositoryConfigOptionalCommandTest < Minitest::Test
     end
   end
 
-  def test_a_legacy_optional_path_requires_its_standard_entry_point
-    with_repository do |root|
-      legacy = File.join(root, '.agents/bin/validate_local')
-      File.write(legacy, "#!/bin/sh\nexit 0\n")
-      File.chmod(0o755, legacy)
-
-      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-      assert_includes message, '.agents/bin/validate_local requires the standard entry point .agents/bin/validate-local'
-    end
-  end
-
   def test_candidate_only_optional_commands_must_still_form_a_valid_interface
     with_repository do |root|
       create_command(root, 'trigger_hosted_ci')
-      source = File.read(File.join(root, '.agents/agent-workflow.yml'))
+      source = File.read(File.join(root, '.agents/shaka/config.yml'))
 
       message = assert_raises(Shaka::Error) do
         Shaka::RepositoryConfig.load(root:, source:, available_commands: [])
       end.message
-      assert_includes message, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
+      assert_includes message, '.agents/shaka/bin/trigger-hosted-ci requires .agents/shaka/bin/validate-local'
     end
   end
 
   def test_rejects_a_non_executable_optional_command
     with_repository do |root|
       create_command(root, 'validate_local')
-      path = File.join(root, '.agents/bin/validate-local')
+      path = File.join(root, '.agents/shaka/bin/validate-local')
       skip 'this platform does not store an executable bit' unless File.executable?(path)
 
       File.chmod(0o644, path)
 
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-      assert_includes message, '.agents/bin/validate-local is not executable'
+      assert_includes message, '.agents/shaka/bin/validate-local is not executable'
     end
   end
 
   def test_rejects_a_dangling_optional_command_symlink
     with_repository do |root|
-      path = File.join(root, '.agents/bin/validate-local')
-      File.symlink('../../bin/missing-validate-local', path)
+      path = File.join(root, '.agents/shaka/bin/validate-local')
+      File.symlink('../../../bin/missing-validate-local', path)
 
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-      assert_includes message, '.agents/bin/validate-local does not exist'
+      assert_includes message, '.agents/shaka/bin/validate-local does not exist'
     end
   end
 end
@@ -231,22 +220,6 @@ class RepositoryConfigWipTest < Minitest::Test
   def test_a_repository_can_hide_the_checkout_path
     with_repository('wip' => { 'include_checkout_path' => false }) do |root|
       assert_equal({ 'include_checkout_path' => false }, Shaka::RepositoryConfig.load(root:).wip)
-    end
-  end
-
-  def test_the_earlier_location_setting_now_sets_the_checkout_path
-    [true, false].each do |value|
-      with_repository('wip' => { 'include_locations' => value }) do |root|
-        assert_equal({ 'include_checkout_path' => value }, Shaka::RepositoryConfig.load(root:).wip)
-      end
-    end
-  end
-
-  def test_rejects_both_names_for_the_checkout_path_setting
-    with_repository('wip' => { 'include_locations' => false, 'include_checkout_path' => true }) do |root|
-      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
-
-      assert_includes error.message, 'set only wip.include_checkout_path'
     end
   end
 
@@ -275,10 +248,10 @@ class RepositoryConfigWipTest < Minitest::Test
   end
 
   def test_rejects_a_wip_value_that_is_not_a_boolean
-    with_repository('wip' => { 'include_locations' => 'yes' }) do |root|
+    with_repository('wip' => { 'include_checkout_path' => 'yes' }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'wip.include_locations must be true or false'
+      assert_includes error.message, 'wip.include_checkout_path must be true or false'
     end
   end
 

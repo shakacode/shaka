@@ -58,7 +58,6 @@ module Shaka
 
       def refuse_trusted_or_adopted!
         validate_policies
-        refuse_legacy_configuration!
         source = Configuration.private_source(root: @root, ref: @ref)
         raise Error, 'Trusted Shaka configuration already exists; private setup is unavailable' if
           source.trusted_source == 'present'

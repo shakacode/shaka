@@ -38,7 +38,7 @@ must cite that evidence before claiming the pilot's real-use acceptance.
 
 - **R2 — Use the repository's checks.** Read policy and optional script availability
   from the trusted default-branch seam: `.agents/shaka/config.yml` with the fixed
-  `.agents/shaka/bin/` interface, or the older `.agents/agent-workflow.yml` with `.agents/bin/`. Follow prose constraints in trusted `AGENTS.md`; run the candidate
+  `.agents/shaka/bin/` interface. Follow prose constraints in trusted `AGENTS.md`; run the candidate
   scripts at those fixed paths. Reject invalid configuration. Failed checks and
   evidence from another commit cannot establish current readiness.
 - **R6 — Merge the verified revision.** Refresh GitHub state and require the expected
@@ -179,8 +179,7 @@ it, and Markdown explains decisions and human-only constraints.
 ## Repository seam
 
 The **seam** is `.agents/shaka/config.yml` plus the standard `.agents/shaka/bin/` interface,
-which `seam init` creates. Repositories configured earlier keep `.agents/agent-workflow.yml`
-plus `.agents/bin/`; Shaka reads either, and `seam upgrade` moves the older one.
+which `seam init` creates.
 It supplies setup, full and optional pre-review validation, focused tests, an optional
 hosted-CI trigger, base branch, review, merge authority, branch naming, and recovery policy.
 GitHub supplies live protection, required checks, and allowed merge methods. `AGENTS.md`

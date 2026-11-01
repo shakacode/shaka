@@ -22,7 +22,7 @@ module PostImplementationFixture
   end
 
   def commit_candidate_instructions(root)
-    File.write(File.join(root, '.agents/agent-workflow.yml'),
+    File.write(File.join(root, '.agents/shaka/config.yml'),
                YAML.dump(seam('checkpoint' => { 'enabled' => false, 'model' => 'candidate-model' })))
     directory = File.join(root, 'skills/shaka/references')
     FileUtils.mkdir_p(directory)

@@ -107,15 +107,13 @@ module Shaka
       return if @repository.nil? || settings?
 
       reminder("settings #{@repository}",
-               "#{@repository} has no Shaka settings (#{Configuration::Layout::NEW.contract}). Unless the user " \
+               "#{@repository} has no Shaka settings (#{Configuration::Paths::CONTRACT}). Unless the user " \
                "already chose, ask for a private trial in this clone or team setup: #{SETUP_GUIDE}. " \
                'Declining setup skips settings, not the publication steps.')
     end
 
     def settings?
-      [Configuration::Layout::LEGACY, Configuration::Layout::NEW].any? do |layout|
-        Configuration::Layout.entry?(File.join(@repository, layout.contract))
-      end
+      Configuration::Layout.entry?(File.join(@repository, Configuration::Paths::CONTRACT))
     end
 
     def doctor_unrun

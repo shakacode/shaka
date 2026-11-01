@@ -80,7 +80,7 @@ class PrDescriptionAttributionTest < Minitest::Test
   end
 
   def enable_candidate_attribution(root)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     config = YAML.safe_load_file(path)
     config['pr_description']['show_shaka_credit'] = true
     File.write(path, YAML.dump(config))
