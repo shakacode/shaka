@@ -69,7 +69,8 @@ module Shaka
     end
 
     def placeholder_covered?(old, measured)
-      old['responses'].empty? && measured.any? do |fresh|
+      # An unreadable response is `complete: false` and stays visible; only a read that found nothing gives way.
+      old['responses'].empty? && old['complete'] == true && measured.any? do |fresh|
         old['host'] == fresh['host'] && (old['sources'].empty? || old['sources'].intersect?(fresh['sources'])) &&
           UsageRecords.same_attribution?(old, fresh)
       end

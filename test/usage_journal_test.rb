@@ -420,6 +420,18 @@ class UsageJournalEdgeCaseTest < Minitest::Test
     assert_equal 2, Shaka::UsageJournalRecords.combine(placeholders).size
   end
 
+  def test_a_readable_response_keeps_an_unreadable_one_from_the_same_session
+    unreadable = record('r1').merge('responses' => [], 'complete' => false)
+    combined = Shaka::UsageJournalRecords.combine([record('r2'), unreadable])
+    assert_equal([['r2'], []], combined.map { |entry| entry['responses'] })
+  end
+
+  def test_a_read_that_found_nothing_gives_way_to_a_later_measured_report
+    empty = record('r1').merge('responses' => [], 'sources' => [], 'complete' => true)
+    combined = Shaka::UsageJournalRecords.combine([empty, record('r2')])
+    assert_equal([['r2']], combined.map { |entry| entry['responses'] })
+  end
+
   def test_a_comment_edited_on_the_web_still_counts
     github = UsageJournalTest::GitHub.new
     reader(github).publish([record('r1')], event: 'commit')
