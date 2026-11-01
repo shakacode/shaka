@@ -9,6 +9,8 @@ module Shaka
     # checked. A result stays bound through any update that leaves these files alone. Rendering
     # code only shows results, and settings code reaches them through its fingerprinted output.
     # The built-in defaults count because the review runner reads its timeouts from them directly.
+    # The review folder counts whole, comment rendering included: listing those files apart would
+    # have spared 3 of 315 commits on main.
     module RelevantCode
       ROOT = File.expand_path('../../..', __dir__)
       PATTERNS = %w[
