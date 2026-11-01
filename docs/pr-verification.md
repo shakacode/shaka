@@ -409,10 +409,9 @@ recommendation** and leaves the description at **No recommendation yet**. Shaka 
 to show a recommendation made for an earlier commit, so the recommendation does not name
 one. Beside it, links open the walkthrough, the detailed code review when one was
 published, and the full checkpoint. Your agent adds a **Next** line when merging waits on
-something the recommendation does not say, such as another PR. The **Summary** follows:
-one sentence with the outcome, then up to four bullets for what else you need to decide.
-Your agent summarizes
-consequential decisions, questions or friction, and critical changes in a few lines.
+something the recommendation does not say, such as another PR. The **Summary** follows.
+Your agent writes it as one sentence with the outcome, then up to four bullets on
+consequential decisions, questions or friction, and critical changes.
 Supporting evidence appears below.
 The report keeps the **Reviewer verdict** within the checkpoint. A recommendation becomes a
 **Recorded decision** after the owner accepts it or acts under existing authority.

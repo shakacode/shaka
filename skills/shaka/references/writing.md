@@ -12,8 +12,8 @@
 - Lead with the outcome its reader notices.
 - Write a PR description `summary` as one outcome sentence, a blank line, then at most
   four bullets, each one fact a maintainer needs to decide on merging. Omit the bullets
-  when that sentence covers the change. Leave out what the diff shows. Put issue history
-  and safety arguments in Intent.
+  when that sentence covers the change. Leave out what the diff shows. Put a safety
+  argument in `intent.safe_because` and issue history in `task_history`.
   - Instead of: “It stays under Human comments, and reviewer-shortfall and sandbox gaps
     still appear under Setup gaps. `shaka resolve` still refuses to treat one as the
     agent’s answer, so it gains no authority.”
@@ -45,7 +45,7 @@
 - Describe observable behavior rather than implementation jargon. For example:
   - Instead of: “Tier 3 needs a bounded reader for native events.”
   - Write: “We need to test whether agents follow the PR workflow, including waiting
-    for merge permission. This change reads Codex’s reported activity for those tests.
+    for merge permission. The PR reads Codex’s reported activity for those tests.
     Running and grading the full workflow remains future work.”
 - Keep explanations proportional to the change. Keep the average sentence under
   about 15 words; no sentence should need more than 25. Keep paragraphs to about
