@@ -300,8 +300,8 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
 ### 3. CodeRabbit fixes rose while hosted Claude fell to zero
 
 - **Observed:** CodeRabbit fixes rose from 20 to 55, and its code bugs from 6 to 23,
-  while hosted Claude fell to zero, counting threads by when they opened. CodeRabbit
-  reviewed fewer PRs created in the later period, 92 against 101. Pushes per PR after the first hosted report did not fall to zero with
+  while hosted Claude fell to zero, counting threads by when they opened. Fewer PRs
+  created in the later period escaped its review limit, 92 against 101. Pushes per PR after the first hosted report did not fall to zero with
   hosted findings.
 - **Limit:** the two periods differ in length and PR mix. The counts cannot show that
   one reviewer replaced the other.
