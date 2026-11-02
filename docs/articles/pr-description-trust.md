@@ -1,111 +1,134 @@
-# Every check passed. The maintainer called it "kind of pointless."
+# How Shaka works with pstack and Addy Osmani's agent skills, and where it falls short
 
-*An AI agent wrote this article: Claude Code running Claude Opus 5.5, on 2026-10-31
-(UTC). The maintainer asked for it, rejected two versions, and asked for this one.
-The numbers come from public PRs merged 2026-10-22 to 2026-10-29. Sources and methods
-are in the [reference](../reference/pr-description-ideas.md).*
+*An AI agent wrote this analysis: Claude Code running Claude Opus 5.5, on 2026-11-01
+(UTC), at the maintainer's request. It compares Shaka with
+[pstack](https://github.com/cursor/plugins/tree/c742dd61706fbacc1b95f1a20b7b988cf096ce6c/pstack)
+at `c742dd6` and
+[agent-skills](https://github.com/addyosmani/agent-skills/tree/eb07f19f52c2669f2364897aaa293e2aaddd7b1c)
+at `eb07f19` by reading them. No run has tested the combinations. Usage numbers come from
+the 429 pull requests (PRs) merged here in October 2026.*
 
-Shaka's agents wrote a history of how pull request (PR) descriptions came to show
-intent and proof. Every check passed, and the maintainer still rejected it.
+Shaka runs delivery: it takes a task through validation, review, publication, and the
+merge decision. pstack and agent-skills teach engineering technique, and each can also
+run delivery itself. Installing them together raises one question: who is in charge?
 
-The agents rebuilt it around Lauren Tan's and Addy Osmani's ideas. Every check passed
-again. The maintainer said it read like a detailed reference with an article inside
-it.
+Shaka has a written answer. It fits pstack well. It fits Addy Osmani's pack less well,
+and the reason is how each pack starts a skill.
 
-By then the PR had 23 review runs, three checkpoints saying Proceed, and about $61 of
-AI spend. The reviews were useful. They caught a count command that returned 30 PRs
-where the article claimed 115, and a claim about #984 that went too far. None of them
-asked why anyone would read the thing.
+## Main results
 
-## Automated review checks the claims, and nothing checks the point
+- Shaka's rules for other skills load only when a task asks for one. That suits pstack,
+  whose skills wait to be named. Addy's skills start on their own.
+- Agents reported pstack in 13 of the 297 PRs with a Skills used section, and Addy's
+  pack in none. Shaka's guide says neither has been tried on a full delivery.
+- The strongest proof gets the weakest record. A test suite run is bound to the commit.
+  A harness that drives the real app ends up as a sentence.
+- Both packs have the agent restate the goal early. Shaka doesn't yet
+  ([#1017](https://github.com/shakacode/shaka/issues/1017)).
+- Shaka's own 12,450-word workflow is the largest thing in this comparison.
 
-The maintainer asked one question. An agent turned it into a detailed brief. A second
-agent built to that brief and wrote the Intent block. The checkpoint then judged the
-result against that Intent. Every step after the first was an agent reading another
-agent.
+## Three different shapes
 
-[Tan's test for proof](https://x.com/poteto/status/2109436202554372476) asks whether
-the work matches what you intended.
-[Osmani argues](https://addyo.substack.com/p/the-code-nobody-reads) the expensive
-failures sit upstream, in asking for the wrong thing. Both recommend
-having the agent restate the goal before it starts. Shaka planned that step in
-[#421](https://github.com/shakacode/shaka/issues/421) and hasn't built it.
+| | pstack | agent-skills | Shaka |
+| --- | --- | --- | --- |
+| **Size** | 61 skills, 41,962 words | 25 skills, 52,354 words | A 12,450-word workflow, plus references it loads when needed |
+| **Median skill** | 437 words | 2,060 words | n/a |
+| **What starts a skill** | You name it: 60 of 61 are explicit-only | The host matches its description: 0 of 25 are explicit-only | You invoke it |
+| **Runs its own delivery** | Shipping, Babysit, and Autopilot playbooks | `/build auto` and `/ship` | It is the delivery |
 
-## People here spend their attention on words
+agent-skills also ships a session-start hook. Its own comments say not to wire it on
+Claude Code or Codex, which already route skills from their descriptions.
 
-In a [study of 309 PRs](one-shot-pr-study.md), a person gave feedback on 65. 64 of
-those changed docs or agent instructions. Of the 73 PRs within the size limits that
-left those files and Shaka's settings alone, none drew feedback.
+## What Shaka already handles
 
-From 10-22 to 10-29, 13 of 110 PRs carried any GitHub comment from a person. Chat feedback
-doesn't appear in that count, and a missing comment doesn't prove the code is right.
+[Shaka's guide](../working-with-shaka.md#combine-shaka-with-other-skills) covers these
+cases, and its companion rules name both packs:
 
-## The top review rating stopped meaning much
+| Situation | What Shaka does |
+| --- | --- |
+| A skill produces a spec, review, or template | Treats it as task input. It sets no merge preference, reviewer, or required check. |
+| Its advice conflicts with Shaka | Follows Shaka and names the declined advice on the PR. |
+| It fans out workers (`swarm`, `arena`) | Needs the user's approval to delegate. |
+| It prescribes PR text (Opening a PR) | Applies the prose advice and keeps Shaka's managed description. |
+| It runs delivery (`/ship`, Autopilot) | Declines that part and offers a separate trial. |
+| It produces verification evidence | Records the command, commit, result, artifacts, and gaps. |
 
-Review effort 5 says to review every line, reproduce the change, and ask a second
-reviewer. 47 of 110 PRs got that rating. A rule that puts anything under `docs/` at 5
-set 45 of them.
+Code backs two of these: `description` owns the PR text, and `merge` owns the merge. The
+rest are instructions the agent follows. No test or enforcement entry covers them.
 
-40 of those 45 also changed code, and 25 of those 40 changed fewer than 20 lines of docs. One small
-docs edit rates a whole code PR at the maximum. 17 of the 44 with a timestamp merged
-within 30 minutes of first being ready.
+## The gaps
 
-## The proof got folded away
+### 1. The rules load only when someone asks
 
-The description's second job is to show the proof. On 10-22 and 10-23, all 36
-`Not verified` lines were visible. On 10-29, 3 were visible and 27 sat inside a
-collapsed section. [#860](https://github.com/shakacode/shaka/pull/860) made that
-change while grouping metadata. The visible Verification section went from a median
-of 75 words to 11.
+- **Today:** the workflow reads the companion rules when a task hands over another skill's
+  output or asks for another skill.
+- **Why it matters:** Addy's descriptions match nearly everything. `git-workflow-and-versioning`
+  says to use it when making any code change. `test-driven-development` says the same for
+  any logic, bug, or behavior change. A host can load these with nobody asking, so the rule
+  that Shaka wins may not be in the agent's context.
+- **Likely collisions:** its `feature/<short-description>` branch names against Shaka's
+  `branches.name`, `doubt-driven-development`'s fresh reviewers against the delegation
+  rule, and `spec-driven-development`'s approval gate against an immediate start.
+- **Status:** inferred from the text. No run has tested it.
+- **Smallest fix:** one always-loaded sentence saying the workflow outranks other skills.
 
-![Stacked bars of Not verified lines by merge date. 10-22: 28 visible. 10-23: 8 visible. 10-24: no merges. 10-25, when #860 merged: 3 visible, 2 folded. 10-26: 5 folded. 10-27: 2 visible, 10 folded. 10-28: 1 visible, 8 folded. 10-29: 3 visible, 27 folded.](../img/pr-description-not-verified.svg)
+### 2. Nobody has run Addy's pack through Shaka
 
-The agent that wrote the PR decides which gaps are material enough to stay visible.
+- **Today:** 0 of 297 PRs report it. The guide invites a trial and asks which instructions
+  conflicted.
+- **Limit:** reporting is agent-written, so zero reported doesn't prove zero used.
+- **Smallest fix:** one real task with the pack installed. It would test gap 1 directly.
 
-## Signals that rarely change say little
+### 3. The strongest proof gets the weakest record
 
-The checkpoint's verdict on verification read "adequate with accepted gaps" 138 times
-out of 144. It read "inadequate" once. No person accepted those gaps. A reviewer model
-judged them acceptable.
+- **Today:** `evidence run` records repository commands such as `validate`, bound to the
+  commit. Tan's `create-verification-skill` builds a harness that drives the app as a user
+  would, which is the proof tests can't give. Its result goes into a `checks` sentence.
+  Ruby confirms that sentence cites a link or a command. It can't tell that anything ran.
+- **Why it matters:** a stale harness result looks the same as a current one. Rerunning it
+  after a later commit is left to the agent.
+- **Smallest fix:** let a repository declare a verification command that binds like
+  `validate`.
 
-Shaka also writes a line when a configured reviewer doesn't finish. Agents can't
-soften a line the tool writes. 6 of the first 8 such lines were still false: both
-reviewers had run, and the agent passed the tool one result file
-([#984](https://github.com/shakacode/shaka/pull/984)).
+### 4. Usage can't be counted cleanly
 
-## What held up
+- **Today:** agents recorded pstack under at least five source labels: `cursor/plugins`,
+  `cursor/plugins pstack`, `justin808/plugins`, `Installed pstack portable skill`, and
+  `local pstack`. Ports also rename skills, so `tdd` appears as `pstack-tdd`.
+- **Why it matters:** the 13 above came from a text search. Nobody can yet ask which pack
+  helped.
+- **Smallest fix:** a normalized pack field in `skills_used`.
 
-- **Stated gaps.** 97 of 110 PRs name something that went unproven.
-- **Rules moved into code.** When agents chose all three checks, 11 of 12 PRs spent two
-  restating passes. After Shaka wrote that line itself, 32 of 101 spent one and none
-  spent two.
-- **A second reviewer.** Codex reported 37 of the 102 defects local review found, ones
-  Claude did not report ([review process study](review-process-study.md)).
-- **Paths as a guide to attention.** What a PR changed predicted a person's feedback
-  better than its size.
+### 5. Nobody measures the combined instructions
 
-## What other teams can take from this
+- **Today:** `bin/report-instruction-growth` counts Shaka's own files. Five Addy skills that
+  match ordinary code changes (git workflow, code review, test-driven development,
+  incremental implementation, and its router) total 10,782 words, close to Shaka's 12,450.
+- **Why it matters:** the cost of carrying both is unknown, and Shaka is the larger half.
+- **Smallest fix:** record it in the trial from gap 2 before changing anything.
 
-- Ask a person whether the result is worth having. Automated review won't.
-- Have the agent restate the goal before work starts, and check the result against the
-  person's words.
-- Keep what went unproven in plain view.
-- Rate review effort per file or section, so a small docs edit doesn't set the rating
-  for a whole PR.
-- Watch how often each signal changes. A verdict that almost never varies tells a
-  reader very little.
+### 6. Shaka lacks a step both packs have
 
-## What this changed in Shaka
+- **Today:** Addy's core behaviors have the agent list its assumptions and say "Correct me
+  now or I'll proceed." Tan's `/in-your-own-words` restates the goal. Shaka writes Intent
+  at publication, after the work.
+- **Smallest fix:** [#1017](https://github.com/shakacode/shaka/issues/1017), which caps
+  any wait at five minutes.
 
-- [#999](https://github.com/shakacode/shaka/issues/999): keep `Not verified` visible.
-- [#1000](https://github.com/shakacode/shaka/issues/1000): stop calling model-judged
-  gaps accepted.
-- [#1001](https://github.com/shakacode/shaka/issues/1001): stop a small docs edit from
-  rating a whole code PR at the maximum.
-- [#1002](https://github.com/shakacode/shaka/issues/1002): stop unrelated merges from
-  voiding evidence mid-task. One cost this PR a 20-minute validation run.
-- [#1003](https://github.com/shakacode/shaka/issues/1003): let docs images skip the full
-  test suite.
-- [A comment on #421](https://github.com/shakacode/shaka/issues/421#issuecomment-6550360529)
-  adds this case to the plan for restating the goal before work starts.
+## Fits that already work
 
+- Addy's `CONSTRAINTS.md` can reach Shaka's merge check through
+  [`project_guidance`](../settings.md#project_guidance). An unmet requirement then blocks readiness.
+- Addy's "things I didn't touch" summary maps to Intent's Leaves out.
+- pstack's principles are short enough to use inside any phase. Two of them,
+  `principle-prove-it-works` and `principle-fix-root-causes`, run 209 and 324 words.
+
+## What to do first
+
+1. Add the one-sentence rule from gap 1. It is cheap and covers the unknown.
+2. Run one real task with agent-skills installed, and ask the guide's question. That
+   settles gaps 1, 2, and 5.
+3. Decide on the bound verification command in gap 3, the largest change here.
+
+The [reference](../reference/pr-description-ideas.md) holds the wider history of these
+ideas in Shaka.
