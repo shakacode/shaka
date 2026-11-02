@@ -12,6 +12,13 @@ A PR whose only changed publication files are those `RenderingPreview::INSTALLED
 this procedure: a preview keeps them installed, so it cannot show their change. `handoff` owes
 no preview for them and lists them as not previewed.
 
+A PR that changes no file a preview loads, and at least one it cannot load, also skips this
+procedure, and `description --rendering-preview-root` refuses it. The files it cannot load are
+walkthrough, review-comment, and checkpoint renderers, and files below the publication directory.
+A description marker cannot attest to them. On a same-repository PR, `handoff` names them in a note
+and owes nothing for them. Say on the PR how you checked their rendering, such as a live round trip
+with the PR's own helper.
+
 1. Confirm `gh pr view` reports `isCrossRepository` false. Only accounts with write
    access can push such a branch. Otherwise, skip the republish.
 2. Publish with the installed helper as usual. After its last publication for a reviewed
@@ -27,7 +34,8 @@ no preview for them and lists them as not previewed.
    you inspected. Never copy installation metadata or rewrite evidence to force a match.
    Other affected artifacts use `skills/shaka/scripts/shaka` from a detached checkout of that
    head; review their rendering code before running it. Mixed workflow changes do not excuse
-   skipping the supported description preview.
+   skipping the supported description preview, which keeps the installed copies of the files it
+   cannot load, including walkthrough code the description calls.
 4. Inspect the actual PR description on GitHub at desktop and mobile widths: headings,
    diff totals and bucket paths, visible token cost, and expanded evidence and metadata.
    Record the result under verification. A fixture comment is supporting
@@ -35,14 +43,11 @@ no preview for them and lists them as not previewed.
    current-head preview marker for Shaka publication changes. For a review comment, confirm its last line is still the
    `REVIEWED` attestation that `merge` reads.
 5. If preview, `handoff`, or attestation checks fail, restore the installed rendering and
-   resolve the failure before handoff. Report an unsupported renderer as a blocker. A head
+   resolve the failure before handoff. A head
    that lacks an installed renderer, or whose files require each other in a cycle, is refused:
    rebase an older head or fix the cycle. A PR that deletes or renames a renderer cannot
    preview until the installation has that change. Never claim a sample completes self-preview.
 
 Repeat after each new head and after any later installed-helper publication overwrites the
-preview. Usage refresh invalidates the marker when it replaces rendered usage. Handoff also
-detects walkthrough, review-comment, and checkpoint renderers; these remain blocked until
-their reviewed preview path and artifact-specific evidence check are supported. A description
-marker cannot satisfy them. Every other command, including seam, evidence, review, and merge,
-stays installed.
+preview. Usage refresh invalidates the marker when it replaces rendered usage. Every other
+command, including seam, evidence, review, and merge, stays installed.

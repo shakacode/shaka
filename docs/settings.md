@@ -907,13 +907,18 @@ rendered before and after screenshots.
 ## `pr_description.opening_check`
 
 **Optional.** Check whether the first sentence of a PR description or code
-walkthrough leads with a useful outcome for its reader. This is writing advice,
+walkthrough leads with a useful outcome for its reader, and whether a description
+uses words a maintainer new to Shaka would not follow. This is writing advice,
 not a check of the whole text's accuracy.
 It flags a first sentence led by an internal tool, such as a command or helper, and
 one that gives a thing something only a person does, such as "A repository can now
 see when a reviewer could not run."
+On a description, it also reads the Intent and Verification text you see without
+opening anything. For each term it flags, it suggests plainer words: "that commit"
+for "that head", for example. The agent decides whether a term needs changing.
 A failed check does not block publication or merging. With an opening reviewer
-configured, each walkthrough with a new opening adds one call to it.
+configured, each description with new text and each walkthrough with a new opening
+adds one call to it.
 
 > $shaka Use Codex for opening checks.
 
@@ -974,7 +979,7 @@ Shaka treats the PR opening as text to assess, not as instructions to follow.
 
 If the selected reviewer cannot run, Shaka returns the reason and the prompt for
 the coding agent to apply. It preserves your model choice. A successful result
-is reused while the opening, instructions, provider, model, and effort stay the
+is reused while the checked text, instructions, provider, model, and effort stay the
 same.
 
 ## `prose_limits`

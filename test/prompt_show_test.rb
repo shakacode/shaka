@@ -50,6 +50,14 @@ module PromptShowFixture
   end
 
   def seam(review) = super(review.except('pr_description')).merge(review.slice('pr_description'))
+
+  def opening_sources(base)
+    setting = 'pr_description.opening_check.replacement_prompt_file'
+    ["replacement .agents/codex-prompt.md@#{base} (#{setting})", 'built-in: data rule',
+     'placeholder: first paragraph of the PR description summary', 'built-in: description prose rule',
+     'placeholder: visible Intent and Verification prose; a walkthrough omits this and the rule above it']
+  end
+
   def unmarked(text) = text.gsub(/\h{32}/, 'MARKER')
   def shown_text(document) = document.fetch('sections').map { |section| section.fetch('text') }.join
   def sources(document) = document.fetch('sections').map { |section| section.fetch('source') }
@@ -105,14 +113,13 @@ class PromptShowTest < Minitest::Test
   def test_the_opening_prompt_matches_what_the_opening_check_sends
     opening = { 'pr_description' => { 'opening_check' => { 'replacement_prompt_file' => '.agents/codex-prompt.md' } } }
     with_change(opening) do |root, base, _head, _bin|
-      result = Shaka::OpeningPublication.new(root:, ref: base).call("Opens the repository.\n")
+      result = Shaka::OpeningPublication.new(root:, ref: base)
+                                        .call("Opens the repository.\n", prose: 'Why: it was closed.')
       assert_equal 'host_check', result.fetch('status'), result.to_s
 
       document = show(root, 'opening', '--ref', base)
       assert_reproduces(result.fetch('prompt'), document)
-      setting = 'pr_description.opening_check.replacement_prompt_file'
-      assert_equal ["replacement .agents/codex-prompt.md@#{base} (#{setting})", 'built-in: data rule',
-                    'placeholder: first paragraph of the PR description summary'], sources(document)
+      assert_equal opening_sources(base), sources(document)
     end
   end
 

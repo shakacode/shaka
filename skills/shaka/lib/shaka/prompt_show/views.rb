@@ -119,6 +119,7 @@ module Shaka
     # The opening check prompt, read through the same settings path as description publication.
     class OpeningView
       OPENING = 'first paragraph of the PR description summary'
+      PROSE = 'visible Intent and Verification prose; a walkthrough omits this and the rule above it'
 
       attr_reader :notes
 
@@ -131,8 +132,12 @@ module Shaka
         raise Error, 'prompt show opening takes no --head or --base' if @options.key?(:head)
 
         sections = OpeningPublication.new(root: @options.fetch(:root), ref: @options.fetch(:criteria_ref))
-                                     .prompt_sections("<#{OPENING}>")
-        sections && [*sections[0..-2], sections.last.with(source: "placeholder: #{OPENING}")]
+                                     .prompt_sections("<#{OPENING}>", prose: "<#{PROSE}>")
+        return unless sections
+
+        instructions, rule, opening, prose_rule, prose = sections
+        [instructions, rule, opening.with(source: "placeholder: #{OPENING}"), prose_rule,
+         prose.with(source: "placeholder: #{PROSE}")]
       end
     end
   end

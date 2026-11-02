@@ -36,6 +36,25 @@ class PostImplementationAdequacyTest < Minitest::Test
     end
   end
 
+  def test_accepted_gaps_show_as_the_reviewers_judgment_and_keep_their_stored_marker
+    with_result do |result, path|
+      with_verdict(result, ADEQUACY.merge('verdict' => 'adequate with accepted gaps'))
+      github, = publish(result, path)
+      body = github.bodies.first.first
+      assert_includes body, '**Verification:** Adequate, with gaps the reviewer judged acceptable.'
+      refute_includes body, 'Adequate with accepted gaps'
+      assert_includes body, '<!-- shaka:post-implementation-adequacy adequate_with_accepted_gaps -->'
+      assert_equal 'adequate with accepted gaps', Shaka::PostImplementationEvidence.new(github).adequacy(HEAD)
+    end
+  end
+
+  # The marker exactly as earlier comments carry it, spelled out so a rename here cannot pass by renaming both sides.
+  def test_a_comment_published_with_the_earlier_label_still_parses
+    published = comment("**Verification:** Adequate with accepted gaps.\n\n" \
+                        "<!-- shaka:post-implementation-adequacy adequate_with_accepted_gaps -->\n")
+    assert_equal 'adequate with accepted gaps', evidence(published).adequacy(HEAD)
+  end
+
   def test_the_owner_disposition_keeps_the_verification_verdict_readable
     with_result do |result, path|
       with_verdict(result, ADEQUACY.merge('verdict' => 'adequate with accepted gaps'))

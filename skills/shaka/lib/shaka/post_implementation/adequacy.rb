@@ -6,11 +6,16 @@ module Shaka
   # A separate judgment from the verdict: whether the description's checks prove what its intent rests on.
   # Mixed into the checkpoint publication, which supplies @head, @state, and any @disposition_line.
   module PostImplementationAdequacy
+    # The stored verdict keeps its words so published comments still parse. A reader needs to know whose
+    # judgment the gaps got, because the maintainer has accepted nothing yet.
+    DISPLAYED = { 'adequate with accepted gaps' => 'Adequate, with gaps the reviewer judged acceptable' }.freeze
+
     private
 
     def adequacy(report)
       @adequacy = report.fetch('verification_adequacy')
-      "**Verification:** #{@adequacy.fetch('verdict').capitalize}.\n\n" \
+      verdict = @adequacy.fetch('verdict')
+      "**Verification:** #{DISPLAYED.fetch(verdict) { verdict.capitalize }}.\n\n" \
         "- Weakest claim: #{@adequacy.fetch('weakest_claim')}\n- Next check: #{@adequacy.fetch('next_check')}"
     end
 

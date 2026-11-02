@@ -383,9 +383,11 @@ current commit. A new commit needs fresh evidence. The reviewer judges value; Ru
 checks the published result and commit, not the judgment’s quality.
 
 The checkpoint also says whether the description's **Verification** proves what its
-**Intent** claims: **Adequate**, **Adequate with accepted gaps**, **Inadequate**, or
-**Cannot judge**. It names the weakest claim and the one check that would most raise
-confidence, and the description shows the verdict under its recommendation. With Ask,
+**Intent** claims: **Adequate**, **Adequate, with gaps the reviewer judged acceptable**,
+**Inadequate**, or **Cannot judge**. The second verdict is the reviewer model's opinion;
+you have not accepted those gaps until you decide to merge. The checkpoint names the
+weakest claim and the one check that would most raise confidence. The description shows
+an **Inadequate** or **Cannot judge** verdict under its recommendation. With Ask,
 an **Inadequate** or **Cannot judge** verdict is information for your merge decision; with
 Auto, your agent stops and hands the PR back to you, and merges only after you approve that
 commit. No setting turns this stop off: Auto merging past verification that failed or could

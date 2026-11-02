@@ -76,7 +76,7 @@ class CliOpeningSettingsTest < Minitest::Test
       require 'json'
       STDIN.read
       File.write(File.join(ENV.fetch('HOME'), 'codex-args.json'), JSON.generate(ARGV))
-      File.write(ARGV[ARGV.index('-o') + 1], #{JSON.generate('sentences' => [sentence]).inspect})
+      File.write(ARGV[ARGV.index('-o') + 1], #{JSON.generate('sentences' => [sentence], 'unclear_terms' => []).inspect})
     RUBY
   end
 end

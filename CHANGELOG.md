@@ -24,6 +24,9 @@ from working is a major version.
 - Keep validation and review results valid when Shaka updates during a task, unless the
   update changes the code that runs or checks them. Rewording a description for the same
   commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.
+- Say **Adequate, with gaps the reviewer judged acceptable** on a checkpoint, in place of
+  **Adequate with accepted gaps**, which read as if the maintainer had accepted them.
+  Published checkpoints still parse.
 - Show `ready in` and `merged in` on more PRs. The description now reads the task
   start from a usage report that covers the whole task, and records the ready time
   each time it updates instead of only while a watch runs.
@@ -40,6 +43,10 @@ from working is a major version.
 - Keep usage on the PR with `shaka usage publish` and `shaka usage collect`. Each
   publication appends its own comments, so contributors cannot overwrite each other,
   and a new owner recovers usage without the earlier machine's transcripts.
+- Get plainer wording for terms a maintainer new to Shaka would not follow. The advisory
+  opening check now also reads a description's visible Intent and Verification text and
+  suggests a replacement for each term. A description with new text adds one call to the
+  opening reviewer.
 
 ## [1.0.0] - Unpublished
 
