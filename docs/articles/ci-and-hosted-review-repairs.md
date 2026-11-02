@@ -62,9 +62,13 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
 - A "code bug" names wrong behavior the code can reach, and a fix commit followed
   it. The class excludes missing `require` lines and defensive changes with no
   reachable failure.
-- Before 2026-10-14, hosted reports had no fixed finding count. The total of about
-  163 findings comes from 124 inline threads and 39 findings listed only in report
-  text.
+- Before 2026-10-14, hosted reports had no fixed finding count, so the agent counted
+  findings by reading them. Later reports state their own count. The total of about 163
+  findings comes from 124 inline threads and 39 findings listed only in report text.
+- The [earlier review study](review-process-study.md) found that about half of hosted
+  Claude inline threads got a fix-style reply. That study used a keyword search over
+  2026-09-19 to 2026-10-17. This report reads each reply and counts only a fix commit
+  that followed, so its share is lower.
 - CodeRabbit counts come from a second agent, which read all 124 answered threads and
   used the same classes. It judged fixes from the reply text and did not check each
   commit. The two agents spot-checked about 100 of those calls and found none clearly
@@ -250,7 +254,7 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
 - **Limit:** reviewers class their own local findings, while this report classed the
   hosted ones. Some local fixes came after a PR was public.
 
-### 2. Findings fell in two steps: a model change, then a prompt change
+### 2. Findings fell in two steps, after #446 and after #640
 
 - **Observed, first step:** [#446](https://github.com/shakacode/shaka/pull/446) bumped `claude-code-action` from 1.0.235 to 1.0.241
   on 2026-10-11 and left the prompt alone. All 7 sampled runs before it logged
