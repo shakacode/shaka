@@ -21,7 +21,8 @@ is 2026-10-02 to 2026-10-31 UTC.
 
 ## Main results
 
-- CI failed 88 times in 4,291 runs. The change on the branch caused 30 of those
+- CI had 88 failed attempts. The window held 4,291 Actions runs, counting cancelled and
+  skipped ones. The change on the branch caused 30 of those
   failures: 14 on 10 regular PRs, 9 on a Windows port, and 7 on Dependabot bumps.
   Flaky tests caused 15, and the hosted review job itself failed 32 times.
 - Hosted Claude review led to 10 code bug fixes on 8 PRs. All 10 came in the
@@ -34,7 +35,8 @@ is 2026-10-02 to 2026-10-31 UTC.
   and all 446 later reports found nothing. Local review was running throughout.
 - Back-and-forth continued. CodeRabbit, another hosted reviewer, led to 55 fixes on
   30 PRs after #640 merged, including 23 code bug threads. Hosted Claude had reported
-  zero findings on the same commit for 53 of those fixes, across 33 commits.
+  zero findings on the same commit for 21 of those 23 code bug threads, across 17
+  commits. The strict prompt excludes many docs and cleanup findings by design.
 - CodeRabbit's counts run low. Its free review limit left 249 of the 442 PRs with no
   review from it, including 151 of the 243 PRs created after #640 merged.
 - Pushes per PR did not follow findings to zero. PRs got a mean of 1.33 pushes after
@@ -124,6 +126,11 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
 | Findings with no push | about 106 | about 30 | 0 |
 | Mean pushes after the first report | 1.33 | 0.74 | 0.96 |
 | PRs with no push after the first report | 45% | 61% | 58% |
+
+The generic prompt asks for code quality, bugs, security, and performance. The strict
+prompt flags only code that fails to run, wrong results in a named state, and quoted
+rule violations. It also skips the rule audit and makes a short pass when a local Claude
+review of that commit exists. A full review is the run without that short pass.
 
 The findings with no push were mostly declined with a reason. Others were already
 fixed, or a description update answered them.
@@ -223,11 +230,13 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
 | Docs rebuild and canary | 0.2 | 2.0 |
 | All workflows | | 265.1 |
 
-- A push costs about 11 minutes of workflow time when every workflow runs.
-- The 27 hosted Claude fixes came in 22 commits. At most 22 pushes come to about
-  4 hours, or 2% of the total.
+- A push uses about 11 minutes of workflow time, at median run times, when every
+  workflow runs.
+- The 27 hosted Claude fixes came in 22 commits. Measured runs on the 14 of those
+  commits that were pushed as a PR head add up to 3.1 hours, about 1% of the total. The
+  others landed inside a later push or could not be traced to a run.
 - The 14 failures on regular PRs were on 14 distinct commits, and each led to a new
-  push. Those pushes come to about 2.6 hours, or 1%.
+  push. Measured runs on those next heads add up to 2.4 hours, about 1%.
 - Repairs used little of `shaka`'s CI time in this window. The window has
   no period without local review to compare against.
 
@@ -249,8 +258,9 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
   Findings per report fell from 0.80 to 0.21. Fixed code bugs fell less, from 3.9 to 2.1
   per 100 reports, so the drop was mostly in findings that led to no change.
 - **Observed, second step:** the last hosted Claude finding came at 05:07 UTC on
-  2026-10-18. [#640](https://github.com/shakacode/shaka/pull/640) merged at 05:13 UTC with the model unchanged. All 446
-  later reports found nothing. The workflow runs a full review when it finds no local
+  2026-10-18. [#640](https://github.com/shakacode/shaka/pull/640) merged at 05:13 UTC.
+  No action bump landed between 2026-10-17 and 2026-10-21, and sampled runs on both
+  sides of #640 logged the same action and model. All 446 later reports found nothing. The workflow runs a full review when it finds no local
   Claude review of that commit. All 96 full reviews found nothing. On 78 of them, the
   commit never got a published local Claude review. Those commits span 39 PRs with a
   median of 503 changed lines. The other 18 got one the job did not find when it ran.
@@ -295,8 +305,8 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
   [#553](https://github.com/shakacode/shaka/pull/553) merged on 2026-10-16. Pinning
   the runner in [#854](https://github.com/shakacode/shaka/pull/854) ended the Ruby
   failures.
-- **Proposed change:** leave hosted review job failures out of counts of failing
-  code. The workflow already labels them `Claude review UNAVAILABLE`.
+- **Proposed change:** none for the workflow, which already labels these failures
+  `Claude review UNAVAILABLE`. A later count of failing code should leave them out.
 - **Maintenance:** none for the fixes already merged.
 
 ### 5. PRs that passed alone still broke `main`
