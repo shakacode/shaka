@@ -11,6 +11,8 @@ module Shaka
   class GitLab
     include Transport
 
+    attr_reader :host
+
     def initialize(host:, project:, runner: nil)
       @host = validated_host(host)
       @project = validated_project(project)
