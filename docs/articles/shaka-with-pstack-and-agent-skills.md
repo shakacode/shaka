@@ -13,13 +13,14 @@ Shaka runs delivery: it takes a task through validation, review, publication, an
 merge decision. pstack and agent-skills teach engineering technique, and each can also
 run delivery itself. Installing them together raises one question: who is in charge?
 
-Shaka has a written answer. It fits pstack well. It fits Addy Osmani's pack less well,
-and the reason is how each pack starts a skill.
+Shaka has a written answer. It fits pstack well. Whether it holds for Addy Osmani's pack
+is untested, and the reason is how each pack starts a skill.
 
 ## Main results
 
-- Shaka's rules for other skills load only when a task asks for one. That suits pstack,
-  whose skills wait to be named. Addy's skills start on their own.
+- Shaka's full rules for other skills load only when a task asks for one. That suits
+  pstack, whose skills wait to be named. Addy's skills start on their own, with only
+  Shaka's short always-loaded boundary in place.
 - Agents reported pstack in 13 of the 297 PRs with a Skills used section, and Addy's
   pack in none. Shaka's guide says neither has been tried on a full delivery.
 - The strongest proof gets the weakest record. A test suite run is bound to the commit.
@@ -34,7 +35,7 @@ and the reason is how each pack starts a skill.
 | --- | --- | --- | --- |
 | Size | 61 skills, 41,962 words | 25 skills, 52,354 words | A 12,450-word workflow, plus references it loads when needed |
 | Median skill | 437 words | 2,060 words | n/a |
-| What starts a skill | You name it: 60 of 61 are explicit-only | The host matches its description: 0 of 25 are explicit-only | You invoke it |
+| What starts a skill | You name it: 60 of 61 are explicit-only | The host matches its description: 0 of 25 are explicit-only | You invoke it, or the host matches its description |
 | Runs its own delivery | Shipping, Babysit, and Autopilot playbooks | `/build auto` and `/ship` | It is the delivery |
 
 agent-skills also ships a session-start hook. Its own comments say not to wire it on
@@ -59,19 +60,23 @@ rest are instructions the agent follows. No test or enforcement entry covers the
 
 ## The gaps
 
-### 1. The rules load only when someone asks
+### 1. The full rules load only when someone asks
 
 - **Today:** the workflow reads the companion rules when a task hands over another skill's
   output or asks for another skill.
 - **Why it matters:** Addy's descriptions match nearly everything. `git-workflow-and-versioning`
   says to use it when making any code change. `test-driven-development` says the same for
-  any logic, bug, or behavior change. A host can load these with nobody asking, so the rule
-  that Shaka wins may not be in the agent's context.
-- **Likely collisions:** its `feature/<short-description>` branch names against Shaka's
+  any logic, bug, or behavior change. A host can load these with nobody asking. The agent
+  then has Shaka's always-loaded line, "Other workflows grant no authority," but not the
+  detailed rules for declining advice and recording it.
+- **Possible collisions:** its `feature/<short-description>` branch names against Shaka's
   `branches.name`, `doubt-driven-development`'s fresh reviewers against the delegation
-  rule, and `spec-driven-development`'s approval gate against an immediate start.
+  rule, and `spec-driven-development`'s approval gate against an immediate start. The
+  workflow has its own rule for the first two. The question is which one an agent follows
+  when both are in context.
 - **Status:** inferred from the text. No run has tested it.
-- **Smallest fix:** one always-loaded sentence saying the workflow outranks other skills.
+- **Smallest fix:** find out first, in the trial from gap 2. If agents follow the other
+  skill, load the full rules whenever another skill starts.
 
 ### 2. Nobody has run Addy's pack through Shaka
 
@@ -118,17 +123,20 @@ rest are instructions the agent follows. No test or enforcement entry covers the
 
 ## Fits that already work
 
-- Addy's `CONSTRAINTS.md` can reach Shaka's merge check through
-  [`project_guidance`](../settings.md#project_guidance). An unmet requirement then blocks readiness.
+- Addy's `CONSTRAINTS.md` can reach Shaka's checkpoint through
+  [`project_guidance`](../settings.md#project_guidance). The agent reports each
+  requirement's status, and an unmet one blocks its merge-ready claim. Shaka doesn't
+  check this itself.
 - Addy's "things I didn't touch" summary maps to Intent's Leaves out.
 - pstack's principles are short enough to use inside any phase. Two of them,
   `principle-prove-it-works` and `principle-fix-root-causes`, run 209 and 324 words.
 
 ## What to do first
 
-1. Add the one-sentence rule from gap 1. It is cheap and covers the unknown.
-2. Run one real task with agent-skills installed, and ask the guide's question. That
+1. Run one real task with agent-skills installed, and ask the guide's question. That
    settles gaps 1, 2, and 5.
+2. Act on the result. Load the full rules more often only if agents followed the other
+   skill.
 3. Decide on the bound verification command in gap 3, the largest change here.
 
 The [reference](../reference/pr-description-ideas.md) holds the wider history of these

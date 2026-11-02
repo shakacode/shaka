@@ -72,8 +72,9 @@ how each held up. For how Shaka works with those sources today, read
   groups cost about the same, $10.79 and $9.68.
 - **Visible Verification text:** the median was 75 words for PRs merged 10-22 and 10-23
   and 11 words for PRs merged 10-29, not counting link targets.
-- **Where `Not verified` appears**, anywhere in the description, by merge date. Across
-  the 110 PRs, 45 were visible, 52 folded, and 13 absent. #860 merged on 10-25.
+- **Where `Not verified` appears**, anywhere in the description, by merge date. A PR
+  counts once, at its first such line. Across the 110 PRs, 45 were visible, 52 folded, and
+  13 absent. #860 merged on 10-25.
 
 | Merged | Visible | Folded | Absent |
 | --- | ---: | ---: | ---: |
