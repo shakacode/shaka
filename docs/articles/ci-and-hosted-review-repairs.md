@@ -80,8 +80,8 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
   the outcome.
 - Pushes are distinct commits that ran `Validate` on a PR. They include rebases and
   changes people asked for, so they measure total back-and-forth, not review alone.
-- Model names and turn counts come from job logs: 7 sampled runs in each `shaka` period
-  and 12 on `react_on_rails`. The other runs were not read.
+- Model names and turn counts come from job logs: 7 sampled runs before #446, 7 from
+  #446 to #640, 8 after #640, and 12 on `react_on_rails`. The other runs were not read.
 - Workflow time is wall-clock time per run, which differs from billed time. This
   report makes no cost claim.
 
@@ -115,7 +115,7 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
 | ---: | ---: | ---: | ---: |
 | Logged model | `claude-sonnet-5` | `claude-sonnet-5-5` | `claude-sonnet-5-5` |
 | Prompt | Generic | Generic | Strict |
-| Turns per review, sampled | 22 to 59 | 5 to 11 | 4 to 9 |
+| Turns per review, sampled | 22 to 59 | 5 to 11 | 3 to 9 |
 | Reports | 152 on 73 PRs | 192 on 117 PRs | 446 on 234 PRs |
 | Findings | about 122 | about 41 | 0 |
 | Findings per report | 0.80 | 0.21 | 0 |
@@ -259,11 +259,19 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
   per 100 reports, so the drop was mostly in findings that led to no change.
 - **Observed, second step:** the last hosted Claude finding came at 05:07 UTC on
   2026-10-18. [#640](https://github.com/shakacode/shaka/pull/640) merged at 05:13 UTC.
-  No action bump landed between 2026-10-17 and 2026-10-21, and sampled runs on both
-  sides of #640 logged the same action and model. All 446 later reports found nothing. The workflow runs a full review when it finds no local
+  Sampled runs at 11:30 UTC on 2026-10-17 and 05:50 UTC on 2026-10-18 logged the same
+  action commit and model. All 446 later reports found nothing. The workflow runs a full review when it finds no local
   Claude review of that commit. All 96 full reviews found nothing. On 78 of them, the
   commit never got a published local Claude review. Those commits span 39 PRs with a
   median of 503 changed lines. The other 18 got one the job did not find when it ran.
+- **Action timeline:** later bumps reached 1.0.248 on 2026-10-15, 1.0.250 at 09:45 UTC
+  on 2026-10-17, 1.0.252 on 2026-10-21, and 1.0.262 on 2026-10-29. A sampled run after
+  the last bump still logged `claude-sonnet-5-5`.
+- **Counting method:** [#507](https://github.com/shakacode/shaka/pull/507) added a
+  self-reported finding count to each report on 2026-10-14. It changed the report
+  format and left the review instructions alone. Splitting the middle period there
+  gives 0.14 findings per report by hand count, then 0.25 by self-report. The drop from
+  0.80 therefore appears before the counting method changed.
 - **Limit:** the timing does not prove either change caused its step. Each period
   reviewed different PRs, and earlier commits on those 39 PRs may have had local
   review. The action bump may also have changed more than the default model. The
@@ -277,8 +285,8 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
   reports said it found no issues. Those counts fit an effect from the prompt or the
   model. `react_on_rails` is also a different codebase, and 11 of its bug threads sit on
   one PR.
-- **Proposed change:** on the 17 commits where CodeRabbit later led to a code bug fix,
-  rerun both prompts under both models. Change the prompt or pin the model only if the
+- **Proposed change:** take the 17 commits where hosted Claude reported zero findings
+  and CodeRabbit later led to a code bug fix. Rerun both prompts under both models. Change the prompt or pin the model only if the
   rerun shows which one loses bugs its rules include.
 - **Guarantee at risk:** more findings bring back nits. About 87% of findings before
   #446 led to no push, and about 73% from #446 to #640.
@@ -287,8 +295,8 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
 ### 3. CodeRabbit fixes rose while hosted Claude fell to zero
 
 - **Observed:** CodeRabbit fixes rose from 20 to 55, and its code bugs from 6 to 23,
-  while hosted Claude fell to zero. CodeRabbit reviewed fewer PRs in the later period,
-  92 against 101. Pushes per PR after the first hosted report did not fall to zero with
+  while hosted Claude fell to zero, counting threads by when they opened. CodeRabbit
+  reviewed fewer PRs created in the later period, 92 against 101. Pushes per PR after the first hosted report did not fall to zero with
   hosted findings.
 - **Limit:** the two periods differ in length and PR mix. The counts cannot show that
   one reviewer replaced the other.
