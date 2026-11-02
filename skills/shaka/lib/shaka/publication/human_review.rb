@@ -21,20 +21,22 @@ module Shaka
 
     module_function
 
-    def render(effort, floor)
+    # pull supplies GitHub's file count, which counts a rename once where the floor's paths hold both names.
+    def render(effort, floor, pull = nil)
       reading = READING[effort] if effort.is_a?(Integer)
       raise Error, 'Publication intent review_effort must be a whole number from 1 to 5.' unless reading
 
       refuse_below_floor!(effort, floor)
-      [line(effort, reading, floor), *(SHIPPED if floor && floor['shipped'])].join(' ')
+      [line(effort, reading, floor, pull), *(SHIPPED if floor && floor['shipped'])].join(' ')
     end
 
     # A rating at its floor is about the files that set it, so the line asks only for those.
-    def line(effort, reading, floor)
+    def line(effort, reading, floor, pull)
       level = floor ? floor['level'] : 1
       return "**Human review:** #{effort} of 5, #{reading}" unless level > 1
 
-      files = "#{floor_files(floor)}.#{other_files(floor['others'])}"
+      groups = groups(floor)
+      files = "#{floor_files(groups)}.#{other_files(groups, pull)}"
       return "**Human review:** #{effort} of 5, #{reading} Floor #{level}: #{files}" if effort > level
 
       "**Human review:** #{effort} of 5. #{level > 2 ? 'Read' : 'Skim'} #{files}"
@@ -47,9 +49,12 @@ module Shaka
                    "it #{floor['reason']} (#{floor_path(floor['path'])}). Rate it #{floor['level']} or higher."
     end
 
-    def floor_files(floor)
+    # A rendering preview runs this file against the installed floor lookup, which may predate groups.
+    def groups(floor) = floor['groups'] || [{ 'reason' => floor['reason'], 'paths' => [floor['path']] }]
+
+    def floor_files(groups)
       room = NAMED_FILES
-      floor['groups'].map do |group|
+      groups.map do |group|
         paths = group['paths']
         named = paths.first(room)
         room -= named.size
@@ -61,7 +66,9 @@ module Shaka
       [named.map { |path| floor_path(path) }.join(', '), *("and #{unnamed} more" if unnamed.positive?)].join(' ')
     end
 
-    def other_files(count)
+    def other_files(groups, pull)
+      changed = pull && pull['changed_files']
+      count = changed.is_a?(Integer) ? changed - groups.sum { |group| group['paths'].size } : 0
       return '' unless count.positive?
 
       count == 1 ? ' 1 other file sets a lower floor.' : " #{count} other files set a lower floor."
@@ -70,6 +77,6 @@ module Shaka
     # A changed filename comes from the PR author, so only a plain one reaches the description.
     def floor_path(path) = path.match?(SAFE_PATH) ? "`#{path}`" : 'a file whose name is withheld'
 
-    private_class_method :line, :refuse_below_floor!, :floor_files, :names, :other_files, :floor_path
+    private_class_method :line, :refuse_below_floor!, :groups, :floor_files, :names, :other_files, :floor_path
   end
 end

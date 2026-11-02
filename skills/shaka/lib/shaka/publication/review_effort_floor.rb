@@ -11,8 +11,8 @@ module Shaka
 
     def self.defaults = Defaults.fetch('pr_description', 'human_review_floors')
 
-    # Returns the highest matching floor with its reason, the first path that set it, every file at
-    # that level grouped by the floor that set it, and how many other files the PR changes; or NONE.
+    # Returns the highest matching floor with its reason, the first path that set it, and every file
+    # at that level grouped by the floor that set it; or NONE.
     # Rules come from the trusted repository settings; nil means they were not read, so the
     # shipped defaults apply and the result says so.
     def self.for(paths, rules = nil)
@@ -22,7 +22,7 @@ module Shaka
 
     def self.highest(paths, rules)
       top = matches(paths, rules).group_by { |rule, _| rule['level'] }.max_by(&:first)&.last
-      top ? summary(top, paths) : NONE
+      top ? summary(top) : NONE
     end
 
     def self.matches(paths, rules)
@@ -32,11 +32,9 @@ module Shaka
       end
     end
 
-    def self.summary(top, paths)
+    def self.summary(top)
       rule, found = top.first
-      groups = grouped(top)
-      rule.merge('path' => found.first, 'groups' => groups,
-                 'others' => paths.uniq.size - groups.sum { |group| group['paths'].size })
+      rule.merge('path' => found.first, 'groups' => grouped(top))
     end
 
     # A file two floors at one level both match stays with the first.

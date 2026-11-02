@@ -7,11 +7,9 @@ require_relative 'publication_test'
 class PublicationHumanReviewTest < Minitest::Test
   WORKFLOW = 'skills/shaka/config/workflow.yml'
 
-  def render(paths, effort, rules = Shaka::ReviewEffortFloor.defaults)
-    intent = INTENT.merge('review_effort' => effort)
-    content = PublicationRegressionTest.new(name).description_content('intent' => intent)
+  def render(paths, effort, rules = Shaka::ReviewEffortFloor.defaults, changed: paths&.size)
     floor = paths && Shaka::ReviewEffortFloor.for(paths, rules)
-    Shaka::Publication.description(content, nil, nil, Shaka::PublicationSettings.new(review_effort_floor: floor))
+    Shaka::HumanReview.render(effort, floor, { 'changed_files' => changed })
   end
 
   def test_a_rating_above_the_floor_keeps_its_own_reading_and_names_the_floor_files
@@ -65,5 +63,24 @@ class PublicationHumanReviewTest < Minitest::Test
     assert_includes render(['docs/a.md'], 1), '**Human review:** 1 of 5, the description should be enough.'
     refute_includes render(['docs/a.md'], 1), 'Floor'
     refute_includes render(nil, 1), 'Floor'
+  end
+
+  # GitHub counts a rename as one file, though the floor reads both of its names.
+  def test_a_rename_counts_once_among_the_other_files
+    rendered = render(['.agents/shaka/config.yml', 'lib/a.rb', 'lib/b.rb'], 5, changed: 2)
+
+    assert_includes rendered, '1 other file sets a lower floor.'
+  end
+
+  def test_without_a_file_count_the_other_files_sentence_is_left_out
+    refute_includes render(['.agents/shaka/config.yml', 'lib/a.rb'], 5, changed: nil), 'lower floor'
+  end
+
+  # A rendering preview pairs this renderer with the installed floor lookup.
+  def test_an_installed_floor_without_groups_names_its_one_path
+    floor = { 'level' => 3, 'reason' => 'changes agent instructions', 'path' => WORKFLOW }
+
+    assert_equal "**Human review:** 3 of 5. Read `#{WORKFLOW}` (changes agent instructions). 1 other file sets a " \
+                 'lower floor.', Shaka::HumanReview.render(3, floor, { 'changed_files' => 2 })
   end
 end

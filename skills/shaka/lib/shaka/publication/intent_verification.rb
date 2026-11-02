@@ -38,7 +38,7 @@ module Shaka
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
       lines.insert(1, *task, *root_cause(spec))
-      lines << HumanReview.render(spec['review_effort'], floor)
+      lines << HumanReview.render(spec['review_effort'], floor, pull)
       lines.concat(ReviewFocusList.render(spec, pull), exclusions(spec['leaves_out']))
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
     end
