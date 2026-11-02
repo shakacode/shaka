@@ -27,9 +27,11 @@ review threads. The window is 2026-10-02 to 2026-10-31 UTC.
 - Hosted Claude reported zero findings on all 446 reports after
   [#640](https://github.com/shakacode/shaka/pull/640) merged on 2026-10-18. That PR
   changed the review prompt. Local review was running before and after it.
-- Back-and-forth continued. CodeRabbit, another hosted reviewer, led to 49
-  fix replies on 26 PRs after #640 merged. Hosted Claude had reported zero findings
-  on the same commit for 47 of those replies, across 29 commits.
+- Back-and-forth continued. CodeRabbit, another hosted reviewer, led to 55 fixes on
+  30 PRs after #640 merged, including 23 code bug threads. Hosted Claude had reported
+  zero findings on the same commit for 53 of those fixes, across 33 commits.
+- CodeRabbit's counts run low. Its free review limit left 249 of the 442 PRs with no
+  review from it, including 151 of the 243 PRs created after #640 merged.
 - Pushes per PR held steady. PRs got a mean of 0.97 pushes after their first
   hosted Claude report before #640, and 0.96 after.
 - Local review carried the most fixes. Local reviewers had 328 defects recorded
@@ -53,8 +55,14 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
 - Before 2026-10-14, hosted reports had no fixed finding count. The total of about
   163 findings comes from 124 inline threads and 39 findings listed only in report
   text.
-- CodeRabbit counts are a keyword search for "Fixed" in the reply, excluding
-  "Declined". The agent read 8 of the Major ones and all 8 were real problems.
+- CodeRabbit counts come from a second agent, which read all 128 answered threads and
+  used the same classes. It judged fixes from the reply text and did not check each
+  commit. The two agents spot-checked about 100 of those calls and found none clearly
+  wrong. Nobody else rechecked them, and one code bug on #902 spans two threads.
+- On 249 PRs, CodeRabbit posted only "Review limit reached" and opened no thread. Its
+  counts therefore understate what it would have found.
+- The `react_on_rails` counts in finding 2 come from that repository's public PRs
+  created in the same window, classed by the same second agent.
 - Local review counts come from published `Finding details` lines, deduplicated by
   PR, class, and title. Reviewers chose the class, and implementing agents recorded
   the outcome.
@@ -129,8 +137,13 @@ The 10 code bugs:
 
 | | Before #640 | After #640 |
 | ---: | ---: | ---: |
+| PRs CodeRabbit skipped at its review limit, by PR creation date | 98 of 199 | 151 of 243 |
 | CodeRabbit threads | 51 | 95 |
-| CodeRabbit threads with a fix reply | 17 | 49 |
+| CodeRabbit code bugs fixed | 6 | 23 |
+| CodeRabbit docs or instruction fixes | 10 | 23 |
+| CodeRabbit cleanups fixed | 4 | 9 |
+| CodeRabbit threads declined | 24 | 25 |
+| CodeRabbit threads with no reply | 7 | 15 |
 | Local review findings | 1,100 | 1,495 |
 | Local defects recorded as fixed | 124 | 204 |
 
@@ -188,21 +201,31 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
   review. The [earlier review study](review-process-study.md) named local review as a
   likely reason for zero-finding reports. These full reviews make the prompt the
   stronger candidate.
-- **Proposed change:** rerun the current prompt and the old prompt on the 29 commits
-  where CodeRabbit later led to a fix. Loosen the current prompt if it misses problems
-  its rules include.
+- **Evidence:** `react_on_rails` kept a
+  [generic Claude review prompt](https://github.com/shakacode/react_on_rails/blob/main/.github/workflows/claude-code-review.yml)
+  through this window. Claude opened 87 threads there before #640 merged and 95 after.
+  Of its 23 fixed code bug threads, 22 came after. Only 8 of its 239 later reports said
+  it found no issues.
+- **Limit on that evidence:** `react_on_rails` is a different codebase. Its prompt also
+  allows findings the `shaka` prompt excludes, and 11 of those bug threads sit on one
+  PR.
+- **Proposed change:** rerun the current prompt and the old prompt on the 17 commits
+  where CodeRabbit later led to a code bug fix. Loosen the current prompt if it misses
+  problems its rules include.
 - **Guarantee at risk:** a looser prompt brings back nits. Before #640, about 83% of
   findings led to no push.
 - **Maintenance:** a prompt edit and one measured rerun.
 
-### 3. CodeRabbit fix replies rose while hosted Claude fell to zero
+### 3. CodeRabbit fixes rose while hosted Claude fell to zero
 
-- **Observed:** CodeRabbit fix replies rose from 17 to 49 while hosted Claude fell to
-  zero. Pushes per PR stayed flat.
-- **Limit:** the two periods differ in length, PR mix, and CodeRabbit settings. The
-  counts cannot show that one reviewer replaced the other.
-- **Proposed change:** none yet. A reviewer that finds real bugs after local review
-  is worth keeping until a replacement finds the same ones.
+- **Observed:** CodeRabbit fixes rose from 20 to 55, and its code bugs from 6 to 23,
+  while hosted Claude fell to zero. CodeRabbit reviewed fewer PRs in the later period,
+  92 against 101. Pushes per PR stayed flat.
+- **Limit:** the two periods differ in length and PR mix. The counts cannot show that
+  one reviewer replaced the other.
+- **Proposed change:** for the maintainer to decide. Raising CodeRabbit's review limit
+  would cover the 249 PRs it skipped. The price is unknown. A reviewer that finds real
+  bugs after local review is worth keeping until a replacement finds the same ones.
 
 ### 4. Most CI errors were not defects in the change
 
