@@ -7,9 +7,8 @@ require_relative 'publication_test'
 class PublicationHumanReviewTest < Minitest::Test
   WORKFLOW = 'skills/shaka/config/workflow.yml'
 
-  def render(paths, effort, rules = Shaka::ReviewEffortFloor.defaults, changed: paths&.size)
-    floor = paths && Shaka::ReviewEffortFloor.for(paths, rules)
-    Shaka::HumanReview.render(effort, floor, { 'changed_files' => changed })
+  def render(paths, effort, rules = Shaka::ReviewEffortFloor.defaults)
+    Shaka::HumanReview.render(effort, paths && Shaka::ReviewEffortFloor.for(paths, rules))
   end
 
   def test_a_rating_above_the_floor_keeps_its_own_reading_and_names_the_floor_files
@@ -23,7 +22,7 @@ class PublicationHumanReviewTest < Minitest::Test
     rendered = render(['.agents/shaka/config.yml', 'lib/a.rb', 'test/a_test.rb'], 5)
 
     assert_includes rendered, '**Human review:** 5 of 5. Read `.agents/shaka/config.yml` (changes Shaka\'s ' \
-                              'repository configuration). 2 other files set a lower floor.'
+                              'repository configuration). The rest set a lower floor.'
     refute_includes rendered, 'every line'
   end
 
@@ -34,7 +33,7 @@ class PublicationHumanReviewTest < Minitest::Test
     rendered = render(['docs/a.md', '.agents/x.yml', 'lib/a.rb'], 5, rules)
 
     assert_includes rendered, 'Read `.agents/x.yml` (changes settings), `docs/a.md` (changes guides). ' \
-                              '1 other file sets a lower floor.'
+                              'The rest set a lower floor.'
   end
 
   def test_every_file_at_the_floor_leaves_out_the_other_files_sentence
@@ -65,22 +64,19 @@ class PublicationHumanReviewTest < Minitest::Test
     refute_includes render(nil, 1), 'Floor'
   end
 
-  # GitHub counts a rename as one file, though the floor reads both of its names.
-  def test_a_rename_counts_once_among_the_other_files
-    rendered = render(['.agents/shaka/config.yml', 'lib/a.rb', 'lib/b.rb'], 5, changed: 2)
+  # The floor reads both names of a rename, so a rename at the floor must not hide the other files.
+  def test_a_rename_at_the_floor_still_mentions_the_rest
+    rendered = render(['.agents/shaka/old.yml', '.agents/shaka/new.yml', 'lib/a.rb'], 5)
 
-    assert_includes rendered, '1 other file sets a lower floor.'
+    assert_includes rendered, 'The rest set a lower floor.'
+    refute_includes render(['.agents/shaka/old.yml', '.agents/shaka/new.yml'], 5), 'The rest'
   end
 
-  def test_without_a_file_count_the_other_files_sentence_is_left_out
-    refute_includes render(['.agents/shaka/config.yml', 'lib/a.rb'], 5, changed: nil), 'lower floor'
-  end
-
-  # A rendering preview pairs this renderer with the installed floor lookup.
+  # A rendering preview pairs this renderer with the installed floor lookup, which cannot say what else changed.
   def test_an_installed_floor_without_groups_names_its_one_path
     floor = { 'level' => 3, 'reason' => 'changes agent instructions', 'path' => WORKFLOW }
 
-    assert_equal "**Human review:** 3 of 5. Read `#{WORKFLOW}` (changes agent instructions). 1 other file sets a " \
-                 'lower floor.', Shaka::HumanReview.render(3, floor, { 'changed_files' => 2 })
+    assert_equal "**Human review:** 3 of 5. Read `#{WORKFLOW}` (changes agent instructions).",
+                 Shaka::HumanReview.render(3, floor)
   end
 end

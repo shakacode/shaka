@@ -1200,8 +1200,8 @@ changes, so an agent can't rate a risky change as light reading.
 The rating points at files. It does not ask for the whole PR to be studied. A code PR with one
 guide in it reads:
 
-> **Human review:** 5 of 5. Read `docs/settings.md` (changes docs for Shaka's users). 12 other
-> files set a lower floor.
+> **Human review:** 5 of 5. Read `docs/settings.md` (changes docs for Shaka's users). The rest
+> set a lower floor.
 
 Nothing checks how closely anyone read.
 

@@ -20,7 +20,7 @@ Read this only when a maintainer asks to choose, change, or explain
 - Globs use `File.fnmatch` with `FNM_PATHNAME`, `FNM_EXTGLOB`, and `FNM_DOTMATCH`: `**/` spans
   folders, `dir/**/*` matches everything under `dir`, and a trailing `dir/**` does not cross `/`.
 - A renamed file counts under both names. The PR's floor is the highest level any changed
-  file matches; the first matching file is the one the description names.
+  file matches; the description names up to five files at that level, grouped by floor.
 - A rating below the floor refuses publication. Ruby never raises the rating itself.
 - `merge` reads the same list. When `merge.auto_max_review_floor` is below 5, it refuses a PR
   whose floor is above that setting unless the user confirmed the head, so lowering a floor can
