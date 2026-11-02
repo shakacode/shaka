@@ -1197,8 +1197,8 @@ Every PR description says where a person's attention matters, from 1 (the descri
 enough) to 5 (read the riskiest files closely). Shaka sets a minimum from the files the PR
 changes, so an agent can't rate a risky change as light reading.
 
-The rating points at files. It does not ask for the whole PR to be studied. A code PR with one
-guide in it reads:
+The rating points at files. It does not ask for the whole PR to be studied. In a repository that
+sets its docs at 5, as this one does, a code PR with one guide in it reads:
 
 > **Human review:** 5 of 5. Read `docs/settings.md` (changes docs for Shaka's users). The rest
 > set a lower floor.
