@@ -6,7 +6,8 @@
 at `c742dd6` and
 [agent-skills](https://github.com/addyosmani/agent-skills/tree/eb07f19f52c2669f2364897aaa293e2aaddd7b1c)
 at `eb07f19` by reading them. No run has tested the combinations. Usage numbers come from
-the 429 pull requests (PRs) merged here in October 2026.*
+the 429 pull requests (PRs) merged here in October 2026. Codex and a fresh Claude session
+reviewed it before publication.*
 
 Shaka runs delivery: it takes a task through validation, review, publication, and the
 merge decision. pstack and agent-skills teach engineering technique, and each can also
@@ -31,10 +32,10 @@ and the reason is how each pack starts a skill.
 
 | | pstack | agent-skills | Shaka |
 | --- | --- | --- | --- |
-| **Size** | 61 skills, 41,962 words | 25 skills, 52,354 words | A 12,450-word workflow, plus references it loads when needed |
-| **Median skill** | 437 words | 2,060 words | n/a |
-| **What starts a skill** | You name it: 60 of 61 are explicit-only | The host matches its description: 0 of 25 are explicit-only | You invoke it |
-| **Runs its own delivery** | Shipping, Babysit, and Autopilot playbooks | `/build auto` and `/ship` | It is the delivery |
+| Size | 61 skills, 41,962 words | 25 skills, 52,354 words | A 12,450-word workflow, plus references it loads when needed |
+| Median skill | 437 words | 2,060 words | n/a |
+| What starts a skill | You name it: 60 of 61 are explicit-only | The host matches its description: 0 of 25 are explicit-only | You invoke it |
+| Runs its own delivery | Shipping, Babysit, and Autopilot playbooks | `/build auto` and `/ship` | It is the delivery |
 
 agent-skills also ships a session-start hook. Its own comments say not to wire it on
 Claude Code or Codex, which already route skills from their descriptions.

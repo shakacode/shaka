@@ -10,7 +10,7 @@ to do, and it shows that the verification is adequate for that goal
 ([#421 plan](https://github.com/shakacode/shaka/issues/421#issuecomment-6205960445)).
 This page records where the ideas for those jobs came from, what Shaka built, and
 how each held up. For how Shaka works with those sources today, read
-[the analysis](../articles/pr-description-trust.md).
+[the analysis](../articles/shaka-with-pstack-and-agent-skills.md).
 
 ![Before and after. #543, merged 2026-10-15, shows a summary, a checkpoint status, and a free-form table of areas and results; nothing states the problem, what was left out, or what went untested. #974, merged 2026-10-29, shows a recommendation with links, a summary, an Intent block with Why, Task, Root cause, Safe because, Review effort 2 of 5 with its floor, and Scope, then Verification with a Shaka-written validation and review line and a Setup gaps line saying 1 of 2 configured reviewers completed. Its checks and Not verified line are folded under Evidence and limitations. A note says #984 later found the Setup gaps line wrong: both reviewers ran, and the agent passed one result. Tags name Tan as the source for Intent, and Osmani as the source for the review floor and validation line, by the orchestrating session's account.](../img/pr-description-before-after.svg)
 

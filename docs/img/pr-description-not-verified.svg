@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 286" width="520" role="img" aria-labelledby="t d">
-<title id="t">Where Not verified lines appear, by merge date</title>
-<desc id="d">Stacked bars for PRs merged 2026-10-22 to 2026-10-29, counting Not verified lines. 10-22: 28 visible, 0 folded. 10-23: 8 visible, 0 folded. 10-24: no merges. 10-25, when #860 merged: 3 visible, 2 folded. 10-26: 0 visible, 5 folded. 10-27: 2 visible, 10 folded. 10-28: 1 visible, 8 folded. 10-29: 3 visible, 27 folded.</desc>
+<title id="t">PRs by where Not verified appears, by merge date</title>
+<desc id="d">Stacked bars for PRs merged 2026-10-22 to 2026-10-29, counting PRs by where a Not verified line appears. 10-22: 28 visible, 0 folded. 10-23: 8 visible, 0 folded. 10-24: no merges. 10-25, when #860 merged: 3 visible, 2 folded. 10-26: 0 visible, 5 folded. 10-27: 2 visible, 10 folded. 10-28: 1 visible, 8 folded. 10-29: 3 visible, 27 folded.</desc>
 <style>
 .bg{fill:#fff;stroke:#d9e0e7}
 text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
@@ -27,7 +27,7 @@ text{fill:#e6edf5}
 }
 </style>
 <rect class="bg" x="0.5" y="0.5" width="519" height="285" rx="8"/>
-<text class="h" x="16" y="28">Where Not verified lines appear, by merge date</text>
+<text class="h" x="16" y="28">PRs by where Not verified appears, by merge date</text>
 <rect class="vis" x="16" y="42" width="12" height="10" rx="2"/><text class="s m" x="33" y="51">Visible</text>
 <rect class="fold" x="88" y="42" width="12" height="10" rx="2"/><text class="s m" x="105" y="51">Folded under a click</text>
 <line class="grid" x1="40.0" y1="200.0" x2="508.0" y2="200.0"/><text class="s m e" x="34.0" y="204.0">10</text>
