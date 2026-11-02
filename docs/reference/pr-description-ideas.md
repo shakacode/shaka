@@ -39,9 +39,16 @@ how each held up. For how Shaka works with those sources today, read
   - a `**Setup gaps:**` line naming configured reviewers.
 - **Restated checks:** "11 of 12" is #740's own count of the PRs merged after #553.
   "32 of 101" comes from the window above, where 101 descriptions list check bullets
-  under Verification. Those bullets were searched for terms such as `bin/validate`,
-  `--command validate`, `0 failures`, and `RuboCop clean`, then read by eye. A few
-  matches also prove something about the change.
+  under Verification. A description counts when one of those bullets matches this
+  case-insensitive expression:
+
+  ```text
+  (bin\/validate|\bvalidate\b[^\n]{0,40}(pass|green|exit 0)|evidence run --command validate|tests?,? 0 failures|RuboCop (clean|passed)|local review[^\n]{0,30}(clean|0 findings|no findings))
+  ```
+
+  The 32 are #973, #962, #959, #958, #945, #944, #939, #931, #930, #922, #916, #915, #907, #901,
+  #898, #897, #895, #893, #891, #888, #881, #880, #879, #875, #860, #853, #844, #833,
+  #826, #823, #792, and #742. Read by eye, a few matches also prove something about the change.
 - **Not in the count:** 5 of the 115 have no Intent block: 4 Dependabot PRs and one
   that Shaka did not publish. The count has no comparison group from another
   repository, and descriptions are read as they are now.
@@ -66,10 +73,11 @@ how each held up. For how Shaka works with those sources today, read
 - **People's comments:** 36 GitHub comments on 13 of the 110 PRs with Intent. A
   comment counts when it has no agent identity line or Shaka marker and comes from no
   bot. Chat feedback does not appear.
-- **Cost:** the median PR cost $15.14, at API prices. Docs-only PRs (5) had a median
-  of $9.22 and code-only PRs (61) $10.54. PRs changing both (40) had a median of
-  $21.87, and they are larger. Per 100 changed lines, the mixed and code-only
-  groups cost about the same, $10.79 and $9.68.
+- **Cost:** across the 109 PRs that report a spend, the median was $15.14, at API prices.
+  Docs-only PRs (5) had a median of $9.22 and code-only PRs (61) $10.54. PRs changing both
+  (40, one reporting no spend) had a median of $21.87, and they are larger. Per 100
+  changed lines, the mixed and code-only groups cost about the same, $10.79 and $9.68.
+  The other 4 changed only `internal/`.
 - **Visible Verification text:** the median was 75 words for PRs merged 10-22 and 10-23
   and 11 words for PRs merged 10-29, not counting link targets.
 - **Where `Not verified` appears**, anywhere in the description, by merge date. A PR
@@ -151,7 +159,7 @@ production line. pstack is Tan's public skill set in `cursor/plugins`.
 - **In Shaka:** the Intent block's required Safe because line.
   [#576](https://github.com/shakacode/shaka/pull/576) also tells agents to reproduce
   through the real caller before editing, and to check the fix's safety assumption.
-- **Result:** in #576's [comparison](https://github.com/shakacode/shaka/blob/main/eval/reports/early-verification.md),
+- **Result:** in #576's [comparison](https://github.com/shakacode/shaka/blob/7ff503f46c520dfdc1aed5a5803e15886930caf6/eval/reports/early-verification.md),
   the revised guidance caught an empty-chunk crash the old guidance missed. Both
   agents reproduced before editing, so testing earlier was a tie.
 - **Limit:** Safe because is a sentence, and Shaka does not rank its evidence. The

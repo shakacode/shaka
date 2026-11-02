@@ -24,7 +24,7 @@ is untested, and the reason is how each pack starts a skill.
 - Agents reported pstack in 13 of the 297 PRs with a Skills used section, and Addy's
   pack in none. Shaka's guide says neither has been tried on a full delivery.
 - The strongest proof gets the weakest record. A test suite run is bound to the commit.
-  A harness that drives the real app ends up as a sentence.
+  A harness that drives the real app, run outside `validate`, ends up as a sentence.
 - Both packs have the agent restate the goal early. Shaka doesn't yet
   ([#1017](https://github.com/shakacode/shaka/issues/1017)).
 - Shaka's own 12,450-word workflow is the largest thing in this comparison.
@@ -83,17 +83,19 @@ rest are instructions the agent follows. No test or enforcement entry covers the
 - **Today:** 0 of 297 PRs report it. The guide invites a trial and asks which instructions
   conflicted.
 - **Limit:** reporting is agent-written, so zero reported doesn't prove zero used.
-- **Smallest fix:** one real task with the pack installed. It would test gap 1 directly.
+- **Smallest fix:** one real task with the pack installed and none of its skills named. It
+  would test gap 1 directly.
 
 ### 3. The strongest proof gets the weakest record
 
 - **Today:** `evidence run` records repository commands such as `validate`, bound to the
   commit. Tan's `create-verification-skill` builds a harness that drives the app as a user
-  would, which is the proof tests can't give. Its result goes into a `checks` sentence.
-  Ruby confirms that sentence cites a link or a code span. It can't tell that anything ran.
-- **Why it matters:** a stale harness result looks the same as a current one. Rerunning it
-  after a later commit is left to the agent.
-- **Smallest fix:** let a repository declare a verification command that binds like
+  would, which is the proof tests can't give. A harness that `validate` calls inherits that
+  binding. One run on its own goes into a `checks` sentence that names its commit. Ruby
+  confirms that sentence cites a link or a code span. It can't tell that anything ran.
+- **Why it matters:** nothing compares the commit in that sentence with the head, so a
+  stale result can pass as current. Rerunning it after a later commit is left to the agent.
+- **Smallest fix:** let a repository declare a separate verification command that binds like
   `validate`.
 
 ### 4. Usage can't be counted cleanly
@@ -133,8 +135,10 @@ rest are instructions the agent follows. No test or enforcement entry covers the
 
 ## What to do first
 
-1. Run one real task with agent-skills installed, and ask the guide's question. That
-   settles gaps 1, 2, and 5.
+1. Run one real code change with agent-skills installed, naming none of its skills. Record
+   which skills the host loaded, and which branch name the agent used when
+   `git-workflow-and-versioning` and `branches.name` disagreed. Then ask the guide's
+   question. That gives first evidence on gaps 1, 2, and 5.
 2. Act on the result. Load the full rules more often only if agents followed the other
    skill.
 3. Decide on the bound verification command in gap 3, the largest change here.
