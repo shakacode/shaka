@@ -135,8 +135,8 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
 | PRs with no push after the first report | 45% | 61% | 58% |
 
 The generic prompt asks for code quality, bugs, security, and performance. The strict
-prompt flags only code that fails to run, wrong results in a named state, and quoted
-rule violations. It also skips the rule audit and makes a short pass when a local Claude
+prompt flags only code that fails to run, wrong results, data loss, or security holes in
+a named state, and quoted rule violations. It also skips the rule audit and makes a short pass when a local Claude
 review of that commit exists. A full review is the run without that short pass.
 
 The findings with no push were mostly declined with a reason. Others were already
@@ -178,7 +178,8 @@ The 10 code bugs:
 | Local review findings | 1,100 | 1,495 |
 | Local defects recorded as fixed | 124 | 204 |
 
-Thread and fix rows split by when the thread opened.
+Thread and fix rows split by when the thread opened, and local review rows by when the
+review comment was published.
 
 Examples of CodeRabbit fixes on commits where hosted Claude reported zero findings:
 
