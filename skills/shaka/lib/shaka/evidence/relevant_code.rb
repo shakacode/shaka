@@ -8,7 +8,8 @@ module Shaka
     # The installed files that decide how validation and review run and how their results are
     # checked. A result stays bound through any update that leaves these files alone. Rendering
     # code only shows results, and most settings code reaches them through its fingerprinted output.
-    # The settings schemas listed here are the exception: the review runner reads them directly.
+    # The settings code listed here is the exception: the review runner reads it directly, and
+    # configuration.rb and sources.rb produce the prompt text a reviewer receives.
     # The built-in defaults count because the review runner reads its timeouts from them directly, and
     # the rate card because reviewer settings read their model names from it. The launcher picks the Ruby
     # that runs everything, and subcommands.rb routes `evidence` and `review` to their code.
@@ -29,7 +30,9 @@ module Shaka
         lib/shaka/{call_log,defaults,error,pr_template,prompt_section,repository_identity}.rb
         lib/shaka/{review_prompt,reviewer_selection,reviewer_settings,subcommands,version,workflow_version}.rb
         lib/shaka/repository_config/{post_implementation_schema,prompt_files,review_limit,review_schema}.rb
+        lib/shaka/configuration.rb
         lib/shaka/configuration/machine_reviewers.rb
+        lib/shaka/configuration/sources.rb
         lib/shaka/doctor/cli_inventory.rb
         lib/shaka/usage/rate_card.rb
         scripts/shaka

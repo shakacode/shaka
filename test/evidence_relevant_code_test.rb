@@ -34,8 +34,17 @@ module EvidenceRequireGraph
   end
 
   def settings_constants(path)
-    File.readlines(File.join(LIB, '../..', path), encoding: 'UTF-8').grep_v(/^\s*#/).join.scan(SETTINGS_CONSTANT)
+    source(path).scan(SETTINGS_CONSTANT)
   end
+
+  # Module methods listed code calls, and whether a listed file defines each one.
+  def unlisted_configuration_calls(listed)
+    calls = listed.grep(/\.rb\z/).flat_map { |path| source(path).scan(/\bConfiguration\.([a-z_]\w*[?!]?)/).flatten }.uniq
+    defined = listed.grep(/\.rb\z/).map { |path| source(path) }.join
+    calls.reject { |name| defined.match?(/def (?:self\.)?#{Regexp.escape(name)}(?!\w)/) }
+  end
+
+  def source(path) = File.readlines(File.join(LIB, '../..', path), encoding: 'UTF-8').grep_v(/^\s*#/).join
 
   def snake(name) = name.gsub(/(?<=[a-z0-9])([A-Z])/, '_\1').downcase
 
@@ -188,6 +197,10 @@ class EvidenceRelevantCodeListTest < Minitest::Test
 
   # A schema the runner reads directly bypasses the effective-settings digest, which the require
   # graph cannot show, because settings code is classified as outside it.
+  def test_every_configuration_method_listed_code_calls_is_relevant
+    assert_empty EvidenceRequireGraph.unlisted_configuration_calls(Shaka::Evidence::RelevantCode.files)
+  end
+
   def test_every_settings_constant_listed_code_reads_is_relevant_or_classified
     assert_empty EvidenceRequireGraph.unlisted_reads(Shaka::Evidence::RelevantCode.files)
   end
