@@ -39,9 +39,9 @@ module EvidenceRequireGraph
 
   # Module methods listed code calls, and whether a listed file defines each one.
   def unlisted_configuration_calls(listed)
-    calls = listed.grep(/\.rb\z/).flat_map { |path| source(path).scan(/\bConfiguration\.([a-z_]\w*[?!]?)/).flatten }.uniq
-    defined = listed.grep(/\.rb\z/).map { |path| source(path) }.join
-    calls.reject { |name| defined.match?(/def (?:self\.)?#{Regexp.escape(name)}(?!\w)/) }
+    code = listed.grep(/\.rb\z/).map { |path| source(path) }.join
+    calls = code.scan(/\bConfiguration\.([a-z_]\w*[?!]?)/).flatten.uniq
+    calls.reject { |name| code.match?(/def (?:self\.)?#{Regexp.escape(name)}(?!\w)/) }
   end
 
   def source(path) = File.readlines(File.join(LIB, '../..', path), encoding: 'UTF-8').grep_v(/^\s*#/).join
