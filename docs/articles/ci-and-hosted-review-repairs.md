@@ -67,8 +67,9 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
   findings comes from 124 inline threads and 39 findings listed only in report text.
 - The [earlier review study](review-process-study.md) found that about half of hosted
   Claude inline threads got a fix-style reply. That study used a keyword search over
-  2026-09-19 to 2026-10-17. This report reads each reply and counts only a fix commit
-  that followed, so its share is lower.
+  2026-09-19 to 2026-10-17, and most of its 728 threads predate this window. This report
+  counts only a fix commit that followed: 27 of about 163 findings, or 17%. The windows
+  and the methods both differ.
 - CodeRabbit counts come from a second agent, which read all 124 answered threads and
   used the same classes. It judged fixes from the reply text and did not check each
   commit. The two agents spot-checked about 100 of those calls and found none clearly
@@ -124,9 +125,9 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
 | Findings | about 122 | about 41 | 0 |
 | Findings per report | 0.80 | 0.21 | 0 |
 | Inline threads | 119 | 5 | 0 |
-| Code bugs fixed by a push | 6 on 5 PRs | 4 on 3 PRs | 0 |
+| Code bugs fixed | 6 on 5 PRs | 4 on 3 PRs | 0 |
 | Docs or instruction fixes | 4 on 4 PRs | 6 on 3 PRs | 0 |
-| Cleanups fixed by a push | 6 on 4 PRs | 1 on 1 PR | 0 |
+| Cleanups fixed | 6 on 4 PRs | 1 on 1 PR | 0 |
 | Findings with no push | about 106 | about 30 | 0 |
 | Mean pushes after the first report | 1.33 | 0.74 | 0.96 |
 | PRs with no push after the first report | 45% | 61% | 58% |
