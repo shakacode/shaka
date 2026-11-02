@@ -129,7 +129,7 @@ production line. pstack is Tan's public skill set in `cursor/plugins`.
 - **Idea:** in Loops You Can Trust, an artifact gives a reviewer something to inspect,
   where an explanation can sound right and be wrong. Failing to reproduce a bug, or judging a fix too
   risky, is a useful outcome that keeps bad work from moving on.
-- **In Shaka:** each check must cite a link or a command (#553).
+- **In Shaka:** each check must cite a link or a code span (#553).
   [#742](https://github.com/shakacode/shaka/pull/742) has the checkpoint judge
   whether the proof is enough. Under Auto, `merge` refuses a head judged inadequate
   or unjudgeable until a person confirms it.

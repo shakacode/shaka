@@ -90,7 +90,7 @@ rest are instructions the agent follows. No test or enforcement entry covers the
 - **Today:** `evidence run` records repository commands such as `validate`, bound to the
   commit. Tan's `create-verification-skill` builds a harness that drives the app as a user
   would, which is the proof tests can't give. Its result goes into a `checks` sentence.
-  Ruby confirms that sentence cites a link or a command. It can't tell that anything ran.
+  Ruby confirms that sentence cites a link or a code span. It can't tell that anything ran.
 - **Why it matters:** a stale harness result looks the same as a current one. Rerunning it
   after a later commit is left to the agent.
 - **Smallest fix:** let a repository declare a verification command that binds like
