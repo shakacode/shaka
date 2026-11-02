@@ -235,7 +235,7 @@ would send it back, such as
 `Auto merge preview: with merge.preference: auto, the agent would hand this PR back: skills/shaka/SKILL.md sets review floor 3`.
 A PR that passes still gets the agent's own judgment of risk and compatibility under Auto.
 
-Only the floors hold a PR back. An agent rating its PR above its floor, or listing a file under
+The agent's rating does not hold a PR back. Rating it above its floor, or listing a file under
 **Closer reading**, tells a reader where to look but does not stop Auto from merging it.
 
 Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
