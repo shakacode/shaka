@@ -23,7 +23,8 @@ Files are under [`eval/hosted-review-prompt/`](../hosted-review-prompt/).
 | `runs.jsonl` | All 138 reviews: comments, turns, cost. Local paths are replaced with `<path>` or `<tree>` |
 | `findings.jsonl` | The scorer's 62 findings after unblinding |
 | `decoys.jsonl` | How the scorer scored each of the 34 decoys |
-| `hosted-runs-sample.jsonl` | 30 sampled hosted runs, seed 640, plus the 2 runs either side of #446 |
+| `hosted-runs-sample.jsonl` | 15 random successful hosted runs on each side of #640, seed 640, plus the 2 runs either side of #446 |
+| `hosted-reports-by-period.jsonl` | Hosted reports, inline threads, and count lines per period, from `replay/periods.rb.txt` |
 | `replay/*.rb.txt` | The replay and scoring scripts, stored as text |
 
 ## Results against the bars
@@ -60,4 +61,9 @@ tree, diff, PR view, and prompts. `replay/run.rb.txt` runs the reviews with
 `replay/gh.rb.txt` first on `PATH` and `replay/inline.rb.txt` as the inline comment tool, so
 nothing reaches GitHub. `replay/score.rb.txt` scores blind, and `replay/tally.rb.txt`
 unblinds. Building the commit list needs the CodeRabbit thread classes from
-[PR #1016](https://github.com/shakacode/shaka/pull/1016).
+[PR #1016](https://github.com/shakacode/shaka/pull/1016). Scoring also needs each thread's
+text and fix note, which `targets.jsonl` links through its `url` field.
+
+`run.rb.txt` did not stop on a usage-limit error, as the preregistration required. It
+stops at its spend cap only. All 138 reviews succeeded on their first attempt, so the rule
+never came into play. The scripts stay as they ran.

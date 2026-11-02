@@ -145,7 +145,9 @@ Run logs sampled from each period show the same step:
 - **Sample size:** three runs per commit show the spread but cannot show a small
   difference between prompts.
 - **Not an exact copy of the job:** runs used the local Claude Code CLI 2.1.312, not the
-  action. The action's CLI version does not appear in its logs.
+  action. The action's CLI version does not appear in its logs. Each tree was a fresh
+  one-commit repository, so its local SHA differed from the checkout SHA in the prompt.
+  One run on #792 remarked on that. Both prompts ran under the same condition.
 - **Scoring:** a finding matched when it named the same file or function and the same
   failure. The scorer split notes into findings, so its counts run above the reviews' own
   count lines: 10 scored findings came from 8 runs whose count line said 0. The scorer got all 34 planted decoys right. Decoys did not pass through the
