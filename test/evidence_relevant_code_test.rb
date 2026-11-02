@@ -15,7 +15,29 @@ module EvidenceRequireGraph
                  attention|ready_time|review_thread|review_coverage|pending_review|published_results|
                  usage(?!/rate_card)|gitlab|install/|repository_config|configuration(?!/fingerprint)|trusted_|doctor/)}x
 
+  # Read directly by listed code, yet they cannot change how a check runs or how its result is checked:
+  # each feeds a digest already compared, picks a settings source, rejects bad YAML, guards a push,
+  # records metadata, or lives at a listed path this name does not spell.
+  CLASSIFIED_READS = %w[RepositoryConfig::ProjectGuidanceSchema RepositoryConfig::DuplicateKeys
+                        Configuration::FeatureGuard Configuration::FingerprintCanonical
+                        Configuration::PrivateInventory Configuration::SettingsPreview
+                        Doctor::InstallationIdentity Doctor::MachineAlias].freeze
+  SETTINGS_CONSTANT = /\b(RepositoryConfig|Configuration|Doctor)::([A-Z]\w*)/
+
   module_function
+
+  # Listed code naming a settings or doctor constant that lives in an unlisted file.
+  def unlisted_reads(listed)
+    reads = listed.grep(/\.rb\z/).flat_map { |path| settings_constants(path) }.uniq
+    reads.reject { |owner, name| listed.include?("lib/shaka/#{snake(owner)}/#{snake(name)}.rb") }
+         .map { it.join('::') } - CLASSIFIED_READS
+  end
+
+  def settings_constants(path)
+    File.readlines(File.join(LIB, '../..', path), encoding: 'UTF-8').grep_v(/^\s*#/).join.scan(SETTINGS_CONSTANT)
+  end
+
+  def snake(name) = name.gsub(/(?<=[a-z0-9])([A-Z])/, '_\1').downcase
 
   def files
     seen = []
@@ -100,25 +122,6 @@ class EvidenceRelevantCodeTest < Minitest::Test
     end
   end
 
-  def test_data_files_and_entry_points_count_as_relevant_and_description_republishing_does_not
-    files = Shaka::Evidence::RelevantCode.files
-    refute_includes files, 'lib/shaka/published_results.rb'
-    assert_includes files, 'config/defaults.yml'
-    assert_includes files, 'config/model-rates.yml'
-    assert_includes files, 'scripts/shaka'
-    assert_includes files, 'lib/shaka/subcommands.rb'
-    assert_includes files, 'config/review-prompt.md'
-    assert_includes files, 'config/review-instructions-precedence.md'
-  end
-
-  # A new require from evidence or review code fails here until it is listed or classified,
-  # so the fixed list cannot quietly let a result from changed review code bind.
-  def test_every_file_evidence_and_review_code_requires_is_relevant_or_classified
-    listed = Shaka::Evidence::RelevantCode.files
-    unlisted = EvidenceRequireGraph.files.reject { |path| listed.include?("lib/shaka/#{path}") }
-    assert_empty unlisted
-  end
-
   private
 
   def write_file(path, text)
@@ -158,5 +161,34 @@ class EvidenceRelevantCodeTest < Minitest::Test
     yield
   ensure
     object.define_singleton_method(name, original)
+  end
+end
+
+# The list has to hold what evidence and review code actually depends on.
+class EvidenceRelevantCodeListTest < Minitest::Test
+  def test_data_files_and_entry_points_count_as_relevant_and_description_republishing_does_not
+    files = Shaka::Evidence::RelevantCode.files
+    refute_includes files, 'lib/shaka/published_results.rb'
+    assert_includes files, 'config/defaults.yml'
+    assert_includes files, 'config/model-rates.yml'
+    assert_includes files, 'scripts/shaka'
+    assert_includes files, 'lib/shaka/subcommands.rb'
+    assert_includes files, 'lib/shaka/repository_config/post_implementation_schema.rb'
+    assert_includes files, 'config/review-prompt.md'
+    assert_includes files, 'config/review-instructions-precedence.md'
+  end
+
+  # A new require from evidence or review code fails here until it is listed or classified,
+  # so the fixed list cannot quietly let a result from changed review code bind.
+  def test_every_file_evidence_and_review_code_requires_is_relevant_or_classified
+    listed = Shaka::Evidence::RelevantCode.files
+    unlisted = EvidenceRequireGraph.files.reject { |path| listed.include?("lib/shaka/#{path}") }
+    assert_empty unlisted
+  end
+
+  # A schema the runner reads directly bypasses the effective-settings digest, which the require
+  # graph cannot show, because settings code is classified as outside it.
+  def test_every_settings_constant_listed_code_reads_is_relevant_or_classified
+    assert_empty EvidenceRequireGraph.unlisted_reads(Shaka::Evidence::RelevantCode.files)
   end
 end
