@@ -36,6 +36,7 @@
         "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
+        "reference/pr-description-ideas",
         {
           "type": "doc",
           "id": "expected-experience",
@@ -57,7 +58,8 @@
       "items": [
         "articles/review-process-study",
         "articles/checkpoint-sentence-eval",
-        "articles/one-shot-pr-study"
+        "articles/one-shot-pr-study",
+        "articles/shaka-with-pstack-and-agent-skills"
       ]
     },
     {
