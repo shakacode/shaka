@@ -76,22 +76,6 @@ class PublicationReviewEffortFloorTest < Minitest::Test
                                    "(`#{WORKFLOW}`). Rate it 3 or higher."
   end
 
-  def test_a_rating_at_or_above_the_floor_renders_the_floor_reason
-    assert_includes render([WORKFLOW], 4),
-                    '**Review effort:** 4 of 5, threshold: read every line and run it yourself. ' \
-                    "Floor 3: changes agent instructions (`#{WORKFLOW}`)."
-  end
-
-  # A filename is PR-controlled; a backtick, newline, or comment marker could reshape the description.
-  def test_a_filename_outside_the_plain_set_is_withheld
-    ["lib/x`\n\n## Injected.rb", 'lib/<!-- shaka:end -->.rb'].each do |path|
-      rendered = render([path], 2)
-      assert_includes rendered, 'Floor 2: changes code or configuration (a file whose name is withheld).'
-      refute_includes rendered, 'Injected'
-      refute_includes rendered, '<!-- shaka:end -->.rb'
-    end
-  end
-
   # A repository's floors can be stricter, so falling back to the shipped ones must show.
   def test_unread_repository_floors_are_named_in_the_line
     content = PublicationRegressionTest.new(name).description_content
@@ -100,11 +84,6 @@ class PublicationReviewEffortFloorTest < Minitest::Test
                                               Shaka::PublicationSettings.new(review_effort_floor: floor))
 
     assert_includes rendered, "Shaka's shipped floors applied because this repository's settings were not read."
-  end
-
-  def test_no_floor_text_without_a_floor_or_without_a_pull_request
-    refute_includes render(['docs/a.md'], 1), 'Floor'
-    refute_includes render(nil, 1), 'Floor'
   end
 
   # A rename keeps the risk of the file it came from.

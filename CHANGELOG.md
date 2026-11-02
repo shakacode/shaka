@@ -24,6 +24,10 @@ from working is a major version.
 - Say **Adequate, with gaps the reviewer judged acceptable** on a checkpoint, in place of
   **Adequate with accepted gaps**, which read as if the maintainer had accepted them.
   Published checkpoints still parse.
+- Stop PR descriptions from asking for every line to be reviewed. The **Review effort** line
+  is now **Human review**: it names the files that set the rating and counts the others, and it
+  no longer promises reproduction or a second reviewer. Settings keep their names, and Auto
+  merge holds back the same PRs. See [#1001](https://github.com/shakacode/shaka/issues/1001).
 - Show `ready in` and `merged in` on more PRs. The description now reads the task
   start from a usage report that covers the whole task, and records the ready time
   each time it updates instead of only while a watch runs.

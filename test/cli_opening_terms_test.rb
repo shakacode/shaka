@@ -27,7 +27,7 @@ class CliOpeningTermsTest < Minitest::Test
       assert_includes prompt, "Why: #{INTENT['why']}"
       assert_includes prompt, "Leaves out: #{INTENT['leaves_out']}"
       refute_includes prompt, VERIFICATION['checks'].first
-      refute_includes prompt, 'Review effort'
+      refute_includes prompt, 'Human review'
     end
   end
 

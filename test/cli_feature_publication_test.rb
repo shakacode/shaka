@@ -58,7 +58,7 @@ class CliFeaturePublicationTest < Minitest::Test
     assert_predicate status, :success?, error
     body = File.read(File.join(dir, 'published.md'))
     assert_includes body, 'No matching check records supplied'
-    assert_includes body, "Floor 5: changes Shaka's repository configuration (`.agents/shaka/config.yml`)."
+    assert_includes body, "5 of 5. Read `.agents/shaka/config.yml` (changes Shaka's repository configuration)."
   end
 
   def test_result_flags_bind_actual_results_and_refuse_missing_review

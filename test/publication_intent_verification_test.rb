@@ -15,7 +15,7 @@ class PublicationIntentVerificationTest < Minitest::Test
 
     intent = "## Intent\n\n**Why:** #{INTENT['why']}\n\n**Task:** Codex prompt\n\n" \
              "**Safe because:** #{INTENT['safe_because']}\n\n" \
-             "**Review effort:** 2 of 5, easy: skim the diff.\n\n**Leaves out:** #{INTENT['leaves_out']}\n\n" \
+             "**Human review:** 2 of 5, skim the diff.\n\n**Leaves out:** #{INTENT['leaves_out']}\n\n" \
              "**Scope:** #{INTENT['scope']}"
     verification = "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n" \
                    "<details>\n<summary>Evidence and limitations</summary>"
@@ -84,12 +84,12 @@ class PublicationIntentVerificationTest < Minitest::Test
     assert_includes error.message, 'intent root_cause'
   end
 
-  # The reviewer sees from the blast radius how hard to look, like a heart-rate zone.
-  def test_review_effort_names_its_zone
+  # The line promises only what a person would plausibly do; no rule checks how closely anyone read.
+  def test_review_effort_asks_for_attention_and_not_for_labor
     rendered = render('intent' => INTENT.merge('review_effort' => 5))
 
-    assert_includes rendered, '**Review effort:** 5 of 5, all out: review every line, reproduce it, and ' \
-                              'ask a second reviewer.'
+    assert_includes rendered, '**Human review:** 5 of 5, read the riskiest files closely; a mistake here is ' \
+                              'hard to undo.'
   end
 
   def test_review_effort_must_be_a_whole_number_from_one_to_five

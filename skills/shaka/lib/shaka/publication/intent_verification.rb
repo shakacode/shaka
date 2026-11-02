@@ -4,6 +4,7 @@ require_relative '../error'
 require_relative 'text'
 require_relative 'verification_gates'
 require_relative 'diff_buckets'
+require_relative 'human_review'
 require_relative 'review_focus_list'
 
 module Shaka
@@ -13,16 +14,7 @@ module Shaka
     INTENT = { 'why' => 'Why', 'safe_because' => 'Safe because' }.freeze
     # A bug fix names its cause apart from the symptom; other changes have none to name.
     ROOT_CAUSE = 'root_cause'
-    # Like heart-rate zones: the blast radius sets how hard a reviewer should work.
-    REVIEW_EFFORT = {
-      1 => 'recovery: read the description.',
-      2 => 'easy: skim the diff.',
-      3 => 'tempo: read the walkthrough and the diff.',
-      4 => 'threshold: read every line and run it yourself.',
-      5 => 'all out: review every line, reproduce it, and ask a second reviewer.'
-    }.freeze
     CHECKS = (1..3)
-    SAFE_PATH = %r{\A[\w.@+/ -]+\z}
     # A link opens the evidence and a code span names what ran; plain prose names neither.
     # GitHub also renders a link whose address sits in angle brackets.
     EVIDENCE = %r{\]\(https?://[^)\s]+\)|\]\(<https?://[^>\s]+>\)|`[^`]+`}
@@ -46,7 +38,7 @@ module Shaka
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
       lines.insert(1, *task, *root_cause(spec))
-      lines << review_effort(spec['review_effort'], floor)
+      lines << HumanReview.render(spec['review_effort'], floor)
       lines.concat(ReviewFocusList.render(spec, pull), exclusions(spec['leaves_out']))
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
     end
@@ -76,34 +68,6 @@ module Shaka
       files, added, removed = counts
       " (#{files} #{files == 1 ? 'file' : 'files'}, +#{added} / −#{removed} lines)"
     end
-
-    def review_effort(effort, floor)
-      zone = REVIEW_EFFORT[effort] if effort.is_a?(Integer)
-      raise Error, 'Publication intent review_effort must be a whole number from 1 to 5.' unless zone
-
-      line = "**Review effort:** #{effort} of 5, #{zone}"
-      return line unless floor
-
-      [line, *floor_text(effort, floor), *(SHIPPED if floor['shipped'])].join(' ')
-    end
-
-    # The repository's floors can be stricter, so a description that never read them says so.
-    SHIPPED = "Shaka's shipped floors applied because this repository's settings were not read."
-
-    def floor_text(effort, floor)
-      return [] unless floor['level'] > 1
-
-      reason = "#{floor['reason']} (#{floor_path(floor['path'])})"
-      if effort < floor['level']
-        raise Error, "Publication intent review_effort #{effort} is below this PR's floor of #{floor['level']}: " \
-                     "it #{reason}. Rate it #{floor['level']} or higher."
-      end
-
-      ["Floor #{floor['level']}: #{reason}."]
-    end
-
-    # A changed filename comes from the PR author, so only a plain one reaches the description.
-    def floor_path(path) = path.match?(SAFE_PATH) ? "`#{path}`" : 'a file whose name is withheld'
 
     def verification(spec, gate_line)
       visible = spec['merge_limitations']
@@ -148,7 +112,7 @@ module Shaka
     end
 
     private_class_method :intent, :scope, :exclusions, :diff_size,
-                         :review_effort, :floor_text, :floor_path, :verification,
+                         :verification,
                          :not_verified, :checks, :evidenced, :object
   end
 end

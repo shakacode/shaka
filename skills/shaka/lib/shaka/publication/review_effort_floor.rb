@@ -11,7 +11,8 @@ module Shaka
 
     def self.defaults = Defaults.fetch('pr_description', 'human_review_floors')
 
-    # Returns the highest matching floor with its reason and the first path that set it, or NONE.
+    # Returns the highest matching floor with its reason, the first path that set it, every file at
+    # that level grouped by the floor that set it, and how many other files the PR changes; or NONE.
     # Rules come from the trusted repository settings; nil means they were not read, so the
     # shipped defaults apply and the result says so.
     def self.for(paths, rules = nil)
@@ -20,11 +21,32 @@ module Shaka
     end
 
     def self.highest(paths, rules)
-      matches = rules.filter_map do |rule|
-        path = paths.find { |candidate| match?(rule, candidate) }
-        rule.merge('path' => path) if path
+      top = matches(paths, rules).group_by { |rule, _| rule['level'] }.max_by(&:first)&.last
+      top ? summary(top, paths) : NONE
+    end
+
+    def self.matches(paths, rules)
+      rules.filter_map do |rule|
+        found = paths.select { |candidate| match?(rule, candidate) }
+        [rule, found] unless found.empty?
       end
-      matches.max_by { |rule| rule['level'] } || NONE
+    end
+
+    def self.summary(top, paths)
+      rule, found = top.first
+      groups = grouped(top)
+      rule.merge('path' => found.first, 'groups' => groups,
+                 'others' => paths.uniq.size - groups.sum { |group| group['paths'].size })
+    end
+
+    # A file two floors at one level both match stays with the first.
+    def self.grouped(top)
+      seen = []
+      top.filter_map do |rule, found|
+        fresh = found.uniq - seen
+        seen += fresh
+        { 'reason' => rule['reason'], 'paths' => fresh } unless fresh.empty?
+      end
     end
 
     # `except` removes a file from its own floor only; another floor can still match it.
@@ -44,6 +66,6 @@ module Shaka
 
     def self.glob?(globs, path) = Array(globs).any? { |glob| File.fnmatch?(glob, path, GLOB) }
 
-    private_class_method :highest, :match?, :word?, :tokens, :glob?
+    private_class_method :highest, :matches, :summary, :grouped, :match?, :word?, :tokens, :glob?
   end
 end

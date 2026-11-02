@@ -24,7 +24,7 @@ class PublicationReviewFocusListTest < Minitest::Test
                     { 'url' => "#{BLOB}/lib/guard.rb", 'lines' => nil })
     rendered = intent([MERGE, GUARD], pull)
 
-    expected = "**Review effort:** 2 of 5, easy: skim the diff.\n\n**Closer reading:**\n" \
+    expected = "**Human review:** 2 of 5, skim the diff.\n\n**Closer reading:**\n" \
                "- 5 of 5: [`lib/guard.rb`](#{BLOB}/lib/guard.rb), decides who may merge.\n" \
                "- 4 of 5: [`lib/merge.rb` lines 40–58](#{BLOB}/lib/merge.rb#L40-L58), " \
                'compares the queue base before submitting.'

@@ -235,6 +235,9 @@ would send it back, such as
 `Auto merge preview: with merge.preference: auto, the agent would hand this PR back: skills/shaka/SKILL.md sets review floor 3`.
 A PR that passes still gets the agent's own judgment of risk and compatibility under Auto.
 
+Only the floors hold a PR back. An agent rating its PR above its floor, or listing a file under
+**Closer reading**, tells a reader where to look but does not stop Auto from merging it.
+
 Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
 something after merge, so the agent hands those PRs back on its own judgment.
 
@@ -1190,10 +1193,17 @@ Shaka still stores UTC, and other commands' timestamps stay in UTC.
 
 **Optional. Default: the floors below.**
 
-Every PR description says how much human review the change needs, from 1 (read the
-description) to 5 (review every line, reproduce it, and ask a second reviewer). Shaka sets a
-minimum from the files the PR changes, so an agent can't rate a risky change as light reading.
-The description names the floor and the file that set it.
+Every PR description says where a person's attention matters, from 1 (the description should be
+enough) to 5 (read the riskiest files closely). Shaka sets a minimum from the files the PR
+changes, so an agent can't rate a risky change as light reading.
+
+The rating points at files. It does not ask for the whole PR to be studied. A code PR with one
+guide in it reads:
+
+> **Human review:** 5 of 5. Read `docs/settings.md` (changes docs for Shaka's users). 12 other
+> files set a lower floor.
+
+Nothing checks how closely anyone read.
 
 What deserves close review depends on your project, so set these floors for each repository.
 The easiest way is to ask your agent:
@@ -1203,7 +1213,7 @@ The easiest way is to ask your agent:
 
 Your agent knows the matching rules and checks its proposal against your recent PRs. You
 decide what matters; for example, a project whose guides are read by its customers may want
-every `docs/` change reviewed at 5.
+`docs/` changes at 5.
 
 In [a study of 309 PRs in this repository](articles/one-shot-pr-study.md), people asked for
 changes on many docs and agent-instruction PRs and on no PR that changed only code and tests.
