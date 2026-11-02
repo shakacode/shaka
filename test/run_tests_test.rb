@@ -52,7 +52,30 @@ class RunTestsTest < Minitest::Test
     assert_includes output, 'Total: 1 runs'
   end
 
+  # Break caught: decoding worker output as UTF-8 replaced bytes from a worker under another locale.
+  def test_worker_output_in_another_encoding_reaches_the_report_unchanged
+    output, status = run_tests([latin1_fixture], workers: 1)
+
+    assert_predicate status, :success?, output.b
+    assert_includes output.b, "caf\xE9".b
+  end
+
   private
+
+  def latin1_fixture
+    File.join(@directory, 'latin1_test.rb').tap do |path|
+      File.write(path, <<~'RUBY')
+        require 'minitest/autorun'
+
+        class Latin1FixtureTest < Minitest::Test
+          def test_latin1
+            $stdout.binmode.write("caf\xE9\n".b)
+            assert true
+          end
+        end
+      RUBY
+    end
+  end
 
   def locale_fixture
     File.join(@directory, 'locale_test.rb').tap do |path|
