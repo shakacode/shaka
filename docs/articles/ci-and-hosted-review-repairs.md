@@ -34,9 +34,9 @@ review threads. The window is 2026-10-02 to 2026-10-31 UTC.
   review from it, including 151 of the 243 PRs created after #640 merged.
 - Pushes per PR held steady. PRs got a mean of 0.97 pushes after their first
   hosted Claude report before #640, and 0.96 after.
-- Local review carried the most fixes. Local reviewers had 328 defects recorded
-  as fixed, compared with 10 hosted Claude code bugs. The two counts use different
-  standards.
+- Local review recorded far more fixes. Local reviewers had 328 defects recorded as
+  fixed. Hosted Claude led to 27 fixes of any class, 10 of them code bugs. The two
+  counts use different standards.
 
 After #640, hosted Claude asked for no changes. The data does not show local review
 as the cause, and CodeRabbit kept asking for changes on GitHub.
@@ -55,7 +55,7 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
 - Before 2026-10-14, hosted reports had no fixed finding count. The total of about
   163 findings comes from 124 inline threads and 39 findings listed only in report
   text.
-- CodeRabbit counts come from a second agent, which read all 128 answered threads and
+- CodeRabbit counts come from a second agent, which read all 124 answered threads and
   used the same classes. It judged fixes from the reply text and did not check each
   commit. The two agents spot-checked about 100 of those calls and found none clearly
   wrong. Nobody else rechecked them, and one code bug on #902 spans two threads.
@@ -90,10 +90,10 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
 | CodeQL | 2 | Paired Dependabot action bumps ran mismatched versions | 2 | [#534](https://github.com/shakacode/shaka/pull/534), [#535](https://github.com/shakacode/shaka/pull/535) |
 
 - `Validate` on PRs ran 878 times, and 36 runs ended failed (4.1%).
-- Every head in the "change broke a test" row was followed by a new push.
 - None of the 32 hosted review failures said anything about the code.
 - Cancelled runs are excluded. A new push on a branch cancels its older runs.
-- The `Windows` workflow had no failed attempts.
+- The `Windows` workflow had no failed attempts. Its job continues on error, so a
+  green run does not show that the Windows checks passed.
 
 ## What hosted Claude review led to
 
@@ -182,8 +182,8 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
 
 ### 1. Local review recorded most of the fixed defects
 
-- **Observed:** 328 local defects were recorded as fixed, against 10 hosted Claude
-  code bugs.
+- **Observed:** 328 local defects were recorded as fixed, against 27 hosted Claude
+  fixes of any class.
 - **Evidence:** the two tables above. Local reviewers ran on 407 of the 442 PRs.
 - **Limit:** reviewers class their own local findings, while this report classed the
   hosted ones. Some local fixes came after a PR was public.
@@ -202,7 +202,7 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
   likely reason for zero-finding reports. These full reviews make the prompt the
   stronger candidate.
 - **Evidence:** `react_on_rails` kept a
-  [generic Claude review prompt](https://github.com/shakacode/react_on_rails/blob/main/.github/workflows/claude-code-review.yml)
+  [generic Claude review prompt](https://github.com/shakacode/react_on_rails/blob/c5353f46c1a8d9f08e9dfa8f2e0447a85c65d618/.github/workflows/claude-code-review.yml)
   through this window. Claude opened 87 threads there before #640 merged and 95 after.
   Of its 23 fixed code bug threads, 22 came after. Only 8 of its 239 later reports said
   it found no issues.
@@ -259,9 +259,9 @@ Shaka has no built-in command for this count. Ask your agent for it as an ordina
 task:
 
 ```text
-/shaka Count CI failures and hosted review findings that needed a push over the
+$shaka Count CI failures and hosted review findings that needed a push over the
 last 30 days. Read the logs and replies to separate real bugs from nits and flaky
 failures.
 ```
 
-In Codex, start the prompt with `$shaka` instead of `/shaka`.
+In Claude Code, start the prompt with `/shaka` instead of `$shaka`.
