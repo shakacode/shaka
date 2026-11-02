@@ -8,13 +8,16 @@ module Shaka
     # The installed files that decide how validation and review run and how their results are
     # checked. A result stays bound through any update that leaves these files alone. Rendering
     # code only shows results, and settings code reaches them through its fingerprinted output.
-    # The built-in defaults count because the review runner reads its timeouts from them directly.
+    # The built-in defaults count because the review runner reads its timeouts from them directly, and
+    # the rate card because reviewer settings read their model names from it. The launcher picks the Ruby
+    # that runs everything, and subcommands.rb routes `evidence` and `review` to their code.
     # The review folder counts whole, comment rendering included: listing those files apart would
     # have spared 3 of 315 commits on main.
     module RelevantCode
       ROOT = File.expand_path('../../..', __dir__)
       PATTERNS = %w[
         config/defaults.yml
+        config/model-rates.yml
         config/review-prompt.md
         config/review-instructions-precedence.md
         lib/shaka/evidence/*.rb
@@ -23,7 +26,9 @@ module Shaka
         lib/shaka/configuration/fingerprint.rb
         lib/shaka/configuration/fingerprint/*.rb
         lib/shaka/{call_log,defaults,error,pr_template,prompt_section,repository_identity}.rb
-        lib/shaka/{review_prompt,reviewer_selection,reviewer_settings,version,workflow_version}.rb
+        lib/shaka/{review_prompt,reviewer_selection,reviewer_settings,subcommands,version,workflow_version}.rb
+        lib/shaka/usage/rate_card.rb
+        scripts/shaka
       ].freeze
 
       module_function
