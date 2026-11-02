@@ -245,7 +245,8 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
   others landed inside a later push or could not be traced to a run.
 - The 14 failures on regular PRs were on 14 distinct commits, and each led to a new
   push. Measured runs on those next heads add up to 2.4 hours, about 1%.
-- Repairs used little of `shaka`'s CI time in this window. The window has
+- These two kinds of repair used little of `shaka`'s CI time in this window. Pushes after
+  CodeRabbit and local review findings were not measured. The window has
   no period without local review to compare against.
 
 ## Findings
