@@ -24,7 +24,8 @@ is 2026-10-02 to 2026-10-31 UTC.
 - CI had 88 failed attempts. The window held 4,291 Actions runs, counting cancelled and
   skipped ones. The change on the branch caused 30 of those
   failures: 14 on 10 regular PRs, 9 on a Windows port, and 7 on Dependabot bumps.
-  Flaky tests caused 15, and the hosted review job itself failed 32 times.
+  Flaky tests caused 15, and the hosted review job itself failed 32 times. The runner
+  image and PRs that broke `main` together account for the other 11.
 - Hosted Claude review led to 10 code bug fixes on 8 PRs. All 10 came in the
   first 16 days. The review also led to 10 docs or instruction fixes and 7
   cleanups.
@@ -32,12 +33,13 @@ is 2026-10-02 to 2026-10-31 UTC.
   2026-10-11, and the logged model changed from `claude-sonnet-5` to
   `claude-sonnet-5-5`. Findings per report fell from 0.80 to 0.21. Then
   [#640](https://github.com/shakacode/shaka/pull/640) changed the prompt on 2026-10-18,
-  and all 446 later reports found nothing. Local review was running throughout.
+  and all 446 later reports found nothing, 96 of them full reviews. Local review was
+  running throughout.
 - Back-and-forth continued. CodeRabbit, another hosted reviewer, led to 55 fixes on
   30 PRs after #640 merged, including 23 code bug threads. Hosted Claude had reported
   zero findings on the same commit for 21 of those 23 code bug threads, across 17
   commits. The strict prompt excludes many docs and cleanup findings by design.
-- CodeRabbit's counts run low. Its free review limit left 249 of the 442 PRs with no
+- CodeRabbit's counts run low. Its review limit left 249 of the 442 PRs with no
   review from it, including 151 of the 243 PRs created after #640 merged.
 - Pushes per PR did not follow findings to zero. PRs got a mean of 1.33 pushes after
   their first hosted Claude report before #446, 0.74 from #446 to #640, and 0.96 after
@@ -306,8 +308,10 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
 - **Limit:** the two periods differ in length and PR mix. The counts cannot show that
   one reviewer replaced the other.
 - **Proposed change:** for the maintainer to decide. Raising CodeRabbit's review limit
-  would cover the 249 PRs it skipped. The price is unknown. A reviewer that finds real
-  bugs after local review is worth keeping until a replacement finds the same ones.
+  would cover the 249 PRs it skipped. The price is unknown. Of the 17 commits in finding 2,
+  9 had a published local review of that same commit, and all 17 sit on PRs with local
+  review. A reviewer that finds real bugs after local review is worth keeping until a
+  replacement finds the same ones.
 
 ### 4. Most CI errors were not defects in the change
 
