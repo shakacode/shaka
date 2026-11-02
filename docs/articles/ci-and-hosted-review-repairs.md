@@ -1,20 +1,23 @@
-# CI errors and hosted review repairs: shakacode/shaka, 30 days
+# CI errors and hosted review repairs over 30 days
 
 *An AI agent wrote this report: Claude Code running Claude Opus 5.5, on
 2026-11-01. The maintainer asked how often CI failed and how often the hosted
 Claude review found a bug that needed another push. The question tests a claim:
 running code reviews locally first removes most back-and-forth with reviews on
-GitHub. The agent collected the data, classified each record, and drafted the
-text.*
+GitHub. The agent collected the data, classified the CI failures and hosted Claude
+findings, and drafted the text. A second agent classified the CodeRabbit, Greptile, and
+`react_on_rails` Claude threads.*
 
 Two terms recur below:
 
 - Local review is the review an agent runs through Shaka before pushing a commit.
 - Hosted Claude review is the GitHub Actions job that reviews pushed commits on
-  ready PRs from this repository, except Dependabot's.
+  ready PRs from the same repository, except Dependabot's.
 
-All sources are public GitHub data: Actions runs and logs, PR comments, and
-review threads. The window is 2026-10-02 to 2026-10-31 UTC.
+CI and repair counts cover `shakacode/shaka`. One section compares hosted reviewers on
+`shakacode/react_on_rails`, because Greptile does not run on `shaka`. All sources are
+public GitHub data: Actions runs and logs, PR comments, and review threads. The window
+is 2026-10-02 to 2026-10-31 UTC.
 
 ## Main results
 
@@ -34,6 +37,8 @@ review threads. The window is 2026-10-02 to 2026-10-31 UTC.
   review from it, including 151 of the 243 PRs created after #640 merged.
 - Pushes per PR held steady. PRs got a mean of 0.97 pushes after their first
   hosted Claude report before #640, and 0.96 after.
+- On `react_on_rails`, CodeRabbit led to a fix on 46% of its threads, Greptile 32%, and
+  Claude 25%. Each reviewer found bugs the others did not.
 - Local review recorded far more fixes. Local reviewers had 328 defects recorded as
   fixed. Hosted Claude led to 27 fixes of any class, 10 of them code bugs. The two
   counts use different standards.
@@ -61,8 +66,9 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
   wrong. Nobody else rechecked them, and one code bug on #902 spans two threads.
 - On 249 PRs, CodeRabbit posted only "Review limit reached" and opened no thread. Its
   counts therefore understate what it would have found.
-- The `react_on_rails` counts in finding 2 come from that repository's public PRs
-  created in the same window, classed by the same second agent.
+- The `react_on_rails` counts come from that repository's public PRs created in the
+  same window, classed by the same second agent, which left no per-thread reasons. The
+  hand counts of separate bugs are approximate.
 - Local review counts come from published `Finding details` lines, deduplicated by
   PR, class, and title. Reviewers chose the class, and implementing agents recorded
   the outcome.
@@ -159,6 +165,37 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
 - [#827](https://github.com/shakacode/shaka/pull/827#discussion_r4343165577):
   agent instruction files under some paths fell below the automatic-merge floor.
 
+## Three hosted reviewers on `react_on_rails`
+
+Greptile does not run on `shaka`: it appears on none of the 442 PRs. A fair comparison
+of the three reviewers therefore needs another repository. `shakacode/react_on_rails`
+runs all three, with 128 PRs created in the same window. The review limit left none of
+those PRs with only a limit notice.
+
+| Reviewer | Threads | Answered | Led to a fix | Code bugs | Docs | Cleanups | Already fixed | Declined |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| CodeRabbit on `react_on_rails` | 52 | 47 | 24 | 15 | 9 | 0 | 5 | 18 |
+| Greptile on `react_on_rails` | 44 | 30 | 14 | 6 | 3 | 5 | 1 | 13 |
+| Claude on `react_on_rails` | 182 | 137 | 45 | 23 | 12 | 10 | 9 | 83 |
+| CodeRabbit on `shaka` | 146 | 124 | 75 | 29 | 33 | 13 | 0 | 49 |
+
+- Threads led to a fix at these rates on `react_on_rails`: CodeRabbit 46%, Greptile
+  32%, and Claude 25%. CodeRabbit on `shaka` reached 51%.
+- Claude repeats itself. Its 23 code bug threads hold about 12 separate bugs by hand
+  count, and 11 of those threads sit on
+  [#5224](https://github.com/shakacode/react_on_rails/pull/5224).
+- Each reviewer found bugs the others did not. By hand count, the bugs not also fixed
+  from another reviewer's thread are about 12 of 15 for CodeRabbit, 9 of 12 for Claude,
+  and 2 of 6 for Greptile.
+- Greptile's two are a password left in a URL on
+  [#5218](https://github.com/shakacode/react_on_rails/pull/5218) and invalid `--jobs`
+  values on [#5262](https://github.com/shakacode/react_on_rails/pull/5262).
+- Bugs cluster. [#5262](https://github.com/shakacode/react_on_rails/pull/5262) holds 7
+  of CodeRabbit's 15, so one month says little about any single reviewer.
+- These counts leave out unanswered threads, findings listed only in summary comments,
+  and 98 Codex connector threads on `react_on_rails`. Two answered Greptile threads fit
+  no class.
+
 ## How much CI time repairs used
 
 | Workflow | Median minutes | Total hours |
@@ -175,7 +212,7 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
   4 hours, or 2% of the total.
 - The 14 failures on regular PRs were on 14 distinct commits, and each led to a new
   push. Those pushes come to about 2.6 hours, or 1%.
-- Repairs used little of this repository's CI time in this window. The window has
+- Repairs used little of `shaka`'s CI time in this window. The window has
   no period without local review to compare against.
 
 ## Findings
@@ -252,6 +289,16 @@ Examples of CodeRabbit fixes on commits where hosted Claude reported zero findin
   merge. `Validate` already runs on `merge_group`, so a merge queue needs no workflow
   change.
 - **Expected benefit:** about 2 fewer `main` breaks a month, going by this window.
+
+### 6. No hosted reviewer covered the others
+
+- **Observed:** on `react_on_rails`, most CodeRabbit and Claude code bugs were not also
+  fixed from another reviewer's thread. Greptile added about 2 bugs the others did not
+  lead to.
+- **Limit:** one month, one repository, and bugs that cluster on a few PRs. Greptile's
+  own analytics were not available to this study.
+- **Proposed change:** none yet. Dropping a reviewer needs more months of data than
+  this window gives.
 
 ## Run the same study on your repository
 
