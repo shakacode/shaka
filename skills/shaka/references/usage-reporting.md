@@ -21,7 +21,7 @@ differently. The model line at the top of the description shows the USD total, s
 collapsed summary does not repeat it. Columns are USD, Codex
 credits, Input, Cached input, Output, Reasoning, and Cache writes; a column no report
 measured is left out. The table links to the reader-facing [usage and cost guide](https://shaka.shakacode.com/docs/reference/usage-and-cost)
-for comparison advice and accounting limits. Report names keep their hyphens from breaking the line. Dollar amounts are
+for column definitions and accounting rules. Report names keep their hyphens from breaking the line. Dollar amounts are
 rounded to cents, and token counts are shortened to about three figures, such as
 45.3M; the hidden record keeps the exact counts. A
 cell no report measured shows `—`, and `+` marks a minimum: a partial estimate, or a
@@ -37,7 +37,7 @@ Each report is priced once, when `shaka usage` runs, with the rate card installe
 A carried report keeps that price; nothing reprices it. A collapsed **How each report
 was measured and priced** list under the table shows each report's rate card,
 the date its prices were verified, source links, and what its sources left out. Known accounting
-boilerplate is omitted from the visible report; unknown prose and report-specific limitations stay visible.
+boilerplate moves to the guide; unknown prose and report-specific limitations stay visible.
 The full original note stays in the hidden record for later publication. A PR left open across
 a price change therefore shows which rows used which prices. To price every row with current rates, rerun `shaka usage` for each report and
 publish the new records.

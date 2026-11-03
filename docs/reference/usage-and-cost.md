@@ -25,12 +25,34 @@ can count the same response twice.
 
 ## Avoid misleading token comparisons
 
-Hosts count cache and reasoning tokens differently. Codex input includes cached
-input; Claude Code input excludes cache reads and writes. Do not add cached
-input to a Codex input count again. Ask the agent to normalize counters before
-comparing providers.
+Input counts tokens sent to the model; output counts tokens generated.
+Cached input was read from an earlier prompt cache. Cache writes store input
+for later reuse. Reasoning can already be part of output, so adding every
+column can count the same tokens twice.
+
+| Host | Input includes | Output includes |
+| --- | --- | --- |
+| Codex | Cached input | Reasoning |
+| Claude Code | Neither cache reads nor writes | Reasoning |
+| Cursor | Cache reads and writes | Reasoning is unreported |
+| OpenCode | Neither cache reads nor writes | Reasoning is separate |
+| Pi | Neither cache reads nor writes | Reasoning |
+| OpenRouter | Cached input | Reasoning |
+
+For example, 100,000 Codex input tokens with 80,000 cached tokens means 20,000
+uncached tokens. Do not add cached input again. Ask the agent to normalize
+counters before comparing providers. Token totals are not summed across hosts.
 
 <a id="how-estimates-are-priced"></a>
+
+Read each report's pricing note before comparing dollars. OpenAI reports
+distinguish Codex plan credits from API-equivalent USD; Cursor estimates use
+on-demand list prices. Pi preserves nominal recorded cost, while OpenRouter
+uses the response's reported account charge.
+
+Anthropic prices uncached input, cache reads, and cache writes separately.
+A one-hour cache write costs more than a five-minute write. Fast-mode responses
+need a published rate; unsupported models or billing categories stay unpriced.
 
 Paying for a review does not establish that it finished or was thorough. Check
 its result separately. A timeout without usage metadata has unknown cost.
