@@ -15,7 +15,7 @@ to know whether the strict prompt caused them.
 
 ## The short answer
 
-Mostly no.
+Not as far as this test can tell.
 
 - I picked the 17 commits where hosted Claude said "no issues" and CodeRabbit later
   found a bug, 21 bugs in all. The old prompt caught 3 of them. The current prompt
@@ -67,11 +67,12 @@ has every bug, every review, and the detailed counts.
 
 ## What I take from this
 
-### The strict prompt isn't the main problem
+### Going back to the old prompt wouldn't fix this
 
 Going back to the old prompt would catch 3 more of these 21 bugs, short of the 5 I
 asked for. The full review caught nothing either, so the short pass isn't shown to be
-the cause.
+the cause. The test doesn't clear the strict prompt, though. Both prompts ran on the
+newer model, and the old prompt might do better on the old one.
 
 ### The current prompt is very quiet
 
@@ -105,9 +106,15 @@ public PR comments and Actions logs:
 | #446 to #640 | `claude-sonnet-5-5` | 192 | 5 | about 6 | about $0.10 |
 | After #640 | `claude-sonnet-5-5` | 448 | 0 | about 6 | about $0.11 |
 
-Turns and cost come from a sample of 30 runs. #446 merged at 19:53 UTC on 2026-10-11.
+Turns and cost come from sampled runs: 9 before #446, 6 between #446 and #640, and 15
+after #640. #446 merged at 19:53 UTC on 2026-10-11.
 The last successful run before it used `claude-sonnet-5` for 51 turns. The first one
 after it used `claude-sonnet-5-5` for 7.
+
+One more change landed in the middle period.
+[#507](https://github.com/shakacode/shaka/pull/507), on 2026-10-14, changed how the
+report ends, to a fixed finding-count line. The review instructions stayed the same, but
+some findings could have moved from inline comments into the summary.
 
 I didn't plan this part. The model change turned up while we priced the replay, and
 nothing has tested it yet. #446 changed the action version and the model at the same time. The next step is
