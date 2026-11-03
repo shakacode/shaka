@@ -23,7 +23,7 @@ class DoctorRestAccessTest < Minitest::Test
       assert_includes line(report, 'GitHub GraphQL'),
                       '[FAILED] GitHub GraphQL — GitHub refused GraphQL here: HTTP 403: GitHub GraphQL is not ' \
                       "available from Claude Code sessions\n"
-      assert_includes calls, [*REST, 'repos/owner/repo']
+      assert_includes calls, [*REST, 'repos/{owner}/{repo}']
     end
   end
 
@@ -67,19 +67,13 @@ class DoctorRestAccessTest < Minitest::Test
     end
   end
 
-  def test_an_origin_outside_github_blocks_without_rest
-    in_checkout(origin: 'https://gitlab.com/owner/repo.git') do |root|
-      calls = []
-      report, = doctor(root:, runner: rest_runner(calls))
-      assert_includes line(report, 'Repository access'), 'origin is not on github.com: gitlab.com'
-      assert_empty rest_calls(calls)
-    end
-  end
-
-  def test_a_checkout_without_an_origin_fails_the_access_check
-    in_checkout(origin: nil) do |root|
-      report, = doctor(root:, runner: rest_runner([]))
-      assert_includes line(report, 'Repository access'), 'Cannot read origin'
+  # A 403 from the GraphQL endpoint for another cause, such as SAML enforcement, reads as that cause.
+  def test_another_graphql_refusal_quotes_its_own_reason
+    in_checkout do |root|
+      saml = ['', 'HTTP 403: Resource protected by organization SAML enforcement; grant this token access ' \
+                  "(https://api.github.com/graphql)\n", false]
+      report, = doctor(root:, runner: rest_runner([], view: saml))
+      assert_includes line(report, 'GitHub GraphQL'), "Resource protected by organization SAML enforcement\n"
     end
   end
 
@@ -95,13 +89,7 @@ class DoctorRestAccessTest < Minitest::Test
 
   private
 
-  def in_checkout(origin: 'https://github.com/owner/repo.git')
-    Dir.mktmpdir do |dir|
-      system('git', 'init', '--quiet', dir, exception: true)
-      system('git', '-C', dir, 'remote', 'add', 'origin', origin, exception: true) if origin
-      yield dir
-    end
-  end
+  def in_checkout(&) = Dir.mktmpdir(&)
 
   def rest_runner(calls, view: BLOCKED, permissions: { 'push' => true }, body: nil, rest: nil)
     fallback = stub_gh({})
