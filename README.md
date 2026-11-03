@@ -7,7 +7,8 @@ You give a task. The agent builds, verifies, and reviews. You get a pull request
 (PR) you can judge quickly.
 
 [Watch the 52-second demo](https://www.youtube.com/watch?v=T6Fstx2fGJI) ·
-[See a Shaka PR](https://github.com/shakacode/shaka/pull/667)
+[See a Shaka PR](https://github.com/shakacode/shaka/pull/667) ·
+[Docs website](https://shaka.shakacode.com/)
 
 <a id="why-use-it"></a>
 
