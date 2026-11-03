@@ -16,8 +16,14 @@ Ask your coding agent:
 Install Shaka from https://github.com/shakacode/shaka.
 ```
 
-Your agent checks the requirements and tells you if anything is missing.
 Prefer to install it manually? Follow [manual installation](manual-installation.md).
+
+Check the install, and follow what the report says:
+
+```text
+$shaka doctor
+```
+
 If the skill doesn't appear, start a new chat and try again.
 
 <a id="2-choose-private-trial-or-team-setup"></a>
@@ -28,7 +34,7 @@ If the skill doesn't appear, start a new chat and try again.
 If your project has no Shaka settings, the agent asks whether to set it up just
 for you or for your team.
 
-- Individual settings stay out of commits.
+- Individual settings stay out of the repository.
 - Team setup opens a PR so your teammates can review the settings.
 
 ## 3. Start a task

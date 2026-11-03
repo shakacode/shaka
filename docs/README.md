@@ -23,6 +23,8 @@ By default, you merge the PR. You can approve the agent's merge or choose
 [Auto](working-with-shaka.md#choose-a-merge-policy).
 Even with Auto, large or risky changes need your merge decision.
 
+![You give a task. The agent builds, verifies, and reviews. You review the PR and decide what happens next.](img/task-to-pr.svg)
+
 <a id="start-here"></a>
 <a id="what-to-do-first"></a>
 
