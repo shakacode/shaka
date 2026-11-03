@@ -76,6 +76,9 @@ acceptance matches your decision. Acceptance does not override
 Under Auto, **Inadequate** or **Cannot judge** verification returns the merge
 decision to you. Required checks and approvals still apply.
 
+To audit past Auto merges, search GitHub for `is:merged label:auto-merged`.
+The list can miss merge-queue submissions or PRs GitHub refused to label.
+
 ## Approval and attention labels
 
 By default, you merge on GitHub or approve the agent's merge. An initial "Go"
