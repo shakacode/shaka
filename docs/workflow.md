@@ -1,86 +1,48 @@
 # Workflow and enforcement
 
-Shaka supplies the process; your repository supplies the commands and constraints.
-
-| Step | Result |
-| --- | --- |
-| Intake | Confirm the task, repository, ownership, and merge preference |
-| Plan | Assess value, scope, risk, model, and effort |
-| Implement | Reproduce bugs or test new behavior, then make the change |
-| Verify | Run local checks, review independently, and fix findings |
-| Explain | Publish the PR, walkthrough, evidence, and usage |
-| Review | Handle GitHub review findings and required checks |
-| Finish | Merge when authorized, or return the reviewed PR for your merge |
-
-Before shipping, Shaka compares the finished solution with the original goal, then
-recommends **Merge**, **Merge after maintainer decision**, **Revise before merge**,
-**Reconsider approach**, or **Do not merge**.
-A working implementation can still warrant reconsideration. Each recommendation
-includes a reason and next step; Merge still follows your checks and Ask or Auto choice.
-
-When Shaka recommends a model and effort, it aims to minimize the task's total work.
-Effort is not priced per token, the input the agent reads dominates spend, and rework
-costs the most ([evidence](https://github.com/shakacode/shaka/issues/45)).
-
-`shaka workflow` validates and prints the
-[workflow definition](../skills/shaka/config/workflow.yml). The agent loads
-supporting procedures as needed.
+Shaka uses your project's checks and your coding agent's tools. You can ask for
+[planning, review only, or a complete task](working-with-shaka.md#choose-the-outcome-you-need).
+Tests and AI review help catch mistakes; they cannot establish that the result
+is right for your users.
 
 ## Trust model
 
-![A maintainer controls a glass-enclosed workspace while outside material waits on a separate inspection tray.](img/trust-workspace.webp)
+On a public repository, anyone can leave a comment that tries to steer your
+agent. Shaka withholds comments from untrusted authors and reads shared settings
+from the default branch. A PR cannot quietly choose its own review rules.
 
-Shaka exists to make the people who maintain a project faster. It trusts them:
-anyone with write access, plus the users, bots, and teams you list. Their settings
-and instructions on the default branch are the project's decisions, and a
-maintainer can change them, such as which CI reviews a merge waits for.
+Shaka trusts people with write access and the accounts or teams you explicitly
+list. To include a reviewer whose comments are being withheld, ask:
 
-Shaka's limits are for input that could try to steer the agent. On a public
-repository, anyone can comment or open a PR from a fork. So the agent withholds
-comments from untrusted authors, treats diffs as data rather than instructions,
-and reads settings from the default branch rather than from the PR under review.
-Even a comment the agent reads is review input, not an instruction: settings and
-merge approval come from you and the default branch. The same goes for the branch a
-PR targets. The agent never takes it from an issue, a PR description, or a comment,
-because that text would then choose which code the setup and validation commands
-run before anyone looks. When a PR already targets some other branch, the agent
-confirms it with you and waits for your merge decision.
+```text
+$shaka Add USER to this project's trusted GitHub actors.
+```
 
-![Maintainers, the default branch, and your decisions steer the agent. Public comments, fork PR diffs, and settings changed in the PR are read as data only.](img/trust-boundary.svg)
-
-Other checks, such as confirming the reviewed commit before merge, catch mistakes.
-They do not restrict maintainers.
+A trusted comment is feedback, not permission to change merge policy or run
+commands from the comment. You and the trusted configuration govern those choices.
+A settings experiment needs [explicit selection](settings.md#preview-settings-before-adopting-them).
 
 ## What is enforced
 
-| Responsibility | Enforcement |
+| Safeguard | What checks it |
 | --- | --- |
-| Valid settings, command paths, and values | Ruby configuration checks |
-| Which public comment bodies an agent reads | Ruby allowlist and provenance checks |
-| Reviewed commit and required GitHub merge conditions | Ruby merge helper and GitHub protection |
-| Posted review evidence covering the merged commit, or a stated waiver | Ruby merge helper, when the agent merges and review is required |
-| PR size within [`merge.limits`](settings.md#mergelimits), or a person's confirmation of that commit | Ruby merge helper, when the agent merges |
-| Sentence, paragraph, and total length of PR descriptions and walkthroughs | Ruby publication helpers, using [`prose_limits`](settings.md#prose_limits) |
-| Adequate tests, useful screenshots, and how thorough the review was | Agent judgment and review |
-| Keeping private information out of publications | Agent inspection; no automated privacy scan |
+| Valid configuration and command paths | Shaka's Ruby helper |
+| Which public comment bodies are released to the agent | Ruby allowlist and provenance checks |
+| The commit and required conditions when the agent merges | Ruby merge helper and GitHub protection |
+| Posted review covering the merge commit, or a recorded waiver | Ruby merge helper when review is required |
+| PR size limits or confirmation of the commit | Ruby merge helper |
+| Description and walkthrough length | Ruby publication helpers |
+| Useful tests, careful reviews, accurate explanations, and privacy | Agent judgment and human review |
 
-The merge helper confirms that review posted on the PR covers the commit it
-merges; it cannot tell whether the review was careful or its findings were fixed.
-A merge you make yourself on GitHub skips this check, and so does
-`review.required: none`. See [`review.required`](settings.md#reviewrequired) for
-what counts as review evidence.
+A posted review is evidence that a report exists, not proof that the review was
+careful or its findings were fixed. Merging on GitHub yourself skips Shaka's
+merge-helper checks. GitHub's own required checks and approvals still apply.
 
-`shaka enforcement` lists rules enforced by code and those that rely on the agent.
-Its [source map](../skills/shaka/config/enforcement.yml) describes enforcement;
-it does not prove a task followed every step.
+For a list of code checks and rules left to the agent, ask it to explain the
+output of `shaka enforcement`. That list does not prove a task followed every step.
 
 ## Customize the instructions
 
-Put commands and merge choices in [settings](settings.md). Use `AGENTS.md` for
-project constraints, review criteria, and writing preferences.
-
-To change Shaka, edit the workflow and references in a fork.
-[Fork Shaka and make it yours](fork-and-hack.md) covers installing that fork
-and sending a change back. Update the enforcement map for changed rules, run
-the checks, and submit a PR. Install the reviewed version explicitly; a project
-branch cannot replace the skill used to review itself.
+Use [settings](settings-guide.md) for commands, reviewers, and merge choices.
+Put project constraints and writing preferences in `AGENTS.md`. If you want to
+change Shaka's workflow for all your projects, [use a fork](fork-and-hack.md).

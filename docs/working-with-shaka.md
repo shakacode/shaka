@@ -1,15 +1,13 @@
 # Working with Shaka
 
-Ask the agent about anything this page leaves out. Code enforces only what
-[what is enforced](workflow.md#what-is-enforced) lists. The rest follows Shaka's
-instructions.
+Ask for the outcome you need. You can plan before coding, review existing work,
+or carry a task through to a PR.
 
 Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode
 ([other agents](coding-agents.md)).
 
 <a id="what-you-get"></a>
 
-For what each PR shows, see [Why use Shaka](README.md#why-use-shaka).
 
 ## Give it an outcome
 
@@ -74,10 +72,6 @@ Search your PR list on GitHub:
 A label doesn't wake a chat. See [approval details](pr-verification.md#approval-and-attention-labels).
 
 ## Resume unfinished work
-
-When work on a GitHub issue starts, the agent comments on the issue with the same
-fields as **WIP Details**, so people watching it see who took it and how to resume.
-The branch isn't pushed yet, so **Owner** names the machine that holds it.
 
 Comment on any open PR. Wait for an answer before merging.
 
@@ -197,22 +191,19 @@ $shaka Fix https://github.com/OWNER/REPO/issues/N. Use pstack's
 create-verification-skill to prove searching for O'Brien finds the order. Go.
 ```
 
-Shaka uses pstack's techniques inside its own steps. pstack's Shipping, Babysit,
-and Autopilot playbooks run their own delivery, so Shaka leaves them out and
-offers to try one separately. On Codex, install a community port of pstack.
+Use a compatible pstack installation for your coding tool. Shaka keeps delivery
+ownership when applying another skill's techniques; agree separately before
+switching to another delivery workflow.
 
 <a id="hand-verification-evidence-back-to-shaka"></a>
 
-The PR's verification lists the harness command, the commit it ran on, what it
-showed, its screenshots or logs, and what it didn't cover. After a later commit,
-the agent reruns any check that commit affects.
+Ask for verification through the user's actual path. A search fix should exercise
+the search screen, including the query that failed.
 
 <a id="try-a-new-skill-pack-with-shaka"></a>
 
-pstack, [Ponytail](https://github.com/DietrichGebert/ponytail), and
-[Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills) haven't
-been tried on a full Shaka delivery. Try a new pack on a task you'd merge anyway.
-Then ask:
+Try an unfamiliar skill pack on a small task you can judge. Keep its contribution
+visible and ask:
 
 ```text
 Which instructions from that pack did you follow, and where did they conflict with Shaka?

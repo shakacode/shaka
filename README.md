@@ -17,16 +17,9 @@ You give a task. The agent builds, verifies, and reviews. You get a pull request
 Writing code is only part of the work. You still need to know whether it works,
 what a reviewer found, and what needs your attention before merging.
 
-Shaka gives your agent a repeatable way to finish that work:
-
-- For substantial changes, an AI reviewer checks the work in a fresh session. The agent addresses findings
-  before pushing.
-- Each PR explains the change, shows check results, and identifies anything still
-  unverified. For UI changes, you get before-and-after screenshots.
-- You can see where to focus your review, plus available token usage, estimated
-  costs, and time spent working or waiting.
-- You describe the outcome without having to keep reminding the agent to test,
-  review, and explain its work.
+Shaka asks your agent to test, get an independent review for substantial changes,
+and finish the PR without repeated reminders. You can focus on whether the
+result fits your project and ask for revisions before it joins your code.
 
 By default, you merge the PR. You can also approve the agent's merge or choose
 [Auto](docs/working-with-shaka.md#choose-a-merge-policy).

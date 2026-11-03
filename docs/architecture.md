@@ -1,29 +1,22 @@
 # Why Shaka stays small
 
-Shaka carries one task to its requested outcome: usually a reviewed pull
-request, sometimes a plan or review only. One agent task owns delivery through
-review, merge, or handoff.
-
-Shaka uses the work item and GitHub as its shared record, avoiding a separate
-tracking system.
+Shaka uses the task and GitHub as its shared record. You do not need a separate
+tracking service to resume work or understand a finished change.
 
 ## Keep facts where people look for them
 
-- When there is a work item, it holds the reason for the work: priority, scope,
-  and dependencies. For tasks started from a description, capture that context
-  in the PR.
-- GitHub holds delivery evidence: commits, checks, reviews, and the PR outcome.
-- The agent task holds experiments and unpushed work. That context is temporary.
+Keep the goal, priority, and dependencies in the issue or other work item.
+For work started from a sentence, keep that context in the PR.
+GitHub holds the commits, checks, reviews, and outcome.
 
-![The work item holds why the work exists and GitHub holds delivery evidence; a fresh PR reader reconstructs the task from those two. The agent task is temporary.](img/where-facts-live.svg)
-
-A fresh PR reader should be able to reconstruct the owner, blocker,
-revision, and next step from the work item and GitHub. An unfinished PR carries a
-short [recovery note](working-with-shaka.md#resume-unfinished-work) for that
-purpose. The note helps someone continue the work.
+An agent chat can hold experiments and unpushed work. Before handing work over,
+ask the agent to preserve what the next person needs. A PR's
+[recovery note](working-with-shaka.md#resume-unfinished-work) can identify that
+work; it cannot recover files that were never saved.
 
 ## Put repeatable checks in code
 
-Ruby handles configuration validation, comment filtering, and merge checks. Skill
-instructions guide the agent’s decisions. This keeps repeatable checks testable
-and reduces the instructions the agent must interpret.
+When improving Shaka, use Ruby for repeatable checks and instructions for
+judgment calls. Configuration validation belongs in code; deciding whether a
+test meaningfully covers a user's problem needs review.
+See [Developing Shaka](../contributing/development.md).

@@ -1,38 +1,31 @@
 # Releases after merge
 
-Shaka carries a change through its PR. Promoting a release, watching it in
-production, and deciding whether to roll back belong to your project.
-This page shows where the PR record stops and how to pass what your release
-process needs through it.
+Merging a verified PR does not establish that production is healthy. Keep
+release approval, observation, and recovery in your project's release process.
+Shaka prepares the PR; it does not deploy or monitor the release for you.
 
-## Keep three decisions separate
+## Carry release work into the handoff
 
-| Decision | Owner | Evidence |
-| --- | --- | --- |
-| Merge the change | Shaka prepares it; you or your merge setting decide. | Current-commit tests, review, walkthrough, and unresolved concerns. |
-| Promote the release | Your project | The exact release range, current staging results, migration and dependency checks, and approval. |
-| Close the observation window | Your project | Fresh post-deployment observations, responder handoff, and any recovery verification. |
+Name work beyond merging when you give the task:
 
-A passing PR check does not show that a deployment is healthy. A successful
-deployment does not show that its observation window completed.
+```text
+$shaka Add the new invoice field. Record the backfill owner and staging check
+before we merge; do not deploy.
+```
 
-## What Shaka records for your release
+Agree who runs each staging check, backfill, or feature-flag change, and when.
+Keep those actions on the PR so the release owner can find them after merge.
+For requirements on every PR, add [project guidance](settings.md#project_guidance).
 
-- **[Steps besides merging](pr-verification.md#answers-for-your-next-decision).**
-  Put a staging check, backfill, or feature-flag change in an `after merge` row,
-  so whoever promotes the release finds it on the PR. After a merge, the agent
-  lists the rows still open.
-- **Deployment link.** The description links the newest successful deployment
-  or preview of the PR's current commit, or says none was found. It tells you
-  which build the evidence came from, not whether production is healthy.
-- **Your PR evidence guide.** Set [`project_guidance.pr_evidence`](settings.md#project_guidance)
-  to ask every PR for what your release needs, such as the staging steps to
-  exercise, their expected results, and cleanup. The agent reports each item in
-  the description and names any gap.
+## Decide whether to release
 
-## What your project owns
+Check the exact release range, migrations, dependencies, and current staging
+results. A preview for one PR may not exercise the combined release.
 
-Shaka does not deploy, watch a release, notify a responder, or grant permission
-to promote or roll back. Keep observation windows, alert thresholds, on-call
-handoff, and recovery runbooks with your project, in infrastructure that keeps
-running after the agent's session ends.
+Keep alert thresholds, an observation window, an on-call handoff, and recovery
+steps somewhere that remains available after the agent chat ends. Release and
+rollback permission come from your project, separately from permission to merge.
+
+<a id="keep-three-decisions-separate"></a>
+<a id="what-shaka-records-for-your-release"></a>
+<a id="what-your-project-owns"></a>

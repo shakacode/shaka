@@ -1,18 +1,18 @@
 # What to expect from Shaka
 
 <a id="pilot-status-and-limitations"></a>
+<a id="what-the-pilot-has-established"></a>
 
-Use Shaka with your repository's checks and review rules. This guide explains
-setup choices, what happens when verification is incomplete, and how to resume
-work or recover from access problems. For installation and everyday prompts,
-see [Start here](getting-started.md) and [Working with Shaka](working-with-shaka.md).
+Give your agent a task. It checks setup, builds and verifies the change, and
+opens a PR explaining the result. Ask for help as you go.
+[Start here](getting-started.md) covers your first task.
 
 ## Choose how to start
 
-Give Shaka a task. If setup is missing, it asks whether you want individual
-or team settings. Individual setup avoids a team setup PR; shared
-[repository setup](configure-repository.md) gives the team one configuration.
-Setup alone does not authorize merging.
+If your project has no Shaka settings, the agent asks whether to set it up just
+for you or for your team. Individual settings stay out of commits. Team settings
+arrive in a [setup PR](configure-repository.md) your teammates can review.
+Neither choice authorizes merging your work.
 
 <a id="private-trials-available-tools-incomplete-guided-experience"></a>
 <a id="individual-trials-available-tools-incomplete-guided-experience"></a>
@@ -24,110 +24,73 @@ $shaka <task or issue link>
 Set up Shaka just for me. Go.
 ```
 
-Individual settings remain outside commits in a repository without team setup.
-They cover the same choices as shared settings: reviewers, custom code-review
-instructions, checkpoint choices, writing limits, opening instructions, and WIP preferences.
-When a later task starts in a new worktree, the agent copies your individual
-settings into it. Edits you made after setup come along while the earlier
-checkout still exists.
-
-The agent should find your existing commands and go on with your task. In a
-[maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011)
-on a disposable repository, a series of fresh chats went from individual setup to
-a merged PR.
-
-To try repository settings for one task before adopting them, use a
-[settings preview](settings.md#preview-settings-before-adopting-them). Trying an
-unmerged change to Shaka itself is different: see [try a Shaka PR](trying-pr-versions.md).
+Individual setup supports the same reviewer and writing preferences as team
+setup. It applies only where team settings are absent. To try different team
+settings for one task, select a [settings PR](settings.md#preview-settings-before-adopting-them).
+To try a change to Shaka itself, use a [PR trial](trying-pr-versions.md).
 
 ## Run an ordinary task
 
-If a project has no usable checks, decide with the agent whether to add them or
-report limited verification. Routine tasks should not require editing configuration
-or PATH by hand.
+Describe the outcome you want. The agent finds your project's checks and asks
+when it needs a decision. If there are no useful checks, agree on whether to add
+them or report limited verification.
 
 ## Multiple reviewers per commit
 
-Start with one reviewer. For broader coverage, configure
-[multiple reviewers](settings.md#reviewlocal_review_count), such as Claude, Codex,
-or DeepSeek. Additional reviews cost more. The agent combines reviews before
-deciding how to respond, so overlapping findings are handled once.
+Start with one reviewer. [Additional reviewers](settings.md#reviewlocal_review_count)
+cost more; the agent combines their findings before making repairs.
 
 ## Understand the PR's settings and evidence
 
-Expand the settings block to see whether the validation and review results match
-the candidate commit. Below that line, one row per result shows the settings it used
-and what it ran with, such as the validation command or the reviewer.
-[Which settings apply](settings.md#which-settings-apply) explains where settings
-come from.
+The PR shows what was tested and reviewed, which commit those results cover,
+and any missing evidence. Failed checks or stale results cannot satisfy a
+required gate. A settings summary alone does not prove tests or review ran.
 
-When the settings are not the default branch's, as in an individual setup or a
-settings PR tried on one task, the block also holds a table of every setting.
-Settings that are UNKNOWN or never published in every column are listed below
-that table instead of taking a row.
-The publication helper redacts selected settings values; this is not a general
-privacy scan. A settings block describes the run; it does not prove tests or
-review happened.
+```text
+Explain what this PR's verification proves and what I still need to check.
+```
 
-| What changes or fails | Expected response |
-| --- | --- |
-| Validation fails | Fix the demonstrated problem, then rerun the affected checks. The PR stays unverified until they complete. |
-| The candidate changes after tests or review | Check whether the evidence still covers the candidate; rerun affected work when it is stale. |
-| Material command or review settings change | The workflow requires reassessing affected evidence; do not assume an earlier pass is current. Editing your validate script also marks the earlier review out of date, so expect validation and review to rerun, as a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011) with individual settings showed. |
-| Shaka updates during a task | Earlier validation and review still count unless the update changes the Shaka code that runs them or checks their results. A new Shaka version, or a change to how review comments are displayed, also means a rerun. |
-| The description is reworded for the same commit | Results already shown as verified stay, marked as not rechecked. A pull request from a fork is the exception: its author can edit the description, so its results need to be supplied again. |
-| A result is missing, a reviewer is unavailable, or CI is still running | Show the gap explicitly. Missing or stale evidence cannot satisfy a required gate. |
-| An optional reviewer is pending | Disclose it and follow the configured waiting choice; required gates still apply. |
-
-Public PRs must contain no private task content, operational settings, or
-private-content fingerprints. Expandable details are still public. WIP Details
-includes separate checkout-path and chat-locator fields, shown by default.
-The [WIP setting](settings.md#wipinclude_checkout_path) hides the checkout path and keeps the chat locator.
-Privacy still requires the agent to inspect the publication.
+Public PRs, including their expandable details, are public. WIP Details normally
+includes your checkout path and a chat locator. You can
+[hide the checkout path](settings.md#wipinclude_checkout_path) or ask the agent to
+withhold the chat locator before publication. Shaka redacts selected settings;
+the agent still has to inspect the rest for private content.
 
 ## Decide whether to merge
 
-See [merge choices](working-with-shaka.md#choose-a-merge-policy) for Ask, Auto,
-and required approvals. The workflow instructs the agent to retain explicit task
-merge authorization within its scope, but a task's Auto choice doesn't carry into a
-fresh chat. In a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011),
-the new chat read `Merge authority: auto` in WIP Details as a record, not permission,
-and held at Ask. To keep Auto, say so again in the new chat.
+By default, you merge on GitHub or approve the agent's merge. With Auto, the
+agent merges eligible work after checks and approvals; large or risky changes
+still need your decision. See [merge choices](working-with-shaka.md#choose-a-merge-policy).
+
+When continuing the same task, the agent reuses an established merge choice.
+A WIP note alone does not grant authority. If a new chat cannot verify your
+earlier Auto decision, state it again.
 
 ## Resume or change your checkout
 
-| Scenario | Expected experience and recovery limit |
-| --- | --- |
-| Resume the same task with a PR | The workflow directs the agent to refresh PR state and evidence. Open WIP Details and return to the owner, or give a new chat the PR URL after the previous owner stops. Fresh chats given only the PR URL read WIP Details and refreshed PR state in a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513462011). |
-| Resume before a PR exists | Supply the task and checkout, plus the branch, head, and paths of saved validation and review results if you have them. The workflow directs the agent to rerun a check whose result is missing before it pushes and publishes. The intended path is local inspection; there is no PR record from which to recover missing choices. A fresh chat given those inputs found them and named the next step in a [maintainer-run check](https://github.com/shakacode/shaka/issues/277#issuecomment-6513172691). |
-| Use a linked worktree with individual settings | Each worktree has its own local settings identity and recovery copy in the common Git directory. Host permissions must allow the required writes. |
-| An outside pull adds team settings | Inspect adoption and compare saved individual settings. Default-branch team policy governs; do not overwrite it with the local copy. |
-| Clean or delete a worktree with individual settings | Previously captured settings may be restored outside a checkout for comparison. Uncaptured edits and deletion of the common Git directory cannot be recovered from those copies. |
+Return to the chat that owns the work. Before handing it to a new chat, finish
+or cancel any active automatic follow-up and confirm the previous owner stopped.
+Then give the new chat the PR URL. WIP Details identifies the
+revision, unfinished work, and next action.
 
-Use the [resume guide](working-with-shaka.md#resume-unfinished-work).
-Recovery copies protect captured configuration, not feature changes or the agent
-conversation. A [return point](pr-verification.md#return-points)
-needs recorded guidance and recoverable work state. It is a separate agent procedure;
-the Ruby `checkpoint` command does not capture or restore snapshots.
+Before a PR exists, give the new chat the task, checkout, and branch, plus saved
+check results if available. It reruns checks whose results are missing.
+
+Captured individual settings can seed a new worktree even after the earlier
+worktree is deleted. Keep the earlier checkout available to capture its latest
+edits first. Recovery copies protect captured settings, not feature changes or
+conversations. Uncaptured edits, or deletion of the shared Git directory, cannot
+be recovered from those copies. Team settings take precedence over saved
+individual settings.
+
+To revisit earlier guidance, ask for a [return point](pr-verification.md#return-points).
+It can restore only the work state the agent recorded.
+See [resuming unfinished work](working-with-shaka.md#resume-unfinished-work).
 
 ## When the coding agent denies access
 
-Expect the failed operation and path to be reported, with no claim of completion.
-Use the host's supported permission mechanism for the necessary operation, then
-retry and verify it. Shaka does not create a sandbox or grant filesystem access.
+The agent reports the failed operation and path. Use your coding tool's
+permission controls, then retry. Shaka cannot grant access; permission to edit
+project files may still exclude the Git files individual setup needs.
 
-Host permissions can allow project edits while denying protected Git writes
-needed by individual setup. The acceptance report records host-specific outcomes;
-an unrestricted run does not prove that a sandboxed setup or retry will succeed.
-
-<a id="what-the-pilot-has-established"></a>
-
-## Recorded verification evidence
-
-The [first-task acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759)
-records a verified consumer feature PR and separates passed, partial, and untested
-cases for the evaluated installation. It includes supplemental recovery and
-migration checks. Use the report to understand that evaluation's coverage;
-newer versions need their own evidence for previously untested scenarios.
-[Issue #277](https://github.com/shakacode/shaka/issues/277) tracks what is still
-to verify.
+<a id="recorded-verification-evidence"></a>
