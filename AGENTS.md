@@ -14,6 +14,8 @@ or require other repositories to copy them. The [Shaka skill's writing guidance]
 is the reusable default.
 
 - Assume the reader is new to Shaka and wants to get useful work done.
+- When writing product documentation, follow [documentation structure](internal/documentation.md)
+  so readers can start with the skill and consult guides as needed.
 - In product guides, explain outcomes, choices, and examples. Put agent execution
   details with the skill and development records under `internal/`.
 - `bin/check-docs-navigation` refuses `docs/` links and URLs that point into
