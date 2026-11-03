@@ -97,8 +97,13 @@ module Shaka
         Dir.mktmpdir do |dir|
           before = write(dir, 'previous.md', previous)
           after = write(dir, 'current.md', current)
-          out, status = Open3.capture2('diff', '-u', '--label', 'previous', '--label', 'current', before, after)
-          status.success? ? 'Canary PR body matches the previous run.' : out
+          out, err, status = Open3.capture3('diff', '-u', '--label', 'previous', '--label', 'current', before, after)
+          # diff exits 1 when the files differ and 2 when it fails.
+          case status.exitstatus
+          when 0 then 'Canary PR body matches the previous run.'
+          when 1 then out
+          else "Cannot diff the canary PR body: #{err.lines.first.to_s.strip}"
+          end
         end
       end
 
