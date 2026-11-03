@@ -104,6 +104,12 @@ end
 class GitLabCommentsTest < Minitest::Test
   include GitLabCommentsFixture
 
+  def test_internal_visibility_is_unsupported_before_any_discussion_body_is_read
+    @data['projects/group%2Fsub%2Frepo'] = project.merge('visibility' => 'internal')
+    assert_raises(Shaka::Error) { reader.call(head: HEAD, target: 'main') }
+    refute(@calls.any? { |argv, _| argv[4].include?('/discussions') })
+  end
+
   def test_private_discussion_read_retains_prose_at_a_verified_head_and_target
     result = reader.call(head: HEAD, target: 'main')
     assert_equal 'Check the expected revision.', result.fetch('notes').first.fetch('body')

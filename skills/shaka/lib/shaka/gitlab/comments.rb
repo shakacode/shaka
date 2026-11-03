@@ -14,6 +14,8 @@ module Shaka
 
       def call(head:, target:)
         project = @client.project
+        raise Error, 'GitLab internal-project comment reads are not supported.' if project['visibility'] == 'internal'
+
         packet = @mr.stable_read(head:, target:) { read_packet(project, head, target) }
         verify_project(project)
         verify_sources(packet)
