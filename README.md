@@ -9,6 +9,8 @@ You give a task. The agent builds, verifies, and reviews. You get a pull request
 [Watch the 52-second demo](https://www.youtube.com/watch?v=T6Fstx2fGJI) ·
 [See a Shaka PR](https://github.com/shakacode/shaka/pull/667)
 
+<a id="why-use-it"></a>
+
 ## Why use Shaka?
 
 Writing code is only part of the work. You still need to know whether it works,
@@ -16,7 +18,7 @@ what a reviewer found, and what needs your attention before merging.
 
 Shaka gives your agent a repeatable way to finish that work:
 
-- A second AI reviews the change in a fresh session. The agent addresses findings
+- For substantial changes, an AI reviewer checks the work in a fresh session. The agent addresses findings
   before pushing.
 - Each PR explains the change, shows check results, and identifies anything still
   unverified. For UI changes, you get before-and-after screenshots.
@@ -32,6 +34,8 @@ Even with Auto, large or risky changes need your merge decision.
 <a id="example-prompts"></a>
 <a id="get-started"></a>
 <a id="requirements"></a>
+<a id="start-with-a-small-task"></a>
+<a id="what-you-need"></a>
 
 ## Try it
 
@@ -48,7 +52,8 @@ $shaka Fix search when the query contains an apostrophe. Go.
 ```
 
 Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode.
-For Pi, load the installed skill. Your agent checks setup and tells you if
+For Pi, load the installed skill. See [other coding agents](docs/coding-agents.md).
+Your agent checks setup and tells you if
 anything is missing.
 
 Read the PR, ask for revisions if needed, and decide whether to merge.
@@ -70,6 +75,8 @@ you pay for the agents and services you use.
 
 [ShakaCode](https://www.shakacode.com) can help customize the Shaka skill to
 improve your development team's efficiency.
+
+<a id="documentation"></a>
 
 ## When you want more detail
 

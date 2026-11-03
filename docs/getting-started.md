@@ -4,7 +4,7 @@ You don't need to read the rest of the docs first. Install Shaka, give your agen
 a small task, and review the result.
 
 Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode.
-For Pi, load the installed skill.
+For Pi, load the installed skill. See [other coding agents](coding-agents.md).
 
 <a id="getting-started"></a>
 

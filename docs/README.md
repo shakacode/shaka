@@ -24,6 +24,7 @@ By default, you merge the PR. You can approve the agent's merge or choose
 Even with Auto, large or risky changes need your merge decision.
 
 <a id="start-here"></a>
+<a id="what-to-do-first"></a>
 
 ## Start a task
 
@@ -52,6 +53,9 @@ Maintainers can choose whose comments the agent reads.
 See [review safety](workflow.md#trust-model).
 
 <a id="configure-and-understand"></a>
+<a id="learn-as-you-go"></a>
+<a id="set-up-when-you-need-to"></a>
+<a id="look-deeper"></a>
 
 ## Reference
 
@@ -67,5 +71,8 @@ Open a guide when you need it, or ask your agent to read it for you.
 - [Settings reference](settings.md): look up options and defaults.
 - [Workflow and review safety](workflow.md): understand checks and trusted feedback.
 
-The sidebar lists the remaining guides, including updates, forks, and advanced use.
+- [Update Shaka](migration.md), [use a fork](fork-and-hack.md), or [try an unmerged PR](trying-pr-versions.md).
+- [Control towers](control-towers.md), [repository catalog](repository-catalog.md), and [architecture](architecture.md).
+- [Writing preferences](writing-preferences.md), [what to expect](expected-experience.md), and [canary runs](canary.md).
+
 Development guidance lives in [Contributing](../CONTRIBUTING.md).
