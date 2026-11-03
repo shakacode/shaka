@@ -21,7 +21,7 @@ class CliDescriptionElapsedTest < Minitest::Test
   end
 
   def test_an_unreadable_check_list_still_publishes
-    refute_includes published, '· ready in'
+    assert_includes published, '· ready pending'
   end
 
   def description_content
