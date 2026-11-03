@@ -18,10 +18,10 @@ Enable **Custom script** under Linear's **Settings → Code & reviews → Config
 coding tools**. Run it once to create the configuration, then ask your agent to
 finish setup using your installed Shaka adapter.
 
-If editing it yourself, set `openIssue` in `~/.linear/coding-tools.json` to the
+If editing it yourself, set `openIssue.path` in `~/.linear/coding-tools.json` to the
 absolute path of `examples/linear-codex` in your installed Shaka checkout. Pass
 `LINEAR_PROMPT`, `LINEAR_WORK_DIR`, `LINEAR_ISSUE_IDENTIFIER`, and
-`LINEAR_ISSUE_BRANCH_NAME` in its `env` list. Keep unrelated entries.
+`LINEAR_ISSUE_BRANCH_NAME` in the `openIssue.env` list. Keep unrelated entries.
 [Linear's documentation](https://linear.app/docs/open-issues-with-custom-scripts)
 explains the configuration format.
 

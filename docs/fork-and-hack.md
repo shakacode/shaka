@@ -36,8 +36,8 @@ real task before adopting it everywhere.
 
 ## Keep your fork current
 
-Ask your agent to inspect upstream changes and merge them into your custom
-branch before updating the installation. Shaka does not pull upstream into a
+Ask your agent to inspect upstream changes, merge them into your custom
+branch, and push it to your fork before updating the installation. Shaka does not pull upstream into a
 fork automatically.
 
 Merge rather than rewriting your installed branch's history. Updates only

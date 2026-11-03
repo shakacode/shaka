@@ -52,7 +52,7 @@ Ask brings each PR back for your merge decision. If a chat stops, ask the tower
 to resume it.
 
 Claude normally offers sessions you start with a click. If you request unattended
-work, it starts background agents that do not appear in your session list and
+work, it starts background agents that
 stop when the tower chat ends. Those agents publish PRs and never merge, even
 under Auto. Keep the tower open while they work.
 
