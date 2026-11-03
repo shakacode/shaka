@@ -37,9 +37,10 @@ class CursorUsageEstimateRefreshTest < Minitest::Test
   end
 
   def assert_visible_estimate(updated)
-    estimate = updated[/\*\*Estimated token costs:\*\* ([^\n]+)/, 1]
+    estimate = updated[/\*\*Estimated token costs:\*\* ([^\n·]+)/, 1]&.strip
     refute_nil estimate
     assert_includes updated, "AI spend: #{CGI.unescapeHTML(estimate)}"
+    assert_includes updated, "**Estimated token costs:** #{estimate} · ready pending\n"
     assert_includes updated, '<summary>Usage and cost</summary>'
     refute_includes updated, 'Usage and cost ·'
     assert_includes updated, '<summary>Shaka metrics</summary>'

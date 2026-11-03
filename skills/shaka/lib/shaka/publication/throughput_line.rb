@@ -18,12 +18,13 @@ module Shaka
     # Appended to the model line.
     def header(state) = "#{SPEND}#{shown_spend(state)}"
 
-    # Appended to the estimated cost line: task start to merge once merged, otherwise to ready;
-    # nothing until that time is known.
+    # Appended to the estimated cost line: task start to merge once merged, otherwise to ready.
     def took(state)
       ended, label = state['t3'] ? [state['t3'], 'merged'] : [state['t2'], 'ready']
+      return ' · ready pending' unless ended
+
       span = state['t0'] && ended && ended != 'UNKNOWN' ? interval(state['t0'], ended) : 'UNKNOWN'
-      span == 'UNKNOWN' ? '' : " · #{label} in #{span}"
+      " · #{label} in #{span}"
     end
 
     def earliest_start(commit)

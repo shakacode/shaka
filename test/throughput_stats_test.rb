@@ -108,6 +108,32 @@ class ThroughputStatsTest < Minitest::Test
   end
 end
 
+# Missing measurements stay explicit beside cost, and later updates replace them in place.
+class ThroughputSummaryTest < Minitest::Test
+  include ThroughputHelper
+
+  def test_cost_line_keeps_unknown_timing_when_task_start_was_not_recorded
+    times = { 'ci_started_at' => PUSH, 'ready_at' => READY }
+    rendered = describe('$7.27', timeline: times)
+    visible = rendered.split('<summary>Details</summary>').first
+    assert_includes visible, "**Estimated token costs:** $7.27 · ready in UNKNOWN\n"
+    assert_includes rendered, 'CI to ready 41m'
+    times['merged'] = MERGED
+    assert_includes describe('$7.27', timeline: times),
+                    "**Estimated token costs:** $7.27 · merged in UNKNOWN\n"
+  end
+
+  def test_pending_timing_is_visible_and_replaced_once_when_ready
+    body = describe('$4.12', timeline: push_times, pull: head_pull)
+    assert_includes body.split('<summary>Details</summary>').first,
+                    "**Estimated token costs:** $4.12 · ready pending\n"
+    assert_equal body, Shaka::ThroughputStats.update(body, {})
+    updated = Shaka::ThroughputStats.update(body, 't2' => READY.iso8601)
+    assert_includes updated, "**Estimated token costs:** $4.12 · ready in 1h 19m\n"
+    assert_equal updated, Shaka::ThroughputStats.update(updated, {})
+  end
+end
+
 # A refresh rewrites the spend and the time in place, keeping line endings and leaving a damaged block alone.
 class ThroughputRefreshTest < Minitest::Test
   include ThroughputHelper
