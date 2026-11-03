@@ -1,77 +1,71 @@
 # Documentation
 
-**Review the intent and the evidence, not every line.**
+You give a task. The agent builds, verifies, and reviews. You get a pull request
+(PR) you can judge quickly.
 
-Give your coding agent a task. Shaka has it build, test, and get an independent
-review. You get a pull request (PR) you can judge quickly.
+You don't need to read these guides before using Shaka. Start with a small task
+and ask your agent when you need help. The guides are here when you want more detail.
+
+<a id="why-use-shaka"></a>
 
 ## Why use Shaka
 
-Each PR shows:
+Shaka helps your coding agent finish the work around the code: testing,
+independent review, and a PR that explains the result. You can see what was
+checked, what remains unverified, and which files need your attention.
+For UI changes, the PR includes before-and-after screenshots.
 
-- **Intent:** why the change exists, what it leaves out, and why it is safe.
-- **Verification:** the checks that prove the change and any claim left unproven.
-  Each check links to its result or names the command that ran.
-- **UI evidence:** for a UI change, annotated before-and-after screenshots, plus
-  a video when timing matters.
-- **Human review:** which files a person should read, or that the description is
-  enough. When a few lines need a closer look, walkthrough notes can
-  point them out.
-- **Less to read:** detail you can skip is collapsed.
-- **Your merge decision:** by default, the agent hands the ready PR back to you.
+PRs also report available token usage, estimated costs, and time spent working
+or waiting. See [usage and cost](reference/usage-and-cost.md) and
+[timings](reference/timings.md) when you want to understand those numbers.
 
-See [what a PR answers](pr-verification.md#answers-for-your-next-decision).
-
-![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](img/task-to-pr.svg)
+By default, you merge the PR. You can approve the agent's merge or choose
+[Auto](working-with-shaka.md#choose-a-merge-policy).
+Even with Auto, large or risky changes need your merge decision.
 
 <a id="start-here"></a>
 
-## What to do first
+## Start a task
 
-1. Ask your coding agent: `Install Shaka from https://github.com/shakacode/shaka.`
-2. In your project, give it a small fix you can check:
+Ask your coding agent:
 
-   ```text
-   $shaka Fix search when the query contains an apostrophe. Go.
-   ```
+```text
+Install Shaka from https://github.com/shakacode/shaka.
+```
 
-   Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode
-   ([other agents](coding-agents.md)).
-3. Read the PR and decide whether to merge.
+Then give it a small task:
 
-[Start here](getting-started.md) covers setup. New to pull requests? Try
-[Shaka in pictures](shaka-in-pictures.md).
+```text
+$shaka Fix search when the query contains an apostrophe. Go.
+```
 
-## Learn as you go
+Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode.
+For Pi, load the installed skill. The agent checks setup and asks when it needs you.
 
-1. [Working with Shaka](working-with-shaka.md): merge policy, feedback, waiting
-   PRs, and other kinds of tasks.
-2. [FAQ](faq.md): pauses, merging, review, and where settings live.
+[Start here](getting-started.md) covers your first task.
+[Shaka in pictures](shaka-in-pictures.md) introduces pull requests.
+
+## For open-source repositories
+
+To reduce prompt-injection risk, Shaka ignores comments from untrusted authors.
+Maintainers can choose whose comments the agent reads.
+See [review safety](workflow.md#trust-model).
 
 <a id="configure-and-understand"></a>
 
-## Set up when you need to
+## Reference
 
-The agent handles setup.
+Open a guide when you need it, or ask your agent to read it for you.
 
-- [Repository setup](configure-repository.md) — reuse your checks and review the setup PR.
-- [Choose your settings](settings-guide.md) — common choices and prompts for your agent.
-- [Coding agents](coding-agents.md) — invocation and installation for your environment.
-- [Install Shaka manually](manual-installation.md) — review and run the installer yourself.
-- [Fork Shaka and make it yours](fork-and-hack.md) — install your fork and send a change back.
-- [Update Shaka](migration.md) — update your installation.
+- [Working with Shaka](working-with-shaka.md): prompts, merge choices, feedback, and resuming work.
+- [FAQ](faq.md): answers to common questions.
+- [Repository setup](configure-repository.md): individual and team setup.
+- [Choose your settings](settings-guide.md): ask your agent to explain or change settings.
+- [Coding agents](coding-agents.md): use Shaka with your agent.
+- [Manual installation](manual-installation.md): run the installer yourself.
+- [PR verification](pr-verification.md): inspect evidence before merging.
+- [Settings reference](settings.md): look up options and defaults.
+- [Workflow and review safety](workflow.md): understand checks and trusted feedback.
 
-## Look deeper
-
-- [PR verification](pr-verification.md) — evaluate a change and revisit its decisions after merging.
-- [What to expect from Shaka](expected-experience.md) — setup choices, verification gaps, and recovery.
-- [Settings reference](settings.md) — exact options, defaults, and advanced behavior.
-- [Writing preferences](writing-preferences.md) — choose how the agent writes for your project.
-- [Workflow and enforcement](workflow.md) — what code checks and what relies on the agent.
-- [Architecture](architecture.md) — why Shaka keeps one owner and little state.
-- [Repository catalog](repository-catalog.md) — organize repositories across projects.
-- [Control towers](control-towers.md) — coordinate a batch across chats and decide which PRs to merge first.
-- [Try a Shaka PR](trying-pr-versions.md) — evaluate an unmerged change on real work.
-- [Canary runs](canary.md) — read the sandbox pull request opened after a merge to `main`.
-
+The sidebar lists the remaining guides, including updates, forks, and advanced use.
 Development guidance lives in [Contributing](../CONTRIBUTING.md).
