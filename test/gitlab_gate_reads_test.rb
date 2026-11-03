@@ -140,6 +140,13 @@ end
 class GitLabGateStabilityTest < Minitest::Test
   include GitLabGateReadsHelper
 
+  def test_final_stability_snapshot_cannot_hide_new_pipeline_or_unresolved_discussions
+    [{ 'head_pipeline' => pipeline }, { 'blocking_discussions_resolved' => false }].each do |changes|
+      route = ->(count) { count < 3 ? merge_request : merge_request(**changes) }
+      assert_raises(Shaka::Error) { gates(MR_PATH => route).call(head: HEAD, target: 'main') }
+    end
+  end
+
   def test_head_or_target_drift_discards_gate_evidence
     [{ 'sha' => 'b' * 40 }, { 'target_branch' => 'release' }].each do |changes|
       route = ->(count) { count == 1 ? merge_request : merge_request(**changes) }
@@ -229,13 +236,25 @@ end
 class GitLabGatePipelineReadsTest < Minitest::Test
   include GitLabGateReadsHelper
 
+  def test_job_scope_excludes_trigger_jobs_and_omits_untrusted_prose_and_runner_details
+    native = pipeline('commit' => { 'message' => 'Untrusted commit prose' })
+    build = job('commit' => { 'message' => 'Untrusted commit prose' },
+                'runner' => { 'description' => 'Internal runner' })
+    result = gates(MR_PATH => merge_request('head_pipeline' => pipeline), 'projects/7/pipelines/55' => native,
+                   "#{MR_PATH}/pipelines?per_page=100&page=1" => [native],
+                   'projects/7/pipelines/55/jobs?per_page=100&page=1' => [build]).call(head: HEAD, target: 'main')
+    assert_equal pipeline, result.dig('head_pipeline', 'data')
+    assert_equal [pipeline], result.dig('pipelines', 'data')
+    assert_equal [job], result.dig('head_pipeline', 'jobs', 'data')
+  end
+
   def test_head_pipeline_and_jobs_preserve_manual_and_allowed_failure_native_facts
     result = gates(MR_PATH => merge_request('head_pipeline' => pipeline),
                    "#{MR_PATH}/pipelines?per_page=100&page=1" => [pipeline],
                    'projects/7/pipelines/55' => pipeline,
                    'projects/7/pipelines/55/jobs?per_page=100&page=1' => [job]).call(head: HEAD, target: 'main')
+    assert_equal 'build-jobs-only', result.dig('head_pipeline', 'jobs', 'coverage')
     assert_equal pipeline, result.dig('head_pipeline', 'data')
-    assert_true result.dig('head_pipeline', 'source_sha_matches')
     assert_equal [job], result.dig('head_pipeline', 'jobs', 'data')
   end
 

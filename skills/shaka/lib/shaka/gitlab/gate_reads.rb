@@ -47,6 +47,8 @@ module Shaka
     # Head-pipeline evidence comes from its native ID, never from a successful list entry.
     module GatePipelineReads
       PIPELINE_IDENTITY = %w[id project_id sha ref].freeze
+      PIPELINE_FIELDS = (PIPELINE_IDENTITY + %w[status source]).freeze
+      JOB_FIELDS = %w[id name status allow_failure stage ref].freeze
 
       private
 
@@ -64,12 +66,15 @@ module Shaka
       end
 
       def pipeline_jobs(pipeline)
-        observe do
+        result = observe do
           data = @client.api_list("projects/#{pipeline['project_id']}/pipelines/#{pipeline['id']}/jobs")
           raise Error, 'Malformed GitLab job evidence.' unless data.all? { |job| job_record?(job, pipeline) }
 
-          data
+          data.map { |job| job.slice(*JOB_FIELDS).merge('pipeline' => job['pipeline'].slice(*PIPELINE_FIELDS)) }
         end
+        return result unless %w[available absent].include?(result['availability'])
+
+        result.merge('coverage' => 'build-jobs-only')
       end
 
       def read_head_pipeline(reference, snapshot)
@@ -80,7 +85,7 @@ module Shaka
           raise Error, 'GitLab pipeline identity did not match the native head pipeline.'
         end
 
-        data
+        data.slice(*PIPELINE_FIELDS)
       end
 
       def head_reference?(reference, snapshot)
@@ -158,7 +163,7 @@ module Shaka
       def call(head:, target:, target_sha: nil)
         raise Error, 'Expected a full target commit SHA.' unless target_sha.nil? || commit?(target_sha)
 
-        @mr.stable_read(head:, target:) do |snapshot|
+        @mr.stable_read(head:, target:, verify: method(:verify_final_context)) do |snapshot|
           project = @client.project
           with_target_revision(project, target, target_sha) do
             collect(snapshot, project, head)
@@ -193,6 +198,12 @@ module Shaka
         [snapshot.key?('head_pipeline'), reference, snapshot['blocking_discussions_resolved']]
       end
 
+      def verify_final_context(first, last)
+        return if native_context(first) == native_context(last)
+
+        raise Error, 'GitLab native gate context changed at the final MR read.'
+      end
+
       def observe
         data = yield
         { 'availability' => data.is_a?(Array) && data.empty? ? 'absent' : 'available', 'data' => data }
@@ -219,7 +230,7 @@ module Shaka
           data = @client.api_list("#{path}/pipelines")
           raise Error, 'Malformed GitLab pipeline list.' unless data.all? { |pipeline| pipeline_record?(pipeline) }
 
-          data
+          data.map { |pipeline| pipeline.slice(*PIPELINE_FIELDS) }
         end
       end
     end
