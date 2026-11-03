@@ -13,18 +13,22 @@ module Shaka
       end
 
       def call(head:, target:)
-        @mr.stable_read(head:, target:) do
-          project = @client.project
-          discussions = @mr.discussions
-          screened = project['visibility'] == 'public' ? public_notes(project, discussions) : private_notes(discussions)
-          attach_positions(screened, discussions)
-          verify_project(project)
-          { 'provider' => 'gitlab', 'host' => @client.host, 'head' => head, 'target' => target,
-            'visibility' => project.fetch('visibility') }.merge(screened)
-        end
+        project = @client.project
+        packet = @mr.stable_read(head:, target:) { read_packet(project, head, target) }
+        verify_project(project)
+        verify_sources(packet)
+        packet
       end
 
       private
+
+      def read_packet(project, head, target)
+        discussions = @mr.discussions
+        screened = project['visibility'] == 'public' ? public_notes(project, discussions) : private_notes(discussions)
+        attach_positions(screened, discussions)
+        { 'provider' => 'gitlab', 'host' => @client.host, 'head' => head, 'target' => target,
+          'visibility' => project.fetch('visibility') }.merge(screened)
+      end
 
       def attach_positions(screened, discussions)
         native = discussions.flat_map { |discussion| discussion.fetch('notes') }
@@ -45,14 +49,18 @@ module Shaka
       end
 
       def public_notes(project, discussions)
-        loader = TrustConfig.new(client: @client)
-        config = loader.load
+        config = TrustConfig.new(client: @client).load
         screened = ActorTrust.new(client: @client, project_id: project.fetch('id'),
                                   trusted_users: config.fetch(:users), trusted_bots: config.fetch(:bots),
                                   metadata_bots: config.fetch(:metadata_bots)).screen(discussions)
-        raise Error, 'GitLab trusted actor source changed during comment read.' unless config == loader.load
-
         screened.merge('trust_sources' => config.fetch(:sources))
+      end
+
+      def verify_sources(packet)
+        return unless packet['visibility'] == 'public'
+        return if packet.fetch('trust_sources') == TrustConfig.new(client: @client).load.fetch(:sources)
+
+        raise Error, 'GitLab trusted actor source changed during comment read.'
       end
 
       def private_notes(discussions)

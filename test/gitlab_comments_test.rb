@@ -81,6 +81,24 @@ module GitLabCommentsFixture
     @data['users/43'] = { 'id' => 43, 'username' => 'stranger', 'state' => 'active', 'bot' => false }
     @data['projects/7/members/all/43'] = Failure.new(404)
   end
+
+  def policy_error_context(status)
+    public_context
+    @data["projects/7/repository/files/.agents%2Fshaka%2Ftrusted-gitlab-actors.yml?ref=#{'a' * 40}"] =
+      Failure.new(status)
+  end
+
+  def change_default_on_final_mr_read
+    public_context
+    @data['projects/7/repository/branches/next'] =
+      { 'name' => 'next', 'default' => true, 'commit' => { 'id' => 'd' * 40 } }
+    @data["projects/7/repository/files/.agents%2Fshaka%2Ftrusted-gitlab-actors.yml?ref=#{'d' * 40}"] =
+      policy_payload("trusted_users: []\n").merge('ref' => 'd' * 40, 'commit_id' => 'd' * 40)
+    @data['projects/7/merge_requests/1'] = lambda { |count|
+      @data['projects/group%2Fsub%2Frepo']['default_branch'] = 'next' if count > 2
+      native_mr
+    }
+  end
 end
 
 class GitLabCommentsTest < Minitest::Test
@@ -124,6 +142,38 @@ end
 
 class GitLabCommentsFailureTest < Minitest::Test
   include GitLabCommentsFixture
+
+  def test_visibility_observed_on_the_final_project_read_cannot_release_private_prose
+    @data['projects/group%2Fsub%2Frepo'] = lambda { |count|
+      project.merge('visibility' => count <= 4 ? 'private' : 'public')
+    }
+    assert_raises(Shaka::Error) { reader.call(head: HEAD, target: 'main') }
+  end
+
+  def test_missing_optional_actor_file_still_allows_a_verified_project_writer
+    policy_error_context(404)
+    @data['projects/7/members/all/42'] =
+      { 'id' => 42, 'username' => 'alice', 'state' => 'active', 'access_level' => 30, 'expires_at' => nil }
+
+    result = reader.call(head: HEAD, target: 'main')
+    assert_equal 'writer', result.fetch('notes').first.fetch('trust')
+    assert_equal({ 'state' => 'absent', 'sha256' => nil },
+                 result.fetch('trust_sources').first.slice('state', 'sha256'))
+  end
+
+  def test_policy_denials_and_unavailability_do_not_become_an_empty_scope
+    [401, 403, 429, 500].each do |status|
+      policy_error_context(status)
+      error = assert_raises(Shaka::Error) { reader.call(head: HEAD, target: 'main') }
+      assert_equal status, error.http_status
+    end
+  end
+
+  def test_default_branch_change_at_the_final_mr_read_discards_old_actor_settings
+    change_default_on_final_mr_read
+    error = assert_raises(Shaka::Error) { reader.call(head: HEAD, target: 'main') }
+    assert_includes error.message, 'trusted actor source changed'
+  end
 
   def test_unknown_public_author_prose_is_withheld_while_configured_prose_survives
     stranger_context

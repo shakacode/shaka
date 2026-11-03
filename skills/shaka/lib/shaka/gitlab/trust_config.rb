@@ -21,10 +21,8 @@ module Shaka
 
       def load
         revision = @client.default_revision
-        file = @client.api("projects/#{revision.fetch('id')}/repository/files/#{URI.encode_www_form_component(PATH)}",
-                           fields: { ref: revision.fetch('sha') })
-        text = trusted_text(file, revision)
-        settings = parse_settings(text)
+        text = read_text(revision)
+        settings = text.nil? ? ACTORS.transform_values { [] } : parse_settings(text)
         unless revision == @client.default_revision
           raise Error, 'GitLab trusted default revision changed during the read.'
         end
@@ -33,6 +31,16 @@ module Shaka
       end
 
       private
+
+      def read_text(revision)
+        file = @client.api("projects/#{revision.fetch('id')}/repository/files/#{URI.encode_www_form_component(PATH)}",
+                           fields: { ref: revision.fetch('sha') })
+        trusted_text(file, revision)
+      rescue Error => e
+        raise unless e.http_status == 404
+
+        nil
+      end
 
       def parse_settings(text)
         data = settings_data(text)
@@ -95,7 +103,8 @@ module Shaka
       def provenance(revision, text)
         { 'scope' => 'repository', 'provider' => 'gitlab', 'host' => revision.fetch('host'),
           'project_id' => revision.fetch('id'), 'repository' => revision.fetch('path_with_namespace'),
-          'commit' => revision.fetch('sha'), 'path' => PATH, 'sha256' => Digest::SHA256.hexdigest(text) }
+          'commit' => revision.fetch('sha'), 'path' => PATH, 'state' => text.nil? ? 'absent' : 'present',
+          'sha256' => text && Digest::SHA256.hexdigest(text) }
       end
     end
   end
