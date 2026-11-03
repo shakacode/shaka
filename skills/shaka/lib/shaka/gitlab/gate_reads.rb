@@ -6,14 +6,22 @@ module Shaka
   class GitLab
     # Checks readable native facts without treating missing fields as satisfied gates.
     module GateValidation
+      APPROVAL_FLAGS = %w[approved has_approval_rules multiple_approval_rules_available
+                          merge_request_approvers_available].freeze
+      APPROVAL_FIELDS = (%w[id iid project_id approvals_required approvals_left] + APPROVAL_FLAGS).freeze
+
       private
 
       def validate_approvals(data, snapshot)
-        valid = identity_fields_match?(data, snapshot) && boolean?(data['approved']) &&
+        valid = identity_fields_match?(data, snapshot) && approval_flags?(data) &&
                 %w[approvals_required approvals_left].all? { |key| !data.key?(key) || count?(data[key]) }
         raise Error, 'Malformed GitLab approval evidence.' unless valid
 
-        data
+        data.slice(*APPROVAL_FIELDS)
+      end
+
+      def approval_flags?(data)
+        boolean?(data['approved']) && APPROVAL_FLAGS.all? { |key| !data.key?(key) || boolean?(data[key]) }
       end
 
       def identity_fields_match?(data, snapshot)
@@ -25,11 +33,13 @@ module Shaka
                 data['rules'].is_a?(Array) && data['rules'].all? { |rule| approval_rule?(rule) }
         raise Error, 'Malformed GitLab approval-state evidence.' unless valid
 
-        data
+        data.slice('id', 'iid', 'project_id', 'approval_rules_overwritten')
+            .merge('rules' => data['rules'].map { |rule| rule.slice('id', 'approvals_required', 'approved') })
       end
 
       def approval_rule?(rule)
-        rule.is_a?(Hash) && count?(rule['approvals_required']) && boolean?(rule['approved'])
+        rule.is_a?(Hash) && count?(rule['approvals_required']) && boolean?(rule['approved']) &&
+          (!rule.key?('id') || positive_id?(rule['id']))
       end
 
       def boolean?(value) = [true, false].include?(value)

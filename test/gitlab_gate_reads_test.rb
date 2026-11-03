@@ -168,6 +168,19 @@ end
 class GitLabGateReadsTest < Minitest::Test
   include GitLabGateReadsHelper
 
+  def test_approval_packets_keep_only_gate_facts_without_mr_prose_or_unrelated_user_records
+    rules = [{ 'id' => 8, 'approvals_required' => 1, 'approved' => false }]
+    state = { 'approval_rules_overwritten' => false, 'rules' => rules }
+    raw_rule = rules.first.merge('name' => 'Rule label', 'users' => [{ 'name' => 'Unrelated user' }])
+    result = gates("#{MR_PATH}/approvals" => approvals('title' => 'Untrusted title',
+                                                       'description' => 'Untrusted instructions',
+                                                       'approved_by' => [{ 'user' => { 'name' => 'Unrelated user' } }]),
+                   "#{MR_PATH}/approval_state" => state.merge('rules' => [raw_rule]))
+             .call(head: HEAD, target: 'main')
+    assert_equal approvals, result.dig('approvals', 'data')
+    assert_equal state, result.dig('approval_state', 'data')
+  end
+
   def test_native_requirements_and_empty_pipelines_are_explicit_without_a_ready_verdict
     result = gates.call(head: HEAD, target: 'main')
     assert_equal({ 'availability' => 'available', 'value' => true },
@@ -212,7 +225,7 @@ class GitLabGateReadsTest < Minitest::Test
 
   def test_empty_or_malformed_approval_responses_do_not_become_satisfied_gates
     [{}, { 'approved' => 'true' }, approvals('approvals_left' => -1), approvals('iid' => 4),
-     approvals('project_id' => 8), approvals('id' => 92)].each do |value|
+     approvals('project_id' => 8), approvals('id' => 92), approvals('has_approval_rules' => 'false')].each do |value|
       result = gates("#{MR_PATH}/approvals" => value).call(head: HEAD, target: 'main')
       assert_equal({ 'availability' => 'unknown' }, result['approvals'])
     end
@@ -220,7 +233,7 @@ class GitLabGateReadsTest < Minitest::Test
 
   def test_rule_approval_state_preserves_unapproved_rule_instead_of_using_approved_by_as_a_gate
     state = { 'approval_rules_overwritten' => false,
-              'rules' => [{ 'id' => 8, 'name' => 'Maintainer', 'approvals_required' => 1, 'approved' => false }] }
+              'rules' => [{ 'id' => 8, 'approvals_required' => 1, 'approved' => false }] }
     result = gates("#{MR_PATH}/approval_state" => state).call(head: HEAD, target: 'main')
     assert_equal({ 'availability' => 'available', 'data' => state }, result['approval_state'])
   end
