@@ -20,6 +20,11 @@ $shaka Add CSV export to the orders page. Reuse the filters shown on screen.
 Go.
 ```
 
+Before coding, the agent explains the outcome, scope, and success criteria it
+understood, including assumptions that could change the result. Correct any mismatch
+in chat. Clear tasks can proceed without another approval; consequential questions
+still need your answer.
+
 ## Choose a merge policy
 
 | Policy | What happens |

@@ -37,10 +37,17 @@ module Shaka
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
-      lines.insert(1, *task, *root_cause(spec))
+      lines.insert(1, *task, *task_understanding(spec), *root_cause(spec))
       lines << HumanReview.render(spec['review_effort'], floor)
       lines.concat(ReviewFocusList.render(spec, pull), exclusions(spec['leaves_out']))
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
+    end
+
+    def task_understanding(spec)
+      return [] if spec['task_understanding'].nil?
+
+      body = PublicationText.required(spec['task_understanding'], 'intent task_understanding')
+      ["<details>\n<summary>Task as understood</summary>\n\n#{body}\n\n</details>"]
     end
 
     def root_cause(spec)
@@ -111,7 +118,7 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :scope, :exclusions, :diff_size,
+    private_class_method :intent, :task_understanding, :scope, :exclusions, :diff_size,
                          :verification,
                          :not_verified, :checks, :evidenced, :object
   end

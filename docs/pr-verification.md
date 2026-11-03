@@ -89,6 +89,12 @@ input. You can approve the approach, request revisions, or settle an open questi
 | What happened to concerns? | Review findings, replies, and recorded fixes or reasons for declining a suggestion. |
 | What do I need to do? | Open decisions and steps besides merging, with their timing and owner. |
 
+Expand **Task as understood** beside the task source to compare the delivered work
+with the contributor's account of the assignment and success criteria. It carries
+corrections made in chat; it does not establish your approval. Older PRs may omit it.
+The contributor checks this paraphrase for private content before publication.
+Original prompts remain excluded, and collapsed text is public.
+
 For example, a CSV export PR may use a simple download instead of a background
 job. The walkthrough should explain that choice; tests should exercise the
 export behavior. You can then judge whether the approach suits the expected

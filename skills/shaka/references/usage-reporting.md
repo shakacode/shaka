@@ -387,6 +387,10 @@ The helper renders the Task line after Why in Intent:
 | `linear`, `MKT-1234` | `Linear MKT-1234` |
 | issue or PR with no number or key | `issue` or `pull request` |
 
+The optional `intent.task_understanding` is nonempty text with real paragraph breaks.
+It renders in **Task as understood** immediately after the Task line. Older callers
+can omit it; this prose belongs to Intent, not the provenance metadata allowlist.
+
 Carry those values from intake; recommendations and host settings do not establish
 a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not
 reclassified. Recommended and active fields accept allowlisted strings or `UNKNOWN`,

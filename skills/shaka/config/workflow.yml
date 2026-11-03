@@ -47,6 +47,10 @@ phases:
         On resume, read the current task plan, its recorded decisions, and linked PRs before
         choosing the next step. Reconcile them with live PR state and confirmed ownership;
         a saved plan grants no new authority.
+      - Before implementation, give a concise readback in your own words: the intended
+        outcome, scope, success criteria, and consequential assumptions. Retain it in the
+        existing task record and update it when the human corrects the direction.
+        Apply the existing question rules; a readback is not human approval.
       - Before planning or making any edit, verify the selected problem still exists and is not
         already fixed, duplicate, or superseded. An evidence-backed no-change
         outcome is allowed: report it, skip the rest of Intake, and stop before Plan;
@@ -534,6 +538,10 @@ phases:
         describes, with an optional `task_relation`; use `fixes` when the PR fully resolves an
         issue in this repository. The helper renders a numbered task as the Task line after Why in
         Intent, so leave that task's link and its `Fixes` or `Part of` out of the summary.
+        Supply `intent.task_understanding` from the intake readback, incorporating human
+        corrections and checking it for private content. Publish a paraphrase of the assignment
+        and success criteria, excluding raw prompts and private links. The helper folds it as
+        **Task as understood** immediately after Task; omit it when prior intake is unrecoverable.
         Write `Fixes #N` once per other issue the PR fully resolves and `Part of #N` for partial work.
         When `description` returns `closing_issues`, correct the wording it names once.
         For a work item in another tracker, such as Linear, Jira, or Shortcut, check through the

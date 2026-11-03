@@ -18,6 +18,15 @@ version: 1
 # `rule` when that span does not read as a sentence on its own, as half of "Never A or B"
 # does not. A clause added to a sentence an entry already quotes is not detected either.
 rules:
+  - id: startup-task-readback
+    phase: intake
+    quote: >-
+      Before implementation, give a concise readback in your own words: the intended
+      outcome, scope, success criteria, and consequential assumptions.
+    enforced_by: agent
+    note: >-
+      The agent states and retains its interpretation. Ruby cannot verify understanding,
+      startup timing, human agreement, or whether a paraphrase contains private facts.
   - id: startup-review-before-implementation
     phase: plan
     quote: >-
