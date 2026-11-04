@@ -123,6 +123,7 @@ module Shaka
         verify_reviewed_target(first, target_sha)
         result = yield
         last = target_revision(project, target)
+        verify_reviewed_target(last, target_sha)
         result.merge('target_revision' => stable_target_revision(first, last))
       end
 

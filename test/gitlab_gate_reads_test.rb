@@ -126,6 +126,15 @@ class GitLabGateTargetRevisionTest < Minitest::Test
     assert_equal({ 'availability' => 'unavailable-access', 'http_status' => 403 }, result['target_revision'])
   end
 
+  def test_final_readable_target_mismatch_is_rejected_after_an_unavailable_first_read
+    route = lambda do |count|
+      count == 1 ? Failure.new(status: 403) : target_branch('commit' => { 'id' => 'd' * 40 })
+    end
+    assert_raises(Shaka::Error) do
+      gates(TARGET_PATH => route).call(head: HEAD, target: 'main', target_sha: TARGET_SHA)
+    end
+  end
+
   def test_requested_target_path_is_encoded_without_losing_branch_identity
     target = 'release/週+next'
     path = 'projects/7/repository/branches/release%2F%E9%80%B1%2Bnext'
