@@ -66,7 +66,8 @@ module Shaka
       def dirty
         # Without --no-optional-locks, status refreshes the index, and a read-only report must not write.
         changes = value('--no-optional-locks', 'status', '--porcelain', '--untracked-files=all').to_s
-        files = changes.lines.map { |line| line[3..].strip }
+        # The output arrives stripped, so the first line can lose its leading status column.
+        files = changes.lines.map { |line| line.lstrip.sub(/\A\S+\s+/, '').chomp }
         return if files.empty?
 
         finding('B3', "uncommitted files: #{listed(files)}",

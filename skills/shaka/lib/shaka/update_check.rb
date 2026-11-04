@@ -70,8 +70,7 @@ module Shaka
     def remember(result) = (Cache.record(@checkout, result) if @checkout && result['status'] != 'unknown')
 
     def result
-      return answer('uninstalled', 'Use the official installer to receive update guidance.') if
-        @source['kind'] == 'uninstalled'
+      return uninstalled if @source['kind'] == 'uninstalled'
       return development unless @source['kind'] == 'revision'
 
       @release ? pinned_release : compare(@source['repository'].to_s[GITHUB, 1])
@@ -96,8 +95,7 @@ module Shaka
     def compare(repository)
       return unsupported_source unless supported?(repository)
 
-      official = repository.casecmp?('shakacode/shaka') && @branch == 'main'
-      @target = official ? 'official main' : "#{repository} #{@branch}"
+      @target = "#{repository} #{@branch}"
       head = checkout_head
       head == recorded || pulled?(head) ? github(repository, head) : not_a_pull(head)
     end
@@ -138,7 +136,7 @@ module Shaka
 
     def git(*arguments) = @runner.call(['git', '-C', @checkout, *arguments], @checkout)
 
-    # Only an upstream lag waits for the notice threshold; a moved checkout needs action now.
+    # Only a lag behind the registered branch waits for the notice threshold; a moved checkout needs action now.
     def comparison(response, head)
       ahead_by = response['ahead_by']
       case response['status']

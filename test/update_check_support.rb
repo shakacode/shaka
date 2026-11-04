@@ -11,15 +11,18 @@ module UpdateCheckSupport
   SOURCE = { 'kind' => 'revision', 'revision' => SHA,
              'repository' => 'https://github.com/shakacode/shaka.git' }.freeze
   DEFAULTS = { source: SOURCE, branch: 'main', checkout: CHECKOUT, ahead_by: 3, head: SHA, github: nil,
-               published: ['', '', true], pulled: ['', '', true] }.freeze
+               published: ['', '', true], pulled: ['', '', true], registered: nil }.freeze
 
   def check(status, **options)
     @options = DEFAULTS.merge(options)
     @calls = []
     @github = @options[:github] || [JSON.generate({ 'status' => status, 'ahead_by' => @options[:ahead_by],
                                                     'oldest' => '2020-01-01T00:00:00Z' }), '', true]
-    Shaka::UpdateCheck.new(source: @options[:source], branch: @options[:branch], checkout: @options[:checkout],
-                           helper: '/installed path/scripts/shaka', runner: method(:answer)).result
+    registered = @options[:registered]
+    # The real lookup reads this machine's home, so tests name the registered helper themselves.
+    offline = Class.new(Shaka::UpdateCheck) { define_method(:registered_helper) { registered } }
+    offline.new(source: @options[:source], branch: @options[:branch], checkout: @options[:checkout],
+                helper: '/installed path/scripts/shaka', runner: method(:answer)).result
   end
 
   def answer(argv, directory)

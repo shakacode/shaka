@@ -28,7 +28,7 @@ module HealthyInstallScenarios
 
   def build_a8
     trial = File.join(@home, '.local/share/shaka/pr-trials')
-    FileUtils.mkdir_p(File.join(trial, '123-example'))
+    FileUtils.mkdir_p(File.join(trial, 'installs', "0.1.0-#{'a' * 64}-#{'b' * 64}"))
     { from: @root, location: trial, next: nil }
   end
 
