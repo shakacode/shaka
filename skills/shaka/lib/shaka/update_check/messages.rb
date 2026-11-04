@@ -25,10 +25,11 @@ module Shaka
                               "Run #{registered} update-check for update guidance.", 'unregistered_copy')
       end
 
-      # The registered helper install --status names for this copy (A9); nil when host links use this copy.
+      # The registered helper install --status names for this copy (A9). Nil when host links use this copy,
+      # or when unsafe file modes (B10), which status reports first, make that helper unsafe to run.
       def registered_helper
         healthy = Install::StatusHealthy.new(Install::StatusInventory.new(source: ROOT, home: Dir.home))
-        healthy.primary.helper if healthy.unregistered_helper
+        healthy.primary.helper if healthy.unregistered_helper && healthy.primary.safe?
       rescue ArgumentError, SystemCallError
         nil
       end

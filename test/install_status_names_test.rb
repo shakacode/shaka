@@ -46,6 +46,17 @@ class InstallStatusNamesTest < Minitest::Test
     assert_equal ['uninstalled', nil], result.values_at('status', 'reason')
   end
 
+  # Status reports unsafe file modes before A9, so update-check never recommends that checkout's helper.
+  def test_update_check_names_no_helper_from_an_unsafe_registered_checkout
+    root = default_install
+    clone = clone_to(File.join(@directory, 'second clone'))
+    File.chmod(0o777, File.join(root, 'skills'))
+    result = update_check(clone)
+    assert_equal ['uninstalled', nil], result.values_at('status', 'reason')
+  ensure
+    File.chmod(0o755, File.join(root, 'skills')) if root
+  end
+
   private
 
   # The fixture helper is a stub, so the clone runs this repository's real helper; that also proves its

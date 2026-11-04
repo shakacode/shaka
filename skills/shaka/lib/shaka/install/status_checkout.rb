@@ -39,6 +39,9 @@ module Shaka
         false
       end
 
+      # The file-mode checks alone, with no Git read, for a caller about to recommend this checkout's helper.
+      def safe? = unsafe.nil? && unsafe_files.nil?
+
       # Git reads a writable checkout's config, which can name commands to run, so an unsafe
       # checkout gets no Git read at all, as the installer refuses it before any Git command.
       def findings
