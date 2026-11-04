@@ -12,7 +12,7 @@ class OfficialDevelopmentUseTest < Minitest::Test
     refute_predicate status, :success?
     assert_includes output, 'linked worktrees'
     assert_includes output, 'local branches: feature'
-    assert_includes output, '--directory ~/.local/share/shaka/source'
+    assert_includes output, "--directory #{File.join(@home, '.local/share/shaka/source')}"
     refute_includes output, '--take-over'
     refute File.symlink?(@destination)
   end
@@ -24,7 +24,7 @@ class OfficialDevelopmentUseTest < Minitest::Test
       output, status = invoke('--directory', worktree, *flags)
       refute_predicate status, :success?
       assert_includes output, 'is a linked worktree of'
-      assert_includes output, 'git clone '
+      assert_includes output, 'Install from a separate clone. Next: '
     end
     refute File.symlink?(@destination)
   end

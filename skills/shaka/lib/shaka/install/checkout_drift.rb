@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'shellwords'
+require_relative 'refusal'
 
 module Shaka
   module Install
@@ -37,7 +38,24 @@ module Shaka
 
         return "#{detail} Run #{Shellwords.escape(helper)} install --update to record it." if pulled?
 
-        "#{detail} It must match #{@repository} #{@branch}; keep local commits in a separate development checkout."
+        "#{detail} It must match #{Refusal.url(@repository)} #{@branch}. Next: #{drift_step}"
+      end
+
+      # The same steps install --status gives: catch up a checkout that is behind, or keep local commits on
+      # a branch, which an earlier attempt may already have made, and return to the record. reset --keep
+      # refuses rather than overwrite an edited file.
+      def drift_step
+        recorded = @record['revision']
+        return Refusal.command('git', '-C', @root, 'merge', '--ff-only', recorded) if ancestor?(revision, recorded)
+
+        name = "kept-#{git('rev-parse', '--short', 'HEAD')}"
+        kept = begin
+          git('rev-parse', '--verify', '--quiet', "refs/heads/#{name}")
+        rescue ArgumentError
+          nil
+        end
+        keep = "#{Refusal.command('git', '-C', @root, 'branch', name)} && " unless kept == revision
+        "#{keep}#{Refusal.command('git', '-C', @root, 'reset', '--keep', recorded)}"
       end
 
       def helper = File.join(@root, 'skills/shaka/scripts/shaka')

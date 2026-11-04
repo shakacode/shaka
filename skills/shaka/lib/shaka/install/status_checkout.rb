@@ -5,7 +5,6 @@ require_relative 'official'
 require_relative 'status_git'
 require_relative 'status_revision'
 require_relative 'checkout_development'
-require_relative 'settings_location'
 require_relative 'status_modes'
 require_relative 'status_states'
 
@@ -113,25 +112,6 @@ module Shaka
         finding('C3', "source checkout is also used for development (#{uses.join('; ')})", **development_step)
           .merge('rank' => 'C3-development')
       rescue ArgumentError
-        nil
-      end
-
-      # --take-over cannot move the hosts to the checkout they already use, and an occupied default
-      # location gets the same answer the installer gives for it.
-      def development_step
-        home = Dir.home
-        if @root == real(SettingsLocation.default_directory(home))
-          return { decision: 'Move these worktrees and branches to a separate development clone; this checkout ' \
-                             'already sits where a fresh Shaka checkout would go.' }
-        end
-
-        command = SettingsLocation.take_over(@root, home, @record)
-        command ? { command: } : { decision: SettingsLocation.decision(home) }
-      end
-
-      def real(path)
-        File.realpath(path)
-      rescue SystemCallError
         nil
       end
 

@@ -27,12 +27,14 @@ module Shaka
       RECORD = Locations::RECORD
       attr_reader :root, :record, :repository, :release
 
-      def initialize(directory, repository: nil, branch: nil, release: nil)
+      # fresh_install is the installer's command for these selections in the default location.
+      def initialize(directory, repository: nil, branch: nil, release: nil, fresh_install: nil)
         @root = File.expand_path(directory)
         @root = File.realpath(@root) if File.directory?(@root)
         @repository = repository
         @branch = branch
         @release = release
+        @fresh_install = fresh_install
       end
 
       def prepare(action)

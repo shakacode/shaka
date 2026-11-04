@@ -30,10 +30,12 @@ module Shaka
         @names = options.fetch(:names).uniq
         refuse_settings_location(selected, source, options)
         @owner = owning_checkout(selected, options[:skills_dir], registered_source(source)) if options[:take_over]
-        @checkout = Checkout.new(selected, **source_options(options))
+        @source = source
+        @checkout = Checkout.new(selected, **source_options(options), fresh_install: fresh_command(source, options))
       end
 
       def run(action)
+        refuse_unregistered(action)
         @checkout.prepare(action)
         @checkout.check_development_use(action)
         return verify(targets_for(action)) if action == :verify
@@ -83,8 +85,6 @@ module Shaka
       def switch_links(links)
         links.each { |entry| entry.switch_all(@checkout.root) }
       end
-
-      def registered_source(source) = (source if File.file?(File.join(source, '.git', Checkout::RECORD)))
 
       def targets_for(_action)
         recorded = @checkout.record&.fetch('targets') || []
