@@ -16,7 +16,8 @@ module Shaka
     TIMES = %w[t0 t1 t2 t3].freeze
     BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\n\*\*This head:\*\* [^\r\n]+(?=\r?\n|\z)/
     HEADER = /^(🤖 [^\r\n]*?) - AI spend: [^\r\n]*/
-    COST = /^(\*\*Estimated (?:token costs|cost):\*\* [^\r\n·]+?)(?: · (?:ready|merged) in [^\r\n]*)?(?=\r?\n|\z)/
+    COST = /^(\*\*Estimated\ (?:token\ costs|cost):\*\*\ [^\r\n·]+?)
+            (?:\ ·\ (?:(?:ready|merged)\ in\ [^\r\n]*|ready\ pending))?(?=\r?\n|\z)/x
 
     def self.state(content, timeline = nil, pull = nil) = publish_state(content, timeline || {}, pull)
 
