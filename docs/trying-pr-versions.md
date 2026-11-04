@@ -13,9 +13,10 @@ on this task: fix the search bug in /path/to/my/project.
 Prepare a pinned trial and give me the prompt for a fresh chat.
 ```
 
-Replace the PR, project, and task. The agent gives you a prompt for a **new chat**
-in the project. The trial is pinned to one revision outside your project;
-your normal installation and existing tasks keep their versions.
+Replace the candidate PR, project, and task. The preparation command copies the
+selected revision outside your project and returns a skill path and startup
+prompt. Paste that prompt into a **new chat** in the project. Your normal Shaka
+installation and existing tasks keep their selected versions.
 
 Each task uses one candidate at one exact revision. If the candidate changes,
 prepare another trial for its new revision. To return to your normal version,
@@ -23,15 +24,15 @@ start another chat with your usual Shaka invocation.
 
 ## Keep the project's settings
 
-The trial keeps your project's checks, reviewers, and merge policy. It does not
-migrate settings. If the candidate needs a new setting, the agent explains the
-incompatibility before following the normal configuration procedure.
+The trial uses the project's trusted configuration, checks, reviewers, and merge
+policy. It does not migrate settings. If the candidate needs a new setting, the
+agent explains the incompatibility and follows the usual configuration procedure.
+For example, a writing-style trial may need an existing repository style file;
+selecting its Shaka PR does not create or authorize that file.
 
 ## Share what happened
 
-The result PR names the exact Shaka revision tested. Check that record before
-reporting the trial.
-
+Keep the tested Shaka revision in the resulting project PR's workflow provenance.
 After trying the change, ask your agent:
 
 ```text
@@ -41,10 +42,15 @@ or drop. Review the summary for private details before publishing.
 ```
 
 For private work, authorize a public-safe summary with no project link or private
-context. You and the agent still inspect the report for confidential content;
-the link checks do not scan all prose. Ask the preparation chat to publish it.
-Reporting a trial requires no permission to manage labels. The maintainer
-decides whether to merge; a trial report grants no merge authority.
+context. The reporting command checks each github.com/OWNER/REPO link, rejects
+private or unverifiable repositories, and refuses any other mention of github.com; you and your agent still review prose and other links for confidentiality.
+Ask the agent that prepared the trial to publish your verified, public-safe report.
+
+Maintainers apply the existing `eval-required` label before asking for volunteers.
+Testers can report without permission to manage labels.
+A few linked examples and keep/revise/drop recommendations can inform adoption.
+They are anecdotes, and the maintainer still decides whether to merge. Neither a
+report nor a vote grants merge authority.
 
 Use a trial to learn from real work, not to claim that the candidate beats the
 normal version. If adoption depends on that comparison, choose a

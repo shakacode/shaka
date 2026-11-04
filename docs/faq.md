@@ -4,7 +4,7 @@
 
 Pick a small bug or improvement in a project you know. Follow [Start here](getting-started.md)
 to install Shaka, ask the agent to configure the repository, and run your task.
-[Working with Shaka](working-with-shaka.md) has prompts for planning, feedback, and review.
+[Working with Shaka](working-with-shaka.md) explains the PR you get and your merge decision.
 
 ## Do I need to write configuration by hand?
 
@@ -21,7 +21,7 @@ $shaka <task or issue link>
 Set up Shaka just for me. Go.
 ```
 
-Settings stay out of commits. See [individual setup](expected-experience.md#individual-setup).
+Settings stay out of commits. See [individual support and acceptance gaps](expected-experience.md#individual-setup).
 With team settings, local choices do not override them. You can explicitly
 [select a settings PR](settings.md#preview-settings-before-adopting-them) for one task.
 Trying a different Shaka implementation is separate: see [try a Shaka PR](trying-pr-versions.md).
@@ -117,8 +117,12 @@ New installs put the Shaka source in `~/.local/share/shaka/source`. That
 checkout is not configuration, and you never edit it. Your settings live in
 each project's `.agents/shaka/` folder and in `~/.agents/trusted-github-actors.yml`.
 
-If the installation is missing or points at an old location, ask `$shaka doctor`.
-For recovery without the skill, use the [manual status check](manual-installation.md#verify-and-update).
+Older installs used `~/.agents/shaka`, which looked like settings. The installer
+now refuses that location and prints one command that clones Shaka into the new
+default and moves your skill links there. Run it, then delete the old checkout.
+If the new default already holds something else, the message says what to move
+aside first.
+`install --status` names the same command.
 
 ## Where do I put project rules?
 
@@ -129,16 +133,33 @@ For recovery without the skill, use the [manual status check](manual-installatio
 | What the local reviewer looks for and how it reports | [`review.replacement_prompt_file`](settings.md#reviewreplacement_prompt_file), replacing Shaka's defaults |
 | Changes to Shaka's workflow | A [fork of Shaka](fork-and-hack.md) |
 
-For Claude Code, a `CLAUDE.md` containing `@AGENTS.md` gives it the same project
-instructions. Shaka's reviewer reads trusted `AGENTS.md` independently.
+Shaka reads `AGENTS.md` from Git at the trusted commit. When `AGENTS.md` is a
+symlink to another file in the repository, such as `CLAUDE.md`, Shaka reads that
+file at the same commit. Claude Code is a separate case: recent versions can read
+`AGENTS.md` directly, but not in every session, and not by default when a
+`CLAUDE.md` exists. To give Claude the same instructions every time, add a
+`CLAUDE.md` containing `@AGENTS.md`. See Claude Code's
+[AGENTS.md support](https://code.claude.com/docs/en/memory#agents-md).
 
 ## Can I customize the prompt Shaka gives its local reviewer?
 
-Ask the agent to add your criteria, such as preserving compatibility with an
-older public API. [Custom instructions](settings.md#reviewcustom_instructions_file)
-add to Shaka's defaults. [Replacement prompts](settings.md#reviewreplacement_prompt_file)
-replace them; start from a copy so you can choose what to remove. Local-review
-prompts do not configure hosted CI reviews.
+Yes. Write your own rules in `.agents/shaka/instructions/review.md`. Shaka adds them
+after its [default instructions](../skills/shaka/config/review-prompt.md), so you keep
+Shaka's rules and add yours; [`review.custom_instructions_file`](settings.md#reviewcustom_instructions_file)
+names another file. To remove one of Shaka's rules instead, set
+[`review.replacement_prompt_file`](settings.md#reviewreplacement_prompt_file) to a copy of the
+default instructions, or set `replacement_prompt_file` on one agent's entry in
+`local_review_agents`. Paths are relative to the repository root.
+
+With shared settings, Shaka reads the default-branch version, so a PR that edits it
+is reviewed with the current version. With individual setup, keep the file in
+`.agents/shaka/`, where it stays out of commits.
+Criteria in `AGENTS.md` still apply on top of the prompt file.
+The prompt file configures local reviews; a CI review job takes its prompt from
+its own workflow.
+
+The [settings reference](settings.md#reviewreplacement_prompt_file) explains which instructions
+apply and links the review protocol.
 
 ## Can a PR change Shaka's settings or rules for itself?
 
@@ -153,9 +174,9 @@ for experiments. A fork PR cannot choose its own review rules. See
 
 ## What is a checkpoint?
 
-A checkpoint assesses whether the change solves the problem and is worth
-maintaining. Use its [recommendation and evidence](pr-verification.md#checkpoint)
-to decide what happens next.
+It helps the task owner choose what to do next. See the
+[checkpoint guide](pr-verification.md#checkpoint) for its terms,
+how it differs from the code walkthrough, and current report labels.
 
 ## Can I hide my checkout path while keeping the chat locator?
 

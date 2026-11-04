@@ -57,7 +57,7 @@ not fresh verification of that PR.
 
 Inspect the source captures and final annotation for private data, unrelated
 screen content, error pages, and loading placeholders before publication.
-Follow the [capture upload procedure](ui-verification.md#publish-ui-evidence),
+Follow the [capture upload procedure](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md#show-what-a-person-will-see),
 then read the comment back to confirm uploaded URLs. After a material change,
 refresh affected captures, annotations, and any diagnostic images, or explain
 which evidence remains applicable.
