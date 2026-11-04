@@ -5,6 +5,7 @@ require_relative 'install_scenario_support'
 # Each installer refusal ends with a next command that clears it, or says a person must decide.
 class InstallRefusalNextStepTest < Minitest::Test
   include InstallScenarioSupport
+  include InstallRefusalSteps
 
   def test_a_writable_checkout_names_the_chmod_that_clears_it
     root = default_install
@@ -44,67 +45,5 @@ class InstallRefusalNextStepTest < Minitest::Test
     output = refusal(default_install, '--branch', 'mian')
     refute_includes output, 'switch mian'
     assert_includes output, 'Next: a person must decide'
-  end
-
-  def test_a_default_checkout_with_a_merged_worktree_clears_it_with_printed_commands
-    root = default_install
-    git('-C', root, 'worktree', 'add', '-q', File.join(@directory, 'feature'))
-    step = refused(root)
-    refute_includes step, '--take-over'
-    assert_includes step, 'worktree remove'
-    report = status(root)
-    assert_equal step, report['next_command']
-    run_next(report, 'C3')
-    assert_equal 'ok', status(root)['severity']
-  end
-
-  # The B2 step keeps local commits on a branch, which then needs a person, not a failing take-over.
-  def test_a_default_checkout_with_unmerged_work_names_it_for_a_person
-    root = default_install
-    commit(root, 'local change')
-    run_next(status(root), 'B2')
-    report = status(root)
-    assert_equal 'C3', report['state']
-    assert_nil report['next_command']
-    assert_match(/a person must decide .*kept-/, report['decision'])
-  end
-
-  def test_installing_a_switched_branch_at_the_default_path_clears_the_old_branch
-    root = clone_to(default_path)
-    git('-C', root, 'switch', '-q', '-c', 'feature')
-    git('-C', root, 'push', '-qu', 'origin', 'feature')
-    flags = ['--directory', root, '--repository', @remote, '--branch', 'feature']
-    step = refused(root, *flags)
-    assert_includes step, 'branch -d main'
-    run_step(step)
-    installer(root, *flags)
-  end
-
-  private
-
-  def installer(root, *)
-    output, process = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), *)
-    assert_predicate process, :success?, output
-    output
-  end
-
-  def refusal(root, *)
-    output, process = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), *)
-    refute_predicate process, :success?, output
-    output
-  end
-
-  # The command after the last "Next: ", which every installer refusal ends with.
-  def refused(root, *)
-    output = refusal(root, *)
-    step = output[/.*Next: (.+?)\.?\s*\z/m, 1]
-    refute_nil step, output
-    refute_match(/\Aa person must decide/, step, output)
-    step
-  end
-
-  def run_step(step)
-    output, process = Open3.capture2e(environment, 'sh', '-c', step)
-    assert_predicate process, :success?, output
   end
 end

@@ -73,21 +73,22 @@ module Shaka
       end
 
       def held_work(worktrees, branches)
-        unmerged = branches.reject { |name| merged?(name) }
-        held = unmerged.map { |name| "the commits only branch #{name} holds" }
-        worktrees.each do |entry|
-          held << "locked worktree #{entry[:path]}" if entry[:locked]
-          held << "the uncommitted files in #{entry[:path]}" if changed?(entry[:path])
-          held << "the commits only detached worktree #{entry[:path]} holds" if stranded?(entry)
-        end
-        held
+        branches.reject { |name| merged?(name) }.map { |name| "the commits only branch #{name} holds" } +
+          worktrees.flat_map { |entry| worktree_holds(entry) }
+      end
+
+      def worktree_holds(entry)
+        path = entry[:path]
+        { "locked worktree #{path}" => entry[:locked], "the uncommitted files in #{path}" => changed?(path),
+          "the commits only detached worktree #{path} holds" => stranded?(entry),
+          "the submodules in #{path}" => submodules?(path) }.select { |_held, found| found }.keys
       end
 
       # git branch -d accepts a branch merged into the remote branch it tracks, or into HEAD when it has none.
       def merged?(name) = ancestor?("refs/heads/#{name}", tracked(name) || 'HEAD')
 
       def tracked(name)
-        git('rev-parse', '--verify', '--quiet', "refs/heads/#{name}@{upstream}")
+        git('rev-parse', '--verify', '--quiet', "#{name}@{upstream}")
       rescue ArgumentError
         nil
       end
@@ -98,6 +99,9 @@ module Shaka
       rescue ArgumentError
         true
       end
+
+      # git worktree remove refuses a worktree whose index holds a submodule.
+      def submodules?(path) = git('-C', path, 'ls-files', '--stage').match?(/^160000 /)
 
       def stranded?(entry)
         entry[:detached] &&
