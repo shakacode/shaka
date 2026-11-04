@@ -24,11 +24,15 @@ class PublicationIntentVerificationTest < Minitest::Test
   end
 
   # https://github.com/shakacode/shaka/issues/777: a line saying no claim went unproven told the reader nothing.
-  def test_not_verified_appears_only_for_a_claim_that_went_unproven
+  # https://github.com/shakacode/shaka/issues/999: a folded line made the reader open the fold to find a gap.
+  def test_not_verified_appears_visibly_only_for_a_claim_that_went_unproven
     refute_includes render, '**Not verified:**'
 
     gap = 'The live rate limit was not triggered; the test replays its stderr.'
-    assert_includes render('verification' => VERIFICATION.merge('not_verified' => gap)), "**Not verified:** #{gap}"
+    limits = VERIFICATION.merge('not_verified' => gap, 'merge_limitations' => 'No live merge.')
+    visible, folded = render('verification' => limits).split('<summary>Evidence and limitations</summary>')
+    assert_operator visible.index("**Not verified:** #{gap}"), :<, visible.index('**Merge limitations:**')
+    assert_includes folded, VERIFICATION['checks'].first
   end
 
   def test_intent_and_verification_follow_the_links_and_precede_every_section
@@ -105,8 +109,6 @@ class PublicationIntentVerificationTest < Minitest::Test
                       'verification' => { 'checks' => [], 'not_verified' => 'Validation has not run yet.' })
 
     assert_includes rendered, '**Not verified:** Validation has not run yet.'
-    assert_operator rendered.index('<summary>Evidence and limitations</summary>'), :<,
-                    rendered.index('**Not verified:**')
   end
 
   def test_one_to_three_checks_are_allowed
