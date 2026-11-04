@@ -25,9 +25,10 @@ module Shaka
                               "Run #{registered} update-check for update guidance.", 'unregistered_copy')
       end
 
-      # The helper of the registered checkout the host links use, as install --status names it.
+      # The registered helper install --status names for this copy (A9); nil when host links use this copy.
       def registered_helper
-        Install::StatusHealthy.new(Install::StatusInventory.new(source: ROOT, home: Dir.home)).primary&.helper
+        healthy = Install::StatusHealthy.new(Install::StatusInventory.new(source: ROOT, home: Dir.home))
+        healthy.primary.helper if healthy.unregistered_helper
       rescue ArgumentError, SystemCallError
         nil
       end
