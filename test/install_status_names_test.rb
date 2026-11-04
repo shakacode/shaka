@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'install_scenario_support'
+require_relative '../skills/shaka/lib/shaka/install/status_checkout'
 
 # What install status and update-check name: changed files, PR trials, and the registered installation.
 class InstallStatusNamesTest < Minitest::Test
@@ -55,6 +56,17 @@ class InstallStatusNamesTest < Minitest::Test
     assert_equal ['uninstalled', nil], result.values_at('status', 'reason')
   ensure
     File.chmod(0o755, File.join(root, 'skills')) if root
+  end
+
+  # A skill listing that fails is not proof the files are safe, so the helper is not recommended.
+  def test_a_checkout_whose_files_cannot_be_listed_is_not_safe
+    root = default_install
+    checkout = Class.new(Shaka::Install::StatusCheckout) do
+      define_method(:skill_paths) { |_skills| raise Errno::EACCES, 'skills' }
+    end
+    record = JSON.parse(File.read(File.join(root, '.git/shaka-install.json')))
+    refute_predicate checkout.new(File.realpath(root), record), :safe?
+    assert_predicate Shaka::Install::StatusCheckout.new(File.realpath(root), record), :safe?
   end
 
   private
