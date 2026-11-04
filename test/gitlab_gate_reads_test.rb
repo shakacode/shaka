@@ -168,6 +168,13 @@ class GitLabGateStabilityTest < Minitest::Test
     assert_raises(Shaka::Error) { gates(PROJECT_PATH => route).call(head: HEAD, target: 'main') }
   end
 
+  def test_requirements_first_changed_at_the_final_mr_snapshot_are_rejected
+    route = lambda do |count|
+      project('only_allow_merge_if_pipeline_succeeds' => count >= 6)
+    end
+    assert_raises(Shaka::Error) { gates(PROJECT_PATH => route).call(head: HEAD, target: 'main') }
+  end
+
   def test_native_head_pipeline_replacement_cannot_leave_old_pipeline_evidence_current
     route = ->(count) { count == 1 ? merge_request : merge_request('head_pipeline' => pipeline) }
     assert_raises(Shaka::Error) { gates(MR_PATH => route).call(head: HEAD, target: 'main') }

@@ -174,13 +174,15 @@ module Shaka
       def call(head:, target:, target_sha: nil)
         raise Error, 'Expected a full target commit SHA.' unless target_sha.nil? || commit?(target_sha)
 
-        @mr.stable_read(head:, target:, verify: method(:verify_final_context)) do |snapshot|
-          project = @client.project
+        project = @client.project
+        packet = @mr.stable_read(head:, target:, verify: method(:verify_final_context)) do |snapshot|
           with_target_revision(project, target, target_sha) do
             collect(snapshot, project, head)
               .tap { verify_native_context(snapshot, project) }
           end
         end
+        verify_project_requirements(project)
+        packet
       end
 
       private
@@ -196,11 +198,14 @@ module Shaka
       end
 
       def verify_native_context(snapshot, project)
-        current = @client.project
-        unless project.slice('id', *REQUIREMENTS) == current.slice('id', *REQUIREMENTS) &&
-               native_context(snapshot) == native_context(@mr.snapshot)
-          raise Error, 'GitLab requirements or native head-pipeline context changed during the read.'
-        end
+        verify_project_requirements(project)
+        verify_final_context(snapshot, @mr.snapshot)
+      end
+
+      def verify_project_requirements(project)
+        return if project.slice('id', *REQUIREMENTS) == @client.project.slice('id', *REQUIREMENTS)
+
+        raise Error, 'GitLab project requirements changed during the read.'
       end
 
       def native_context(snapshot)
