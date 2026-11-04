@@ -27,6 +27,7 @@ class PublicationIntentVerificationTest < Minitest::Test
   # https://github.com/shakacode/shaka/issues/999: a folded line made the reader open the fold to find a gap.
   def test_not_verified_appears_visibly_only_for_a_claim_that_went_unproven
     refute_includes render, '**Not verified:**'
+    refute_includes render('verification' => VERIFICATION.merge('merge_limitations' => 'Nothing.')), 'Merge limitations'
 
     gap = 'The live rate limit was not triggered; the test replays its stderr.'
     limits = VERIFICATION.merge('not_verified' => gap, 'merge_limitations' => 'No live merge.')

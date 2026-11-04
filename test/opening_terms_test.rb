@@ -106,8 +106,8 @@ class OpeningTermsTest < Minitest::Test
                  Shaka::OpeningProse.call('intent' => intent, 'verification' => verification).lines(chomp: true)
   end
 
-  def test_visible_prose_skips_a_not_verified_line_the_description_omits
-    verification = { 'not_verified' => 'Nothing.', 'checks' => ['Ran `bin/test`.'] }
-    refute_includes Shaka::OpeningProse.call('intent' => {}, 'verification' => verification), 'Not verified'
+  def test_visible_prose_skips_gap_lines_the_description_omits
+    verification = { 'not_verified' => ' Nothing. ', 'merge_limitations' => 'nothing', 'checks' => ['Ran `bin/test`.'] }
+    assert_equal '', Shaka::OpeningProse.call('intent' => {}, 'verification' => verification)
   end
 end

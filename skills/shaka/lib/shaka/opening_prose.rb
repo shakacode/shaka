@@ -19,10 +19,11 @@ module Shaka
       lines.filter_map { |label, text| "#{label}: #{text}" unless text.to_s.strip.empty? }.join("\n")
     end
 
-    # The description omits a Not verified line that reports nothing unproven, so the check skips it too.
+    # The description omits a gap line that reports nothing, so the check skips it too.
     def verification_lines(spec)
-      unproven = spec['not_verified'] unless spec['not_verified'].to_s.strip.match?(IntentVerification::PROVED)
-      [['Verification', spec['summary']], ['Not verified', unproven], ['Merge limitations', spec['merge_limitations']]]
+      gaps = { 'Not verified' => 'not_verified', 'Merge limitations' => 'merge_limitations' }
+      [['Verification', spec['summary']],
+       *gaps.filter_map { |label, key| [label, spec[key]] unless IntentVerification.proved?(spec[key]) }]
     end
   end
 end

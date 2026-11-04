@@ -81,13 +81,15 @@ module Shaka
     # The agent still answers, but a reader learns nothing from being told no claim went unproven.
     PROVED = /\Anothing\.?\z/i
 
+    def proved?(text) = text.to_s.strip.match?(PROVED)
+
     def not_verified(value)
       text = PublicationText.single_line(value, 'verification not_verified')
-      text.match?(PROVED) ? [] : ["**Not verified:** #{text}"]
+      proved?(text) ? [] : ["**Not verified:** #{text}"]
     end
 
     def merge_limitations(value)
-      return [] if value.nil?
+      return [] if value.nil? || proved?(value)
 
       ["**Merge limitations:** #{PublicationText.single_line(value, 'verification merge_limitations')}"]
     end
