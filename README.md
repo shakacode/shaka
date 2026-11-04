@@ -65,9 +65,10 @@ See [review safety](docs/workflow.md#trust-model).
 
 ## Make it work for your team
 
-Shaka uses your coding agent and your repository's checks. You can choose
-reviewers and merge preferences for each project. Shaka itself is free;
-you pay for the agents and services you use.
+Shaka uses your coding agent and your repository's checks. You can configure
+local AI reviewer models, efforts, and prompts for each project. You can also
+choose its merge preference. Shaka itself is free; you pay for the agents and
+services you use.
 
 [ShakaCode](https://www.shakacode.com) can help customize the Shaka skill to
 improve your development team's efficiency.
