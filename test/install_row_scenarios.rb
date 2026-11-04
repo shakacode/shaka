@@ -52,18 +52,21 @@ module UnlistedRowScenarios
       end
   end
 
-  # Installer output only; update-check's guidance still names "official main" (#687).
+  # Installer output only; update-check guidance still names 'official main' (#687).
   def build_row_e2
     root = clone_to(default_path)
     git('-C', root, 'remote', 'set-url', 'origin', InstallScenarioSupport::OFFICIAL)
-    install_output, = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), '--directory', root)
+    outputs = [succeeded(install_from(root))]
     pull(root)
-    status_output, = run_status(root)
-    refusal, = second_install
-    [install_output, status_output, refusal].each { |output| refute_match RETIRED, output }
+    outputs << succeeded(run_status(root))
+    refusal, process = second_install
+    refute_predicate process, :success?
+    assert_includes refusal, 'Refusing existing destination'
+    (outputs << refusal).each { |output| refute_match RETIRED, output }
   end
 
-  # The settings layout from before 1.0 is refused by name, not read.
+  # A repository with only the settings layout from before 1.0 has no settings: seam check stops and
+  # names the file it needs. It does not name the old layout or a command that converts it.
   def build_row_e3
     repository = File.join(@directory, 'old layout')
     FileUtils.mkdir_p(File.join(repository, '.agents/bin'))
@@ -76,9 +79,16 @@ module UnlistedRowScenarios
 
   def second_install
     default_install unless File.directory?(default_path)
-    second = clone_to(File.join(@directory, 'second clone'))
-    Open3.capture2e(environment, RbConfig.ruby, File.join(second, 'bin/install'), '--directory', second,
-                    '--repository', @remote)
+    install_from(clone_to(File.join(@directory, 'second clone')), '--repository', @remote)
+  end
+
+  def install_from(root, *)
+    Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), '--directory', root, *)
+  end
+
+  def succeeded((output, process))
+    assert_predicate process, :success?, output
+    output
   end
 
   # The fixture helper is a stub, so update-check needs the real skill pushed to the fixture remote.
