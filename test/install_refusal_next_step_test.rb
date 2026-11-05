@@ -70,6 +70,18 @@ class InstallRefusalNextStepTest < Minitest::Test
                  File.realpath(File.join(@home, '.claude/skills/shaka'))
   end
 
+  # When origin's history was rewritten, which history to keep is a person's choice, as status says.
+  def test_a_rewritten_origin_needs_a_person
+    root = default_install
+    commit(@root, 'rewritten', amend: true)
+    git('-C', @root, 'push', '--force', '-q', 'origin', 'main')
+    git('-C', root, 'fetch', '-q', @remote, '+main:refs/remotes/origin/main')
+    git('-C', root, 'reset', '-q', '--hard', 'origin/main')
+    output = refusal(root, '--verify')
+    refute_includes output, 'reset --keep'
+    assert_includes output, 'Next: a person must decide which revision main should use'
+  end
+
   def test_a_missing_branch_needs_a_person
     output = refusal(default_install, '--branch', 'mian')
     refute_includes output, 'switch mian'

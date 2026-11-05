@@ -75,15 +75,20 @@ module Shaka
       end
 
       def held_work(worktrees, branches)
-        branches.reject { |name| merged?(name) }.map { |name| "the commits only branch #{name} holds" } +
+        branches.reject { |name| merged?(name) }.map { |name| "the unmerged commits on branch #{name}" } +
           worktrees.flat_map { |entry| worktree_holds(entry) }
       end
 
+      # Git reads a worktree's config and attributes, which can name commands, so a folder the directory
+      # check refuses, or one that is gone, gets no Git read and goes to a person.
       def worktree_holds(entry)
         path = entry[:path]
+        verify_safe_directory(path, 'Linked worktree')
         { "locked worktree #{path}" => entry[:locked], "the uncommitted files in #{path}" => changed?(path),
           "the commits only detached worktree #{path} holds" => stranded?(entry),
           "the submodules in #{path}" => submodules?(path) }.select { |_held, found| found }.keys
+      rescue ArgumentError
+        ["worktree #{path}, which Shaka cannot read safely"]
       end
 
       # git branch -d accepts a branch merged into the remote branch it tracks, or into HEAD when it has none.
@@ -104,12 +109,9 @@ module Shaka
         true
       end
 
-      # git worktree remove refuses a worktree whose index holds a submodule. A folder Git cannot read,
-      # such as a locked worktree on a drive that is not mounted, counts as holding one.
+      # git worktree remove refuses a worktree whose index holds a submodule.
       def submodules?(path)
         git('-c', 'core.fsmonitor=false', '-C', path, 'ls-files', '--stage').match?(/^160000 /)
-      rescue ArgumentError
-        true
       end
 
       def stranded?(entry)

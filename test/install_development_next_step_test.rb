@@ -28,7 +28,7 @@ class InstallDevelopmentNextStepTest < Minitest::Test
     git('-C', root, 'worktree', 'lock', worktree)
     FileUtils.rm_rf(worktree)
     assert_includes installer(root, '--verify'), 'Warning:'
-    assert_match(/a person must decide .*locked worktree/, status(root)['decision'])
+    assert_match(/a person must decide .*portable/, status(root)['decision'])
   end
 
   # git worktree remove deletes ignored files, such as a local .env, so they are work a person decides on.
@@ -47,6 +47,17 @@ class InstallDevelopmentNextStepTest < Minitest::Test
     git('-C', root, 'worktree', 'add', '-q', '-b', 'feature', File.join(@directory, "feature\nextra"))
     run_next(status(root), 'C3')
     assert_equal 'ok', status(root)['severity']
+  end
+
+  # Git reads a worktree's config, so a folder another account could change gets no Git read.
+  def test_a_writable_worktree_folder_gets_no_git_read
+    root = default_install
+    worktree = File.join(@directory, 'feature')
+    git('-C', root, 'worktree', 'add', '-q', worktree)
+    File.chmod(0o777, worktree)
+    assert_match(/a person must decide .*cannot read safely/, status(root)['decision'])
+  ensure
+    File.chmod(0o755, worktree) if worktree && File.directory?(worktree)
   end
 
   # A worktree folder deleted by hand still holds its branch until Git prunes it.

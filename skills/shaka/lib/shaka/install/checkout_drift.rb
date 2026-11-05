@@ -47,15 +47,24 @@ module Shaka
       def drift_step
         recorded = @record['revision']
         return Refusal.command('git', '-C', @root, 'merge', '--ff-only', recorded) if ancestor?(revision, recorded)
+        return rewritten_step unless ancestor?(recorded, "refs/remotes/origin/#{@branch}")
 
         name = "kept-#{git('rev-parse', '--short', 'HEAD')}"
-        kept = begin
-          git('rev-parse', '--verify', '--quiet', "refs/heads/#{name}")
-        rescue ArgumentError
-          nil
-        end
-        keep = "#{Refusal.command('git', '-C', @root, 'branch', name)} && " unless kept == revision
+        keep = "#{Refusal.command('git', '-C', @root, 'branch', name)} && " unless kept(name) == revision
         "#{keep}#{Refusal.command('git', '-C', @root, 'reset', '--keep', recorded)}"
+      end
+
+      def kept(name)
+        git('rev-parse', '--verify', '--quiet', "refs/heads/#{name}")
+      rescue ArgumentError
+        nil
+      end
+
+      # Origin no longer has the recorded revision, so which history to trust is a person's choice.
+      def rewritten_step
+        Refusal.decide("which revision #{@branch} should use, because origin/#{@branch} no longer has the recorded one",
+                       'to compare them', Refusal.command('git', '-C', @root, 'log', '--oneline', '--left-right',
+                                                          "HEAD...origin/#{@branch}"))
       end
 
       def helper = File.join(@root, 'skills/shaka/scripts/shaka')
