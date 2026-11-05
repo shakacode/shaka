@@ -1,39 +1,17 @@
 # Changelog
 
-Notable changes to Shaka, newest first. Each release lists breaking changes with
-upgrade steps, then what changed for users. The GitHub release for each version
-lists every merged PR.
+All notable changes to this project will be documented in this file.
 
-Versions follow [Semantic Versioning](https://semver.org/). From 1.0.0, a change
-that stops an existing `.agents/shaka/config.yml` or a documented `shaka` command
-from working is a major version.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+From 1.0.0, a change that stops an existing `.agents/shaka/config.yml` or a
+documented `shaka` command from working is a major version.
 
 ## [Unreleased]
 
-### Breaking
-
-- Shaka reads settings only from `.agents/shaka/`. A repository that still has
-  `.agents/agent-workflow.yml` or `.agents/bin/` must convert and merge the result before
-  updating. Clone this repository at commit `a01a3a7e9705be165b7bf339b0cc6d2b727ce4d7` and run its
-  `skills/shaka/scripts/shaka seam upgrade --root DIR` to preview. Then add
-  `--apply --digest PREVIEW_DIGEST`. That command and `wip.include_locations` are gone
-  from later commits; set `wip.include_checkout_path` instead.
-
-### Fixed
-
-- Keep validation and review results valid when Shaka updates during a task, unless the
-  update changes the code that runs or checks them. Rewording a description for the same
-  commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.
-- Say **Adequate, with gaps the reviewer judged acceptable** on a checkpoint, in place of
-  **Adequate with accepted gaps**, which read as if the maintainer had accepted them.
-  Published checkpoints still parse.
-- Stop PR descriptions from asking for every line to be reviewed. The **Review effort** line
-  is now **Human review**: it names the files that set the rating, and it
-  no longer promises reproduction or a second reviewer. Settings keep their names, and Auto
-  merge holds back the same PRs. See [#1001](https://github.com/shakacode/shaka/issues/1001).
-- Show `ready in` and `merged in` on more PRs. The description now reads the task
-  start from a usage report that covers the whole task, and records the ready time
-  each time it updates instead of only while a watch runs.
+Deliver a task through a tested pull request with a code walkthrough, independent
+review, and an explicit Ask or Auto merge choice. Real-use acceptance and host
+qualification remain evidence requirements; the version number does not establish them.
 
 ### Added
 
@@ -51,28 +29,44 @@ from working is a major version.
   opening check now also reads a description's visible Intent and Verification text and
   suggests a replacement for each term. A description with new text adds one call to the
   opening reviewer.
-
-## [1.0.0] - Unpublished
-
-Deliver a task through a tested pull request with a code walkthrough, independent
-review, and an explicit Ask or Auto merge choice.
-
-### Upgrade from the name reservation
-
-The published `0.1.0.pre.1` gem only reserved the name. Existing source installations
-retain their registered revision choice; installing this gem does not upgrade them.
-After publication, new gem installations select the matching release tag. Follow
-[getting started](docs/getting-started.md) to inspect and update an existing installation.
-
-### Release safety
-
 - Pin release installations to an immutable tag commit and preserve rollback choices.
 - Check the exact source, tested gem and release notes before publication approval.
 - Check native simulated merge and release decisions without granting publication authority.
+
+### Changed
+
+- The `shaka` gem carries the current workflow. The published `0.1.0.pre.1` gem only
+  reserved the name. New gem installations select the matching release tag. Installing
+  the gem does not upgrade an existing source installation, which keeps its registered
+  revision choice; follow [getting started](docs/getting-started.md) to inspect and
+  update one.
 - Preserve maintainer-controlled repository settings and native GitHub checks.
 
-Real-use acceptance and host qualification remain evidence requirements; the
-version number does not establish them.
+### Removed
+
+- **Breaking:** Shaka no longer reads `.agents/agent-workflow.yml` or `.agents/bin/`;
+  settings live only in `.agents/shaka/`. Convert and merge the result before
+  updating: clone this repository at commit `a01a3a7e9705be165b7bf339b0cc6d2b727ce4d7`
+  and run its `skills/shaka/scripts/shaka seam upgrade --root DIR` to preview, then add
+  `--apply --digest PREVIEW_DIGEST`. Later commits no longer include `seam upgrade`.
+- **Breaking:** The `wip.include_locations` setting is gone; set
+  `wip.include_checkout_path` instead.
+
+### Fixed
+
+- Keep validation and review results valid when Shaka updates during a task, unless the
+  update changes the code that runs or checks them. Rewording a description for the same
+  commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.
+- Say **Adequate, with gaps the reviewer judged acceptable** on a checkpoint, in place of
+  **Adequate with accepted gaps**, which read as if the maintainer had accepted them.
+  Published checkpoints still parse.
+- Stop PR descriptions from asking for every line to be reviewed. The **Review effort** line
+  is now **Human review**: it names the files that set the rating, and it
+  no longer promises reproduction or a second reviewer. Settings keep their names, and Auto
+  merge holds back the same PRs. See [#1001].
+- Show `ready in` and `merged in` on more PRs. The description now reads the task
+  start from a usage report that covers the whole task, and records the ready time
+  each time it updates instead of only while a watch runs.
 
 ## [0.1.0.pre.1] - 2026-09-16
 
@@ -81,5 +75,5 @@ current workflow; install from source as described in
 [getting started](docs/getting-started.md).
 
 [Unreleased]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...HEAD
-[1.0.0]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...HEAD
 [0.1.0.pre.1]: https://github.com/shakacode/shaka/releases/tag/v0.1.0.pre.1
+[#1001]: https://github.com/shakacode/shaka/issues/1001
