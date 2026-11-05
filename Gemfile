@@ -3,6 +3,8 @@
 source 'https://rubygems.org'
 
 gem 'minitest', '~> 6.0'
+# bin/check-docs-navigation parses SVGs; rexml is a bundled gem, so a bundled Ruby needs it listed.
+gem 'rexml', '~> 3.4'
 gem 'rubocop', '~> 1.92'
 gem 'rubocop-minitest', '~> 0.41.0'
 gem 'rubocop-performance', '~> 1.27'
