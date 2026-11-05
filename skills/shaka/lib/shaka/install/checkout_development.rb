@@ -104,7 +104,7 @@ module Shaka
       # count, because git worktree remove deletes them without asking.
       def changed?(path)
         !git('-c', 'core.fsmonitor=false', '-C', path, '--no-optional-locks', 'status', '--porcelain',
-             '--ignored').empty?
+             '--untracked-files=all', '--ignored').empty?
       rescue ArgumentError
         true
       end

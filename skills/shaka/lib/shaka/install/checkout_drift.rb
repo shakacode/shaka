@@ -46,8 +46,8 @@ module Shaka
       # refuses rather than overwrite an edited file.
       def drift_step
         recorded = @record['revision']
-        return Refusal.command('git', '-C', @root, 'merge', '--ff-only', recorded) if ancestor?(revision, recorded)
         return rewritten_step unless ancestor?(recorded, "refs/remotes/origin/#{@branch}")
+        return Refusal.command('git', '-C', @root, 'merge', '--ff-only', recorded) if ancestor?(revision, recorded)
 
         name = "kept-#{git('rev-parse', '--short', 'HEAD')}"
         keep = "#{Refusal.command('git', '-C', @root, 'branch', name)} && " unless kept(name) == revision

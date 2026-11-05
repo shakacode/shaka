@@ -60,6 +60,16 @@ class InstallDevelopmentNextStepTest < Minitest::Test
     File.chmod(0o755, worktree) if worktree && File.directory?(worktree)
   end
 
+  # git worktree remove refuses untracked files even when the checkout's config hides them from status.
+  def test_an_untracked_file_hidden_by_config_needs_a_person
+    root = default_install
+    worktree = File.join(@directory, 'feature')
+    git('-C', root, 'worktree', 'add', '-q', worktree)
+    git('-C', root, 'config', 'status.showUntrackedFiles', 'no')
+    File.write(File.join(worktree, 'notes.txt'), 'draft')
+    assert_match(/a person must decide .*uncommitted files/, status(root)['decision'])
+  end
+
   # A worktree folder deleted by hand still holds its branch until Git prunes it.
   def test_a_deleted_worktree_folder_is_pruned_before_its_branch_goes
     root = default_install
