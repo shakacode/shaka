@@ -6,7 +6,7 @@ description: Deliver a task through verified GitHub PRs, or help get started and
 # Shaka
 
 Own one task through its requested PR outcome. `$shaka` (`/shaka` in Claude Code, OpenCode,
-and Cursor) alone offers a guided start. Work solo unless delegation is authorized and useful; reuse
+Cursor, and GitHub Copilot) alone offers a guided start. Work solo unless delegation is authorized and useful; reuse
 relevant evidence.
 
 Before any branch change, resolve this installed skill to its trusted source outside every
