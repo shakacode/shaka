@@ -370,10 +370,17 @@ source row. Omit it for a task in another GitHub repository, which may be privat
 
 For a Jira or Linear ticket whose key may appear in this PR, set `task_source` to
 `issue`, `task_tracker` to `jira` or `linear`, and `task_key` to its key, such as
-`MKT-1234`; for a private tracker, omit the tracker keys so the line reads `issue`. Add an
-https `task_url` whenever the ticket's URL is available and may appear in this PR.
-If intake gives only a key, retrieve the canonical URL through the tracker connection;
-do not invent one. Leave the key unlinked only when the URL is unavailable or cannot be shared.
+`MKT-1234`; withhold the tracker keys when they cannot be shared.
+
+For an issue or PR without `task_number`, Ruby requires exactly one of:
+
+- `task_url`: a shareable https URL, validated and rendered as a link.
+- `task_url_omission_reason`: nonempty, single-line text explaining why the URL is
+  unavailable or cannot be shared. The Task line displays this public-safe reason.
+
+Retrieve the canonical URL through the tracker connection when intake gives only a key.
+Ruby validates supplied metadata; the agent establishes availability and shareability.
+Prompt tasks and numbered GitHub tasks take neither field.
 
 With a number or key, the optional `task_relation` says how this PR relates to the
 task: `fixes`, `part_of`, `follow_up`, or `refs`. Only a GitHub issue number takes `fixes`.
@@ -385,8 +392,8 @@ The helper renders the Task line after Why in Intent:
 | `description` | `Claude prompt` or `Codex prompt`, from the writer's identity |
 | issue `1234`, `part_of` | `GitHub #1234 · part of` |
 | issue `1234`, `fixes` | `GitHub · fixes #1234`, which closes the issue when the PR merges into the default branch |
-| `linear`, `MKT-1234` | `Linear MKT-1234` |
-| issue or PR with no number or key | `issue` or `pull request` |
+| `linear`, `MKT-1234`, `task_url` | `Linear MKT-1234`, linked to the supplied URL |
+| issue or PR with an omission reason | `issue · URL omitted: Private task.` or `pull request · URL omitted: Tracker unavailable.` |
 
 The optional `intent.task_understanding` is nonempty text with real paragraph breaks.
 It renders in **Task as understood** immediately after the Task line. Older callers

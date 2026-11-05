@@ -32,11 +32,26 @@ class TaskSourceLineTest < Minitest::Test
     assert_equal '**Task:** GitHub · fixes #1234', line(ISSUE.merge('task_relation' => 'fixes'))
   end
 
-  def test_another_trackers_ticket_is_linked_only_when_a_url_is_supplied
-    assert_equal '**Task:** Linear MKT-1234', line(LINEAR)
+  def test_another_trackers_ticket_is_linked_when_a_url_is_supplied
+    linear = LINEAR.merge('task_url' => 'https://linear.app/example/issue/MKT-1234')
+    assert_equal '**Task:** [Linear MKT-1234](https://linear.app/example/issue/MKT-1234)', line(linear)
     jira = LINEAR.merge('task_tracker' => 'jira', 'task_key' => 'PROJ-1234',
                         'task_url' => 'https://acme.atlassian.net/browse/PROJ-1234', 'task_relation' => 'part_of')
     assert_equal '**Task:** [Jira PROJ-1234](https://acme.atlassian.net/browse/PROJ-1234) · part of', line(jira)
+  end
+
+  def test_refuses_a_ticket_without_a_url_or_an_omission_reason
+    error = assert_raises(Shaka::Error) { line(LINEAR) }
+
+    assert_includes error.message, 'task_url'
+    assert_includes error.message, 'task_url_omission_reason'
+  end
+
+  def test_an_unlinked_ticket_explains_why_its_url_was_omitted
+    assert_equal '**Task:** Linear MKT-1234 · URL omitted: Tracker access unavailable.',
+                 line(LINEAR.merge('task_url_omission_reason' => 'Tracker access unavailable.'))
+    assert_equal '**Task:** Linear MKT-1234 · URL omitted: Private task URL cannot be shared.',
+                 line(LINEAR.merge('task_url_omission_reason' => 'Private task URL cannot be shared.'))
   end
 
   # Refusing backslashes and hostless URLs still leaves an ordinary query and fragment linked.
@@ -47,9 +62,38 @@ class TaskSourceLineTest < Minitest::Test
     assert_equal "**Task:** [Jira PROJ-1234](#{url})", line(jira)
   end
 
-  def test_a_task_in_another_github_repository_names_only_its_kind
-    assert_equal '**Task:** issue', line(PUBLIC_PROVENANCE.merge('task_source' => 'issue'))
-    assert_equal '**Task:** pull request', line(PUBLIC_PROVENANCE.merge('task_source' => 'pull_request'))
+  def test_a_task_in_another_repository_can_link_its_url_without_a_local_number
+    %w[issue pull_request].each do |source|
+      spec = PUBLIC_PROVENANCE.merge('task_source' => source, 'task_url' => 'https://github.com/other/repo/issues/1')
+      assert_equal "**Task:** [#{source.tr('_', ' ')}](https://github.com/other/repo/issues/1)", line(spec)
+    end
+  end
+
+  def test_a_private_task_can_withhold_its_key_and_url_with_an_explicit_reason
+    %w[issue pull_request].each do |source|
+      spec = PUBLIC_PROVENANCE.merge('task_source' => source, 'task_url_omission_reason' => 'Private task.')
+      assert_equal "**Task:** #{source.tr('_', ' ')} · URL omitted: Private task.", line(spec)
+      assert_raises(Shaka::Error) { line(spec.except('task_url_omission_reason')) }
+    end
+  end
+
+  def test_refuses_empty_or_multiline_omission_reasons
+    [nil, false, 42, {}, [], '', '   ', "\t", "Unavailable.\nNext line", "Private.\rNext line"].each do |reason|
+      assert_raises(Shaka::Error, reason.inspect) { line(LINEAR.merge('task_url_omission_reason' => reason)) }
+    end
+  end
+
+  def test_refuses_both_a_url_and_an_omission_reason
+    spec = LINEAR.merge('task_url' => 'https://linear.app/example/issue/MKT-1234',
+                        'task_url_omission_reason' => 'Unavailable.')
+    assert_raises(Shaka::Error) { line(spec) }
+  end
+
+  def test_prompt_and_numbered_tasks_cannot_override_their_automatic_task_reference
+    [PUBLIC_PROVENANCE, ISSUE].each do |spec|
+      assert_raises(Shaka::Error) { line(spec.merge('task_url' => 'https://example.com/task')) }
+      assert_raises(Shaka::Error) { line(spec.merge('task_url_omission_reason' => 'Private.')) }
+    end
   end
 
   def test_refuses_a_relation_or_tracker_it_cannot_render_safely

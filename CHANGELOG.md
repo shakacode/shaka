@@ -35,6 +35,10 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Changed
 
+- Task references in PR descriptions now require a link or a visible explanation
+  that the URL is unavailable or cannot be shared. Previously unlinked task metadata
+  needs a URL or omission reason before republishing; prompt tasks and numbered
+  GitHub references keep their existing behavior.
 - The `shaka` gem carries the current workflow. The published `0.1.0.pre.1` gem only
   reserved the name. New gem installations select the matching release tag. Installing
   the gem does not upgrade an existing source installation, which keeps its registered
