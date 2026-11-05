@@ -20,6 +20,17 @@ class InstallDevelopmentNextStepTest < Minitest::Test
     assert_equal 'ok', status(root)['severity']
   end
 
+  # Git never prunes a locked worktree, so one whose folder is gone stays listed and needs a person.
+  def test_a_locked_worktree_with_a_missing_folder_still_verifies
+    root = default_install
+    worktree = File.join(@directory, 'portable')
+    git('-C', root, 'worktree', 'add', '-q', worktree)
+    git('-C', root, 'worktree', 'lock', worktree)
+    FileUtils.rm_rf(worktree)
+    assert_includes installer(root, '--verify'), 'Warning:'
+    assert_match(/a person must decide .*locked worktree/, status(root)['decision'])
+  end
+
   # A worktree folder deleted by hand still holds its branch until Git prunes it.
   def test_a_deleted_worktree_folder_is_pruned_before_its_branch_goes
     root = default_install

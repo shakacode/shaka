@@ -42,11 +42,13 @@ module Shaka
                                              "#{@root} is on #{current}; expected #{@branch}", branch_step)
       end
 
-      # git switch finds a local branch or creates one from origin's; a branch neither has, such as a
-      # mistyped --branch, needs a person.
+      # A branch only origin has is switched to by its full name, which another remote's branch of the same
+      # name cannot make ambiguous; a branch neither has, such as a mistyped --branch, needs a person.
       def branch_step
-        return Refusal.command('git', '-C', @root, 'switch', @branch) if
-          %W[refs/heads/#{@branch} refs/remotes/origin/#{@branch}].any? { |ref| ref?(ref) }
+        return Refusal.command('git', '-C', @root, 'switch', @branch) if ref?("refs/heads/#{@branch}")
+        if ref?("refs/remotes/origin/#{@branch}")
+          return Refusal.command('git', '-C', @root, 'switch', '--track', "origin/#{@branch}")
+        end
 
         Refusal.decide("which branch to install; #{@branch} is not in this checkout or its fetched origin",
                        "to list origin's branches", Refusal.command('git', '-C', @root, 'ls-remote', '--heads',

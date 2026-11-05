@@ -54,8 +54,10 @@ module Shaka
       def checked_directory(path, child, label)
         entry = File.lstat(path)
         reason = unsafe_reason(entry, child)
-        refuse_unsafe("#{label} #{child ? 'has an unsafe parent' : 'is unsafe'}: #{path} #{reason}", path, entry) if
-          reason
+        if reason
+          refuse_unsafe("#{label} #{child ? 'has an unsafe parent' : 'is unsafe'}: #{path} #{reason}", reason, path,
+                        entry)
+        end
 
         entry
       rescue Errno::ENOENT, Errno::ELOOP
@@ -64,9 +66,9 @@ module Shaka
 
       # Removing group and world write clears a writable directory you own; a directory root owns, and the
       # other reasons, need a person.
-      def refuse_unsafe(message, path, entry)
+      def refuse_unsafe(message, reason, path, entry)
         raise Unsafe.new(message, "chmod go-w #{Shellwords.escape(path)}") if
-          message.include?(WRITABLE) && entry.uid == Process.euid
+          reason.start_with?(WRITABLE) && entry.uid == Process.euid
 
         raise ArgumentError, message
       end

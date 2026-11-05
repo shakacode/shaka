@@ -27,6 +27,24 @@ class InstallRefusalNextStepTest < Minitest::Test
     refute_kind_of Shaka::Install::DirectorySafety::Unsafe, error
   end
 
+  # Selections belong to bin/install, so maintenance with one is refused before any install step is built.
+  def test_maintenance_with_a_selection_is_refused_first
+    assert_includes refusal(@root, '--verify', '--repository', @remote, '--agent', 'claude'),
+                    'Use bin/install to change installation selections before maintenance'
+  end
+
+  # A branch only origin has is switched to by its full name, so another remote's copy cannot make it ambiguous.
+  def test_a_branch_only_origin_has_switches_by_its_full_name
+    root = default_install
+    git('-C', root, 'push', '-q', @remote, 'HEAD:refs/heads/topic')
+    git('-C', root, 'fetch', '-q', @remote, '+topic:refs/remotes/origin/topic', '+topic:refs/remotes/mirror/topic')
+    git('-C', root, 'remote', 'add', 'mirror', @remote)
+    step = refused(root, '--branch', 'topic')
+    assert_includes step, 'switch --track origin/topic'
+    run_step(step)
+    assert_equal 'topic', git('-C', root, 'branch', '--show-current').strip
+  end
+
   def test_maintenance_without_an_install_names_the_installer
     step = refused(@root, '--verify')
     assert_equal Shellwords.escape(File.join(@root, 'bin/install')), step

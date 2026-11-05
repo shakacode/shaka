@@ -37,7 +37,7 @@ module Shaka
       # checkout there, so it clears the development itself; anywhere else the hosts move to a fresh checkout.
       def development_step
         home = Dir.home
-        return clear_development if @root == real_path(SettingsLocation.default_directory(home))
+        return clear_development if @root == SettingsLocation.real(SettingsLocation.default_directory(home))
         return { command: fresh_install } unless @record
 
         command = SettingsLocation.take_over(@root, home, @record)
@@ -102,9 +102,12 @@ module Shaka
         true
       end
 
-      # git worktree remove refuses a worktree whose index holds a submodule.
+      # git worktree remove refuses a worktree whose index holds a submodule. A folder Git cannot read,
+      # such as a locked worktree on a drive that is not mounted, counts as holding one.
       def submodules?(path)
         git('-c', 'core.fsmonitor=false', '-C', path, 'ls-files', '--stage').match?(/^160000 /)
+      rescue ArgumentError
+        true
       end
 
       def stranded?(entry)
@@ -139,12 +142,6 @@ module Shaka
           { path:, head: entry[/^HEAD (\h+)$/, 1], detached: entry.match?(/^detached$/),
             locked: entry.match?(/^locked/) }
         end
-      end
-
-      def real_path(path)
-        File.realpath(path)
-      rescue SystemCallError
-        nil
       end
     end
   end
