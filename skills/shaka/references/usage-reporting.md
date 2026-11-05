@@ -371,8 +371,9 @@ source row. Omit it for a task in another GitHub repository, which may be privat
 For a Jira or Linear ticket whose key may appear in this PR, set `task_source` to
 `issue`, `task_tracker` to `jira` or `linear`, and `task_key` to its key, such as
 `MKT-1234`; for a private tracker, omit the tracker keys so the line reads `issue`. Add an
-https `task_url` only when the ticket's address may appear too; without it the key is
-shown unlinked.
+https `task_url` whenever the ticket's URL is available and may appear in this PR.
+If intake gives only a key, retrieve the canonical URL through the tracker connection;
+do not invent one. Leave the key unlinked only when the URL is unavailable or cannot be shared.
 
 With a number or key, the optional `task_relation` says how this PR relates to the
 task: `fixes`, `part_of`, `follow_up`, or `refs`. Only a GitHub issue number takes `fixes`.
