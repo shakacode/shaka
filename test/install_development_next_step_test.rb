@@ -31,6 +31,24 @@ class InstallDevelopmentNextStepTest < Minitest::Test
     assert_match(/a person must decide .*locked worktree/, status(root)['decision'])
   end
 
+  # git worktree remove deletes ignored files, such as a local .env, so they are work a person decides on.
+  def test_a_worktree_holding_only_an_ignored_file_needs_a_person
+    root = default_install
+    worktree = File.join(@directory, 'feature')
+    git('-C', root, 'worktree', 'add', '-q', worktree)
+    File.write(File.join(root, '.git/info/exclude'), ".env\n")
+    File.write(File.join(worktree, '.env'), 'TOKEN=local')
+    assert_match(/a person must decide .*uncommitted files/, status(root)['decision'])
+  end
+
+  # Worktree paths are read NUL-separated, so a newline in one still gets a command that removes it.
+  def test_a_worktree_path_with_a_newline_is_cleared
+    root = default_install
+    git('-C', root, 'worktree', 'add', '-q', '-b', 'feature', File.join(@directory, "feature\nextra"))
+    run_next(status(root), 'C3')
+    assert_equal 'ok', status(root)['severity']
+  end
+
   # A worktree folder deleted by hand still holds its branch until Git prunes it.
   def test_a_deleted_worktree_folder_is_pruned_before_its_branch_goes
     root = default_install

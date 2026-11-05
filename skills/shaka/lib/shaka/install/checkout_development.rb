@@ -66,7 +66,7 @@ module Shaka
       # A second --force removes a locked worktree too. A worktree whose folder was deleted still holds
       # its branch until Git prunes it, so prune goes first.
       def removal(worktrees, branches, discard:)
-        steps = git('worktree', 'list', '--porcelain').match?(/^prunable/) ? [development_git('worktree', 'prune')] : []
+        steps = worktree_list.any? { |entry| entry[:prunable] } ? [development_git('worktree', 'prune')] : []
         steps += worktrees.map do |entry|
           development_git('worktree', 'remove', *(%w[--force --force] if discard), entry[:path])
         end
@@ -95,9 +95,11 @@ module Shaka
         nil
       end
 
-      # No fsmonitor hook: a status read must not start a program the checkout's config names.
+      # No fsmonitor hook: a status read must not start a program the checkout's config names. Ignored files
+      # count, because git worktree remove deletes them without asking.
       def changed?(path)
-        !git('-c', 'core.fsmonitor=false', '-C', path, '--no-optional-locks', 'status', '--porcelain').empty?
+        !git('-c', 'core.fsmonitor=false', '-C', path, '--no-optional-locks', 'status', '--porcelain',
+             '--ignored').empty?
       rescue ArgumentError
         true
       end
@@ -132,15 +134,17 @@ module Shaka
 
       def linked_worktrees = worktree_entries.map { |entry| entry[:path] }
 
-      # The first porcelain entry is the main worktree; prunable entries no longer exist on disk.
-      def worktree_entries
-        entries = git('worktree', 'list', '--porcelain').split(/\n\n+/).drop(1)
-        entries.grep_v(/^prunable/).filter_map do |entry|
-          path = entry[/^worktree (.+)$/, 1]
-          next if path.nil? || path == @root
+      # Prunable entries no longer exist on disk.
+      def worktree_entries = worktree_list.reject { |entry| entry[:prunable] || entry[:path] == @root }
 
-          { path:, head: entry[/^HEAD (\h+)$/, 1], detached: entry.match?(/^detached$/),
-            locked: entry.match?(/^locked/) }
+      # The first entry is the main worktree. -z ends each field with NUL, so a path may hold a newline.
+      def worktree_list
+        git('worktree', 'list', '--porcelain', '-z').split("\0\0").drop(1).filter_map do |entry|
+          fields = entry.split("\0").to_h { |field| field.split(' ', 2).values_at(0, 1) }
+          next unless fields['worktree']
+
+          { path: fields['worktree'], head: fields['HEAD'], detached: fields.key?('detached'),
+            locked: fields.key?('locked'), prunable: fields.key?('prunable') }
         end
       end
     end

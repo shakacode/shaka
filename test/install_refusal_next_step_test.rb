@@ -20,11 +20,11 @@ class InstallRefusalNextStepTest < Minitest::Test
   # chmod needs the directory's owner, so a writable directory root owns gets no chmod step.
   def test_a_writable_directory_root_owns_gets_no_chmod
     safety = Class.new { include Shaka::Install::DirectorySafety }.new
-    error = assert_raises(ArgumentError) do
-      safety.send(:refuse_unsafe, "Installation directory is unsafe: / #{Shaka::Install::DirectorySafety::WRITABLE}",
-                  '/', File.lstat('/'))
-    end
+    writable = Shaka::Install::DirectorySafety::WRITABLE
+    message = "Installation directory is unsafe: / #{writable}"
+    error = assert_raises(ArgumentError) { safety.send(:refuse_unsafe, message, writable, '/', File.lstat('/')) }
     refute_kind_of Shaka::Install::DirectorySafety::Unsafe, error
+    assert_equal message, error.message
   end
 
   # Selections belong to bin/install, so maintenance with one is refused before any install step is built.
