@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'rexml/document'
 
 AGENT_REFERENCES = %r{(?:\A|/)skills/shaka/references(?:[/#?]|\z)}
 
@@ -104,6 +105,15 @@ def broken_links(docs)
     sources.flat_map { |path| broken_emitted_links(repository, docs, path) }
 end
 
+# A docs-only change skips the tests, so each figure must at least parse as an SVG document.
+def malformed_figures(docs)
+  Dir.glob('img/**/*.svg', base: docs).reject do |file|
+    REXML::Document.new(File.read(File.join(docs, file), encoding: 'UTF-8')).root&.name == 'svg'
+  rescue REXML::ParseException
+    false
+  end
+end
+
 begin
   root = ARGV.fetch(0, File.expand_path('../docs', __dir__))
   navigation = JSON.parse(File.read(File.join(root, 'sidebars.json')))
@@ -122,10 +132,12 @@ begin
   puts "Link a human guide, not agent instructions: #{agent_links.join(', ')}" unless agent_links.empty?
   broken = broken_links(root)
   puts "Unresolved links in docs/ and skills/:\n#{broken.join("\n")}" unless broken.empty?
-  exit 1 unless missing.empty? && stale.empty? && agent_links.empty? && broken.empty?
+  malformed = malformed_figures(root)
+  puts "Figures that do not parse as SVG: #{malformed.join(', ')}" unless malformed.empty?
+  exit 1 unless missing.empty? && stale.empty? && agent_links.empty? && broken.empty? && malformed.empty?
 
   puts "All #{pages.size} published pages are in docs/sidebars.json and link no agent instructions; " \
-       'links and anchors in docs/ and skills/ resolve.'
+       'links and anchors in docs/ and skills/ resolve; figures parse.'
 rescue JSON::ParserError, KeyError, ArgumentError, Errno::ENOENT => e
   warn "Docs navigation check failed: #{e.message}"
   exit 1
