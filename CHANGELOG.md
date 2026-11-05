@@ -58,6 +58,12 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Fixed
 
+- End every installer refusal with a command that fixes it, or say that you must decide.
+  A Shaka folder you also develop in now gets the commands that remove its clean
+  worktrees and merged branches, and names any work that exists only there, instead of
+  a `--take-over` that fails. A writable folder names `chmod go-w`, local commits name
+  the step that keeps them on a branch, and a mistyped `--branch` no longer prints a
+  `git switch` that fails.
 - Keep validation and review results valid when Shaka updates during a task, unless the
   update changes the code that runs or checks them. Rewording a description for the same
   commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.

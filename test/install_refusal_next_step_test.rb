@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'install_scenario_support'
+require_relative '../skills/shaka/lib/shaka/install/directory_safety'
 
 # Each installer refusal ends with a next command that clears it, or says a person must decide.
 class InstallRefusalNextStepTest < Minitest::Test
@@ -14,6 +15,16 @@ class InstallRefusalNextStepTest < Minitest::Test
     assert_includes step, 'chmod go-w '
     run_step(step)
     installer(root, '--verify')
+  end
+
+  # chmod needs the directory's owner, so a writable directory root owns gets no chmod step.
+  def test_a_writable_directory_root_owns_gets_no_chmod
+    safety = Class.new { include Shaka::Install::DirectorySafety }.new
+    error = assert_raises(ArgumentError) do
+      safety.send(:refuse_unsafe, "Installation directory is unsafe: / #{Shaka::Install::DirectorySafety::WRITABLE}",
+                  '/', File.lstat('/'))
+    end
+    refute_kind_of Shaka::Install::DirectorySafety::Unsafe, error
   end
 
   def test_maintenance_without_an_install_names_the_installer

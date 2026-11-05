@@ -63,9 +63,11 @@ module Shaka
                                    removal(worktrees, branches, discard: true)) }
       end
 
-      # A second --force removes a locked worktree too.
+      # A second --force removes a locked worktree too. A worktree whose folder was deleted still holds
+      # its branch until Git prunes it, so prune goes first.
       def removal(worktrees, branches, discard:)
-        steps = worktrees.map do |entry|
+        steps = git('worktree', 'list', '--porcelain').match?(/^prunable/) ? [development_git('worktree', 'prune')] : []
+        steps += worktrees.map do |entry|
           development_git('worktree', 'remove', *(%w[--force --force] if discard), entry[:path])
         end
         steps << development_git('branch', discard ? '-D' : '-d', *branches) unless branches.empty?
@@ -101,7 +103,9 @@ module Shaka
       end
 
       # git worktree remove refuses a worktree whose index holds a submodule.
-      def submodules?(path) = git('-C', path, 'ls-files', '--stage').match?(/^160000 /)
+      def submodules?(path)
+        git('-c', 'core.fsmonitor=false', '-C', path, 'ls-files', '--stage').match?(/^160000 /)
+      end
 
       def stranded?(entry)
         entry[:detached] &&

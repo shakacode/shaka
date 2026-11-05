@@ -20,6 +20,18 @@ class InstallDevelopmentNextStepTest < Minitest::Test
     assert_equal 'ok', status(root)['severity']
   end
 
+  # A worktree folder deleted by hand still holds its branch until Git prunes it.
+  def test_a_deleted_worktree_folder_is_pruned_before_its_branch_goes
+    root = default_install
+    worktree = File.join(@directory, 'feature')
+    git('-C', root, 'worktree', 'add', '-q', worktree)
+    FileUtils.rm_rf(worktree)
+    report = status(root)
+    assert_includes report['next_command'], 'worktree prune'
+    run_next(report, 'C3')
+    assert_equal 'ok', status(root)['severity']
+  end
+
   # git worktree remove refuses a worktree with submodules, even on a branch merged into the one it tracks.
   def test_a_default_checkout_worktree_with_a_submodule_needs_a_person
     root = default_install
