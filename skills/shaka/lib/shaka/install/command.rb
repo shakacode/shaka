@@ -46,7 +46,7 @@ module Shaka
       end
 
       def selections(options)
-        options.on('--agent NAME', 'codex, claude, cursor, or opencode; repeat for several') do |value|
+        options.on('--agent NAME', 'codex, claude, cursor, opencode, or copilot; repeat for several') do |value|
           @options[:agents] << value
         end
         options.on('--with-mct') { @options[:names] << 'mct' }

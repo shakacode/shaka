@@ -164,6 +164,14 @@ description, the hook then fills that description's Cursor usage row.
 [Usage reporting](usage-reporting.md#what-the-cursor-reader-includes)
 explains what is counted.
 
+## GitHub Copilot
+
+Select `--agent copilot` with the [official installer](official-installation.md#install).
+Start a new Copilot CLI session or VS Code Agent chat and invoke `/shaka`.
+In Copilot CLI, use `/skills list` to check discovery and `/skills info` to inspect
+its location.
+For limitations and supported surfaces, see the [Copilot guide](https://github.com/shakacode/shaka/blob/main/docs/coding-agents.md#github-copilot).
+
 ## OpenCode
 
 Use `~/.config/opencode/skills` to avoid overlapping compatibility installations.
