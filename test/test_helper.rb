@@ -8,10 +8,11 @@ require 'rbconfig'
 require_relative '../skills/shaka/lib/shaka/executable_file'
 
 # The helpers and fakes the tests spawn need only Ruby's standard library. Under bundle exec
-# RUBYOPT and BUNDLER_SETUP make each one load Bundler, several times its own startup.
+# RUBYOPT and BUNDLER_SETUP make each one load Bundler, several times its own startup, and
+# a bundle path setting points GEM_HOME away from bundled gems such as rexml.
 # BUNDLE_* settings stay, so a test's own bundle exec still finds the bundle.
 if defined?(Bundler)
-  %w[RUBYOPT RUBYLIB].each { |key| ENV[key] = Bundler.original_env[key] }
+  %w[RUBYOPT RUBYLIB GEM_HOME GEM_PATH].each { |key| ENV[key] = Bundler.original_env[key] }
   ENV.delete('BUNDLER_SETUP')
 end
 # Helper calls the tests spawn stay out of the developer's own call log.
