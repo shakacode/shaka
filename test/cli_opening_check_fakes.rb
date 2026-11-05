@@ -55,7 +55,7 @@ module CliOpeningCheckFakes
                     recommended_model recommended_effort active_model active_effort].to_h { |key| [key, 'UNKNOWN'] }
     provenance['task_source'] = 'issue'
     provenance['initial_prompt'] = 'EXCLUDED'
-    provenance['task_url_omission_reason'] = 'Task URL not recorded in fixture.'
+    provenance['task_url_omission_reason'] = 'Unavailable.'
     { 'identity' => { 'agent' => 'Codex' }, 'summary' => self.class::SUMMARY, 'deployment' => 'none',
       'steps_besides_merging' => 'none',
       'intent' => INTENT, 'verification' => VERIFICATION,
