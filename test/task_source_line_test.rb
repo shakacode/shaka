@@ -54,14 +54,6 @@ class TaskSourceLineTest < Minitest::Test
                  line(LINEAR.merge('task_url_omission_reason' => 'Private task URL cannot be shared.'))
   end
 
-  # Refusing backslashes and hostless URLs still leaves an ordinary query and fragment linked.
-  def test_a_ticket_url_may_carry_a_query_and_fragment
-    url = 'https://acme.atlassian.net/browse/PROJ-1234?focusedCommentId=1#comment-1'
-    jira = LINEAR.merge('task_tracker' => 'jira', 'task_key' => 'PROJ-1234', 'task_url' => url)
-
-    assert_equal "**Task:** [Jira PROJ-1234](#{url})", line(jira)
-  end
-
   def test_a_task_in_another_repository_can_link_its_url_without_a_local_number
     %w[issue pull_request].each do |source|
       spec = PUBLIC_PROVENANCE.merge('task_source' => source, 'task_url' => 'https://github.com/other/repo/issues/1')
@@ -107,8 +99,21 @@ class TaskSourceLineTest < Minitest::Test
     end
   end
 
-  # A trailing backslash would escape the link's closing parenthesis, and a link needs a host that userinfo
-  # cannot hide.
+  private
+
+  def line(spec, agent = 'Claude Code') = Shaka::ExecutionProvenance.new(spec).line(agent)
+end
+
+class TaskUrlSafetyTest < Minitest::Test
+  LINEAR = TaskSourceLineTest::LINEAR
+
+  def test_a_ticket_url_may_carry_a_query_and_fragment
+    url = 'https://acme.atlassian.net/browse/PROJ-1234?focusedCommentId=1#comment-1'
+    jira = LINEAR.merge('task_tracker' => 'jira', 'task_key' => 'PROJ-1234', 'task_url' => url)
+
+    assert_equal "**Task:** [Jira PROJ-1234](#{url})", line(jira)
+  end
+
   def test_refuses_a_ticket_url_with_a_backslash_or_no_host
     ['https://x.test/a\\', 'https:///x', 'https://:443/task', 'https://a@:443/task', 'https://a@/task',
      'https://user@x.test/a'].each do |url|
@@ -116,7 +121,18 @@ class TaskSourceLineTest < Minitest::Test
     end
   end
 
+  def test_refuses_a_ticket_url_with_an_invalid_port
+    ['https://example.com:abc/task', 'https://example.com:65536/task', 'https://example.com:-1/task'].each do |url|
+      assert_raises(Shaka::Error, url) { line(LINEAR.merge('task_url' => url)) }
+    end
+  end
+
+  def test_a_ticket_url_may_use_a_valid_explicit_port
+    url = 'https://example.com:8443/task'
+    assert_equal "**Task:** [Linear MKT-1234](#{url})", line(LINEAR.merge('task_url' => url))
+  end
+
   private
 
-  def line(spec, agent = 'Claude Code') = Shaka::ExecutionProvenance.new(spec).line(agent)
+  def line(spec) = Shaka::ExecutionProvenance.new(spec).line('Claude Code')
 end

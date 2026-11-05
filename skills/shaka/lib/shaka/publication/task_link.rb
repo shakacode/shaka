@@ -2,6 +2,7 @@
 
 require_relative '../error'
 require_relative 'text'
+require 'uri'
 
 module Shaka
   # A tracker task carries a link or a visible explanation, never a silently omitted URL.
@@ -28,9 +29,19 @@ module Shaka
     def self.validate_value!(spec, field)
       if field == 'task_url_omission_reason'
         PublicationText.single_line(spec[field], "provenance #{field}")
-      elsif !spec[field].is_a?(String) || !spec[field].match?(URL)
+      elsif !valid_url?(spec[field])
         raise Error, 'Publication provenance task_url must be a safe https URL.'
       end
+    end
+
+    # URI syntax alone permits Markdown delimiters; both checks are required.
+    def self.valid_url?(value)
+      return false unless value.is_a?(String) && value.match?(URL)
+
+      uri = URI.parse(value)
+      uri.is_a?(URI::HTTPS) && !uri.host.to_s.empty? && uri.userinfo.nil? && (0..65_535).cover?(uri.port)
+    rescue URI::InvalidURIError
+      false
     end
 
     def self.render(name, spec)
@@ -40,6 +51,6 @@ module Shaka
       reason ? "#{name} · URL omitted: #{reason}" : name
     end
 
-    private_class_method :validate_value!
+    private_class_method :validate_value!, :valid_url?
   end
 end
