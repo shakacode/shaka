@@ -6,7 +6,7 @@ module Shaka
     # at startup, so this file loads nothing else.
     module Locations
       HOSTS = { 'codex' => '.agents/skills', 'claude' => '.claude/skills', 'cursor' => '.cursor/skills',
-                'opencode' => '.config/opencode/skills' }.freeze
+                'opencode' => '.config/opencode/skills', 'copilot' => '.copilot/skills' }.freeze
       RECORD = 'shaka-install.json'
       # A replaced record is renamed RETIRED<UTC stamp>.json beside it, never deleted.
       RETIRED = 'shaka-install.retired-'

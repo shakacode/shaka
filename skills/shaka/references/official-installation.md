@@ -40,6 +40,7 @@ This directory is the Shaka source, not configuration; each project keeps its se
 | `claude` | `~/.claude/skills` | `/shaka` |
 | `cursor` | `~/.cursor/skills` | `/shaka` in a new Agent chat |
 | `opencode` | `~/.config/opencode/skills` | `/shaka` in a new session |
+| `copilot` | `~/.copilot/skills` | `/shaka` in Copilot CLI or VS Code Agent chat |
 
 Repeat `--agent` for several hosts, or use `--directory SOURCE --skills-dir DIR` for a custom directory.
 Add `--with-mct` for the Codex master, `--with-rct` for its repository tower,

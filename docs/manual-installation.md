@@ -60,6 +60,7 @@ Each one adds this link:
 | `claude` | `~/.claude/skills/shaka` |
 | `cursor` | `~/.cursor/skills/shaka` |
 | `opencode` | `~/.config/opencode/skills/shaka` |
+| `copilot` | `~/.copilot/skills/shaka` |
 
 Pi has no option of its own; it loads the shared skill linked for `codex`.
 `bin/install --help` lists the remaining options.
