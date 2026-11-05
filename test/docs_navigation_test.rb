@@ -131,6 +131,7 @@ end
 class DocsFigureCheckTest < Minitest::Test
   FIGURES = { 'img/good.svg' => '<svg xmlns="http://www.w3.org/2000/svg"/>', 'img/empty.svg' => '',
               'img/nested/unclosed.svg' => '<svg><g></svg>', 'img/page.svg' => '<html/>',
+              'img/bare.svg' => '<svg/>', 'img/.draft/LOUD.SVG' => '<svg>',
               'sidebars.json' => '{"docsSidebar":["guide"]}', 'guide.md' => '# Guide' }.freeze
 
   def check(docs)
@@ -145,6 +146,6 @@ class DocsFigureCheckTest < Minitest::Test
     output, status = Dir.mktmpdir { |docs| check(docs) }
     refute_predicate status, :success?
     malformed = output[/^Figures that do not parse as SVG: (.*)$/, 1].split(', ')
-    assert_equal %w[img/empty.svg img/nested/unclosed.svg img/page.svg], malformed.sort
+    assert_equal %w[img/.draft/LOUD.SVG img/bare.svg img/empty.svg img/nested/unclosed.svg img/page.svg], malformed.sort
   end
 end

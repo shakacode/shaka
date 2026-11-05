@@ -105,10 +105,14 @@ def broken_links(docs)
     sources.flat_map { |path| broken_emitted_links(repository, docs, path) }
 end
 
+SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
+
 # A docs-only change skips the tests, so each figure must at least parse as an SVG document.
+# The classifier accepts any name under img/, so the scan includes hidden paths and .SVG.
 def malformed_figures(docs)
-  Dir.glob('img/**/*.svg', base: docs).reject do |file|
-    REXML::Document.new(File.read(File.join(docs, file), encoding: 'UTF-8')).root&.name == 'svg'
+  Dir.glob('img/**/*', File::FNM_DOTMATCH, base: docs).grep(/\.svg\z/i).reject do |file|
+    root = REXML::Document.new(File.read(File.join(docs, file), encoding: 'UTF-8')).root
+    root&.name == 'svg' && root.namespace == SVG_NAMESPACE
   rescue REXML::ParseException
     false
   end
