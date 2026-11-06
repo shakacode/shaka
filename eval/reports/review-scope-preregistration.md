@@ -253,7 +253,8 @@ cross-PR K items, and every unfixed same-file finding.
   fork. An arm that reaches the cap ends there, recorded, and is not extended; its final head is
   scored as it stands.
 - **Frozen text:** a changed arm, bar, decoy, item rule, or stop rule after the first priced
-  call is a new eval with a new preregistration.
+  call is a new eval with a new preregistration. So is a changed judge or verifier prompt. The
+  operator writes both prompts before the pilot and keeps them with the run records.
 
 ## Held-out exposure
 
@@ -373,6 +374,7 @@ Recommended: approve the Stage 1 pilot only, capped at $20 billed-equivalent.
   Recommended. In cache-neutral dollars, this option also needs a per-PR exception for #902,
   up to $16.
 - B) Run both pilots: Stage 1 now; Stage 2 after its prototype exists ($70.97 billed, cap $125).
+  Stage 2 also needs per-PR exceptions for #810, up to $24 billed, and #902, up to $38 billed.
 - C) Stop here and keep this preregistration as the record.
 
 Also needed: which unit the caps count. In cache-neutral dollars, Stage 2's $650 estimate
