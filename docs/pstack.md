@@ -55,16 +55,16 @@ corrections and evidence to this task instead of opening one.
 
 [cursor/plugins#781](https://github.com/cursor/plugins/pull/781) changes the skill
 itself. The changed skill returns corrections and evidence when another workflow
-owns delivery. The PR is a draft, and no run has yet shown upstream ignoring a
-prompt like the one above. Stay on upstream unless the skill opens its own PR anyway.
+owns delivery. The PR is a draft. Stay on upstream unless the skill opens its own
+PR anyway.
 
 To try the PR's branch in Claude Code, remove the upstream marketplace first. Both
 use the name `cursor-plugins`, and Claude Code registers one marketplace per name.
 Removing a marketplace also uninstalls its plugins and deletes their saved data.
-Uninstall each plugin from `cursor-plugins` with `--keep-data` first, so its data
-survives the switch. The commands below assume a user install, the default. For a
-project or local install, add `--scope project` or `--scope local` to each
-uninstall.
+Uninstall pstack, and any other plugin you installed from `cursor-plugins`, with
+`--keep-data` first, so its data survives the switch. The commands below assume a
+user install, the default. For a project or local install, add `--scope project`
+or `--scope local` to each `uninstall`, `marketplace add`, and `install` command.
 
 ```sh
 claude plugin uninstall pstack@cursor-plugins --keep-data
