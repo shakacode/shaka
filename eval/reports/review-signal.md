@@ -8,7 +8,7 @@ against the reviewed commit, and drafted the text. The study started no paid mod
 
 ## Why this ran
 
-- On 2026-11-03, Lauren Tan, who works on pstack, called adversarial reviews "mostly a
+- On 2026-11-03 (UTC), Lauren Tan, who works on pstack, called adversarial reviews "mostly a
   waste of tokens" and said pstack would use its
   [interrogate skill](https://github.com/cursor/plugins/blob/ab1f702ce8/pstack/skills/interrogate/SKILL.md)
   less ([post](https://x.com/poteto/status/2117437607940681849)).
@@ -47,7 +47,8 @@ against the reviewed commit, and drafted the text. The study started no paid mod
 | Nit, documented or dismissed | 1,221 |
 | Risk or defect, dismissed | 362 |
 | Risk or defect, accepted by the maintainer | 68 |
-| Other (open, decision needed, documented risk) | 28 |
+| Risk or defect, open or waiting on a maintainer decision | 15 |
+| Risk, documented | 13 |
 
 ### Sample
 
@@ -76,8 +77,10 @@ The rule was written to the task's state folder before any sampled report was re
   seven-character SHA collision (#9), directory names shaped like Markdown links (#21,
   #28), and a URL with user info and no host (#29).
 - 39 were new to the PR and one was drift (#15). None was already in the base.
-- 20 were confirmed by a run. The fix's own test, or a probe, failed at the reviewed
-  commit and passed at the fix. The other 20 were checked by reading. Most of those are
+- 20 were confirmed by a run. For 19, the fix's own test or a probe failed at the
+  reviewed commit and passed at the fix. For #38, a probe reproduced the failure at the
+  reviewed commit, and the fix removed the call it probed. The other 20 were checked by
+  reading. Most of those are
   prose findings, where a run proves nothing.
 - 24 fixes changed code, and 16 changed prose. 23 of the 24 code fixes added or
   changed a test. For 18 of them, the run check above used that test.
@@ -170,7 +173,7 @@ tree with only the fix's test files swapped in.
 | 24 | [#785 comment](https://github.com/shakacode/shaka/pull/785#issuecomment-6305319723) | `2bacd69` → `c4d6014` | Read: at 2bacd69 the new article's line 54 says 4 of 51 commented PRs did not change, while line 68 and later tables label all 65 'A person changed it' |
 | 25 | [#1045 comment](https://github.com/shakacode/shaka/pull/1045#issuecomment-6617540501) | `f7840be` → `cdc4417` | Read: UsageDetails::GUIDE (base) links every usage table to usage-and-cost.md for column definitions; the PR's rewrite removed them. Codex called it a nit, Claude a defect |
 | 26 | [#673 comment](https://github.com/shakacode/shaka/pull/673#issuecomment-6258364616) | `f2bd227` → `6f6a5df` | Run `test/seam_upgrade_test.rb`: the fix's test_assigned_directory_values_without_command_names_block (guide.md case) fails at f2bd227, passes at fix 6f6a5df |
-| 27 | [#1024 comment](https://github.com/shakacode/shaka/pull/1024#issuecomment-6569337020) | `7f54b25` → `6365c3b` | Probe: at 7f54b25, HumanReview.render(3, base-shaped floor without groups) raises NoMethodError: undefined method 'map' for nil |
+| 27 | [#1024 comment](https://github.com/shakacode/shaka/pull/1024#issuecomment-6569337020) | `7f54b25` → `6365c3b` | Probe: at 7f54b25, HumanReview.render(3, base-shaped floor without groups) raises NoMethodError: undefined method 'map' for nil; the same call renders at fix 6365c3b |
 | 28 | [#850 comment](https://github.com/shakacode/shaka/pull/850#issuecomment-6338245797) | `aabedde` → `db94c65` | Run `test/seam_upgrade_unmoved_tool_test.rb`: the fix's seam_upgrade_unmoved_tool_test fails at rebased head aabedde, passes at fix db94c65 |
 | 29 | [#947 comment](https://github.com/shakacode/shaka/pull/947#issuecomment-6487735655) | `d0377c9` → `b3ca133` | Run `test/task_source_line_test.rb`: the fix's task_source_line_test fails at d0377c9 (https://a@:443/task accepted), passes at fix b3ca133 |
 | 30 | [#902 comment](https://github.com/shakacode/shaka/pull/902#issuecomment-6479167788) | `5aec7cb` → `aaeef20` | Run `test/throughput_stats_test.rb`: the fix's throughput_stats_test fails at 5aec7cb (rebased 9938348; Prompt to CI 43m instead of 38m), passes at fix aaeef20 |
@@ -181,7 +184,7 @@ tree with only the fix's test files swapped in.
 | 35 | [#853 comment](https://github.com/shakacode/shaka/pull/853#issuecomment-6351073713) | `a9eae56` → `2c7cce7` | Run `test/publication_settings_summary_test.rb`: the fix's regression raises KeyError: key not found: "REDACTED" at a9eae56, passes at fix 2c7cce7; the fetch calls were added by the PR |
 | 36 | [#757 comment](https://github.com/shakacode/shaka/pull/757#issuecomment-6310097710) | `59b75ca` → `0ee46e2` | Run `test/review_effort_floor_setting_test.rb`: the fix's review_effort_floor_setting_test fails at 59b75ca (capitalized word never matches; level 4 expected), passes at fix 0ee46e2 |
 | 37 | [#570 comment](https://github.com/shakacode/shaka/pull/570#issuecomment-6225042445) | `4fb4c6c` → `1c78d14` | Read: AGENTS.md:140-141 (added by PR) stated 'Ruby reads them and repeats no literal' as fact; no test enforces it, as the fixed text now says |
-| 38 | [#811 comment](https://github.com/shakacode/shaka/pull/811#issuecomment-6314379974) | `5aa9cae` → `98ab543` | Probe: with BUNDLE_PATH set, Bundler.unbundle_env! (added to test_helper by PR) leaves ENV['BUNDLE_PATH'] nil, so a test's nested bundle exec loses an env-configured bundle path |
+| 38 | [#811 comment](https://github.com/shakacode/shaka/pull/811#issuecomment-6314379974) | `5aa9cae` → `98ab543` | Probe: with BUNDLE_PATH set, Bundler.unbundle_env! (added to test_helper by PR) leaves ENV['BUNDLE_PATH'] nil, so a test's nested bundle exec loses an env-configured bundle path; the fix removed the call |
 | 39 | [#964 comment](https://github.com/shakacode/shaka/pull/964#issuecomment-6494126585) | `0e2fce2` → `9104b6c` | Read: the proposed ADR keyed pins by claim branch and released only at Finish; review-only tasks have no claim branch and abandoned tasks never reach Finish |
 | 40 | [#542 comment](https://github.com/shakacode/shaka/pull/542#issuecomment-6185759490) | `dcc75cf` → `0d77ef8` | Read: the PR's workflow.yml wording made the resolved-preview pass read as unconditional while ui-verification.md kept the conditional; fix removed the duplicate sentence |
 
@@ -199,8 +202,8 @@ A keyword scan of all 362 dismissed defects and risks finds 9 whose reason menti
 predating the PR or falling outside its scope.
 
 The workflow sends a finding about behavior the change does not alter to the maintainer,
-who may accept it. A third sample, 10 of the 83 accepted or undecided defects and risks by
-the same hash rule, held no base finding: each was a tradeoff of the PR's own change.
+who may accept it. A third sample, 10 of the 83 accepted, open, or undecided defects and risks
+by the same hash rule, held no base finding: each was a tradeoff of the PR's own change.
 
 ## Cycles and empty runs
 
@@ -274,9 +277,10 @@ Claude-only findings.
     Closing it took a review cycle past the ledger's cap.
   - #30: the first fix read commit statuses but still let a later time replace an
     earlier one.
-  - #21 and #28: on #850, seven findings (F1, F5, F7, F8, F10, F11, F12) concerned how
-    one path check reads Markdown links. F8 returned after its first fix. Both sampled
-    ones need a directory name shaped like a link, which nobody is likely to create.
+  - #21: on #850, F8 returned after its first fix. It is one of seven findings there
+    (F1, F5, F7, F8, F10, F11, F12) about how one path check reads Markdown links. #28,
+    F7, is another. Both sampled ones need a directory name shaped like a link, which
+    nobody is likely to create.
 - One fix is a judgment call. In #12, the author removed a proposed cap instead of
   justifying it or making it a setting.
 - Across the population, 41 findings were marked "returned after its fix". 23 of them
@@ -287,7 +291,7 @@ Claude-only findings.
 | Claim | Shaka's data |
 | --- | --- |
 | Repeat review mostly finds old code (Osmani, ~59% there since the first pass) | 6 of 17 later-cycle findings (35%). 11 of 17 were in code written during the loop. |
-| Findings are often code from before the change | 0 of 40 fixed findings; 1 of 15 sampled dismissals |
+| Findings often concern code from before the change (this study's question 1) | 0 of 40 fixed findings, 1 of 15 sampled dismissals, and 0 of 10 sampled accepted, open, or undecided findings |
 | Reviewers lack the goal (Tan) | The workflow tells the agent to pass the task's goal file to every run. Whether reviewers used it was not measured. |
 | The author accepts all feedback (Tan) | 362 defects and risks (15% of findings) were dismissed with a reason, and at least 152 nit dispositions say the nit was kept as written. At least 189 nits were applied anyway, so the agent does act on some optional feedback. |
 | Reviewers get lost in nitpicks (Tan) | 1,221 nits, 49% of findings. Claude reported 1,211 of them, 56% of its findings. |
@@ -337,8 +341,9 @@ What would change this:
   users would reach that input.
 - Origin labels compare the cited lines and claims with the base. Prose drift was judged
   by reading.
-- A finding's cycle is where it was last recorded, which can be later than where it was
-  first reported.
+- The sample tables show the cycle where each finding was last recorded. Population
+  discovery counts use the cycle that first reported each finding, read from the reports'
+  collation lines; 71 fixed defects and 67 fixed risks have none.
 - The sample of 17 later-cycle findings is small, so 35% has a wide margin.
 - Costs are the publications' own estimates. 264 runs have none, and Claude's model mix
   changed during the window.

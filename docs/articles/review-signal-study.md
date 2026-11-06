@@ -36,12 +36,13 @@ cost.
 - All 40 sampled fixes, 30 defects and 10 risks, were real problems.
 - Every one came from its own PR. None was already in the base branch. One was older
   docs text that the PR's code change made wrong.
-- Half were proven by a run. For 20, the fix's own test or a short probe failed on
-  the reviewed commit and passed after the fix. The rest, mostly docs and design
+- Half were proven by a run. For 19, the fix's own test or a short probe failed on
+  the reviewed commit and passed after the fix. One more probe reproduced the failure on
+  the reviewed commit. The rest, mostly docs and design
   findings, were checked by reading.
 - 4 of the 30 defects need an input nobody is likely to produce. One example is a
   directory whose name looks like a Markdown link.
-- 58% of fixed defects are first reported in the first cycle. In the sample, later
+- 58% of fixed defects with a known first cycle were first reported in cycle 1. In the sample, later
   cycles mostly caught bugs in code written during the loop, often by the previous fix.
 - Reviewer spend is $2.38 per fixed defect.
 - Recommendation: keep the two-reviewer loop as it is.
