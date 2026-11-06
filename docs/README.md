@@ -1,58 +1,30 @@
 # Documentation
 
-You give a task. The agent builds, verifies, and reviews. You get a pull request
-(PR) you can judge quickly.
+Shaka is a skill for AI coding agents. Give it a task and get a tested, reviewed
+pull request you can judge. By default, you decide whether it merges.
 
-You don't need to read these guides before using Shaka. Start with a small task
-and ask your agent when you need help. The guides are here when you want more detail.
-
-<a id="why-use-shaka"></a>
-
-## Why use Shaka
-
-Shaka helps your coding agent finish the work around the code: testing,
-independent review, and a PR that explains the result. You can see what was
-checked, what remains unverified, and which files need your attention.
-For UI changes, the PR includes before-and-after screenshots.
-
-PRs also report available token usage, estimated costs, and time spent working
-or waiting. See [usage and cost](reference/usage-and-cost.md) and
-[timings](reference/timings.md) when you want to understand those numbers.
-
-By default, you merge the PR. You can approve the agent's merge or choose
-[Auto](working-with-shaka.md#choose-a-merge-policy).
-Even with Auto, large or risky changes need your merge decision.
-
-![You give a task. The agent builds, verifies, and reviews. You review the PR and decide what happens next.](img/task-to-pr.svg)
-
-<a id="start-here"></a>
-<a id="what-to-do-first"></a>
-
-## Start a task
-
-Ask your coding agent:
+Start with a small task. Ask your agent for help whenever you need it:
 
 ```text
 Install Shaka from https://github.com/shakacode/shaka.
 ```
 
-Then give it a small task:
+Then, in Codex:
 
 ```text
 $shaka Fix search when the query contains an apostrophe. Go.
 ```
 
-Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode.
-For Pi, load the installed skill. The agent checks setup and asks when it needs you.
+Use `/shaka` in Claude Code, Cursor, or OpenCode. For Pi, load the installed skill.
 
-[Start here](getting-started.md) covers your first task.
-[Shaka in pictures](shaka-in-pictures.md) introduces pull requests.
+<a id="why-use-shaka"></a>
+<a id="start-here"></a>
+<a id="what-to-do-first"></a>
 
-## For open-source repositories
-
-To reduce prompt-injection risk, Shaka ignores comments from untrusted authors.
-Maintainers can choose whose comments the agent reads.
-See [review safety](workflow.md#trust-model).
+[Start here](getting-started.md) helps with setup.
+[Shaka in pictures](shaka-in-pictures.md) gives you a playground task if you are
+new to pull requests. [Watch the demo](https://www.youtube.com/watch?v=T6Fstx2fGJI)
+or [open an example PR](https://github.com/shakacode/shaka/pull/667).
 
 <a id="configure-and-understand"></a>
 <a id="learn-as-you-go"></a>
@@ -61,20 +33,21 @@ See [review safety](workflow.md#trust-model).
 
 ## Reference
 
-Open a guide when you need it, or ask your agent to read it for you.
+| If you want to… | Try… |
+| --- | --- |
+| Plan before coding, review an existing PR, or give feedback | [Working with Shaka](working-with-shaka.md) |
+| Choose who merges or which AI reviews | [Choose your settings](settings-guide.md) |
+| Introduce Shaka to teammates | [Repository setup](configure-repository.md) |
+| Resolve a setup or access problem | [FAQ](faq.md), [coding agents](coding-agents.md), or [recovery limits](expected-experience.md) |
+| Install, update, or customize Shaka | [Manual installation](manual-installation.md), [updates](migration.md), or [forks](fork-and-hack.md) |
+| Decide whether to merge | [Before you merge](pr-verification.md) and [releases after merge](releases-after-merge.md) |
+| Look up a setting or reporting limit | [Settings](settings.md), [cost](reference/usage-and-cost.md), or [timings](reference/timings.md) |
+| Understand trust and safeguards | [Workflow and enforcement](workflow.md) |
+| Set a writing style | [Writing preferences](writing-preferences.md) |
+| Coordinate several projects | [Control towers](control-towers.md) and [repository catalog](repository-catalog.md) |
+| Improve Shaka itself | [Architecture](architecture.md), [PR trials](trying-pr-versions.md), [canary runs](canary.md), or [Contributing](../CONTRIBUTING.md) |
 
-- [Working with Shaka](working-with-shaka.md): prompts, merge choices, feedback, and resuming work.
-- [FAQ](faq.md): answers to common questions.
-- [Repository setup](configure-repository.md): individual and team setup.
-- [Choose your settings](settings-guide.md): ask your agent to explain or change settings.
-- [Coding agents](coding-agents.md): use Shaka with your agent.
-- [Manual installation](manual-installation.md): run the installer yourself.
-- [PR verification](pr-verification.md): inspect evidence before merging.
-- [Settings reference](settings.md): look up options and defaults.
-- [Workflow and review safety](workflow.md): understand checks and trusted feedback.
+[Articles](articles/review-process-study.md) share measured experiments with AI review.
 
-- [Update Shaka](migration.md), [use a fork](fork-and-hack.md), or [try an unmerged PR](trying-pr-versions.md).
-- [Control towers](control-towers.md), [repository catalog](repository-catalog.md), and [architecture](architecture.md).
-- [Writing preferences](writing-preferences.md), [what to expect](expected-experience.md), and [canary runs](canary.md).
-
-Development guidance lives in [Contributing](../CONTRIBUTING.md).
+<a id="start-a-task"></a>
+<a id="for-open-source-repositories"></a>
