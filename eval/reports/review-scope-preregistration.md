@@ -174,6 +174,8 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
   is inconclusive and reported.
 - **Missed by an arm:** the K item is still present at that arm's final head. When the
   historical fix added a test, run it at the final head; otherwise a verifier reads the code.
+  Wherever such a test runs, a failed assertion means present, a pass means absent, and a
+  load error or any other error means `unclear`.
 - **Escape audit:** at each arm's final head, both reviewers review the full diff once more,
   outside the loop. After both audits, one fresh verifier session checks every defect and risk
   from both with the review signal report's procedure, so one reader judges both heads. It
@@ -299,6 +301,10 @@ cross-PR K items, and every unfixed same-file finding.
     and L2 and is reported with its spend. A verifier session that stops there leaves its
     claims unverified. The second fork can get a smaller budget than the first; the
     alternating order spreads that between the arms.
+  - **No holdback:** nothing is set aside for the escape audits or the verifier. When an
+    item's limit runs out after both forks finish, L2 still counts. Only the K items and
+    escapes that need the verifier become inconclusive. Holding money back would move that
+    shortfall onto the forks, where a stopped fork also loses L2.
   - **Units:** the budget is Claude Code's billed estimate. If the maintainer counts
     cache-neutral dollars, the reviewer reserve is $2.55 per cycle, 1.5 times $1.00 + $0.69
     rounded up the same way. `R` minus the reserve is divided by 10.7, the ratio under
