@@ -4,8 +4,8 @@
 (UTC). It made no paid model calls. Every number below comes from published review data, Git,
 or stub reviewers that cost nothing. Nothing here is a result about review quality.*
 
-**Status:** preregistered, not run. The maintainer approves the priced pilot before any paid
-call.
+**Status:** preregistered, not run. The judge and verifier prompts are pinned. The
+maintainer approves the priced pilot before any paid call.
 
 ## The question
 
@@ -48,9 +48,9 @@ commit. *K* is the set of known fixed findings an item can be scored against.
 | --- | --- | --- | --- | --- |
 | Reviewer | `claude-opus-5-5` | `anthropic/claude` through `shaka review run`, Claude CLI default model and effort | $4 / $20 | $0.23–$0.61 / $0.54–$1.00 |
 | Reviewer | `gpt-6.1-sol` | `openai/codex` through `shaka review run`, Codex CLI default under `--ignore-user-config` | $2 / $10 | $0.07–$0.14 / $0.29–$0.69 |
-| Implementer, Stage 2 | `claude-opus-5-5` | Claude Code 2.1.318, effort high, Shaka at the pinned prototype commit, `--max-budget-usd 20` per session | $4 / $20 | $3 per fixing cycle, $1 per clean cycle, billed (assumption below) |
-| Verifier, Stage 2 | `claude-opus-5-5` | One fresh Claude Code session per escape audit, with no arm label | $4 / $20 | $1.50 per session, billed (assumption) |
-| Judge | `gpt-6.1-sol` | `codex exec -s read-only`, effort low | $2 / $10 | about $0.035 per call |
+| Implementer, Stage 2 | `claude-opus-5-5` | Claude Code 2.1.318, effort high, Shaka at the pinned prototype commit, `--max-budget-usd` of at most 20 per session, set by the [Per item](#stop-rules) rule | $4 / $20 | $3 per fixing cycle, $1 per clean cycle, billed (assumption below) |
+| Verifier, Stage 2 | `claude-opus-5-5` | One fresh Claude Code session per item, after both escape audits, effort high, with no arm label; [pinned prompt](review-scope/verifier-prompt.md) | $4 / $20 | $3 per session, $1.50 per audit's findings, billed (assumption) |
+| Judge | `gpt-6.1-sol` | `codex exec -s read-only`, effort low; [pinned prompt](review-scope/judge-prompt.md) | $2 / $10 | about $0.035 per call |
 
 - Both arms use every component above unchanged. The arms differ in one thing: the diff the
   reviewers receive from cycle 2 on.
@@ -115,8 +115,12 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
   `AGENTS.md` and nothing under `.agents/shaka/`. The fixture's `main` below replaces those
   files, so a PR that changes them would show its final version.
 - **Excluded:** every PR the review signal report names, and the three pilot items.
-- **Draw:** sort eligible ledgers by the SHA-1 of `PR:LEDGER_MARKER` and take the first 25 for
-  Stage 1. Stage 2 takes the first 10 of those 25, in the same order.
+- **Draw:** sort eligible ledgers by the SHA-1 of the bytes `PR:MARKER`, with no newline. `PR`
+  is the decimal PR number. `MARKER` is the ledger comment's marker from `local-review-loop-`
+  to its end, without the `shaka:reply:` prefix. For example,
+  `printf '%s' 810:local-review-loop-24180a9fcbae-a4e720c72292 | shasum`. A script computes
+  the keys from PR numbers and markers alone. Take the first 25 for Stage 1. Stage 2 takes
+  the first 10 of those 25, in the same order.
 
 ### Fixture
 
@@ -151,13 +155,16 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
   arms in its window completed. Any other K item is inconclusive and reported, so a failed
   run can never count as a miss avoided.
 - **Judge input:** one finding at a time, with the item's K list plus decoys, under opaque ids.
-  The judge never sees the arm, reviewer, model, cost, or run number.
+  The judge never sees the arm, reviewer, model, cost, or run number. The
+  [judge prompt](review-scope/judge-prompt.md) holds the exact text and how each input is
+  built.
 - **Cost:** each run's usage record from `review run`, in both D12 figures.
 
 ### Stage 2
 
 - **K for an item:** the historical fixed defects and risks whose cited code exists at the
-  first reviewed commit, minus those the shared live cycle 1 fixed.
+  first reviewed commit, minus those the shared live cycle 1 fixed. The historical fix's test,
+  or the verifier's reading, at the forks' shared head decides which ones it fixed.
 - **No fix after cycle 1:** when the shared cycle 1 commits no fix, both arms would review the
   same head. Both loops end there. The item leaves L1 and L2 and is reported with its shared
   cost.
@@ -166,8 +173,11 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
 - **Missed by an arm:** the K item is still present at that arm's final head. When the
   historical fix added a test, run it at the final head; otherwise a verifier reads the code.
 - **Escape audit:** at each arm's final head, both reviewers review the full diff once more,
-  outside the loop. A fresh verifier session checks each defect and risk with the review
-  signal report's procedure. It sees heads labelled `P` and `Q`, never the arm.
+  outside the loop. After both audits, one fresh verifier session checks every defect and risk
+  from both with the review signal report's procedure, so one reader judges both heads. It
+  sees heads labelled `P` and `Q`, never the arm. `P` is the final head of the fork that ran
+  first. The [verifier prompt](review-scope/verifier-prompt.md)
+  holds the exact text, the claims each session checks, and how its answers count.
 - **Cost after the fork:** the implementer's native session usage, every reviewer usage record,
   validation runs and their time from `shaka evidence run`, and wall-clock time from fork to
   loop end. The implementer's own summary of its work never counts.
@@ -176,10 +186,16 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
 
 ADR D12 requires matched warm-up and counterbalanced order before any efficiency claim.
 
-- **Order:** within each item, the first hex digit of the SHA-1 of the item's PR number picks
-  which arm runs first: even means A. In the pilot, A runs first on #810 and #902, and B on
-  #954. Stage 1 runs each cycle's two arms back to back in that order. Stage 2 runs the two
-  forks one after the other in that order, never in parallel.
+- **Order:** each item takes its position in the draw order. The pilot items take theirs from
+  the same SHA-1 key, which orders them #902, #810, #954. An item at an odd position runs A
+  first in its first later cycle; an item at an even position runs B first.
+  - **Stage 1** then alternates by cycle within the item and runs each cycle's two arms back
+    to back. Within an item, A and B go first equally often, or one cycle apart.
+  - **Stage 2** has one pair of forks per item, so position alone decides. It runs the two
+    forks one after the other, never in parallel.
+  - **Pilot:** Stage 1 runs A first at #902's cycles 2, 4 and 6, #810's cycle 3, and #954's
+    cycle 2; B goes first at #902's cycles 3 and 5 and #810's cycles 2 and 4. That puts 20 of
+    the 36 runs A first. Stage 2 runs A's fork first on #902 and #954, and B's on #810.
 - **Warm-up:** before an item's first timed run, each reviewer CLI answers the prompt
   "Reply with OK.", untimed and unscored. Stage 2's forks start warm from the shared session.
 - **Cache:** the second arm of a pair can reuse the first arm's prompt cache. Cache-neutral
@@ -242,6 +258,8 @@ cross-PR K items, and every unfixed same-file finding.
   WebSearch denied, in both arms.
 - **Judge and verifier labels:** `P` and `Q`, or opaque finding ids. Never a model id, arm
   name, price, or run number.
+- **Scorer prompts:** the judge and verifier prompt files postdate every item's merge base, so
+  no fixture tree holds them.
 - **Training data:** the items date from 2026-10 and 2026-11, after Claude Opus 5.5's training
   cutoff. gpt-6.1-sol's cutoff is UNKNOWN.
 
@@ -255,6 +273,18 @@ cross-PR K items, and every unfixed same-file finding.
 - **Per item:** before each call the ledger also checks that item's own spend against its
   limit: the ADR's $15 per PR evaluation, or the exception the maintainer approved for that
   item. An item at its limit ends there and is recorded.
+  - **Session budget:** every Stage 2 Claude Code session, implementer or verifier, first try
+    or retry, reserves `min(20, R)` dollars and passes that value as `--max-budget-usd`. `R`
+    is the item's limit minus its spent, reserved, and unknown charges. Admission uses the
+    same value as its estimate, so no session can carry its item past the limit.
+  - **Budget stop:** a budget stop is not a provider error, so it gets no retry. An
+    implementer session that stops at its budget ends as a failed session: the item leaves L1
+    and L2 and is reported with its spend. A verifier session that stops there leaves its
+    claims unverified. The second fork can get a smaller budget than the first; the
+    alternating order spreads that between the arms.
+  - **Units:** the budget is Claude Code's billed estimate. If the maintainer counts
+    cache-neutral dollars, `R` is divided by 10.7, the ratio under [Arms](#arms), before the
+    minimum, and the ledger reserves 10.7 times the budget.
 - **Pilot bars:** a missed P1 to P4 stops the run and reports, without asking for approval.
 - **Scorer:** J1 to J3 below their bars stops the run; found counts from that judge are void.
 - **Stage 2 prerequisite:** no Stage 2 priced call until the prototype helper commit exists
@@ -280,9 +310,10 @@ cross-PR K items, and every unfixed same-file finding.
   scored as it stands.
 - **Frozen text:** a changed arm, bar, decoy, item rule, or stop rule after the first priced
   call is a new eval with a new preregistration. So is a changed judge or verifier prompt.
-- **Pinned scorer prompts:** the operator commits the judge and verifier prompts beside this
-  report, in a separate PR the maintainer merges before the first priced call. Every scored
-  call uses those files at that commit, and the run records name it.
+- **Pinned scorer prompts:** the [judge prompt](review-scope/judge-prompt.md) and the
+  [verifier prompt](review-scope/verifier-prompt.md) sit beside this report. The maintainer
+  merges them before the first priced call. Every scored call uses those files at the `main`
+  commit that added them, and the run records name it.
 
 ## Held-out exposure
 
@@ -373,7 +404,8 @@ Three items per stage. Arm B is priced at arm A's cost, so the cap covers no sav
 | 2 | #954 | Shared cycle 1; 1 cycle per arm; 2 escape audits | $9.95 | $90.15 |
 | **2** | **Total** | **19 loop cycles, 6 audits** | **$70.97** | **$649.80** |
 
-An escape audit is one more full-diff run by both reviewers plus one verifier session.
+An escape audit is one more full-diff run by both reviewers. One verifier session per item
+checks both audits; the table prices it as two $1.50 halves.
 
 - **Stage 1 band:** reviewer costs varied up to 1.5 times between runs on these items, so
   $9 to $17. Cap $20.
