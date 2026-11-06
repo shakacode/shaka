@@ -29,9 +29,9 @@ module Shaka
     end
 
     # A waiting banner sends the maintainer to the description, so that description must list the question,
-    # whether or not it carries a checkpoint object.
+    # whether or not it carries a checkpoint object. Merging the waiting head answers it.
     def require_decisions!(content, pull, repository)
-      return if open_decisions?(content)
+      return if open_decisions?(content) || pull['merged'] == true
       return unless MergeWarningRegion.awaiting?(pull['body'].to_s, repository, pull.dig('head', 'sha'))
 
       raise Error, 'The checkpoint waits for a maintainer decision; list that question in decisions.'

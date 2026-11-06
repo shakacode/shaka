@@ -56,8 +56,8 @@ class CheckpointRecommendationTest < Minitest::Test
       "#{region::CLOSE}\n\nFeature summary"
   end
 
-  def require_decisions(content, body)
-    pull = { 'body' => body, 'head' => { 'sha' => HEAD } }
+  def require_decisions(content, body, merged: false)
+    pull = { 'body' => body, 'head' => { 'sha' => HEAD }, 'merged' => merged }
     Shaka::CheckpointRecommendation.require_decisions!(content, pull, 'example/test')
   end
 
@@ -69,6 +69,25 @@ class CheckpointRecommendationTest < Minitest::Test
     end
 
     assert_nil require_decisions({ 'decisions' => ['Accept the risk and merge?'] }, waiting)
+  end
+
+  def test_merging_the_waiting_head_answers_its_decision
+    waiting = banner(Shaka::MergeWarningRegion::AWAITING)
+    [{}, { 'decisions' => [] }].each { |answered| assert_nil require_decisions(answered, waiting, merged: true) }
+  end
+
+  def answered_by_merge(body, merged: true)
+    pull = { 'merged' => merged, 'head' => { 'sha' => HEAD } }
+    Shaka::MergeWarningRegion.answered_by_merge(body, 'example/test', pull)
+  end
+
+  def test_a_merge_removes_only_the_warning_that_waited_on_the_merged_head
+    waiting = banner(Shaka::MergeWarningRegion::AWAITING)
+    assert_equal 'Feature summary', answered_by_merge(waiting)
+    assert_equal waiting, answered_by_merge(waiting, merged: false)
+
+    kept = [banner(Shaka::MergeWarningRegion::BLOCKED), banner(Shaka::MergeWarningRegion::AWAITING, head: 'b' * 40)]
+    kept.each { |body| assert_equal body, answered_by_merge(body) }
   end
 
   def test_other_banners_and_older_heads_need_no_decisions

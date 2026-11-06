@@ -84,9 +84,18 @@ module Shaka
 
       def pending
         target = @record['pending_revision']
-        return unless target
+        return staging unless target
 
         finding('B7', "an update to #{target[0, 7]} did not finish", command: "#{installer} --update")
+      end
+
+      # The update removes it after waiting for any update still running, which holds the same lock.
+      def staging
+        path = staging_path
+        return unless path
+
+        finding('B7', "an update's temporary checkout #{path} was not removed; that update is still running " \
+                      'or was interrupted', command: "#{installer} --update")
       end
 
       def ruby

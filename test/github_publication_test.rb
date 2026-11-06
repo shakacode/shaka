@@ -108,7 +108,7 @@ class GitHubDescriptionTest < Minitest::Test
     github = client(pull_response(quoted), RENDERED)
     error = assert_raises(Shaka::Error) { github.description(body: BODY) }
     assert_includes error.message, 'ambiguous'
-    assert_equal 2, @calls.size
+    assert_equal 1, @calls.size
   end
 
   def test_an_edit_that_lands_while_the_update_is_prepared_is_not_erased

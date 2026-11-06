@@ -15,6 +15,13 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Added
 
+- Keep complete usage accounting when a PR description outgrows GitHub's limit.
+  The description retains its tables and pricing notes, with checksummed links to
+  accounting comments. A missing or changed archive blocks later updates.
+  Older helpers refuse to replace archived descriptions; update Shaka before refreshing one.
+- Install pstack beside Shaka in Cursor, Claude Code, or Codex, and keep it current,
+  with the [pstack guide](docs/pstack.md). The guide also gives a prompt for building
+  your own updater for agent skill packs.
 - Show a PR's Timings as text bars, so you can see where the time went, what ran
   together, and when the PR waited on a person. Steps that passed or finished now
   appear only in the bars, and the table keeps a row for each step that did not.
@@ -57,6 +64,22 @@ qualification remain evidence requirements; the version number does not establis
   `wip.include_checkout_path` instead.
 
 ### Fixed
+
+- Clear the temporary worktree an interrupted `install --update` leaves in the source
+  checkout. `install --status` now reports it as an interrupted update and names
+  `install --update`, which removes it, instead of calling it development work with no
+  command that clears it. `install --verify` no longer warns about it. A worktree left by
+  an update from an earlier version still shows as development; remove it with
+  `git -C SOURCE worktree remove --force --force PATH`, using the source checkout and
+  worktree path status lists.
+
+- Replace circular checkpoint links during open decisions with a waiting status.
+  Decision-writing guidance now asks for options, consequences, a recommendation,
+  and a clear way to answer.
+
+- Finish a PR's description after the maintainer merges a PR whose checkpoint waited
+  on their decision. The merge counts as the answer: an empty decisions list now
+  publishes, and the "waiting for the maintainer's decision" warning comes off.
 
 - Keep validation and review results valid when Shaka updates during a task, unless the
   update changes the code that runs or checks them. Rewording a description for the same

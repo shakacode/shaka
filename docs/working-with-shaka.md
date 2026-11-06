@@ -204,7 +204,8 @@ create-verification-skill to prove searching for O'Brien finds the order. Go.
 
 Shaka uses pstack's techniques inside its own steps. pstack's Shipping, Babysit,
 and Autopilot playbooks run their own delivery, so Shaka leaves them out and
-offers to try one separately. On Codex, install a community port of pstack.
+offers to try one separately. To install pstack and keep it current, read
+[Use pstack with Shaka](pstack.md).
 
 <a id="hand-verification-evidence-back-to-shaka"></a>
 

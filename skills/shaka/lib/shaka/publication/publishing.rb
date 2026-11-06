@@ -9,23 +9,16 @@ require_relative 'feature_guard'
 require_relative 'managed_region'
 require_relative 'merge_warning_region'
 require_relative 'rendered_prose'
+require_relative '../github/description_publishing'
 
 module Shaka
   # Publishes rendered Markdown, checking GitHub's own rendering before anything is written
   # and confirming the stored bytes afterwards.
   module Publishing
+    include DescriptionPublishing
+
     VERBATIM = 'Quoted text.'
     REPLY_PAGES = 20
-
-    # A block builds the body from the pull request it replaces, using this same read.
-    def description(body: nil)
-      current = pull
-      existing = current['body'].to_s
-      merged = check_length(merge(existing, publishable(block_given? ? yield(current) : body)))
-      verify_rendering(merged)
-      check_unchanged(existing, current)
-      confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
-    end
 
     # `verbatim` names quoted text the rendering check leaves to the caller; see verify_rendering.
     def reply(body:, key:, comment: nil, trust_config: nil, verbatim: [], # rubocop:disable Metrics/ParameterLists
@@ -80,6 +73,7 @@ module Shaka
 
     # Only the marked region is ours; anything a person or another bot added stays.
     def merge(existing, body)
+      existing = Publishing.without_archive_guard(existing)
       managed = "#{OPEN_MARK}\n#{body}#{CLOSE_MARK}"
       return managed if existing.strip.empty?
 

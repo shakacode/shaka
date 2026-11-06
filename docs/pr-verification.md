@@ -406,9 +406,11 @@ accepted guidance. Once a direction is chosen, the agent records that guidance
 and recoverable work state as a [return point](#return-points). This is not an
 automatic Ruby snapshot or an extra human approval.
 The PR description opens with **Decisions to make** while you have questions to answer.
-Until you answer them, the links below the questions show **Decisions to make** as the
-checkpoint, and the code walkthrough waits, because your answers may change the code it
-would explain. Ask your agent for a walkthrough sooner if you want to read one first.
+Each question should explain your options, what each changes, the agent's recommendation,
+and how to answer. Published checkpoint and walkthrough links remain available.
+An unpublished checkpoint says **Not published yet**. The code walkthrough waits because
+your answers may change the code it would explain. Ask your agent for a walkthrough
+sooner if you want to read one first.
 Otherwise, below the line naming the AI that wrote it, it opens with the task owner's
 recommendation from the checkpoint published for that commit, such as
 **Recommendation: Merge**, or **No recommendation yet** before the owner has recorded one.
