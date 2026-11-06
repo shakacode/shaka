@@ -73,6 +73,7 @@ module Shaka
 
     # Only the marked region is ours; anything a person or another bot added stays.
     def merge(existing, body)
+      existing = Publishing.without_archive_guard(existing)
       managed = "#{OPEN_MARK}\n#{body}#{CLOSE_MARK}"
       return managed if existing.strip.empty?
 

@@ -39,6 +39,9 @@ and SHA256 checksums identify them; the tables and pricing notes stay in the des
 Keep those comments. A later update checks their contents before using them and stops
 if a comment is missing or changed. The checksum detects changes; it does not make a
 GitHub comment immutable.
+Older Shaka helpers refuse to replace an archived description. Update Shaka before
+refreshing one; reverting the helper does not undo an existing archive. An interrupted
+upload can leave unreferenced comments while the description keeps its earlier contents.
 
 ## Compare host counters carefully
 

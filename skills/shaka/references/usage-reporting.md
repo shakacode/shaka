@@ -40,6 +40,10 @@ updates verify and restore the records before carry and deduplication. Missing, 
 or cross-PR archive comments stop publication; restore the original bytes rather than
 removing the references or substituting zero. Visible tables, pricing notes, and coverage
 limits remain in the description. Text outside the managed region is preserved.
+Older helpers refuse this versioned description before replacing it; update Shaka
+before refreshing an archived PR. Archives outlive a helper rollback, so retain a
+compatible helper for those PRs. Failed uploads can leave unreferenced archive comments;
+the description stays unchanged until every part is stored and verified.
 
 Each report is priced once, when `shaka usage` runs, with the rate card installed then.
 A carried report keeps that price; nothing reprices it. A collapsed **How each report

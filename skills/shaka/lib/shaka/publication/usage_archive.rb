@@ -48,32 +48,27 @@ module Shaka
     # never accounting evidence. Reading is restricted to this PR's API comments.
     def expand(body)
       @read = {}
-      region = Publishing.managed_region(body)
+      region = archive_region(body)
       return body unless region&.include?(PREFIX)
 
       check_references(region)
       expanded = region.gsub(REFERENCES) do
         restore(Regexp.last_match[1], Regexp.last_match[2])
       end
-      replace_region(body, region, expanded)
+      Publishing.without_archive_guard(replace_region(body, region, expanded))
     rescue IndexError, JSON::ParserError, ArgumentError
       raise Error, 'Usage archive is missing or malformed; restore it before publishing.'
     end
 
     private
 
-    def identify_writer(body)
-      @writer = Publishing.managed_region(body).to_s[/^🤖 [^\r\n]+$/] || '🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN'
-    end
+    def archive_region(body)
+      region = Publishing.managed_region(body)
+      if body.include?(Publishing::ARCHIVE_GUARD) && !region&.include?(PREFIX)
+        raise Error, 'Usage archive references are missing or malformed; restore them before publishing.'
+      end
 
-    def encode(blocks)
-      raise Error, "Body exceeds GitHub's 65536-character limit; usage cannot make it fit." if blocks.empty?
-
-      payload = JSON.generate(blocks)
-      chunks = [payload].pack('m0').scan(CHUNKS)
-      raise Error, 'Usage archive exceeds 128 comment parts.' if chunks.size > 128
-
-      [chunks, Digest::SHA256.hexdigest(payload)]
+      region
     end
 
     def check_preview(preview)
@@ -116,7 +111,7 @@ module Shaka
         ref = { 'comments' => ids, 'sha256' => digest, 'record' => index }
         "#{PREFIX}#{JSON.generate(ref)} -->\n#{display(block, ref)}#{END_MARK}"
       end
-      replace_region(body, region, compact)
+      Publishing.with_archive_guard(replace_region(body, region, compact))
     end
 
     def replace_region(body, region, replacement)

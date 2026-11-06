@@ -5,6 +5,20 @@ module Shaka
   module UsageArchiveStorage
     private
 
+    def identify_writer(body)
+      @writer = Publishing.managed_region(body).to_s[/^🤖 [^\r\n]+$/] || '🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN'
+    end
+
+    def encode(blocks)
+      raise Error, "Body exceeds GitHub's 65536-character limit; usage cannot make it fit." if blocks.empty?
+
+      payload = JSON.generate(blocks)
+      chunks = [payload].pack('m0').scan(UsageArchive::CHUNKS)
+      raise Error, 'Usage archive exceeds 128 comment parts.' if chunks.size > 128
+
+      [chunks, Digest::SHA256.hexdigest(payload)]
+    end
+
     def reference(json)
       value = JSON.parse(json)
       unless value.is_a?(Hash) && value.keys.sort == %w[comments record sha256] && valid_reference?(value)
