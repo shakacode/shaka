@@ -41,31 +41,44 @@ class InstallUpdateStagingTest < Minitest::Test
     refute_includes output, 'Warning:'
   end
 
-  # Only a detached worktree at the exact path the installer makes is its own; anything else is a person's.
+  # Git locks a worktree while worktree add runs, so a kill then leaves it locked.
+  def test_a_staging_worktree_locked_by_a_killed_add_is_cleared
+    root = local_install
+    staging = add_staging(root)
+    git('-C', root, 'worktree', 'lock', '--reason', 'initializing', staging)
+    run_next(status(root), 'B7')
+    assert_cleared(root, staging)
+  end
+
+  # Only the worktree the record names is the installer's; one at the same kind of path is a person's.
   def test_a_persons_worktree_stays_development_and_survives_the_update
     root = local_install
-    lookalikes = [File.join(@directory, 'shaka-update-notes/source'), staging_path('attached')]
-    git('-C', root, 'worktree', 'add', '-q', '--detach', lookalikes[0])
-    git('-C', root, 'worktree', 'add', '-q', '-b', 'topic', lookalikes[1])
+    lookalike = staging_path('person')
+    git('-C', root, 'worktree', 'add', '-q', '--detach', lookalike)
     assert_equal 'C3', status(root)['state']
     run_install(root, '--update')
-    assert_equal(lookalikes.map { File.realpath(it) }, linked_worktrees(root))
+    assert_equal [File.realpath(lookalike)], linked_worktrees(root)
   end
 
   private
 
-  # The folder Dir.mktmpdir('shaka-update') makes, holding the staged checkout.
-  def staging_path(suffix = 'abc123') = File.join(@directory, "shaka-update20261105-4242-#{suffix}", 'source')
+  # The source folder inside a folder Dir.mktmpdir('shaka-update') makes.
+  def staging_path(suffix = 'abc123')
+    File.join(File.realpath(@directory), "shaka-update20261105-4242-#{suffix}", 'source')
+  end
 
+  # What a killed update leaves: the record stage writes first, and the worktree it then adds.
   def add_staging(root)
     path = staging_path
+    File.write(File.join(root, '.git/shaka-update-staging'), "#{path}\n")
     git('-C', root, 'worktree', 'add', '-q', '--detach', path)
-    File.realpath(path)
+    path
   end
 
   def assert_cleared(root, staging)
     assert_empty staging_worktrees(root)
-    refute_path_exists staging
+    refute_path_exists File.dirname(staging)
+    refute_path_exists File.join(root, '.git/shaka-update-staging')
     assert_equal 'ok', status(root)['severity']
   end
 

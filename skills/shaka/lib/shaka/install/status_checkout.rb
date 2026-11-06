@@ -92,13 +92,11 @@ module Shaka
 
       # The update removes it after waiting for any update still running, which holds the same lock.
       def staging
-        paths = staging_worktrees
-        return if paths.empty?
+        path = staging_path
+        return unless path
 
-        finding('B7', "an update's staging worktree is still registered (#{listed(paths)}); that update is " \
-                      'still running or was interrupted', command: "#{installer} --update")
-      rescue ArgumentError
-        nil
+        finding('B7', "an update's temporary checkout #{path} was not removed; that update is still running " \
+                      'or was interrupted', command: "#{installer} --update")
       end
 
       def ruby
