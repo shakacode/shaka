@@ -155,7 +155,8 @@ Two measurements could change the verdict:
 ## Rerun it
 
 The [report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-signal.md)
-gives the sampling rule and the 40 findings, so the same data gives the same sample. To
+gives the sampling rule and the 40 findings with their commits, so each check can be
+rerun. The comment snapshot is not published, and a fresh download may differ. To
 run the study on your own repository, ask your agent:
 
 ```text

@@ -365,7 +365,9 @@ What would change this:
   finding count, and cost.
 - Each reviewer's report sits in a `Round N · COMMIT · REVIEWER` disclosure. Its
   **Collated as** line maps report item numbers to finding IDs.
-- Draw the sample with the rule above. The two tables list every sampled finding, so the
-  same snapshot gives the same 40.
+- Draw the sample with the rule above. The 23.8 MB snapshot is not published, and ledger
+  comments can change after it was taken. A fresh download may give different population
+  counts and a different sample. The tables list all 40 sampled findings with their source
+  comments and commits, so each check can still be rerun.
 - Check each with the procedure under Sample. For a run check, run the fix's test files on
   the reviewed commit and then on the fix.
