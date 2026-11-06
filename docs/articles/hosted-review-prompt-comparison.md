@@ -82,9 +82,11 @@ newer model, and the old prompt might do better on the old one.
 The current prompt raised 1 finding in 87 runs, and that one was real: on #902, a stats
 write error could stop `pr watch`. `main` now catches that error.
 
-Besides the CodeRabbit bugs, the old prompt raised 45 findings. The scorer called 10 of
-them real, covering 6 distinct problems:
+Besides the bugs it caught, the old prompt raised 55 findings. The scorer called 12 of
+them real, covering 7 distinct problems:
 
+- On #710, restoring a link with `ln -s` could nest it inside a directory. The same
+  PR's fix switched to `ln -sfn`.
 - On #902, a description edit made during a stats write could be lost. `main` now
   re-reads the description before writing.
 - Two were in the canary code from #901. A failed comment skipped closing old canary
@@ -141,8 +143,8 @@ and we'd have to move the pin when that model retires. The test answers a histor
 question, and its fix is one I wouldn't adopt.
 
 **The stronger model, `claude-opus-5-5`.** Moving hosted review to Opus is a change we
-could actually make. Local Opus reviews cost about three times what hosted Sonnet reviews did, so a
-replay of both prompts on these commits would cost about $11. On 12 of these commits, local Opus
+could actually make. Local Opus reviews cost about three times what hosted Sonnet reviews did, so one
+run per commit with both prompts would cost about $11. On 12 of these commits, local Opus
 reviewed the same commit before CodeRabbit commented. Its rounds named 1 of the 13 bug
 threads there, going by a keyword search with each match read. The local report comments the hosted job could
 read named 4, counting Codex rounds and rounds on earlier commits. A hosted Opus review would get a different prompt, and most
@@ -160,6 +162,9 @@ If we want more of those catches, the lever is CodeRabbit's review limit. The li
 - The same choice makes local Opus look worse than it is. A bug local Opus caught would
   often be fixed before CodeRabbit saw it, so it would never make this list. The keyword search
   can also miss a bug Opus described in other words.
+- The CI study counts 9 of these 17 commits with a published local review of that
+  commit. The round tables here show local rounds on 14, and the hosted job took the short
+  pass on 12. I haven't reconciled the two counts.
 - Three runs per commit can't show a small difference between prompts.
 - The reviews ran on the local Claude Code CLI 2.1.312, not the GitHub action. They
   still matched the hosted job on these commits. 50 of 51 current-prompt runs said "no
