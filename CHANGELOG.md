@@ -15,6 +15,9 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Added
 
+- Install pstack beside Shaka in Cursor, Claude Code, or Codex, and keep it current,
+  with the [pstack guide](docs/pstack.md). The guide also gives a prompt for building
+  your own updater for agent skill packs.
 - Show a PR's Timings as text bars, so you can see where the time went, what ran
   together, and when the PR waited on a person. Steps that passed or finished now
   appear only in the bars, and the table keeps a row for each step that did not.

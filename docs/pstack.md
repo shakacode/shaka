@@ -69,7 +69,17 @@ claude plugin install pstack@cursor-plugins
 ```
 
 Before installing, [compare the branch with upstream](https://github.com/cursor/plugins/compare/main...justin808:plugins:jg-codex/verification-maintenance-handoff).
-To return to upstream, remove the marketplace again and add `cursor/plugins`.
+The marketplace follows the branch, so each update installs its newest commit.
+Compare again before you update.
+
+To return to upstream, reinstall from `cursor/plugins` and turn auto-update on
+again if you used it:
+
+```sh
+claude plugin marketplace remove cursor-plugins
+claude plugin marketplace add cursor/plugins
+claude plugin install pstack@cursor-plugins
+```
 
 ## Build your own updater
 
@@ -82,9 +92,10 @@ Write a script that keeps my agent skill packs current. Read a manifest
 listing each pack's Git URL, its branch or pinned commit, its skill folders,
 and the agent skill folders that get them. Update a checkout only when it is
 clean, on the expected branch, and free of local commits. Link each skill into
-~/.claude/skills, ~/.agents/skills, and ~/.cursor/skills. When another skill
-already uses a name, add a prefix such as pstack- and report the conflict
-instead of overwriting. Show the planned changes before making them.
+~/.claude/skills, ~/.agents/skills, and ~/.cursor/skills, skipping any agent
+that already has the pack installed as a plugin. When another skill already
+uses a name, add a prefix such as pstack- and report the conflict instead of
+overwriting. Show the planned changes before making them.
 ```
 
 Codex reads skills from `~/.agents/skills`. Optional additions:
