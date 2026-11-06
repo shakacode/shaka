@@ -42,8 +42,9 @@ module Shaka
         root = @checkout.root
         return if action == :install || registered?(root) || File.file?(File.join(root, '.git'))
 
+        # A registered checkout's installer reinstalls itself without --directory, so it always names the folder.
         default = SettingsLocation.resolved(SettingsLocation.default_directory(Dir.home))
-        directory = (['--directory', root] unless SettingsLocation.resolved(root) == default)
+        directory = (['--directory', root] unless SettingsLocation.resolved(root) == default && !registered?(@source))
         raise ArgumentError, Refusal.message('No Shaka installation is registered here', root,
                                              Refusal.command(File.join(@source, 'bin/install'), *directory))
       end

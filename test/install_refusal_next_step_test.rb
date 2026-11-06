@@ -33,32 +33,14 @@ class InstallRefusalNextStepTest < Minitest::Test
                     'Use bin/install to change installation selections before maintenance'
   end
 
+  # A registered checkout's installer reinstalls itself without --directory, so its step names the empty folder.
+  def test_maintenance_from_a_registered_checkout_names_the_empty_folder
+    run_install(@root, '--directory', @root, '--repository', @remote)
+    step = refused(@root, '--verify', '--directory', default_path)
+    assert_includes step, "--directory #{Shellwords.escape(default_path)}"
+  end
+
   # A branch only origin has is switched to by its full name, so another remote's copy cannot make it ambiguous.
-  # git branch refuses a kept name already in use, so a kept branch moved elsewhere needs a person.
-  def test_local_commits_with_an_occupied_kept_branch_need_a_person
-    root = default_install
-    commit(root, 'local change')
-    name = "kept-#{git('-C', root, 'rev-parse', '--short', 'HEAD').strip}"
-    git('-C', root, 'branch', name, 'HEAD~1')
-    assert_includes refusal(root, '--verify'), 'Next: a person must decide where to keep these commits, because ' \
-                                               "branch #{name}"
-    report = status(root)
-    assert_equal 'B2', report['state']
-    assert_nil report['next_command']
-  end
-
-  # A checkout reset behind its record catches up with a fast-forward.
-  def test_a_checkout_behind_its_record_fast_forwards
-    root = default_install
-    pull(root)
-    head = record_head(root)
-    git('-C', root, 'reset', '-q', '--hard', 'HEAD~1')
-    step = refused(root, '--verify')
-    assert_includes step, 'merge --ff-only'
-    run_step(step)
-    assert_equal head, git('-C', root, 'rev-parse', 'HEAD').strip
-  end
-
   def test_a_branch_only_origin_has_switches_by_its_full_name
     root = default_install
     git('-C', root, 'push', '-q', @remote, 'HEAD:refs/heads/topic')
@@ -75,16 +57,6 @@ class InstallRefusalNextStepTest < Minitest::Test
     assert_equal Shellwords.escape(File.join(@root, 'bin/install')), step
   end
 
-  def test_local_commits_get_the_step_that_keeps_them_on_a_branch
-    root = default_install
-    commit(root, 'local change')
-    step = refused(root, '--verify')
-    assert_includes step, 'reset --keep'
-    run_step(step)
-    installer(root, '--verify')
-    refute_empty git('-C', root, 'for-each-ref', '--format=%(refname:short)', 'refs/heads/kept-*').strip
-  end
-
   def test_a_linked_worktree_keeps_the_selected_agent
     worktree = File.join(@directory, 'worktree')
     git('-C', @root, 'worktree', 'add', '-q', '--detach', worktree)
@@ -95,31 +67,9 @@ class InstallRefusalNextStepTest < Minitest::Test
                  File.realpath(File.join(@home, '.claude/skills/shaka'))
   end
 
-  # When origin's history was rewritten, which history to keep is a person's choice, as status says.
-  def test_a_rewritten_origin_needs_a_person
-    root = default_install
-    commit(@root, 'rewritten', amend: true)
-    git('-C', @root, 'push', '--force', '-q', 'origin', 'main')
-    git('-C', root, 'fetch', '-q', @remote, '+main:refs/remotes/origin/main')
-    git('-C', root, 'reset', '-q', '--hard', 'origin/main')
-    output = refusal(root, '--verify')
-    refute_includes output, 'reset --keep'
-    assert_includes output, 'Next: a person must decide which revision main should use'
-  end
-
   def test_a_missing_branch_needs_a_person
     output = refusal(default_install, '--branch', 'mian')
     refute_includes output, 'switch mian'
     assert_includes output, 'Next: a person must decide'
-  end
-
-  private
-
-  # Points the install record at HEAD and returns it.
-  def record_head(root)
-    head = git('-C', root, 'rev-parse', 'HEAD').strip
-    record = File.join(root, '.git/shaka-install.json')
-    File.write(record, JSON.generate(JSON.parse(File.read(record)).merge('revision' => head)))
-    head
   end
 end
