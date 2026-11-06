@@ -43,11 +43,12 @@ module Shaka
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
     end
 
+    # Shown open like the other Intent lines; paragraphs join with line breaks so none reads as a separate item.
     def task_understanding(spec)
       return [] if spec['task_understanding'].nil?
 
       body = PublicationText.required(spec['task_understanding'], 'intent task_understanding')
-      ["<details>\n<summary>Task as understood</summary>\n\n#{body}\n\n</details>"]
+      ["**Task as understood:** #{body.strip.split(/\n\s*\n/).map(&:strip).join('<br>')}"]
     end
 
     def root_cause(spec)

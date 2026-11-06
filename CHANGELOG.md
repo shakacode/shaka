@@ -52,6 +52,10 @@ qualification remain evidence requirements; the version number does not establis
   revision choice; follow [getting started](docs/getting-started.md) to inspect and
   update one.
 - Preserve maintainer-controlled repository settings and native GitHub checks.
+- A PR description shows **Task as understood** as an open line after the Task line,
+  not a fold, so you can compare the task with the result without expanding anything,
+  and it no longer runs into **Root cause** when opened. It now counts toward the
+  description's visible word limits.
 
 ### Removed
 
