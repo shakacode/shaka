@@ -46,6 +46,12 @@ Older Shaka helpers refuse to replace an archived description. Update Shaka befo
 refreshing one; reverting the helper does not undo an existing archive. An interrupted
 upload can leave unreferenced comments while the description keeps its earlier contents.
 
+If an archive is deleted, recover its original records from saved reports or a saved
+description. Have a maintainer verify that every record is recovered before replacing
+the damaged managed region with those records and publishing again. If the records
+cannot be recovered, report the missing accounting and stop for a maintainer decision;
+removing the references does not preserve the lost history.
+
 ## Compare host counters carefully
 
 | Host | Input accounting | Output accounting |

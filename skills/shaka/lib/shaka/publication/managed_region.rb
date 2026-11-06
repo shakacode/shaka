@@ -6,7 +6,8 @@ module Shaka
     OPEN_MARK = '<!-- shaka:begin -->'
     CLOSE_MARK = '<!-- shaka:end -->'
     # Older writers reject the extra opener instead of overwriting accounting they cannot read.
-    ARCHIVE_GUARD = "#{CLOSE_MARK}\n<!-- shaka:usage-archive:v2 -->\n#{OPEN_MARK}".freeze
+    ARCHIVE_GUARD = "#{CLOSE_MARK}\n<!-- shaka:usage-archive:v2; update Shaka; " \
+                    "do not remove this guard or archive references -->\n#{OPEN_MARK}".freeze
 
     def self.without_archive_guard(body) = body.sub(ARCHIVE_GUARD, CLOSE_MARK)
     def self.with_archive_guard(body) = body.sub(CLOSE_MARK, ARCHIVE_GUARD)

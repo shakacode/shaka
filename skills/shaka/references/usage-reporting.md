@@ -37,6 +37,8 @@ Keep usage archive comments, including superseded sets as history. If an archive
 cannot be verified, restore its original bytes; do not remove references or substitute
 zero. Update Shaka before refreshing an archived PR, and keep a compatible helper
 when reverting.
+If original records are unavailable, stop and report the missing accounting for a
+maintainer decision; never claim complete history after removing its references.
 
 Each report is priced once, when `shaka usage` runs, with the rate card installed then.
 A carried report keeps that price; nothing reprices it. A collapsed **How each report
