@@ -15,13 +15,17 @@ reads the prompt on standard input and runs in the checkout described below:
 ```bash
 claude -p --model claude-opus-5-5 --effort high --max-budget-usd BUDGET \
   --permission-mode bypassPermissions --disallowedTools WebFetch WebSearch \
-  --output-format json --no-session-persistence < PROMPT_FILE
+  --output-format stream-json --verbose --no-session-persistence < PROMPT_FILE > STREAM
 ```
 
-- `BUDGET` follows the preregistration's Per item stop rule, as an implementer session's
-  does.
+- `BUDGET` is the verifier budget from the preregistration's Per item stop rule.
 - The session runs without GitHub credentials, like the Stage 2 implementer sessions.
-- The JSON output's usage fields give the session's usage record.
+- `STREAM` keeps every tool call. Its final `result` event holds the answer and the
+  session's usage.
+- **Isolation:** the operator reads the tool calls in `STREAM`. A session that touched
+  `/Users/justin/claude/shaka-state/`, the run records, or a checkout other than its own and
+  the temporary worktrees it made is void, and counts as a provider error under the
+  preregistration's Retries rule.
 
 ## Checkout
 
@@ -30,8 +34,9 @@ claude -p --model claude-opus-5-5 --effort high --max-budget-usd BUDGET \
 - Branches:
   - `main`: the item fixture's `main`.
   - `start`: the first reviewed commit.
-  - `P`: the final head of the fork that ran first in the item's order.
-  - `Q`: the final head of the other fork.
+  - `P` and `Q`: the two forks' final heads. One random bit per item, such as the parity
+    of `openssl rand -hex 1`, decides which fork's head is `P`. Only the run record holds
+    that mapping.
 - Nothing else from either loop: no ledger, goal file, reviewer report, or session
   transcript.
 
@@ -51,10 +56,11 @@ claude -p --model claude-opus-5-5 --effort high --max-budget-usd BUDGET \
 
 ## Reading the answer
 
-- The answer is the last `json` fenced block in the session's `result`: one object per
+- The answer is the last `json` fenced block in the final `result` event: one object per
   claim.
-- **K for the item:** a K item stays in K when `common` is `yes`. Otherwise the shared cycle 1
-  fixed it.
+- **K for the item:** a K item leaves K only when `common` is `no`, because the shared cycle
+  1 fixed it. `unclear` or no answer at `common`, or at either head, leaves it inconclusive:
+  reported, not scored.
 - **Missed by an arm:** a K item still in K whose value at that arm's head is `yes`.
 - **Escapes:** audit claims joined by `same_as` are one problem. A problem is an escape at a
   head when any of its claims has `yes` there, so a problem one audit found also counts at

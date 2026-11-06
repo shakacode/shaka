@@ -169,14 +169,16 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
   same head. Both loops end there. The item leaves L1 and L2 and is reported with its shared
   cost.
 - **Scored only when complete:** an item counts toward L1 and L2 only when both arms' loops
-  ended by finishing or by the round cap, not by a failed session.
+  ended by finishing or by the round cap, not by a failed session. A K item whose test or
+  verifier answer at the forks' shared head or at either final head is `unclear` or missing
+  is inconclusive and reported.
 - **Missed by an arm:** the K item is still present at that arm's final head. When the
   historical fix added a test, run it at the final head; otherwise a verifier reads the code.
 - **Escape audit:** at each arm's final head, both reviewers review the full diff once more,
   outside the loop. After both audits, one fresh verifier session checks every defect and risk
   from both with the review signal report's procedure, so one reader judges both heads. It
-  sees heads labelled `P` and `Q`, never the arm. `P` is the final head of the fork that ran
-  first. The [verifier prompt](review-scope/verifier-prompt.md)
+  sees heads labelled `P` and `Q`, never the arm. One random bit per item assigns the labels,
+  recorded only in the run record. The [verifier prompt](review-scope/verifier-prompt.md)
   holds the exact text, the claims each session checks, and how its answers count.
 - **Cost after the fork:** the implementer's native session usage, every reviewer usage record,
   validation runs and their time from `shaka evidence run`, and wall-clock time from fork to
@@ -190,12 +192,13 @@ ADR D12 requires matched warm-up and counterbalanced order before any efficiency
   the same SHA-1 key, which orders them #902, #810, #954. An item at an odd position runs A
   first in its first later cycle; an item at an even position runs B first.
   - **Stage 1** then alternates by cycle within the item and runs each cycle's two arms back
-    to back. Within an item, A and B go first equally often, or one cycle apart.
+    to back. Within an item, the counts of A-first and B-first cycles differ by at most one.
   - **Stage 2** has one pair of forks per item, so position alone decides. It runs the two
     forks one after the other, never in parallel.
   - **Pilot:** Stage 1 runs A first at #902's cycles 2, 4 and 6, #810's cycle 3, and #954's
-    cycle 2; B goes first at #902's cycles 3 and 5 and #810's cycles 2 and 4. That puts 20 of
-    the 36 runs A first. Stage 2 runs A's fork first on #902 and #954, and B's on #810.
+    cycle 2; B goes first at #902's cycles 3 and 5 and #810's cycles 2 and 4. A goes first in
+    5 of the 9 cycles, which hold 20 of the 36 runs. Stage 2 runs A's fork first on #902 and
+    #954, and B's on #810.
 - **Warm-up:** before an item's first timed run, each reviewer CLI answers the prompt
   "Reply with OK.", untimed and unscored. Stage 2's forks start warm from the shared session.
 - **Cache:** the second arm of a pair can reuse the first arm's prompt cache. Cache-neutral
@@ -274,17 +277,28 @@ cross-PR K items, and every unfixed same-file finding.
   limit: the ADR's $15 per PR evaluation, or the exception the maintainer approved for that
   item. An item at its limit ends there and is recorded.
   - **Session budget:** every Stage 2 Claude Code session, implementer or verifier, first try
-    or retry, reserves `min(20, R)` dollars and passes that value as `--max-budget-usd`. `R`
-    is the item's limit minus its spent, reserved, and unknown charges. Admission uses the
-    same value as its estimate, so no session can carry its item past the limit.
+    or retry, enters the ledger as one call. `R` is the item's limit minus its spent,
+    reserved, and unknown charges. A verifier's budget is `min(20, R)`. An implementer
+    session also makes `review run` calls, which the ledger does not admit separately, so it
+    first sets aside a reviewer reserve: $1.15 for each cycle the round cap still lets it
+    review, 1.5 times the largest historical cost of one cycle's two reviewer runs under
+    [Arms](#arms) ($0.61 + $0.14). Its budget is `min(20, R - reserve)`. The session passes
+    its budget as `--max-budget-usd`, and the ledger reserves the budget plus any reserve.
+    A budget of $0 or less ends the item there.
+  - **Overshoot:** admission keeps a session from starting past the limit, not from finishing
+    past it. The last call in flight can cross the budget, as ADR D9 allows, and reviewer runs
+    can exceed their reserve. The session's actual cost is charged in full, and the item ends
+    once it reaches its limit.
   - **Budget stop:** a budget stop is not a provider error, so it gets no retry. An
     implementer session that stops at its budget ends as a failed session: the item leaves L1
     and L2 and is reported with its spend. A verifier session that stops there leaves its
     claims unverified. The second fork can get a smaller budget than the first; the
     alternating order spreads that between the arms.
   - **Units:** the budget is Claude Code's billed estimate. If the maintainer counts
-    cache-neutral dollars, `R` is divided by 10.7, the ratio under [Arms](#arms), before the
-    minimum, and the ledger reserves 10.7 times the budget.
+    cache-neutral dollars, the reviewer reserve is $2.55 per cycle (1.5 times $1.00 + $0.69),
+    `R` minus the reserve is divided by 10.7, the ratio under [Arms](#arms), before the
+    minimum, and the ledger reserves 10.7 times the budget plus the reserve. Actual cost
+    settles from usage records, so the ratio only sizes the reservation.
 - **Pilot bars:** a missed P1 to P4 stops the run and reports, without asking for approval.
 - **Scorer:** J1 to J3 below their bars stops the run; found counts from that judge are void.
 - **Stage 2 prerequisite:** no Stage 2 priced call until the prototype helper commit exists

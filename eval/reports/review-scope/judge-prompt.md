@@ -19,9 +19,13 @@ codex exec -s read-only --ignore-rules --ignore-user-config \
 - The flags match Shaka's own Codex reviewer, plus the model, the low effort, and the
   working directory. `--ignore-user-config` drops any configured model, so the model is
   named.
-- `EMPTY_DIR` is a new empty directory outside every checkout, so the judge reads nothing
-  but the prompt.
-- The JSON events on standard output give the call's usage record.
+- `EMPTY_DIR` is a new empty directory outside every checkout, so the judge starts with
+  nothing but the prompt.
+- The JSON events on standard output give the call's usage record and every command the
+  judge ran.
+- **Isolation:** the read-only sandbox still allows reads outside `EMPTY_DIR`, and the
+  judge needs none. A call whose events show any command or file read is void, and counts
+  as a provider error under the preregistration's Retries rule.
 
 ## Inputs
 
@@ -44,7 +48,7 @@ codex exec -s read-only --ignore-rules --ignore-user-config \
 
 - The answer is the last line of `ANSWER` that parses as a JSON object. Its `finding` must
   equal the call's finding id, and its `match` must be `none` or an id from the list.
-- A call whose answer fails that check counts as a provider error under the
+- A call whose answer fails that check, or a void call, counts as a provider error under the
   preregistration's Retries rule: the identical prompt is sent once more. A finding still
   without a valid answer is unjudged. A K item whose window holds an unjudged finding is
   inconclusive, as a K item with an incomplete run is.
