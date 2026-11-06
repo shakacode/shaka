@@ -278,7 +278,8 @@ Claude-only findings.
   - #5: the F13 fix (#2) still retired a comment when only one of its reports matched.
     Closing it took a review cycle past the ledger's cap.
   - #30: the first fix read commit statuses but still let a later time replace an
-    earlier one.
+    earlier one. The line at fault, in `carried_state`, existed at the ledger's first
+    reviewed commit; the first fix changed only how the start time was read.
   - #21: on #850, F8 returned after its first fix. It is one of seven findings there
     (F1, F5, F7, F8, F10, F11, F12) about how one path check reads Markdown links. #28,
     F7, is another. Both sampled ones need a directory name shaped like a link, which
@@ -310,9 +311,10 @@ Claude-only findings.
   sampled accepted or undecided findings. A label for findings already in the base would
   have little to mark.
 - **Each reviewer reports defects the other did not.** Of 345 fixed defects, Codex alone
-  reported 154, Claude alone 113, and both 78. Neither sees the other's findings for a
-  commit. Whether one reviewer would have caught the other's defects in a later cycle is
-  unknown, so the loss from dropping one is not measured.
+  reported 154, Claude alone 113, and both 78. Some cycles ran only one reviewer, and
+  neither sees the other's findings for a commit. Whether one reviewer would have caught
+  the other's defects in a later cycle is unknown, so the loss from dropping one is not
+  measured.
 - **In the sample, later cycles mostly caught the loop's own new code.** A diff-only
   re-review would
   likely still find those 11 of 17. It could miss findings like the 4 of 13 later-cycle

@@ -44,7 +44,8 @@ cost.
   directory whose name looks like a Markdown link.
 - 58% of fixed defects with a known first cycle were first reported in cycle 1. In the sample, later
   cycles mostly caught bugs in code written during the loop, often by the previous fix.
-- Reviewer spend is $2.38 per fixed defect.
+- Reviewer spend is $2.38 per fixed defect, across the 443 ledgers with a cost on every
+  run.
 - Recommendation: keep the two-reviewer loop as it is.
 
 | Cycle | Fixed defects first reported | Reviewer spend |
@@ -68,7 +69,7 @@ the 2,310 runs with a cost estimate.
 - **In this repository:** two reviewers on every commit. A ledger stops after 5
   reviewed commits unless the maintainer extends it.
 - **Result:** the fixes the loop produced were real, and each reviewer reported defects
-  the other did not on the same commit. Of 345 fixed defects, Codex alone reported 154,
+  the other did not. Of 345 fixed defects, Codex alone reported 154,
   Claude alone 113, and both 78. Whether either would have found the rest in a later
   cycle is unknown. The nitpicking is real too: nits are 49% of all findings, almost all from
   Claude.
@@ -123,8 +124,8 @@ the 2,310 runs with a cost estimate.
 
 | Option | Evidence | Verdict |
 | --- | --- | --- |
-| Keep the two-reviewer loop as it is | Every sampled fix was real. Each reviewer reports defects the other did not on the same commit. Reviewer spend is $2.38 per fixed defect. | Recommended |
-| Re-review only new commits after the first full round, and label findings already in the base | Base findings are rare: no sampled fix, 1 of 15 sampled dismissals, and 0 of 10 sampled findings the maintainer accepted or has yet to decide. Diff-only re-review could miss defects like 4 of the 13 later-cycle sampled defects, to save part of the $485 that later cycles cost over three weeks. | Not supported |
+| Keep the two-reviewer loop as it is | Every sampled fix was real. Each reviewer reports defects the other did not. Reviewer spend is $2.38 per fixed defect. | Recommended |
+| Re-review only new commits after the first full round, and label findings already in the base | Base findings are rare: no sampled fix, 1 of 15 sampled dismissals, and 0 of 10 sampled findings the maintainer accepted or has yet to decide. Diff-only re-review could miss defects like 4 of the 13 later-cycle sampled defects, to save part of the $485 that later cycles cost over three weeks. | Not shown to help |
 | Review less, and spend those tokens on run-based verification | The sample holds only findings a reviewer named, so it cannot show what a run-proving adversary would find. The repository's tests had not covered these inputs. | Not tested by this data |
 
 Two measurements could change the verdict:
