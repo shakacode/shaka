@@ -109,7 +109,7 @@ the local review tables on the 442 PRs from October:
 | Reviewer | Model | Thinking level | Reviews | Findings per review | Cost per review |
 | --- | --- | --- | ---: | ---: | ---: |
 | Hosted Claude, before #446 | `claude-sonnet-5` | not set | 152 | 0.8 inline comments | about $0.90 |
-| Hosted Claude, #446 to #640 | `claude-sonnet-5-5` | not set | 192 | 0.03 inline comments | about $0.10 |
+| Hosted Claude, #446 to #640 | `claude-sonnet-5-5` | not set | 192 | 0.03 inline comments; 0.25 in the count line | about $0.10 |
 | Hosted Claude, after #640 | `claude-sonnet-5-5` | not set | 448 | 0 | about $0.11 |
 | Local Claude | `claude-opus-5-5` in 1,370 of 1,478 | not recorded in 1,283; medium in 187 | 1,478 | 2.2 | $0.33 |
 | Local Codex | not recorded in 1,452 of 1,514 | not recorded in 1,358; medium in 153 | 1,514 | 0.24 | $0.10 |
@@ -144,8 +144,8 @@ question, and its fix is one I wouldn't adopt.
 could actually make. Local Opus reviews cost about three times what hosted Sonnet reviews did, so a
 replay of both prompts on these commits would cost about $11. On 12 of these commits, local Opus
 reviewed the same commit before CodeRabbit commented. Its rounds named 1 of the 13 bug
-threads there, going by a keyword search with each match read. The local Opus and Codex
-reports together named 4. A hosted Opus review would get a different prompt, and most
+threads there, going by a keyword search with each match read. The local report comments the hosted job could
+read named 4, counting Codex rounds and rounds on earlier commits. A hosted Opus review would get a different prompt, and most
 local rounds ran at the default thinking level. Still, I'd expect it to miss most of the
 same bugs.
 
@@ -157,6 +157,9 @@ If we want more of those catches, the lever is CodeRabbit's review limit. The li
 
 - The commits were picked because a bug was known, so this says nothing about clean
   commits.
+- The same choice makes local Opus look worse than it is. A bug local Opus caught would
+  often be fixed before CodeRabbit saw it, so it would never make this list. The keyword search
+  can also miss a bug Opus described in other words.
 - Three runs per commit can't show a small difference between prompts.
 - The reviews ran on the local Claude Code CLI 2.1.312, not the GitHub action. They
   still matched the hosted job on these commits. 50 of 51 current-prompt runs said "no
