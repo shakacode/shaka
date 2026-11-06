@@ -96,8 +96,8 @@ them real, covering 7 distinct problems:
   secrets in its environment. The throttle counted unrelated canary runs. Spend amounts
   with commas read as unknown.
 
-Loosening the prompt would bring back about 1 finding per review, roughly 3 in 10 of
-them real. Most hosted findings didn't lead to a push even before #640: about 87% before #446 and
+Loosening the prompt would bring back about 1 finding per review. Counting the bugs it
+caught, about 3 in 10 were real. Most hosted findings didn't lead to a push even before #640: about 87% before #446 and
 about 73% from #446 to #640, according to
 [the CI and hosted review study](ci-and-hosted-review-repairs.md). I'm not loosening it yet.
 
@@ -111,7 +111,7 @@ the local review tables on the 442 PRs from October:
 | Reviewer | Model | Thinking level | Reviews | Findings per review | Cost per review |
 | --- | --- | --- | ---: | ---: | ---: |
 | Hosted Claude, before #446 | `claude-sonnet-5` | not set | 152 | 0.8 inline comments | about $0.90 |
-| Hosted Claude, #446 to #640 | `claude-sonnet-5-5` | not set | 192 | 0.03 inline comments; 0.25 in the count line | about $0.10 |
+| Hosted Claude, #446 to #640 | `claude-sonnet-5-5` | not set | 192 | 0.03 inline comments; 0.17 in the count line | about $0.10 |
 | Hosted Claude, after #640 | `claude-sonnet-5-5` | not set | 448 | 0 | about $0.11 |
 | Local Claude | `claude-opus-5-5` in 1,370 of 1,478 | not recorded in 1,283; medium in 187 | 1,478 | 2.2 | $0.33 |
 | Local Codex | not recorded in 1,452 of 1,514 | not recorded in 1,358; medium in 153 | 1,514 | 0.24 | $0.10 |
