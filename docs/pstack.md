@@ -60,9 +60,12 @@ prompt like the one above. Stay on upstream unless the skill opens its own PR an
 
 To try the PR's branch in Claude Code, remove the upstream marketplace first. Both
 use the name `cursor-plugins`, and Claude Code registers one marketplace per name.
-Removing a marketplace also uninstalls the plugins you installed from it.
+Removing a marketplace also uninstalls its plugins and deletes their saved data.
+Uninstall each plugin from `cursor-plugins` with `--keep-data` first, so its data
+survives the switch:
 
 ```sh
+claude plugin uninstall pstack@cursor-plugins --keep-data
 claude plugin marketplace remove cursor-plugins
 claude plugin marketplace add justin808/plugins#jg-codex/verification-maintenance-handoff
 claude plugin install pstack@cursor-plugins
@@ -76,6 +79,7 @@ To return to upstream, reinstall from `cursor/plugins` and turn auto-update on
 again if you used it:
 
 ```sh
+claude plugin uninstall pstack@cursor-plugins --keep-data
 claude plugin marketplace remove cursor-plugins
 claude plugin marketplace add cursor/plugins
 claude plugin install pstack@cursor-plugins
