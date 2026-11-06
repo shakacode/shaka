@@ -70,7 +70,7 @@ module Shaka
     end
 
     # Keep both review surfaces together before an optional deployment preview.
-    # While decisions are open, the walkthrough waits for them and they are the checkpoint, so placeholders say so.
+    # Open decisions explain why unpublished evidence is pending, without linking back to the same question.
     def links(content, pull, deciding: false)
       reviews = [walkthrough(content['walkthrough'], deciding:), review(content['review']),
                  post_implementation(content['post_implementation'], deciding:)].compact.join(' · ')
@@ -84,7 +84,7 @@ module Shaka
 
     def post_implementation(url, deciding:)
       if url.nil? || (url.is_a?(String) && url.strip.empty?)
-        return "Checkpoint: #{deciding ? PublicationSections::DECISIONS_LINK : UNPUBLISHED}"
+        return "Checkpoint: #{deciding ? '_Waiting for your decision above._' : UNPUBLISHED}"
       end
 
       url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'post_implementation')

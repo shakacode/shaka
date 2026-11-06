@@ -68,6 +68,11 @@ qualification remain evidence requirements; the version number does not establis
   an update from an earlier version still shows as development; remove it with
   `git -C SOURCE worktree remove --force --force PATH`, using the source checkout and
   worktree path status lists.
+
+- Replace circular checkpoint links during open decisions with a waiting status.
+  Decision-writing guidance now asks for options, consequences, a recommendation,
+  and a clear way to answer.
+
 - Keep validation and review results valid when Shaka updates during a task, unless the
   update changes the code that runs or checks them. Rewording a description for the same
   commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.
