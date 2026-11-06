@@ -87,9 +87,9 @@ them real, covering 6 distinct problems:
 
 - On #902, a description edit made during a stats write could be lost. `main` now
   re-reads the description before writing.
-- Two are still on `main`, in the canary code from #901. A failed comment skips
-  closing old canary PRs. A `diff` error gives an empty diff. A separate fix is in
-  progress.
+- Two were in the canary code from #901. A failed comment skipped closing old canary
+  PRs, and a `diff` error gave an empty diff.
+  [#1030](https://github.com/shakacode/shaka/pull/1030) fixed both.
 - The other three were on #901 too. The Cursor installer ran from `curl | bash` with
   secrets in its environment. The throttle counted unrelated canary runs. Spend amounts
   with commas read as unknown.
@@ -115,6 +115,9 @@ the local review tables on the 442 PRs from October:
 | Local Codex | not recorded in 1,452 of 1,514 | not recorded in 1,358; medium in 153 | 1,514 | 0.24 | $0.10 |
 | This replay | `claude-sonnet-5-5` | not set | 138 | see above | $0.11 |
 
+Hosted costs are means of sampled runs. Local costs are medians of the largest group of
+rounds: Opus with no thinking level recorded, and Codex with no model recorded.
+
 - The hosted counts and the switch at #446 are covered in more detail in
   [the CI and hosted review study](ci-and-hosted-review-repairs.md). Hosted turn and cost
   figures come from sampled runs: 9 before #446, 6 between #446 and #640, and 15 after
@@ -139,10 +142,12 @@ question, and its fix is one I wouldn't adopt.
 
 **The stronger model, `claude-opus-5-5`.** Moving hosted review to Opus is a change we
 could actually make. Opus costs about twice as much per review as Sonnet, so a replay of both
-prompts on these commits would cost about $10. But local Opus already reviewed 13 of
-these 17 commits before CodeRabbit flagged them. Its reports named only 4 of the 14 bug
-threads on those commits. A hosted Opus pass would most likely repeat a review that
-already missed them.
+prompts on these commits would cost about $10. On 12 of these commits, local Opus
+reviewed the same commit before CodeRabbit commented. Its rounds named 1 of the 13 bug
+threads there, going by a keyword search with each match read. The local Opus and Codex
+reports together named 4. A hosted Opus review would get a different prompt, and most
+local rounds ran at the default thinking level. Still, I'd expect it to miss most of the
+same bugs.
 
 CodeRabbit is a different reviewer, and it caught bugs that both Claude reviews missed.
 If we want more of those catches, the lever is CodeRabbit's review limit. The limit left
@@ -162,6 +167,8 @@ If we want more of those catches, the lever is CodeRabbit's review limit. The li
   "review" or "preview" in it. Fixing that and rescoring moved the old prompt from 2
   bugs to 3. Claude had seen the first results by then; the scorer hadn't.
 - The scorer's "caught" calls are firmer than its real, nit, and unconfirmed calls.
+- Each planted decoy repeated a bug's text word for word, so the 34 of 34 shows the
+  scorer matches exact restatements. The decoys say less about paraphrased findings.
 - 4 of the bug threads were already in the local review report the hosted job could
   read. The current prompt says not to repeat those. 3 need a fact from outside the
   repository. The report gives totals without them.

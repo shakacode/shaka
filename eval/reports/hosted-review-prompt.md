@@ -25,6 +25,7 @@ Files are under [`eval/hosted-review-prompt/`](../hosted-review-prompt/).
 | `decoys.jsonl` | How the scorer scored each of the 34 decoys |
 | `hosted-runs-sample.jsonl` | 15 random successful hosted runs on each side of #640, seed 640, plus the 2 runs either side of #446 |
 | `hosted-reports-by-period.jsonl` | Hosted reports, inline threads, and count lines per period, from `replay/periods.rb.txt` |
+| `hosted-runs-study-commits.jsonl` | The hosted run on each of the 17 study commits: model, turns, cost |
 | `local-review-rounds.jsonl` | Local review rounds on the 442 October PRs, by reviewer, model, and effort, from `replay/rounds.rb.txt` |
 | `replay/*.rb.txt` | The replay and scoring scripts, stored as text |
 
@@ -33,7 +34,7 @@ Files are under [`eval/hosted-review-prompt/`](../hosted-review-prompt/).
 | Bar | Needed | Result | Met |
 | --- | --- | ---: | --- |
 | Replay validity | Current prompt at `FINDINGS 0` on at least 50% of runs | 50 of 51 | Yes |
-| Replay cost match | Within 3x of 5.3 turns and $0.11 | 5.5 turns, $0.11 | Yes |
+| Replay cost match | Within 3x of the hosted 5.3 turns and $0.12 ($0.11 in the preregistration, rounded before the runs) | 5.5 turns, $0.11 | Yes |
 | Scorer accuracy | At least 90% on decoys | 34 of 34 | Yes |
 | Loosen the criteria | Old prompt at least 5 bugs ahead, and at least 3 to 1 on bugs only one found | 3 bugs ahead, 3 to 0 | No |
 | Change the short pass | Current at full depth at least 5 bugs ahead of current at its own depth | 0 ahead | No |
@@ -147,6 +148,17 @@ Local Claude reviewed 13 of the 17 commits, which hold 14 of the 22 bug threads.
 reports named 4 of those threads, counted from the report text the hosted run could
 read. On `61d0b5c3` the local report came after the hosted wait, so its named count is 0
 by construction.
+
+`replay/local-named.rb.txt` checks each bug thread against the local Claude rounds on its
+commit. The script records when the first Claude round on that commit was published and
+searches the round text for the bug's keywords. The agent then read each match. On 12
+commits the Claude round came before CodeRabbit's comment. Those rounds named 1 of the 13
+bug threads there, the `#961` extglob case. On `61d0b5c3` the Claude round came after
+CodeRabbit's comment and listed `pushedDate` as unverified.
+
+The frozen PR view never used a comment's later text: every local comment it read had an
+edit at or before the hosted report. The six empty PR bodies come from creation records
+with no text. Shaka opens a PR with an empty body and fills it later.
 
 ## Rerun
 
