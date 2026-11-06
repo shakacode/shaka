@@ -69,7 +69,7 @@ module Shaka
       comment = @github.api("repos/#{@github.repository}/issues/comments/#{id}")
       path = URI.parse(comment.fetch('issue_url')).path
       encoded = comment.fetch('body')[UsageArchive::PAYLOAD, 1]
-      unless path == "/repos/#{@github.repository}/issues/#{@github.number}" &&
+      unless path.casecmp?("/repos/#{@github.repository}/issues/#{@github.number}") &&
              encoded && encoded.length <= UsageArchive::CHUNK_SIZE
         raise Error, 'Usage archive comment is changed or belongs to another PR.'
       end

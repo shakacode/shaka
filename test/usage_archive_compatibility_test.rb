@@ -42,6 +42,14 @@ class UsageArchiveCompatibilityTest < Minitest::Test
     assert_equal 2, Shaka::UsageRecords.parsed_blocks(archive.expand(compact)).size
   end
 
+  def test_repository_casing_does_not_make_a_same_pr_archive_unreadable
+    github = UsageArchiveTest::Comments.new
+    original = mixed_body
+    compact = Shaka::UsageArchive.new(github).prepare(original).publish
+    github.define_singleton_method(:repository) { 'Owner/Repo' }
+    assert_equal original, Shaka::UsageArchive.new(github).expand(compact)
+  end
+
   def test_a_new_writer_keeps_rejecting_unrelated_extra_markers
     github = DescriptionUsageArchiveTest::MemoryGitHub.new
     archive = Shaka::UsageArchive.new(github)
