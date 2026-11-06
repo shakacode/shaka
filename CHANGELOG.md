@@ -58,6 +58,10 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Fixed
 
+- Clear the temporary worktree an interrupted `install --update` leaves in the source
+  checkout. `install --status` now reports it as an interrupted update and names
+  `install --update`, which removes it, instead of calling it development work with no
+  command that clears it. `install --verify` no longer warns about it.
 - Keep validation and review results valid when Shaka updates during a task, unless the
   update changes the code that runs or checks them. Rewording a description for the same
   commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.

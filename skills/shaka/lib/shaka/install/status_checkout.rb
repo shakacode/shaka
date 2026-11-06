@@ -84,9 +84,21 @@ module Shaka
 
       def pending
         target = @record['pending_revision']
-        return unless target
+        return finding('B7', "an update to #{target[0, 7]} did not finish", command: "#{installer} --update") if
+          target
 
-        finding('B7', "an update to #{target[0, 7]} did not finish", command: "#{installer} --update")
+        staging
+      end
+
+      # The update removes it after waiting for any update still running, which holds the same lock.
+      def staging
+        paths = staging_worktrees
+        return if paths.empty?
+
+        finding('B7', "an update's staging worktree is still registered (#{listed(paths)}); that update is " \
+                      'still running or was interrupted', command: "#{installer} --update")
+      rescue ArgumentError
+        nil
       end
 
       def ruby

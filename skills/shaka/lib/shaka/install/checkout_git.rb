@@ -10,9 +10,26 @@ module Shaka
       AUTHENTICATION_ENV = %w[GIT_SSH GIT_SSH_COMMAND GIT_SSH_VARIANT GIT_ASKPASS GIT_TERMINAL_PROMPT
                               GIT_CONFIG_GLOBAL GIT_CONFIG_SYSTEM GIT_CONFIG_NOSYSTEM].freeze
 
+      # stage checks the candidate out detached in the source folder of a Dir.mktmpdir('shaka-update') folder.
+      # A worktree list entry that matches both is the installer's own; any other worktree is a person's.
+      STAGING_PATH = %r{/shaka-update\d{8}-\d+-[a-z0-9]+/source\z}
+
+      def self.staging?(entry) = entry.match?(/^detached$/) && entry[/^worktree (.+)$/, 1].to_s.match?(STAGING_PATH)
+
       def revision = git('rev-parse', 'HEAD')
 
+      # A killed update skips stage's cleanup. The caller holds the checkout lock, so no update is using these.
+      def clear_staging
+        staging_worktrees.each { |path| git('worktree', 'remove', '--force', path) }
+      end
+
       private
+
+      # Listed whether or not the folder still exists, since either way Git keeps the entry.
+      def staging_worktrees
+        entries = git('worktree', 'list', '--porcelain').split(/\n\n+/).drop(1)
+        entries.select { |entry| CheckoutGit.staging?(entry) }.map { |entry| entry[/^worktree (.+)$/, 1] }
+      end
 
       def advance(candidate)
         git('merge', '--quiet', '--ff-only', candidate)

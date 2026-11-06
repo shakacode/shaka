@@ -43,10 +43,11 @@ module Shaka
         uses
       end
 
-      # The first porcelain entry is the main worktree; prunable entries no longer exist on disk.
+      # The first porcelain entry is the main worktree; prunable entries no longer exist on disk. A
+      # staging worktree a killed update left is not development; status reports it as B7.
       def linked_worktrees
         entries = git('worktree', 'list', '--porcelain').split(/\n\n+/).drop(1)
-        entries.grep_v(/^prunable/)
+        entries.grep_v(/^prunable/).reject { |entry| CheckoutGit.staging?(entry) }
                .filter_map { |entry| entry[/^worktree (.+)$/, 1] }
                .reject { |path| path == @root }
       end
