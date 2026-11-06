@@ -75,9 +75,9 @@ commit. *K* is the set of known fixed findings an item can be scored against.
 
 ### How each arm is produced
 
-- **Stage 1:** each run is `shaka review run --root FIXTURE --head CK --criteria-ref BASE
-  --description-file DESC` without `--ledger`. Arm A passes `--base MERGE_BASE`; arm B passes
-  `--base C(K-1)`. `DESC` is identical for both arms: the PR title, then the earlier findings
+- **Stage 1:** each run is `shaka review run --root FIXTURE --head CK --criteria-ref MAIN
+  --description-file DESC` without `--ledger`, where `MAIN` is the fixture's `main` described
+  below. Arm A passes `--base MERGE_BASE`; arm B passes `--base C(K-1)`. `DESC` is identical for both arms: the PR title, then the earlier findings
   (id, class, summary, disposition) first reported before cycle K, built from each round's
   **Collated as** line. Without a ledger, neither arm gets the ledger's "confirm each fix"
   instruction or commit list; the earlier findings reach both through `DESC`.
@@ -109,21 +109,29 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
 - **Eligible:** a ledger in the report's snapshot (500 ledgers, 2026-10-15 to 2026-11-05) with
   at least three reviewed commits, every reviewed commit fetchable, and at least one fixed
   defect or risk first reported at cycle 2 or later.
+- **Also required:** each reviewed commit is an ancestor of the next, and the PR changes no
+  `AGENTS.md` and nothing under `.agents/shaka/`. The fixture's `main` below replaces those
+  files, so a PR that changes them would show its final version.
 - **Excluded:** every PR the review signal report names, and the three pilot items.
 - **Draw:** sort eligible ledgers by the SHA-1 of `PR:LEDGER_MARKER` and take the first 25 for
   Stage 1. Stage 2 takes the first 10 of those 25, in the same order.
 
 ### Fixture
 
-- Each run gets a repository built from a Git bundle of only the reviewed commit's ancestry.
-  It has no remote, and later commits are absent. The dry run found that a plain local clone
-  carries 725 refs, including `origin/main` with #902's merged fix, which a read-only Codex
-  reviewer could read.
-- The checkout lives at `/Users/justin/claude/shaka-worktrees/<PR>` on the historical head
-  branch name, the layout the historical reports show. The prompt names this path, and the
-  dry run's scratch path leaked the word `fixtures` into it.
-- `--criteria-ref` is the item's own merge base, so reviewers get the `AGENTS.md` of that time
-  and no later text.
+- Each run gets a repository built from a Git bundle with two branches and no remote:
+  - the historical head branch name at the reviewed commit, holding only its ancestry;
+  - `main`, one commit on the item's merge base that replaces the root `AGENTS.md` and
+    `.agents/shaka/` with the trusted `main` copies pinned at pilot start. No other file
+    changes, so no later code enters the fixture.
+- The dry run found two leaks this layout closes. A plain local clone carries 725 refs,
+  including `origin/main` with #902's merged fix, which a read-only Codex reviewer could read.
+  And `--criteria-ref MERGE_BASE` fails on #810: the current helper refuses its older settings
+  ("review.post_implementation moved to the top-level checkpoint section").
+- `main` serves as `--criteria-ref` in Stage 1 and as the trusted ref for `seam check` in
+  Stage 2. Both arms get the same criteria.
+- The checkout lives at `/Users/justin/claude/shaka-worktrees/<PR>`, the layout the historical
+  reports show. The prompt names this path, and the dry run's scratch path leaked the word
+  `fixtures` into it.
 - Stage 2 starts from the first reviewed commit. Its goal file holds the PR title and the
   linked issue's first paragraph, if one exists, and no finding text.
 
@@ -216,7 +224,8 @@ cross-PR K items, and every unfixed same-file finding.
 
 - **Spend:** the pilot caps are $20 for Stage 1 and $125 for Stage 2 in billed-equivalent
   dollars, or $35 and $1,000 if the maintainer counts cache-neutral dollars. The full-run caps
-  are set at approval. The ADR's shared $200 monthly cap takes precedence. The spend ledger
+  are set at approval. The ADR's shared $200 monthly cap takes precedence. So does its $15 per
+  PR evaluation, unless the maintainer approves an exception for a named item. The spend ledger
   admits a call only when `spent + reserved + unknown + estimate <= cap`; `budget_exhausted`
   stops the run with no retry to make room.
 - **Pilot bars:** a missed P1 to P4 stops the run and reports, without asking for approval.
@@ -227,7 +236,7 @@ cross-PR K items, and every unfixed same-file finding.
   apart from the ledger block.
 - **Stage 2 offline smoke:** at $0, in a fixture with no remote and no GitHub credentials, run
   every helper command the workflow's Intake and Verify phases call: `doctor --brief`,
-  `seam check --ref MERGE_BASE`, `claim`, `reviewer`, `review run` with stub reviewers,
+  `seam check --ref main`, `claim`, `reviewer`, `review run` with stub reviewers,
   `review record`, and `evidence run` for `validate`. A command that fails offline gets a
   harness fix before any priced call. Intake runs once per item, inside the shared cycle 1;
   both forks resume after it.
@@ -256,13 +265,17 @@ cross-PR K items, and every unfixed same-file finding.
 All of this ran on 2026-11-06 with no model call.
 
 - **Stub reviewers:** stub `claude` and `codex` executables on `PATH` record the exact prompt
-  Shaka sends and return an empty attested report. Shaka's real `review run` ran 36 times, for
-  both arms and both reviewers at all 9 later cycles of the pilot items. All 36 returned
-  `completed`.
+  Shaka sends and return an empty attested report. Shaka's real `review run` ran 36 times in
+  the fixtures described above: both arms and both reviewers at all 9 later cycles. All 36
+  returned `completed`.
+- **Fixtures:** each held only its head branch and `main`, with 521 to 623 commits. In all 36,
+  `git merge-base main HEAD` equals the item's merge base, and each `C(K-1)` is an ancestor of
+  its `CK`.
 - **Ledger probe:** a stub ledger loop on #954 accepted arm A's second round and refused arm
   B's, quoted under [How each arm is produced](#how-each-arm-is-produced).
-- **Fixture probe:** a bundle fixture for #902 at cycle 3 held 614 commits and no later head.
-  `review run` completed in it with the item's merge base as the criteria ref.
+- **Offline probe:** with no GitHub credentials, `seam check --ref main` loaded the settings in
+  a fixture. `doctor --brief` reported FAILED for repository access. The Stage 2 prompts
+  therefore tell the implementer the checkout is offline.
 - **gstack checks:** `gstack-eval-plan dry-run` passed for both stages.
 
 ```text
@@ -274,8 +287,8 @@ CHECK: reservation-fits-cap ok ($0.4161 <= cap $20.00) one call = 22113 in + 163
 DRY_RUN_RESULT: pass
 
 Stage 2 rows (9 implementer prompts), --arms claude-opus-5-5 --output-budget 32768 --cap 125
-CHECK: retry-prompt ok — "The previous session stopped before the review loop finished. Read the ledger and the branch's commits, then continue the loop from the last recorded round without repeating it. Do not push, open a pull request, or post anything to GitHub."
-CHECK: reservation-fits-cap ok ($0.6559 <= cap $125.00) one call = 134 in + 32768 out tokens
+CHECK: retry-prompt ok — "The previous session stopped before the review loop finished. This checkout has no GitHub remote, so work offline. Read the ledger and the branch's commits, then continue the loop from the last recorded round without repeating it. Do not push, open a pull request, or post anything to GitHub."
+CHECK: reservation-fits-cap ok ($0.6559 <= cap $125.00) one call = 147 in + 32768 out tokens
 DRY_RUN_RESULT: pass
 ```
 
@@ -287,9 +300,9 @@ is the price.
 
 | Item | Arm A tokens per run | Arm B tokens per run | B/A |
 | --- | ---: | ---: | ---: |
-| #810 | 7,517 | 5,620 | 0.75 |
-| #902 | 21,648 | 5,485 | 0.25 |
-| #954 | 7,827 | 5,576 | 0.71 |
+| #810 | 7,514 | 5,619 | 0.75 |
+| #902 | 21,634 | 5,484 | 0.25 |
+| #954 | 7,825 | 5,576 | 0.71 |
 
 - The historical runs read 113K to 331K input tokens each, because reviewers read files over
   several turns. The prompt is re-read every turn, so B's saving per run can exceed the
@@ -301,7 +314,8 @@ is the price.
 
 - Shared cycle 1: "/shaka The branch checked out at /Users/justin/claude/shaka-worktrees/PR
   holds a change that has not been reviewed yet. Its goal is in
-  /Users/justin/claude/shaka-state/PR/goal.md. Run one round of the local review loop with the
+  /Users/justin/claude/shaka-state/PR/goal.md. This checkout has no GitHub remote, so work
+  offline. Run one round of the local review loop with the
   configured reviewers and the ledger /Users/justin/claude/shaka-state/PR/ledger.json: review
   the current head, record every finding, fix defects and clearly correct risks in new commits,
   and run validation. Stop before reviewing the new head. Do not push, open a pull request, or
@@ -354,7 +368,8 @@ Three items per stage. Arm B is priced at arm A's cost, so the cap covers no sav
 Recommended: approve the Stage 1 pilot only, capped at $20 billed-equivalent.
 
 - A) Run the Stage 1 pilot (3 items; $11.66 billed or $23.76 cache-neutral; cap $20 or $35).
-  Recommended.
+  Recommended. In cache-neutral dollars, this option also needs a per-PR exception for #902,
+  up to $16.
 - B) Run both pilots: Stage 1 now; Stage 2 after its prototype exists ($74.29 billed, cap $125).
 - C) Stop here and keep this preregistration as the record.
 
@@ -382,13 +397,17 @@ cannot fit the $200 monthly cap.
 ## Rerun the dry run
 
 1. Fetch each pilot PR: `git fetch origin "+refs/pull/N/head:refs/remotes/origin/pr/N"`.
-2. For each reviewed commit `CK`, build a fixture from a bundle of a temporary branch at `CK`,
-   clone it into `/Users/justin/claude/shaka-worktrees/N`, and remove its remote.
-3. Put stub `claude` and `codex` executables first on `PATH`. Each reads the prompt from stdin,
+2. Build `main` for the item: write a tree from the merge base's files, with the root
+   `AGENTS.md` and `.agents/shaka/` taken from trusted `main`, and commit it with
+   `git commit-tree -p MERGE_BASE`.
+3. For each reviewed commit `CK`, bundle a branch at `CK` together with `main`. Clone the
+   bundle into `/Users/justin/claude/shaka-worktrees/N`, fetch `main` from it, and remove the
+   remote.
+4. Put stub `claude` and `codex` executables first on `PATH`. Each reads the prompt from stdin,
    saves it, and returns a report ending `REVIEWED <head> BY <reviewer> EFFORT <effort>
    FINDINGS 0`. The Claude stub prints a JSON result with a `result` field; the Codex stub
    writes the report to the `-o` path.
-4. Run `shaka review run` for both arms and both reviewers as under
+5. Run `shaka review run` for both arms and both reviewers as under
    [How each arm is produced](#how-each-arm-is-produced), and save one JSON row per prompt.
-5. Run `gstack-eval-plan dry-run --input ROWS --arms claude-opus-5-5,gpt-6.1-sol
+6. Run `gstack-eval-plan dry-run --input ROWS --arms claude-opus-5-5,gpt-6.1-sol
    --output-budget 16384 --retry-prompt RETRY --cap 20 --out DIR`.
