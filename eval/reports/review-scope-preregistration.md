@@ -49,6 +49,7 @@ commit. *K* is the set of known fixed findings an item can be scored against.
 | Reviewer | `claude-opus-5-5` | `anthropic/claude` through `shaka review run`, Claude CLI default model and effort | $4 / $20 | $0.23–$0.61 / $0.54–$1.00 |
 | Reviewer | `gpt-6.1-sol` | `openai/codex` through `shaka review run`, Codex CLI default under `--ignore-user-config` | $2 / $10 | $0.07–$0.14 / $0.29–$0.69 |
 | Implementer, Stage 2 | `claude-opus-5-5` | Claude Code 2.1.318, effort high, Shaka at the pinned prototype commit, `--max-budget-usd 20` per session | $4 / $20 | $3 per fixing cycle, $1 per clean cycle, billed (assumption below) |
+| Verifier, Stage 2 | `claude-opus-5-5` | One fresh Claude Code session per escape audit, with no arm label | $4 / $20 | $1.50 per session, billed (assumption) |
 | Judge | `gpt-6.1-sol` | `codex exec -s read-only`, effort low | $2 / $10 | about $0.035 per call |
 
 - Both arms use every component above unchanged. The arms differ in one thing: the diff the
@@ -146,6 +147,9 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
   at cycle j cannot be found before j by either arm, so the window does not favor one.
 - **Found by an arm:** any run of that arm inside the window reports a finding that the judge
   matches to the K item.
+- **Scored only when complete:** a K item counts toward P3 and R1 only when every run of both
+  arms in its window completed. Any other K item is inconclusive and reported, so a failed
+  run can never count as a miss avoided.
 - **Judge input:** one finding at a time, with the item's K list plus decoys, under opaque ids.
   The judge never sees the arm, reviewer, model, cost, or run number.
 - **Cost:** each run's usage record from `review run`, in both D12 figures.
@@ -154,6 +158,11 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
 
 - **K for an item:** the historical fixed defects and risks whose cited code exists at the
   first reviewed commit, minus those the shared live cycle 1 fixed.
+- **No fix after cycle 1:** when the shared cycle 1 commits no fix, both arms would review the
+  same head. Both loops end there. The item leaves L1 and L2 and is reported with its shared
+  cost.
+- **Scored only when complete:** an item counts toward L1 and L2 only when both arms' loops
+  ended by finishing or by the round cap, not by a failed session.
 - **Missed by an arm:** the K item is still present at that arm's final head. When the
   historical fix added a test, run it at the final head; otherwise a verifier reads the code.
 - **Escape audit:** at each arm's final head, both reviewers review the full diff once more,
@@ -163,6 +172,20 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
   validation runs and their time from `shaka evidence run`, and wall-clock time from fork to
   loop end. The implementer's own summary of its work never counts.
 
+### Order and warm-up
+
+ADR D12 requires matched warm-up and counterbalanced order before any efficiency claim.
+
+- **Order:** within each item, the first hex digit of the SHA-1 of the item's PR number picks
+  which arm runs first: even means A. In the pilot, A runs first on #810 and #902, and B on
+  #954. Stage 1 runs each cycle's two arms back to back in that order. Stage 2 runs the two
+  forks one after the other in that order, never in parallel.
+- **Warm-up:** before an item's first timed run, each reviewer CLI answers the prompt
+  "Reply with OK.", untimed and unscored. Stage 2's forks start warm from the shared session.
+- **Cache:** the second arm of a pair can reuse the first arm's prompt cache. Cache-neutral
+  cost, the primary comparison, does not depend on that; billed cost and time are compared
+  only across the counterbalanced order.
+
 ## Bars
 
 | Metric | Pass bar | Direction | A miss means |
@@ -171,21 +194,22 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
 | P2 pilot scorer | The judge bars below hold on the pilot's controls | higher | Stop; found counts are void |
 | P3 pilot harm signal | `b - c` below 2 over the 5 pilot K items, with b and c as in R1 | lower | Stop and recommend keeping full diff; no full run |
 | P4 pilot spend | Actual spend within the pilot cap; full-run projection within the cap the maintainer approves | lower | Stop; recompute with fewer items or ask for a different cap |
-| R1 Stage 1 safety, primary | `b - c <= max(1, ceil(0.10 * size(K)))`, where b counts K items A finds and B misses, and c the reverse | lower | Keep full-diff re-review; Stage 2 does not run |
+| R1 Stage 1 safety, primary | `b - c <= max(1, ceil(0.10 * size(K)))` over scored K items, where b counts K items A finds and B misses, and c the reverse; fewer than 20 scored K items is inconclusive | lower | Keep full-diff re-review; Stage 2 does not run |
 | R2 Stage 1 reviewer cost | Geometric mean of per-cycle B/A, cache-neutral, at most 0.80 | lower | Reported; Stage 2 still decides value |
 | R3 findings per later cycle | Paired B/A ratio | report only | Predicts triage load for Stage 2 |
 | J1 judge positive controls | At least 90% of historical reports collated to a K item are matched to it | higher | Stop; scorer below its bar |
 | J2 judge cross-PR decoys | 0 matched | lower | Stop; scorer below its bar |
 | J3 judge same-PR near misses | At most 1 in 10 matched | lower | Stop; scorer below its bar |
-| L1 Stage 2 safety, primary | Same rule as R1, over Stage 2's K | lower | Keep full-diff re-review |
+| L1 Stage 2 safety, primary | Same rule as R1, over Stage 2's scored K; fewer than 5 scored K items is inconclusive | lower | Keep full-diff re-review |
 | L2 Stage 2 total cost, primary | Geometric mean of per-PR B/A post-fork cost, cache-neutral, at most 0.75, and its 95% bootstrap upper bound below 1.00 | lower | Keep full-diff re-review; the saving does not pay for a setting |
 | L3 time after the fork | Geometric mean B/A | report only | Supports or weakens L2 |
 | L4 loop-introduced escapes | B's verified escapes exceed A's by at most 2 over 10 PRs | lower | Flag to the maintainer with each escape |
 
 **Decision:** recommend new-commits re-review only when R1, L1 and L2 all pass. A failed R1
-or L1 keeps full diff. With safety passing, a geometric mean above 0.75 also keeps full diff.
-A mean at or below 0.75 whose upper bound reaches 1.00 is inconclusive, and the maintainer
-decides. A third stage needs a new preregistration.
+or L1 keeps full diff. An inconclusive R1 or L1 cannot support B. With safety passing, a
+geometric mean above 0.75 also keeps full diff. A mean at or below 0.75 whose upper bound
+reaches 1.00 is inconclusive, and the maintainer decides. A third stage needs a new
+preregistration.
 
 ## Decoys
 
@@ -224,11 +248,13 @@ cross-PR K items, and every unfixed same-file finding.
 ## Stop rules
 
 - **Spend:** the pilot caps are $20 for Stage 1 and $125 for Stage 2 in billed-equivalent
-  dollars, or $35 and $1,000 if the maintainer counts cache-neutral dollars. The full-run caps
-  are set at approval. The ADR's shared $200 monthly cap takes precedence. So does its $15 per
-  PR evaluation, unless the maintainer approves an exception for a named item. The spend ledger
+  dollars, or $35 and $1,200 if the maintainer counts cache-neutral dollars. The full-run caps
+  are set at approval. The ADR's shared $200 monthly cap takes precedence. The spend ledger
   admits a call only when `spent + reserved + unknown + estimate <= cap`; `budget_exhausted`
   stops the run with no retry to make room.
+- **Per item:** before each call the ledger also checks that item's own spend against its
+  limit: the ADR's $15 per PR evaluation, or the exception the maintainer approved for that
+  item. An item at its limit ends there and is recorded.
 - **Pilot bars:** a missed P1 to P4 stops the run and reports, without asking for approval.
 - **Scorer:** J1 to J3 below their bars stops the run; found counts from that judge are void.
 - **Stage 2 prerequisite:** no Stage 2 priced call until the prototype helper commit exists
@@ -253,8 +279,10 @@ cross-PR K items, and every unfixed same-file finding.
   fork. An arm that reaches the cap ends there, recorded, and is not extended; its final head is
   scored as it stands.
 - **Frozen text:** a changed arm, bar, decoy, item rule, or stop rule after the first priced
-  call is a new eval with a new preregistration. So is a changed judge or verifier prompt. The
-  operator writes both prompts before the pilot and keeps them with the run records.
+  call is a new eval with a new preregistration. So is a changed judge or verifier prompt.
+- **Pinned scorer prompts:** the operator commits the judge and verifier prompts beside this
+  report, in a separate PR the maintainer merges before the first priced call. Every scored
+  call uses those files at that commit, and the run records name it.
 
 ## Held-out exposure
 
@@ -338,26 +366,31 @@ Three items per stage. Arm B is priced at arm A's cost, so the cap covers no sav
 | 1 | #810 | 3 later cycles × 2 arms × 2 reviewers = 12 runs | $2.04 | $5.70 |
 | 1 | #902 | 5 × 2 × 2 = 20 runs | $6.60 | $14.00 |
 | 1 | #954 | 1 × 2 × 2 = 4 runs | $0.64 | $1.68 |
-| 1 | Judge | about 68 calls: findings, controls, near misses | $2.38 | $2.38 |
-| **1** | **Total** | **36 runs, 68 judge calls** | **$11.66** | **$23.76** |
+| 1 | Judge and warm-up | about 68 judge calls; 6 short warm-up prompts | $2.58 | $2.58 |
+| **1** | **Total** | **36 runs, 68 judge calls, 6 warm-ups** | **$11.86** | **$23.96** |
 | 2 | #810 | Shared cycle 1; 3 cycles per arm; 2 escape audits | $23.41 | $222.90 |
 | 2 | #902 | Shared cycle 1; 4 cycles per arm, the most the round cap allows; 2 escape audits | $37.61 | $336.75 |
 | 2 | #954 | Shared cycle 1; 1 cycle per arm; 2 escape audits | $9.95 | $90.15 |
 | **2** | **Total** | **19 loop cycles, 6 audits** | **$70.97** | **$649.80** |
 
+An escape audit is one more full-diff run by both reviewers plus one verifier session.
+
 - **Stage 1 band:** reviewer costs varied up to 1.5 times between runs on these items, so
-  $8 to $18. Cap $20.
-- **Stage 2 band:** an implementer cost of 0.6 to 1.8 times the assumption, $1.80 to $5.40 per
-  fixing cycle, gives $48 to $116. Cap $125.
+  $9 to $17. Cap $20.
+- **Stage 2 band:** implementer and verifier costs of 0.6 to 1.8 times the assumptions, such as
+  $1.80 to $5.40 per fixing cycle, give $48 to $117. Cap $125.
 - **Cost units:** the [ADR's budget](../../internal/adr/0001-eval-and-release-gating.md#budget)
   sets its caps in API-equivalent dollars and gives its figures cache-neutral. This plan
   states both and leaves the unit to the maintainer.
-- **Per-PR cap:** the ADR allows $15 per PR evaluation. Stage 1 averages $3.90 per item billed
-  and $7.90 cache-neutral. Cache-neutral, #902 alone is $14.00 plus about $1.80 of judge calls,
-  just over $15. Stage 2 exceeds the cap in either unit, up to $38 billed for #902, so it needs
-  its own approval.
-- **Time:** Stage 1 is about 40 minutes with two workers. Stage 2 is 3 to 5 hours: about 19
-  cycles of review, fix, and the 5.5-minute median validation.
+- **Per-PR cap:** the ADR allows $15 per PR evaluation, and the spend ledger checks each item
+  against it. Exceptions below use the band's upper end, not the point estimate.
+  - Stage 1 fits in billed dollars: #902, the largest item, reaches about $12. In cache-neutral
+    dollars #902 can reach $23.
+  - Stage 2 exceeds $15 in either unit. In billed dollars, #810 can reach $40, #902 $62 and
+    #954 $17.
+- **Time:** Stage 1 is about 40 minutes with two items running at once. Stage 2 is 5 to 8
+  hours: about 19 cycles of review, fix, and the 5.5-minute median validation, with each
+  item's forks run one after the other.
 - **Full-run projection:** Stage 1 on 25 items is about $120 billed ($60 to $180). Stage 2 on 10
   items is about $250 billed ($170 to $400), above the monthly cap. The pilot's
   `gstack-eval-plan pilot report` replaces these figures with measured ones.
@@ -370,11 +403,12 @@ Three items per stage. Arm B is priced at arm A's cost, so the cap covers no sav
 
 Recommended: approve the Stage 1 pilot only, capped at $20 billed-equivalent.
 
-- A) Run the Stage 1 pilot (3 items; $11.66 billed or $23.76 cache-neutral; cap $20 or $35).
+- A) Run the Stage 1 pilot (3 items; $11.86 billed or $23.96 cache-neutral; cap $20 or $35).
   Recommended. In cache-neutral dollars, this option also needs a per-PR exception for #902,
-  up to $16.
+  up to $23.
 - B) Run both pilots: Stage 1 now; Stage 2 after its prototype exists ($70.97 billed, cap $125).
-  Stage 2 also needs per-PR exceptions for #810, up to $24 billed, and #902, up to $38 billed.
+  Stage 2 also needs per-PR exceptions, billed: up to $40 for #810, $62 for #902 and $17 for
+  #954.
 - C) Stop here and keep this preregistration as the record.
 
 Also needed: which unit the caps count. In cache-neutral dollars, Stage 2's $650 estimate
