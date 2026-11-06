@@ -119,7 +119,7 @@ the 2,310 runs with a cost estimate.
 | Option | Evidence | Verdict |
 | --- | --- | --- |
 | Keep the two-reviewer loop as it is | Every sampled fix was real. Each reviewer finds defects the other misses. Reviewer spend is $2.38 per fixed defect. | Recommended |
-| Re-review only new commits after the first full round, and label findings already in the base | Base findings are rare: 1 of 15 sampled dismissals, and no sampled fix. Diff-only re-review could miss defects like 4 of the 13 later-cycle sampled defects, to save part of the $485 that later cycles cost over three weeks. | Not supported |
+| Re-review only new commits after the first full round, and label findings already in the base | Base findings are rare: no sampled fix, 1 of 15 sampled dismissals, and 0 of 10 sampled findings the maintainer accepted or has yet to decide. Diff-only re-review could miss defects like 4 of the 13 later-cycle sampled defects, to save part of the $485 that later cycles cost over three weeks. | Not supported |
 | Review less, and spend those tokens on run-based verification | The sample holds only findings a reviewer named, so it cannot show what a run-proving adversary would find. The repository's tests had not covered these inputs. | Not tested by this data |
 
 Two measurements could change the verdict:

@@ -198,6 +198,10 @@ recorded reasons only:
 A keyword scan of all 362 dismissed defects and risks finds 9 whose reason mentions
 predating the PR or falling outside its scope.
 
+The workflow sends a finding about behavior the change does not alter to the maintainer,
+who may accept it. A third sample, 10 of the 83 accepted or undecided defects and risks by
+the same hash rule, held no base finding: each was a tradeoff of the PR's own change.
+
 ## Cycles and empty runs
 
 | Measure | Median | 90th percentile | Max |
@@ -226,7 +230,8 @@ predating the PR or falling outside its scope.
 
 Of the sampled findings, 17 were first reported in cycle 2 or later: 13 defects and 4
 risks. Each report's collation line gives a finding's first round. For rebased PRs, whose
-reports name pre-rebase commits, the round number gives the cycle.
+reports name pre-rebase commits, that round's row in the execution table gives the reviewed
+commit, and so the cycle.
 
 - 11 sat in code written during the review loop, absent at the ledger's first reviewed
   commit. Most came from fixes for earlier findings.
@@ -284,7 +289,7 @@ Claude-only findings.
 | Repeat review mostly finds old code (Osmani, ~59% there since the first pass) | 6 of 17 later-cycle findings (35%). 11 of 17 were in code written during the loop. |
 | Findings are often code from before the change | 0 of 40 fixed findings; 1 of 15 sampled dismissals |
 | Reviewers lack the goal (Tan) | The workflow tells the agent to pass the task's goal file to every run. Whether reviewers used it was not measured. |
-| The author accepts all feedback (Tan) | 362 defects and risks (15% of findings) were dismissed with a reason. At least 152 nit dispositions say the nit was kept as written, and at least 189 say it was applied. |
+| The author accepts all feedback (Tan) | 362 defects and risks (15% of findings) were dismissed with a reason, and at least 152 nit dispositions say the nit was kept as written. At least 189 nits were applied anyway, so the agent does act on some optional feedback. |
 | Reviewers get lost in nitpicks (Tan) | 1,221 nits, 49% of findings. Claude reported 1,211 of them, 56% of its findings. |
 | Only findings proven by a run should survive (pstack interrogate) | No reviewer ran anything. 18 sampled fixes carried a test that fails at the reviewed commit and passes at the fix. |
 
@@ -294,8 +299,10 @@ Claude-only findings.
 
 - **The fixes are real.** Every sampled `fixed` defect and risk was a real problem, and
   each was introduced by its PR. A fixed-only sample cannot show how common base findings
-  are, because an agent would dismiss those. Dismissals show few: 1 of 15 sampled, and 9
-  of 362 by keyword. A label for findings already in the base would have little to mark.
+  are, because an agent would dismiss those or send them to the maintainer. Those buckets
+  show few: 1 of 15 sampled dismissals, 9 of 362 dismissals by keyword, and 0 of 10
+  sampled accepted or undecided findings. A label for findings already in the base would
+  have little to mark.
 - **Each reviewer finds defects the other misses.** Of 345 fixed defects, Codex alone
   reported 154, Claude alone 113, and both 78. Dropping either reviewer, or reviewing
   less, would lose about a third or more of the fixed defects.
