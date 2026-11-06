@@ -1037,7 +1037,7 @@ class PublicationCheckpointTest < Minitest::Test
     body = Shaka::Publication.description(data, nil, PULL)
     assert_includes body, "<!-- shaka:decisions -->\n## Decisions to make<a id=\"decisions-to-make\"></a>\n\n" \
                           "- Keep the parser?\n\nCode Walkthrough: _After the decisions._ · " \
-                          "Checkpoint: _Waiting for your decision above._\n\n**Next:**"
+                          "Checkpoint: _Not published yet._\n\n**Next:**"
     assert_operator body.index('## Decisions to make'), :<, body.index('Review the current result.')
     refute_includes body, 'Recommendation'
   end

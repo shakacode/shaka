@@ -36,9 +36,8 @@ class PublicationDecisionsTest < Minitest::Test
     rendered = render('decisions' => ['Keep the label?'], 'walkthrough' => nil)
 
     assert_includes rendered, "\n\nCode Walkthrough: _After the decisions._ · " \
-                              "Checkpoint: _Waiting for your decision above._\n\n## Summary"
+                              "Checkpoint: _Not published yet._\n\n## Summary"
     refute_includes rendered, '(#user-content-decisions-to-make)'
-    refute_includes rendered, 'Not published yet'
   end
 
   def test_without_decisions_the_links_still_say_not_published
