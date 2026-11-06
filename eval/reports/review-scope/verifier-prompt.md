@@ -23,8 +23,9 @@ claude -p --model claude-opus-5-5 --effort high --max-budget-usd BUDGET \
 - `STREAM` keeps every tool call. Its final `result` event holds the answer and the
   session's usage.
 - **Isolation:** the operator reads the tool calls in `STREAM`. A session that touched
-  `/Users/justin/claude/shaka-state/`, the run records, or a checkout other than its own and
-  the temporary worktrees it made is void, and counts as a provider error under the
+  `/Users/justin/claude/shaka-state/`, the run records, the coding hosts' session stores
+  (`~/.claude/projects/`, `~/.codex/sessions/`), or a checkout other than its own and the
+  temporary worktrees it made is void. A void session counts as a provider error under the
   preregistration's Retries rule.
 
 ## Checkout
@@ -34,6 +35,9 @@ claude -p --model claude-opus-5-5 --effort high --max-budget-usd BUDGET \
 - Branches:
   - `main`: the item fixture's `main`.
   - `start`: the first reviewed commit.
+  - `common`: the shared cycle 1's final head, where both forks began, recorded when the
+    forks are created. It is not derived from `P` and `Q`, because a fork may rewrite
+    history.
   - `P` and `Q`: the two forks' final heads. One random bit per item, such as the parity
     of `openssl rand -hex 1`, decides which fork's head is `P`. Only the run record holds
     that mapping.
@@ -46,7 +50,7 @@ claude -p --model claude-opus-5-5 --effort high --max-budget-usd BUDGET \
   the item's K items whose historical fix added no test; and the item's verifier decoys from
   the Decoys table. Nothing says which audit, if any, a claim came from.
 - K items whose historical fix added a test are not claims. The operator runs that test at
-  `git merge-base P Q`, `P`, and `Q` instead.
+  `common`, `P`, and `Q` instead.
 - **Claim text:** the numbered report item, verbatim, without its item number. For an audit
   finding it comes from the audit's report. For a K item or a decoy it comes from the
   historical report first collated to it. No coverage section, attestation line, or text
@@ -87,7 +91,8 @@ This checkout holds one change to a code repository. Its branches:
 
 - `main`: the project's main line. `git merge-base main start` is the commit the change was built on; call it `base`.
 - `start`: the change when its review began.
-- `P` and `Q`: two later versions of the change. Both descend from `start`. `git merge-base P Q` is the newest commit they share; call it `common`.
+- `common`: the change at a later point.
+- `P` and `Q`: two later versions of the change, each worked on from `common`.
 
 Each claim below says something is wrong in the change. For every claim, decide whether the problem it describes exists at each of `base`, `start`, `common`, `P`, and `Q`. Work through the claims in order:
 

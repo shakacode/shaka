@@ -281,8 +281,8 @@ cross-PR K items, and every unfixed same-file finding.
     reserved, and unknown charges. A verifier's budget is `min(20, R)`. An implementer
     session also makes `review run` calls, which the ledger does not admit separately, so it
     first sets aside a reviewer reserve: $1.15 for each cycle the round cap still lets it
-    review, 1.5 times the largest historical cost of one cycle's two reviewer runs under
-    [Arms](#arms) ($0.61 + $0.14). Its budget is `min(20, R - reserve)`. The session passes
+    review. That is 1.5 times the largest historical cost of one cycle's two reviewer runs
+    under [Arms](#arms), $0.61 + $0.14, rounded up to the next 5 cents. Its budget is `min(20, R - reserve)`. The session passes
     its budget as `--max-budget-usd`, and the ledger reserves the budget plus any reserve.
     A budget of $0 or less ends the item there.
   - **Overshoot:** admission keeps a session from starting past the limit, not from finishing
@@ -295,7 +295,8 @@ cross-PR K items, and every unfixed same-file finding.
     claims unverified. The second fork can get a smaller budget than the first; the
     alternating order spreads that between the arms.
   - **Units:** the budget is Claude Code's billed estimate. If the maintainer counts
-    cache-neutral dollars, the reviewer reserve is $2.55 per cycle (1.5 times $1.00 + $0.69),
+    cache-neutral dollars, the reviewer reserve is $2.55 per cycle (1.5 times $1.00 + $0.69,
+    rounded up the same way),
     `R` minus the reserve is divided by 10.7, the ratio under [Arms](#arms), before the
     minimum, and the ledger reserves 10.7 times the budget plus the reserve. Actual cost
     settles from usage records, so the ratio only sizes the reservation.
@@ -316,8 +317,9 @@ cross-PR K items, and every unfixed same-file finding.
 - **Stage order:** Stage 2's pilot runs only after Stage 1's pilot passes P1 to P4. Stage 2's
   full run starts only after R1 passes on Stage 1's full run. Each step needs its own approval.
 - **Retries:** at most one per attempt, after a diagnosed timeout or provider error. A second
-  failure records the attempt as failed. Stage 1 resends the identical prompt; Stage 2 sends the
-  resume prompt below.
+  failure records the attempt as failed. Stage 1 runs, judge calls, and verifier sessions
+  resend the identical prompt, a verifier in a fresh session. A Stage 2 implementer session
+  sends the resume prompt below.
 - **Round cap:** Stage 2 keeps the trusted `review.local_max_rounds` of 5 reviewed commits per
   ledger, the shared cycle 1 included. Each arm therefore reviews at most 4 commits after the
   fork. An arm that reaches the cap ends there, recorded, and is not extended; its final head is
