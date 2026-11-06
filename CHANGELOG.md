@@ -73,6 +73,10 @@ qualification remain evidence requirements; the version number does not establis
   Decision-writing guidance now asks for options, consequences, a recommendation,
   and a clear way to answer.
 
+- Finish a PR's description after the maintainer merges a PR whose checkpoint waited
+  on their decision. The merge counts as the answer: an empty decisions list now
+  publishes, and the "waiting for the maintainer's decision" warning comes off.
+
 - Keep validation and review results valid when Shaka updates during a task, unless the
   update changes the code that runs or checks them. Rewording a description for the same
   commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.

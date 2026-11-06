@@ -56,8 +56,8 @@ class CheckpointRecommendationTest < Minitest::Test
       "#{region::CLOSE}\n\nFeature summary"
   end
 
-  def require_decisions(content, body)
-    pull = { 'body' => body, 'head' => { 'sha' => HEAD } }
+  def require_decisions(content, body, merged: false)
+    pull = { 'body' => body, 'head' => { 'sha' => HEAD }, 'merged' => merged }
     Shaka::CheckpointRecommendation.require_decisions!(content, pull, 'example/test')
   end
 
@@ -69,6 +69,11 @@ class CheckpointRecommendationTest < Minitest::Test
     end
 
     assert_nil require_decisions({ 'decisions' => ['Accept the risk and merge?'] }, waiting)
+  end
+
+  def test_merging_the_waiting_head_answers_its_decision
+    waiting = banner(Shaka::MergeWarningRegion::AWAITING)
+    [{}, { 'decisions' => [] }].each { |answered| assert_nil require_decisions(answered, waiting, merged: true) }
   end
 
   def test_other_banners_and_older_heads_need_no_decisions

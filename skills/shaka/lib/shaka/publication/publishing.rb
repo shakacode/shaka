@@ -21,7 +21,8 @@ module Shaka
     def description(body: nil)
       current = pull
       existing = current['body'].to_s
-      merged = check_length(merge(existing, publishable(block_given? ? yield(current) : body)))
+      base = MergeWarningRegion.answered_by_merge(existing, @repository, current)
+      merged = check_length(merge(base, publishable(block_given? ? yield(current) : body)))
       verify_rendering(merged)
       check_unchanged(existing, current)
       confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
