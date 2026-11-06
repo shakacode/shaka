@@ -26,6 +26,16 @@ class InstallUpdateStagingTest < Minitest::Test
     assert_empty staging_worktrees(root)
   end
 
+  # A kill between writing the record and worktree add leaves the record and an empty folder, no worktree.
+  def test_a_record_without_a_worktree_is_cleared
+    root = local_install
+    path = staging_path
+    FileUtils.mkdir_p(File.dirname(path))
+    File.write(File.join(root, '.git/shaka-update-staging'), "#{path}\n")
+    run_next(status(root), 'B7')
+    assert_cleared(root, path)
+  end
+
   def test_repair_clears_the_staging_worktree
     root = local_install
     add_staging(root)

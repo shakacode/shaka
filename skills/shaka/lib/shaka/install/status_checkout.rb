@@ -84,10 +84,9 @@ module Shaka
 
       def pending
         target = @record['pending_revision']
-        return finding('B7', "an update to #{target[0, 7]} did not finish", command: "#{installer} --update") if
-          target
+        return staging unless target
 
-        staging
+        finding('B7', "an update to #{target[0, 7]} did not finish", command: "#{installer} --update")
       end
 
       # The update removes it after waiting for any update still running, which holds the same lock.
