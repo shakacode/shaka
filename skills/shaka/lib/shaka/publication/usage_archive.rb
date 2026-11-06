@@ -5,11 +5,14 @@ require 'json'
 require 'uri'
 require_relative '../usage/usage_records'
 require_relative 'usage_archive_storage'
+require_relative 'usage_archive_references'
+require_relative 'throughput_line'
 
 module Shaka
   # Keeps accounting bytes in same-PR comments when usage outgrows a description.
   class UsageArchive
     include UsageArchiveStorage
+    include UsageArchiveReferences
 
     LIMIT = 65_536
     CHUNK_SIZE = 48_000
@@ -27,7 +30,7 @@ module Shaka
 
     def initialize(github)
       @github = github
-      @verified = {}
+      @references = {}
     end
 
     # Planning checks the final size without writing comments. Rendering and the
@@ -36,12 +39,10 @@ module Shaka
       return Plan.new(body, -> { body }) if body.length <= LIMIT
 
       identify_writer(body)
-      blocks = records(body)
-      chunks, digest = encode(blocks)
-      ids = @verified[digest] || Array.new(chunks.size, 9_999_999_999_999_999_999)
-      preview = replace(body, blocks, ids, digest)
+      references, publish = planned_references(records(body))
+      preview = replace(body, references)
       check_preview(preview)
-      Plan.new(preview, -> { replace(body, blocks, archive_ids(chunks, digest), digest) })
+      Plan.new(preview, -> { replace(body, publish.call) })
     end
 
     # Restore before carry/deduplication. Comments are mutable; a link alone is
@@ -52,9 +53,7 @@ module Shaka
       return body unless region&.include?(PREFIX)
 
       check_references(region)
-      expanded = region.gsub(REFERENCES) do
-        restore(Regexp.last_match[1], Regexp.last_match[2])
-      end
+      expanded = expand_region(region)
       Publishing.without_archive_guard(replace_region(body, region, expanded))
     rescue IndexError, JSON::ParserError, ArgumentError
       raise Error, 'Usage archive is missing or malformed; restore it before publishing.'
@@ -62,12 +61,14 @@ module Shaka
 
     private
 
+    def expand_region(region)
+      expanded = region.gsub(REFERENCES) { restore(Regexp.last_match[1], Regexp.last_match[2]) }
+      expanded.sub(UsageArchiveReferences::INVENTORY, '')
+    end
+
     def archive_region(body)
       region = Publishing.managed_region(body)
-      if body.include?(Publishing::ARCHIVE_GUARD) && !region&.include?(PREFIX)
-        raise Error, 'Usage archive references are missing or malformed; restore them before publishing.'
-      end
-
+      check_archive_format(body, region)
       region
     end
 
@@ -76,12 +77,13 @@ module Shaka
     end
 
     def check_references(region)
-      return if region.scan(REFERENCES).size == region.scan(PREFIX).size
+      refs = region.scan(REFERENCES).map { |json, _display| reference(json) }
+      unless refs.size == region.scan(PREFIX).size && refs.size == region.scan(END_MARK).size
+        raise Error, 'Malformed usage archive reference.'
+      end
 
-      raise Error, 'Malformed usage archive reference.'
+      check_inventory(region, refs)
     end
-
-    def archive_ids(chunks, digest) = @verified[digest] ||= chunks.map { |chunk| write(chunk) }
 
     def restore(json, visible)
       ref = reference(json)
@@ -102,16 +104,17 @@ module Shaka
 
     def inner(block) = block.sub(/\A[^\n]*\n/, '').delete_suffix(UsageRecords::END_MARK)
 
-    def replace(body, blocks, ids, digest)
+    def replace(body, references)
       region = Publishing.managed_region(body)
+      inventory = []
       compact = region.gsub(UsageRecords::BLOCK) do |block|
-        index = blocks.index(block)
-        next block unless index
+        ref = references[block]
+        next block unless ref
 
-        ref = { 'comments' => ids, 'sha256' => digest, 'record' => index }
+        inventory << ref
         "#{PREFIX}#{JSON.generate(ref)} -->\n#{display(block, ref)}#{END_MARK}"
       end
-      Publishing.with_archive_guard(replace_region(body, region, compact))
+      Publishing.with_archive_guard(replace_region(body, region, inventory_line(inventory) + compact))
     end
 
     def replace_region(body, region, replacement)

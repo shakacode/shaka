@@ -33,17 +33,10 @@ then shows `+`. Each record is also kept as a hidden block holding its reported
 columns and note. A later publish that carries the block puts its row back in
 the table.
 
-When accounting makes the description exceed GitHub's body limit, publication moves
-the full record blocks into size-bounded comments on that PR. Keep those comments:
-the description links each archive part and pins its SHA256 checksum. Later description
-updates verify and restore the records before carry and deduplication. Missing, edited,
-or cross-PR archive comments stop publication; restore the original bytes rather than
-removing the references or substituting zero. Visible tables, pricing notes, and coverage
-limits remain in the description. Text outside the managed region is preserved.
-Older helpers refuse this versioned description before replacing it; update Shaka
-before refreshing an archived PR. Archives outlive a helper rollback, so retain a
-compatible helper for those PRs. Failed uploads can leave unreferenced archive comments;
-the description stays unchanged until every part is stored and verified.
+Keep usage archive comments, including superseded sets as history. If an archive
+cannot be verified, restore its original bytes; do not remove references or substitute
+zero. Update Shaka before refreshing an archived PR, and keep a compatible helper
+when reverting.
 
 Each report is priced once, when `shaka usage` runs, with the rate card installed then.
 A carried report keeps that price; nothing reprices it. A collapsed **How each report

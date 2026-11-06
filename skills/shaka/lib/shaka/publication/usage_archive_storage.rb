@@ -7,6 +7,24 @@ module Shaka
 
     def identify_writer(body)
       @writer = Publishing.managed_region(body).to_s[/^🤖 [^\r\n]+$/] || '🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN'
+      @writer = @writer.split(ThroughputLine::SPEND, 2).first
+    end
+
+    def planned_references(blocks)
+      raise Error, "Body exceeds GitHub's 65536-character limit; usage cannot make it fit." if blocks.empty?
+
+      fresh = blocks.reject { |block| @references.key?(block) }
+      return [@references, -> { @references }] if fresh.empty?
+
+      chunks, digest = encode(fresh)
+      placeholders = Array.new(chunks.size, 9_999_999_999_999_999_999)
+      preview = @references.merge(reference_map(fresh, placeholders, digest))
+      [preview, -> { store_references(fresh, chunks, digest) }]
+    end
+
+    def store_references(blocks, chunks, digest)
+      ids = chunks.map { |chunk| write(chunk) }
+      @references.merge!(reference_map(blocks, ids, digest))
     end
 
     def encode(blocks)
@@ -19,32 +37,13 @@ module Shaka
       [chunks, Digest::SHA256.hexdigest(payload)]
     end
 
-    def reference(json)
-      value = JSON.parse(json)
-      unless value.is_a?(Hash) && value.keys.sort == %w[comments record sha256] && valid_reference?(value)
-        raise Error, 'Malformed usage archive reference.'
-      end
-
-      value
-    end
-
-    def valid_reference?(value)
-      ids, digest, index = value.values_at('comments', 'sha256', 'record')
-      valid_ids?(ids) && digest.is_a?(String) && digest.match?(/\A[0-9a-f]{64}\z/) &&
-        index.is_a?(Integer) && index >= 0
-    end
-
-    def valid_ids?(ids)
-      ids.is_a?(Array) && ids.size.between?(1, 128) && ids.all? { |id| id.is_a?(Integer) && id.positive? }
-    end
-
     def read(reference)
       ids, digest = reference.values_at('comments', 'sha256')
       key = [ids, digest]
       return @read[key] if @read.key?(key)
 
       blocks = read_blocks(ids, digest)
-      @verified[digest] = ids
+      @references.merge!(reference_map(blocks, ids, digest))
       @read[key] = blocks
     end
 
