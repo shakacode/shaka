@@ -1,27 +1,30 @@
-require 'json'; require 'time'
-K = { 'r4318478516'=>/\[bot\]\[bot\]|second suffix|already ends|idempoten|double/i, 'r4321718491'=>/multibyte|100,000|100 KB|100000|byte/i,
- 'r4320141258'=>/compaction/i, 'r4343165577'=>/AGENTS\.md|instruction file/i, 'r4342198902'=>/SystemCallError|realpath|private_prompt/,
- 'r4332786363'=>/CRLF|carriage/i, 'r4382251483'=>/pushedDate/, 'r4382953400'=>/pushedDate/, 'r4386784581'=>/padded|whitespace|strip/i,
- 'r4407332600'=>/CONTRIBUTING/, 'r4410175388'=>/extglob/i, 'r4410175420'=>/val" \+|string pieces|split across|composed/i,
- 'r4409155563'=>/no command|nil summary|issued no|without (a )?command/i, 'r4408828900'=>/[Kk]ept.installed|kept files/ }
-targets = File.readlines(ARGV[0]).map { JSON.parse(_1) }
-targets.each do |t|
-  id = t['url'][/r\d+\z/]; k = K[id] or next
-  pr = JSON.parse(File.read("pr-#{t['pr']}.json")).dig('data', 'repository', 'pullRequest')
+#!/usr/bin/env ruby
+# For each bug thread, reads the local Claude rounds on its commit as they stood when CodeRabbit
+# commented, and searches them for the bug's keywords. Input: targets.jsonl, and pr-N.json files
+# from GraphQL with comment bodies, comment edit history, and review-thread first comments.
+require 'json'
+require 'time'
+K = { 'r4318478516' => /\[bot\]\[bot\]|second suffix|already ends|idempoten/i, 'r4321718491' => /multibyte|100,000|100 KB|100000/i,
+      'r4320141258' => /compaction/i, 'r4343165577' => /AGENTS\.md|instruction file/i, 'r4342198902' => /SystemCallError|realpath|private_prompt/,
+      'r4332786363' => /CRLF|carriage/i, 'r4382251483' => /pushedDate/, 'r4382953400' => /pushedDate/, 'r4386784581' => /padded|whitespace/i,
+      'r4407332600' => /CONTRIBUTING/, 'r4410175388' => /extglob/i, 'r4410175420' => /val" \+|string pieces|split across|composed/i,
+      'r4409155563' => /no command|nil summary|issued no|without (a )?command/i, 'r4408828900' => /[Kk]ept.installed|kept files/ }.freeze
+File.readlines(ARGV[0]).map { JSON.parse(_1) }.each do |t|
+  id = t['url'][/r\d+\z/]
+  next unless (k = K[id])
+
+  pr = JSON.parse(File.read("#{ARGV[1]}/pr-#{t['pr']}.json")).dig('data', 'repository', 'pullRequest')
   short = t['sha'][0, 7]
-  cr = pr['reviewThreads']['nodes'].map { _1['comments']['nodes'][0] }.find { _1['url'].end_with?(id) }
-  cr_at = Time.parse(cr['createdAt'])
-  locals = pr['comments']['nodes'].select { _1['body'].start_with?('<!-- shaka:reply:local-') }
-  # earliest publication of a Claude round on this head, and its text
-  first = nil; text = +''
-  locals.each do |c|
-    versions = c['userContentEdits']['nodes'].filter_map { |e| [Time.parse(e['editedAt']), e['diff']] if e['diff'] } + [[Time.parse(c['createdAt']), c['body']]]
-    versions.each do |at, body|
-      next unless body =~ /Round \d+ · #{short} · anthropic\/claude/
-      first = at if first.nil? || at < first
-    end
-    c['body'].scan(/<summary>Round \d+ · #{short} · anthropic\/claude.*?(?=<summary>Round |\z)/m) { text << _1 }
+  cr_at = Time.parse(pr['reviewThreads']['nodes'].map { _1['comments']['nodes'][0] }.find { _1['url'].end_with?(id) }['createdAt'])
+  round = /<summary>Round \d+ · #{short} · anthropic\/claude.*?(?=<summary>Round |\z)/m
+  text = +''
+  pr['comments']['nodes'].select { _1['body'].start_with?('<!-- shaka:reply:local-') }.each do |c|
+    edits = c['userContentEdits']['nodes'].filter_map { |e| [Time.parse(e['editedAt']), e['diff']] if e['diff'] }
+    versions = edits.empty? ? [[Time.parse(c['createdAt']), c['body']]] : edits
+    _at, body = versions.select { |at, _| at <= cr_at }.max_by(&:first)
+    body&.scan(round) { text << _1 }
   end
   hit = text.lines.grep(k).first
-  puts [t['target'], "##{t['pr']}", short, first ? "local_claude=#{first.utc.iso8601}" : 'local_claude=none', "coderabbit=#{cr_at.utc.iso8601}", first ? (first < cr_at ? 'before' : 'AFTER') : '', hit ? "NAMED: #{hit.strip[0, 160]}" : 'not named'].join(' | ')
+  puts({ target: t['target'], pr: t['pr'], sha: t['sha'], coderabbit_at: cr_at.utc.iso8601, claude_round_before: !text.empty?,
+         keyword_line: hit&.strip&.slice(0, 200) }.to_json)
 end

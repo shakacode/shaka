@@ -26,6 +26,8 @@ Files are under [`eval/hosted-review-prompt/`](../hosted-review-prompt/).
 | `hosted-runs-sample.jsonl` | 15 random successful hosted runs on each side of #640, seed 640, plus the 2 runs either side of #446 |
 | `hosted-reports-by-period.jsonl` | Hosted reports, inline threads, and count lines per period, from `replay/periods.rb.txt` |
 | `hosted-runs-study-commits.jsonl` | The hosted run on each of the 17 study commits: model, turns, cost |
+| `local-rounds-study-commits.jsonl` | The local review rounds on the 17 study commits |
+| `local-claude-named.jsonl` | For each bug thread, whether a local Claude round named it before CodeRabbit commented |
 | `local-review-rounds.jsonl` | Local review rounds on the 442 October PRs, by reviewer, model, and effort, from `replay/rounds.rb.txt` |
 | `replay/*.rb.txt` | The replay and scoring scripts, stored as text |
 
@@ -144,17 +146,19 @@ each study commit. Effort `UNKNOWN` means Shaka passed none, so the CLI default 
 | #952 | `80f7d22e` | 1 | 0 | `claude-opus-5-5`, UNKNOWN: 2 and 1 | 2 rounds: 0 and 0 |
 | #951 | `49351dca` | 1 | 0 | `claude-opus-5-5`, UNKNOWN: 1 | 1 round: 0 |
 
-Local Claude reviewed 13 of the 17 commits, which hold 14 of the 22 bug threads. Its
-reports named 4 of those threads, counted from the report text the hosted run could
+Local Claude reviewed 13 of the 17 commits, which hold 14 of the 22 bug threads. The
+local report comments, from Claude and Codex rounds together, named 4 of those threads, counted from the report text the hosted run could
 read. On `61d0b5c3` the local report came after the hosted wait, so its named count is 0
 by construction.
 
 `replay/local-named.rb.txt` checks each bug thread against the local Claude rounds on its
-commit. The script records when the first Claude round on that commit was published and
-searches the round text for the bug's keywords. The agent then read each match. On 12
+commit, as the report comments stood when CodeRabbit commented. The script searches that
+round text for the bug's keywords, and the agent read each match.
+`local-claude-named.jsonl` holds its output and the agent's reading.
+`local-rounds-study-commits.jsonl` holds the local rounds behind the table above. On 12
 commits the Claude round came before CodeRabbit's comment. Those rounds named 1 of the 13
 bug threads there, the `#961` extglob case. On `61d0b5c3` the Claude round came after
-CodeRabbit's comment and listed `pushedDate` as unverified.
+CodeRabbit's comment.
 
 The frozen PR view never used a comment's later text: every local comment it read had an
 edit at or before the hosted report. The six empty PR bodies come from creation records

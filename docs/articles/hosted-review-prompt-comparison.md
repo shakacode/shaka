@@ -141,8 +141,8 @@ and we'd have to move the pin when that model retires. The test answers a histor
 question, and its fix is one I wouldn't adopt.
 
 **The stronger model, `claude-opus-5-5`.** Moving hosted review to Opus is a change we
-could actually make. Opus costs about twice as much per review as Sonnet, so a replay of both
-prompts on these commits would cost about $10. On 12 of these commits, local Opus
+could actually make. Local Opus reviews cost about three times what hosted Sonnet reviews did, so a
+replay of both prompts on these commits would cost about $11. On 12 of these commits, local Opus
 reviewed the same commit before CodeRabbit commented. Its rounds named 1 of the 13 bug
 threads there, going by a keyword search with each match read. The local Opus and Codex
 reports together named 4. A hosted Opus review would get a different prompt, and most
