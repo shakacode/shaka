@@ -154,7 +154,7 @@ tree with only the fix's test files swapped in.
 | 8 | [#698 comment](https://github.com/shakacode/shaka/pull/698#issuecomment-6257930181) | `27356e5` → `ea456b5` | Run `test/official_link_refusal_test.rb`: the fix's test_moving_aside_never_replaces_an_earlier_backup fails at reviewed head 27356e5, passes at fix; link_refusal.rb new in PR |
 | 9 | [#954 comment](https://github.com/shakacode/shaka/pull/954#issuecomment-6489963059) | `048b110` → `db8e38f` | Read: stale.rb (new in PR) compared a 7-hex prefix; claim correct, but it needs two commits in one PR sharing 7 hex characters |
 | 10 | [#577 comment](https://github.com/shakacode/shaka/pull/577#issuecomment-6229495111) | `a85f153` → `71f0db5` | Run `test/handoff_threads_test.rb`: the fix's test_a_thread_whose_reply_may_be_past_the_first_page_is_noted_not_owed fails at reviewed head a85f153, passes at fix; review_threads.rb new in PR |
-| 11 | [#585 comment](https://github.com/shakacode/shaka/pull/585#issuecomment-6229914322) | `?` → `0b08ac1` | Run `test/local_review_usage_edges_test.rb`: the fix's test_runner_result_attaches_both_ledger_heads_after_source_cleanup fails at rebased head f71b609 (1 record, expected 2), passes at fix; implementer also reproduced with a native-runner probe |
+| 11 | [#585 comment](https://github.com/shakacode/shaka/pull/585#issuecomment-6229914322) | `f71b609` → `0b08ac1` | Run `test/local_review_usage_edges_test.rb`: the fix's test_runner_result_attaches_both_ledger_heads_after_source_cleanup fails at rebased head f71b609 (1 record, expected 2), passes at fix; implementer also reproduced with a native-runner probe |
 | 12 | [#891 comment](https://github.com/shakacode/shaka/pull/891#issuecomment-6412051785) | `e60b515` → `e537c90` | Read: AGENTS.md trust model allows a fixed behavior only for three named reasons; the proposed ADR text added in the PR named none |
 | 13 | [#1024 comment](https://github.com/shakacode/shaka/pull/1024#issuecomment-6569337020) | `7f54b25` → `6365c3b` | Read: at 7f54b25 feature_guard paths lists both rename names and review_effort_floor others = paths.uniq.size minus floor files; base had no others count. Fix's test cannot run at head (render signature changed) |
 | 14 | [#960 comment](https://github.com/shakacode/shaka/pull/960#issuecomment-6508800297) | `b022da3` → `82420bc` | Read: ReviewSchema#validate at b022da3 always calls enum!(review.required), which the ADR (new in PR) forbids in the personal file |
@@ -225,7 +225,8 @@ predating the PR or falling outside its scope.
 ### What later cycles find
 
 Of the sampled findings, 17 were first reported in cycle 2 or later: 13 defects and 4
-risks.
+risks. Each report's collation line gives a finding's first round. For rebased PRs, whose
+reports name pre-rebase commits, the round number gives the cycle.
 
 - 11 sat in code written during the review loop, absent at the ledger's first reviewed
   commit. Most came from fixes for earlier findings.
@@ -244,7 +245,9 @@ Claude-only findings.
   424 fixed risks.
   - **$2.38 of reviewer spend per fixed defect.**
   - **$1.00 per fixed defect or risk.**
-  - Counting only the 26 of 30 sampled defects with a likely trigger gives about $2.75.
+  - Counting only defects with a likely trigger gives about $2.68. That weights each
+    stratum's share by its size: 9 of 10 Codex-only, 10 of 10 Claude-only, and 7 of 10
+    found by both.
 - Per run: Codex $0.11 and Claude $0.53, across those 443 ledgers.
 - Cycle 1 took $243.52 (33%) of costed spend. Later cycles took $485 (67%).
 - Claude's per-run cost varies with its model. On #985, Opus 5.5 runs cost $0.37 to
@@ -296,7 +299,8 @@ Claude-only findings.
 - **Each reviewer finds defects the other misses.** Of 345 fixed defects, Codex alone
   reported 154, Claude alone 113, and both 78. Dropping either reviewer, or reviewing
   less, would lose about a third or more of the fixed defects.
-- **Later cycles mostly catch the loop's own new code.** A diff-only re-review would
+- **In the sample, later cycles mostly caught the loop's own new code.** A diff-only
+  re-review would
   likely still find those 11 of 17. It could miss findings like the 4 of 13 later-cycle
   sampled defects in code the first cycle saw. The sample is too small to say how many
   fixed defects that is. The saving would be some part of the later-cycle spend, $485

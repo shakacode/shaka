@@ -41,8 +41,8 @@ cost.
   findings, were checked by reading.
 - 4 of the 30 defects need an input nobody is likely to produce. One example is a
   directory whose name looks like a Markdown link.
-- 58% of fixed defects are first reported in the first cycle. Later cycles mostly
-  catch bugs in code written during the loop, often by the previous fix.
+- 58% of fixed defects are first reported in the first cycle. In the sample, later
+  cycles mostly caught bugs in code written during the loop, often by the previous fix.
 - Reviewer spend is $2.38 per fixed defect.
 - Recommendation: keep the two-reviewer loop as it is.
 
@@ -89,7 +89,7 @@ the 2,310 runs with a cost estimate.
 
 ### 3. Repeat review mostly re-finds old code
 
-- **Idea:** Osmani's team ran `git blame` on what repeated review flagged. About 59% was
+- **Idea:** the team in Osmani's post ran `git blame` on what repeated review flagged. About 59% was
   code there since the first pass. Their review now re-reads only the diff after the
   first cycles and asks the author to rethink after three.
 - **In Shaka:** each cycle reviews the whole PR diff against its base.
