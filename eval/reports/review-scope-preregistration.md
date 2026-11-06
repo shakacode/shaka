@@ -98,7 +98,7 @@ The pilot items come from the report's sample, which this plan's author had alre
 | Item | Why | Reviewed commits | K (first reported, fixed at) |
 | --- | --- | --- | --- |
 | [#810](https://github.com/shakacode/shaka/pull/810) | Defect in text the first cycle saw, found in cycle 2 | 4: `24180a9` `450b4fa` `7da26fc` `86f3cda` | F4 defect (2, 3); F5 risk (2, 3) |
-| [#902](https://github.com/shakacode/shaka/pull/902) | Long loop; defects found in cycles 3 to 5, one of them in code cycle 1 saw | 6, rebased: `97de0d1` `4d301a4` `5e00bf9` `5aec7cb` `aaeef20` `cc11931` | G10 defect (3, 5); G11 risk (4, 5); G14 defect (5, 6) |
+| [#902](https://github.com/shakacode/shaka/pull/902) | Long loop; defects found in cycles 3 to 5, one of them in code cycle 1 saw | 6, as rebased before push; the rebased commits form one chain: `97de0d1` `4d301a4` `5e00bf9` `5aec7cb` `aaeef20` `cc11931` | G10 defect (3, 5); G11 risk (4, 5); G14 defect (5, 6) |
 | [#954](https://github.com/shakacode/shaka/pull/954) | Median two-cycle PR; nothing fixed after cycle 1 | 2, first of its two ledgers: `048b110` `db8e38f` | none (null item) |
 
 Full SHAs are in the review comments linked above. Every reviewed commit is fetchable from
@@ -170,7 +170,7 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
 | P2 pilot scorer | The judge bars below hold on the pilot's controls | higher | Stop; found counts are void |
 | P3 pilot harm signal | `b - c` below 2 over the 5 pilot K items, with b and c as in R1 | lower | Stop and recommend keeping full diff; no full run |
 | P4 pilot spend | Actual spend within the pilot cap; full-run projection within the cap the maintainer approves | lower | Stop; recompute with fewer items or ask for a different cap |
-| R1 Stage 1 safety, primary | `b - c <= max(1, ceil(0.10 * |K|))`, where b counts K items A finds and B misses, and c the reverse | lower | Keep full-diff re-review; Stage 2 does not run |
+| R1 Stage 1 safety, primary | `b - c <= max(1, ceil(0.10 * size(K)))`, where b counts K items A finds and B misses, and c the reverse | lower | Keep full-diff re-review; Stage 2 does not run |
 | R2 Stage 1 reviewer cost | Geometric mean of per-cycle B/A, cache-neutral, at most 0.80 | lower | Reported; Stage 2 still decides value |
 | R3 findings per later cycle | Paired B/A ratio | report only | Predicts triage load for Stage 2 |
 | J1 judge positive controls | At least 90% of historical reports collated to a K item are matched to it | higher | Stop; scorer below its bar |
