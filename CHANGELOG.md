@@ -63,8 +63,8 @@ qualification remain evidence requirements; the version number does not establis
   `install --update`, which removes it, instead of calling it development work with no
   command that clears it. `install --verify` no longer warns about it. A worktree left by
   an update from an earlier version still shows as development; remove it with
-  `git -C ~/.local/share/shaka/source worktree remove --force PATH`, using the path
-  status lists.
+  `git -C SOURCE worktree remove --force --force PATH`, using the source checkout and
+  worktree path status lists.
 - Keep validation and review results valid when Shaka updates during a task, unless the
   update changes the code that runs or checks them. Rewording a description for the same
   commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.
