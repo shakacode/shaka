@@ -146,7 +146,9 @@ links split between two checkouts. Split links move to the checkout whose instal
 record changed last, which `install --status` names; when other steps run
 first, repair stops so you can check again. Local commits move to a
 `kept-<commit>` branch first, which you then decide what to do with, and a
-record it replaces is renamed aside, so nothing is deleted. It stops when a step
+record it replaces is renamed aside. The only thing repair deletes is the
+temporary checkout an interrupted update left behind, which it removes by running
+the update again. It stops when a step
 needs your decision and shows that state. Running it again changes nothing.
 
 Shaka tells you when an update is available once your installation is three

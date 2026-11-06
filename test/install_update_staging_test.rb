@@ -36,6 +36,13 @@ class InstallUpdateStagingTest < Minitest::Test
     assert_cleared(root, path)
   end
 
+  def test_a_plain_install_clears_the_staging_worktree_too
+    root = local_install
+    staging = add_staging(root)
+    run_install(root, '--directory', root, '--repository', @remote)
+    assert_cleared(root, staging)
+  end
+
   def test_repair_clears_the_staging_worktree
     root = local_install
     add_staging(root)
