@@ -25,8 +25,11 @@ Not as far as this test can tell.
 - The bigger drop came a week earlier. [#446](https://github.com/shakacode/shaka/pull/446)
   bumped the review action, and the model changed from `claude-sonnet-5` to
   `claude-sonnet-5-5`. Inline review comments went from 119 on 152 reviews to 5 on 192.
+- Local reviews ran a stronger model, `claude-opus-5-5`, on most commits. The hosted
+  review never set a thinking level, and most local reviews didn't either.
 
-I'm keeping the current prompt for now. The next thing to test is the model.
+I'm keeping the current prompt for now. Testing more models doesn't look worth it, and
+I explain why below.
 
 ## What we ran
 
@@ -92,36 +95,58 @@ them real, covering 6 distinct problems:
   with commas read as unknown.
 
 Loosening the prompt would bring back about 1 finding per review, roughly 3 in 10 of
-them real. Before #640, about 83% of hosted findings didn't lead to a push, according
-to #1016. I'd rather test the model before deciding.
+them real. Most hosted findings didn't lead to a push even before #640: about 87% before #446 and
+about 73% from #446 to #640, according to
+[the CI and hosted review study](ci-and-hosted-review-repairs.md). I'm not loosening it yet.
 
-### Test the model next
+### The local reviews ran a stronger model
 
-The workflow doesn't name a model, so the action picks one. The counts below come from
-public PR comments and Actions logs:
+The hosted review and the local reviews didn't use the same model. The hosted job never
+set a thinking level. Local reviews set one in about 1 of 8 Claude rounds. Every other
+review used Claude Code's default. The counts below come from public Actions logs and
+the local review tables on the 442 PRs from October:
 
-| Period | Model | Reviews | Inline comments | Turns per review | Cost per review |
-| --- | --- | ---: | ---: | ---: | ---: |
-| Before #446 | `claude-sonnet-5` | 152 | 119 | about 37 | about $0.90 |
-| #446 to #640 | `claude-sonnet-5-5` | 192 | 5 | about 6 | about $0.10 |
-| After #640 | `claude-sonnet-5-5` | 448 | 0 | about 6 | about $0.11 |
+| Reviewer | Model | Thinking level | Reviews | Findings per review | Cost per review |
+| --- | --- | --- | ---: | ---: | ---: |
+| Hosted Claude, before #446 | `claude-sonnet-5` | not set | 152 | 0.8 inline comments | about $0.90 |
+| Hosted Claude, #446 to #640 | `claude-sonnet-5-5` | not set | 192 | 0.03 inline comments | about $0.10 |
+| Hosted Claude, after #640 | `claude-sonnet-5-5` | not set | 448 | 0 | about $0.11 |
+| Local Claude | `claude-opus-5-5` in 1,370 of 1,478 | not recorded in 1,283; medium in 187 | 1,478 | 2.2 | $0.33 |
+| Local Codex | not recorded in 1,452 of 1,514 | not recorded in 1,358; medium in 153 | 1,514 | 0.24 | $0.10 |
+| This replay | `claude-sonnet-5-5` | not set | 138 | see above | $0.11 |
 
-Turns and cost come from sampled runs: 9 before #446, 6 between #446 and #640, and 15
-after #640. #446 merged at 19:53 UTC on 2026-10-11.
-The last successful run before it used `claude-sonnet-5` for 51 turns. The first one
-after it used `claude-sonnet-5-5` for 7.
+- The hosted counts and the switch at #446 are covered in more detail in
+  [the CI and hosted review study](ci-and-hosted-review-repairs.md). Hosted turn and cost
+  figures come from sampled runs: 9 before #446, 6 between #446 and #640, and 15 after
+  #640.
+- Local Claude ran Opus for most reviews, at about three times the hosted cost per
+  review. Local reviews also used a different prompt, so their findings per review
+  don't compare directly with the hosted ones.
+- [#507](https://github.com/shakacode/shaka/pull/507), on 2026-10-14, changed how the
+  hosted report ends, to a fixed finding-count line. The review instructions stayed
+  the same, but some findings could have moved from inline comments into the summary.
 
-One more change landed in the middle period.
-[#507](https://github.com/shakacode/shaka/pull/507), on 2026-10-14, changed how the
-report ends, to a fixed finding-count line. The review instructions stayed the same, but
-some findings could have moved from inline comments into the summary.
+### Is it worth testing other models?
 
-I didn't plan this part. The model change turned up while we priced the replay, and
-nothing has tested it yet. #446 changed the action version and the model at the same time. The next step is
-to replay these commits on `claude-sonnet-5`, which still responds. One run per commit
-with both prompts costs about $31. If the older model finds more, we pin a model in the
-workflow. A review would then cost about 8 times as much, and we'd have to update the pin
-when that model retires.
+I don't think so. The CI study proposed rerunning both prompts under both models. Here
+are the two tests I considered.
+
+**The older model, `claude-sonnet-5`.** A replay would show whether #446 caused most of
+the drop. One run per commit with both prompts costs about $31. If it found more, the
+fix would be pinning an older model. A review would then cost about 8 times as much,
+and we'd have to move the pin when that model retires. The test answers a history
+question, and its fix is one I wouldn't adopt.
+
+**The stronger model, `claude-opus-5-5`.** Moving hosted review to Opus is a change we
+could actually make. Opus costs about twice as much per review as Sonnet, so a replay of both
+prompts on these commits would cost about $10. But local Opus already reviewed 13 of
+these 17 commits before CodeRabbit flagged them. Its reports named only 4 of the 14 bug
+threads on those commits. A hosted Opus pass would most likely repeat a review that
+already missed them.
+
+CodeRabbit is a different reviewer, and it caught bugs that both Claude reviews missed.
+If we want more of those catches, the lever is CodeRabbit's review limit. The limit left
+249 of October's 442 PRs without a CodeRabbit review.
 
 ## Limits
 

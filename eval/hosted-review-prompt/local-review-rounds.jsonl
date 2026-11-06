@@ -1,0 +1,16 @@
+{"reviewer":"openai/codex","model":"UNKNOWN","effort":"UNKNOWN","rounds":1312,"findings":301,"rounds_with_cost":942,"median_cost_usd":0.1}
+{"reviewer":"anthropic/claude","model":"claude-opus-5-5","effort":"UNKNOWN","rounds":1218,"findings":2614,"rounds_with_cost":906,"median_cost_usd":0.33}
+{"reviewer":"anthropic/claude","model":"claude-opus-5-5","effort":"medium","rounds":144,"findings":467,"rounds_with_cost":58,"median_cost_usd":0.29}
+{"reviewer":"openai/codex","model":"UNKNOWN","effort":"medium","rounds":137,"findings":38,"rounds_with_cost":75,"median_cost_usd":0.14}
+{"reviewer":"anthropic/claude","model":"claude-fable-5-1","effort":"UNKNOWN","rounds":47,"findings":107,"rounds_with_cost":39,"median_cost_usd":2.61}
+{"reviewer":"openai/codex","model":"gpt-6.1-sol","effort":"UNKNOWN","rounds":46,"findings":11,"rounds_with_cost":34,"median_cost_usd":0.12}
+{"reviewer":"anthropic/claude","model":"claude-sonnet-5","effort":"medium","rounds":27,"findings":23,"rounds_with_cost":25,"median_cost_usd":0.26}
+{"reviewer":"anthropic/claude","model":"UNKNOWN","effort":"UNKNOWN","rounds":18,"findings":33,"rounds_with_cost":8,"median_cost_usd":0.47}
+{"reviewer":"openai/codex","model":"gpt-6.1-sol","effort":"medium","rounds":16,"findings":6,"rounds_with_cost":12,"median_cost_usd":0.12}
+{"reviewer":"anthropic/claude","model":"shared: claude-haiku-4-5, claude-opus-5","effort":"medium","rounds":11,"findings":36,"rounds_with_cost":0,"median_cost_usd":null}
+{"reviewer":"deepseek/openrouter","model":"deepseek/deepseek-v4.1-flash","effort":"low","rounds":7,"findings":13,"rounds_with_cost":7,"median_cost_usd":0.007}
+{"reviewer":"anthropic/claude","model":"claude-opus-5-5","effort":"high","rounds":6,"findings":10,"rounds_with_cost":0,"median_cost_usd":null}
+{"reviewer":"anthropic/claude","model":"UNKNOWN","effort":"medium","rounds":5,"findings":18,"rounds_with_cost":0,"median_cost_usd":null}
+{"reviewer":"openai/codex","model":"UNKNOWN","effort":"low","rounds":3,"findings":0,"rounds_with_cost":0,"median_cost_usd":null}
+{"reviewer":"anthropic/claude","model":"claude-opus-5-5","effort":"low","rounds":2,"findings":0,"rounds_with_cost":0,"median_cost_usd":null}
+{"reviewer":"deepseek/openrouter","model":"deepseek/deepseek-v4.1-flash","effort":"UNKNOWN","rounds":2,"findings":0,"rounds_with_cost":2,"median_cost_usd":0.01}

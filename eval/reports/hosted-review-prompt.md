@@ -25,6 +25,7 @@ Files are under [`eval/hosted-review-prompt/`](../hosted-review-prompt/).
 | `decoys.jsonl` | How the scorer scored each of the 34 decoys |
 | `hosted-runs-sample.jsonl` | 15 random successful hosted runs on each side of #640, seed 640, plus the 2 runs either side of #446 |
 | `hosted-reports-by-period.jsonl` | Hosted reports, inline threads, and count lines per period, from `replay/periods.rb.txt` |
+| `local-review-rounds.jsonl` | Local review rounds on the 442 October PRs, by reviewer, model, and effort, from `replay/rounds.rb.txt` |
 | `replay/*.rb.txt` | The replay and scoring scripts, stored as text |
 
 ## Results against the bars
@@ -115,6 +116,37 @@ from 2026-10-02 to 2026-10-31, read on 2026-11-01.
 | Before #446, merged 2026-10-11T19:53:19Z | 152 | 119 | 0 | - | - |
 | #446 to #640, merged 2026-10-18T05:13:24Z | 192 | 5 | 127 | 20 | 32 |
 | After #640 | 448 | 0 | 448 | 0 | 0 |
+
+## Local reviews of the study commits
+
+`replay/rounds.rb.txt` reads the round table in each published local review comment.
+It found 3,001 rounds on 407 of the 442 PRs. The table below lists the local rounds on
+each study commit. Effort `UNKNOWN` means Shaka passed none, so the CLI default applied.
+
+| PR | Commit | Bug threads | Named in the local report | Local Claude rounds | Local Codex rounds |
+| --- | --- | ---: | ---: | --- | --- |
+| #746 | `82e351a9` | 1 | 0 | `claude-opus-5-5`, effort UNKNOWN: 0 findings | 1 round: 0 |
+| #742 | `88d2a964` | 1 | 0 | `claude-opus-5-5`, UNKNOWN: 2 | 1 round: 0 |
+| #710 | `09514d82` | 2 | 0 | none | none |
+| #751 | `d2d5a113` | 1 | 0 | `claude-opus-5-5`, high: 2 | none |
+| #827 | `c1a1452d` | 1 | 0 | `claude-opus-5-5`, UNKNOWN: 1 | 1 round: 0 |
+| #816 | `cfacfa44` | 1 | 0 | `claude-opus-5-5`, UNKNOWN: 2 | 1 round: 0 |
+| #792 | `bed49a7a` | 1 | 0 | `claude-opus-5-5`, UNKNOWN: 0 | 1 round: 0 |
+| #860 | `52cbdf0c` | 2 | 0 | none | 1 round: 0 |
+| #902 | `61d0b5c3` | 1 | 0 | `claude-opus-5-5`, medium: 7 | 1 round: 3 |
+| #902 | `3c6b38b2` | 1 | 1 | `claude-opus-5-5`, medium: 3 | 1 round: 0 |
+| #901 | `28e37712` | 3 | 0 | none | none |
+| #898 | `9e401b0b` | 1 | 1 | `claude-opus-5-5`, UNKNOWN: 3 | 1 round: 0 |
+| #912 | `b2142a43` | 1 | 0 | none | none |
+| #926 | `0eb828bc` | 1 | 0 | `claude-opus-5-5`, UNKNOWN: 1 | 1 round: 1 |
+| #961 | `f5ebf59e` | 2 | 2 | `claude-opus-5-5`, UNKNOWN: 1 | 1 round: 1 |
+| #952 | `80f7d22e` | 1 | 0 | `claude-opus-5-5`, UNKNOWN: 2 and 1 | 2 rounds: 0 and 0 |
+| #951 | `49351dca` | 1 | 0 | `claude-opus-5-5`, UNKNOWN: 1 | 1 round: 0 |
+
+Local Claude reviewed 13 of the 17 commits, which hold 14 of the 22 bug threads. Its
+reports named 4 of those threads, counted from the report text the hosted run could
+read. On `61d0b5c3` the local report came after the hosted wait, so its named count is 0
+by construction.
 
 ## Rerun
 
