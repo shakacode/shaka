@@ -67,9 +67,10 @@ the 2,310 runs with a cost estimate.
   verification. Agents doing abstract review get lost in nitpicks, Tan wrote.
 - **In this repository:** two reviewers on every commit. A ledger stops after 5
   reviewed commits unless the maintainer extends it.
-- **Result:** the fixes the loop produced were real, and each reviewer found defects the
-  other missed. Of 345 fixed defects, Codex alone reported 154, Claude alone 113, and
-  both 78. The nitpicking is real too: nits are 49% of all findings, almost all from
+- **Result:** the fixes the loop produced were real, and each reviewer reported defects
+  the other did not on the same commit. Of 345 fixed defects, Codex alone reported 154,
+  Claude alone 113, and both 78. Whether either would have found the rest in a later
+  cycle is unknown. The nitpicking is real too: nits are 49% of all findings, almost all from
   Claude.
 - **Limit:** the study checked only findings the agent chose to fix. The 1,221 nits and
   362 dismissed defects and risks were not verified.
@@ -81,7 +82,10 @@ the 2,310 runs with a cost estimate.
 - **In Shaka:** the workflow tells the agent to give every reviewer the task's goal
   file. The agent records a disposition for each finding.
 - **Result:** the author agent did not accept everything. The agent dismissed 362
-  defects and risks with a reason, 15% of all findings. No sampled fix left the merged change worse.
+  defects and risks with a reason, 15% of all findings. None of the 40 sampled fixes was
+  undone or reported again after it landed, apart from a few chains in which a fix left
+  or caused the next defect. The study did not compare merged PRs with their versions
+  before review.
   Two fixes introduced the next defect, and the following cycle caught each one.
 - **Limit:** the data cannot show whether a reviewer read the goal file. Long ledgers did
   chase unlikely inputs. On [#850](https://github.com/shakacode/shaka/pull/850), seven
@@ -119,14 +123,16 @@ the 2,310 runs with a cost estimate.
 
 | Option | Evidence | Verdict |
 | --- | --- | --- |
-| Keep the two-reviewer loop as it is | Every sampled fix was real. Each reviewer finds defects the other misses. Reviewer spend is $2.38 per fixed defect. | Recommended |
+| Keep the two-reviewer loop as it is | Every sampled fix was real. Each reviewer reports defects the other did not on the same commit. Reviewer spend is $2.38 per fixed defect. | Recommended |
 | Re-review only new commits after the first full round, and label findings already in the base | Base findings are rare: no sampled fix, 1 of 15 sampled dismissals, and 0 of 10 sampled findings the maintainer accepted or has yet to decide. Diff-only re-review could miss defects like 4 of the 13 later-cycle sampled defects, to save part of the $485 that later cycles cost over three weeks. | Not supported |
 | Review less, and spend those tokens on run-based verification | The sample holds only findings a reviewer named, so it cannot show what a run-proving adversary would find. The repository's tests had not covered these inputs. | Not tested by this data |
 
 Two measurements could change the verdict:
 
 - The implementing agent's cost for each extra cycle, for triage, fixes, and validation,
-  is unmeasured. A large cost would make a diff-only trial worthwhile.
+  is unmeasured. A large cost would make a diff-only trial worthwhile. A
+  [preregistered comparison](https://github.com/shakacode/shaka/blob/main/eval/reports/review-scope-preregistration.md)
+  designs that trial; its paid pilot awaits the maintainer's approval.
 - Claude's nits are the largest share of findings that change nothing. The
   [October study](review-process-study.md#1-the-local-claude-reviewer-is-noisy-but-it-carries-most-of-the-fixes)
   already proposed capping them, a change outside these three options.

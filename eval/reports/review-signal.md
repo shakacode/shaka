@@ -105,7 +105,7 @@ The rule was written to the task's state folder before any sampled report was re
 | 12 | [#891](https://github.com/shakacode/shaka/pull/891) | F1: Fixed 3-entry cap names no trust-model reason for a fixed behavior | Claude | 1 of 3 | yes | new | code read | prose (design) |
 | 13 | [#1024](https://github.com/shakacode/shaka/pull/1024) | F2: A renamed file counts twice among the other files | Claude | 1 of 5 | yes | new | code read | code + test |
 | 14 | [#960](https://github.com/shakacode/shaka/pull/960) | R8: ADR says sub-schemas validate the personal file, but ReviewSchema demands review.required | Claude | 8 of 10 | yes | new | code read | prose |
-| 15 | [#751](https://github.com/shakacode/shaka/pull/751) | F1: usage-reporting.md still describes only the 1.x export path and parentID turns | Claude | 1 of 6 | yes | new (drift) | code read | prose |
+| 15 | [#751](https://github.com/shakacode/shaka/pull/751) | F1: usage-reporting.md still describes only the 1.x export path and parentID turns | Claude | 1 of 6 | yes | drift | code read | prose |
 | 16 | [#810](https://github.com/shakacode/shaka/pull/810) | F4: Guide says the line folds when everything passed, but a review with findings also folds | Claude | 2 of 4 | yes | new | code read | prose + code + test |
 | 17 | [#1031](https://github.com/shakacode/shaka/pull/1031) | F2: auto-merged label stated as universal; queue and refused-label cases go unlabeled | Claude | 1 of 4 | yes | new | code read | prose |
 | 18 | [#592](https://github.com/shakacode/shaka/pull/592) | F1: Guide says a Next line is optional for every recommendation, but only Merge may omit it | Claude | 1 of 2 | yes | new | code read | prose |
@@ -266,7 +266,9 @@ Claude-only findings.
 
 ## Did a suggestion make the change worse?
 
-- No sampled fix left the merged change worse than before review.
+- None of the 40 sampled fixes was undone or reported again after it landed, apart from
+  the cases below. The study did not compare each merged PR with its version before
+  review, and it did not examine the 189 or more applied nits.
 - Two fixes introduced the next defect:
   - #22: a fix added bracket counting to group statements. The next cycle showed a
     bracket inside a comment broke it, and the final fix removed the grouping.
@@ -307,9 +309,10 @@ Claude-only findings.
   show few: 1 of 15 sampled dismissals, 9 of 362 dismissals by keyword, and 0 of 10
   sampled accepted or undecided findings. A label for findings already in the base would
   have little to mark.
-- **Each reviewer finds defects the other misses.** Of 345 fixed defects, Codex alone
-  reported 154, Claude alone 113, and both 78. Dropping either reviewer, or reviewing
-  less, would lose about a third or more of the fixed defects.
+- **Each reviewer reports defects the other did not.** Of 345 fixed defects, Codex alone
+  reported 154, Claude alone 113, and both 78. Neither sees the other's findings for a
+  commit. Whether one reviewer would have caught the other's defects in a later cycle is
+  unknown, so the loss from dropping one is not measured.
 - **In the sample, later cycles mostly caught the loop's own new code.** A diff-only
   re-review would
   likely still find those 11 of 17. It could miss findings like the 4 of 13 later-cycle
@@ -325,7 +328,9 @@ Claude-only findings.
 What would change this:
 
 - The implementing agent's cost per extra cycle is unmeasured. A large cost there would
-  make a diff-only re-review after cycle 1 worth a trial.
+  make a diff-only re-review after cycle 1 worth a trial. The
+  [preregistered comparison](review-scope-preregistration.md) is that trial; its paid
+  pilot awaits the maintainer's approval.
 - The largest share of findings that change nothing is Claude's nits. The
   [review process study](../../docs/articles/review-process-study.md#1-the-local-claude-reviewer-is-noisy-but-it-carries-most-of-the-fixes)
   already proposed capping them, a change outside the three options compared here.
