@@ -62,7 +62,9 @@ To try the PR's branch in Claude Code, remove the upstream marketplace first. Bo
 use the name `cursor-plugins`, and Claude Code registers one marketplace per name.
 Removing a marketplace also uninstalls its plugins and deletes their saved data.
 Uninstall each plugin from `cursor-plugins` with `--keep-data` first, so its data
-survives the switch:
+survives the switch. The commands below assume a user install, the default. For a
+project or local install, add `--scope project` or `--scope local` to each
+uninstall.
 
 ```sh
 claude plugin uninstall pstack@cursor-plugins --keep-data
