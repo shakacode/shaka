@@ -48,11 +48,13 @@ commit. *K* is the set of known fixed findings an item can be scored against.
 | --- | --- | --- | --- | --- |
 | Reviewer | `claude-opus-5-5` | `anthropic/claude` through `shaka review run`, Claude CLI default model and effort | $4 / $20 | $0.24–$0.61 / $0.55–$1.00 |
 | Reviewer | `gpt-6.1-sol` | `openai/codex` through `shaka review run`, Codex CLI default under `--ignore-user-config` | $2 / $10 | $0.07–$0.14 / $0.29–$0.69 |
-| Implementer, Stage 2 | `claude-opus-5-5` | Claude Code 2.1.318, effort high, Shaka at the pinned trusted commit, `--max-budget-usd 20` per session | $4 / $20 | $3 per fixing cycle, $1 per clean cycle, billed (assumption below) |
+| Implementer, Stage 2 | `claude-opus-5-5` | Claude Code 2.1.318, effort high, Shaka at the pinned prototype commit, `--max-budget-usd 20` per session | $4 / $20 | $3 per fixing cycle, $1 per clean cycle, billed (assumption below) |
 | Judge | `gpt-6.1-sol` | `codex exec -s read-only`, effort low | $2 / $10 | about $0.035 per call |
 
 - Both arms use every component above unchanged. The arms differ in one thing: the diff the
   reviewers receive from cycle 2 on.
+- Every run goes through one pinned Shaka helper commit: the trusted `main` commit at pilot
+  start for Stage 1, and the prototype commit below for both Stage 2 arms.
 - Reviewer costs come from the pilot items' own published runs (the execution tables in the
   [#810](https://github.com/shakacode/shaka/pull/810#issuecomment-6314326001),
   [#902](https://github.com/shakacode/shaka/pull/902#issuecomment-6479167788) and
@@ -79,12 +81,13 @@ commit. *K* is the set of known fixed findings an item can be scored against.
   (id, class, summary, disposition) first reported before cycle K, built from each round's
   **Collated as** line. Without a ledger, neither arm gets the ledger's "confirm each fix"
   instruction or commit list; the earlier findings reach both through `DESC`.
-- **Stage 2:** arm A is today's ledger loop. Arm B needs a prototype. The stub dry run showed
-  that today's ledger refuses arm B's second round: "The ledger's rounds measure the change
-  against 4925daa13ac6…; use a new ledger." The prototype is a pinned, unmerged helper commit
-  that lets `review run --ledger` embed `git diff PREVIOUS_REVIEWED_HEAD..HEAD` from cycle 2
-  on. It keeps the earlier-findings list, the round cap, and returned-after-fix detection.
-  Both arms run that same helper commit, with the scope as the only difference.
+- **Stage 2:** arm B needs a prototype. The stub dry run showed that today's ledger refuses
+  arm B's second round: "The ledger's rounds measure the change against 4925daa13ac6…; use a
+  new ledger." The prototype is a pinned, unmerged helper commit with a scope choice for
+  `review run --ledger`. With the scope at full diff, it must render byte-identical prompts to
+  the trusted helper; arm A uses that. Arm B sets the new-commits scope, which embeds
+  `git diff PREVIOUS_REVIEWED_HEAD..HEAD` from cycle 2 on. Both scopes keep the
+  earlier-findings list, the round cap, and returned-after-fix detection.
 
 ## Items and fixture
 
@@ -128,9 +131,10 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
 
 ### Stage 1
 
-- **Window:** a K item can be found at any cycle from 2 up to the cycle before the first
-  commit that contains its recorded fix. A defect introduced at cycle j cannot be found before
-  j by either arm, so the window does not favor one.
+- **Window:** a K item can be found at any cycle from 2 up to the cycle where history first
+  reported it. From the next cycle on, its summary is in the earlier-findings list both arms
+  receive, so a later match would repeat history rather than discover it. A defect introduced
+  at cycle j cannot be found before j by either arm, so the window does not favor one.
 - **Found by an arm:** any run of that arm inside the window reports a finding that the judge
   matches to the K item.
 - **Judge input:** one finding at a time, with the item's K list plus decoys, under opaque ids.
@@ -210,16 +214,25 @@ cross-PR K items, and every unfixed same-file finding.
 
 ## Stop rules
 
-- **Spend:** Stage 1 pilot cap $20, Stage 2 pilot cap $125, both billed-equivalent. The full-run
-  caps are set at approval. The ADR's shared $200 monthly cap takes precedence. The spend ledger
+- **Spend:** the pilot caps are $20 for Stage 1 and $125 for Stage 2 in billed-equivalent
+  dollars, or $35 and $1,000 if the maintainer counts cache-neutral dollars. The full-run caps
+  are set at approval. The ADR's shared $200 monthly cap takes precedence. The spend ledger
   admits a call only when `spent + reserved + unknown + estimate <= cap`; `budget_exhausted`
   stops the run with no retry to make room.
 - **Pilot bars:** a missed P1 to P4 stops the run and reports, without asking for approval.
 - **Scorer:** J1 to J3 below their bars stops the run; found counts from that judge are void.
-- **Stage 2 prerequisite:** no Stage 2 priced call until the prototype helper commit exists,
-  passes `bin/validate`, and its stub-rendered cycle-2 prompt matches Stage 1's arm-B prompt
-  apart from the ledger block. A free smoke must also complete one ledger round offline:
-  stub reviewers, `review record`, and a real `bin/validate` in the fixture.
+- **Stage 2 prerequisite:** no Stage 2 priced call until the prototype helper commit exists
+  and passes `bin/validate`. Its stub-rendered full-scope prompts must match the trusted
+  helper's byte for byte. Its cycle-2 new-commits prompt must match Stage 1's arm-B prompt
+  apart from the ledger block.
+- **Stage 2 offline smoke:** at $0, in a fixture with no remote and no GitHub credentials, run
+  every helper command the workflow's Intake and Verify phases call: `doctor --brief`,
+  `seam check --ref MERGE_BASE`, `claim`, `reviewer`, `review run` with stub reviewers,
+  `review record`, and `evidence run` for `validate`. A command that fails offline gets a
+  harness fix before any priced call. Intake runs once per item, inside the shared cycle 1;
+  both forks resume after it.
+- **Early spend:** an implementer session that spends more than $2 before its first
+  `review run` is voided. Its spend counts, and the harness is fixed before a retry.
 - **Stage order:** Stage 2's pilot runs only after Stage 1's pilot passes P1 to P4. Stage 2's
   full run starts only after R1 passes on Stage 1's full run. Each step needs its own approval.
 - **Retries:** at most one per attempt, after a diagnosed timeout or provider error. A second
@@ -253,15 +266,16 @@ All of this ran on 2026-11-06 with no model call.
 - **gstack checks:** `gstack-eval-plan dry-run` passed for both stages.
 
 ```text
-Stage 1 rows (36 reviewer prompts), --arms claude-opus-5-5,gpt-6.1-sol --output-budget 16384 --cap 25
+Stage 1 rows (36 reviewer prompts), --arms claude-opus-5-5,gpt-6.1-sol --output-budget 16384 --cap 20
 CHECK: price-table ok
 CHECK: output-budget ok (16384 tokens; reasoning floor 8192)
 CHECK: retry-prompt ok — "On a diagnosed timeout or provider error, resend this row's review prompt unchanged, once, with --timeout-seconds 600. Append nothing, so both arms keep byte-identical inputs."
-CHECK: reservation-fits-cap ok ($0.4161 <= cap $25.00) one call = 22113 in + 16384 out tokens
+CHECK: reservation-fits-cap ok ($0.4161 <= cap $20.00) one call = 22113 in + 16384 out tokens
 DRY_RUN_RESULT: pass
 
-Stage 2 rows (9 implementer prompts), --arms claude-opus-5-5 --output-budget 32768 --cap 120
+Stage 2 rows (9 implementer prompts), --arms claude-opus-5-5 --output-budget 32768 --cap 125
 CHECK: retry-prompt ok — "The previous session stopped before the review loop finished. Read the ledger and the branch's commits, then continue the loop from the last recorded round without repeating it. Do not push, open a pull request, or post anything to GitHub."
+CHECK: reservation-fits-cap ok ($0.6559 <= cap $125.00) one call = 134 in + 32768 out tokens
 DRY_RUN_RESULT: pass
 ```
 
@@ -318,8 +332,13 @@ Three items per stage. Arm B is priced at arm A's cost, so the cap covers no sav
   $8 to $18. Cap $20.
 - **Stage 2 band:** an implementer cost of 0.6 to 1.8 times the assumption, $1.80 to $5.40 per
   fixing cycle, gives $51 to $121. Cap $125.
-- **Per-PR cap:** the ADR's $15 per PR evaluation holds for Stage 1, about $3.90 per item. Stage
-  2 exceeds it, up to about $41 for #902, so Stage 2 needs its own approval.
+- **Cost units:** the [ADR's budget](../../internal/adr/0001-eval-and-release-gating.md#budget)
+  sets its caps in API-equivalent dollars and gives its figures cache-neutral. This plan
+  states both and leaves the unit to the maintainer.
+- **Per-PR cap:** the ADR allows $15 per PR evaluation. Stage 1 averages $3.90 per item billed
+  and $7.90 cache-neutral. Cache-neutral, #902 alone is $14.00 plus about $1.80 of judge calls,
+  just over $15. Stage 2 exceeds the cap in either unit, up to $41 billed for #902, so it needs
+  its own approval.
 - **Time:** Stage 1 is about 40 minutes with two workers. Stage 2 is 3 to 5 hours: about 21
   cycles of review, fix, and the 5.5-minute median validation.
 - **Full-run projection:** Stage 1 on 25 items is about $120 billed ($60 to $180). Stage 2 on 10
@@ -334,18 +353,20 @@ Three items per stage. Arm B is priced at arm A's cost, so the cap covers no sav
 
 Recommended: approve the Stage 1 pilot only, capped at $20 billed-equivalent.
 
-- A) Run the Stage 1 pilot (3 items, $11.66 estimated, $20 cap). Recommended.
-- B) Run both pilots: Stage 1 now; Stage 2 after its prototype exists ($74 estimated, $125 cap).
+- A) Run the Stage 1 pilot (3 items; $11.66 billed or $23.76 cache-neutral; cap $20 or $35).
+  Recommended.
+- B) Run both pilots: Stage 1 now; Stage 2 after its prototype exists ($74.29 billed, cap $125).
 - C) Stop here and keep this preregistration as the record.
 
-Also needed: whether the ADR's caps count billed-equivalent or cache-neutral dollars. In
-cache-neutral dollars, Stage 2 cannot fit any monthly cap near $200.
+Also needed: which unit the caps count. In cache-neutral dollars, Stage 2's $674 estimate
+cannot fit the $200 monthly cap.
 
 ## Limits
 
-- **Stage 1 replays history shaped by arm A.** After a historical full-diff find, the next
-  commit holds that fix. Stage 1 therefore credits B only inside the window before that fix,
-  and it cannot show what B's own loop would have done next. Stage 2 can.
+- **Stage 1 replays history shaped by arm A.** After a historical full-diff find, the earlier
+  findings name it and a later commit holds its fix. Stage 1 therefore credits either arm only
+  up to the cycle where history first reported each item. It cannot show what B's own loop
+  would have done next. Stage 2 can.
 - **Stage 1's arm A is not quite today.** Both arms run without a ledger, so neither gets the
   ledger's "confirm each fix" instruction.
 - **Stage 2's arm B is a prototype.** Its prompt wording may differ from a shipped setting.
@@ -370,4 +391,4 @@ cache-neutral dollars, Stage 2 cannot fit any monthly cap near $200.
 4. Run `shaka review run` for both arms and both reviewers as under
    [How each arm is produced](#how-each-arm-is-produced), and save one JSON row per prompt.
 5. Run `gstack-eval-plan dry-run --input ROWS --arms claude-opus-5-5,gpt-6.1-sol
-   --output-budget 16384 --retry-prompt RETRY --cap 25 --out DIR`.
+   --output-budget 16384 --retry-prompt RETRY --cap 20 --out DIR`.
