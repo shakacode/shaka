@@ -65,6 +65,7 @@ Uninstall pstack, and any other plugin you installed from `cursor-plugins`, with
 `--keep-data` first, so its data survives the switch. The commands below assume a
 user install, the default. For a project or local install, add `--scope project`
 or `--scope local` to each `uninstall`, `marketplace add`, and `install` command.
+If a plugin is installed in more than one scope, uninstall and reinstall it in each.
 
 ```sh
 claude plugin uninstall pstack@cursor-plugins --keep-data
