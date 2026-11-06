@@ -34,6 +34,31 @@ class InstallRefusalNextStepTest < Minitest::Test
   end
 
   # A branch only origin has is switched to by its full name, so another remote's copy cannot make it ambiguous.
+  # git branch refuses a kept name already in use, so a kept branch moved elsewhere needs a person.
+  def test_local_commits_with_an_occupied_kept_branch_need_a_person
+    root = default_install
+    commit(root, 'local change')
+    name = "kept-#{git('-C', root, 'rev-parse', '--short', 'HEAD').strip}"
+    git('-C', root, 'branch', name, 'HEAD~1')
+    assert_includes refusal(root, '--verify'), 'Next: a person must decide where to keep these commits, because ' \
+                                               "branch #{name}"
+    report = status(root)
+    assert_equal 'B2', report['state']
+    assert_nil report['next_command']
+  end
+
+  # A checkout reset behind its record catches up with a fast-forward.
+  def test_a_checkout_behind_its_record_fast_forwards
+    root = default_install
+    pull(root)
+    head = record_head(root)
+    git('-C', root, 'reset', '-q', '--hard', 'HEAD~1')
+    step = refused(root, '--verify')
+    assert_includes step, 'merge --ff-only'
+    run_step(step)
+    assert_equal head, git('-C', root, 'rev-parse', 'HEAD').strip
+  end
+
   def test_a_branch_only_origin_has_switches_by_its_full_name
     root = default_install
     git('-C', root, 'push', '-q', @remote, 'HEAD:refs/heads/topic')
@@ -86,5 +111,15 @@ class InstallRefusalNextStepTest < Minitest::Test
     output = refusal(default_install, '--branch', 'mian')
     refute_includes output, 'switch mian'
     assert_includes output, 'Next: a person must decide'
+  end
+
+  private
+
+  # Points the install record at HEAD and returns it.
+  def record_head(root)
+    head = git('-C', root, 'rev-parse', 'HEAD').strip
+    record = File.join(root, '.git/shaka-install.json')
+    File.write(record, JSON.generate(JSON.parse(File.read(record)).merge('revision' => head)))
+    head
   end
 end

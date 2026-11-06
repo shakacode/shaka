@@ -50,8 +50,18 @@ module Shaka
         return Refusal.command('git', '-C', @root, 'merge', '--ff-only', recorded) if ancestor?(revision, recorded)
 
         name = "kept-#{git('rev-parse', '--short', 'HEAD')}"
-        keep = "#{Refusal.command('git', '-C', @root, 'branch', name)} && " unless kept(name) == revision
+        existing = kept(name)
+        return occupied_step(name) if existing && existing != revision
+
+        keep = "#{Refusal.command('git', '-C', @root, 'branch', name)} && " unless existing
         "#{keep}#{Refusal.command('git', '-C', @root, 'reset', '--keep', recorded)}"
+      end
+
+      # git branch refuses a name already in use, so a kept branch moved elsewhere leaves the choice to a person.
+      def occupied_step(name)
+        Refusal.decide("where to keep these commits, because branch #{name} already points at another commit",
+                       'to compare them', Refusal.command('git', '-C', @root, 'log', '--oneline', '--left-right',
+                                                          "#{name}...HEAD"))
       end
 
       def kept(name)
