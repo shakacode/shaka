@@ -550,8 +550,9 @@ phases:
         it in the handoff; report an item you cannot read as unverified.
         The helper writes the repository validation and local review line under Verification
         from `--validation-result` and `--review-result`, so leave those out of `checks`.
-        An optional linked `verification.summary` gives a compact result. Keep material gaps visible
-        in `merge_limitations`; accepted gaps, checks, tables, and `details` fold under Evidence and limitations.
+        An optional linked `verification.summary` gives a compact result. `not_verified` stays visible;
+        put a gap that limits merging in `merge_limitations`. Checks, tables, and `details` fold under
+        Evidence and limitations.
         Use optional `task_history` for the initial request and useful decision history.
         `verification` lists 1 to 3 `checks`, each proof of this PR's own claim: what was run
         against the changed behavior and its outcome, citing a link or the command. Its

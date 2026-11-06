@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require 'fileutils'
 require 'tmpdir'
+require 'pathname'
 require 'shaka/publication/rendering_preview'
 
 # A preview renders with every publication file at the head, except the guards and writes that stay installed.
@@ -30,6 +31,12 @@ class RenderingPreviewHeadTest < Minitest::Test
     assert_includes guards.keys, 'review_effort_floor.rb'
     assert_includes guards.keys, 'publishing.rb'
     assert_match(/body\n<!-- shaka:rendering-preview [0-9a-f]{40} -->/, preview(appends: guards))
+  end
+
+  def test_description_and_archive_guard_definitions_stay_installed
+    names = %w[description_publishing usage_archive usage_archive_storage usage_archive_references]
+    appends = names.to_h { |name| [archive_guard_path(name), "\nraise 'head archive guard loaded'\n"] }
+    assert_match(/body\n<!-- shaka:rendering-preview [0-9a-f]{40} -->/, preview(appends:))
   end
 
   # The write's table check follows rendering, so it counts separators with the installed prose filter.
@@ -69,6 +76,12 @@ class RenderingPreviewHeadTest < Minitest::Test
 
   private
 
+  def archive_guard_path(name)
+    paths = Dir.glob(File.join(ROOT, "skills/shaka/lib/shaka/{github,publication}/#{name}.rb"))
+    assert_equal 1, paths.size, name
+    Pathname.new(paths.first).relative_path_from(Pathname.new(File.join(ROOT, DIRECTORY))).to_s
+  end
+
   # Renders a commit holding this checkout's publication files, less one, plus new files and appended lines.
   def preview(without: nil, files: {}, appends: {})
     Dir.mktmpdir do |dir|
@@ -91,7 +104,11 @@ class RenderingPreviewHeadTest < Minitest::Test
     Dir[File.join(ROOT, DIRECTORY, '*.rb')].each { |path| FileUtils.cp(path, target) }
     FileUtils.rm(File.join(target, without)) if without
     files.each { |name, source| File.write(File.join(target, name), source) }
-    appends.each { |name, source| File.write(File.join(target, name), source, mode: 'a') }
+    appends.each do |name, source|
+      path = File.join(target, name)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, source, mode: 'a')
+    end
   end
 
   def git(dir, *)

@@ -135,6 +135,20 @@ class DocsOnlyChangeTest < DocsOnlyChangeTestSupport
     refute_predicate status, :success?
   end
 
+  def test_accepts_figures
+    write('docs/img/figure.svg', "<svg/>\n")
+    File.binwrite(File.join(@root, 'docs/img/photo.webp'), "RIFF\x00\x00\x00\x00WEBP".b)
+    output, status = classify
+    assert_predicate status, :success?, output
+  end
+
+  def test_rejects_an_executable_figure
+    write('docs/img/figure.svg', "<svg/>\n")
+    FileUtils.chmod(0o755, File.join(@root, 'docs/img/figure.svg'))
+    _output, status = classify
+    refute_predicate status, :success?
+  end
+
   def test_rejects_executable_markdown
     FileUtils.chmod(0o755, File.join(@root, 'docs/guide.md'))
     _output, status = classify

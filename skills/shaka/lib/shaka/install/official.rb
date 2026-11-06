@@ -62,6 +62,7 @@ module Shaka
       # changes only after the update succeeds, so a refused update leaves it alone.
       def advance(action, targets)
         record_ruby unless recorded_ruby?
+        @checkout.clear_staging
         update(targets) if action == :update && !@checkout.pending?
         @checkout.save(targets, identity(targets))
       end
@@ -82,9 +83,7 @@ module Shaka
         @checkout.update { |root| identity(targets, root) }
       end
 
-      def switch_links(links)
-        links.each { |entry| entry.switch_all(@checkout.root) }
-      end
+      def switch_links(links) = links.each { |entry| entry.switch_all(@checkout.root) }
 
       def targets_for(_action)
         recorded = @checkout.record&.fetch('targets') || []

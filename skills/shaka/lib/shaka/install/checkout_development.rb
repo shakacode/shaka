@@ -136,8 +136,9 @@ module Shaka
 
       def linked_worktrees = worktree_entries.map { |entry| entry[:path] }
 
-      # Prunable entries no longer exist on disk.
-      def worktree_entries = worktree_list.reject { |entry| entry[:prunable] || entry[:path] == @root }
+      # Prunable entries no longer exist on disk. A staging worktree a killed update left is not development;
+      # status reports it as B7.
+      def worktree_entries = worktree_list.reject { it[:prunable] || [@root, staging_path].include?(it[:path]) }
 
       # The first entry is the main worktree. -z ends each field with NUL, so a path may hold a newline.
       def worktree_list

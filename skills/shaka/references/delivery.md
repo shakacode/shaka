@@ -15,6 +15,12 @@ Ask before an answer becomes expensive to change. Use existing context and earli
 answers, recommend a path, and continue independent work while a question is pending.
 Silence is not approval.
 
+In each description `decisions` item, explain the choice in plain language,
+the practical consequence of each option, and your recommendation with its reason.
+Link directly to supporting evidence when needed; a link back to the question adds no context.
+Say how to answer, such as replying in the owning chat or commenting on the PR.
+Keep the decision understandable without opening another document.
+
 | Situation | Action |
 | --- | --- |
 | Task or checkout is missing | Ask for the description or repository path. |

@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require_relative 'repository_fixture'
 require_relative 'cli_opening_check_fakes'
 require 'json'
+require 'shaka/publication/merge_warning_region'
 
 module CliDescriptionDecisionsRun
   def run_description(dir, root:, env: {}, decisions: true)
@@ -14,6 +15,14 @@ module CliDescriptionDecisionsRun
     options = ['--root', root, '--content-file', content, '--ref', fixture_ref(root)]
     Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }.merge(env),
                    *self.class::COMMAND, 'description', 'owner/repo', '1', *options)
+  end
+
+  def assert_decisions_cleared(dir, root, env)
+    output, error, status = run_description(dir, root:, decisions: [], env:)
+    assert_predicate status, :success?, error
+    refute_includes File.read(File.join(dir, 'published.md')), 'shaka:decisions'
+    assert_equal 'deleted', File.read(File.join(dir, 'released')).strip
+    assert_equal 'released', JSON.parse(output).dig('attention', 'state')
   end
 
   def description_content
@@ -127,14 +136,6 @@ class CliDescriptionDecisionsTest < Minitest::Test
 
   private
 
-  def assert_decisions_cleared(dir, root, env)
-    output, error, status = run_description(dir, root:, decisions: [], env:)
-    assert_predicate status, :success?, error
-    refute_includes File.read(File.join(dir, 'published.md')), 'shaka:decisions'
-    assert_equal 'deleted', File.read(File.join(dir, 'released')).strip
-    assert_equal 'released', JSON.parse(output).dig('attention', 'state')
-  end
-
   def fake_gh = DESCRIPTION_GH
 end
 
@@ -174,6 +175,53 @@ class CliDescriptionDecisionsUnderMergeTest < Minitest::Test
   def fake_gh = DESCRIPTION_GH
 end
 
+class CliDescriptionMergedDecisionsTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+  include CliOpeningCheckFakes
+  include CliDescriptionDecisionsRun
+
+  COMMAND = SHAKA_COMMAND
+  ROOT = File.expand_path('..', __dir__)
+  SUMMARY = 'Decisions stay with the label.'
+
+  def test_a_merge_answers_the_waiting_decision_and_clears_its_banner
+    env = { 'EXISTING_BODY' => waiting_body, 'PR_LABEL' => 'awaiting-answer', 'PR_MERGED' => 'true' }
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        assert_decisions_cleared(dir, root, env)
+        refute_includes File.read(File.join(dir, 'published.md')), Shaka::MergeWarningRegion::OPEN
+      end
+    end
+  end
+
+  def test_an_unmerged_pull_request_still_needs_the_waiting_decision
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, decisions: [], env: { 'EXISTING_BODY' => waiting_body })
+
+        refute_predicate status, :success?
+        assert_includes error, 'waits for a maintainer decision'
+        refute_path_exists File.join(dir, 'published.md')
+      end
+    end
+  end
+
+  private
+
+  def waiting_body
+    region = Shaka::MergeWarningRegion
+    head = 'c' * 40
+    "#{region::OPEN}\n> **#{region::AWAITING.first}**\n>\n> Reason.\n>\n" \
+      '> [Blocking report](https://github.com/owner/repo/pull/1#issuecomment-1) · ' \
+      "Head [`#{head[0, 7]}`](https://github.com/owner/repo/commit/#{head}). Passing checks.\n" \
+      "#{region::CLOSE}\n\n<!-- shaka:begin -->\n<!-- shaka:decisions -->\n<!-- shaka:end -->\n"
+  end
+
+  def fake_gh = DESCRIPTION_GH
+end
+
 DESCRIPTION_GH = <<~'RUBY'
   require 'json'
   raw = STDIN.read
@@ -188,7 +236,8 @@ DESCRIPTION_GH = <<~'RUBY'
     else
       puts JSON.generate('body' => ENV.fetch('EXISTING_BODY', ''),
                          'head' => { 'sha' => 'c' * 40, 'repo' => { 'full_name' => 'owner/repo' } },
-                         'base' => { 'repo' => { 'full_name' => 'owner/repo' } }, 'changed_files' => 0)
+                         'base' => { 'repo' => { 'full_name' => 'owner/repo' } }, 'changed_files' => 0,
+                         'merged' => ENV['PR_MERGED'] == 'true')
     end
   when %r{pulls/1/files\?} then puts '[]'
   when %r{issues/1/comments\?} then puts ENV.fetch('PR_COMMENTS', '[]')

@@ -46,7 +46,7 @@
   Pass a recorded `--ci-review-wait` task override to `description` too.
 
 - Verification opens with bound validation/review status and an optional linked `summary`.
-  Put material merge-affecting gaps in `merge_limitations`; accepted gaps stay in `not_verified`.
+  `not_verified` and `merge_limitations` render visibly; put a gap that limits merging in `merge_limitations`.
   Checks, tables, and PR-specific `details` share one Evidence and limitations disclosure.
   Put the initiating request and useful decision history in optional `task_history`.
 - Intent ends with `scope`, GitHub's file/line totals, and path-based file buckets.

@@ -33,6 +33,13 @@ then shows `+`. Each record is also kept as a hidden block holding its reported
 columns and note. A later publish that carries the block puts its row back in
 the table.
 
+Keep usage archive comments, including superseded sets as history. If an archive
+cannot be verified, restore its original bytes; do not remove references or substitute
+zero. Update Shaka before refreshing an archived PR, and keep a compatible helper
+when reverting.
+If original records are unavailable, stop and report the missing accounting for a
+maintainer decision; never claim complete history after removing its references.
+
 Each report is priced once, when `shaka usage` runs, with the rate card installed then.
 A carried report keeps that price; nothing reprices it. A collapsed **How each report
 was measured and priced** list under the table shows each report's rate card,
