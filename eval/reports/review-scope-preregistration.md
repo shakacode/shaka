@@ -46,7 +46,7 @@ commit. *K* is the set of known fixed findings an item can be scored against.
 
 | Role | Model id | Settings | Price per MTok (in/out) | Historical cost per run, billed / cache-neutral |
 | --- | --- | --- | --- | --- |
-| Reviewer | `claude-opus-5-5` | `anthropic/claude` through `shaka review run`, Claude CLI default model and effort | $4 / $20 | $0.24–$0.61 / $0.55–$1.00 |
+| Reviewer | `claude-opus-5-5` | `anthropic/claude` through `shaka review run`, Claude CLI default model and effort | $4 / $20 | $0.23–$0.61 / $0.54–$1.00 |
 | Reviewer | `gpt-6.1-sol` | `openai/codex` through `shaka review run`, Codex CLI default under `--ignore-user-config` | $2 / $10 | $0.07–$0.14 / $0.29–$0.69 |
 | Implementer, Stage 2 | `claude-opus-5-5` | Claude Code 2.1.318, effort high, Shaka at the pinned prototype commit, `--max-budget-usd 20` per session | $4 / $20 | $3 per fixing cycle, $1 per clean cycle, billed (assumption below) |
 | Judge | `gpt-6.1-sol` | `codex exec -s read-only`, effort low | $2 / $10 | about $0.035 per call |
@@ -77,10 +77,11 @@ commit. *K* is the set of known fixed findings an item can be scored against.
 
 - **Stage 1:** each run is `shaka review run --root FIXTURE --head CK --criteria-ref MAIN
   --description-file DESC` without `--ledger`, where `MAIN` is the fixture's `main` described
-  below. Arm A passes `--base MERGE_BASE`; arm B passes `--base C(K-1)`. `DESC` is identical for both arms: the PR title, then the earlier findings
-  (id, class, summary, disposition) first reported before cycle K, built from each round's
-  **Collated as** line. Without a ledger, neither arm gets the ledger's "confirm each fix"
-  instruction or commit list; the earlier findings reach both through `DESC`.
+  below. Arm A passes `--base MERGE_BASE`; arm B passes `--base C(K-1)`.
+- **Stage 1 description:** `DESC` is identical for both arms: the PR title, then the earlier
+  findings (id, class, summary, disposition) first reported before cycle K, built from each
+  round's **Collated as** line. Without a ledger, neither arm gets the ledger's "confirm each
+  fix" instruction or commit list; the earlier findings reach both through `DESC`.
 - **Stage 2:** arm B needs a prototype. The stub dry run showed that today's ledger refuses
   arm B's second round: "The ledger's rounds measure the change against 4925daa13ac6…; use a
   new ledger." The prototype is a pinned, unmerged helper commit with a scope choice for
@@ -247,8 +248,10 @@ cross-PR K items, and every unfixed same-file finding.
 - **Retries:** at most one per attempt, after a diagnosed timeout or provider error. A second
   failure records the attempt as failed. Stage 1 resends the identical prompt; Stage 2 sends the
   resume prompt below.
-- **Round cap:** Stage 2 keeps the trusted `review.local_max_rounds` of 5. An arm that reaches
-  the cap ends there, recorded, and is not extended.
+- **Round cap:** Stage 2 keeps the trusted `review.local_max_rounds` of 5 reviewed commits per
+  ledger, the shared cycle 1 included. Each arm therefore reviews at most 4 commits after the
+  fork. An arm that reaches the cap ends there, recorded, and is not extended; its final head is
+  scored as it stands.
 - **Frozen text:** a changed arm, bar, decoy, item rule, or stop rule after the first priced
   call is a new eval with a new preregistration.
 
@@ -283,7 +286,7 @@ Stage 1 rows (36 reviewer prompts), --arms claude-opus-5-5,gpt-6.1-sol --output-
 CHECK: price-table ok
 CHECK: output-budget ok (16384 tokens; reasoning floor 8192)
 CHECK: retry-prompt ok — "On a diagnosed timeout or provider error, resend this row's review prompt unchanged, once, with --timeout-seconds 600. Append nothing, so both arms keep byte-identical inputs."
-CHECK: reservation-fits-cap ok ($0.4161 <= cap $20.00) one call = 22113 in + 16384 out tokens
+CHECK: reservation-fits-cap ok ($0.4161 <= cap $20.00) one call = 22101 in + 16384 out tokens
 DRY_RUN_RESULT: pass
 
 Stage 2 rows (9 implementer prompts), --arms claude-opus-5-5 --output-budget 32768 --cap 125
@@ -315,11 +318,10 @@ is the price.
 - Shared cycle 1: "/shaka The branch checked out at /Users/justin/claude/shaka-worktrees/PR
   holds a change that has not been reviewed yet. Its goal is in
   /Users/justin/claude/shaka-state/PR/goal.md. This checkout has no GitHub remote, so work
-  offline. Run one round of the local review loop with the
-  configured reviewers and the ledger /Users/justin/claude/shaka-state/PR/ledger.json: review
-  the current head, record every finding, fix defects and clearly correct risks in new commits,
-  and run validation. Stop before reviewing the new head. Do not push, open a pull request, or
-  post anything to GitHub."
+  offline. Run one round of the local review loop with the configured reviewers and the ledger
+  /Users/justin/claude/shaka-state/PR/ledger.json: review the current head, record every
+  finding, fix defects and clearly correct risks in new commits, and run validation. Stop
+  before reviewing the new head. Do not push, open a pull request, or post anything to GitHub."
 - Each arm, resuming a fork of that session with `claude --resume ID --fork-session`:
   "Continue the local review loop with the same ledger: review the current head, record every
   finding, fix defects and clearly correct risks in new commits, validate, and review again
@@ -338,22 +340,22 @@ Three items per stage. Arm B is priced at arm A's cost, so the cap covers no sav
 | 1 | Judge | about 68 calls: findings, controls, near misses | $2.38 | $2.38 |
 | **1** | **Total** | **36 runs, 68 judge calls** | **$11.66** | **$23.76** |
 | 2 | #810 | Shared cycle 1; 3 cycles per arm; 2 escape audits | $23.41 | $222.90 |
-| 2 | #902 | Shared cycle 1; 5 cycles per arm; 2 escape audits | $40.93 | $360.95 |
+| 2 | #902 | Shared cycle 1; 4 cycles per arm, the most the round cap allows; 2 escape audits | $37.61 | $336.75 |
 | 2 | #954 | Shared cycle 1; 1 cycle per arm; 2 escape audits | $9.95 | $90.15 |
-| **2** | **Total** | **21 loop cycles, 6 audits** | **$74.29** | **$674.00** |
+| **2** | **Total** | **19 loop cycles, 6 audits** | **$70.97** | **$649.80** |
 
 - **Stage 1 band:** reviewer costs varied up to 1.5 times between runs on these items, so
   $8 to $18. Cap $20.
 - **Stage 2 band:** an implementer cost of 0.6 to 1.8 times the assumption, $1.80 to $5.40 per
-  fixing cycle, gives $51 to $121. Cap $125.
+  fixing cycle, gives $48 to $116. Cap $125.
 - **Cost units:** the [ADR's budget](../../internal/adr/0001-eval-and-release-gating.md#budget)
   sets its caps in API-equivalent dollars and gives its figures cache-neutral. This plan
   states both and leaves the unit to the maintainer.
 - **Per-PR cap:** the ADR allows $15 per PR evaluation. Stage 1 averages $3.90 per item billed
   and $7.90 cache-neutral. Cache-neutral, #902 alone is $14.00 plus about $1.80 of judge calls,
-  just over $15. Stage 2 exceeds the cap in either unit, up to $41 billed for #902, so it needs
+  just over $15. Stage 2 exceeds the cap in either unit, up to $38 billed for #902, so it needs
   its own approval.
-- **Time:** Stage 1 is about 40 minutes with two workers. Stage 2 is 3 to 5 hours: about 21
+- **Time:** Stage 1 is about 40 minutes with two workers. Stage 2 is 3 to 5 hours: about 19
   cycles of review, fix, and the 5.5-minute median validation.
 - **Full-run projection:** Stage 1 on 25 items is about $120 billed ($60 to $180). Stage 2 on 10
   items is about $250 billed ($170 to $400), above the monthly cap. The pilot's
@@ -370,10 +372,10 @@ Recommended: approve the Stage 1 pilot only, capped at $20 billed-equivalent.
 - A) Run the Stage 1 pilot (3 items; $11.66 billed or $23.76 cache-neutral; cap $20 or $35).
   Recommended. In cache-neutral dollars, this option also needs a per-PR exception for #902,
   up to $16.
-- B) Run both pilots: Stage 1 now; Stage 2 after its prototype exists ($74.29 billed, cap $125).
+- B) Run both pilots: Stage 1 now; Stage 2 after its prototype exists ($70.97 billed, cap $125).
 - C) Stop here and keep this preregistration as the record.
 
-Also needed: which unit the caps count. In cache-neutral dollars, Stage 2's $674 estimate
+Also needed: which unit the caps count. In cache-neutral dollars, Stage 2's $650 estimate
 cannot fit the $200 monthly cap.
 
 ## Limits
@@ -385,6 +387,10 @@ cannot fit the $200 monthly cap.
 - **Stage 1's arm A is not quite today.** Both arms run without a ledger, so neither gets the
   ledger's "confirm each fix" instruction.
 - **Stage 2's arm B is a prototype.** Its prompt wording may differ from a shipped setting.
+- **Round cap:** #902's historical loop reviewed 6 commits. Under the cap, each Stage 2 arm
+  stops after 4 cycles past the fork, so G14, fixed at cycle 6 in history, may fall outside
+  both arms' loops. The cap cuts both arms alike, though an arm that finds more may reach it
+  sooner.
 - **Implementer:** Stage 2 fixes one implementer, Claude Opus 5.5 at high effort. #902 was first
   built in Cursor, so Stage 2 replays its loop with a different implementer.
 - **Fresh context:** Stage 2's arms fork one session after cycle 1. A real session may
