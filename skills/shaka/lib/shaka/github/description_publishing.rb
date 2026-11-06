@@ -4,7 +4,7 @@ require_relative 'usage_archive'
 require_relative '../prose_limits'
 
 module Shaka
-  # Publishes a guarded description after its usage archive plan fits.
+  # GitHub write guards stay outside the previewable publication renderers.
   module DescriptionPublishing
     # A block builds the body from the pull request it replaces, using this same read.
     def description(body: nil, prose: ProseLimits.new)

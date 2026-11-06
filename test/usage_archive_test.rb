@@ -2,7 +2,7 @@
 
 require_relative 'usage_records_test'
 require_relative 'publication_test'
-require_relative '../skills/shaka/lib/shaka/publication/usage_archive'
+require_relative '../skills/shaka/lib/shaka/github/usage_archive'
 
 # Remote accounting must survive body limits and fail closed when its comments change.
 class UsageArchiveTest < Minitest::Test

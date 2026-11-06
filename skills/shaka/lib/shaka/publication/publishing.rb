@@ -9,7 +9,7 @@ require_relative 'feature_guard'
 require_relative 'managed_region'
 require_relative 'merge_warning_region'
 require_relative 'rendered_prose'
-require_relative 'description_publishing'
+require_relative '../github/description_publishing'
 
 module Shaka
   # Publishes rendered Markdown, checking GitHub's own rendering before anything is written

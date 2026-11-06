@@ -6,7 +6,7 @@ require 'uri'
 require_relative '../usage/usage_records'
 require_relative 'usage_archive_storage'
 require_relative 'usage_archive_references'
-require_relative 'throughput_line'
+require_relative '../publication/throughput_line'
 
 module Shaka
   # Keeps accounting bytes in same-PR comments when usage outgrows a description.
