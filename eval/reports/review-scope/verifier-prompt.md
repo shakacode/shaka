@@ -25,7 +25,8 @@ claude -p --model claude-opus-5-5 --effort high --max-budget-usd BUDGET \
 - **Isolation:** the operator reads the tool calls in `STREAM`. A session that touched
   `/Users/justin/claude/shaka-state/`, the run records, the coding hosts' session stores
   (`~/.claude/projects/`, `~/.codex/sessions/`), or a checkout other than its own and the
-  temporary worktrees it made is void. A void session counts as a provider error under the
+  temporary worktrees it made is void. So is a session that made any network call, such as
+  `curl`, `gh`, or `git fetch`. A void session counts as a provider error under the
   preregistration's Retries rule.
 
 ## Checkout

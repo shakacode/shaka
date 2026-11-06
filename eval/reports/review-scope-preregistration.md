@@ -262,7 +262,10 @@ cross-PR K items, and every unfixed same-file finding.
 - **Judge and verifier labels:** `P` and `Q`, or opaque finding ids. Never a model id, arm
   name, price, or run number.
 - **Scorer prompts:** the judge and verifier prompt files postdate every item's merge base, so
-  no fixture tree holds them.
+  no fixture tree holds them. The Shaka install a candidate runs from does hold them, as it
+  holds this report. A candidate transcript that reads this report or a file under
+  `eval/reports/review-scope/` voids the attempt, under the same transcript check as
+  Network.
 - **Training data:** the items date from 2026-10 and 2026-11, after Claude Opus 5.5's training
   cutoff. gpt-6.1-sol's cutoff is UNKNOWN.
 
@@ -278,13 +281,15 @@ cross-PR K items, and every unfixed same-file finding.
   item. An item at its limit ends there and is recorded.
   - **Session budget:** every Stage 2 Claude Code session, implementer or verifier, first try
     or retry, enters the ledger as one call. `R` is the item's limit minus its spent,
-    reserved, and unknown charges. A verifier's budget is `min(20, R)`. An implementer
-    session also makes `review run` calls, which the ledger does not admit separately, so it
-    first sets aside a reviewer reserve: $1.15 for each cycle the round cap still lets it
-    review. That is 1.5 times the largest historical cost of one cycle's two reviewer runs
-    under [Arms](#arms), $0.61 + $0.14, rounded up to the next 5 cents. Its budget is `min(20, R - reserve)`. The session passes
-    its budget as `--max-budget-usd`, and the ledger reserves the budget plus any reserve.
-    A budget of $0 or less ends the item there.
+    reserved, and unknown charges. A verifier's budget is `min(20, R)`.
+  - **Reviewer reserve:** an implementer session also makes `review run` calls, which the
+    ledger does not admit separately. It first sets aside $1.15 for each cycle it may review:
+    one for the shared cycle 1 session, which stops after one round, and for a fork or its
+    retry, the cycles the round cap still allows, at most four. $1.15 is 1.5 times the
+    largest historical cost of one cycle's two reviewer runs under [Arms](#arms), $0.61 +
+    $0.14, rounded up to the next 5 cents. The session's budget is `min(20, R - reserve)`.
+  - **Admission:** the session passes its budget as `--max-budget-usd`, and the ledger
+    reserves the budget plus any reserve. A budget of $0 or less ends the item there.
   - **Overshoot:** admission keeps a session from starting past the limit, not from finishing
     past it. The last call in flight can cross the budget, as ADR D9 allows, and reviewer runs
     can exceed their reserve. The session's actual cost is charged in full, and the item ends
@@ -295,11 +300,10 @@ cross-PR K items, and every unfixed same-file finding.
     claims unverified. The second fork can get a smaller budget than the first; the
     alternating order spreads that between the arms.
   - **Units:** the budget is Claude Code's billed estimate. If the maintainer counts
-    cache-neutral dollars, the reviewer reserve is $2.55 per cycle (1.5 times $1.00 + $0.69,
-    rounded up the same way),
-    `R` minus the reserve is divided by 10.7, the ratio under [Arms](#arms), before the
-    minimum, and the ledger reserves 10.7 times the budget plus the reserve. Actual cost
-    settles from usage records, so the ratio only sizes the reservation.
+    cache-neutral dollars, the reviewer reserve is $2.55 per cycle, 1.5 times $1.00 + $0.69
+    rounded up the same way. `R` minus the reserve is divided by 10.7, the ratio under
+    [Arms](#arms), before the minimum, and the ledger reserves 10.7 times the budget plus the
+    reserve. Actual cost settles from usage records, so the ratio only sizes the reservation.
 - **Pilot bars:** a missed P1 to P4 stops the run and reports, without asking for approval.
 - **Scorer:** J1 to J3 below their bars stops the run; found counts from that judge are void.
 - **Stage 2 prerequisite:** no Stage 2 priced call until the prototype helper commit exists
