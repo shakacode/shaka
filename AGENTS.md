@@ -14,6 +14,8 @@ or require other repositories to copy them. The [Shaka skill's writing guidance]
 is the reusable default.
 
 - Assume the reader is new to Shaka and wants to get useful work done.
+- When writing product documentation, follow [documentation structure](internal/documentation.md)
+  so readers can start with the skill and consult guides as needed.
 - In product guides, explain outcomes, choices, and examples. Put agent execution
   details with the skill and development records under `internal/`.
 - `bin/check-docs-navigation` refuses `docs/` links and URLs that point into
@@ -191,6 +193,9 @@ Publish tested changes as bounded PRs, preferably below 500 changed lines each.
 Explain necessary larger changes; split independent work instead of hiding size.
 Required evidence is the PR's current commit, actual validation results, and review.
 No extra closeout audit, receipt, automatic issue, heartbeat, or parallel tracker.
+When a PR changes what Shaka users see or do, add an entry under `## [Unreleased]`
+in `CHANGELOG.md`, following the format its header names, written for users rather
+than as a commit summary. Leave out internal changes. No check enforces this.
 Report available model, reasoning effort, and token evidence on the PR by commit;
 mark shared or unavailable attribution explicitly, as specified in the pilot plan.
 Do not close the pilot until its required real-use acceptance is established.

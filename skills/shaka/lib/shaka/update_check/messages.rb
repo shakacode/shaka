@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'shellwords'
+require_relative '../install/status_healthy'
+require_relative '../install/status_inventory'
 
 module Shaka
   class UpdateCheck
@@ -10,6 +12,27 @@ module Shaka
       SIGNED_OUT = /gh auth login|not logged in|authentication required|HTTP 401|bad credentials/i
 
       private
+
+      # A clone or copy without an installation record, which may run beside a registered installation.
+      def uninstalled
+        registered = registered_helper
+        unless registered
+          return answer('uninstalled', "This copy is not a registered installation; install Shaka through #{GUIDE} " \
+                                       'to receive update guidance.')
+        end
+
+        answer('uninstalled', "This copy at #{Shellwords.escape(@helper)} is not the registered installation. " \
+                              "Run #{registered} update-check for update guidance.", 'unregistered_copy')
+      end
+
+      # The registered helper install --status names for this copy (A9). Nil when host links use this copy,
+      # or when unsafe file modes (B10), which status reports first, make that helper unsafe to run.
+      def registered_helper
+        healthy = Install::StatusHealthy.new(Install::StatusInventory.new(source: ROOT, home: Dir.home))
+        healthy.primary.helper if healthy.unregistered_helper && healthy.primary.safe?
+      rescue ArgumentError, SystemCallError
+        nil
+      end
 
       def pinned_release
         return not_a_pull(checkout_head) if checkout_head != recorded
@@ -68,19 +91,19 @@ module Shaka
       end
 
       def custom
-        answer('custom', "This copy differs from #{@target}: review upstream changes through #{GUIDE}. " \
+        answer('custom', "This copy differs from #{@target}: compare the two through #{GUIDE}. " \
                          'Keep your chosen source and local changes; do not replace it automatically.')
       end
 
       def development
-        answer('custom', "Development source: review upstream changes through #{GUIDE}. " \
+        answer('custom', "Development source: compare it with shakacode/shaka main through #{GUIDE}. " \
                          'Keep your chosen source and local changes; do not replace it automatically.',
                'development_source')
       end
 
       def unsupported_source
         answer('custom', 'Updates are checked only for a GitHub origin, branch, and full commit. ' \
-                         "Review upstream changes through #{GUIDE}.", 'unsupported_source')
+                         "Compare this copy with shakacode/shaka main through #{GUIDE}.", 'unsupported_source')
       end
 
       def request_failed(error)

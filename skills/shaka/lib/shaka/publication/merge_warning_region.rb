@@ -37,6 +37,13 @@ module Shaka
       split(body).first.start_with?("#{OPEN}\n> **#{AWAITING.first}**\n") && head(body, repository) == current
     end
 
+    # A merge of the head the warning waited on answers it; any other warning stays as the record.
+    def answered_by_merge(body, repository, pull)
+      return body unless pull['merged'] == true && awaiting?(body, repository, pull.dig('head', 'sha'))
+
+      remove(body)
+    end
+
     # Whether a ready checkpoint for this head settles the warning: it names an earlier head, or it waited
     # only on the maintainer's decision for this one.
     def settled_by_ready?(body, repository, current)

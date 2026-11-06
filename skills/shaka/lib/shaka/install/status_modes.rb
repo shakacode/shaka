@@ -32,13 +32,17 @@ module Shaka
 
       # Installation verification refuses these same files; each kind gets a step that can fix it.
       def unsafe_files
+        listed_unsafe_files
+      rescue SystemCallError
+        nil
+      end
+
+      def listed_unsafe_files
         skills = File.join(@root, 'skills')
         paths, listed = skill_paths(skills)
         return refused if @refusal
 
         symlink(paths) || foreign(listed) || special(paths, skills) || writable(listed, skills)
-      rescue SystemCallError
-        nil
       end
 
       # The installer's own refusal of the skill files, which Git may not show, such as a helper that

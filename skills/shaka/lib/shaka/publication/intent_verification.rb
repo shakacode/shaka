@@ -37,10 +37,17 @@ module Shaka
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
-      lines.insert(1, *task, *root_cause(spec))
+      lines.insert(1, *task, *task_understanding(spec), *root_cause(spec))
       lines << HumanReview.render(spec['review_effort'], floor)
       lines.concat(ReviewFocusList.render(spec, pull), exclusions(spec['leaves_out']))
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
+    end
+
+    def task_understanding(spec)
+      return [] if spec['task_understanding'].nil?
+
+      body = PublicationText.required(spec['task_understanding'], 'intent task_understanding')
+      ["<details>\n<summary>Task as understood</summary>\n\n#{body}\n\n</details>"]
     end
 
     def root_cause(spec)
@@ -69,22 +76,29 @@ module Shaka
       " (#{files} #{files == 1 ? 'file' : 'files'}, +#{added} / −#{removed} lines)"
     end
 
+    # An unproven claim stays visible: a maintainer deciding whether to merge must not have to open the fold.
     def verification(spec, gate_line)
-      visible = spec['merge_limitations']
       summary = evidenced(PublicationText.single_line(spec['summary'], 'verification summary')) if spec['summary']
-      ['## Verification', gate_line, summary, *(not_verified(visible) unless visible.nil?)].compact.join("\n\n")
+      ['## Verification', gate_line, summary, *not_verified(spec['not_verified']),
+       *merge_limitations(spec['merge_limitations'])].compact.join("\n\n")
     end
 
-    def evidence(spec, allowed)
-      [*checks(spec['checks'], allowed), *not_verified(spec['not_verified'])].join("\n\n")
-    end
+    def evidence(spec, allowed) = checks(spec['checks'], allowed).join("\n\n")
 
     # The agent still answers, but a reader learns nothing from being told no claim went unproven.
     PROVED = /\Anothing\.?\z/i
 
+    def proved?(text) = text.to_s.strip.match?(PROVED)
+
     def not_verified(value)
       text = PublicationText.single_line(value, 'verification not_verified')
-      text.match?(PROVED) ? [] : ["**Not verified:** #{text}"]
+      proved?(text) ? [] : ["**Not verified:** #{text}"]
+    end
+
+    def merge_limitations(value)
+      return [] if value.nil? || proved?(value)
+
+      ["**Merge limitations:** #{PublicationText.single_line(value, 'verification merge_limitations')}"]
     end
 
     # An unfinished draft may have run nothing yet; Not verified then says why.
@@ -111,8 +125,8 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :scope, :exclusions, :diff_size,
+    private_class_method :intent, :task_understanding, :scope, :exclusions, :diff_size,
                          :verification,
-                         :not_verified, :checks, :evidenced, :object
+                         :not_verified, :merge_limitations, :checks, :evidenced, :object
   end
 end

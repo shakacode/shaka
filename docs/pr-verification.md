@@ -83,11 +83,17 @@ input. You can approve the approach, request revisions, or settle an open questi
 | What is it for, and what does it leave out? | **Intent** in the description: the problem, the **Task** it came from (a ticket such as GitHub #1234 or Linear MKT-1234, with this PR's relation to it, or the agent prompt), the scope, what was deliberately left out, and why the change is safe. A bug fix also names its **Root cause**, or says it was not found and the PR treats only the symptom. |
 | What should I read myself? | **Human review** under Intent, rated from 1 (the description should be enough) to 5 (read the riskiest files closely). The rating is about where your attention matters, so it names the files that set it. Nothing checks how closely anyone read. When a few files or lines need more care than the rest, **Closer reading** lists each with its own level and reason, linked to the code. Shaka sets a minimum from the files the PR changes, and withholds any file name that contains unusual characters. Each repository chooses those minimums with [`pr_description.human_review_floors`](settings.md#pr_descriptionhuman_review_floors). |
 | Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
-| How was it checked? | **Verification** in the description. Its first line, written by Shaka from the recorded results, says whether repository validation passed and who reviewed the current revision; when validation passed and a local review ran through Shaka, it is folded under a one-line summary so a failure or a missing review stands out. When fewer local reviewers completed than [`review.local_review_count`](settings.md#reviewlocal_review_count) or [`review.provider_coverage`](settings.md#reviewprovider_coverage) asks for, the line stays unfolded. A **Setup gaps** line below it says how many completed, names each listed provider that did not, and links the review comment. A Codex reviewer whose sandbox could not start, so that every command failed with a `bwrap:` error, also unfolds the line and is named there, because it read only the diff. Up to three checks follow, each showing what ran against this change's behavior, its outcome, and a link to the evidence or the command itself. **Not verified** names a claim this PR makes that went unproven and why that is acceptable; Shaka leaves the line out when the agent reports nothing unproven. |
+| How was it checked? | **Verification** in the description. Its first line, written by Shaka from the recorded results, says whether repository validation passed and who reviewed the current revision; when validation passed and a local review ran through Shaka, it is folded under a one-line summary so a failure or a missing review stands out. When fewer local reviewers completed than [`review.local_review_count`](settings.md#reviewlocal_review_count) or [`review.provider_coverage`](settings.md#reviewprovider_coverage) asks for, the line stays unfolded. A **Setup gaps** line below it says how many completed, names each listed provider that did not, and links the review comment. A Codex reviewer whose sandbox could not start, so that every command failed with a `bwrap:` error, also unfolds the line and is named there, because it read only the diff. **Not verified** follows in plain view: it names a claim this PR makes that went unproven and why that is acceptable, and Shaka leaves it out when the agent reports nothing unproven. A **Merge limitations** line below it names a gap that should hold the merge, such as a migration that needs the maintainer's approval. Up to three checks sit in the collapsed Evidence and limitations section, each showing what ran against this change's behavior, its outcome, and a link to the evidence or the command itself. |
 | Which skills contributed? | **Skills used** lists the reported skills, their contributions, and evidence labels. |
 | What did people say? | **Human comments** in the description: each comment a person wrote, its reply, and whether it is still open. |
 | What happened to concerns? | Review findings, replies, and recorded fixes or reasons for declining a suggestion. |
 | What do I need to do? | Open decisions and steps besides merging, with their timing and owner. |
+
+Expand **Task as understood** beside the task source to compare the delivered work
+with the contributor's account of the assignment and success criteria. It carries
+corrections made in chat; it does not establish your approval. Older PRs may omit it.
+The contributor checks this paraphrase for private content before publication.
+Original prompts remain excluded, and collapsed text is public.
 
 For example, a CSV export PR may use a simple download instead of a background
 job. The walkthrough should explain that choice; tests should exercise the
@@ -400,9 +406,11 @@ accepted guidance. Once a direction is chosen, the agent records that guidance
 and recoverable work state as a [return point](#return-points). This is not an
 automatic Ruby snapshot or an extra human approval.
 The PR description opens with **Decisions to make** while you have questions to answer.
-Until you answer them, the links below the questions show **Decisions to make** as the
-checkpoint, and the code walkthrough waits, because your answers may change the code it
-would explain. Ask your agent for a walkthrough sooner if you want to read one first.
+Each question should explain your options, what each changes, the agent's recommendation,
+and how to answer. Published checkpoint and walkthrough links remain available.
+An unpublished checkpoint says **Not published yet**. The code walkthrough waits because
+your answers may change the code it would explain. Ask your agent for a walkthrough
+sooner if you want to read one first.
 Otherwise, below the line naming the AI that wrote it, it opens with the task owner's
 recommendation from the checkpoint published for that commit, such as
 **Recommendation: Merge**, or **No recommendation yet** before the owner has recorded one.

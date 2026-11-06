@@ -359,6 +359,17 @@ class PublicationPostImplementationLinkTest < Minitest::Test
 end
 
 class PublicationProvenanceRequirementTest < Minitest::Test
+  def test_description_requires_a_link_decision_for_tracker_tasks
+    provenance = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_tracker' => 'linear',
+                                         'task_key' => 'MKT-1234')
+    content = PublicationRegressionTest.new('render').description_content('provenance' => provenance)
+    assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
+
+    provenance['task_url_omission_reason'] = 'Private task URL cannot be shared.'
+    rendered = Shaka::Publication.description(content)
+    assert_includes rendered, '**Task:** Linear MKT-1234 · URL omitted: Private task URL cannot be shared.'
+  end
+
   # Catches a renderer that accepts the structured metadata but silently drops it,
   # leaving a PR without the route evidence needed for later comparison.
   def test_description_renders_public_safe_execution_provenance
@@ -1026,7 +1037,7 @@ class PublicationCheckpointTest < Minitest::Test
     body = Shaka::Publication.description(data, nil, PULL)
     assert_includes body, "<!-- shaka:decisions -->\n## Decisions to make<a id=\"decisions-to-make\"></a>\n\n" \
                           "- Keep the parser?\n\nCode Walkthrough: _After the decisions._ · " \
-                          "Checkpoint: [Decisions to make](#user-content-decisions-to-make)\n\n**Next:**"
+                          "Checkpoint: _Not published yet._\n\n**Next:**"
     assert_operator body.index('## Decisions to make'), :<, body.index('Review the current result.')
     refute_includes body, 'Recommendation'
   end

@@ -33,6 +33,13 @@ then shows `+`. Each record is also kept as a hidden block holding its reported
 columns and note. A later publish that carries the block puts its row back in
 the table.
 
+Keep usage archive comments, including superseded sets as history. If an archive
+cannot be verified, restore its original bytes; do not remove references or substitute
+zero. Update Shaka before refreshing an archived PR, and keep a compatible helper
+when reverting.
+If original records are unavailable, stop and report the missing accounting for a
+maintainer decision; never claim complete history after removing its references.
+
 Each report is priced once, when `shaka usage` runs, with the rate card installed then.
 A carried report keeps that price; nothing reprices it. A collapsed **How each report
 was measured and priced** list under the table shows each report's rate card,
@@ -370,9 +377,17 @@ source row. Omit it for a task in another GitHub repository, which may be privat
 
 For a Jira or Linear ticket whose key may appear in this PR, set `task_source` to
 `issue`, `task_tracker` to `jira` or `linear`, and `task_key` to its key, such as
-`MKT-1234`; for a private tracker, omit the tracker keys so the line reads `issue`. Add an
-https `task_url` only when the ticket's address may appear too; without it the key is
-shown unlinked.
+`MKT-1234`; withhold the tracker keys when they cannot be shared.
+
+For an issue or PR without `task_number`, Ruby requires exactly one of:
+
+- `task_url`: a shareable https URL, validated and rendered as a link.
+- `task_url_omission_reason`: nonempty, single-line text explaining why the URL is
+  unavailable or cannot be shared. The Task line displays this public-safe reason.
+
+Retrieve the canonical URL through the tracker connection when intake gives only a key.
+Ruby validates supplied metadata; the agent establishes availability and shareability.
+Prompt tasks and numbered GitHub tasks take neither field.
 
 With a number or key, the optional `task_relation` says how this PR relates to the
 task: `fixes`, `part_of`, `follow_up`, or `refs`. Only a GitHub issue number takes `fixes`.
@@ -384,8 +399,12 @@ The helper renders the Task line after Why in Intent:
 | `description` | `Claude prompt` or `Codex prompt`, from the writer's identity |
 | issue `1234`, `part_of` | `GitHub #1234 · part of` |
 | issue `1234`, `fixes` | `GitHub · fixes #1234`, which closes the issue when the PR merges into the default branch |
-| `linear`, `MKT-1234` | `Linear MKT-1234` |
-| issue or PR with no number or key | `issue` or `pull request` |
+| `linear`, `MKT-1234`, `task_url` | `Linear MKT-1234`, linked to the supplied URL |
+| issue or PR with an omission reason | `issue · URL omitted: Private task.` or `pull request · URL omitted: Tracker unavailable.` |
+
+The optional `intent.task_understanding` is nonempty text with real paragraph breaks.
+It renders in **Task as understood** immediately after the Task line. Older callers
+can omit it; this prose belongs to Intent, not the provenance metadata allowlist.
 
 Carry those values from intake; recommendations and host settings do not establish
 a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not

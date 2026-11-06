@@ -210,7 +210,8 @@ Ruby checks the disposition's head, vocabulary, reason, and next-action field, w
 It rejects **Merge** when verification has a blocking conclusion, or lists a concern
 without a matching `accepted_concerns` entry, and never verifies who made a decision.
 It accepts **Merge after maintainer decision** unless the verdict is Do not merge. `description`
-refuses an empty `decisions` list while the PR's waiting warning names the current head, and a
+refuses an empty `decisions` list while the PR's waiting warning names the current head, unless
+GitHub reports that head merged; that merge answers the decision and removes the warning. It refuses a
 non-empty list while this head's latest checkpoint recommends Merge. Publishing Merge is refused
 while the description lists decisions, unless that waiting warning names the current head; it then
 removes the warning.

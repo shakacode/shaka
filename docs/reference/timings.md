@@ -64,6 +64,11 @@ Shaka metrics, the estimated cost adds how long the work took from the recorded
 task start once that is known: `ready in 1h 19m` while the PR is open, then
 `merged in 3h 24m`.
 
+Before a ready time is recorded, the summary shows `ready pending`. Missing
+timestamps produce `ready in UNKNOWN` or `merged in UNKNOWN`. Pending means no
+ready time was recorded; it does not establish whether the PR is ready to merge.
+Skipped CI reviews can leave that measurement pending until merge.
+
 The Timings section breaks that down for the current head. Prompt to CI runs
 from the task start to the head's earliest check. CI to ready runs from that
 check until the head's required checks and configured CI reviews are green.

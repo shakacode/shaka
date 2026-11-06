@@ -1,9 +1,10 @@
 # Start here
 
-Start with a small fix in a project you know.
+You don't need to read the rest of the docs first. Install Shaka, give your agent
+a small task, and review the result.
 
-Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode
-([other agents](coding-agents.md)).
+Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode.
+For Pi, load the installed skill. See [other coding agents](coding-agents.md).
 
 <a id="getting-started"></a>
 
@@ -15,7 +16,7 @@ Ask your coding agent:
 Install Shaka from https://github.com/shakacode/shaka.
 ```
 
-To run the commands yourself, follow [manual installation](manual-installation.md).
+Prefer to install it manually? Follow [manual installation](manual-installation.md).
 
 Check the install, and follow what the report says:
 
@@ -23,19 +24,18 @@ Check the install, and follow what the report says:
 $shaka doctor
 ```
 
-If the Shaka skill doesn't appear, start a new chat and try again.
+If the skill doesn't appear, start a new chat and try again.
 
 <a id="2-choose-private-trial-or-team-setup"></a>
 <a id="2-choose-individual-trial-or-team-setup"></a>
 
 ## 2. Choose individual or team setup
 
-On your first task in a project without Shaka settings, the agent asks whether to
-set Shaka up just for you or for your team.
+If your project has no Shaka settings, the agent asks whether to set it up just
+for you or for your team.
 
-- **Just for you:** settings stay out of commits, and the task goes on.
-- **For your team:** the agent opens a setup PR for you to review. See
-  [repository setup](configure-repository.md).
+- Individual settings stay out of the repository.
+- Team setup opens a PR so your teammates can review the settings.
 
 ## 3. Start a task
 
@@ -43,14 +43,9 @@ set Shaka up just for you or for your team.
 $shaka Fix search when the query contains an apostrophe. Go.
 ```
 
-Use your own small outcome or an issue link. The agent asks when it needs you.
+Use your own small task or an issue link. The agent builds, verifies, and gets an
+independent review before opening a PR. It asks when it needs your input.
 
-Other kinds of tasks:
-
-- [Plan before implementing](working-with-shaka.md#get-a-plan-before-implementing).
-- [Review an existing PR](working-with-shaka.md#review-an-existing-pr).
-- [Resume a PR](working-with-shaka.md#resume-a-pr-you-already-started) or
-  [recover unfinished work](working-with-shaka.md#resume-unfinished-work).
-
-Under **Ask**, the default, you decide whether to merge the PR.
-[Working with Shaka](working-with-shaka.md) covers what comes next.
+Read the PR and ask for revisions if needed. By default, you decide whether to
+merge. [Working with Shaka](working-with-shaka.md) covers feedback, merge choices,
+and resuming unfinished work.

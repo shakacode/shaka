@@ -78,14 +78,15 @@ module Shaka
 
       def path = project_path(@client.project.fetch('id'))
 
-      def stable_read(head:, target:)
+      def stable_read(head:, target:, verify: nil)
         raise Error, 'Expected a full head SHA and target branch.' unless commit?(head) && text?(target)
 
         first = snapshot
         verify_expected(first, head, target)
         expected = identity(first)
         result = yield first
-        verify_after(expected, head, target)
+        last = verify_after(expected, head, target)
+        verify&.call(first, last)
         result
       end
 
@@ -109,7 +110,7 @@ module Shaka
       def verify_after(expected, head, target)
         last = snapshot
         verify_expected(last, head, target)
-        return if expected == identity(last)
+        return last if expected == identity(last)
 
         raise Error, 'GitLab merge request identity or diff revision changed during the read.'
       end
