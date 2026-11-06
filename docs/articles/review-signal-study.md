@@ -9,8 +9,9 @@ lists every finding and how it was checked.*
 
 ## Why this ran
 
-Before Shaka pushes a PR, two AI reviewers read every commit: Codex and Claude. Each
-finding is a defect, a risk, or a nit. The agent fixes defects and clear risks in new
+Before Shaka pushes a PR, an AI reviewer reads every commit. Shaka's default is one
+reviewer; this repository configures two, Codex and Claude. Each finding is a defect, a
+risk, or a nit. The agent fixes defects and clear risks in new
 commits, and both reviewers read the new commit. The loop ends when no fixable finding
 remains. Each reviewed commit is one *cycle*.
 
@@ -18,7 +19,7 @@ Two people questioned review loops like this one in recent posts:
 
 - Lauren Tan, who works on pstack, called adversarial reviews
   "mostly a waste of tokens" ([post](https://x.com/poteto/status/2117437607940681849)).
-  In a [follow-up](https://x.com/poteto/status/2117445316043825393), she said repeated
+  A [follow-up post](https://x.com/poteto/status/2117445316043825393) says repeated
   rounds "overcook" a PR.
 - Addy Osmani described how the Claude Code team reviews code
   ([post](https://x.com/addyosmani/status/2114604912520921136)). About 59% of what their
@@ -26,8 +27,7 @@ Two people questioned review loops like this one in recent posts:
 
 Shaka had not checked whether its own fixes were real. An October
 [study of review on 350 PRs](review-process-study.md) counted findings by the
-disposition the agent recorded, such as `fixed`, without checking that a fixed finding
-was real. One PR, [#985](https://github.com/shakacode/shaka/pull/985), ran 41 reviewer
+disposition the agent recorded, such as `fixed`. One PR, [#985](https://github.com/shakacode/shaka/pull/985), ran 41 reviewer
 runs. The study below checks whether the fixes were real, and what the repeated cycles
 cost.
 
@@ -40,32 +40,32 @@ cost.
   the reviewed commit and passed after the fix. The rest, mostly docs and design
   findings, were checked by reading.
 - 4 of the 30 defects need an input nobody is likely to produce. One example is a
-  directory named like a Markdown link, such as `cache([1](2)`.
-- Just over half of fixed defects (54%) are found in the first cycle. Later cycles
-  mostly catch bugs in code written during the loop, often by the previous fix.
+  directory whose name looks like a Markdown link.
+- 58% of fixed defects are first reported in the first cycle. Later cycles mostly
+  catch bugs in code written during the loop, often by the previous fix.
 - Reviewer spend is $2.38 per fixed defect.
 - Recommendation: keep the two-reviewer loop as it is.
 
-| Cycle | Fixed defects found | Reviewer spend |
+| Cycle | Fixed defects first reported | Reviewer spend |
 | --- | ---: | ---: |
-| 1 | 160 (54%) | $243.52 (33%) |
-| 2 | 51 | $167.45 |
-| 3 | 35 | $123.21 |
+| 1 | 159 (58%) | $243.52 (33%) |
+| 2 | 42 | $167.45 |
+| 3 | 27 | $123.21 |
 | 4 | 16 | $85.82 |
-| 5 | 12 | $48.80 |
-| 6 or later | 21 | $59.66 |
+| 5 | 13 | $48.80 |
+| 6 or later | 17 | $59.66 |
 
-The defect counts cover the 295 fixed defects whose cycle is known. Spend covers the
-2,310 runs with a cost estimate.
+The defect counts cover the 274 fixed defects whose first cycle is known. Spend covers
+the 2,310 runs with a cost estimate.
 
 ## The ideas, tested
 
 ### 1. Adversarial review is mostly a waste of tokens
 
 - **Idea:** Tan argued that tokens spent on review would do more on empirical and formal
-  verification. Agents doing abstract review, in her view, get lost in nitpicks.
-- **In Shaka:** two reviewers on every commit. A ledger stops after 5 reviewed commits
-  unless the maintainer extends it.
+  verification. Agents doing abstract review get lost in nitpicks, Tan wrote.
+- **In this repository:** two reviewers on every commit. A ledger stops after 5
+  reviewed commits unless the maintainer extends it.
 - **Result:** the fixes the loop produced were real, and each reviewer found defects the
   other missed. Of 345 fixed defects, Codex alone reported 154, Claude alone 113, and
   both 78. The nitpicking is real too: nits are 49% of all findings, almost all from
@@ -93,10 +93,11 @@ The defect counts cover the 295 fixed defects whose cycle is known. Spend covers
   code there since the first pass. Their review now re-reads only the diff after the
   first cycles and asks the author to rethink after three.
 - **In Shaka:** each cycle reviews the whole PR diff against its base.
-- **Result:** 17 sampled findings came from cycle 2 or later. 11 sat in code written
-  during the loop, and 6 (35%) in code the first cycle had already seen.
-- **Limit:** 17 findings is a small sample. A diff-only re-review might still reach some
-  of the 6, when a later commit touched nearby lines.
+- **Result:** 17 sampled findings were first reported in cycle 2 or later. 11 sat in
+  code written during the loop, and 6 (35%) in code the first cycle had already seen.
+- **Limit:** 17 findings is a small sample, drawn by reporter rather than by cycle, so
+  35% is not a population rate. A diff-only re-review might still reach some of the 6,
+  when a later commit touched nearby lines.
 
 ### 4. Only findings proven by a run should survive
 
@@ -118,8 +119,8 @@ The defect counts cover the 295 fixed defects whose cycle is known. Spend covers
 | Option | Evidence | Verdict |
 | --- | --- | --- |
 | Keep the two-reviewer loop as it is | Every sampled fix was real. Each reviewer finds defects the other misses. Reviewer spend is $2.38 per fixed defect. | Recommended |
-| Re-review only new commits after the first full round, and label findings already in the base | No sampled fix was already in the base, so the label would mark almost nothing. Diff-only re-review could miss up to about 16% of fixed defects, to save part of the $485 that later cycles cost over three weeks. | Not supported |
-| Review less, and spend those tokens on run-based verification | The repository's tests did not cover these inputs. Each regression test came after a reviewer named the input. | Not supported |
+| Re-review only new commits after the first full round, and label findings already in the base | Base findings are rare: 1 of 15 sampled dismissals, and no sampled fix. Diff-only re-review could miss defects like 4 of the 13 later-cycle sampled defects, to save part of the $485 that later cycles cost over three weeks. | Not supported |
+| Review less, and spend those tokens on run-based verification | The sample holds only findings a reviewer named, so it cannot show what a run-proving adversary would find. The repository's tests had not covered these inputs. | Not tested by this data |
 
 Two measurements could change the verdict:
 
