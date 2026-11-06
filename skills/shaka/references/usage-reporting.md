@@ -33,6 +33,14 @@ then shows `+`. Each record is also kept as a hidden block holding its reported
 columns and note. A later publish that carries the block puts its row back in
 the table.
 
+When accounting makes the description exceed GitHub's body limit, publication moves
+the full record blocks into size-bounded comments on that PR. Keep those comments:
+the description links each archive part and pins its SHA256 checksum. Later description
+updates verify and restore the records before carry and deduplication. Missing, edited,
+or cross-PR archive comments stop publication; restore the original bytes rather than
+removing the references or substituting zero. Visible tables, pricing notes, and coverage
+limits remain in the description. Text outside the managed region is preserved.
+
 Each report is priced once, when `shaka usage` runs, with the rate card installed then.
 A carried report keeps that price; nothing reprices it. A collapsed **How each report
 was measured and priced** list under the table shows each report's rate card,

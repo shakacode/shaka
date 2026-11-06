@@ -15,6 +15,9 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Added
 
+- Keep complete usage accounting when a PR description outgrows GitHub's limit.
+  The description retains its tables and pricing notes, with checksummed links to
+  accounting comments. A missing or changed archive blocks later updates.
 - Install pstack beside Shaka in Cursor, Claude Code, or Codex, and keep it current,
   with the [pstack guide](docs/pstack.md). The guide also gives a prompt for building
   your own updater for agent skill packs.

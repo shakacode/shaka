@@ -33,6 +33,13 @@ because hosts count tokens differently. Two retained reports can overlap, so a
 sum can count the same response twice; a minimum marker does not guarantee
 that the reports are disjoint.
 
+Long-lived PRs can accumulate more accounting data than GitHub allows in a description.
+Shaka then keeps the full records in comments on the same PR. **Usage archive** links
+and SHA256 checksums identify them; the tables and pricing notes stay in the description.
+Keep those comments. A later update checks their contents before using them and stops
+if a comment is missing or changed. The checksum detects changes; it does not make a
+GitHub comment immutable.
+
 ## Compare host counters carefully
 
 | Host | Input accounting | Output accounting |
