@@ -69,8 +69,8 @@ claude -p --model claude-opus-5-5 --effort high --max-budget-usd BUDGET \
 - **Missed by an arm:** a K item still in K whose value at that arm's head is `yes`.
 - **Escapes:** audit claims joined by `same_as` are one problem. A problem is an escape at a
   head when any of its claims has `yes` there, so a problem one audit found also counts at
-  the other head when that head holds it. A loop-introduced escape, the L4 count, also has `start`
-  equal to `no`.
+  the other head when that head holds it. A problem counts as a loop-introduced escape, the
+  L4 count, only when none of its claims has `start` equal to `yes` or `unclear`.
 - **Decoys:** a verifier decoy passes when it gets `no` at both `P` and `Q`.
 - **Unclear:** `unclear` at a head leaves that claim inconclusive there. It never counts as
   absent.

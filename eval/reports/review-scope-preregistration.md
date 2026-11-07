@@ -171,7 +171,8 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
 - **Scored only when complete:** an item counts toward L1 and L2 only when both arms' loops
   ended by finishing or by the round cap, not by a failed session. A K item whose test or
   verifier answer at the forks' shared head or at either final head is `unclear` or missing
-  is inconclusive and reported.
+  is inconclusive and reported. An item missing either escape audit or the verifier session
+  leaves L4 and is reported, so an unaudited arm never counts as having no escapes.
 - **Missed by an arm:** the K item is still present at that arm's final head. When the
   historical fix added a test, run it at the final head; otherwise a verifier reads the code.
   Wherever such a test runs, a failed assertion means present, a pass means absent, and a
