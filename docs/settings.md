@@ -853,11 +853,12 @@ What each rating asks:
 
 | Risk | What it asks |
 | --- | --- |
-| Low | Nothing before merge; such PRs are meant for a later audit in a batch. |
-| Medium | A person skims the description, the reasons, and the verification, then opens only the files the reasons name. |
-| High or unknown | A person reviews it carefully, starting with whether the verification proves the change works. |
+| Low | Meant for auto-merge, with a later audit in a batch. |
+| Medium | Never auto-merged: a person skims the description, the reasons, and the verification, then opens only the files the reasons name. |
+| High or unknown | Never auto-merged: a person reviews it carefully, starting with whether the verification proves the change works. |
 
-For now the rating is a preview in the checkpoint comment and changes no merge.
+For now the rating is a preview in the checkpoint comment: it does not change what merges, and
+`merge` settings still decide.
 
 ## `project_guidance`
 

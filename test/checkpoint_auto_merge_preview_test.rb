@@ -31,17 +31,23 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
   # client sets PreviewGitHub's changed_files or labels.
-  def body_for(files, merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2 }, verdict: nil, **client)
-    with_repository('merge' => merge) do |root|
+  def body_for(files, merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2 }, verdict: nil, settings: {},
+               **client)
+    with_repository(settings.merge('merge' => merge)) do |root|
       trust!(root)
       with_result do |result, path|
         change_verdict(result, verdict) if verdict
-        github = PreviewGitHub.new('a' * 40).tap { |client| client.files = files }
-        client.each { |key, value| github.public_send("#{key}=", value) }
+        github = preview_github(files, client)
         publish_at(root, result, path, github)
         return github.bodies.first.first
       end
     end
+  end
+
+  def preview_github(files, client)
+    github = PreviewGitHub.new('a' * 40).tap { |preview| preview.files = files }
+    client.each { |key, value| github.public_send("#{key}=", value) }
+    github
   end
 
   def change_verdict(result, verdict)
@@ -64,9 +70,11 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
 
   # The fixture's reviewer rates low; the changed files can raise it.
   def test_the_risk_rating_comes_from_the_reviewer_and_protected_areas
-    assert_includes body_for(%w[lib/fix.rb]), '**Risk:** Low. Shaka may merge it'
+    assert_includes body_for(%w[lib/fix.rb]), '**Risk:** Low. Low risk is meant for auto-merge'
     assert_includes body_for(%w[lib/fix.rb db/migrate/1_add_index.rb]),
                     "**Risk:** High, raised from the reviewer's low by `database` (`db/migrate/1_add_index.rb`)."
+    assert_includes body_for(%w[db/migrate/1_add_index.rb], settings: { 'protected_areas' => { 'database' => [] } }),
+                    '**Risk:** Low.'
   end
 
   def test_names_the_file_that_would_hand_the_pr_back

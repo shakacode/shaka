@@ -21,6 +21,9 @@ module Shaka
     # The reviewer's rating of what a mistake would reach. Unknown is treated as high wherever it is used.
     RISK = %w[low medium high unknown].freeze
     MAX_RISK_REASONS = 5
+    # A report from before risk ratings, such as a run published after an upgrade, counts as unknown.
+    LEGACY_RISK = { 'rating' => 'unknown',
+                    'reasons' => ['This checkpoint ran before risk ratings; rerun it for one.'] }.freeze
 
     module_function
 
@@ -32,7 +35,7 @@ module Shaka
       validate(report, head:)
       report.slice('head', 'conclusion', 'reasons', 'concerns', 'alternative', 'summary', 'next_action')
             .merge('verification_adequacy' => report['verification_adequacy'].slice(*ADEQUACY_FIELDS),
-                   'risk' => report['risk'].slice('rating', 'reasons'))
+                   'risk' => report.fetch('risk', LEGACY_RISK).slice('rating', 'reasons'))
     rescue JSON::ParserError => e
       raise Error, "Malformed checkpoint report: not valid JSON#{position(e)}"
     end
@@ -50,7 +53,7 @@ module Shaka
       evidence_fields!(report)
       summary_fields!(report)
       adequacy!(report['verification_adequacy'])
-      risk!(report['risk'])
+      risk!(report['risk']) if report.key?('risk')
     end
 
     def risk!(risk)
