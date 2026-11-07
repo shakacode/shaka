@@ -7,14 +7,16 @@ The first study is the [Shaka report](review-signal.md).
 *An AI agent wrote this report: Claude Code running Claude Opus 5.5, on 2026-11-06 (UTC).
 The agent read review data published on
 [shakacode/react_on_rails](https://github.com/shakacode/react_on_rails), read each sampled
-fix against its finding, and drafted the text. The study started no paid model runs and
-ran no React on Rails code.*
+fix against its finding, ran each fix's test on its reviewed commit and at the fix in an
+isolated checkout, and drafted the text. The study started no paid model runs.*
 
 ## Conclusions
 
-1. **The fixes were real here too.** All 30 sampled fixed defects read as real problems,
-   and 3 need an input unlikely in practice. These are readings: no React on Rails test
-   ran.
+1. **The fixes were real here too, and most are proven by a run.** All 30 sampled fixed
+   defects were real problems. For 24, a test, or a mutation of the code, failed on the
+   reviewed commit and passed at the fix. The other 6 were checked by
+   reading: 5 are prose findings, and #9's tests fail on the reviewed commit only because
+   its fix changed the mechanism. 3 of the 30 need an input unlikely in practice.
 2. **Each fixed defect cost 2.4 times as much as on Shaka, and each fixed defect or risk
    about twice as much.** Reviewer spend was $5.72
    per fixed defect against $2.38, and $2.05 per fixed defect or risk against $1.00.
@@ -30,8 +32,9 @@ ran no React on Rails code.*
 4. **Later rounds mostly chased earlier fixes.** At least 9 of the 14 sampled findings
    last recorded in cycle 2 or later sat in code an earlier fix had rewritten. URL-redaction code
    that both #5218 and #5235 changed produced 6 of the 30 sampled defects.
-5. **This data cannot compare review with run-based checks or with a human reviewer.**
-   No test ran, and every maintainer comment in the data was written by an agent.
+5. **This data cannot show what a reviewer required to prove findings by a run would
+   find, or compare AI review with a human reviewer.** The reviewers here ran nothing, and
+   every maintainer comment in the data was written by an agent.
 
 ## Why this ran
 
@@ -77,21 +80,26 @@ commit; three strata by reporter (Codex only, Claude only, both); within each, s
 SHA-1 of `PR:ID:TITLE` and take the first 10. That gives 30 of the 43 fixed defects.
 Fixed risks were not sampled.
 
-Each finding was checked by reading:
+Each finding was checked the same way as in the Shaka study:
 
-1. The finding's title and recorded disposition in its ledger comment.
-2. The fix commit's message, files, and diff.
-3. For #29 and #30, the code at the reviewed commit and at the base, read through the
-   GitHub API.
+1. Read the finding's title and recorded disposition in its ledger comment, and the fix
+   commit's message, files, and diff.
+2. **Run:** in an isolated checkout of React on Rails, check out the reviewed commit,
+   copy in only the fix's test files, and run them; then run the same files at the fix.
+   A finding is confirmed when the fix's test fails on the reviewed commit, the failing
+   examples are the ones that test the finding's claim, and all pass at the fix.
+3. When the fix changed only a test, run the reviewed commit's own test instead, or
+   mutate the code to show whether the test can fail.
 
-Running each fix's test on the reviewed commit, the Shaka study's strongest check, was
-attempted. The agent's host refused to run code from another repository, so no finding
-here was confirmed by a run.
+Ruby and JavaScript dependencies were installed once from `main`, not from each
+commit's lockfile. Tests ran on Ruby 3.4.6 and Node 24.8.0, and #3 on Node 18.20.3.
 
 ## Results
 
-- All 30 read as real problems that the fix addressed. Two were checked against the
-  reviewed code itself (#29 and #30); the other 28 rest on the finding and fix diff.
+- All 30 were real problems that the fix addressed. 24 were confirmed by a run, listed
+  under [Run evidence](#run-evidence). The other 6 were checked by reading: 5 prose
+  findings (#14, #18, #20, #27, #28), and #9, whose fix replaced how the gate reruns, so
+  its tests fail on the reviewed commit for a reason other than the finding.
 - Three need a trigger unlikely in practice: a cache tag holding a lone UTF-16 surrogate
   (#1), a Git push URL that names a different repository from the fetch URL (#2), and a
   literal at sign right after encoded slashes, as in `%2F%2F@ab` (#30).
@@ -151,6 +159,39 @@ here was confirmed by a run.
 
 Cycle is the reviewed commit, within its ledger, where the finding was last recorded. Each
 PR link goes to the ledger comment the finding came from.
+
+### Run evidence
+
+| # | Reviewed → fix | What ran | Result on the reviewed commit, then the fix |
+| ---: | --- | --- | --- |
+| 1 | `ee07998` → `25eff40` | `tagValidation.test.ts` (Jest) | 4 malformed UTF-16 cases fail; 9 of 9 pass |
+| 2 | `dbdb273` → `619d88e` | `test_push_url_on_another_repo_is_refused` | Fails; passes |
+| 3 | `5a7c824` → `90a6bb8` | Reviewed commit's own `vm.test.ts` on Node 18.20.3 | 3 fail at `jest.replaceProperty`; 60 of 60 pass |
+| 4 | `d302422` → `f41bc82` | `test_repo_without_js_lockfile_still_opens_pr` | Fails; passes |
+| 5 | `3fea28f` → `fa711c4` | `test_rerun_on_a_reused_pr_comments_its_new_evidence` | Fails; passes |
+| 6 | `f41bc82` → `bb76334` | `test_regenerates_every_js_project_with_its_own_lockfile` | Fails; passes |
+| 7 | `d302422` → `f41bc82` | `test_pins_files_the_default_branch_added_after_the_operator_checkout` | Fails; passes |
+| 8 | `9e389e4` → `8858d7a` | `utils_spec.rb` | 4 fail, including "leaves encoded double slashes inside a path unchanged"; 0 fail |
+| 9 | `30e3aa3` → `500c2a1` | CI command tests (`node --test`) | 14 fail, all because the fix reruns the gate run instead of dispatching one; read |
+| 10 | `cd8e976` → `8b2f788` | Doctor and lockfile specs | 4 fail, including "warns about a vulnerable npm alias copy"; 0 fail |
+| 11 | `0208746` → `03fb6d0` | `release_rake_helpers_spec.rb` | "warns and continues on a retry whose tag already exists" fails; 0 fail |
+| 12 | `f5e2718` → `c815b9c` | `ci-required-label-filter.test.cjs` | 3 fail, including "reruns the gate when a hosted-CI label changed after the pass started"; 0 fail |
+| 13 | `ec7d15a` → `13d5323` | `ppr_warm_rake_spec.rb` with the abort message mutated | Reviewed spec still passes 15 of 15; fixed spec fails 1 |
+| 15 | `2ab0241` → `f7666c0` | `utils_spec.rb` | 3 fail, including "does not treat a space between two paths as an authority"; 0 fail |
+| 16 | `82a2d5b` → `2ab0241` | `utils_spec.rb` | 4 fail, including "does not treat a line break between two paths as an authority"; 0 fail |
+| 17 | `25eff40` → `16515ae` | `tsc` on the fix's type tests | Unused `@ts-expect-error`; clean |
+| 19 | `4cf0022` → `82a2d5b` | `utils_spec.rb` | "leaves a literal stack-trace URL intact when its own path has an escape" fails; 0 fail |
+| 21 | `1260983` → `9a64039` | `utils_spec.rb` | 4 fail, including "leaves an encoded password before a literal at sign to the literal patterns"; 0 fail |
+| 22 | `fa19d3b` → `8e9b617` | `check-node-renderer-fresh-engines.test.mjs` | "counts an engines.node npm cannot parse as a mismatch" fails; 10 of 10 pass |
+| 23 | `9b21747` → `69c185c` | `shaka_seam_check_test.rb` with each side's pinned Shaka | "unknown review key: local_review_count"; passes |
+| 24 | `04d93c1` → `ea04c37` | `configBuilder.test.ts` | 5 fail (undefined, null, `""`, `0`, `"false"`); 93 of 93 pass |
+| 25 | `a569ce1` → `40c8a8d` | `markdown_link_lint_script_spec.rb` with lychee | 1 fails; 0 fail |
+| 26 | `8b2f788` → `04c1dbd` | Doctor and lockfile specs | 4 fail, including "finds npm v1 alias copies beside a patched ordinary copy"; 0 fail |
+| 29 | `710a593` → `8204e87` | `ClientSideRenderer.test.ts` | "renders the new props when same-id content mounts before a waiting component is cleaned up" fails; 54 of 54 pass |
+| 30 | `f7666c0` → `ad73697` | `utils_spec.rb` | 3 fail, including "finishes when a literal at sign opens the token after an encoded authority start"; 0 fail |
+
+Prose findings #14, #18, #20, #27, and #28 were read. #27's fix also added a test, which
+passes on both commits because the finding concerns CHANGELOG text.
 
 ### Two findings checked against the code
 
@@ -269,7 +310,7 @@ Those threads led to 6 more problems fixed on the PR and 2 fixed elsewhere:
 
 | Question | Shaka | React on Rails |
 | --- | --- | --- |
-| Are fixed defects real? | 30 of 30 sampled, 16 confirmed by a run; 10 of 10 risks | 30 of 30 sampled, all by reading; 2 checked against the code |
+| Are fixed defects real? | 30 of 30 sampled, 16 confirmed by a run; 10 of 10 risks | 30 of 30 sampled, 24 confirmed by a run |
 | Unlikely triggers among sampled defects | 4 of 30 | 3 of 30 |
 | Already in the base | 0 of 40; 1 drift | 1 of 30, reached only through the PR's new path; 2 drift |
 | Does each reviewer catch defects the other missed? | Yes: 154 Codex only, 113 Claude only | Yes: 19 Codex only, 13 Claude only |
@@ -281,9 +322,9 @@ later-cycle findings.
 
 ## What this does and does not show
 
-- Every check here is a reading. The 28 that rest on the finding and fix diff trust that
-  the fix commit describes the problem truthfully. The run checks that made the Shaka
-  study stronger could not run on this host.
+- 24 verdicts rest on a run. The 6 readings trust the finding and the fix diff.
+- Dependencies came from `main`, not each commit's lockfile, so a run could differ on a
+  commit whose dependencies changed. No run failed for a dependency reason.
 - One agent, Claude Opus 5.5, judged every finding and every outside thread. It shares a
   model family with one local reviewer and with Claude in CI.
 - The sample holds only findings an agent chose to fix. The 318 nits, 95 dismissed defects
@@ -306,11 +347,12 @@ later-cycle findings.
   [Shaka report](review-signal.md#rerun-it) describes; this repository also has an older
   execution-table layout with no cost column.
 - Draw the sample with the rule above. The tables list each sampled finding with its source
-  comment, so each reading can be repeated.
+  comment, so each check can be repeated.
 - For the second layer, list each PR's inline review comments, keep roots from outside
   reviewers whose `original_commit_id` is the last reviewed commit of a ledger that ended
   with no open findings and has runs from both reviewers, and read the agent's reply in each thread. To order a thread
   after the local sign-off, compare its creation time with the ledger comment's
   `updated_at`.
-- To add run checks, check out the reviewed commit, copy in the fix's test files, and run
-  them there and at the fix.
+- For a run check, check out the reviewed commit, copy in the fix's test files, and run
+  them there and at the fix. [Run evidence](#run-evidence) gives the commits and the
+  failing examples for each.

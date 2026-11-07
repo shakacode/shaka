@@ -15,7 +15,7 @@ list every finding and how it was checked.*
    sampled fixes were real problems, and almost every one was introduced by its own PR.
    47 changed code, and 46 of those added or changed a test; 2 more changed only a test. On Shaka, 16 of the 30
    sampled defects were confirmed by running the fix's test or a probe on the reviewed
-   commit. The React on Rails verdicts are readings only, because no test could run there.
+   commit; on React on Rails, 24 of 30 were.
 2. **Being right is not enough. Much of what reviewers say is optional or turned down.** Nits
    are 49% of findings on Shaka and 56% on React on Rails. The agent dismissed 29% and 39% of
    defects and risks, and declined 61% of the threads that
@@ -171,10 +171,9 @@ connector, and Greptile. The
 [React on Rails report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-signal-react-on-rails.md)
 lists every finding.
 
-- All 30 sampled fixed defects read as real, and 3 need an
-  unlikely input. Two were checked against the reviewed code; the other 28 rest on the
-  finding and the fix diff. Every check was a reading: the agent's host refused to run another
-  repository's code, so none was confirmed by a run.
+- All 30 sampled fixed defects were real, and 3 need an unlikely input. For 24, a test, or
+  a mutation of the code, failed on the reviewed commit and passed at the fix. The other 6 were read: 5 are prose, and one fix changed the mechanism its
+  tests check.
 - The loop costs more per fixed defect there. Reviewer spend is $5.72 per fixed defect,
   against $2.38 on Shaka. Codex reported nothing on 84% of its runs. Claude reported 316 of
   the 318 nits and 80 of the 83 fixed risks.
@@ -191,7 +190,7 @@ lists every finding.
 | Measure | Shaka | React on Rails |
 | --- | ---: | ---: |
 | Sampled fixed defects that were real | 30 of 30 | 30 of 30 |
-| Confirmed by a run | 16 of 30 | 0 of 30 |
+| Confirmed by a run | 16 of 30 | 24 of 30 |
 | Fixed defects first reported in cycle 1, of those with a known first cycle | 159 of 274 (58%) | 14 of 28 (50%) |
 | Reviewer spend per fixed defect | $2.38 | $5.72 |
 | Nits, share of findings | 49% | 56% |
