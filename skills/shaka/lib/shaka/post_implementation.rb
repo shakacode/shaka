@@ -88,7 +88,8 @@ module Shaka
       published.merge('merge_safeguard' => safeguard)
     end
 
-    # Settings come from the trusted default branch, never the PR; without --ref there is no preview.
+    # Settings come from the trusted default branch, never the PR. Without --ref there is no Auto merge
+    # preview, and the risk rating uses the packaged protected areas.
     # The preview is advisory, so unreadable settings leave it out instead of blocking the checkpoint.
     def trusted_seam
       return @trusted_seam if defined?(@trusted_seam)

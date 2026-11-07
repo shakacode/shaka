@@ -10,7 +10,7 @@ module Shaka
   module PostImplementationRisk
     GLOB = File::FNM_PATHNAME | File::FNM_EXTGLOB | File::FNM_DOTMATCH
     ACTION = {
-      'low' => 'Low risk is meant for auto-merge with a later audit in a batch.',
+      'low' => 'Low risk is meant for auto-merge, with a later audit.',
       'medium' => 'Medium risk is meant for a person to merge after a skim: the description, these reasons, ' \
                   'and the verification, then only the files the reasons name.',
       'high' => 'High risk is meant for a person to merge after a careful review that starts with the ' \

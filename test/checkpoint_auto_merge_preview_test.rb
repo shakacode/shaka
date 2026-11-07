@@ -71,8 +71,11 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
   # The fixture's reviewer rates low; the changed files can raise it.
   def test_the_risk_rating_comes_from_the_reviewer_and_protected_areas
     assert_includes body_for(%w[lib/fix.rb]), '**Risk:** Low. Low risk is meant for auto-merge'
-    assert_includes body_for(%w[lib/fix.rb db/migrate/1_add_index.rb]),
+    migration = body_for(%w[lib/fix.rb db/migrate/1_add_index.rb])
+    assert_includes migration,
                     "**Risk:** High, raised from the reviewer's low by `database` (`db/migrate/1_add_index.rb`)."
+    assert_includes migration, 'The risk rating above is high, which is meant for a person to merge.'
+    refute_includes body_for(%w[lib/fix.rb]), 'The risk rating above'
     assert_includes body_for(%w[db/migrate/1_add_index.rb], settings: { 'protected_areas' => { 'database' => [] } }),
                     '**Risk:** Low.'
   end
