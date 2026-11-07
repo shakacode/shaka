@@ -141,11 +141,12 @@ rounds: Opus with no thinking level recorded, and Codex with no model recorded.
 Not now. The CI study proposed rerunning both prompts under both models. Here are the
 two tests I considered.
 
-**The older model, `claude-sonnet-5`.** A replay would show whether #446 caused most of
-the drop. One run per commit with both prompts costs about $31. If it found more, the
-fix would be pinning an older model. A review would then cost about 8 times as much,
-and we'd have to move the pin when that model retires. The test answers a history
-question, and its fix is one I wouldn't adopt.
+**The older model, `claude-sonnet-5`.** A replay would show whether the model, rather
+than the action bump, caused most of the drop at #446. Its cost is unclear. Before #446
+a hosted review on that model ran about 37 turns for about $0.90, but the older action
+may explain the long runs. One run per commit with both prompts would cost between about
+$4 and $31. If it found more, the fix would be pinning a model that will retire. The
+test answers a history question, and its fix is one I wouldn't adopt.
 
 **The stronger model, `claude-opus-5-5`.** Moving hosted review to Opus is a change we
 could actually make. These 17 commits are the wrong place to test it, though. They were
