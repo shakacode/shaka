@@ -178,6 +178,8 @@ code both local reviewers passed.
   have clean final commits with a run from only one reviewer. The 7 comments
   without a table are left out of cycle, cost, and sign-off counts.
 - On 31 of the 72 PRs, outside reviewers left 66 inline threads on the cleared commit.
+  The four AI reviewers alone commented on 30 of them; GitHub code scanning was the only
+  outside reviewer on the other.
 - 50 of the 66 threads, and 11 of the 15 that led to a fix, were posted after the ledger
   comment's last update, so they followed the local sign-off. The workflow pushes only
   after local review, but the timestamps alone cannot order the other 16.
