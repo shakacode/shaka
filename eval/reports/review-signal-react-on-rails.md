@@ -18,12 +18,13 @@ ran no React on Rails code.*
 2. **Each real defect cost 2.4 times as much as on Shaka.** Reviewer spend was $5.72 per
    fixed defect against $2.38. Codex reported nothing on 84% of its runs, and Claude
    reported 316 of the 318 nits.
-3. **Extra reviewers still found bugs after two had signed off, but most of what they
+3. **Extra reviewers still found bugs on commits two had cleared, but most of what they
    said was declined.** On 10 of the 38 PRs that drew outside comments on a cleared
-   commit, those comments led to 17 fixes, one a user-facing redirect bug. The agent
-   declined 49 of the 89 threads.
+   commit, those comments led to 17 fixes, one a user-facing redirect bug. 22 of the 26
+   threads behind those fixes are timestamped after the local sign-off. The agent declined
+   49 of the 89 threads, 48 of the 86 from AI reviewers.
 4. **Later rounds mostly chased earlier fixes.** At least 9 of the 14 sampled findings
-   from cycle 2 or later sat in code an earlier fix had rewritten. One URL-redaction
+   last recorded in cycle 2 or later sat in code an earlier fix had rewritten. One URL-redaction
    routine produced 4 of the 30 sampled defects.
 5. **This data cannot compare review with run-based checks or with a human reviewer.**
    No test ran, and every maintainer comment in the data was written by an agent.
@@ -224,7 +225,7 @@ review, but the timestamps alone cannot order those 18.
 | Fixed defects: Codex only / Claude only / both | 19 / 13 / 11 | 154 / 113 / 78 |
 | Fixed risks: Codex only / Claude only / both | 3 / 75 / 5 | not split |
 | Nits, share of findings | 318 of 563 (56%) | 1,221 of 2,486 (49%) |
-| Defects and risks dismissed | 95 (17%) | 362 (15%) |
+| Defects and risks dismissed | 95 of 245 (39%) | 362 of 1,265 (29%) |
 | Findings marked "returned after its fix" | 9 | 41 |
 | Reviewer spend per fixed defect | $5.72 | $2.38 |
 | Reviewer spend per fixed defect or risk | $2.05 | $1.00 |
