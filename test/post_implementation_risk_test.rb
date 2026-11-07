@@ -15,6 +15,12 @@ class PostImplementationRiskTest < Minitest::Test
     assert_includes RISK.section(assessment, ['Adds an index.']), "raised from the reviewer's low by `database`"
   end
 
+  def test_a_file_name_cannot_end_its_code_span
+    hostile = "db/migrate/x` [click](https://example.invalid) `\n@someone.rb"
+    section = RISK.section(RISK.assess('low', AREAS, [hostile]), ['Adds a migration.'])
+    assert_includes section, '(`db/migrate/x? [click](https://example.invalid) ??@someone.rb`)'
+  end
+
   def test_default_areas_cover_persistence_infrastructure_and_ci
     { 'config/storage.yml' => 'persistence', 'deploy/main.tf' => 'infrastructure',
       'services/api/Dockerfile' => 'infrastructure', '.github/workflows/ci.yml' => 'ci_and_trust',
