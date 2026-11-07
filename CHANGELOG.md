@@ -18,7 +18,7 @@ qualification remain evidence requirements; the version number does not establis
 - Rate each PR's risk as low, medium, or high in the checkpoint, with reasons, and say
   what that rating asks of the merge: a skim for medium, a careful review that starts
   with the verification for high. Changes to databases, persistence, infrastructure,
-  CI and trust, or Shaka's settings always count as high; set `protected_areas` to
+  CI and trust, or Shaka's settings always count as high; set `high_risk_areas` to
   change those paths. The rating is a preview and changes no merge yet.
 - Keep complete usage accounting when a PR description outgrows GitHub's limit.
   The description retains its tables and pricing notes, with checksummed links to

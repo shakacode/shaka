@@ -768,7 +768,7 @@ A task's explicit choices take precedence. See
 for what the checkpoint means for your merge decision.
 
 The checkpoint also rates the PR's risk as low, medium, or high, raised to high inside a
-[protected area](#protected_areas), and says what that rating asks of the merge.
+[high-risk area](#high_risk_areas), and says what that rating asks of the merge.
 
 The PR records the conclusion, reasons, execution settings, and available native
 usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not merge”, or
@@ -824,11 +824,11 @@ checkpoint:
 To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to replace the whole prompt;
 you then keep that copy in step with Shaka's changes.
 
-## `protected_areas`
+## `high_risk_areas`
 
 **Optional. Default: the areas below.** The checkpoint rates each PR's risk as low,
 medium, or high by what a mistake would reach and whether a revert undoes it. A change
-in a protected area always counts as high, whatever the reviewer rates it, because the
+in a high-risk area always counts as high, whatever the reviewer rates it, because the
 reviewer reads a diff and description that the PR's author controls.
 
 | Area | Default paths |
@@ -844,7 +844,7 @@ you set for an area replaces that area's patterns, and `[]` turns it off. A new 
 an area:
 
 ```yaml
-protected_areas:
+high_risk_areas:
   database: [db/migrate/**/*, db/schema.rb]
   billing: [app/billing/**/*]
 ```

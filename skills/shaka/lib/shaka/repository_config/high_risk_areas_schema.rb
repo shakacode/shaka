@@ -7,10 +7,10 @@ module Shaka
   class RepositoryConfig
     # Named groups of paths where a change is always high risk, whatever a reviewer rates it.
     # A repository's list for an area replaces the packaged one; an empty list turns the area off.
-    class ProtectedAreasSchema
+    class HighRiskAreasSchema
       include Validation
 
-      KEY = 'protected_areas'
+      KEY = 'high_risk_areas'
       NAME = /\A[a-z][a-z0-9_]{0,39}\z/
 
       def self.effective(settings) = Defaults.fetch(KEY).merge(settings || {})

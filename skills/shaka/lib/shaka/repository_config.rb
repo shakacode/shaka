@@ -90,8 +90,8 @@ module Shaka
     # The settings exactly as config.yml states them, before any default applies.
     def explicit_settings = @data
 
-    # The trusted protected areas with packaged defaults for any area the repository leaves out.
-    def protected_areas = ProtectedAreasSchema.effective(@data[ProtectedAreasSchema::KEY])
+    # The trusted high-risk areas with packaged defaults for any area the repository leaves out.
+    def high_risk_areas = HighRiskAreasSchema.effective(@data[HighRiskAreasSchema::KEY])
 
     def prompt_files = self.class.prompt_files(review:, opening: opening_check, guidance: project_guidance)
 

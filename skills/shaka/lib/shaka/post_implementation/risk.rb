@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require_relative '../merge_review_floor'
-require_relative '../repository_config/protected_areas_schema'
+require_relative '../repository_config/high_risk_areas_schema'
 require_relative 'auto_merge_preview'
 
 module Shaka
-  # The checkpoint's risk rating, raised to high for any change inside a protected area, and what each
+  # The checkpoint's risk rating, raised to high for any change inside a high-risk area, and what each
   # rating asks of the merge. A preview: nothing here changes what merges.
   module PostImplementationRisk
     # Case-insensitive, because a case-insensitive checkout changes Infra/main.tf as surely as infra/main.tf.
@@ -21,11 +21,11 @@ module Shaka
     module_function
 
     # rating is the reviewer's; areas maps names to path patterns; paths are the PR's changed files, or nil
-    # when they could not be read, which counts as high because a protected change cannot be ruled out.
+    # when they could not be read, which counts as high because a high-risk change cannot be ruled out.
     def assess(rating, areas, paths)
-      hits = paths ? protected(areas, paths) : []
+      hits = paths ? hits(areas, paths) : []
       level = !paths || hits.any? || rating == 'unknown' ? 'high' : rating
-      { 'rating' => rating, 'level' => level, 'protected' => hits, 'paths_read' => !paths.nil? }
+      { 'rating' => rating, 'level' => level, 'areas_hit' => hits, 'paths_read' => !paths.nil? }
     end
 
     # The checkpoint's two Ruby-computed previews. seam reads the trusted settings when a completed
@@ -38,7 +38,7 @@ module Shaka
     # seam is the trusted RepositoryConfig, or nil when it could not be read, which applies the packaged areas.
     # Changed files that GitHub cannot list count as unread.
     def from(seam, github, head, rating)
-      areas = seam&.protected_areas || RepositoryConfig::ProtectedAreasSchema.effective(nil)
+      areas = seam&.high_risk_areas || RepositoryConfig::HighRiskAreasSchema.effective(nil)
       paths = begin
         MergeReviewFloor.new.paths(github, head)
       rescue Error, SystemCallError
@@ -48,7 +48,7 @@ module Shaka
     end
 
     # The first changed file in each area, so a reader sees why the area applies.
-    def protected(areas, paths)
+    def hits(areas, paths)
       areas.filter_map do |name, globs|
         path = paths.find { |candidate| globs.any? { |glob| File.fnmatch?(glob, candidate, GLOB) } }
         { 'area' => name, 'path' => path } if path
@@ -58,7 +58,7 @@ module Shaka
     def section(assessment, reasons)
       lines = ["**Risk:** #{heading(assessment)} #{ACTION.fetch(assessment['level'])}"]
       lines.concat(reasons.map { |reason| "- #{reason}" })
-      lines << '- Changed files could not be read, so protected areas were not checked.' unless
+      lines << '- Changed files could not be read, so high-risk areas were not checked.' unless
         assessment['paths_read']
       "#{lines.join("\n")}\n\n_Preview: the rating does not change what merges yet; merge settings still decide._"
     end
@@ -70,7 +70,7 @@ module Shaka
     def heading(assessment)
       level = assessment['level'].capitalize
       rated = assessment['rating']
-      raised = assessment['protected'].map { |hit| "`#{hit['area']}` (`#{inert(hit['path'])}`)" }
+      raised = assessment['areas_hit'].map { |hit| "`#{hit['area']}` (`#{inert(hit['path'])}`)" }
       return "#{level}, raised from the reviewer's #{rated} by #{raised.join(', ')}." if raised.any? && rated != 'high'
       return "#{level}, inside #{raised.join(', ')}." if raised.any?
       return "#{level}; the reviewer could not judge it, so it counts as high." if rated == 'unknown'

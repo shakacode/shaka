@@ -6,12 +6,12 @@ require 'shaka/repository_config'
 
 class PostImplementationRiskTest < Minitest::Test
   RISK = Shaka::PostImplementationRisk
-  AREAS = Shaka::RepositoryConfig::ProtectedAreasSchema.effective(nil)
+  AREAS = Shaka::RepositoryConfig::HighRiskAreasSchema.effective(nil)
 
-  def test_a_protected_area_raises_any_rating_to_high
+  def test_a_high_risk_area_raises_any_rating_to_high
     assessment = RISK.assess('low', AREAS, ['app/models/user.rb', 'db/migrate/20260101_add_index.rb'])
     assert_equal 'high', assessment['level']
-    assert_equal [{ 'area' => 'database', 'path' => 'db/migrate/20260101_add_index.rb' }], assessment['protected']
+    assert_equal [{ 'area' => 'database', 'path' => 'db/migrate/20260101_add_index.rb' }], assessment['areas_hit']
     assert_includes RISK.section(assessment, ['Adds an index.']), "raised from the reviewer's low by `database`"
   end
 
@@ -26,11 +26,11 @@ class PostImplementationRiskTest < Minitest::Test
       'services/api/Dockerfile' => 'infrastructure', '.github/workflows/ci.yml' => 'ci_and_trust',
       '.agents/shaka/config.yml' => 'shaka', 'Infra/main.tf' => 'infrastructure',
       'app/dockerfile' => 'infrastructure' }.each do |path, area|
-      assert_equal [area], RISK.assess('low', AREAS, [path])['protected'].map { it['area'] }, path
+      assert_equal [area], RISK.assess('low', AREAS, [path])['areas_hit'].map { it['area'] }, path
     end
   end
 
-  def test_the_rating_stands_outside_protected_areas
+  def test_the_rating_stands_outside_high_risk_areas
     assessment = RISK.assess('medium', AREAS, ['app/models/user.rb', 'README.md'])
     assert_equal %w[medium medium], assessment.values_at('rating', 'level')
     section = RISK.section(assessment, ['Changes a shared model.'])
@@ -54,19 +54,19 @@ class PostImplementationRiskTest < Minitest::Test
     assert_equal 'high', RISK.assess('unknown', AREAS, ['README.md'])['level']
     unread = RISK.assess('low', AREAS, nil)
     assert_equal 'high', unread['level']
-    assert_includes RISK.section(unread, ['Docs only.']), 'protected areas were not checked'
+    assert_includes RISK.section(unread, ['Docs only.']), 'high-risk areas were not checked'
   end
 
   def test_a_repository_list_replaces_an_area_and_an_empty_list_turns_it_off
-    areas = Shaka::RepositoryConfig::ProtectedAreasSchema.effective('database' => [], 'billing' => ['app/billing/**/*'])
+    areas = Shaka::RepositoryConfig::HighRiskAreasSchema.effective('database' => [], 'billing' => ['app/billing/**/*'])
     assessment = RISK.assess('low', areas, ['db/migrate/1_x.rb', 'app/billing/invoice.rb'])
-    assert_equal(['billing'], assessment['protected'].map { it['area'] })
+    assert_equal(['billing'], assessment['areas_hit'].map { it['area'] })
   end
 
   def test_invalid_areas_are_refused
     { [] => 'must be a mapping', { 'Bad Name' => ['x'] } => 'lowercase words',
       { 'database' => 'db/**' } => 'list of path patterns' }.each do |areas, message|
-      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig::ProtectedAreasSchema.new(areas).validate }
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig::HighRiskAreasSchema.new(areas).validate }
       assert_includes error.message, message
     end
   end
