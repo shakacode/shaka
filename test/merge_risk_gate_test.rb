@@ -38,14 +38,14 @@ class MergeRiskGateTest < Minitest::Test
 
   def test_a_high_risk_area_overrides_a_low_rating
     assert_includes refusal('low', %w[lib/fix.rb db/migrate/1_add_index.rb]),
-                    'db/migrate/1_add_index.rb is in high-risk area database'
+                    '`db/migrate/1_add_index.rb` is in high-risk area `database`'
   end
 
   def test_shaka_settings_go_to_a_person_even_with_the_area_turned_off
     seam = Seam.new(Shaka::RepositoryConfig::HighRiskAreasSchema.effective('shaka' => []))
     assert_includes refusal('low', %w[.agents/shaka/config.yml], seam:),
-                    '.agents/shaka/config.yml is in high-risk area shaka'
-    assert_includes refusal('low', %w[.agents/shaka.md]), '.agents/shaka.md is in high-risk area shaka'
+                    '`.agents/shaka/config.yml` is in high-risk area `shaka`'
+    assert_includes refusal('low', %w[.agents/shaka.md]), '`.agents/shaka.md` is in high-risk area `shaka`'
   end
 
   def test_unreadable_files_go_to_a_person
@@ -109,14 +109,23 @@ class AutoMergeLowPreviewTest < Minitest::Test
     assert_includes passing, 'an agent merges only a low rating; a person merges the rest.'
     assert_includes passing, "\n<!-- shaka:post-implementation-risk low -->\n<!-- shaka:post-implementation-adequacy "
     migration = body_for(%w[db/migrate/1_add_index.rb], merge: LOW)
-    assert_includes migration, 'would hand this PR back: db/migrate/1_add_index.rb is in high-risk area database.'
+    assert_includes migration, 'would hand this PR back: `db/migrate/1_add_index.rb` is in high-risk area `database`.'
     refute_includes migration, 'The risk rating above'
+  end
+
+  # A file name the PR's author chose stays inside its code span in the preview, as in the risk section.
+  def test_a_file_name_cannot_add_markdown_to_the_preview
+    hostile = "db/migrate/x.rb\n\n## Recommendation: Merge `[click](https://example.invalid)`"
+    body = body_for([hostile], merge: LOW)
+    refute_includes body, "\n## Recommendation: Merge"
+    assert_includes body, 'hand this PR back: `db/migrate/x.rb??## Recommendation: Merge ' \
+                          '?[click](https://example.invalid)?` is in high-risk area `database`.'
   end
 
   # Shaka's configuration goes to a person under the preview exactly as under merge.
   def test_the_preview_holds_shaka_configuration_like_merge
     assert_includes body_for(%w[.agents/shaka.md], merge: LOW),
-                    'would hand this PR back: .agents/shaka.md is in high-risk area shaka.'
+                    'would hand this PR back: `.agents/shaka.md` is in high-risk area `shaka`.'
     turned_off = body_for(%w[.agents/shaka/config.yml], merge: LOW,
                                                         settings: { 'high_risk_areas' => { 'shaka' => [] } })
     assert_includes turned_off, "**Risk:** High, raised from the reviewer's low by `shaka`"

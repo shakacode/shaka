@@ -43,8 +43,9 @@ module Shaka
       return 'the checkpoint for this head has no risk rating' unless rating
       return "Shaka could not read this PR's changed files" unless assessment['paths_read']
 
+      # The PR's author names its files, and the preview publishes this line under the maintainer's account.
       hit = assessment['areas_hit'].first
-      return "#{hit['path']} is in high-risk area #{hit['area']}" if hit
+      return "`#{PostImplementationRisk.inert(hit['path'])}` is in high-risk area `#{hit['area']}`" if hit
 
       "the checkpoint rates this head #{assessment['level']} risk"
     end

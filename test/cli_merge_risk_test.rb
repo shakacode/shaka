@@ -41,7 +41,7 @@ class CliMergeRiskTest < Minitest::Test
 
   def test_a_high_risk_area_goes_to_a_person_whatever_the_rating
     merged('low', 'db/migrate/1_add_index.rb') do |error, status, mutation|
-      assert_refused(error, status, mutation, 'db/migrate/1_add_index.rb is in high-risk area database')
+      assert_refused(error, status, mutation, '`db/migrate/1_add_index.rb` is in high-risk area `database`')
     end
   end
 

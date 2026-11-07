@@ -235,8 +235,11 @@ would send it back, such as
 `Auto merge preview: with merge.preference: auto, the agent would hand this PR back: skills/shaka/SKILL.md sets review floor 3`.
 A PR that passes still gets the agent's own judgment of risk and compatibility under Auto.
 
-The agent's rating does not hold a PR back. Rating it above its floor, or listing a file under
-**Closer reading**, tells a reader where to look but does not stop Auto from merging it.
+The agent's review-effort rating does not hold a PR back. Rating it above its floor, or listing a
+file under **Closer reading**, tells a reader where to look but does not stop Auto from merging it.
+
+Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
+something after merge, so the agent hands those PRs back on its own judgment.
 
 ## `merge.auto_merge`
 
@@ -259,18 +262,15 @@ the rating from the checkpoint comment that your account published for the exact
 reads the high-risk areas from your trusted settings and the changed files from GitHub. A
 missing rating, unreadable files, or a change to Shaka's settings in `.agents/shaka/` or
 `.agents/shaka.md` all come back to you too; those settings count as the `shaka` area even if
-you turn it off. A repository with the checkpoint turned off publishes no rating, so under
-`low` every PR comes back to you. To let the agent merge a PR anyway, confirm that commit the same way as a
+you turn it off. A repository with the checkpoint turned off publishes no new ratings, so under
+`low` a PR comes back to you unless an earlier checkpoint already rated that exact head low. To let the agent merge a PR anyway, confirm that commit the same way as a
 PR past [`merge.limits`](#mergelimits). Each PR the agent merges under Auto is labeled
 `auto-merged`, so you can audit them later.
 
 Try it before you switch to `auto`. While `preference` is still `ask`, each ready checkpoint
 comment says whether Auto would merge the PR under this rule, or names what would send it
-back, such as
-`Auto merge preview: with merge.preference: auto, the agent would hand this PR back: db/migrate/1_add_index.rb is in high-risk area database`.
-
-Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
-something after merge, so the agent hands those PRs back on its own judgment.
+back. For example, it may say the agent would hand this PR back because
+`db/migrate/1_add_index.rb` is in high-risk area `database`.
 
 ## `merge.hold_labels`
 
