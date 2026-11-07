@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'json'
-require_relative '../post_implementation_report'
 require_relative '../merge_review_floor'
 require_relative '../repository_config/protected_areas_schema'
 require_relative 'auto_merge_preview'
@@ -11,7 +9,6 @@ module Shaka
   # rating asks of the merge. A preview: nothing here changes what merges.
   module PostImplementationRisk
     GLOB = File::FNM_PATHNAME | File::FNM_EXTGLOB | File::FNM_DOTMATCH
-    LEVELS = %w[low medium high].freeze
     ACTION = {
       'low' => 'Low risk is meant for auto-merge with a later audit in a batch.',
       'medium' => 'Medium risk is meant for a person to merge after a skim: the description, these reasons, ' \

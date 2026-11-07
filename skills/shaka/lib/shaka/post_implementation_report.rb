@@ -21,9 +21,9 @@ module Shaka
     # The reviewer's rating of what a mistake would reach. Unknown is treated as high wherever it is used.
     RISK = %w[low medium high unknown].freeze
     MAX_RISK_REASONS = 5
-    # A report from before risk ratings, such as a run published after an upgrade, counts as unknown.
-    LEGACY_RISK = { 'rating' => 'unknown',
-                    'reasons' => ['This checkpoint ran before risk ratings; rerun it for one.'] }.freeze
+    # A report with no rating, such as a run from before risk ratings published after an upgrade, counts as
+    # unknown.
+    LEGACY_RISK = { 'rating' => 'unknown', 'reasons' => ['The checkpoint report gave no risk rating.'] }.freeze
 
     module_function
 
