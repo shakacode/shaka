@@ -53,6 +53,10 @@ class GitHubRestReadsTest < Minitest::Test
     assert_equal 101, rows.size
   end
 
+  def test_a_page_without_a_total_is_refused_rather_than_read_as_complete
+    assert_raises(Shaka::Error) { client(response({ 'check_runs' => full_page })).rest_checks(HEAD) }
+  end
+
   def test_checks_refuse_a_truncated_set
     error = assert_raises(Shaka::Error) { client(*Array.new(10) { runs_page(full_page, total: 5000) }).rest_checks(HEAD) }
     assert_includes error.message, 'truncated'

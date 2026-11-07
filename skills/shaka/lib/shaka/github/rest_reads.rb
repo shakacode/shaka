@@ -11,7 +11,8 @@ module Shaka
       UNREADABLE = %w[reviewDecision viewerCanMergeAsAdmin isInMergeQueue isMergeQueueEnabled mergeQueueEntry].freeze
       PAGE = 100
       MAX_PAGES = 10
-      # `gh pr checks` buckets; any other state, such as QUEUED or IN_PROGRESS, is pending.
+      # `gh pr checks` buckets, except that STARTUP_FAILURE fails where gh would leave it pending.
+      # Any other state, such as QUEUED, IN_PROGRESS, or STALE, is pending.
       BUCKETS = { 'SUCCESS' => 'pass', 'SKIPPED' => 'skipping', 'NEUTRAL' => 'skipping', 'CANCELLED' => 'cancel',
                   'FAILURE' => 'fail', 'ERROR' => 'fail', 'TIMED_OUT' => 'fail', 'ACTION_REQUIRED' => 'fail',
                   'STARTUP_FAILURE' => 'fail' }.freeze
@@ -91,18 +92,24 @@ module Shaka
       end
 
       # Every row of a paged list, refusing a set too large to read whole.
-      def every_page(path, key)
+      def every_page(path, key, &)
         rows = []
         1.upto(MAX_PAGES) do |page|
-          body = api("#{path}?per_page=#{PAGE}&page=#{page}")
-          batch = body[key]
-          raise Error, "GitHub returned an unreadable #{key} page." unless batch.is_a?(Array)
-
-          yield body if block_given?
+          batch, total = list_page("#{path}?per_page=#{PAGE}&page=#{page}", key, &)
           rows.concat(batch)
-          return rows if batch.size < PAGE || rows.size >= body['total_count'].to_i
+          return rows if batch.size < PAGE || rows.size >= total
         end
         raise Error, "GitHub reported more than #{PAGE * MAX_PAGES} #{key}; refusing to read a truncated set."
+      end
+
+      # A page without its rows or total cannot say whether more pages follow.
+      def list_page(path, key)
+        body = api(path)
+        batch, total = body.values_at(key, 'total_count')
+        raise Error, "GitHub returned an unreadable #{key} page." unless batch.is_a?(Array) && total.is_a?(Integer)
+
+        yield body if block_given?
+        [batch, total]
       end
 
       # Branch protection whose contexts cannot be read must not count as requiring nothing.
