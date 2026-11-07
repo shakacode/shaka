@@ -22,7 +22,9 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
 
    Each subject ends with `(#N)`. Read each PR's Changelog section with
    `gh pr view N --repo shakacode/shaka --json body`. Check the note against what the
-   PR merged, and skip notes that say `None`. Merge the notes with any entries already
+   PR merged, and skip notes that say `None`. When a PR has no Changelog section or
+   left it blank, check `## [Unreleased]` before writing a note: PRs merged before
+   this process recorded their notes there. Merge the notes with any entries already
    under `## [Unreleased]`, grouped as the file's header format asks. Rename that heading
    to `## [VERSION] - YYYY-MM-DD` with the planned publication date,
    and add an empty `## [Unreleased]` above it. At the bottom, add a `[VERSION]` link
