@@ -53,7 +53,8 @@ Open the repository link to confirm the files arrived. Then ask:
 Help me start a new chat in the shaka-playground folder.
 ```
 
-Continue in that chat. A **repository** is the project's GitHub home;
+Ask the new chat which project folder it is using. Confirm that it names
+`shaka-playground` before continuing. A **repository** is the project's GitHub home;
 the local folder holds the copy your agent edits.
 
 ### Step 3: Run a health check
@@ -69,7 +70,7 @@ the next step adds them. Ask the agent to resolve other failures before continui
 
 ```text
 /shaka Add a counter that shows how many times the button was clicked.
-Set up Shaka just for me. Go.
+Set up Shaka just for me. Use merge policy ask. Go.
 ```
 
 Individual setup keeps Shaka settings out of commits. If the agent asks a
@@ -81,11 +82,17 @@ you do not understand before approving it.
 The agent builds, tests, reviews, and opens a PR. You can give feedback while
 it works. If the agent stops, ask what it needs to continue.
 
+Continue when the agent gives you a PR link and says it is ready for your review.
+
 ### Step 6: Read the pull request
 
-Open the PR and try the counter in its preview or ask the agent to show it.
-Confirm that clicking increments the number and that the page still works.
-Ask about anything the PR leaves untested.
+Open the PR. Read its summary to understand what changed, then open
+**Verification** to see what was tested and what remains unverified. Follow
+**Code Review** to see the reviewer's findings and how they were handled.
+
+Try the counter in its preview, or ask the agent to show it. Click several times
+and confirm that each click increases the number by one. Ask about any failed
+checks or unresolved concerns before merging.
 
 ### Step 7: Ask for a change
 
@@ -98,11 +105,21 @@ Make the counter number bigger.
 Reload the PR when the agent finishes. Your main project version stays unchanged
 until you merge, so you can keep asking for revisions.
 
+Try the updated counter again and confirm that the number is easier to read.
+
 ### Step 8: Merge
 
-When you are happy, tell the agent `Merge this PR.` or use GitHub's merge control
-for the commit in its handoff. Required checks and approvals still apply.
-A purple **Merged** status confirms that the change joined your project.
+When you are satisfied with the result and its checks, tell the agent:
+
+```text
+Merge the commit in your handoff.
+```
+
+Required checks and approvals still apply. A purple **Merged** status confirms
+that the change joined your project.
+
+You can also merge through GitHub. Confirm that its latest commit matches the
+agent's handoff before using the offered merge control.
 
 ### Step 9: See what you gained
 

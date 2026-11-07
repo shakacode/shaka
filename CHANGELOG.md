@@ -21,6 +21,8 @@ from working is a major version.
 
 ### Fixed
 
+- Find merge choices and recovery help from the docs overview, and follow the
+  playground tutorial through checking, revising, and approving a PR.
 - Keep validation and review results valid when Shaka updates during a task, unless the
   update changes the code that runs or checks them. Rewording a description for the same
   commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.

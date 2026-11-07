@@ -33,10 +33,18 @@ or [open an example PR](https://github.com/shakacode/shaka/pull/667).
 
 ## Reference
 
+Ask your agent, or choose a guide below:
+
+```text
+Explain what I need to check before merging this PR: <PR link>.
+```
+
 | If you want to… | Try… |
 | --- | --- |
 | Plan before coding, review an existing PR, or give feedback | [Working with Shaka](working-with-shaka.md) |
-| Choose who merges or which AI reviews | [Choose your settings](settings-guide.md) |
+| Choose who merges | [Choose a merge policy](working-with-shaka.md#choose-a-merge-policy) |
+| Choose which AI reviews | [Choose your settings](settings-guide.md) |
+| Resume unfinished work | [Resume unfinished work](working-with-shaka.md#resume-unfinished-work) |
 | Introduce Shaka to teammates | [Repository setup](configure-repository.md) |
 | Resolve a setup or access problem | [FAQ](faq.md), [coding agents](coding-agents.md), or [recovery limits](expected-experience.md) |
 | Install, update, or customize Shaka | [Manual installation](manual-installation.md), [updates](migration.md), or [forks](fork-and-hack.md) |

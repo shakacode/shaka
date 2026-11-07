@@ -18,8 +18,9 @@ Writing code is only part of the work. You still need to know whether it works,
 what a reviewer found, and what needs your attention before merging.
 
 Shaka asks your agent to test, get an independent review for substantial changes,
-and finish the PR without repeated reminders. You can focus on whether the
-result fits your project and ask for revisions before it joins your code.
+and finish the PR without repeated reminders. Each PR explains the change and
+links the evidence: test results, review findings, and screenshots when relevant.
+It also names what remains unverified. You can ask for revisions before merging.
 
 By default, you merge the PR. You can also approve the agent's merge or choose
 [Auto](docs/working-with-shaka.md#choose-a-merge-policy).
