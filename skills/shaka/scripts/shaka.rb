@@ -383,7 +383,7 @@ begin
     Shaka::PostImplementationEvidence.new(github, **checkpoint).call(head)
   end
   result = case command
-           when 'pr' then Shaka::Status.new(github, seam_required_checks:).call
+           when 'pr' then Shaka::Status.new(github, seam_required_checks:, rest_fallback: true).call
            when 'comments'
              issue_only = options.fetch(:issue_only, false)
              raise OptionParser::InvalidArgument, '--head does not apply to issues' if issue_only && options[:head]
