@@ -853,7 +853,8 @@ also reads that template and fills any of its sections Shaka's description does 
 already cover. The template gives the description its shape; the guide says what to
 run or check before writing it. Shaka looks for `pull_request_template.md` in `.github/`,
 the repository root, then `docs/`. With several templates, name the one to use as
-`pr_evidence`.
+`pr_evidence`. For example, a template's Changelog section can
+[replace edits to `CHANGELOG.md`](changelog-in-pr-descriptions.md).
 
 Put anything a command can check in your [validate script](#standard-command-scripts)
 or CI, where a failure stops the PR. Keep the guides for judgment calls, such as
