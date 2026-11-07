@@ -11,7 +11,7 @@ list every finding and how it was checked.*
 
 ## Conclusions
 
-1. **AI review finds real problems, mostly in code the tests had not covered.** All 70
+1. **AI review finds real problems that the tests had not caught.** All 70
    sampled fixes were real problems, and almost every one was introduced by its own PR.
    47 changed code, and 46 of those added or changed a test; 2 more changed only a test. On Shaka, 16 of the 30
    sampled defects were confirmed by running the fix's test or a probe on the reviewed
@@ -34,7 +34,7 @@ list every finding and how it was checked.*
 4. **More reviewers keep finding real problems, but most of what the extra ones raise is
    declined.** Codex and Claude each catch defects the other misses. On React on Rails
    commits both had passed, four more AI reviewers on GitHub still led to 11 problems
-   fixed on the PR and 3 elsewhere, on 7 of the 31 PRs they commented on. One was a bug
+   fixed on the PR and 3 elsewhere, on 7 of the 30 PRs they commented on. One was a bug
    that stopped Turbo Frame components from mounting. 9 of the 12 threads behind the
    on-PR fixes are timestamped after the local sign-off. The agent declined 39 of the 64
    threads those reviewers opened.
@@ -185,8 +185,8 @@ lists every finding.
   On 31 PRs, outside reviewers, plus GitHub code scanning, left 66 threads on a commit
   both local reviewers had passed. 50 of them came after the local sign-off by timestamp.
   The agent fixed 11 distinct problems on 7 of those PRs and 3 more in other PRs. It
-  declined 40 threads with a reason, and 9 got no reply. On 7 more PRs only one local
-  reviewer ran on the final commit; outside threads there led to 8 more fixes.
+  declined 40 threads with a reason, and 9 got no reply. On clean final commits that
+  only one local reviewer had passed, 23 more outside threads led to 8 more fixes.
 
 | Measure | Shaka | React on Rails |
 | --- | ---: | ---: |

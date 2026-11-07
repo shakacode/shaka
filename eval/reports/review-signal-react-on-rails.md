@@ -174,7 +174,8 @@ inline review comment was made on, so the comments on exactly that commit are fi
 code both local reviewers passed.
 
 - 119 of the 128 ledger comments with an execution table ended with no open findings, on
-  84 PRs. On 72 of those PRs, both reviewers ran on the final commit. The 7 comments
+  84 PRs. On 72 of those PRs, both reviewers ran on a clean final commit; the other 12
+  have clean final commits with a run from only one reviewer. The 7 comments
   without a table are left out of cycle, cost, and sign-off counts.
 - On 31 of the 72 PRs, outside reviewers left 66 inline threads on the cleared commit.
 - 50 of the 66 threads, and 11 of the 15 that led to a fix, were posted after the ledger
@@ -219,9 +220,9 @@ code both local reviewers passed.
 
 ### Commits only one local reviewer passed
 
-On 7 more PRs, the ledger ended clean but only one reviewer ran on the final commit.
-Outside reviewers left 23 threads there, which led to 6 more problems fixed on the PR and
-2 fixed elsewhere:
+Outside reviewers left 23 more threads on clean final commits that only one local
+reviewer had passed. They span 8 PRs, 7 of them with no thread on a two-reviewer commit.
+Those threads led to 6 more problems fixed on the PR and 2 fixed elsewhere:
 
 - [#5262](https://github.com/shakacode/react_on_rails/pull/5262), a new fleet-upgrade
   script that only Codex passed last, drew most of them.
