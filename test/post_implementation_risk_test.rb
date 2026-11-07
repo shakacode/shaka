@@ -27,9 +27,18 @@ class PostImplementationRiskTest < Minitest::Test
     assessment = RISK.assess('medium', AREAS, ['app/models/user.rb', 'README.md'])
     assert_equal %w[medium medium], assessment.values_at('rating', 'level')
     section = RISK.section(assessment, ['Changes a shared model.'])
-    assert_includes section, 'A person merges it after a skim'
+    assert_includes section, 'meant for a person to merge after a skim'
     assert_includes section, '- Changes a shared model.'
-    assert_includes section, 'changes no merge yet'
+    assert_includes section, 'does not change what merges yet'
+  end
+
+  def test_unreadable_changed_files_count_as_unread
+    github = Object.new
+    def github.repository = 'shakacode/shaka'
+    def github.number = 1
+    def github.api(*) = raise(Shaka::Error, 'GitHub is down')
+    assessment = RISK.from(nil, github, 'a' * 40, 'low')
+    assert_equal ['high', false], assessment.values_at('level', 'paths_read')
   end
 
   def test_unknown_ratings_and_unread_files_count_as_high
@@ -66,9 +75,13 @@ class PostImplementationRiskReportTest < Minitest::Test
     end
   end
 
-  def test_a_report_needs_a_risk_rating_with_reasons
+  def test_a_report_from_before_risk_ratings_counts_as_unknown
+    assert_equal 'unknown', read(REPORT).dig('risk', 'rating')
+  end
+
+  def test_a_risk_rating_needs_reasons
     assert_equal RISK, read(REPORT.merge('risk' => RISK))['risk']
-    [nil, { 'rating' => 'critical', 'reasons' => ['x'] }, { 'rating' => 'low', 'reasons' => [] },
+    [{ 'rating' => 'critical', 'reasons' => ['x'] }, { 'rating' => 'low', 'reasons' => [] },
      { 'rating' => 'low', 'reasons' => ["two\nlines"] }].each do |risk|
       assert_raises(Shaka::Error, risk.inspect) { read(REPORT.merge('risk' => risk)) }
     end

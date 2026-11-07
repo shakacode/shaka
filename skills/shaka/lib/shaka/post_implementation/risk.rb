@@ -13,12 +13,11 @@ module Shaka
     GLOB = File::FNM_PATHNAME | File::FNM_EXTGLOB | File::FNM_DOTMATCH
     LEVELS = %w[low medium high].freeze
     ACTION = {
-      'low' => 'Shaka may merge it once the repository allows low-risk auto-merge; audit it later with the ' \
-               'other auto-merged PRs.',
-      'medium' => 'A person merges it after a skim: the description, these reasons, and the verification, ' \
-                  'then only the files the reasons name.',
-      'high' => 'A person merges it after a careful review that starts with the verification: does the ' \
-                'evidence prove the change works, before the code?'
+      'low' => 'Low risk is meant for auto-merge with a later audit in a batch.',
+      'medium' => 'Medium risk is meant for a person to merge after a skim: the description, these reasons, ' \
+                  'and the verification, then only the files the reasons name.',
+      'high' => 'High risk is meant for a person to merge after a careful review that starts with the ' \
+                'verification: does the evidence prove the change works, before the code?'
     }.freeze
 
     module_function
@@ -31,8 +30,8 @@ module Shaka
       { 'rating' => rating, 'level' => level, 'protected' => hits, 'paths_read' => !paths.nil? }
     end
 
-    # The checkpoint's two Ruby-computed previews. seam reads the trusted settings, and only when the
-    # checkpoint renders a preview, because a checkpoint that is not ready shows no Auto merge line.
+    # The checkpoint's two Ruby-computed previews. seam reads the trusted settings when a completed
+    # checkpoint renders; an incomplete one reads none.
     def previews(seam, github, pull, head)
       { auto_merge: ->(verdict) { AutoMergePreview.line(seam.call, github, pull, head, verdict) },
         risk: ->(rating) { from(seam.call, github, head, rating) } }
@@ -63,7 +62,7 @@ module Shaka
       lines.concat(reasons.map { |reason| "- #{reason}" })
       lines << '- Changed files could not be read, so protected areas were not checked.' unless
         assessment['paths_read']
-      "#{lines.join("\n")}\n\n_Preview: the rating changes no merge yet._"
+      "#{lines.join("\n")}\n\n_Preview: the rating does not change what merges yet; merge settings still decide._"
     end
 
     def heading(assessment)
