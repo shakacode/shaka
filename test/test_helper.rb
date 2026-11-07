@@ -87,6 +87,7 @@ VERIFICATION = { 'checks' => ['Ran `bin/validate`: all tests passed.'],
 # The checkpoint reviewer's judgment of whether that proof covers the intent.
 ADEQUACY = { 'verdict' => 'adequate', 'weakest_claim' => 'Rebased commits link to the right revision.',
              'next_check' => 'Publish one review comment on a rebased branch.' }.freeze
+RISK = { 'rating' => 'low', 'reasons' => ['Only the checkpoint wording changes.'] }.freeze
 # The description content a checkpoint runs on, with the two facts only the checkpoint reads.
 CHECKPOINT_CONTENT = { 'summary' => 'Restore the missing-check error before submission.', 'intent' => INTENT,
                        'verification' => VERIFICATION,

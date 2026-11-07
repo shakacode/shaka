@@ -767,6 +767,9 @@ A task's explicit choices take precedence. See
 [the checkpoint](reference/pr-record.md#checkpoint)
 for what the checkpoint means for your merge decision.
 
+The checkpoint also rates the PR's risk as low, medium, or high, raised to high inside a
+[protected area](#protected_areas), and says what that rating asks of the merge.
+
 The PR records the conclusion, reasons, execution settings, and available native
 usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not merge”, or
 unresolved substantive concerns block readiness and Auto; green technical checks
@@ -820,6 +823,41 @@ checkpoint:
 
 To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to replace the whole prompt;
 you then keep that copy in step with Shaka's changes.
+
+## `protected_areas`
+
+**Optional. Default: the areas below.** The checkpoint rates each PR's risk as low,
+medium, or high by what a mistake would reach and whether a revert undoes it. A change
+in a protected area always counts as high, whatever the reviewer rates it, because the
+reviewer reads a diff and description that the PR's author controls.
+
+| Area | Default paths |
+| --- | --- |
+| `database` | migrations, `db/schema.rb`, `db/structure.sql`, SQL files, Prisma schemas |
+| `persistence` | database, storage, cache, Redis, and Sidekiq configuration |
+| `infrastructure` | Terraform, `infra/`, `k8s/`, Helm charts, Dockerfiles, Compose files, Control Plane and Fly configuration |
+| `ci_and_trust` | GitHub workflows and actions, `CODEOWNERS` |
+| `shaka` | `.agents/shaka/` |
+
+[`defaults.yml`](../skills/shaka/config/defaults.yml) lists the exact patterns. A list
+you set for an area replaces that area's patterns, and `[]` turns it off. A new name adds
+an area:
+
+```yaml
+protected_areas:
+  database: [db/migrate/**/*, db/schema.rb]
+  billing: [app/billing/**/*]
+```
+
+What each rating asks:
+
+| Risk | What it asks |
+| --- | --- |
+| Low | Nothing before merge; such PRs are meant for a later audit in a batch. |
+| Medium | A person skims the description, the reasons, and the verification, then opens only the files the reasons name. |
+| High or unknown | A person reviews it carefully, starting with whether the verification proves the change works. |
+
+For now the rating is a preview in the checkpoint comment and changes no merge.
 
 ## `project_guidance`
 

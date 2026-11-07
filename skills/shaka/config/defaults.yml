@@ -19,6 +19,14 @@ checkpoint: # The finished-result checkpoint before merge readiness.
   # Added after the checkpoint prompt when it exists. Naming it in config.yml makes the file required.
   custom_instructions_file: .agents/shaka/instructions/checkpoint.md
 
+protected_areas: # A change here is always high risk, whatever the checkpoint rates it.
+  database: [db/migrate/**/*, '**/migrations/**/*', db/schema.rb, db/structure.sql, '**/*.sql', '**/schema.prisma']
+  persistence: [config/database.yml, config/storage.yml, 'config/cache*.yml', config/redis.yml, config/sidekiq.yml]
+  infrastructure: ['**/*.tf', '**/*.tfvars', infra/**/*, k8s/**/*, '**/charts/**/*', '**/Dockerfile*',
+                   '**/docker-compose*.yml', .controlplane/**/*, fly.toml]
+  ci_and_trust: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS]
+  shaka: [.agents/shaka/**/*]
+
 merge:
   preference: ask # Setup writes this; config.yml must state a preference.
   limits: # A merge past any limit needs confirmation of the exact head.

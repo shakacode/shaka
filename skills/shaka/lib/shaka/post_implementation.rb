@@ -81,8 +81,8 @@ module Shaka
     def publish_body(github, result, head, pull)
       renderer = result.key?('disposition') ? PostImplementationDispositionPublication : PostImplementationPublication
       message = -> { ready_message(github, head, pull) }
-      auto_merge = ->(verdict) { AutoMergePreview.line(trusted_seam, github, pull, head, verdict) }
-      publication = renderer.new(result, head:, repository: @arguments.first, message:, auto_merge:)
+      previews = PostImplementationRisk.previews(method(:trusted_seam), github, pull, head)
+      publication = renderer.new(result, head:, repository: @arguments.first, message:, previews:)
       published = github.reply(body: publication.render, key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
       safeguard = merge_safeguard(github, head, publication, published)
       published.merge('merge_safeguard' => safeguard)

@@ -62,6 +62,13 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
                     'the agent would still judge its risk and compatibility before merging.'
   end
 
+  # The fixture's reviewer rates low; the changed files can raise it.
+  def test_the_risk_rating_comes_from_the_reviewer_and_protected_areas
+    assert_includes body_for(%w[lib/fix.rb]), '**Risk:** Low. Shaka may merge it'
+    assert_includes body_for(%w[lib/fix.rb db/migrate/1_add_index.rb]),
+                    "**Risk:** High, raised from the reviewer's low by `database` (`db/migrate/1_add_index.rb`)."
+  end
+
   def test_names_the_file_that_would_hand_the_pr_back
     assert_includes body_for(%w[lib/fix.rb skills/shaka/SKILL.md]),
                     'would hand this PR back: skills/shaka/SKILL.md sets review floor 3 (changes agent instructions)'
