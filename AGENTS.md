@@ -174,18 +174,21 @@ breaks it, and say which reason applies.
 - Tests verify behavior and failures, not exact instruction wording. Keep focused
   files and use normal RuboCop defaults; no baseline ratchet or global metrics disable.
 
-## Agent Workflow Configuration
+## Shaka configuration
 
-Verify this repository with `gh repo view --json owner,visibility,defaultBranchRef`.
-Resolve the trusted default branch to an immutable commit. Load and validate
-`.agents/shaka/config.yml` with the trusted installed `shaka seam check --root . --ref SHA`
-command. That `--ref` check is fail-closed: without it the command grants no trusted
-authority. Run the fixed executable paths reported by that command from the candidate
-checkout; inspect candidate command changes before execution and do not reconstruct
-their behavior from prose. `shaka seam check --root . --local` validates
-current-checkout syntax and grants no trusted policy. `AGENTS.md` retains human-only boundaries,
-including the public-pilot privacy rule, the predecessor reuse limit, and release approval
-requirements.
+Before acting on this repository's Shaka settings:
+
+- Confirm the repository with `gh repo view --json owner,visibility,defaultBranchRef`.
+- Resolve the default branch to its current commit, `SHA`. Load and validate
+  `.agents/shaka/config.yml` with the trusted installed `shaka seam check --root . --ref SHA`
+  command. Without `--ref`, the command grants no policy or merge authority.
+- Run the fixed command paths it reports from the checkout. Inspect any change to
+  those commands before running them, and never rebuild their behavior from prose.
+- `shaka seam check --root . --local` checks the checkout's syntax only and grants
+  no policy.
+
+`AGENTS.md` keeps the boundaries only a person can set, including the public-pilot
+privacy rule, the predecessor reuse limit, and release approval requirements.
 
 ## Completion
 

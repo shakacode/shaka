@@ -114,7 +114,7 @@ class SeamPointerTest < Minitest::Test
   def assert_trust_safe_pointer(output)
     commands = output.scan(/`([^`]+)`/).flatten
 
-    assert_includes output, '## Agent Workflow Configuration'
+    assert_includes output, '## Shaka configuration'
     assert_includes commands, 'gh repo view --json owner,visibility,defaultBranchRef'
     refute_includes commands, 'gh repo view OWNER/REPO --json owner,visibility,defaultBranchRef'
     assert_includes commands, 'shaka seam check --root . --ref SHA'
