@@ -33,8 +33,8 @@ Not as far as this test can tell. Both prompts ran only on the newer model.
 - Local reviews ran a stronger model, `claude-opus-5-5`, on most commits. The hosted
   review never set a thinking level, and most local reviews didn't either.
 
-I'm keeping the current prompt for now. Testing more models doesn't look worth it, and
-I explain why below.
+I'm keeping the current prompt for now, and I'm not testing other models yet. I explain
+why below.
 
 ## What we ran
 
@@ -136,10 +136,10 @@ rounds: Opus with no thinking level recorded, and Codex with no model recorded.
   hosted report ends, to a fixed finding-count line. The review instructions stayed
   the same, but some findings could have moved from inline comments into the summary.
 
-### Is it worth testing other models?
+### Should we test other models?
 
-I don't think so. The CI study proposed rerunning both prompts under both models. Here
-are the two tests I considered.
+Not now. The CI study proposed rerunning both prompts under both models. Here are the
+two tests I considered.
 
 **The older model, `claude-sonnet-5`.** A replay would show whether #446 caused most of
 the drop. One run per commit with both prompts costs about $31. If it found more, the
@@ -148,17 +148,18 @@ and we'd have to move the pin when that model retires. The test answers a histor
 question, and its fix is one I wouldn't adopt.
 
 **The stronger model, `claude-opus-5-5`.** Moving hosted review to Opus is a change we
-could actually make. Local Opus reviews cost about three times what hosted Sonnet reviews did, so one
-run per commit with both prompts would cost about $11. On 12 of these commits, local Opus
-reviewed the same commit before CodeRabbit commented. Its rounds named 1 of the 13 bug
-threads there, going by a keyword search with each match read. The local report comments the hosted job could
-read named 4, counting Codex rounds and rounds on earlier commits. A hosted Opus review would get a different prompt, and most
-local rounds ran at the default thinking level. Still, I'd expect it to miss most of the
-same bugs.
+could actually make. These 17 commits are the wrong place to test it, though. They were
+picked because a Claude review missed a bug that CodeRabbit found, which tilts any test
+here against Claude. Local Opus doesn't settle it either. On 12 of these commits it
+reviewed the same commit before CodeRabbit commented, and its rounds named 1 of the 13
+bug threads there. That used a different prompt, so it doesn't predict how a hosted
+Opus review would do.
 
-CodeRabbit is a different reviewer, and it caught bugs that both Claude reviews missed.
-If we want more of those catches, the lever is CodeRabbit's review limit. The limit left
-249 of October's 442 PRs without a CodeRabbit review.
+A fair Opus test would need commits picked without regard to which reviewer missed
+what. I'm not spending on that now. Local Opus already reviews most commits, and
+CodeRabbit catches bugs both Claude reviews miss. If we want more of those catches, the
+lever is CodeRabbit's review limit. The limit left 249 of October's 442 PRs without a
+CodeRabbit review.
 
 ## Limits
 
