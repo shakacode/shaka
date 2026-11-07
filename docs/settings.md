@@ -854,8 +854,8 @@ What each rating asks:
 | Risk | What it asks |
 | --- | --- |
 | Low | Meant for auto-merge, with a later audit in a batch. |
-| Medium | Never auto-merged: a person skims the description, the reasons, and the verification, then opens only the files the reasons name. |
-| High or unknown | Never auto-merged: a person reviews it carefully, starting with whether the verification proves the change works. |
+| Medium | Meant for a person to merge after a skim of the description, the reasons, and the verification, then of only the files the reasons name. |
+| High or unknown | Meant for a person to merge after a careful review that starts with whether the verification proves the change works. |
 
 For now the rating is a preview in the checkpoint comment: it does not change what merges, and
 `merge` settings still decide.
