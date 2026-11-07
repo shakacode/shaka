@@ -10,6 +10,24 @@ The agent read review data published on
 fix against its finding, and drafted the text. The study started no paid model runs and
 ran no React on Rails code.*
 
+## Conclusions
+
+1. **The fixes were real here too.** All 30 sampled fixed defects read as real problems,
+   and 3 need an input unlikely in practice. These are readings: no React on Rails test
+   ran.
+2. **Each real defect cost 2.4 times as much as on Shaka.** Reviewer spend was $5.72 per
+   fixed defect against $2.38. Codex reported nothing on 84% of its runs, and Claude
+   reported 316 of the 318 nits.
+3. **Extra reviewers still found bugs after two had signed off, but most of what they
+   said was declined.** On 10 of the 38 PRs that drew outside comments on a cleared
+   commit, those comments led to 17 fixes, one a user-facing redirect bug. The agent
+   declined 49 of the 89 threads.
+4. **Later rounds mostly chased earlier fixes.** At least 9 of the 14 sampled findings
+   from cycle 2 or later sat in code an earlier fix had rewritten. One URL-redaction
+   routine produced 4 of the 30 sampled defects.
+5. **This data cannot compare review with run-based checks or with a human reviewer.**
+   No test ran, and every maintainer comment in the data was written by an agent.
+
 ## Why this ran
 
 - The [Shaka study](review-signal.md) found that all 40 sampled fixes from Shaka's local

@@ -1,11 +1,43 @@
-# Are Shaka's review fixes real? A check of 40 findings
+# What AI code review is worth: 70 checked fixes from two repositories
 
 *An AI agent wrote this article: Claude Code running Claude Opus 5.5, on 2026-11-06.
-The agent checked 40 review findings that Shaka's agents had fixed, using review data
-already published on this repository's pull requests (PRs), and drafted the text. No
-person has rechecked the verdicts. The
-[full report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-signal.md)
-lists every finding and how it was checked.*
+The agent checked 70 review findings that Shaka's agents had fixed, 40 on this
+repository and 30 on React on Rails, using review data already published on their pull
+requests (PRs), and drafted the text. No person has rechecked the verdicts. The
+[Shaka report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-signal.md)
+and the
+[React on Rails report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-signal-react-on-rails.md)
+list every finding and how it was checked.*
+
+## Conclusions
+
+1. **AI review finds real bugs that the tests had missed.** All 70 sampled fixes were
+   real problems, and almost every one was introduced by its own PR. On Shaka, 16 of the 30
+   sampled defects were confirmed by running the fix's test or a probe on the reviewed
+   commit. The React on Rails verdicts are readings only, because no test could run there.
+2. **Being right is not enough. Most of what reviewers say changes nothing.** Nits are
+   49% of findings on Shaka and 56% on React on Rails. The agent dismissed 15% and 17% of
+   defects and risks, and declined 55% of the threads that outside reviewers opened.
+   Reading and answering all of that costs time this study did not price.
+3. **The first round does most of the work. Later rounds mostly chase the loop's own
+   fixes.** 58% and 50% of fixed defects were first reported in cycle 1. Most later
+   findings sat in code an earlier fix had written: 11 of 17 sampled on Shaka, at least 9
+   of 14 on React on Rails (the two counts use different cycle measures). The longest
+   chains came from one routine each, a path check on
+   [#850](https://github.com/shakacode/shaka/pull/850) and a URL redactor on
+   [#5218](https://github.com/shakacode/react_on_rails/pull/5218), where each fix exposed
+   the next edge case.
+4. **More reviewers keep finding things, at falling yield.** Codex and Claude each catch
+   defects the other misses. After both had cleared a React on Rails commit, four more AI
+   reviewers on GitHub still led to 17 fixes on 10 of 38 PRs, including a user-facing
+   redirect bug. The agent declined 49 of the 89 threads they opened.
+5. **What a real defect costs depends on the codebase.** Reviewer spend per fixed defect
+   was $2.38 on Shaka and $5.72 on React on Rails, with the same two reviewers.
+   Measure your own repository before arguing that review is or is not worth it.
+6. **This data cannot settle the larger questions.** It cannot show whether the same
+   tokens would do more as run-based verification, how AI review compares with a human
+   reviewer, how precise the unfixed findings were, or what each extra cycle costs the
+   agent doing the fixes.
 
 ## Why this ran
 
@@ -157,7 +189,9 @@ did.
 
 ## Recommendation
 
-**Keep the two-reviewer loop as it is.** The study compared three options:
+**On Shaka's own repository, keep the two-reviewer loop as it is.** React on Rails pays
+2.4 times as much per fixed defect, so this verdict does not carry over to it unchanged.
+The Shaka study compared three options:
 
 | Option | Evidence | Verdict |
 | --- | --- | --- |
