@@ -57,6 +57,15 @@ checkpoint: # Defaults: the final "did we build the right thing?" check before m
   # Default: Shaka's checkpoint prompt. A file here replaces it; prefer custom_instructions_file.
   # replacement_prompt_file: .agents/shaka/checkpoint-prompt.md
 
+protected_areas: # Defaults: a change here is always high risk, whatever the checkpoint rates it.
+  # A list here replaces that area's patterns; [] turns the area off; a new name adds an area.
+  database: [db/migrate/**/*, '**/migrations/**/*', db/schema.rb, db/structure.sql, '**/*.sql', '**/schema.prisma']
+  persistence: [config/database.yml, config/storage.yml, 'config/cache*.yml', config/redis.yml, config/sidekiq.yml]
+  infrastructure: ['**/*.tf', '**/*.tfvars', infra/**/*, k8s/**/*, '**/charts/**/*', '**/Dockerfile*',
+                   '**/docker-compose*.yml', .controlplane/**/*, fly.toml]
+  ci_and_trust: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS]
+  shaka: [.agents/shaka/**/*]
+
 merge:
   preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.
   # required_checks: [validate] # Default: none; use when GitHub requires no checks.
