@@ -8,7 +8,8 @@ module Shaka
   # The checkpoint's risk rating, raised to high for any change inside a protected area, and what each
   # rating asks of the merge. A preview: nothing here changes what merges.
   module PostImplementationRisk
-    GLOB = File::FNM_PATHNAME | File::FNM_EXTGLOB | File::FNM_DOTMATCH
+    # Case-insensitive, because a case-insensitive checkout changes Infra/main.tf as surely as infra/main.tf.
+    GLOB = File::FNM_PATHNAME | File::FNM_EXTGLOB | File::FNM_DOTMATCH | File::FNM_CASEFOLD
     ACTION = {
       'low' => 'Low risk is meant for auto-merge, with a later audit.',
       'medium' => 'Medium risk is meant for a person to merge after a skim: the description, these reasons, ' \
@@ -40,7 +41,7 @@ module Shaka
       areas = seam&.protected_areas || RepositoryConfig::ProtectedAreasSchema.effective(nil)
       paths = begin
         MergeReviewFloor.new.paths(github, head)
-      rescue Error
+      rescue Error, SystemCallError
         nil
       end
       assess(rating, areas, paths)
