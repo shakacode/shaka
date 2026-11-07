@@ -15,7 +15,8 @@ ran no React on Rails code.*
 1. **The fixes were real here too.** All 30 sampled fixed defects read as real problems,
    and 3 need an input unlikely in practice. These are readings: no React on Rails test
    ran.
-2. **Each real problem cost about twice as much as on Shaka.** Reviewer spend was $5.72
+2. **Each fixed defect cost 2.4 times as much as on Shaka, and each fixed defect or risk
+   about twice as much.** Reviewer spend was $5.72
    per fixed defect against $2.38, and $2.05 per fixed defect or risk against $1.00.
    Both reviewers' runs cost about 1.6 times as much here, and more fixes are labeled
    risks, so the data cannot say which difference drove the gap. Codex reported nothing on 84% of its runs, and Claude
@@ -27,8 +28,8 @@ ran no React on Rails code.*
    threads behind the on-PR fixes are timestamped after the local sign-off. The agent
    declined 40 of the 66 threads.
 4. **Later rounds mostly chased earlier fixes.** At least 9 of the 14 sampled findings
-   last recorded in cycle 2 or later sat in code an earlier fix had rewritten. One URL-redaction
-   routine produced 4 of the 30 sampled defects.
+   last recorded in cycle 2 or later sat in code an earlier fix had rewritten. URL-redaction code
+   that both #5218 and #5235 changed produced 6 of the 30 sampled defects.
 5. **This data cannot compare review with run-based checks or with a human reviewer.**
    No test ran, and every maintainer comment in the data was written by an agent.
 
@@ -109,7 +110,9 @@ here was confirmed by a run.
   [#5262](https://github.com/shakacode/react_on_rails/pull/5262), a new fleet-upgrade
   script. Four come from one URL-redaction routine in
   [#5218](https://github.com/shakacode/react_on_rails/pull/5218), where each fix exposed
-  the next edge case. The Shaka study saw the same pattern on one path check.
+  the next edge case. Two more, #8 and #21, come from
+  [#5235](https://github.com/shakacode/react_on_rails/pull/5235), which changed the same
+  redaction code. The Shaka study saw the same pattern on one path check.
 
 ### Fixed defects
 
