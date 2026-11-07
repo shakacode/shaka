@@ -20,11 +20,12 @@ ran no React on Rails code.*
    Both reviewers' runs cost about 1.6 times as much here, and more fixes are labeled
    risks, so the data cannot say which difference drove the gap. Codex reported nothing on 84% of its runs, and Claude
    reported 316 of the 318 nits.
-3. **Extra reviewers still found real problems on commits two had cleared, but most of what they
-   said was declined.** On 10 of the 38 PRs that drew outside comments on a cleared
-   commit, those comments led to 17 fixes, one a user-facing redirect bug. 18 of the 21
-   threads behind those fixes are timestamped after the local sign-off. The agent declined
-   49 of the 89 threads, 48 of the 86 from AI reviewers.
+3. **Extra reviewers still found real problems on commits both local reviewers had passed,
+   but the agent declined most of what they said.** Outside comments on such a commit
+   reached 31 PRs. On 7 of them they led to 11 problems fixed on the PR and 3 fixed
+   elsewhere, one a bug that stopped Turbo Frame components from mounting. 9 of the 12
+   threads behind the on-PR fixes are timestamped after the local sign-off. The agent
+   declined 40 of the 66 threads.
 4. **Later rounds mostly chased earlier fixes.** At least 9 of the 14 sampled findings
    last recorded in cycle 2 or later sat in code an earlier fix had rewritten. One URL-redaction
    routine produced 4 of the 30 sampled defects.
@@ -164,54 +165,70 @@ PR link goes to the ledger comment the finding came from.
 
 ## The second layer: reviews after the local loop signed off
 
-For each ledger that ended "No open findings", the last reviewed commit is the one both
-local reviewers passed. GitHub records the commit each inline review comment was made on,
-so the comments on exactly that commit are findings on code the local loop cleared.
-
-71 of the 89 threads, and 22 of the 26 that led to a fix, were posted after the ledger
-comment's last update, so they followed the local sign-off. The other 18 were posted
-while that ledger comment was still changing. The workflow pushes only after local
-review, but the timestamps alone cannot order those 18.
+A commit counts as cleared when its ledger ended "No open findings" and both Codex and
+Claude have a run recorded on that last reviewed commit. GitHub records the commit each
+inline review comment was made on, so the comments on exactly that commit are findings on
+code both local reviewers passed.
 
 - 119 of the 128 ledger comments with an execution table ended with no open findings, on
-  84 PRs. The 7 comments without a table are left out of cycle, cost, and sign-off counts.
-- On 38 of those PRs, outside reviewers left 89 inline threads on the cleared commit.
+  84 PRs. On 72 of those PRs, both reviewers ran on the final commit. The 7 comments
+  without a table are left out of cycle, cost, and sign-off counts.
+- On 31 of the 72 PRs, outside reviewers left 66 inline threads on the cleared commit.
+- 50 of the 66 threads, and 11 of the 15 that led to a fix, were posted after the ledger
+  comment's last update, so they followed the local sign-off. The workflow pushes only
+  after local review, but the timestamps alone cannot order the other 16.
 - Each thread was read with the agent's reply and labeled by hand:
 
 | Outcome | Threads |
 | --- | ---: |
-| Fixed on the PR | 21 (17 distinct problems) |
-| Fixed in another PR | 5 |
-| Declined with a reason | 49 |
+| Fixed on the PR | 12 (11 distinct problems) |
+| Fixed in another PR | 3 |
+| Declined with a reason | 40 |
 | Requested checks run, no code change | 2 |
-| No reply | 12 |
+| No reply | 9 |
 
 | Reviewer | Fixed on the PR | Fixed elsewhere | Declined | Checks run | No reply |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Claude in CI | 6 | 0 | 18 | 0 | 5 |
-| Codex connector | 4 | 2 | 9 | 0 | 3 |
-| Greptile | 4 | 1 | 5 | 0 | 0 |
-| CodeRabbit | 3 distinct (7 threads) | 2 | 16 | 2 | 2 |
-| GitHub code scanning and code quality | 0 | 0 | 1 | 0 | 2 |
+| Claude in CI | 5 | 0 | 15 | 0 | 4 |
+| Codex connector | 1 | 1 | 8 | 0 | 2 |
+| Greptile | 2 | 1 | 4 | 0 | 0 |
+| CodeRabbit | 3 distinct (4 threads) | 1 | 12 | 2 | 2 |
+| GitHub code scanning | 0 | 0 | 1 | 0 | 1 |
 
-- 10 PRs got at least one fix from this layer.
-  [#5262](https://github.com/shakacode/react_on_rails/pull/5262) drew 6 of the 17 problems.
-- The fixes include user-facing bugs. On
-  [#5139](https://github.com/shakacode/react_on_rails/pull/5139#discussion_r4289498346),
-  the Codex connector found that TanStack Router versions the declared peer range allowed
-  had removed the API the code read, so redirects fell back to status 200. The fix narrowed
-  the peer range to versions that still have it. On [#5193](https://github.com/shakacode/react_on_rails/pull/5193), two
-  findings arrived after merge and were fixed in
-  [#5194](https://github.com/shakacode/react_on_rails/pull/5194).
+- 7 of the 31 PRs got at least one fix from this layer.
+- The most consequential is a user-facing bug. On
+  [#5227](https://github.com/shakacode/react_on_rails/pull/5227), Greptile found that one
+  unregistered store on a page stopped every incoming Turbo Frame component from
+  mounting. The fix went into the PR it was built on,
+  [#5220](https://github.com/shakacode/react_on_rails/pull/5220). On
+  [#5330](https://github.com/shakacode/react_on_rails/pull/5330), Greptile and CodeRabbit
+  found that a release sign-in check outlived its wrapper on TERM or HUP.
 - Others are small: a wrong PR number in a changelog entry, a duplicated helper, a
   clarified comment.
-- The agent declined 49 of the 89 threads (55%); 48 of the 86 from the four AI reviewers. Most replies cite behavior that predates
-  the PR, a disproof with a command or a source read, or a cost the agent judged too high.
-- 12 threads got no reply. They include two P1 findings on the backport
+- The agent declined 40 of the 66 threads (61%), 39 of the 64 from the four AI reviewers.
+  Most replies cite behavior that predates the PR, a disproof with a command or a source
+  read, or a cost the agent judged too high.
+- 9 threads got no reply. They include two P1 findings on the backport
   [#5283](https://github.com/shakacode/react_on_rails/pull/5283), whose source PR #5252
   disproved the same concern, and a security note on
   [#5275](https://github.com/shakacode/react_on_rails/pull/5275). This study did not check
   the unanswered threads.
+
+### Commits only one local reviewer passed
+
+On 7 more PRs, the ledger ended clean but only one reviewer ran on the final commit.
+Outside reviewers left 23 threads there, which led to 6 more problems fixed on the PR and
+2 fixed elsewhere:
+
+- [#5262](https://github.com/shakacode/react_on_rails/pull/5262), a new fleet-upgrade
+  script that only Codex passed last, drew most of them.
+- On [#5139](https://github.com/shakacode/react_on_rails/pull/5139#discussion_r4289498346),
+  which only Claude passed last, the Codex connector found that TanStack Router versions
+  the declared peer range allowed had removed the API the code read, so redirects fell
+  back to status 200. The fix narrowed the peer range.
+- On [#5193](https://github.com/shakacode/react_on_rails/pull/5193), two findings came
+  before merge, and their fixes landed after it in
+  [#5194](https://github.com/shakacode/react_on_rails/pull/5194).
 
 ## Cycles, empty runs, and cost
 
@@ -249,7 +266,7 @@ review, but the timestamps alone cannot order those 18.
 | Unlikely triggers among sampled defects | 4 of 30 | 3 of 30 |
 | Already in the base | 0 of 40; 1 drift | 1 of 30, reached only through the PR's new path; 2 drift |
 | Does each reviewer catch defects the other missed? | Yes: 154 Codex only, 113 Claude only | Yes: 19 Codex only, 13 Claude only |
-| Do more reviewers after a clean loop find more? | Not measured | 17 problems fixed on 10 of 38 PRs; 55% of their threads declined |
+| Do more reviewers after a clean loop find more? | Not measured | 11 problems fixed on 7 of 31 PRs; 61% of their threads declined |
 
 Later-cycle findings are left out of this table: the Shaka study counted the cycle that
 first reported each finding, and this one could read that cycle for only 8 of its 14
@@ -265,7 +282,7 @@ later-cycle findings.
 - The sample holds only findings an agent chose to fix. The 318 nits, 95 dismissed defects
   and risks, and 83 fixed risks were not checked.
 - Outside threads were matched to the cleared commit by the commit GitHub records for each
-  inline comment. 18 of the 89 cannot be ordered after the local sign-off by timestamp. Summary comments from the same bots were not counted, so the outside
+  inline comment. 16 of the 66 cannot be ordered after the local sign-off by timestamp. Summary comments from the same bots were not counted, so the outside
   layer's totals are a floor.
 - Whether the declined outside threads were right to decline was not judged, except where
   a reply shows a disproof.
@@ -285,7 +302,7 @@ later-cycle findings.
   comment, so each reading can be repeated.
 - For the second layer, list each PR's inline review comments, keep roots from outside
   reviewers whose `original_commit_id` is the last reviewed commit of a ledger that ended
-  with no open findings, and read the agent's reply in each thread. To order a thread
+  with no open findings and has runs from both reviewers, and read the agent's reply in each thread. To order a thread
   after the local sign-off, compare its creation time with the ledger comment's
   `updated_at`.
 - To add run checks, check out the reviewed commit, copy in the fix's test files, and run

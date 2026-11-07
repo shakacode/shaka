@@ -18,7 +18,8 @@ list every finding and how it was checked.*
    commit. The React on Rails verdicts are readings only, because no test could run there.
 2. **Being right is not enough. Much of what reviewers say is optional or wrong.** Nits
    are 49% of findings on Shaka and 56% on React on Rails. The agent dismissed 29% and 39% of
-   defects and risks, and declined 55% of the threads that outside reviewers opened.
+   defects and risks, and declined 61% of the threads that
+   outside reviewers opened on commits both local reviewers had passed.
    Reading and answering all of that costs time this study did not price.
 3. **The first round does most of the work. Later rounds mostly chase the loop's own
    fixes.** 58% and 50% of fixed defects were first reported in cycle 1. Most later
@@ -30,11 +31,12 @@ list every finding and how it was checked.*
    [#5218](https://github.com/shakacode/react_on_rails/pull/5218), where each fix exposed
    the next edge case.
 4. **More reviewers keep finding real problems, but most of what the extra ones raise is
-   declined.** Codex and Claude each catch
-   defects the other misses. On React on Rails commits both had cleared, four more AI reviewers
-   on GitHub still led to 17 fixes on 10 of 38 PRs, including a user-facing redirect bug.
-   18 of the 21 threads behind those fixes are timestamped after the local sign-off. The
-   agent declined 48 of the 86 threads those reviewers opened.
+   declined.** Codex and Claude each catch defects the other misses. On React on Rails
+   commits both had passed, four more AI reviewers on GitHub still led to 11 problems
+   fixed on the PR and 3 elsewhere, on 7 of the 31 PRs they commented on. One was a bug
+   that stopped Turbo Frame components from mounting. 9 of the 12 threads behind the
+   on-PR fixes are timestamped after the local sign-off. The agent declined 39 of the 64
+   threads those reviewers opened.
 5. **Review cost about twice as much per real problem on React on Rails.** Reviewer spend
    was $5.72 per fixed defect against $2.38 on Shaka, and $2.05 per fixed defect or risk
    against $1.00, with the same two reviewers. Both reviewers' runs cost about 1.6 times
@@ -168,7 +170,8 @@ connector, and Greptile. The
 lists every finding.
 
 - All 30 sampled fixed defects read as real, and 3 need an
-  unlikely input. Every check was a reading: the agent's host refused to run another
+  unlikely input. Two were checked against the reviewed code; the other 28 rest on the
+  finding and the fix diff. Every check was a reading: the agent's host refused to run another
   repository's code, so none was confirmed by a run.
 - The loop costs more per fixed defect there. Reviewer spend is $5.72 per fixed defect,
   against $2.38 on Shaka. Codex reported nothing on 84% of its runs. Claude reported 316 of
@@ -176,17 +179,18 @@ lists every finding.
 - Fixes chain the same way. At least 9 of the 14 sampled findings last recorded in
   cycle 2 or later sat in code an earlier fix had rewritten. Three of those came from one
   URL-redaction routine.
-- More reviewers found more problems, and most of what they raised was declined. On 38 PRs where both local reviewers
-  had signed off, the outside reviewers, plus GitHub code scanning, left 89 threads on the
-  cleared commit. 71 of them came after the local sign-off by timestamp. The agent
-  fixed 17 distinct problems on 10 of those PRs and 5 more in other PRs. It declined 49
-  threads with a reason, and 12 got no reply.
+- More reviewers found more problems, and the agent declined most of what they raised.
+  On 31 PRs, outside reviewers, plus GitHub code scanning, left 66 threads on a commit
+  both local reviewers had passed. 50 of them came after the local sign-off by timestamp.
+  The agent fixed 11 distinct problems on 7 of those PRs and 3 more in other PRs. It
+  declined 40 threads with a reason, and 9 got no reply. On 7 more PRs only one local
+  reviewer ran on the final commit; outside threads there led to 8 more fixes.
 
 | Measure | Shaka | React on Rails |
 | --- | ---: | ---: |
 | Sampled fixed defects that were real | 30 of 30 | 30 of 30 |
 | Confirmed by a run | 16 of 30 | 0 of 30 |
-| Fixed defects first reported in cycle 1 | 58% | 50% |
+| Fixed defects first reported in cycle 1, of those with a known first cycle | 159 of 274 (58%) | 14 of 28 (50%) |
 | Reviewer spend per fixed defect | $2.38 | $5.72 |
 | Nits, share of findings | 49% | 56% |
 
