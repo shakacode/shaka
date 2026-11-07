@@ -72,13 +72,15 @@ here was confirmed by a run.
 - Three need a trigger unlikely in practice: a cache tag holding a lone UTF-16 surrogate
   (#1), a Git push URL that names a different repository from the fetch URL (#2), and a
   literal at sign right after encoded slashes, as in `%2F%2F@ab` (#30).
-- 27 sat in code or text the PR added. 3 were drift, where unchanged base code or docs
-  became wrong because of the PR: #14, #18, and #29. In #29 the faulty line was already on
-  `main`; the PR's new Turbo Frame path is what reached it.
+- 27 sat in code or text the PR added. 2 were drift, where unchanged base docs became
+  wrong because of the PR: #14 and #18. One was base code: in #29 the faulty line was
+  already on `main`, and only the PR's new Turbo Frame path reached it.
 - 23 fixes changed code and added or changed a test, 2 changed only a test, and 5 changed
   only prose.
 - Fixes chain here too. At least 9 of the 14 findings last recorded in cycle 2 or later
-  sat in code an earlier fix had rewritten: #2, #8, #13, #15, #16, #22, #24, #26, and #30.
+  sat in code an earlier fix had rewritten. The Shaka study counted findings first reported
+  in cycle 2 or later, which this data cannot give for most of the sample, so the two
+  figures are not comparable: #2, #8, #13, #15, #16, #22, #24, #26, and #30.
   #22's commit says the previous round's fix was wrong, and #24's says a commit hook's
   autofix undid the earlier fix.
 - Two PRs hold 9 of the 30. Five sampled Codex-only defects come from
@@ -119,7 +121,7 @@ here was confirmed by a run.
 | 26 | [#5247](https://github.com/shakacode/react_on_rails/pull/5247#issuecomment-6435380395) | D7: npm v1 alias copies still hidden | both | 2 of 4 | yes | new | code + test |
 | 27 | [#5317](https://github.com/shakacode/react_on_rails/pull/5317#issuecomment-6675215353) | K1: Changelog entry lacks the Action required for upgraders tag | both | 1 of 3 | yes | new | prose |
 | 28 | [#5270](https://github.com/shakacode/react_on_rails/pull/5270#issuecomment-6490208954) | F2: CHANGELOG omits changed private helper signatures | both | 1 of 5 | yes | new | prose |
-| 29 | [#5227](https://github.com/shakacode/react_on_rails/pull/5227#issuecomment-6284634026) | F1: A renderer waiting on a store is reused by same-id frame content and renders old props | both | 1 of 2 | yes | drift | code + test |
+| 29 | [#5227](https://github.com/shakacode/react_on_rails/pull/5227#issuecomment-6284634026) | F1: A renderer waiting on a store is reused by same-id frame content and renders old props | both | 1 of 2 | yes | base, reached by the PR's new path | code + test |
 | 30 | [#5218](https://github.com/shakacode/react_on_rails/pull/5218#issuecomment-6265865054) | F10: The backward search for a decoded at sign looped forever on an at sign at offset 0 or 1 | both | 4 of 5 | yes, unlikely trigger | new | code + test |
 
 Cycle is the reviewed commit, within its ledger, where the finding was last recorded. Each
@@ -143,7 +145,12 @@ PR link goes to the ledger comment the finding came from.
 
 For each ledger that ended "No open findings", the last reviewed commit is the one both
 local reviewers passed. GitHub records the commit each inline review comment was made on,
-so the comments on exactly that commit are findings the local loop had cleared.
+so the comments on exactly that commit are findings on code the local loop cleared.
+
+71 of the 89 threads, and 18 of the 22 that led to a fix, were posted after the ledger
+comment's last update, so they followed the local sign-off. The other 18 were posted
+while that ledger comment was still changing. The workflow pushes only after local
+review, but the timestamps alone cannot order those 18.
 
 - 119 of 128 ledgers ended with no open findings, on 84 PRs.
 - On 38 of those PRs, outside reviewers left 89 inline threads on the cleared commit.
@@ -157,13 +164,13 @@ so the comments on exactly that commit are findings the local loop had cleared.
 | Requested checks run, no code change | 2 |
 | No reply | 12 |
 
-| Reviewer | Fixed on the PR | Fixed elsewhere | Declined | No reply |
-| --- | ---: | ---: | ---: | ---: |
-| Claude in CI | 6 | 0 | 18 | 5 |
-| Codex connector | 4 | 2 | 9 | 3 |
-| Greptile | 4 | 1 | 5 | 0 |
-| CodeRabbit | 3 distinct (7 threads) | 2 | 16 | 2 |
-| GitHub code scanning and code quality | 0 | 0 | 1 | 2 |
+| Reviewer | Fixed on the PR | Fixed elsewhere | Declined | Checks run | No reply |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Claude in CI | 6 | 0 | 18 | 0 | 5 |
+| Codex connector | 4 | 2 | 9 | 0 | 3 |
+| Greptile | 4 | 1 | 5 | 0 | 0 |
+| CodeRabbit | 3 distinct (7 threads) | 2 | 16 | 2 | 2 |
+| GitHub code scanning and code quality | 0 | 0 | 1 | 0 | 2 |
 
 - 10 PRs got at least one fix from this layer.
   [#5262](https://github.com/shakacode/react_on_rails/pull/5262) drew 6 of the 17 problems.
@@ -176,7 +183,7 @@ so the comments on exactly that commit are findings the local loop had cleared.
   [#5194](https://github.com/shakacode/react_on_rails/pull/5194).
 - Others are small: a wrong PR number in a changelog entry, a duplicated helper, a
   clarified comment.
-- The agent declined 49 of the 89 threads (55%). Most replies cite behavior that predates
+- The agent declined 49 of the 89 threads (55%); 48 of the 86 from the four AI reviewers. Most replies cite behavior that predates
   the PR, a disproof with a command or a source read, or a cost the agent judged too high.
 - 12 threads got no reply. They include two P1 findings on the backport
   [#5283](https://github.com/shakacode/react_on_rails/pull/5283), whose source PR #5252
@@ -207,7 +214,7 @@ so the comments on exactly that commit are findings the local loop had cleared.
 
 - Spend per fixed defect uses the 99 ledgers with a cost on every run: $223.06 over 39
   fixed defects and 70 fixed risks. 65 runs have no cost estimate.
-- Claude reported 316 of the 318 nits and 75 of the 83 fixed risks. Codex reported more
+- Claude reported 316 of the 318 nits. It reported 80 of the 83 fixed risks, 75 of them alone. Codex reported more
   of the fixed defects alone than Claude did, but returned nothing on 84% of its runs.
 - Outside reviewers' costs are not in these numbers. Their subscriptions are not priced
   per review.
@@ -218,10 +225,13 @@ so the comments on exactly that commit are findings the local loop had cleared.
 | --- | --- | --- |
 | Are fixed defects real? | 30 of 30 sampled, 16 confirmed by a run; 10 of 10 risks | 30 of 30 sampled, all by reading; 2 checked against the code |
 | Unlikely triggers among sampled defects | 4 of 30 | 3 of 30 |
-| Already in the base | 0 of 40; 1 drift | 0 of 30; 3 drift |
+| Already in the base | 0 of 40; 1 drift | 1 of 30, reached only through the PR's new path; 2 drift |
 | Does each reviewer catch defects the other missed? | Yes: 154 Codex only, 113 Claude only | Yes: 19 Codex only, 13 Claude only |
-| Do later cycles mostly chase the loop's own fixes? | 11 of 17 sampled later-cycle findings | At least 9 of 14 |
 | Do more reviewers after a clean loop find more? | Not measured | 17 problems fixed on 10 of 38 PRs; 55% of their threads declined |
+
+Later-cycle findings are left out of this table: the Shaka study counted the cycle that
+first reported each finding, and this one could read that cycle for only 8 of its 14
+later-cycle findings.
 
 ## What this does and does not show
 
@@ -233,7 +243,7 @@ so the comments on exactly that commit are findings the local loop had cleared.
 - The sample holds only findings an agent chose to fix. The 318 nits, 95 dismissed defects
   and risks, and 83 fixed risks were not checked.
 - Outside threads were matched to the cleared commit by the commit GitHub records for each
-  inline comment. Summary comments from the same bots were not counted, so the outside
+  inline comment. 18 of the 89 cannot be ordered after the local sign-off by timestamp. Summary comments from the same bots were not counted, so the outside
   layer's totals are a floor.
 - Whether the declined outside threads were right to decline was not judged, except where
   a reply shows a disproof.

@@ -133,11 +133,13 @@ lists every finding.
   repository's code, so none was confirmed by a run.
 - The loop costs more per fixed defect there. Reviewer spend is $5.72 per fixed defect,
   against $2.38 on Shaka. Codex reported nothing on 84% of its runs. Claude reported 316 of
-  the 318 nits and 75 of the 83 fixed risks.
-- Fixes chain the same way. At least 9 of the 14 sampled findings from cycle 2 or
-  later sat in code an earlier fix had rewritten. Four came from one URL-redaction routine.
+  the 318 nits and 80 of the 83 fixed risks.
+- Fixes chain the same way. At least 9 of the 14 sampled findings last recorded in
+  cycle 2 or later sat in code an earlier fix had rewritten. Three of those came from one
+  URL-redaction routine.
 - More reviewers found more problems, and most of what they raised was declined. On 38 PRs where both local reviewers
-  had signed off, the outside reviewers left 89 threads on the cleared commit. The agent
+  had signed off, the outside reviewers, plus GitHub code scanning, left 89 threads on the
+  cleared commit. 71 of them came after the local sign-off by timestamp. The agent
   fixed 17 distinct problems on 10 of those PRs and 5 more in other PRs. It declined 49
   threads with a reason, and 12 got no reply.
 
@@ -185,7 +187,7 @@ Two measurements could change the verdict:
   readings do.
 - **Cost:** the review comments' own estimates, for reviewers only. 264 runs have none.
   The implementing agent's tokens and time are not included.
-- **Scope:** one repository, one maintainer, three weeks. Review prompts changed during
+- **Scope:** for the Shaka study, one repository, one maintainer, three weeks. Review prompts changed during
   that time.
 
 ## Rerun it
