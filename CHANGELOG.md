@@ -17,7 +17,7 @@ qualification remain evidence requirements; the version number does not establis
 
 - Rate each PR's risk as low, medium, or high in the checkpoint, with reasons, and say
   what that rating asks of the merge: a skim for medium, a careful review that starts
-  with the verification for high. Changes to databases, persistence, infrastructure,
+  with the verification for high. A missing rating shows as unknown and counts as high. Changes to databases, persistence, infrastructure,
   CI and trust, or Shaka's settings always count as high; set `high_risk_areas` to
   change those paths. Set `merge.auto_merge: low` to let Auto merge only low-risk PRs
   instead of using `merge.auto_max_review_floor`; the default, `floors`, keeps the floors,

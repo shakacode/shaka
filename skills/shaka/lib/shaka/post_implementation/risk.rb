@@ -3,7 +3,6 @@
 require_relative '../merge_review_floor'
 require_relative '../configuration/feature_guard'
 require_relative '../repository_config/high_risk_areas_schema'
-require_relative 'auto_merge_preview'
 
 module Shaka
   # The checkpoint's risk rating, raised to high for any change inside a high-risk area, and what each
@@ -29,8 +28,8 @@ module Shaka
       { 'rating' => rating, 'level' => level, 'areas_hit' => hits, 'paths_read' => !paths.nil? }
     end
 
-    # The checkpoint's two Ruby-computed previews. seam reads the trusted settings when a completed
-    # checkpoint renders; an incomplete one reads none.
+    # The checkpoint's two Ruby-computed previews; the caller loads AutoMergePreview, which requires this file.
+    # seam reads the trusted settings when a completed checkpoint renders; an incomplete one reads none.
     def previews(seam, github, pull, head)
       { auto_merge: ->(checkpoint) { AutoMergePreview.line(seam.call, github, pull, head, checkpoint) },
         risk: ->(rating) { from(seam.call, github, head, rating) } }
