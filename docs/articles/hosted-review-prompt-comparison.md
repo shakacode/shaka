@@ -15,16 +15,21 @@ to know whether the strict prompt caused them.
 
 ## The short answer
 
-Not as far as this test can tell.
+Not as far as this test can tell. Both prompts ran only on the newer model.
 
 - I picked the 17 commits where hosted Claude said "no issues" and CodeRabbit later
   found a bug, 21 bugs in all. The old prompt caught 3 of them. The current prompt
   caught none.
+- The old prompt also raised 12 other real findings, covering 7 problems. At least 4
+  of those were fixed on `main` later. The current prompt raised 1. That's the best case
+  for loosening it.
 - The current prompt does a short pass when a local Claude review already ran. Forcing
   a full review didn't help: 36 runs, zero findings.
-- The bigger drop came a week earlier. [#446](https://github.com/shakacode/shaka/pull/446)
-  bumped the review action, and the model changed from `claude-sonnet-5` to
-  `claude-sonnet-5-5`. Inline review comments went from 119 on 152 reviews to 5 on 192.
+- Hosted findings had already dropped a week earlier.
+  [#446](https://github.com/shakacode/shaka/pull/446) bumped the review action, and the
+  model changed from `claude-sonnet-5` to `claude-sonnet-5-5`. Inline review comments went
+  from 119 on 152 reviews to 5 on 192. A report-format change in that week moved some
+  findings into the summary, and neither study shows which change caused the drop.
 - Local reviews ran a stronger model, `claude-opus-5-5`, on most commits. The hosted
   review never set a thinking level, and most local reviews didn't either.
 
@@ -111,7 +116,7 @@ the local review tables on the 442 PRs from October:
 | Reviewer | Model | Thinking level | Reviews | Findings per review | Cost per review |
 | --- | --- | --- | ---: | ---: | ---: |
 | Hosted Claude, before #446 | `claude-sonnet-5` | not set | 152 | 0.8 inline comments | about $0.90 |
-| Hosted Claude, #446 to #640 | `claude-sonnet-5-5` | not set | 192 | 0.03 inline comments; 0.17 in the count line | about $0.10 |
+| Hosted Claude, #446 to #640 | `claude-sonnet-5-5` | not set | 192 | 0.03 inline comments; 32 findings in the 127 reports with a count line | about $0.10 |
 | Hosted Claude, after #640 | `claude-sonnet-5-5` | not set | 448 | 0 | about $0.11 |
 | Local Claude | `claude-opus-5-5` in 1,370 of 1,478 | not recorded in 1,283; medium in 187 | 1,478 | 2.2 | $0.33 |
 | Local Codex | not recorded in 1,452 of 1,514 | not recorded in 1,358; medium in 153 | 1,514 | 0.24 | $0.10 |
@@ -180,7 +185,9 @@ If we want more of those catches, the lever is CodeRabbit's review limit. The li
 - 4 of the bug threads were already in the local review report the hosted job could
   read. The current prompt says not to repeat those. 3 need a fact from outside the
   repository. The report gives totals without them.
-- PR #1016 counted 15 PRs. The list here has 16.
+- The CI study counted 15 PRs and 21 bug threads. The list here has 16 PRs and 22
+  threads, because one #902 bug spans two threads on two commits. The CI study also counts
+  446 hosted reports after #640, read a day before this study's 448.
 - The run cost $15.78 for reviews, $5.32 for scoring, and $0.03 for setup checks. These
   are API-equivalent prices; the runs used a Claude subscription.
 
