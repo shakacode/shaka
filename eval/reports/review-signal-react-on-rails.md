@@ -147,12 +147,13 @@ For each ledger that ended "No open findings", the last reviewed commit is the o
 local reviewers passed. GitHub records the commit each inline review comment was made on,
 so the comments on exactly that commit are findings on code the local loop cleared.
 
-71 of the 89 threads, and 18 of the 22 that led to a fix, were posted after the ledger
+71 of the 89 threads, and 22 of the 26 that led to a fix, were posted after the ledger
 comment's last update, so they followed the local sign-off. The other 18 were posted
 while that ledger comment was still changing. The workflow pushes only after local
 review, but the timestamps alone cannot order those 18.
 
-- 119 of 128 ledgers ended with no open findings, on 84 PRs.
+- 119 of the 128 ledger comments with an execution table ended with no open findings, on
+  84 PRs. The 7 comments without a table are left out of cycle, cost, and sign-off counts.
 - On 38 of those PRs, outside reviewers left 89 inline threads on the cleared commit.
 - Each thread was read with the agent's reply and labeled by hand:
 
@@ -195,7 +196,7 @@ review, but the timestamps alone cannot order those 18.
 
 | Measure | React on Rails | Shaka |
 | --- | ---: | ---: |
-| Ledgers | 128 | 500 |
+| Ledgers with an execution table | 128 of 135 | 500 |
 | Cycles per ledger, median / 90th percentile / max | 1 / 5 / 7 | 2 / 5 / 12 |
 | Runs that reported nothing | 258 of 506 (51%) | 1,242 of 2,574 (48%) |
 | Codex runs that reported nothing | 210 of 249 (84%) | 1,009 of 1,310 (77%) |
