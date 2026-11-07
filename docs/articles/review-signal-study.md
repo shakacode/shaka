@@ -16,8 +16,8 @@ list every finding and how it was checked.*
    49 changed code, and 48 of those added or changed a test. On Shaka, 16 of the 30
    sampled defects were confirmed by running the fix's test or a probe on the reviewed
    commit. The React on Rails verdicts are readings only, because no test could run there.
-2. **Being right is not enough. Most of what reviewers say changes nothing.** Nits are
-   49% of findings on Shaka and 56% on React on Rails. The agent dismissed 29% and 39% of
+2. **Being right is not enough. Much of what reviewers say is optional or wrong.** Nits
+   are 49% of findings on Shaka and 56% on React on Rails. The agent dismissed 29% and 39% of
    defects and risks, and declined 55% of the threads that outside reviewers opened.
    Reading and answering all of that costs time this study did not price.
 3. **The first round does most of the work. Later rounds mostly chase the loop's own

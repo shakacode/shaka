@@ -20,7 +20,7 @@ ran no React on Rails code.*
    Both reviewers' runs cost about 1.6 times as much here, and more fixes are labeled
    risks, so the data cannot say which difference drove the gap. Codex reported nothing on 84% of its runs, and Claude
    reported 316 of the 318 nits.
-3. **Extra reviewers still found bugs on commits two had cleared, but most of what they
+3. **Extra reviewers still found real problems on commits two had cleared, but most of what they
    said was declined.** On 10 of the 38 PRs that drew outside comments on a cleared
    commit, those comments led to 17 fixes, one a user-facing redirect bug. 18 of the 21
    threads behind those fixes are timestamped after the local sign-off. The agent declined
@@ -99,9 +99,9 @@ here was confirmed by a run.
 - 23 fixes changed code and added or changed a test, 2 changed only a test, and 5 changed
   only prose.
 - Fixes chain here too. At least 9 of the 14 findings last recorded in cycle 2 or later
-  sat in code an earlier fix had rewritten. The Shaka study counted findings first reported
-  in cycle 2 or later, which this data cannot give for most of the sample, so the two
-  figures are not comparable: #2, #8, #13, #15, #16, #22, #24, #26, and #30.
+  sat in code an earlier fix had rewritten: #2, #8, #13, #15, #16, #22, #24, #26, and #30.
+  The Shaka study counted findings first reported in cycle 2 or later. Here the first
+  cycle is unknown for 6 of these 14, so the two figures are not directly comparable.
   #22's commit says the previous round's fix was wrong, and #24's says a commit hook's
   autofix undid the earlier fix.
 - Two PRs hold 9 of the 30. Five sampled Codex-only defects come from
