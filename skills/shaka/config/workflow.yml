@@ -847,8 +847,9 @@ phases:
       - `merge` refuses a PR over the trusted `merge.limits` for changed files, changed lines, or
         commits, or whose size GitHub does not report. It also refuses a PR with a changed file
         above the trusted `merge.auto_max_review_floor`, or one changing Shaka's configuration
-        while that setting is below 5. That refusal switches Auto to Ask: report the counts or the
-        file it names and hand the PR back. Label that handoff `awaiting-merge-approval` with
+        while that setting is below 5. Under `merge.auto_merge: low` it refuses instead any head
+        whose checkpoint rating is not low or that changes a high-risk file. That refusal switches
+        Auto to Ask: report the counts, rating, or file it names and hand the PR back. Label that handoff `awaiting-merge-approval` with
         `attention --state merge`, because the user's confirmation of the head approves its
         merge. Pass `--limits-confirmed-head SHA` only for a head the
         user confirmed in this task after seeing the counts and any file it names; asking you to merge a named head, or an
