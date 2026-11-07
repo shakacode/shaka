@@ -193,9 +193,9 @@ Publish tested changes as bounded PRs, preferably below 500 changed lines each.
 Explain necessary larger changes; split independent work instead of hiding size.
 Required evidence is the PR's current commit, actual validation results, and review.
 No extra closeout audit, receipt, automatic issue, heartbeat, or parallel tracker.
-When a PR changes what Shaka users see or do, add an entry under `## [Unreleased]`
-in `CHANGELOG.md`, following the format its header names, written for users rather
-than as a commit summary. Leave out internal changes. No check enforces this.
+Fill the Changelog section of the [PR template](.github/pull_request_template.md)
+instead of editing `CHANGELOG.md`; only a release PR edits that file. No check
+enforces this.
 Report available model, reasoning effort, and token evidence on the PR by commit;
 mark shared or unavailable attribution explicitly, as specified in the pilot plan.
 Do not close the pilot until its required real-use acceptance is established.
