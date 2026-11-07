@@ -11,7 +11,7 @@ list every finding and how it was checked.*
 
 ## Conclusions
 
-1. **AI review finds real problems that the tests had not caught.** All 70
+1. **AI review finds real problems.** All 70
    sampled fixes were real problems, and almost every one was introduced by its own PR.
    47 changed code, and 46 of those added or changed a test; 2 more changed only a test. On Shaka, 16 of the 30
    sampled defects were confirmed by running the fix's test or a probe on the reviewed
@@ -171,8 +171,9 @@ connector, and Greptile. The
 [React on Rails report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-signal-react-on-rails.md)
 lists every finding.
 
-- All 30 sampled fixed defects were real, and 3 need an unlikely input. For 24, a test, or
-  a mutation of the code, failed on the reviewed commit and passed at the fix. The other 6 were read: 5 are prose, and one fix changed the mechanism its
+- All 30 sampled fixed defects were real, and 3 need an unlikely input. For 23, a test
+  failed on the reviewed commit and passed at the fix. For one more, a mutation of the code
+  went unnoticed by the reviewed test and was caught by the fixed one. The other 6 were read: 5 are prose, and one fix changed the mechanism its
   tests check.
 - The loop costs more per fixed defect there. Reviewer spend is $5.72 per fixed defect,
   against $2.38 on Shaka. Codex reported nothing on 84% of its runs. Claude reported 316 of

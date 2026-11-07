@@ -13,8 +13,9 @@ isolated checkout, and drafted the text. The study started no paid model runs.*
 ## Conclusions
 
 1. **The fixes were real here too, and most are proven by a run.** All 30 sampled fixed
-   defects were real problems. For 24, a test, or a mutation of the code, failed on the
-   reviewed commit and passed at the fix. The other 6 were checked by
+   defects were real problems. For 23, the fix's test, or the reviewed commit's own test
+   for #3, failed on the reviewed commit and passed at the fix. For #13, a mutation of the
+   code went unnoticed by the reviewed test and was caught by the fixed one. The other 6 were checked by
    reading: 5 are prose findings, and #9's tests fail on the reviewed commit only because
    its fix changed the mechanism. 3 of the 30 need an input unlikely in practice.
 2. **Each fixed defect cost 2.4 times as much as on Shaka, and each fixed defect or risk
@@ -241,6 +242,9 @@ code both local reviewers passed.
 | Greptile | 2 | 1 | 4 | 0 | 0 |
 | CodeRabbit | 3 distinct (4 threads) | 1 | 12 | 2 | 2 |
 | GitHub code scanning | 0 | 0 | 1 | 0 | 1 |
+
+CodeRabbit's fourth fixed thread repeats Greptile's #5330 finding about TERM and HUP, so
+it is counted once, in Greptile's row.
 
 - 7 of the 31 PRs got at least one fix from this layer.
 - The most consequential is a user-facing bug. On
