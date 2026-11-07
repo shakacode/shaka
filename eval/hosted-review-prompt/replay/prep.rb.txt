@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+# Freezes each commit: integration tree, PR diff, PR view as of the hosted report, and three prompts.
+require 'json'; require 'time'; require 'yaml'; require 'fileutils'; require 'open3'
+s, repo = ARGV
+r = "#{s}/rw"
+OLD_REF = '889364fff33a2f8b15493a80cd3633aaaab440c5^'
+NEW_REF = '84525c74610e324b56cadaced74587402f2f69e7'
+def git(repo, *a) = Open3.capture2('git', '-C', repo, '--no-pager', *a).then { |o, st| st.success? ? o : abort("git #{a.join(' ')} failed") }
+def prompt_at(repo, ref)
+  y = YAML.safe_load(git(repo, 'show', "#{ref}:.github/workflows/claude-code-review.yml"), aliases: true)
+  y['jobs']['claude-review']['steps'].find { _1['name'] == 'Run Claude Code Review' }['with']['prompt']
+end
+def fill(t, h)
+  h.each { |k, v| t = t.gsub("${{ #{k} }}", v.to_s) }
+  abort("unfilled: #{t[/\$\{\{.*?\}\}/]}") if t.include?('${{')
+  t
+end
+as_of = lambda do |node, at|
+  e = node['userContentEdits']['nodes'].select { Time.parse(_1['editedAt']) <= at }.max_by { Time.parse(_1['editedAt']) }
+  next nil unless node['userContentEdits']['nodes'].any?
+  e && (e['diff'] || '')
+end
+old_t = prompt_at(repo, OLD_REF); new_t = prompt_at(repo, NEW_REF)
+JSON.parse(File.read("#{s}/commits.json")).each do |c|
+  sha = c['sha']; d = "#{r}/state/#{sha}"; FileUtils.mkdir_p(d)
+  pr = JSON.parse(File.read("#{s}/pr/#{c['pr']}.json")).dig('data', 'repository', 'pullRequest')
+  at = Time.parse(c['report_at'])
+  git(repo, 'fetch', '--quiet', 'origin', c['checkout'])
+  parents = git(repo, 'rev-list', '--parents', '-n1', c['checkout']).split
+  abort("#{c['checkout']} second parent is not #{sha}") unless parents[2] == sha
+  File.write("#{d}/diff.patch", git(repo, 'diff', '--no-ext-diff', "#{parents[1]}...#{sha}"))
+  tar = "#{d}/tree.tar"
+  system('git', '-C', repo, 'archive', '-o', tar, c['checkout'], exception: true)
+  comments = pr['comments']['nodes'].select { _1.dig('author', 'login') == c['author'] && _1['body'].start_with?('<!-- shaka:reply:local-') && Time.parse(_1['createdAt']) <= at }.filter_map do |k|
+    body = as_of.(k, at) || k['body']
+    next if body.empty?
+    { 'author' => k['author'], 'url' => k['url'], 'createdAt' => k['createdAt'], 'body' => body }
+  end
+  report = comments.reverse.find { _1['body'].include?("REVIEWED #{sha} BY") }
+  abort("no local report for #{sha}") if c['depth'] == 'shaka' && report.nil?
+  body = as_of.(pr, at)
+  body = pr['body'] if body.nil? && pr['userContentEdits']['nodes'].empty?
+  view = { 'number' => pr['number'], 'title' => pr['title'], 'body' => body.to_s, 'author' => pr['author'], 'baseRefName' => pr['baseRefName'],
+           'headRefName' => pr['headRefName'], 'headRefOid' => sha, 'url' => "https://github.com/shakacode/shaka/pull/#{pr['number']}", 'state' => 'OPEN', 'comments' => comments }
+  File.write("#{d}/view.json", JSON.pretty_generate(view))
+  common = { 'github.repository' => 'shakacode/shaka', 'github.event.pull_request.number' => pr['number'], 'github.event.pull_request.head.sha' => sha,
+             'github.sha' => c['checkout'], 'github.event.pull_request.user.login' => c['author'] }
+  File.write("#{d}/prompt-p.txt", fill(old_t, common))
+  File.write("#{d}/prompt-q.txt", fill(new_t, common.merge('steps.depth.outputs.depth' => c['depth'], 'steps.depth.outputs.report' => c['depth'] == 'shaka' ? report['url'] : '')))
+  File.write("#{d}/prompt-r.txt", fill(new_t, common.merge('steps.depth.outputs.depth' => 'full', 'steps.depth.outputs.report' => ''))) if c['depth'] == 'shaka'
+  puts [c['pr'], sha[0, 8], c['depth'], "diff=#{File.foreach("#{d}/diff.patch").count}", "body=#{view['body'].size}", "comments=#{comments.size}", "report=#{report ? report['body'].size : '-'}", "tar=#{File.size(tar) / 1024}K"].join(' ')
+end
