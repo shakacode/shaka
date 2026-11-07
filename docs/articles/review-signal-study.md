@@ -118,6 +118,41 @@ the 2,310 runs with a cost estimate.
 - **Limit:** a run shows the code behaved as the finding said. A run cannot show how
   often users would reach that input.
 
+## A second repository: React on Rails
+
+Shaka's reviewers might suit Shaka's own code unusually well, so the same check ran on
+[React on Rails](https://github.com/shakacode/react_on_rails), a public gem and npm
+packages with outside users. Its PRs go through the same two-reviewer loop. After the
+push, four more AI reviewers comment on GitHub: Claude in CI, CodeRabbit, the Codex
+connector, and Greptile. The
+[React on Rails report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-signal-react-on-rails.md)
+lists every finding.
+
+- All 30 sampled fixed defects read as real, and 3 need an
+  unlikely input. Every check was a reading: the agent's host refused to run another
+  repository's code, so none was confirmed by a run.
+- The loop costs more per fixed defect there. Reviewer spend is $5.72 per fixed defect,
+  against $2.38 on Shaka. Codex reported nothing on 84% of its runs. Claude reported 316 of
+  the 318 nits and 75 of the 83 fixed risks.
+- Fixes chain the same way. At least 9 of the 14 sampled findings from cycle 2 or
+  later sat in code an earlier fix had rewritten. Four came from one URL-redaction routine.
+- More reviewers found more problems, and most of what they raised was declined. On 38 PRs where both local reviewers
+  had signed off, the outside reviewers left 89 threads on the cleared commit. The agent
+  fixed 17 distinct problems on 10 of those PRs and 5 more in other PRs. It declined 49
+  threads with a reason, and 12 got no reply.
+
+| Measure | Shaka | React on Rails |
+| --- | ---: | ---: |
+| Sampled fixed defects that were real | 30 of 30 | 30 of 30 |
+| Confirmed by a run | 16 of 30 | 0 of 30 |
+| Fixed defects first reported in cycle 1 | 58% | 50% |
+| Reviewer spend per fixed defect | $2.38 | $5.72 |
+| Nits, share of findings | 49% | 56% |
+
+The data has no independent human review: both maintainers' accounts post agent-written
+replies here. It cannot say whether a person would have caught what the outside reviewers
+did.
+
 ## Recommendation
 
 **Keep the two-reviewer loop as it is.** The study compared three options:
