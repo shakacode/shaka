@@ -238,6 +238,35 @@ A PR that passes still gets the agent's own judgment of risk and compatibility u
 The agent's rating does not hold a PR back. Rating it above its floor, or listing a file under
 **Closer reading**, tells a reader where to look but does not stop Auto from merging it.
 
+## `merge.auto_merge`
+
+**Optional. Default: `floors`.** What the agent may merge under `preference: auto` without you
+confirming the head.
+
+- `floors` keeps [`merge.auto_max_review_floor`](#mergeauto_max_review_floor).
+- `low` lets the agent merge only a PR whose checkpoint rates it low
+  [risk](#high_risk_areas), with no changed file in a high-risk area. The review floors then
+  play no part in what merges.
+
+```yaml
+merge:
+  preference: auto
+  auto_merge: low
+```
+
+Medium and high risk always come back to you, so there is no higher setting. `merge` reads
+the rating from the checkpoint comment that your account published for the exact head. It
+reads the high-risk areas from your trusted settings and the changed files from GitHub. A
+missing rating, unreadable files, or a change to Shaka's settings in `.agents/shaka/` all come
+back to you too. To let the agent merge a PR anyway, confirm that commit the same way as a
+PR past [`merge.limits`](#mergelimits). Each PR the agent merges under Auto is labeled
+`auto-merged`, so you can audit them later.
+
+Try it before you switch to `auto`. While `preference` is still `ask`, each ready checkpoint
+comment says whether Auto would merge the PR under this rule, or names what would send it
+back, such as
+`Auto merge preview: with merge.preference: auto, the agent would hand this PR back: db/migrate/1_add_index.rb is in high-risk area database`.
+
 Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
 something after merge, so the agent hands those PRs back on its own judgment.
 
@@ -857,8 +886,9 @@ What each rating asks:
 | Medium | Meant for a person to merge after a skim of the description, the reasons, and the verification, then of only the files the reasons name. |
 | High or unknown | Meant for a person to merge after a careful review that starts with whether the verification proves the change works. |
 
-For now the rating is a preview in the checkpoint comment: it does not change what merges, and
-`merge` settings still decide. Without a trusted settings commit, the rating uses the default areas.
+The rating changes what merges only under [`merge.auto_merge: low`](#mergeauto_merge). Otherwise
+it is a preview in the checkpoint comment. Without a trusted settings commit, the rating uses the
+default areas.
 
 ## `project_guidance`
 

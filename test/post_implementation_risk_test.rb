@@ -36,7 +36,7 @@ class PostImplementationRiskTest < Minitest::Test
     section = RISK.section(assessment, ['Changes a shared model.'])
     assert_includes section, 'meant for a person to merge after a skim'
     assert_includes section, '- Changes a shared model.'
-    assert_includes section, 'does not change what merges yet'
+    assert_includes section, 'does not change what merges until'
   end
 
   def test_unreadable_changed_files_count_as_unread

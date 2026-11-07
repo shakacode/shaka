@@ -4,34 +4,49 @@ require_relative '../error'
 require_relative '../merge_hold'
 require_relative '../merge_limits'
 require_relative '../merge_review_floor'
+require_relative '../merge_risk_gate'
 require_relative '../post_implementation_report'
 
 module Shaka
   # Tells a maintainer on Ask whether Auto would have merged a ready PR, so they can try
-  # merge.auto_max_review_floor on real PRs before switching to auto. A hold label is named
-  # too, because merge refuses it whatever the floor.
+  # merge.auto_max_review_floor or merge.auto_merge: low on real PRs before switching to auto. A hold
+  # label is named too, because merge refuses it whatever the floor or rating.
   module AutoMergePreview
     LABEL = '**Auto merge preview:**'
 
     module_function
 
-    # seam is the trusted RepositoryConfig; pull is the snapshot with GitHub's size counts; verdict is the
-    # checkpoint's verification verdict. Returns nil unless the repository is on Ask with a floor below the top
-    # level or a hold label on the PR.
-    def line(seam, github, pull, head, verdict = nil)
+    # seam is the trusted RepositoryConfig; pull is the snapshot with GitHub's size counts; checkpoint holds the
+    # checkpoint's :verdict on verification and its risk :assessment. Returns nil unless the repository is on Ask
+    # with merge.auto_merge: low, a floor below the top level, or a hold label on the PR.
+    def line(seam, github, pull, head, checkpoint = {})
       return unless seam&.merge&.fetch('preference') == 'ask'
 
-      floor = MergeReviewFloor.from(seam)
       label = label_hold(seam, pull)
-      return unless floor.holds_any? || label
+      return unless label || gated?(seam)
 
-      reasons = [label, limits_hold(seam, pull), floor_hold(floor, github, head), verdict_hold(verdict)].compact
-      unless reasons.empty?
-        return "#{LABEL} with `merge.preference: auto`, the agent would hand this PR back: #{reasons.join('; ')}."
-      end
+      reasons = [label, limits_hold(seam, pull), gate_hold(seam, github, head, checkpoint[:assessment]),
+                 verdict_hold(checkpoint[:verdict])].compact
+      return passing(seam) if reasons.empty?
 
-      "#{LABEL} this PR passes the review floor and size checks Auto applies; the agent would still " \
-        'judge its risk and compatibility before merging.'
+      "#{LABEL} with `merge.preference: auto`, the agent would hand this PR back: #{reasons.join('; ')}."
+    end
+
+    def passing(seam)
+      "#{LABEL} this PR passes the #{rated?(seam) ? 'risk rating' : 'review floor'} and size checks Auto applies; " \
+        'the agent would still judge its risk and compatibility before merging.'
+    end
+
+    def rated?(seam) = seam.merge.fetch('auto_merge') == 'low'
+
+    def gated?(seam) = rated?(seam) || MergeReviewFloor.from(seam).holds_any?
+
+    # Under merge.auto_merge: low the rating decides, as MergeRiskGate does; otherwise the review floors.
+    def gate_hold(seam, github, head, assessment)
+      return floor_hold(MergeReviewFloor.from(seam), github, head) unless rated?(seam)
+      return 'the checkpoint has no risk rating' unless assessment
+
+      MergeRiskGate.reason(assessment)
     end
 
     def verdict_hold(verdict)

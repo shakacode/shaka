@@ -16,14 +16,17 @@ module Shaka
 
     def checks(report) = "#{adequacy(report)}\n\n#{risk(report)}"
 
-    # The floor-based preview and the risk rating can disagree until merge settings read the rating, so the
-    # preview says when the rating is meant for a person.
+    # Under review floors the preview and the risk rating can disagree, so the preview says when the rating is
+    # meant for a person. Under merge.auto_merge: low the preview already reads the rating.
     def auto_merge_line
-      line = @previews[:auto_merge]&.call(@adequacy&.fetch('verdict'))
-      level = @risk_assessment&.fetch('level')
-      return line unless line && level && level != 'low'
+      line = @previews[:auto_merge]&.call(verdict: @adequacy&.fetch('verdict'), assessment: @risk_assessment)
+      return line unless line && meant_for_person?
 
-      "#{line} The risk rating above is #{level}, which is meant for a person to merge."
+      "#{line} The risk rating above is #{@risk_assessment.fetch('level')}, which is meant for a person to merge."
+    end
+
+    def meant_for_person?
+      @risk_assessment && !@risk_assessment['governs'] && @risk_assessment.fetch('level') != 'low'
     end
 
     # Without a risk preview, as in a test, changed files count as unread and the rating as high.
@@ -41,11 +44,13 @@ module Shaka
         "- Weakest claim: #{@adequacy.fetch('weakest_claim')}\n- Next check: #{@adequacy.fetch('next_check')}"
     end
 
-    # The verdict marker lets merge and the description read the verdict without trusting free text. It sits
-    # above the owner's disposition line and the attestation, which close the comment.
+    # The rating and verdict markers let merge and the description read them without trusting free text. They
+    # sit above the owner's disposition line and the attestation, which close the comment.
     def footer
       verdict = @adequacy && PostImplementationEvidence.adequacy(@adequacy.fetch('verdict'))
-      [verdict, @disposition_line].compact.sum('') { "#{it}\n" } + PostImplementationEvidence.attestation(@head, @state)
+      rating = verdict && @risk_assessment && PostImplementationEvidence.risk(@risk_assessment.fetch('rating'))
+      [rating, verdict, @disposition_line].compact.sum('') { "#{it}\n" } +
+        PostImplementationEvidence.attestation(@head, @state)
     end
   end
 end

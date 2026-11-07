@@ -33,8 +33,9 @@ module Shaka
             'Required checks, reviews, and merge authority still apply.'
 
     # message and previews[:auto_merge] are called only for a ready checkpoint; auto_merge takes the
-    # verification verdict and returns a line or nil. previews[:risk] takes the reviewer's rating and returns
-    # PostImplementationRisk's assessment; without it, changed files count as unread.
+    # verification verdict and risk assessment as verdict: and assessment:, and returns a line or nil.
+    # previews[:risk] takes the reviewer's rating and returns PostImplementationRisk's assessment;
+    # without it, changed files count as unread.
     def initialize(result, head:, repository:, message: nil, previews: {})
       @result = result
       @previews = previews

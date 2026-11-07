@@ -113,7 +113,8 @@ module Shaka
       @base_branch = @data['base_branch']
       @review = with_default_review_wait(PostImplementationSchema.fold(@data))
       merge = @data.fetch('merge')
-      @merge = { 'auto_max_review_floor' => MergeReviewFloor::DEFAULT, 'hold_labels' => MergeHold::DEFAULT }
+      @merge = { 'auto_max_review_floor' => MergeReviewFloor::DEFAULT, 'hold_labels' => MergeHold::DEFAULT,
+                 'auto_merge' => Defaults.fetch('merge', 'auto_merge') }
                .merge(merge, 'limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = WipSchema.resolve(@data.fetch('wip', {}))
       assign_presentation

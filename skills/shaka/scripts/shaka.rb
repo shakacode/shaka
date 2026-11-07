@@ -37,6 +37,7 @@ require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/evidence/command'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
+require_relative '../lib/shaka/merge_risk_gate'
 require_relative '../lib/shaka/merge_limits'
 require_relative '../lib/shaka/opening_publication'
 require_relative '../lib/shaka/opening_prose'
@@ -104,6 +105,14 @@ end
 
 def merge_limits(options, seam)
   Shaka::MergeLimits.new(seam ? seam.merge.fetch('limits') : {}, confirmed_head: options[:confirmed_head])
+end
+
+# merge.auto_merge picks what an agent may merge without a confirmed head: the review floors, or only a
+# low risk rating. Without trusted settings the floors' top level applies and nothing is held.
+def auto_merge_gate(seam, checkpoint, confirmed_head)
+  return Shaka::MergeRiskGate.new(seam, checkpoint, confirmed_head:) if seam&.merge&.fetch('auto_merge') == 'low'
+
+  Shaka::MergeReviewFloor.from(seam, confirmed_head:)
 end
 
 def require_merge_ref!(options)
@@ -453,7 +462,7 @@ begin
                                               seam_required_checks:)
              merge.empty_checks_confirmed_head = options[:empty_checks_confirmed_head]
              merge.auto = options[:auto]
-             merge.review_floor = Shaka::MergeReviewFloor.from(seam, confirmed_head: options[:confirmed_head])
+             merge.review_floor = auto_merge_gate(seam, review.fetch(:checkpoint), options[:confirmed_head])
              merge.hold = Shaka::MergeHold.from(seam)
              merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
                         limits: merge_limits(options, seam), squash_message:)

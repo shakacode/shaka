@@ -25,8 +25,8 @@ class PreviewGitHub < PostImplementationPublicationFixture::GitHub
   end
 end
 
-# A ready checkpoint on Ask says whether merge.auto_max_review_floor would have let Auto merge the PR.
-class CheckpointAutoMergePreviewTest < Minitest::Test
+# Publishes a checkpoint under the given merge settings and changed files, and returns its body.
+module AutoMergePreviewFixture
   include PostImplementationPublicationFixture
   include RepositoryConfigTestHelpers
 
@@ -55,6 +55,25 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
     adequacy = ADEQUACY.merge('verdict' => verdict)
     File.write(result['report'], JSON.generate(report.merge('verification_adequacy' => adequacy)))
   end
+
+  def trust!(root)
+    system('git', '-C', root, 'init', '--quiet', exception: true)
+    system('git', '-C', root, 'add', '.', exception: true)
+    system('git', '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+           'commit', '--quiet', '-m', 'trusted', exception: true)
+  end
+
+  def publish_at(root, result, path, github)
+    File.write(path, JSON.generate(result))
+    arguments = ['publish', 'example/test', '1', '--content-file', path, '--squash-message', message_file(path),
+                 '--root', root, '--ref', 'HEAD']
+    capture_io { assert_equal 0, Shaka::PostImplementation.run(arguments, github:) }
+  end
+end
+
+# A ready checkpoint on Ask says whether merge.auto_max_review_floor would have let Auto merge the PR.
+class CheckpointAutoMergePreviewTest < Minitest::Test
+  include AutoMergePreviewFixture
 
   def test_a_verdict_that_stops_auto_hands_the_pr_back
     assert_includes body_for(%w[lib/fix.rb], verdict: 'cannot judge'),
@@ -127,21 +146,5 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
 
       refute_includes github.bodies.first.first, 'Auto merge preview'
     end
-  end
-
-  private
-
-  def trust!(root)
-    system('git', '-C', root, 'init', '--quiet', exception: true)
-    system('git', '-C', root, 'add', '.', exception: true)
-    system('git', '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
-           'commit', '--quiet', '-m', 'trusted', exception: true)
-  end
-
-  def publish_at(root, result, path, github)
-    File.write(path, JSON.generate(result))
-    arguments = ['publish', 'example/test', '1', '--content-file', path, '--squash-message', message_file(path),
-                 '--root', root, '--ref', 'HEAD']
-    capture_io { assert_equal 0, Shaka::PostImplementation.run(arguments, github:) }
   end
 end

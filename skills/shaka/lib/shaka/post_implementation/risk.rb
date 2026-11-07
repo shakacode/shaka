@@ -6,7 +6,7 @@ require_relative 'auto_merge_preview'
 
 module Shaka
   # The checkpoint's risk rating, raised to high for any change inside a high-risk area, and what each
-  # rating asks of the merge. A preview: nothing here changes what merges.
+  # rating asks of the merge. Merge reads the rating only under merge.auto_merge: low, through MergeRiskGate.
   module PostImplementationRisk
     # Case-insensitive, because a case-insensitive checkout changes Infra/main.tf as surely as infra/main.tf.
     GLOB = File::FNM_PATHNAME | File::FNM_EXTGLOB | File::FNM_DOTMATCH | File::FNM_CASEFOLD
@@ -31,12 +31,12 @@ module Shaka
     # The checkpoint's two Ruby-computed previews. seam reads the trusted settings when a completed
     # checkpoint renders; an incomplete one reads none.
     def previews(seam, github, pull, head)
-      { auto_merge: ->(verdict) { AutoMergePreview.line(seam.call, github, pull, head, verdict) },
+      { auto_merge: ->(checkpoint) { AutoMergePreview.line(seam.call, github, pull, head, checkpoint) },
         risk: ->(rating) { from(seam.call, github, head, rating) } }
     end
 
     # seam is the trusted RepositoryConfig, or nil when it could not be read, which applies the packaged areas.
-    # Changed files that GitHub cannot list count as unread.
+    # Changed files that GitHub cannot list count as unread. governs says whether merge reads the rating.
     def from(seam, github, head, rating)
       areas = seam&.high_risk_areas || RepositoryConfig::HighRiskAreasSchema.effective(nil)
       paths = begin
@@ -44,7 +44,7 @@ module Shaka
       rescue Error, SystemCallError
         nil
       end
-      assess(rating, areas, paths)
+      assess(rating, areas, paths).merge('governs' => seam&.merge&.fetch('auto_merge') == 'low')
     end
 
     # The first changed file in each area, so a reader sees why the area applies.
@@ -60,7 +60,14 @@ module Shaka
       lines.concat(reasons.map { |reason| "- #{reason}" })
       lines << '- Changed files could not be read, so high-risk areas were not checked.' unless
         assessment['paths_read']
-      "#{lines.join("\n")}\n\n_Preview: the rating does not change what merges yet; merge settings still decide._"
+      "#{lines.join("\n")}\n\n#{footnote(assessment)}"
+    end
+
+    def footnote(assessment)
+      return '_With `merge.auto_merge: low`, an agent merges only a low rating; a person merges the rest._' if
+        assessment['governs']
+
+      '_Preview: the rating does not change what merges until `merge.auto_merge` is `low`._'
     end
 
     # The PR's author names its files, so a backtick or line break must not end the code span and let the

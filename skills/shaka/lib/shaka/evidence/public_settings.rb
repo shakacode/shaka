@@ -12,6 +12,7 @@ module Shaka
         'source' => %w[private/local preview/local trusted/team],
         'installation.source' => %w[revision development uninstalled],
         'merge.preference' => %w[ask auto],
+        'merge.auto_merge' => %w[floors low],
         'merge.private_trial_default' => %w[ask],
         'review.required' => %w[always meaningful_changes none],
         'review.ci_review_wait' => %w[none one all],
