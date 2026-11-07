@@ -455,11 +455,10 @@ chat through `CODEX_THREAD_ID` and reads its latest native turn context. Missing
 `active_model` and `active_effort` use the same result. Concrete contradictions
 stop publication. Reviewer reports and usage rows remain separate.
 
-The header labels the model `(configured)`; the note says the served model is
-unavailable in saved Codex logs. Turn context records configuration, while saved
-response items and token records do not supply a served-model identity.
+The header labels the model `(configured)`. Turn context records configuration;
+saved response items and token records do not supply a served-model identity.
 Missing, ambiguous, or unreadable session metadata leaves unavailable fields
-`UNKNOWN` with a reason. A new turn without context clears earlier settings.
+`UNKNOWN` with a warning and reason. A new turn without context clears earlier settings.
 
 Claude Code publications resolve the chat through `CLAUDE_CODE_SESSION_ID` the same
 way. Ruby reads the served model and effort from the current turn's latest response

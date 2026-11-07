@@ -1,0 +1,32 @@
+require 'json'; require 'time'
+P446 = Time.parse('2026-10-11T19:53:19Z'); P640 = Time.parse('2026-10-18T05:13:24Z')
+rows = {}
+File.foreach('prs.jsonl') do |l|
+  pr = JSON.parse(l)
+  pr['comments']['nodes'].each do |c|
+    next unless c['body'].start_with?('<!-- shaka:reply:local-')
+    head = nil
+    c['body'].each_line do |line|
+      cells = line.strip.split('|').map(&:strip)
+      next head = nil unless line.start_with?('|')
+      cells.shift
+      if cells[0] == 'Round' then head = cells; next end
+      next if head.nil? || cells[0] !~ /\A\d+\z/
+      h = head.zip(cells).to_h
+      who = h['Reviewer'].to_s
+      reviewer = who[%r{\A([a-z]+/[a-z]+)}, 1] or next
+      model = (h['Model'] || who[/model ([^<]+)/, 1]).to_s.strip
+      effort = (h['Effort'] || who[/effort ([^<]+)/, 1]).to_s.strip
+      model = 'UNKNOWN' if model.empty?; effort = 'UNKNOWN' if effort.empty?
+      commit = h['Commit'][/`(\h+)`/, 1]
+      rows[[pr['number'], commit, reviewer, cells[0]]] = { pr: pr['number'], created: pr['createdAt'], commit:, reviewer:, model:, effort:, findings: h['Findings'].to_s[/\A\d+/].to_i, cost: h['Cost'].to_s[/\$([\d.]+)/, 1]&.to_f }
+    end
+  end
+end
+r = rows.values
+puts "rounds=#{r.size} prs=#{r.map { _1[:pr] }.uniq.size}"
+summ = ->(v) { c = v.filter_map { _1[:cost] }.sort; "rounds=#{v.size} findings/round=#{(v.sum { _1[:findings] }.to_f / v.size).round(2)} median_cost=#{c.empty? ? '-' : c[c.size / 2].round(2)} cost_n=#{c.size}" }
+r.group_by { [_1[:reviewer], _1[:model], _1[:effort]] }.sort_by { -_2.size }.each { |k, v| puts "#{k.join(' | ')}: #{summ.(v)}" }
+puts '--- claude by PR period'
+r.select { _1[:reviewer] == 'anthropic/claude' }.group_by { t = Time.parse(_1[:created]); t < P446 ? 'a before446' : (t < P640 ? 'b 446-640' : 'c after640') }.sort.each { |k, v| puts "#{k}: #{summ.(v)} models=#{v.map { _1[:model] }.tally} efforts=#{v.map { _1[:effort] }.tally}" }
+File.write('rounds.json', JSON.generate(r))

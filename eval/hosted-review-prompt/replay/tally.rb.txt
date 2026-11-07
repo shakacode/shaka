@@ -1,0 +1,26 @@
+require 'json'
+sd = ARGV[0] || 'score-out'
+gold = JSON.parse(File.read('gold.json')); map = File.readlines('out/map.jsonl').map { JSON.parse(_1) }.to_h { [_1['id'], _1] }
+rows = []; dec = []; turns = []
+Dir["#{sd}/*.codes.json"].each do |cf|
+  sha = File.basename(cf).split('.').first; codes = JSON.parse(File.read(cf)); raw = JSON.parse(File.read("#{sd}/#{sha}.json")); turns << raw['turns']
+  txt = raw['result'].to_s; txt = txt[txt.index('{')..txt.rindex('}')]
+  res = JSON.parse(txt)['reviews']
+  codes.each do |code, id|
+    fs = res.dig(code, 'findings') || (warn("missing #{code} #{id}"); [])
+    if id.start_with?('decoy')
+      kind, t = id.split(':'); hit = fs.any? { _1['class'] == 'match' && _1['target'] == t }; any = fs.any? { _1['class'] == 'match' }
+      dec << [kind, sha[0, 8], t, kind == 'decoy-pos' ? hit : !any, fs.map { [_1['class'], _1['target'], _1['verdict']] }]
+    else
+      m = map[id]; fs.each { |f| rows << f.merge('id' => id, 'arm' => m['arm'], 'sha' => sha, 'rep' => m['rep']) }
+    end
+  end
+end
+File.write('scored.json', JSON.pretty_generate(rows))
+puts "scorer turns=#{turns.inspect}"
+puts "decoys ok=#{dec.count { _1[3] }}/#{dec.size}"; dec.reject { _1[3] }.each { p _1 }
+rows.group_by { _1['arm'] }.sort.each { |a, v| puts "#{a} findings=#{v.size} " + v.group_by { _1['class'] }.transform_values(&:size).to_s + ' ' + v.group_by { _1['verdict'] }.transform_values(&:size).to_s }
+gold.each do |g|
+  c = %w[p q r].map { |a| n = map.values.select { _1['arm'] == a && _1['sha'] == g['sha'] }.size; k = rows.select { _1['arm'] == a && _1['class'] == 'match' && _1['target'] == g['target'] }.map { _1['id'] }.uniq.size; nr = rows.select { _1['arm'] == a && _1['class'] == 'near' && _1['target'] == g['target'] }.map { _1['id'] }.uniq.size; "#{a}=#{n.zero? ? '-' : "#{k}/#{n}"}#{nr > 0 ? "(near#{nr})" : ''}" }
+  puts "#{g['target']} #{g['bug']} ##{g['pr']} #{g['sha'][0, 8]} #{c.join(' ')} #{g['known_local'] ? 'known' : ''} #{g['outside'] ? 'outside' : ''}"
+end

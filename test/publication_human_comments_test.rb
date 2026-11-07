@@ -368,9 +368,9 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
     end
   end
 
-  def test_reply_openings_skip_both_old_and_current_codex_publisher_notes
+  def test_reply_openings_skip_historical_codex_publisher_notes
     notes = ['Publisher model is configured; served model is UNKNOWN.',
-             Shaka::CodexPublisherSettings::NOTE]
+             'Served model unavailable in saved Codex logs.']
     notes.each do |note|
       reply = REPLY.sub(IDENTITY, "#{IDENTITY}\n\n_#{note}_")
       rendered = describe(packet(inline_comments: [inline(1, 'ann', 'Why?'), inline(2, 'ann', reply)]))

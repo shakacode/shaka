@@ -70,6 +70,9 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Fixed
 
+- Codex publications keep the model's `(configured)` label without repeating the
+  served-model caveat. Missing or unreadable attribution still shows a warning.
+
 - Give more installer refusals a next command that fixes them, or say that you must decide.
   A Shaka folder you also develop in now gets the commands that remove its clean
   worktrees and merged branches, and names any work that exists only there, instead of
