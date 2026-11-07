@@ -37,17 +37,36 @@ module Shaka
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
-      lines.insert(1, *task, *task_understanding(spec), *root_cause(spec))
+      lines.insert(1, *task_with_understanding(task, spec['task_understanding']), *root_cause(spec))
       lines << HumanReview.render(spec['review_effort'], floor)
       lines.concat(ReviewFocusList.render(spec, pull), exclusions(spec['leaves_out']))
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
     end
 
-    def task_understanding(spec)
-      return [] if spec['task_understanding'].nil?
+    UNDERSTANDING = { 'goal' => 'Goal', 'done_when' => 'Done when' }.freeze
 
-      body = PublicationText.required(spec['task_understanding'], 'intent task_understanding')
-      ["<details>\n<summary>Task as understood</summary>\n\n#{body}\n\n</details>"]
+    # The understanding nests under the Task line, so every paragraph reads as part of the task.
+    def task_with_understanding(task, value)
+      return [*task] if value.nil?
+
+      ["#{task || '**Task as understood:**'}\n#{understanding_items(value).join("\n")}"]
+    end
+
+    # Callers supply the goal and its success criteria; text from older callers keeps its paragraphs.
+    def understanding_items(value)
+      return [legacy_understanding(value)] unless value.is_a?(Hash)
+
+      extra = value.keys - UNDERSTANDING.keys
+      raise Error, "Publication intent task_understanding has unknown keys: #{extra.join(', ')}." if extra.any?
+
+      UNDERSTANDING.map do |field, label|
+        "- **#{label}:** #{PublicationText.single_line(value[field], "intent task_understanding #{field}")}"
+      end
+    end
+
+    def legacy_understanding(value)
+      paragraphs = PublicationText.required(value, 'intent task_understanding').strip.split(/\n\s*\n/)
+      "- **As understood:** #{paragraphs.map { |text| text.strip.gsub("\n", "\n  ") }.join("\n\n  ")}"
     end
 
     def root_cause(spec)
@@ -125,8 +144,8 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :task_understanding, :scope, :exclusions, :diff_size,
-                         :verification,
+    private_class_method :intent, :task_with_understanding, :understanding_items, :legacy_understanding,
+                         :scope, :exclusions, :diff_size, :verification,
                          :not_verified, :merge_limitations, :checks, :evidenced, :object
   end
 end

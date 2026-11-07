@@ -113,11 +113,11 @@ module BrokenInstallScenarios
     { from: @root, location: orphan, next: 'mv ' }
   end
 
-  # Development in the source checkout: it hosts a worktree for a feature branch.
+  # Development in the source checkout: it hosts a worktree for a feature branch, which status clears.
   def build_c3
     root = default_install
     git('-C', root, 'worktree', 'add', '-q', File.join(@directory, 'feature'))
-    problem(root, nil)
+    problem(root, 'worktree remove')
   end
 
   # The old default location, which is also where every project keeps its Shaka settings.

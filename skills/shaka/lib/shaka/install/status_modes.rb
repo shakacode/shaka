@@ -11,9 +11,6 @@ module Shaka
     module StatusModes
       include DirectorySafety
 
-      # DirectorySafety's reasons for a writable directory; the rest of its message is the path.
-      WRITABLE = [' is group or world writable without a sticky bit protecting your directory',
-                  ' is group or world writable'].freeze
       OWNERSHIP = 'Make your account the owner of the skill files (chown needs that account or root), ' \
                   'then rerun status.'
 
@@ -22,11 +19,9 @@ module Shaka
       def unsafe
         [@root, File.join(@root, '.git')].each { |path| verify_safe_directory(path, 'Installation directory') }
         nil
+      rescue Unsafe => e
+        finding('B10', e.detail, command: e.step)
       rescue ArgumentError => e
-        offending = e.message.sub(/\A[^:]*: /, '')
-        path = WRITABLE.map { |reason| offending.delete_suffix(reason) }.find { |trimmed| trimmed != offending }
-        return finding('B10', e.message, command: "chmod go-w #{Shellwords.escape(path)}") if path
-
         finding('B10', e.message, decision: 'Move the installation to a directory you own, then rerun bin/install.')
       end
 
