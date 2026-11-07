@@ -43,7 +43,9 @@ class MergeRiskGateTest < Minitest::Test
 
   def test_shaka_settings_go_to_a_person_even_with_the_area_turned_off
     seam = Seam.new(Shaka::RepositoryConfig::HighRiskAreasSchema.effective('shaka' => []))
-    assert_includes refusal('low', %w[.agents/shaka/config.yml], seam:), "changes Shaka's configuration"
+    assert_includes refusal('low', %w[.agents/shaka/config.yml], seam:),
+                    '.agents/shaka/config.yml is in high-risk area shaka'
+    assert_includes refusal('low', %w[.agents/shaka.md]), '.agents/shaka.md is in high-risk area shaka'
   end
 
   def test_unreadable_files_go_to_a_person
@@ -98,15 +100,25 @@ end
 class AutoMergeLowPreviewTest < Minitest::Test
   include AutoMergePreviewFixture
 
+  LOW = { 'preference' => 'ask', 'auto_merge' => 'low' }.freeze
+
   # Under merge.auto_merge: low the preview reads the rating, not the floors, and the marker carries it for merge.
   def test_auto_merge_low_previews_the_risk_rating
-    low = { 'preference' => 'ask', 'auto_merge' => 'low' }
-    passing = body_for(%w[lib/fix.rb skills/shaka/SKILL.md], merge: low)
+    passing = body_for(%w[lib/fix.rb skills/shaka/SKILL.md], merge: LOW)
     assert_includes passing, 'this PR passes the risk rating and size checks Auto applies'
     assert_includes passing, 'an agent merges only a low rating; a person merges the rest.'
     assert_includes passing, "\n<!-- shaka:post-implementation-risk low -->\n<!-- shaka:post-implementation-adequacy "
-    migration = body_for(%w[db/migrate/1_add_index.rb], merge: low)
+    migration = body_for(%w[db/migrate/1_add_index.rb], merge: LOW)
     assert_includes migration, 'would hand this PR back: db/migrate/1_add_index.rb is in high-risk area database.'
     refute_includes migration, 'The risk rating above'
+  end
+
+  # Shaka's configuration goes to a person under the preview exactly as under merge.
+  def test_the_preview_holds_shaka_configuration_like_merge
+    assert_includes body_for(%w[.agents/shaka.md], merge: LOW),
+                    'would hand this PR back: .agents/shaka.md is in high-risk area shaka.'
+    turned_off = body_for(%w[.agents/shaka/config.yml], merge: LOW,
+                                                        settings: { 'high_risk_areas' => { 'shaka' => [] } })
+    assert_includes turned_off, "**Risk:** High, raised from the reviewer's low by `shaka`"
   end
 end

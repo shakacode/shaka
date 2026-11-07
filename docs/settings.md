@@ -257,8 +257,10 @@ merge:
 Medium and high risk always come back to you, so there is no higher setting. `merge` reads
 the rating from the checkpoint comment that your account published for the exact head. It
 reads the high-risk areas from your trusted settings and the changed files from GitHub. A
-missing rating, unreadable files, or a change to Shaka's settings in `.agents/shaka/` all come
-back to you too. To let the agent merge a PR anyway, confirm that commit the same way as a
+missing rating, unreadable files, or a change to Shaka's settings in `.agents/shaka/` or
+`.agents/shaka.md` all come back to you too; those settings count as the `shaka` area even if
+you turn it off. A repository with the checkpoint turned off publishes no rating, so under
+`low` every PR comes back to you. To let the agent merge a PR anyway, confirm that commit the same way as a
 PR past [`merge.limits`](#mergelimits). Each PR the agent merges under Auto is labeled
 `auto-merged`, so you can audit them later.
 
@@ -866,7 +868,7 @@ reviewer reads a diff and description that the PR's author controls.
 | `persistence` | database, storage, cache, Redis, and Sidekiq configuration |
 | `infrastructure` | Terraform, `infra/`, `k8s/`, Helm charts, Dockerfiles, Compose files, Control Plane and Fly configuration |
 | `ci_and_trust` | GitHub workflows and actions, `CODEOWNERS` |
-| `shaka` | `.agents/shaka/` |
+| `shaka` | `.agents/shaka/` and `.agents/shaka.md`, which count here even if you turn the area off |
 
 [`defaults.yml`](../skills/shaka/config/defaults.yml) lists the exact patterns. A list
 you set for an area replaces that area's patterns, and `[]` turns it off. A new name adds

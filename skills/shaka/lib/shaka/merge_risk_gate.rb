@@ -2,13 +2,13 @@
 
 require_relative 'error'
 require_relative 'merge_review_floor'
-require_relative 'configuration/feature_guard'
 require_relative 'post_implementation/risk'
 
 module Shaka
   # Under merge.auto_merge: low, the agent may merge only a head its checkpoint rated low risk, with no
-  # changed file in a high-risk area. The rating comes from this account's checkpoint marker for the exact
-  # head; the areas come from the trusted settings and the files from GitHub, so a PR cannot lower either.
+  # changed file in a high-risk area or in Shaka's own configuration. The rating comes from this account's
+  # checkpoint marker for the exact head; the areas come from the trusted settings and the files from GitHub,
+  # so a PR cannot lower either.
   class MergeRiskGate
     SETTING = 'merge.auto_merge'
 
@@ -33,11 +33,7 @@ module Shaka
     # Returns why a person must merge this head, or nil when its rating and files allow Auto.
     def hold(github, head)
       rating = @checkpoint.risk(head)
-      paths = read(github, head)
-      assessment = PostImplementationRisk.assess(rating || 'unknown', @seam.high_risk_areas, paths)
-      configuration = paths&.find { |path| Configuration::FeatureGuard.configuration?(path) }
-      return "#{configuration} changes Shaka's configuration" if configuration
-
+      assessment = PostImplementationRisk.assess(rating || 'unknown', @seam.high_risk_areas, read(github, head))
       self.class.reason(assessment, rating)
     end
 

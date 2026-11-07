@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../merge_review_floor'
+require_relative '../configuration/feature_guard'
 require_relative '../repository_config/high_risk_areas_schema'
 require_relative 'auto_merge_preview'
 
@@ -47,12 +48,21 @@ module Shaka
       assess(rating, areas, paths).merge('governs' => seam&.merge&.fetch('auto_merge') == 'low')
     end
 
-    # The first changed file in each area, so a reader sees why the area applies.
+    # The first changed file in each area, so a reader sees why the area applies. Shaka's own configuration
+    # counts as the shaka area even where a repository narrows or turns that area off, as merge always holds it.
     def hits(areas, paths)
-      areas.filter_map do |name, globs|
+      found = areas.filter_map do |name, globs|
         path = paths.find { |candidate| globs.any? { |glob| File.fnmatch?(glob, candidate, GLOB) } }
         { 'area' => name, 'path' => path } if path
       end
+      found + configuration_hit(found, paths)
+    end
+
+    def configuration_hit(found, paths)
+      return [] if found.any? { |hit| hit['area'] == 'shaka' }
+
+      path = paths.find { |candidate| Configuration::FeatureGuard.configuration?(candidate) }
+      path ? [{ 'area' => 'shaka', 'path' => path }] : []
     end
 
     def section(assessment, reasons)
