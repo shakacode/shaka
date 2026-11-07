@@ -19,9 +19,9 @@ class UpdateCheckTest < Minitest::Test
   def test_available_update_says_how_many_commits_behind_the_installation_is
     result = check('ahead')
     assert_equal 3, result.fetch('commits_behind')
-    assert_includes result.fetch('guidance'), '3 commits behind official main'
-    assert_includes check('ahead', ahead_by: 1).fetch('guidance'), '1 commit behind official main'
-    assert_includes check('ahead', checkout: nil).fetch('guidance'), '3 commits behind official main'
+    assert_includes result.fetch('guidance'), '3 commits behind shakacode/shaka main'
+    assert_includes check('ahead', ahead_by: 1).fetch('guidance'), '1 commit behind shakacode/shaka main'
+    assert_includes check('ahead', checkout: nil).fetch('guidance'), '3 commits behind shakacode/shaka main'
   end
 
   def test_available_update_without_a_usable_count_keeps_the_advice_and_omits_the_number
@@ -29,7 +29,7 @@ class UpdateCheckTest < Minitest::Test
       result = check('ahead', ahead_by:)
       assert_equal 'available', result.fetch('status')
       refute result.key?('commits_behind')
-      assert_includes result.fetch('guidance'), 'Newer official main commits are available.'
+      assert_includes result.fetch('guidance'), 'Newer shakacode/shaka main commits are available.'
       assert_includes result.fetch('guidance'), 'install --update'
     end
   end
@@ -48,7 +48,7 @@ class UpdateCheckTest < Minitest::Test
 
   def test_manual_pull_reports_an_older_record_instead_of_an_update
     guidance = check('identical', head: PULLED).fetch('guidance')
-    assert_includes guidance, 'is at bbbbbbb, but its installation record names aaaaaaa. It matches official main'
+    assert_includes guidance, 'its installation record names aaaaaaa. It matches shakacode/shaka main'
     assert_includes guidance, '/installed\\ path/scripts/shaka install --update to record it'
     assert_equal ['merge-base', '--is-ancestor', SHA, PULLED], @calls.fetch(1).first.drop(3)
     assert_equal ['merge-base', '--is-ancestor', PULLED, 'refs/remotes/origin/main'], @calls.fetch(2).first.drop(3)
@@ -103,7 +103,7 @@ class UpdateCheckTest < Minitest::Test
        ssh://github.com/shakacode/shaka.git/ https://github.com/ShakaCode/shaka.git
        https://github.com/shakacode/shaka/].each do |origin|
       result = check('ahead', source: SOURCE.merge('repository' => origin), checkout: nil)
-      assert_includes result.fetch('guidance'), 'behind official main'
+      assert_match(%r{behind shakacode/shaka main}i, result.fetch('guidance'))
       assert_equal 1, @calls.size
     end
   end

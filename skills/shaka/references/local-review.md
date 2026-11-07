@@ -287,6 +287,8 @@ GOAL="$LEDGER_DIR/goal.md"
 
 Write the plan recommendation's `value` and `scope` lines to `$GOAL` and pass
 `--description-file "$GOAL"` to every round. This file tells the reviewer what the change is for; update it when the plan changes.
+Include the task readback with human corrections, screened for private content, so
+reviewers assess the same assignment the PR's **Goal** and **Done when** describe.
 
 Do not reuse another task's directory, and do not put the ledger in a temporary directory:
 `review run` adds `ledger_warning` to its result when it sits in one. Pass `--ledger "$LEDGER"`

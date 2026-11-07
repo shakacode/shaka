@@ -47,12 +47,14 @@ URL, and state:
 
 ```sh
 GH_HOST=github.com gh search issues --repo shakacode/shaka --match title,body --limit 1000 \
-  --json number,url,state -- "$QUERY"
+  --json number,url,state -- TERM1 TERM2 TERM3
 GH_HOST=github.com gh search prs --repo shakacode/shaka --match title,body --limit 1000 \
-  --json number,url,state -- "$QUERY"
+  --json number,url,state -- TERM1 TERM2 TERM3
 ```
 
-Pass `QUERY` after `--` on each command as one safely quoted argument. The separator prevents a
+Pass each query term after `--` as its own argument, such as `-- review effort floor docs`.
+Do not quote the terms together: one argument makes GitHub match them as an exact phrase, which
+usually returns nothing for a multi-word query. The separator prevents a
 leading hyphen from becoming a CLI option. Options such as `--jq` placed after `--` become query
 text. The term rules above prevent GitHub from treating query text as an operator.
 This best-effort check can miss duplicates when GitHub has no matching indexed text; no results is

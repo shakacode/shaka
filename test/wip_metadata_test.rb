@@ -16,6 +16,7 @@ module WipMetadataFixture
           'state' => 'in progress', 'next_action' => 'finish the metadata check' }.freeze
   IDENTITY = { 'agent' => 'Codex', 'provider' => 'OpenAI', 'model' => 'gpt-6.1-sol', 'effort' => 'medium' }.freeze
   PROVENANCE = { 'task_source' => 'issue', 'initial_prompt' => 'EXCLUDED',
+                 'task_url_omission_reason' => 'Task URL not recorded in fixture.',
                  'requested_model' => 'UNKNOWN', 'requested_effort' => 'UNKNOWN',
                  'recommended_model' => 'UNKNOWN', 'recommended_effort' => 'UNKNOWN',
                  'active_model' => 'UNKNOWN', 'active_effort' => 'UNKNOWN' }.freeze

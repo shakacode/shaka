@@ -5,7 +5,6 @@ require_relative 'official'
 require_relative 'status_git'
 require_relative 'status_revision'
 require_relative 'checkout_development'
-require_relative 'settings_location'
 require_relative 'status_modes'
 require_relative 'status_states'
 
@@ -39,6 +38,14 @@ module Shaka
         false
       end
 
+      # The file-mode checks a caller needs before recommending this checkout's helper. Git runs only
+      # after the directory check passes, and a file that cannot be read counts as unsafe.
+      def safe?
+        unsafe.nil? && listed_unsafe_files.nil?
+      rescue SystemCallError
+        false
+      end
+
       # Git reads a writable checkout's config, which can name commands to run, so an unsafe
       # checkout gets no Git read at all, as the installer refuses it before any Git command.
       def findings
@@ -66,7 +73,8 @@ module Shaka
       def dirty
         # Without --no-optional-locks, status refreshes the index, and a read-only report must not write.
         changes = value('--no-optional-locks', 'status', '--porcelain', '--untracked-files=all').to_s
-        files = changes.lines.map { |line| line[3..].strip }
+        # The output arrives stripped, so the first line can lose its leading status column.
+        files = changes.lines.map { |line| line.lstrip.sub(/\A\S+\s+/, '').chomp }
         return if files.empty?
 
         finding('B3', "uncommitted files: #{listed(files)}",
@@ -75,9 +83,18 @@ module Shaka
 
       def pending
         target = @record['pending_revision']
-        return unless target
+        return staging unless target
 
         finding('B7', "an update to #{target[0, 7]} did not finish", command: "#{installer} --update")
+      end
+
+      # The update removes it after waiting for any update still running, which holds the same lock.
+      def staging
+        path = staging_path
+        return unless path
+
+        finding('B7', "an update's temporary checkout #{path} was not removed; that update is still running " \
+                      'or was interrupted', command: "#{installer} --update")
       end
 
       def ruby
@@ -104,25 +121,6 @@ module Shaka
         finding('C3', "source checkout is also used for development (#{uses.join('; ')})", **development_step)
           .merge('rank' => 'C3-development')
       rescue ArgumentError
-        nil
-      end
-
-      # --take-over cannot move the hosts to the checkout they already use, and an occupied default
-      # location gets the same answer the installer gives for it.
-      def development_step
-        home = Dir.home
-        if @root == real(SettingsLocation.default_directory(home))
-          return { decision: 'Move these worktrees and branches to a separate development clone; this checkout ' \
-                             'already sits where a fresh Shaka checkout would go.' }
-        end
-
-        command = SettingsLocation.take_over(@root, home, @record)
-        command ? { command: } : { decision: SettingsLocation.decision(home) }
-      end
-
-      def real(path)
-        File.realpath(path)
-      rescue SystemCallError
         nil
       end
 

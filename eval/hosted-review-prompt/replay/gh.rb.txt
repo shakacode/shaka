@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+# Answers `gh pr view|diff|comment` from a frozen copy of the PR. Nothing reaches GitHub.
+require 'json'
+state = ENV.fetch('PR_STATE')
+out = ENV.fetch('PR_OUT')
+File.open("#{out}/gh-calls.log", 'a') { _1.puts(ARGV.join(' ')) }
+abort("gh: unsupported command: #{ARGV.join(' ')}") unless ARGV[0] == 'pr'
+view = JSON.parse(File.read("#{state}/view.json"))
+args = ARGV[2..]
+def opt(args, *names)
+  names.each do |n|
+    i = args.index(n)
+    return args[i + 1] if i
+    hit = args.find { _1.start_with?("#{n}=") }
+    return hit.split('=', 2)[1] if hit
+  end
+  nil
+end
+case ARGV[1]
+when 'diff'
+  print File.read("#{state}/diff.patch")
+when 'view'
+  fields = opt(args, '--json')
+  if fields
+    abort('gh: --jq is not supported here') if opt(args, '--jq', '-q')
+    known = view.merge('comments' => view['comments'])
+    puts JSON.pretty_generate(fields.split(',').to_h { [_1, known[_1]] })
+  else
+    puts "title:\t#{view['title']}", "state:\tOPEN", "author:\t#{view.dig('author', 'login')}", "number:\t#{view['number']}",
+         "base:\t#{view['baseRefName']}", "head:\t#{view['headRefName']}", "url:\t#{view['url']}", '--', view['body'].to_s
+    if args.include?('--comments') || args.include?('-c')
+      view['comments'].each { puts '--', "author:\t#{_1.dig('author', 'login')}", "url:\t#{_1['url']}", '--', _1['body'] }
+    end
+  end
+when 'comment'
+  body = opt(args, '--body', '-b')
+  file = opt(args, '--body-file', '-F')
+  body = (file == '-' ? $stdin.read : File.read(file)) if file
+  abort('gh: comment needs --body or --body-file') unless body
+  File.open("#{out}/comments.jsonl", 'a') { _1.puts({ body: }.to_json) }
+  puts "#{view['url']}#issuecomment-1"
+else
+  abort("gh: unsupported command: pr #{ARGV[1]}")
+end

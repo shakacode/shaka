@@ -127,3 +127,25 @@ class DocsNavigationTest < Minitest::Test
     assert_includes output, 'skills/shaka/lib/guide.rb -> docs/gone.md (missing file)'
   end
 end
+
+class DocsFigureCheckTest < Minitest::Test
+  FIGURES = { 'img/good.svg' => '<svg xmlns="http://www.w3.org/2000/svg"/>', 'img/empty.svg' => '',
+              'img/nested/unclosed.svg' => '<svg><g></svg>', 'img/page.svg' => '<html/>',
+              'img/bare.svg' => '<svg/>', 'img/.draft/LOUD.SVG' => '<svg>',
+              'sidebars.json' => '{"docsSidebar":["guide"]}', 'guide.md' => '# Guide' }.freeze
+
+  def check(docs)
+    FIGURES.each do |path, text|
+      FileUtils.mkdir_p(File.dirname(File.join(docs, path)))
+      File.write(File.join(docs, path), text)
+    end
+    Open3.capture2('ruby', File.expand_path('../bin/check-docs-navigation', __dir__), docs)
+  end
+
+  def test_figures_must_parse_as_svg
+    output, status = Dir.mktmpdir { |docs| check(docs) }
+    refute_predicate status, :success?
+    malformed = output[/^Figures that do not parse as SVG: (.*)$/, 1].split(', ')
+    assert_equal %w[img/.draft/LOUD.SVG img/bare.svg img/empty.svg img/nested/unclosed.svg img/page.svg], malformed.sort
+  end
+end

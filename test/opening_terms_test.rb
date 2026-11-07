@@ -99,9 +99,15 @@ class OpeningTermsTest < Minitest::Test
     intent = { 'why' => 'Reviewers asked.', 'root_cause' => 'A cache.', 'safe_because' => 'Tests cover it.',
                'scope' => 'The cache.', 'review_focus' => [{ 'reason' => 'Touches merge.' }], 'review_effort' => 3 }
     verification = { 'summary' => 'CI passed.', 'merge_limitations' => 'No live merge.',
-                     'checks' => ['Ran `bin/test`.'], 'not_verified' => 'A collapsed gap.' }
+                     'checks' => ['Ran `bin/test`.'], 'not_verified' => 'No live rate limit.' }
     assert_equal ['Why: Reviewers asked.', 'Root cause: A cache.', 'Safe because: Tests cover it.', 'Scope: The cache.',
-                  'Closer reading: Touches merge.', 'Verification: CI passed.', 'Not verified: No live merge.'],
+                  'Closer reading: Touches merge.', 'Verification: CI passed.', 'Not verified: No live rate limit.',
+                  'Merge limitations: No live merge.'],
                  Shaka::OpeningProse.call('intent' => intent, 'verification' => verification).lines(chomp: true)
+  end
+
+  def test_visible_prose_skips_gap_lines_the_description_omits
+    verification = { 'not_verified' => ' Nothing. ', 'merge_limitations' => 'nothing', 'checks' => ['Ran `bin/test`.'] }
+    assert_equal '', Shaka::OpeningProse.call('intent' => {}, 'verification' => verification)
   end
 end

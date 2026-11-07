@@ -37,10 +37,36 @@ module Shaka
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
-      lines.insert(1, *task, *root_cause(spec))
+      lines.insert(1, *task_with_understanding(task, spec['task_understanding']), *root_cause(spec))
       lines << HumanReview.render(spec['review_effort'], floor)
       lines.concat(ReviewFocusList.render(spec, pull), exclusions(spec['leaves_out']))
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
+    end
+
+    UNDERSTANDING = { 'goal' => 'Goal', 'done_when' => 'Done when' }.freeze
+
+    # The understanding nests under the Task line, so every paragraph reads as part of the task.
+    def task_with_understanding(task, value)
+      return [*task] if value.nil?
+
+      ["#{task || '**Task as understood:**'}\n#{understanding_items(value).join("\n")}"]
+    end
+
+    # Callers supply the goal and its success criteria; text from older callers keeps its paragraphs.
+    def understanding_items(value)
+      return [legacy_understanding(value)] unless value.is_a?(Hash)
+
+      extra = value.keys - UNDERSTANDING.keys
+      raise Error, "Publication intent task_understanding has unknown keys: #{extra.join(', ')}." if extra.any?
+
+      UNDERSTANDING.map do |field, label|
+        "- **#{label}:** #{PublicationText.single_line(value[field], "intent task_understanding #{field}")}"
+      end
+    end
+
+    def legacy_understanding(value)
+      paragraphs = PublicationText.required(value, 'intent task_understanding').strip.split(/\n\s*\n/)
+      "- **As understood:** #{paragraphs.map { |text| text.strip.gsub("\n", "\n  ") }.join("\n\n  ")}"
     end
 
     def root_cause(spec)
@@ -69,22 +95,29 @@ module Shaka
       " (#{files} #{files == 1 ? 'file' : 'files'}, +#{added} / −#{removed} lines)"
     end
 
+    # An unproven claim stays visible: a maintainer deciding whether to merge must not have to open the fold.
     def verification(spec, gate_line)
-      visible = spec['merge_limitations']
       summary = evidenced(PublicationText.single_line(spec['summary'], 'verification summary')) if spec['summary']
-      ['## Verification', gate_line, summary, *(not_verified(visible) unless visible.nil?)].compact.join("\n\n")
+      ['## Verification', gate_line, summary, *not_verified(spec['not_verified']),
+       *merge_limitations(spec['merge_limitations'])].compact.join("\n\n")
     end
 
-    def evidence(spec, allowed)
-      [*checks(spec['checks'], allowed), *not_verified(spec['not_verified'])].join("\n\n")
-    end
+    def evidence(spec, allowed) = checks(spec['checks'], allowed).join("\n\n")
 
     # The agent still answers, but a reader learns nothing from being told no claim went unproven.
     PROVED = /\Anothing\.?\z/i
 
+    def proved?(text) = text.to_s.strip.match?(PROVED)
+
     def not_verified(value)
       text = PublicationText.single_line(value, 'verification not_verified')
-      text.match?(PROVED) ? [] : ["**Not verified:** #{text}"]
+      proved?(text) ? [] : ["**Not verified:** #{text}"]
+    end
+
+    def merge_limitations(value)
+      return [] if value.nil? || proved?(value)
+
+      ["**Merge limitations:** #{PublicationText.single_line(value, 'verification merge_limitations')}"]
     end
 
     # An unfinished draft may have run nothing yet; Not verified then says why.
@@ -111,8 +144,8 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :scope, :exclusions, :diff_size,
-                         :verification,
-                         :not_verified, :checks, :evidenced, :object
+    private_class_method :intent, :task_with_understanding, :understanding_items, :legacy_understanding,
+                         :scope, :exclusions, :diff_size, :verification,
+                         :not_verified, :merge_limitations, :checks, :evidenced, :object
   end
 end

@@ -46,7 +46,7 @@ class PublicationMetricsTest < Minitest::Test
     spec['task_history'] = 'The maintainer requested this change.'
     rendered = Shaka::Publication.description(spec)
     visible = rendered.split('<summary>Evidence and limitations</summary>').first
-    assert_includes visible, '**Not verified:** Live migration needs maintainer approval.'
+    assert_includes visible, '**Merge limitations:** Live migration needs maintainer approval.'
     refute_includes visible, VERIFICATION['checks'].first
     hierarchy = disclosure_hierarchy(rendered)
     assert_includes hierarchy, [1, 'Task history']

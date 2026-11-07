@@ -32,13 +32,12 @@ class PublicationDecisionsTest < Minitest::Test
     refute_includes render('decisions' => []), 'Decisions to make'
   end
 
-  # GitHub gives comment headings no anchor, so the link targets the one the heading carries.
-  def test_open_decisions_hold_the_walkthrough_and_name_the_checkpoint
+  def test_open_decisions_explain_the_pending_checkpoint_without_a_circular_link
     rendered = render('decisions' => ['Keep the label?'], 'walkthrough' => nil)
 
     assert_includes rendered, "\n\nCode Walkthrough: _After the decisions._ · " \
-                              "Checkpoint: [Decisions to make](#user-content-decisions-to-make)\n\n## Summary"
-    refute_includes rendered, 'Not published yet'
+                              "Checkpoint: _Not published yet._\n\n## Summary"
+    refute_includes rendered, '(#user-content-decisions-to-make)'
   end
 
   def test_without_decisions_the_links_still_say_not_published

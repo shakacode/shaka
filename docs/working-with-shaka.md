@@ -20,6 +20,11 @@ $shaka Add CSV export to the orders page. Reuse the filters shown on screen.
 Go.
 ```
 
+Before coding, the agent explains the outcome, scope, and success criteria it
+understood, including assumptions that could change the result. Correct any mismatch
+in chat. Clear tasks can proceed without another approval; consequential questions
+still need your answer.
+
 ## Choose a merge policy
 
 | Policy | What happens |
@@ -199,7 +204,8 @@ create-verification-skill to prove searching for O'Brien finds the order. Go.
 
 Shaka uses pstack's techniques inside its own steps. pstack's Shipping, Babysit,
 and Autopilot playbooks run their own delivery, so Shaka leaves them out and
-offers to try one separately. On Codex, install a community port of pstack.
+offers to try one separately. To install pstack and keep it current, read
+[Use pstack with Shaka](pstack.md).
 
 <a id="hand-verification-evidence-back-to-shaka"></a>
 

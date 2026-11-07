@@ -146,7 +146,9 @@ links split between two checkouts. Split links move to the checkout whose instal
 record changed last, which `install --status` names; when other steps run
 first, repair stops so you can check again. Local commits move to a
 `kept-<commit>` branch first, which you then decide what to do with, and a
-record it replaces is renamed aside, so nothing is deleted. It stops when a step
+record it replaces is renamed aside. The only thing repair deletes is the
+temporary checkout an interrupted update left behind, which it removes by running
+the update again. It stops when a step
 needs your decision and shows that state. Running it again changes nothing.
 
 Shaka tells you when an update is available once your installation is three
@@ -209,6 +211,12 @@ the installed copy. If the move fails partway, your agents keep using the old
 clone, and the installer lists anything it could not put back. When you run the
 command from a different clone and your skills live in a custom folder, add
 `--skills-dir DIR`.
+
+If you develop in `~/.local/share/shaka/source` itself, there is no other place
+to move to. The installer then prints the commands that remove that folder's
+clean worktrees and merged branches. When a branch or worktree holds work that
+exists nowhere else, it names that work and leaves the choice to you: copy it
+elsewhere first, or run the discard command it prints.
 
 If the installer is force-stopped (`kill -9`) at the wrong moment, no clone
 counts as installed. To fix it, rename the newest

@@ -39,8 +39,27 @@ module Shaka
 
         current = current.empty? ? "a detached HEAD at #{revision[0, 7]}" : "branch #{current}"
         raise ArgumentError, Refusal.message('Installation checkout is not on the registered branch',
-                                             "#{@root} is on #{current}; expected #{@branch}",
-                                             Refusal.command('git', '-C', @root, 'switch', @branch))
+                                             "#{@root} is on #{current}; expected #{@branch}", branch_step)
+      end
+
+      # A branch only origin has is switched to by its full name, which another remote's branch of the same
+      # name cannot make ambiguous; a branch neither has, such as a mistyped --branch, needs a person.
+      def branch_step
+        return Refusal.command('git', '-C', @root, 'switch', @branch) if ref?("refs/heads/#{@branch}")
+        if ref?("refs/remotes/origin/#{@branch}")
+          return Refusal.command('git', '-C', @root, 'switch', '--track', "origin/#{@branch}")
+        end
+
+        Refusal.decide("which branch to install; #{@branch} is not in this checkout or its fetched origin",
+                       "to list origin's branches", Refusal.command('git', '-C', @root, 'ls-remote', '--heads',
+                                                                    'origin'))
+      end
+
+      def ref?(name)
+        git('rev-parse', '--verify', '--quiet', name)
+        true
+      rescue ArgumentError
+        false
       end
 
       def validate_tracking

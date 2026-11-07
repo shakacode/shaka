@@ -33,6 +33,21 @@ module Shaka
       end
 
       def registered?(root) = File.file?(File.join(root, '.git', Checkout::RECORD))
+      def registered_source(source) = (source if registered?(source))
+
+      # Maintenance needs a registered checkout. The record is read before any Git command, so a missing
+      # checkout gets the installer that registers one instead of a directory error. A .git file, as a
+      # linked worktree has, is left to the checkout's own refusal.
+      def refuse_unregistered(action)
+        root = @checkout.root
+        return if action == :install || registered?(root) || File.file?(File.join(root, '.git'))
+
+        # A registered checkout's installer reinstalls itself without --directory, so it always names the folder.
+        default = SettingsLocation.resolved(SettingsLocation.default_directory(Dir.home))
+        directory = (['--directory', root] unless SettingsLocation.resolved(root) == default && !registered?(@source))
+        raise ArgumentError, Refusal.message('No Shaka installation is registered here', root,
+                                             Refusal.command(File.join(@source, 'bin/install'), *directory))
+      end
 
       def old_install(state, root)
         command = SettingsLocation.take_over(root, Dir.home, recorded(root))

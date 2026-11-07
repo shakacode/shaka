@@ -10,7 +10,7 @@ module ConfigurationBoundaryFileIO
     hosts/codex_wake.rb trial/prepare.rb trial/command.rb install/display.rb install/checkout.rb install/official.rb
     local_review/usage.rb doctor/installation_identity.rb doctor/cursor_stop_hook.rb local_review/ledger_running.rb
     enforcement_config.rb evidence/command.rb evidence/verification.rb executable_file.rb installer.rb
-    install/source.rb install/tree.rb
+    install/source.rb install/tree.rb install/checkout_git.rb
     install/link_lock.rb install/package.rb install/package_verification.rb install/version.rb local_review/ledger.rb
     post_implementation.rb post_implementation_report.rb post_implementation_runner.rb usage/cursor_usage_refresh.rb
     local_review.rb local_review/cli.rb local_review/comment.rb local_review/path_guard.rb local_review/shebang.rb

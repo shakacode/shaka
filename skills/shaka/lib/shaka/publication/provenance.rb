@@ -11,7 +11,7 @@ module Shaka
   class ExecutionProvenance
     FIELDS = %w[task_source initial_prompt requested_model requested_effort
                 recommended_model recommended_effort active_model active_effort].freeze
-    OPTIONAL_FIELDS = %w[task_number task_relation task_tracker task_key task_url].freeze
+    OPTIONAL_FIELDS = %w[task_number task_relation task_tracker task_key task_url task_url_omission_reason].freeze
     TASK_SOURCES = %w[description issue pull_request].freeze
     TASK_PATHS = { 'issue' => 'issues', 'pull_request' => 'pull' }.freeze
     REQUESTED_FIELDS = %w[requested_model requested_effort].freeze

@@ -1,44 +1,27 @@
 # Changelog
 
-Notable changes to Shaka, newest first. Each release lists breaking changes with
-upgrade steps, then what changed for users. The GitHub release for each version
-lists every merged PR.
+All notable changes to this project will be documented in this file.
 
-Versions follow [Semantic Versioning](https://semver.org/). From 1.0.0, a change
-that stops an existing `.agents/shaka/config.yml` or a documented `shaka` command
-from working is a major version.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+From 1.0.0, a change that stops an existing `.agents/shaka/config.yml` or a
+documented `shaka` command from working is a major version.
 
 ## [Unreleased]
 
-### Breaking
-
-- Shaka reads settings only from `.agents/shaka/`. A repository that still has
-  `.agents/agent-workflow.yml` or `.agents/bin/` must convert and merge the result before
-  updating. Clone this repository at commit `a01a3a7e9705be165b7bf339b0cc6d2b727ce4d7` and run its
-  `skills/shaka/scripts/shaka seam upgrade --root DIR` to preview. Then add
-  `--apply --digest PREVIEW_DIGEST`. That command and `wip.include_locations` are gone
-  from later commits; set `wip.include_checkout_path` instead.
-
-### Fixed
-
-- Find merge choices and recovery help from the docs overview, and follow the
-  playground tutorial through checking, revising, and approving a PR.
-- Keep validation and review results valid when Shaka updates during a task, unless the
-  update changes the code that runs or checks them. Rewording a description for the same
-  commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.
-- Say **Adequate, with gaps the reviewer judged acceptable** on a checkpoint, in place of
-  **Adequate with accepted gaps**, which read as if the maintainer had accepted them.
-  Published checkpoints still parse.
-- Stop PR descriptions from asking for every line to be reviewed. The **Review effort** line
-  is now **Human review**: it names the files that set the rating, and it
-  no longer promises reproduction or a second reviewer. Settings keep their names, and Auto
-  merge holds back the same PRs. See [#1001](https://github.com/shakacode/shaka/issues/1001).
-- Show `ready in` and `merged in` on more PRs. The description now reads the task
-  start from a usage report that covers the whole task, and records the ready time
-  each time it updates instead of only while a watch runs.
+Deliver a task through a tested pull request with a code walkthrough, independent
+review, and an explicit Ask or Auto merge choice. Real-use acceptance and host
+qualification remain evidence requirements; the version number does not establish them.
 
 ### Added
 
+- Keep complete usage accounting when a PR description outgrows GitHub's limit.
+  The description retains its tables and pricing notes, with checksummed links to
+  accounting comments. A missing or changed archive blocks later updates.
+  Older helpers refuse to replace archived descriptions; update Shaka before refreshing one.
+- Install pstack beside Shaka in Cursor, Claude Code, or Codex, and keep it current,
+  with the [pstack guide](docs/pstack.md). The guide also gives a prompt for building
+  your own updater for agent skill packs.
 - Show a PR's Timings as text bars, so you can see where the time went, what ran
   together, and when the PR waited on a person. Steps that passed or finished now
   appear only in the bars, and the table keeps a row for each step that did not.
@@ -53,28 +36,81 @@ from working is a major version.
   opening check now also reads a description's visible Intent and Verification text and
   suggests a replacement for each term. A description with new text adds one call to the
   opening reviewer.
-
-## [1.0.0] - Unpublished
-
-Deliver a task through a tested pull request with a code walkthrough, independent
-review, and an explicit Ask or Auto merge choice.
-
-### Upgrade from the name reservation
-
-The published `0.1.0.pre.1` gem only reserved the name. Existing source installations
-retain their registered revision choice; installing this gem does not upgrade them.
-After publication, new gem installations select the matching release tag. Follow
-[getting started](docs/getting-started.md) to inspect and update an existing installation.
-
-### Release safety
-
 - Pin release installations to an immutable tag commit and preserve rollback choices.
 - Check the exact source, tested gem and release notes before publication approval.
 - Check native simulated merge and release decisions without granting publication authority.
-- Preserve maintainer-controlled repository settings and native GitHub checks.
 
-Real-use acceptance and host qualification remain evidence requirements; the
-version number does not establish them.
+### Changed
+
+- Clarify where to find merge choices and recovery help, and what to check in
+  the playground tutorial before approving a PR.
+- Task references in PR descriptions now require a link or a visible explanation
+  that the URL is unavailable or cannot be shared. Previously unlinked task metadata
+  needs a URL or omission reason before republishing; prompt tasks and numbered
+  GitHub references keep their existing behavior.
+- The `shaka` gem carries the current workflow. The published `0.1.0.pre.1` gem only
+  reserved the name. New gem installations select the matching release tag. Installing
+  the gem does not upgrade an existing source installation, which keeps its registered
+  revision choice; follow [getting started](docs/getting-started.md) to inspect and
+  update one.
+- Preserve maintainer-controlled repository settings and native GitHub checks.
+- A PR description lists the contributor's understanding of the task as **Goal** and
+  **Done when** under the Task line, where it used to sit in a **Task as understood**
+  fold. You can compare the task with the result without expanding anything, and the
+  text no longer runs into **Root cause**. It now counts toward the description's
+  visible word limits.
+
+### Removed
+
+- **Breaking:** Shaka no longer reads `.agents/agent-workflow.yml` or `.agents/bin/`;
+  settings live only in `.agents/shaka/`. Convert and merge the result before
+  updating: clone this repository at commit `a01a3a7e9705be165b7bf339b0cc6d2b727ce4d7`
+  and run its `skills/shaka/scripts/shaka seam upgrade --root DIR` to preview, then add
+  `--apply --digest PREVIEW_DIGEST`. Later commits no longer include `seam upgrade`.
+- **Breaking:** The `wip.include_locations` setting is gone; set
+  `wip.include_checkout_path` instead.
+
+### Fixed
+
+- Codex publications keep the model's `(configured)` label without repeating the
+  served-model caveat. Missing or unreadable attribution still shows a warning.
+
+- Give more installer refusals a next command that fixes them, or say that you must decide.
+  A Shaka folder you also develop in now gets the commands that remove its clean
+  worktrees and merged branches, and names any work that exists only there, instead of
+  a `--take-over` that fails. A writable folder you own names `chmod go-w`, local commits name
+  the step that keeps them on a branch, and a mistyped `--branch` no longer prints a
+  `git switch` that fails.
+
+- Clear the temporary worktree an interrupted `install --update` leaves in the source
+  checkout. `install --status` now reports it as an interrupted update and names
+  `install --update`, which removes it, instead of calling it development work with no
+  command that clears it. `install --verify` no longer warns about it. A worktree left by
+  an update from an earlier version still shows as development; remove it with
+  `git -C SOURCE worktree remove --force --force PATH`, using the source checkout and
+  worktree path status lists.
+
+- Replace circular checkpoint links during open decisions with a waiting status.
+  Decision-writing guidance now asks for options, consequences, a recommendation,
+  and a clear way to answer.
+
+- Finish a PR's description after the maintainer merges a PR whose checkpoint waited
+  on their decision. The merge counts as the answer: an empty decisions list now
+  publishes, and the "waiting for the maintainer's decision" warning comes off.
+
+- Keep validation and review results valid when Shaka updates during a task, unless the
+  update changes the code that runs or checks them. Rewording a description for the same
+  commit now keeps results it already shows as verified instead of refusing or showing UNKNOWN.
+- Say **Adequate, with gaps the reviewer judged acceptable** on a checkpoint, in place of
+  **Adequate with accepted gaps**, which read as if the maintainer had accepted them.
+  Published checkpoints still parse.
+- Stop PR descriptions from asking for every line to be reviewed. The **Review effort** line
+  is now **Human review**: it names the files that set the rating, and it
+  no longer promises reproduction or a second reviewer. Settings keep their names, and Auto
+  merge holds back the same PRs. See [#1001].
+- Show `ready in` and `merged in` on more PRs. The description now reads the task
+  start from a usage report that covers the whole task, and records the ready time
+  each time it updates instead of only while a watch runs.
 
 ## [0.1.0.pre.1] - 2026-09-16
 
@@ -83,5 +119,5 @@ current workflow; install from source as described in
 [getting started](docs/getting-started.md).
 
 [Unreleased]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...HEAD
-[1.0.0]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...HEAD
 [0.1.0.pre.1]: https://github.com/shakacode/shaka/releases/tag/v0.1.0.pre.1
+[#1001]: https://github.com/shakacode/shaka/issues/1001
