@@ -29,15 +29,17 @@ list every finding and how it was checked.*
    [#850](https://github.com/shakacode/shaka/pull/850) and a URL redactor on
    [#5218](https://github.com/shakacode/react_on_rails/pull/5218), where each fix exposed
    the next edge case.
-4. **More reviewers keep finding things, at falling yield.** Codex and Claude each catch
+4. **More reviewers keep finding real problems, but most of what the extra ones raise is
+   declined.** Codex and Claude each catch
    defects the other misses. On React on Rails commits both had cleared, four more AI reviewers
    on GitHub still led to 17 fixes on 10 of 38 PRs, including a user-facing redirect bug.
-   22 of the 26 threads behind those fixes are timestamped after the local sign-off. The
+   18 of the 21 threads behind those fixes are timestamped after the local sign-off. The
    agent declined 48 of the 86 threads those reviewers opened.
-5. **The cost of a real defect differed 2.4 times between the two repositories.**
-   Reviewer spend per fixed defect was $2.38 on Shaka and $5.72 on React on Rails, with
-   the same two reviewers. Claude's runs also cost more there, and the data cannot say
-   which difference drove the gap.
+5. **Review cost about twice as much per real problem on React on Rails.** Reviewer spend
+   was $5.72 per fixed defect against $2.38 on Shaka, and $2.05 per fixed defect or risk
+   against $1.00, with the same two reviewers. Both reviewers' runs cost about 1.6 times
+   as much there, and React on Rails labels more fixes as risks. The data cannot say which
+   difference drove the gap.
    Measure your own repository before arguing that review is or is not worth it.
 6. **This data cannot settle the larger questions.** It cannot show whether the same
    tokens would do more as run-based verification, how AI review compares with a human
@@ -195,7 +197,8 @@ did.
 ## Recommendation
 
 **On Shaka's own repository, keep the two-reviewer loop as it is.** React on Rails pays
-2.4 times as much per fixed defect, so this verdict does not carry over to it unchanged.
+about twice as much per fixed defect or risk, so this verdict does not carry over to it
+unchanged.
 The Shaka study compared three options:
 
 | Option | Evidence | Verdict |

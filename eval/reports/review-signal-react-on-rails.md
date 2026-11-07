@@ -15,12 +15,14 @@ ran no React on Rails code.*
 1. **The fixes were real here too.** All 30 sampled fixed defects read as real problems,
    and 3 need an input unlikely in practice. These are readings: no React on Rails test
    ran.
-2. **Each real defect cost 2.4 times as much as on Shaka.** Reviewer spend was $5.72 per
-   fixed defect against $2.38. Codex reported nothing on 84% of its runs, and Claude
+2. **Each real problem cost about twice as much as on Shaka.** Reviewer spend was $5.72
+   per fixed defect against $2.38, and $2.05 per fixed defect or risk against $1.00.
+   Both reviewers' runs cost about 1.6 times as much here, and more fixes are labeled
+   risks, so the data cannot say which difference drove the gap. Codex reported nothing on 84% of its runs, and Claude
    reported 316 of the 318 nits.
 3. **Extra reviewers still found bugs on commits two had cleared, but most of what they
    said was declined.** On 10 of the 38 PRs that drew outside comments on a cleared
-   commit, those comments led to 17 fixes, one a user-facing redirect bug. 22 of the 26
+   commit, those comments led to 17 fixes, one a user-facing redirect bug. 18 of the 21
    threads behind those fixes are timestamped after the local sign-off. The agent declined
    49 of the 89 threads, 48 of the 86 from AI reviewers.
 4. **Later rounds mostly chased earlier fixes.** At least 9 of the 14 sampled findings
@@ -283,6 +285,8 @@ later-cycle findings.
   comment, so each reading can be repeated.
 - For the second layer, list each PR's inline review comments, keep roots from outside
   reviewers whose `original_commit_id` is the last reviewed commit of a ledger that ended
-  with no open findings, and read the agent's reply in each thread.
+  with no open findings, and read the agent's reply in each thread. To order a thread
+  after the local sign-off, compare its creation time with the ledger comment's
+  `updated_at`.
 - To add run checks, check out the reviewed commit, copy in the fix's test files, and run
   them there and at the fix.
