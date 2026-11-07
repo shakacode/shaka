@@ -103,6 +103,9 @@ run was needed.
 | [#952](https://github.com/shakacode/shaka/pull/952#discussion_r4409155563) | A later run with no commands hid a sandbox gap | 0/3 | 0/3 | 0/3 |
 | [#951](https://github.com/shakacode/shaka/pull/951#discussion_r4408828900) | The kept-installed note was missing when a preview was owed | 0/3 | 0/3 | 0/3 |
 
+Every scoring packet gave each review and decoy its own code, and each held the expected
+number of items, so no review was dropped or credited to another.
+
 ## Scoring passes
 
 The first pass used the defective cleanup the deviation describes. Its totals for the old

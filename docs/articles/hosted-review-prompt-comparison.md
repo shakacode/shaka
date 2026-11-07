@@ -186,8 +186,8 @@ CodeRabbit review.
 - 4 of the bug threads were already in the local review report the hosted job could
   read. The current prompt says not to repeat those. 3 need a fact from outside the
   repository. The report gives totals without them.
-- The CI study counted 15 PRs and 21 bug threads. The list here has 16 PRs and 22
-  threads, because one #902 bug spans two threads on two commits. The CI study also counts
+- The CI study counts 21 bug threads on these 17 commits. The list here has 22, because
+  one #902 bug spans two threads on two commits. The CI study also counts
   446 hosted reports after #640, read a day before this study's 448.
 - The run cost $15.78 for reviews, $5.32 for scoring, and $0.03 for setup checks. These
   are API-equivalent prices; the runs used a Claude subscription.
