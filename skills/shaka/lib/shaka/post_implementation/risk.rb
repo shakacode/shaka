@@ -62,10 +62,14 @@ module Shaka
       "#{lines.join("\n")}\n\n_Preview: the rating does not change what merges yet; merge settings still decide._"
     end
 
+    # The PR's author names its files, so a backtick or line break must not end the code span and let the
+    # rest of the name render as Markdown in a comment the maintainer's account publishes.
+    def inert(path) = path.gsub(/[`\r\n]/, '?')
+
     def heading(assessment)
       level = assessment['level'].capitalize
       rated = assessment['rating']
-      raised = assessment['protected'].map { |hit| "`#{hit['area']}` (`#{hit['path']}`)" }
+      raised = assessment['protected'].map { |hit| "`#{hit['area']}` (`#{inert(hit['path'])}`)" }
       return "#{level}, raised from the reviewer's #{rated} by #{raised.join(', ')}." if raised.any? && rated != 'high'
       return "#{level}, inside #{raised.join(', ')}." if raised.any?
       return "#{level}; the reviewer could not judge it, so it counts as high." if rated == 'unknown'
