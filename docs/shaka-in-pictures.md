@@ -38,6 +38,7 @@ Install Shaka from https://github.com/shakacode/shaka.
 
 Start a new chat and invoke `/shaka` or `$shaka` by itself. A welcome confirms
 the skill is available. Follow the diagnostic's instructions for missing tools.
+Missing project settings are expected before the playground is set up.
 
 ### Step 2: Make a playground project
 
@@ -63,7 +64,7 @@ the local folder holds the copy your agent edits.
 /shaka doctor
 ```
 
-Use `$shaka doctor` in Codex. Missing project settings are expected here;
+Use `$shaka doctor` in Codex. Missing project settings (**Repository seam**) are expected here;
 the next step adds them. Ask the agent to resolve other failures before continuing.
 
 ### Step 4: Give Shaka a task
@@ -108,6 +109,8 @@ until you merge, so you can keep asking for revisions.
 Try the updated counter again and confirm that the number is easier to read.
 
 ### Step 8: Merge
+
+The agent's **handoff** is its message naming the PR and the commit ready to merge.
 
 When you are satisfied with the result and its checks, tell the agent:
 
