@@ -37,6 +37,7 @@
         "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
+        "reference/pr-description-ideas",
         {
           "type": "doc",
           "id": "expected-experience",
@@ -61,7 +62,8 @@
         "articles/one-shot-pr-study",
         "articles/ci-and-hosted-review-repairs",
         "articles/hosted-review-prompt-comparison",
-        "articles/review-signal-study"
+        "articles/review-signal-study",
+        "articles/shaka-with-pstack-and-agent-skills"
       ]
     },
     {
