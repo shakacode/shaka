@@ -89,7 +89,7 @@ class PrivateCheckpointSettingsTest < Minitest::Test
   def checkpoint_reviewer
     report = { head: @ref, conclusion: 'Proceed', reasons: ['Useful change'], concerns: [],
                alternative: 'No change', summary: 'Evidence supports it.', next_action: 'Merge.',
-               verification_adequacy: ADEQUACY }
+               verification_adequacy: ADEQUACY, risk: RISK }
     <<~RUBY
       #!/usr/bin/env ruby
       require 'json'

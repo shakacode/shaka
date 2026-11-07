@@ -1,16 +1,38 @@
 # frozen_string_literal: true
 
 require_relative 'evidence'
+require_relative 'risk'
 
 module Shaka
-  # A separate judgment from the verdict: whether the description's checks prove what its intent rests on.
-  # Mixed into the checkpoint publication, which supplies @head, @state, and any @disposition_line.
+  # A separate judgment from the verdict: whether the description's checks prove what its intent rests on,
+  # shown beside the risk rating. Mixed into the checkpoint publication, which supplies @head, @state,
+  # @previews, and any @disposition_line.
   module PostImplementationAdequacy
     # The stored verdict keeps its words so published comments still parse. A reader needs to know whose
     # judgment the gaps got, because the maintainer has accepted nothing yet.
     DISPLAYED = { 'adequate with accepted gaps' => 'Adequate, with gaps the reviewer judged acceptable' }.freeze
 
     private
+
+    def checks(report) = "#{adequacy(report)}\n\n#{risk(report)}"
+
+    # The floor-based preview and the risk rating can disagree until merge settings read the rating, so the
+    # preview says when the rating is meant for a person.
+    def auto_merge_line
+      line = @previews[:auto_merge]&.call(@adequacy&.fetch('verdict'))
+      level = @risk_assessment&.fetch('level')
+      return line unless line && level && level != 'low'
+
+      "#{line} The risk rating above is #{level}, which is meant for a person to merge."
+    end
+
+    # Without a risk preview, as in a test, changed files count as unread and the rating as high.
+    def risk(report)
+      rating = report.fetch('risk')
+      rate = @previews[:risk] || ->(value) { PostImplementationRisk.assess(value, {}, nil) }
+      @risk_assessment = rate.call(rating.fetch('rating'))
+      PostImplementationRisk.section(@risk_assessment, rating.fetch('reasons'))
+    end
 
     def adequacy(report)
       @adequacy = report.fetch('verification_adequacy')

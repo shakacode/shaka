@@ -81,21 +81,23 @@ module Shaka
     def publish_body(github, result, head, pull)
       renderer = result.key?('disposition') ? PostImplementationDispositionPublication : PostImplementationPublication
       message = -> { ready_message(github, head, pull) }
-      auto_merge = ->(verdict) { AutoMergePreview.line(trusted_seam, github, pull, head, verdict) }
-      publication = renderer.new(result, head:, repository: @arguments.first, message:, auto_merge:)
+      previews = PostImplementationRisk.previews(method(:trusted_seam), github, pull, head)
+      publication = renderer.new(result, head:, repository: @arguments.first, message:, previews:)
       published = github.reply(body: publication.render, key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
       safeguard = merge_safeguard(github, head, publication, published)
       published.merge('merge_safeguard' => safeguard)
     end
 
-    # Settings come from the trusted default branch, never the PR; without --ref there is no preview.
+    # Settings come from the trusted default branch, never the PR. Without --ref there is no Auto merge
+    # preview, and the risk rating uses the packaged protected areas.
     # The preview is advisory, so unreadable settings leave it out instead of blocking the checkpoint.
     def trusted_seam
-      return unless @options[:criteria_ref]
+      return @trusted_seam if defined?(@trusted_seam)
+      return @trusted_seam = nil unless @options[:criteria_ref]
 
-      TrustedConfigSource.from_ref(root: @options[:root] || Dir.pwd, ref: @options[:criteria_ref])
+      @trusted_seam = TrustedConfigSource.from_ref(root: @options[:root] || Dir.pwd, ref: @options[:criteria_ref])
     rescue Error, SystemCallError
-      nil
+      @trusted_seam = nil
     end
 
     def merge_safeguard(github, head, publication, published)

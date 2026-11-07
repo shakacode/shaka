@@ -90,7 +90,7 @@ module Shaka
       @summary = disposition.fetch('reason')
       verification = report.fetch('summary', report.fetch('reasons').first)
       ["## Recommendation: #{@disposition}", @summary, *next_line(disposition),
-       evidence_lines(report, disposition), adequacy(report),
+       evidence_lines(report, disposition), checks(report),
        supporting_analysis(report, verification, lead: "Reviewer summary: #{verification}")].join("\n\n")
     end
 
