@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+# Minimal stdio MCP server: github_inline_comment.create_inline_comment records to a file.
+require 'json'
+out = ENV.fetch('PR_OUT')
+TOOL = { name: 'create_inline_comment', description: 'Create an inline comment on a specific line or lines in a PR file.',
+         inputSchema: { type: 'object', required: %w[path body],
+                        properties: { path: { type: 'string', description: 'File path to comment on' },
+                                      body: { type: 'string', description: 'Comment text; may include a suggestion block' },
+                                      line: { type: 'number', description: 'Line number for a single-line comment' },
+                                      startLine: { type: 'number', description: 'First line of a multi-line comment' },
+                                      side: { type: 'string', enum: %w[LEFT RIGHT] },
+                                      commit_id: { type: 'string' } } } }.freeze
+$stdout.sync = true
+$stdin.each_line do |line|
+  m = JSON.parse(line)
+  id = m['id']
+  next if id.nil?
+  res = case m['method']
+        when 'initialize' then { protocolVersion: m.dig('params', 'protocolVersion') || '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: 'github_inline_comment', version: '1.0.0' } }
+        when 'tools/list' then { tools: [TOOL] }
+        when 'tools/call'
+          File.open("#{out}/inline.jsonl", 'a') { _1.puts(m.dig('params', 'arguments').to_json) }
+          { content: [{ type: 'text', text: 'Comment created.' }] }
+        else { }
+        end
+  puts({ jsonrpc: '2.0', id:, result: res }.to_json)
+end

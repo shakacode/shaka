@@ -1,0 +1,17 @@
+{"sha":"82e351a90532545f248e052b34c81a17ec5fa622","run":39318181650,"model":"claude-sonnet-5-5","turns":6,"cost_usd":0.1169,"duration_ms":20827}
+{"sha":"88d2a9641592df0aafb887e499a82065429fa67a","run":39373627703,"model":"claude-sonnet-5-5","turns":9,"cost_usd":0.2079,"duration_ms":25264}
+{"sha":"09514d8247a54cac16601ab86bb3ab2f1ce0caaf","run":39523982881,"model":"claude-sonnet-5-5","turns":5,"cost_usd":0.1363,"duration_ms":21199}
+{"sha":"d2d5a11341a8d44057dbd16a18f107406d330624","run":39345171378,"model":"claude-sonnet-5-5","turns":4,"cost_usd":0.0915,"duration_ms":13252}
+{"sha":"c1a1452d781ff94ced61c7ceabb2e8229bf9dda9","run":39695748493,"model":"claude-sonnet-5-5","turns":5,"cost_usd":0.0785,"duration_ms":13378}
+{"sha":"cfacfa44496d52a4627aed6d25c3ef5e5bf2101e","run":39678676769,"model":"claude-sonnet-5-5","turns":4,"cost_usd":0.0741,"duration_ms":19955}
+{"sha":"bed49a7a616c7a250a6214cadbdbce5b867e1d30","run":39539039905,"model":"claude-sonnet-5-5","turns":4,"cost_usd":0.0887,"duration_ms":12849}
+{"sha":"52cbdf0c1381f89c6c971a58cc932aced17f38ac","run":39927875936,"model":"claude-sonnet-5-5","turns":7,"cost_usd":0.1541,"duration_ms":39025}
+{"sha":"61d0b5c3eae8cebba348dd9798fe903024c49f03","run":40397023360,"model":"claude-sonnet-5-5","turns":6,"cost_usd":0.159,"duration_ms":20307}
+{"sha":"3c6b38b21f5bcb9dd0b1f4144ae1637115bc73f1","run":40407270586,"model":"claude-sonnet-5-5","turns":5,"cost_usd":0.1462,"duration_ms":18602}
+{"sha":"28e37712e6ecc7dd0ae5e891198dafbb1308286c","run":40393162166,"model":"claude-sonnet-5-5","turns":6,"cost_usd":0.1182,"duration_ms":29455}
+{"sha":"9e401b0b7b17cefa45ce79f4b120b78d0d966180","run":40476764962,"model":"claude-sonnet-5-5","turns":8,"cost_usd":0.116,"duration_ms":19754}
+{"sha":"b2142a43c50887970526020875ac3da1d1557cdd","run":40467116732,"model":"claude-sonnet-5-5","turns":4,"cost_usd":0.1169,"duration_ms":21480}
+{"sha":"0eb828bcaabea92d7a9ff8edd0036149464cf310","run":40789761862,"model":"claude-sonnet-5-5","turns":5,"cost_usd":0.0798,"duration_ms":13214}
+{"sha":"f5ebf59e2ed745ff10019d6fa9b00481c9f43e00","run":40842078569,"model":"claude-sonnet-5-5","turns":3,"cost_usd":0.1048,"duration_ms":43951}
+{"sha":"80f7d22e1050da2c256d21cf552b5cd901367b82","run":40825412547,"model":"claude-sonnet-5-5","turns":5,"cost_usd":0.0973,"duration_ms":13953}
+{"sha":"49351dcae102301eae43ad55764ce8539299a3b9","run":40819618903,"model":"claude-sonnet-5-5","turns":4,"cost_usd":0.1036,"duration_ms":13895}

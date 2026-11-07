@@ -31,6 +31,7 @@ class CliPublisherAttributionTest < Minitest::Test
         body = File.read(File.join(dir, 'published.md'))
         assert_includes body, 'Codex · OpenAI · gpt-6.1-sol (configured) · medium'
         assert_includes body, '| Active model / effort | gpt-6.1-sol / medium |'
+        refute_includes body, 'Served model unavailable in saved Codex logs.'
       end
     end
   end
@@ -59,13 +60,25 @@ class CliPublisherAttributionTest < Minitest::Test
     end
   end
 
-  def test_reply_publishes_native_identity_and_generated_note
+  def test_reply_publishes_native_identity_without_routine_note
     with_session(context) do |environment, _file|
       run_publication(environment, command: 'reply') do |dir, _output, error, status|
         assert_predicate status, :success?, error
         body = File.read(File.join(dir, 'published.md'))
         assert_includes body, 'Codex · OpenAI · gpt-6.1-sol (configured) · medium'
-        assert_includes body, 'Served model unavailable in saved Codex logs.'
+        refute_includes body, 'Served model unavailable in saved Codex logs.'
+      end
+    end
+  end
+
+  def test_reply_preserves_missing_attribution_warning
+    with_session(context('gpt-test', nil)) do |environment, _file|
+      run_publication(environment, command: 'reply') do |dir, _output, error, status|
+        assert_predicate status, :success?, error
+        body = File.read(File.join(dir, 'published.md'))
+        assert_includes body, 'Codex · OpenAI · gpt-test (configured) · UNKNOWN'
+        assert_includes body, '_UNKNOWN effort: Codex current turn settings unavailable._'
+        refute_includes body, 'Served model unavailable in saved Codex logs.'
       end
     end
   end

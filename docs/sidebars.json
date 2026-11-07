@@ -60,6 +60,7 @@
         "articles/checkpoint-sentence-eval",
         "articles/one-shot-pr-study",
         "articles/ci-and-hosted-review-repairs",
+        "articles/hosted-review-prompt-comparison",
         "articles/review-signal-study"
       ]
     },
