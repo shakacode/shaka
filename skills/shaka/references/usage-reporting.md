@@ -402,9 +402,10 @@ The helper renders the Task line after Why in Intent:
 | `linear`, `MKT-1234`, `task_url` | `Linear MKT-1234`, linked to the supplied URL |
 | issue or PR with an omission reason | `issue · URL omitted: Private task.` or `pull request · URL omitted: Tracker unavailable.` |
 
-The optional `intent.task_understanding` is nonempty text with real paragraph breaks.
-It renders in **Task as understood** immediately after the Task line. Older callers
-can omit it; this prose belongs to Intent, not the provenance metadata allowlist.
+The optional `intent.task_understanding` is an object with one-line `goal` and
+`done_when` strings, rendered as **Goal** and **Done when** under the Task line.
+Plain text from older callers renders there as **As understood**. Callers can omit
+it; this prose belongs to Intent, not the provenance metadata allowlist.
 
 Carry those values from intake; recommendations and host settings do not establish
 a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not

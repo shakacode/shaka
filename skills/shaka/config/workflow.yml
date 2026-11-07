@@ -540,8 +540,9 @@ phases:
         Intent, so leave that task's link and its `Fixes` or `Part of` out of the summary.
         Supply `intent.task_understanding` from the intake readback, incorporating human
         corrections and checking it for private content. Publish a paraphrase of the assignment
-        and success criteria, excluding raw prompts and private links. The helper folds it as
-        **Task as understood** immediately after Task; omit it when prior intake is unrecoverable.
+        and success criteria as `goal` and `done_when`, one line each, excluding raw prompts and
+        private links. The helper nests them under the Task line; omit the field when prior intake
+        is unrecoverable.
         Write `Fixes #N` once per other issue the PR fully resolves and `Part of #N` for partial work.
         When `description` returns `closing_issues`, correct the wording it names once.
         For a work item in another tracker, such as Linear, Jira, or Shortcut, check through the

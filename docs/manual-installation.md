@@ -212,6 +212,12 @@ clone, and the installer lists anything it could not put back. When you run the
 command from a different clone and your skills live in a custom folder, add
 `--skills-dir DIR`.
 
+If you develop in `~/.local/share/shaka/source` itself, there is no other place
+to move to. The installer then prints the commands that remove that folder's
+clean worktrees and merged branches. When a branch or worktree holds work that
+exists nowhere else, it names that work and leaves the choice to you: copy it
+elsewhere first, or run the discard command it prints.
+
 If the installer is force-stopped (`kill -9`) at the wrong moment, no clone
 counts as installed. To fix it, rename the newest
 `.git/shaka-install.retired-*.json` in the old clone to

@@ -59,7 +59,8 @@
         "articles/review-process-study",
         "articles/checkpoint-sentence-eval",
         "articles/one-shot-pr-study",
-        "articles/ci-and-hosted-review-repairs"
+        "articles/ci-and-hosted-review-repairs",
+        "articles/review-signal-study"
       ]
     },
     {

@@ -145,3 +145,34 @@ module InstallScenarioShell
 
   def succeeds?(command) = Open3.capture2e(environment, 'sh', '-c', command).last.success?
 end
+
+# Runs the installer from a checkout and reads the next step its refusal ends with.
+module InstallRefusalSteps
+  private
+
+  def installer(root, *)
+    output, process = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), *)
+    assert_predicate process, :success?, output
+    output
+  end
+
+  def refusal(root, *)
+    output, process = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), *)
+    refute_predicate process, :success?, output
+    output
+  end
+
+  # The command after the last "Next: ", which every installer refusal ends with.
+  def refused(root, *)
+    output = refusal(root, *)
+    step = output[/.*Next: (.+?)\.?\s*\z/m, 1]
+    refute_nil step, output
+    refute_match(/\Aa person must decide/, step, output)
+    step
+  end
+
+  def run_step(step)
+    output, process = Open3.capture2e(environment, 'sh', '-c', step)
+    assert_predicate process, :success?, output
+  end
+end
