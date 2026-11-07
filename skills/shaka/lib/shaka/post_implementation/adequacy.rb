@@ -16,13 +16,22 @@ module Shaka
 
     def checks(report) = "#{adequacy(report)}\n\n#{risk(report)}"
 
-    def auto_merge_line = @previews[:auto_merge]&.call(@adequacy&.fetch('verdict'))
+    # The floor-based preview and the risk rating can disagree until merge settings read the rating, so the
+    # preview says when the rating is meant for a person.
+    def auto_merge_line
+      line = @previews[:auto_merge]&.call(@adequacy&.fetch('verdict'))
+      level = @risk_assessment&.fetch('level')
+      return line unless line && level && level != 'low'
+
+      "#{line} The risk rating above is #{level}, which is meant for a person to merge."
+    end
 
     # Without a risk preview, as in a test, changed files count as unread and the rating as high.
     def risk(report)
       rating = report.fetch('risk')
       rate = @previews[:risk] || ->(value) { PostImplementationRisk.assess(value, {}, nil) }
-      PostImplementationRisk.section(rate.call(rating.fetch('rating')), rating.fetch('reasons'))
+      @risk_assessment = rate.call(rating.fetch('rating'))
+      PostImplementationRisk.section(@risk_assessment, rating.fetch('reasons'))
     end
 
     def adequacy(report)

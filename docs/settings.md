@@ -853,12 +853,12 @@ What each rating asks:
 
 | Risk | What it asks |
 | --- | --- |
-| Low | Meant for auto-merge, with a later audit in a batch. |
+| Low | Meant for auto-merge, with a later audit. |
 | Medium | Meant for a person to merge after a skim of the description, the reasons, and the verification, then of only the files the reasons name. |
 | High or unknown | Meant for a person to merge after a careful review that starts with whether the verification proves the change works. |
 
 For now the rating is a preview in the checkpoint comment: it does not change what merges, and
-`merge` settings still decide.
+`merge` settings still decide. Without a trusted settings commit, the rating uses the default areas.
 
 ## `project_guidance`
 
