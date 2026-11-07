@@ -24,7 +24,8 @@ class PostImplementationRiskTest < Minitest::Test
   def test_default_areas_cover_persistence_infrastructure_and_ci
     { 'config/storage.yml' => 'persistence', 'deploy/main.tf' => 'infrastructure',
       'services/api/Dockerfile' => 'infrastructure', '.github/workflows/ci.yml' => 'ci_and_trust',
-      '.agents/shaka/config.yml' => 'shaka' }.each do |path, area|
+      '.agents/shaka/config.yml' => 'shaka', 'Infra/main.tf' => 'infrastructure',
+      'app/dockerfile' => 'infrastructure' }.each do |path, area|
       assert_equal [area], RISK.assess('low', AREAS, [path])['protected'].map { it['area'] }, path
     end
   end
@@ -39,12 +40,14 @@ class PostImplementationRiskTest < Minitest::Test
   end
 
   def test_unreadable_changed_files_count_as_unread
-    github = Object.new
-    def github.repository = 'shakacode/shaka'
-    def github.number = 1
-    def github.api(*) = raise(Shaka::Error, 'GitHub is down')
-    assessment = RISK.from(nil, github, 'a' * 40, 'low')
-    assert_equal ['high', false], assessment.values_at('level', 'paths_read')
+    [Shaka::Error.new('GitHub is down'), Errno::EACCES.new('gh')].each do |failure|
+      github = Object.new
+      def github.repository = 'shakacode/shaka'
+      def github.number = 1
+      github.define_singleton_method(:api) { |*| raise failure }
+      assessment = RISK.from(nil, github, 'a' * 40, 'low')
+      assert_equal ['high', false], assessment.values_at('level', 'paths_read'), failure.class.name
+    end
   end
 
   def test_unknown_ratings_and_unread_files_count_as_high
