@@ -185,8 +185,8 @@ lists every finding.
   On 31 PRs, outside reviewers, plus GitHub code scanning, left 66 threads on a commit
   both local reviewers had passed. 50 of them came after the local sign-off by timestamp.
   The agent fixed 11 distinct problems on 7 of those PRs and 3 more in other PRs. It
-  declined 40 threads with a reason, and 9 got no reply. On clean final commits that
-  only one local reviewer had passed, 23 more outside threads led to 8 more fixes.
+  declined 40 threads with a reason, and 9 got no reply. On clean final commits whose
+  ledger records only one local reviewer, 23 more outside threads led to 8 more fixes.
 
 | Measure | Shaka | React on Rails |
 | --- | ---: | ---: |
