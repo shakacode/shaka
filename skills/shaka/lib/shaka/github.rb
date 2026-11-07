@@ -4,6 +4,7 @@ require 'json'
 require 'open3'
 require_relative 'call_log'
 require_relative 'error'
+require_relative 'graphql_refusal'
 require_relative 'publication/publishing'
 require_relative 'prose_limits'
 require_relative 'review_thread'
@@ -11,6 +12,7 @@ require_relative 'walkthrough/evidence'
 require_relative 'walkthrough/history'
 require_relative 'github/check_list'
 require_relative 'github/required_check_rules'
+require_relative 'github/rest_reads'
 require_relative 'github/review_evidence_reads'
 require_relative 'github/squash_comment'
 require_relative 'github/start_comment'
@@ -57,6 +59,7 @@ module Shaka
     include GraphqlTransport
     include CheckList
     include RequiredCheckRules
+    include RestReads
     include ReviewEvidenceReads
     include SquashComment
     include WalkthroughNotePosting
@@ -84,9 +87,7 @@ module Shaka
       result
     end
 
-    def review(id)
-      api("#{reviews_path}/#{positive_integer(id)}")
-    end
+    def review(id) = api("#{reviews_path}/#{positive_integer(id)}")
 
     def resolve_thread(thread_id)
       ReviewThread.resolve(self, thread_id)
@@ -160,7 +161,7 @@ module Shaka
       stdout, stderr, status = @runner.call(argv, stdin_data: input)
       detail = argv[1] == 'api' ? argv.drop(2).find { |arg| !arg.start_with?('-') } : argv[2]
       unless accepted.include?(status.exitstatus)
-        raise Error.from_gh("gh #{argv[1]} #{detail} failed (exit #{status.exitstatus}).", stderr)
+        raise GraphqlRefused.for_gh(argv, "gh #{argv[1]} #{detail} failed (exit #{status.exitstatus}).", stderr)
       end
 
       utf8(stdout)
