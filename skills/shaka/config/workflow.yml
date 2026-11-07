@@ -616,7 +616,9 @@ phases:
 
         `pr` reports the native readiness snapshot and required checks; it is not an exit code.
         Its `requiredChecksSource` is `github`, or `seam` when GitHub enforces no required checks
-        and the trusted `merge.required_checks` gates the PR instead.
+        and the trusted `merge.required_checks` gates the PR instead. Where GitHub refuses
+        GraphQL, `pr` reads over REST, sets `readOver` to `rest`, and lists the fields it could
+        not read in `unknownFields`; report each of those as unknown in the handoff.
         `post-implementation publish --squash-message`, `squash-message`, and
         `merge --squash-message` read the same JSON: `title`, the PR title,
         and `body`, plain text for a `git log` reader that says what changed and why, drawn from

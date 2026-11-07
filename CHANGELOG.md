@@ -70,6 +70,10 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Fixed
 
+- `shaka pr` works in Claude Code cloud sessions, where GitHub refuses GraphQL. It reads
+  the pull request and its required checks over REST and lists the fields REST can't
+  show, such as the review decision, as unknown. Other pull request commands still need GraphQL.
+
 - Codex publications keep the model's `(configured)` label without repeating the
   served-model caveat. Missing or unreadable attribution still shows a warning.
 

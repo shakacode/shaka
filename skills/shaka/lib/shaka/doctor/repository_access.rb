@@ -2,6 +2,7 @@
 
 require 'json'
 require_relative 'check'
+require_relative '../graphql_refusal'
 
 module Shaka
   class Doctor
@@ -15,7 +16,7 @@ module Shaka
                      'pull' => 'READ' }.freeze
 
       GRAPHQL_GUIDANCE = 'Fix the cause GitHub names, or finish pull requests from a session where GitHub ' \
-                         "GraphQL works; Shaka's pull request commands still need it."
+                         "GraphQL works; Shaka's pull request commands other than `shaka pr` still need it."
 
       # `run` takes an argv and a chdir keyword and returns stdout, stderr, and success, like Checks#run.
       def initialize(root:, run:)
@@ -31,7 +32,7 @@ module Shaka
       def call
         out, error, ok = @run.call(['gh', 'repo', 'view', '--json', 'nameWithOwner,viewerPermission'], chdir: @root)
         return [graphql_permission(JSON.parse(out))] if ok
-        return [rest_repository_access, graphql_refused(error)] if graphql_refused?(error)
+        return [rest_repository_access, graphql_refused(error)] if GraphqlRefused.refusal?(error)
 
         [unreachable_repository(first_line(error))]
       rescue JSON::ParserError
@@ -39,10 +40,6 @@ module Shaka
       end
 
       private
-
-      # The refusal Claude Code cloud sessions return: gh names the GraphQL endpoint beside the
-      # status, while REST still answers.
-      def graphql_refused?(stderr) = stderr.include?('HTTP 403') && stderr.include?('api.github.com/graphql')
 
       # `gh repo view` needs GraphQL, so REST reads the repository gh would have viewed: gh fills
       # `{owner}/{repo}` from the same remotes and `gh repo set-default` target, without GraphQL.

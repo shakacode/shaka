@@ -49,9 +49,11 @@ session (use `$shaka` in Codex):
 ```
 
 A [one-session trial](https://github.com/shakacode/shaka/issues/277#issuecomment-6541487155)
-of Claude Code on the web found GitHub's GraphQL API blocked. Shaka uses that API to
-read a pull request's state, so `shaka pr` failed. Doctor reads repository access over
-REST there and reports the blocked API as a failed GitHub GraphQL check. The
+of Claude Code on the web found GitHub's GraphQL API blocked. Doctor reads repository
+access over REST there and reports the blocked API as a failed GitHub GraphQL check.
+`shaka pr` also reads the pull request and its required checks over REST there. It lists
+what REST can't show, such as the review decision and merge queue state, as unknown.
+Shaka's other pull request commands still need GraphQL. The
 cloud session's `claude` CLI came signed in, and a Claude review completed there
 after the session installed Shaka and Ruby 3.4, because its Ruby was older. For a
 change Claude wrote, that's a same-provider review. To finish the pull request, use
