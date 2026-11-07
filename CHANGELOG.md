@@ -70,6 +70,10 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Fixed
 
+- Run Shaka from a shell that sets no locale, as some cloud containers do. The helper
+  then uses a UTF-8 locale, which the Ruby, Git, and GitHub CLI commands it starts
+  inherit, so UTF-8 text no longer fails as invalid US-ASCII. A locale you set is kept.
+
 - Codex publications keep the model's `(configured)` label without repeating the
   served-model caveat. Missing or unreadable attribution still shows a warning.
 

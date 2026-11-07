@@ -3,7 +3,7 @@
 # SHAKA_RUBY wins. An installed package then uses the Ruby that ran bin/install, recorded
 # beside the packages. A source checkout uses `ruby` from PATH. The helper needs only Ruby's
 # standard library, so Ruby starts without RUBYOPT or installed gems, which keeps a project's
-# Bundler setup and gem paths out. The environment itself is unchanged, because `shaka work`
+# Bundler setup and gem paths out. The environment is otherwise unchanged, because `shaka work`
 # hands it to the coding agent, whose project commands still need those settings.
 # Only shell builtins and the system readlink run before Ruby, so a project's PATH cannot
 # substitute a command here. Ruby preloads the version check, which older Rubies can parse.
@@ -56,6 +56,18 @@ if [ -z "$ruby" ] && [ -f "$package/.shaka-install.json" ]; then
       "Rerun bin/install with Ruby 3.4, or set SHAKA_RUBY to a Ruby 3.4 interpreter." >&2
     exit 1
   fi
+fi
+
+# Without a locale, the helper and the Ruby, git and gh commands it starts read text as
+# US-ASCII and fail on UTF-8. Only then set LANG; those commands inherit it, as does the agent
+# `shaka work` starts. A chosen locale, even C, is kept. Older macOS lacks C.UTF-8 among the
+# locales in /usr/share/locale, so it gets en_US.UTF-8.
+if [ -z "${LC_ALL:-}${LC_CTYPE:-}${LANG:-}" ]; then
+  LANG=C.UTF-8
+  if [ -d /usr/share/locale/en_US.UTF-8 ] && [ ! -d /usr/share/locale/C.UTF-8 ]; then
+    LANG=en_US.UTF-8
+  fi
+  export LANG
 fi
 
 exec "${ruby:-ruby}" --disable-gems --disable-rubyopt -r "$scripts/../lib/shaka/ruby_requirement.rb" "$scripts/shaka.rb" "$@"
