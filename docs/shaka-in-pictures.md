@@ -136,6 +136,7 @@ it, and accepting it without running Git commands yourself.
 ## When something seems wrong
 
 - If you dislike the result, ask for another revision or close the PR without merging.
+- If you regret a merged change, ask the agent to open a PR that undoes it.
 - If a check fails, ask what is broken and what needs to happen next.
 - If the chat stops, use [resume unfinished work](working-with-shaka.md#resume-unfinished-work).
 
