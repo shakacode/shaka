@@ -22,6 +22,10 @@ and finish the PR without repeated reminders. Each PR explains the change and
 links the evidence: test results, review findings, and screenshots when relevant.
 It also names what remains unverified. You can ask for revisions before merging.
 
+Use that record to decide what happens next. During regular retrospectives, you
+and your agents can examine results, token use, and timing to improve the PR
+workflow, including automatic merges.
+
 By default, you merge the PR. You can also approve the agent's merge or choose
 [Auto](docs/working-with-shaka.md#choose-a-merge-policy).
 Even with Auto, large or risky changes need your merge decision.

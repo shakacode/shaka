@@ -1,56 +1,152 @@
-# PR verification
+# Decide what happens next
 
-![Two independently supported inspection lenses examine the same component on a workbench.](img/independent-review.webp)
+<a id="pr-verification"></a>
 
-Use a Shaka PR to understand the change, assess its evidence, and decide what
-needs closer review. The same record helps you revisit decisions after merging.
+Shaka produces a pull request with an **evidence packet**: an explanation of the
+change, checks and review findings, visual comparisons when relevant, and what
+remains unverified.
 
-## Approval and attention labels
+The packet should give you enough context to make a quick, accurate, and confident
+decision: request changes, answer an open question, or authorize merging.
 
-To find work waiting on you, use the [attention-label searches and next actions](working-with-shaka.md#find-prs-waiting-on-you).
-The agent manages the labels as it works. Your part is to answer open decisions,
-authorize an Ask merge, provide any required GitHub approval, or resume a paused
-chat when nothing can wake it.
+The same record supports regular retrospectives, including after automatic merges.
+People and agents can examine results, token use, timing, and review findings to
+improve the accuracy, efficiency, and effectiveness of the PR workflow.
 
-![While the agent works, a PR has no attention label. The agent sets awaiting-answer for a decision, awaiting-merge-approval when the PR is ready to merge, and awaiting-resume when it paused and nothing will wake it.](img/attention-labels.svg)
+## What the evidence packet gives you
 
-Under **Ask**, the agent brings you the verified commit and waits for your merge
-decision. You can tell it in chat to merge that commit, or merge it yourself
-through GitHub's offered control. For example: “Merge the commit in your handoff.”
-Saying “Go” to start the task does not grant this later merge authority.
+The evidence packet explains what changed, why, how it was checked, and what
+remains uncertain. It supports your next decision and later examination of how
+the work was done.
 
-`awaiting-merge-approval` means only the merge is left, so Shaka won't let the
-agent set it while the PR's local review has findings needing attention, or when no
-published review covers the current commit. To skip review on purpose, such as for a
-typo fix, the agent gives a reason, which appears in the command's result. Repositories
-with `review.required: none` don't need one. If findings were published, a reason
-doesn't clear them: someone has to fix them or record a decision. Under **Auto**, the
-agent's merge stops for the same open findings.
+The visible summary should make the outcome, unresolved concerns, and next action
+easy to find. Linked and expandable details preserve the evidence needed for
+closer human review and agent analysis.
+
+Useful evidence connects each result to the revision it covers. It distinguishes
+observed results from judgments and unverified claims. Missing measurements remain
+explicit gaps.
+
+During regular retrospectives, use that record to examine where time and tokens
+went, which checks caught problems, what required repeated repair, and what
+happened after merging.
+
+<a id="read-a-pr-for-your-decision"></a>
+<a id="answers-for-your-merge-decision"></a>
+<a id="answers-for-your-next-decision"></a>
+
+## Start with the change
+
+Read the PR description for the outcome and why it matters. Compare the result
+with your request. Try the changed feature when that helps you judge it.
+
+Then check the evidence and its limits, read unresolved concerns, and decide what
+happens next:
+
+| What you need | Where to look |
+| --- | --- |
+| What changed and why | **Summary** and **Intent** in the PR description |
+| What was checked and what remains uncertain | **Verification** in the PR description |
+| What needs your input | **Decisions to make**, when present at the top of the description |
+| Whether the result is worth merging | **Checkpoint**, linked near the top of the description |
+| How review went | **Code Review**, linked near the top of the description when published |
+| How the change works | **Code Walkthrough**, linked near the top of the description when published |
+
+## See what needs your decision
+
+When your input is needed, **Decisions to make** appears at the top of the PR
+description. Each question should explain the concern, the relevant evidence,
+your options, and the agent's recommendation.
+
+For example:
+
+> The export passed tests with 10,000 rows. Larger exports remain untested.
+> We recommend checking the expected maximum before merging. What export size
+> should we support?
+
+Read the evidence behind the recommendation. Passing checks do not settle a
+product choice or establish that an untested case is acceptable.
+
+After you answer, the record should preserve your decision, its reason, and the
+revision it applies to. Later retrospectives can compare what was known and
+accepted with what happened afterward.
+
+Steps you need to carry out should name their owner, timing, and how to confirm
+completion. See [steps before or after merging](#check-for-steps-before-or-after-merging).
+
+<a id="approval-and-attention-labels"></a>
+
+## Request changes or authorize merging
+
+**To request changes**, explain the result you want or the concern the PR hasn't
+resolved. Comment on the PR and paste the link into the owning chat, or give
+feedback directly in that chat.
+
+For example:
+
+```text
+The export needs to handle 100,000 rows. Update the change and its evidence before asking me to merge.
+```
+
+After a revision, check the updated explanation and evidence. Earlier results
+should remain identifiable by the revision they cover.
+
+**To authorize an Ask merge**, tell the agent:
+
+```text
+Merge the commit in your handoff.
+```
+
+The handoff is the agent's message naming the PR and commit ready to merge.
+You can also merge through GitHub. Check that its current commit matches the
+handoff, and use the [prepared squash message or merge queue](#squash-merge-details)
+as applicable. If the commits differ, return to the agent.
+
+Your merge authorization does not replace required checks or GitHub approvals.
+Agreeing with an approach or answering a question does not, by itself, authorize
+merging.
+
+**With Auto**, the agent already has authority to merge eligible work. The evidence
+packet still explains the result and supports later retrospectives. Work outside
+that authority returns to you for a decision. See
+[Ask and Auto](working-with-shaka.md#choose-a-merge-policy) to choose who merges.
+
+### See whether human review is needed
+
+[PR #1081](https://github.com/shakacode/shaka/pull/1081) proposes the risk assessment
+below. It is not released yet. It adds risk to the checkpoint; existing PRs may
+still show a numeric **Human review** rating under **Intent**.
+
+Open the **Checkpoint** link near the top of the PR description. Under the proposed
+risk assessment:
+
+- **Low:** eligible for automatic merging when enabled, with later audit.
+- **Medium:** read the description, risk reasons, and verification; inspect the
+  code those reasons identify.
+- **High or unknown:** review carefully, starting with whether the evidence
+  demonstrates that the change works.
+
+The assessment includes reasons to help you focus your attention. Low risk does
+not mean automatic merging is enabled. In #1081, risk governs automatic merging
+only when the repository opts into low-risk-only Auto merging. Otherwise, the
+rating is advisory and existing merge rules apply.
+
+<details>
+<summary>GitHub approvals and Auto safeguards</summary>
 
 An **Approve** review on GitHub also grants Ask authority when it comes from a
 login you named to the agent as a merge approver for this task. For example:
-“Treat `maria` as a merge approver for this task.” That review can also satisfy
+"Treat `maria` as a merge approver for this task." That review can also satisfy
 a required GitHub approval if the reviewer is eligible under the repository's rules.
 Return to the owning chat unless the handoff names active automatic follow-up.
-Approval in chat does not
-satisfy a required GitHub review; a required review must come from an eligible
-GitHub reviewer. GitHub does not let the PR author approve their own PR.
-
-After authorization, the agent submits the merge when required checks, approvals,
-and review findings are settled. Under **Auto**, it already has that authority
-for eligible work. Both paths preserve repository protection and required approvals;
-a checkpoint recommendation alone grants no merge authority.
+Approval in chat does not satisfy a required GitHub review. GitHub does not let
+the PR author approve their own PR.
 
 Under Auto, every check reported on the commit has to pass, not only the
-required ones. Skipped and neutral results count as passing, as they do on
-GitHub. A job that hasn't started when the agent merges isn't seen, so make a
-check required if it must always gate the merge. A
-failing or unfinished optional job, such as a Windows build or a security scan,
-holds the merge. When one fails, the agent hands the PR back to you as it does
-under Ask. After an Auto merge, the PR carries the `auto-merged` label, so
-`is:merged label:auto-merged` lists the PRs the agent merged on its own. Two
-cases go unlabeled, and the agent says so in its report: a PR it added to a
-merge queue, and one where GitHub refused the label after the merge.
+required ones. Skipped and neutral results count as passing. A job that hasn't
+started when the agent merges isn't seen, so make a check required if it must
+always gate the merge. A failing or unfinished optional job holds the merge.
+When one fails, the agent hands the PR back to you as it does under Ask.
 
 If GitHub requires a branch update, the agent rebases, revalidates, and reviews
 the new commit. Your merge decision carries forward when the change keeps the
@@ -58,560 +154,381 @@ approved behavior. A branch rule may still require fresh GitHub approval.
 If behavior changes, the agent explains the difference and returns the new
 commit for your decision.
 
-When you choose to merge through GitHub, compare its current commit with the
-agent's chat handoff before using the offered control. If they differ, or no allowed merge
-method is offered, return to the agent. For a squash merge, use the
-[prepared commit message](#squash-merge-details). A merge queue takes no message, so
-add the PR to the queue instead.
+After an Auto merge, the PR carries the `auto-merged` label. Two cases go
+unlabeled, and the agent says so: a PR it added to a merge queue, and one where
+GitHub refused the label after the merge.
 
-<a id="read-a-pr-for-your-decision"></a>
+</details>
 
-<a id="answers-for-your-merge-decision"></a>
+## Supporting reference
 
-## Answers for your next decision
+### Understand the limits of verification
 
-Start with the description for the outcome, open decisions, steps besides
-merging, and what the change is for and how it was proved. Follow the code
-walkthrough for implementation choices and alternatives.
-Then inspect the supporting evidence for the revision you are reviewing.
-A handoff should make clear whether the change is ready to merge or needs your
-input. You can approve the approach, request revisions, or settle an open question.
+The PR description's **Verification** section summarizes the checks and reviews
+for the change. Expand **Evidence and limitations** for the supporting results.
 
-| Your question | Where to look |
-| --- | --- |
-| What changes for users? | The description, preview, and visual comparisons when applicable. |
-| What is it for, and what does it leave out? | **Intent** in the description: the problem, the **Task** it came from (a ticket such as GitHub #1234 or Linear MKT-1234, with this PR's relation to it, or the agent prompt), the scope, what was deliberately left out, and why the change is safe. A bug fix also names its **Root cause**, or says it was not found and the PR treats only the symptom. |
-| What should I read myself? | **Human review** under Intent, rated from 1 (the description should be enough) to 5 (read the riskiest files closely). The rating is about where your attention matters, so it names the files that set it. Nothing checks how closely anyone read. When a few files or lines need more care than the rest, **Closer reading** lists each with its own level and reason, linked to the code. Shaka sets a minimum from the files the PR changes, and withholds any file name that contains unusual characters. Each repository chooses those minimums with [`pr_description.human_review_floors`](settings.md#pr_descriptionhuman_review_floors). |
-| Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
-| How was it checked? | **Verification** in the description. Its first line, written by Shaka from the recorded results, says whether repository validation passed and who reviewed the current revision; when validation passed and a local review ran through Shaka, it is folded under a one-line summary so a failure or a missing review stands out. When fewer local reviewers completed than [`review.local_review_count`](settings.md#reviewlocal_review_count) or [`review.provider_coverage`](settings.md#reviewprovider_coverage) asks for, the line stays unfolded. A **Setup gaps** line below it says how many completed, names each listed provider that did not, and links the review comment. A Codex reviewer whose sandbox could not start, so that every command failed with a `bwrap:` error, also unfolds the line and is named there, because it read only the diff. **Not verified** follows in plain view: it names a claim this PR makes that went unproven and why that is acceptable, and Shaka leaves it out when the agent reports nothing unproven. A **Merge limitations** line below it names a gap that should hold the merge, such as a migration that needs the maintainer's approval. Up to three checks sit in the collapsed Evidence and limitations section, each showing what ran against this change's behavior, its outcome, and a link to the evidence or the command itself. |
-| Which skills contributed? | **Skills used** lists the reported skills, their contributions, and evidence labels. |
-| What did people say? | **Human comments** in the description: each comment a person wrote, its reply, and whether it is still open. |
-| What happened to concerns? | Review findings, replies, and recorded fixes or reasons for declining a suggestion. |
-| What do I need to do? | Open decisions and steps besides merging, with their timing and owner. |
+Pay particular attention to:
 
-Read **Goal** and **Done when** under the task source to compare the delivered work
-with the contributor's account of the assignment and success criteria. They carry
-corrections made in chat; they do not establish your approval. Older PRs may omit them,
-show **As understood** there, or fold **Task as understood** under a heading you expand.
-The contributor checks this paraphrase for private content before publication.
-Original prompts remain excluded.
+- **Not verified:** a claim or behavior that remains unproven.
+- **Setup gaps:** a review could not complete as configured. Read what it actually covered.
+- **Merge limitations:** something that should hold the merge until it is resolved.
 
-For example, a CSV export PR may use a simple download instead of a background
-job. The walkthrough should explain that choice; tests should exercise the
-export behavior. You can then judge whether the approach suits the expected
-volume and whether important cases are missing.
+A passing test supports only the behavior it exercised. A review with no findings
+is useful evidence, but its coverage and limitations still matter.
 
-## See a current PR
+For example, screenshots can show the resulting layout. They do not establish
+that a payment completes successfully. A review based only on the diff cannot
+establish that the reviewer ran the application.
 
-These captures show real public PRs on October 14, 2026 (Hawaii time).
-Open each source to read the full record; its live state may have changed.
+These distinctions also matter during retrospectives. An untested behavior, a
+missed defect, and a check that could not run point to different improvements.
 
-### Start with the recommendation
+See [review coverage settings](settings.md#reviewprovider_coverage) for incomplete
+reviewer coverage. The agent reports unverified claims; Shaka does not prove that
+those reports are complete. See [what is enforced](workflow.md#what-is-enforced).
 
-![PR description opening with Recommendation: Merge, a short Next action, and links to Code Walkthrough, Code Review, and Checkpoint.](img/pr-recommendation.webp)
+### Check how review went
 
-[PR #527](https://github.com/shakacode/shaka/pull/527) shows the recommendation
-above the summary and links to its supporting evidence. Newer descriptions put
-those links on the recommendation's line. Open **Checkpoint**
-before acting on the recommendation; the screenshot is a historical example,
-not approval to merge another commit.
+The PR's **Code Review** link opens a summary of the reviewed revision, coverage
+limits, unresolved findings, and review history.
 
-### Follow the review history
+You can check how the process went without reading every finding. Notice how many
+review rounds were needed. Repeated rounds can signal that the solution needs
+reconsideration or that the process is going in circles.
+
+Detailed findings and responses remain available for agent analysis during
+retrospectives, or investigation when a problem surfaces later.
+
+<a id="follow-the-review-history"></a>
+
+<details>
+<summary>Example review history</summary>
 
 ![One Local Adversarial Review comment showing the reviewed revision, coverage limits, a table of four reviewed commits and finding dispositions, and collapsed reports.](img/pr-review-history.webp)
 
 [The review record on PR #539](https://github.com/shakacode/shaka/pull/539#issuecomment-6186181367)
-gathers several reviewed commits in one comment. The table shows findings and
-their dispositions; expandable sections keep the reports available. Read the
-coverage limits even when the outcome says no open findings.
+gathers several reviewed commits in one comment. The capture is from October 14,
+2026, Hawaii time; the live PR may have changed.
 
-## Check the latest changes
+</details>
 
-Before merging, open the PR to see how the change was checked. Tests and reviews
-should cover its latest code. For visible changes, look for results from using
-the app, including desktop and mobile where relevant. A review app should let
-you try the feature with the data and services it needs.
+### Check the cost of getting the result
 
-Good checks also show that they can catch the problem. For example, a smoke test
-should pass on a healthy page and fail when required content is missing. This
-is a **negative control**.
+The PR shows recorded token use, estimated cost, and timing where available.
+It identifies missing measurements and any usage shared with other work.
 
-Use focused AI review for code and tests, and spend human review time on decisions
-that need your knowledge. An agent can check a billing calculation; someone who
-knows the contract must decide whether that is the right billing rule.
+Use these details to spot unexpectedly costly work, slow checks, or repeated repairs.
 
-## See which skills contributed
+During regular retrospectives, agents can investigate where the time and tokens
+went and what that effort achieved. Did more review catch consequential problems?
+Did repeated repairs improve the solution? Could a simpler approach have produced
+an equally reliable result?
 
-Expand **Skills used** to see the skills reported during planning, implementation,
-review, and integration, with their sources and revisions when available.
-**Agent-reported** means the agent says it applied the skill. The agent selects
-**Corroborated** when it identifies a record confirming invocation or loading.
-Shaka checks metadata shape, not that record or instruction compliance.
-Contributions remain the agent's account, and completeness is unverified.
-Missing records show unknown coverage. Shaka's own entries, from source
-`ShakaCode/shaka`, are not listed: every managed PR uses Shaka, and **Execution
-details** names the Shaka skill version that ran.
-Agents are instructed to withhold private skill identifiers; Ruby does not screen
-them.
+Assess cost and speed alongside correctness and usefulness, including problems
+discovered after merging. Under **Shaka metrics** in the PR description, expand
+**Details** for the records. See [usage and cost](reference/usage-and-cost.md) and
+[timings](reference/timings.md) for the accounting rules and measurement limits.
 
-## See what people said
-
-Agent posts can outnumber a person's comments many times over: on one Shaka PR,
-5 of 52 comments and reviews came from a person. The description lists those
-under **Human comments**, after any open decisions and before the agent's own
-sections:
-
-| From | Said | Response | Status |
-| --- | --- | --- | --- |
-| **Reviewer** maria | Finds the tester terms unclear; suggests template notation | — | **Open** |
-| sam | “you mean chat, not owner.” | “Changed the guide to use chat throughout…” | Resolved |
-
-- **From** names the account. The PR author's comments show the account alone;
-  **Reviewer** marks one from another trusted account. Agents post from a person's
-  account, so the account name cannot tell a person from an agent.
-  Every post a person did not write opens with the agent's 🤖 line, so a comment
-  without it counts as a person's. A bot account's post, a post that opens with
-  a hidden tool marker such as `<!-- shaka:reply:… -->`, and a superseded
-  walkthrough under Shaka's pointer also count as an agent's.
-- **Said** links to the comment. A comment of at most 12 words and 90 characters
-  appears in quotation marks, in the person's own words, without its code. A
-  longer one is already on the PR, so the agent summarizes it in one line, shown
-  without quotation marks; so is a short comment with a list beside code. Shaka
-  refuses to publish while a comment it summarizes has no summary.
-- **Response** links the agent post, or the trusted bot's post, that answered it.
-- **Status** is GitHub's resolved state for an inline thread, and the verdict for
-  an approval, a request for changes, or a dismissed review. Any other comment
-  stays open until an agent reply links to it.
-
-Open comments come first, and a reviewer's come before the author's.
-
-On a public repository anyone can comment or submit a review. A comment from an
-account the repository does not trust is listed as **Unverified** and linked
-without a quotation or summary, because the agent does not read it. That account's
-approval or request for changes is not shown, and its comments do not count as open.
-
-The list names the commit at which the agent read the comments. A comment added
-later appears the next time the agent reads comments and updates the description.
-If the PR has moved to a newer commit since that read, a note under the list says
-so. On a PR from a fork the list appears only when the agent passes a fresh read.
-Instructions you give in chat are not on GitHub, so they are not in this list.
-
-To leave the list out or change how many rows it shows, see
-[`pr_description.show_human_comments`](settings.md#pr_descriptionshow_human_comments).
-
-## Revisit a merged change
-
-Assess the decision and the process separately:
-
-- **Was the approach reasonable?** Compare the recorded goal, alternatives, and
-  risks with what was known then and what you learned after deployment. A working
-  feature can still introduce more maintenance than its benefit justifies.
-- **What evidence supports the process?** Check which revision was tested and
-  reviewed, how findings were handled, and which gaps or exceptions were reported.
-  Missing evidence leaves a question open; it does not establish that a step
-  passed or failed.
-
-For the CSV export, later growth may justify a background job. The original
-walkthrough helps distinguish changed needs from an assumption that lacked support.
-The test and review records help you examine how that assumption was checked.
-
-Shaka makes the recorded work inspectable. It does not prove that every workflow
-instruction was followed or that the tests and review were sufficient. See
-[what is enforced](workflow.md#what-is-enforced).
-
-<a id="keep-the-pr-easy-to-read"></a>
-
-## Expect a readable delivery record
-
-The agent writes the description, publishes validation and review evidence, and
-prepares the code walkthrough and checkpoint. It leads with the outcome and a
-short validation result, puts useful comparisons beside the explanation, and
-keeps longer output in expandable sections. Its chat handoff links to that record.
-
-For example: “The menu stays reachable on narrow screens. The regression test
-failed before the fix and passes now; desktop and mobile screenshots show the
-result.” Details can hold commands, tested commits, and a recording of the menu.
-
-Local validation shows how long it ran and on what kind of machine, such as
-`validate: 27m on m5 (Apple M5 Max, 18 cores, 128 GB RAM, 3 GB free, load 140→450)`
-under **Shaka settings used**. When you compare runs across machines, the
-hardware and the load at start and end help you judge whether a slow run met a
-busy machine or slower hardware. They are context, not proof of the cause. Only
-the CPU model, these counts, and your machine alias are published, never the
-machine's own name, your user name, or paths.
-
-Shaka uses your existing tests and validation commands, plus browser tools when
-needed. Required GitHub checks and approvals still apply.
-
-## Notes on the diff
-
-The walkthrough can also leave a few notes on the diff itself, written for you
-as the reviewer. Each note sits on the lines it is about and says how to read
-them: where to start, which lines change behavior, what to check closely, what
-to skim, or why the code took this approach. They are not findings to fix, and
-they do not replace explanations the code itself needs.
-
-For example, in a PR that stops duplicate refunds:
-
-> **Start here:** this check is the whole behavior change; the controller and
-> retry job only call it.
-
-> **Skim:** the rest of this file moves the old helper unchanged.
-
-Notes help most on a change of several files. Reviewers tend to read files in
-the order GitHub lists them and comment less on the later ones
-([Fregnan et al., 2022](https://arxiv.org/abs/2208.04259)), so a note can send
-you to the important part first. Understanding a change is usually harder than
-finding its defects
-([Bacchelli and Bird, 2013](https://www.microsoft.com/en-us/research/publication/expectations-outcomes-and-challenges-of-modern-code-review/)).
-
-When the agent publishes a walkthrough for a newer commit, it resolves the
-older walkthrough's notes. A note you replied to stays open, and the agent
-answers it like any review comment.
-
-## When a diagram helps
-
-A walkthrough may include one small diagram when a change crosses several
-components or adds a branch. It sits beside the step it explains and names code
-you can find in the reviewed commit. For example, a PR that stops duplicate
-refunds might show which callers reach the new check and where it refuses:
-
-```text
-RefundsController#create ──┐
-RefundRetryJob#perform ────┴── Refunds.issue
-                               ├── RefundPolicy.check      refuses a second refund for the same order (new)
-                               └── PaymentGateway.refund   reached only after the policy passes
-```
-
-The tree shows that the web request and the retry job both pass the new check
-before the gateway call, which is the point a reviewer most needs to confirm. A
-flowchart suits a change with several outcomes or states.
-
-A smaller change reads better as a sentence: “`RefundPolicy.check` now also
-rejects refunds larger than the original charge.” No diagram is added, because
-nothing about the order of calls changed.
-
-A diagram explains the change; it is not evidence that the change works. The
-before and after results still come from running the tested commit. Diagrams are
-optional, and Shaka does not check that one matches the code.
-
-## What a rollback undoes
-
-A walkthrough names who a failure would reach and what they would see, such as
-“customers with a pending refund see the old amount until the job reruns.” It
-also separates reverting the code from undoing what the code already did:
-
-- **Reversible:** “Reverting this commit restores the previous refund limit.
-  No stored data changes, so nothing else needs repair.”
-- **Not undone by a revert:** “This change emails each customer when a refund is
-  issued. Reverting stops new emails; messages already sent cannot be recalled,
-  and refunds already issued stay issued.”
-
-When a change rewrites or deletes stored data, expect the walkthrough to say how
-that data is restored, or that it cannot be. Use this to decide how much review
-and staging the change needs before it merges.
-
-The agent writes this from its reading of the change, and Shaka does not check
-it. A walkthrough that says nothing about data or outside effects is not
-evidence that a revert is enough.
-
-## Publish work while a base repair is pending
-
-A failure already present on the trusted base can leave unrelated work blocked.
-For example, a dependency advisory may fail the same security check on both the
-base and a task branch that never changed that dependency.
-
-Shaka can publish that work as a **blocked draft** after reproducing the same
-failure on an immutable base and confirming the task leaves affected inputs
-unchanged. The PR names the failed check, comparison evidence, separate repair
-issue, and next action. Independent review still happens before push. The agent
-performs this comparison; Ruby does not prove it.
-
-The draft stays blocked until the repair lands or a maintainer explicitly accepts
-the documented local failure for that task. Acceptance does not waive security or
-trust failures, required GitHub or seam merge checks, or protection. In the advisory
-example, the security gate still needs a repair. Failed validation stays failed;
-it is never reported as passing. Missing readiness evidence remains UNKNOWN.
-
-Ask the agent to show the failure on the unchanged base and explain which checks
-still block merging before accepting a base failure.
-
+<a id="checkpoint"></a>
 <a id="reconsider-the-finished-result"></a>
 <a id="decision-checkpoint"></a>
 <a id="evaluation-checkpoint"></a>
 
-## Checkpoint
+### Understand the recommendation
 
-At a **checkpoint**, Shaka presents a result, question, or blocker and recommends what to do
-next. The task owner may be a human or a coordinating agent acting within existing
-authority. This is the return from the agent's work loop; it does not mean the
-overall task is finished.
+The **Checkpoint**, linked near the top of the PR description, assesses whether
+the change solves the intended problem, whether the evidence supports its claims,
+and whether the benefit justifies the maintenance cost.
 
-The current pre-merge checkpoint evaluates whether the result solves the original
-problem for its users and earns its maintenance cost. It considers actual scope,
-complexity, simpler alternatives, and whether the testing matches what a failure
-would reach. Unexpected growth or repeated repairs can
-prompt this review earlier. The code walkthrough explains what changed and how it works.
+Read the recommendation and any unresolved concerns first. Open the supporting
+assessment when you want to examine the reasoning.
 
-The checkpoint recommends the next action for the PR and includes copyable
-squash commit title and body blocks when it recommends merging. When the base branch
-has a [merge queue](#merge-queues), it says what the queue will write instead.
-Required checks, reviews, and your Ask or Auto choice still apply.
+A recommendation to merge is a judgment based on the available evidence. It does
+not grant merge authority or replace required checks and approvals.
 
-A checkpoint that recommends merging comes after the code walkthrough and any
-screenshots for the same commit, so you read the evidence before the recommendation
-and merge text. Shaka refuses to publish it until the walkthrough for that
-commit exists; your agent publishes the screenshots first.
+During retrospectives, compare that assessment with later outcomes. Did the
+change solve the problem? Were its costs and risks judged accurately? What should
+future assessments consider?
+
+<details>
+<summary>Checkpoint verdicts and accepted concerns</summary>
+
+The reviewer's conclusion is **Proceed**, **Simplify/reframe**, or **Do not merge**.
+Substantive unresolved concerns hold readiness and Auto even when technical checks
+pass. The checkpoint separates the reviewer's verdict from the task owner's
+recommendation.
+
+When the conclusion is **Proceed**, you can explicitly accept a listed concern.
+The agent records that decision under **Concerns recorded as accepted by the
+maintainer**. Read that list before merging. Shaka checks that decisions are
+recorded, not who made them or whether the judgment is sound. Accepting a concern
+does not override **Simplify/reframe** or **Do not merge**.
+
+The checkpoint also judges whether verification supports the PR's claims:
+**Adequate**, **Adequate, with gaps the reviewer judged acceptable**,
+**Inadequate**, or **Cannot judge**. The reviewer's acceptance of a gap is not your
+acceptance. With Ask, the verdict informs your merge decision. With Auto,
+**Inadequate** or **Cannot judge** stops the merge until you approve that commit.
+
+If a consequential question remains, the description shows **Decisions to make**.
+A checkpoint containing only the reviewer's verdict is not an owner recommendation.
+A new commit needs current evidence; an earlier recommendation does not cover it.
+See [checkpoint settings](settings.md#checkpoint) for customization.
 
 ![Checkpoint for commit 1198b62 showing Recommendation: Merge, the next action, Reviewer verdict: Proceed, no unresolved concerns, and a copyable squash commit title.](img/pr-checkpoint.webp)
 
-[The checkpoint on PR #527](https://github.com/shakacode/shaka/pull/527#issuecomment-6184807134),
-captured October 14, 2026 (Hawaii time), separates the owner's recommendation
-from the reviewer's verdict. Current checkpoints show the owner's reason, the
-reviewer's conclusion, and any unresolved concerns. For **Merge**, a **Next** line appears
-only when merging waits on something the recommendation does not say. The reviewer's summary,
-token counts, and squash message sit in closed sections below.
+[The checkpoint on PR #527](https://github.com/shakacode/shaka/pull/527#issuecomment-6184807134)
+is a historical example captured October 14, 2026, Hawaii time.
 
-The checkpoint explains one conclusion:
-**Proceed**, **Simplify/reframe**, or **Do not merge**. Substantive unresolved concerns
-hold readiness and Auto even when technical checks pass. When the checkpoint says
-**Proceed** and you decide a listed concern is acceptable, tell your agent, for example
-"I accept the unknown-frequency concern; merge as is." The agent republishes the
-checkpoint with your decision under **Concerns recorded as accepted by the maintainer**, and merge
-preparation continues. Shaka checks that a decision is recorded for each concern, not
-who made it, so read that list before you merge. Accepting a concern does not override
-**Simplify/reframe** or **Do not merge**. When the agent disagrees with a concern or a
-**Simplify/reframe** verdict, or a question comes up after the checkpoint said **Merge**, it recommends
-**Merge after maintainer decision** and asks you under **Decisions to make**, so the checkpoint,
-the warning, and the question agree. For example, if a required check can't run after the checkpoint,
-the checkpoint changes to say the PR waits on your answer. Shaka blocks final merge
-preparation without this account's published ready review or explicit opt-out for the
-current commit. A new commit needs fresh evidence. The reviewer judges value; Ruby
-checks the published result and commit, not the judgment’s quality.
+</details>
 
-The checkpoint also says whether the description's **Verification** proves what its
-**Intent** claims: **Adequate**, **Adequate, with gaps the reviewer judged acceptable**,
-**Inadequate**, or **Cannot judge**. The second verdict is the reviewer model's opinion;
-you have not accepted those gaps until you decide to merge. The checkpoint names the
-weakest claim and the one check that would most raise confidence. The description shows
-an **Inadequate** or **Cannot judge** verdict under its recommendation. With Ask,
-an **Inadequate** or **Cannot judge** verdict is information for your merge decision; with
-Auto, your agent stops and hands the PR back to you, and merges only after you approve that
-commit. No setting turns this stop off: Auto merging past verification that failed or could
-not be judged has no known use; open an issue if your repository needs one. For
-example, a fix whose safety rests on a shared caller, checked only by a unit test that
-stubs that caller, would be **Inadequate**, with the next check naming a run through it.
+<a id="show-what-a-person-will-see"></a>
+<a id="show-what-changed-between-captures"></a>
 
-Use **Recommendation** for the proposal and **Recorded decision** for
-accepted guidance. Once a direction is chosen, the agent records that guidance
-and recoverable work state as a [return point](#return-points). This is not an
-automatic Ruby snapshot or an extra human approval.
-The PR description opens with **Decisions to make** while you have questions to answer.
-Each question should explain your options, what each changes, the agent's recommendation,
-and how to answer. Published checkpoint and walkthrough links remain available.
-An unpublished checkpoint says **Not published yet**. The code walkthrough waits because
-your answers may change the code it would explain. Ask your agent for a walkthrough
-sooner if you want to read one first.
-Otherwise, below the line naming the AI that wrote it, it opens with the task owner's
-recommendation from the checkpoint published for that commit, such as
-**Recommendation: Merge**, or **No recommendation yet** before the owner has recorded one.
-Shaka reads the recommendation from the latest checkpoint for that commit each time the
-description is published; your agent republishes the description when the checkpoint
-changes. A checkpoint that holds only the reviewer's verdict shows it as **Reviewer
-recommendation** and leaves the description at **No recommendation yet**. Shaka refuses
-to show a recommendation made for an earlier commit, so the recommendation does not name
-one. Beside it, links open the walkthrough, the detailed code review when one was
-published, and the full checkpoint. Your agent adds a **Next** line when merging waits on
-something the recommendation does not say, such as another PR. The **Summary** follows.
-Your agent writes it as one sentence with the outcome, then up to four bullets on
-consequential decisions, questions or friction, and critical changes.
-Supporting evidence appears below.
-The report keeps the **Reviewer verdict** within the checkpoint. A recommendation becomes a
-**Recorded decision** after the owner accepts it or acts under existing authority.
-Auto applies previously granted authority; a consequential unresolved choice still needs direction.
-Parsed identifiers and readiness rules remain unchanged.
+### Inspect visible changes
 
-For example, a settings page may satisfy the task but introduce an interface most
-users never need. The agent can recommend extending an existing setting instead
-before more work builds around that page. Maintainers can customize the
-[checkpoint settings](settings.md#checkpoint)
-with their audience and architectural priorities.
+Annotated before-and-after screenshots, on mobile and desktop, enable quick
+assessment of UX changes. Recordings can show a flow and animations.
 
-## Return points
+The explanations will say what was tested and what remains unverified.
 
-A **return point** saves guidance you gave during a task, such as your first request
-or a later change of direction, with the code it applies to. The PR description lists
-them as C1, C2, and so on, each with a name, your guidance, and a code revision:
+Detailed captures remain available for closer inspection and later analysis when
+a visual or interaction problem surfaces. Open the PR's linked verification
+comment to find the captures.
 
-| Return point | Human guidance | Code revision |
-| --- | --- | --- |
-| C1 — Initial request | Fix escaped separators while keeping the current syntax | `3f2a9c1` |
-| C2 — Parser direction | Use the existing parser; keep the escaped-separator test | `8d41e07` |
+<a id="notes-on-the-diff"></a>
+<a id="when-a-diagram-helps"></a>
 
-To go back to one, see
-[revise earlier guidance and try again](working-with-shaka.md#revise-earlier-guidance-and-try-again).
-A return point records your guidance; the [checkpoint](#checkpoint) recommends whether
-to merge.
+### Understand how the change works
 
-## Change one behavior at a time
+The **Code Walkthrough**, linked near the top of the PR description, explains the
+approach, important implementation choices, and alternatives considered. Linked
+code and diagrams help you inspect the parts that matter.
 
-The agent writes a focused test, confirms it fails because the behavior is broken
-or missing, then fixes the code and simplifies it while tests stay green. Tests
-exercise behavior through public interfaces; matching implementation details or
-instruction wording does not prove the result.
+Consult it when you want to understand a consequential choice or examine how the
+pieces fit together.
 
-When automation is impractical, the agent records the limitation and useful
-before/after evidence. Wording edits need documentation checks, not invented
-failing tests. Validation can select checks for affected files; required security
-checks still apply.
+During retrospectives, agents can compare the recorded reasoning with later
+results: which assumptions held, what changed, and whether a simpler approach
+would have served better.
 
-## Corrections after review
+Walkthrough notes on GitHub's diff point out code worth reading. They are reading
+guidance, not findings to fix. Diagrams explain the approach; they do not prove
+that it works.
 
-A correction repairs a review finding on a PR that was already validated, reviewed,
-and explained. It should cost in proportion to the repair, without lowering what the
-PR has to prove. Your agent checks the repair and the behavior it affects, then
-updates the existing PR once.
+<a id="what-a-rollback-undoes"></a>
 
-| What you see on the PR | After a correction |
-| --- | --- |
-| The finding's thread | A reply with how the defect was reproduced, and the fix commit |
-| Repository validation and required checks | Run again for the new commit |
-| Local review | The configured reviewers review the new commit |
-| Hosted review | Awaited again when your repository's review settings require it for the change |
-| [Checkpoint](#checkpoint) | Run again; merging needs a checkpoint, or your explicit skip, for the exact commit |
-| Code walkthrough | The same walkthrough for the new commit, with only the affected steps rewritten |
+### Understand what undoing the change would require
 
-Evidence for an earlier commit is shown with that commit. It counts for the new one
-only where Shaka can prove nothing relevant changed, such as a clean merge of the
-base or a prose-only edit.
+For changes with significant consequences, the walkthrough explains who could be
+affected and how recovery would work.
 
-Your agent reproduces a finding on the versions your repository's required checks use. In
-[PR #463](https://github.com/shakacode/shaka/pull/463), a credential-redaction finding
-was dismissed after a test on URI 1.1.1, which drops the password itself. CI used
-URI 1.0.3, which keeps it. The [replay](https://github.com/shakacode/shaka/blob/main/eval/reports/correction-replay-463.md)
-shows both results and the work each path performs.
+Reverting code may restore previous behavior without undoing actions already
+taken. Sent emails remain sent; issued refunds remain issued. Changed or deleted
+data may need a separate recovery procedure.
 
-The walkthrough is reused only while the repair leaves the goal, scope, dependencies,
-and settings of the task unchanged. A small diff alone does not make a change low risk.
+Look for those consequences before merging. If recovery depends on a backup,
+migration, or manual action, the record should make that dependency clear.
 
-To skip the checkpoint for one correction, tell your agent:
+<a id="see-what-people-said"></a>
+
+### Find feedback from people
+
+AI reports can fill a PR's discussion. When people leave feedback, Shaka highlights
+it in a **Human comments** section near the top of the PR description so it stays
+visible.
+
+The section links to the original comments and responses and shows what remains open.
+
+The list reflects the agent's last read of GitHub comments. Later feedback appears
+when the agent next reads comments and updates the description. Guidance given
+only in chat is not included in this list.
+
+See [human-comment settings](settings.md#pr_descriptionshow_human_comments) to
+change its visibility. Untrusted public comments appear as linked **Unverified**
+entries without quoted or summarized content; see [review safety](workflow.md#trust-model).
+
+### See which skills contributed
+
+Skills give an AI agent instructions for particular kinds of work, such as
+reviewing code or checking documentation.
+
+In the PR description, expand **Skills used**, when present, to see which skills
+the agent reports using and what they contributed.
+
+These records help later analysis examine which techniques were useful and where
+the process could improve. A listed skill does not establish that its instructions
+were followed or that it improved the result.
+
+**Agent-reported** means the agent says it applied the skill. **Corroborated**
+means the agent identifies a record confirming invocation or loading. Shaka checks
+the metadata, not that record. Completeness remains unverified. Shaka's own version
+appears under **Execution details** rather than in **Skills used**.
+
+<a id="return-points"></a>
+
+### Revisit an earlier direction
+
+During a task, you may change your mind about the approach. The PR description can
+record earlier guidance as **return points**, labeled C1, C2, and so on. Each
+connects your guidance to a code revision.
+
+For example:
 
 ```text
-Skip the checkpoint for this correction; the outcome is unchanged.
+Return to C2 and try the simpler approach.
 ```
 
-The PR can still merge, and it shows that no product review ran for that commit.
+Ask the agent what it can restore before proceeding. A return point records
+guidance and the associated work; it does not guarantee recovery of unsaved
+changes or undo deployments and other outside effects. See
+[how to revise earlier guidance](working-with-shaka.md#revise-earlier-guidance-and-try-again).
 
-## Documentation changes
+### Find PRs waiting on you
 
-The agent checks links and rendered pages. For a substantial rewrite, it also
-checks whether a fresh reader can complete the intended task from the normal
-entry point, without hints from the author. Expect that result alongside the
-validation evidence; passing link checks alone does not establish that a guide is useful.
+Shaka adds labels to GitHub PRs to show what needs your attention:
 
-## Show what a person will see
+- **awaiting-answer:** the agent needs your input. Open the PR description and
+  look for **Decisions to make**.
+- **awaiting-merge-approval:** the PR is ready for your merge decision.
+- **awaiting-resume:** work has paused and needs you to restart the conversation.
 
-| Change | Useful evidence |
-| --- | --- |
-| Layout, styling, or visible output | Test on desktop and mobile; capture before/after screenshots of both, with [annotations explaining meaningful changes](#show-what-changed-between-captures). |
-| Interaction, animation, or timing | A short recording, with screenshots where they help comparison. |
-| Backend or command-line behavior | Focused tests and concise before/after output. |
+For paused work, expand **WIP Details** in the PR description. Follow its chat
+link and paste the recorded **Next action** into that chat.
 
-The agent inspects screenshots for the intended state and reviews relevant video
-frames to confirm the interaction is visible. Expect useful evidence of the
-change, rather than an error page, blank screen, or loading placeholder.
-Screenshots and video complement tests.
+A label identifies what is waiting; adding a label does not itself wake the agent.
+See [PR searches and next actions](working-with-shaka.md#find-prs-waiting-on-you).
 
-The agent uses safe test data and checks captures for credentials, private task
-details, customer data, and unrelated screen content before publishing.
-Expandable sections on public PRs are public too.
+### Check for steps before or after merging
 
-For any on-screen change other than command-line output, the agent also uses the
-change by hand on the head it pushes, and repeats that pass after any later commit
-that changes runtime behavior.
-When the PR has a preview deployment, it checks the preview too, or says why not.
+Some changes need an action outside the code, such as configuring a service
+before merging or migrating data afterward.
 
-The agent uploads captures to the PR and verifies that you can open them; a local
-path is not shared evidence. Below the agent's 🤖 line, the comment opens with a
-**Verification for** heading that links the tested commit, so you can find it among
-review comments and see whether it matches the current head. The agent names the
-tested behavior, then refreshes affected evidence after code changes or explains
-which part still applies.
-After a later commit, the new comment covers every view the PR changes and repeats
-the earlier captures of views that stayed the same, so only the latest check stays open.
-Shaka posts the check, folds the earlier ones, and refuses a check that drops an earlier
-capture unless the agent marks it replaced.
-When a new comment replaces an earlier one, the agent folds the earlier one
-beneath a link to its replacement. Current evidence appears first; older captures
-stay one click away. When a capture cannot be published, the PR records the
-missing upload route, refusal, or upload error.
+When those actions are needed, the PR description includes a **Before and after
+merge** section. It says what to do, who should do it, when it must happen, and
+how to confirm completion.
 
-## Show what changed between captures
+Read these steps before authorizing a merge. A merged PR does not establish that
+the service was configured, the migration ran, or the change reached users.
 
-See the resulting UI with a few numbered boxes, highlights, or arrows explaining
-what changed. The original before and after captures stay available, so a reviewer
-can inspect the change beyond those callouts.
+<a id="show-whether-it-is-faster-or-slower"></a>
 
-For example, when three sidebar links are added, three boxes on the new screenshot
-identify them. A pixel difference can instead highlight every following row because
-it moved. For a removed element, a labeled before crop supplies the missing context.
+### Check claims about speed
 
-The agent compares the whole affected view before choosing annotations and labels
-both intended and unexpected changes. Callouts explain the comparison; they do not
-prove that the UI works. Ask the agent to publish captures with the tested revision
-and explain what it verified through interaction.
+When a PR aims to improve performance, look for a comparison between the previous
+version and the proposed change.
 
-Comparable captures use the same route, viewport, theme, scroll position, test data,
-and interaction step. When layout changes, animation, or live data prevent alignment,
-the comparison explains that limit. A short recording remains useful for timing and interaction.
+The evidence should name what was measured, the tested conditions, and the result:
+faster, slower, no meaningful difference, or inconclusive.
 
-Pixel differences are optional diagnostic evidence, kept in expandable details when
-useful for investigating subtle color, opacity, or unintended changes. Rendering
-noise and moved content can dominate them; a highlighted pixel is not itself a defect.
+For example, a faster page-load claim needs measurements of the affected page.
+Passing functional tests does not establish that improvement.
 
-## Show whether it is faster or slower
+If performance was not measured, the PR should say so. Keep inconclusive results
+visible so later analysis can distinguish an expected improvement from one that
+was demonstrated.
 
-Some changes aim to speed up page load, rendering, or bundle size, or could slow them.
-Others change what a page loads or how it is cached or streamed. For these, the agent
-compares the base with the change on pages and metrics that reach the change. It uses
-the repository's own benchmark when there is one, and
-[ShakaPerf](https://github.com/shakacode/shakaperf#usage) otherwise.
+<a id="publish-work-while-a-base-repair-is-pending"></a>
 
-The PR reports the verdict: improvement, wash, regression, or ambiguous. It names the
-pages, metrics, sample count, and the base and change commits. Any regression or
-ambiguous result, and a wash for an intended speed-up, go back for a fix or for the
-maintainer to accept. When no comparison can run, the PR says the speed was not measured.
+### Understand a blocked draft
 
-## Squash merge details
+Sometimes a check fails because of a problem that already exists before the
+proposed change.
 
-For a manual squash merge through GitHub, open the **Checkpoint** linked from the
-PR description. A ready checkpoint includes copyable title and body blocks for
-its commit: a title such as `Add CSV export (#42)` and a short body explaining
-what changed and why, with any branch `Co-authored-by` lines. If the checkpoint
-was explicitly skipped, the agent publishes a separate squash-message comment.
+The agent may publish a draft PR so the work remains available for review. The PR
+should explain the failure, show evidence that it also occurs without the change,
+and say what needs to happen next.
 
-Check that the message covers the commit in the handoff, then paste its title and
-body into GitHub's squash merge boxes. The agent refreshes the message when the
-commit changes. After new commits land, Shaka marks the older checkpoint as outdated
-when the agent next takes the PR out of `awaiting-merge-approval` or updates its
-description, so GitHub hides that merge text until a checkpoint for the new commit
-appears. When the agent submits an authorized merge, it supplies that
-message itself.
+A draft published this way is not ready to merge. An existing failure is still
+a failure. Accepting a known failure does not waive required checks, security,
+trust, or repository protection. See [verification limits](#understand-the-limits-of-verification).
 
-GitHub fills those boxes from a repository setting, by default with every branch
-commit's title. To start from the PR title and an empty body instead, set **Settings →
-General → Pull Requests → Allow squash merging** to **Pull request title**.
+<a id="squash-merge-details"></a>
 
-### Merge queues
+### Use the prepared merge message
 
-A merge queue offers no message box and ignores any message, so the checkpoint
-prepares none when the PR's base branch has one. It tells you to add the PR to the
-queue and says what the queue will write, which comes from the repository's setting
-for the queue's merge method: squash merging or merge commits.
+When GitHub combines a PR's commits into one, it calls that a **squash merge**.
 
-When that setting is **Pull request title and description**, the queue copies the whole
-PR description into git history, including Shaka's sections and **WIP Details**. The
-checkpoint warns you, `shaka doctor` flags the setting, and the agent's merge refuses the
-queue, as it does when it cannot read the queue's settings. For a squash queue, choose
-**Default message** to commit the branch commit messages, or **Pull request title** to keep
-the commit to the PR title.
+Shaka prepares a short commit title and description explaining what changed and
+why. Open the **Checkpoint** link near the top of the PR description to find them,
+then copy them into GitHub's squash-merge fields.
+
+If the agent merges for you, it supplies the message.
+
+<a id="merge-queues"></a>
+
+If GitHub offers a **merge queue**, add the PR to the queue instead. The queue
+manages the merge and provides no message fields.
+
+If you explicitly skipped the checkpoint, the agent publishes the squash message
+in a separate comment. Check that the prepared message covers the commit in the
+handoff. After code changes, wait for an updated message.
+
+<details>
+<summary>Repository settings for merge messages</summary>
+
+GitHub normally fills squash-merge fields from the branch commit titles. To start
+from the PR title and an empty body, choose **Pull request title** under
+**Settings → General → Pull Requests → Allow squash merging**.
+
+A merge queue uses its repository settings. **Pull request title and description**
+copies the whole PR description, including **WIP Details**, into Git history.
+Shaka warns about that choice and refuses to submit a queued merge with it, or
+when the queue settings cannot be read. For a squash queue, choose **Default
+message** for branch commit messages or **Pull request title** for the PR title.
+
+</details>
+
+<a id="revisit-a-merged-change"></a>
+
+### Improve the process over time
+
+Regularly ask your agent to examine completed PRs, including what happened after merging.
+
+Retrospective skills can help. Examples include
+[AI Hero's `/retro`](https://github.com/mattpocock/skills/blob/main/skills/engineering/retro/SKILL.md),
+for improving the agent's working environment, and
+[Poteto's `/reflect`](https://github.com/cursor/plugins/blob/main/pstack/skills/reflect/SKILL.md),
+for turning session lessons into skill improvements.
+
+Give the agent the PR links and ask it to examine correctness, review rounds,
+repeated repairs, token use, and timing. Ask for recommendations supported by the
+evidence and an account of missing information.
+
+Those skills focus on sessions. The PR evidence supplies additional material for
+a broader retrospective. Skill command names depend on how they are installed.
+
+<a id="check-the-latest-changes"></a>
+<a id="corrections-after-review"></a>
+
+### Check that the evidence is current
+
+A PR can change after tests and reviews finish. Each saved version has a **commit
+ID**, which identifies the code that was checked.
+
+Look for evidence covering the PR's latest version. If results come from an
+earlier version, the explanation should say which still apply and what was
+checked again.
+
+If that connection is unclear, ask the agent to update the evidence before you decide.
+
+<a id="see-a-current-pr"></a>
+<a id="start-with-the-recommendation"></a>
+
+<details>
+<summary>Example PR description</summary>
+
+![PR description opening with Recommendation: Merge, a short Next action, and links to Code Walkthrough, Code Review, and Checkpoint.](img/pr-recommendation.webp)
+
+[PR #527](https://github.com/shakacode/shaka/pull/527), captured October 14, 2026,
+Hawaii time, shows the recommendation and evidence links. Its layout is historical;
+its recommendation is not approval to merge another commit.
+
+</details>
+
+<a id="keep-the-pr-easy-to-read"></a>
+<a id="expect-a-readable-delivery-record"></a>
+<a id="change-one-behavior-at-a-time"></a>
+<a id="documentation-changes"></a>
+
+For how agents produce and verify the record, see [the workflow guide](workflow.md).

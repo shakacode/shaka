@@ -42,6 +42,9 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Changed
 
+- Explain how to use a PR's evidence packet for the next decision and regular
+  retrospectives, with a shorter reading path and supporting reference details.
+
 - Clarify where to find merge choices and recovery help, and what to check in
   the playground tutorial before approving a PR.
 - Task references in PR descriptions now require a link or a visible explanation
