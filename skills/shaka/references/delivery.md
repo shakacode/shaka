@@ -387,6 +387,14 @@ rollback consequences where they fit; avoid a heading for every checklist item.
 State each risk and rollback as the [review evidence rules](publication.md#review-evidence) describe.
 Cover the change completely, then stop.
 
+For larger PRs, those exceeding a trusted `merge.limits` size limit or spanning
+several distinct behaviors, keep a compact working coverage map. Map each concept
+to its changed paths and mark it pending or covered. Group supporting tests and
+docs with their behavior; label mechanical or generated changes together. Check
+the map against the whole diff, including meaningful changes within each path,
+before claiming coverage. Keep it in the existing task record, without a separate
+ledger or publication requirement.
+
 ### Connect a technical fix to its evidence
 
 For technical fixes, connect the triggering failure and observed cause (label inference)

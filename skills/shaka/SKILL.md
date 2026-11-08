@@ -21,6 +21,8 @@ follow the [retrospective procedure](references/retrospective.md) and stop at it
 For a request to review documentation together, one topic at a time, follow the
 [guided documentation review](references/guided-documentation-review.md) and stop after each
 topic.
+For a requested interactive code walkthrough, follow the
+[interactive walkthrough](references/interactive-walkthrough.md) and stop after each concept.
 For a request to see what a reviewer receives, or to explain or change this repository's
 settings, follow the [configure procedure](references/configure.md).
 For a request to install or update Shaka itself, follow

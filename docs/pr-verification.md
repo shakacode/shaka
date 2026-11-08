@@ -46,6 +46,23 @@ result. Open **Code Review** or **Code Walkthrough** for closer examination.
 Evidence should cover the version you're reviewing. Passing checks support a
 decision; they do not settle every product choice or prove every claim.
 
+## Walk through the code together
+
+Ask for an interactive tour when you want to understand a PR before deciding:
+
+```text
+$shaka Walk me through https://github.com/OWNER/REPO/pull/123 one concept at a time.
+```
+
+The agent starts with a short agenda, explains one concept, and pauses for your
+questions. Say `next` to continue, or ask to change the depth, revisit a concept,
+or skip ahead. Larger PRs get a lightweight coverage map that connects concepts
+to changed files and tracks what has been covered.
+
+The tour follows a specific revision and refreshes when the comparison changes.
+It complements the published Code Walkthrough and selective notes on the diff.
+Finishing the tour does not approve or authorize merging the PR.
+
 <a id="use-the-prepared-merge-message"></a>
 <a id="approval-and-attention-labels"></a>
 <a id="squash-merge-details"></a>

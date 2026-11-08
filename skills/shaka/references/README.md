@@ -28,6 +28,7 @@ the workflow reaches that decision:
 | Publish PR descriptions, walkthroughs, replies, and review reports | [Publication](publication.md) |
 | Assess documentation changes | [Documentation verification](documentation-verification.md) |
 | Review documentation with the user, one topic at a time | [Guided documentation review](guided-documentation-review.md) |
+| Explain code with the user, one concept at a time | [Interactive walkthrough](interactive-walkthrough.md) |
 | Choose tests and evidence | [Workflow implementation and verification](../config/workflow.yml) |
 | Verify a UI or speed-affecting change | [UI evidence](ui-verification.md) or [performance comparison](performance-verification.md) |
 | Leave reviewer notes on a walkthrough diff | [Walkthrough notes](walkthrough-notes.md) |
