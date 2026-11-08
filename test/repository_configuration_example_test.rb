@@ -82,7 +82,9 @@ class RepositoryConfigurationExampleRiskAreasTest < Minitest::Test
     areas = Shaka::RepositoryConfig.load(root: File.expand_path('..', __dir__)).high_risk_areas
     %w[skills/shaka/lib/shaka/merge_risk_gate.rb skills/shaka/lib/shaka/evidence/public_settings.rb
        skills/shaka/lib/shaka/trusted_config_source.rb
-       skills/shaka/lib/shaka/repository_config/merge_schema.rb].each do |path|
+       skills/shaka/lib/shaka/repository_config/merge_schema.rb skills/shaka/config/post-implementation-risk.md
+       skills/shaka/lib/shaka/post_implementation/adequacy.rb skills/shaka/lib/shaka/post_implementation_runner.rb
+       skills/shaka/config/workflow.yml skills/shaka/SKILL.md skills/shaka/scripts/shaka.rb].each do |path|
       assert_equal 'merge_and_trust', Shaka::PostImplementationRisk.hits(areas, [path]).first&.fetch('area'), path
     end
   end

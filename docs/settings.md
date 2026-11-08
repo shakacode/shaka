@@ -208,8 +208,10 @@ Put other project restrictions in `AGENTS.md`.
 
 ## `merge.auto_merge_max_risk`
 
-**Optional. Default: `low`.** The highest [risk](#high_risk_areas) the agent may merge under
-`preference: auto` without you confirming the head. Each level includes the ones below it.
+**Optional. Default: `low`.** The highest [risk](#high_risk_areas) the agent may merge without
+you confirming the head. Each level includes the ones below it. Under `preference: ask` the
+agent merges only a head you approved, and that approval is the confirmation, so the limit
+matters under `preference: auto`.
 
 - `low` lets the agent merge only a PR whose checkpoint rates it low risk.
 - `medium` lets the agent merge a PR rated low or medium.

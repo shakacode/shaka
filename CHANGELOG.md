@@ -84,7 +84,8 @@ qualification remain evidence requirements; the version number does not establis
   `merge.auto_max_review_floor` and `pr_description.human_review_floors` are retired:
   for one release a configuration that still sets them loads with a warning and their
   values are ignored, and the next release refuses them. `merge.auto_merge_max_risk`
-  now limits what Auto merges. A repository that lowered `auto_max_review_floor` to keep
+  now limits what the agent merges without a person confirming the head; under Ask that
+  approval is the confirmation. A repository that lowered `auto_max_review_floor` to keep
   other paths from Auto, such as merge or release code, should list them under
   `high_risk_areas`; the packaged areas cover only the paths named above.
 
