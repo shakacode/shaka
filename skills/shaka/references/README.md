@@ -29,7 +29,7 @@ the workflow reaches that decision:
 | Publish PR descriptions, walkthroughs, replies, and review reports | [Publication](publication.md) |
 | Assess documentation changes | [Documentation verification](documentation-verification.md) |
 | Review documentation with the user, one topic at a time | [Guided documentation review](guided-documentation-review.md) |
-| Interpret PR evidence | [PR record details](https://github.com/shakacode/shaka/blob/main/docs/reference/pr-record.md) |
+| Choose tests and evidence | [Workflow implementation and verification](../config/workflow.yml) |
 | Verify a UI or speed-affecting change | [UI evidence](ui-verification.md) or [performance comparison](performance-verification.md) |
 | Leave reviewer notes on a walkthrough diff | [Walkthrough notes](walkthrough-notes.md) |
 | Explain visible changes on the new capture | [Annotated screenshots and optional pixel diagnostics](visual-diff.md) |

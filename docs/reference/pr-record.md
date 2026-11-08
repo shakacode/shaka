@@ -111,8 +111,9 @@ separate message comment. Use the message for the commit you reviewed.
 The agent supplies the message when it merges for you.
 
 A **merge queue** provides no message fields. Add the PR to the queue instead.
-Its repository settings control the message. Shaka refuses a queue that copies
-the full PR description into Git history, or whose settings cannot be read.
+Its repository settings control the message. Shaka's own merge refuses a queue
+that copies the full PR description into Git history, or whose settings cannot
+be read. The checkpoint warns you before you add the PR through GitHub.
 For squash queues, choose **Default message** for branch commit messages or
 **Pull request title** for the PR title.
 
