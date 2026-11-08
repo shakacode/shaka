@@ -15,6 +15,9 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Added
 
+- Ask for an interactive code walkthrough with a short agenda and pauses for
+  questions. Larger PR walkthroughs use a lightweight coverage map; selective
+  notes on the diff remain unchanged.
 - Keep complete usage accounting when a PR description outgrows GitHub's limit.
   The description retains its tables and pricing notes, with checksummed links to
   accounting comments. A missing or changed archive blocks later updates.
