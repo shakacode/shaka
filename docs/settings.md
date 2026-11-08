@@ -593,7 +593,7 @@ On Linux, Codex's read-only sandbox needs unprivileged user namespaces. A contai
 without them, such as a default Docker container, fails every command the Codex
 reviewer tries with `bwrap: No permissions to create a new namespace`. The reviewer
 still answers from the diff in its prompt, so it reads no callers, tests, or
-configuration. The PR description's [Verification](pr-verification.md#understand-the-limits-of-verification)
+configuration. The PR description's [Verification](reference/pr-record.md#verification-results)
 then names it on the Setup gaps line.
 
 Run Codex reviews where its sandbox can start, such as on the host instead of in the
@@ -627,7 +627,7 @@ can run, here Codex. The others follow the list order, so the second is Claude i
 fresh session, without the implementation conversation. If Codex had written the
 change, the order would be Claude, then Codex. When the agent finds a reviewer's CLI
 missing or signed out, fewer reviewers read that commit, and from the next commit the next
-listed reviewer takes its place. The PR description's [Verification](pr-verification.md#understand-the-limits-of-verification)
+listed reviewer takes its place. The PR description's [Verification](reference/pr-record.md#verification-results)
 says how many completed.
 
 Each extra reviewer adds cost and may increase elapsed time. The PR's
@@ -664,7 +664,7 @@ optional.
 
 When a listed provider cannot review, the agent copies Shaka's gap report into the published
 review, which shows it near the top with the reason: that provider is not listed in `local_review_agents`, not set up on the machine, or
-unavailable. The PR description's [Verification](pr-verification.md#understand-the-limits-of-verification) names the provider too. Shaka does not substitute another provider, and the gap never blocks merging.
+unavailable. The PR description's [Verification](reference/pr-record.md#verification-results) names the provider too. Shaka does not substitute another provider, and the gap never blocks merging.
 Writing the change does not count as reviewing it.
 
 To pay for one local review instead, leave this unset and set `local_review_count: 1`. With
@@ -764,7 +764,7 @@ checkpoint:
 Repository choices come from the [configuration source](#which-settings-apply),
 and prompt files from [where Shaka reads prompt files](#where-shaka-reads-a-prompt-file).
 A task's explicit choices take precedence. See
-[the checkpoint](pr-verification.md#checkpoint)
+[the checkpoint](reference/pr-record.md#checkpoint)
 for what the checkpoint means for your merge decision.
 
 The PR records the conclusion, reasons, execution settings, and available native
@@ -775,7 +775,7 @@ Setting `enabled: false` in the selected configuration opts out and
 requires a visible note. Individual setup applies these choices too. Final
 preparation accepts an individual opt-out only after its note is published on the PR.
 
-See [checkpoint terms and current report labels](pr-verification.md#checkpoint).
+See [checkpoint terms and current report labels](reference/pr-record.md#checkpoint).
 The current automated gate concerns pre-merge readiness; these terms do not add
 an approval step or a general outer-loop mechanism.
 
@@ -784,7 +784,7 @@ The AI reviewer assesses whether the change solves the problem and is worth
 maintaining. The task owner supplies the original problem and evidence, resolves
 concerns, and establishes merge readiness. Final merge preparation
 requires a report for the current commit with no unresolved concerns, counting a concern
-you [accepted](pr-verification.md#checkpoint) as resolved, or an explicit opt-out.
+you [accepted](reference/pr-record.md#checkpoint) as resolved, or an explicit opt-out.
 
 ### Add your own checkpoint questions
 
@@ -838,7 +838,7 @@ project_guidance:
   the agent reports that run in the description's verification. Shaka also shows the
   guide to the agent each time it publishes the description, so a skipped read still
   surfaces it.
-- `merge_readiness`: read before the [checkpoint](pr-verification.md#checkpoint).
+- `merge_readiness`: read before the [checkpoint](reference/pr-record.md#checkpoint).
   For example, a data service can require a confirmed backfill plan. The agent lists
   each requirement and its status, and an unmet one blocks the merge-ready claim.
   Write standing rules for every PR here; a task's own acceptance criteria stay in
@@ -1128,7 +1128,7 @@ cannot be read.
 **Optional. Default: `true`.**
 
 PR descriptions list the comments people wrote under **Human comments**, so they are
-not lost among agent posts. See [how human feedback is highlighted](pr-verification.md#find-feedback-from-people).
+not lost among agent posts. See [how human feedback is highlighted](reference/pr-record.md#human-comments).
 
 To leave the list out of this repository's PR descriptions, set:
 

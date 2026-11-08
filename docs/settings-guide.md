@@ -169,7 +169,7 @@ turn it off, in team or individual settings.
 ## Decide what happens next
 
 Shaka recommends what to do next at a
-[checkpoint](pr-verification.md#checkpoint) and records the owner's
+[checkpoint](reference/pr-record.md#checkpoint) and records the owner's
 choice for later. See that guide for the terms and current report labels.
 [Checkpoint settings](settings.md#checkpoint) choose who evaluates
 the result, with team or individual setup.

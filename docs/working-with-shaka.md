@@ -53,7 +53,7 @@ Don't both write at once.
 
 ### Revise earlier guidance and try again
 
-The PR description lists your instructions as [return points](pr-verification.md#return-points)
+The PR description lists your instructions as [return points](reference/pr-record.md#recovery)
 C1, C2, and so on. To go back to one:
 
 ```text
@@ -73,10 +73,10 @@ Search your PR list on GitHub:
 | Search | What to do |
 | --- | --- |
 | `is:open label:awaiting-answer` | Answer **Decisions to make** in the description. |
-| `is:open label:awaiting-merge-approval` | Merge with the prepared [commit message](pr-verification.md#squash-merge-details). Or add the PR to your [merge queue](pr-verification.md#merge-queues), or tell the agent to merge that commit. |
+| `is:open label:awaiting-merge-approval` | Merge with the prepared [commit message](reference/pr-record.md#merge-messages). Or add the PR to your [merge queue](reference/pr-record.md#merge-messages), or tell the agent to merge that commit. |
 | `is:open label:awaiting-resume` | Open **WIP Details → Chat link** and paste **Next action** there. |
 
-A label doesn't wake a chat. See [approval details](pr-verification.md#approval-and-attention-labels).
+A label doesn't wake a chat. See [approval details](reference/pr-record.md#merge-approval).
 
 ## Resume unfinished work
 

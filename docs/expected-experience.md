@@ -106,7 +106,7 @@ and held at Ask. To keep Auto, say so again in the new chat.
 
 Use the [resume guide](working-with-shaka.md#resume-unfinished-work).
 Recovery copies protect captured configuration, not feature changes or the agent
-conversation. A [return point](pr-verification.md#return-points)
+conversation. A [return point](reference/pr-record.md#recovery)
 needs recorded guidance and recoverable work state. It is a separate agent procedure;
 the Ruby `checkpoint` command does not capture or restore snapshots.
 

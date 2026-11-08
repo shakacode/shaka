@@ -18,7 +18,7 @@ diagnostic evidence; put them in collapsed details when useful.
 After a later commit that changes runtime behavior, repeat the manual pass and refresh
 the affected captures and annotations, including any diagnostic differences.
 Read the current public
-[verification guide](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md) for examples when deciding what evidence a
+[verification guide](https://github.com/shakacode/shaka/blob/main/docs/reference/pr-record.md#visual-evidence) for examples when deciding what evidence a
 change needs. Follow this installed workflow if the current public guide differs.
 
 ## Publish UI evidence

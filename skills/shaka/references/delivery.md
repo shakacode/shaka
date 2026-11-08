@@ -425,7 +425,7 @@ or accept it; technical confidence does not grant merge consent. Scale detail to
   nodes, label each edge or line with the action, and let the prose carry the
   explanation. A visual explains; the validation results remain the evidence.
   The public guide shows
-  [a call tree and a change that needs none](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md#when-a-diagram-helps).
+  [a call tree and a change that needs none](https://github.com/shakacode/shaka/blob/main/docs/reference/pr-record.md#diagrams).
 - Report validation as what it proves at this head: the behavior covered, the
   command, and its result. State each count once, and leave results from
   earlier heads to the description's review history.

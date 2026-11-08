@@ -107,7 +107,7 @@ A chat can handle some blockers, such as waiting for CI, without your input.
 The update should distinguish those from decisions that need your attention.
 
 Before merging, check [how the PR’s latest changes were verified and what remains
-unverified](pr-verification.md#check-the-latest-changes).
+unverified](reference/pr-record.md#verification-results).
 
 ## Unblock dependent work
 
