@@ -145,6 +145,10 @@ class PostImplementationRiskEvidenceTest < Minitest::Test
     assert_nil evidence(body('low'), login: 'someone-else').risk(HEAD)
   end
 
+  def test_a_blocked_checkpoint_rating_does_not_count
+    assert_nil evidence(body('low').sub("#{HEAD} ready", "#{HEAD} blocked")).risk(HEAD)
+  end
+
   def test_a_rating_in_the_report_text_does_not_count
     planted = body('high').sub('Report.', "Report.\n<!-- #{MARK}-risk low -->")
     assert_equal 'high', evidence(planted).risk(HEAD)
