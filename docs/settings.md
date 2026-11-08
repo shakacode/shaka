@@ -593,7 +593,7 @@ On Linux, Codex's read-only sandbox needs unprivileged user namespaces. A contai
 without them, such as a default Docker container, fails every command the Codex
 reviewer tries with `bwrap: No permissions to create a new namespace`. The reviewer
 still answers from the diff in its prompt, so it reads no callers, tests, or
-configuration. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision)
+configuration. The PR description's [Verification](pr-verification.md#understand-the-limits-of-verification)
 then names it on the Setup gaps line.
 
 Run Codex reviews where its sandbox can start, such as on the host instead of in the
@@ -627,7 +627,7 @@ can run, here Codex. The others follow the list order, so the second is Claude i
 fresh session, without the implementation conversation. If Codex had written the
 change, the order would be Claude, then Codex. When the agent finds a reviewer's CLI
 missing or signed out, fewer reviewers read that commit, and from the next commit the next
-listed reviewer takes its place. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision)
+listed reviewer takes its place. The PR description's [Verification](pr-verification.md#understand-the-limits-of-verification)
 says how many completed.
 
 Each extra reviewer adds cost and may increase elapsed time. The PR's
@@ -664,7 +664,7 @@ optional.
 
 When a listed provider cannot review, the agent copies Shaka's gap report into the published
 review, which shows it near the top with the reason: that provider is not listed in `local_review_agents`, not set up on the machine, or
-unavailable. The PR description's [Verification](pr-verification.md#answers-for-your-next-decision) names the provider too. Shaka does not substitute another provider, and the gap never blocks merging.
+unavailable. The PR description's [Verification](pr-verification.md#understand-the-limits-of-verification) names the provider too. Shaka does not substitute another provider, and the gap never blocks merging.
 Writing the change does not count as reviewing it.
 
 To pay for one local review instead, leave this unset and set `local_review_count: 1`. With
@@ -1128,8 +1128,7 @@ cannot be read.
 **Optional. Default: `true`.**
 
 PR descriptions list the comments people wrote under **Human comments**, so they are
-not lost among agent posts. [See what people said](pr-verification.md#see-what-people-said)
-shows the list and explains each column.
+not lost among agent posts. See [how human feedback is highlighted](pr-verification.md#find-feedback-from-people).
 
 To leave the list out of this repository's PR descriptions, set:
 

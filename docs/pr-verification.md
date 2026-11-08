@@ -183,6 +183,10 @@ establish that the reviewer ran the application.
 These distinctions also matter during retrospectives. An untested behavior, a
 missed defect, and a check that could not run point to different improvements.
 
+When review is incomplete, the gap report names the missing reviewers and how many
+completed. A Codex reviewer whose sandbox could not start is identified as reading
+only the diff; the review record explains that limit.
+
 See [review coverage settings](settings.md#reviewprovider_coverage) for incomplete
 reviewer coverage. The agent reports unverified claims; Shaka does not prove that
 those reports are complete. See [what is enforced](workflow.md#what-is-enforced).
@@ -296,6 +300,20 @@ Detailed captures remain available for closer inspection and later analysis when
 a visual or interaction problem surfaces. Open the PR's linked verification
 comment to find the captures.
 
+<details>
+<summary>Examples of useful evidence</summary>
+
+| Change | Useful evidence |
+| --- | --- |
+| Layout, styling, or visible output | Annotated before-and-after desktop and mobile screenshots. |
+| Interaction, animation, or timing | A short recording, with screenshots where they help comparison. |
+| Backend or command-line behavior | Focused tests and concise before-and-after output. |
+
+A diagram explains the approach. Running the changed software supplies evidence
+that the approach works.
+
+</details>
+
 <a id="notes-on-the-diff"></a>
 <a id="when-a-diagram-helps"></a>
 
@@ -315,6 +333,24 @@ would have served better.
 Walkthrough notes on GitHub's diff point out code worth reading. They are reading
 guidance, not findings to fix. Diagrams explain the approach; they do not prove
 that it works.
+
+<details>
+<summary>Example diagram and a change that needs none</summary>
+
+A change that prevents duplicate refunds might show both callers reaching the
+same check before a payment is issued:
+
+```text
+RefundsController#create ──┐
+RefundRetryJob#perform ────┴── Refunds.issue
+                               ├── RefundPolicy.check      refuses a second refund for the same order (new)
+                               └── PaymentGateway.refund   reached only after the policy passes
+```
+
+A smaller change can use a sentence: "RefundPolicy.check now also rejects refunds
+larger than the original charge." No call order changed, so no diagram is needed.
+
+</details>
 
 <a id="what-a-rollback-undoes"></a>
 

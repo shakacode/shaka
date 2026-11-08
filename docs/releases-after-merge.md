@@ -18,7 +18,7 @@ deployment does not show that its observation window completed.
 
 ## What Shaka records for your release
 
-- **[Steps besides merging](pr-verification.md#answers-for-your-next-decision).**
+- **[Steps besides merging](pr-verification.md#check-for-steps-before-or-after-merging).**
   Put a staging check, backfill, or feature-flag change in an `after merge` row,
   so whoever promotes the release finds it on the PR. After a merge, the agent
   lists the rows still open.
