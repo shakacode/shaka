@@ -279,6 +279,17 @@ A checkpoint containing only the reviewer's verdict is not an owner recommendati
 A new commit needs current evidence; an earlier recommendation does not cover it.
 See [checkpoint settings](settings.md#checkpoint) for customization.
 
+The report uses these labels to distinguish a proposal from a decision:
+
+| Label | Meaning |
+| --- | --- |
+| **Recommendation** | What the task owner proposes doing next. |
+| **Recorded decision** | Guidance accepted or acted on under existing authority. |
+| **Reviewer recommendation** | The reviewer's view, before the task owner records a recommendation. |
+| **No recommendation yet** | The owner has not recorded a recommendation for this commit. |
+| **Not published yet** | The linked report is not available yet. |
+| **Merge after maintainer decision** | A question or concern needs your decision before merging. |
+
 ![Checkpoint for commit 1198b62 showing Recommendation: Merge, the next action, Reviewer verdict: Proceed, no unresolved concerns, and a copyable squash commit title.](img/pr-checkpoint.webp)
 
 [The checkpoint on PR #527](https://github.com/shakacode/shaka/pull/527#issuecomment-6184807134)
