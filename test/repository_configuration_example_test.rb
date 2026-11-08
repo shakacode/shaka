@@ -103,3 +103,19 @@ class RepositoryConfigurationExampleAreaDriftTest < Minitest::Test
     end
   end
 end
+
+# Shaka's user guides and its validation and install code go to a person for a skim, as their floors did.
+class RepositoryConfigurationExampleMediumAreasTest < Minitest::Test
+  def test_shaka_guides_and_install_code_count_as_medium
+    config = Shaka::RepositoryConfig.load(root: File.expand_path('..', __dir__))
+    { 'docs/getting-started.md' => 'user_docs', 'docs/articles/one-shot-pr-study.md' => 'user_docs',
+      'bin/validate' => 'validation_install', 'shaka.gemspec' => 'validation_install',
+      'skills/shaka/lib/shaka/install/checkout.rb' => 'validation_install' }.each do |path, area|
+      assessment = Shaka::PostImplementationRisk.assess('low', config.high_risk_areas, [path], config.medium_risk_areas)
+      assert_equal [area], assessment['medium_areas_hit'].map { it['area'] }, path
+    end
+    reference = Shaka::PostImplementationRisk.assess('low', config.high_risk_areas, ['docs/reference/pr-record.md'],
+                                                     config.medium_risk_areas)
+    assert_equal 'low', reference['level']
+  end
+end

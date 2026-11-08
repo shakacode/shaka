@@ -87,6 +87,12 @@ medium_risk_areas: # Defaults: a change here counts as at least medium risk, so 
   agent_instructions: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', .claude/**/*, .cursor/**/*]
   # Ours: Shaka's instructions, prompts and references; its Ruby code is rated on its own.
   shaka_instructions: ['skills/**/*.{md,yml}']
+  # Ours: guides for Shaka's users; the reference pages under docs/reference/ are rated on their own.
+  user_docs: ['docs/*', 'docs/articles/**/*', 'docs/img/**/*']
+  # Ours: validation, install and update code, which reaches every user.
+  validation_install: [bin/**/*, .rubocop.yml, .ruby-version, 'Gemfile{,.lock}', shaka.gemspec,
+                       'skills/shaka/lib/shaka/{installer,update_check,github}.rb',
+                       'skills/shaka/lib/shaka/{install,update_check,github}/**/*']
 
 merge:
   preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.
