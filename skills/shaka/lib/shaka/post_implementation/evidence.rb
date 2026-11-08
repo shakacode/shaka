@@ -26,7 +26,7 @@ module Shaka
                           "<!-- #{MARK} ([0-9a-f]{40}) (?:ready|blocked) -->\\s*\\z")
     def self.adequacy(verdict) = "<!-- #{MARK}-adequacy #{verdict.tr(' ', '_')} -->"
 
-    # The reviewer's risk rating sits directly above the verdict, so merge can read it under merge.auto_merge: low.
+    # The reviewer's risk rating sits directly above the verdict, so merge can read it under merge.auto_merge_max_risk.
     RISK = Regexp.new("\n<!-- #{MARK}-risk (#{PostImplementationReport::RISK.join('|')}) -->" \
                       "\n<!-- #{MARK}-adequacy (?:#{ADEQUACY_SLUGS.keys.join('|')}) -->" \
                       "\n(?:<!-- #{MARK}-disposition (?:#{RECOMMENDATION}) -->\n)?" \

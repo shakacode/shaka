@@ -40,7 +40,7 @@ module Shaka
     # In the order docs/settings.md explains them.
     SETTINGS = [
       merge('preference'), merge('required_checks'), merge('limits'), merge('auto_max_review_floor'),
-      merge('auto_merge'),
+      merge('auto_merge_max_risk'),
       setting('merge.hold_labels') { |context| MergeHold.from(context.config).labels },
       review('startup_check'), review('required'), review('ci_review_jobs'), review('ci_review_wait'),
       review('local_max_rounds'), review('local_review_agents'),

@@ -78,9 +78,8 @@ merge:
   # install code.
   # While preference is ask, each ready checkpoint says whether Auto would merge the PR.
   auto_max_review_floor: 2
-  # Default: floors, the line above decides. low: Auto merges only a PR the checkpoint rates low risk, with
-  # no file in high_risk_areas (above), and every ready checkpoint previews that while preference is ask.
-  auto_merge: floors
+  # auto_merge_max_risk: unset, so the line above decides. Set to low, Auto would merge only a PR the
+  # checkpoint rates low risk with no file in high_risk_areas (above); medium would add medium risk.
   hold_labels: [hold] # Default. Shaka never merges a PR carrying one of these; remove it to merge.
 
 branches:

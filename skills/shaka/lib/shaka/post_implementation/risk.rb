@@ -6,7 +6,7 @@ require_relative '../repository_config/high_risk_areas_schema'
 
 module Shaka
   # The checkpoint's risk rating, raised to high for any change inside a high-risk area, and what each
-  # rating asks of the merge. Merge reads the rating only under merge.auto_merge: low, through MergeRiskGate.
+  # rating asks of the merge. Merge reads the rating only under merge.auto_merge_max_risk, through MergeRiskGate.
   module PostImplementationRisk
     # Case-insensitive, because a case-insensitive checkout changes Infra/main.tf as surely as infra/main.tf.
     GLOB = File::FNM_PATHNAME | File::FNM_EXTGLOB | File::FNM_DOTMATCH | File::FNM_CASEFOLD
@@ -17,8 +17,17 @@ module Shaka
       'high' => 'High risk is meant for a person to merge after a careful review that starts with the ' \
                 'verification: does the evidence prove the change works, before the code?'
     }.freeze
+    LEVELS = %w[low medium high].freeze
 
     module_function
+
+    # The trusted merge.auto_merge_max_risk, or nil when it is unset and the review floors decide.
+    def max_risk(seam) = seam&.merge&.[]('auto_merge_max_risk')
+
+    def within?(level, max_risk) = LEVELS.index(level) <= LEVELS.index(max_risk)
+
+    # Every level a setting lets the agent merge, so medium reads as low or medium.
+    def allowed(max_risk) = LEVELS.take(LEVELS.index(max_risk) + 1).join(' or ')
 
     # rating is the reviewer's; areas maps names to path patterns; paths are the PR's changed files, or nil
     # when they could not be read, which counts as high because a high-risk change cannot be ruled out.
@@ -36,7 +45,7 @@ module Shaka
     end
 
     # seam is the trusted RepositoryConfig, or nil when it could not be read, which applies the packaged areas.
-    # Changed files that GitHub cannot list count as unread. governs says whether merge reads the rating.
+    # Changed files that GitHub cannot list count as unread. max_risk is the setting merge reads, or nil.
     def from(seam, github, head, rating)
       areas = seam&.high_risk_areas || RepositoryConfig::HighRiskAreasSchema.effective(nil)
       paths = begin
@@ -44,7 +53,7 @@ module Shaka
       rescue Error, SystemCallError
         nil
       end
-      assess(rating, areas, paths).merge('governs' => seam&.merge&.fetch('auto_merge') == 'low')
+      assess(rating, areas, paths).merge('max_risk' => max_risk(seam))
     end
 
     # The first changed file in each area, so a reader sees why the area applies. Shaka's own configuration
@@ -65,18 +74,31 @@ module Shaka
     end
 
     def section(assessment, reasons)
-      lines = ["**Risk:** #{heading(assessment)} #{ACTION.fetch(assessment['level'])}"]
+      lines = ["**Risk:** #{heading(assessment)} #{action(assessment)}"]
       lines.concat(reasons.map { |reason| "- #{reason}" })
       lines << '- Changed files could not be read, so high-risk areas were not checked.' unless
         assessment['paths_read']
       "#{lines.join("\n")}\n\n#{footnote(assessment)}"
     end
 
-    def footnote(assessment)
-      return '_With `merge.auto_merge: low`, an agent merges only a low rating; a person merges the rest._' if
-        assessment['governs']
+    # Under a max level that admits this level, the setting, not the design default, says who merges.
+    def action(assessment)
+      level = assessment['level']
+      max = assessment['max_risk']
+      return ACTION.fetch(level) unless max && level != 'low' && within?(level, max)
 
-      '_Preview: the rating does not change what merges until `merge.auto_merge` is `low`._'
+      "#{level.capitalize} risk is at or below `merge.auto_merge_max_risk: #{max}`, so an agent may merge it, " \
+        'with a later audit.'
+    end
+
+    def footnote(assessment)
+      max = assessment['max_risk']
+      if max
+        return "_With `merge.auto_merge_max_risk: #{max}`, an agent merges a #{allowed(max)} rating; a person " \
+               'merges the rest._'
+      end
+
+      '_Preview: the rating does not change what merges until `merge.auto_merge_max_risk` is set._'
     end
 
     # The PR's author names its files, so a backtick or line break must not end the code span and let the

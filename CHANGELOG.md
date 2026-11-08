@@ -19,9 +19,10 @@ qualification remain evidence requirements; the version number does not establis
   what that rating asks of the merge: a skim for medium, a careful review that starts
   with the verification for high. A missing rating shows as unknown and counts as high. Changes to databases, persistence, infrastructure,
   CI and trust, or Shaka's settings always count as high; set `high_risk_areas` to
-  change those paths. Set `merge.auto_merge: low` to let Auto merge only low-risk PRs
-  instead of using `merge.auto_max_review_floor`; the default, `floors`, keeps the floors,
-  and the rating stays a preview in the checkpoint comment.
+  change those paths. Set `merge.auto_merge_max_risk` to `low` to let Auto merge only
+  low-risk PRs, or to `medium` to add medium risk, instead of using
+  `merge.auto_max_review_floor`. Left unset, the floors decide and the rating stays a
+  preview in the checkpoint comment.
 - Keep complete usage accounting when a PR description outgrows GitHub's limit.
   The description retains its tables and pricing notes, with checksummed links to
   accounting comments. A missing or changed archive blocks later updates.

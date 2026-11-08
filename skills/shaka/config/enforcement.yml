@@ -756,8 +756,8 @@ rules:
       refuses a confirmation that names a head other than the one being merged.
       `MergeReviewFloor#verify!` refuses a PR with a changed file above the trusted
       `merge.auto_max_review_floor` unless the flag names the head being merged, and under
-      `merge.auto_merge: low` `MergeRiskGate#verify!` does the same for a head not rated low or
-      changing a high-risk file. Neither can tell
+      `merge.auto_merge_max_risk` `MergeRiskGate#verify!` does the same for a head rated above that
+      level or changing a high-risk file. Neither can tell
       whether a user confirmed that head, or whether a rebase changed behavior, so passing the
       flag honestly is the agent's alone. The scan does not reach this rule, which restricts
       with "only for".

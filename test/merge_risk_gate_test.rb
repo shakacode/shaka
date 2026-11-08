@@ -4,14 +4,16 @@ require_relative 'checkpoint_auto_merge_preview_test'
 require 'shaka/merge_risk_gate'
 require 'shaka/post_implementation/evidence'
 
-# Under merge.auto_merge: low, merge reads the checkpoint's rating for the exact head and the trusted areas.
+# Under merge.auto_merge_max_risk, merge reads the checkpoint's rating for the exact head and the trusted areas.
 class MergeRiskGateTest < Minitest::Test
   HEAD = 'a' * 40
-  Seam = Struct.new(:high_risk_areas)
+  Seam = Struct.new(:high_risk_areas, :merge)
   Checkpoint = Struct.new(:ratings) do
     def risk(head) = ratings[head]
   end
-  SEAM = Seam.new(Shaka::RepositoryConfig::HighRiskAreasSchema.effective(nil))
+  AREAS = Shaka::RepositoryConfig::HighRiskAreasSchema.effective(nil)
+  SEAM = Seam.new(AREAS, { 'auto_merge_max_risk' => 'low' })
+  MEDIUM = Seam.new(AREAS, { 'auto_merge_max_risk' => 'medium' })
 
   def gate(rating, seam: SEAM, confirmed_head: nil)
     Shaka::MergeRiskGate.new(seam, Checkpoint.new({ HEAD => rating }), confirmed_head:)
@@ -30,10 +32,20 @@ class MergeRiskGateTest < Minitest::Test
   end
 
   def test_any_other_rating_or_a_missing_one_goes_to_a_person
-    assert_includes refusal('medium', %w[lib/fix.rb]), 'the checkpoint rates this head medium risk, and ' \
-                                                       'merge.auto_merge: low lets the agent merge only low risk'
+    assert_includes refusal('medium', %w[lib/fix.rb]),
+                    'the checkpoint rates this head medium risk, and merge.auto_merge_max_risk: low lets the ' \
+                    'agent merge only low risk'
     assert_includes refusal('unknown', %w[lib/fix.rb]), 'rates this head high risk'
     assert_includes refusal(nil, %w[lib/fix.rb]), 'the checkpoint for this head has no risk rating'
+  end
+
+  def test_medium_also_merges_low_and_still_refuses_high
+    assert_nil gate('low', seam: MEDIUM).verify!(github(%w[lib/fix.rb]), HEAD)
+    assert_nil gate('medium', seam: MEDIUM).verify!(github(%w[lib/fix.rb]), HEAD)
+    assert_includes refusal('high', %w[lib/fix.rb], seam: MEDIUM),
+                    'rates this head high risk, and merge.auto_merge_max_risk: medium lets the agent merge only ' \
+                    'low or medium risk'
+    assert_includes refusal('medium', %w[db/migrate/1_x.rb], seam: MEDIUM), 'is in high-risk area `database`'
   end
 
   def test_a_high_risk_area_overrides_a_low_rating
@@ -42,7 +54,7 @@ class MergeRiskGateTest < Minitest::Test
   end
 
   def test_shaka_settings_go_to_a_person_even_with_the_area_turned_off
-    seam = Seam.new(Shaka::RepositoryConfig::HighRiskAreasSchema.effective('shaka' => []))
+    seam = Seam.new(Shaka::RepositoryConfig::HighRiskAreasSchema.effective('shaka' => []), SEAM.merge)
     assert_includes refusal('low', %w[.agents/shaka/config.yml], seam:),
                     '`.agents/shaka/config.yml` is in high-risk area `shaka`'
     assert_includes refusal('low', %w[.agents/shaka.md]), '`.agents/shaka.md` is in high-risk area `shaka`'
@@ -58,11 +70,17 @@ class MergeRiskGateTest < Minitest::Test
     assert_nil gate('high', confirmed_head: HEAD).verify!(github(%w[db/migrate/1_x.rb]), HEAD)
   end
 
-  def test_the_setting_accepts_only_floors_or_low
-    error = assert_raises(Shaka::Error) do
-      Shaka::RepositoryConfig::MergeSchema.new('preference' => 'auto', 'auto_merge' => 'medium').validate
+  def test_the_setting_accepts_only_low_or_medium
+    %w[high floors].each do |value|
+      error = assert_raises(Shaka::Error, value) do
+        Shaka::RepositoryConfig::MergeSchema.new('preference' => 'auto', 'auto_merge_max_risk' => value).validate
+      end
+      assert_includes error.message, 'merge.auto_merge_max_risk must be low or medium'
     end
-    assert_includes error.message, 'merge.auto_merge must be floors or low'
+    error = assert_raises(Shaka::Error) do
+      Shaka::RepositoryConfig::MergeSchema.new('preference' => 'auto', 'auto_merge' => 'low').validate
+    end
+    assert_includes error.message, 'auto_merge'
   end
 end
 
@@ -96,21 +114,33 @@ class PostImplementationRiskEvidenceTest < Minitest::Test
   end
 end
 
-# Under merge.auto_merge: low the Auto merge preview on Ask reads the risk rating.
+# Under merge.auto_merge_max_risk the Auto merge preview on Ask reads the risk rating.
 class AutoMergeLowPreviewTest < Minitest::Test
   include AutoMergePreviewFixture
 
-  LOW = { 'preference' => 'ask', 'auto_merge' => 'low' }.freeze
+  LOW = { 'preference' => 'ask', 'auto_merge_max_risk' => 'low' }.freeze
+  MEDIUM = LOW.merge('auto_merge_max_risk' => 'medium').freeze
 
-  # Under merge.auto_merge: low the preview reads the rating, not the floors, and the marker carries it for merge.
+  # At low the preview reads the rating, not the floors, and the marker carries it for merge.
   def test_auto_merge_low_previews_the_risk_rating
     passing = body_for(%w[lib/fix.rb skills/shaka/SKILL.md], merge: LOW)
     assert_includes passing, 'this PR passes the risk rating and size checks Auto applies'
-    assert_includes passing, 'an agent merges only a low rating; a person merges the rest.'
+    assert_includes passing, 'an agent merges a low rating; a person merges the rest.'
     assert_includes passing, "\n<!-- shaka:post-implementation-risk low -->\n<!-- shaka:post-implementation-adequacy "
     migration = body_for(%w[db/migrate/1_add_index.rb], merge: LOW)
     assert_includes migration, 'would hand this PR back: `db/migrate/1_add_index.rb` is in high-risk area `database`.'
     refute_includes migration, 'The risk rating above'
+  end
+
+  # At medium, the comment says low and medium both merge, and a medium rating reads as the agent's to merge.
+  def test_medium_previews_low_or_medium
+    medium = body_for(%w[lib/fix.rb], merge: MEDIUM, report: { rating: 'medium' })
+    assert_includes medium, 'this PR passes the risk rating and size checks Auto applies'
+    assert_includes medium,
+                    'Medium risk is at or below `merge.auto_merge_max_risk: medium`, so an agent may merge it'
+    assert_includes medium, 'an agent merges a low or medium rating; a person merges the rest.'
+    high = body_for(%w[lib/fix.rb], merge: MEDIUM, report: { rating: 'high' })
+    assert_includes high, 'would hand this PR back: the checkpoint rates this head high risk.'
   end
 
   # A file name the PR's author chose stays inside its code span in the preview, as in the risk section.

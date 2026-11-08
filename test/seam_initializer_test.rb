@@ -11,8 +11,7 @@ require 'shaka/version'
 
 GENERATED_MERGE = { 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS,
                     'auto_max_review_floor' => Shaka::MergeReviewFloor::DEFAULT,
-                    'hold_labels' => Shaka::MergeHold::DEFAULT,
-                    'auto_merge' => Shaka::Defaults.fetch('merge', 'auto_merge') }.freeze
+                    'hold_labels' => Shaka::MergeHold::DEFAULT }.freeze
 
 module SeamInitializerTestHelpers
   COMMAND = SHAKA_COMMAND

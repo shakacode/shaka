@@ -241,34 +241,35 @@ file under **Closer reading**, tells a reader where to look but does not stop Au
 Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
 something after merge, so the agent hands those PRs back on its own judgment.
 
-## `merge.auto_merge`
+## `merge.auto_merge_max_risk`
 
-**Optional. Default: `floors`.** What the agent may merge under `preference: auto` without you
-confirming the head.
+**Optional. Default: unset.** The highest [risk](#high_risk_areas) the agent may merge under
+`preference: auto` without you confirming the head. Each level includes the ones below it.
 
-- `floors` keeps [`merge.auto_max_review_floor`](#mergeauto_max_review_floor).
-- `low` lets the agent merge only a PR whose checkpoint rates it low
-  [risk](#high_risk_areas), with no changed file in a high-risk area. The review floors then
-  play no part in what merges.
+- `low` lets the agent merge only a PR whose checkpoint rates it low risk.
+- `medium` lets the agent merge a PR rated low or medium.
+- Unset, [`merge.auto_max_review_floor`](#mergeauto_max_review_floor) decides instead.
 
 ```yaml
 merge:
   preference: auto
-  auto_merge: low
+  auto_merge_max_risk: low
 ```
 
-Medium and high risk always come back to you, so there is no higher setting. `merge` reads
-the rating from the checkpoint comment that your account published for the exact head. It
-reads the high-risk areas from your trusted settings and the changed files from GitHub. A
-missing rating, unreadable files, or a change to Shaka's settings in `.agents/shaka/` or
-`.agents/shaka.md` all come back to you too; those settings count as the `shaka` area even if
-you turn it off. A repository with the checkpoint turned off publishes no new ratings, so under
-`low` a PR comes back to you unless an earlier checkpoint already rated that exact head low. To let the agent merge a PR anyway, confirm that commit the same way as a
-PR past [`merge.limits`](#mergelimits). Each PR the agent merges under Auto is labeled
+High risk always comes back to you, so `high` is not a value. Once this is set, the review
+floors play no part in what merges. `merge` reads the rating from the checkpoint comment that
+your account published for the exact head. It reads the high-risk areas from your trusted
+settings and the changed files from GitHub. A change in a high-risk area counts as high,
+whatever the reviewer rated it. A missing rating, unreadable files, or a change to Shaka's
+settings in `.agents/shaka/` or `.agents/shaka.md` all come back to you too; those settings
+count as the `shaka` area even if you turn it off. A repository with the checkpoint turned off
+publishes no new ratings, so a PR comes back to you unless an earlier checkpoint already rated
+that exact head. To let the agent merge a PR anyway, confirm that commit the same way as a PR
+past [`merge.limits`](#mergelimits). Each PR the agent merges under Auto is labeled
 `auto-merged`, so you can audit them later.
 
 Try it before you switch to `auto`. While `preference` is still `ask`, each ready checkpoint
-comment says whether Auto would merge the PR under this rule, or names what would send it
+comment says whether Auto would merge the PR at this level, or names what would send it
 back. For example, it may say the agent would hand this PR back because
 `db/migrate/1_add_index.rb` is in high-risk area `database`.
 
@@ -888,8 +889,8 @@ What each rating asks:
 | Medium | Meant for a person to merge after a skim of the description, the reasons, and the verification, then of only the files the reasons name. |
 | High or unknown | Meant for a person to merge after a careful review that starts with whether the verification proves the change works. |
 
-The rating changes what merges only under [`merge.auto_merge: low`](#mergeauto_merge). Otherwise
-it is a preview in the checkpoint comment. Without a trusted settings commit, the rating uses the
+The rating changes what merges only once [`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) is
+set. Until then it is a preview in the checkpoint comment. Without a trusted settings commit, the rating uses the
 default areas.
 
 ## `project_guidance`

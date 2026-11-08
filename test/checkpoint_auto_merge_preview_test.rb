@@ -30,13 +30,13 @@ module AutoMergePreviewFixture
   include PostImplementationPublicationFixture
   include RepositoryConfigTestHelpers
 
-  # client sets PreviewGitHub's changed_files or labels.
-  def body_for(files, merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2 }, verdict: nil, settings: {},
+  # report takes the verdict: or rating: to publish; client sets PreviewGitHub's changed_files or labels.
+  def body_for(files, merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2 }, settings: {}, report: {},
                **client)
     with_repository(settings.merge('merge' => merge)) do |root|
       trust!(root)
       with_result do |result, path|
-        change_verdict(result, verdict) if verdict
+        revise(result, **report)
         github = preview_github(files, client)
         publish_at(root, result, path, github)
         return github.bodies.first.first
@@ -50,10 +50,11 @@ module AutoMergePreviewFixture
     github
   end
 
-  def change_verdict(result, verdict)
+  def revise(result, verdict: nil, rating: nil)
     report = JSON.parse(File.read(result['report']))
-    adequacy = ADEQUACY.merge('verdict' => verdict)
-    File.write(result['report'], JSON.generate(report.merge('verification_adequacy' => adequacy)))
+    report['verification_adequacy'] = ADEQUACY.merge('verdict' => verdict) if verdict
+    report['risk'] = RISK.merge('rating' => rating) if rating
+    File.write(result['report'], JSON.generate(report))
   end
 
   def trust!(root)
@@ -76,9 +77,9 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
   include AutoMergePreviewFixture
 
   def test_a_verdict_that_stops_auto_hands_the_pr_back
-    assert_includes body_for(%w[lib/fix.rb], verdict: 'cannot judge'),
+    assert_includes body_for(%w[lib/fix.rb], report: { verdict: 'cannot judge' }),
                     "would hand this PR back: the checkpoint's verdict on its verification is cannot judge."
-    refute_includes body_for(%w[lib/fix.rb], verdict: 'adequate with accepted gaps'), 'hand this PR back'
+    refute_includes body_for(%w[lib/fix.rb], report: { verdict: 'adequate with accepted gaps' }), 'hand this PR back'
   end
 
   def test_says_code_at_the_floor_passes_without_promising_a_merge

@@ -2,7 +2,7 @@
 
 require_relative 'cli_merge_fixture'
 
-# The merge command applies merge.auto_merge: low through the real wiring: this account's checkpoint marker
+# The merge command applies merge.auto_merge_max_risk: low through the real wiring: this account's checkpoint marker
 # for the exact head, the trusted high-risk areas, and the PR's changed files from GitHub.
 class CliMergeRiskTest < Minitest::Test
   include CliMergeFixture
@@ -63,7 +63,8 @@ class CliMergeRiskTest < Minitest::Test
   private
 
   def merged(rating, files, *extra, head: HEAD, login: 'agent')
-    with_merge_repository(merge_policy.merge('preference' => 'auto', 'auto_merge' => 'low')) do |root, ref, mutation|
+    with_merge_repository(merge_policy.merge('preference' => 'auto',
+                                             'auto_merge_max_risk' => 'low')) do |root, ref, mutation|
       fake = File.join(root, 'fake-bin', 'gh')
       File.write(fake, File.read(fake).sub("require 'json'\n", "require 'json'\n#{RISK_GH}"))
       env = { 'PR_FILES' => files, 'CHECKPOINT_COMMENTS' => JSON.generate([checkpoint(rating, head, login)]) }
@@ -86,7 +87,7 @@ class CliMergeRiskTest < Minitest::Test
 
   def assert_refused(error, status, mutation, reason)
     refute_predicate status, :success?
-    assert_includes error, "#{reason}, and merge.auto_merge: low lets the agent merge only low risk"
+    assert_includes error, "#{reason}, and merge.auto_merge_max_risk: low lets the agent merge only low risk"
     refute_path_exists mutation
   end
 end

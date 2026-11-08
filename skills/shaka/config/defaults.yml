@@ -36,9 +36,9 @@ merge:
   # The highest human review floor (pr_description.human_review_floors) a PR may set and still
   # merge without a person confirming its head. 5 holds nothing back.
   auto_max_review_floor: 5
-  # What the agent may merge without a person confirming the head: floors keeps auto_max_review_floor;
-  # low merges only a PR the checkpoint rates low risk, outside every high_risk_areas entry.
-  auto_merge: floors
+  # auto_merge_max_risk, unset by default: the highest checkpoint risk the agent may merge without a
+  # person confirming the head. low merges low only; medium merges low and medium. High never merges this
+  # way, nor does a PR in a high_risk_areas entry. While it is unset, auto_max_review_floor decides.
   hold_labels: [hold] # A PR carrying any of these never merges through Shaka until a person removes it.
 
 branches:

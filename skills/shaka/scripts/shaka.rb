@@ -107,10 +107,10 @@ def merge_limits(options, seam)
   Shaka::MergeLimits.new(seam ? seam.merge.fetch('limits') : {}, confirmed_head: options[:confirmed_head])
 end
 
-# merge.auto_merge picks what an agent may merge without a confirmed head: the review floors, or only a
-# low risk rating. Without trusted settings the floors' top level applies and nothing is held.
+# merge.auto_merge_max_risk, when set, limits what an agent may merge without a confirmed head to that risk
+# level and below; unset, the review floors decide. Without trusted settings nothing is held.
 def auto_merge_gate(seam, checkpoint, confirmed_head)
-  return Shaka::MergeRiskGate.new(seam, checkpoint, confirmed_head:) if seam&.merge&.fetch('auto_merge') == 'low'
+  return Shaka::MergeRiskGate.new(seam, checkpoint, confirmed_head:) if Shaka::MergeRiskGate.max_risk(seam)
 
   Shaka::MergeReviewFloor.from(seam, confirmed_head:)
 end
