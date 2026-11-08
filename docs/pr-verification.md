@@ -114,11 +114,12 @@ that authority returns to you for a decision. See
 ### See whether human review is needed
 
 [PR #1081](https://github.com/shakacode/shaka/pull/1081) proposes the risk assessment
-below. It is not released yet. It adds risk to the checkpoint; existing PRs may
-still show a numeric **Human review** rating under **Intent**.
+below. It is not released yet. Current installations show **Human review** under
+**Intent** in the PR description. See [the current rating](#current-human-review-rating)
+for how to use it.
 
-Open the **Checkpoint** link near the top of the PR description. Under the proposed
-risk assessment:
+When the proposed assessment is available, open the **Checkpoint** link near the
+top of the PR description:
 
 - **Low:** eligible for automatic merging when enabled, with later audit.
 - **Medium:** read the description, risk reasons, and verification; inspect the
@@ -130,6 +131,22 @@ The assessment includes reasons to help you focus your attention. Low risk does
 not mean automatic merging is enabled. In #1081, risk governs automatic merging
 only when the repository opts into low-risk-only Auto merging. Otherwise, the
 rating is advisory and existing merge rules apply.
+
+<a id="current-human-review-rating"></a>
+
+<details>
+<summary>Current Human review rating</summary>
+
+Current PR descriptions rate human review from 1 for a quick review to 5 for close
+reading of the riskiest files. The rating names the files that set it. When
+present, **Closer reading** links to particular code and explains why it needs
+attention. No check establishes how closely anyone read.
+
+Repositories set [minimum ratings by changed file](settings.md#pr_descriptionhuman_review_floors).
+Current Auto settings can return work to a person when its rating exceeds the
+[configured threshold](settings.md#mergeauto_max_review_floor).
+
+</details>
 
 <details>
 <summary>GitHub approvals and Auto safeguards</summary>
