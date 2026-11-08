@@ -8,7 +8,7 @@ class CliMergeAdminActorTest < Minitest::Test
 
   def test_admin_actor_can_merge_without_account_configuration
     with_merge_repository do |root, ref, mutation|
-      output, error, status = run_merge(root, ref, mutation)
+      output, error, status = run_merge(root, ref, mutation, *CONFIRMED)
 
       assert_predicate status, :success?, error
       assert_equal 'MERGED', JSON.parse(output)['state']
@@ -19,7 +19,7 @@ class CliMergeAdminActorTest < Minitest::Test
 
   def test_unprotected_branch_refuses_an_unconfirmed_merge
     with_merge_repository do |root, ref, mutation|
-      _, error, status = run_merge(root, ref, mutation, env: { 'NO_REQUIRED_CHECKS' => '1' })
+      _, error, status = run_merge(root, ref, mutation, *CONFIRMED, env: { 'NO_REQUIRED_CHECKS' => '1' })
 
       refute_predicate status, :success?
       assert_match(/--empty-checks-confirmed-head/, error)
@@ -29,7 +29,7 @@ class CliMergeAdminActorTest < Minitest::Test
 
   def test_unprotected_branch_merges_the_head_the_user_confirmed
     with_merge_repository do |root, ref, mutation|
-      output, error, status = run_merge(root, ref, mutation, '--empty-checks-confirmed-head', HEAD,
+      output, error, status = run_merge(root, ref, mutation, *CONFIRMED, '--empty-checks-confirmed-head', HEAD,
                                         env: { 'NO_REQUIRED_CHECKS' => '1' })
 
       assert_predicate status, :success?, error
