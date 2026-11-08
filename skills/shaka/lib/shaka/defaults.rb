@@ -9,8 +9,7 @@ module Shaka
   module Defaults
     PATH = File.expand_path('../../config/defaults.yml', __dir__)
     SECTIONS = %w[review checkpoint high_risk_areas medium_risk_areas merge branches wip pr_description prose_limits
-                  project_guidance
-                  runtime].freeze
+                  project_guidance runtime].freeze
 
     def self.fetch(*keys)
       keys.reduce(data) do |node, key|

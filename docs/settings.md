@@ -230,8 +230,9 @@ settings in `.agents/shaka/` or `.agents/shaka.md` all come back to you too; tho
 count as the `shaka` area even if you turn it off. A repository with the checkpoint turned off
 publishes no new ratings, so a PR comes back to you unless an earlier checkpoint already rated
 that exact head. To let the agent merge a PR anyway, confirm that commit the same way as a PR
-past [`merge.limits`](#mergelimits). Each PR the agent merges under Auto is labeled
-`auto-merged`, so you can audit them later.
+past [`merge.limits`](#mergelimits). Once GitHub confirms a merge the agent made under Auto, it labels the
+PR `auto-merged`, so you can audit them later; queued merges and failed label writes are
+[exceptions](reference/pr-record.md#merge-approval).
 
 Try it before you switch to `auto`. While `preference` is still `ask`, each ready checkpoint
 comment says whether Auto would merge the PR at this level, or names what would send it
