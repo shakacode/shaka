@@ -80,7 +80,7 @@ high_risk_areas: # Defaults: a change here is always high risk, whatever the che
                     'skills/shaka/lib/shaka/{public_comments,evidence,seam,repository_config,configuration}/**/*',
                     'skills/shaka/lib/shaka/publication/{feature_guard,verification_gates}.rb',
                     'skills/shaka/lib/shaka/post_implementation/**/*', 'skills/shaka/lib/shaka/post_implementation*.rb',
-                    'skills/shaka/config/{post-implementation-*.md,workflow.yml,enforcement.yml}',
+                    'skills/shaka/config/{post-implementation-*.md,workflow.yml,enforcement.yml,defaults.yml}',
                     skills/shaka/SKILL.md, skills/shaka/scripts/shaka.rb]
 
 medium_risk_areas: # Defaults: a change here counts as at least medium risk, so a person skims it.

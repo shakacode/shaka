@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require 'yaml'
 require 'shaka/defaults'
 require 'shaka/repository_config'
 require 'shaka/local_review/runner'
@@ -84,8 +85,21 @@ class RepositoryConfigurationExampleRiskAreasTest < Minitest::Test
        skills/shaka/lib/shaka/trusted_config_source.rb
        skills/shaka/lib/shaka/repository_config/merge_schema.rb skills/shaka/config/post-implementation-risk.md
        skills/shaka/lib/shaka/post_implementation/adequacy.rb skills/shaka/lib/shaka/post_implementation_runner.rb
-       skills/shaka/config/workflow.yml skills/shaka/SKILL.md skills/shaka/scripts/shaka.rb].each do |path|
+       skills/shaka/config/workflow.yml skills/shaka/config/defaults.yml skills/shaka/SKILL.md
+       skills/shaka/scripts/shaka.rb].each do |path|
       assert_equal 'merge_and_trust', Shaka::PostImplementationRisk.hits(areas, [path]).first&.fetch('area'), path
+    end
+  end
+end
+
+# Areas the example shows from the packaged defaults keep the packaged patterns, so the example cannot drift.
+class RepositoryConfigurationExampleAreaDriftTest < Minitest::Test
+  def test_example_areas_match_the_packaged_patterns
+    example = YAML.safe_load_file(File.expand_path('../.agents/shaka/config.yml', __dir__))
+    %w[high_risk_areas medium_risk_areas].each do |section|
+      Shaka::Defaults.fetch(section).each do |area, patterns|
+        assert_equal patterns, example.fetch(section).fetch(area), "#{section}.#{area}"
+      end
     end
   end
 end

@@ -87,6 +87,8 @@ qualification remain evidence requirements; the version number does not establis
 - **Breaking:** The 1-to-5 human review rating is gone. PR descriptions no longer show
   **Human review: N of 5**, a rating below the changed files' floor no longer refuses
   publication, and **Closer reading** entries list a file and reason without a level.
+  Auto under the default settings now hands back medium- and high-risk PRs; before, the
+  default floor of 5 held nothing back.
   `merge.auto_max_review_floor` and `pr_description.human_review_floors` are retired:
   for one release a configuration that still sets them loads with a warning and their
   values are ignored, and the next release refuses them. `merge.auto_merge_max_risk`
