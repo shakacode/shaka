@@ -143,8 +143,8 @@ present, **Closer reading** links to particular code and explains why it needs
 attention. No check establishes how closely anyone read.
 
 Repositories set [minimum ratings by changed file](settings.md#pr_descriptionhuman_review_floors).
-Current Auto settings can return work to a person when its rating exceeds the
-[configured threshold](settings.md#mergeauto_max_review_floor).
+Current Auto settings can return work to you when a changed file's minimum rating
+exceeds the [configured threshold](settings.md#mergeauto_max_review_floor).
 
 </details>
 
