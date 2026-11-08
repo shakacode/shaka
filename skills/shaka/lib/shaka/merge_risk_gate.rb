@@ -19,7 +19,7 @@ module Shaka
     # areas; checkpoint answers risk(head) with the published rating or nil. confirmed_head names the head a
     # user approved, as for merge limits.
     def initialize(seam, checkpoint, confirmed_head: nil)
-      @areas = seam&.high_risk_areas || RepositoryConfig::HighRiskAreasSchema.effective(nil)
+      @areas, @medium = PostImplementationRisk.areas(seam)
       @checkpoint = checkpoint
       @confirmed_head = confirmed_head
       @max_risk = self.class.max_risk(seam)
@@ -39,7 +39,7 @@ module Shaka
     # Returns why a person must merge this head, or nil when its rating and files allow Auto.
     def hold(github, head)
       rating = @checkpoint.risk(head)
-      assessment = PostImplementationRisk.assess(rating || 'unknown', @areas, read(github, head))
+      assessment = PostImplementationRisk.assess(rating || 'unknown', @areas, read(github, head), @medium)
       self.class.reason(assessment, @max_risk, rating)
     end
 
@@ -53,6 +53,9 @@ module Shaka
       hit = assessment['areas_hit'].first
       return "`#{PostImplementationRisk.inert(hit['path'])}` is in high-risk area `#{hit['area']}`" if hit
 
+      raised = assessment.fetch('medium_areas_hit', []).first
+      return "`#{PostImplementationRisk.inert(raised['path'])}` is in medium-risk area `#{raised['area']}`" if raised
+
       "the checkpoint rates this head #{assessment['level']} risk"
     end
 
@@ -60,6 +63,8 @@ module Shaka
 
     def read(github, head)
       PullChangedFiles.new.paths(github, head)
+    rescue PullChangedFiles::Moved
+      raise
     rescue Error, SystemCallError
       nil
     end

@@ -55,6 +55,7 @@ module Shaka
         RepositoryConfig::PostImplementationSchema.effective(context.config.review.fetch('post_implementation', {}))
       end,
       setting('high_risk_areas') { |context| context.config.high_risk_areas },
+      setting('medium_risk_areas') { |context| context.config.medium_risk_areas },
       setting('project_guidance') { |context| context.config.project_guidance },
       setting('pr_description.opening_check') { |context| context.config.opening_check },
       setting('prose_limits') { |context| context.config.prose_limits },

@@ -25,7 +25,7 @@ module Shaka
 
       REQUIRED = %w[version review merge].freeze
       OPTIONAL = %w[base_branch branches wip pr_description repo_prefix prose_limits project_guidance
-                    checkpoint high_risk_areas].freeze
+                    checkpoint high_risk_areas medium_risk_areas].freeze
       OPTIONAL_REVIEW_KEYS = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, ReviewSchema::PROMPT_FILE,
                               ReviewSchema::CUSTOM_INSTRUCTIONS,
                               ReviewSchema::LOCAL_REVIEW_COUNT, ReviewCoverage::KEY, ReviewLimit::KEY,
@@ -77,8 +77,13 @@ module Shaka
         WipSchema.new(@data['wip']).validate if @data.key?('wip')
         validate_description
         RepoPrefix.validate!(@data['repo_prefix']) if @data.key?('repo_prefix')
-        key = HighRiskAreasSchema::KEY
-        HighRiskAreasSchema.new(@data[key]).validate if @data.key?(key)
+        validate_risk_areas
+      end
+
+      def validate_risk_areas
+        [HighRiskAreasSchema, MediumRiskAreasSchema].each do |schema|
+          schema.new(@data[schema::KEY]).validate if @data.key?(schema::KEY)
+        end
       end
 
       def validate_description

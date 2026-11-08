@@ -6,7 +6,8 @@ require_relative '../configuration/feature_guard'
 require_relative '../repository_config/high_risk_areas_schema'
 
 module Shaka
-  # The checkpoint's risk rating, raised to high for any change inside a high-risk area, and what each
+  # The checkpoint's risk rating, raised to high for any change inside a high-risk area and from low to medium
+  # inside a medium-risk area, and what each
   # rating asks of the merge. Merge reads the rating against merge.auto_merge_max_risk, through MergeRiskGate.
   module PostImplementationRisk
     # Case-insensitive, because a case-insensitive checkout changes Infra/main.tf as surely as infra/main.tf.
@@ -32,12 +33,20 @@ module Shaka
     # Every level a setting lets the agent merge, so medium reads as low or medium.
     def allowed(max_risk) = LEVELS.take(LEVELS.index(max_risk) + 1).join(' or ')
 
-    # rating is the reviewer's; areas maps names to path patterns; paths are the PR's changed files, or nil
-    # when they could not be read, which counts as high because a high-risk change cannot be ruled out.
-    def assess(rating, areas, paths)
+    # rating is the reviewer's; areas and medium map names to path patterns; paths are the PR's changed files,
+    # or nil when they could not be read, which counts as high because a high-risk change cannot be ruled out.
+    def assess(rating, areas, paths, medium = {})
       hits = paths ? hits(areas, paths) : []
       level = !paths || hits.any? || rating == 'unknown' ? 'high' : rating
-      { 'rating' => rating, 'level' => level, 'areas_hit' => hits, 'paths_read' => !paths.nil? }
+      raised = level == 'low' ? area_hits(medium, paths) : []
+      { 'rating' => rating, 'level' => raised.any? ? 'medium' : level, 'areas_hit' => hits,
+        'medium_areas_hit' => raised, 'paths_read' => !paths.nil? }
+    end
+
+    # The packaged areas apply when the trusted settings cannot be read.
+    def areas(seam)
+      [seam&.high_risk_areas || RepositoryConfig::HighRiskAreasSchema.effective(nil),
+       seam&.medium_risk_areas || RepositoryConfig::MediumRiskAreasSchema.effective(nil)]
     end
 
     # The checkpoint's two Ruby-computed previews; the caller loads AutoMergePreview, which requires this file.
@@ -50,23 +59,27 @@ module Shaka
     # seam is the trusted RepositoryConfig, or nil when it could not be read, which applies the packaged areas.
     # Changed files that GitHub cannot list count as unread. max_risk is the level merge reads.
     def from(seam, github, head, rating)
-      areas = seam&.high_risk_areas || RepositoryConfig::HighRiskAreasSchema.effective(nil)
+      high, medium = areas(seam)
       paths = begin
         PullChangedFiles.new.paths(github, head)
       rescue Error, SystemCallError
         nil
       end
-      assess(rating, areas, paths).merge('max_risk' => max_risk(seam))
+      assess(rating, high, paths, medium).merge('max_risk' => max_risk(seam))
     end
 
     # The first changed file in each area, so a reader sees why the area applies. Shaka's own configuration
     # counts as the shaka area even where a repository narrows or turns that area off, as merge always holds it.
     def hits(areas, paths)
-      found = areas.filter_map do |name, globs|
+      found = area_hits(areas, paths)
+      found + configuration_hit(found, paths)
+    end
+
+    def area_hits(areas, paths)
+      areas.filter_map do |name, globs|
         path = paths.find { |candidate| globs.any? { |glob| File.fnmatch?(glob, candidate, GLOB) } }
         { 'area' => name, 'path' => path } if path
       end
-      found + configuration_hit(found, paths)
     end
 
     def configuration_hit(found, paths)
@@ -107,7 +120,9 @@ module Shaka
     def heading(assessment)
       level = assessment['level'].capitalize
       rated = assessment['rating']
-      raised = assessment['areas_hit'].map { |hit| "`#{hit['area']}` (`#{inert(hit['path'])}`)" }
+      raised = (assessment['areas_hit'] + assessment.fetch('medium_areas_hit', [])).map do |hit|
+        "`#{hit['area']}` (`#{inert(hit['path'])}`)"
+      end
       return "#{level}, raised from the reviewer's #{rated} by #{raised.join(', ')}." if raised.any? && rated != 'high'
       return "#{level}, inside #{raised.join(', ')}." if raised.any?
       return "#{level}; the reviewer could not judge it, so it counts as high." if rated == 'unknown'

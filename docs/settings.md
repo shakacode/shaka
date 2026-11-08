@@ -859,6 +859,25 @@ What each rating asks:
 Auto; by default only low. Without a trusted settings commit, merge and the rating use the default level and
 areas.
 
+## `medium_risk_areas`
+
+**Optional. Default: the area below.** A change in a medium-risk area counts as at least
+medium risk: a reviewer's low rating is raised to medium, so under the default
+[`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) of `low` a person skims the PR
+before it merges. A high rating, or a change in a [high-risk area](#high_risk_areas), stays high.
+
+| Area | Default paths |
+| --- | --- |
+| `agent_instructions` | `AGENTS.md`, `CLAUDE.md`, and `SKILL.md` anywhere, `.claude/`, `.cursor/` |
+
+Lists work as in `high_risk_areas`: a list you set for an area replaces its patterns, `[]`
+turns it off, and a new name adds an area:
+
+```yaml
+medium_risk_areas:
+  prompts: [prompts/**/*]
+```
+
 ## `project_guidance`
 
 **Optional. Default: none.** Markdown files with your repository's own requirements,

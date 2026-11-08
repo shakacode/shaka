@@ -33,6 +33,9 @@ high_risk_areas: # A change here is always high risk, whatever the checkpoint ra
     - '**/*[_-]{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,_*,-*}/**/*'
   shaka: [.agents/shaka/**/*]
 
+medium_risk_areas: # A change here counts as at least medium risk, so a person skims it before it merges.
+  agent_instructions: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', .claude/**/*, .cursor/**/*]
+
 merge:
   preference: ask # Setup writes this; config.yml must state a preference.
   limits: # A merge past any limit needs confirmation of the exact head.

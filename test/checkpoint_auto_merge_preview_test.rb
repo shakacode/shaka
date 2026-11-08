@@ -85,7 +85,7 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
 
   # With no merge.auto_merge_max_risk in the settings, the default low applies.
   def test_says_a_low_rated_pr_passes_without_promising_a_merge
-    body = body_for(%w[lib/fix.rb test/fix_test.rb skills/shaka/SKILL.md])
+    body = body_for(%w[lib/fix.rb test/fix_test.rb README.md])
     assert_includes body, '**Auto merge preview:** this PR passes the risk rating and size checks Auto applies; ' \
                           'the agent would still judge its risk and compatibility before merging.'
     assert_includes body, '_With `merge.auto_merge_max_risk: low`, an agent merges a low rating; a person merges ' \
@@ -114,7 +114,7 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
     assert_includes body_for(%w[lib/fix.rb], labels: ['do-not-merge'],
                                              merge: { 'preference' => 'ask', 'hold_labels' => ['do-not-merge'] }),
                     'it carries the hold label `do-not-merge`'
-    assert_includes body_for(%w[skills/shaka/SKILL.md], labels: ['hold']),
+    assert_includes body_for(%w[README.md], labels: ['hold']),
                     'would hand this PR back: it carries the hold label `hold`.'
   end
 

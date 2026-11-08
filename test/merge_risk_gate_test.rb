@@ -7,7 +7,7 @@ require 'shaka/post_implementation/evidence'
 # Under merge.auto_merge_max_risk, merge reads the checkpoint's rating for the exact head and the trusted areas.
 class MergeRiskGateTest < Minitest::Test
   HEAD = 'a' * 40
-  Seam = Struct.new(:high_risk_areas, :merge)
+  Seam = Struct.new(:high_risk_areas, :merge, :medium_risk_areas)
   Checkpoint = Struct.new(:ratings) do
     def risk(head) = ratings[head]
   end
@@ -46,6 +46,19 @@ class MergeRiskGateTest < Minitest::Test
                     'rates this head high risk, and merge.auto_merge_max_risk: medium lets the agent merge only ' \
                     'low or medium risk'
     assert_includes refusal('medium', %w[db/migrate/1_x.rb], seam: MEDIUM), 'is in high-risk area `database`'
+  end
+
+  def test_a_medium_risk_area_goes_to_a_person_at_low_and_merges_at_medium
+    assert_includes refusal('low', %w[.claude/settings.json]), '`.claude/settings.json` is in medium-risk area ' \
+                                                               '`agent_instructions`'
+    assert_nil gate('low', seam: MEDIUM).verify!(github(%w[.claude/settings.json]), HEAD)
+  end
+
+  def test_a_head_that_moves_while_files_are_read_says_to_refresh
+    client = github(%w[lib/fix.rb])
+    client.define_singleton_method(:api) { |*| { 'head' => { 'sha' => 'c' * 40 }, 'base' => { 'sha' => 'b' * 40 } } }
+    error = assert_raises(Shaka::Error) { gate('low').verify!(client, HEAD) }
+    assert_includes error.message, 'PR head changed; refresh verification and walkthrough'
   end
 
   def test_a_high_risk_area_overrides_a_low_rating
@@ -139,7 +152,7 @@ class AutoMergeLowPreviewTest < Minitest::Test
 
   # At low the preview reads the rating, and the marker carries it for merge.
   def test_auto_merge_low_previews_the_risk_rating
-    passing = body_for(%w[lib/fix.rb skills/shaka/SKILL.md], merge: LOW)
+    passing = body_for(%w[lib/fix.rb README.md], merge: LOW)
     assert_includes passing, 'this PR passes the risk rating and size checks Auto applies'
     assert_includes passing, 'an agent merges a low rating; a person merges the rest.'
     assert_includes passing, "\n<!-- shaka:post-implementation-risk low -->\n<!-- shaka:post-implementation-adequacy "

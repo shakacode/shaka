@@ -18,6 +18,7 @@ class RepositoryConfigurationExampleCoverageTest < Minitest::Test
     'merge.limits' => Shaka::MergeLimits::DEFAULTS.keys,
     'checkpoint' => CONFIG::PostImplementationSchema::KEYS,
     'high_risk_areas' => Shaka::Defaults.fetch('high_risk_areas').keys,
+    'medium_risk_areas' => Shaka::Defaults.fetch('medium_risk_areas').keys,
     'pr_description' => CONFIG::PrDescriptionSchema::KEYS - [CONFIG::RetiredSettings::PR_DESCRIPTION],
     'pr_description.opening_check' => CONFIG::OpeningSchema::KEYS,
     'project_guidance' => CONFIG::ProjectGuidanceSchema::NAMES,

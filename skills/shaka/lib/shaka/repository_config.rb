@@ -92,6 +92,7 @@ module Shaka
 
     # The trusted high-risk areas with packaged defaults for any area the repository leaves out.
     def high_risk_areas = HighRiskAreasSchema.effective(@data[HighRiskAreasSchema::KEY])
+    def medium_risk_areas = MediumRiskAreasSchema.effective(@data[MediumRiskAreasSchema::KEY])
 
     def prompt_files = self.class.prompt_files(review:, opening: opening_check, guidance: project_guidance)
 

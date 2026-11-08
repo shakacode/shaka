@@ -7,6 +7,7 @@ require 'shaka/repository_config'
 class PostImplementationRiskTest < Minitest::Test
   RISK = Shaka::PostImplementationRisk
   AREAS = Shaka::RepositoryConfig::HighRiskAreasSchema.effective(nil)
+  MEDIUM = Shaka::RepositoryConfig::MediumRiskAreasSchema.effective(nil)
 
   def test_a_high_risk_area_raises_any_rating_to_high
     assessment = RISK.assess('low', AREAS, ['app/models/user.rb', 'db/migrate/20260101_add_index.rb'])
@@ -38,6 +39,17 @@ class PostImplementationRiskTest < Minitest::Test
     %w[AUTHORS.md lib/author.rb app/models/authority.rb].each do |path|
       assert_equal 'low', RISK.assess('low', AREAS, [path])['level'], path
     end
+  end
+
+  def test_a_medium_risk_area_raises_low_to_medium_only
+    raised = RISK.assess('low', AREAS, %w[lib/fix.rb AGENTS.md], MEDIUM)
+    assert_equal 'medium', raised['level']
+    assert_equal [{ 'area' => 'agent_instructions', 'path' => 'AGENTS.md' }], raised['medium_areas_hit']
+    assert_includes RISK.section(raised, ['Edits instructions.']),
+                    "raised from the reviewer's low by `agent_instructions`"
+    assert_equal 'high', RISK.assess('high', AREAS, %w[AGENTS.md], MEDIUM)['level']
+    assert_equal 'high', RISK.assess('low', AREAS, %w[AGENTS.md db/migrate/1_x.rb], MEDIUM)['level']
+    assert_equal 'low', RISK.assess('low', AREAS, %w[README.md], MEDIUM)['level']
   end
 
   def test_the_rating_stands_outside_high_risk_areas

@@ -17,10 +17,13 @@ qualification remain evidence requirements; the version number does not establis
 
 - Rate each PR's risk as low, medium, or high in the checkpoint, with reasons, and say
   what that rating asks of the merge: a skim for medium, a careful review that starts
-  with the verification for high. A missing rating shows as unknown and counts as high. Changes to databases, persistence, infrastructure,
-  CI and trust, auth, permissions, secrets, credentials, or Shaka's settings always count as high; set `high_risk_areas` to
-  change those paths. Auto merges only PRs at or below `merge.auto_merge_max_risk`:
-  `low` by default, or `medium` to add medium risk. High risk always goes to a person.
+  with the verification for high. A missing rating shows as unknown and counts as high.
+  Changes to databases, persistence, infrastructure, CI and trust, auth, permissions,
+  secrets, credentials, or Shaka's settings always count as high; set `high_risk_areas`
+  to change those paths. Changes to agent instructions count as at least medium; set
+  `medium_risk_areas` to change those paths. The agent merges only PRs at or below
+  `merge.auto_merge_max_risk` without a person confirming the head: `low` by default,
+  or `medium` to add medium risk. High risk always goes to a person.
 - Keep complete usage accounting when a PR description outgrows GitHub's limit.
   The description retains its tables and pricing notes, with checksummed links to
   accounting comments. A missing or changed archive blocks later updates.
