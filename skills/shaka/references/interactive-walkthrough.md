@@ -3,7 +3,7 @@
 Read this when the user requests a live code walkthrough, one concept at a time.
 A request to publish a complete walkthrough follows the normal delivery workflow.
 
-Keep the current task's owner. This request authorizes reading and explanation;
+Keep the tour in the current owning task. This request authorizes reading and explanation;
 edits, GitHub publication, and merging retain their existing authorization rules.
 An interactive tour does not replace the published COMMENT walkthrough required
 by a delivery task. Keep its selective inline notes unchanged.
@@ -41,11 +41,11 @@ to the behavior they cover, and label inferred rationale. Scale depth to the
 concept and the user's questions.
 
 Ask for questions or `next`, then stop. Answer questions before advancing;
-advance one concept on `next`, `continue`, or equivalent readiness. Honor requests
+advance one concept on explicit readiness, such as `next` or `continue`. Honor requests
 to reorder, revisit, skip, change depth, or end the tour. Update the coverage map
 as concepts are covered, including gaps a question reveals.
 
-Before advancing or closing, refresh the PR's head and comparison base. If either
+Before answering a follow-up, advancing, or closing, refresh the PR's head and comparison base. If either
 changed, say which explanation is stale, inspect the new diff, and update the
 agenda and affected coverage before continuing.
 

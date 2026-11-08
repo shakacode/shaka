@@ -21,6 +21,9 @@ must cite that evidence before claiming the pilot's real-use acceptance.
 - **R4 — Explain the implementation.** Publish a conceptual walkthrough with links
   to reviewed code as a commit-bound COMMENT review. It remains readable after
   merge and substitutes for neither approval nor required acknowledgment.
+  Offer an [interactive tour](../skills/shaka/references/interactive-walkthrough.md)
+  when requested, with an agenda and a lightweight coverage map for larger PRs.
+  Keep the published walkthrough and its selective inline notes.
 - **R9 — Accept work from any tracker.** Use a task link or description, resolve its
   checkout, and ask for missing context. Requirements remain in the original
   tracker; delivery evidence belongs on GitHub. Reading grants no tracker-write
