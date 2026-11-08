@@ -52,7 +52,7 @@ GH_HOST=github.com gh search prs --repo shakacode/shaka --match title,body --lim
   --json number,url,state -- TERM1 TERM2 TERM3
 ```
 
-Pass each query term after `--` as its own argument, such as `-- review effort floor docs`.
+Pass each query term after `--` as its own argument, such as `-- risk rating docs`.
 Do not quote the terms together: one argument makes GitHub match them as an exact phrase, which
 usually returns nothing for a multi-word query. The separator prevents a
 leading hyphen from becoming a CLI option. Options such as `--jq` placed after `--` become query

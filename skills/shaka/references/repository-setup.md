@@ -168,8 +168,10 @@ and standard script; keep those definitions there.
    branch has no seam yet, follow [the first setup PR](#review-and-merge-the-first-setup-pr)
    path to review it before publishing and hand it to the maintainer. A migration
    keeps the normal workflow gates. Merge before relying on the new policy.
-6. After the setup PR merges, offer to choose the repository's
-   [human review floors](human-review-floors.md); until then the shipped floors apply.
+6. After the setup PR merges, offer to choose the repository's `high_risk_areas` and
+   `merge.auto_merge_max_risk` from the shared
+   [settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md); until then the
+   packaged defaults apply.
 
 For a repository whose commands and review job match this example, the initializer
 is:

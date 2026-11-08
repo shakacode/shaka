@@ -17,7 +17,6 @@ the workflow reaches that decision:
 | Install prerequisites, forks, removal, or host details | [Installation details](installation.md) |
 | Configure or inspect a repository | [Setup](repository-setup.md) and shared [settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md) |
 | Migrate existing settings | [Migration](migration.md) |
-| Choose how much human review changed files need | [Human review floors](human-review-floors.md) |
 | Plan, split PRs, write updates, or recover work | [Delivery and communication](delivery.md) |
 | Take over a spec or use another installed skill | [Companion skills](companion-skills.md) |
 | Revise earlier human steering and restart | [Return points](return-points.md) |

@@ -6,11 +6,11 @@ require 'json'
 require 'yaml'
 require 'shaka/merge_hold'
 require 'shaka/merge_limits'
-require 'shaka/merge_review_floor'
+require 'shaka/defaults'
 require 'shaka/version'
 
 GENERATED_MERGE = { 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS,
-                    'auto_max_review_floor' => Shaka::MergeReviewFloor::DEFAULT,
+                    'auto_merge_max_risk' => Shaka::Defaults.fetch('merge', 'auto_merge_max_risk'),
                     'hold_labels' => Shaka::MergeHold::DEFAULT }.freeze
 
 module SeamInitializerTestHelpers

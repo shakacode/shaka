@@ -19,10 +19,8 @@ qualification remain evidence requirements; the version number does not establis
   what that rating asks of the merge: a skim for medium, a careful review that starts
   with the verification for high. A missing rating shows as unknown and counts as high. Changes to databases, persistence, infrastructure,
   CI and trust, or Shaka's settings always count as high; set `high_risk_areas` to
-  change those paths. Set `merge.auto_merge_max_risk` to `low` to let Auto merge only
-  low-risk PRs, or to `medium` to add medium risk, instead of using
-  `merge.auto_max_review_floor`. Left unset, the floors decide and the rating stays a
-  preview in the checkpoint comment.
+  change those paths. Auto merges only PRs at or below `merge.auto_merge_max_risk`:
+  `low` by default, or `medium` to add medium risk. High risk always goes to a person.
 - Keep complete usage accounting when a PR description outgrows GitHub's limit.
   The description retains its tables and pricing notes, with checksummed links to
   accounting comments. A missing or changed archive blocks later updates.
@@ -80,6 +78,13 @@ qualification remain evidence requirements; the version number does not establis
   `--apply --digest PREVIEW_DIGEST`. Later commits no longer include `seam upgrade`.
 - **Breaking:** The `wip.include_locations` setting is gone; set
   `wip.include_checkout_path` instead.
+- **Breaking:** The 1-to-5 human review rating is gone. PR descriptions no longer show
+  **Human review: N of 5**, a rating below the changed files' floor no longer refuses
+  publication, and **Closer reading** entries list a file and reason without a level.
+  `merge.auto_max_review_floor` and `pr_description.human_review_floors` are retired:
+  for one release a configuration that still sets them loads with a warning and their
+  values are ignored, and the next release refuses them. `merge.auto_merge_max_risk`
+  now limits what Auto merges; list paths that must reach a person under `high_risk_areas`.
 
 ### Fixed
 
@@ -124,10 +129,6 @@ qualification remain evidence requirements; the version number does not establis
 - Say **Adequate, with gaps the reviewer judged acceptable** on a checkpoint, in place of
   **Adequate with accepted gaps**, which read as if the maintainer had accepted them.
   Published checkpoints still parse.
-- Stop PR descriptions from asking for every line to be reviewed. The **Review effort** line
-  is now **Human review**: it names the files that set the rating, and it
-  no longer promises reproduction or a second reviewer. Settings keep their names, and Auto
-  merge holds back the same PRs. See [#1001].
 - Show `ready in` and `merged in` on more PRs. The description now reads the task
   start from a usage report that covers the whole task, and records the ready time
   each time it updates instead of only while a watch runs.
@@ -140,4 +141,3 @@ current workflow; install from source as described in
 
 [Unreleased]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...HEAD
 [0.1.0.pre.1]: https://github.com/shakacode/shaka/releases/tag/v0.1.0.pre.1
-[#1001]: https://github.com/shakacode/shaka/issues/1001

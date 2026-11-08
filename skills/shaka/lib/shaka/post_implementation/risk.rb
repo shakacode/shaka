@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
-require_relative '../merge_review_floor'
+require_relative '../defaults'
+require_relative '../pull_changed_files'
 require_relative '../configuration/feature_guard'
 require_relative '../repository_config/high_risk_areas_schema'
 
 module Shaka
   # The checkpoint's risk rating, raised to high for any change inside a high-risk area, and what each
-  # rating asks of the merge. Merge reads the rating only under merge.auto_merge_max_risk, through MergeRiskGate.
+  # rating asks of the merge. Merge reads the rating against merge.auto_merge_max_risk, through MergeRiskGate.
   module PostImplementationRisk
     # Case-insensitive, because a case-insensitive checkout changes Infra/main.tf as surely as infra/main.tf.
     GLOB = File::FNM_PATHNAME | File::FNM_EXTGLOB | File::FNM_DOTMATCH | File::FNM_CASEFOLD
@@ -21,8 +22,10 @@ module Shaka
 
     module_function
 
-    # The trusted merge.auto_merge_max_risk, or nil when it is unset and the review floors decide.
-    def max_risk(seam) = seam&.merge&.[]('auto_merge_max_risk')
+    DEFAULT_MAX = Defaults.fetch('merge', 'auto_merge_max_risk')
+
+    # The trusted merge.auto_merge_max_risk, or the packaged level when the settings or the key are missing.
+    def max_risk(seam) = seam&.merge&.[]('auto_merge_max_risk') || DEFAULT_MAX
 
     def within?(level, max_risk) = LEVELS.index(level) <= LEVELS.index(max_risk)
 
@@ -40,16 +43,16 @@ module Shaka
     # The checkpoint's two Ruby-computed previews; the caller loads AutoMergePreview, which requires this file.
     # seam reads the trusted settings when a completed checkpoint renders; an incomplete one reads none.
     def previews(seam, github, pull, head)
-      { auto_merge: ->(checkpoint) { AutoMergePreview.line(seam.call, github, pull, head, checkpoint) },
+      { auto_merge: ->(checkpoint) { AutoMergePreview.line(seam.call, pull, checkpoint) },
         risk: ->(rating) { from(seam.call, github, head, rating) } }
     end
 
     # seam is the trusted RepositoryConfig, or nil when it could not be read, which applies the packaged areas.
-    # Changed files that GitHub cannot list count as unread. max_risk is the setting merge reads, or nil.
+    # Changed files that GitHub cannot list count as unread. max_risk is the level merge reads.
     def from(seam, github, head, rating)
       areas = seam&.high_risk_areas || RepositoryConfig::HighRiskAreasSchema.effective(nil)
       paths = begin
-        MergeReviewFloor.new.paths(github, head)
+        PullChangedFiles.new.paths(github, head)
       rescue Error, SystemCallError
         nil
       end
@@ -84,21 +87,17 @@ module Shaka
     # Under a max level that admits this level, the setting, not the design default, says who merges.
     def action(assessment)
       level = assessment['level']
-      max = assessment['max_risk']
-      return ACTION.fetch(level) unless max && level != 'low' && within?(level, max)
+      max = assessment.fetch('max_risk', DEFAULT_MAX)
+      return ACTION.fetch(level) unless level != 'low' && within?(level, max)
 
       "#{level.capitalize} risk is at or below `merge.auto_merge_max_risk: #{max}`, so an agent may merge it, " \
         'with a later audit.'
     end
 
     def footnote(assessment)
-      max = assessment['max_risk']
-      if max
-        return "_With `merge.auto_merge_max_risk: #{max}`, an agent merges a #{allowed(max)} rating; a person " \
-               'merges the rest._'
-      end
-
-      '_Preview: the rating does not change what merges until `merge.auto_merge_max_risk` is set._'
+      max = assessment.fetch('max_risk', DEFAULT_MAX)
+      "_With `merge.auto_merge_max_risk: #{max}`, an agent merges a #{allowed(max)} rating; a person merges the " \
+        'rest._'
     end
 
     # The PR's author names its files, so a backtick or line break must not end the code span and let the

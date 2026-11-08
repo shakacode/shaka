@@ -83,7 +83,7 @@ preferences: local reviewers and how often they run, checkpoint and opening-chec
 reviewers, how PR descriptions read, writing limits, branch names, and WIP reporting.
 Setup stops and names the file and key when the file holds anything that describes a
 repository instead, such as commands, CI review jobs, merge policy, project guidance,
-human review floors, or a prompt file, or when a value is invalid.
+high-risk areas, or a prompt file, or when a value is invalid.
 
 - **Read once.** Shaka reads the file only while a new individual setup runs. Editing it
   later changes no repository you already set up; change that copy's
@@ -206,58 +206,21 @@ merged. Whether you actually confirmed it is the agent's responsibility; the
 [enforcement reference](workflow.md#what-is-enforced) explains the boundary.
 Put other project restrictions in `AGENTS.md`.
 
-## `merge.auto_max_review_floor`
-
-**Optional. Default: 5, which holds nothing back.** Lets the agent merge only the PRs whose
-[human review floor](#pr_descriptionhuman_review_floors) is at or below this number. Use it
-with `preference: auto` when you want small code fixes merged for you but docs and agent
-instructions brought back to you.
-
-```yaml
-merge:
-  preference: auto
-  auto_max_review_floor: 2
-```
-
-With the default floors, this merges a PR that changes only code, tests, and Markdown docs. A
-PR that also edits `SKILL.md` sets floor 3, so the agent hands it back as Ask and names the
-file: `skills/shaka/SKILL.md sets review floor 3 (changes agent instructions)`. To let the agent
-merge it anyway, confirm that commit the same way as a PR past [`merge.limits`](#mergelimits).
-Docs sit at floor 1 by default, so raise their floor first if a person should read them.
-
-A PR that changes Shaka's settings in `.agents/shaka/` always comes back to you once this is
-below 5, whatever floors you set. If Shaka cannot read the PR's complete list of changed files
-from GitHub, the PR comes back too.
-
-Try a number before you switch to `auto`. While `preference` is still `ask`, each ready
-checkpoint comment on a PR says whether it passes the floor and `merge.limits`, or names what
-would send it back, such as
-`Auto merge preview: with merge.preference: auto, the agent would hand this PR back: skills/shaka/SKILL.md sets review floor 3`.
-A PR that passes still gets the agent's own judgment of risk and compatibility under Auto.
-
-The agent's review-effort rating does not hold a PR back. Rating it above its floor, or listing a
-file under **Closer reading**, tells a reader where to look but does not stop Auto from merging it.
-
-Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
-something after merge, so the agent hands those PRs back on its own judgment.
-
 ## `merge.auto_merge_max_risk`
 
-**Optional. Default: unset.** The highest [risk](#high_risk_areas) the agent may merge under
+**Optional. Default: `low`.** The highest [risk](#high_risk_areas) the agent may merge under
 `preference: auto` without you confirming the head. Each level includes the ones below it.
 
 - `low` lets the agent merge only a PR whose checkpoint rates it low risk.
 - `medium` lets the agent merge a PR rated low or medium.
-- Unset, [`merge.auto_max_review_floor`](#mergeauto_max_review_floor) decides instead.
 
 ```yaml
 merge:
   preference: auto
-  auto_merge_max_risk: low
+  auto_merge_max_risk: medium
 ```
 
-High risk always comes back to you, so `high` is not a value. Once this is set, the review
-floors play no part in what merges. `merge` reads the rating from the checkpoint comment that
+High risk always comes back to you, so `high` is not a value. `merge` reads the rating from the checkpoint comment that
 your account published for the exact head. It reads the high-risk areas from your trusted
 settings and the changed files from GitHub. A change in a high-risk area counts as high,
 whatever the reviewer rated it. A missing rating, unreadable files, or a change to Shaka's
@@ -889,9 +852,9 @@ What each rating asks:
 | Medium | Meant for a person to merge after a skim of the description, the reasons, and the verification, then of only the files the reasons name. |
 | High or unknown | Meant for a person to merge after a careful review that starts with whether the verification proves the change works. |
 
-The rating changes what merges only once [`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) is
-set. Until then it is a preview in the checkpoint comment. Without a trusted settings commit, the rating uses the
-default areas.
+[`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) sets which ratings the agent may merge under
+Auto; by default only low. Without a trusted settings commit, merge and the rating use the default level and
+areas.
 
 ## `project_guidance`
 
@@ -1259,75 +1222,6 @@ UTC and labels it UTC, as does any update that cannot read the repository's sett
 zone never stops a PR update. `shaka configure settings`
 reports the zone that applies, so you can check a new value. Only the display changes:
 Shaka still stores UTC, and other commands' timestamps stay in UTC.
-
-## `pr_description.human_review_floors`
-
-**Optional. Default: the floors below.**
-
-Every PR description says where a person's attention matters, from 1 (the description should be
-enough) to 5 (read the riskiest files closely). Shaka sets a minimum from the files the PR
-changes, so an agent can't rate a risky change as light reading.
-
-The rating points at files. It does not ask for the whole PR to be studied. In a repository that
-sets its docs at 5, as this one does, a code PR with one guide in it reads:
-
-> **Human review:** 5 of 5. Read `docs/settings.md` (changes docs for Shaka's users). The rest
-> set a lower floor.
-
-Nothing checks how closely anyone read.
-
-What deserves close review depends on your project, so set these floors for each repository.
-The easiest way is to ask your agent:
-
-> Help me choose Shaka's human review floors for this repository. Look at our folders and
-> recent PRs, ask me which changes I review most carefully, and open a settings PR.
-
-Your agent knows the matching rules and checks its proposal against your recent PRs. You
-decide what matters; for example, a project whose guides are read by its customers may want
-`docs/` changes at 5.
-
-In [a study of 309 PRs in this repository](articles/one-shot-pr-study.md), people asked for
-changes on many docs and agent-instruction PRs and on no PR that changed only code and tests.
-So by default agent instructions sit above code. Docs stay at 1 because who reads them differs
-by project; set them higher when they reach your users, as this repository does.
-
-| Floor | Changed file |
-| --- | --- |
-| 5 | Shaka's settings in `.agents/shaka/` |
-| 4 | GitHub Actions workflows, `CODEOWNERS`, and code named for auth, merge, release, trust, permissions, secrets, or credentials |
-| 3 | Agent instructions, such as `AGENTS.md`, `SKILL.md`, and `skills/` |
-| 2 | Any other code or configuration |
-| 1 | Markdown docs and images |
-
-The PR's floor is the highest one any of its files reaches. A PR changing a guide and a GitHub
-Actions workflow needs at least 4.
-
-Each floor lists the files it covers, and can list exceptions that leave a file out of that floor
-only. For example, the default floor 4 covers `docs/merge-guide.md` by its name but excepts
-Markdown, so the guide falls to the next floor that covers it, or to 1. The same guide under
-`skills/` still gets 3 from the agent-instructions floor.
-
-Your list replaces the default one. This repository adds three floors ahead of the defaults,
-so a guide gets the closest review and a page under `docs/reference/` gets a skim:
-
-```yaml
-pr_description:
-  human_review_floors:
-    - level: 5
-      reason: changes docs for Shaka's users
-      paths: [docs/**/*]
-      except: [docs/reference/**/*]
-    - level: 2
-      reason: changes a reference page
-      paths: [docs/reference/**/*]
-    - level: 4
-      reason: changes evidence or settings checks
-      paths: [skills/shaka/lib/shaka/evidence/**/*, skills/shaka/lib/shaka/seam/**/*]
-    # ...followed by the default floors
-```
-
-Shaka reads the floors from the same settings as everything else on this page, never from the
-PR's own branch, so a PR can't lower its own floor. An empty list, `[]`, turns floors off.
 
 ## `wip.include_checkout_path`
 

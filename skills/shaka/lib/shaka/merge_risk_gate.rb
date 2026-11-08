@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 require_relative 'error'
-require_relative 'merge_review_floor'
+require_relative 'pull_changed_files'
+require_relative 'repository_config/high_risk_areas_schema'
 require_relative 'post_implementation/risk'
 
 module Shaka
@@ -14,10 +15,11 @@ module Shaka
 
     def self.max_risk(seam) = PostImplementationRisk.max_risk(seam)
 
-    # seam is the trusted RepositoryConfig; checkpoint answers risk(head) with the published rating or nil.
-    # confirmed_head names the head a user approved, as for merge limits.
+    # seam is the trusted RepositoryConfig, or nil when there is none, which applies the packaged level and
+    # areas; checkpoint answers risk(head) with the published rating or nil. confirmed_head names the head a
+    # user approved, as for merge limits.
     def initialize(seam, checkpoint, confirmed_head: nil)
-      @seam = seam
+      @areas = seam&.high_risk_areas || RepositoryConfig::HighRiskAreasSchema.effective(nil)
       @checkpoint = checkpoint
       @confirmed_head = confirmed_head
       @max_risk = self.class.max_risk(seam)
@@ -37,7 +39,7 @@ module Shaka
     # Returns why a person must merge this head, or nil when its rating and files allow Auto.
     def hold(github, head)
       rating = @checkpoint.risk(head)
-      assessment = PostImplementationRisk.assess(rating || 'unknown', @seam.high_risk_areas, read(github, head))
+      assessment = PostImplementationRisk.assess(rating || 'unknown', @areas, read(github, head))
       self.class.reason(assessment, @max_risk, rating)
     end
 
@@ -57,7 +59,7 @@ module Shaka
     private
 
     def read(github, head)
-      MergeReviewFloor.new.paths(github, head)
+      PullChangedFiles.new.paths(github, head)
     rescue Error, SystemCallError
       nil
     end

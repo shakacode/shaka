@@ -24,10 +24,10 @@ module Shaka
                       .map { |path| "skills/shaka/lib/shaka/#{path}" }.freeze
     # Every other Ruby file directly in DIRECTORY previews from the head. These stay installed because they guard
     # the PR or run after its description renders, inside the GitHub write or a refusal of it: the loader, the
-    # configuration and review-effort guards, the write with its region markers and rendering check, and the merge
+    # configuration guard, the write with its region markers and rendering check, and the merge
     # warning and decisions check that follow rendering. Ruby keeps these files from loading; another head file
     # could still reopen their modules, which is why only same-repository heads whose diff was inspected preview.
-    INSTALLED = %w[rendering_preview feature_guard review_effort_floor publishing managed_region rendered_prose
+    INSTALLED = %w[rendering_preview feature_guard publishing managed_region rendered_prose
                    merge_warning_region checkpoint_recommendation].map { |name| "#{DIRECTORY}#{name}.rb" }.freeze
     MARKER = /<!-- shaka:rendering-preview ([0-9a-f]{40}) -->/
 

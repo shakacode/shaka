@@ -16,7 +16,7 @@ class CliDescriptionReviewFocusTest < Minitest::Test
   SOURCE = "class Queue\n  def submit\n    check\n  end\nend\n"
 
   def description_content
-    focus = [{ 'path' => 'lib/queue.rb', 'level' => 4, 'reason' => 'submits the queue entry.',
+    focus = [{ 'path' => 'lib/queue.rb', 'reason' => 'submits the queue entry.',
                'from' => 'def submit', 'block' => true }]
     super.merge('intent' => INTENT.merge('review_focus' => focus))
   end
@@ -50,14 +50,14 @@ class CliDescriptionReviewFocusTest < Minitest::Test
     RUBY
   end
 
-  def test_a_focus_range_is_linked_at_the_head_under_review_effort
+  def test_a_focus_range_is_linked_at_the_head
     Dir.mktmpdir do |dir|
       _output, error, status = run_description(dir)
 
       assert_predicate status, :success?, error
       link = "[`lib/queue.rb` lines 2–4](https://github.com/owner/repo/blob/#{HEAD}/lib/queue.rb#L2-L4)"
       assert_includes File.read(File.join(dir, 'published.md')),
-                      "**Closer reading:**\n- 4 of 5: #{link}, submits the queue entry."
+                      "**Closer reading:**\n- #{link}, submits the queue entry."
     end
   end
 end

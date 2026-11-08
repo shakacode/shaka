@@ -66,6 +66,22 @@ class MergeRiskGateTest < Minitest::Test
     assert_includes error.message, "Shaka could not read this PR's changed files"
   end
 
+  # The packaged level, low, applies when the settings omit the key or cannot be read at all.
+  def test_the_default_low_applies_without_the_setting
+    seam = Seam.new(AREAS, {})
+    assert_nil gate('low', seam:).verify!(github(%w[lib/fix.rb]), HEAD)
+    assert_includes refusal('medium', %w[lib/fix.rb], seam:), 'merge.auto_merge_max_risk: low lets the agent merge'
+    assert_equal 'low', Shaka::MergeRiskGate.max_risk(nil)
+  end
+
+  # Without trusted settings the gate still holds, with the packaged level and areas, and never crashes.
+  def test_without_trusted_settings_the_gate_fails_safe
+    assert_nil gate('low', seam: nil).verify!(github(%w[lib/fix.rb]), HEAD)
+    assert_includes refusal('low', %w[db/migrate/1_x.rb], seam: nil), 'is in high-risk area `database`'
+    assert_includes refusal('medium', %w[lib/fix.rb], seam: nil), 'merge.auto_merge_max_risk: low'
+    assert_includes refusal(nil, %w[lib/fix.rb], seam: nil), 'the checkpoint for this head has no risk rating'
+  end
+
   def test_a_confirmed_head_merges_whatever_the_rating
     assert_nil gate('high', confirmed_head: HEAD).verify!(github(%w[db/migrate/1_x.rb]), HEAD)
   end
@@ -121,7 +137,7 @@ class AutoMergeLowPreviewTest < Minitest::Test
   LOW = { 'preference' => 'ask', 'auto_merge_max_risk' => 'low' }.freeze
   MEDIUM = LOW.merge('auto_merge_max_risk' => 'medium').freeze
 
-  # At low the preview reads the rating, not the floors, and the marker carries it for merge.
+  # At low the preview reads the rating, and the marker carries it for merge.
   def test_auto_merge_low_previews_the_risk_rating
     passing = body_for(%w[lib/fix.rb skills/shaka/SKILL.md], merge: LOW)
     assert_includes passing, 'this PR passes the risk rating and size checks Auto applies'

@@ -1,9 +1,9 @@
 Judge `verification_adequacy` by whether the packet's `verification` proves what its
-`intent` rests on, weighed against `review_effort` and any `review_focus` levels:
+`intent` rests on, weighed against the risk you rate:
 
 - `adequate`: the checks reach what `safe_because` rests on, and `not_verified` leaves
   nothing material.
-- `adequate with accepted gaps`: the named gaps are acceptable for the review effort.
+- `adequate with accepted gaps`: the named gaps are acceptable for that risk.
 - `inadequate`: no check reaches the fact the safety claim rests on.
 - `cannot judge`: the checks do not show what ran.
 

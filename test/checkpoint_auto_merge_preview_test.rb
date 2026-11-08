@@ -31,8 +31,7 @@ module AutoMergePreviewFixture
   include RepositoryConfigTestHelpers
 
   # report takes the verdict: or rating: to publish; client sets PreviewGitHub's changed_files or labels.
-  def body_for(files, merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2 }, settings: {}, report: {},
-               **client)
+  def body_for(files, merge: { 'preference' => 'ask' }, settings: {}, report: {}, **client)
     with_repository(settings.merge('merge' => merge)) do |root|
       trust!(root)
       with_result do |result, path|
@@ -72,9 +71,11 @@ module AutoMergePreviewFixture
   end
 end
 
-# A ready checkpoint on Ask says whether merge.auto_max_review_floor would have let Auto merge the PR.
+# A ready checkpoint on Ask says whether merge.auto_merge_max_risk, low by default, would have let Auto merge the PR.
 class CheckpointAutoMergePreviewTest < Minitest::Test
   include AutoMergePreviewFixture
+
+  MIGRATION = 'db/migrate/1_add_index.rb'
 
   def test_a_verdict_that_stops_auto_hands_the_pr_back
     assert_includes body_for(%w[lib/fix.rb], report: { verdict: 'cannot judge' }),
@@ -82,37 +83,38 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
     refute_includes body_for(%w[lib/fix.rb], report: { verdict: 'adequate with accepted gaps' }), 'hand this PR back'
   end
 
-  def test_says_code_at_the_floor_passes_without_promising_a_merge
-    assert_includes body_for(%w[lib/fix.rb test/fix_test.rb]),
-                    '**Auto merge preview:** this PR passes the review floor and size checks Auto applies; ' \
-                    'the agent would still judge its risk and compatibility before merging.'
+  # With no merge.auto_merge_max_risk in the settings, the default low applies.
+  def test_says_a_low_rated_pr_passes_without_promising_a_merge
+    body = body_for(%w[lib/fix.rb test/fix_test.rb skills/shaka/SKILL.md])
+    assert_includes body, '**Auto merge preview:** this PR passes the risk rating and size checks Auto applies; ' \
+                          'the agent would still judge its risk and compatibility before merging.'
+    assert_includes body, '_With `merge.auto_merge_max_risk: low`, an agent merges a low rating; a person merges ' \
+                          'the rest._'
   end
 
   # The fixture's reviewer rates low; the changed files can raise it.
   def test_the_risk_rating_comes_from_the_reviewer_and_high_risk_areas
     assert_includes body_for(%w[lib/fix.rb]), '**Risk:** Low. Low risk is meant for auto-merge'
-    migration = body_for(%w[lib/fix.rb db/migrate/1_add_index.rb])
-    assert_includes migration,
-                    "**Risk:** High, raised from the reviewer's low by `database` (`db/migrate/1_add_index.rb`)."
-    assert_includes migration, 'The risk rating above is high, which is meant for a person to merge.'
-    refute_includes body_for(%w[lib/fix.rb]), 'The risk rating above'
-    assert_includes body_for(%w[db/migrate/1_add_index.rb], settings: { 'high_risk_areas' => { 'database' => [] } }),
-                    '**Risk:** Low.'
+    migration = body_for(['lib/fix.rb', MIGRATION])
+    assert_includes migration, "**Risk:** High, raised from the reviewer's low by `database` (`#{MIGRATION}`)."
+    refute_includes migration, 'The risk rating above'
+    assert_includes body_for([MIGRATION], settings: { 'high_risk_areas' => { 'database' => [] } }), '**Risk:** Low.'
   end
 
   def test_names_the_file_that_would_hand_the_pr_back
-    assert_includes body_for(%w[lib/fix.rb skills/shaka/SKILL.md]),
-                    'would hand this PR back: skills/shaka/SKILL.md sets review floor 3 (changes agent instructions)'
+    assert_includes body_for(['lib/fix.rb', MIGRATION]),
+                    "would hand this PR back: `#{MIGRATION}` is in high-risk area `database`."
+    assert_includes body_for(%w[lib/fix.rb], report: { rating: 'medium' }),
+                    'would hand this PR back: the checkpoint rates this head medium risk.'
   end
 
   def test_names_a_hold_label_whatever_the_files
     assert_includes body_for(%w[lib/fix.rb], labels: %w[bug Hold]),
                     'would hand this PR back: it carries the hold label `Hold`.'
     assert_includes body_for(%w[lib/fix.rb], labels: ['do-not-merge'],
-                                             merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2,
-                                                      'hold_labels' => ['do-not-merge'] }),
+                                             merge: { 'preference' => 'ask', 'hold_labels' => ['do-not-merge'] }),
                     'it carries the hold label `do-not-merge`'
-    assert_includes body_for(%w[skills/shaka/SKILL.md], labels: ['hold'], merge: { 'preference' => 'ask' }),
+    assert_includes body_for(%w[skills/shaka/SKILL.md], labels: ['hold']),
                     'would hand this PR back: it carries the hold label `hold`.'
   end
 
@@ -123,20 +125,18 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
   end
 
   def test_names_both_limits_and_the_held_file
-    files = [*(1..29).map { |n| "lib/f#{n}.rb" }, 'skills/shaka/SKILL.md']
+    files = [*(1..29).map { |n| "lib/f#{n}.rb" }, MIGRATION]
 
-    assert_includes body_for(files), '(changed_files 30 > 29); skills/shaka/SKILL.md sets review floor 3'
+    assert_includes body_for(files), "(changed_files 30 > 29); `#{MIGRATION}` is in high-risk area `database`"
   end
 
   def test_an_unreadable_file_list_is_named_plainly
     assert_includes body_for(%w[lib/fix.rb], changed_files: 2),
-                    'would hand this PR back: Shaka could not read its changed files from GitHub.'
+                    "would hand this PR back: Shaka could not read this PR's changed files."
   end
 
-  def test_no_preview_under_auto_or_at_the_top_floor
-    [{ 'preference' => 'auto', 'auto_max_review_floor' => 2 }, { 'preference' => 'ask' }].each do |merge|
-      refute_includes body_for(%w[lib/fix.rb], merge:), 'Auto merge preview'
-    end
+  def test_no_preview_under_auto
+    refute_includes body_for(%w[lib/fix.rb], merge: { 'preference' => 'auto' }), 'Auto merge preview'
   end
 
   def test_unreadable_settings_leave_the_preview_out_and_still_publish

@@ -524,13 +524,9 @@ phases:
         `intent` holds one line each for `why`, `scope`, and `safe_because`: the problem,
         what changes, and the concrete safeguard. Add optional `leaves_out` only for a deliberate
         deferred part readers would reasonably expect; otherwise omit it. Intent ends with
-        `scope`, GitHub's file/line counts, and path-based buckets. Intent's `review_effort`, 1 to 5, tells the reader how much attention the change asks for:
-        1 for docs a reader can trust from the description, 5 for irreversible or security changes.
-        The helper refuses a rating below the floor the changed files set; to choose or change the
-        floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
-        When a few files or ranges need more care than that rating, list them in `review_focus`, each with
-        `path`, a `level` above `review_effort`, a one-line `reason`, and optional `from` with `to` or `block`
-        as `code_links` take them.
+        `scope`, GitHub's file/line counts, and path-based buckets. When a few files or ranges need
+        more care than the rest, list them in `review_focus`, each with `path`, a one-line `reason`, and
+        optional `from` with `to` or `block` as `code_links` take them.
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
         Name the task in provenance as the
@@ -845,10 +841,8 @@ phases:
         UNSTABLE. Pass `merge --ref` from intake and `--ci-review-wait MODE` only for a this-task override. Read
         completed feedback before merge and report pending optional reviews.
       - `merge` refuses a PR over the trusted `merge.limits` for changed files, changed lines, or
-        commits, or whose size GitHub does not report. It also refuses a PR with a changed file
-        above the trusted `merge.auto_max_review_floor`, or one changing Shaka's configuration
-        while that setting is below 5. Under `merge.auto_merge_max_risk` it refuses instead any head
-        whose checkpoint rating is above that level or that changes a high-risk file. That refusal switches
+        commits, or whose size GitHub does not report. It also refuses any head whose checkpoint
+        rating is above the trusted `merge.auto_merge_max_risk` or that changes a high-risk file. That refusal switches
         Auto to Ask: report the counts, rating, or file it names and hand the PR back. Label that handoff `awaiting-merge-approval` with
         `attention --state merge`, because the user's confirmation of the head approves its
         merge. Pass `--limits-confirmed-head SHA` only for a head the

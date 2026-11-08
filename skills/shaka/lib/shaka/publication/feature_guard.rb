@@ -8,7 +8,7 @@ module Shaka
   module FeaturePublication
     module_function
 
-    # Returns the changed paths, both names of a rename, which also set the review-effort floor.
+    # Returns the changed paths, both names of a rename.
     def check(github:, pull:, flow:)
       unless Configuration::FeatureGuard::FLOWS.include?(flow)
         raise Error, 'Publication flow must be feature, setup, or migration'

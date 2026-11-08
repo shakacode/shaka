@@ -39,7 +39,7 @@ module Shaka
 
     # In the order docs/settings.md explains them.
     SETTINGS = [
-      merge('preference'), merge('required_checks'), merge('limits'), merge('auto_max_review_floor'),
+      merge('preference'), merge('required_checks'), merge('limits'),
       merge('auto_merge_max_risk'),
       setting('merge.hold_labels') { |context| MergeHold.from(context.config).labels },
       review('startup_check'), review('required'), review('ci_review_jobs'), review('ci_review_wait'),
@@ -64,7 +64,6 @@ module Shaka
       end,
       *%w[show_shaka_credit show_human_comments max_human_comments].map { |key| description(key) },
       setting('pr_description.time_zone') { |context| TimeZone.renderable(context.config.time_zone) },
-      description('human_review_floors'),
       setting('wip.include_checkout_path') do |context|
         context.config.wip['include_checkout_path']
       end,
