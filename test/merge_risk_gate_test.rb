@@ -61,6 +61,14 @@ class MergeRiskGateTest < Minitest::Test
     assert_includes error.message, 'PR head changed; refresh verification and walkthrough'
   end
 
+  def test_a_retired_floor_below_five_holds_even_a_low_rating
+    seam = SEAM.dup
+    seam.define_singleton_method(:retired_floor) { '2' }
+    assert_includes refusal('low', %w[lib/fix.rb], seam:),
+                    'still sets the retired merge.auto_max_review_floor: 2; move the paths its floors held'
+    assert_nil gate('low', seam:, confirmed_head: HEAD).verify!(github(%w[lib/fix.rb]), HEAD)
+  end
+
   def test_a_high_risk_area_overrides_a_low_rating
     assert_includes refusal('low', %w[lib/fix.rb db/migrate/1_add_index.rb]),
                     '`db/migrate/1_add_index.rb` is in high-risk area `database`'

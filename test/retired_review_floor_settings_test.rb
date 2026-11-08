@@ -21,9 +21,8 @@ class RetiredReviewFloorSettingsTest < Minitest::Test
     load_with(merge: { 'auto_max_review_floor' => 2 }) do |config|
       refute config.merge.key?('auto_max_review_floor')
       assert_equal 'low', config.merge.fetch('auto_merge_max_risk')
-      assert_includes config.warnings,
-                      'merge.auto_max_review_floor is retired and ignored; merge.auto_merge_max_risk (default low) ' \
-                      'now limits what Auto merges. Remove it; the next release refuses it.'
+      assert_equal '2', config.retired_floor
+      assert_includes config.warnings.join, 'Below 5 it holds every agent merge until removed'
     end
   end
 
@@ -57,5 +56,11 @@ class RetiredReviewFloorSettingsTest < Minitest::Test
     load_with(merge: { 'auto_merge_max_risk' => 'medium' }) do |config|
       assert_equal 'medium', config.merge.fetch('auto_merge_max_risk')
     end
+  end
+
+  # The top level held nothing, so a repository that still states it is not held.
+  def test_a_retired_floor_of_five_holds_nothing
+    load_with(merge: { 'auto_max_review_floor' => 5 }) { |config| assert_nil config.retired_floor }
+    load_with { |config| assert_nil config.retired_floor }
   end
 end

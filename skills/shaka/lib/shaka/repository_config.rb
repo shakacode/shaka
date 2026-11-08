@@ -97,6 +97,7 @@ module Shaka
     def prompt_files = self.class.prompt_files(review:, opening: opening_check, guidance: project_guidance)
 
     def warnings = PromptFiles.warnings(root: @root, sha:, review:) + RetiredSettings.warnings(@data)
+    def retired_floor = RetiredSettings.held_floor(@data)
 
     private
 

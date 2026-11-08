@@ -19,6 +19,7 @@ module Shaka
     # areas; checkpoint answers risk(head) with the published rating or nil. confirmed_head names the head a
     # user approved, as for merge limits.
     def initialize(seam, checkpoint, confirmed_head: nil)
+      @seam = seam
       @areas, @medium = PostImplementationRisk.areas(seam)
       @checkpoint = checkpoint
       @confirmed_head = confirmed_head
@@ -36,8 +37,20 @@ module Shaka
                    '--limits-confirmed-head for a head the user confirmed'
     end
 
+    # A retired floor below 5 kept files from Auto that the risk areas may not name yet, so it holds every merge.
+    def self.retired(seam)
+      floor = seam.respond_to?(:retired_floor) && seam.retired_floor
+      return unless floor
+
+      "this repository still sets the retired merge.auto_max_review_floor: #{floor}; move the paths its floors " \
+        'held into high_risk_areas or medium_risk_areas, then remove it'
+    end
+
     # Returns why a person must merge this head, or nil when its rating and files allow Auto.
     def hold(github, head)
+      retired = self.class.retired(@seam)
+      return retired if retired
+
       rating = @checkpoint.risk(head)
       assessment = PostImplementationRisk.assess(rating || 'unknown', @areas, read(github, head), @medium)
       self.class.reason(assessment, @max_risk, rating)

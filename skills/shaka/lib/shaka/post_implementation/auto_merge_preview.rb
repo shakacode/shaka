@@ -34,6 +34,8 @@ module Shaka
 
     # The rating decides against merge.auto_merge_max_risk, as MergeRiskGate does.
     def gate_hold(seam, assessment)
+      retired = MergeRiskGate.retired(seam)
+      return retired if retired
       return 'the checkpoint has no risk rating' unless assessment
 
       MergeRiskGate.reason(assessment, MergeRiskGate.max_risk(seam))
