@@ -19,11 +19,12 @@ qualification remain evidence requirements; the version number does not establis
   what that rating asks of the merge: a skim for medium, a careful review that starts
   with the verification for high. A missing rating shows as unknown and counts as high.
   Changes to databases, persistence, infrastructure, CI and trust, auth, permissions,
-  secrets, credentials, or Shaka's settings always count as high; set `high_risk_areas`
-  to change those paths. Changes to agent instructions count as at least medium; set
-  `medium_risk_areas` to change those paths. The agent merges only PRs at or below
-  `merge.auto_merge_max_risk` without a person confirming the head: `low` by default,
-  or `medium` to add medium risk. High risk always goes to a person.
+  secrets, or credentials always count as high; set `high_risk_areas` to change those
+  paths. Shaka's own settings in `.agents/shaka/` and `.agents/shaka.md` count as high
+  even if the `shaka` area is turned off. Changes to agent instructions count as at
+  least medium; set `medium_risk_areas` to change those paths. The agent merges only PRs
+  at or below `merge.auto_merge_max_risk` without a person confirming the head: `low` by
+  default, or `medium` to add medium risk. High risk always goes to a person.
 - Ask for an interactive code walkthrough with a short agenda and pauses for
   questions. Larger PR walkthroughs use a lightweight coverage map; selective
   notes on the diff remain unchanged.
