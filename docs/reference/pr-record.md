@@ -25,18 +25,16 @@ investigating. Detailed findings remain available for later agent analysis.
 
 ## Human review
 
-Current installations show **Human review** under **Intent**, from 1 for a brief
-review to 5 for close reading of the riskiest files. **Closer reading**, when
-present, links to code needing particular attention.
+The checkpoint rates each PR's **Risk** as low, medium, or high, with reasons.
+Low is meant for auto-merge with a later audit, medium for a person to merge
+after a skim, and high for a careful review that starts with the verification.
+A change in one of the repository's
+[`high_risk_areas`](../settings.md#high_risk_areas) always counts as high.
+Under Auto, [`merge.auto_merge_max_risk`](../settings.md#mergeauto_merge_max_risk)
+sets the highest rating the agent merges without you; the default is low.
 
-Repositories set [minimum ratings by changed file](../settings.md#pr_descriptionhuman_review_floors).
-Current Auto settings can return work to you when a changed file's minimum
-exceeds the [configured threshold](../settings.md#mergeauto_max_review_floor).
-
-[PR #1081](https://github.com/shakacode/shaka/pull/1081) proposes a checkpoint risk
-assessment of low, medium, or high. Risk governs automatic merging only when that
-feature is installed and the repository opts into low-risk-only Auto merging.
-A low rating alone does not enable Auto.
+**Closer reading**, under **Intent** when present, links to the code needing
+particular attention, each with its reason.
 
 ## Checkpoint
 
