@@ -18,7 +18,7 @@ qualification remain evidence requirements; the version number does not establis
 - Rate each PR's risk as low, medium, or high in the checkpoint, with reasons, and say
   what that rating asks of the merge: a skim for medium, a careful review that starts
   with the verification for high. A missing rating shows as unknown and counts as high. Changes to databases, persistence, infrastructure,
-  CI and trust, or Shaka's settings always count as high; set `high_risk_areas` to
+  CI and trust, auth, permissions, secrets, credentials, or Shaka's settings always count as high; set `high_risk_areas` to
   change those paths. Auto merges only PRs at or below `merge.auto_merge_max_risk`:
   `low` by default, or `medium` to add medium risk. High risk always goes to a person.
 - Keep complete usage accounting when a PR description outgrows GitHub's limit.
@@ -84,7 +84,9 @@ qualification remain evidence requirements; the version number does not establis
   `merge.auto_max_review_floor` and `pr_description.human_review_floors` are retired:
   for one release a configuration that still sets them loads with a warning and their
   values are ignored, and the next release refuses them. `merge.auto_merge_max_risk`
-  now limits what Auto merges; list paths that must reach a person under `high_risk_areas`.
+  now limits what Auto merges. A repository that lowered `auto_max_review_floor` to keep
+  other paths from Auto, such as merge or release code, should list them under
+  `high_risk_areas`; the packaged areas cover only the paths named above.
 
 ### Fixed
 

@@ -64,7 +64,21 @@ high_risk_areas: # Defaults: a change here is always high risk, whatever the che
   infrastructure: ['**/*.tf', '**/*.tfvars', infra/**/*, k8s/**/*, '**/charts/**/*', '**/Dockerfile*',
                    '**/docker-compose*.yml', .controlplane/**/*, fly.toml]
   ci_and_trust: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS]
+  # A path segment named for a word, alone or joined by _ or -, as auth_controller.rb or oauth/; not authors.md.
+  security:
+    - '**/{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,.*,_*,-*}'
+    - '**/*[_-]{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,.*,_*,-*}'
+    - '**/{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,_*,-*}/**/*'
+    - '**/*[_-]{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,_*,-*}/**/*'
   shaka: [.agents/shaka/**/*]
+  # Ours: Shaka's merge, trust, evidence and settings code, which the retired review floors held from Auto.
+  merge_and_trust: ['skills/shaka/lib/shaka/{merge,trust,release}*.rb',
+                    'skills/shaka/lib/shaka/{merge,trust,release}*/**/*',
+                    'skills/shaka/lib/shaka/{pull_changed_files,required_checks,ci_review_wait,review_coverage}.rb',
+                    'skills/shaka/lib/shaka/{public_comments,defaults,seam,repository_config,configuration}.rb',
+                    'skills/shaka/lib/shaka/{public_comments,evidence,seam,repository_config,configuration}/**/*',
+                    'skills/shaka/lib/shaka/publication/{feature_guard,verification_gates}.rb',
+                    'skills/shaka/lib/shaka/post_implementation/{risk,evidence,auto_merge_preview}.rb']
 
 merge:
   preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.

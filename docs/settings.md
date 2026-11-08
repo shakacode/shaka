@@ -832,6 +832,7 @@ reviewer reads a diff and description that the PR's author controls.
 | `persistence` | database, storage, cache, Redis, and Sidekiq configuration |
 | `infrastructure` | Terraform, `infra/`, `k8s/`, Helm charts, Dockerfiles, Compose files, Control Plane and Fly configuration |
 | `ci_and_trust` | GitHub workflows and actions, `CODEOWNERS` |
+| `security` | a file or folder named for auth, OAuth, authentication, authorization, permissions, secrets, or credentials, alone or joined by `_` or `-`, such as `auth_controller.rb` or `oauth/` |
 | `shaka` | `.agents/shaka/` and `.agents/shaka.md`, which count here even if you turn the area off |
 
 [`defaults.yml`](../skills/shaka/config/defaults.yml) lists the exact patterns. A list

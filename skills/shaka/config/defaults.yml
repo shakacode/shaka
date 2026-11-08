@@ -25,6 +25,12 @@ high_risk_areas: # A change here is always high risk, whatever the checkpoint ra
   infrastructure: ['**/*.tf', '**/*.tfvars', infra/**/*, k8s/**/*, '**/charts/**/*', '**/Dockerfile*',
                    '**/docker-compose*.yml', .controlplane/**/*, fly.toml]
   ci_and_trust: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS]
+  # A path segment named for a word, alone or joined by _ or -, as auth_controller.rb or oauth/; not authors.md.
+  security:
+    - '**/{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,.*,_*,-*}'
+    - '**/*[_-]{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,.*,_*,-*}'
+    - '**/{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,_*,-*}/**/*'
+    - '**/*[_-]{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,_*,-*}/**/*'
   shaka: [.agents/shaka/**/*]
 
 merge:

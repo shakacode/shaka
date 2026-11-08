@@ -30,6 +30,16 @@ class PostImplementationRiskTest < Minitest::Test
     end
   end
 
+  def test_the_security_area_matches_named_segments_only
+    %w[app/controllers/auth_controller.rb lib/oauth/callback.rb config/secrets.yml app/models/user_permissions.rb
+       lib/Credentials.rb services/api-auth/handler.go].each do |path|
+      assert_equal ['security'], RISK.assess('low', AREAS, [path])['areas_hit'].map { it['area'] }, path
+    end
+    %w[AUTHORS.md lib/author.rb app/models/authority.rb].each do |path|
+      assert_equal 'low', RISK.assess('low', AREAS, [path])['level'], path
+    end
+  end
+
   def test_the_rating_stands_outside_high_risk_areas
     assessment = RISK.assess('medium', AREAS, ['app/models/user.rb', 'README.md'])
     assert_equal %w[medium medium], assessment.values_at('rating', 'level')

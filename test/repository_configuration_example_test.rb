@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require 'shaka/defaults'
 require 'shaka/repository_config'
 require 'shaka/local_review/runner'
+require 'shaka/post_implementation/risk'
 
 # The repository contract doubles as the browsable example of shipped defaults.
 class RepositoryConfigurationExampleTest < Minitest::Test
@@ -71,6 +72,18 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     when 'opening_check' then @example.fetch('pr_description').fetch(section).except('reviewer')
     when 'pr_description' then @example.fetch(section).except('opening_check', 'time_zone')
     else @example.fetch(section)
+    end
+  end
+end
+
+# Shaka's own settings hold its merge and trust code from Auto, as the retired review floors did.
+class RepositoryConfigurationExampleRiskAreasTest < Minitest::Test
+  def test_shaka_merge_and_trust_code_counts_as_high
+    areas = Shaka::RepositoryConfig.load(root: File.expand_path('..', __dir__)).high_risk_areas
+    %w[skills/shaka/lib/shaka/merge_risk_gate.rb skills/shaka/lib/shaka/evidence/public_settings.rb
+       skills/shaka/lib/shaka/trusted_config_source.rb
+       skills/shaka/lib/shaka/repository_config/merge_schema.rb].each do |path|
+      assert_equal 'merge_and_trust', Shaka::PostImplementationRisk.hits(areas, [path]).first&.fetch('area'), path
     end
   end
 end
