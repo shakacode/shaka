@@ -1,4 +1,6 @@
-# Decide what happens next
+# Review the PR and improve the process
+
+<a id="decide-what-happens-next"></a>
 
 Shaka produces a pull request with an **evidence packet**: an explanation of the
 change, checks and review results, visual comparisons when relevant, and what
