@@ -891,7 +891,8 @@ project_guidance:
 ```
 
 [The guide](https://github.com/shakacode/shaka/blob/main/.agents/shaka/pr-evidence.md)
-has a shape worth copying. Each section opens with when it applies, so the agent can tell at once whether to read on.
+has a shape worth copying. Each section opens with when it applies, so the agent can
+tell at once whether to read on.
 It points to a longer procedure instead of repeating it, so the steps keep one home. It
 ends by saying where to report the result, or why there is none.
 
