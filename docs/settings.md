@@ -871,15 +871,17 @@ merge treats a head without a published rating as high. Three things change the 
 - Paths in a [high-risk](#high_risk_areas) or [medium-risk area](#medium_risk_areas).
   Shaka applies the area's level after the reviewer rates, so the reviewer cannot rate
   those changes lower.
-- Rating guidance in your [checkpoint instructions file](#add-your-own-checkpoint-questions),
-  for a rule that paths cannot express. For example:
+- Rating guidance in text the reviewer reads, for a rule that paths cannot express. Put
+  it in your [checkpoint instructions file](#add-your-own-checkpoint-questions), which
+  the reviewer reads last, after the rubric. For example:
 
   ```markdown
   Rate a change to a public API response as at least medium.
   ```
 
-  The reviewer reads your file after the rubric. Shaka does not check the rating
-  against your file.
+  A replacement prompt or `AGENTS.md` can carry the same guidance, but the reviewer
+  reads your instructions file after both. Shaka does not check the rating against any
+  of them.
 - The [checkpoint](#checkpoint) reviewer, model, and effort, which choose who rates.
 
 [`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) leaves the rating alone and sets
