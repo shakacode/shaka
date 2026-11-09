@@ -294,18 +294,11 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
   reports said it found no issues. Those counts fit an effect from the prompt or the
   model. `react_on_rails` is also a different codebase, and 11 of its bug threads sit on
   one PR.
-- **Follow-up test:** the [prompt comparison](hosted-review-prompt-comparison.md) took
-  the 17 commits where hosted Claude reported zero findings and CodeRabbit later found
-  a bug. It reran the old and current prompts on them, both under `claude-sonnet-5-5`.
-  The old prompt caught 3 of the 21 bugs, and the current prompt caught none. Full
-  reviews, run in place of the short pass, found nothing in 36 runs.
-- **Limit on that test:** neither prompt ran on the older model, so the test does not
-  clear the strict prompt. The commits were picked because a bug was known, so the test
-  says nothing about the prompt on commits without one.
-- **Decision:** the maintainer kept the current prompt and deferred both model tests.
-  An older-model replay would answer a history question with a fix he would not adopt.
-  A fair test of a stronger model needs commits chosen without regard to which reviewer
-  missed what.
+- **Follow-up test:** the [prompt comparison](hosted-review-prompt-comparison.md) reran
+  the old and current prompts, both under `claude-sonnet-5-5`, on the 17 commits where
+  hosted Claude reported zero findings and CodeRabbit later found a bug. The maintainer
+  kept the current prompt for now and deferred tests of other models. That article
+  gives the results and their limits.
 - **Proposed change:** none for now. If more of these catches are wanted, the
   comparison points to CodeRabbit's review limit, which finding 3 leaves to the
   maintainer.
