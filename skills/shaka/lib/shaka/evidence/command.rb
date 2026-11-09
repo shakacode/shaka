@@ -5,6 +5,7 @@ require 'open3'
 require_relative '../call_log'
 require_relative '../error'
 require_relative '../local_review/path_guard'
+require_relative 'base_freshness'
 require_relative 'candidate_tree'
 require_relative 'inputs'
 require_relative 'machine_facts'
@@ -67,7 +68,8 @@ module Shaka
         raise Error, "Missing --#{e.key}"
       end
 
-      def run_fixed = execute_run(prepare_run)
+      # A head behind the base would need a rebase and a rerun, so the check stops before it starts.
+      def run_fixed = prepare_run.then { |run| BaseFreshness.gate(run, @options[:base]) { execute_run(run) } }
 
       def prepare_run
         root, ref, repository = common
