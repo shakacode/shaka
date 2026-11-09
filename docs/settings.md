@@ -862,9 +862,10 @@ areas.
 ### Change how risk is rated
 
 Shaka's [risk rubric](../skills/shaka/config/post-implementation-risk.md) tells the
-checkpoint reviewer what each rating means. Every checkpoint prompt includes the rubric.
-No setting removes it: a [replacement prompt](#add-your-own-checkpoint-questions)
-replaces only the checkpoint questions. Three things change the rating:
+checkpoint reviewer what each rating means. Every checkpoint prompt includes the rubric,
+and a [replacement prompt](#add-your-own-checkpoint-questions) replaces only the
+checkpoint questions. With `checkpoint.enabled: false`, no reviewer rates the PR, and
+merge treats the missing rating as high. Three things change the rating:
 
 - Paths in a risk area. A change in a high-risk area counts as high, and a change in a
   [medium-risk area](#medium_risk_areas) counts as at least medium. Shaka applies both
