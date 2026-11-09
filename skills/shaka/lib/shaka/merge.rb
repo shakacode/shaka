@@ -53,22 +53,18 @@ module Shaka
       @review_evidence.final_check(head)
       # Under Auto no person looked at the findings, so open ones stop it however late they were published.
       MergeWaitReview.new(@github).refuse_open_findings! if @auto
+      # Base failures let Auto accept UNSTABLE, which no longer shows a check that failed since the
+      # first read, so every check is read again last.
+      verify_gate if @auto && @base_failures
       @submission.call(current, head)
     end
 
-    def verify_gate
-      gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
-      verify_checks(gate.fetch('checks'), head: @head, confirmed_head: @empty_checks_confirmed_head)
-      gate
-    end
-
     # The walkthrough explains the change; the attestation records that a separate review ran.
-    # GitHub cannot catch a seam check, or an Auto check while base failures allow UNSTABLE, that
-    # fails while these are read, so the checks are read again.
+    # GitHub cannot catch a seam check that fails while these are read, so it is read again.
     def verify_reviews(head, base, walkthrough, gate)
       verify_walkthrough(@github.review(walkthrough), head, walkthrough)
       evidence = { 'review_evidence' => @review_evidence.call(head, base:) }
-      verify_gate if gate['source'] == 'seam' || (@auto && @base_failures)
+      verify_gate if gate['source'] == 'seam'
       evidence
     end
 

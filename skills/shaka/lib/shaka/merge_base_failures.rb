@@ -33,10 +33,8 @@ module Shaka
     private
 
     def verify_head(name, not_passing, required_names)
-      if required_names.include?(name)
-        raise Error, "#{name} is a required check. GitHub blocks the merge while it fails, " \
-                     'and Shaka does not bypass protection.'
-      end
+      raise Error, "#{name} is a required check, so Auto cannot merge past it." if required_names.include?(name)
+
       rows = not_passing.select { |check| check['name'] == name }
       return if !rows.empty? && rows.all? { |check| check['bucket'] == 'fail' }
 

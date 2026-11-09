@@ -4,7 +4,7 @@ Use this path when required validation fails for a reason already present on the
 trusted base. It permits committing and publishing a blocked draft, not treating
 failed evidence as passing or bypassing a merge gate. This is an agent procedure;
 Ruby does not verify the base comparison or a maintainer's acceptance. For hosted
-checks, the last section names the one fact Ruby verifies.
+checks, the last section says what Ruby verifies.
 
 ## Establish the failure before committing
 

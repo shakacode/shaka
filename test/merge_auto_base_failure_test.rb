@@ -61,13 +61,28 @@ class MergeAutoBaseFailureTest < Minitest::Test
     assert_equal 'MERGED', merge.fetch('state')
   end
 
-  # UNSTABLE hides a check that fails while the reviews are read, so the second read must catch it.
-  def test_the_second_read_refuses_a_check_that_failed_meanwhile
-    @client.head_checks = [[passing('Validate'), failing('windows')],
-                           [passing('Validate'), failing('windows'), failing('lint')]]
+  # UNSTABLE hides a check that fails after the first read, so the read just before submission must
+  # catch one that fails as late as the final snapshot.
+  def test_the_last_read_refuses_a_check_that_failed_meanwhile
     excuse(base_rows: [failing('windows')])
+    checks = @client.head_checks
+    reads = 0
+    @client.define_singleton_method(:snapshot) do
+      reads += 1
+      checks << { 'name' => 'lint', 'state' => 'FAILURE', 'bucket' => 'fail' } if reads == 2
+      super()
+    end
 
     assert_blocked(/not passing: lint \(FAILURE\)/)
+  end
+
+  # A check the settings require stays required although GitHub's own required checks replace that list.
+  def test_refuses_a_check_merge_required_checks_names
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['windows'])
+    @merge.auto = true
+    excuse(base_rows: [failing('windows')])
+
+    assert_blocked(/windows is a required check/)
   end
 
   def test_refuses_a_check_the_base_does_not_fail

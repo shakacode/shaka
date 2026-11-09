@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'required_checks'
 
 module Shaka
   # Refuses a merge unless every gating check (native, or seam-declared as a fallback) is passing.
@@ -12,6 +13,12 @@ module Shaka
                             'the user told you to merge; Auto supplies no such approval.'
 
     private
+
+    def verify_gate
+      gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
+      verify_checks(gate.fetch('checks'), head: @head, confirmed_head: @empty_checks_confirmed_head)
+      gate
+    end
 
     # confirmed_head names the head a user told the agent to merge knowing no check gates it.
     def verify_checks(checks, head: nil, confirmed_head: nil)
@@ -48,11 +55,14 @@ module Shaka
                    'Wait with pr watch --auto, or hand the PR back under Ask'
     end
 
-    # Drops the failures MergeBaseFailures finds on the base branch too.
+    # Drops the failures MergeBaseFailures finds on the base branch too. A check merge.required_checks
+    # names counts as required even where GitHub's own required checks take that list's place.
     def unexcused(waiting, required)
       return waiting unless @base_failures
 
-      names = required.filter_map { |check| check['name'] if check.is_a?(Hash) } if required.is_a?(Array)
+      if required.is_a?(Array)
+        names = required.filter_map { |check| check['name'] if check.is_a?(Hash) }.union(Array(@seam_required_checks))
+      end
       waiting - @base_failures.excuse(waiting, names, @target.base)
     end
 

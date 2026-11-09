@@ -40,8 +40,9 @@ module Shaka
     end
 
     # Like required checks, an unreadable base comparison is reported rather than failing the read.
+    # `required` also marks the checks merge.required_checks names, as MergeBaseFailures does.
     def base_checks(reader, base_ref, checks)
-      required = checks['requiredChecks']&.map { |check| check['name'] }
+      required = checks['requiredChecks']&.map { |check| check['name'] }&.union(Array(@seam_required_checks))
       BaseChecks.new(@github).call(base_ref, reader.checks, required)
     rescue Error => e
       { 'baseChecksUnavailable' => e.message }

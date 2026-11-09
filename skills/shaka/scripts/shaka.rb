@@ -237,7 +237,9 @@ def merge_flags(flags, options)
 end
 
 def auto_flags(flags, options)
-  flags.on('--auto', 'Merge under Auto: every head check must pass; label auto-merged') { options[:auto] = true }
+  flags.on('--auto', 'Merge under Auto: every head check but --base-failure ones must pass; label auto-merged') do
+    options[:auto] = true
+  end
   flags.on('--base-failure NAME', 'With --auto: a non-required check that fails on the base branch too') do |name|
     (options[:base_failures] ||= []) << name
   end
