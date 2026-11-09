@@ -209,9 +209,8 @@ Put other project restrictions in `AGENTS.md`.
 ## `merge.auto_merge_max_risk`
 
 **Optional. Default: `low`.** The highest [risk](#high_risk_areas) the agent may merge without
-you confirming the head. Each level includes the ones below it. Under `preference: ask` the
-agent merges only a head you approved, and that approval is the confirmation, so the limit
-matters under `preference: auto`.
+your approval. Each level includes the ones below it. Under `preference: ask` you approve every
+merge anyway, so this setting matters under `preference: auto`.
 
 - `low` lets the agent merge only a PR whose checkpoint rates it low risk.
 - `medium` lets the agent merge a PR rated low or medium.
@@ -222,22 +221,19 @@ merge:
   auto_merge_max_risk: medium
 ```
 
-High risk always comes back to you, so `high` is not a value. `merge` reads the rating from the checkpoint comment that
-your account published for the exact head. It reads the high-risk areas from your trusted
-settings and the changed files from GitHub. A change in a high-risk area counts as high,
-whatever the reviewer rated it. A missing rating, unreadable files, or a change to Shaka's
-settings in `.agents/shaka/` or `.agents/shaka.md` all come back to you too; those settings
-count as the `shaka` area even if you turn it off. A repository with the checkpoint turned off
-publishes no new ratings, so a PR comes back to you unless an earlier checkpoint already rated
-that exact head. To let the agent merge a PR anyway, confirm that commit the same way as a PR
-past [`merge.limits`](#mergelimits). Once GitHub confirms a merge the agent made under Auto, it labels the
-PR `auto-merged`, so you can audit them later; queued merges and failed label writes are
-[exceptions](reference/pr-record.md#merge-approval).
+There is no `high` setting: high-risk PRs always go to you. So do these, whatever their rating:
 
-Try it before you switch to `auto`. While `preference` is still `ask`, each ready checkpoint
-comment says whether Auto would merge the PR at this level, or names what would send it
-back. For example, it may say the agent would hand this PR back because
-`db/migrate/1_add_index.rb` is in high-risk area `database`.
+- a change in a [high-risk area](#high_risk_areas);
+- a change to Shaka's own settings;
+- a PR without a checkpoint rating.
+
+To let the agent merge one of them anyway, approve it as you would a PR past
+[`merge.limits`](#mergelimits). The agent labels each PR it merges under Auto `auto-merged`, so you
+can review them later ([exceptions](reference/pr-record.md#merge-approval)).
+
+Try it before you switch to `auto`. While `preference` is still `ask`, each checkpoint comment
+says whether Auto would merge the PR, and if not, why: for example, `db/migrate/1_add_index.rb`
+is in high-risk area `database`.
 
 ## `merge.hold_labels`
 
