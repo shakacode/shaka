@@ -105,18 +105,27 @@ class StatusBaseChecksTest < Minitest::Test
     assert_match(/head changed/, error.message)
   end
 
+  # The comparison names the base read first, so a retarget meanwhile is refused rather than mislabeled.
+  def test_refuses_a_base_that_changed_while_checks_were_read
+    error = assert_raises(Shaka::Error) do
+      status(response({}, status: 1, http_status: 404), final_base: 'release')
+    end
+
+    assert_match(/base changed/, error.message)
+  end
+
   private
 
   # Snapshot, required checks, branch rules, every head check, the base reads, then the snapshot again.
-  def status(*base_reads, final_head: HEAD)
+  def status(*base_reads, final_head: HEAD, final_base: 'main')
     github = client(snapshot(HEAD), response([VALIDATE]), *no_configured_requirements,
-                    response([VALIDATE, LINT], status: 1), *base_reads, snapshot(final_head))
+                    response([VALIDATE, LINT], status: 1), *base_reads, snapshot(final_head, final_base))
     Shaka::Status.new(github, base_checks: true).call
   end
 
-  def snapshot(head)
+  def snapshot(head, base = 'main')
     response({ 'data' => { 'repository' => { 'pullRequest' => {
-               'headRefOid' => head, 'state' => 'OPEN', 'baseRefName' => 'main'
+               'headRefOid' => head, 'state' => 'OPEN', 'baseRefName' => base
              } } } })
   end
 end

@@ -28,13 +28,17 @@ module Shaka
     private
 
     # Every head read sits between the two snapshots, so a head that moves meanwhile is refused
-    # rather than paired with another commit's checks.
+    # rather than paired with another commit's checks. A base comparison names the first snapshot's
+    # base, so a retarget meanwhile is refused too.
     def read(reader)
       first = reader.snapshot
       checks = required_checks(reader)
       compared = base_checks(reader, first['baseRefName'], checks) if @base_checks
       current = reader.snapshot
       raise Error, 'PR head changed while reading status; retry.' unless current['headRefOid'] == first['headRefOid']
+      if compared && current['baseRefName'] != first['baseRefName']
+        raise Error, 'PR base changed while reading status; retry.'
+      end
 
       current.merge(checks, compared || {})
     end
