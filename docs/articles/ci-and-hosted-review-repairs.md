@@ -294,16 +294,22 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
   reports said it found no issues. Those counts fit an effect from the prompt or the
   model. `react_on_rails` is also a different codebase, and 11 of its bug threads sit on
   one PR.
-- **Follow-up test:** the [prompt comparison](hosted-review-prompt-comparison.md) took the
-  17 commits where hosted Claude reported zero findings and CodeRabbit later led to a
-  code bug fix. It reran the old and current prompts on them, both under
-  `claude-sonnet-5-5`. The
-  old prompt caught 3 of the 21 bugs, and the current prompt caught none. Forced full
-  reviews with the current prompt found nothing in 36 runs. The maintainer kept the
-  current prompt.
-- **Proposed change:** none for the prompt. Comparing models on the same commits would
-  test the drop after #446, and that comparison has not run.
-- **Maintenance:** none until a model comparison runs.
+- **Follow-up test:** the [prompt comparison](hosted-review-prompt-comparison.md) took
+  the 17 commits where hosted Claude reported zero findings and CodeRabbit later led to
+  a code bug fix. It reran the old and current prompts on them, both under
+  `claude-sonnet-5-5`. The old prompt caught 3 of the 21 bugs, and the current prompt
+  caught none. Forced full reviews with the current prompt found nothing in 36 runs.
+  The test does not clear the strict prompt, because neither prompt ran on the older
+  model.
+- **Decision:** the maintainer kept the current prompt for now and declined both model
+  tests. An older-model replay would answer a history question with a fix he would not
+  adopt. A fair test of a stronger model needs commits chosen without regard to which
+  reviewer missed what.
+- **Proposed change:** none for now. The comparison names CodeRabbit's review limit as
+  the lever for catching more of these bugs.
+- **Guarantee at risk:** more findings bring back nits. About 87% of findings before
+  #446 led to no push, and about 73% from #446 to #640.
+- **Maintenance:** none.
 
 ### 3. CodeRabbit fixes rose while hosted Claude fell to zero
 
