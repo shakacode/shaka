@@ -15,7 +15,7 @@ the workflow reaches that decision:
 | Try an unmerged Shaka version on real work | [PR trials](pr-trials.md) |
 | Install, update, or verify Shaka | [Official installation](official-installation.md) |
 | Install prerequisites, forks, removal, or host details | [Installation details](installation.md) |
-| Configure or inspect a repository | [Setup](repository-setup.md) and shared [settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md) |
+| Configure or inspect a repository, or refresh `.agents/shaka.md` | [Setup](repository-setup.md) and shared [settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md) |
 | Migrate existing settings | [Migration](migration.md) |
 | Plan, split PRs, write updates, or recover work | [Delivery and communication](delivery.md) |
 | Take over a spec or use another installed skill | [Companion skills](companion-skills.md) |
