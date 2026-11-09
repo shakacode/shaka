@@ -196,6 +196,9 @@ No extra closeout audit, receipt, automatic issue, heartbeat, or parallel tracke
 When a PR changes what Shaka users see or do, add an entry under `## [Unreleased]`
 in `CHANGELOG.md`, following the format its header names, written for users rather
 than as a commit summary. Leave out internal changes. No check enforces this.
+A settings change, as `.agents/shaka/pr-evidence.md` defines it, gets its own changelog
+entry that names each setting key, its old and new value, and the edit an existing
+`.agents/shaka/config.yml` needs, or says none is needed.
 Report available model, reasoning effort, and token evidence on the PR by commit;
 mark shared or unavailable attribution explicitly, as specified in the pilot plan.
 Do not close the pilot until its required real-use acceptance is established.
