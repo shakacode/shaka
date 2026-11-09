@@ -52,6 +52,24 @@ class MergeAutoBaseFailureTest < Minitest::Test
     assert_equal [[:tip, BASE], [:checks, BASE_SHA]] * 2, @client.base_reads
   end
 
+  # The trusted all wait refuses UNSTABLE to wait for CI review jobs; Auto has already required them to pass.
+  def test_merges_past_a_base_failure_when_the_trusted_wait_is_all
+    @merge = Shaka::Merge.new(@client, seam_wait: 'all')
+    @merge.auto = true
+    excuse(base_rows: [failing('windows')])
+
+    assert_equal 'MERGED', merge.fetch('state')
+  end
+
+  # UNSTABLE hides a check that fails while the reviews are read, so the second read must catch it.
+  def test_the_second_read_refuses_a_check_that_failed_meanwhile
+    @client.head_checks = [[passing('Validate'), failing('windows')],
+                           [passing('Validate'), failing('windows'), failing('lint')]]
+    excuse(base_rows: [failing('windows')])
+
+    assert_blocked(/not passing: lint \(FAILURE\)/)
+  end
+
   def test_refuses_a_check_the_base_does_not_fail
     [[[passing('windows')], 'pass'], [[], 'missing'], [[failing('windows'), passing('windows')], 'mixed']]
       .each do |rows, bucket|

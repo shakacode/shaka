@@ -86,7 +86,7 @@ class StatusBaseChecksTest < Minitest::Test
     assert_equal({ 'baseRefName' => 'main', 'baseSha' => BASE,
                    'failing' => [{ 'name' => 'lint', 'required' => false, 'link' => 'https://ci/head',
                                    'base' => 'fail', 'baseLink' => 'https://ci/base' }] }, result['baseChecks'])
-    assert_equal %w[gh api repos/owner/repo/branches/main], @calls[6][0].first(3)
+    assert_equal %w[gh api repos/owner/repo/branches/main], @calls[5][0].first(3)
   end
 
   def test_reports_an_unreadable_base_without_failing
@@ -96,15 +96,27 @@ class StatusBaseChecksTest < Minitest::Test
     assert_includes result['baseChecksUnavailable'], 'branches/main'
   end
 
+  # The head checks come from whatever head GitHub has when they are read, so a push meanwhile is refused.
+  def test_refuses_a_head_that_moved_while_checks_were_read
+    error = assert_raises(Shaka::Error) do
+      status(response({}, status: 1, http_status: 404), final_head: 'c' * 40)
+    end
+
+    assert_match(/head changed/, error.message)
+  end
+
   private
 
-  # Snapshot, required checks, branch rules, snapshot again, then every head check and the base reads.
-  def status(*base_reads)
-    snapshot = response({ 'data' => { 'repository' => { 'pullRequest' => {
-                          'headRefOid' => HEAD, 'state' => 'OPEN', 'baseRefName' => 'main'
-                        } } } })
-    github = client(snapshot, response([VALIDATE]), *no_configured_requirements, snapshot,
-                    response([VALIDATE, LINT], status: 1), *base_reads)
+  # Snapshot, required checks, branch rules, every head check, the base reads, then the snapshot again.
+  def status(*base_reads, final_head: HEAD)
+    github = client(snapshot(HEAD), response([VALIDATE]), *no_configured_requirements,
+                    response([VALIDATE, LINT], status: 1), *base_reads, snapshot(final_head))
     Shaka::Status.new(github, base_checks: true).call
+  end
+
+  def snapshot(head)
+    response({ 'data' => { 'repository' => { 'pullRequest' => {
+               'headRefOid' => head, 'state' => 'OPEN', 'baseRefName' => 'main'
+             } } } })
   end
 end

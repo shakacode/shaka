@@ -44,9 +44,11 @@ ones that make users act after merge.
 When a CI check fails on the PR and on your default branch too, the agent compares
 the two logs before repairing anything. A failure the PR did not cause stays out of
 the PR, and the agent gives you a prompt that starts the fix on the default branch as
-its own task. An optional check like that does not stop Auto from merging. A required
-one still blocks, because GitHub enforces it and Shaka never bypasses protection: you
-choose between waiting for the fix and merging with your own override.
+its own task. An optional check like that does not stop Auto from merging. Shaka
+confirms the default branch fails the same check; that the PR left the failure alone
+is the agent's judgment from the logs and the diff. A required check still blocks,
+because GitHub enforces it and Shaka never bypasses protection: you choose between
+waiting for the fix and merging with your own override.
 
 ## Give feedback
 

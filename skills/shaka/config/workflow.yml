@@ -748,8 +748,8 @@ phases:
         for CI review. User-requested review gates still block in every mode.
         CodeRabbit, hosted Codex, and other unnamed bots are advisory: read completed findings,
         never wait for them except under the explicit comment-resolution settlement procedure below.
-      - Before repairing a failed hosted check, read its `baseChecks` entry from `pr`. When the base
-        fails it too, follow [hosted checks the base fails](<{{package_root}}/skills/shaka/references/base-validation-failure.md#hosted-checks-the-base-fails>).
+      - Before repairing a failed hosted check, compare it with the base as
+        [hosted checks the base fails](<{{package_root}}/skills/shaka/references/base-validation-failure.md#hosted-checks-the-base-fails>) describes.
       - Collect every current-head finding into one repair batch. Fix demonstrated defects
         (correctness, failing tests, security, contract or data-loss). Decline nits with a reason
         on the original thread. After two repair rounds, remaining nits do not start another cycle.

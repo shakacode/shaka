@@ -3,7 +3,8 @@
 Use this path when required validation fails for a reason already present on the
 trusted base. It permits committing and publishing a blocked draft, not treating
 failed evidence as passing or bypassing a merge gate. This is an agent procedure;
-Ruby does not verify the base comparison or a maintainer's acceptance.
+Ruby does not verify the base comparison or a maintainer's acceptance. For hosted
+checks, the last section names the one fact Ruby verifies.
 
 ## Establish the failure before committing
 
@@ -92,6 +93,8 @@ commit of the PR's base branch, beside links to both runs.
   after step 2 reproduces it there.
 - `pass` or `mixed`: the base does not share the failure. When the base newly passes,
   update the branch and read the check again; otherwise repair it here.
+- `baseChecksUnavailable` in place of `baseChecks`: run `pr` again. While the base stays
+  unread, the base owns nothing.
 
 Leave a failure the base owns unrepaired in this PR, then:
 

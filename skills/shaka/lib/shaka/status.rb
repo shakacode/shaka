@@ -27,20 +27,22 @@ module Shaka
 
     private
 
+    # Every head read sits between the two snapshots, so a head that moves meanwhile is refused
+    # rather than paired with another commit's checks.
     def read(reader)
-      head = reader.snapshot['headRefOid']
+      first = reader.snapshot
       checks = required_checks(reader)
+      compared = base_checks(reader, first['baseRefName'], checks) if @base_checks
       current = reader.snapshot
-      raise Error, 'PR head changed while reading status; retry.' unless current['headRefOid'] == head
+      raise Error, 'PR head changed while reading status; retry.' unless current['headRefOid'] == first['headRefOid']
 
-      status = current.merge(checks)
-      @base_checks ? status.merge(base_checks(reader, status)) : status
+      current.merge(checks, compared || {})
     end
 
     # Like required checks, an unreadable base comparison is reported rather than failing the read.
-    def base_checks(reader, status)
-      required = status['requiredChecks']&.map { |check| check['name'] }
-      BaseChecks.new(@github).call(status['baseRefName'], reader.checks, required)
+    def base_checks(reader, base_ref, checks)
+      required = checks['requiredChecks']&.map { |check| check['name'] }
+      BaseChecks.new(@github).call(base_ref, reader.checks, required)
     rescue Error => e
       { 'baseChecksUnavailable' => e.message }
     end
