@@ -4,25 +4,60 @@ require_relative 'publisher_attribution_test'
 require_relative 'claude_publisher_attribution_test'
 require_relative 'cli_opening_check_fakes'
 
-class CliPublisherAttributionTest < Minitest::Test
-  include PublisherAttributionFixture
-  include ClaudePublisherAttributionFixture
-  include CliOpeningCheckFakes
-
+# Runs `shaka description` or `shaka reply` against a fake GitHub and keeps what it would publish.
+module CliPublicationRun
   COMMAND = SHAKA_COMMAND
   ROOT = File.expand_path('..', __dir__)
-  SUMMARY = 'Missing attribution comes from the publisher session.'
-
-  REPLY_GH_CASES = <<~CODE
+  REVIEW_URL = 'https://github.com/owner/repo/pull/1#issuecomment-9'
+  REPLY_GH_CASES = <<~CODE.freeze
     when 'user' then puts JSON.generate('login' => 'author')
     when %r{repos/owner/repo/issues/1/comments}
       if ARGV.include?('POST')
         File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
         puts JSON.generate(request)
       else
-        puts '[]'
+        puts JSON.generate([{ 'id' => 9, 'html_url' => '#{REVIEW_URL}', 'body' => "# Review\\n",
+                              'user' => { 'login' => 'claude[bot]' } }])
       end
   CODE
+
+  private
+
+  def run_publication(environment, command: 'description')
+    Dir.mktmpdir do |dir|
+      write_fake_commands(dir)
+      file = File.join(dir, 'content.json')
+      supplied = description_content
+      supplied = supplied.slice('identity', 'summary').merge('reviews' => @reviews).compact if command == 'reply'
+      File.write(file, JSON.generate(supplied))
+      env = command_environment(environment, dir)
+      result = invoke(env, file, command)
+      yield dir, *result
+    end
+  end
+
+  def invoke(env, file, command)
+    flags = command == 'reply' ? ['--key', 'native-attribution'] : ['--root', ROOT]
+    Open3.capture3(env, *COMMAND, command, 'owner/repo', '1', '--content-file', file, *flags)
+  end
+
+  def fake_gh
+    super.sub('else abort', "#{REPLY_GH_CASES}else abort")
+  end
+
+  def command_environment(environment, dir)
+    hosts = Shaka::PublisherAttribution::HOST_VARIABLES.to_h { |variable| [variable, nil] }
+    hosts.merge(environment, 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir)
+  end
+end
+
+class CliPublisherAttributionTest < Minitest::Test
+  include PublisherAttributionFixture
+  include ClaudePublisherAttributionFixture
+  include CliOpeningCheckFakes
+  include CliPublicationRun
+
+  SUMMARY = 'Missing attribution comes from the publisher session.'
 
   def test_description_publishes_native_header_and_provenance
     with_session(context) do |environment, _file|
@@ -91,31 +126,25 @@ class CliPublisherAttributionTest < Minitest::Test
       supplied['identity']['model'] = 'other-model' if @conflict
     end
   end
+end
 
-  def run_publication(environment, command: 'description')
-    Dir.mktmpdir do |dir|
-      write_fake_commands(dir)
-      file = File.join(dir, 'content.json')
-      supplied = description_content
-      supplied = supplied.slice('identity', 'summary') if command == 'reply'
-      File.write(file, JSON.generate(supplied))
-      env = command_environment(environment, dir)
-      result = invoke(env, file, command)
-      yield dir, *result
+# On #1097 the published reply named the review before its identity line, so on the maintainer's
+# own thread the agent's answer read as the maintainer's.
+class CliReviewReplyOrderTest < Minitest::Test
+  include PublisherAttributionFixture
+  include CliOpeningCheckFakes
+  include CliPublicationRun
+
+  SUMMARY = 'Answered the review.'
+  OPENING = /\A<!--[^\n]*-->\n🤖 Codex · OpenAI[^\n]*\n\nResponded to the \[Review\]\(#{Regexp.escape(REVIEW_URL)}\) /
+
+  def test_a_review_reply_publishes_its_identity_line_above_the_review
+    @reviews = [REVIEW_URL]
+    with_session(context) do |environment, _file|
+      run_publication(environment, command: 'reply') do |dir, _output, error, status|
+        assert_predicate status, :success?, error
+        assert_match OPENING, File.read(File.join(dir, 'published.md'))
+      end
     end
-  end
-
-  def invoke(env, file, command)
-    flags = command == 'reply' ? ['--key', 'native-attribution'] : ['--root', ROOT]
-    Open3.capture3(env, *COMMAND, command, 'owner/repo', '1', '--content-file', file, *flags)
-  end
-
-  def fake_gh
-    super.sub('else abort', "#{REPLY_GH_CASES}else abort")
-  end
-
-  def command_environment(environment, dir)
-    hosts = Shaka::PublisherAttribution::HOST_VARIABLES.to_h { |variable| [variable, nil] }
-    hosts.merge(environment, 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir)
   end
 end

@@ -368,6 +368,19 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
     end
   end
 
+  # REPLY keeps the older order, with the review line above the identity line. A newer reply
+  # names its reviews under the identity line, and the Response still quotes the answer.
+  def test_a_reply_that_names_its_reviews_under_the_identity_line_quotes_its_answer
+    reply = "<!-- shaka:reply:maintainer-1 -->\n#{IDENTITY}\n\n" \
+            "Addressed the [Local Adversarial Review](#{URL}#issuecomment-9) by openai/gpt-6 (high) on `aaaaaaa`.\n" \
+            "Responded to the [review](#{URL}#discussion_r1) by `ann`.\n\n" \
+            'Removed both placeholders. The example now runs in one chat.'
+    rendered = describe(packet(inline_comments: [inline(1, 'ann', 'Why?'), inline(2, 'ann', reply)]))
+
+    assert_equal "[“Removed both placeholders\\. The example now runs in one chat\\.”](#{URL}#discussion_r2)",
+                 cells(rendered).first[2]
+  end
+
   def test_reply_openings_skip_historical_codex_publisher_notes
     notes = ['Publisher model is configured; served model is UNKNOWN.',
              'Served model unavailable in saved Codex logs.']
