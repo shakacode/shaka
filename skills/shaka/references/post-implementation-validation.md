@@ -51,9 +51,11 @@ with the Checkpoint link beside Code Walkthrough, followed by any deployment lin
 a named placeholder. This link locates the report; it does not establish readiness.
 
 Publishing a blocked or incomplete checkpoint converts the PR to draft and adds a
-**Do not merge** warning above its feature summary, or a **Not ready to merge** warning
-for Merge after maintainer decision. The warning names the reason,
-head, report link, and task owner's next step. Its separate marked region survives
+**Do not merge yet** warning above its feature summary, or a **Not ready to merge**
+warning for Merge after maintainer decision. The warning shows the disposition `reason`,
+or the reviewer summary without one, then the disposition `next_action` or a fixed next
+step. The Not ready to merge step always asks for an answer and says the answer does not
+approve merging. A report link and the head follow. Its separate marked region survives
 normal description updates. When a ready checkpoint is the latest one and the warning
 names an earlier head, publication removes the warning and reports `cleared` with the
 PR's `draft` status. After all required gates pass, the task owner marks a draft PR
@@ -178,6 +180,8 @@ Choose one fixed value; Ruby parses these values, so they are not configurable:
 Give each owner field one job:
 
 - `reason`: the main reason for the recommendation. A recommendation is not merge permission.
+  For Merge after maintainer decision, write the question by the
+  [question rules](delivery.md#when-the-agent-asks-questions).
 - `next_action`: the action, starting with its verb. Name who does it only when that
   person is not the developer. Do not restate the recommendation. Keep it to one short,
   plain sentence; leave out the commit, merge preference, and check results. For Merge,

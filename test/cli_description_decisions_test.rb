@@ -213,8 +213,8 @@ class CliDescriptionMergedDecisionsTest < Minitest::Test
   def waiting_body
     region = Shaka::MergeWarningRegion
     head = 'c' * 40
-    "#{region::OPEN}\n> **#{region::AWAITING.first}**\n>\n> Reason.\n>\n" \
-      '> [Blocking report](https://github.com/owner/repo/pull/1#issuecomment-1) · ' \
+    "#{region::OPEN}\n#{region::AWAITING_MARKER}\n> **#{region::AWAITING.first}**\n>\n> Reason.\n>\n" \
+      '> [Final review report](https://github.com/owner/repo/pull/1#issuecomment-1) · ' \
       "Head [`#{head[0, 7]}`](https://github.com/owner/repo/commit/#{head}). Passing checks.\n" \
       "#{region::CLOSE}\n\n<!-- shaka:begin -->\n<!-- shaka:decisions -->\n<!-- shaka:end -->\n"
   end

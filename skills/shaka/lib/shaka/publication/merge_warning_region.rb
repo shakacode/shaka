@@ -8,16 +8,51 @@ module Shaka
   module MergeWarningRegion
     OPEN = '<!-- shaka:merge-warning:begin -->'
     CLOSE = '<!-- shaka:merge-warning:end -->'
-    BLOCKED = ['⛔ Do not merge — post-implementation checkpoint blocked.',
-               'Task owner: resolve the linked concerns and publish a new checkpoint for the current head.'].freeze
-    # An owner who would merge after the maintainer's decision is not told the PR must never merge.
-    AWAITING = ["⛔ Not ready to merge — waiting for the maintainer's decision.",
-                'Maintainer: answer under Decisions to make. Task owner: then publish a new checkpoint.'].freeze
+    # Detection reads this hidden line, so the visible heading can change without losing open warnings.
+    AWAITING_MARKER = '<!-- shaka:merge-warning:awaiting -->'
+    # Warnings published before the marker existed are still recognized by their first line.
+    LEGACY_AWAITING = "⛔ Not ready to merge — waiting for the maintainer's decision."
+    AWAITING = ['⛔ Not ready to merge: a maintainer needs to answer a question.',
+                'Answer the question below under Decisions to make. ' \
+                'Your answer does not approve merging. The agent records it and updates this PR.'].freeze
+    BLOCKED = ['⛔ Do not merge yet: the final review found a problem.',
+               'The agent fixes the problems in the linked report and runs the review again. ' \
+               'You do not need to answer anything yet.'].freeze
+    INCOMPLETE = ['⛔ Do not merge yet: the final review did not finish.',
+                  'The agent fixes what stopped the review and runs it again. ' \
+                  'You do not need to answer anything yet.'].freeze
 
     module_function
 
-    # The heading and next step for a blocked checkpoint with this owner disposition.
-    def wording(disposition) = disposition == PostImplementationReport::AWAITING_DECISION ? AWAITING : BLOCKED
+    # The heading and default next step for a blocked checkpoint in this state with this owner disposition.
+    def wording(state, disposition)
+      return AWAITING if disposition == PostImplementationReport::AWAITING_DECISION
+
+      state == 'not_completed' ? INCOMPLETE : BLOCKED
+    end
+
+    # The warning for a blocked checkpoint publication, quoting its reason; report and commit are rendered links.
+    def render(publication, report:, commit:)
+      heading, step = wording(publication.state, publication.disposition)
+      marker = "#{AWAITING_MARKER}\n" if waiting?(publication)
+      "#{OPEN}\n#{marker}> **#{heading}**\n>\n#{quote(publication.summary)}\n>\n> #{next_step(publication, step)}\n" \
+        ">\n> [Final review report](#{report}) · Head #{commit}. " \
+        "This PR stays a draft until a new review clears this warning; passing checks alone do not.\n#{CLOSE}\n\n"
+    end
+
+    # The owner's own next step is more specific than the fixed one. A waiting warning keeps its request for an
+    # answer, because the owner's step there is the agent's own bookkeeping.
+    def next_step(publication, fixed)
+      return fixed if publication.next_action.nil? || waiting?(publication)
+
+      "**Next:** #{escape(publication.next_action.split.join(' '))}"
+    end
+
+    def waiting?(publication) = publication.disposition == PostImplementationReport::AWAITING_DECISION
+
+    def quote(text) = text.lines.map { |line| "> #{escape(line.chomp)}" }.join("\n")
+
+    def escape(text) = text.gsub('&', '&amp;').gsub('<', '&lt;').gsub('>', '&gt;')
 
     def prepend(existing, managed)
       warning, remaining = split(existing)
@@ -28,13 +63,15 @@ module Shaka
 
     # The head on the warning's generated last line; quoted summary text precedes it.
     def head(body, repository)
-      link = %r{· Head \[`\h{7}`\]\(https://github\.com/#{Regexp.escape(repository)}/commit/(\h{40})\)\. Passing}
+      link = %r{· Head \[`\h{7}`\]\(https://github\.com/#{Regexp.escape(repository)}/commit/(\h{40})\)\.}
       split(body).first.scan(link).last&.first
     end
 
     # Whether the warning for this head waits on the maintainer; only its generated first line counts.
     def awaiting?(body, repository, current)
-      split(body).first.start_with?("#{OPEN}\n> **#{AWAITING.first}**\n") && head(body, repository) == current
+      warning = split(body).first
+      starts = ["#{OPEN}\n#{AWAITING_MARKER}\n", "#{OPEN}\n> **#{LEGACY_AWAITING}**\n"]
+      starts.any? { |start| warning.start_with?(start) } && head(body, repository) == current
     end
 
     # A merge of the head the warning waited on answers it; any other warning stays as the record.

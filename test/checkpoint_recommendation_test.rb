@@ -48,9 +48,11 @@ class CheckpointRecommendationTest < Minitest::Test
     assert_includes error.message, 'verification_adequacy comes from the published checkpoint'
   end
 
+  # The waiting warning carries a hidden marker; a legacy one is recognized by its old heading alone.
   def banner(wording, head: HEAD)
     region = Shaka::MergeWarningRegion
-    "#{region::OPEN}\n> **#{wording.first}**\n>\n> Reason.\n>\n" \
+    marker = "#{region::AWAITING_MARKER}\n" if wording == region::AWAITING
+    "#{region::OPEN}\n#{marker}> **#{wording.first}**\n>\n> Reason.\n>\n" \
       '> [Blocking report](https://github.com/example/test/pull/1#issuecomment-1) · ' \
       "Head [`#{head[0, 7]}`](https://github.com/example/test/commit/#{head}). Passing checks.\n" \
       "#{region::CLOSE}\n\nFeature summary"
@@ -120,5 +122,33 @@ class CheckpointRecommendationTest < Minitest::Test
   def test_content_without_a_checkpoint_is_unchanged
     content = { 'summary' => 'Done.' }
     assert_same content, resolve(content, [])
+  end
+end
+
+# Open PRs keep warnings published before the hidden marker existed, and the new heading alone proves nothing.
+class MergeWarningRecognitionTest < Minitest::Test
+  HEAD = 'a' * 40
+  REGION = Shaka::MergeWarningRegion
+
+  def banner(first_lines)
+    "#{REGION::OPEN}\n#{first_lines}\n>\n> Reason.\n>\n" \
+      '> [Blocking report](https://github.com/example/test/pull/1#issuecomment-1) · ' \
+      "Head [`#{HEAD[0, 7]}`](https://github.com/example/test/commit/#{HEAD}). Passing checks.\n" \
+      "#{REGION::CLOSE}\n\nFeature summary"
+  end
+
+  def waits?(body) = REGION.awaiting?(body, 'example/test', HEAD)
+
+  def test_a_waiting_warning_published_before_the_marker_still_waits_and_clears_on_merge
+    legacy = banner("> **#{REGION::LEGACY_AWAITING}**")
+    pull = { 'merged' => true, 'head' => { 'sha' => HEAD } }
+
+    assert waits?(legacy)
+    assert_equal 'Feature summary', REGION.answered_by_merge(legacy, 'example/test', pull)
+  end
+
+  def test_only_the_marker_makes_the_new_heading_wait
+    assert waits?(banner("#{REGION::AWAITING_MARKER}\n> **#{REGION::AWAITING.first}**"))
+    refute waits?(banner("> **#{REGION::AWAITING.first}**"))
   end
 end

@@ -95,7 +95,8 @@ module Shaka
     end
 
     def next_line(disposition)
-      disposition['next_action'] ? ["**Next:** #{disposition['next_action']}"] : []
+      @next_action = disposition['next_action']
+      @next_action ? ["**Next:** #{@next_action}"] : []
     end
 
     # The owner's reason leads, so the visible verdict states only the conclusion and any open concerns.
