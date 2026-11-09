@@ -818,8 +818,9 @@ checkpoint:
 
 To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to a copy
 of the built-in prompt without that question. You then keep that copy in step with
-Shaka's changes. The copy replaces only the questions. Shaka's rules, report format, and
-rubrics for verification and [risk](#change-how-risk-is-rated) still apply.
+Shaka's changes. The copy replaces the whole built-in prompt, including its guidance on
+what to report. Shaka's rules, report format, and rubrics for verification and
+[risk](#change-how-risk-is-rated) still apply.
 
 ## `high_risk_areas`
 
@@ -863,8 +864,8 @@ areas.
 
 Shaka's [risk rubric](../skills/shaka/config/post-implementation-risk.md) tells the
 checkpoint reviewer what each rating means. Every checkpoint prompt includes the rubric,
-and a [replacement prompt](#add-your-own-checkpoint-questions) replaces only the
-checkpoint questions. With `checkpoint.enabled: false`, no reviewer rates the PR, and
+and a [replacement prompt](#add-your-own-checkpoint-questions) replaces the built-in
+prompt but keeps the rubric. With `checkpoint.enabled: false`, no reviewer rates the PR, and
 merge treats the missing rating as high. Three things change the rating:
 
 - Paths in a risk area. A change in a high-risk area counts as high, and a change in a
