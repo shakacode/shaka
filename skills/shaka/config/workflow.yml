@@ -605,7 +605,7 @@ phases:
         handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
-          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto] [--limits-confirmed-head SHA]
+          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto [--base-failure NAME]] [--limits-confirmed-head SHA]
           [--empty-checks-confirmed-head SHA] [--adequacy-confirmed-head SHA] [--review-waiver REASON]
         usage --commit SHA --contribution CATEGORY [--since-time TASK_START_UTC]
         ```
@@ -748,6 +748,8 @@ phases:
         for CI review. User-requested review gates still block in every mode.
         CodeRabbit, hosted Codex, and other unnamed bots are advisory: read completed findings,
         never wait for them except under the explicit comment-resolution settlement procedure below.
+      - Before repairing a failed hosted check, read its `baseChecks` entry from `pr`. When the base
+        fails it too, follow [hosted checks the base fails](<{{package_root}}/skills/shaka/references/base-validation-failure.md#hosted-checks-the-base-fails>).
       - Collect every current-head finding into one repair batch. Fix demonstrated defects
         (correctness, failing tests, security, contract or data-loss). Decline nits with a reason
         on the original thread. After two repair rounds, remaining nits do not start another cycle.
@@ -877,7 +879,9 @@ phases:
         on the PR resumes. Never set `awaiting-merge-approval` in Auto
         mode. In Auto mode, run `merge --auto` with the current head, walkthrough ID, and
         `--squash-message` content. It labels the PR `auto-merged` once GitHub confirms the merge;
-        report a failed or queue-deferred label in the handoff. When `--auto` refuses a failed check, hand
+        report a failed or queue-deferred label in the handoff. Add `--base-failure NAME` for each
+        optional check that [hosted checks the base fails](<{{package_root}}/skills/shaka/references/base-validation-failure.md#hosted-checks-the-base-fails>)
+        attributed to the base. When `--auto` refuses a failed check, hand
         this PR back under Ask. A head the user confirms past a gate is an Ask merge: run `merge`
         with the confirmation and without `--auto`. A required
         native approval must arrive first, and do not ask for a second approval afterward.

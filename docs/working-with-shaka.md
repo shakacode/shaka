@@ -41,6 +41,13 @@ back large PRs ([size limits](settings.md#mergelimits)) and risky ones, such as
 changes to authentication, permissions, releases, deployments, or stored data, or
 ones that make users act after merge.
 
+When a CI check fails on the PR and on your default branch too, the agent compares
+the two logs before repairing anything. A failure the PR did not cause stays out of
+the PR, and the agent gives you a prompt that starts the fix on the default branch as
+its own task. An optional check like that does not stop Auto from merging. A required
+one still blocks, because GitHub enforces it and Shaka never bypasses protection: you
+choose between waiting for the fix and merging with your own override.
+
 ## Give feedback
 
 <a id="on-github-or-in-chat"></a>

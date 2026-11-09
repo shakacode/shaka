@@ -15,7 +15,7 @@ module Shaka
 
     # confirmed_head names the head a user told the agent to merge knowing no check gates it.
     def verify_checks(checks, head: nil, confirmed_head: nil)
-      verify_all_checks(@github.checks) if @auto
+      verify_all_checks(@github.checks, checks) if @auto
       raise Error, 'No observable required checks; native readiness is unknown' unless checks.is_a?(Array)
       return verify_empty_confirmation(head, confirmed_head) if checks.empty?
 
@@ -26,19 +26,29 @@ module Shaka
       end
     end
 
-    # Under Auto, GitHub has to report CLEAN, as with ci_review_wait: all.
-    def merge_state_wait = @auto ? 'all' : @ci_review_wait
+    # Under Auto, GitHub has to report CLEAN, as with ci_review_wait: all. Named base failures keep
+    # GitHub at UNSTABLE, so they leave the trusted wait in charge and verify_all_checks covers the rest.
+    def merge_state_wait = @auto && !@base_failures&.any? ? 'all' : @ci_review_wait
 
-    # Auto merges also need every reported check on the head, required or not, to have passed.
-    def verify_all_checks(checks)
+    # Auto merges also need every reported check on the head, required or not, to have passed,
+    # except a non-required one that MergeBaseFailures finds failing on the base branch too.
+    def verify_all_checks(checks, required)
       raise Error, 'Head checks are unknown; Auto cannot merge' unless checks.is_a?(Array)
 
-      waiting = checks.reject { |check| passing_check?(check) }
+      waiting = unexcused(checks.reject { |check| passing_check?(check) }, required)
       return if waiting.empty?
 
       names = waiting.map { |check| check.is_a?(Hash) ? "#{check['name']} (#{check['state']})" : check.inspect }
       raise Error, "Auto merges only when every check on the head passed; not passing: #{names.join(', ')}. " \
                    'Wait with pr watch --auto, or hand the PR back under Ask'
+    end
+
+    # Drops the failures MergeBaseFailures finds on the base branch too.
+    def unexcused(waiting, required)
+      return waiting unless @base_failures
+
+      names = required.filter_map { |check| check['name'] if check.is_a?(Hash) } if required.is_a?(Array)
+      waiting - @base_failures.excuse(waiting, names, @target.base)
     end
 
     def verify_empty_confirmation(head, confirmed_head)
@@ -49,9 +59,11 @@ module Shaka
                    'ask the user to confirm this head'
     end
 
-    # Reported only when the confirmation excused an empty set, so a merge result shows no check gated it.
+    # Reported when the confirmation excused an empty set, or Auto excused base failures, so a merge
+    # result shows which checks did not gate it.
     def excused_checks(gate, head)
-      gate.fetch('checks').empty? ? { 'empty_required_checks_confirmed_head' => head } : {}
+      excused = gate.fetch('checks').empty? ? { 'empty_required_checks_confirmed_head' => head } : {}
+      @base_failures ? excused.merge(@base_failures.evidence) : excused
     end
 
     def passing_check?(check)

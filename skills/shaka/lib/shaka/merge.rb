@@ -18,9 +18,9 @@ module Shaka
 
     # The head a user told the agent to merge although no required check gates it, the
     # MergeRiskGate that sends PRs above merge.auto_merge_max_risk back to the user, the MergeHold
-    # that stops a merge, and whether the agent merges under Auto, where every head check must
-    # pass and the merge is labeled.
-    attr_writer :empty_checks_confirmed_head, :risk_gate, :hold, :auto
+    # that stops a merge, whether the agent merges under Auto, where every head check must pass
+    # and the merge is labeled, and the MergeBaseFailures Auto may merge past.
+    attr_writer :empty_checks_confirmed_head, :risk_gate, :hold, :auto, :base_failures
 
     # `review` takes MergeReviewEvidence's technical settings and final product checkpoint.
     def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
@@ -63,11 +63,12 @@ module Shaka
     end
 
     # The walkthrough explains the change; the attestation records that a separate review ran.
-    # GitHub cannot catch a seam check that fails while these are read, so it is read again.
+    # GitHub cannot catch a seam check, or an Auto check while base failures allow UNSTABLE, that
+    # fails while these are read, so the checks are read again.
     def verify_reviews(head, base, walkthrough, gate)
       verify_walkthrough(@github.review(walkthrough), head, walkthrough)
       evidence = { 'review_evidence' => @review_evidence.call(head, base:) }
-      verify_gate if gate['source'] == 'seam'
+      verify_gate if gate['source'] == 'seam' || (@auto && @base_failures)
       evidence
     end
 

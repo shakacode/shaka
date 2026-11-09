@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'base_checks'
 require_relative 'error'
 require_relative 'graphql_refusal'
 require_relative 'required_checks'
@@ -7,11 +8,13 @@ require_relative 'required_checks'
 module Shaka
   # Reads one PR head together with the required checks observed for it.
   class Status
-    # rest_fallback reads over REST when GitHub refuses GraphQL; only `shaka pr` asks for it.
-    def initialize(github, seam_required_checks: nil, rest_fallback: false)
+    # rest_fallback reads over REST when GitHub refuses GraphQL, and base_checks adds BaseChecks's
+    # report; only `shaka pr` asks for them.
+    def initialize(github, seam_required_checks: nil, rest_fallback: false, base_checks: false)
       @github = github
       @seam_required_checks = seam_required_checks
       @rest_fallback = rest_fallback
+      @base_checks = base_checks
     end
 
     def call
@@ -30,7 +33,16 @@ module Shaka
       current = reader.snapshot
       raise Error, 'PR head changed while reading status; retry.' unless current['headRefOid'] == head
 
-      current.merge(checks)
+      status = current.merge(checks)
+      @base_checks ? status.merge(base_checks(reader, status)) : status
+    end
+
+    # Like required checks, an unreadable base comparison is reported rather than failing the read.
+    def base_checks(reader, status)
+      required = status['requiredChecks']&.map { |check| check['name'] }
+      BaseChecks.new(@github).call(status['baseRefName'], reader.checks, required)
+    rescue Error => e
+      { 'baseChecksUnavailable' => e.message }
     end
 
     # A repository without required checks is a valid state for reading, not a failure.
