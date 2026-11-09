@@ -868,9 +868,9 @@ and a [replacement prompt](#add-your-own-checkpoint-questions) replaces the buil
 prompt but keeps the rubric. With `checkpoint.enabled: false`, no reviewer rates the PR, and
 merge treats a head without a published rating as high. Three things change the rating:
 
-- Paths in a risk area. A change in a high-risk area counts as high, and a change in a
-  [medium-risk area](#medium_risk_areas) counts as at least medium. Shaka applies both
-  after the reviewer rates, so the reviewer cannot rate those changes lower.
+- Paths in a [high-risk](#high_risk_areas) or [medium-risk area](#medium_risk_areas).
+  Shaka applies the area's level after the reviewer rates, so the reviewer cannot rate
+  those changes lower.
 - Rating guidance in your [checkpoint instructions file](#add-your-own-checkpoint-questions),
   for a rule that paths cannot express. For example:
 
