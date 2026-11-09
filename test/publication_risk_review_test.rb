@@ -123,6 +123,13 @@ class PublicationRiskReviewTest < Minitest::Test
     refute_includes rendered, '## Risk and review'
   end
 
+  def test_withheld_settings_show_no_level
+    rendered = render(risk: Shaka::RiskReview::WITHHELD)
+
+    assert_includes rendered, '**Recommendation: Merge** · **Risk: not shown** · '
+    assert_includes section(rendered), "**Not shown.** Shaka could not read this repository's trusted settings"
+  end
+
   def test_open_decisions_keep_the_lead_to_the_links
     refute_includes render(risk: HIGH, 'decisions' => ['Keep the label?']), '**Risk: High**'
   end

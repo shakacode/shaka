@@ -3,7 +3,7 @@
 require_relative '../error'
 require_relative '../post_implementation_report'
 require_relative 'history'
-require_relative 'risk'
+require_relative 'published_risk'
 
 module Shaka
   # Checks this account's published checkpoint facts, not the reviewer's product judgment.
@@ -71,7 +71,8 @@ module Shaka
       rating, reviewed = body.match(RISK)&.captures
       return unless rating && reviewed == head
 
-      { 'rating' => rating, 'reasons' => PostImplementationRisk.reasons_in(body), 'url' => comment['html_url'] }
+      reasons = PostImplementationPublishedRisk.reasons_in(body)
+      { 'rating' => rating, 'reasons' => reasons, 'url' => comment['html_url'] }
     end
 
     # The latest checkpoint's owner recommendation, or nil when that checkpoint is for another head or has none.

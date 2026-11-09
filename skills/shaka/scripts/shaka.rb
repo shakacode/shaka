@@ -183,12 +183,14 @@ def render_description(carried, version, pull, settings, timeline, options, gith
 end
 
 # The risk level comes from this head's checkpoint and the trusted areas, as merge reads them, so the
-# description cannot disagree with either. A description without a checkpoint shows no level.
+# description cannot disagree with either. A description without a checkpoint shows no level, and one without
+# trusted settings withholds it, since the packaged areas could rate lower than the repository's own.
 def described_risk(carried, github, pull, settings)
   return unless carried['checkpoint'].is_a?(Hash)
+  return Shaka::RiskReview::WITHHELD unless settings.config
 
-  Shaka::PostImplementationRisk.published(settings.config, github, pull.dig('head', 'sha'),
-                                          Shaka::PostImplementationEvidence.new(github))
+  Shaka::PostImplementationPublishedRisk.assessment(settings.config, github, pull.dig('head', 'sha'),
+                                                    Shaka::PostImplementationEvidence.new(github))
 end
 
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.

@@ -21,10 +21,6 @@ module Shaka
     }.freeze
     LEVELS = %w[low medium high].freeze
     UNREAD_FILES = 'Changed files could not be read, so high-risk areas were not checked.'
-    # section's reasons in a published checkpoint: the bullets between its Risk line and its footnote.
-    PUBLISHED_REASONS = /^\*\*Risk:\*\* [^\n]*\n((?:- [^\n]*\n)+)\n_With `merge\.auto_merge_max_risk: /
-    # Markup that could end a description's folded block or plant a marker in it.
-    UNSAFE_REASON = %r{<!--|</?(?:details|summary)\b}i
 
     module_function
 
@@ -99,24 +95,6 @@ module Shaka
       lines.concat(reasons.map { |reason| "- #{reason}" })
       lines << "- #{UNREAD_FILES}" unless assessment['paths_read']
       "#{lines.join("\n")}\n\n#{footnote(assessment)}"
-    end
-
-    # This head's published rating as the description shows it: the assessment merge would make from it, the
-    # reviewer's reasons, and the checkpoint's link; nil when no checkpoint for the head published a rating.
-    # evidence answers published_risk(head) with this account's latest checkpoint.
-    def published(seam, github, head, evidence)
-      found = evidence.published_risk(head)
-      return unless found
-
-      from(seam, github, head, found.fetch('rating')).merge(found.slice('reasons', 'url'))
-    end
-
-    # The reviewer wrote the reasons after reading the diff, so they arrive as outside text: the line Ruby adds
-    # is left out, and a reason with markup that could break the description drops them all.
-    def reasons_in(body)
-      reasons = body.gsub("\r\n", "\n").match(PUBLISHED_REASONS)&.[](1).to_s.lines
-                    .map { |line| line.chomp.delete_prefix('- ') } - [UNREAD_FILES]
-      reasons.any? { |reason| reason.match?(UNSAFE_REASON) } ? [] : reasons
     end
 
     # Under a max level that admits this level, the setting, not the design default, says who merges.

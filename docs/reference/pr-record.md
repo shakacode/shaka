@@ -47,6 +47,8 @@ of you, then lists:
   [PR evidence guide](../settings.md#project_guidance) asks for one.
 
 Until the checkpoint rates the current commit, the level reads **not rated yet**.
+When Shaka cannot read the repository's trusted settings, it reads **not shown**:
+Shaka's default areas could rate the change lower than the repository's own.
 
 ## Checkpoint
 

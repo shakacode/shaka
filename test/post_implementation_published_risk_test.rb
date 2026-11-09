@@ -9,6 +9,7 @@ class PostImplementationPublishedRiskTest < Minitest::Test
 
   HEAD = 'a' * 40
   RISK_MODULE = Shaka::PostImplementationRisk
+  READER = Shaka::PostImplementationPublishedRisk
 
   def published(rating:, reasons:, conclusion: 'Proceed', concerns: [])
     with_result do |result, path|
@@ -42,7 +43,7 @@ class PostImplementationPublishedRiskTest < Minitest::Test
     github = published(rating: 'low', reasons: ['Docs only.'])
     def github.api_list(path) = path.include?('/files') ? [{ 'filename' => 'db/migrate/1_add.rb' }] : super
     def github.api(path, **) = super.merge('changed_files' => 1)
-    assessment = RISK_MODULE.published(nil, github, HEAD, Shaka::PostImplementationEvidence.new(github))
+    assessment = READER.assessment(nil, github, HEAD, Shaka::PostImplementationEvidence.new(github))
 
     assert_equal %w[low high], assessment.values_at('rating', 'level')
     assert_equal [{ 'area' => 'database', 'path' => 'db/migrate/1_add.rb' }], assessment['areas_hit']
@@ -55,18 +56,23 @@ class PostImplementationPublishedRiskTest < Minitest::Test
   end
 
   def test_the_line_ruby_adds_is_not_read_as_the_reviewers
-    assert_equal ['Docs only.'], RISK_MODULE.reasons_in(section(['Docs only.'], paths_read: false))
+    assert_equal ['Docs only.'], READER.reasons_in(section(['Docs only.'], paths_read: false))
   end
 
   def test_a_reason_with_folding_or_marker_markup_drops_them_all
     ['Ends </details> early.', 'Plants <!-- shaka:begin -->.', 'Opens <summary>x</summary>.'].each do |hostile|
-      assert_empty RISK_MODULE.reasons_in(section(['Fine.', hostile])), hostile
+      assert_empty READER.reasons_in(section(['Fine.', hostile])), hostile
     end
-    assert_equal ['Renders `<Component>`.'], RISK_MODULE.reasons_in(section(['Renders `<Component>`.']))
+    assert_equal ['Renders `<Component>`.'], READER.reasons_in(section(['Renders `<Component>`.']))
+  end
+
+  def test_a_reason_the_description_would_refuse_drops_them_all
+    assert_empty READER.reasons_in(section(['Fine.', 'Splits on a literal \\n in prose.']))
+    assert_equal ['Splits on `\\n`.'], READER.reasons_in(section(['Splits on `\\n`.']))
   end
 
   def test_windows_line_endings_and_missing_sections_are_handled
-    assert_equal ['Docs only.'], RISK_MODULE.reasons_in(section(['Docs only.']).gsub("\n", "\r\n"))
-    assert_empty RISK_MODULE.reasons_in('No risk section here.')
+    assert_equal ['Docs only.'], READER.reasons_in(section(['Docs only.']).gsub("\n", "\r\n"))
+    assert_empty READER.reasons_in('No risk section here.')
   end
 end

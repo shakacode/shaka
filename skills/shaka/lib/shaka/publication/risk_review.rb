@@ -12,6 +12,8 @@ module Shaka
   # reads it; only a description is rendered with a pull.
   module RiskReview
     HEADING = '## Risk and review'
+    # What the description command supplies as shaka_risk when it could not read the trusted settings.
+    WITHHELD = { 'withheld' => 'trusted settings unread' }.freeze
     CHECKPOINT_URL = %r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+#issuecomment-\d+\z}
 
     module_function
@@ -21,7 +23,9 @@ module Shaka
       return unless content['checkpoint'].is_a?(Hash)
 
       level = assessment(pull)&.fetch('level')
-      level ? "**Risk: #{level.capitalize}**" : '**Risk: not rated yet**'
+      return "**Risk: #{level.capitalize}**" if level
+
+      withheld?(pull) ? '**Risk: not shown**' : '**Risk: not rated yet**'
     end
 
     # Intent's own renderer refuses a missing intent, after this section.
@@ -32,15 +36,21 @@ module Shaka
       rated = assessment(pull)
       return [] unless rated || focus.any? || record.any?
 
-      opening = rated ? level_line(rated) : unrated(content)
+      opening = rated ? level_line(rated) : unrated(content, pull)
       ["#{HEADING}\n\n#{[opening, *focus, *(rated ? notes(rated) : []), *record].join("\n\n")}"]
     end
 
-    def unrated(content)
+    def unrated(content, pull)
+      if withheld?(pull)
+        return "**Not shown.** Shaka could not read this repository's trusted settings, so it cannot check " \
+               'the high-risk areas merge checks. The checkpoint states its own rating.'
+      end
       return "**Not rated yet.** The checkpoint rates this commit's risk." if content['checkpoint'].is_a?(Hash)
 
       '**Not rated.** No checkpoint rated this commit.'
     end
+
+    def withheld?(pull) = pull&.dig('shaka_risk', 'withheld').is_a?(String)
 
     def assessment(pull)
       risk = pull&.dig('shaka_risk')
@@ -100,6 +110,7 @@ module Shaka
       ["<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"]
     end
 
-    private_class_method :assessment, :unrated, :level_line, :notes, :reasons, :reasons_label, :checkpoint, :record
+    private_class_method :assessment, :unrated, :withheld?, :level_line, :notes, :reasons, :reasons_label,
+                         :checkpoint, :record
   end
 end
