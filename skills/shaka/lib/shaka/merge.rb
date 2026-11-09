@@ -40,7 +40,8 @@ module Shaka
       verify_snapshot(initial, head, @target)
       gate = verify_gate
       evidence = verify_reviews(head, base, walkthrough, gate).merge(excused_checks(gate, head))
-      AutoMergedLabel.new(@github, enabled: @auto).mark(submit(initial, @github.snapshot, head)).merge(evidence)
+      merged = submit(initial, @github.snapshot, head)
+      AutoMergedLabel.new(@github, enabled: @auto).mark(merged).merge(evidence, base_failure_evidence)
     end
 
     private

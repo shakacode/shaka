@@ -11,14 +11,14 @@ class MergeAutoBaseFailureTest < Minitest::Test
 
   # Answers the base-tip reads MergeBaseFailures makes, and the auto-merged label calls.
   module BaseApi
-    attr_accessor :base_rows
+    attr_accessor :base_rows, :tips
 
     def base_reads = (@base_reads ||= [])
     def labels = (@labels ||= [])
 
     def branch_tip(branch)
       base_reads << [:tip, branch]
-      BASE_SHA
+      tips&.shift || BASE_SHA
     end
 
     def rest_checks(sha)
@@ -52,13 +52,21 @@ class MergeAutoBaseFailureTest < Minitest::Test
     assert_equal [[:tip, BASE], [:checks, BASE_SHA]] * 2, @client.base_reads
   end
 
-  # The trusted all wait refuses UNSTABLE to wait for CI review jobs; Auto has already required them to pass.
-  def test_merges_past_a_base_failure_when_the_trusted_wait_is_all
+  # The result names the base commit the last read verified, though the base moved since the first.
+  def test_reports_the_base_commit_of_the_last_read
+    excuse(base_rows: [failing('windows')])
+    @client.tips = ['d' * 40, 'e' * 40]
+
+    assert_equal 'e' * 40, merge.dig('base_failures_excused', 'base_sha')
+  end
+
+  # A repository that waits for every CI review keeps CLEAN as its minimum, so Auto hands these back.
+  def test_a_trusted_all_wait_still_refuses_unstable
     @merge = Shaka::Merge.new(@client, seam_wait: 'all')
     @merge.auto = true
     excuse(base_rows: [failing('windows')])
 
-    assert_equal 'MERGED', merge.fetch('state')
+    assert_blocked(/not CLEAN: "UNSTABLE"/)
   end
 
   # UNSTABLE hides a check that fails after the first read, so the read just before submission must

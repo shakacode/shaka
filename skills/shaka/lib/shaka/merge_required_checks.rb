@@ -34,12 +34,12 @@ module Shaka
     end
 
     # Under Auto, GitHub has to report CLEAN, as with ci_review_wait: all. Named base failures keep
-    # GitHub at UNSTABLE whatever the trusted wait, so Auto then accepts UNSTABLE: verify_all_checks
-    # has already required every other check on the head, CI review jobs included, to pass.
+    # GitHub at UNSTABLE, so they defer to the trusted wait: `none` and `one` accept UNSTABLE once
+    # verify_all_checks has required every other check to pass, and `all` still requires CLEAN.
     def merge_state_wait
       return @ci_review_wait unless @auto
 
-      @base_failures&.any? ? 'one' : 'all'
+      @base_failures&.any? ? @ci_review_wait : 'all'
     end
 
     # Auto merges also need every reported check on the head, required or not, to have passed,
@@ -74,12 +74,13 @@ module Shaka
                    'ask the user to confirm this head'
     end
 
-    # Reported when the confirmation excused an empty set, or Auto excused base failures, so a merge
-    # result shows which checks did not gate it.
+    # Reported only when the confirmation excused an empty set, so a merge result shows no check gated it.
     def excused_checks(gate, head)
-      excused = gate.fetch('checks').empty? ? { 'empty_required_checks_confirmed_head' => head } : {}
-      @base_failures ? excused.merge(@base_failures.evidence) : excused
+      gate.fetch('checks').empty? ? { 'empty_required_checks_confirmed_head' => head } : {}
     end
+
+    # What the last check read excused as base failures, so the result names the base commit it verified.
+    def base_failure_evidence = @base_failures ? @base_failures.evidence : {}
 
     def passing_check?(check)
       return false unless check.is_a?(Hash) && check['name'].is_a?(String) && !check['name'].strip.empty?

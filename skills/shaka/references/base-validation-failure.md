@@ -85,8 +85,7 @@ failing check under `baseChecks`: `base` is the same-named check's result on the
 commit of the PR's base branch, beside links to both runs.
 
 - `fail`: open both logs. The base owns the failure when they show the same diagnostic
-  and the task diff leaves the check's inputs unchanged, as step 3 above describes.
-  This holds for a security scan too: its finding is the base repair's to fix. A
+  and the task diff leaves the check's inputs unchanged, as step 3 above describes. A
   different diagnostic, an affected input, or a task regression returns to ordinary repair.
 - `pending`, or `missing` while the base commit's CI still runs: run `pr` again once it
   finishes. A check that stays `missing` never runs on the base; the base owns it only
@@ -101,11 +100,16 @@ Leave a failure the base owns unrepaired in this PR, then:
 - An optional check does not block an Ask handoff; name it there. Under Auto, pass
   `merge --auto --base-failure NAME`. Ruby merges past it only when the check is not
   required and fails on both the head and the newest base commit, and reports it in
-  `base_failures_excused`.
+  `base_failures_excused`. A trusted `review.ci_review_wait: all` still requires a
+  CLEAN merge state, so Auto refuses and the PR goes back under Ask.
 - A required check blocks the merge: GitHub enforces it, and Shaka does not bypass
   protection. Finish the rest of the task, record the comparison in the description,
   and publish `decisions` asking the maintainer to wait for the base repair or merge
   with their own override.
+
+Unlike the waiver the sections above refuse, this exception covers an optional security
+scan whose finding the base already has: this PR neither adds nor waives that finding,
+and the base repair fixes it. A required security check still blocks.
 
 Unless an existing issue or PR owns the base repair, give the user a ready prompt that
 starts it as its own task, naming the check, base branch, base commit, and diagnostic,
