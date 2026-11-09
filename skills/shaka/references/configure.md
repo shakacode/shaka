@@ -56,7 +56,8 @@ findings. No reviewer reads `project_guidance` files; the working agent does.
 
 A settings change is its own PR. Ruby refuses a feature PR that changes Shaka's
 configuration, and the description publisher refuses it too.
-To refresh `.agents/shaka.md` for the installed version, follow
+To refresh Shaka configuration for the installed version, which regenerates
+`.agents/shaka.md`, follow
 [refresh the pointer file](repository-setup.md#refresh-the-pointer-file).
 
 1. Read the current value with `configure settings --ref`. Before editing, tell the

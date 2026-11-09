@@ -115,7 +115,7 @@ reviewing the setup PR.
 setup runs leave it alone. After updating Shaka, you can bring it up to date:
 
 ```text
-Refresh .agents/shaka.md for the current Shaka version.
+Refresh Shaka configuration for the current version.
 ```
 
 The PR shows what changed, including any edits of your own the new text replaces.
