@@ -296,9 +296,11 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
   one PR.
 - **Follow-up test:** the [prompt comparison](hosted-review-prompt-comparison.md) reran
   the old and current prompts, both under `claude-sonnet-5-5`, on the 17 commits where
-  hosted Claude reported zero findings and CodeRabbit later found a bug. The maintainer
-  kept the current prompt for now and deferred tests of other models. That article
-  gives the results and their limits.
+  hosted Claude reported zero findings and CodeRabbit later found a bug. The old prompt
+  caught 3 of the 21 bugs and the current prompt none. The bar set beforehand for
+  loosening the prompt was 5 more. Other models, small differences that 3 runs per commit
+  cannot show, and commits without a known bug stay untested. The maintainer kept the
+  current prompt for now. That article gives the full results and limits.
 - **Proposed change:** none for now. If more of these catches are wanted, the
   comparison points to CodeRabbit's review limit, which finding 3 leaves to the
   maintainer.
