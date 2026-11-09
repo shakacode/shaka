@@ -114,7 +114,15 @@ class MergeAutoBaseFailureTest < Minitest::Test
   def test_refuses_a_name_that_fails_nothing_on_the_head
     excuse(base_rows: [failing('lint')], names: ['lint'])
 
-    assert_blocked(/--base-failure lint names no failing check on the head/)
+    assert_blocked(/--base-failure lint needs every head check of that name to fail/)
+  end
+
+  # Head rows that disagree settle nothing, as base rows that disagree do not.
+  def test_refuses_a_name_another_head_row_passes
+    excuse(base_rows: [failing('windows')])
+    @client.head_checks << passing('windows')
+
+    assert_blocked(/--base-failure windows needs every head check of that name to fail/)
   end
 
   def test_an_unnamed_failing_check_still_blocks

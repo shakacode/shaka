@@ -7,7 +7,7 @@ module Shaka
   class AutoMergedLabel
     NAME = 'auto-merged'
     COLOR = '0E8A16'
-    DESCRIPTION = 'Merged by the agent under Auto after every check on the head passed'
+    DESCRIPTION = 'Merged by the agent under Auto after every head check passed or failed on the base too'
     NOT_FOUND = 404
     # 403: the caller may apply labels but not create them. 422: another run created it first.
     TOLERATED_CREATE_FAILURES = [403, 422].freeze

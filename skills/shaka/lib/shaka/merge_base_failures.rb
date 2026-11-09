@@ -19,26 +19,29 @@ module Shaka
 
     def any? = !@names.empty?
 
-    # Returns the head rows it excuses. required_names is nil when required checks are unknown.
-    def excuse(not_passing, required_names, base)
+    # Returns the head rows it excuses, from every check on the head. required_names is nil when
+    # required checks are unknown.
+    def excuse(head_checks, required_names, base)
       return [] unless any?
       raise Error, 'Required checks are unknown, so no check can be excused as a base failure.' if required_names.nil?
 
-      @names.each { |name| verify_head(name, not_passing, required_names) }
+      @names.each { |name| verify_head(name, head_checks, required_names) }
       sha = verify_base(base)
       @evidence = { 'base_failures_excused' => { 'base' => base, 'base_sha' => sha, 'checks' => @names } }
-      not_passing.select { |check| @names.include?(check['name']) }
+      head_checks.select { |check| @names.include?(check['name']) }
     end
 
     private
 
-    def verify_head(name, not_passing, required_names)
+    # Every head row of the name has to fail, as every base row does: rows that disagree settle nothing.
+    def verify_head(name, head_checks, required_names)
       raise Error, "#{name} is a required check, so Auto cannot merge past it." if required_names.include?(name)
 
-      rows = not_passing.select { |check| check['name'] == name }
+      rows = head_checks.select { |check| check['name'] == name }
       return if !rows.empty? && rows.all? { |check| check['bucket'] == 'fail' }
 
-      raise Error, "--base-failure #{name} names no failing check on the head; drop the flag or wait for the check."
+      raise Error, "--base-failure #{name} needs every head check of that name to fail; " \
+                   'drop the flag or wait for the check.'
     end
 
     def verify_base(base)

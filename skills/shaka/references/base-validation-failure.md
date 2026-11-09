@@ -70,10 +70,10 @@ failed evidence failed and leave readiness evidence UNKNOWN where Ruby cannot
 bind it. The agent establishes accepted local validation, not a fabricated ready
 verdict from `evidence verify`.
 
-Security and trust failures cannot be waived through this path. Native required
-checks, seam-required merge checks, protection, and current-head review still
+Security and trust failures cannot be waived through this blocked-draft path. Native
+required checks, seam-required merge checks, protection, and current-head review still
 block readiness when unsatisfied, even after acceptance. Auto remains blocked
-while the failure is unresolved. Resume normal Explain, Review, and Finish only
+while this local failure is unresolved. Resume normal Explain, Review, and Finish only
 when the remaining gates permit readiness; then mark the PR ready for review and
 refresh its description, walkthrough, and handoff. Task-scoped acceptance of a
 local failure never grants merge authorization.
@@ -107,8 +107,8 @@ Leave a failure the base owns unrepaired in this PR, then:
   and publish `decisions` asking the maintainer to wait for the base repair or merge
   with their own override.
 
-In this section, a failure the base owns includes an optional security scan whose
-finding the base already has. A required security check still blocks.
+Unlike the blocked-draft path above, this section's exception covers an optional
+security scan whose finding the base already has. A required security check still blocks.
 
 Unless an existing issue or PR owns the base repair, give the user a ready prompt that
 starts it as its own task, naming the check, base branch, base commit, and diagnostic,

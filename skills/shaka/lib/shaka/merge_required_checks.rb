@@ -47,7 +47,7 @@ module Shaka
     def verify_all_checks(checks, required)
       raise Error, 'Head checks are unknown; Auto cannot merge' unless checks.is_a?(Array)
 
-      waiting = unexcused(checks.reject { |check| passing_check?(check) }, required)
+      waiting = unexcused(checks, checks.reject { |check| passing_check?(check) }, required)
       return if waiting.empty?
 
       names = waiting.map { |check| check.is_a?(Hash) ? "#{check['name']} (#{check['state']})" : check.inspect }
@@ -57,13 +57,13 @@ module Shaka
 
     # Drops the failures MergeBaseFailures finds on the base branch too. A check merge.required_checks
     # names counts as required even where GitHub's own required checks take that list's place.
-    def unexcused(waiting, required)
+    def unexcused(checks, waiting, required)
       return waiting unless @base_failures
 
       if required.is_a?(Array)
         names = required.filter_map { |check| check['name'] if check.is_a?(Hash) }.union(Array(@seam_required_checks))
       end
-      waiting - @base_failures.excuse(waiting, names, @target.base)
+      waiting - @base_failures.excuse(checks.grep(Hash), names, @target.base)
     end
 
     def verify_empty_confirmation(head, confirmed_head)
