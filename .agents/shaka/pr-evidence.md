@@ -13,16 +13,22 @@ or say why the procedure skipped them.
 
 ## Settings changes
 
-When a PR adds, removes, or renames a setting, or changes a default or what a setting
-does, add a `Settings changes` section to the description. A setting is anything in
-`skills/shaka/config/defaults.yml` or documented in `docs/settings.md`. List each change
-as a row with the setting key, its value before and after (or "none" when added or
-removed), and what existing repositories must do: nothing, or the exact edit to
-`.agents/shaka/config.yml`. Link the `docs/settings.md` anchor for each key.
+Check this section on every PR, whether or not the rendering section applies.
 
-For any other PR, cover the section with `Settings changes: none.` so a reader can tell
-it was checked.
+A setting is a key that `.agents/shaka/config.yml` can set, as documented in
+`docs/settings.md` at the PR's base or head. Command-line defaults under `runtime:` in
+`skills/shaka/config/defaults.yml` are not settings.
+
+When a PR adds, removes, or renames a setting, or changes its default or what it does,
+add a `Settings changes` section to the description. Give each change a row with the
+setting key and its value before and after, writing "(not set)" where the key did not
+exist. Add what existing repositories must do: nothing, or the exact edit to
+`.agents/shaka/config.yml`. Link the key's `docs/settings.md` anchor at the head, or at
+the base for a removed key.
+
+On any other PR, add the line `Settings changes: none.` so a reader can tell it was
+checked.
 
 Edits that only change this repository's own `.agents/shaka/config.yml` values are
-policy changes, not setting changes: list them in the same section, marked
+policy changes, not setting changes. List them in the same section, marked
 "this repository only", with no changelog entry.

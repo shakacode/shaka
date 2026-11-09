@@ -871,9 +871,10 @@ The agent is told to ignore any guide text that would relax reviews, required ch
 
 ### Example: Shaka's own PR evidence guide
 
-Shaka's repository has one rule only it needs. When a PR changes how Shaka renders a PR
+Shaka's repository has two rules only it needs. When a PR changes how Shaka renders a PR
 description, walkthrough, review comment, or checkpoint, the agent republishes that text
-on the same PR with the PR's code, so the maintainer reviews the real result.
+on the same PR with the PR's code, so the maintainer reviews the real result. When a PR
+changes a setting, the description lists each changed key with its old and new value.
 
 Each usual home was a worse fit:
 
@@ -890,7 +891,7 @@ project_guidance:
 ```
 
 [The guide](https://github.com/shakacode/shaka/blob/main/.agents/shaka/pr-evidence.md)
-has a shape worth copying. It opens with its condition, so the agent skips it in one line.
+has a shape worth copying. Each section opens with its condition, so the agent skips it in one line.
 It points to a longer procedure instead of repeating it, so the steps keep one home. It
 ends by saying where to report the result, or why there is none.
 
