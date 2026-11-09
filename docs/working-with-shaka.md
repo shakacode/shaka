@@ -45,8 +45,9 @@ When a CI check fails on the PR and on the branch it targets, usually your defau
 branch, the agent compares the two logs before repairing anything. A failure the PR
 did not cause stays out of the PR, and the agent gives you a prompt that starts the
 fix on that branch as its own task. Auto can then merge past an optional check like
-that: Shaka confirms the target branch fails the same check, and the agent judges
-from the logs and the diff that the PR left the failure alone. A repository that
+that once the agent names it: Shaka confirms that a check of the same name fails on
+the target branch, and the agent judges from the logs and the diff that the PR left
+the failure alone. A repository that
 [waits for every CI review](settings.md#reviewci_review_wait) still hands these PRs
 back to you. A required check still blocks, because GitHub enforces it and Shaka
 never bypasses protection: you choose between waiting for the fix and merging with

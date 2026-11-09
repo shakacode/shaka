@@ -35,7 +35,7 @@ module Shaka
 
     # Under Auto, GitHub has to report CLEAN, as with ci_review_wait: all. Named base failures keep
     # GitHub at UNSTABLE, so they defer to the trusted wait: `none` and `one` accept UNSTABLE once
-    # verify_all_checks has required every other check to pass, and `all` still requires CLEAN.
+    # verify_all_checks has required every other check to pass, and `all` never accepts UNSTABLE.
     def merge_state_wait
       return @ci_review_wait unless @auto
 

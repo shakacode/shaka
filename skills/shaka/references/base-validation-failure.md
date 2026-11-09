@@ -100,16 +100,15 @@ Leave a failure the base owns unrepaired in this PR, then:
 - An optional check does not block an Ask handoff; name it there. Under Auto, pass
   `merge --auto --base-failure NAME`. Ruby merges past it only when the check is not
   required and fails on both the head and the newest base commit, and reports it in
-  `base_failures_excused`. A trusted `review.ci_review_wait: all` still requires a
-  CLEAN merge state, so Auto refuses and the PR goes back under Ask.
+  `base_failures_excused`. A trusted `review.ci_review_wait: all` never accepts the
+  UNSTABLE state an optional failure leaves, so Auto refuses and the PR goes back under Ask.
 - A required check blocks the merge: GitHub enforces it, and Shaka does not bypass
   protection. Finish the rest of the task, record the comparison in the description,
   and publish `decisions` asking the maintainer to wait for the base repair or merge
   with their own override.
 
-Unlike the waiver the sections above refuse, this exception covers an optional security
-scan whose finding the base already has: this PR neither adds nor waives that finding,
-and the base repair fixes it. A required security check still blocks.
+In this section, a failure the base owns includes an optional security scan whose
+finding the base already has. A required security check still blocks.
 
 Unless an existing issue or PR owns the base repair, give the user a ready prompt that
 starts it as its own task, naming the check, base branch, base commit, and diagnostic,
