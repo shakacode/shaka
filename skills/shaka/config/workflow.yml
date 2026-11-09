@@ -749,8 +749,10 @@ phases:
         CodeRabbit, hosted Codex, and other unnamed bots are advisory: read completed findings,
         never wait for them except under the explicit comment-resolution settlement procedure below.
       - Collect every current-head finding into one repair batch. Fix demonstrated defects
-        (correctness, failing tests, security, contract or data-loss). Decline nits with a reason
-        on the original thread. After two repair rounds, remaining nits do not start another cycle.
+        (correctness, failing tests, security, contract or data-loss). Answer each finding on its
+        original thread with `reply`, adding `--comment ROOT_ID` inline, and decline nits there with
+        a reason; a raw `gh` reply has no identity line, so it reads as the maintainer's.
+        After two repair rounds, remaining nits do not start another cycle.
         Remaining demonstrated defects still block until fixed, declined with evidence, or the
         maintainer decides. Follow the packaged
         [review guide](<{{package_root}}/skills/shaka/references/review.md>).
