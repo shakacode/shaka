@@ -10,6 +10,7 @@ module Shaka
     module InitializerReadme
       HOME = 'https://github.com/shakacode/shaka'
       DOCS = "#{HOME}/blob/main/docs".freeze
+      INIT_COMMAND = 'shaka seam init'
       # Shows the default a maintainer most often changes, so config.yml names the file Shaka reads.
       CONFIG_TRAILER = ['', 'Defaults you can change (https://shaka.shakacode.com/docs/settings#checkpoint):',
                         'checkpoint:',
@@ -20,7 +21,7 @@ module Shaka
                         '  # replacement_prompt_file: .agents/shaka/checkpoint-prompt.md'].freeze
 
       # The one renderer for .agents/shaka.md, shared by init, migrate, and `seam pointer --readme`.
-      def self.text(generated_by: 'shaka seam init')
+      def self.text(generated_by: INIT_COMMAND)
         <<~MARKDOWN
           #{marker(generated_by)}
           # Shaka configuration
@@ -69,7 +70,7 @@ module Shaka
 
       def readme_marker = InitializerReadme.marker(generated_by)
 
-      def generated_by = 'shaka seam init'
+      def generated_by = INIT_COMMAND
     end
   end
 end
