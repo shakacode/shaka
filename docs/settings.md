@@ -762,7 +762,8 @@ A task's explicit choices take precedence. See
 for what the checkpoint means for your merge decision.
 
 The checkpoint also rates the PR's risk as low, medium, or high, raised to high inside a
-[high-risk area](#high_risk_areas), and says what that rating asks of the merge.
+[high-risk area](#high_risk_areas), and says what that rating asks of the merge. To
+change the rating, see [Change how risk is rated](#change-how-risk-is-rated).
 
 The PR records the conclusion, reasons, execution settings, and available native
 usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not merge”, or
@@ -815,8 +816,10 @@ checkpoint:
 | Set | Missing or empty | Settings validation fails |
 | Set to another path | Also present at the default path | The named file is added; `seam check` and `doctor` warn that the default one is ignored |
 
-To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to replace the whole prompt;
-you then keep that copy in step with Shaka's changes.
+To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to a copy
+of the built-in prompt without that question. You then keep that copy in step with
+Shaka's changes. The copy replaces only the questions. Shaka's rules, report format, and
+rubrics for verification and [risk](#change-how-risk-is-rated) still apply.
 
 ## `high_risk_areas`
 
@@ -855,6 +858,31 @@ What each rating asks:
 [`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) sets which ratings the agent may merge under
 Auto; by default only low. Without a trusted settings commit, merge and the rating use the default level and
 areas.
+
+### Change how risk is rated
+
+Shaka's [risk rubric](../skills/shaka/config/post-implementation-risk.md) tells the
+checkpoint reviewer what each rating means. Every checkpoint prompt includes the rubric.
+No setting removes it: a [replacement prompt](#add-your-own-checkpoint-questions)
+replaces only the checkpoint questions. Three things change the rating:
+
+- Paths in a risk area. A change in a high-risk area counts as high, and a change in a
+  [medium-risk area](#medium_risk_areas) counts as at least medium. Shaka applies both
+  after the reviewer rates, so the reviewer cannot rate those changes lower.
+- Rating guidance in your [checkpoint instructions file](#add-your-own-checkpoint-questions),
+  for a rule that paths cannot express. For example:
+
+  ```markdown
+  Rate a change to a public API response as at least medium.
+  ```
+
+  The reviewer reads your file after the rubric. Shaka does not check the rating
+  against your file.
+- The [checkpoint](#checkpoint) reviewer, model, and effort, which choose who rates.
+
+[`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) leaves the rating alone and sets
+which ratings the agent may merge. To see the rubric and your file in the order the
+reviewer reads them, ask `$shaka Show what my checkpoint reviewer receives.`
 
 ## `medium_risk_areas`
 

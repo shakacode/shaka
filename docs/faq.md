@@ -130,7 +130,8 @@ aside first.
 | --- | --- |
 | Commands, merge policy, and review jobs | [Settings](settings.md) in `.agents/shaka/config.yml` |
 | Project constraints, review criteria, and writing style | `AGENTS.md` |
-| What the local reviewer looks for and how it reports | [`review.replacement_prompt_file`](settings.md#reviewreplacement_prompt_file), replacing Shaka's defaults |
+| What the local reviewer looks for and how it reports | [`review.custom_instructions_file`](settings.md#reviewcustom_instructions_file), adding to Shaka's defaults, or [`review.replacement_prompt_file`](settings.md#reviewreplacement_prompt_file), replacing them |
+| How the checkpoint rates a PR's risk | [Risk areas and checkpoint instructions](settings.md#change-how-risk-is-rated) |
 | Changes to Shaka's workflow | A [fork of Shaka](fork-and-hack.md) |
 
 Shaka reads `AGENTS.md` from Git at the trusted commit. When `AGENTS.md` is a
@@ -158,8 +159,8 @@ Criteria in `AGENTS.md` still apply on top of the prompt file.
 The prompt file configures local reviews; a CI review job takes its prompt from
 its own workflow.
 
-The [settings reference](settings.md#reviewreplacement_prompt_file) explains which instructions
-apply and links the review protocol.
+The settings reference explains
+[which instructions apply](settings.md#where-shaka-reads-a-prompt-file).
 
 ## Can a PR change Shaka's settings or rules for itself?
 
