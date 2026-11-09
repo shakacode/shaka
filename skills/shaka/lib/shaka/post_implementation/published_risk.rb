@@ -2,6 +2,7 @@
 
 require_relative '../error'
 require_relative '../publication/text'
+require_relative '../pull_changed_files'
 require_relative 'risk'
 
 module Shaka
@@ -17,12 +18,23 @@ module Shaka
 
     # This head's published rating as the description shows it: the assessment merge would make from it, the
     # reviewer's reasons, and the checkpoint's link; nil when no checkpoint for the head published a rating.
-    # evidence answers published_risk(head) with this account's latest checkpoint.
+    # evidence answers published_risk(head) with this account's latest checkpoint. As in merge, a head or base
+    # that moves while the files are read stops the description instead of rating the files unread.
     def assessment(seam, github, head, evidence)
       found = evidence.published_risk(head)
       return unless found
 
-      PostImplementationRisk.from(seam, github, head, found.fetch('rating')).merge(found.slice('reasons', 'url'))
+      high, medium = PostImplementationRisk.areas(seam)
+      PostImplementationRisk.assess(found.fetch('rating'), high, paths(github, head), medium)
+                            .merge('max_risk' => PostImplementationRisk.max_risk(seam), **found.slice('reasons', 'url'))
+    end
+
+    def paths(github, head)
+      PullChangedFiles.new.paths(github, head)
+    rescue PullChangedFiles::Moved
+      raise
+    rescue Error, SystemCallError
+      nil
     end
 
     # The reviewer wrote the reasons after reading the diff, so they arrive as outside text: the line Ruby adds
@@ -40,6 +52,6 @@ module Shaka
       false
     end
 
-    private_class_method :publishable?
+    private_class_method :paths, :publishable?
   end
 end

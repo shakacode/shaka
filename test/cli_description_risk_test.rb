@@ -32,6 +32,8 @@ class CliDescriptionRiskTest < Minitest::Test
   end
 
   def comments
+    return @comments if @comments
+
     [{ 'id' => 1, 'created_at' => '2026-11-09T00:00:00Z', 'user' => { 'login' => 'agent' },
        'html_url' => 'https://github.com/owner/repo/pull/1#issuecomment-7', 'body' => checkpoint_body }]
   end
@@ -73,6 +75,17 @@ class CliDescriptionRiskTest < Minitest::Test
                             "(`#{CHANGED}`). High risk is meant for a person to merge"
       assert_includes body, '**The [checkpoint](https://github.com/owner/repo/pull/1#issuecomment-7) reviewer ' \
                             "rated it low:**\n\n- Prints text only."
+    end
+  end
+
+  def test_before_the_checkpoint_publishes_the_level_reads_not_rated_yet
+    @comments = []
+    Dir.mktmpdir do |dir|
+      _output, error, status = run_description(dir, ref: true)
+
+      assert_predicate status, :success?, error
+      body = File.read(File.join(dir, 'published.md'))
+      assert_includes body, '**No recommendation yet** · **Risk: not rated yet** · '
     end
   end
 

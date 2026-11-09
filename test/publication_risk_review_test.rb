@@ -163,6 +163,13 @@ class PublicationRiskRecordTest < Minitest::Test
     assert_raises(Shaka::Error) { render('risk_record' => { 'summary' => "R1\nR2", 'body' => 'x' }) }
   end
 
+  def test_a_risk_record_body_cannot_open_or_close_its_fold
+    record = { 'summary' => 'R1', 'body' => "Recovery: revert.\n</details>\nOutside." }
+    error = assert_raises(Shaka::Error) { render('risk_record' => record) }
+
+    assert_includes error.message, 'details or summary tags'
+  end
+
   def test_a_risk_record_cannot_carry_a_shaka_marker
     record = { 'summary' => 'R1', 'body' => '<!-- shaka:begin -->' }
 

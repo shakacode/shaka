@@ -15,6 +15,8 @@ module Shaka
     # What the description command supplies as shaka_risk when it could not read the trusted settings.
     WITHHELD = { 'withheld' => 'trusted settings unread' }.freeze
     CHECKPOINT_URL = %r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+#issuecomment-\d+\z}
+    # A record body folds inside details, so it must not open or close one.
+    FOLD_TAG = %r{</?(?:details|summary)\b}i
 
     module_function
 
@@ -107,6 +109,8 @@ module Shaka
 
       summary = PublicationText.summary_text(spec['summary'], 'risk_record summary')
       body = PublicationText.required(spec['body'], 'risk_record body')
+      raise Error, 'Publication risk_record body must not contain details or summary tags.' if body.match?(FOLD_TAG)
+
       ["<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"]
     end
 

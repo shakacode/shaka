@@ -50,6 +50,22 @@ class PostImplementationPublishedRiskTest < Minitest::Test
     assert_equal ['Docs only.'], assessment['reasons']
   end
 
+  # Merge stops on a head that moves while it reads the files; the description does not rate them unread instead.
+  def test_a_head_that_moves_while_the_files_are_read_stops_the_description
+    github = published(rating: 'low', reasons: ['Docs only.'])
+    def github.api(path, **) = super.merge('head' => { 'sha' => 'b' * 40 })
+
+    assert_raises(Shaka::PullChangedFiles::Moved) do
+      READER.assessment(nil, github, HEAD, Shaka::PostImplementationEvidence.new(github))
+    end
+  end
+
+  def test_no_checkpoint_comment_reads_as_no_rating
+    client = Struct.new(:issue_comments, :viewer_login).new([], 'test-author')
+
+    assert_nil Shaka::PostImplementationEvidence.new(client).published_risk(HEAD)
+  end
+
   def section(reasons, paths_read: true)
     assessment = RISK_MODULE.assess('low', {}, paths_read ? ['README.md'] : nil)
     "Before\n\n#{RISK_MODULE.section(assessment, reasons)}\n\nAfter"

@@ -67,7 +67,9 @@ module Shaka
     # a checkpoint without a rating. Merge reads risk(head), which requires a ready checkpoint.
     def published_risk(head)
       comment = latest
-      body = comment&.fetch('body', '').to_s
+      return unless comment
+
+      body = comment.fetch('body', '').to_s
       rating, reviewed = body.match(RISK)&.captures
       return unless rating && reviewed == head
 

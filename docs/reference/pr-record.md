@@ -28,8 +28,9 @@ investigating. Detailed findings remain available for later agent analysis.
 ## Risk and review
 
 The lead line shows the checkpoint's **Risk** for the current commit beside its
-**Recommendation**. Shaka reads the level from the published checkpoint and the
-changed files the way merge does, so the description cannot disagree with either.
+**Recommendation**. Shaka reads the level from the checkpoint published for that
+commit and applies the repository's high-risk areas to its changed files, as merge
+does. A blocked checkpoint's level still shows, though merge waits for a ready one.
 Low is meant for auto-merge with a later audit, medium for a person to merge after
 a skim, and high for a careful review that starts with the verification. A change in
 one of the repository's [`high_risk_areas`](../settings.md#high_risk_areas) always
