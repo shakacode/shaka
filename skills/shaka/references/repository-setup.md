@@ -259,6 +259,11 @@ by editing the YAML afterward. Set `wip.include_checkout_path` to
 If the repository already uses `AGENTS.md`, it may point to its requirements
 there; Shaka does not require that file.
 
+Init and migrate never rewrite an existing `.agents/shaka.md`. To refresh it for the
+installed Shaka version, write the output of `shaka seam pointer --readme` to that file
+and publish it as its own configuration PR, passing `--flow migration` to
+`evidence guard`; the diff shows any repository edits it replaces.
+
 Command arguments are parsed as argument lists. Put pipelines and other compound
 shell behavior in repository scripts rather than in command flags.
 

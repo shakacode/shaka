@@ -109,6 +109,13 @@ class SeamPointerTest < Minitest::Test
     assert_includes error, 'pointer'
   end
 
+  def test_check_refuses_the_pointer_readme_option
+    _output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--readme')
+
+    refute_predicate status, :success?
+    assert_includes error, '--readme applies only to pointer'
+  end
+
   private
 
   def assert_trust_safe_pointer(output)
