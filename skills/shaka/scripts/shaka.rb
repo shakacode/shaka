@@ -176,9 +176,19 @@ end
 def render_description(carried, version, pull, settings, timeline, options, github) # rubocop:disable Metrics/ParameterLists
   pull = pull.merge('shaka_changed_files' => Shaka::FeaturePublication.files(github, pull))
   pull = pull.merge('shaka_review_focus' => Shaka::ReviewFocus.resolve(carried, github, pull))
+  pull = pull.merge('shaka_risk' => described_risk(carried, github, pull, settings))
   Shaka::RenderingPreview.publish(options, pull, github) do
     Shaka::Publication.description(carried, version, pull, settings, timeline, environment: ENV)
   end
+end
+
+# The risk level comes from this head's checkpoint and the trusted areas, as merge reads them, so the
+# description cannot disagree with either. A description without a checkpoint shows no level.
+def described_risk(carried, github, pull, settings)
+  return unless carried['checkpoint'].is_a?(Hash)
+
+  Shaka::PostImplementationRisk.published(settings.config, github, pull.dig('head', 'sha'),
+                                          Shaka::PostImplementationEvidence.new(github))
 end
 
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.

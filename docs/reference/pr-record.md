@@ -23,18 +23,30 @@ The **Code Review** link opens the review record. Check coverage, unresolved
 findings, and the number of rounds; repeated rounds can signal work worth
 investigating. Detailed findings remain available for later agent analysis.
 
-## Human review
+<a id="human-review"></a>
 
-The checkpoint rates each PR's **Risk** as low, medium, or high, with reasons.
-Low is meant for auto-merge with a later audit, medium for a person to merge
-after a skim, and high for a careful review that starts with the verification.
-A change in one of the repository's
-[`high_risk_areas`](../settings.md#high_risk_areas) always counts as high.
-Under Auto, [`merge.auto_merge_max_risk`](../settings.md#mergeauto_merge_max_risk)
+## Risk and review
+
+The lead line shows the checkpoint's **Risk** for the current commit beside its
+**Recommendation**. Shaka reads the level from the published checkpoint and the
+changed files the way merge does, so the description cannot disagree with either.
+Low is meant for auto-merge with a later audit, medium for a person to merge after
+a skim, and high for a careful review that starts with the verification. A change in
+one of the repository's [`high_risk_areas`](../settings.md#high_risk_areas) always
+counts as high. Under Auto, [`merge.auto_merge_max_risk`](../settings.md#mergeauto_merge_max_risk)
 sets the highest rating the agent merges without you; the default is low.
 
-**Closer reading**, under **Intent** when present, links to the code needing
-particular attention, each with its reason.
+The **Risk and review** section follows the summary. It says what the level asks
+of you, then lists:
+
+- **Flagged by the implementer**: code needing particular attention, each with its reason.
+- The checkpoint reviewer's reasons. When a high-risk area raised the level, the
+  section names the file and area and shows the reviewer's own rating. Low-risk
+  reasons are folded.
+- Your repository's own risk record, folded, when your
+  [PR evidence guide](../settings.md#project_guidance) asks for one.
+
+Until the checkpoint rates the current commit, the level reads **not rated yet**.
 
 ## Checkpoint
 

@@ -3,6 +3,7 @@
 require_relative '../error'
 require_relative '../post_implementation_report'
 require_relative 'history'
+require_relative 'risk'
 
 module Shaka
   # Checks this account's published checkpoint facts, not the reviewer's product judgment.
@@ -59,6 +60,18 @@ module Shaka
     def risk(head)
       rating, reviewed, state = latest&.fetch('body', '').to_s.match(RISK)&.captures
       rating if reviewed == head && state == 'ready'
+    end
+
+    # What the latest checkpoint printed about risk for this head, ready or blocked, since a blocked checkpoint
+    # still shows its rating: the rating, the reviewer's reasons, and the comment's link. Nil for another head or
+    # a checkpoint without a rating. Merge reads risk(head), which requires a ready checkpoint.
+    def published_risk(head)
+      comment = latest
+      body = comment&.fetch('body', '').to_s
+      rating, reviewed = body.match(RISK)&.captures
+      return unless rating && reviewed == head
+
+      { 'rating' => rating, 'reasons' => PostImplementationRisk.reasons_in(body), 'url' => comment['html_url'] }
     end
 
     # The latest checkpoint's owner recommendation, or nil when that checkpoint is for another head or has none.

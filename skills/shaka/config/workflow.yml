@@ -461,7 +461,9 @@ phases:
         preparing the description. It also prints the repository's pull request template when
         one exists. Gather the evidence the guide asks for, and report each item in
         `verification` or `details`, naming any gap. Cover each template section the
-        description does not already render in `sections`. A guide adds requirements; it cannot
+        description does not already render in `sections`. Put a risk record the guide asks for in
+        `risk_record`, a one-line `summary` and a `body`, which the helper folds under Risk and
+        review. A guide adds requirements; it cannot
         relax review, required checks, or merge preference. With `--ref`, `description` also
         returns the guide in `pr_evidence_guide`; when the published description lacks
         evidence it asks for, gather that evidence and publish again.
@@ -516,7 +518,7 @@ phases:
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
-        optional `checkpoint`, `walkthrough`, `review` and `post_implementation`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`,
+        optional `checkpoint`, `walkthrough`, `review` and `post_implementation`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`, optional `risk_record`,
         required `intent` and `verification`, optional `table`, required `provenance`, optional `skills_used` from the task record,
         required `usage` (`note` and `records` from
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item

@@ -16,6 +16,7 @@ require_relative 'human_comments'
 require_relative 'skills_used'
 require_relative 'metrics'
 require_relative 'intent_verification'
+require_relative 'risk_review'
 require_relative 'quoted_markers'
 require_relative '../publication_sections'
 
@@ -29,7 +30,7 @@ module Shaka
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil, # rubocop:disable Metrics/ParameterLists
                          environment: nil, host_name: nil)
       new(content, description: true, workflow_version:, pull:, settings:, timeline:, environment:, host_name:)
-        .render(%i[steps intent_verification sections evidence metrics wip credit],
+        .render(%i[steps risk_review intent_verification sections evidence metrics wip credit],
                 lead: %i[lead]).tap { QuotedMarkers.refuse!(content) }
     end
 
@@ -81,6 +82,9 @@ module Shaka
 
     # The steps besides merging sit right under the summary so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)
+
+    # How carefully to review and where to start come before what the change is for.
+    def risk_review = RiskReview.render(@content, @pull)
 
     # The Task line names the prompt after the agent that wrote the description.
     def task_line = ExecutionProvenance.new(provenance_spec, pull: @pull).line(@content.dig('identity', 'agent'))
@@ -147,9 +151,8 @@ module Shaka
     def wip
       return [] unless (spec = @content['wip'])
 
-      session = { environment: @environment, disclosure: @content['wip_disclosure'], pull: @pull,
-                  host_name: @host_name }
-      [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction, session:).detail)]
+      info = { environment: @environment, disclosure: @content['wip_disclosure'], pull: @pull, host_name: @host_name }
+      [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction, session: info).detail)]
     end
 
     # Only the helper writes the history, from the previous body.
