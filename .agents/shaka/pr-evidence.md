@@ -23,7 +23,8 @@ When a PR adds, removes, or renames a setting, or changes its default or what it
 add a `Settings changes` section to the description. Give each change a row with the
 setting key and its value before and after. Use the shipped default when the key
 is unset, as in "default `one` → default `all`", and "(not set)" where the key did
-not exist. Add what existing repositories must do: nothing, or the exact edit to
+not exist. When only the behavior changes, say what the setting did before and does
+now. Add what existing repositories must do: nothing, or the exact edit to
 `.agents/shaka/config.yml`. Link the key's `docs/settings.md` anchor at the head, or at
 the base for a removed key.
 
