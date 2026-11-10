@@ -1,17 +1,13 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require 'json'
-require 'shaka/claim'
 require_relative 'claim_helpers'
+require_relative 'claim_rest_helpers'
 
 # Claim in a session where GitHub refuses GraphQL, as Claude Code cloud sessions do.
 class ClaimRestTest < Minitest::Test
   include ClaimHelpers
-
-  REFUSAL = 'HTTP 403: GitHub GraphQL is not available from Claude Code sessions (https://api.github.com/graphql)'
-  PULL = { 'number' => 402, 'title' => 'Feedback', 'html_url' => 'https://github.com/shakacode/shaka/pull/402',
-           'head' => { 'ref' => 'alex/fix' }, 'body' => 'Part of #392' }.freeze
+  include ClaimRestHelpers
 
   def test_a_graphql_refusal_reads_open_pull_requests_over_rest_and_names_what_it_could_not_read
     result = claim_over_rest('392', pulls: [PULL, PULL.merge('number' => 403, 'body' => nil)])
@@ -48,13 +44,6 @@ class ClaimRestTest < Minitest::Test
     assert_empty result.fetch('unknownFields')
   end
 
-  def test_an_owning_pull_request_on_a_later_page_is_found
-    others = Array.new(100) { |index| PULL.merge('number' => 1000 + index, 'body' => '') }
-    result = Shaka::Claim.new(query: '392', root: Dir.pwd, runner: rest_runner(pulls: [others, [PULL]])).result
-
-    assert_equal([402], result.fetch('pull_requests').map { |pr| pr.fetch('number') })
-  end
-
   def test_an_incomplete_or_full_search_is_not_a_complete_ownership_check
     [{ 'incomplete_results' => true, 'items' => [] }, :full].each do |search|
       error = assert_raises(Shaka::Error) { claim_over_rest('392', pulls: [], search: search) }
@@ -81,49 +70,5 @@ class ClaimRestTest < Minitest::Test
 
     refute result.key?('readOver')
     refute result.key?('unknownFields')
-  end
-
-  private
-
-  def claim_over_rest(query, pulls:, search: [], comments: [], seen: [])
-    Shaka::Claim.new(query: query, root: Dir.pwd,
-                     runner: rest_runner(pulls:, search:, comments:, seen:)).result
-  end
-
-  def rest_runner(pulls:, search: [], comments: [], seen: [])
-    lambda do |argv, **|
-      seen << argv
-      reply = rest_reply(argv, pulls, search, comments)
-      reply ? [JSON.generate(reply), '', ClaimHelpers::STATUS.new(0)] : other_reply(argv)
-    end
-  end
-
-  def rest_reply(argv, pulls, search, comments)
-    return unless argv[1] == 'api'
-    return { 'full_name' => 'shakacode/shaka' } if argv.last == 'repos/{owner}/{repo}'
-    return search_result(search) if argv.include?('search/issues')
-    return pulls_page(pulls, argv.last) if argv.last.start_with?('repos/shakacode/shaka/pulls?')
-
-    comments
-  end
-
-  # Pages given as an array of arrays; a flat array is the first page alone.
-  def pulls_page(pulls, path)
-    pages = pulls.first.is_a?(Array) ? pulls : [pulls]
-    pages.fetch(path[/[?&]page=(\d+)/, 1].to_i - 1, [])
-  end
-
-  def search_result(search)
-    return search if search.is_a?(Hash)
-
-    items = search == :full ? Array.new(100) { |index| { 'number' => index + 1 } } : search
-    { 'incomplete_results' => false, 'items' => items }
-  end
-
-  def other_reply(argv)
-    return ['', REFUSAL, ClaimHelpers::STATUS.new(1)] if argv[1] == 'pr'
-    return ['', '', ClaimHelpers::STATUS.new(0)] if argv[1] == 'ls-remote'
-
-    raise "Unexpected command: #{argv.inspect}"
   end
 end

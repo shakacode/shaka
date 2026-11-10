@@ -18,12 +18,21 @@ module Shaka
       def initialize(capture) = @capture = capture
 
       def list(search)
-        search.empty? ? open_pull_requests : searched_numbers(search.last)
+        stable { search.empty? ? open_pull_requests : searched_numbers(search.last) }
       end
 
       def api_list(path) = array(api(path), 'GitHub pull request list')
 
       private
+
+      # REST pages by offset, so a pull request closing between pages shifts another onto a page
+      # already read. A list longer than one page is read twice and must come back the same.
+      def stable
+        rows = yield
+        return rows if rows.length < PAGE_SIZE || yield.map { |row| row['number'] } == rows.map { |row| row['number'] }
+
+        raise Error, 'GitHub PR inventory changed during ownership search.'
+      end
 
       def open_pull_requests
         PublicComments::BoundedList.new(self, max_pages: MAX_PAGES, label: 'GitHub open pull request list')
