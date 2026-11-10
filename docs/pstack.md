@@ -26,6 +26,10 @@ Codex support. In Claude Code, pstack's commands carry a `pstack:` prefix, such 
 `/pstack:poteto-mode`. For Cursor updates, read
 [Cursor's plugin documentation](https://cursor.com/docs/plugins).
 
+If you also linked a pstack skill into `~/.claude/skills`, Claude Code loads both
+copies, possibly at different versions. `shaka doctor` lists each skill name Claude
+Code loads twice and each skill link that points nowhere, without changing them.
+
 ## Keep Claude Code current
 
 Claude Code leaves auto-update off for third-party marketplaces, so pstack stays at

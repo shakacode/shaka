@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'tmpdir'
 require 'shaka/doctor'
 
 # Builds a Doctor whose every outside dependency is supplied, so each test states exactly
@@ -14,10 +15,12 @@ module DoctorHelper
     { 'state' => 'A1', 'title' => 'Default install, one host', 'severity' => 'ok',
       'location' => '/home/.local/share/shaka/source' }
   end
+  # An empty home, so no test reads the skill folders of the machine it runs on.
+  EMPTY_HOME = Dir.mktmpdir('doctor-home')
   DEFAULTS = { root: nil, environment: { 'SHAKA_MACHINE_ALIAS' => 'm5' }, responses: {}, runner: nil,
                usage_files: nil, usage_source: nil, host_name: 'test-machine.local', host: 'claude-code',
                ruby_version: RUBY_VERSION, cursor_stop_hook: false, executable: EXECUTABLE,
-               installation_status: INSTALLED_STATE }.freeze
+               installation_status: INSTALLED_STATE, home: EMPTY_HOME }.freeze
 
   def doctor(**overrides)
     options = DEFAULTS.merge(overrides)
@@ -32,7 +35,7 @@ module DoctorHelper
                               usage_source: options[:usage_source] || ->(_host) { options[:usage_files] || [__FILE__] },
                               host_name: options[:host_name], ruby_version: options[:ruby_version],
                               cursor_stop_hook: -> { options[:cursor_stop_hook] }, executable: options[:executable],
-                              installation_status: options[:installation_status])
+                              installation_status: options[:installation_status], home: options[:home])
   end
 
   def check_names(report) = report.scan(/^\[\w+\] ([^\n]+?) —/).flatten.sort
