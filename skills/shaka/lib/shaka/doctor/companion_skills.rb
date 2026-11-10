@@ -67,25 +67,29 @@ module Shaka
         sources.select { |_name, where| where.length > 1 }
       end
 
-      # One unreadable plugin is named; the others are still checked.
       def add_plugin_skills(sources)
-        enabled_plugins.each do |plugin, install_path|
-          folder = File.join(install_path, 'skills')
-          skills(folder).each { |path| sources[File.basename(path)] << "#{plugin} plugin" } if File.directory?(folder)
-        rescue ArgumentError, TypeError => e
-          @unread << "#{plugin} plugin skills not read: #{first_line(e.message)}"
-        end
-      rescue JSON::ParserError, SystemCallError, KeyError, TypeError, NoMethodError => e
+        enabled_plugins.each { |key, installs| add_plugin(sources, plugin(key), installs) }
+      rescue JSON::ParserError, SystemCallError, TypeError, NoMethodError => e
         @unread << "Claude Code plugin skills not read: #{first_line(e.message)}"
       end
+
+      # A plugin record that cannot be read is named; the other plugins are still checked.
+      def add_plugin(sources, name, installs)
+        user = installs.find { |install| install['scope'] == 'user' }
+        folder = File.join(user.fetch('installPath'), 'skills') if user
+        return unless folder && File.directory?(folder)
+
+        skills(folder).each { |path| sources[File.basename(path)] << "#{name} plugin" }
+      rescue KeyError, TypeError, NoMethodError, ArgumentError => e
+        @unread << "#{name} plugin skills not read: #{first_line(e.message)}"
+      end
+
+      def plugin(key) = key.to_s.split('@').first
 
       # Claude Code loads a user-scope plugin only while settings.json marks it enabled.
       def enabled_plugins
         enabled = json(SETTINGS).fetch('enabledPlugins', {})
-        json(PLUGINS).fetch('plugins', {}).filter_map do |key, installs|
-          user = installs.find { |install| install['scope'] == 'user' }
-          [key.split('@').first, user.fetch('installPath')] if user && enabled[key] == true
-        end
+        json(PLUGINS).fetch('plugins', {}).select { |key, _installs| enabled[key] == true }
       end
 
       # Only a missing file means no plugins; a file this account cannot reach is reported.

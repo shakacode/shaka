@@ -15,6 +15,16 @@ class DoctorCompanionSkillsFaultsTest < Minitest::Test
     assert_includes text, 'review (~/.claude/skills, pack plugin)'
   end
 
+  def test_a_malformed_plugin_record_still_checks_the_other_plugins
+    skill('.claude/skills/review')
+    plugin('pack', skills: %w[review])
+    malformed_records
+    text = report
+    assert_includes text, 'early plugin skills not read: key not found: "installPath"'
+    assert_includes text, 'empty plugin skills not read'
+    assert_includes text, 'review (~/.claude/skills, pack plugin)'
+  end
+
   def test_a_link_into_an_unreadable_folder_is_not_called_broken
     @locked = File.join(@home, 'locked')
     FileUtils.mkdir_p(File.join(@locked, 'skill'))
@@ -60,5 +70,16 @@ class DoctorCompanionSkillsFaultsTest < Minitest::Test
 
   def test_a_missing_home_is_reported_not_raised
     assert_includes doctor(home: nil).first, '[DEGRADED] Companion skills — not checked: no home directory'
+  end
+
+  private
+
+  # Records read before the valid one: one without installPath, one that is null.
+  def malformed_records
+    update('.claude/plugins/installed_plugins.json', 'plugins') do |all|
+      { 'early@market' => [{ 'scope' => 'user' }], 'empty@market' => nil, **all }
+    end
+    enable = { 'early@market' => true, 'empty@market' => true }
+    update('.claude/settings.json', 'enabledPlugins') { |all| all.merge(enable) }
   end
 end

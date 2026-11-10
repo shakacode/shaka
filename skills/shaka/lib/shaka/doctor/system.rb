@@ -15,7 +15,14 @@ module Shaka
             host_name: MachineAlias.system_name, ruby_version: RUBY_VERSION,
             cursor_stop_hook: -> { CursorStopHook.installed? },
             executable: ->(name, path, root) { LocalReviewPathGuard.safe_executable(path, name, root) },
-            installation_status: -> { Install::Status.new(source: PACKAGE_ROOT).call }, home: Dir.home)
+            installation_status: -> { Install::Status.new(source: PACKAGE_ROOT).call }, home: home)
+      end
+
+      # Without a resolvable home, the companion-skills check reports itself not checked.
+      def self.home
+        Dir.home
+      rescue ArgumentError
+        nil
       end
     end
   end
