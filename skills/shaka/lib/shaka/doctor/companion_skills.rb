@@ -48,7 +48,12 @@ module Shaka
         paths.select { |path| File.symlink?(path) && broken?(path) } + folders.flat_map { |f| broken_links(f) }
       end
 
-      def broken_links(folder) = entries(folder).select { |path| File.symlink?(path) && broken?(path) }
+      # A skill folder can hold a SKILL.md link that points nowhere, which drops the skill just the same.
+      def broken_links(folder)
+        entries(folder).flat_map do |path|
+          [path, File.join(path, 'SKILL.md')].select { |link| File.symlink?(link) && broken?(link) }
+        end
+      end
 
       # A target that cannot be reached is unread, not broken, so a working link is never called broken.
       def broken?(path)
@@ -91,13 +96,19 @@ module Shaka
 
       # A plugin record that cannot be read is named; the other plugins are still checked.
       def add_plugin(sources, name, installs)
-        user = installs.find { |install| install['scope'] == 'user' }
+        user = user_install(installs)
         folder = File.join(install_path(user), 'skills') if user
         return unless folder && File.directory?(folder)
 
         skills(folder).each { |path| sources[File.basename(path)] << "#{name} plugin" }
       rescue KeyError, TypeError, NoMethodError, ArgumentError => e
         @unread << "#{name} plugin skills not read: #{first_line(e.message)}"
+      end
+
+      def user_install(installs)
+        raise TypeError, 'record is not a list of objects' unless installs.is_a?(Array) && installs.all?(Hash)
+
+        installs.find { |install| install['scope'] == 'user' }
       end
 
       # A relative path would resolve against wherever doctor runs, not the plugin.
@@ -112,9 +123,12 @@ module Shaka
 
       # Claude Code loads a user-scope plugin only while settings.json marks it enabled.
       def enabled_plugins
-        enabled = json(SETTINGS).fetch('enabledPlugins', {})
-        json(PLUGINS).fetch('plugins', {}).select { |key, _installs| enabled[key] == true }
+        enabled = object(object(json(SETTINGS), SETTINGS).fetch('enabledPlugins', {}), 'enabledPlugins')
+        object(object(json(PLUGINS), PLUGINS).fetch('plugins', {}), 'plugins').select { |key, _| enabled[key] == true }
       end
+
+      # These files are Claude Code's own; a changed shape degrades the check instead of finding no plugins.
+      def object(value, label) = value.is_a?(Hash) ? value : raise(TypeError, "#{label} is not a JSON object")
 
       # Only a missing file means no plugins; a file this account cannot reach is reported.
       def json(relative)

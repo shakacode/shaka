@@ -40,6 +40,19 @@ class DoctorCompanionSkillsFaultsTest < Minitest::Test
     assert_includes report, 'pack plugin skills not read: installPath relative/pack is not absolute'
   end
 
+  def test_an_unexpected_plugin_file_shape_is_not_called_healthy
+    write('.claude/plugins/installed_plugins.json', JSON.generate('plugins' => []))
+    assert_includes report, 'Claude Code plugin skills not read: plugins is not a JSON object'
+    write('.claude/settings.json', JSON.generate('enabledPlugins' => 'pack@market'))
+    assert_includes report, 'Claude Code plugin skills not read: enabledPlugins is not a JSON object'
+  end
+
+  def test_a_plugin_record_of_the_wrong_shape_is_named
+    plugin('pack', skills: [])
+    update('.claude/plugins/installed_plugins.json', 'plugins') { |all| all.merge('pack@market' => ['user']) }
+    assert_includes report, 'pack plugin skills not read: record is not a list of objects'
+  end
+
   def test_a_link_into_an_unreadable_folder_is_not_called_broken
     @locked = File.join(@home, 'locked')
     FileUtils.mkdir_p(File.join(@locked, 'skill'))
