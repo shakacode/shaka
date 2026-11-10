@@ -948,10 +948,10 @@ the repository root, then `docs/`. With several templates, name the one to use a
 `pr_evidence`. For example, a template's Changelog section can
 [replace edits to `CHANGELOG.md`](changelog-in-pr-descriptions.md).
 
-If a template section has an HTML comment that says when to include it, the agent
-fills it only when that condition applies. For example, a **Settings changes**
-section can ask the agent to omit its heading and body when the diff leaves
-repository settings alone. The agent still reports required verification.
+A template section is included by default. To make it conditional, use an HTML
+comment that says when to omit the heading and body. For example, ask the agent
+to omit **Settings changes** when the diff leaves repository settings alone.
+The agent still reports required verification.
 
 Put anything a command can check in your [validate script](#standard-command-scripts)
 or CI, where a failure stops the PR. Keep the guides for judgment calls, such as
