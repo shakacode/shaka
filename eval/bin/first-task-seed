@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+seed = 'cfdbfc06f24786210ab5bdfa57edb6590f938a54'
+source = 'https://github.com/shakacode/shaka-277-trial.git'
+abort 'Usage: eval/bin/first-task-seed NEW_DIRECTORY' unless ARGV.size == 1
+
+destination = File.expand_path(ARGV.fetch(0))
+
+def git(directory, *args)
+  env = %w[GIT_DIR GIT_WORK_TREE GIT_COMMON_DIR GIT_INDEX_FILE].to_h { |name| [name, nil] }
+  system(env, 'git', '-C', directory, *args, exception: true)
+end
+
+begin
+  Dir.mkdir(destination)
+  git(destination, 'init', '--quiet', '--initial-branch=main')
+  git(destination, 'fetch', '--quiet', '--no-tags', source, seed)
+  git(destination, 'checkout', '--quiet', '-b', 'main', seed)
+rescue SystemCallError, RuntimeError => e
+  abort "Could not prepare first-task seed: #{e.message}"
+end
+
+puts "Prepared #{seed}. Run bin/validate in the new checkout before hosting it."
