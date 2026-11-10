@@ -55,6 +55,43 @@ class UsageArchiveGroupingTest < Minitest::Test
     assert_builder_refuses(github, damaged)
   end
 
+  # Each edit below also rewrites the inventory, so only the reference checks can catch it.
+  def test_a_grouped_reference_that_repeats_a_record_is_refused
+    github = DescriptionUsageArchiveTest::MemoryGitHub.new
+    github.description(body: "#{large_pair}\n")
+    assert_builder_refuses(github, reinventoried(github.stored['body'].sub('"records":[0,1]', '"records":[1,1]')))
+  end
+
+  def test_a_grouped_reference_cannot_restore_a_report_it_does_not_show
+    github = DescriptionUsageArchiveTest::MemoryGitHub.new
+    legacy = record('codex', 'Legacy', responses: ['legacy-response'], contribution: 'review')
+    github.description(body: "#{large_pair}\n\n#{legacy}\n")
+    hidden = github.stored['body'].gsub(Shaka::UsageArchive::REFERENCES) do |reference|
+      ref = JSON.parse(Regexp.last_match(1))
+      ref.key?('record') ? without_report(ref, Regexp.last_match(2)) : reference
+    end
+    assert_builder_refuses(github, reinventoried(hidden))
+  end
+
+  # The report's own reference rewritten as a grouped one, which shows only the archive line.
+  def without_report(ref, display)
+    grouped = ref.slice('comments', 'sha256').merge('records' => [ref['record']])
+    line = display[/^Usage archive: .*\n\z/]
+    "#{Shaka::UsageArchive::PREFIX}#{JSON.generate(grouped)} -->\n#{line}#{Shaka::UsageArchive::END_MARK}"
+  end
+  private :without_report
+
+  def reinventoried(body)
+    entries = body.scan(Shaka::UsageArchive::REFERENCES).map do |json, _display|
+      ref = JSON.parse(json)
+      [*ref.values_at('comments', 'sha256'), ref.fetch('records') { ref['record'] }]
+    end
+    body.sub(Shaka::UsageArchiveReferences::INVENTORY) do
+      "#{Shaka::UsageArchiveReferences::INVENTORY_PREFIX}#{Digest::SHA256.hexdigest(JSON.generate(entries))} -->\n"
+    end
+  end
+  private :reinventoried
+
   def assert_builder_refuses(github, damaged)
     github.stored['body'] = damaged
     assert_raises(Shaka::Error) { github.description { flunk 'A damaged archive reached the description builder.' } }
