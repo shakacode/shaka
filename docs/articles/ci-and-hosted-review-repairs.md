@@ -294,12 +294,19 @@ prompt, so it does not describe the model or prompt reviewing `shaka` now.
   reports said it found no issues. Those counts fit an effect from the prompt or the
   model. `react_on_rails` is also a different codebase, and 11 of its bug threads sit on
   one PR.
-- **Proposed change:** take the 17 commits where hosted Claude reported zero findings
-  and CodeRabbit later led to a code bug fix. Rerun both prompts under both models. Change the prompt or pin the model only if the
-  rerun shows which one loses bugs its rules include.
+- **Follow-up test:** the [prompt comparison](hosted-review-prompt-comparison.md) reran
+  the old and current prompts, both under `claude-sonnet-5-5`, on the 17 commits where
+  hosted Claude reported zero findings and CodeRabbit later found a bug. The old prompt
+  caught 3 of the 21 bugs and the current prompt none. The bar set beforehand for
+  loosening the prompt was 5 more. Other models, small differences that 3 runs per commit
+  cannot show, and commits without a known bug stay untested. The maintainer kept the
+  current prompt for now. That article gives the full results and limits.
+- **Proposed change:** none for now. If more of these catches are wanted, the
+  comparison points to CodeRabbit's review limit, which finding 3 leaves to the
+  maintainer.
 - **Guarantee at risk:** more findings bring back nits. About 87% of findings before
   #446 led to no push, and about 73% from #446 to #640.
-- **Maintenance:** a prompt edit or a model pin, plus one measured rerun.
+- **Maintenance:** none.
 
 ### 3. CodeRabbit fixes rose while hosted Claude fell to zero
 
