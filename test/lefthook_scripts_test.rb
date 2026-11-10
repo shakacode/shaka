@@ -5,7 +5,7 @@ require 'open3'
 require 'tmpdir'
 
 # Runs the bin/lefthook scripts the commit hooks call, in a scratch directory.
-class LefthookScriptsTest < Minitest::Test
+module LefthookScriptHelpers
   ROOT = File.expand_path('..', __dir__)
   ENVIRONMENT = { 'BUNDLE_GEMFILE' => File.join(ROOT, 'Gemfile'), 'RUBYOPT' => nil, 'RUBYLIB' => nil }.freeze
 
@@ -17,6 +17,38 @@ class LefthookScriptsTest < Minitest::Test
   def teardown
     FileUtils.rm_rf(@dir)
   end
+
+  private
+
+  def script(name, *, stdin_data: '', env: {})
+    Open3.capture2e(ENVIRONMENT.merge(env), RbConfig.ruby, File.join(ROOT, 'bin/lefthook', name), *,
+                    chdir: @dir, stdin_data:)
+  end
+
+  def git(*)
+    output, status = Open3.capture2e('git', '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+                                     '-c', 'commit.gpgsign=false', *, chdir: @dir)
+    assert_predicate status, :success?, output
+    output
+  end
+
+  def git_repository
+    git('init', '-q')
+    git('add', '.')
+    git('commit', '-qm', 'base')
+    git('update-ref', 'refs/remotes/origin/main', 'HEAD')
+  end
+
+  def write(path, content)
+    FileUtils.mkdir_p(File.dirname(File.join(@dir, path)))
+    File.binwrite(File.join(@dir, path), content)
+  end
+
+  def read(path) = File.binread(File.join(@dir, path))
+end
+
+class LefthookScriptsTest < Minitest::Test
+  include LefthookScriptHelpers
 
   def test_rejects_a_ruby_syntax_error
     write('broken.rb', "# frozen_string_literal: true\n\ndef broken\n  1\n")
@@ -66,11 +98,21 @@ class LefthookScriptsTest < Minitest::Test
     write('a.txt', 'text')
     write('b.txt', "done\n")
     write('c.bin', "bin\0ary")
-    write('d.txt', '')
-    _, status = script('trailing-newlines', 'a.txt', 'b.txt', 'c.bin', 'd.txt', 'missing.txt')
+    write('d.bin', "\x08\x01")
+    write('e.txt', '')
+    File.symlink(File.join(@dir, 'a.txt'), File.join(@dir, 'link.txt'))
+    _, status = script('trailing-newlines', 'link.txt', 'a.txt', 'b.txt', 'c.bin', 'd.bin', 'e.txt', 'missing.txt')
 
     assert_predicate status, :success?
-    assert_equal(["text\n", "done\n", "bin\0ary", ''], %w[a.txt b.txt c.bin d.txt].map { read(it) })
+    assert_equal(["text\n", "done\n", "bin\0ary", "\x08\x01", ''], %w[a.txt b.txt c.bin d.bin e.txt].map { read(it) })
+  end
+
+  def test_reports_when_rubocop_cannot_run
+    write('ok.rb', "# frozen_string_literal: true\n\nputs 'ok'\n")
+    output, status = script('ruby-check', 'lint', 'ok.rb', env: { 'PATH' => File.join(@dir, 'no-bin') })
+
+    refute_predicate status, :success?
+    assert_includes output, 'RuboCop could not run'
   end
 
   def test_installed_reports_whether_the_pre_commit_hook_runs_lefthook
@@ -81,17 +123,34 @@ class LefthookScriptsTest < Minitest::Test
 
     assert_predicate script('installed').last, :success?
   end
+end
 
-  private
+# Runs the pre-push check against commits in a scratch repository.
+class LefthookBranchCheckTest < Minitest::Test
+  include LefthookScriptHelpers
 
-  def script(name, *)
-    Open3.capture2e(ENVIRONMENT, RbConfig.ruby, File.join(ROOT, 'bin/lefthook', name), *, chdir: @dir)
+  def test_branch_mode_checks_committed_content_not_the_working_tree
+    git_repository
+    write('lib/a.rb', "# frozen_string_literal: true\n\ndef broken\n")
+    git('add', '.')
+    git('commit', '-qm', 'broken')
+    write('lib/a.rb', "# frozen_string_literal: true\n\nputs 'fixed'\n")
+    output, status = script('ruby-check', 'branch')
+
+    refute_predicate status, :success?
+    assert_includes output, 'Syntax errors in: lib/a.rb'
+    assert_equal "# frozen_string_literal: true\n\nputs 'fixed'\n", read('lib/a.rb')
   end
 
-  def write(path, content)
-    FileUtils.mkdir_p(File.dirname(File.join(@dir, path)))
-    File.binwrite(File.join(@dir, path), content)
-  end
+  def test_branch_mode_checks_each_pushed_commit_and_ignores_unpushed_edits
+    git_repository
+    write('lib/a.rb', "# frozen_string_literal: true\n\nputs 'clean'\n")
+    git('add', '.')
+    git('commit', '-qm', 'clean')
+    pushed = git('rev-parse', 'HEAD').strip
+    write('lib/a.rb', "def broken\n")
+    input = "refs/heads/x #{pushed} refs/heads/x #{'0' * 40}\n"
 
-  def read(path) = File.binread(File.join(@dir, path))
+    assert_predicate script('ruby-check', 'branch', stdin_data: input).last, :success?
+  end
 end

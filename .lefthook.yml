@@ -1,24 +1,27 @@
-# Commit-time checks for Shaka contributors. They read only the files a commit or
-# push changes, so a slip fails in seconds instead of inside bin/validate.
+# Commit-time checks for Shaka contributors. The Ruby and newline checks read only
+# the files a commit or push changes, so a slip fails in seconds instead of inside
+# bin/validate. The docs check runs the whole offline link check when a commit
+# touches documentation or skills.
 # Install once per clone: bundle exec lefthook install
-# Skip once: git commit --no-verify, or LEFTHOOK=0 git push
+# Skip once: git commit --no-verify, or git push --no-verify
+# The commands run in order because two of them rewrite the same staged files.
 
 pre-commit:
-  parallel: true
   commands:
     ruby:
       run: bin/lefthook/ruby-check fix {staged_files}
       stage_fixed: true
 
-    docs-links:
-      glob: "{*.md,**/*.md,docs/sidebars.json,docs/img/*.svg}"
-      run: ruby bin/check-docs-navigation
-
     trailing-newlines:
       run: bin/lefthook/trailing-newlines {staged_files}
       stage_fixed: true
+
+    docs-links:
+      glob: "{*.md,**/*.md,docs/**/*,skills/**/*}"
+      run: ruby bin/check-docs-navigation
 
 pre-push:
   commands:
     ruby:
       run: bin/lefthook/ruby-check branch
+      use_stdin: true

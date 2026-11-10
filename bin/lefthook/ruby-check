@@ -1,44 +1,84 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'English'
+require 'tmpdir'
+
 # Checks changed Ruby files for syntax errors and RuboCop offences.
-#   ruby-check fix FILE...  pre-commit: autocorrect, then fail on what remains
+#   ruby-check fix FILE...  pre-commit: apply safe corrections, then fail on what remains
 #   ruby-check lint FILE... report offences without changing files
-#   ruby-check branch       pre-push: lint files changed since the merge base
-#                           with SHAKA_BASE_REF (default origin/main)
+#   ruby-check branch       pre-push: lint the Ruby files each pushed commit changed since
+#                           its merge base with SHAKA_BASE_REF (default origin/main). It
+#                           reads the pushed refs from standard input, or checks HEAD.
 # Ruby files are *.rb, *.rake, *.gemspec, Gemfile, and files with a ruby shebang.
 
 def ruby_file?(path)
-  return false unless File.file?(path)
+  return false if File.symlink?(path) || !File.file?(path)
   return true if path.end_with?('.rb', '.rake', '.gemspec') || File.basename(path) == 'Gemfile'
 
   File.open(path, 'rb') { |file| file.gets.to_s.match?(/\A#!.*\bruby\b/) }
 end
 
-def branch_files
+OFFENCES = 'RuboCop offences remain. Fix them, or skip the hook once with --no-verify.'
+RUBOCOP_UNAVAILABLE = 'RuboCop could not run; install the development gems with .agents/shaka/bin/setup.'
+
+def git(*args) = IO.popen(['git', *args], err: File::NULL, &:read)
+
+# Git's pre-push input lists "LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA" per pushed ref.
+def pushed_commits
+  input = $stdin.tty? ? '' : $stdin.read
+  commits = input.lines.filter_map { it.split[1] }.grep_v(/\A0+\z/)
+  commits.empty? ? ['HEAD'] : commits.uniq
+end
+
+def changed_files(commit)
   base = ENV.fetch('SHAKA_BASE_REF', 'origin/main')
-  merge_base = IO.popen(['git', 'merge-base', base, 'HEAD'], err: File::NULL, &:read).strip
+  merge_base = git('merge-base', base, commit).strip
   abort "ruby-check: no merge base with #{base}; fetch it or set SHAKA_BASE_REF" if merge_base.empty?
 
-  IO.popen(['git', 'diff', '--no-ext-diff', '--name-only', '--diff-filter=ACMR', '-z', merge_base, 'HEAD'],
-           &:read).split("\0")
+  git('diff', '--no-ext-diff', '--name-only', '--diff-filter=ACMR', '-z', merge_base, commit).split("\0")
+end
+
+# Lints the committed content, not the working tree, in a scratch copy of the changed files.
+def check_commit(commit)
+  files = changed_files(commit)
+  return true if files.empty?
+
+  Dir.mktmpdir('ruby-check') do |dir|
+    config = %w[.rubocop.yml] & git('ls-tree', '--name-only', commit, '.rubocop.yml').split("\n")
+    archive = IO.popen(['git', 'archive', '--format=tar', commit, '--', *config, *files], &:read)
+    IO.popen(['tar', '-x', '-C', dir], 'wb') { it.write(archive) }
+    Dir.chdir(dir) { passes?('lint', files) }
+  end
+end
+
+def passes?(mode, files)
+  files = files.select { ruby_file?(it) }
+  files.empty? || (syntax_valid?(files) && rubocop_passes?(mode, files))
+end
+
+def syntax_valid?(files)
+  broken = files.reject { system(RbConfig.ruby, '-c', it, out: File::NULL) }
+  warn "Syntax errors in: #{broken.join(', ')}" unless broken.empty?
+  broken.empty?
+end
+
+def rubocop_passes?(mode, files)
+  rubocop = %w[bundle exec rubocop --force-exclusion --display-cop-names]
+  rubocop << '--autocorrect' if mode == 'fix'
+  return true if system(*rubocop, '--', *files)
+
+  offences = $CHILD_STATUS&.exitstatus == 1
+  warn(offences ? OFFENCES : RUBOCOP_UNAVAILABLE)
+  false
 end
 
 mode = ARGV.shift
-files = case mode
-        when 'fix', 'lint' then ARGV
-        when 'branch' then branch_files
-        else abort 'usage: ruby-check fix|lint FILE... | ruby-check branch'
-        end
-files = files.select { ruby_file?(it) }
-exit if files.empty?
-
-broken = files.reject { system(RbConfig.ruby, '-c', it, out: File::NULL) }
-abort "Syntax errors in: #{broken.join(', ')}" unless broken.empty?
-
-rubocop = %w[bundle exec rubocop --force-exclusion --display-cop-names]
-rubocop << '--autocorrect-all' if mode == 'fix'
-exit if system(*rubocop, '--', *files)
-
-warn 'RuboCop offences remain. Fix them, or skip once with git commit --no-verify.'
-exit 1
+# The branch check runs RuboCop from a scratch directory, so name this checkout's Gemfile.
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../Gemfile', __dir__)
+passed = case mode
+         when 'fix', 'lint' then passes?(mode, ARGV)
+         when 'branch' then pushed_commits.map { check_commit(it) }.all?
+         else abort 'usage: ruby-check fix|lint FILE... | ruby-check branch'
+         end
+exit passed
