@@ -45,7 +45,7 @@ module Shaka
         return "**Not shown.** Shaka could not read this repository's trusted settings, so it cannot check " \
                'the high-risk areas merge checks. The checkpoint states its own rating.'
       end
-      return "**Not rated yet.** The checkpoint rates this commit's risk." if content['checkpoint'].is_a?(Hash)
+      return '**Not rated yet.** No published checkpoint rates this commit.' if content['checkpoint'].is_a?(Hash)
 
       '**Not rated.** No checkpoint rated this commit.'
     end

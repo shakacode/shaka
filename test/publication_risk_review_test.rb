@@ -103,7 +103,7 @@ class PublicationRiskReviewTest < Minitest::Test
     rendered = render(risk: nil)
 
     assert_includes rendered, '**Recommendation: Merge** · **Risk: not rated yet** · '
-    assert_equal "## Risk and review\n\n**Not rated yet.** The checkpoint rates this commit's risk.\n\n" \
+    assert_equal "## Risk and review\n\n**Not rated yet.** No published checkpoint rates this commit.\n\n" \
                  "**Flagged by the implementer:**\n- `lib/merge.rb`, compares the queue base before submitting.",
                  section(rendered)
   end
