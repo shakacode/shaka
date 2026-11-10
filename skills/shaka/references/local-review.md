@@ -310,7 +310,7 @@ Repository editorial prompts do not replace those definitions. Handle each by cl
 
 | Class | In the loop |
 | --- | --- |
-| `defect` | Reproduce it where practical, fix it in a new commit, review again |
+| `defect` | Reproduce it where practical, fix it in the round's one repair commit, review again |
 | `risk` | Fix it when the fix is clearly correct; otherwise document it |
 | `nit` | Document it for a later decision; never fixed in the loop |
 
