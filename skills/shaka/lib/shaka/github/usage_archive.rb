@@ -87,10 +87,12 @@ module Shaka
 
     def restore(json, visible)
       ref = reference(json)
-      block = read(ref).fetch(ref.fetch('record'))
-      raise Error, 'Archived usage display changed; restore it before publishing.' unless display(block, ref) == visible
+      stored = read(ref)
+      blocks = indices(ref).map { |index| stored.fetch(index) }
+      changed = display(blocks, ref) != visible
+      raise Error, 'Archived usage display changed; restore it before publishing.' if changed
 
-      block
+      blocks.join(SEPARATOR)
     end
 
     def records(body)
@@ -107,14 +109,13 @@ module Shaka
     def replace(body, references)
       region = Publishing.managed_region(body)
       inventory = []
-      compact = region.gsub(UsageRecords::BLOCK) do |block|
-        ref = references[block]
-        next block unless ref
+      compact = runs(region, references).map do |gap, blocks, ref|
+        next gap + blocks.join(SEPARATOR) unless ref
 
         inventory << ref
-        "#{PREFIX}#{JSON.generate(ref)} -->\n#{display(block, ref)}#{END_MARK}"
+        "#{gap}#{PREFIX}#{JSON.generate(ref)} -->\n#{display(blocks, ref)}#{END_MARK}"
       end
-      Publishing.with_archive_guard(replace_region(body, region, inventory_line(inventory) + compact))
+      Publishing.with_archive_guard(replace_region(body, region, inventory_line(inventory) + compact.join))
     end
 
     def replace_region(body, region, replacement)
@@ -123,11 +124,13 @@ module Shaka
       end
     end
 
-    def display(block, ref)
+    # A single-record reference repeats its report; a grouped one holds table records that render nothing.
+    def display(blocks, ref)
       links = ref.fetch('comments').map.with_index do |id, index|
         "[part #{index + 1}](#issuecomment-#{id})"
       end.join(', ')
-      "#{inner(block)}\nUsage archive: #{links}. SHA256: `#{ref.fetch('sha256')}`.\n"
+      shown = ref.key?('record') ? "#{inner(blocks.first)}\n" : ''
+      "#{shown}Usage archive: #{links}. SHA256: `#{ref.fetch('sha256')}`.\n"
     end
   end
 end

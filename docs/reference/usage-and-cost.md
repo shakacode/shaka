@@ -34,17 +34,21 @@ sum can count the same response twice; a minimum marker does not guarantee
 that the reports are disjoint.
 
 Long-lived PRs can accumulate more accounting data than GitHub allows in a description.
-Shaka then keeps the full records in comments on the same PR. **Usage archive** links
-and SHA256 checksums identify them; the tables and pricing notes stay in the description.
+Shaka then keeps the full records in comments on the same PR. A **Usage archive** line
+with links and a SHA256 checksum identifies each set of those comments; the tables and
+pricing notes stay in the description. An update adds about one such line, however many
+reports it archives, so a PR that gathers reviews for weeks keeps fitting.
 Keep those comments. A later update checks their contents before using them and stops
 if a comment is missing or changed. The checksum detects changes; it does not make a
 GitHub comment immutable.
 Updates reuse unchanged records and upload only new or changed records. Keep
 superseded archive comments as accounting history; they are not deleted when a
 record is replaced. An ordered inventory also detects missing description references.
-Older Shaka helpers refuse to replace an archived description. Update Shaka before
-refreshing one; reverting the helper does not undo an existing archive. An interrupted
-upload can leave unreferenced comments while the description keeps its earlier contents.
+Older Shaka helpers refuse to replace an archived description. One installed before
+these grouped lines stops with `Malformed usage archive reference.`: update Shaka, and
+leave the references as they are. Reverting the helper does not undo an existing
+archive. An interrupted upload can leave unreferenced comments while the description
+keeps its earlier contents.
 
 If an archive is deleted, recover its original records from saved reports or a saved
 description. Have a maintainer verify that every record is recovered before replacing
