@@ -19,12 +19,24 @@ class EvidenceBaseFreshnessTest < Minitest::Test
     end
   end
 
-  def test_runs_and_reports_zero_when_the_head_matches_the_base
+  def test_reports_the_count_before_the_check_output_when_the_head_matches_the_base
     with_origin do |root, ref, _origin|
-      result, = run_with_base(root, ref)
+      File.write(File.join(root, '.agents/shaka/bin/test'), "#!/bin/sh\necho check-output >&2\n")
+      result, error = run_with_base(root, ref)
 
       assert_equal 'completed', result.fetch('status')
       assert_equal({ 'base' => 'main', 'behind' => 0 }, result.fetch('base_behind'))
+      assert_operator error.index('head has every commit on origin/main'), :<, error.index('check-output')
+    end
+  end
+
+  def test_refuses_a_revision_or_remote_name_as_the_base
+    with_origin do |root, ref, _origin|
+      [ref, 'origin/main'].each do |base|
+        result, error = run_with_base(root, ref, expected_exit: 1, base:)
+        assert_nil result
+        assert_includes error, '--base takes the base branch name'
+      end
     end
   end
 
@@ -89,12 +101,12 @@ class EvidenceBaseFreshnessTest < Minitest::Test
     end
   end
 
-  def run_with_base(root, ref, expected_exit: 0)
+  def run_with_base(root, ref, expected_exit: 0, base: 'main')
     output, error = capture_io do
       assert_equal expected_exit, Shaka::Evidence::Command.run(
-        ['run', '--root', root, '--ref', ref, '--repository', 'shakacode/shaka', '--command', 'test', '--base', 'main']
+        ['run', '--root', root, '--ref', ref, '--repository', 'shakacode/shaka', '--command', 'test', '--base', base]
       )
     end
-    [JSON.parse(output), error]
+    [output.empty? ? nil : JSON.parse(output), error]
   end
 end

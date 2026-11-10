@@ -279,7 +279,7 @@ phases:
     body: |-
       - Before review run the resolved `validate_local` command when present in the trusted seam,
         otherwise its resolved `validate` command, plus focused checks. Run each fixed command through
-        `shaka evidence run --root DIR --ref TRUSTED_SHA --repository OWNER/REPO --command NAME --base BASE [-- ARGS]`
+        `shaka evidence run --root DIR --ref TRUSTED_SHA --repository OWNER/REPO --command NAME --base BASE_BRANCH [-- ARGS]`
         and retain its JSON result outside the candidate checkout. A `behind_base` result ran
         nothing: update the branch from the base first, then rerun. Defer full validation and
         the resolved `trigger_hosted_ci` command when local validation exists until the repair batch is

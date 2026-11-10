@@ -2,6 +2,7 @@
 
 require 'open3'
 require_relative '../doctor/bounded_command'
+require_relative '../error'
 require_relative '../workflow_version'
 
 module Shaka
@@ -18,26 +19,36 @@ module Shaka
       end
 
       # Yields to run the check only when the head is not behind the base, and adds the count to its result.
+      # The count is printed first, so a long check shows it while running.
       def self.gate(context, base)
         return yield unless base
 
-        report = check(root: context.fetch(:root), base:)
+        report = check(root: context.fetch(:root), base: branch!(base))
+        warn notice(report)
         behind = report.fetch('behind')
-        if behind == 'unknown'
-          warn "shaka: cannot tell whether the head is behind origin/#{base}: #{report['reason']}"
-        elsif behind.positive?
-          return stop(context, report)
+        if behind.is_a?(Integer) && behind.positive?
+          return { 'kind' => 'validation', 'command' => context.fetch(:name), 'status' => 'behind_base',
+                   'base_behind' => report }
         end
         yield.merge('base_behind' => report)
       end
 
-      def self.stop(context, report)
-        warn "shaka: head is #{report['behind']} commit(s) behind origin/#{report['base']}; " \
-             'update the branch first, then rerun'
-        { 'kind' => 'validation', 'command' => context.fetch(:name), 'status' => 'behind_base',
-          'base_behind' => report }
+      # A revision or remote-tracking name would fail the fetch and quietly turn the stop off.
+      def self.branch!(base)
+        return base unless base.match?(%r{\A(?:\h{40}|origin/|refs/)})
+
+        raise Error, "--base takes the base branch name, such as main, not #{base}"
       end
-      private_class_method :stop
+
+      def self.notice(report)
+        base = "origin/#{report['base']}"
+        case report['behind']
+        when 'unknown' then "shaka: cannot tell whether the head is behind #{base}: #{report['reason']}"
+        when 0 then "shaka: head has every commit on #{base}"
+        else "shaka: head is #{report['behind']} commit(s) behind #{base}; update the branch first, then rerun"
+        end
+      end
+      private_class_method :branch!, :notice
 
       def initialize(root, base, fetch_seconds)
         @root = root

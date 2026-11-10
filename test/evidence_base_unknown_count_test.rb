@@ -25,22 +25,23 @@ class EvidenceBaseUnknownCountTest < Minitest::Test
         shallow = File.join(directory, 'shallow')
         system('git', 'clone', '--quiet', '--depth', '1', "file://#{directory}/origin.git", shallow, exception: true)
 
-        assert_equal 'unknown', Shaka::Evidence::BaseFreshness.check(root: shallow, base: 'main').fetch('behind')
+        report = Shaka::Evidence::BaseFreshness.check(root: shallow, base: 'main')
+        assert_equal ['unknown', 'the checkout is shallow'], report.values_at('behind', 'reason')
       end
     end
   end
 
   private
 
-  # A killed orphan can linger until launchd or init reaps it.
+  # A killed orphan can stay a zombie until launchd or init reaps it, which still answers signal 0.
   def gone?(pid)
     50.times do
-      Process.kill(0, pid)
+      state, = Open3.capture2('ps', '-o', 'stat=', '-p', pid.to_s)
+      return true if state.strip.empty? || state.start_with?('Z')
+
       sleep 0.1
     end
     false
-  rescue Errno::ESRCH
-    true
   end
 
   # The transport starts a child and waits on it, as an SSH fetch would.
