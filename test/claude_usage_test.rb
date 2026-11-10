@@ -178,13 +178,13 @@ end
 class ClaudeUsageDiscoveryTest < Minitest::Test
   include ClaudeUsageFixture
 
-  def test_duplicate_session_discovers_only_the_newest_project_and_its_subagents
+  def test_duplicate_session_keeps_usage_unavailable
     Dir.mktmpdir do |directory|
       project_session(directory, 'repo', 999, 100)
       project_session(directory, 'worktree', 100, 200)
       output = discovered(directory)
-      assert_metric output, 'Input', 300
-      refute_includes output, 'Conflicting response copies'
+      assert_includes output, 'Responses: UNKNOWN'
+      refute_match(/\| (100|300|999) \|/, output)
     end
   end
 

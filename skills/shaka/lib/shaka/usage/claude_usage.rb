@@ -164,13 +164,24 @@ module Shaka
       [session] + Dir.glob(File.join(File.dirname(session), File.basename(session, '.jsonl'), 'subagents', '*.jsonl'))
     end
 
-    # Worktree moves can leave several transcripts for one session; use the newest valid copy.
-    def self.session_file(identity, environment: ENV)
+    # Publishers can follow worktree moves; usage discovery keeps ambiguous copies unavailable.
+    def self.session_file(identity, environment: ENV, latest: false)
       return unless identity.is_a?(String) && identity.match?(/\A[0-9a-f-]{36}\z/)
 
       home = environment.fetch('CLAUDE_CONFIG_DIR', File.expand_path('~/.claude'))
       sessions = Dir.glob(File.join(home, 'projects', '*', "#{identity}.jsonl"))
-      sessions.sort_by { |file| [File.mtime(file), file] }.reverse.find { |file| session_of(file) == identity }
+      return newest_session(sessions, identity) if latest
+
+      sessions.first if sessions.one? && session_of(sessions.first) == identity
+    end
+
+    def self.newest_session(sessions, identity)
+      candidates = sessions.filter_map do |file|
+        [File.mtime(file), file]
+      rescue SystemCallError
+        nil
+      end
+      candidates.sort.reverse_each.find { |_time, file| session_of(file) == identity }&.last
     end
 
     def self.session_of(file)
@@ -185,7 +196,7 @@ module Shaka
       nil
     end
 
-    private_class_method :session_of
+    private_class_method :session_of, :newest_session
 
     def initialize(files, turns, all_turns: false)
       @responses = {}

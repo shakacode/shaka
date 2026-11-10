@@ -37,6 +37,8 @@ module ClaudePublisherAttributionFixture
     assert_nil result['publisher_note']
   end
 
+  def prepare(environment) = Shaka::PublisherAttribution.prepare(claude_content, environment:)
+
   def claude_content
     { 'identity' => { 'agent' => 'Claude Code', 'provider' => 'Anthropic', 'model' => 'UNKNOWN',
                       'effort' => 'UNKNOWN' },
@@ -119,8 +121,20 @@ class ClaudePublisherAttributionTest < Minitest::Test
 
   def test_missing_session_is_unknown
     missing = { 'CLAUDE_CODE_SESSION_ID' => CLAUDE_ID, 'CLAUDE_CONFIG_DIR' => '/missing' }
-    assert_includes prepare(missing)['publisher_note'], 'session unavailable or ambiguous'
+    assert_includes prepare(missing)['publisher_note'], 'session unavailable'
   end
+
+  def test_two_detected_hosts_keep_the_unverified_note
+    with_claude_session(prompt, response) do |environment, _file|
+      result = prepare(environment.merge('CODEX_THREAD_ID' => CLAUDE_ID))
+      assert_equal claude_content['identity'], result['identity']
+      assert_includes result['publisher_note'], 'Native publisher settings unavailable'
+    end
+  end
+end
+
+class ClaudePublisherSessionDiscoveryTest < Minitest::Test
+  include ClaudePublisherAttributionFixture
 
   def test_duplicate_session_uses_the_most_recent_transcript
     with_claude_session(prompt, response('claude-older', 'low')) do |environment, file|
@@ -145,15 +159,14 @@ class ClaudePublisherAttributionTest < Minitest::Test
     end
   end
 
-  def test_two_detected_hosts_keep_the_unverified_note
-    with_claude_session(prompt, response) do |environment, _file|
-      result = prepare(environment.merge('CODEX_THREAD_ID' => CLAUDE_ID))
-      assert_equal claude_content['identity'], result['identity']
-      assert_includes result['publisher_note'], 'Native publisher settings unavailable'
+  def test_dangling_transcript_does_not_hide_a_valid_session
+    with_claude_session(prompt, response) do |environment, file|
+      dangling = another_project(environment, file, prompt)
+      File.unlink(dangling)
+      File.symlink('/missing-transcript', dangling)
+      assert_publisher_settings(environment, %w[claude-opus-5-5 medium])
+      File.unlink(file)
+      assert_includes prepare(environment)['publisher_note'], 'session unavailable'
     end
   end
-
-  private
-
-  def prepare(environment) = Shaka::PublisherAttribution.prepare(claude_content, environment:)
 end
