@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'publication_test'
+require 'shaka/visible_prose'
 
 # A reader saw Recommendation: Merge with no hint of how carefully to review: the checkpoint's risk level lived only
 # in its own comment, and the code to read first sat apart from the reasons for that level.
@@ -39,7 +40,7 @@ class PublicationRiskReviewTest < Minitest::Test
     expected = "## Risk and review\n\n**High risk** is meant for a person to merge after a careful review that " \
                'starts with the verification: does the evidence prove the change works, before the code?' \
                "\n\n**Flagged by the implementer:**\n- `lib/merge.rb`, compares the queue base before submitting." \
-               "\n\n**Why high**, from the [checkpoint](#{CHECKPOINT}):\n\n- Changes who may merge."
+               "\n\n**Why high**, from the [checkpoint](#{CHECKPOINT}):\n\n> - Changes who may merge."
     assert_equal expected, section(render(risk: HIGH))
   end
 
@@ -57,7 +58,7 @@ class PublicationRiskReviewTest < Minitest::Test
 
     assert_includes text, "**High**, raised from the reviewer's low by `merge_and_trust` (`lib/seam.rb`). " \
                           'High risk is meant for a person'
-    assert_includes text, "**The [checkpoint](#{CHECKPOINT}) reviewer rated it low:**\n\n- Changes who may merge."
+    assert_includes text, "**The [checkpoint](#{CHECKPOINT}) reviewer rated it low:**\n\n> - Changes who may merge."
     refute_includes text, 'Why high'
   end
 
@@ -90,13 +91,6 @@ class PublicationRiskReviewTest < Minitest::Test
     text = section(render(risk: HIGH.merge('paths_read' => false)))
 
     assert_includes text, "#{Shaka::PostImplementationRisk::UNREAD_FILES}\n\n**Why high**"
-  end
-
-  def test_a_link_that_is_not_a_pr_comment_is_left_out
-    text = section(render(risk: HIGH.merge('url' => 'https://example.com/x')))
-
-    assert_includes text, '**Why high**, from the checkpoint:'
-    refute_includes text, 'example.com'
   end
 
   def test_before_the_checkpoint_rates_the_head_the_flagged_code_still_shows
@@ -174,5 +168,30 @@ class PublicationRiskRecordTest < Minitest::Test
     record = { 'summary' => 'R1', 'body' => '<!-- shaka:begin -->' }
 
     assert_raises(Shaka::Error) { render('risk_record' => record) }
+  end
+end
+
+# The checkpoint reviewer's reasons are another author's words, so they are quoted and linked only to a PR comment.
+class PublicationRiskReasonsTest < Minitest::Test
+  HIGH = PublicationRiskReviewTest::HIGH
+
+  def render(...) = PublicationRiskReviewTest.new('render').render(...)
+  def section(rendered) = PublicationRiskReviewTest.new('section').section(rendered)
+
+  # The description's author cannot shorten the reviewer's reasons, so they stay out of the prose limits.
+  def test_quoted_reasons_do_not_count_toward_the_prose_limits
+    html = '<p><strong>Why high</strong>, from the checkpoint:</p><blockquote><ul><li>Changes who may merge.</li>' \
+           '</ul></blockquote>'
+    prose = Shaka::VisibleProse.new(html).paragraphs.flatten.join(' ')
+
+    assert_includes section(render(risk: HIGH)), "\n\n> - Changes who may merge."
+    refute_includes prose, 'Changes who may merge.'
+  end
+
+  def test_a_link_that_is_not_a_pr_comment_is_left_out
+    text = section(render(risk: HIGH.merge('url' => 'https://example.com/x')))
+
+    assert_includes text, '**Why high**, from the checkpoint:'
+    refute_includes text, 'example.com'
   end
 end

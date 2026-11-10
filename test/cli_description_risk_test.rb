@@ -74,7 +74,7 @@ class CliDescriptionRiskTest < Minitest::Test
       assert_includes body, "## Risk and review\n\n**High**, raised from the reviewer's low by `merge_and_trust` " \
                             "(`#{CHANGED}`). High risk is meant for a person to merge"
       assert_includes body, '**The [checkpoint](https://github.com/owner/repo/pull/1#issuecomment-7) reviewer ' \
-                            "rated it low:**\n\n- Prints text only."
+                            "rated it low:**\n\n> - Prints text only."
     end
   end
 

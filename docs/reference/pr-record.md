@@ -41,7 +41,7 @@ The **Risk and review** section follows the summary. It says what the level asks
 of you, then lists:
 
 - **Flagged by the implementer**: code needing particular attention, each with its reason.
-- The checkpoint reviewer's reasons. When a high-risk area raised the level, the
+- The checkpoint reviewer's reasons, quoted. When a high-risk area raised the level, the
   section names the file and area and shows the reviewer's own rating. Low-risk
   reasons are folded.
 - Your repository's own risk record, folded, when your

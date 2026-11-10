@@ -75,7 +75,9 @@ module Shaka
     end
 
     # The reasons are the checkpoint reviewer's, labeled as theirs; when an area raised the level, the label says
-    # what the reviewer rated instead. A low rating keeps them folded.
+    # what the reviewer rated instead. A low rating keeps them folded. Otherwise they are quoted, which marks them
+    # as another author's words and keeps them out of the prose limits, since the description's author cannot
+    # shorten them.
     def reasons(rated)
       reasons = Array(rated['reasons'])
       return [] if reasons.empty?
@@ -84,7 +86,7 @@ module Shaka
       level = rated['level']
       return ["<details>\n<summary>Why low, from the checkpoint</summary>\n\n#{list}\n\n</details>"] if level == 'low'
 
-      ["#{reasons_label(rated, checkpoint(rated['url']))}\n\n#{list}"]
+      ["#{reasons_label(rated, checkpoint(rated['url']))}\n\n#{list.gsub(/^/, '> ')}"]
     end
 
     def reasons_label(rated, checkpoint)
