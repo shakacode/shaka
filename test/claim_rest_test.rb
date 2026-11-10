@@ -62,6 +62,12 @@ class ClaimRestTest < Minitest::Test
     end
   end
 
+  def test_a_pull_request_without_body_metadata_is_an_error_not_a_clear_result
+    pull = PULL.except('body').merge('title' => 'Unrelated', 'head' => { 'ref' => 'alex/other' })
+    error = assert_raises(Shaka::Error) { claim_over_rest('392', pulls: [pull]) }
+    assert_includes error.message, 'incomplete pull request metadata'
+  end
+
   def test_a_failed_rest_read_after_the_refusal_is_an_error_not_a_clear_result
     inner = rest_runner(pulls: [])
     broken = lambda do |argv, **|

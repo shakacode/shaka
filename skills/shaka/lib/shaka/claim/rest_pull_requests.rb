@@ -30,9 +30,10 @@ module Shaka
                                    .call("repos/#{repository}/pulls").map { |pull| row(pull) }
       end
 
+      # REST sends null for an empty body; a missing key stays missing so References refuses it.
       def row(pull)
         { 'number' => pull['number'], 'title' => pull['title'], 'url' => pull['html_url'],
-          'headRefName' => pull.dig('head', 'ref'), 'body' => pull['body'].nil? ? '' : pull['body'],
+          'headRefName' => pull.dig('head', 'ref'), 'body' => pull.key?('body') ? pull['body'] || '' : nil,
           'closingIssuesReferences' => [] }
       end
 
