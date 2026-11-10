@@ -2,6 +2,7 @@
 
 require 'open3'
 require_relative '../error'
+require_relative '../local_review/process'
 require_relative 'candidate_tree'
 
 module Shaka
@@ -9,13 +10,13 @@ module Shaka
     # Runs a check in its own process group and recaptures the candidate tree while it runs.
     # An edit to the checkout voids the result anyway, so the check stops within one interval
     # plus a capture instead of finishing first. Only the check's own group is signaled.
+    # An edit undone before the next capture is not seen, as the comparison after the check
+    # never saw one either.
     class TreeWatch
       MESSAGE = 'worktree changed mid-run'
       # Seconds between captures. One capture took about 2 seconds on this repository under heavy
       # load, so an edit stops the check well within a minute.
       DEFAULT_INTERVAL = 15
-      # Seconds the check gets to exit after TERM before its group is killed.
-      GRACE = 5
       Outcome = Data.define(:status, :changed_tree) do
         def stopped? = !changed_tree.nil?
 
@@ -41,7 +42,7 @@ module Shaka
           input.close
           readers = [output, error].map { |stream| Thread.new { stream.read } }
           changed = watch(waiter)
-          $stderr.write(*readers.map(&:value))
+          $stderr.write(*(changed ? drain(readers) : readers.map(&:value)))
           Outcome.new(status: waiter.value, changed_tree: changed)
         ensure
           # An interrupted helper would otherwise leave the check running in its separate group.
@@ -67,20 +68,19 @@ module Shaka
         nil
       end
 
-      # The group outlives its leader when a child ignores TERM, so KILL follows either way.
+      # TERM, then KILL for members that outlive their leader. A lasting macOS denial of the KILL
+      # leaves the result to report the stop anyway.
       def stop(waiter, tree = nil)
         warn "shaka: #{MESSAGE}; stopping the check" if tree
-        signal('TERM', waiter.pid)
-        waiter.join(GRACE)
-        signal('KILL', waiter.pid)
+        LocalReviewProcess.terminate(waiter)
+        tree
+      rescue Errno::EPERM
         tree
       end
 
-      def signal(name, pid)
-        Process.kill(name, -pid)
-      rescue Errno::ESRCH
-        nil
-      end
+      # A descendant that left the group can keep a pipe open after the stop, so a stopped
+      # check's output is whatever arrived shortly after it.
+      def drain(readers) = readers.map { |reader| LocalReviewProcess.thread_output(reader) }
     end
   end
 end
