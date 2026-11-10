@@ -18,6 +18,15 @@ class LocalReviewArgumentErrorTest < Minitest::Test
     assert_unlaunched('', 'unexpected argument ""')
   end
 
+  # The result records what was asked for, as every other `review run` outcome does.
+  def test_parse_failure_keeps_the_requested_model_and_effort
+    with_repository do |root, base, head, _bin|
+      output, = Open3.capture3(*review_arguments(root, base, head, 'openai/codex', effort: 'high', model: 'gpt-x'),
+                               '--model medium')
+      assert_equal %w[gpt-x high], JSON.parse(output).values_at('requested_model', 'requested_effort')
+    end
+  end
+
   private
 
   def assert_unlaunched(extra, reason)

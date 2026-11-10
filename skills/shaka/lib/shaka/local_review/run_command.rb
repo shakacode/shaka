@@ -2,6 +2,7 @@
 
 require 'optparse'
 require_relative '../call_log'
+require_relative '../reviewer_settings'
 
 module Shaka
   # `shaka review run`. A caller waits on its JSON, so an argument it cannot parse, such as
@@ -15,12 +16,16 @@ module Shaka
 
       present(dispatch('run'))
     rescue OptionParser::ParseError => e
-      present({ 'status' => 'not_completed', 'head' => @options[:head], 'reviewer' => @options[:reviewer],
-                'attempted' => false, 'failure_stage' => 'setup_failure', 'skip_evidence' => 'not_eligible',
-                'reason' => e.message })
+      present(ReviewerSettings.attach(unparsed(e), model: @options[:model], effort: @options[:effort], notices: nil))
     end
 
     private
+
+    def unparsed(error)
+      { 'status' => 'not_completed', 'head' => @options[:head], 'reviewer' => @options[:reviewer],
+        'attempted' => false, 'failure_stage' => 'setup_failure', 'skip_evidence' => 'not_eligible',
+        'reason' => error.message }
+    end
 
     def run_parser
       OptionParser.new do |flags|
