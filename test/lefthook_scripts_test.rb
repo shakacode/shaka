@@ -86,12 +86,13 @@ class LefthookScriptsTest < Minitest::Test
 
   def test_checks_extensionless_ruby_scripts_and_skips_other_files
     write('tool', "#!/usr/bin/env ruby\nputs(\n")
+    write('Rakefile', "task(\n")
     write('notes.md', "puts(\n")
     write('run.sh', "#!/bin/sh\nputs(\n")
-    output, status = script('ruby-check', 'fix', 'tool', 'notes.md', 'run.sh', 'deleted.rb')
+    output, status = script('ruby-check', 'fix', 'tool', 'Rakefile', 'notes.md', 'run.sh', 'deleted.rb')
 
     refute_predicate status, :success?
-    assert_includes output, 'Syntax errors in: tool'
+    assert_includes output, 'Syntax errors in: tool, Rakefile'
     _, others = script('ruby-check', 'fix', 'notes.md', 'run.sh')
 
     assert_predicate others, :success?

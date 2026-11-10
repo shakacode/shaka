@@ -10,7 +10,8 @@ require 'tmpdir'
 #   ruby-check branch       pre-push: lint the Ruby files each pushed commit changed since
 #                           its merge base with SHAKA_BASE_REF (default origin/main). It
 #                           reads the pushed refs from standard input, or checks HEAD.
-# Ruby files are *.rb, *.rake, *.gemspec, Gemfile, and files with a ruby shebang.
+# Ruby files are *.rb, *.rake, *.gemspec, Gemfile, Rakefile, config.ru, and files with a
+# ruby shebang.
 
 RUBY_NAMES = %w[Gemfile Rakefile config.ru].freeze
 
@@ -18,7 +19,7 @@ def ruby_file?(path)
   return false if File.symlink?(path) || !File.file?(path)
   return true if path.end_with?('.rb', '.rake', '.gemspec') || RUBY_NAMES.include?(File.basename(path))
 
-  File.open(path, 'rb') { |file| file.gets.to_s.match?(/\A#!.*\bruby\b/) }
+  File.open(path, 'rb') { |file| file.read(256).to_s.lines.first.to_s.match?(/\A#!.*\bruby\b/) }
 end
 
 RUBOCOP_MESSAGES = { 1 => 'RuboCop offences remain. Fix them, or skip the hook once with --no-verify.',
