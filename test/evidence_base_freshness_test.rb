@@ -32,7 +32,7 @@ class EvidenceBaseFreshnessTest < Minitest::Test
 
   def test_refuses_a_revision_or_remote_name_as_the_base
     with_origin do |root, ref, _origin|
-      [ref, ref[0, 7], 'HEAD', 'origin/main'].each do |base|
+      [ref, ref[0, 7], 'HEAD', 'HEAD~1', 'main^', '@{-1}', 'origin/main'].each do |base|
         result, error = run_with_base(root, ref, expected_exit: 1, base:)
         assert_nil result
         assert_includes error, '--base takes the base branch name'

@@ -33,9 +33,9 @@ module Shaka
         yield.merge('base_behind' => report)
       end
 
-      # A revision or remote-tracking name would fail the fetch and quietly turn the stop off.
+      # A revision, revision expression, or remote-tracking name would fail the fetch and quietly turn the stop off.
       def self.branch!(base)
-        return base unless base == 'HEAD' || base.match?(%r{\A(?:\h{7,}\z|origin/|refs/)})
+        return base if base.match?(%r{\A[\w.\-/]+\z}) && !base.match?(%r{\A(?:HEAD\z|\h{7,}\z|origin/|refs/)})
 
         raise Error, "--base takes the base branch name, such as main, not #{base}"
       end
