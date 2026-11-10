@@ -42,7 +42,18 @@ module Shaka
         []
       end
 
-      def broken_links(folder) = entries(folder).select { |path| File.symlink?(path) && !File.exist?(path) }
+      def broken_links(folder) = entries(folder).select { |path| File.symlink?(path) && broken?(path) }
+
+      # A target that cannot be reached is unread, not broken, so a working link is never called broken.
+      def broken?(path)
+        File.stat(path)
+        false
+      rescue Errno::ENOENT, Errno::ENOTDIR, Errno::ELOOP
+        true
+      rescue SystemCallError => e
+        @unread << "#{shown(path)} not read: #{first_line(e.message)}"
+        false
+      end
 
       # Only a folder holding SKILL.md loads as a skill, so a broken link or stray file is no copy.
       def skills(folder) = entries(folder).select { |path| File.file?(File.join(path, 'SKILL.md')) }
@@ -56,12 +67,15 @@ module Shaka
         sources.select { |_name, where| where.length > 1 }
       end
 
+      # One unreadable plugin is named; the others are still checked.
       def add_plugin_skills(sources)
         enabled_plugins.each do |plugin, install_path|
           folder = File.join(install_path, 'skills')
           skills(folder).each { |path| sources[File.basename(path)] << "#{plugin} plugin" } if File.directory?(folder)
+        rescue ArgumentError, TypeError => e
+          @unread << "#{plugin} plugin skills not read: #{first_line(e.message)}"
         end
-      rescue JSON::ParserError, SystemCallError, KeyError, TypeError, NoMethodError, ArgumentError => e
+      rescue JSON::ParserError, SystemCallError, KeyError, TypeError, NoMethodError => e
         @unread << "Claude Code plugin skills not read: #{first_line(e.message)}"
       end
 
