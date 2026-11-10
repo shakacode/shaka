@@ -6,8 +6,13 @@ require_relative 'trusted_command_fixture'
 class EvidenceTrustedCommandCleanupTest < Minitest::Test
   include TrustedCommandFixture
 
-  # Stands in for a validator that cleans untracked files, such as `git clean -fdx`.
-  SELF_REMOVING = "#!/bin/sh\nrm -- \"$0\"\n"
+  # Stands in for a validator that cleans untracked files and directories, such as `git clean -fdx`.
+  SELF_REMOVING = <<~SH
+    #!/bin/sh
+    set -eu
+    root=$(git -C "$(dirname -- "$0")" rev-parse --show-toplevel)
+    rm -rf "$root/.agents"
+  SH
 
   def test_run_tolerates_a_command_that_removes_the_copy
     with_older_branch(validate: SELF_REMOVING) do |root, trusted, _head|

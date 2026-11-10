@@ -41,7 +41,7 @@ module Shaka
         yield
       ensure
         File.delete(target) if @written && File.file?(target)
-        @created.reverse_each { |directory| Dir.rmdir(directory) if Dir.empty?(directory) }
+        @created.reverse_each { |directory| Dir.rmdir(directory) if removable?(directory) }
       end
 
       private
@@ -67,6 +67,8 @@ module Shaka
         end
       end
 
+      # The run may already have removed a directory this created, as `git clean -fdx` does.
+      def removable?(directory) = File.directory?(directory) && Dir.empty?(directory)
       def target = File.join(@root, @path)
       def parent(index) = File.join(@root, *File.dirname(@path).split('/').first(index + 1))
       def relative(directory) = directory.delete_prefix("#{@root}/")
