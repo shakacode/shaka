@@ -18,7 +18,5 @@ refactors, test-only changes, and implementation improvements with no visible
 effect. If there is no user-visible change, write "None". Recheck the note after
 revisions.
 
-For each supported setting that changes for users, include its key, the old and
-new behavior or value, and any action existing repositories need to take.
-Repository-only policy changes belong under Settings changes. The release
-collects these notes into CHANGELOG.md. -->
+Carry user-visible setting changes and their migration details from Settings
+changes into this note. The release collects these notes into CHANGELOG.md. -->
