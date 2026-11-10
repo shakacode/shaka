@@ -8,6 +8,7 @@ and use it across your repositories.
 | Codex | `$shaka` | Desktop app or CLI; the optional RCT skill needs desktop task tools |
 | Claude Code | `/shaka` | Desktop app or CLI; Claude tower skills need desktop session tools |
 | Cursor | `/shaka` | Start a new Agent chat after installation |
+| GitHub Copilot | `/shaka` | Copilot CLI or VS Code Agent chat; see [Copilot setup](#github-copilot) |
 | OpenCode | `/shaka` | Use the installed skill in a session; an optional launcher is also available |
 | Pi | Load the installed Shaka skill | Uses Pi's existing permissions; no separate Shaka launcher |
 
@@ -27,6 +28,31 @@ runs Shaka.
 To support another coding agent, [contribute](../CONTRIBUTING.md) installation
 instructions, a demonstrated task, and known limitations. Keep environment-specific
 code separate from the shared workflow.
+
+## GitHub Copilot
+
+Ask Copilot to install Shaka, then start a new CLI session or VS Code Agent chat:
+
+> Install Shaka from https://github.com/shakacode/shaka for GitHub Copilot.
+
+In Copilot CLI, project skills override personal skills with the same name.
+Before using `/shaka` in an untrusted checkout, use
+[`ignoredSkillsLocations`](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference)
+to exclude that checkout's `.github/skills`, `.claude/skills`, and `.agents/skills`
+directories, including any added project roots. Check the discovered Shaka path
+with `/skills` before invoking it.
+
+Start with `/shaka` and your task. Shaka uses Copilot's existing model, tools,
+and permissions. Both [Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills)
+and [VS Code](https://code.visualstudio.com/docs/agent-customization/agent-skills)
+document personal skills in `~/.copilot/skills`.
+
+The installer is tested for Copilot's skills directory; a real Copilot delivery
+has not yet been validated. Shaka has no Copilot launcher, native token-usage
+reader, or Copilot local-review adapter. Local review uses a configured reviewer
+such as Codex. When none is available and the host can open a fresh chat, Shaka
+uses that chat with the implementation model as the fallback reviewer.
+This installation is for local use; it does not install Shaka in Copilot's cloud agent.
 
 ## Cloud agents
 

@@ -10,6 +10,9 @@ module CliMergeFixture
 
   COMMAND = SHAKA_COMMAND
   HEAD = 'a' * 40
+  # A person's confirmation of the head, which passes merge.auto_merge_max_risk for tests of other gates; the risk
+  # gate itself reads a checkpoint rating these fakes do not publish.
+  CONFIRMED = ['--limits-confirmed-head', HEAD].freeze
   FAKE_GH = <<~'RUBY_SCRIPT'
     #!/usr/bin/env ruby
     require 'json'

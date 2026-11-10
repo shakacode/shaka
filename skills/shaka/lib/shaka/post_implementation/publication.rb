@@ -32,13 +32,15 @@ module Shaka
     SCOPE = 'Ruby checked this report\'s format and commit; the reviewer judged value, not correctness. ' \
             'Required checks, reviews, and merge authority still apply.'
 
-    # message and auto_merge are called only for a ready checkpoint; auto_merge takes the verification
-    # verdict and returns a line or nil.
-    def initialize(result, head:, repository:, message: nil, auto_merge: nil)
+    # message and previews[:auto_merge] are called only for a ready checkpoint; auto_merge takes the
+    # verification verdict and risk assessment as verdict: and assessment:, and returns a line or nil.
+    # previews[:risk] takes the reviewer's rating and returns PostImplementationRisk's assessment;
+    # without it, changed files count as unread.
+    def initialize(result, head:, repository:, message: nil, previews: {})
       @result = result
+      @previews = previews
       @head = head
       @message = message
-      @auto_merge = auto_merge
       @repository = repository
       @revision = "[`#{head[0, 7]}`](https://github.com/#{repository}/commit/#{head})"
       @usage = native_usage
@@ -48,7 +50,7 @@ module Shaka
     def render
       @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
-      body += "\n\n#{[*@auto_merge&.call(@adequacy&.fetch('verdict')), merge_text].join("\n\n")}" if @state == 'ready'
+      body += "\n\n#{[*auto_merge_line, merge_text].join("\n\n")}" if @state == 'ready'
       "#{identity}\n\n# Checkpoint for #{@revision}\n\n#{body}\n\n#{footer}"
     end
 
@@ -82,7 +84,7 @@ module Shaka
       action, next_action = recommendation(report)
       summary = @summary = report.fetch('summary', report.fetch('reasons').first)
       ["## Reviewer recommendation: #{action}", "**Next:** #{owner_action(report, next_action)}",
-       verdict(report, summary), adequacy(report), supporting_analysis(report, summary)].join("\n\n")
+       verdict(report, summary), checks(report), supporting_analysis(report, summary)].join("\n\n")
     end
 
     # One paragraph states the verdict and its evidence; the concern list follows only when there is one.

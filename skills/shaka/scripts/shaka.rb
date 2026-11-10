@@ -37,6 +37,7 @@ require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/evidence/command'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
+require_relative '../lib/shaka/merge_risk_gate'
 require_relative '../lib/shaka/merge_limits'
 require_relative '../lib/shaka/opening_publication'
 require_relative '../lib/shaka/opening_prose'
@@ -104,6 +105,12 @@ end
 
 def merge_limits(options, seam)
   Shaka::MergeLimits.new(seam ? seam.merge.fetch('limits') : {}, confirmed_head: options[:confirmed_head])
+end
+
+# merge.auto_merge_max_risk limits what an agent may merge without a confirmed head to that risk level and
+# below. Without trusted settings the packaged level and high-risk areas apply.
+def auto_merge_gate(seam, checkpoint, confirmed_head)
+  Shaka::MergeRiskGate.new(seam, checkpoint, confirmed_head:)
 end
 
 def require_merge_ref!(options)
@@ -230,7 +237,7 @@ end
 
 # Heads a user approved for merge although a gate would otherwise hand them back.
 def confirmation_flags(flags, options)
-  flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits/floor') { |sha| options[:confirmed_head] = sha }
+  flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits/risk') { |sha| options[:confirmed_head] = sha }
   flags.on('--empty-checks-confirmed-head SHA', 'Head the user told you to merge with no required checks') do |sha|
     options[:empty_checks_confirmed_head] = sha
   end
@@ -453,7 +460,7 @@ begin
                                               seam_required_checks:)
              merge.empty_checks_confirmed_head = options[:empty_checks_confirmed_head]
              merge.auto = options[:auto]
-             merge.review_floor = Shaka::MergeReviewFloor.from(seam, confirmed_head: options[:confirmed_head])
+             merge.risk_gate = auto_merge_gate(seam, review.fetch(:checkpoint), options[:confirmed_head])
              merge.hold = Shaka::MergeHold.from(seam)
              merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
                         limits: merge_limits(options, seam), squash_message:)

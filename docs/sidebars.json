@@ -20,6 +20,7 @@
       "items": [
         "configure-repository",
         "settings-guide",
+        "changelog-in-pr-descriptions",
         "coding-agents",
         "linear",
         "pstack",

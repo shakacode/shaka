@@ -73,7 +73,7 @@ class PublicationMetricsTest < Minitest::Test
   def test_diff_size_comes_from_the_live_pull_request_and_closes_intent
     pull = { 'changed_files' => 2, 'additions' => 5, 'deletions' => 1,
              'shaka_changed_files' => [{ 'filename' => 'lib/a.rb' }, { 'filename' => 'test/a_test.rb' }] }
-    rendered = Shaka::IntentVerification.render({ 'intent' => INTENT, 'verification' => VERIFICATION }, nil, nil, pull)
+    rendered = Shaka::IntentVerification.render({ 'intent' => INTENT, 'verification' => VERIFICATION }, nil, pull)
 
     assert rendered.first.end_with?("**Scope:** #{INTENT['scope']} (2 files, +5 / −1 lines)\n\n" \
                                     "<details>\n<summary>Files: Code 1 · Tests 1</summary>\n\n" \

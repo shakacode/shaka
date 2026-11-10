@@ -33,4 +33,4 @@ checked.
 
 Edits that only change this repository's own `.agents/shaka/config.yml` values are
 policy changes, not setting changes. List them in the same section, marked
-"this repository only", with no changelog entry.
+"this repository only", and write "None" in the Changelog section for them.

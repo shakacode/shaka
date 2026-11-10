@@ -2,6 +2,7 @@
 
 require_relative 'merge_test'
 require 'shaka/merge_hold'
+require 'shaka/merge_risk_gate'
 require 'shaka/repository_config'
 require_relative 'repository_fixture'
 
@@ -31,8 +32,8 @@ class MergeHoldTest < Minitest::Test
     assert_blocked(/hold label "hold"/)
   end
 
-  def test_limit_and_floor_confirmations_do_not_pass_a_hold
-    @merge.review_floor = Shaka::MergeReviewFloor.new(2, confirmed_head: HEAD)
+  def test_limit_and_risk_confirmations_do_not_pass_a_hold
+    @merge.risk_gate = Shaka::MergeRiskGate.new(nil, Struct.new(:risk).new(nil), confirmed_head: HEAD)
     @client.snapshots = [labeled('hold')]
     error = assert_raises(Shaka::Error) do
       @merge.call(head: HEAD, base: BASE, walkthrough: 17, limits: Shaka::MergeLimits.new(confirmed_head: HEAD))

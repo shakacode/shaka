@@ -57,6 +57,43 @@ checkpoint: # Defaults: the final "did we build the right thing?" check before m
   # Default: Shaka's checkpoint prompt. A file here replaces it; prefer custom_instructions_file.
   # replacement_prompt_file: .agents/shaka/checkpoint-prompt.md
 
+high_risk_areas: # Defaults: a change here is always high risk, whatever the checkpoint rates it.
+  # A list here replaces that area's patterns; [] turns the area off; a new name adds an area.
+  database: [db/migrate/**/*, '**/migrations/**/*', db/schema.rb, db/structure.sql, '**/*.sql', '**/schema.prisma']
+  persistence: [config/database.yml, config/storage.yml, 'config/cache*.yml', config/redis.yml, config/sidekiq.yml]
+  infrastructure: ['**/*.tf', '**/*.tfvars', infra/**/*, k8s/**/*, '**/charts/**/*', '**/Dockerfile*',
+                   '**/docker-compose*.yml', .controlplane/**/*, fly.toml]
+  ci_and_trust: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS]
+  # A path segment named for a word, alone or joined by _ or -, as auth_controller.rb or oauth/; not authors.md.
+  security:
+    - '**/{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,.*,_*,-*}'
+    - '**/*[_-]{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,.*,_*,-*}'
+    - '**/{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,_*,-*}/**/*'
+    - '**/*[_-]{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,_*,-*}/**/*'
+  shaka: [.agents/shaka/**/*]
+  # Ours: Shaka's merge, trust, evidence and settings code, which the retired review floors held from Auto, and
+  # the checkpoint's rating rules and the merge rules, so a PR cannot rate a change to them itself.
+  merge_and_trust: ['skills/shaka/lib/shaka/{merge,trust,release}*.rb',
+                    'skills/shaka/lib/shaka/{merge,trust,release}*/**/*',
+                    'skills/shaka/lib/shaka/{pull_changed_files,required_checks,ci_review_wait,review_coverage}.rb',
+                    'skills/shaka/lib/shaka/{public_comments,defaults,seam,repository_config,configuration}.rb',
+                    'skills/shaka/lib/shaka/{public_comments,evidence,seam,repository_config,configuration}/**/*',
+                    'skills/shaka/lib/shaka/publication/{feature_guard,verification_gates}.rb',
+                    'skills/shaka/lib/shaka/post_implementation/**/*', 'skills/shaka/lib/shaka/post_implementation*.rb',
+                    'skills/shaka/config/{post-implementation-*.md,workflow.yml,enforcement.yml,defaults.yml}',
+                    skills/shaka/SKILL.md, skills/shaka/scripts/shaka.rb]
+
+medium_risk_areas: # Defaults: a change here counts as at least medium risk, so a person skims it.
+  agent_instructions: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', .claude/**/*, .cursor/**/*]
+  # Ours: Shaka's instructions, prompts and references; its Ruby code is rated on its own.
+  shaka_instructions: ['skills/**/*.{md,yml}']
+  # Ours: guides for Shaka's users; the reference pages under docs/reference/ are rated on their own.
+  user_docs: ['docs/*', 'docs/articles/**/*', 'docs/img/**/*']
+  # Ours: validation, install and update code, which reaches every user.
+  validation_install: [bin/**/*, .rubocop.yml, .ruby-version, 'Gemfile{,.lock}', shaka.gemspec,
+                       'skills/shaka/lib/shaka/{installer,update_check,github}.rb',
+                       'skills/shaka/lib/shaka/{install,update_check,github}/**/*']
+
 merge:
   preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.
   # required_checks: [validate] # Default: none; use when GitHub requires no checks.
@@ -64,11 +101,9 @@ merge:
     max_changed_files: 29
     max_changed_lines: 999 # Additions plus deletions.
     max_commits: 9
-  # Default: 5, any human review floor (below). Ours: 2, so Auto would merge code, tests, and reference
-  # pages and hand back other docs, agent instructions, and settings, merge, trust, validation, and
-  # install code.
-  # While preference is ask, each ready checkpoint says whether Auto would merge the PR.
-  auto_max_review_floor: 2
+  # Default. Auto merges only a PR the checkpoint rates low risk with no file in high_risk_areas (above);
+  # medium would add medium risk. While preference is ask, each ready checkpoint says whether Auto would merge.
+  auto_merge_max_risk: low
   hold_labels: [hold] # Default. Shaka never merges a PR carrying one of these; remove it to merge.
 
 branches:
@@ -82,48 +117,6 @@ pr_description:
   show_human_comments: true # Default: list comments people wrote on the PR.
   max_human_comments: 20 # Default: how many of those comments to list.
   time_zone: America/Los_Angeles # Ours: the PR timings' readers. Default: UTC, or the user's zone when set.
-  # Default: Shaka's shipped floors. The lowest human review effort a PR may claim, from the
-  # files it changes. This list replaces the default one. Ours adds the first three floors and the
-  # validation and install floor, names merge-gate and trust code in the trust floor, and
-  # exempts Shaka's Ruby library code from the agent-instructions floor, so
-  # auto_max_review_floor can tell them apart. The rest are the defaults.
-  human_review_floors:
-    - level: 5
-      reason: changes docs for Shaka's users
-      paths: [docs/**/*]
-      except: [docs/reference/**/*]
-    - level: 2 # A skim, and at auto_max_review_floor, so Auto can merge a reference-only PR.
-      reason: changes a reference page
-      paths: [docs/reference/**/*]
-    - level: 4
-      reason: changes evidence or settings checks
-      paths: ['skills/shaka/lib/shaka/{evidence,seam,repository_config,configuration}/**/*',
-              'skills/shaka/lib/shaka/{seam,repository_config,configuration}.rb']
-    - level: 5
-      reason: changes Shaka's repository configuration
-      paths: [.agents/shaka/**/*]
-    - level: 4
-      reason: changes trust, merge, authentication, or release paths
-      paths: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS,
-              'skills/shaka/lib/shaka/{required_checks,ci_review_wait,review_coverage,public_comments,defaults}.rb',
-              'skills/shaka/lib/shaka/publication/{review_effort_floor,feature_guard,verification_gates}.rb',
-              skills/shaka/lib/shaka/public_comments/**/*]
-      words: [auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
-              credential]
-      except: ['**/*.md', '**/*.{png,jpg,jpeg,gif,svg,webp}']
-    - level: 3
-      reason: changes validation, install, update, or GitHub code
-      paths: [bin/**/*, .rubocop.yml, .ruby-version, 'Gemfile{,.lock}', shaka.gemspec,
-              'skills/shaka/lib/shaka/{installer,update_check,github}.rb',
-              'skills/shaka/lib/shaka/{install,update_check,github}/**/*']
-    - level: 3
-      reason: changes agent instructions
-      paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]
-      except: ['skills/shaka/lib/**/*.rb']
-    - level: 2
-      reason: changes code or configuration
-      paths: ['**/*']
-      except: ['**/*.md', docs/**/*, '**/*.{png,jpg,jpeg,gif,svg,webp}']
   opening_check:
     enabled: true # Default: check that the PR description's first sentence leads with the outcome.
     effort: low # Default.

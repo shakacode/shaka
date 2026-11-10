@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'opening_schema'
-require_relative 'human_review_floor_schema'
+require_relative 'retired_settings'
 require_relative 'validation'
 require_relative '../publication/time_zone'
 
@@ -11,8 +11,9 @@ module Shaka
     class PrDescriptionSchema
       include Validation
 
-      KEYS = %w[show_shaka_credit show_human_comments max_human_comments time_zone opening_check
-                human_review_floors].freeze
+      # The retired key loads with a warning and is ignored for one release.
+      KEYS = ['show_shaka_credit', 'show_human_comments', 'max_human_comments', 'time_zone', 'opening_check',
+              RetiredSettings::PR_DESCRIPTION].freeze
 
       def initialize(description)
         @description = description
@@ -24,8 +25,6 @@ module Shaka
         validate_credit
         validate_human_comments
         validate_time_zone
-        HumanReviewFloorSchema.new(@description['human_review_floors']).validate if
-          @description.key?('human_review_floors')
         return unless @description.key?('opening_check')
 
         OpeningSchema.new(@description['opening_check']).validate

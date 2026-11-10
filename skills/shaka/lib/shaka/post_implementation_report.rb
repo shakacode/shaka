@@ -18,6 +18,12 @@ module Shaka
     # verification that failed or could not be judged; Ask leaves the decision to the maintainer.
     STOPS_AGENT_MERGE = ['inadequate', 'cannot judge'].freeze
     ADEQUACY_FIELDS = %w[verdict weakest_claim next_check].freeze
+    # The reviewer's rating of what a mistake would reach. Unknown is treated as high wherever it is used.
+    RISK = %w[low medium high unknown].freeze
+    MAX_RISK_REASONS = 5
+    # A report with no rating, such as a run from before risk ratings published after an upgrade, counts as
+    # unknown.
+    LEGACY_RISK = { 'rating' => 'unknown', 'reasons' => ['The checkpoint report gave no risk rating.'] }.freeze
 
     module_function
 
@@ -28,7 +34,8 @@ module Shaka
       report = JSON.parse(text)
       validate(report, head:)
       report.slice('head', 'conclusion', 'reasons', 'concerns', 'alternative', 'summary', 'next_action')
-            .merge('verification_adequacy' => report['verification_adequacy'].slice(*ADEQUACY_FIELDS))
+            .merge('verification_adequacy' => report['verification_adequacy'].slice(*ADEQUACY_FIELDS),
+                   'risk' => report.fetch('risk', LEGACY_RISK).slice('rating', 'reasons'))
     rescue JSON::ParserError => e
       raise Error, "Malformed checkpoint report: not valid JSON#{position(e)}"
     end
@@ -46,6 +53,21 @@ module Shaka
       evidence_fields!(report)
       summary_fields!(report)
       adequacy!(report['verification_adequacy'])
+      risk!(report['risk']) if report.key?('risk')
+    end
+
+    def risk!(risk)
+      raise Error, "Checkpoint risk needs rating (#{RISK.join(', ')}) and reasons" unless
+        risk.is_a?(Hash) && RISK.include?(risk['rating'])
+
+      risk_reasons!(risk['reasons'])
+    end
+
+    def risk_reasons!(reasons)
+      return if reasons.is_a?(Array) && reasons.size.between?(1, MAX_RISK_REASONS) &&
+                reasons.all? { |reason| text?(reason) && !reason.match?(/[\r\n]/) }
+
+      raise Error, "Checkpoint risk reasons must be 1 to #{MAX_RISK_REASONS} single-line strings"
     end
 
     # Single lines, because the checkpoint comment renders them inline.

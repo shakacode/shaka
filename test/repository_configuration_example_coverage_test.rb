@@ -8,17 +8,19 @@ class RepositoryConfigurationExampleCoverageTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   CONFIG = Shaka::RepositoryConfig
   REVIEW = CONFIG::ReviewSchema
-  # Every key the settings accept, by the path it nests under.
+  # Every key the settings accept, by the path it nests under. Retired keys still load for one release but are
+  # left out of the example.
   ACCEPTED_SETTINGS = {
     nil => CONFIG::Schema::REQUIRED + CONFIG::Schema::OPTIONAL,
     'review' => ['required', *CONFIG::Schema::OPTIONAL_REVIEW_KEYS],
     'review.local_review_agents' => [*REVIEW::IDENTITY, REVIEW::PROMPT_FILE, REVIEW::MODEL, REVIEW::EFFORT],
-    'merge' => ['preference', *CONFIG::MergeSchema::OPTIONAL],
+    'merge' => ['preference', *CONFIG::MergeSchema::OPTIONAL - [CONFIG::RetiredSettings::MERGE]],
     'merge.limits' => Shaka::MergeLimits::DEFAULTS.keys,
     'checkpoint' => CONFIG::PostImplementationSchema::KEYS,
-    'pr_description' => CONFIG::PrDescriptionSchema::KEYS,
+    'high_risk_areas' => Shaka::Defaults.fetch('high_risk_areas').keys,
+    'medium_risk_areas' => Shaka::Defaults.fetch('medium_risk_areas').keys,
+    'pr_description' => CONFIG::PrDescriptionSchema::KEYS - [CONFIG::RetiredSettings::PR_DESCRIPTION],
     'pr_description.opening_check' => CONFIG::OpeningSchema::KEYS,
-    'pr_description.human_review_floors' => ['level', 'reason', *CONFIG::HumanReviewFloorSchema::LISTS],
     'project_guidance' => CONFIG::ProjectGuidanceSchema::NAMES,
     'prose_limits' => Shaka::ProseLimits::DEFAULTS.keys,
     'branches' => CONFIG::BranchSchema::KEYS,

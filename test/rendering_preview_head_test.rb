@@ -28,7 +28,6 @@ class RenderingPreviewHeadTest < Minitest::Test
   def test_a_changed_guard_or_write_stays_installed
     guards = Shaka::RenderingPreview::INSTALLED.to_h { |path| [File.basename(path), "\nraise 'head copy loaded'\n"] }
     assert_includes guards.keys, 'feature_guard.rb'
-    assert_includes guards.keys, 'review_effort_floor.rb'
     assert_includes guards.keys, 'publishing.rb'
     assert_match(/body\n<!-- shaka:rendering-preview [0-9a-f]{40} -->/, preview(appends: guards))
   end

@@ -51,14 +51,13 @@ class CliFeaturePublicationTest < Minitest::Test
     end
   end
 
-  # Repository configuration sets merge authority, so its review effort floor is 5.
+  # A configuration change once forced a 5-of-5 review rating; that rating is retired, so none renders.
   def assert_migration_body(dir, root)
-    content = description_content.merge('intent' => INTENT.merge('review_effort' => 5))
-    _output, error, status = publish(dir, root, '--publication-flow', 'migration', content:)
+    _output, error, status = publish(dir, root, '--publication-flow', 'migration', content: description_content)
     assert_predicate status, :success?, error
     body = File.read(File.join(dir, 'published.md'))
     assert_includes body, 'No matching check records supplied'
-    assert_includes body, "5 of 5. Read `.agents/shaka/config.yml` (changes Shaka's repository configuration)."
+    refute_includes body, 'Human review'
   end
 
   def test_result_flags_bind_actual_results_and_refuse_missing_review

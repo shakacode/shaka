@@ -233,9 +233,10 @@ It covers late reports, bounded waits, and the remaining owner's handoff.
    defects on the runtime and dependency versions the repository's required checks
    use. A pass on another version does not dismiss a finding; if those versions are
    unavailable locally, say so and run the regression through those checks. Fix
-   them with focused tests, and explain the result on the original thread. Briefly
-   explain declined findings; do not implement speculative requests or create
-   follow-up issues merely because a bot suggested them.
+   them with focused tests, and explain the result on the original thread with
+   `shaka reply`, adding `--comment ROOT_ID` for an inline thread. Briefly explain
+   declined findings; do not implement speculative requests or create follow-up
+   issues merely because a bot suggested them.
 3. After changes, run the affected checks and the repository's validation. Obtain review
    of the fix and affected behavior on the new commit, using the existing workflow
    or its documented re-review mechanism. A stale finding may still apply; check it

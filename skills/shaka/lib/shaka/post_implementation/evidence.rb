@@ -26,6 +26,13 @@ module Shaka
                           "<!-- #{MARK} ([0-9a-f]{40}) (?:ready|blocked) -->\\s*\\z")
     def self.adequacy(verdict) = "<!-- #{MARK}-adequacy #{verdict.tr(' ', '_')} -->"
 
+    # The reviewer's risk rating sits directly above the verdict, so merge can read it under merge.auto_merge_max_risk.
+    RISK = Regexp.new("\n<!-- #{MARK}-risk (#{PostImplementationReport::RISK.join('|')}) -->" \
+                      "\n<!-- #{MARK}-adequacy (?:#{ADEQUACY_SLUGS.keys.join('|')}) -->" \
+                      "\n(?:<!-- #{MARK}-disposition (?:#{RECOMMENDATION}) -->\n)?" \
+                      "<!-- #{MARK} ([0-9a-f]{40}) (ready|blocked) -->\\s*\\z")
+    def self.risk(rating) = "<!-- #{MARK}-risk #{rating} -->"
+
     def initialize(github, enabled: true)
       @github = github
       @enabled = enabled
@@ -47,6 +54,12 @@ module Shaka
 
     # The latest checkpoint's verification verdict, or nil when that checkpoint is for another head or has none.
     def adequacy(head) = adequacy_in(latest, head)
+
+    # The latest checkpoint's risk rating, or nil when that checkpoint is for another head, is blocked, or has none.
+    def risk(head)
+      rating, reviewed, state = latest&.fetch('body', '').to_s.match(RISK)&.captures
+      rating if reviewed == head && state == 'ready'
+    end
 
     # The latest checkpoint's owner recommendation, or nil when that checkpoint is for another head or has none.
     def recommendation(head)
