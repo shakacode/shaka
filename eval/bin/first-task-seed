@@ -7,9 +7,9 @@ abort 'Usage: eval/bin/first-task-seed NEW_DIRECTORY' unless ARGV.size == 1
 
 destination = File.expand_path(ARGV.fetch(0))
 
-def git(directory, *args)
+def git(directory, *)
   env = %w[GIT_DIR GIT_WORK_TREE GIT_COMMON_DIR GIT_INDEX_FILE].to_h { |name| [name, nil] }
-  system(env, 'git', '-C', directory, *args, exception: true)
+  system(env, 'git', '-C', directory, *, exception: true)
 end
 
 begin
