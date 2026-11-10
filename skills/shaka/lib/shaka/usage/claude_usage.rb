@@ -164,13 +164,13 @@ module Shaka
       [session] + Dir.glob(File.join(File.dirname(session), File.basename(session, '.jsonl'), 'subagents', '*.jsonl'))
     end
 
-    # The saved session for one session ID, or nil when it is not exactly one matching file.
+    # Worktree moves can leave several transcripts for one session; use the newest valid copy.
     def self.session_file(identity, environment: ENV)
       return unless identity.is_a?(String) && identity.match?(/\A[0-9a-f-]{36}\z/)
 
       home = environment.fetch('CLAUDE_CONFIG_DIR', File.expand_path('~/.claude'))
       sessions = Dir.glob(File.join(home, 'projects', '*', "#{identity}.jsonl"))
-      sessions.first if sessions.one? && session_of(sessions.first) == identity
+      sessions.sort_by { |file| [File.mtime(file), file] }.reverse.find { |file| session_of(file) == identity }
     end
 
     def self.session_of(file)
