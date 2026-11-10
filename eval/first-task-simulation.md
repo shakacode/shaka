@@ -41,7 +41,9 @@ no private paths, content or fingerprints. The one-line prompt does not ask the
 agent to compensate for missing defaults.
 
 Record the PR URL and head, host/profile, installed revision, setup and delivery
-time, human/CI waiting, interventions, and pass, fail or blocked. A failed setup
+time, human/CI waiting, interventions, and pass, fail or blocked. Keep available
+model, effort and token evidence on the PR by commit; mark missing or shared
+attribution explicitly. A failed setup
 or incomplete PR is a result. If a person runs it, ask what they understood from
 the PR and settings block before explaining either. Keep raw logs local and use
 [the existing issue][acceptance] for public-safe acceptance evidence. A rehearsal
