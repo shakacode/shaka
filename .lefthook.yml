@@ -1,0 +1,24 @@
+# Commit-time checks for Shaka contributors. They read only the files a commit or
+# push changes, so a slip fails in seconds instead of inside bin/validate.
+# Install once per clone: bundle exec lefthook install
+# Skip once: git commit --no-verify, or LEFTHOOK=0 git push
+
+pre-commit:
+  parallel: true
+  commands:
+    ruby:
+      run: bin/lefthook/ruby-check fix {staged_files}
+      stage_fixed: true
+
+    docs-links:
+      glob: "{*.md,**/*.md,docs/sidebars.json,docs/img/*.svg}"
+      run: ruby bin/check-docs-navigation
+
+    trailing-newlines:
+      run: bin/lefthook/trailing-newlines {staged_files}
+      stage_fixed: true
+
+pre-push:
+  commands:
+    ruby:
+      run: bin/lefthook/ruby-check branch

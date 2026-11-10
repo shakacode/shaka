@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Checks changed Ruby files for syntax errors and RuboCop offences.
+#   ruby-check fix FILE...  pre-commit: autocorrect, then fail on what remains
+#   ruby-check lint FILE... report offences without changing files
+#   ruby-check branch       pre-push: lint files changed since the merge base
+#                           with SHAKA_BASE_REF (default origin/main)
+# Ruby files are *.rb, *.rake, *.gemspec, Gemfile, and files with a ruby shebang.
+
+def ruby_file?(path)
+  return false unless File.file?(path)
+  return true if path.end_with?('.rb', '.rake', '.gemspec') || File.basename(path) == 'Gemfile'
+
+  File.open(path, 'rb') { |file| file.gets.to_s.match?(/\A#!.*\bruby\b/) }
+end
+
+def branch_files
+  base = ENV.fetch('SHAKA_BASE_REF', 'origin/main')
+  merge_base = IO.popen(['git', 'merge-base', base, 'HEAD'], err: File::NULL, &:read).strip
+  abort "ruby-check: no merge base with #{base}; fetch it or set SHAKA_BASE_REF" if merge_base.empty?
+
+  IO.popen(['git', 'diff', '--no-ext-diff', '--name-only', '--diff-filter=ACMR', '-z', merge_base, 'HEAD'],
+           &:read).split("\0")
+end
+
+mode = ARGV.shift
+files = case mode
+        when 'fix', 'lint' then ARGV
+        when 'branch' then branch_files
+        else abort 'usage: ruby-check fix|lint FILE... | ruby-check branch'
+        end
+files = files.select { ruby_file?(it) }
+exit if files.empty?
+
+broken = files.reject { system(RbConfig.ruby, '-c', it, out: File::NULL) }
+abort "Syntax errors in: #{broken.join(', ')}" unless broken.empty?
+
+rubocop = %w[bundle exec rubocop --force-exclusion --display-cop-names]
+rubocop << '--autocorrect-all' if mode == 'fix'
+exit if system(*rubocop, '--', *files)
+
+warn 'RuboCop offences remain. Fix them, or skip once with git commit --no-verify.'
+exit 1

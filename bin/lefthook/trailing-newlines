@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Adds a final newline to each named text file that lacks one. Binary files, empty
+# files, and missing paths are left alone.
+ARGV.each do |path|
+  next unless File.file?(path)
+
+  content = File.binread(path)
+  next if content.empty? || content.end_with?("\n") || content.include?("\0")
+
+  File.binwrite(path, "#{content}\n")
+  puts "Added a final newline to #{path}"
+end
