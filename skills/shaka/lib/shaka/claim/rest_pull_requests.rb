@@ -40,7 +40,10 @@ module Shaka
       end
 
       # REST sends null for an empty body; a missing key stays missing so References refuses it.
+      # The description path never reaches References, so the branch name is checked here.
       def row(pull)
+        raise Error, 'GitHub returned incomplete pull request metadata.' unless pull.dig('head', 'ref').is_a?(String)
+
         { 'number' => pull['number'], 'title' => pull['title'], 'url' => pull['html_url'],
           'headRefName' => pull.dig('head', 'ref'), 'body' => pull.key?('body') ? pull['body'] || '' : nil,
           'closingIssuesReferences' => [] }
@@ -52,8 +55,7 @@ module Shaka
         (1..MAX_PAGES).each do |page|
           batch = search_page(query, page)
           items.concat(batch)
-          # PullRequests#search_numbers refuses an item that is not an object with a number.
-          return items.map { |item| item.is_a?(Hash) ? item.slice('number') : item } if batch.length < PAGE_SIZE
+          return items.map { |item| item.slice('number') } if batch.length < PAGE_SIZE
         end
         raise Error, 'GitHub pull request search reached its limit; ownership is incomplete.'
       end
@@ -61,7 +63,8 @@ module Shaka
       def search_page(query, page)
         result = api(['-X', 'GET', 'search/issues', '-f', "q=repo:#{repository} is:pr is:open #{query}",
                       '-f', "per_page=#{PAGE_SIZE}", '-f', "page=#{page}"])
-        unless result.is_a?(Hash) && result['incomplete_results'] == false && result['items'].is_a?(Array)
+        unless result.is_a?(Hash) && result['incomplete_results'] == false && result['items'].is_a?(Array) &&
+               result['items'].all?(Hash)
           raise Error, 'GitHub pull request search returned incomplete results.'
         end
 
