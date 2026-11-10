@@ -2,7 +2,7 @@
 
 require_relative 'evidence_fixture'
 
-class EvidenceBaseFetchTimeoutTest < Minitest::Test
+class EvidenceBaseUnknownCountTest < Minitest::Test
   include EvidenceFixture
 
   def test_a_stalled_fetch_is_killed_with_its_transport_children
@@ -13,6 +13,19 @@ class EvidenceBaseFetchTimeoutTest < Minitest::Test
 
         assert_equal 'unknown', report.fetch('behind')
         assert gone?(Integer(File.read(pid_file))), 'the transport child must not outlive the fetch'
+      end
+    end
+  end
+
+  def test_a_shallow_checkout_reports_unknown_instead_of_a_count
+    with_checkout do |root, _ref|
+      Dir.mktmpdir('shaka-base-shallow-') do |directory|
+        system('git', 'init', '--quiet', '--bare', File.join(directory, 'origin.git'), exception: true)
+        git(root, 'push', '--quiet', File.join(directory, 'origin.git'), 'HEAD:refs/heads/main')
+        shallow = File.join(directory, 'shallow')
+        system('git', 'clone', '--quiet', '--depth', '1', "file://#{directory}/origin.git", shallow, exception: true)
+
+        assert_equal 'unknown', Shaka::Evidence::BaseFreshness.check(root: shallow, base: 'main').fetch('behind')
       end
     end
   end

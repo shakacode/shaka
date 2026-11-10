@@ -51,6 +51,9 @@ module Shaka
         remote = "refs/remotes/origin/#{@base}"
         return unknown("cannot fetch origin #{@base}") unless fetch(remote)
 
+        # A shallow history hides base commits the head already has, so its count would be too high.
+        return unknown('the checkout is shallow') unless git('rev-parse', '--is-shallow-repository') == 'false'
+
         count = git('rev-list', '--count', "HEAD..#{remote}")
         count ? { 'base' => @base, 'behind' => Integer(count) } : unknown("cannot compare HEAD with #{remote}")
       end
