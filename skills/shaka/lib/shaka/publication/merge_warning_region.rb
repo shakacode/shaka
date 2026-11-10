@@ -15,14 +15,12 @@ module Shaka
     AWAITING = ['⛔ Not ready to merge: a maintainer needs to answer a question.',
                 'Answer the question below under Decisions to make. ' \
                 'Your answer does not approve merging. The agent records it and updates this PR.'].freeze
-    BLOCKED = ['⛔ Do not merge yet: the final review found a problem.',
-               'The agent fixes the problems in the linked report and runs the review again. ' \
-               'You do not need to answer anything yet.'].freeze
+    BLOCKED = ['⛔ Do not merge yet: the final review raised concerns.',
+               'The agent addresses the concerns in the linked report and runs the review again.'].freeze
     REJECTED = ['⛔ Do not merge: this PR should be closed or replaced.',
-                'A maintainer decides whether to close or replace it. The agent will ask you.'].freeze
+                'A maintainer decides whether to close or replace it.'].freeze
     INCOMPLETE = ['⛔ Do not merge yet: the final review did not finish.',
-                  'The agent fixes what stopped the review and runs it again. ' \
-                  'You do not need to answer anything yet.'].freeze
+                  'The agent fixes what stopped the review and runs it again.'].freeze
 
     module_function
 
@@ -41,15 +39,17 @@ module Shaka
       marker = "#{AWAITING_MARKER}\n" if waiting?(publication)
       "#{OPEN}\n#{marker}> **#{heading}**\n>\n#{quote(publication.summary)}\n>\n> #{next_step(publication, step)}\n" \
         ">\n> [Final review report](#{report}) · Head #{commit}. " \
-        "This PR stays a draft until a new review clears this warning; passing checks alone do not.\n#{CLOSE}\n\n"
+        "This PR stays a draft until a new review clears this warning and required checks pass.\n#{CLOSE}\n\n"
     end
 
-    # The owner's own next step is more specific than the fixed one. A waiting warning keeps its request for an
-    # answer, because the owner's step there is the agent's own bookkeeping.
+    # The owner's own next step is more specific than the fixed one. A waiting warning keeps only its request for
+    # an answer, because the owner's step there is the agent's own bookkeeping. A close-or-replace warning keeps
+    # the maintainer's decision ahead of the owner's step.
     def next_step(publication, fixed)
       return fixed if publication.next_action.nil? || waiting?(publication)
 
-      "**Next:** #{escape(publication.next_action.split.join(' '))}"
+      owner = "**Next:** #{escape(publication.next_action.split.join(' '))}"
+      fixed == REJECTED.last ? "#{fixed} #{owner}" : owner
     end
 
     def waiting?(publication) = publication.disposition == PostImplementationReport::AWAITING_DECISION

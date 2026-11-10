@@ -77,7 +77,7 @@ class PostImplementationMergeWarningWordingTest < Minitest::Test
       text = warning(publish(result, path).first)
 
       assert_includes text, REGION::REJECTED.first
-      refute_includes text, 'You do not need to answer anything yet.'
+      assert_includes text, REGION::REJECTED.last
       assert_plain(text)
     end
   end
@@ -93,8 +93,7 @@ class PostImplementationMergeWarningWordingTest < Minitest::Test
       dispose(result, 'Revise before merge', 'The approach duplicates the existing retry.', 'Remove the new retry.')
       text = warning(publish(result, path).first)
 
-      assert_includes text, REGION::REJECTED.first
-      assert_includes text, '**Next:** Remove the new retry.'
+      assert_includes text, "#{REGION::REJECTED.last} **Next:** Remove the new retry."
     end
   end
 
@@ -104,7 +103,8 @@ class PostImplementationMergeWarningWordingTest < Minitest::Test
       text = warning(publish(result, path).first)
 
       assert_includes text, REGION::REJECTED.first
-      refute_match(/review recommends/i, text)
+      assert_includes text, 'A smaller PR already fixes this.'
+      refute_match(/review (recommends|raised)/i, text)
     end
   end
 
