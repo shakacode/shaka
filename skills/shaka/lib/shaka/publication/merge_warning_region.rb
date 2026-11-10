@@ -13,7 +13,7 @@ module Shaka
     # Warnings published before the marker existed are still recognized by their first line.
     LEGACY_AWAITING = "⛔ Not ready to merge — waiting for the maintainer's decision."
     AWAITING = ['⛔ Not ready to merge: a maintainer needs to answer a question.',
-                'Answer the question below under Decisions to make. ' \
+                'Answer it under Decisions to make, further down this description. ' \
                 'Your answer does not approve merging. The agent records it and updates this PR.'].freeze
     BLOCKED = ['⛔ Do not merge yet: changes are still needed.',
                'The agent makes the changes and runs the review again.'].freeze
@@ -38,7 +38,7 @@ module Shaka
       heading, step = wording(publication)
       marker = "#{AWAITING_MARKER}\n" if waiting?(publication)
       "#{OPEN}\n#{marker}> **#{heading}**\n>\n#{quote(publication.summary)}\n>\n> #{next_step(publication, step)}\n" \
-        ">\n> [Final review report](#{report}) · Head #{commit}. " \
+        ">\n> [Review report](#{report}) · Head #{commit}. " \
         "This PR stays a draft until a new review clears this warning and required checks pass.\n#{CLOSE}\n\n"
     end
 

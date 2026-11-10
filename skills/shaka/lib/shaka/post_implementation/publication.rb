@@ -25,7 +25,6 @@ module Shaka
     include PostImplementationPublisherIdentity
     include PostImplementationExecutionText
     include PostImplementationAdequacy
-
     include PostImplementationWarningFields
 
     attr_reader :state
