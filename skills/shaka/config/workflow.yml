@@ -271,6 +271,9 @@ phases:
         fix, rerun the same check, then simplify while green. Exercise the safety assumption for affected
         shared callers; report unexercised paths and any impractical check. Keep useful probes rerunnable.
         If automation is impractical, explain why and capture before and after behavior.
+        When the change alters a behavior, name, or promise, search the repository for text that
+        still describes the old one, such as docs, comments, examples, help output, changelog
+        entries, and agent instructions, and update it in the same change.
         Keep executable logic in code, not in Markdown. Test behavior, not implementation wording.
         For prose-only changes, inspect the diff.
     done_when: The change and its tests exist on the branch.

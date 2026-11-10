@@ -6,7 +6,7 @@ Shaka supplies the process; your repository supplies the commands and constraint
 | --- | --- |
 | Intake | Confirm the task, repository, ownership, and merge preference |
 | Plan | Assess value, scope, risk, model, and effort |
-| Implement | Reproduce bugs or test new behavior, then make the change |
+| Implement | Reproduce bugs or test new behavior, make the change, and update docs and comments that describe the old behavior |
 | Verify | Run local checks, review independently, and fix findings |
 | Explain | Publish the PR, walkthrough, evidence, and usage |
 | Review | Handle GitHub review findings and required checks |
