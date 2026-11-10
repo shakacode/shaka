@@ -18,6 +18,19 @@ class EvidenceTrustedCommandTest < Minitest::Test
     end
   end
 
+  def test_tree_watch_counts_the_copy_as_part_of_the_starting_tree
+    interval = Shaka::Evidence::TreeWatch.interval
+    Shaka::Evidence::TreeWatch.interval = 0.2
+    with_older_branch(validate: "#{VALIDATE}sleep 1\n") do |root, trusted, _head|
+      result = run_check(root, trusted, command: 'validate')
+
+      assert_equal 'completed', result.fetch('status')
+      refute result.key?('stop_reason')
+    end
+  ensure
+    Shaka::Evidence::TreeWatch.interval = interval
+  end
+
   def test_run_reports_failure_of_the_trusted_command
     with_older_branch do |root, trusted, _head|
       File.delete(File.join(root, 'candidate.txt'))

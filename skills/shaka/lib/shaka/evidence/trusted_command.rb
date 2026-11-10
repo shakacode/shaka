@@ -2,6 +2,7 @@
 
 require_relative '../configuration'
 require_relative '../error'
+require_relative 'candidate_tree'
 
 module Shaka
   module Evidence
@@ -9,11 +10,13 @@ module Shaka
     # The trusted commit's copy sits at its usual path for the run, so it finds the checkout the
     # same way, and everything this created is removed afterward.
     class TrustedCommand
-      # Runs the block with the trusted copy in place when the run decided to use it.
-      def self.around(context, &)
-        return yield unless context.fetch(:trusted_copy)
+      # Runs the block with the trusted copy in place when the run decided to use it. The block gets
+      # the checkout and the tree to watch during the check: the tested tree, plus the copy while it is in place.
+      def self.around(context, tree)
+        root = context.fetch(:root)
+        return yield root, tree unless context.fetch(:trusted_copy)
 
-        new(*context.values_at(:root, :ref, :path)).with(&)
+        new(root, *context.values_at(:ref, :path)).with { yield root, CandidateTree.capture(root:) }
       end
 
       # The result field that tells a reader the default branch supplied the command.
