@@ -17,11 +17,12 @@ module EvidenceRequireGraph
 
   # Read directly by listed code, yet they cannot change how a check runs or how its result is checked:
   # each feeds a digest already compared, picks a settings source, rejects bad YAML, guards a push,
-  # records metadata, or lives at a listed path this name does not spell.
+  # records metadata, bounds the base fetch that only decides whether a check starts, or lives at a
+  # listed path this name does not spell.
   CLASSIFIED_READS = %w[RepositoryConfig::ProjectGuidanceSchema RepositoryConfig::DuplicateKeys
                         Configuration::FeatureGuard Configuration::FingerprintCanonical
                         Configuration::PrivateInventory Configuration::SettingsPreview
-                        Doctor::InstallationIdentity Doctor::MachineAlias].freeze
+                        Doctor::BoundedCommand Doctor::InstallationIdentity Doctor::MachineAlias].freeze
   SETTINGS_CONSTANT = /\b(RepositoryConfig|Configuration|Doctor)::([A-Z]\w*)/
 
   module_function
