@@ -531,11 +531,12 @@ class PublicationReviewReplyExcerptTest < Minitest::Test
                  cells(rendered).first[2]
   end
 
-  def test_an_answer_that_starts_by_linking_a_comment_is_still_quoted
-    reply = "#{IDENTITY}\n\nResponded to the [comment](#{URL}#discussion_r1) with a rename."
+  # Only the marked lines are skipped, so an answer worded like a review line keeps its opening.
+  def test_an_answer_worded_like_a_review_line_is_still_quoted
+    reply = "#{IDENTITY}\n\nResponded to the [comment](#{URL}#discussion_r1).\n\nFixed the race."
     rendered = describe(packet(inline_comments: [inline(1, 'ann', 'Why?'), inline(2, 'ann', reply)]))
 
-    assert_includes cells(rendered).first[2], 'with a rename'
+    assert_includes cells(rendered).first[2], 'Responded to the comment'
   end
 
   private

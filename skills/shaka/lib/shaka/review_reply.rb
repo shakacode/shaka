@@ -2,6 +2,7 @@
 
 require_relative 'error'
 require_relative 'merge_review_evidence'
+require_relative 'publication/agent_post'
 require_relative 'publication/publication'
 require_relative 'reviewer_selection'
 require_relative 'public_comments/github_login'
@@ -28,7 +29,7 @@ module Shaka
     end
 
     # The identity line stays first, so a reader sees that an agent wrote the reply before the
-    # lines naming the reviews it answers.
+    # lines naming the reviews it answers. The hidden mark lets a reader skip those lines exactly.
     def compose
       content = @content.merge('publisher_note' => @publisher_note)
       body = Publication.comment(content)
@@ -36,7 +37,7 @@ module Shaka
       return body if lines.empty?
 
       identity = PublicationText.publisher_identity(content)
-      "#{identity}\n\n#{lines.join("\n")}#{body.delete_prefix(identity)}"
+      "#{identity}\n\n#{AgentPost::REVIEWS_MARK}\n#{lines.join("\n")}#{body.delete_prefix(identity)}"
     end
 
     private

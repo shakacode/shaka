@@ -17,11 +17,8 @@ module Shaka
     PUBLISHER_NOTE = /_(?:#{CODEX_NOTE}|Native publisher settings unavailable|#{UNREAD})[^\n]*_/
     # The agent's identity line, with the publisher note the helper may print under it.
     IDENTITY_LINE = /^🤖 [^\n]*$(?:\n\n#{PUBLISHER_NOTE}$)?/
-    # `shaka reply` names the reviews a reply answers under its identity line, one line each in the
-    # forms ReviewReply::Evidence writes; the answer follows. An answer that merely starts the same way stays.
-    LINKED = /\[[^\]\n]*\]\([^)\s]*\)/
-    REVIEW_LINE = /(?:Addressed the #{LINKED} by \S+ \(\S+\) on `\w+`|Responded to the #{LINKED}(?: by `[^`\n]+`)?)\./
-    REVIEW_LINES = /\A\s*(?:#{REVIEW_LINE}\n)+/
+    # The marked lines under the identity line name the reviews a reply answers; the answer follows.
+    REVIEW_LINES = /\A\s*#{Regexp.escape(AgentPost::REVIEWS_MARK)}\n(?:[^\n]+\n)*/
     # The content key that maps a longer comment's URL to the agent's one-line summary of it.
     SUMMARIES = 'human_comment_summaries'
 

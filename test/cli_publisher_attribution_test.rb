@@ -136,7 +136,9 @@ class CliReviewReplyOrderTest < Minitest::Test
   include CliPublicationRun
 
   SUMMARY = 'Answered the review.'
-  OPENING = /\A<!--[^\n]*-->\n🤖 Codex · OpenAI[^\n]*\n\nResponded to the \[Review\]\(#{Regexp.escape(REVIEW_URL)}\) /
+  # The reply's own mark, its identity line, then the marked line naming the review.
+  IDENTITY_FIRST = /\A<!--[^\n]*-->\n🤖 Codex · OpenAI[^\n]*\n\n<!--[^\n]*-->\n/
+  OPENING = /#{IDENTITY_FIRST}Responded to the \[Review\]\(#{Regexp.escape(REVIEW_URL)}\) /
 
   def test_a_review_reply_publishes_its_identity_line_above_the_review
     @reviews = [REVIEW_URL]

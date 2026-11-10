@@ -27,8 +27,8 @@ module ReviewReplyFixture
     file.path
   end
 
-  # The paragraph under the identity line, where a reply names the reviews it answers.
-  def review_lines(body) = body.split("\n\n", 3)[1]
+  # The marked paragraph under the identity line, where a reply names the reviews it answers.
+  def review_lines(body) = body.split("\n\n", 3)[1].delete_prefix("#{Shaka::AgentPost::REVIEWS_MARK}\n")
 end
 
 # A review reply's opening line comes from the published comment, not from text the author types.
@@ -169,6 +169,7 @@ class ReviewReplyOrderTest < Minitest::Test
 
   URL = ReviewReplyTest::URL
   IDENTITY_LINE = '🤖 Codex · OpenAI · gpt-5.5 · medium'
+  REVIEWS = "#{Shaka::AgentPost::REVIEWS_MARK}\nAddressed the [Local Adversarial Review]".freeze
 
   def teardown
     Array(@reports).each { |path| FileUtils.rm_f(path) }
@@ -178,7 +179,7 @@ class ReviewReplyOrderTest < Minitest::Test
     identity, reviews, answer = compose.split("\n\n", 3)
 
     assert_equal IDENTITY_LINE, identity
-    assert reviews.start_with?('Addressed the [Local Adversarial Review]')
+    assert reviews.start_with?(REVIEWS)
     assert_equal "Fixed the race.\n", answer
   end
 
@@ -187,7 +188,7 @@ class ReviewReplyOrderTest < Minitest::Test
 
     assert_equal IDENTITY_LINE, identity
     assert_equal '_Native publisher settings unavailable._', note
-    assert reviews.start_with?('Addressed the [Local Adversarial Review]')
+    assert reviews.start_with?(REVIEWS)
   end
 
   private
