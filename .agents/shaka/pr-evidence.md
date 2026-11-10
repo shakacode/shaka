@@ -26,8 +26,9 @@ is unset, as in "default `one` → default `all`", and "(not set)" where the key
 not exist. When only the behavior changes, say what the setting did before and does
 now. Add what existing repositories must do: nothing, or the exact edit to
 `.agents/shaka/config.yml`. Link the key's `docs/settings.md` anchor at the head, or at
-the base for a removed key. Repeat these rows for users in the Changelog section of
-`.github/pull_request_template.md`.
+the base for a removed key. In the Changelog section, add one line per changed setting
+with its key, old and new value, and any edit existing repositories must make. These
+lines come in addition to the template's one or two lines.
 
 On any other PR, add the line `Settings changes: none.` so a reader can tell it was
 checked.
