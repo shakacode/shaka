@@ -32,7 +32,7 @@ class EvidenceBaseFreshnessTest < Minitest::Test
 
   def test_refuses_a_revision_or_remote_name_as_the_base
     with_origin do |root, ref, _origin|
-      [ref, 'origin/main'].each do |base|
+      [ref, ref[0, 7], 'HEAD', 'origin/main'].each do |base|
         result, error = run_with_base(root, ref, expected_exit: 1, base:)
         assert_nil result
         assert_includes error, '--base takes the base branch name'
@@ -79,7 +79,7 @@ class EvidenceBaseFreshnessTest < Minitest::Test
     with_checkout do |root, ref|
       Dir.mktmpdir('shaka-base-origin-') do |directory|
         origin = File.join(directory, 'origin.git')
-        system('git', 'init', '--quiet', '--bare', origin, exception: true)
+        system('git', 'init', '--quiet', '--bare', '--initial-branch=main', origin, exception: true)
         git(root, 'branch', '-M', 'main')
         git(root, 'remote', 'add', 'origin', origin)
         git(root, 'push', '--quiet', 'origin', 'main')

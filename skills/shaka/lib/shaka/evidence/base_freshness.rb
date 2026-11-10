@@ -35,7 +35,7 @@ module Shaka
 
       # A revision or remote-tracking name would fail the fetch and quietly turn the stop off.
       def self.branch!(base)
-        return base unless base.match?(%r{\A(?:\h{40}|origin/|refs/)})
+        return base unless base == 'HEAD' || base.match?(%r{\A(?:\h{7,}\z|origin/|refs/)})
 
         raise Error, "--base takes the base branch name, such as main, not #{base}"
       end

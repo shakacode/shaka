@@ -9,9 +9,11 @@ class EvidenceBaseUnknownCountTest < Minitest::Test
     with_checkout do |root, _ref|
       Dir.mktmpdir('shaka-base-stall-') do |directory|
         pid_file = stalling_origin(root, directory)
+        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         report = Shaka::Evidence::BaseFreshness.check(root:, base: 'main', fetch_seconds: 3)
 
-        assert_equal 'unknown', report.fetch('behind')
+        assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 20, 'the 30s stall must be cut'
+        assert_equal ['unknown', 'cannot fetch origin main'], report.values_at('behind', 'reason')
         assert gone?(Integer(File.read(pid_file))), 'the transport child must not outlive the fetch'
       end
     end
@@ -20,8 +22,7 @@ class EvidenceBaseUnknownCountTest < Minitest::Test
   def test_a_shallow_checkout_reports_unknown_instead_of_a_count
     with_checkout do |root, _ref|
       Dir.mktmpdir('shaka-base-shallow-') do |directory|
-        system('git', 'init', '--quiet', '--bare', File.join(directory, 'origin.git'), exception: true)
-        git(root, 'push', '--quiet', File.join(directory, 'origin.git'), 'HEAD:refs/heads/main')
+        publish_main(root, File.join(directory, 'origin.git'))
         shallow = File.join(directory, 'shallow')
         system('git', 'clone', '--quiet', '--depth', '1', "file://#{directory}/origin.git", shallow, exception: true)
 
@@ -32,6 +33,11 @@ class EvidenceBaseUnknownCountTest < Minitest::Test
   end
 
   private
+
+  def publish_main(root, origin)
+    system('git', 'init', '--quiet', '--bare', '--initial-branch=main', origin, exception: true)
+    git(root, 'push', '--quiet', origin, 'HEAD:refs/heads/main')
+  end
 
   # A killed orphan can stay a zombie until launchd or init reaps it, which still answers signal 0.
   def gone?(pid)
