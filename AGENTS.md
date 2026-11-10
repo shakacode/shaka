@@ -196,6 +196,9 @@ privacy rule, the predecessor reuse limit, and release approval requirements.
 Publish tested changes as bounded PRs, preferably below 500 changed lines each.
 Explain necessary larger changes; split independent work instead of hiding size.
 Required evidence is the PR's current commit, actual validation results, and review.
+Before reviewing a fix to a review finding, `bin/run-tests --changed` and RuboCop on the
+changed files are enough. Run the full `validate` on the head you push; review stays valid
+when that run changes nothing.
 No extra closeout audit, receipt, automatic issue, heartbeat, or parallel tracker.
 Fill the Changelog section of the [PR template](.github/pull_request_template.md)
 instead of editing `CHANGELOG.md`; only a release PR edits that file. No check
