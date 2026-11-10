@@ -15,8 +15,8 @@ module Shaka
     AWAITING = ['⛔ Not ready to merge: a maintainer needs to answer a question.',
                 'Answer the question below under Decisions to make. ' \
                 'Your answer does not approve merging. The agent records it and updates this PR.'].freeze
-    BLOCKED = ['⛔ Do not merge yet: the final review raised concerns.',
-               'The agent addresses the concerns in the linked report and runs the review again.'].freeze
+    BLOCKED = ['⛔ Do not merge yet: changes are still needed.',
+               'The agent makes the changes and runs the review again.'].freeze
     REJECTED = ['⛔ Do not merge: this PR should be closed or replaced.',
                 'A maintainer decides whether to close or replace it.'].freeze
     INCOMPLETE = ['⛔ Do not merge yet: the final review did not finish.',

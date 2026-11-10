@@ -104,7 +104,18 @@ class PostImplementationMergeWarningWordingTest < Minitest::Test
 
       assert_includes text, REGION::REJECTED.first
       assert_includes text, 'A smaller PR already fixes this.'
-      refute_match(/review (recommends|raised)/i, text)
+      refute_match(/review (recommends|raised|found)/i, text)
+    end
+  end
+
+  def test_an_owner_revision_without_review_concerns_is_not_blamed_on_the_review
+    with_result do |result, path|
+      dispose(result, 'Revise before merge', 'The error message should name the missing file.', 'Name the file.')
+      text = warning(publish(result, path).first)
+
+      assert_includes text, REGION::BLOCKED.first
+      assert_includes text, 'The error message should name the missing file.'
+      refute_match(/review (found|raised)/i, text)
     end
   end
 
