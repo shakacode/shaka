@@ -34,6 +34,7 @@ module Shaka
                             .merge('max_risk' => PostImplementationRisk.max_risk(seam), **found.slice('reasons', 'url'))
     end
 
+    # PostImplementationRisk.from rescues Moved, so this reads the files the way MergeRiskGate does.
     def paths(github, head)
       PullChangedFiles.new.paths(github, head)
     rescue PullChangedFiles::Moved
@@ -44,10 +45,14 @@ module Shaka
 
     # The reviewer wrote the reasons after reading the diff, so they arrive as outside text: the line Ruby adds
     # is left out, and a reason with markup that could break the description, or one the description's text
-    # checks would refuse, drops them all, leaving the checkpoint link.
+    # checks would refuse, drops them all, leaving the checkpoint link. Other reviewer fields may span lines,
+    # so a second block that looks like this one could be planted text; any but exactly one drops them too.
     def reasons_in(body)
-      reasons = body.gsub("\r\n", "\n").match(REASONS)&.[](1).to_s.lines
-                    .map { |line| line.chomp.delete_prefix('- ') } - [PostImplementationRisk::UNREAD_FILES]
+      blocks = body.gsub("\r\n", "\n").scan(REASONS)
+      return [] unless blocks.size == 1
+
+      reasons = blocks.first.first.lines.map { |line| line.chomp.delete_prefix('- ') } -
+                [PostImplementationRisk::UNREAD_FILES]
       reasons.all? { |reason| publishable?(reason) } ? reasons : []
     end
 

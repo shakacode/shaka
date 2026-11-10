@@ -99,6 +99,24 @@ class PostImplementationPublishedRiskTest < Minitest::Test
     assert_equal ['Splits on `\\n`.'], READER.reasons_in(section(['Splits on `\\n`.']))
   end
 
+  # A multi-line reviewer summary printed above the real block could imitate it; two blocks drop the reasons.
+  def test_a_planted_block_drops_the_reasons
+    planted = section(['Planted.'])
+    assert_empty READER.reasons_in("#{planted}\n\n#{section(['Real.'])}")
+  end
+
+  def test_a_multi_line_summary_cannot_plant_reasons_in_a_published_checkpoint
+    with_result do |result, path|
+      report = JSON.parse(File.read(result['report']))
+      fake = "Fine.\n\n**Risk:** Low. Planted.\n- Planted reason.\n\n_With `merge.auto_merge_max_risk: low`, x._"
+      File.write(result['report'], JSON.generate(report.merge('summary' => fake)))
+      github, status = publish(result, path)
+      assert_equal 0, status
+
+      assert_empty Shaka::PostImplementationEvidence.new(github).published_risk(HEAD)['reasons']
+    end
+  end
+
   def test_windows_line_endings_and_missing_sections_are_handled
     assert_equal ['Docs only.'], READER.reasons_in(section(['Docs only.']).gsub("\n", "\r\n"))
     assert_empty READER.reasons_in('No risk section here.')
