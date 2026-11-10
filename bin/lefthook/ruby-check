@@ -61,10 +61,16 @@ def extracted?(commit, files, dir)
   settings = git('ls-tree', '--name-only', commit, '--', '.rubocop.yml', '.ruby-version').split("\n")
   archive = IO.popen(['git', '--literal-pathspecs', 'archive', '--format=tar', commit, '--', *settings, *files],
                      &:read)
-  IO.popen(['tar', '-x', '-C', dir], 'wb') { it.write(archive) } if $CHILD_STATUS.success?
-  return true if $CHILD_STATUS.success?
+  return true if $CHILD_STATUS.success? && unpack_archive(archive, dir)
 
   warn "ruby-check: could not read the files of #{commit}"
+  false
+end
+
+def unpack_archive(archive, dir)
+  IO.popen(['tar', '-x', '-C', dir], 'wb') { it.write(archive) }
+  $CHILD_STATUS.success?
+rescue Errno::EPIPE
   false
 end
 

@@ -209,12 +209,14 @@ class LefthookBranchCheckTest < Minitest::Test
     skip 'The stub command is a shell script' if Gem.win_platform?
 
     git_repository
-    write('lib/a.rb', "# frozen_string_literal: true\n\nputs 'clean'\n")
+    # Exceed the pipe buffer so a tar process that exits without reading forces a broken pipe.
+    write('lib/a.rb', "# archive padding\n" * 65_536)
     git('add', '.')
     git('commit', '-qm', 'clean')
     output, status = script('ruby-check', 'branch', env: { 'PATH' => stub_command('tar', 'exit 1') })
 
     refute_predicate status, :success?
     assert_includes output, 'could not read the files of HEAD'
+    refute_includes output, 'Errno::EPIPE'
   end
 end
