@@ -200,9 +200,6 @@ No extra closeout audit, receipt, automatic issue, heartbeat, or parallel tracke
 Fill the Changelog section of the [PR template](.github/pull_request_template.md)
 instead of editing `CHANGELOG.md`; only a release PR edits that file. No check
 enforces this.
-A PR that changes a setting, as `.agents/shaka/pr-evidence.md` defines one, repeats
-its Settings changes rows for users in that Changelog section. Edits to this
-repository's own `.agents/shaka/config.yml` values get none.
 Report available model, reasoning effort, and token evidence on the PR by commit;
 mark shared or unavailable attribution explicitly, as specified in the pilot plan.
 Do not close the pilot until its required real-use acceptance is established.
