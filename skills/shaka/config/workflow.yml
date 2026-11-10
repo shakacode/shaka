@@ -63,7 +63,8 @@ phases:
         sentence, run `claim --description SLUG` with a short lowercase slug of the task, such
         as `add-button-counter`; it checks for the same slug. On a hit, report the
         open pull requests and remote branches and stop for a decision unless the user already
-        authorized a comparison or override. Do not open a second PR. Use the reported
+        authorized a comparison or override. Do not open a second PR. When `claim` reports
+        `readOver: rest`, report its `unknownFields` as unknown. Use the reported
         `branch_name` when creating a branch; do not invent a personal prefix.
       - Resolve this task's merge preference from the trusted seam, defaulting to Ask.
         An explicit user choice of Ask or Auto for this task overrides that default.

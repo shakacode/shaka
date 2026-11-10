@@ -43,7 +43,7 @@ class ClaimRestTest < Minitest::Test
     result = Shaka::Claim.new(query: Shaka::Claim::Description.new(slug: 'add-button-counter'), root: Dir.pwd,
                               runner: rest_runner(pulls: [pull])).result
 
-    assert_equal([402], result.fetch('pull_requests').map { |pr| pr.fetch('number') })
+    assert_equal([%w[headRefName number title url]], result.fetch('pull_requests').map { |pr| pr.keys.sort })
     assert_equal 'rest', result.fetch('readOver')
   end
 

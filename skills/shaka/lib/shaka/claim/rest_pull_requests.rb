@@ -11,7 +11,7 @@ module Shaka
       # REST names no closing issues, so a PR linked to the issue only from GitHub's sidebar is
       # missed. Claim names the field rather than reading "no links" from the empty list it uses.
       UNKNOWN_FIELDS = %w[closingIssuesReferences].freeze
-      SEARCH_PAGES = 10
+      MAX_PAGES = 10
       PAGE_SIZE = PublicComments::BoundedList::PAGE_SIZE
       NAME = %r{\A[\w.-]+/[\w.-]+\z}
 
@@ -26,7 +26,7 @@ module Shaka
       private
 
       def open_pull_requests
-        PublicComments::BoundedList.new(self, max_pages: 10, label: 'GitHub open pull request list')
+        PublicComments::BoundedList.new(self, max_pages: MAX_PAGES, label: 'GitHub open pull request list')
                                    .call("repos/#{repository}/pulls").map { |pull| row(pull) }
       end
 
@@ -39,7 +39,7 @@ module Shaka
       # The query `gh pr list --search` sends to GitHub's search, read one page at a time.
       def searched_numbers(query)
         items = []
-        (1..SEARCH_PAGES).each do |page|
+        (1..MAX_PAGES).each do |page|
           batch = search_page(query, page)
           items.concat(batch)
           return items.map { |item| { 'number' => item['number'] } } if batch.length < PAGE_SIZE

@@ -44,7 +44,11 @@ module Shaka
       end
 
       # A task without a work item has no number for text, references, or comments to mention.
-      def by_branch_name = pull_requests([], PR_FIELDS.join(',')).filter { |pr| @names.cover?(pr.fetch('headRefName')) }
+      def by_branch_name
+        pull_requests([], PR_FIELDS.join(',')).filter_map do |pr|
+          pr.slice(*PR_FIELDS) if @names.cover?(pr.fetch('headRefName'))
+        end
+      end
 
       def inventory_numbers(inventory)
         inventory.map do |pr|
