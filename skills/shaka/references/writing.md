@@ -26,6 +26,8 @@
 - When the order already shows the relation, drop "therefore", "thus", "so",
   "however", and "but", and split the joined clauses into separate sentences.
 - Use familiar words; explain unfamiliar project terms through the behavior they name.
+- Write a question for a person by the
+  [question rules](delivery.md#when-the-agent-asks-questions).
 - Explain a PR’s problem and benefit for a maintainer who has not read the issue or design.
   For preparatory work, connect this part to the later user outcome.
 - Keep exact commands, identifiers, risks, and evidence intact.

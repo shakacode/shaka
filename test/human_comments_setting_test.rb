@@ -19,9 +19,19 @@ class HumanCommentsSettingTest < Minitest::Test
     end
   end
 
+  def test_no_comment_is_ignored_unless_the_repository_lists_one
+    with_repository do |root|
+      assert_empty Shaka::RepositoryConfig.load(root:).pr_description['ignored_human_comments']
+    end
+    with_repository('pr_description' => { 'ignored_human_comments' => ['+review-app-*'] }) do |root|
+      assert_equal ['+review-app-*'], Shaka::RepositoryConfig.load(root:).pr_description['ignored_human_comments']
+    end
+  end
+
   def test_the_switch_takes_a_boolean_and_the_cap_a_positive_whole_number
     [{ 'show_human_comments' => 'no' }, { 'show_human_comments' => nil }, { 'max_human_comments' => 0 },
-     { 'max_human_comments' => '20' }, { 'max_human_comments' => 2.5 }].each do |section|
+     { 'max_human_comments' => '20' }, { 'max_human_comments' => 2.5 }, { 'ignored_human_comments' => '+deploy' },
+     { 'ignored_human_comments' => [''] }, { 'ignored_human_comments' => [1] }].each do |section|
       with_repository('pr_description' => section) do |root|
         error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
         assert_includes error.message, "pr_description.#{section.keys.first}"

@@ -208,6 +208,10 @@ Put other project restrictions in `AGENTS.md`.
 
 ## `merge.auto_merge_max_risk`
 
+Shaka rejects the former `merge.auto_max_review_floor` and
+`pr_description.human_review_floors` settings. Remove them after moving their paths
+into [`high_risk_areas`](#high_risk_areas) or [`medium_risk_areas`](#medium_risk_areas).
+
 **Optional. Default: `low`.** The highest [risk](#high_risk_areas) the agent may merge without
 your approval. Each level includes the ones below it. Under `preference: ask` you approve every
 merge anyway, so this setting matters under `preference: auto`.
@@ -891,7 +895,8 @@ project_guidance:
   library can ask for a compatibility run against its oldest supported version, and
   the agent reports that run in the description's verification. Shaka also shows the
   guide to the agent each time it publishes the description, so a skipped read still
-  surfaces it.
+  surfaces it. A risk record the guide asks for, such as your own risk classes, appears
+  folded under the description's [Risk and review](reference/pr-record.md#risk-and-review).
 - `merge_readiness`: read before the [checkpoint](reference/pr-record.md#checkpoint).
   For example, a data service can require a confirmed backfill plan. The agent lists
   each requirement and its status, and an unmet one blocks the merge-ready claim.
@@ -1116,6 +1121,13 @@ directories holding the configuration and scripts must be real directories.
 Removing an optional check already on the default branch requires an explicit,
 maintainer-approved policy change.
 
+A long-lived branch cut before you added these scripts, such as a release branch,
+still gets validation evidence. When the branch has no `.agents/shaka/bin`
+directory, Shaka runs the default branch's copy of the script against that
+branch's files and removes the copy afterward. The script still runs the branch's
+own tools, so `exec bin/ci-local` runs that branch's `bin/ci-local`. The result
+records the trusted copy as its command source.
+
 ## `base_branch`
 
 **Optional. Default: the repository's default branch.**
@@ -1213,6 +1225,29 @@ only when it has at most 12 words and 90 characters, leaving out any code. A lon
 one is already on the PR, so the list shows the agent's one-line summary and links
 to it. So does a short comment with a list beside code, where code is hard to tell
 from prose.
+
+## `pr_description.ignored_human_comments`
+
+**Optional. Default: none.**
+
+Leaves comments that only run a command, such as `+review-app-deploy` or `/deploy`,
+out of the **Human comments** list, so the list shows what people actually said. A
+line under the list says how many it left out.
+
+```yaml
+pr_description:
+  ignored_human_comments:
+    - '+review-app-*'
+    - '/deploy'
+    - '/deploy *'
+```
+
+A comment is left out when its whole text matches an entry, ignoring case and
+surrounding spaces. `*` matches any characters except whitespace, such as spaces, tabs, and line breaks, so `+review-app-*`
+matches `+review-app-deploy` but not `+review-app-deploy failed on staging`. Write
+`/deploy *` to match a command with one argument, such as `/deploy staging`. A
+review that approves, requests changes, or was dismissed stays listed whatever its
+text says.
 
 ## `pr_description.time_zone`
 

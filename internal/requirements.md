@@ -42,7 +42,8 @@ must cite that evidence before claiming the pilot's real-use acceptance.
 - **R2 — Use the repository's checks.** Read policy and optional script availability
   from the trusted default-branch seam: `.agents/shaka/config.yml` with the fixed
   `.agents/shaka/bin/` interface. Follow prose constraints in trusted `AGENTS.md`; run the candidate
-  scripts at those fixed paths. Reject invalid configuration. Failed checks and
+  scripts at those fixed paths, or the trusted copies when the candidate predates the
+  `.agents/shaka/bin/` directory. Reject invalid configuration. Failed checks and
   evidence from another commit cannot establish current readiness.
 - **R6 — Merge the verified revision.** Refresh GitHub state and require the expected
   head. Missing evidence, pending or failed required checks, stale heads, conflicts,

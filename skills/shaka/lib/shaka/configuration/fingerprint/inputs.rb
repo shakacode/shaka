@@ -3,6 +3,7 @@
 require 'find'
 require_relative '../../repository_config'
 require_relative '../../trusted_path_resolver'
+require_relative '../paths'
 require_relative '../private_inventory'
 require_relative '../private_source'
 require_relative 'trusted_prompts'
@@ -26,7 +27,8 @@ module Shaka
         commands = @settings.fetch('commands').values
         return private_hashes(candidate, commands) if @private_source
 
-        merge_trusted(@files.hashes(candidate, files_only: commands), prompts)
+        trusted_commands = predates_commands? ? commands : []
+        merge_trusted(@files.hashes(candidate - trusted_commands, files_only: commands), prompts + trusted_commands)
       rescue KeyError => e
         raise Error, "Effective settings lack #{e.key}"
       end
@@ -34,6 +36,12 @@ module Shaka
       private
 
       def candidate_paths = private_paths + @settings.fetch('commands').values
+
+      # A branch cut before the command directory existed runs the trusted copies, so those are its inputs.
+      def predates_commands?
+        directory = File.join(@root, Paths::COMMAND_DIRECTORY)
+        @trusted_ref && !File.exist?(directory) && !File.symlink?(directory)
+      end
 
       def prompt_paths
         guidance = RepositoryConfig::ProjectGuidanceSchema.resolve(@settings)
