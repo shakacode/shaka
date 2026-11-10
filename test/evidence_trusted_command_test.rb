@@ -30,9 +30,21 @@ class EvidenceTrustedCommandTest < Minitest::Test
 
   def test_candidate_command_directory_missing_one_command_still_fails
     with_checkout do |root, trusted|
-      File.delete(File.join(root, '.agents/shaka/bin/setup'))
+      File.delete(File.join(root, '.agents/shaka/bin/validate'))
 
-      assert_includes refused_run(root, trusted), '.agents/shaka/bin/setup does not exist'
+      assert_includes refused_run(root, trusted), '.agents/shaka/bin/validate does not exist'
+      refute_path_exists File.join(root, '.agents/shaka/bin/validate')
+    end
+  end
+
+  def test_changed_trusted_command_supersedes_the_result
+    with_older_branch do |root, trusted, head|
+      result = run_check(root, trusted, command: 'validate')
+      newer = change_trusted_validate(root, trusted, head)
+      binding = bind(root, newer, head, result)
+
+      assert_equal 'superseded', binding.fetch('status')
+      assert_includes binding.fetch('changed_settings_components'), 'files'
     end
   end
 
@@ -57,6 +69,15 @@ class EvidenceTrustedCommandTest < Minitest::Test
   end
 
   private
+
+  # A later default-branch commit whose validate script differs, leaving the candidate unchanged.
+  def change_trusted_validate(root, trusted, head)
+    git(root, 'checkout', '--quiet', trusted)
+    File.write(File.join(root, '.agents/shaka/bin/validate'), "#{VALIDATE}echo changed\n")
+    newer = commit_all(root)
+    git(root, 'checkout', '--quiet', head)
+    newer
+  end
 
   def verified_validation(root, trusted, head, result)
     Tempfile.create(['shaka-validation-', '.json']) do |file|

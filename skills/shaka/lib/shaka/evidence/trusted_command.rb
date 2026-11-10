@@ -19,13 +19,13 @@ module Shaka
       # The result field that tells a reader the default branch supplied the command.
       def self.source(context) = needed?(context) ? { 'command_source' => 'trusted_ref' } : {}
 
-      # Settings load without candidate commands only when the branch predates the command directory.
+      # The same condition that lets settings load without candidate commands: no command directory at all.
       def self.needed?(context)
-        root, path = context.values_at(:root, :path)
-        return false if File.exist?(File.join(root, path)) || File.symlink?(File.join(root, path))
-        raise Error, "#{path} is missing from this checkout" unless context.fetch(:kind) == 'trusted/team'
+        directory = File.join(context.fetch(:root), Configuration::Paths::COMMAND_DIRECTORY)
+        return false if File.exist?(directory) || File.symlink?(directory)
+        return true if context.fetch(:kind) == 'trusted/team'
 
-        true
+        raise Error, "#{context.fetch(:path)} is missing from this checkout"
       end
 
       def initialize(root, sha, path)
