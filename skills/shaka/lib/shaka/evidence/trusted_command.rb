@@ -35,21 +35,27 @@ module Shaka
       end
 
       def with
-        created = []
-        create_directories(created)
-        target = File.join(@root, @path)
-        File.open(target, File::WRONLY | File::CREAT | File::EXCL, 0o755) { |file| file.write(@text) }
-        written = true
+        @created = []
+        create_directories
+        write_copy
         yield
       ensure
-        File.delete(target) if written
-        created.reverse_each { |directory| Dir.rmdir(directory) if Dir.empty?(directory) }
+        File.delete(target) if @written
+        @created.reverse_each { |directory| Dir.rmdir(directory) if Dir.empty?(directory) }
       end
 
       private
 
+      # Marks the copy written once the file exists, so a failed write still removes it.
+      def write_copy
+        File.open(target, File::WRONLY | File::CREAT | File::EXCL, 0o755) do |file|
+          @written = true
+          file.write(@text)
+        end
+      end
+
       # Refuses any symlinked or non-directory parent, so the copy cannot land outside the checkout.
-      def create_directories(created)
+      def create_directories
         parents = File.dirname(@path).split('/').each_index.map { |index| parent(index) }
         parents.each do |directory|
           raise Error, "#{relative(directory)} must be a real directory, not a symlink" if File.symlink?(directory)
@@ -57,10 +63,11 @@ module Shaka
           raise Error, "#{relative(directory)} must be a real directory" if File.exist?(directory)
 
           Dir.mkdir(directory)
-          created << directory
+          @created << directory
         end
       end
 
+      def target = File.join(@root, @path)
       def parent(index) = File.join(@root, *File.dirname(@path).split('/').first(index + 1))
       def relative(directory) = directory.delete_prefix("#{@root}/")
     end

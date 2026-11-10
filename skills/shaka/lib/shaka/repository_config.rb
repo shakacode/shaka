@@ -77,8 +77,15 @@ module Shaka
                   'paths' => { 'policy_configuration' => config_path,
                                'candidate_configuration' => @candidate_detected&.contract,
                                'trusted_command_directory' => Configuration::Paths::COMMAND_DIRECTORY,
-                               'candidate_command_directory' => Configuration::Paths::COMMAND_DIRECTORY },
+                               'candidate_command_directory' => candidate_command_directory },
                   'opening_check' => opening_check, 'prose_limits' => prose_limits, 'pr_description' => pr_description)
+    end
+
+    # Nil when the checkout predates the command directory, so a report names no scripts it lacks.
+    def candidate_command_directory
+      directory = Configuration::Paths::COMMAND_DIRECTORY
+      path = File.join(@root, directory)
+      directory if File.exist?(path) || File.symlink?(path)
     end
 
     # The repository's choice wins, then the user's, then the shipped default.

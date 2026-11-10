@@ -54,6 +54,40 @@ class EvidenceTrustedCommandTest < Minitest::Test
     end
   end
 
+  def test_failed_write_removes_the_partial_copy
+    with_older_branch do |root, trusted, _head|
+      copy = trusted_copy(root, trusted)
+      unwritable = Object.new
+      def unwritable.to_s = raise(Errno::ENOSPC)
+      copy.instance_variable_set(:@text, unwritable)
+
+      assert_raises(Errno::ENOSPC) { copy.with { flunk 'command ran' } }
+
+      refute_path_exists File.join(root, '.agents')
+    end
+  end
+
+  def test_trusted_copy_refuses_a_symlinked_parent
+    with_older_branch do |root, trusted, _head|
+      Dir.mktmpdir do |outside|
+        copy = trusted_copy(root, trusted)
+        File.symlink(outside, File.join(root, '.agents'))
+
+        assert_raises(Shaka::Error) { copy.with { flunk 'command ran' } }
+        assert_empty Dir.children(outside)
+      end
+    end
+  end
+
+  def test_settings_report_no_candidate_command_directory
+    with_older_branch do |root, trusted, _head|
+      paths = Shaka::Configuration.trusted(root:, ref: trusted).to_h.fetch('paths')
+
+      assert_nil paths.fetch('candidate_command_directory')
+      assert_equal '.agents/shaka/bin', paths.fetch('trusted_command_directory')
+    end
+  end
+
   def test_symlinked_agents_directory_is_refused
     with_older_branch do |root, trusted, _head|
       Dir.mktmpdir do |outside|
@@ -66,6 +100,10 @@ class EvidenceTrustedCommandTest < Minitest::Test
   end
 
   private
+
+  def trusted_copy(root, trusted)
+    Shaka::Evidence::TrustedCommand.new(root, trusted, '.agents/shaka/bin/validate')
+  end
 
   def refused_run(root, trusted)
     _output, error = capture_io do
