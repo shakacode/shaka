@@ -91,7 +91,9 @@ class LefthookScriptsTest < Minitest::Test
 
     refute_predicate status, :success?
     assert_includes output, 'Syntax errors in: tool'
-    assert_predicate(*script('ruby-check', 'fix', 'notes.md', 'run.sh').values_at(1), :success?)
+    _, others = script('ruby-check', 'fix', 'notes.md', 'run.sh')
+
+    assert_predicate others, :success?
   end
 
   def test_trailing_newlines_adds_only_missing_text_newlines

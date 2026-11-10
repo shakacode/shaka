@@ -19,7 +19,8 @@ def ruby_file?(path)
   File.open(path, 'rb') { |file| file.gets.to_s.match?(/\A#!.*\bruby\b/) }
 end
 
-OFFENCES = 'RuboCop offences remain. Fix them, or skip the hook once with --no-verify.'
+RUBOCOP_MESSAGES = { 1 => 'RuboCop offences remain. Fix them, or skip the hook once with --no-verify.',
+                     2 => 'RuboCop stopped with the error above.' }.freeze
 RUBOCOP_UNAVAILABLE = 'RuboCop could not run; install the development gems with .agents/shaka/bin/setup.'
 
 def git(*args) = IO.popen(['git', *args], err: File::NULL, &:read)
@@ -68,8 +69,7 @@ def rubocop_passes?(mode, files)
   rubocop << '--autocorrect' if mode == 'fix'
   return true if system(*rubocop, '--', *files)
 
-  offences = $CHILD_STATUS&.exitstatus == 1
-  warn(offences ? OFFENCES : RUBOCOP_UNAVAILABLE)
+  warn(RUBOCOP_MESSAGES.fetch($CHILD_STATUS&.exitstatus, RUBOCOP_UNAVAILABLE))
   false
 end
 
