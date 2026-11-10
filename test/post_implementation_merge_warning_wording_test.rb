@@ -2,9 +2,8 @@
 
 require_relative 'post_implementation_publication_test'
 
-# A maintainer reads the warning without knowing how Shaka works, so it leads with the situation, quotes the
-# owner's own reason and next step, and leaves workflow terms out of the visible text.
-class PostImplementationMergeWarningWordingTest < Minitest::Test
+# Builds a checkpoint result, publishes it through the CLI fixture, and reads the visible warning.
+module MergeWarningWordingHelpers
   include PostImplementationPublicationFixture
 
   REGION = Shaka::MergeWarningRegion
@@ -31,6 +30,17 @@ class PostImplementationMergeWarningWordingTest < Minitest::Test
   def assert_plain(text)
     INTERNAL_TERMS.each { |term| refute_match(/#{term}/i, text) }
   end
+
+  def verdict(result, conclusion)
+    report = JSON.parse(File.read(result['report'])).merge('conclusion' => conclusion)
+    File.write(result['report'], JSON.generate(report))
+  end
+end
+
+# A maintainer reads the warning without knowing how Shaka works, so it leads with the situation, quotes the
+# owner's own reason and next step, and leaves workflow terms out of the visible text.
+class PostImplementationMergeWarningWordingTest < Minitest::Test
+  include MergeWarningWordingHelpers
 
   def test_a_question_about_an_unpublished_ci_report_asks_the_maintainer_and_says_an_answer_is_not_approval
     with_result do |result, path|
@@ -71,6 +81,24 @@ class PostImplementationMergeWarningWordingTest < Minitest::Test
     end
   end
 
+  def test_a_review_that_did_not_finish_is_not_reported_as_a_problem_in_the_code
+    with_result do |result, path|
+      text = warning(publish(result.merge('status' => 'not_completed', 'reason' => 'The reviewer timed out.'),
+                             path).first)
+
+      assert_includes text, REGION::INCOMPLETE.first
+      assert_includes text, 'The reviewer timed out.'
+      refute_includes text, REGION::BLOCKED.first
+      assert_plain(text)
+    end
+  end
+end
+
+# A recommendation against the PR leaves closing or replacing it to a maintainer, and a hold for changes is
+# attributed to whoever made it.
+class PostImplementationMergeWarningRejectionTest < Minitest::Test
+  include MergeWarningWordingHelpers
+
   def test_a_reviewer_recommending_against_the_pr_asks_the_maintainer_to_close_or_replace_it
     with_result do |result, path|
       verdict(result, 'Do not merge')
@@ -80,11 +108,6 @@ class PostImplementationMergeWarningWordingTest < Minitest::Test
       assert_includes text, REGION::REJECTED.last
       assert_plain(text)
     end
-  end
-
-  def verdict(result, conclusion)
-    report = JSON.parse(File.read(result['report'])).merge('conclusion' => conclusion)
-    File.write(result['report'], JSON.generate(report))
   end
 
   def test_a_reviewer_verdict_against_the_pr_survives_an_owner_revision
@@ -116,18 +139,6 @@ class PostImplementationMergeWarningWordingTest < Minitest::Test
       assert_includes text, REGION::BLOCKED.first
       assert_includes text, 'The error message should name the missing file.'
       refute_match(/review (found|raised)/i, text)
-    end
-  end
-
-  def test_a_review_that_did_not_finish_is_not_reported_as_a_problem_in_the_code
-    with_result do |result, path|
-      text = warning(publish(result.merge('status' => 'not_completed', 'reason' => 'The reviewer timed out.'),
-                             path).first)
-
-      assert_includes text, REGION::INCOMPLETE.first
-      assert_includes text, 'The reviewer timed out.'
-      refute_includes text, REGION::BLOCKED.first
-      assert_plain(text)
     end
   end
 end
