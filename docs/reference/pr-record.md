@@ -37,7 +37,7 @@ one of the repository's [`high_risk_areas`](../settings.md#high_risk_areas) alwa
 counts as high. Under Auto, [`merge.auto_merge_max_risk`](../settings.md#mergeauto_merge_max_risk)
 sets the highest rating the agent merges without you; the default is low.
 
-The **Risk and review** section follows the summary. It says what the level asks
+The **Risk and review** section follows Intent and precedes Verification. It says what the level asks
 of you, then lists:
 
 - **Flagged by the implementer**: code needing particular attention, each with its reason.
