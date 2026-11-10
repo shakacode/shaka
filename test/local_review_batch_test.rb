@@ -315,6 +315,17 @@ class LocalReviewOpenFindingTest < Minitest::Test
     ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex')
   end
 
+  # Break caught: a defect left unassessed as documented passed for settled.
+  def test_a_new_head_waits_for_a_documented_defect
+    append(EARLIER, 'openai/codex', findings: 1)
+    record([NIT.merge('class' => 'defect')])
+
+    error = assert_raises(Shaka::Error) { ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex') }
+    assert_includes error.message, 'F1'
+    record([NIT.merge('class' => 'risk')])
+    ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex')
+  end
+
   private
 
   def claude_finding(fields) = NIT.merge('id' => 'F2', 'reviewers' => { 'anthropic/claude' => '1' }, **fields)

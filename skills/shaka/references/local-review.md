@@ -378,7 +378,7 @@ different problem can hide an unfixed defect. `model`, `tokens`, `cost`, and
 `estimate` are optional, as described below, and a top-level `fallback` sets the fallback notice.
 
 `review run` refuses a new head until every round on the last head has its findings recorded
-and none of them is still `open`.
+and none of them is still `open` or a `documented` defect.
 Another reviewer may join the last reviewed head. It refuses any other head the ledger already
 reviewed, a head that lacks the last reviewed head or any recorded fix commit, a fix recorded as the
 head it was found in, and a different `--base`; after a rebase, start a new ledger. Publishing
