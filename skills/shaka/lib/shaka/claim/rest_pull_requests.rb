@@ -42,10 +42,13 @@ module Shaka
       # REST sends null for an empty body; a missing key stays missing so References refuses it.
       # The description path never reaches References, so the branch name is checked here.
       def row(pull)
-        raise Error, 'GitHub returned incomplete pull request metadata.' unless pull.dig('head', 'ref').is_a?(String)
+        head = pull['head']
+        unless head.is_a?(Hash) && head['ref'].is_a?(String)
+          raise Error, 'GitHub returned incomplete pull request metadata.'
+        end
 
         { 'number' => pull['number'], 'title' => pull['title'], 'url' => pull['html_url'],
-          'headRefName' => pull.dig('head', 'ref'), 'body' => pull.key?('body') ? pull['body'] || '' : nil,
+          'headRefName' => head['ref'], 'body' => pull.key?('body') ? pull['body'] || '' : nil,
           'closingIssuesReferences' => [] }
       end
 

@@ -31,7 +31,7 @@ module ClaimRestHelpers
   def rest_reply(argv, pulls, search, comments)
     return unless argv[1] == 'api'
     return { 'full_name' => 'shakacode/shaka' } if argv.last == 'repos/{owner}/{repo}'
-    return search_result(search) if argv.include?('search/issues')
+    return search_result(search, argv.find { |arg| arg.start_with?('page=') }) if argv.include?('search/issues')
     return pulls_page(pulls, argv.last) if argv.last.start_with?('repos/shakacode/shaka/pulls?')
 
     comments
@@ -43,10 +43,12 @@ module ClaimRestHelpers
     pages.fetch(path[/[?&]page=(\d+)/, 1].to_i - 1, [])
   end
 
-  def search_result(search)
+  # Search pages given as an array of arrays; a flat array is the first page alone.
+  def search_result(search, path)
     return search if search.is_a?(Hash)
 
     items = search == :full ? Array.new(100) { |index| { 'number' => index + 1 } } : search
+    items = items.fetch(path[/\Apage=(\d+)/, 1].to_i - 1, []) if items.first.is_a?(Array)
     { 'incomplete_results' => false, 'items' => items }
   end
 

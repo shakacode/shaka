@@ -58,12 +58,13 @@ class ClaimRestTest < Minitest::Test
   end
 
   def test_malformed_rest_rows_and_search_items_are_errors_not_crashes
-    without_branch = PULL.merge('head' => {})
-    error = assert_raises(Shaka::Error) do
-      Shaka::Claim.new(query: Shaka::Claim::Description.new(slug: 'fix'), root: Dir.pwd,
-                       runner: rest_runner(pulls: [without_branch])).result
+    [{}, 'alex/fix'].each do |head|
+      error = assert_raises(Shaka::Error) do
+        Shaka::Claim.new(query: Shaka::Claim::Description.new(slug: 'fix'), root: Dir.pwd,
+                         runner: rest_runner(pulls: [PULL.merge('head' => head)])).result
+      end
+      assert_includes error.message, 'incomplete pull request metadata'
     end
-    assert_includes error.message, 'incomplete pull request metadata'
     error = assert_raises(Shaka::Error) { claim_over_rest('392', pulls: [], search: [nil] * 100) }
     assert_includes error.message, 'incomplete results'
   end

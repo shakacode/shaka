@@ -15,6 +15,15 @@ class ClaimRestPagingTest < Minitest::Test
     assert_equal([402], result.fetch('pull_requests').map { |pr| pr.fetch('number') })
   end
 
+  def test_a_search_hit_on_a_later_search_page_is_found
+    pull = PULL.merge('body' => '', 'head' => { 'ref' => 'alex/other' })
+    pages = [Array.new(100) { |index| { 'number' => 1000 + index } }, [{ 'number' => 402 }]]
+    others = unrelated_page.map { |row| row.merge('head' => { 'ref' => "alex/#{row['number']}" }) }
+    result = claim_over_rest('392', pulls: [others, [pull]], search: pages, comments: [{ 'body' => 'Covers #392.' }])
+
+    assert_includes result.fetch('pull_requests').map { |pr| pr.fetch('number') }, 402
+  end
+
   def test_a_list_that_changes_between_paged_reads_is_an_error
     runner = changing_runner([[unrelated_page, [PULL]], [unrelated_page.drop(1), [PULL]]])
     error = assert_raises(Shaka::Error) { Shaka::Claim.new(query: '392', root: Dir.pwd, runner:).result }
