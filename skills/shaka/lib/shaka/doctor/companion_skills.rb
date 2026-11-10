@@ -14,13 +14,13 @@ module Shaka
       include Check
 
       NAME = 'Companion skills'
-      SHOWN = 5
-      CLAUDE = '.claude'
-      PLUGINS = File.join(CLAUDE, 'plugins', 'installed_plugins.json')
-      SETTINGS = File.join(CLAUDE, 'settings.json')
+      CLAUDE = Install::Locations::HOSTS.fetch('claude')
+      PLUGINS = File.join('.claude', 'plugins', 'installed_plugins.json')
+      SETTINGS = File.join('.claude', 'settings.json')
 
       def initialize(home:)
         @home = home
+        @unread = []
       end
 
       def call
@@ -29,39 +29,40 @@ module Shaka
         folders = Install::Locations::HOSTS.values.map { |relative| File.join(@home, relative) }
         folders.select! { |folder| File.directory?(folder) }
         broken = folders.flat_map { |folder| broken_links(folder) }
-        duplicates, skipped = claude_duplicates
-        report(folders.length, broken, duplicates, skipped)
-      rescue SystemCallError => e
-        check(NAME, 'degraded', "not checked: #{first_line(e.message)}")
+        report(folders.length, broken, duplicate_names)
       end
 
       private
 
+      # An unreadable folder is named in the report; the other folders are still checked.
       def entries(folder)
         Dir.children(folder).reject { |name| name.start_with?('.') }.sort.map { |name| File.join(folder, name) }
+      rescue SystemCallError => e
+        @unread << "#{shown(folder)} not read: #{first_line(e.message)}"
+        []
       end
 
       def broken_links(folder) = entries(folder).select { |path| File.symlink?(path) && !File.exist?(path) }
 
-      # Returns [{ name => [where it loads from, ...] }, reason plugin skills were not read or nil].
-      def claude_duplicates
+      # Only a folder holding SKILL.md loads as a skill, so a broken link or stray file is no copy.
+      def skills(folder) = entries(folder).select { |path| File.file?(File.join(path, 'SKILL.md')) }
+
+      # { name => [where Claude Code loads it from, ...] } for names it loads more than once.
+      def duplicate_names
         sources = Hash.new { |hash, key| hash[key] = [] }
-        folder = File.join(@home, Install::Locations::HOSTS.fetch('claude'))
-        entries(folder).each { |path| sources[File.basename(path)] << shown(folder) } if File.directory?(folder)
-        skipped = add_plugin_skills(sources)
-        [sources.select { |_name, where| where.length > 1 }, skipped]
+        folder = File.join(@home, CLAUDE)
+        skills(folder).each { |path| sources[File.basename(path)] << shown(folder) } if File.directory?(folder)
+        add_plugin_skills(sources)
+        sources.select { |_name, where| where.length > 1 }
       end
 
       def add_plugin_skills(sources)
         enabled_plugins.each do |plugin, install_path|
-          skills = File.join(install_path, 'skills')
-          next unless File.directory?(skills)
-
-          entries(skills).each { |path| sources[File.basename(path)] << "#{plugin} plugin" if File.directory?(path) }
+          folder = File.join(install_path, 'skills')
+          skills(folder).each { |path| sources[File.basename(path)] << "#{plugin} plugin" } if File.directory?(folder)
         end
-        nil
-      rescue JSON::ParserError, KeyError, TypeError, NoMethodError => e
-        "Claude Code plugin skills not read: #{first_line(e.message)}"
+      rescue JSON::ParserError, KeyError, TypeError, NoMethodError, ArgumentError => e
+        @unread << "Claude Code plugin skills not read: #{first_line(e.message)}"
       end
 
       # Claude Code loads a user-scope plugin only while settings.json marks it enabled.
@@ -76,40 +77,38 @@ module Shaka
       def json(relative)
         path = File.join(@home, relative)
         File.file?(path) ? JSON.parse(File.read(path)) : {}
+      rescue SystemCallError => e
+        raise TypeError, "#{shown(path)}: #{first_line(e.message)}"
       end
 
-      def report(count, broken, duplicates, skipped)
-        problems = [duplicate_text(duplicates), broken_text(broken), skipped].compact
+      def report(count, broken, duplicates)
+        problems = [duplicate_text(duplicates), broken_text(broken), *@unread].compact
         if problems.empty?
           return check(NAME, 'healthy', "no duplicate names or broken links in #{count} skill folder(s)")
         end
 
-        check(NAME, 'degraded', problems.join('; '), guidance: guidance(duplicates, broken, skipped))
+        check(NAME, 'degraded', problems.join('; '), guidance: guidance(duplicates, broken))
       end
 
       def duplicate_text(duplicates)
         return if duplicates.empty?
 
         items = duplicates.sort.map { |name, where| "#{name} (#{where.join(', ')})" }
-        "Claude Code loads #{duplicates.length} skill name(s) twice: #{listed(items)}"
+        "Claude Code loads #{duplicates.length} skill name(s) twice: #{items.join(', ')}"
       end
 
       def broken_text(broken)
         return if broken.empty?
 
-        "#{broken.length} skill link(s) point nowhere: #{listed(broken.map { |path| shown(path) })}"
+        "#{broken.length} skill link(s) point nowhere: #{broken.map { |path| shown(path) }.join(', ')}"
       end
 
-      def listed(items)
-        rest = items.length - SHOWN
-        [*items.first(SHOWN), ("and #{rest} more" if rest.positive?)].compact.join(', ')
-      end
-
-      def guidance(duplicates, broken, skipped)
+      def guidance(duplicates, broken)
         steps = []
         steps << 'Keep one copy of each duplicated skill, or disable the plugin that repeats it.' if duplicates.any?
         steps << 'Repoint or remove each broken link.' if broken.any?
-        steps << "Check that ~/#{PLUGINS} and ~/#{SETTINGS} hold valid JSON." if skipped
+        steps << "Make each folder named as not read readable, and ~/#{PLUGINS} and ~/#{SETTINGS} valid JSON." \
+          if @unread.any?
         "#{steps.join(' ')} Doctor changes nothing."
       end
 

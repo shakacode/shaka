@@ -16,6 +16,7 @@ class DoctorCompanionSkillsTest < Minitest::Test
   end
 
   def teardown
+    File.chmod(0o755, @locked) if @locked
     FileUtils.remove_entry(@home)
   end
 
@@ -56,10 +57,40 @@ class DoctorCompanionSkillsTest < Minitest::Test
     assert File.symlink?(link)
   end
 
-  def test_a_long_list_is_shortened
+  def test_every_broken_link_is_named
     FileUtils.mkdir_p(File.join(@home, '.agents/skills'))
     7.times { |index| File.symlink(File.join(@home, "missing#{index}"), File.join(@home, ".agents/skills/s#{index}")) }
-    assert_includes report, 's4, and 2 more'
+    expected = Array.new(7) { |index| "~/.agents/skills/s#{index}" }.join(', ')
+    assert_includes report, "7 skill link(s) point nowhere: #{expected}"
+  end
+
+  # Claude Code loads only a folder holding SKILL.md, so these are no second copy.
+  def test_a_broken_link_or_stray_entry_is_not_a_duplicate
+    FileUtils.mkdir_p(File.join(@home, '.claude/skills/empty'))
+    write('.claude/skills/notes', 'not a skill')
+    File.symlink(File.join(@home, 'missing'), File.join(@home, '.claude/skills/review'))
+    plugin('pack', skills: %w[review empty notes])
+    text = report
+    assert_includes text, '1 skill link(s) point nowhere: ~/.claude/skills/review'
+    refute_includes text, 'twice'
+  end
+
+  def test_a_bad_plugin_path_is_reported_not_raised
+    plugin('pack', skills: [], install: "/bad\u0000path")
+    assert_includes report, '[DEGRADED] Companion skills — Claude Code plugin skills not read'
+  end
+
+  def test_an_unreadable_folder_keeps_the_other_results
+    FileUtils.mkdir_p(File.join(@home, '.cursor/skills'))
+    File.symlink(File.join(@home, 'missing'), File.join(@home, '.cursor/skills/gone'))
+    @locked = File.join(@home, '.agents/skills')
+    FileUtils.mkdir_p(@locked)
+    File.chmod(0o000, @locked)
+    skip 'this account reads unreadable folders' if File.readable?(@locked)
+
+    text = report
+    assert_includes text, '~/.agents/skills not read'
+    assert_includes text, '~/.cursor/skills/gone'
   end
 
   def test_unreadable_plugin_settings_are_reported_not_raised
@@ -85,8 +116,8 @@ class DoctorCompanionSkillsTest < Minitest::Test
     File.write(path, text)
   end
 
-  def plugin(name, skills:, enabled: true, scope: 'user')
-    install = File.join(@home, '.claude/plugins/cache/market', name)
+  def plugin(name, skills:, enabled: true, scope: 'user', install: nil)
+    install ||= File.join(@home, '.claude/plugins/cache/market', name)
     skills.each { |skill_name| skill(File.join(install.delete_prefix("#{@home}/"), 'skills', skill_name)) }
     key = "#{name}@market"
     entry = [{ 'scope' => scope, 'installPath' => install }]

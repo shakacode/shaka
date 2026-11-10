@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'tmpdir'
 require 'shaka/doctor'
 
@@ -17,6 +18,7 @@ module DoctorHelper
   end
   # An empty home, so no test reads the skill folders of the machine it runs on.
   EMPTY_HOME = Dir.mktmpdir('doctor-home')
+  Minitest.after_run { FileUtils.remove_entry(EMPTY_HOME) }
   DEFAULTS = { root: nil, environment: { 'SHAKA_MACHINE_ALIAS' => 'm5' }, responses: {}, runner: nil,
                usage_files: nil, usage_source: nil, host_name: 'test-machine.local', host: 'claude-code',
                ruby_version: RUBY_VERSION, cursor_stop_hook: false, executable: EXECUTABLE,
