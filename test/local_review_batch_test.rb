@@ -297,3 +297,25 @@ class LocalReviewBatchCommentTest < Minitest::Test
     round(head, reviewer:, report: report(head, body: "no findings\n", reviewer:, findings: 0), findings: [])
   end
 end
+
+# Every finding of a round is fixed or settled in one repair commit before the next round.
+class LocalReviewOpenFindingTest < Minitest::Test
+  include LocalReviewLedgerSteps
+
+  # Break caught: one finding was fixed and reviewed while another of the round waited, so each
+  # fix restarted validation and review.
+  def test_a_new_head_waits_for_every_open_finding_of_the_last_commit
+    append(EARLIER, 'openai/codex', findings: 1)
+    append(EARLIER, 'anthropic/claude', findings: 1)
+    record([fixed(['openai/codex']), claude_finding('disposition' => 'open')])
+
+    error = assert_raises(Shaka::Error) { ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex') }
+    assert_includes error.message, 'F2'
+    record([fixed(['openai/codex']), claude_finding('disposition' => 'decision_needed', 'note' => 'Ask.')])
+    ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex')
+  end
+
+  private
+
+  def claude_finding(fields) = NIT.merge('id' => 'F2', 'reviewers' => { 'anthropic/claude' => '1' }, **fields)
+end
