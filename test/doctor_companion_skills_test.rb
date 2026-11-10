@@ -69,6 +69,10 @@ class DoctorCompanionSkillsTest < Minitest::Test
     refute_includes text, '[FAILED]'
   end
 
+  def test_a_missing_home_is_reported_not_raised
+    assert_includes doctor(home: nil).first, '[DEGRADED] Companion skills — not checked: no home directory'
+  end
+
   private
 
   def report = doctor(home: @home).first

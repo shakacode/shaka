@@ -24,6 +24,8 @@ module Shaka
       end
 
       def call
+        return check(NAME, 'degraded', 'not checked: no home directory') unless @home
+
         folders = Install::Locations::HOSTS.values.map { |relative| File.join(@home, relative) }
         folders.select! { |folder| File.directory?(folder) }
         broken = folders.flat_map { |folder| broken_links(folder) }
