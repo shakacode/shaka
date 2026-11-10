@@ -13,7 +13,7 @@ or say why the procedure skipped them.
 
 ## Settings changes
 
-Check this section on every PR, whether or not the rendering section applies.
+This section applies to every PR, whether or not the rendering section applies.
 
 A setting is a key that `.agents/shaka/config.yml` can set, as documented in
 `docs/settings.md` at the PR's base or head. Command-line defaults under `runtime:` in
@@ -28,7 +28,7 @@ now. Add what existing repositories must do: nothing, or the exact edit to
 `.agents/shaka/config.yml`. Link the key's `docs/settings.md` anchor at the head, or at
 the base for a removed key. In the Changelog section, add one line per changed setting
 with its key, old and new value, and any edit existing repositories must make. These
-lines come in addition to the template's one or two lines.
+lines come in addition to the template's one or two lines, as its comment allows.
 
 On any other PR, add the line `Settings changes: none.` so a reader can tell it was
 checked.
