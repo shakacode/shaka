@@ -5,6 +5,10 @@ module Shaka
   module UsageArchiveReferences
     INVENTORY_PREFIX = '<!-- shaka:usage-archive-inventory '
     INVENTORY = /<!-- shaka:usage-archive-inventory ([0-9a-f]{64}) -->\n/
+    # The usage section joins its reports with a blank line; a grouped reference restores exactly that.
+    SEPARATOR = "\n\n"
+    # A single `record` reference is the format before grouping; the helpers that wrote it refuse `records`.
+    SHAPES = [%w[comments record sha256], %w[comments records sha256]].freeze
 
     private
 
@@ -17,7 +21,8 @@ module Shaka
     end
 
     def inventory_digest(refs)
-      Digest::SHA256.hexdigest(JSON.generate(refs.map { |ref| ref.values_at('comments', 'sha256', 'record') }))
+      entries = refs.map { |ref| [*ref.values_at('comments', 'sha256'), ref.fetch('records') { ref['record'] }] }
+      Digest::SHA256.hexdigest(JSON.generate(entries))
     end
 
     def inventory_line(refs) = "#{INVENTORY_PREFIX}#{inventory_digest(refs)} -->\n"
@@ -35,9 +40,52 @@ module Shaka
       end
     end
 
+    # Splits the region into [text before, blocks, reference] runs, ending with the text after the last block.
+    # Adjacent table records from one archive share a reference, so the description grows by one reference
+    # per archive instead of one per record. A report with visible text keeps its own reference and display.
+    def runs(region, references)
+      pieces, tail = pieces(region)
+      grouped = pieces.chunk_while { |(_, before), (gap, after)| groupable?(before, gap, after, references) }
+      grouped.map do |run|
+        blocks = run.map(&:last)
+        [run.first.first, blocks, grouped_reference(blocks, references)]
+      end << [tail, [], nil]
+    end
+
+    def groupable?(before, gap, after, references)
+      gap == SEPARATOR && hidden?(before) && hidden?(after) && same_archive?(references[before], references[after])
+    end
+
+    def pieces(region)
+      cursor = 0
+      pieces = region.to_enum(:scan, UsageRecords::BLOCK).map do
+        match = Regexp.last_match
+        gap = region[cursor...match.begin(0)]
+        cursor = match.end(0)
+        [gap, match[0]]
+      end
+      [pieces, region[cursor..]]
+    end
+
+    def grouped_reference(blocks, references)
+      first = references[blocks.first]
+      return first unless first && hidden?(blocks.first)
+
+      first.slice('comments', 'sha256').merge('records' => blocks.map { |block| references[block].fetch('record') })
+    end
+
+    def same_archive?(first, second)
+      first && second && first.values_at('comments', 'sha256') == second.values_at('comments', 'sha256')
+    end
+
+    # A table record keeps only hidden columns and notes, which the table and pricing notes already show.
+    def hidden?(block) = inner(block).gsub(/<!--.*?-->/m, '').strip.empty?
+
+    def indices(ref) = ref.fetch('records') { [ref.fetch('record')] }
+
     def reference(json)
       value = JSON.parse(json)
-      unless value.is_a?(Hash) && value.keys.sort == %w[comments record sha256] && valid_reference?(value)
+      unless value.is_a?(Hash) && SHAPES.include?(value.keys.sort) && valid_reference?(value)
         raise Error, 'Malformed usage archive reference.'
       end
 
@@ -45,9 +93,12 @@ module Shaka
     end
 
     def valid_reference?(value)
-      ids, digest, index = value.values_at('comments', 'sha256', 'record')
-      valid_ids?(ids) && digest.is_a?(String) && digest.match?(/\A[0-9a-f]{64}\z/) &&
-        index.is_a?(Integer) && index >= 0
+      ids, digest = value.values_at('comments', 'sha256')
+      valid_ids?(ids) && digest.is_a?(String) && digest.match?(/\A[0-9a-f]{64}\z/) && valid_indices?(indices(value))
+    end
+
+    def valid_indices?(indices)
+      indices.is_a?(Array) && !indices.empty? && indices.all? { |index| index.is_a?(Integer) && index >= 0 }
     end
 
     def valid_ids?(ids)
