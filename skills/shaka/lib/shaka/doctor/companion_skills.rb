@@ -2,6 +2,7 @@
 
 require 'json'
 require_relative 'check'
+require_relative 'companion_skills_text'
 require_relative '../install/locations'
 
 module Shaka
@@ -12,6 +13,7 @@ module Shaka
     # copies. Report-only: nothing here changes a folder.
     class CompanionSkills
       include Check
+      include CompanionSkillsText
 
       NAME = 'Companion skills'
       CLAUDE = Install::Locations::HOSTS.fetch('claude')
@@ -26,10 +28,9 @@ module Shaka
       def call
         return check(NAME, 'degraded', 'not checked: no home directory') unless @home
 
-        folders = Install::Locations::HOSTS.values.map { |relative| File.join(@home, relative) }
-        folders.select! { |folder| File.directory?(folder) }
-        broken = folders.flat_map { |folder| broken_links(folder) }
-        report(folders.length, broken, duplicate_names)
+        paths = Install::Locations::HOSTS.values.map { |relative| File.join(@home, relative) }
+        folders = paths.select { |folder| File.directory?(folder) }
+        report(folders.length, broken_entries(paths, folders), duplicate_names)
       end
 
       private
@@ -40,6 +41,11 @@ module Shaka
       rescue SystemCallError => e
         @unread << "#{shown(folder)} not read: #{first_line(e.message)}"
         []
+      end
+
+      # A skills folder can itself be a link that points nowhere.
+      def broken_entries(paths, folders)
+        paths.select { |path| File.symlink?(path) && broken?(path) } + folders.flat_map { |f| broken_links(f) }
       end
 
       def broken_links(folder) = entries(folder).select { |path| File.symlink?(path) && broken?(path) }
@@ -56,7 +62,17 @@ module Shaka
       end
 
       # Only a folder holding SKILL.md loads as a skill, so a broken link or stray file is no copy.
-      def skills(folder) = entries(folder).select { |path| File.file?(File.join(path, 'SKILL.md')) }
+      def skills(folder) = entries(folder).select { |path| skill?(path) }
+
+      # A skill this account cannot read is named, so it never silently drops out of the comparison.
+      def skill?(path)
+        File.stat(File.join(path, 'SKILL.md')).file?
+      rescue Errno::ENOENT, Errno::ENOTDIR, Errno::ELOOP
+        false
+      rescue SystemCallError => e
+        @unread << "#{shown(path)} not read: #{first_line(e.message)}"
+        false
+      end
 
       # { name => [where Claude Code loads it from, ...] } for names it loads more than once.
       def duplicate_names
@@ -76,12 +92,20 @@ module Shaka
       # A plugin record that cannot be read is named; the other plugins are still checked.
       def add_plugin(sources, name, installs)
         user = installs.find { |install| install['scope'] == 'user' }
-        folder = File.join(user.fetch('installPath'), 'skills') if user
+        folder = File.join(install_path(user), 'skills') if user
         return unless folder && File.directory?(folder)
 
         skills(folder).each { |path| sources[File.basename(path)] << "#{name} plugin" }
       rescue KeyError, TypeError, NoMethodError, ArgumentError => e
         @unread << "#{name} plugin skills not read: #{first_line(e.message)}"
+      end
+
+      # A relative path would resolve against wherever doctor runs, not the plugin.
+      def install_path(user)
+        path = user.fetch('installPath')
+        raise ArgumentError, "installPath #{path} is not absolute" unless File.absolute_path?(path)
+
+        path
       end
 
       def plugin(key) = key.to_s.split('@').first
@@ -106,28 +130,6 @@ module Shaka
         end
 
         check(NAME, 'degraded', problems.join('; '), guidance: guidance(duplicates, broken))
-      end
-
-      def duplicate_text(duplicates)
-        return if duplicates.empty?
-
-        items = duplicates.sort.map { |name, where| "#{name} (#{where.join(', ')})" }
-        "Claude Code loads #{duplicates.length} skill name(s) twice: #{items.join(', ')}"
-      end
-
-      def broken_text(broken)
-        return if broken.empty?
-
-        "#{broken.length} skill link(s) point nowhere: #{broken.map { |path| shown(path) }.join(', ')}"
-      end
-
-      def guidance(duplicates, broken)
-        steps = []
-        steps << 'Keep one copy of each duplicated skill, or disable the plugin that repeats it.' if duplicates.any?
-        steps << 'Repoint or remove each broken link.' if broken.any?
-        steps << "Make each folder named as not read readable, and ~/#{PLUGINS} and ~/#{SETTINGS} valid JSON." \
-          if @unread.any?
-        "#{steps.join(' ')} Doctor changes nothing."
       end
 
       def shown(path) = path.start_with?("#{@home}/") ? "~#{path.delete_prefix(@home)}" : path

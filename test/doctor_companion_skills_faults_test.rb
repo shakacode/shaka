@@ -25,6 +25,21 @@ class DoctorCompanionSkillsFaultsTest < Minitest::Test
     assert_includes text, 'review (~/.claude/skills, pack plugin)'
   end
 
+  def test_an_unreadable_skill_is_named_not_dropped
+    skill('.claude/skills/review')
+    plugin('pack', skills: %w[review])
+    @locked = File.join(@home, '.claude/skills/review')
+    File.chmod(0o000, @locked)
+    skip 'this account reads unreadable folders' if File.readable?(@locked)
+
+    assert_includes report, '~/.claude/skills/review not read: Permission denied'
+  end
+
+  def test_a_relative_plugin_path_is_named_not_followed
+    plugin('pack', skills: [], install: 'relative/pack')
+    assert_includes report, 'pack plugin skills not read: installPath relative/pack is not absolute'
+  end
+
   def test_a_link_into_an_unreadable_folder_is_not_called_broken
     @locked = File.join(@home, 'locked')
     FileUtils.mkdir_p(File.join(@locked, 'skill'))

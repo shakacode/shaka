@@ -45,6 +45,12 @@ class DoctorCompanionSkillsTest < Minitest::Test
     assert File.symlink?(link)
   end
 
+  def test_a_skills_folder_that_is_a_broken_link_is_reported
+    FileUtils.mkdir_p(File.join(@home, '.cursor'))
+    File.symlink(File.join(@home, 'missing'), File.join(@home, '.cursor/skills'))
+    assert_includes report, '1 skill link(s) point nowhere: ~/.cursor/skills'
+  end
+
   def test_every_broken_link_is_named
     FileUtils.mkdir_p(File.join(@home, '.agents/skills'))
     7.times { |index| File.symlink(File.join(@home, "missing#{index}"), File.join(@home, ".agents/skills/s#{index}")) }
