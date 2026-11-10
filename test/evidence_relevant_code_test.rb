@@ -15,7 +15,7 @@ module EvidenceRequireGraph
                  attention|ready_time|review_thread|review_coverage|pending_review|published_results|
                  usage(?!/rate_card)|gitlab|install/|repository_config|configuration(?!/fingerprint)|trusted_|doctor/)}x
 
-  # Read directly by listed code, yet they cannot change how a check runs or how its result is checked:
+  # Read directly by listed code, yet they cannot change a check's result or how it is checked:
   # each feeds a digest already compared, picks a settings source, rejects bad YAML, guards a push,
   # records metadata, bounds the base fetch that only decides whether a check starts, or lives at a
   # listed path this name does not spell.

@@ -34,10 +34,11 @@ module Shaka
       end
 
       # Anything but a branch name, such as a revision, range, or remote-tracking name, would fail the
-      # fetch and quietly turn the stop off. Git's own check sees past the character set; a missing git
-      # (nil) is left to the fetch, which then reports the count as unknown.
+      # fetch and quietly turn the stop off. Git's branch-name check refuses ranges and revision
+      # suffixes, but accepts or expands the forms listed here. A missing git (nil) is left to the
+      # fetch, which then reports the count as unknown.
       def self.branch!(base)
-        named = base.match?(%r{\A[\w.\-/]+\z}) && !base.match?(%r{\A(?:HEAD\z|\h{7,}\z|origin/|refs/)})
+        named = !base.match?(%r{\A(?:HEAD\z|\h{7,}\z|origin/|refs/)|@\{})
         git_check = named && system(ENVIRONMENT, 'git', 'check-ref-format', '--branch', base,
                                     out: File::NULL, err: File::NULL)
         return base if named && git_check != false

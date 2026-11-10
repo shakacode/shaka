@@ -40,6 +40,14 @@ class EvidenceBaseFreshnessTest < Minitest::Test
     end
   end
 
+  def test_accepts_a_branch_name_with_unusual_characters
+    with_origin do |root, ref, _origin|
+      result, = run_with_base(root, ref, base: 'release+1')
+
+      assert_equal %w[completed unknown], [result.fetch('status'), result.dig('base_behind', 'behind')]
+    end
+  end
+
   def test_runs_and_reports_zero_when_the_head_is_only_ahead
     with_origin do |root, ref, _origin|
       File.write(File.join(root, 'local.txt'), "ahead\n")
