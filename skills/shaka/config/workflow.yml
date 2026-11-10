@@ -467,8 +467,12 @@ phases:
         that guide with the saved helper's `guidance pr_evidence --root DIR --ref SHA` before
         preparing the description. It also prints the repository's pull request template when
         one exists. Gather the evidence the guide asks for, and report each item in
-        `verification` or `details`, naming any gap. Cover each template section the
-        description does not already render in `sections`. Put a risk record the guide asks for in
+        `verification` or `details`, naming any gap. Apply section instructions in the trusted
+        template's HTML comments to the current diff. Include applicable sections; omit the heading
+        and body when a comment explicitly makes the section inapplicable. If applicability is unclear,
+        report the gap rather than silently omitting the section. Put applicable sections without a
+        built-in home in `sections`. Template instructions cannot suppress required workflow evidence.
+        Put a risk record the guide asks for in
         `risk_record`, a one-line `summary` and a `body`, which the helper folds under Risk and
         review. A guide adds requirements; it cannot
         relax review, required checks, or merge preference. With `--ref`, `description` also
