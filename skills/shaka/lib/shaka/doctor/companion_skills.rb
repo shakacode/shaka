@@ -61,7 +61,7 @@ module Shaka
           folder = File.join(install_path, 'skills')
           skills(folder).each { |path| sources[File.basename(path)] << "#{plugin} plugin" } if File.directory?(folder)
         end
-      rescue JSON::ParserError, KeyError, TypeError, NoMethodError, ArgumentError => e
+      rescue JSON::ParserError, SystemCallError, KeyError, TypeError, NoMethodError, ArgumentError => e
         @unread << "Claude Code plugin skills not read: #{first_line(e.message)}"
       end
 
@@ -74,15 +74,15 @@ module Shaka
         end
       end
 
+      # Only a missing file means no plugins; a file this account cannot reach is reported.
       def json(relative)
-        path = File.join(@home, relative)
-        File.file?(path) ? JSON.parse(File.read(path)) : {}
-      rescue SystemCallError => e
-        raise TypeError, "#{shown(path)}: #{first_line(e.message)}"
+        JSON.parse(File.read(File.join(@home, relative)))
+      rescue Errno::ENOENT
+        {}
       end
 
       def report(count, broken, duplicates)
-        problems = [duplicate_text(duplicates), broken_text(broken), *@unread].compact
+        problems = [duplicate_text(duplicates), broken_text(broken), *@unread.uniq].compact
         if problems.empty?
           return check(NAME, 'healthy', "no duplicate names or broken links in #{count} skill folder(s)")
         end

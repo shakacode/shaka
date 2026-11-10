@@ -1,30 +1,18 @@
 # frozen_string_literal: true
 
-require 'fileutils'
-require 'json'
-require 'tmpdir'
-require_relative 'test_helper'
-require_relative 'doctor_helper'
+require_relative 'doctor_companion_skills_support'
 
 # Doctor names skills one coding agent loads twice and skill links that point nowhere,
 # without changing any skill folder.
 class DoctorCompanionSkillsTest < Minitest::Test
-  include DoctorHelper
-
-  def setup
-    @home = Dir.mktmpdir('doctor-skills')
-  end
-
-  def teardown
-    File.chmod(0o755, @locked) if @locked
-    FileUtils.remove_entry(@home)
-  end
+  include CompanionSkillsSupport
 
   def test_an_empty_home_is_healthy
     assert_includes report, '[HEALTHY] Companion skills — no duplicate names or broken links in 0 skill folder(s)'
   end
 
   # Installers link one skill into every agent's folder, and each agent reads only its own.
+
   def test_the_same_name_in_two_agents_folders_is_not_a_duplicate
     skill('.agents/skills/review')
     skill('.claude/skills/review')
@@ -65,6 +53,7 @@ class DoctorCompanionSkillsTest < Minitest::Test
   end
 
   # Claude Code loads only a folder holding SKILL.md, so these are no second copy.
+
   def test_a_broken_link_or_stray_entry_is_not_a_duplicate
     FileUtils.mkdir_p(File.join(@home, '.claude/skills/empty'))
     write('.claude/skills/notes', 'not a skill')
@@ -73,62 +62,5 @@ class DoctorCompanionSkillsTest < Minitest::Test
     text = report
     assert_includes text, '1 skill link(s) point nowhere: ~/.claude/skills/review'
     refute_includes text, 'twice'
-  end
-
-  def test_a_bad_plugin_path_is_reported_not_raised
-    plugin('pack', skills: [], install: "/bad\u0000path")
-    assert_includes report, '[DEGRADED] Companion skills — Claude Code plugin skills not read'
-  end
-
-  def test_an_unreadable_folder_keeps_the_other_results
-    FileUtils.mkdir_p(File.join(@home, '.cursor/skills'))
-    File.symlink(File.join(@home, 'missing'), File.join(@home, '.cursor/skills/gone'))
-    @locked = File.join(@home, '.agents/skills')
-    FileUtils.mkdir_p(@locked)
-    File.chmod(0o000, @locked)
-    skip 'this account reads unreadable folders' if File.readable?(@locked)
-
-    text = report
-    assert_includes text, '~/.agents/skills not read'
-    assert_includes text, '~/.cursor/skills/gone'
-  end
-
-  def test_unreadable_plugin_settings_are_reported_not_raised
-    write('.claude/plugins/installed_plugins.json', '{not json')
-    text = report
-    assert_includes text, '[DEGRADED] Companion skills — Claude Code plugin skills not read'
-    refute_includes text, '[FAILED]'
-  end
-
-  def test_a_missing_home_is_reported_not_raised
-    assert_includes doctor(home: nil).first, '[DEGRADED] Companion skills — not checked: no home directory'
-  end
-
-  private
-
-  def report = doctor(home: @home).first
-
-  def skill(relative) = write(File.join(relative, 'SKILL.md'), "---\nname: #{File.basename(relative)}\n---\n")
-
-  def write(relative, text)
-    path = File.join(@home, relative)
-    FileUtils.mkdir_p(File.dirname(path))
-    File.write(path, text)
-  end
-
-  def plugin(name, skills:, enabled: true, scope: 'user', install: nil)
-    install ||= File.join(@home, '.claude/plugins/cache/market', name)
-    skills.each { |skill_name| skill(File.join(install.delete_prefix("#{@home}/"), 'skills', skill_name)) }
-    key = "#{name}@market"
-    entry = [{ 'scope' => scope, 'installPath' => install }]
-    update('.claude/plugins/installed_plugins.json', 'plugins') { |all| all.merge(key => entry) }
-    update('.claude/settings.json', 'enabledPlugins') { |all| all.merge(key => enabled) }
-  end
-
-  def update(relative, field)
-    path = File.join(@home, relative)
-    data = File.file?(path) ? JSON.parse(File.read(path)) : {}
-    data[field] = yield(data.fetch(field, {}))
-    write(relative, JSON.generate(data))
   end
 end
