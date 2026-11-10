@@ -862,38 +862,31 @@ areas.
 
 ### Change how risk is rated
 
-Paths and your guidance can raise a risk rating, never lower it, so a doubtful PR gets
-a person's look before it merges. Shaka's
-[risk rubric](../skills/shaka/config/post-implementation-risk.md) tells the checkpoint
-reviewer what each rating means. Every checkpoint prompt includes the rubric, and a
-[replacement prompt](#add-your-own-checkpoint-questions) replaces the built-in prompt but
-keeps the rubric. With `checkpoint.enabled: false`, no reviewer rates the PR, and merge
-treats a head without a published rating as high. Two things raise the rating:
+You can raise a PR's risk rating in two ways. No setting lowers a rating below the
+reviewer's.
 
-- Paths in a [high-risk](#high_risk_areas) or [medium-risk area](#medium_risk_areas).
-  Shaka applies the area's level after the reviewer rates, so the reviewer cannot rate
-  those changes lower.
-- Rating guidance in text the reviewer reads, for a rule that paths cannot express. Put
-  it in your [checkpoint instructions file](#add-your-own-checkpoint-questions), which
-  the reviewer reads last, after the rubric. For example:
+- Risk areas. List paths in a [high-risk](#high_risk_areas) or
+  [medium-risk area](#medium_risk_areas). After the reviewer rates, Shaka's code raises
+  the rating of a change to those paths.
+- Rating guidance, for a rule that paths cannot express. Write it in your
+  [checkpoint instructions file](#add-your-own-checkpoint-questions), for example:
 
   ```markdown
   Rate a change to a public API response as at least medium.
   ```
 
-  A replacement prompt or `AGENTS.md` can carry the same guidance. The rubric tells the
-  reviewer that guidance may raise a rating but never lower one. Shaka does not check
-  the rating against any of it.
+  Shaka's [risk rubric](../skills/shaka/config/post-implementation-risk.md) tells the
+  reviewer that guidance may raise a rating but never lower one. The same holds for
+  guidance in `AGENTS.md` or a replacement prompt. Shaka does not check the reviewer's
+  rating against your guidance.
 
-The [checkpoint](#checkpoint) reviewer, model, and effort choose who rates.
-[`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) leaves the rating alone and sets
-which ratings the agent may merge. [`merge.limits`](#mergelimits) sends a PR past its
-size limits to a person the same way. To see the rubric and your file in the order the
-reviewer reads them, ask `$shaka Show what my checkpoint reviewer receives.`
-
-Guidance cannot lower a rating below the rubric. To stop a path from raising ratings, remove
-it from its [high-risk](#high_risk_areas) or [medium-risk area](#medium_risk_areas). To
-ask for a way to lower ratings,
+Shaka also counts a PR as high when the reviewer rates it `unknown`, when GitHub cannot
+list its changed files, when it changes Shaka's own settings, or when no checkpoint rated
+its head, as with `checkpoint.enabled: false`.
+[`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) sets which ratings the agent may
+merge, and [`merge.limits`](#mergelimits) sends larger PRs to a person. To see the rubric
+and your file in the order the reviewer reads them, ask
+`$shaka Show what my checkpoint reviewer receives.` To ask for a way to lower ratings,
 [open a feature request](https://github.com/shakacode/shaka/issues/new/choose).
 
 ## `medium_risk_areas`
