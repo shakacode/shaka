@@ -36,12 +36,34 @@ class EvidenceTrustedCommandCleanupTest < Minitest::Test
   def test_cleanup_leaves_files_behind_a_swapped_in_symlink
     Dir.mktmpdir do |outside|
       File.write(File.join(outside, 'validate'), "kept\n")
-      swap = "#!/bin/sh\nbin=$(dirname -- \"$0\")\nrm -rf \"$bin\"\nln -s #{outside} \"$bin\"\n"
-      with_older_branch(validate: swap) do |root, trusted, _head|
+      with_older_branch(validate: swap('.agents/shaka/bin', outside)) do |root, trusted, _head|
         assert_includes refused_run(root, trusted), 'must be a real directory'
         assert_equal "kept\n", File.read(File.join(outside, 'validate'))
       end
     end
+  end
+
+  def test_cleanup_leaves_directories_behind_a_swapped_in_ancestor
+    %w[.agents .agents/shaka].each do |swapped|
+      Dir.mktmpdir do |outside|
+        FileUtils.mkdir_p(File.join(outside, 'shaka/bin'))
+        with_older_branch(validate: swap(swapped, outside)) do |root, trusted, _head|
+          refused_run(root, trusted)
+
+          assert_path_exists File.join(outside, 'shaka/bin'), swapped
+        end
+      end
+    end
+  end
+
+  # A validator that replaces one directory above its own copy with a symlink to OUTSIDE.
+  def swap(relative, outside)
+    <<~SH
+      #!/bin/sh
+      root=$(git -C "$(dirname -- "$0")" rev-parse --show-toplevel)
+      rm -rf "$root/#{relative}"
+      ln -s #{outside} "$root/#{relative}"
+    SH
   end
 
   def test_run_keeps_unrelated_agents_files

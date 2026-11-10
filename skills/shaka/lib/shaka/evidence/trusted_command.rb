@@ -68,14 +68,14 @@ module Shaka
         end
       end
 
-      # The run may have removed the copy or replaced its directory with a symlink; touch only the real copy.
-      def in_place?
-        expected = File.join(File.realpath(@root), File.dirname(@path))
-        File.file?(target) && File.realpath(File.dirname(target)) == expected
-      end
+      # The run may have removed the copy or swapped any directory above it for a symlink.
+      def in_place? = File.file?(target) && unmoved?(File.dirname(target))
 
       # The run may already have removed a directory this created, as `git clean -fdx` does.
-      def removable?(directory) = !File.symlink?(directory) && File.directory?(directory) && Dir.empty?(directory)
+      def removable?(directory) = File.directory?(directory) && unmoved?(directory) && Dir.empty?(directory)
+
+      # True when no component of the path now leads outside its place in the checkout.
+      def unmoved?(directory) = File.realpath(directory) == File.join(File.realpath(@root), relative(directory))
       def target = File.join(@root, @path)
       def parent(index) = File.join(@root, *File.dirname(@path).split('/').first(index + 1))
       def relative(directory) = directory.delete_prefix("#{@root}/")
