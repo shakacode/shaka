@@ -208,6 +208,10 @@ Put other project restrictions in `AGENTS.md`.
 
 ## `merge.auto_merge_max_risk`
 
+Shaka rejects the former `merge.auto_max_review_floor` and
+`pr_description.human_review_floors` settings. Remove them after moving their paths
+into [`high_risk_areas`](#high_risk_areas) or [`medium_risk_areas`](#medium_risk_areas).
+
 **Optional. Default: `low`.** The highest [risk](#high_risk_areas) the agent may merge without
 your approval. Each level includes the ones below it. Under `preference: ask` you approve every
 merge anyway, so this setting matters under `preference: auto`.

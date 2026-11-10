@@ -22,16 +22,13 @@ class ConfigureSettingsCoverageTest < Minitest::Test
     assert_empty(leaves(Shaka::Defaults.data.except('runtime')).reject { |path| covered?(path) })
   end
 
-  # Retired keys still load, with a warning, for one release, but nothing reports them.
   def test_every_key_the_schema_accepts_belongs_to_a_reported_setting
     keys = SCHEMA::Schema::REQUIRED + SCHEMA::Schema::OPTIONAL +
            { 'review' => ['required', *SCHEMA::Schema::OPTIONAL_REVIEW_KEYS],
              'merge' => ['preference', *SCHEMA::MergeSchema::OPTIONAL],
              'pr_description' => SCHEMA::PrDescriptionSchema::KEYS, 'branches' => SCHEMA::BranchSchema::KEYS,
              'wip' => [SCHEMA::WipSchema::KEY] }.flat_map { |section, names| names.map { |name| "#{section}.#{name}" } }
-    retired = SCHEMA::RetiredSettings::WARNINGS.keys.map { |path| path.join('.') }
-
-    assert_empty(keys.reject { |key| covered?(key) || retired.include?(key) })
+    assert_empty(keys.reject { |key| covered?(key) })
   end
 
   private

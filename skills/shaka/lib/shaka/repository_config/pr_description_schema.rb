@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'opening_schema'
-require_relative 'retired_settings'
 require_relative 'validation'
 require_relative '../publication/time_zone'
 
@@ -11,9 +10,8 @@ module Shaka
     class PrDescriptionSchema
       include Validation
 
-      # The retired key loads with a warning and is ignored for one release.
-      KEYS = ['show_shaka_credit', 'show_human_comments', 'max_human_comments', 'ignored_human_comments', 'time_zone',
-              'opening_check', RetiredSettings::PR_DESCRIPTION].freeze
+      KEYS = %w[show_shaka_credit show_human_comments max_human_comments ignored_human_comments time_zone
+                opening_check].freeze
 
       def initialize(description)
         @description = description
@@ -21,6 +19,7 @@ module Shaka
 
       def validate
         mapping!(@description, 'pr_description')
+        reject_review_floor
         keys!(@description, [], KEYS, 'pr_description')
         validate_credit
         validate_human_comments
@@ -31,6 +30,13 @@ module Shaka
       end
 
       private
+
+      def reject_review_floor
+        return unless @description.key?('human_review_floors')
+
+        raise Error, 'pr_description.human_review_floors is no longer supported; move its paths into ' \
+                     'high_risk_areas or medium_risk_areas, then remove it'
+      end
 
       def validate_credit
         return unless @description.key?('show_shaka_credit')

@@ -2,7 +2,6 @@
 
 require_relative '../error'
 require_relative '../merge_limits'
-require_relative 'retired_settings'
 require_relative 'validation'
 
 module Shaka
@@ -17,8 +16,7 @@ module Shaka
       AUTO_MERGE = 'auto_merge_max_risk'
       # High risk never merges without a person, so it is not a value.
       AUTO_MERGE_VALUES = %w[low medium].freeze
-      # The retired key loads with a warning and is ignored for one release.
-      OPTIONAL = ['limits', AUTO_MERGE, REQUIRED_CHECKS, HOLD_LABELS, RetiredSettings::MERGE].freeze
+      OPTIONAL = ['limits', AUTO_MERGE, REQUIRED_CHECKS, HOLD_LABELS].freeze
 
       def initialize(merge)
         @merge = merge
@@ -26,6 +24,7 @@ module Shaka
 
       def validate
         mapping!(@merge, 'merge')
+        reject_review_floor
         retired = %w[method release].find { |key| @merge.key?(key) }
         raise Error, "merge.#{retired} is no longer configurable; see skills/shaka/references/migration.md" if retired
 
@@ -37,6 +36,13 @@ module Shaka
       end
 
       private
+
+      def reject_review_floor
+        return unless @merge.key?('auto_max_review_floor')
+
+        raise Error, 'merge.auto_max_review_floor is no longer supported; use merge.auto_merge_max_risk and ' \
+                     'move the paths its floors held into high_risk_areas or medium_risk_areas, then remove it'
+      end
 
       def auto_merge!
         return unless @merge.key?(AUTO_MERGE)
