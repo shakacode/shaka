@@ -8,7 +8,12 @@ abort 'Usage: eval/bin/first-task-seed NEW_DIRECTORY' unless ARGV.size == 1
 destination = File.expand_path(ARGV.fetch(0))
 
 def git(directory, *)
-  env = %w[GIT_DIR GIT_WORK_TREE GIT_COMMON_DIR GIT_INDEX_FILE].to_h { |name| [name, nil] }
+  # Git's repository-local environment can override -C.
+  variables = %w[GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
+                 GIT_OBJECT_DIRECTORY GIT_DIR GIT_WORK_TREE GIT_IMPLICIT_WORK_TREE GIT_GRAFT_FILE
+                 GIT_INDEX_FILE GIT_NO_REPLACE_OBJECTS GIT_REPLACE_REF_BASE GIT_PREFIX
+                 GIT_SHALLOW_FILE GIT_COMMON_DIR GIT_CEILING_DIRECTORIES]
+  env = variables.to_h { |name| [name, nil] }
   system(env, 'git', '-C', directory, *, exception: true)
 end
 

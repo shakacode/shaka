@@ -12,11 +12,13 @@ to Shaka can supply the separate new-user evidence for [#277][acceptance].
    not create a remote, install Shaka, or change an existing directory.
 2. In the seed, run `bin/setup` and `bin/validate`. Confirm `bin/greet --plain Ada`
    does not yet print `Hello, Ada`. Host the seed on a fresh, authorized GitHub
-   test repository using the [sandbox setup](../contributing/evaluating-changes.md#set-up-a-sandbox).
+   test repository. Follow the identity, protection, and access cleanup requirements from the
+   [sandbox setup](../contributing/evaluating-changes.md#set-up-a-sandbox); leave the
+   seed unchanged, including omitting the copied-fixture trust file.
    Check that the default branch is at the seed, has no Shaka settings, and
    requires the `test` check. Give the trial identity permission to open a PR
    without administrative access. Keep prior runs out of the trial workspace.
-3. Use a clean host profile and a fresh chat with no Shaka installation, copied
+3. Use a clean Codex profile and a fresh chat with no Shaka installation, copied
    preferences, or earlier trial context. Keep normal permissions enabled.
    Send only the [Start here guide][guide] and the task below. Choose individual
    setup if asked. Record the installed source revision and any help, approval,
