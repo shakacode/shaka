@@ -40,7 +40,7 @@ module Shaka
         write_copy
         yield
       ensure
-        File.delete(target) if @written
+        File.delete(target) if @written && File.file?(target)
         @created.reverse_each { |directory| Dir.rmdir(directory) if Dir.empty?(directory) }
       end
 
