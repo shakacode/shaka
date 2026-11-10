@@ -55,6 +55,17 @@ class CandidateTreeTest < Minitest::Test
     assert_equal git('rev-parse', 'HEAD^{tree}'), Shaka::Evidence::CandidateTree.capture(root: @root)
   end
 
+  # The lint tooling test writes a probe under test/ while evidence run watches the tree.
+  def test_repository_ignore_rules_keep_the_lint_probe_out_of_the_capture
+    FileUtils.cp(File.expand_path('../.gitignore', __dir__), @root)
+    before = Shaka::Evidence::CandidateTree.capture(root: @root)
+    probe = File.join(@root, 'test', 'lint-probe20261109-1-abc')
+    FileUtils.mkdir_p(probe)
+    File.write(File.join(probe, 'probe.rb'), "# probe\n")
+
+    assert_equal before, Shaka::Evidence::CandidateTree.capture(root: @root)
+  end
+
   private
 
   def assert_linked_capture_isolated(linked)

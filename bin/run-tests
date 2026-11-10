@@ -11,6 +11,17 @@ require 'tempfile'
 
 workers = Integer(ENV.fetch('SHAKA_TEST_WORKERS', [Etc.nprocessors, 4].min))
 abort 'SHAKA_TEST_WORKERS must be at least 1' if workers < 1
+# --changed [BASE] runs only the tests a change since BASE's merge base can reach, for quick
+# reruns while fixing review findings. Repository validation still runs the whole suite.
+if ARGV.first == '--changed'
+  abort 'Usage: bin/run-tests --changed [BASE]' if ARGV.size > 2
+  require_relative '../test/support/changed_tests'
+  selector = ChangedTests.new(File.expand_path('..', __dir__))
+  selected = selector.tests_for(selector.changes(ARGV[1] || 'origin/main'))
+  puts selected ? "Running #{selected.size} test files the change can reach" : 'Running the whole suite'
+  ARGV.replace(selected || [])
+  Dir.chdir(File.expand_path('..', __dir__))
+end
 files = (ARGV.empty? ? Dir.glob('test/**/*_test.rb') : ARGV).map { |path| File.expand_path(path) }
 
 utf8_locale = RUBY_PLATFORM.include?('darwin') ? 'en_US.UTF-8' : 'C.UTF-8'

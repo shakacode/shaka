@@ -41,6 +41,14 @@ module Shaka
         runs + statuses.map { |status| status_row(status) }
       end
 
+      # The full SHA of the newest commit on a branch.
+      def branch_tip(branch)
+        sha = api("repos/#{@repository}/branches/#{URI.encode_uri_component(branch)}").dig('commit', 'sha')
+        return sha if sha.is_a?(String) && sha.match?(/\A\h{40}\z/)
+
+        raise Error, "GitHub did not report the newest commit on #{branch}."
+      end
+
       # Classic protection contexts plus ruleset contexts: what `refUpdateRule` and rulesets give over GraphQL.
       def rest_configured_required_checks(branch) = (classic_contexts(branch) + ruleset_contexts(branch)).uniq
 

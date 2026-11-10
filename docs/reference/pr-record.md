@@ -111,7 +111,8 @@ handoff names active automatic follow-up.
 
 Under Auto, every reported check must pass; skipped and neutral count as passing.
 A job that has not started is unseen, so make a check required if it must always
-hold the merge. Failed optional checks return work to you. An Auto merge normally
+hold the merge. Failed optional checks return work to you, except one the agent names
+as failing on the PR's target branch too ([failures the target branch shares](../working-with-shaka.md#choose-a-merge-policy)). An Auto merge normally
 gets the `auto-merged` label; queued merges and failed label writes are exceptions.
 
 If GitHub needs a branch update, the agent revalidates and reviews the new commit.

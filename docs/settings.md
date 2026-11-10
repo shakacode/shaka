@@ -766,7 +766,8 @@ A task's explicit choices take precedence. See
 for what the checkpoint means for your merge decision.
 
 The checkpoint also rates the PR's risk as low, medium, or high, raised to high inside a
-[high-risk area](#high_risk_areas), and says what that rating asks of the merge.
+[high-risk area](#high_risk_areas), and says what that rating asks of the merge. To
+change the rating, see [Change how risk is rated](#change-how-risk-is-rated).
 
 The PR records the conclusion, reasons, execution settings, and available native
 usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not merge”, or
@@ -800,9 +801,9 @@ Ask whether the change adds a step maintainers must remember.
 
 When your file conflicts with a built-in question or your `AGENTS.md` criteria, the
 reviewer follows your file.
-Shaka tells the reviewer that your file cannot relax its safety rules or change the
-report format. Shaka checks the report's format; the reviewer is trusted to keep the
-other rules.
+Shaka tells the reviewer that your file cannot relax its safety rules, change the
+report format, or lower a [risk rating](#change-how-risk-is-rated). Shaka checks the
+report's format; the reviewer is trusted to keep the other rules.
 
 That path is the default of `checkpoint.custom_instructions_file`. To keep the file elsewhere,
 name it with a path relative to the repository root:
@@ -819,8 +820,11 @@ checkpoint:
 | Set | Missing or empty | Settings validation fails |
 | Set to another path | Also present at the default path | The named file is added; `seam check` and `doctor` warn that the default one is ignored |
 
-To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to replace the whole prompt;
-you then keep that copy in step with Shaka's changes.
+To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to a copy
+of the built-in prompt without that question. You then keep that copy in step with
+Shaka's changes. The copy replaces the whole built-in prompt, including its guidance on
+what to report. Shaka's rules, report format, and rubrics for verification and
+[risk](#change-how-risk-is-rated) still apply.
 
 ## `high_risk_areas`
 
@@ -859,6 +863,35 @@ What each rating asks:
 [`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) sets which ratings the agent may merge under
 Auto; by default only low. Without a trusted settings commit, merge and the rating use the default level and
 areas.
+
+### Change how risk is rated
+
+You can raise a PR's risk rating in two ways. No setting lowers a rating below the
+reviewer's.
+
+- Risk areas. List paths in a [high-risk](#high_risk_areas) or
+  [medium-risk area](#medium_risk_areas). After the reviewer rates, Shaka's code raises
+  the rating of a change to those paths.
+- Rating guidance, for a rule that paths cannot express. Write it in your
+  [checkpoint instructions file](#add-your-own-checkpoint-questions), for example:
+
+  ```markdown
+  Rate a change to a public API response as at least medium.
+  ```
+
+  Shaka's [risk rubric](../skills/shaka/config/post-implementation-risk.md) tells the
+  reviewer that guidance may raise a rating but never lower one. The same holds for
+  guidance in `AGENTS.md` or a replacement prompt. Shaka does not check the reviewer's
+  rating against your guidance.
+
+Shaka also counts a PR as high when the reviewer rates it `unknown`, when GitHub cannot
+list its changed files, when it changes Shaka's own settings, or when no checkpoint rated
+its head, as with `checkpoint.enabled: false`.
+[`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) sets which ratings the agent may
+merge, and [`merge.limits`](#mergelimits) sends larger PRs to a person. To see the rubric
+and your file in the order the reviewer reads them, ask
+`$shaka Show what my checkpoint reviewer receives.` To ask for a way to lower ratings,
+[open a feature request](https://github.com/shakacode/shaka/issues/new/choose).
 
 ## `medium_risk_areas`
 

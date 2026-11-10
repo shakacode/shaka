@@ -271,6 +271,10 @@ phases:
         fix, rerun the same check, then simplify while green. Exercise the safety assumption for affected
         shared callers; report unexercised paths and any impractical check. Keep useful probes rerunnable.
         If automation is impractical, explain why and capture before and after behavior.
+        When the change alters a behavior, name, or promise, search the repository for text that
+        still describes the old one, such as docs, comments, examples, help output, agent
+        instructions, and unreleased changelog entries where feature changes edit them, and
+        update it in the same change.
         Keep executable logic in code, not in Markdown. Test behavior, not implementation wording.
         For prose-only changes, inspect the diff.
     done_when: The change and its tests exist on the branch.
@@ -610,7 +614,7 @@ phases:
         handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
-          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto] [--limits-confirmed-head SHA]
+          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto [--base-failure NAME]] [--limits-confirmed-head SHA]
           [--empty-checks-confirmed-head SHA] [--adequacy-confirmed-head SHA] [--review-waiver REASON]
         usage --commit SHA --contribution CATEGORY [--since-time TASK_START_UTC]
         ```
@@ -753,6 +757,8 @@ phases:
         for CI review. User-requested review gates still block in every mode.
         CodeRabbit, hosted Codex, and other unnamed bots are advisory: read completed findings,
         never wait for them except under the explicit comment-resolution settlement procedure below.
+      - Before repairing a failed hosted check, compare it with the base as
+        [hosted checks the base fails](<{{package_root}}/skills/shaka/references/base-validation-failure.md#hosted-checks-the-base-fails>) describes.
       - Collect every current-head finding into one repair batch. Fix demonstrated defects
         (correctness, failing tests, security, contract or data-loss). Answer each finding on its
         original thread with `reply`, adding `--comment ROOT_ID` inline, and decline nits there with
@@ -884,7 +890,9 @@ phases:
         on the PR resumes. Never set `awaiting-merge-approval` in Auto
         mode. In Auto mode, run `merge --auto` with the current head, walkthrough ID, and
         `--squash-message` content. It labels the PR `auto-merged` once GitHub confirms the merge;
-        report a failed or queue-deferred label in the handoff. When `--auto` refuses a failed check, hand
+        report a failed or queue-deferred label in the handoff. Add `--base-failure NAME` for each
+        optional check that [hosted checks the base fails](<{{package_root}}/skills/shaka/references/base-validation-failure.md#hosted-checks-the-base-fails>)
+        attributed to the base. When `--auto` refuses a failed check, hand
         this PR back under Ask. A head the user confirms past a gate is an Ask merge: run `merge`
         with the confirmation and without `--auto`. A required
         native approval must arrive first, and do not ask for a second approval afterward.
