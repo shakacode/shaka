@@ -21,10 +21,11 @@ module MergeWarningWordingHelpers
                               'reason' => reason, 'next_action' => next_action }
   end
 
-  # The visible warning: the marked region without its HTML comments.
+  # The visible warning: the marked region without its opening and waiting marker lines.
   def warning(github)
     body = github.description_body
-    body[body.index(REGION::OPEN)...body.index(REGION::CLOSE)].gsub(/<!--.*?-->\n?/, '')
+    region = body[body.index(REGION::OPEN)...body.index(REGION::CLOSE)]
+    region.lines.reject { |line| [REGION::OPEN, REGION::AWAITING_MARKER].include?(line.chomp) }.join
   end
 
   def assert_plain(text)
