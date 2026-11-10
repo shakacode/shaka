@@ -111,6 +111,15 @@ reviewing the setup PR.
 | `.agents/shaka.md` | Pointer to this configuration for people browsing the repository |
 | `AGENTS.md` (optional) | Existing project instructions and constraints; Shaka does not create or edit it |
 
+`.agents/shaka.md` names the Shaka version that set up the repository, and later
+setup runs leave it alone. After updating Shaka, you can bring it up to date:
+
+```text
+Refresh Shaka configuration for the current version.
+```
+
+The PR shows what changed, including any edits of your own the new text replaces.
+
 The scripts usually wrap existing commands. In Shaka's repository, `.agents/shaka/bin/setup`
 installs development dependencies; `bin/install` installs the skill.
 

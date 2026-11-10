@@ -566,6 +566,19 @@ class SeamInitializerPointerTest < Minitest::Test
     end
   end
 
+  # Break: a refresh command whose text drifts from init would rewrite existing
+  # pointers with content a fresh setup never produces.
+  def test_pointer_readme_prints_exactly_what_init_writes
+    with_repository do |root|
+      assert_predicate init(root).last, :success?
+
+      output, error, status = Open3.capture3(*COMMAND, 'seam', 'pointer', '--readme')
+
+      assert_predicate status, :success?, error
+      assert_equal File.read(File.join(root, '.agents/shaka.md')), output
+    end
+  end
+
   def test_repeat_init_keeps_a_pointer_generated_by_another_skill_version
     with_repository do |root|
       assert_predicate init(root).last, :success?
