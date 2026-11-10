@@ -27,13 +27,15 @@ class PublicationRiskReviewTest < Minitest::Test
 
   def section(rendered) = rendered[/## Risk and review\n\n.*?(?=\n\n## )/m]
 
-  def test_the_level_leads_and_the_section_sits_between_summary_and_intent
+  def test_the_level_leads_and_the_section_sits_between_intent_and_verification
     rendered = render(risk: HIGH)
 
     assert_includes rendered, '**Recommendation: Merge** · **Risk: High** · [Code Walkthrough]('
-    summary, risk, intent = ['## Summary', '## Risk and review', '## Intent'].map { |heading| rendered.index(heading) }
-    assert_operator summary, :<, risk
-    assert_operator risk, :<, intent
+    intent, risk, verification = ['## Intent', '## Risk and review', '## Verification'].map do |heading|
+      rendered.index(heading)
+    end
+    assert_operator intent, :<, risk
+    assert_operator risk, :<, verification
   end
 
   def test_a_plain_rating_says_what_it_asks_then_the_flagged_code_and_the_reviewers_reasons
