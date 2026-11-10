@@ -23,7 +23,7 @@ module Shaka
         steps = []
         steps << 'Keep one copy of each duplicated skill, or disable the plugin that repeats it.' if duplicates.any?
         steps << 'Repoint or remove each broken link.' if broken.any?
-        steps << 'Make each path named as not read readable, and its plugin record valid.' if @unread.any?
+        steps << 'Fix access to each path reported as not read, and repair any invalid plugin record.' if @unread.any?
         "#{steps.join(' ')} Doctor changes nothing."
       end
     end
