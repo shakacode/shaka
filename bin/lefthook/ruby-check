@@ -12,9 +12,11 @@ require 'tmpdir'
 #                           reads the pushed refs from standard input, or checks HEAD.
 # Ruby files are *.rb, *.rake, *.gemspec, Gemfile, and files with a ruby shebang.
 
+RUBY_NAMES = %w[Gemfile Rakefile config.ru].freeze
+
 def ruby_file?(path)
   return false if File.symlink?(path) || !File.file?(path)
-  return true if path.end_with?('.rb', '.rake', '.gemspec') || File.basename(path) == 'Gemfile'
+  return true if path.end_with?('.rb', '.rake', '.gemspec') || RUBY_NAMES.include?(File.basename(path))
 
   File.open(path, 'rb') { |file| file.gets.to_s.match?(/\A#!.*\bruby\b/) }
 end
@@ -25,11 +27,14 @@ RUBOCOP_UNAVAILABLE = 'RuboCop could not run; install the development gems with 
 
 def git(*args) = IO.popen(['git', *args], err: File::NULL, &:read)
 
-# Git's pre-push input lists "LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA" per pushed ref.
+# Git's pre-push input lists "LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA" per pushed ref; a
+# deletion has an all-zero local SHA and pushes nothing to check. A run without that input
+# checks HEAD.
 def pushed_commits
-  input = $stdin.tty? ? '' : $stdin.read
-  commits = input.lines.filter_map { it.split[1] }.grep_v(/\A0+\z/)
-  commits.empty? ? ['HEAD'] : commits.uniq
+  refs = ($stdin.tty? ? '' : $stdin.read).lines.filter_map { it.split[1] }
+  return ['HEAD'] if refs.empty?
+
+  refs.grep_v(/\A0+\z/).uniq
 end
 
 def changed_files(commit)
@@ -46,11 +51,20 @@ def check_commit(commit)
   return true if files.empty?
 
   Dir.mktmpdir('ruby-check') do |dir|
-    config = %w[.rubocop.yml] & git('ls-tree', '--name-only', commit, '.rubocop.yml').split("\n")
-    archive = IO.popen(['git', 'archive', '--format=tar', commit, '--', *config, *files], &:read)
-    IO.popen(['tar', '-x', '-C', dir], 'wb') { it.write(archive) }
-    Dir.chdir(dir) { passes?('lint', files) }
+    extracted?(commit, files, dir) && Dir.chdir(dir) { passes?('lint', files) }
   end
+end
+
+# Copies the files, RuboCop's settings, and the Ruby version file from the commit into dir.
+def extracted?(commit, files, dir)
+  settings = git('ls-tree', '--name-only', commit, '--', '.rubocop.yml', '.ruby-version').split("\n")
+  archive = IO.popen(['git', '--literal-pathspecs', 'archive', '--format=tar', commit, '--', *settings, *files],
+                     &:read)
+  IO.popen(['tar', '-x', '-C', dir], 'wb') { it.write(archive) } if $CHILD_STATUS.success?
+  return true if $CHILD_STATUS.success?
+
+  warn "ruby-check: could not read the files of #{commit}"
+  false
 end
 
 def passes?(mode, files)

@@ -7,7 +7,8 @@ require 'tmpdir'
 # Runs the bin/lefthook scripts the commit hooks call, in a scratch directory.
 module LefthookScriptHelpers
   ROOT = File.expand_path('..', __dir__)
-  ENVIRONMENT = { 'BUNDLE_GEMFILE' => File.join(ROOT, 'Gemfile'), 'RUBYOPT' => nil, 'RUBYLIB' => nil }.freeze
+  ENVIRONMENT = { 'BUNDLE_GEMFILE' => File.join(ROOT, 'Gemfile'), 'RUBYOPT' => nil, 'RUBYLIB' => nil,
+                  'GIT_CONFIG_GLOBAL' => File::NULL, 'GIT_CONFIG_NOSYSTEM' => '1' }.freeze
 
   def setup
     @dir = Dir.mktmpdir
@@ -26,7 +27,7 @@ module LefthookScriptHelpers
   end
 
   def git(*)
-    output, status = Open3.capture2e('git', '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+    output, status = Open3.capture2e(ENVIRONMENT, 'git', '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
                                      '-c', 'commit.gpgsign=false', *, chdir: @dir)
     assert_predicate status, :success?, output
     output
@@ -102,7 +103,7 @@ class LefthookScriptsTest < Minitest::Test
     write('c.bin', "bin\0ary")
     write('d.bin', "\x08\x01")
     write('e.txt', '')
-    File.symlink(File.join(@dir, 'a.txt'), File.join(@dir, 'link.txt'))
+    File.symlink(File.join(@dir, 'a.txt'), File.join(@dir, 'link.txt')) unless Gem.win_platform?
     _, status = script('trailing-newlines', 'link.txt', 'a.txt', 'b.txt', 'c.bin', 'd.bin', 'e.txt', 'missing.txt')
 
     assert_predicate status, :success?
@@ -118,7 +119,7 @@ class LefthookScriptsTest < Minitest::Test
   end
 
   def test_installed_reports_whether_the_pre_commit_hook_runs_lefthook
-    system('git', 'init', '-q', @dir, exception: true)
+    git('init', '-q')
 
     refute_predicate script('installed').last, :success?
     write('.git/hooks/pre-commit', "#!/bin/sh\nlefthook run pre-commit \"$@\"\n")
@@ -144,7 +145,7 @@ class LefthookBranchCheckTest < Minitest::Test
     assert_equal "# frozen_string_literal: true\n\nputs 'fixed'\n", read('lib/a.rb')
   end
 
-  def test_branch_mode_checks_each_pushed_commit_and_ignores_unpushed_edits
+  def test_branch_mode_checks_the_pushed_ref_and_ignores_unpushed_edits
     git_repository
     write('lib/a.rb', "# frozen_string_literal: true\n\nputs 'clean'\n")
     git('add', '.')
@@ -152,6 +153,16 @@ class LefthookBranchCheckTest < Minitest::Test
     pushed = git('rev-parse', 'HEAD').strip
     write('lib/a.rb', "def broken\n")
     input = "refs/heads/x #{pushed} refs/heads/x #{'0' * 40}\n"
+
+    assert_predicate script('ruby-check', 'branch', stdin_data: input).last, :success?
+  end
+
+  def test_branch_mode_checks_nothing_for_a_deletion_push
+    git_repository
+    write('lib/a.rb', "def broken\n")
+    git('add', '.')
+    git('commit', '-qm', 'broken')
+    input = "(delete) #{'0' * 40} refs/heads/old #{git('rev-parse', 'HEAD').strip}\n"
 
     assert_predicate script('ruby-check', 'branch', stdin_data: input).last, :success?
   end
