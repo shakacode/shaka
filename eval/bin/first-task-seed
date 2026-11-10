@@ -14,12 +14,13 @@ def git(directory, *)
                  GIT_INDEX_FILE GIT_NO_REPLACE_OBJECTS GIT_REPLACE_REF_BASE GIT_PREFIX
                  GIT_SHALLOW_FILE GIT_COMMON_DIR GIT_CEILING_DIRECTORIES]
   env = variables.to_h { |name| [name, nil] }
-  system(env, 'git', '-C', directory, *, exception: true)
+  hooks = File.join(directory, '.git', 'disabled-hooks')
+  system(env, 'git', '-c', "core.hooksPath=#{hooks}", '-C', directory, *, exception: true)
 end
 
 begin
   Dir.mkdir(destination)
-  git(destination, 'init', '--quiet', '--initial-branch=main')
+  git(destination, 'init', '--quiet', '--template=', '--initial-branch=main')
   git(destination, 'fetch', '--quiet', '--no-tags', source, seed)
   git(destination, 'checkout', '--quiet', '-b', 'main', seed)
 rescue SystemCallError, RuntimeError => e
