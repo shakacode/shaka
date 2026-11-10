@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require 'shaka/publication/intent_verification'
+require 'shaka/publication/risk_review'
 
 # https://github.com/shakacode/shaka/issues/846: one PR-wide review effort either asked for more
 # care everywhere or understated the few lines that needed close reading.
@@ -11,9 +11,9 @@ class PublicationReviewFocusListTest < Minitest::Test
             'from' => 'def submit', 'block' => true }.freeze
   GUARD = { 'path' => 'lib/guard.rb', 'reason' => 'decides who may merge.' }.freeze
 
+  # The list renders under Risk and review, where a reader decides how carefully to review.
   def intent(focus, pull = nil)
-    content = { 'intent' => INTENT.merge('review_focus' => focus), 'verification' => VERIFICATION }
-    Shaka::IntentVerification.render(content, nil, pull).first
+    Shaka::RiskReview.render({ 'intent' => INTENT.merge('review_focus' => focus) }, pull).join
   end
 
   def resolved(*entries) = { 'shaka_review_focus' => entries }
@@ -23,7 +23,7 @@ class PublicationReviewFocusListTest < Minitest::Test
                     { 'url' => "#{BLOB}/lib/guard.rb", 'lines' => nil })
     rendered = intent([MERGE, GUARD], pull)
 
-    expected = "**Closer reading:**\n" \
+    expected = "**Flagged by the implementer:**\n" \
                "- [`lib/merge.rb` lines 40–58](#{BLOB}/lib/merge.rb#L40-L58), " \
                "compares the queue base before submitting.\n" \
                "- [`lib/guard.rb`](#{BLOB}/lib/guard.rb), decides who may merge."
@@ -50,8 +50,8 @@ class PublicationReviewFocusListTest < Minitest::Test
   end
 
   def test_no_entries_add_nothing
-    refute_includes intent(nil), 'Closer reading'
-    refute_includes intent([]), 'Closer reading'
+    refute_includes intent(nil), 'Flagged'
+    refute_includes intent([]), 'Flagged'
   end
 
   # Agents may still send the retired 1-5 level for a while; it neither refuses nor renders.

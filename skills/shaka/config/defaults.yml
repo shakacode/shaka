@@ -57,6 +57,8 @@ pr_description:
   show_shaka_credit: true # Show a quiet Shaka website credit below the PR summary.
   show_human_comments: true # List the comments people wrote on the PR.
   max_human_comments: 20 # Rows that list shows, open comments first.
+  # Comments the list leaves out when their whole text matches one of these; * matches any characters but whitespace.
+  ignored_human_comments: []
   time_zone: UTC # Zone of the times in the Timings section; a repository that sets none uses the user's.
   opening_check:
     enabled: true # Check description and walkthrough openings, and description terms, after publication.

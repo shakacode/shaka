@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'required_checks'
 
 module Shaka
   # Refuses a merge unless every gating check (native, or seam-declared as a fallback) is passing.
@@ -13,9 +14,15 @@ module Shaka
 
     private
 
+    def verify_gate
+      gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
+      verify_checks(gate.fetch('checks'), head: @head, confirmed_head: @empty_checks_confirmed_head)
+      gate
+    end
+
     # confirmed_head names the head a user told the agent to merge knowing no check gates it.
     def verify_checks(checks, head: nil, confirmed_head: nil)
-      verify_all_checks(@github.checks) if @auto
+      verify_all_checks(@github.checks, checks) if @auto
       raise Error, 'No observable required checks; native readiness is unknown' unless checks.is_a?(Array)
       return verify_empty_confirmation(head, confirmed_head) if checks.empty?
 
@@ -26,19 +33,37 @@ module Shaka
       end
     end
 
-    # Under Auto, GitHub has to report CLEAN, as with ci_review_wait: all.
-    def merge_state_wait = @auto ? 'all' : @ci_review_wait
+    # Under Auto, GitHub has to report CLEAN, as with ci_review_wait: all. Named base failures keep
+    # GitHub at UNSTABLE, so they defer to the trusted wait: `none` and `one` accept UNSTABLE once
+    # verify_all_checks has required every other check to pass, and `all` never accepts UNSTABLE.
+    def merge_state_wait
+      return @ci_review_wait unless @auto
 
-    # Auto merges also need every reported check on the head, required or not, to have passed.
-    def verify_all_checks(checks)
+      @base_failures&.any? ? @ci_review_wait : 'all'
+    end
+
+    # Auto merges also need every reported check on the head, required or not, to have passed,
+    # except a non-required one that MergeBaseFailures finds failing on the base branch too.
+    def verify_all_checks(checks, required)
       raise Error, 'Head checks are unknown; Auto cannot merge' unless checks.is_a?(Array)
 
-      waiting = checks.reject { |check| passing_check?(check) }
+      waiting = unexcused(checks, checks.reject { |check| passing_check?(check) }, required)
       return if waiting.empty?
 
       names = waiting.map { |check| check.is_a?(Hash) ? "#{check['name']} (#{check['state']})" : check.inspect }
       raise Error, "Auto merges only when every check on the head passed; not passing: #{names.join(', ')}. " \
                    'Wait with pr watch --auto, or hand the PR back under Ask'
+    end
+
+    # Drops the failures MergeBaseFailures finds on the base branch too. A check merge.required_checks
+    # names counts as required even where GitHub's own required checks take that list's place.
+    def unexcused(checks, waiting, required)
+      return waiting unless @base_failures
+
+      if required.is_a?(Array)
+        names = required.filter_map { |check| check['name'] if check.is_a?(Hash) }.union(Array(@seam_required_checks))
+      end
+      waiting - @base_failures.excuse(checks.grep(Hash), names, @target.base)
     end
 
     def verify_empty_confirmation(head, confirmed_head)
@@ -53,6 +78,9 @@ module Shaka
     def excused_checks(gate, head)
       gate.fetch('checks').empty? ? { 'empty_required_checks_confirmed_head' => head } : {}
     end
+
+    # What the last check read excused as base failures, so the result names the base commit it verified.
+    def base_failure_evidence = @base_failures ? @base_failures.evidence : {}
 
     def passing_check?(check)
       return false unless check.is_a?(Hash) && check['name'].is_a?(String) && !check['name'].strip.empty?

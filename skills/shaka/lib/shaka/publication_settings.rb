@@ -33,7 +33,8 @@ module Shaka
       current, review, config = (current_settings(root:, ref:, repository:, required:) if ref)
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
           reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone,
-          ready_gate: ReadyTime.gate(config, override: options[:ci_review_wait]))
+          ignored_human_comments: config&.pr_description&.fetch('ignored_human_comments', nil),
+          ready_gate: ReadyTime.gate(config, override: options[:ci_review_wait]), config:)
     end
 
     # Current results win. Failing those, a commit whose description already shows verified results
@@ -103,8 +104,10 @@ module Shaka
     end
 
     def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil, # rubocop:disable Metrics/ParameterLists
-                   reviewer_shortfall: nil, time_zone: nil, ready_gate: nil)
+                   reviewer_shortfall: nil, time_zone: nil, ready_gate: nil, config: nil, ignored_human_comments: nil)
+      @config = config
       @ready_gate = ready_gate
+      @ignored_human_comments = ignored_human_comments
       @reviewer_shortfall = reviewer_shortfall
       @time_zone = time_zone
       @repository = repository
@@ -135,7 +138,13 @@ module Shaka
       rows.is_a?(Integer) && rows.positive? ? rows : RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('max_human_comments')
     end
 
+    # Unread settings hide nothing, so every comment a person wrote stays listed.
+    def ignored_human_comments = @ignored_human_comments.is_a?(Array) ? @ignored_human_comments.grep(String) : []
+
     # The bound results Verification reports and what gates readiness; nil when not read.
     attr_reader :verdict, :ready_gate
+
+    # The trusted settings read at --ref, so the description rates risk with the areas merge uses; nil without them.
+    attr_reader :config
   end
 end

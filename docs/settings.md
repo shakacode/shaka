@@ -208,6 +208,10 @@ Put other project restrictions in `AGENTS.md`.
 
 ## `merge.auto_merge_max_risk`
 
+Shaka rejects the former `merge.auto_max_review_floor` and
+`pr_description.human_review_floors` settings. Remove them after moving their paths
+into [`high_risk_areas`](#high_risk_areas) or [`medium_risk_areas`](#medium_risk_areas).
+
 **Optional. Default: `low`.** The highest [risk](#high_risk_areas) the agent may merge without
 your approval. Each level includes the ones below it. Under `preference: ask` you approve every
 merge anyway, so this setting matters under `preference: auto`.
@@ -762,7 +766,8 @@ A task's explicit choices take precedence. See
 for what the checkpoint means for your merge decision.
 
 The checkpoint also rates the PR's risk as low, medium, or high, raised to high inside a
-[high-risk area](#high_risk_areas), and says what that rating asks of the merge.
+[high-risk area](#high_risk_areas), and says what that rating asks of the merge. To
+change the rating, see [Change how risk is rated](#change-how-risk-is-rated).
 
 The PR records the conclusion, reasons, execution settings, and available native
 usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not merge”, or
@@ -796,9 +801,9 @@ Ask whether the change adds a step maintainers must remember.
 
 When your file conflicts with a built-in question or your `AGENTS.md` criteria, the
 reviewer follows your file.
-Shaka tells the reviewer that your file cannot relax its safety rules or change the
-report format. Shaka checks the report's format; the reviewer is trusted to keep the
-other rules.
+Shaka tells the reviewer that your file cannot relax its safety rules, change the
+report format, or lower a [risk rating](#change-how-risk-is-rated). Shaka checks the
+report's format; the reviewer is trusted to keep the other rules.
 
 That path is the default of `checkpoint.custom_instructions_file`. To keep the file elsewhere,
 name it with a path relative to the repository root:
@@ -815,8 +820,11 @@ checkpoint:
 | Set | Missing or empty | Settings validation fails |
 | Set to another path | Also present at the default path | The named file is added; `seam check` and `doctor` warn that the default one is ignored |
 
-To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to replace the whole prompt;
-you then keep that copy in step with Shaka's changes.
+To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to a copy
+of the built-in prompt without that question. You then keep that copy in step with
+Shaka's changes. The copy replaces the whole built-in prompt, including its guidance on
+what to report. Shaka's rules, report format, and rubrics for verification and
+[risk](#change-how-risk-is-rated) still apply.
 
 ## `high_risk_areas`
 
@@ -856,6 +864,35 @@ What each rating asks:
 Auto; by default only low. Without a trusted settings commit, merge and the rating use the default level and
 areas.
 
+### Change how risk is rated
+
+You can raise a PR's risk rating in two ways. No setting lowers a rating below the
+reviewer's.
+
+- Risk areas. List paths in a [high-risk](#high_risk_areas) or
+  [medium-risk area](#medium_risk_areas). After the reviewer rates, Shaka's code raises
+  the rating of a change to those paths.
+- Rating guidance, for a rule that paths cannot express. Write it in your
+  [checkpoint instructions file](#add-your-own-checkpoint-questions), for example:
+
+  ```markdown
+  Rate a change to a public API response as at least medium.
+  ```
+
+  Shaka's [risk rubric](../skills/shaka/config/post-implementation-risk.md) tells the
+  reviewer that guidance may raise a rating but never lower one. The same holds for
+  guidance in `AGENTS.md` or a replacement prompt. Shaka does not check the reviewer's
+  rating against your guidance.
+
+Shaka also counts a PR as high when the reviewer rates it `unknown`, when GitHub cannot
+list its changed files, when it changes Shaka's own settings, or when no checkpoint rated
+its head, as with `checkpoint.enabled: false`.
+[`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) sets which ratings the agent may
+merge, and [`merge.limits`](#mergelimits) sends larger PRs to a person. To see the rubric
+and your file in the order the reviewer reads them, ask
+`$shaka Show what my checkpoint reviewer receives.` To ask for a way to lower ratings,
+[open a feature request](https://github.com/shakacode/shaka/issues/new/choose).
+
 ## `medium_risk_areas`
 
 **Optional. Default: the area below.** A change in a medium-risk area counts as at least
@@ -891,7 +928,8 @@ project_guidance:
   library can ask for a compatibility run against its oldest supported version, and
   the agent reports that run in the description's verification. Shaka also shows the
   guide to the agent each time it publishes the description, so a skipped read still
-  surfaces it.
+  surfaces it. A risk record the guide asks for, such as your own risk classes, appears
+  folded under the description's [Risk and review](reference/pr-record.md#risk-and-review).
 - `merge_readiness`: read before the [checkpoint](reference/pr-record.md#checkpoint).
   For example, a data service can require a confirmed backfill plan. The agent lists
   each requirement and its status, and an unmet one blocks the merge-ready claim.
@@ -1118,6 +1156,13 @@ directories holding the configuration and scripts must be real directories.
 Removing an optional check already on the default branch requires an explicit,
 maintainer-approved policy change.
 
+A long-lived branch cut before you added these scripts, such as a release branch,
+still gets validation evidence. When the branch has no `.agents/shaka/bin`
+directory, Shaka runs the default branch's copy of the script against that
+branch's files and removes the copy afterward. The script still runs the branch's
+own tools, so `exec bin/ci-local` runs that branch's `bin/ci-local`. The result
+records the trusted copy as its command source.
+
 ## `base_branch`
 
 **Optional. Default: the repository's default branch.**
@@ -1215,6 +1260,29 @@ only when it has at most 12 words and 90 characters, leaving out any code. A lon
 one is already on the PR, so the list shows the agent's one-line summary and links
 to it. So does a short comment with a list beside code, where code is hard to tell
 from prose.
+
+## `pr_description.ignored_human_comments`
+
+**Optional. Default: none.**
+
+Leaves comments that only run a command, such as `+review-app-deploy` or `/deploy`,
+out of the **Human comments** list, so the list shows what people actually said. A
+line under the list says how many it left out.
+
+```yaml
+pr_description:
+  ignored_human_comments:
+    - '+review-app-*'
+    - '/deploy'
+    - '/deploy *'
+```
+
+A comment is left out when its whole text matches an entry, ignoring case and
+surrounding spaces. `*` matches any characters except whitespace, such as spaces, tabs, and line breaks, so `+review-app-*`
+matches `+review-app-deploy` but not `+review-app-deploy failed on staging`. Write
+`/deploy *` to match a command with one argument, such as `/deploy staging`. A
+review that approves, requests changes, or was dismissed stays listed whatever its
+text says.
 
 ## `pr_description.time_zone`
 

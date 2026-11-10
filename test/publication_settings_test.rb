@@ -115,3 +115,22 @@ class PublicationSettingsTest < Minitest::Test
     end
   end
 end
+
+# The Human comments list reads its ignored patterns from the trusted settings, not the public snapshot.
+class PublicationIgnoredCommentsSettingTest < Minitest::Test
+  include EvidenceFixture
+
+  def test_the_repository_s_ignored_comment_patterns_reach_the_description
+    with_checkout('pr_description' => { 'ignored_human_comments' => ['+deploy'] }) do |root, ref|
+      pull = { 'changed_files' => 0, 'head' => { 'sha' => ref }, 'base' => { 'sha' => ref } }
+      github = Object.new.tap do |client|
+        def client.repository = 'shakacode/shaka'
+        def client.number = 1
+        def client.api_list(_path) = []
+      end
+      settings = Shaka::PublicationSettings.prepare(root:, ref:, pull:, options: { root: }, github:)
+
+      assert_equal ['+deploy'], settings.ignored_human_comments
+    end
+  end
+end

@@ -4,12 +4,13 @@ require_relative '../error'
 require_relative 'text'
 
 module Shaka
-  # Renders the few files or line ranges a PR asks reviewers to read more closely than the rest, each with its
-  # reason. ReviewFocus finds their lines at the head.
+  # Renders the few files or line ranges the implementer asks reviewers to read more closely than the rest, each
+  # with its reason, under Risk and review. ReviewFocus finds their lines at the head.
   module ReviewFocusList
     # level is the retired 1-5 rating; an agent may still send it for a while, and it is ignored.
     FIELDS = %w[path level reason from to block].freeze
     SAFE_PATH = %r{\A[\w.@+/ -]+\z}
+    LABEL = '**Flagged by the implementer:**'
 
     module_function
 
@@ -21,7 +22,7 @@ module Shaka
       checked = listed.each_with_index.map { |entry, index| checked(entry, "review_focus #{index + 1}") }
       return [] if checked.empty?
 
-      ["**Closer reading:**\n#{checked.zip(Array(resolved)).map { |entry, link| line(entry, link) }.join("\n")}"]
+      ["#{LABEL}\n#{checked.zip(Array(resolved)).map { |entry, link| line(entry, link) }.join("\n")}"]
     end
 
     def checked(entry, label)

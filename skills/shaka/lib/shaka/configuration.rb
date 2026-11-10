@@ -107,6 +107,14 @@ module Shaka
       File.file?(command_path(root, name))
     end
 
+    # The bytes of a fixed command at the trusted commit, following a tracked symlink to its executable file.
+    def trusted_command(root:, sha:, path:)
+      resolved, entry = TrustedPathResolver.new(root:, sha:).resolve(path)
+      raise Error, "#{path} at #{sha} must be a tracked executable file" unless entry == %w[100755 blob]
+
+      read_at_commit(root:, sha:, path: resolved)
+    end
+
     def contract_entry?(root)
       !Layout.worktree(root:, allow_missing: true).nil?
     end

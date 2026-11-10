@@ -5,6 +5,7 @@ require_relative '../error'
 require_relative '../post_implementation_report'
 require_relative 'text'
 require_relative '../publication_sections'
+require_relative 'risk_review'
 
 module Shaka
   # Renders the links a reader needs before any description section.
@@ -26,7 +27,7 @@ module Shaka
       return [*decisions, links] unless content.key?('checkpoint')
 
       checkpoint = current_checkpoint(content['checkpoint'], pull)
-      label = recommendation_label(checkpoint['recommendation'])
+      label = [recommendation_label(checkpoint['recommendation']), RiskReview.lead(content, pull)].join(' · ')
       [*decisions, decisions.any? ? links : "#{label} · #{links}", *adequacy(checkpoint['verification_adequacy']),
        *next_action(checkpoint['next_action'])]
     end

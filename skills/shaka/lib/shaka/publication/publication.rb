@@ -16,6 +16,7 @@ require_relative 'human_comments'
 require_relative 'skills_used'
 require_relative 'metrics'
 require_relative 'intent_verification'
+require_relative 'risk_review'
 require_relative 'quoted_markers'
 require_relative '../publication_sections'
 
@@ -29,7 +30,7 @@ module Shaka
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil, # rubocop:disable Metrics/ParameterLists
                          environment: nil, host_name: nil)
       new(content, description: true, workflow_version:, pull:, settings:, timeline:, environment:, host_name:)
-        .render(%i[steps intent_verification sections evidence metrics wip credit],
+        .render(%i[steps intent_verification human_comments evidence metrics wip sections credit],
                 lead: %i[lead]).tap { QuotedMarkers.refuse!(content) }
     end
 
@@ -75,7 +76,9 @@ module Shaka
     end
 
     # Only a description is rendered with its pull request, so only a description lists what people wrote.
-    def sections = PublicationSections.render(@content, HumanComments.for(@content, @pull, @settings))
+    def sections = PublicationSections.render(@content)
+
+    def human_comments = HumanComments.for(@content, @pull, @settings)
 
     def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']))
 
@@ -87,10 +90,11 @@ module Shaka
 
     def credit = PublicationLinks.credit(@settings)
 
-    # Intent and verification answer whether to trust the merge, so they come before any section.
+    # Keep review guidance between the purpose and its proof.
     def intent_verification
-      IntentVerification.render(@content, @settings.verdict, @pull, task: task_line,
-                                                                    shortfall: @settings.reviewer_shortfall)
+      intent, verification = IntentVerification.render(@content, @settings.verdict, @pull,
+                                                       task: task_line, shortfall: @settings.reviewer_shortfall)
+      [intent, *RiskReview.render(@content, @pull), verification]
     end
 
     def evidence
@@ -102,8 +106,7 @@ module Shaka
 
     # Verification carries the proof, so a table only adds facts that fit no check.
     def table
-      spec = @content['table']
-      return [] if spec.nil?
+      return [] if (spec = @content['table']).nil?
 
       columns = table_columns(spec)
       [[table_line(columns), table_line(['---'] * columns.size), *table_data_rows(spec, columns.size)].join("\n")]
@@ -147,9 +150,8 @@ module Shaka
     def wip
       return [] unless (spec = @content['wip'])
 
-      session = { environment: @environment, disclosure: @content['wip_disclosure'], pull: @pull,
-                  host_name: @host_name }
-      [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction, session:).detail)]
+      info = { environment: @environment, disclosure: @content['wip_disclosure'], pull: @pull, host_name: @host_name }
+      [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction, session: info).detail)]
     end
 
     # Only the helper writes the history, from the previous body.
