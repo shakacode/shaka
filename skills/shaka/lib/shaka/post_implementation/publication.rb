@@ -18,8 +18,9 @@ module Shaka
     include PostImplementationExecutionText
     include PostImplementationAdequacy
 
-    # disposition and next_action are the owner's recommendation and next step, or nil when the result supplies none.
-    attr_reader :state, :disposition, :next_action
+    # disposition and next_action are the owner's recommendation and next step, or nil when the result supplies none;
+    # conclusion is the reviewer's verdict, or nil when the review did not complete.
+    attr_reader :state, :disposition, :next_action, :conclusion
 
     def summary = @summary || PublicationText.required(@result.fetch('reason'), 'checkpoint failure reason')
 
@@ -29,6 +30,7 @@ module Shaka
       'Do not merge' => ['Do not merge; decide whether to close or replace',
                          'Bring the close-or-replace decision to the maintainer.']
     }.freeze
+    CONCERNS = ['Resolve concerns before merging', 'Resolve substantive concerns, then repeat affected review.'].freeze
     SCOPE = 'Ruby checked this report\'s format and commit; the reviewer judged value, not correctness. ' \
             'Required checks, reviews, and merge authority still apply.'
 
@@ -81,6 +83,7 @@ module Shaka
     def completed_body
       report = PostImplementationReport.read(@result.fetch('report'), head: @head)
       @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
+      @conclusion = report.fetch('conclusion')
       action, next_action = recommendation(report)
       summary = @summary = report.fetch('summary', report.fetch('reasons').first)
       ["## Reviewer recommendation: #{action}", "**Next:** #{owner_action(report, next_action)}",
@@ -112,9 +115,7 @@ module Shaka
     end
 
     def recommendation(report)
-      if report['conclusion'] == 'Proceed' && !report['concerns'].empty?
-        return ['Resolve concerns before merging', 'Resolve substantive concerns, then repeat affected review.']
-      end
+      return CONCERNS if report['conclusion'] == 'Proceed' && !report['concerns'].empty?
 
       ACTIONS.fetch(report.fetch('conclusion'))
     end

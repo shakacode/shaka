@@ -144,6 +144,7 @@ class MergeWarningRecognitionTest < Minitest::Test
     pull = { 'merged' => true, 'head' => { 'sha' => HEAD } }
 
     assert waits?(legacy)
+    assert REGION.settled_by_ready?(legacy, 'example/test', HEAD)
     assert_equal 'Feature summary', REGION.answered_by_merge(legacy, 'example/test', pull)
   end
 

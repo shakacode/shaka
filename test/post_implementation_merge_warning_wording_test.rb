@@ -71,6 +71,18 @@ class PostImplementationMergeWarningWordingTest < Minitest::Test
     end
   end
 
+  def test_a_reviewer_recommending_against_the_pr_asks_the_maintainer_to_close_or_replace_it
+    with_result do |result, path|
+      report = JSON.parse(File.read(result['report'])).merge('conclusion' => 'Do not merge')
+      File.write(result['report'], JSON.generate(report))
+      text = warning(publish(result, path).first)
+
+      assert_includes text, REGION::REJECTED.first
+      refute_includes text, 'You do not need to answer anything yet.'
+      assert_plain(text)
+    end
+  end
+
   def test_a_review_that_did_not_finish_is_not_reported_as_a_problem_in_the_code
     with_result do |result, path|
       text = warning(publish(result.merge('status' => 'not_completed', 'reason' => 'The reviewer timed out.'),

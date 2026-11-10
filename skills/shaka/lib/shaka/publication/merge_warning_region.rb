@@ -18,22 +18,26 @@ module Shaka
     BLOCKED = ['⛔ Do not merge yet: the final review found a problem.',
                'The agent fixes the problems in the linked report and runs the review again. ' \
                'You do not need to answer anything yet.'].freeze
+    REJECTED = ['⛔ Do not merge: the final review recommends closing or replacing this PR.',
+                'A maintainer decides whether to close or replace it. The agent will ask you.'].freeze
     INCOMPLETE = ['⛔ Do not merge yet: the final review did not finish.',
                   'The agent fixes what stopped the review and runs it again. ' \
                   'You do not need to answer anything yet.'].freeze
 
     module_function
 
-    # The heading and default next step for a blocked checkpoint in this state with this owner disposition.
-    def wording(state, disposition)
-      return AWAITING if disposition == PostImplementationReport::AWAITING_DECISION
+    # The heading and default next step for a blocked checkpoint publication. The owner's disposition, when
+    # there is one, decides; otherwise the reviewer's conclusion does.
+    def wording(publication)
+      return AWAITING if waiting?(publication)
+      return INCOMPLETE if publication.state == 'not_completed'
 
-      state == 'not_completed' ? INCOMPLETE : BLOCKED
+      (publication.disposition || publication.conclusion) == 'Do not merge' ? REJECTED : BLOCKED
     end
 
     # The warning for a blocked checkpoint publication, quoting its reason; report and commit are rendered links.
     def render(publication, report:, commit:)
-      heading, step = wording(publication.state, publication.disposition)
+      heading, step = wording(publication)
       marker = "#{AWAITING_MARKER}\n" if waiting?(publication)
       "#{OPEN}\n#{marker}> **#{heading}**\n>\n#{quote(publication.summary)}\n>\n> #{next_step(publication, step)}\n" \
         ">\n> [Final review report](#{report}) · Head #{commit}. " \

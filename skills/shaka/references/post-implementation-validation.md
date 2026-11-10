@@ -51,10 +51,11 @@ with the Checkpoint link beside Code Walkthrough, followed by any deployment lin
 a named placeholder. This link locates the report; it does not establish readiness.
 
 Publishing a blocked or incomplete checkpoint converts the PR to draft and adds a
-**Do not merge yet** warning above its feature summary, or a **Not ready to merge**
-warning for Merge after maintainer decision. The warning shows the disposition `reason`,
-or the reviewer summary without one, then the disposition `next_action` or a fixed next
-step. The Not ready to merge step always asks for an answer and says the answer does not
+**Do not merge yet** warning above its feature summary. A Do not merge verdict or
+disposition gets a **Do not merge** warning that leaves closing or replacing the PR to a
+maintainer, and Merge after maintainer decision gets **Not ready to merge**. The warning
+shows the disposition `reason`, or the reviewer summary without one, then the
+disposition `next_action` or a fixed next step. The Not ready to merge step always asks for an answer and says the answer does not
 approve merging. A report link and the head follow. Its separate marked region survives
 normal description updates. When a ready checkpoint is the latest one and the warning
 names an earlier head, publication removes the warning and reports `cleared` with the
