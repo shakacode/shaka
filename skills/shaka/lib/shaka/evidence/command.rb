@@ -11,6 +11,7 @@ require_relative 'inputs'
 require_relative 'machine_facts'
 require_relative 'options'
 require_relative 'result'
+require_relative 'tree_watch'
 require_relative 'verification'
 require_relative '../configuration/feature_guard'
 
@@ -23,7 +24,7 @@ module Shaka
       ACTIONS = { 'run' => :run_fixed, 'bind' => :bind_result, 'verify' => :verify_results,
                   'guard' => :guard_feature }.freeze
       NAMES = %w[setup test validate validate_local trigger_hosted_ci].freeze
-      Execution = Data.define(:process, :before_tree, :after_tree, :after_settings, :after_kind)
+      Execution = Data.define(:outcome, :before_tree, :after_tree, :after_settings, :after_kind)
 
       def self.run(arguments)
         new(arguments).run
@@ -85,26 +86,26 @@ module Shaka
       def execute_run(context)
         root = context.fetch(:root)
         before_tree = CandidateTree.tested(root:)
-        (output, error, process), timing = timed_check(root, context.fetch(:path))
-        $stderr.write(output, error)
+        outcome, timing = timed_check(root, context.fetch(:path), before_tree)
         after_tree = CandidateTree.capture(root:)
         _config, after_settings, after_kind = Inputs.capture(root:, ref: context.fetch(:ref),
                                                              repository: context.fetch(:repository),
                                                              task_overrides: context.fetch(:task_overrides))
-        run_result(context, Execution.new(process:, before_tree:, after_tree:, after_settings:, after_kind:))
-          .merge(timing)
+        run_result(context, Execution.new(outcome:, before_tree:, after_tree:, after_settings:, after_kind:))
+          .merge(outcome.stop_fields, timing)
       end
 
-      def timed_check(root, path)
+      def timed_check(root, path, tree)
         command = [{ 'PATH' => @original_path }, File.join(root, path), *@arguments]
-        MachineFacts.measure { CallLog.measure { Open3.capture3(*command, chdir: root) } }
+        MachineFacts.measure { CallLog.measure { TreeWatch.new(command, root:, tree:).run } }
       end
 
       def run_result(context, execution)
         changed = inputs_changed?(context, execution)
+        process = execution.outcome.status
         { 'kind' => 'validation', 'command' => context.fetch(:name),
-          'status' => execution.process.success? && !changed ? 'completed' : 'not_completed',
-          'exit_code' => execution.process.exitstatus, 'tested_tree' => execution.before_tree,
+          'status' => process.success? && !changed ? 'completed' : 'not_completed',
+          'exit_code' => process.exitstatus, 'tested_tree' => execution.before_tree,
           'public_settings' => context.fetch(:public_settings), 'settings' => context.fetch(:settings),
           'inputs_changed' => changed,
           'tree_after' => execution.after_tree, 'settings_after' => execution.after_settings,
@@ -112,9 +113,10 @@ module Shaka
           'source_kind' => context.fetch(:kind), 'task_overrides' => context.fetch(:task_overrides) }
       end
 
+      # A stopped check saw the tree change even when the edit was undone before the last capture.
       def inputs_changed?(context, execution)
-        execution.before_tree != execution.after_tree || context.fetch(:settings) != execution.after_settings ||
-          context.fetch(:kind) != execution.after_kind
+        execution.outcome.stopped? || execution.before_tree != execution.after_tree ||
+          context.fetch(:settings) != execution.after_settings || context.fetch(:kind) != execution.after_kind
       end
 
       def bind_result

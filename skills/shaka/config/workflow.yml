@@ -339,8 +339,10 @@ phases:
         [ledger section](<{{package_root}}/skills/shaka/references/local-review.md#run-the-review-loop-with-a-ledger>)
         describes. The prompt asks the reviewer to class each finding as a
         `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
-        disposition with `review record`. Fix defects, and risks whose
-        fix is clearly correct, in new commits, then review the new head. Document optional nits.
+        disposition with `review record`. Fix every reviewer's defects, and risks whose
+        fix is clearly correct, in one repair commit, validate it once, then review the new head;
+        `review run` refuses that head while a finding of the round is `open` or a `documented` defect.
+        Document optional nits.
         Use `open` for unfinished agent work,
         `decision_needed` for a consequential choice the maintainer owns, `dismissed` for
         a finding disproved with evidence, and `accepted` for a consequence the maintainer

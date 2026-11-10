@@ -8,16 +8,55 @@ module Shaka
   module MergeWarningRegion
     OPEN = '<!-- shaka:merge-warning:begin -->'
     CLOSE = '<!-- shaka:merge-warning:end -->'
-    BLOCKED = ['⛔ Do not merge — post-implementation checkpoint blocked.',
-               'Task owner: resolve the linked concerns and publish a new checkpoint for the current head.'].freeze
-    # An owner who would merge after the maintainer's decision is not told the PR must never merge.
-    AWAITING = ["⛔ Not ready to merge — waiting for the maintainer's decision.",
-                'Maintainer: answer under Decisions to make. Task owner: then publish a new checkpoint.'].freeze
+    # Detection reads this hidden line, so the visible heading can change without losing open warnings.
+    AWAITING_MARKER = '<!-- shaka:merge-warning:awaiting -->'
+    # Warnings published before the marker existed are still recognized by their first line.
+    LEGACY_AWAITING = "⛔ Not ready to merge — waiting for the maintainer's decision."
+    AWAITING = ['⛔ Not ready to merge: a maintainer needs to answer a question.',
+                'Answer it under Decisions to make, further down this description. ' \
+                'Your answer does not approve merging. The agent records it and updates this PR.'].freeze
+    BLOCKED = ['⛔ Do not merge yet: changes are still needed.',
+               'The agent makes the changes and runs the review again.'].freeze
+    REJECTED = ['⛔ Do not merge: this PR should be closed or replaced.',
+                'A maintainer decides whether to close or replace it.'].freeze
+    INCOMPLETE = ['⛔ Do not merge yet: the final review did not finish.',
+                  'The agent fixes what stopped the review and runs it again.'].freeze
 
     module_function
 
-    # The heading and next step for a blocked checkpoint with this owner disposition.
-    def wording(disposition) = disposition == PostImplementationReport::AWAITING_DECISION ? AWAITING : BLOCKED
+    # The heading and default next step for a blocked checkpoint publication. Either the reviewer or the owner
+    # recommending against the PR leaves closing or replacing it to a maintainer.
+    def wording(publication)
+      return AWAITING if waiting?(publication)
+      return INCOMPLETE if publication.state == 'not_completed'
+
+      [publication.disposition, publication.conclusion].include?('Do not merge') ? REJECTED : BLOCKED
+    end
+
+    # The warning for a blocked checkpoint publication, quoting its reason; report and commit are rendered links.
+    def render(publication, report:, commit:)
+      heading, step = wording(publication)
+      marker = "#{AWAITING_MARKER}\n" if waiting?(publication)
+      "#{OPEN}\n#{marker}> **#{heading}**\n>\n#{quote(publication.summary)}\n>\n> #{next_step(publication, step)}\n" \
+        ">\n> [Review report](#{report}) · Head #{commit}. " \
+        "This PR stays a draft until a new review clears this warning and required checks pass.\n#{CLOSE}\n\n"
+    end
+
+    # The owner's own next step is more specific than the fixed one. A waiting warning keeps only its request for
+    # an answer, because the owner's step there is the agent's own bookkeeping. A close-or-replace warning keeps
+    # the maintainer's decision ahead of the owner's step.
+    def next_step(publication, fixed)
+      return fixed if publication.next_action.nil? || waiting?(publication)
+
+      owner = "**Next:** #{escape(publication.next_action.split.join(' '))}"
+      fixed == REJECTED.last ? "#{fixed} #{owner}" : owner
+    end
+
+    def waiting?(publication) = publication.disposition == PostImplementationReport::AWAITING_DECISION
+
+    def quote(text) = text.lines.map { |line| "> #{escape(line.chomp)}" }.join("\n")
+
+    def escape(text) = text.gsub('&', '&amp;').gsub('<', '&lt;').gsub('>', '&gt;')
 
     def prepend(existing, managed)
       warning, remaining = split(existing)
@@ -28,13 +67,15 @@ module Shaka
 
     # The head on the warning's generated last line; quoted summary text precedes it.
     def head(body, repository)
-      link = %r{· Head \[`\h{7}`\]\(https://github\.com/#{Regexp.escape(repository)}/commit/(\h{40})\)\. Passing}
+      link = %r{· Head \[`\h{7}`\]\(https://github\.com/#{Regexp.escape(repository)}/commit/(\h{40})\)\.}
       split(body).first.scan(link).last&.first
     end
 
     # Whether the warning for this head waits on the maintainer; only its generated first line counts.
     def awaiting?(body, repository, current)
-      split(body).first.start_with?("#{OPEN}\n> **#{AWAITING.first}**\n") && head(body, repository) == current
+      warning = split(body).first
+      starts = ["#{OPEN}\n#{AWAITING_MARKER}\n", "#{OPEN}\n> **#{LEGACY_AWAITING}**\n"]
+      starts.any? { |start| warning.start_with?(start) } && head(body, repository) == current
     end
 
     # A merge of the head the warning waited on answers it; any other warning stays as the record.

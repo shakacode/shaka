@@ -2,6 +2,7 @@
 
 require_relative 'publication_test'
 require 'shaka/usage/publisher_attribution'
+require 'shaka/review_reply'
 
 # Builds the `shaka comments --head SHA` output a description lists human comments from.
 module HumanCommentsFixture
@@ -506,5 +507,47 @@ class PublicationHumanCommentsSourceTest < Minitest::Test
     end
 
     assert_includes error.message, '--comments'
+  end
+end
+
+# REPLY keeps the older order, with the review line above the identity line. `shaka reply` now
+# names its reviews under the identity line, and the Response still quotes the answer.
+class PublicationReviewReplyExcerptTest < Minitest::Test
+  include HumanCommentsFixture
+
+  ANSWER = 'Removed both placeholders. The example now runs in one chat.'
+  ATTESTED = "# Local Adversarial Review\n\n| Commit | Reviewer |\n| --- | --- |\n" \
+             "| `aaaaaaa` | anthropic/claude<br>model claude-opus-5-5<br>effort high |\n\n" \
+             "REVIEWED #{'a' * 40} BY anthropic/claude EFFORT high FINDINGS 0\n".freeze
+
+  # Built by `shaka reply` itself, so a change to how it names a review shows up here.
+  def test_a_reply_that_names_its_reviews_under_the_identity_line_quotes_its_answer
+    reply = "<!-- shaka:reply:maintainer-1 -->\n#{review_reply}"
+    rendered = describe(packet(inline_comments: [inline(1, 'ann', 'Why?'), inline(2, 'ann', reply)]))
+
+    assert_includes reply, "\nAddressed the [Local Adversarial Review]"
+    assert_includes reply, "\nResponded to the [Review]"
+    assert_equal "[“Removed both placeholders\\. The example now runs in one chat\\.”](#{URL}#discussion_r2)",
+                 cells(rendered).first[2]
+  end
+
+  # Only the marked lines are skipped, so an answer worded like a review line keeps its opening.
+  def test_an_answer_worded_like_a_review_line_is_still_quoted
+    reply = "#{IDENTITY}\n\nResponded to the [comment](#{URL}#discussion_r1).\n\nFixed the race."
+    rendered = describe(packet(inline_comments: [inline(1, 'ann', 'Why?'), inline(2, 'ann', reply)]))
+
+    assert_includes cells(rendered).first[2], 'Responded to the comment'
+  end
+
+  private
+
+  def review_reply
+    local = { 'id' => 8, 'html_url' => "#{URL}#issuecomment-8", 'body' => ATTESTED }
+    hosted = { 'id' => 9, 'html_url' => "#{URL}#issuecomment-9", 'body' => "# Review\n",
+               'user' => { 'login' => 'ann' } }
+    github = Struct.new(:repository, :number, :issue_comments).new('owner/repo', 7, [local, hosted])
+    identity = { 'agent' => 'Codex', 'provider' => 'OpenAI', 'model' => 'gpt-test', 'effort' => 'high' }
+    Shaka::ReviewReply.compose({ 'identity' => identity, 'summary' => ANSWER,
+                                 'reviews' => [local['html_url'], hosted['html_url']] }, github)
   end
 end

@@ -34,11 +34,11 @@ for a recorded task override.
 
 Independent review evidence is either a published
 `REVIEWED <sha> BY <provider>/<family>` attestation or a verified named CI report
-for that head. The identity line on a `shaka reply` names the publisher. A reply
-that addresses a review opens with one line per review. Pass each comment URL in
-the reply content `reviews` list. The helper reads that comment's closing
+for that head. The identity line on a `shaka reply` names the publisher and comes
+first. Under it, a reply that addresses a review has one line per review. Pass each
+comment URL in the reply content `reviews` list. The helper reads that comment's closing
 attestation and round ledger and writes the provider, model, effort, reviewed
-commit, and link. Without that attestation, the opening says “Responded” and names
+commit, and link. Without that attestation, the line says “Responded” and names
 the GitHub author when available; it omits execution fields. This also avoids
 claiming a repair when a hosted review needs only clarification. A missing or non-token local-review model, or a non-token recorded effort, is
 `UNKNOWN`. The closing attestation still names
