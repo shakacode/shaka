@@ -192,7 +192,8 @@ rules:
       that never names the work item, and it matches any PR whose text happens to contain the
       number. `claim --description SLUG` matches only branch names built from the template with
       `ad-hoc` and that slug, so a differently worded slug for the same task is missed. Where
-      GitHub refuses GraphQL, claim lists and searches over REST, which cannot see a PR linked
+      GitHub refuses GraphQL, claim lists open PRs and runs the same search through REST
+      `search/issues`, which cannot see a PR linked
       only from the issue's Development sidebar; it names that field as unknown. Nothing
       then stops the second PR: acting on the collision is the agent's.
   - id: seam-branch-name

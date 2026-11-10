@@ -40,16 +40,18 @@ module Shaka
       end
 
       # REST sends null for an empty body; a missing key stays missing so References refuses it.
-      # The description path never reaches References, so the branch name is checked here.
+      # The description path never reaches References, so the fields it reports are checked here.
       def row(pull)
         head = pull['head']
-        unless head.is_a?(Hash) && head['ref'].is_a?(String)
-          raise Error, 'GitHub returned incomplete pull request metadata.'
-        end
+        raise Error, 'GitHub returned incomplete pull request metadata.' unless head.is_a?(Hash) && reportable?(pull)
 
         { 'number' => pull['number'], 'title' => pull['title'], 'url' => pull['html_url'],
           'headRefName' => head['ref'], 'body' => pull.key?('body') ? pull['body'] || '' : nil,
           'closingIssuesReferences' => [] }
+      end
+
+      def reportable?(pull)
+        pull['number'].is_a?(Integer) && [pull['title'], pull['html_url'], pull['head']['ref']].all?(String)
       end
 
       # The query `gh pr list --search` sends to GitHub's search, read one page at a time.

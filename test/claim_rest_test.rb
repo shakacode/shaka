@@ -58,10 +58,11 @@ class ClaimRestTest < Minitest::Test
   end
 
   def test_malformed_rest_rows_and_search_items_are_errors_not_crashes
-    [{}, 'alex/fix'].each do |head|
+    matching = PULL.merge('head' => { 'ref' => 'jg/ad-hoc-fix' })
+    [{ 'head' => {} }, { 'head' => 'alex/fix' }, { 'number' => nil }, { 'html_url' => 7 }].each do |broken|
       error = assert_raises(Shaka::Error) do
         Shaka::Claim.new(query: Shaka::Claim::Description.new(slug: 'fix'), root: Dir.pwd,
-                         runner: rest_runner(pulls: [PULL.merge('head' => head)])).result
+                         runner: rest_runner(pulls: [matching.merge(broken)])).result
       end
       assert_includes error.message, 'incomplete pull request metadata'
     end
