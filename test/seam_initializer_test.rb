@@ -132,6 +132,13 @@ module SeamInitializerTestHelpers
 end
 
 module SeamInitializerAssertions
+  def assert_checkpoint_comment(root)
+    config = File.read(File.join(root, SeamInitializerTestHelpers::CONTRACT))
+    assert_includes config, '# Or replace the built-in checkpoint prompt with your own file.'
+    assert_includes config, "# Shaka's rules, report format, and rubrics for verification and risk still apply:"
+    refute_includes config, 'whole checkpoint prompt'
+  end
+
   def assert_refuses_changed_mode(root, relative, mode)
     path = File.join(root, relative)
     File.chmod(mode, path)
@@ -153,6 +160,7 @@ class SeamInitializerTest < Minitest::Test
       assert_predicate status, :success?, error
       assert_complete_seam(root, output)
       assert_equal '{login}-{host}/{issue}-{description}', JSON.parse(output).dig('branches', 'name')
+      assert_checkpoint_comment(root)
     end
   end
 

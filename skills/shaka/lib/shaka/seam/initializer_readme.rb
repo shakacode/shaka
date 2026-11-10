@@ -17,7 +17,8 @@ module Shaka
                         '  # Your instructions, added after the checkpoint prompt. Commented out, the file is',
                         '  # optional; uncommented, a missing file fails settings validation.',
                         "  custom_instructions_file: #{Defaults.fetch('checkpoint', 'custom_instructions_file')}",
-                        "  # Or replace Shaka's whole checkpoint prompt with your own file:",
+                        '  # Or replace the built-in checkpoint prompt with your own file.',
+                        "  # Shaka's rules, report format, and rubrics for verification and risk still apply:",
                         '  # replacement_prompt_file: .agents/shaka/checkpoint-prompt.md'].freeze
 
       # The one renderer for .agents/shaka.md, shared by init, migrate, and `seam pointer --readme`.
