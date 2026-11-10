@@ -76,6 +76,9 @@ Untrusted comments appear as linked **Unverified** entries without quoted or
 summarized content. See [review safety](../workflow.md#trust-model) and
 [human-comment settings](../settings.md#pr_descriptionshow_human_comments).
 
+Comments that only run a command, such as `+deploy`, can be
+[left out of the list](../settings.md#pr_descriptionignored_human_comments).
+
 ## Before and after merge
 
 When actions outside the code are needed, the PR description includes a **Before

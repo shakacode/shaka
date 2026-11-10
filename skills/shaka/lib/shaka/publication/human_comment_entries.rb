@@ -14,14 +14,19 @@ module Shaka
     VERDICTS = { 'APPROVED' => 'Approved', 'CHANGES_REQUESTED' => 'Requested changes' }.freeze
     OPEN = ['Open', 'No reply', 'Changes requested'].freeze
 
-    def initialize(packet)
+    # ignored holds the repository's patterns for comments that only run a command, such as `+deploy`.
+    def initialize(packet, ignored: [])
+      @ignored = ignored
       @kept = KINDS.flat_map { |key, kind| rows(packet, key).map { |row| entry(row, kind, false) } }
       # Without withheld text there is nothing for a person to read, and an unverified verdict is not shown.
       withheld = rows(packet, 'excluded_interactions').select { |row| row['body_withheld'] == true }
       @all = @kept + withheld.map { |row| entry(row, row['kind'], true) }
     end
 
-    def humans = @all.select { |entry| human?(entry) }
+    def humans = @all.select { |entry| human?(entry) && !ignored?(entry) }
+
+    # How many comments the list leaves out because they match an ignored pattern.
+    def ignored_count = @all.count { |entry| human?(entry) && ignored?(entry) }
 
     # The latest of the agent or bot posts later in the same inline thread and the agent posts
     # linking the comment. A bot's summary that merely links a comment does not answer it.
@@ -61,6 +66,21 @@ module Shaka
       return false unless person?(entry) && entry.state != 'PENDING'
 
       entry.unverified || !entry.body.to_s.strip.empty? || VERDICTS.key?(entry.state)
+    end
+
+    # A verdict or withheld text still needs a person's attention, whatever the text says.
+    def ignored?(entry)
+      return false if entry.unverified || VERDICTS.key?(entry.state)
+
+      text = entry.body.to_s.strip
+      patterns.any? { |pattern| pattern.match?(text) }
+    end
+
+    def patterns = @patterns ||= @ignored.map { |pattern| glob(pattern) }
+
+    # * is the only wildcard and matches no space, so a command followed by prose stays listed.
+    def glob(text)
+      /\A#{text.strip.split('*', -1).map { |part| Regexp.escape(part) }.join('\S*')}\z/i
     end
 
     def person?(entry) = entry.login.is_a?(String) && entry.id.is_a?(Integer) && !bot?(entry) && !marked?(entry)

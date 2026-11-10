@@ -116,6 +116,7 @@ pr_description:
   show_shaka_credit: true # Default: a small Shaka link under the PR summary.
   show_human_comments: true # Default: list comments people wrote on the PR.
   max_human_comments: 20 # Default: how many of those comments to list.
+  ignored_human_comments: [] # Default: list every comment; add patterns such as '+deploy-*' to leave commands out.
   time_zone: America/Los_Angeles # Ours: the PR timings' readers. Default: UTC, or the user's zone when set.
   opening_check:
     enabled: true # Default: check that the PR description's first sentence leads with the outcome.
