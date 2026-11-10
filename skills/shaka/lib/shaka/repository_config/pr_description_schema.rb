@@ -43,8 +43,9 @@ module Shaka
         shown = @description.fetch('show_human_comments', true)
         enum!(shown, [true, false], 'pr_description.show_human_comments must be true or false')
         rows = @description.fetch('max_human_comments', 1)
-        raise Error, 'pr_description.max_human_comments must be a positive integer' unless rows.is_a?(Integer) &&
-                                                                                           rows.positive?
+        unless rows.is_a?(Integer) && rows.positive?
+          raise Error, 'pr_description.max_human_comments must be a positive integer'
+        end
 
         ignored = @description.fetch('ignored_human_comments', [])
         return if ignored.is_a?(Array) && ignored.all? { |text| text.is_a?(String) && !text.strip.empty? }

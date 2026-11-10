@@ -333,9 +333,12 @@ class PublicationHumanCommentSettingsTest < Minitest::Test
   def test_a_command_with_prose_a_verdict_or_another_line_stays_listed
     comments = packet(issue_comments: [issue_comment(1, 'Bob', '+deploy, but it failed on staging.'),
                                        issue_comment(2, 'Bob', "+deploy\nThe image is stale.")],
-                      review_summaries: [review(3, 'Bob', '+deploy', state: 'APPROVED')])
+                      review_summaries: %w[APPROVED CHANGES_REQUESTED DISMISSED].each_with_index.map do |state, at|
+                        review(3 + at, 'Bob', '+deploy', state:)
+                      end,
+                      excluded_interactions: [excluded(9, 'outsider')])
 
-    assert_equal 3, rows(describe(comments, settings: ignoring(['+deploy*']))).size
+    assert_equal 6, rows(describe(comments, settings: ignoring(['+deploy*', '*']))).size
   end
 
   def test_only_commands_still_show_the_note_and_no_settings_hide_nothing

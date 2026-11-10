@@ -1214,7 +1214,6 @@ one is already on the PR, so the list shows the agent's one-line summary and lin
 to it. So does a short comment with a list beside code, where code is hard to tell
 from prose.
 
-
 ## `pr_description.ignored_human_comments`
 
 **Optional. Default: none.**
@@ -1227,14 +1226,16 @@ line under the list says how many it left out.
 pr_description:
   ignored_human_comments:
     - '+review-app-*'
+    - '/deploy'
     - '/deploy *'
 ```
 
 A comment is left out when its whole text matches an entry, ignoring case and
-surrounding spaces. `*` matches any characters except a space, so `+review-app-*`
+surrounding spaces. `*` matches any characters except spaces and line breaks, so `+review-app-*`
 matches `+review-app-deploy` but not `+review-app-deploy failed on staging`. Write
 `/deploy *` to match a command with one argument, such as `/deploy staging`. A
-review that approves or requests changes stays listed whatever its text says.
+review that approves, requests changes, or was dismissed stays listed whatever its
+text says.
 
 ## `pr_description.time_zone`
 

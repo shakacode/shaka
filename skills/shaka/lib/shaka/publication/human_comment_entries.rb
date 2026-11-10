@@ -12,6 +12,8 @@ module Shaka
     KINDS = { 'review_summaries' => 'review_summary', 'inline_comments' => 'inline_comment',
               'issue_comments' => 'issue_comment' }.freeze
     VERDICTS = { 'APPROVED' => 'Approved', 'CHANGES_REQUESTED' => 'Requested changes' }.freeze
+    # A review in one of these states shows a verdict or a maintainer's dismissal, so it stays listed.
+    REVIEW_STATES = %w[APPROVED CHANGES_REQUESTED DISMISSED].freeze
     OPEN = ['Open', 'No reply', 'Changes requested'].freeze
 
     # ignored holds the repository's patterns for comments that only run a command, such as `+deploy`.
@@ -70,7 +72,7 @@ module Shaka
 
     # A verdict or withheld text still needs a person's attention, whatever the text says.
     def ignored?(entry)
-      return false if entry.unverified || VERDICTS.key?(entry.state)
+      return false if entry.unverified || REVIEW_STATES.include?(entry.state)
 
       text = entry.body.to_s.strip
       patterns.any? { |pattern| pattern.match?(text) }
@@ -78,7 +80,7 @@ module Shaka
 
     def patterns = @patterns ||= @ignored.map { |pattern| glob(pattern) }
 
-    # * is the only wildcard and matches no space, so a command followed by prose stays listed.
+    # * is the only wildcard and matches no whitespace, so a command followed by prose stays listed.
     def glob(text)
       /\A#{text.strip.split('*', -1).map { |part| Regexp.escape(part) }.join('\S*')}\z/i
     end
