@@ -28,7 +28,7 @@ Codex support. In Claude Code, pstack's commands carry a `pstack:` prefix, such 
 
 If you also linked a pstack skill into `~/.claude/skills`, Claude Code loads both
 copies, possibly at different versions. `shaka doctor` lists each skill name that
-appears in both `~/.claude/skills` and an enabled user-scope plugin. It also lists
+appears more than once across `~/.claude/skills` and enabled user-scope plugins. It also lists
 each link in a coding agent's skills folder that points nowhere. It changes neither.
 It does not read project skills or project-scope plugins.
 
