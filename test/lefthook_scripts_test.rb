@@ -33,6 +33,15 @@ module LefthookScriptHelpers
     output
   end
 
+  # Puts an executable shell script named name first on PATH and returns that PATH.
+  def stub_command(name, body)
+    bin = File.join(@dir, '.git', 'stub-bin')
+    FileUtils.mkdir_p(bin)
+    File.write(File.join(bin, name), "#!/bin/sh\n#{body}\n")
+    File.chmod(0o755, File.join(bin, name))
+    [bin, ENV.fetch('PATH')].join(File::PATH_SEPARATOR)
+  end
+
   def git_repository
     git('init', '-q')
     git('add', '.')
@@ -104,11 +113,24 @@ class LefthookScriptsTest < Minitest::Test
     write('c.bin', "bin\0ary")
     write('d.bin', "\x08\x01")
     write('e.txt', '')
-    File.symlink(File.join(@dir, 'a.txt'), File.join(@dir, 'link.txt')) unless Gem.win_platform?
-    _, status = script('trailing-newlines', 'link.txt', 'a.txt', 'b.txt', 'c.bin', 'd.bin', 'e.txt', 'missing.txt')
+    _, status = script('trailing-newlines', 'a.txt', 'b.txt', 'c.bin', 'd.bin', 'e.txt', 'missing.txt')
 
     assert_predicate status, :success?
     assert_equal(["text\n", "done\n", "bin\0ary", "\x08\x01", ''], %w[a.txt b.txt c.bin d.bin e.txt].map { read(it) })
+  end
+
+  def test_trailing_newlines_leaves_symlink_targets_alone
+    skip 'Creating symlinks needs extra privileges on Windows' if Gem.win_platform?
+
+    Dir.mktmpdir do |outside|
+      target = File.join(outside, 'target.txt')
+      File.binwrite(target, 'outside')
+      File.symlink(target, File.join(@dir, 'link.txt'))
+      _, status = script('trailing-newlines', 'link.txt')
+
+      assert_predicate status, :success?
+      assert_equal 'outside', File.binread(target)
+    end
   end
 
   def test_reports_when_rubocop_cannot_run
@@ -166,5 +188,33 @@ class LefthookBranchCheckTest < Minitest::Test
     input = "(delete) #{'0' * 40} refs/heads/old #{git('rev-parse', 'HEAD').strip}\n"
 
     assert_predicate script('ruby-check', 'branch', stdin_data: input).last, :success?
+  end
+
+  def test_branch_mode_runs_rubocop_with_the_committed_ruby_version
+    skip 'The stub command is a shell script' if Gem.win_platform?
+
+    write('.ruby-version', "3.4.6\n")
+    git_repository
+    write('lib/a.rb', "# frozen_string_literal: true\n\nputs 'clean'\n")
+    git('add', '.')
+    git('commit', '-qm', 'clean')
+    record = File.join(@dir, '.git', 'seen-ruby-version')
+    path = stub_command('bundle', "cat .ruby-version > '#{record}'")
+
+    assert_predicate script('ruby-check', 'branch', env: { 'PATH' => path }).last, :success?
+    assert_equal "3.4.6\n", File.read(record)
+  end
+
+  def test_branch_mode_fails_when_the_commit_cannot_be_extracted
+    skip 'The stub command is a shell script' if Gem.win_platform?
+
+    git_repository
+    write('lib/a.rb', "# frozen_string_literal: true\n\nputs 'clean'\n")
+    git('add', '.')
+    git('commit', '-qm', 'clean')
+    output, status = script('ruby-check', 'branch', env: { 'PATH' => stub_command('tar', 'exit 1') })
+
+    refute_predicate status, :success?
+    assert_includes output, 'could not read the files of HEAD'
   end
 end
