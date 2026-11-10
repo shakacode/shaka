@@ -67,11 +67,11 @@ class LocalReviewEarlierDispositionTest < Minitest::Test
     assert_clean_latest_round
   end
 
-  def assert_unassessed
-    assert_equal 'documented', ledger.prior_findings.first.disposition
+  def assert_unchanged
+    assert_equal 'decision_needed', ledger.prior_findings.first.disposition
   end
 
-  private :assert_unassessed
+  private :assert_unchanged
 
   def assert_clean_latest_round
     assert_empty ledger.rounds.last.fetch('findings', [])
@@ -98,11 +98,11 @@ class LocalReviewEarlierDispositionTest < Minitest::Test
 
   def test_an_earlier_fix_needs_a_later_reviewed_revision
     append(EARLIER, 'openai/codex', findings: 1)
-    record([NIT.merge('class' => 'defect')])
+    record([NIT.merge('class' => 'defect', 'disposition' => 'decision_needed', 'note' => 'Ask.')])
     append(HEAD, 'openai/codex', findings: 0)
     fixed = NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => FIX)
     assert_raises(Shaka::Error) { ledger.record!({ 'findings' => [fixed] }, head: EARLIER) }
-    assert_unassessed
+    assert_unchanged
     assert_equal [1], ledger.record!({ 'findings' => [fixed.merge('commit' => HEAD)] }, head: EARLIER)
   end
 end

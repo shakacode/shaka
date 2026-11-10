@@ -34,12 +34,13 @@ Start near the top of the PR description:
 
 | Look for | What it tells you |
 | --- | --- |
+| **Risk** and **Risk and review** | How carefully to review, and which code to read first. |
 | **Summary** and **Intent** | What changed, why, and whether it matches your request. |
 | **Verification** | What was checked and what remains unproven. |
 | **Decisions to make**, when present | Questions needing your judgment, with options and a recommendation. |
 | **Checkpoint** link | The assessment of whether the result is worth merging, including unresolved concerns. |
 
-Check [whether human review is needed](reference/pr-record.md#human-review).
+See [what each risk level asks of you](reference/pr-record.md#risk-and-review).
 Inspect screenshots or try the changed feature when your judgment depends on the
 result. Open **Code Review** or **Code Walkthrough** for closer examination.
 

@@ -101,8 +101,8 @@ class OpeningTermsTest < Minitest::Test
     verification = { 'summary' => 'CI passed.', 'merge_limitations' => 'No live merge.',
                      'checks' => ['Ran `bin/test`.'], 'not_verified' => 'No live rate limit.' }
     assert_equal ['Why: Reviewers asked.', 'Root cause: A cache.', 'Safe because: Tests cover it.', 'Scope: The cache.',
-                  'Closer reading: Touches merge.', 'Verification: CI passed.', 'Not verified: No live rate limit.',
-                  'Merge limitations: No live merge.'],
+                  'Flagged by the implementer: Touches merge.', 'Verification: CI passed.',
+                  'Not verified: No live rate limit.', 'Merge limitations: No live merge.'],
                  Shaka::OpeningProse.call('intent' => intent, 'verification' => verification).lines(chomp: true)
   end
 

@@ -9,6 +9,9 @@ module Shaka
   # or another hidden comment.
   module AgentPost
     IDENTITY = /🤖 [^\n·]+(?: · [^\n·]+){3}$/
+    # `shaka reply` puts this hidden mark above the lines, under its identity line, that name the
+    # reviews it answers, so a reader can skip exactly those lines.
+    REVIEWS_MARK = '<!-- shaka:reviews -->'
     OPENING = /\A(?:#{IDENTITY}|<!-- ?[a-z][\w-]*:[\w.:-]+ ?-->|#{Regexp.escape(WalkthroughHistory::MARKER)})/
 
     def self.marked?(body) = body.to_s.lstrip.match?(OPENING)
