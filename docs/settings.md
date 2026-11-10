@@ -1231,7 +1231,7 @@ pr_description:
 ```
 
 A comment is left out when its whole text matches an entry, ignoring case and
-surrounding spaces. `*` matches any characters except spaces and line breaks, so `+review-app-*`
+surrounding spaces. `*` matches any characters except whitespace, such as spaces, tabs, and line breaks, so `+review-app-*`
 matches `+review-app-deploy` but not `+review-app-deploy failed on staging`. Write
 `/deploy *` to match a command with one argument, such as `/deploy staging`. A
 review that approves, requests changes, or was dismissed stays listed whatever its

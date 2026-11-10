@@ -27,8 +27,11 @@ module Shaka
 
     def humans = @all.select { |entry| human?(entry) && !ignored?(entry) }
 
+    # Every comment a person wrote, including the ones the list leaves out, so a summary of either is accepted.
+    def written = @all.select { |entry| human?(entry) }
+
     # How many comments the list leaves out because they match an ignored pattern.
-    def ignored_count = @all.count { |entry| human?(entry) && ignored?(entry) }
+    def ignored_count = written.size - humans.size
 
     # The latest of the agent or bot posts later in the same inline thread and the agent posts
     # linking the comment. A bot's summary that merely links a comment does not answer it.
@@ -82,7 +85,7 @@ module Shaka
 
     # * is the only wildcard and matches no whitespace, so a command followed by prose stays listed.
     def glob(text)
-      /\A#{text.strip.split('*', -1).map { |part| Regexp.escape(part) }.join('\S*')}\z/i
+      /\A#{text.strip.split('*', -1).map { |part| Regexp.escape(part) }.join('[^[:space:]]*')}\z/i
     end
 
     def person?(entry) = entry.login.is_a?(String) && entry.id.is_a?(Integer) && !bot?(entry) && !marked?(entry)

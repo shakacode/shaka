@@ -73,7 +73,7 @@ module Shaka
       @shown = shown = settings.human_comment_rows
       check(packet, author, @head)
       prefix = "https://github.com/#{pull.dig('base', 'repo', 'full_name')}/pull/#{pull['number']}#"
-      entries = HumanCommentEntries.new(packet, ignored: settings.ignored_human_comments)
+      entries = HumanCommentEntries.new(packet, ignored: ignored(settings))
       @ignored = entries.ignored_count
       @rows, @cells = HumanCommentRows.new(entries, author:, prefix:, summaries:).call(shown)
     end
@@ -88,6 +88,9 @@ module Shaka
     end
 
     private
+
+    # A rendering preview pairs this file with the installed settings, which may predate the setting.
+    def ignored(settings) = settings.respond_to?(:ignored_human_comments) ? settings.ignored_human_comments : []
 
     def check(packet, author, head)
       unless packet.is_a?(Hash)
