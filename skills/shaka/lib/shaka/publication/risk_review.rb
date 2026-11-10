@@ -12,8 +12,6 @@ module Shaka
   # reads it; only a description is rendered with a pull.
   module RiskReview
     HEADING = '## Risk and review'
-    # What the description command supplies as shaka_risk when it could not read the trusted settings.
-    WITHHELD = { 'withheld' => 'trusted settings unread' }.freeze
     CHECKPOINT_URL = %r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+#issuecomment-\d+\z}
     # A record body folds inside details, so it must not open or close one.
     FOLD_TAG = %r{</?(?:details|summary)\b}i

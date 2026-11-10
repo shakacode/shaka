@@ -89,6 +89,16 @@ class CliDescriptionRiskTest < Minitest::Test
     end
   end
 
+  def test_an_unrated_head_without_trusted_settings_still_reads_not_rated_yet
+    @comments = []
+    Dir.mktmpdir do |dir|
+      _output, error, status = run_description(dir)
+
+      assert_predicate status, :success?, error
+      assert_includes File.read(File.join(dir, 'published.md')), '**Risk: not rated yet**'
+    end
+  end
+
   # The packaged areas would rate this low, so without the repository's settings the level is withheld.
   def test_without_trusted_settings_the_level_is_not_shown
     Dir.mktmpdir do |dir|

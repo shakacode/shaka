@@ -39,11 +39,15 @@ class PostImplementationPublishedRiskTest < Minitest::Test
     assert_nil evidence.risk(HEAD), 'merge still reads only a ready checkpoint'
   end
 
+  # Trusted settings carrying the packaged areas and merge settings.
+  SEAM = Struct.new(:high_risk_areas, :medium_risk_areas, :merge)
+               .new(*Shaka::PostImplementationRisk.areas(nil), {}).freeze
+
   def test_the_description_assessment_applies_the_areas_merge_applies
     github = published(rating: 'low', reasons: ['Docs only.'])
     def github.api_list(path) = path.include?('/files') ? [{ 'filename' => 'db/migrate/1_add.rb' }] : super
     def github.api(path, **) = super.merge('changed_files' => 1)
-    assessment = READER.assessment(nil, github, HEAD, Shaka::PostImplementationEvidence.new(github))
+    assessment = READER.assessment(SEAM, github, HEAD, Shaka::PostImplementationEvidence.new(github))
 
     assert_equal %w[low high], assessment.values_at('rating', 'level')
     assert_equal [{ 'area' => 'database', 'path' => 'db/migrate/1_add.rb' }], assessment['areas_hit']
@@ -56,8 +60,16 @@ class PostImplementationPublishedRiskTest < Minitest::Test
     def github.api(path, **) = super.merge('head' => { 'sha' => 'b' * 40 })
 
     assert_raises(Shaka::PullChangedFiles::Moved) do
-      READER.assessment(nil, github, HEAD, Shaka::PostImplementationEvidence.new(github))
+      READER.assessment(SEAM, github, HEAD, Shaka::PostImplementationEvidence.new(github))
     end
+  end
+
+  # Without trusted settings a rated head withholds its level, while an unrated one stays not rated.
+  def test_missing_trusted_settings_withhold_only_a_rated_level
+    github = published(rating: 'low', reasons: ['Docs only.'])
+
+    assert_equal READER::WITHHELD, READER.assessment(nil, github, HEAD, Shaka::PostImplementationEvidence.new(github))
+    assert_nil READER.assessment(nil, github, 'b' * 40, Shaka::PostImplementationEvidence.new(github))
   end
 
   def test_no_checkpoint_comment_reads_as_no_rating

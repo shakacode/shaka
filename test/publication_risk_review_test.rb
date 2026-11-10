@@ -124,7 +124,7 @@ class PublicationRiskReviewTest < Minitest::Test
   end
 
   def test_withheld_settings_show_no_level
-    rendered = render(risk: Shaka::RiskReview::WITHHELD)
+    rendered = render(risk: { 'withheld' => 'trusted settings unread' })
 
     assert_includes rendered, '**Recommendation: Merge** · **Risk: not shown** · '
     assert_includes section(rendered), "**Not shown.** Shaka could not read this repository's trusted settings"
