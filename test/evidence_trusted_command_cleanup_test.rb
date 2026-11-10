@@ -23,6 +23,27 @@ class EvidenceTrustedCommandCleanupTest < Minitest::Test
     end
   end
 
+  def test_candidate_that_removes_its_own_commands_is_not_labeled_trusted
+    with_checkout do |root, trusted|
+      File.write(File.join(root, '.agents/shaka/bin/validate'), SELF_REMOVING)
+      result = run_check(root, trusted, command: 'validate', expected_exit: 1)
+
+      assert_equal 'not_completed', result.fetch('status')
+      refute result.key?('command_source')
+    end
+  end
+
+  def test_cleanup_leaves_files_behind_a_swapped_in_symlink
+    Dir.mktmpdir do |outside|
+      File.write(File.join(outside, 'validate'), "kept\n")
+      swap = "#!/bin/sh\nbin=$(dirname -- \"$0\")\nrm -rf \"$bin\"\nln -s #{outside} \"$bin\"\n"
+      with_older_branch(validate: swap) do |root, trusted, _head|
+        assert_includes refused_run(root, trusted), 'must be a real directory'
+        assert_equal "kept\n", File.read(File.join(outside, 'validate'))
+      end
+    end
+  end
+
   def test_run_keeps_unrelated_agents_files
     with_older_branch do |root, trusted, _head|
       FileUtils.mkdir_p(File.join(root, '.agents/skills'))

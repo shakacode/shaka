@@ -9,23 +9,24 @@ module Shaka
     # The trusted commit's copy sits at its usual path for the run, so it finds the checkout the
     # same way, and everything this created is removed afterward.
     class TrustedCommand
-      # Runs the block with the trusted copy in place when the evidence run's candidate lacks the command.
+      # Runs the block with the trusted copy in place when the run decided to use it.
       def self.around(context, &)
-        return yield unless needed?(context)
+        return yield unless context.fetch(:trusted_copy)
 
         new(*context.values_at(:root, :ref, :path)).with(&)
       end
 
       # The result field that tells a reader the default branch supplied the command.
-      def self.source(context) = needed?(context) ? { 'command_source' => 'trusted_ref' } : {}
+      def self.source(context) = context.fetch(:trusted_copy) ? { 'command_source' => 'trusted_ref' } : {}
 
-      # The same condition that lets settings load without candidate commands: no command directory at all.
-      def self.needed?(context)
-        directory = File.join(context.fetch(:root), Configuration::Paths::COMMAND_DIRECTORY)
+      # Decided once before the run, by the condition that lets settings load without candidate
+      # commands: no command directory at all.
+      def self.needed?(root:, kind:)
+        directory = File.join(root, Configuration::Paths::COMMAND_DIRECTORY)
         return false if File.exist?(directory) || File.symlink?(directory)
-        return true if context.fetch(:kind) == 'trusted/team'
+        return true if kind == 'trusted/team'
 
-        raise Error, "#{context.fetch(:path)} is missing from this checkout"
+        raise Error, "#{Configuration::Paths::COMMAND_DIRECTORY} is missing from this checkout"
       end
 
       def initialize(root, sha, path)
@@ -40,7 +41,7 @@ module Shaka
         write_copy
         yield
       ensure
-        File.delete(target) if @written && File.file?(target)
+        File.delete(target) if @written && in_place?
         @created.reverse_each { |directory| Dir.rmdir(directory) if removable?(directory) }
       end
 
@@ -67,8 +68,14 @@ module Shaka
         end
       end
 
+      # The run may have removed the copy or replaced its directory with a symlink; touch only the real copy.
+      def in_place?
+        expected = File.join(File.realpath(@root), File.dirname(@path))
+        File.file?(target) && File.realpath(File.dirname(target)) == expected
+      end
+
       # The run may already have removed a directory this created, as `git clean -fdx` does.
-      def removable?(directory) = File.directory?(directory) && Dir.empty?(directory)
+      def removable?(directory) = !File.symlink?(directory) && File.directory?(directory) && Dir.empty?(directory)
       def target = File.join(@root, @path)
       def parent(index) = File.join(@root, *File.dirname(@path).split('/').first(index + 1))
       def relative(directory) = directory.delete_prefix("#{@root}/")

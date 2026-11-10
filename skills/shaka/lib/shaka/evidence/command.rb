@@ -78,7 +78,7 @@ module Shaka
         task_overrides = { 'command' => name, 'arguments' => @arguments }
         config, settings, kind, public_settings = Inputs.capture(root:, ref:, repository:, task_overrides:)
         { root:, ref:, repository:, name:, task_overrides:, settings:, kind:, public_settings:,
-          path: config.command(name) }
+          path: config.command(name), trusted_copy: TrustedCommand.needed?(root:, kind:) }
       end
 
       def execute_run(context)
