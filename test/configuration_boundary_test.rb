@@ -26,6 +26,7 @@ module ConfigurationBoundaryFileIO
     update_check/cache.rb install/session_hook.rb ruby_requirement.rb startup_notice/marks.rb
     evidence/machine_facts.rb local_review/custom_instructions.rb local_review/commit_export.rb
     canary/body.rb canary/cli.rb canary/gate.rb canary/run.rb canary/text.rb publication/time_zone.rb
+    evidence/trusted_command.rb
   ].freeze
 end
 

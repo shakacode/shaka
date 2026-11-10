@@ -10,6 +10,7 @@ require_relative 'inputs'
 require_relative 'machine_facts'
 require_relative 'options'
 require_relative 'result'
+require_relative 'trusted_command'
 require_relative 'verification'
 require_relative '../configuration/feature_guard'
 
@@ -83,19 +84,19 @@ module Shaka
       def execute_run(context)
         root = context.fetch(:root)
         before_tree = CandidateTree.tested(root:)
-        (output, error, process), timing = timed_check(root, context.fetch(:path))
+        (output, error, process), timing = timed_check(context)
         $stderr.write(output, error)
         after_tree = CandidateTree.capture(root:)
-        _config, after_settings, after_kind = Inputs.capture(root:, ref: context.fetch(:ref),
-                                                             repository: context.fetch(:repository),
-                                                             task_overrides: context.fetch(:task_overrides))
+        _config, after_settings, after_kind = Inputs.capture(**context.slice(:root, :ref, :repository, :task_overrides))
         run_result(context, Execution.new(process:, before_tree:, after_tree:, after_settings:, after_kind:))
-          .merge(timing)
+          .merge(timing, TrustedCommand.source(context))
       end
 
-      def timed_check(root, path)
-        command = [{ 'PATH' => @original_path }, File.join(root, path), *@arguments]
-        MachineFacts.measure { CallLog.measure { Open3.capture3(*command, chdir: root) } }
+      def timed_check(context)
+        command = [{ 'PATH' => @original_path }, File.join(*context.values_at(:root, :path)), *@arguments]
+        TrustedCommand.around(context) do
+          MachineFacts.measure { CallLog.measure { Open3.capture3(*command, chdir: context.fetch(:root)) } }
+        end
       end
 
       def run_result(context, execution)

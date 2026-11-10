@@ -1116,6 +1116,13 @@ directories holding the configuration and scripts must be real directories.
 Removing an optional check already on the default branch requires an explicit,
 maintainer-approved policy change.
 
+A long-lived branch cut before you added these scripts, such as a release branch,
+still gets validation evidence. When the branch has no `.agents/shaka/bin`
+directory, Shaka runs the default branch's copy of the script against that
+branch's files and removes the copy afterward. The script still runs the branch's
+own tools, so `exec bin/ci-local` runs that branch's `bin/ci-local`. The result
+records the trusted copy as its command source.
+
 ## `base_branch`
 
 **Optional. Default: the repository's default branch.**
