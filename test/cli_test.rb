@@ -179,4 +179,13 @@ class CliMergeAutoTest < Minitest::Test
     refute_predicate status, :success?
     assert_match(/--auto is only for merge/, error)
   end
+
+  # Under Ask a failing optional check does not block merge, so excusing one means nothing there.
+  def test_base_failure_needs_auto
+    _output, error, status = Open3.capture3(*CliTest::COMMAND, 'merge', 'owner/repo', '1', '--head', HEAD,
+                                            '--ref', HEAD, '--base-failure', 'lint')
+
+    refute_predicate status, :success?
+    assert_match(/--base-failure is only for merge --auto/, error)
+  end
 end

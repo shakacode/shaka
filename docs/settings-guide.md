@@ -143,11 +143,13 @@ For custom instructions:
 $shaka Focus code reviews on compatibility.
 ```
 
-The agent starts from Shaka's defaults when preparing replacement instructions.
-Use one prompt for all local reviewers or one for a particular reviewer. Team
+A [custom instructions file](settings.md#reviewcustom_instructions_file) adds your
+rules to the reviewer's prompt, which is Shaka's defaults unless you replace it. To
+remove one of the default instructions,
+[replace the prompt](settings.md#reviewreplacement_prompt_file) for all local reviewers
+or for one. Shaka's fixed rules, such as making no edits, still apply. Team
 instructions come from the default branch; individual instructions stay in your
-local settings folder. See
-[custom review instructions](settings.md#reviewreplacement_prompt_file).
+local settings folder.
 
 ## Keep PR explanations useful
 
