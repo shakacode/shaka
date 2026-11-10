@@ -12,15 +12,23 @@ require_relative '../github/squash_comment'
 require_relative '../merge_queue_commit'
 
 module Shaka
+  # What a blocked checkpoint's merge warning reads: the owner's recommendation and next step, each nil without an
+  # owner disposition, and the reviewer's verdict, nil when the review did not complete.
+  module PostImplementationWarningFields
+    def disposition = @owner&.fetch('recommendation')
+    def next_action = @owner&.fetch('next_action', nil)
+    def conclusion = @report&.fetch('conclusion')
+  end
+
   # Presents the checkpoint's action without confusing configuration with observations.
   class PostImplementationPublication
     include PostImplementationPublisherIdentity
     include PostImplementationExecutionText
     include PostImplementationAdequacy
 
-    # disposition and next_action are the owner's recommendation and next step, or nil when the result supplies none;
-    # conclusion is the reviewer's verdict, or nil when the review did not complete.
-    attr_reader :state, :disposition, :next_action, :conclusion
+    include PostImplementationWarningFields
+
+    attr_reader :state
 
     def summary = @summary || PublicationText.required(@result.fetch('reason'), 'checkpoint failure reason')
 
@@ -81,9 +89,8 @@ module Shaka
     def known(value) = (value.strip if value.is_a?(String) && !value.strip.empty? && !value.strip.casecmp?('UNKNOWN'))
 
     def completed_body
-      report = PostImplementationReport.read(@result.fetch('report'), head: @head)
+      report = @report = PostImplementationReport.read(@result.fetch('report'), head: @head)
       @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
-      @conclusion = report.fetch('conclusion')
       action, next_action = recommendation(report)
       summary = @summary = report.fetch('summary', report.fetch('reasons').first)
       ["## Reviewer recommendation: #{action}", "**Next:** #{owner_action(report, next_action)}",

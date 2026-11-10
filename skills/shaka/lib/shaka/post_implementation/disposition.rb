@@ -83,20 +83,18 @@ module Shaka
     private
 
     def completed_body
-      report = PostImplementationReport.read(@result.fetch('report'), head: @head)
-      disposition = PostImplementationDisposition.read(@result['disposition'], head: @head, report:)
-      @disposition = disposition.fetch('recommendation')
+      report = @report = PostImplementationReport.read(@result.fetch('report'), head: @head)
+      disposition = @owner = PostImplementationDisposition.read(@result['disposition'], head: @head, report:)
       @state = PostImplementationDisposition.merge?(disposition) ? 'ready' : 'blocked'
       @summary = disposition.fetch('reason')
       verification = report.fetch('summary', report.fetch('reasons').first)
-      ["## Recommendation: #{@disposition}", @summary, *next_line(disposition),
+      ["## Recommendation: #{disposition.fetch('recommendation')}", @summary, *next_line(disposition),
        evidence_lines(report, disposition), checks(report),
        supporting_analysis(report, verification, lead: "Reviewer summary: #{verification}")].join("\n\n")
     end
 
     def next_line(disposition)
-      @next_action = disposition['next_action']
-      @next_action ? ["**Next:** #{@next_action}"] : []
+      disposition['next_action'] ? ["**Next:** #{disposition['next_action']}"] : []
     end
 
     # The owner's reason leads, so the visible verdict states only the conclusion and any open concerns.

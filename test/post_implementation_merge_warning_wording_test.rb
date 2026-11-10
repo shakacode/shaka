@@ -32,7 +32,7 @@ class PostImplementationMergeWarningWordingTest < Minitest::Test
     INTERNAL_TERMS.each { |term| refute_match(/#{term}/i, text) }
   end
 
-  def test_a_missing_review_report_asks_the_maintainer_and_says_an_answer_is_not_merge_approval
+  def test_a_question_about_an_unpublished_ci_report_asks_the_maintainer_and_says_an_answer_is_not_approval
     with_result do |result, path|
       concern(result, 'The CI review job finished without publishing its report.')
       dispose(result, Shaka::PostImplementationReport::AWAITING_DECISION, QUESTION, 'Ask Justin.')
@@ -73,13 +73,38 @@ class PostImplementationMergeWarningWordingTest < Minitest::Test
 
   def test_a_reviewer_recommending_against_the_pr_asks_the_maintainer_to_close_or_replace_it
     with_result do |result, path|
-      report = JSON.parse(File.read(result['report'])).merge('conclusion' => 'Do not merge')
-      File.write(result['report'], JSON.generate(report))
+      verdict(result, 'Do not merge')
       text = warning(publish(result, path).first)
 
       assert_includes text, REGION::REJECTED.first
       refute_includes text, 'You do not need to answer anything yet.'
       assert_plain(text)
+    end
+  end
+
+  def verdict(result, conclusion)
+    report = JSON.parse(File.read(result['report'])).merge('conclusion' => conclusion)
+    File.write(result['report'], JSON.generate(report))
+  end
+
+  def test_a_reviewer_verdict_against_the_pr_survives_an_owner_revision
+    with_result do |result, path|
+      verdict(result, 'Do not merge')
+      dispose(result, 'Revise before merge', 'The approach duplicates the existing retry.', 'Remove the new retry.')
+      text = warning(publish(result, path).first)
+
+      assert_includes text, REGION::REJECTED.first
+      assert_includes text, '**Next:** Remove the new retry.'
+    end
+  end
+
+  def test_an_owner_recommending_against_the_pr_is_not_attributed_to_the_reviewer
+    with_result do |result, path|
+      dispose(result, 'Do not merge', 'A smaller PR already fixes this.', 'Close this PR in favor of #900.')
+      text = warning(publish(result, path).first)
+
+      assert_includes text, REGION::REJECTED.first
+      refute_match(/review recommends/i, text)
     end
   end
 

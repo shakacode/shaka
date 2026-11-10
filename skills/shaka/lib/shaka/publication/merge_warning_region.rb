@@ -18,7 +18,7 @@ module Shaka
     BLOCKED = ['⛔ Do not merge yet: the final review found a problem.',
                'The agent fixes the problems in the linked report and runs the review again. ' \
                'You do not need to answer anything yet.'].freeze
-    REJECTED = ['⛔ Do not merge: the final review recommends closing or replacing this PR.',
+    REJECTED = ['⛔ Do not merge: this PR should be closed or replaced.',
                 'A maintainer decides whether to close or replace it. The agent will ask you.'].freeze
     INCOMPLETE = ['⛔ Do not merge yet: the final review did not finish.',
                   'The agent fixes what stopped the review and runs it again. ' \
@@ -26,13 +26,13 @@ module Shaka
 
     module_function
 
-    # The heading and default next step for a blocked checkpoint publication. The owner's disposition, when
-    # there is one, decides; otherwise the reviewer's conclusion does.
+    # The heading and default next step for a blocked checkpoint publication. Either the reviewer or the owner
+    # recommending against the PR leaves closing or replacing it to a maintainer.
     def wording(publication)
       return AWAITING if waiting?(publication)
       return INCOMPLETE if publication.state == 'not_completed'
 
-      (publication.disposition || publication.conclusion) == 'Do not merge' ? REJECTED : BLOCKED
+      [publication.disposition, publication.conclusion].include?('Do not merge') ? REJECTED : BLOCKED
     end
 
     # The warning for a blocked checkpoint publication, quoting its reason; report and commit are rendered links.
