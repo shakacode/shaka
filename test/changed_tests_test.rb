@@ -57,8 +57,10 @@ class ChangedTestsTest < Minitest::Test
     assert_includes selected, 'test/cli_merge_risk_test.rb'
   end
 
-  def test_a_changed_test_file_selects_itself
-    assert_equal %w[test/alpha_test.rb], @selector.tests_for([%w[A test/alpha_test.rb]])
+  def test_a_changed_test_file_selects_itself_and_the_tests_that_require_it
+    File.write(File.join(@root, 'test/gamma_test.rb'), "require_relative 'alpha_test'\n")
+
+    assert_equal %w[test/alpha_test.rb test/gamma_test.rb], @selector.tests_for([%w[A test/alpha_test.rb]])
   end
 
   def test_changes_it_cannot_map_run_the_whole_suite

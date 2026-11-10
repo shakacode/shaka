@@ -11,10 +11,10 @@ class ChangedTests
   # Changes here can affect every test, so they always run the whole suite.
   FOUNDATIONS = %w[test/test_helper.rb test/support/changed_tests.rb bin/run-tests Gemfile Gemfile.lock
                    .ruby-version].freeze
-  # These tests read library sources as text instead of loading them.
+  # These tests read library sources as text, or load renderers the preview requires at runtime.
   SOURCE_READERS = %w[test/configuration_boundary_test.rb test/install_refusal_wording_test.rb
                       test/rendering_preview_guard_test.rb test/rendering_preview_head_test.rb
-                      test/evidence_relevant_code_test.rb].freeze
+                      test/rendering_preview_test.rb test/evidence_relevant_code_test.rb].freeze
   # Text in a test or its support files that shows it starts an entry point in a child process.
   ENTRY_POINTS = {
     'skills/shaka/scripts/shaka.rb' => %r{shaka_command|SHAKA_COMMAND|scripts/shaka|scripts', 'shaka'},
@@ -53,8 +53,8 @@ class ChangedTests
 
   def tests_for_path(status, path)
     return nil unless mappable?(status, path)
-    return [path] if map.key?(path)
 
+    # A test reaches itself, and other tests may require it for its fixtures.
     loaders = map.select { |_, files| files.include?(path) }.keys
     return nil if loaders.empty?
 
