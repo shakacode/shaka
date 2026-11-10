@@ -84,19 +84,10 @@ class EvidenceTreeWatchTest < Minitest::Test
   end
 
   # A descendant in its own session escapes the group signals and keeps the output pipe open.
-  def test_stop_returns_while_an_escaped_descendant_holds_the_output
-    with_checkout do |root, _ref|
-      Dir.mktmpdir('shaka-tree-watch-') do |directory|
-        pid_file = File.join(directory, 'escaped')
-        outcome, seconds = run_escaped(root, pid_file)
+  def test_stop_returns_while_an_escaped_descendant_holds_the_output = assert_escaped_stop(leader: 'sleep 30')
 
-        assert_operator seconds, :<, 20
-        assert_predicate outcome, :stopped?
-      ensure
-        stop_escaped(pid_file)
-      end
-    end
-  end
+  # The leader exits at once; the watch continues while the escaped descendant holds the pipe.
+  def test_edit_after_the_leader_exits_still_stops_the_check = assert_escaped_stop(leader: '')
 
   private
 
@@ -135,9 +126,23 @@ class EvidenceTreeWatchTest < Minitest::Test
 
   def tested(root) = Shaka::Evidence::CandidateTree.capture(root:)
 
-  def run_escaped(root, pid_file)
+  def assert_escaped_stop(leader:)
+    with_checkout do |root, _ref|
+      Dir.mktmpdir('shaka-tree-watch-') do |directory|
+        pid_file = File.join(directory, 'escaped')
+        outcome, seconds = run_escaped(root, pid_file, leader)
+
+        assert_operator seconds, :<, 20
+        assert_predicate outcome, :stopped?
+      ensure
+        stop_escaped(pid_file)
+      end
+    end
+  end
+
+  def run_escaped(root, pid_file, leader)
     escaped = %(#{RbConfig.ruby} -e 'Process.setsid; File.write(ARGV[0], Process.pid.to_s); sleep 30' '#{pid_file}')
-    watch = Shaka::Evidence::TreeWatch.new(['sh', '-c', "#{escaped} &\nsleep 30"], root:, tree: tested(root))
+    watch = Shaka::Evidence::TreeWatch.new(['sh', '-c', "#{escaped} &\n#{leader}"], root:, tree: tested(root))
     editor = Thread.new { edit_when_started(pid_file, File.join(root, 'edited.txt')) }
     started = now
     outcome = nil

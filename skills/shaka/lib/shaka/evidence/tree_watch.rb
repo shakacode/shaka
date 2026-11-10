@@ -41,7 +41,7 @@ module Shaka
         Open3.popen3(*@command, chdir: @root, pgroup: true) do |input, output, error, waiter|
           input.close
           readers = [output, error].map { |stream| Thread.new { stream.read } }
-          changed = watch(waiter)
+          changed = watch(waiter, readers)
           $stderr.write(*(changed ? drain(readers) : readers.map(&:value)))
           Outcome.new(status: waiter.value, changed_tree: changed)
         ensure
@@ -52,21 +52,25 @@ module Shaka
 
       private
 
-      def watch(waiter)
-        until waiter.join(@interval)
+      # A descendant can hold the output open after the leader exits, so the watch lasts until
+      # the output closes too.
+      def watch(waiter, readers)
+        until LocalReviewProcess.join_before_deadline([waiter, *readers], clock + @interval)
           current = capture
           return stop(waiter, current) if current && current != @tree
         end
         nil
       end
 
-      # A file can vanish while Git stages it. The next capture, or the comparison after the
-      # check, decides instead.
+      # A file can vanish while Git stages it, or the capture can fail. The next capture, or the
+      # comparison after the check, decides instead.
       def capture
         CandidateTree.capture(root: @root)
-      rescue Error
+      rescue Error, SystemCallError
         nil
       end
+
+      def clock = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
       # TERM, then KILL for members that outlive their leader. A lasting macOS denial of the KILL
       # leaves the result to report the stop anyway.
