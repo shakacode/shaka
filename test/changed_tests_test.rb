@@ -9,11 +9,13 @@ class ChangedTestsTest < Minitest::Test
     'skills/shaka/lib/shaka/beta.rb' => '',
     'skills/shaka/lib/shaka/gamma.rb' => '',
     'skills/shaka/lib/shaka/orphan.rb' => '',
+    'skills/shaka/lib/shaka/unused.rb' => '',
     'skills/shaka/scripts/shaka.rb' => "require_relative '../lib/shaka/gamma'\n",
-    'test/test_helper.rb' => "def shaka_command = 'skills/shaka/scripts/shaka'\n",
+    'test/test_helper.rb' => "def shaka_command = 'skills/shaka/scripts/shaka'\nSHAKA_COMMAND = shaka_command\n",
     'test/alpha_test.rb' => "require_relative 'test_helper'\nrequire 'shaka/alpha'\n",
     'test/beta_test.rb' => "require_relative '../skills/shaka/lib/shaka/beta'\n",
-    'test/cli_support.rb' => "def run_helper = shaka_command\n",
+    'test/child_test.rb' => "system('ruby', '-rshaka/orphan', '-e', '')\n",
+    'test/cli_support.rb' => "def run_helper = SHAKA_COMMAND\n",
     'test/cli_test.rb' => "require_relative 'test_helper'\nrequire_relative 'cli_support'\n",
     'test/configuration_boundary_test.rb' => "require_relative 'test_helper'\n"
   }.freeze
@@ -41,13 +43,27 @@ class ChangedTestsTest < Minitest::Test
                  @selector.tests_for([%w[M skills/shaka/lib/shaka/gamma.rb]])
   end
 
+  def test_a_library_a_child_ruby_preloads_selects_the_test_that_starts_it
+    assert_equal %w[test/child_test.rb test/configuration_boundary_test.rb],
+                 @selector.tests_for([%w[M skills/shaka/lib/shaka/orphan.rb]])
+  end
+
+  # The real suite starts the helper through SHAKA_COMMAND from the test helper.
+  def test_this_repository_selects_helper_tests_for_a_file_the_helper_loads
+    selected = ChangedTests.new(File.expand_path('..', __dir__))
+                           .tests_for([%w[M skills/shaka/lib/shaka/merge_risk_gate.rb]])
+
+    assert_includes selected, 'test/merge_risk_gate_test.rb'
+    assert_includes selected, 'test/cli_merge_risk_test.rb'
+  end
+
   def test_a_changed_test_file_selects_itself
     assert_equal %w[test/alpha_test.rb], @selector.tests_for([%w[A test/alpha_test.rb]])
   end
 
   def test_changes_it_cannot_map_run_the_whole_suite
     [[%w[M test/test_helper.rb]], [%w[M Gemfile.lock]], [%w[M bin/run-tests]],
-     [%w[M skills/shaka/lib/shaka/orphan.rb]], [%w[D skills/shaka/lib/shaka/beta.rb]],
+     [%w[M skills/shaka/lib/shaka/unused.rb]], [%w[D skills/shaka/lib/shaka/beta.rb]],
      [%w[M docs/settings.md]], [%w[M test/alpha_test.rb], %w[M test/test_helper.rb]], []].each do |changes|
       assert_nil @selector.tests_for(changes), changes.inspect
     end

@@ -17,7 +17,7 @@ class ChangedTests
                       test/evidence_relevant_code_test.rb].freeze
   # Text in a test or its support files that shows it starts an entry point in a child process.
   ENTRY_POINTS = {
-    'skills/shaka/scripts/shaka.rb' => %r{shaka_command|scripts/shaka|scripts', 'shaka'},
+    'skills/shaka/scripts/shaka.rb' => %r{shaka_command|SHAKA_COMMAND|scripts/shaka|scripts', 'shaka'},
     'bin/install' => %r{bin/install|'bin', 'install'},
     'bin/canary' => %r{bin/canary},
     'bin/report-instruction-growth' => /report-instruction-growth/
@@ -96,8 +96,13 @@ class ChangedTests
     relative = source.scan(/^\s*require_relative\s+['"]([^'"]+)['"]/).flatten.map do |name|
       File.join(File.dirname(path), name)
     end
-    named = source.scan(%r{^\s*require\s+['"](shaka/[^'"]+)['"]}).flatten.map { File.join(LIBRARY, it) }
-    (relative + named).map { |name| normalize(name) }.select { File.file?(File.join(@root, it)) }
+    (relative + library_names(source)).map { normalize(it) }.select { File.file?(File.join(@root, it)) }
+  end
+
+  # A child Ruby started with -rshaka/NAME loads that library file too.
+  def library_names(source)
+    source.scan(%r{^\s*require\s+['"](shaka/[^'"]+)['"]|['"]-r(shaka/[^'"]+)['"]}).flatten.compact
+          .map { File.join(LIBRARY, it) }
   end
 
   def normalize(name)
