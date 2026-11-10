@@ -940,18 +940,18 @@ project_guidance:
   a large table and how to roll it back. The guide adds to Shaka's own walkthrough
   rules, such as opening with the behavior that changed; it does not replace them.
 
-When `pr_evidence` is set and your repository has a pull request template, the agent
-also reads that template and fills any of its sections Shaka's description does not
-already cover. The template gives the description its shape; the guide says what to
-run or check before writing it. Shaka looks for `pull_request_template.md` in `.github/`,
-the repository root, then `docs/`. With several templates, name the one to use as
-`pr_evidence`. For example, a template's Changelog section can
-[replace edits to `CHANGELOG.md`](changelog-in-pr-descriptions.md).
+When `pr_evidence` is set, Shaka shows the agent the repository's pull request
+template if it finds one. The evidence guide says what to run or report. Shaka
+looks for `pull_request_template.md` in `.github/`, the repository root, then
+`docs/`. With several templates, name the one to use as `pr_evidence`.
 
-Shaka uses its built-in sections where they cover the template. Extra sections
-appear by default. To make one conditional, use an HTML comment that says when
-to omit its heading and body. For example, omit **Settings changes** when the
-diff leaves repository settings alone. The agent still reports required verification.
+The agent uses Shaka's built-in fields for the headings they cover. For example,
+**Decisions to make** appears only if there's a decision to make. Other template
+sections appear unless an HTML comment says to omit them for the current diff.
+For example, a **Settings changes** comment can ask the agent to omit its heading
+and body when the diff leaves repository settings alone. Required verification
+still appears. A template's Changelog section can
+[replace edits to `CHANGELOG.md`](changelog-in-pr-descriptions.md).
 
 Put anything a command can check in your [validate script](#standard-command-scripts)
 or CI, where a failure stops the PR. Keep the guides for judgment calls, such as
