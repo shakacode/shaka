@@ -8,7 +8,7 @@ require 'tmpdir'
 module LefthookScriptHelpers
   ROOT = File.expand_path('..', __dir__)
   ENVIRONMENT = { 'BUNDLE_GEMFILE' => File.join(ROOT, 'Gemfile'), 'RUBYOPT' => nil, 'RUBYLIB' => nil,
-                  'GIT_CONFIG_GLOBAL' => File::NULL, 'GIT_CONFIG_NOSYSTEM' => '1' }.freeze
+                  'GIT_CONFIG_GLOBAL' => File::NULL, 'GIT_CONFIG_NOSYSTEM' => '1', 'SHAKA_BASE_REF' => nil }.freeze
 
   def setup
     @dir = Dir.mktmpdir
