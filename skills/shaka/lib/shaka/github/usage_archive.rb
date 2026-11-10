@@ -89,7 +89,8 @@ module Shaka
       ref = reference(json)
       stored = read(ref)
       blocks = indices(ref).map { |index| stored.fetch(index) }
-      changed = display(blocks, ref) != visible
+      # A grouped reference shows no report text, so it may only restore records with none to show.
+      changed = display(blocks, ref) != visible || (ref.key?('records') && !blocks.all? { |block| hidden?(block) })
       raise Error, 'Archived usage display changed; restore it before publishing.' if changed
 
       blocks.join(SEPARATOR)

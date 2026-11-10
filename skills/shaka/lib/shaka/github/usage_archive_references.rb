@@ -53,7 +53,7 @@ module Shaka
     end
 
     def groupable?(before, gap, after, references)
-      gap == SEPARATOR && hidden?(before) && hidden?(after) && same_archive?(references[before], references[after])
+      gap == SEPARATOR && hidden?(before) && hidden?(after) && follows?(references[before], references[after])
     end
 
     def pieces(region)
@@ -74,8 +74,10 @@ module Shaka
       first.slice('comments', 'sha256').merge('records' => blocks.map { |block| references[block].fetch('record') })
     end
 
-    def same_archive?(first, second)
-      first && second && first.values_at('comments', 'sha256') == second.values_at('comments', 'sha256')
+    # Indices only increase within a reference, so no edit can restore one record many times.
+    def follows?(first, second)
+      first && second && first.values_at('comments', 'sha256') == second.values_at('comments', 'sha256') &&
+        first['record'] < second['record']
     end
 
     # A table record keeps only hidden columns and notes, which the table and pricing notes already show.
@@ -98,7 +100,8 @@ module Shaka
     end
 
     def valid_indices?(indices)
-      indices.is_a?(Array) && !indices.empty? && indices.all? { |index| index.is_a?(Integer) && index >= 0 }
+      indices.is_a?(Array) && !indices.empty? && indices.all? { |index| index.is_a?(Integer) && index >= 0 } &&
+        indices.each_cons(2).all? { |earlier, later| earlier < later }
     end
 
     def valid_ids?(ids)
