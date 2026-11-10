@@ -79,8 +79,8 @@ of Claude Code on the web found GitHub's GraphQL API blocked. Doctor reads repos
 access over REST there and reports the blocked API as a failed GitHub GraphQL check.
 `shaka pr` also reads the pull request and its required checks over REST there. It lists
 what REST can't show, such as the review decision and merge queue state, as unknown.
-Checking for existing work on an issue also works there, but it can't see a pull request
-linked to the issue only from GitHub's Development sidebar, and says so.
+Checking for existing work on an issue also reads over REST there. It can't see a pull
+request linked to the issue only from GitHub's Development sidebar, and says so.
 Shaka's other pull request commands still need GraphQL. The
 cloud session's `claude` CLI came signed in, and a Claude review completed there
 after the session installed Shaka and Ruby 3.4, because its Ruby was older. For a

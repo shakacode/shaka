@@ -18,8 +18,13 @@ module Shaka
         @capture = capture
       end
 
-      # Names the fields REST could not read once GitHub refused GraphQL; empty otherwise.
-      def read_over = @rest ? { 'readOver' => 'rest', 'unknownFields' => RestPullRequests::UNKNOWN_FIELDS } : {}
+      # Names the fields REST could not read once GitHub refused GraphQL; empty otherwise. A
+      # description task reads no issue links, so none of its fields go unread.
+      def read_over
+        return {} unless @rest
+
+        { 'readOver' => 'rest', 'unknownFields' => @query ? RestPullRequests::UNKNOWN_FIELDS : [] }
+      end
 
       def call
         read

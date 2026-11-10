@@ -42,7 +42,8 @@ module Shaka
         (1..MAX_PAGES).each do |page|
           batch = search_page(query, page)
           items.concat(batch)
-          return items.map { |item| { 'number' => item['number'] } } if batch.length < PAGE_SIZE
+          # PullRequests#search_numbers refuses an item that is not an object with a number.
+          return items.map { |item| item.is_a?(Hash) ? item.slice('number') : item } if batch.length < PAGE_SIZE
         end
         raise Error, 'GitHub pull request search reached its limit; ownership is incomplete.'
       end

@@ -45,6 +45,14 @@ class ClaimRestTest < Minitest::Test
 
     assert_equal([%w[headRefName number title url]], result.fetch('pull_requests').map { |pr| pr.keys.sort })
     assert_equal 'rest', result.fetch('readOver')
+    assert_empty result.fetch('unknownFields')
+  end
+
+  def test_an_owning_pull_request_on_a_later_page_is_found
+    others = Array.new(100) { |index| PULL.merge('number' => 1000 + index, 'body' => '') }
+    result = Shaka::Claim.new(query: '392', root: Dir.pwd, runner: rest_runner(pulls: [others, [PULL]])).result
+
+    assert_equal([402], result.fetch('pull_requests').map { |pr| pr.fetch('number') })
   end
 
   def test_an_incomplete_or_full_search_is_not_a_complete_ownership_check
@@ -88,9 +96,15 @@ class ClaimRestTest < Minitest::Test
     return unless argv[1] == 'api'
     return { 'full_name' => 'shakacode/shaka' } if argv.last == 'repos/{owner}/{repo}'
     return search_result(search) if argv.include?('search/issues')
-    return pulls if argv.last.start_with?('repos/shakacode/shaka/pulls?')
+    return pulls_page(pulls, argv.last) if argv.last.start_with?('repos/shakacode/shaka/pulls?')
 
     comments
+  end
+
+  # Pages given as an array of arrays; a flat array is the first page alone.
+  def pulls_page(pulls, path)
+    pages = pulls.first.is_a?(Array) ? pulls : [pulls]
+    pages.fetch(path[/[?&]page=(\d+)/, 1].to_i - 1, [])
   end
 
   def search_result(search)
