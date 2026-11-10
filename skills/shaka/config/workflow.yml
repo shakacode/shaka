@@ -468,9 +468,9 @@ phases:
         preparing the description. It also prints the repository's pull request template when
         one exists. Gather the evidence the guide asks for, and report each item in
         `verification` or `details`, naming any gap. Apply the trusted template's section
-        comments to the current diff. Use built-in sections where they cover the template.
-        Put each remaining section in `sections` unless its HTML comment explicitly says
-        to omit it for this diff. Omit both the heading and body. If applicability is unclear,
+        comments to the current diff. Route headings Shaka owns through its built-in fields,
+        even when those fields render no section. Put other template sections in `sections` unless
+        an HTML comment explicitly says to omit one for this diff. Omit both the heading and body. If applicability is unclear,
         report the gap in `verification` or `details`. Preserve required workflow evidence.
         Put a risk record the guide asks for in
         `risk_record`, a one-line `summary` and a `body`, which the helper folds under Risk and
