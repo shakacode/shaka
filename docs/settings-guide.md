@@ -144,7 +144,8 @@ $shaka Focus code reviews on compatibility.
 ```
 
 A [custom instructions file](settings.md#reviewcustom_instructions_file) adds your
-rules to Shaka's defaults. To remove one of the default instructions,
+rules to the reviewer's prompt, which is Shaka's defaults unless you replace it. To
+remove one of the default instructions,
 [replace the prompt](settings.md#reviewreplacement_prompt_file) for all local reviewers
 or for one. Shaka's fixed rules, such as making no edits, still apply. Team
 instructions come from the default branch; individual instructions stay in your

@@ -891,7 +891,9 @@ which ratings the agent may merge. [`merge.limits`](#mergelimits) sends a PR pas
 size limits to a person the same way. To see the rubric and your file in the order the
 reviewer reads them, ask `$shaka Show what my checkpoint reviewer receives.`
 
-Shaka has no way to lower a rating for your project. To ask for one,
+Guidance cannot lower a rating below the rubric. To stop a path from raising ratings, remove
+it from its [high-risk](#high_risk_areas) or [medium-risk area](#medium_risk_areas). To
+ask for a way to lower ratings,
 [open a feature request](https://github.com/shakacode/shaka/issues/new/choose).
 
 ## `medium_risk_areas`
