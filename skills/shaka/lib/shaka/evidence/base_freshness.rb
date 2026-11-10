@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
-require 'timeout'
+require_relative '../doctor/bounded_command'
 require_relative '../workflow_version'
 
 module Shaka
@@ -10,11 +10,11 @@ module Shaka
     # does not start on a head that will need a rebase and a rerun anyway.
     class BaseFreshness
       FETCH_SECONDS = 60
-      # A fetch must never wait for a password prompt; a failure reports the count as unknown.
+      # Refuses HTTPS credential prompts; FETCH_SECONDS bounds any other wait, such as an SSH passphrase.
       ENVIRONMENT = WorkflowVersion::GIT_ENVIRONMENT.merge('GIT_TERMINAL_PROMPT' => '0').freeze
 
-      def self.check(root:, base:)
-        new(root, base).check
+      def self.check(root:, base:, fetch_seconds: FETCH_SECONDS)
+        new(root, base, fetch_seconds).check
       end
 
       # Yields to run the check only when the head is not behind the base, and adds the count to its result.
@@ -39,9 +39,10 @@ module Shaka
       end
       private_class_method :stop
 
-      def initialize(root, base)
+      def initialize(root, base, fetch_seconds)
         @root = root
         @base = base
+        @fetch_seconds = fetch_seconds
       end
 
       def check
@@ -56,17 +57,11 @@ module Shaka
 
       private
 
-      # A stalled fetch is killed rather than left running after the check gives up on it.
+      # BoundedCommand ends the fetch's whole process tree at the deadline, including an SSH child.
       def fetch(remote)
-        pid = Process.spawn(ENVIRONMENT, 'git', '-C', @root, 'fetch', '--quiet', '--no-tags', 'origin',
-                            "+refs/heads/#{@base}:#{remote}", in: File::NULL, out: File::NULL, err: File::NULL)
-        Timeout.timeout(FETCH_SECONDS) { Process.wait2(pid).last.success? }
-      rescue Timeout::Error
-        Process.kill('KILL', pid)
-        Process.wait(pid)
-        false
-      rescue SystemCallError
-        false
+        argv = [ENVIRONMENT, 'git', '-C', @root, 'fetch', '--quiet', '--no-tags', 'origin',
+                "+refs/heads/#{@base}:#{remote}"]
+        Doctor::BoundedCommand.new(timeout: @fetch_seconds).call(argv).last
       end
 
       def unknown(reason) = { 'base' => @base, 'behind' => 'unknown', 'reason' => reason }

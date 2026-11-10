@@ -8,16 +8,27 @@ class EvidenceBaseFreshnessTest < Minitest::Test
   def test_stops_before_the_check_when_the_head_is_behind_the_base
     with_origin do |root, ref, origin|
       advance_origin(origin, count: 2)
+      marker = File.join(File.dirname(origin), 'ran')
+      File.write(File.join(root, '.agents/shaka/bin/test'), "#!/bin/sh\ntouch '#{marker}'\n")
       result, error = run_with_base(root, ref, expected_exit: 1)
 
       assert_equal 'behind_base', result.fetch('status')
       assert_equal({ 'base' => 'main', 'behind' => 2 }, result.fetch('base_behind'))
-      refute result.key?('tested_tree'), 'the check must not run'
+      refute_path_exists marker, 'the check must not run'
       assert_includes error, '2 commit(s) behind origin/main'
     end
   end
 
-  def test_runs_and_reports_zero_when_the_head_has_the_base
+  def test_runs_and_reports_zero_when_the_head_matches_the_base
+    with_origin do |root, ref, _origin|
+      result, = run_with_base(root, ref)
+
+      assert_equal 'completed', result.fetch('status')
+      assert_equal({ 'base' => 'main', 'behind' => 0 }, result.fetch('base_behind'))
+    end
+  end
+
+  def test_runs_and_reports_zero_when_the_head_is_only_ahead
     with_origin do |root, ref, _origin|
       File.write(File.join(root, 'local.txt'), "ahead\n")
       git(root, 'add', '-A')
