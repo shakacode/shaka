@@ -33,9 +33,14 @@ module Shaka
         yield.merge('base_behind' => report)
       end
 
-      # A revision, revision expression, or remote-tracking name would fail the fetch and quietly turn the stop off.
+      # Anything but a branch name, such as a revision, range, or remote-tracking name, would fail the
+      # fetch and quietly turn the stop off. Git's own check sees past the character set; a missing git
+      # (nil) is left to the fetch, which then reports the count as unknown.
       def self.branch!(base)
-        return base if base.match?(%r{\A[\w.\-/]+\z}) && !base.match?(%r{\A(?:HEAD\z|\h{7,}\z|origin/|refs/)})
+        named = base.match?(%r{\A[\w.\-/]+\z}) && !base.match?(%r{\A(?:HEAD\z|\h{7,}\z|origin/|refs/)})
+        git_check = named && system(ENVIRONMENT, 'git', 'check-ref-format', '--branch', base,
+                                    out: File::NULL, err: File::NULL)
+        return base if named && git_check != false
 
         raise Error, "--base takes the base branch name, such as main, not #{base}"
       end
@@ -57,8 +62,6 @@ module Shaka
       end
 
       def check
-        return unknown("#{@base} is not a branch name") unless git('check-ref-format', '--branch', @base)
-
         remote = "refs/remotes/origin/#{@base}"
         return unknown("cannot fetch origin #{@base}") unless fetch(remote)
 
@@ -76,6 +79,8 @@ module Shaka
         argv = [ENVIRONMENT, 'git', '-C', @root, 'fetch', '--quiet', '--no-tags', 'origin',
                 "+refs/heads/#{@base}:#{remote}"]
         Doctor::BoundedCommand.new(timeout: @fetch_seconds).call(argv).last
+      rescue SystemCallError
+        false
       end
 
       def unknown(reason) = { 'base' => @base, 'behind' => 'unknown', 'reason' => reason }

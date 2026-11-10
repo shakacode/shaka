@@ -32,6 +32,17 @@ class EvidenceBaseUnknownCountTest < Minitest::Test
     end
   end
 
+  def test_a_fetch_that_cannot_start_reports_unknown
+    with_checkout do |root, _ref|
+      original = Open3.method(:popen3)
+      Open3.define_singleton_method(:popen3) { |*| raise Errno::EAGAIN }
+      report = Shaka::Evidence::BaseFreshness.check(root:, base: 'main')
+      assert_equal ['unknown', 'cannot fetch origin main'], report.values_at('behind', 'reason')
+    ensure
+      Open3.define_singleton_method(:popen3, original)
+    end
+  end
+
   private
 
   def publish_main(root, origin)
