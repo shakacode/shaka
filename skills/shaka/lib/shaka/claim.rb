@@ -6,6 +6,7 @@ require 'optparse'
 require_relative 'branch_name'
 require_relative 'call_log'
 require_relative 'error'
+require_relative 'graphql_refusal'
 require_relative 'claim/description'
 require_relative 'claim/names'
 require_relative 'claim/pull_requests'
@@ -92,7 +93,7 @@ module Shaka
     end
 
     def result
-      listed = listed_pull_requests
+      listed = pull_requests.call
       matching = matching_branches
       {
         'query' => @query,
@@ -100,13 +101,13 @@ module Shaka
         'branch_name' => @names.reported,
         'pull_requests' => listed,
         'branches' => matching,
-        'collision' => listed.any? || matching.any?
+        'collision' => listed.any? || matching.any?, **pull_requests.read_over
       }
     end
 
     private
 
-    def listed_pull_requests = PullRequests.new(query: @query, names: @names, capture: method(:capture)).call
+    def pull_requests = @pull_requests ||= PullRequests.new(query: @query, names: @names, capture: method(:capture))
 
     def matching_branches
       capture(['git', 'ls-remote', '--heads', 'origin']).each_line.filter_map do |line|
@@ -116,11 +117,11 @@ module Shaka
     end
 
     def capture(argv)
-      stdout, _stderr, status = @runner.call(argv, stdin_data: '')
+      stdout, stderr, status = @runner.call(argv, stdin_data: '')
       return utf8(stdout) if status.respond_to?(:exitstatus) && status.exitstatus.zero?
 
       code = status.respond_to?(:exitstatus) ? status.exitstatus : status
-      raise Error, "#{argv.first} #{argv[1]} failed (exit #{code})."
+      raise GraphqlRefused.for_gh(argv, "#{argv.first} #{argv[1]} failed (exit #{code}).", stderr.to_s)
     rescue Errno::ENOENT
       raise Error, "#{argv.first} is unavailable."
     end

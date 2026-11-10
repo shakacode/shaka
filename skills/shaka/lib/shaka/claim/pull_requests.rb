@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
+require_relative '../graphql_refusal'
 require_relative 'references'
 require_relative 'comments'
+require_relative 'rest_pull_requests'
 
 module Shaka
   class Claim
@@ -16,7 +18,21 @@ module Shaka
         @capture = capture
       end
 
+      # Names the fields REST could not read once GitHub refused GraphQL; empty otherwise.
+      def read_over = @rest ? { 'readOver' => 'rest', 'unknownFields' => RestPullRequests::UNKNOWN_FIELDS } : {}
+
       def call
+        read
+      rescue GraphqlRefused
+        raise if @rest
+
+        @rest = RestPullRequests.new(@capture)
+        read
+      end
+
+      private
+
+      def read
         return by_branch_name unless @query
 
         inventory = pull_requests([], PR_JSON)
@@ -26,8 +42,6 @@ module Shaka
 
         inventory.filter_map { |pr| pr.slice(*PR_FIELDS) if covered?(pr, searched) }
       end
-
-      private
 
       # A task without a work item has no number for text, references, or comments to mention.
       def by_branch_name = pull_requests([], PR_FIELDS.join(',')).filter { |pr| @names.cover?(pr.fetch('headRefName')) }
@@ -57,6 +71,8 @@ module Shaka
       end
 
       def pull_requests(search, fields)
+        return @rest.list(search) if @rest
+
         parsed = JSON.parse(@capture.call(['gh', 'pr', 'list', *search, '--state', 'open', '--limit', '1000', '--json',
                                            fields]))
         raise Error, 'GitHub pull request list must be an array.' unless parsed.is_a?(Array)
