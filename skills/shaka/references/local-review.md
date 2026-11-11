@@ -493,7 +493,7 @@ not publish a local file location.
 The helper checks that each report closes with the attestation for its round. Reports are
 published verbatim, so before posting it asks GitHub to render the comment and refuses when an
 unclosed code fence or a stray disclosure tag in a report would hide the attestation. Where GitHub
-refuses that preview, it checks each comment once stored and restores or deletes one that fails. The
+refuses that preview, it checks each comment once stored and restores or deletes one it changed that fails. The
 check cannot stop two reports that together imitate a round's layout, for example a reviewer
 steered by the PR it reads. The attestation and the summary table stay authoritative, because
 the helper writes both itself. It posts one `Local Adversarial Review` comment for the whole

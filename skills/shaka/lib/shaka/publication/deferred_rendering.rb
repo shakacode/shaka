@@ -50,9 +50,10 @@ module Shaka
       html
     end
 
-    # Quoted text is published as written, so the stored comment may show as many escapes as it holds, no more.
+    # Quoted text is published as written, so the stored comment may show outside code as many escapes as
+    # the quotes hold outside code, no more; an escape a quote keeps in code cannot excuse one around it.
     def stored_escapes!(html, verbatim)
-      allowed = verbatim.sum { |text| text.scan(RenderedProse::ESCAPE).size }
+      allowed = verbatim.sum { |text| PublicationText.prose(text).scan(RenderedProse::ESCAPE).size }
       raise Error, RenderedProse::ESCAPED if RenderedProse.bare(html).scan(RenderedProse::ESCAPE).size > allowed
     end
 
