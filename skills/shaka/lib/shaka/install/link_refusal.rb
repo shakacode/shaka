@@ -31,7 +31,7 @@ module Shaka
 
       def move_aside(path)
         Refusal.command(RbConfig.ruby, '-r', File.join(__dir__, 'skill_backup'),
-                        '-e', 'Shaka::Install::SkillBackup.move(ARGV.fetch(0))', '--', path)
+                        '-e', 'Shaka::Install::SkillBackup.run(ARGV.fetch(0))', '--', path)
       end
     end
   end

@@ -10,27 +10,36 @@ module Shaka
     module SkillBackup
       module_function
 
+      def run(path)
+        move(path)
+      rescue ArgumentError, SystemCallError => e
+        abort "Could not back up #{path}: #{e.message}"
+      end
+
       def move(path)
         skills = File.realpath(File.dirname(path))
         name = File.basename(path)
-        backup = File.join(backup_directory(skills), name)
+        directory = backup_directory(skills)
+        backup = File.join(directory, name)
         relocate(File.join(skills, name), backup)
         puts "Backed up to #{backup}"
+      rescue SystemCallError
+        Dir.rmdir(directory) if directory && Dir.empty?(directory)
+        raise
       end
 
       def backup_directory(skills)
         parent = File.dirname(skills)
         raise ArgumentError, 'No backup location outside the skills directory' if parent == skills
 
-        prefix = "#{File.basename(skills)}.before-shaka."
-        Dir.mktmpdir(prefix, parent)
+        Dir.mktmpdir('shaka.before-shaka.', parent)
       rescue Errno::EACCES, Errno::EPERM, Errno::EROFS
         home = File.realpath(Dir.home)
         if home == skills || home.start_with?("#{skills}/")
           raise ArgumentError, 'No writable backup location outside the skills directory'
         end
 
-        Dir.mktmpdir(prefix, home)
+        Dir.mktmpdir('shaka.before-shaka.', home)
       end
 
       def relocate(source, backup)
@@ -38,11 +47,17 @@ module Shaka
         return FileUtils.mv(source, backup) unless target && Pathname.new(target).relative?
 
         absolute_link = "#{backup}.absolute"
-        File.symlink(File.join(File.dirname(source), target), absolute_link)
+        anchor_link(source, target, absolute_link)
         FileUtils.mv(source, backup)
         File.rename(absolute_link, backup) if same_link?(backup, target)
       ensure
         File.unlink(absolute_link) if absolute_link && File.symlink?(absolute_link)
+      end
+
+      def anchor_link(source, target, backup)
+        File.symlink(File.join(File.dirname(source), target), backup)
+      rescue Errno::ENAMETOOLONG
+        File.symlink(File.realpath(source), backup)
       end
 
       def same_link?(path, target)

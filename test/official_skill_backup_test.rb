@@ -34,7 +34,18 @@ class OfficialSkillBackupTest < Minitest::Test
     File.write(@destination, 'old skill')
     with_read_only_skills_parent { run_next(install_conflict) }
     assert_empty Dir.children(@skills_dir)
-    assert_equal 'old skill', File.read(skill_backups("#{@home}/skills").fetch(0))
+    assert_equal 'old skill', File.read(skill_backups(@home).fetch(0))
+  end
+
+  def test_long_skills_directory_name_allows_a_sibling_backup
+    @skills_dir = File.join(File.dirname(@skills_dir), 's' * 255)
+    @destination = File.join(@skills_dir, 'shaka')
+    FileUtils.mkdir_p(@skills_dir)
+    File.write(@destination, 'old skill')
+    run_next(install_conflict)
+    assert_empty Dir.children(@skills_dir)
+    assert_equal 'old skill', File.read(skill_backups.fetch(0))
+    official_install
   end
 
   private
@@ -46,7 +57,7 @@ class OfficialSkillBackupTest < Minitest::Test
     output
   end
 
-  def skill_backups(skills_dir = @skills_dir) = Dir.glob("#{skills_dir}.before-shaka.*/shaka")
+  def skill_backups(parent = File.dirname(@skills_dir)) = Dir.glob("#{parent}/shaka.before-shaka.*/shaka")
 
   def with_read_only_skills_parent
     parent = File.dirname(@skills_dir)
