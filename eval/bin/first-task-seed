@@ -7,15 +7,19 @@ abort 'Usage: eval/bin/first-task-seed NEW_DIRECTORY' unless ARGV.size == 1
 
 destination = File.expand_path(ARGV.fetch(0))
 
-def git(directory, *)
+def git(directory, *arguments)
   # Inherited Git variables can override -C.
-  variables = %w[GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
-                 GIT_OBJECT_DIRECTORY GIT_DIR GIT_WORK_TREE GIT_IMPLICIT_WORK_TREE GIT_GRAFT_FILE
-                 GIT_INDEX_FILE GIT_NO_REPLACE_OBJECTS GIT_REPLACE_REF_BASE GIT_PREFIX
-                 GIT_SHALLOW_FILE GIT_COMMON_DIR GIT_CEILING_DIRECTORIES]
-  env = variables.to_h { |name| [name, nil] }
-  hooks = File.join(directory, '.git', 'disabled-hooks')
-  system(env, 'git', '-c', "core.hooksPath=#{hooks}", '-C', directory, *, exception: true)
+  env = %w[GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
+           GIT_OBJECT_DIRECTORY GIT_DIR GIT_WORK_TREE GIT_IMPLICIT_WORK_TREE GIT_GRAFT_FILE
+           GIT_INDEX_FILE GIT_NO_REPLACE_OBJECTS GIT_REPLACE_REF_BASE GIT_PREFIX
+           GIT_SHALLOW_FILE GIT_COMMON_DIR GIT_CEILING_DIRECTORIES].to_h { |name| [name, nil] }
+  options = ['-c', "core.hooksPath=#{File.join(directory, '.git', 'disabled-hooks')}"]
+  # Fetch can use the operator's network settings; checkout must materialize the pinned tree.
+  if arguments.first == 'checkout'
+    env.update('GIT_CONFIG_GLOBAL' => File::NULL, 'GIT_CONFIG_NOSYSTEM' => '1', 'GIT_ATTR_NOSYSTEM' => '1')
+    options.push('-c', "core.attributesFile=#{File::NULL}")
+  end
+  system(env, 'git', *options, '-C', directory, *arguments, exception: true)
 end
 
 begin
