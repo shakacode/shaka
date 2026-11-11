@@ -70,8 +70,8 @@ class CliDescriptionRiskTest < Minitest::Test
 
       assert_predicate status, :success?, error
       body = File.read(File.join(dir, 'published.md'))
-      assert_includes body, '**Recommendation: Merge** · **Risk: High** · '
-      assert_includes body, "## Risk and review\n\n**High**, raised from the reviewer's low by `merge_and_trust` " \
+      assert_includes body, '**Recommendation: Merge** · 🔴 **Risk: High** · '
+      assert_includes body, "## Risk and review\n\n🔴 **High**, raised from the reviewer's low by `merge_and_trust` " \
                             "(`#{CHANGED}`). High risk is meant for a person to merge"
       assert_includes body, '**The [checkpoint](https://github.com/owner/repo/pull/1#issuecomment-7) reviewer ' \
                             "rated it low:**\n\n> - Prints text only."
@@ -85,7 +85,7 @@ class CliDescriptionRiskTest < Minitest::Test
 
       assert_predicate status, :success?, error
       body = File.read(File.join(dir, 'published.md'))
-      assert_includes body, '**No recommendation yet** · **Risk: not rated yet** · '
+      assert_includes body, '**No recommendation yet** · ⚪ **Risk: not rated yet** · '
     end
   end
 
@@ -106,7 +106,7 @@ class CliDescriptionRiskTest < Minitest::Test
 
       assert_predicate status, :success?, error
       body = File.read(File.join(dir, 'published.md'))
-      assert_includes body, '**Recommendation: Merge** · **Risk: not shown** · '
+      assert_includes body, '**Recommendation: Merge** · ⚪ **Risk: not shown** · '
       refute_includes body, 'Risk: Low'
     end
   end

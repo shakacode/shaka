@@ -995,7 +995,7 @@ end
 
 RECOMMENDATION_LEAD = [
   PENDING_STATS,
-  '**Recommendation: Revise before merge** · **Risk: not rated yet** · _Not published yet._ · ' \
+  '**Recommendation: Revise before merge** · ⚪ **Risk: not rated yet** · _Not published yet._ · ' \
   'Checkpoint: _Not published yet._',
   '**Next:** Justin: choose the simpler parser before another review round.',
   "## Summary\n\nReview the current result."
@@ -1080,7 +1080,7 @@ class PublicationCheckpointTest < Minitest::Test
     data = content
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
-    assert_includes body, '**No recommendation yet** · **Risk: not rated yet** · _Not published yet._'
+    assert_includes body, '**No recommendation yet** · ⚪ **Risk: not rated yet** · _Not published yet._'
     refute_includes body, 'Recommendation:'
   end
 

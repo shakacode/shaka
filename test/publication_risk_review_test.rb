@@ -30,7 +30,7 @@ class PublicationRiskReviewTest < Minitest::Test
   def test_the_level_leads_and_the_section_sits_between_intent_and_verification
     rendered = render(risk: HIGH)
 
-    assert_includes rendered, '**Recommendation: Merge** · **Risk: High** · [Code Walkthrough]('
+    assert_includes rendered, '**Recommendation: Merge** · 🔴 **Risk: High** · [Code Walkthrough]('
     intent, risk, verification = ['## Intent', '## Risk and review', '## Verification'].map do |heading|
       rendered.index(heading)
     end
@@ -39,7 +39,7 @@ class PublicationRiskReviewTest < Minitest::Test
   end
 
   def test_a_plain_rating_says_what_it_asks_then_the_flagged_code_and_the_reviewers_reasons
-    expected = "## Risk and review\n\n**High risk** is meant for a person to merge after a careful review that " \
+    expected = "## Risk and review\n\n🔴 **High risk** is meant for a person to merge after a careful review that " \
                'starts with the verification: does the evidence prove the change works, before the code?' \
                "\n\n**Flagged by the implementer:**\n- `lib/merge.rb`, compares the queue base before submitting." \
                "\n\n**Why high**, from the [checkpoint](#{CHECKPOINT}):\n\n> - Changes who may merge."
@@ -68,8 +68,8 @@ class PublicationRiskReviewTest < Minitest::Test
     low = HIGH.merge('rating' => 'low', 'level' => 'low', 'reasons' => ['Only tests change.'])
     rendered = render(risk: low, focus: [])
 
-    assert_includes rendered, '**Recommendation: Merge** · **Risk: Low** · '
-    assert_equal "## Risk and review\n\n**Low risk** is meant for auto-merge, with a later audit.\n\n" \
+    assert_includes rendered, '**Recommendation: Merge** · 🟢 **Risk: Low** · '
+    assert_equal "## Risk and review\n\n🟢 **Low risk** is meant for auto-merge, with a later audit.\n\n" \
                  "<details>\n<summary>Why low, from the checkpoint</summary>\n\n- Only tests change.\n\n</details>",
                  section(rendered)
   end
@@ -98,8 +98,8 @@ class PublicationRiskReviewTest < Minitest::Test
   def test_before_the_checkpoint_rates_the_head_the_flagged_code_still_shows
     rendered = render(risk: nil)
 
-    assert_includes rendered, '**Recommendation: Merge** · **Risk: not rated yet** · '
-    assert_equal "## Risk and review\n\n**Not rated yet.** No published checkpoint rates this commit.\n\n" \
+    assert_includes rendered, '**Recommendation: Merge** · ⚪ **Risk: not rated yet** · '
+    assert_equal "## Risk and review\n\n⚪ **Not rated yet.** No published checkpoint rates this commit.\n\n" \
                  "**Flagged by the implementer:**\n- `lib/merge.rb`, compares the queue base before submitting.",
                  section(rendered)
   end
@@ -122,7 +122,7 @@ class PublicationRiskReviewTest < Minitest::Test
   def test_withheld_settings_show_no_level
     rendered = render(risk: { 'withheld' => 'trusted settings unread' })
 
-    assert_includes rendered, '**Recommendation: Merge** · **Risk: not shown** · '
+    assert_includes rendered, '**Recommendation: Merge** · ⚪ **Risk: not shown** · '
     assert_includes section(rendered), "**Not shown.** Shaka could not read this repository's trusted settings"
   end
 
@@ -195,5 +195,28 @@ class PublicationRiskReasonsTest < Minitest::Test
 
     assert_includes text, '**Why high**, from the checkpoint:'
     refute_includes text, 'example.com'
+  end
+end
+
+# A colored mark lets a reader see the level at a glance; the word stays beside it for anyone who cannot tell the
+# colors apart.
+class PublicationRiskMarkTest < Minitest::Test
+  HIGH = PublicationRiskReviewTest::HIGH
+
+  def render(...) = PublicationRiskReviewTest.new('render').render(...)
+
+  def test_each_level_carries_its_mark_beside_the_word
+    { 'low' => '🟢', 'medium' => '🟡', 'high' => '🔴' }.each do |level, mark|
+      rendered = render(risk: HIGH.merge('rating' => level, 'level' => level))
+
+      assert_includes rendered, "· #{mark} **Risk: #{level.capitalize}** ·"
+      assert_includes rendered, "## Risk and review\n\n#{mark} **#{level.capitalize}"
+    end
+  end
+
+  def test_unrated_states_share_the_blank_mark
+    assert_includes render(risk: nil), '· ⚪ **Risk: not rated yet** ·'
+    assert_includes render(risk: { 'withheld' => 'trusted settings unread' }), '· ⚪ **Risk: not shown** ·'
+    assert_includes render(checkpoint: false), "## Risk and review\n\n⚪ **Not rated.**"
   end
 end
