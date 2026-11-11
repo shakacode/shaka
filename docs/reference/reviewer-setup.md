@@ -106,8 +106,9 @@ ask for consent each time.
    you, not to any checkout, so a branch cannot change it. If an
    `AGENTS.override.md` sits beside it, Codex reads the override file and
    ignores the original. In that case, put the statement in the override file.
-4. **Check the setup.** Start a fresh Codex chat in a checkout of the
-   up-to-date default branch and ask:
+4. **Check the setup.** For shared settings, update your default-branch
+   checkout. For individual settings, use the checkout where you set them up.
+   Start a fresh Codex chat in that checkout and ask:
 
    ```text
    $shaka doctor
@@ -120,6 +121,8 @@ ask for consent each time.
    excludes Anthropic. Check sign-in separately.
    On your next task, Shaka quotes your statement instead of asking. It then
    sends Claude a tiny access check that contains no code but may use quota.
+   To verify a settings PR preview, try a task with that PR selected and check
+   which reviewer Shaka reports. Doctor checks the checkout's settings.
 
 Write a new statement before reviews send more than the old one covers. That
 includes a new provider or relay service such as OpenRouter, a repository the

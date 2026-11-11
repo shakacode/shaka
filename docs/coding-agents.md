@@ -96,8 +96,9 @@ Your coding tool may separately ask to run the reviewer command.
 Save a narrow
 approval for future chats when you use that command regularly and understand its
 scope. A saved rule can let matching commands run without another approval.
-Review what it covers before saving it. If it matches more than you want,
-approve only this run. Organization policy still applies.
+Review what it covers before saving it. For example, a prefix rule for
+`git status` can also match `git status --short`. If the rule matches more
+than you want, approve only this run. Organization policy still applies.
 
 | Coding tool | Remember an approval |
 | --- | --- |
