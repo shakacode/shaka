@@ -23,7 +23,8 @@ of Shaka. See the adapter configuration below and
 Choose **Work on issue → Custom script**, then select the local folder for the
 project. If macOS asks, allow Linear to open Terminal. In the new window, check
 that Codex started and recognizes the issue and project before it begins work.
-Your usual Shaka review and merge choices apply.
+Shaka uses the branch name suggested by Linear. Your usual review and merge
+choices apply.
 
 ## Fix a setup problem
 

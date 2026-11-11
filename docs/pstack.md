@@ -26,9 +26,9 @@ If a skill is missing or appears twice, ask Shaka to check:
 /shaka doctor
 ```
 
-In Codex, use `$shaka`. Doctor reports broken skill links and duplicate names
-between Claude's user plugins and personal skills folder. It leaves both in place
-so you can choose what to keep. It does not inspect project skills or plugins.
+In Codex, use `$shaka`. Doctor reports broken skill links across supported agents.
+It also flags duplicate names between Claude's user plugins and personal skills.
+Doctor leaves them in place and does not inspect project skills or plugins.
 
 ## Build your own updater
 
@@ -40,8 +40,9 @@ Build a script to update my coding-agent skill packs. Read a manifest of each
 pack's repository URL, branch or pinned commit, skill folders, and destinations
 for each coding agent. Show the plan before applying it.
 
-Only update a checkout when it is clean, on the expected branch, and has no
-unpushed commits. Preserve local changes. Skip any coding agent that already
+Only update a clean checkout. For a tracking branch, confirm the expected branch
+and no unpushed commits. For a pin, check that the checkout still matches its
+last installed revision before switching pins. Skip any coding agent that already
 loads the pack as a plugin. If a skill name is taken, report the conflict and
 use a distinct prefix rather than overwriting it.
 
@@ -66,19 +67,19 @@ version it loaded until you reload plugins or start a new chat. See
 
 ## Hand maintenance results back to Shaka
 
-Ask pstack to update the checks that exercise your app, then let Shaka deliver
-any changes:
+Use this prompt when your installed pstack skill can hand its work back to
+Shaka. The [upstream handoff proposal](https://github.com/cursor/plugins/pull/781)
+is still a draft.
 
 ```text
 /shaka Use pstack's maintain-verification-skill to update this project's app checks.
-Return the changes, evidence, and remaining gaps to Shaka for the PR.
+Return the changes, evidence, and remaining gaps. Leave PR publication to Shaka.
 ```
 
 If the checks still match the app, the agent can report that and stop. If it finds
-corrections, Shaka checks and reviews them before opening its PR. Avoid running a
-second delivery workflow on the same work. The
-[upstream handoff proposal](https://github.com/cursor/plugins/pull/781) is a draft;
-use the installed skill only where it can hand the results back to Shaka.
+corrections, Shaka checks and reviews them before opening its PR.
 
-For the experimental branch switch and rollback, see the
+Removing a marketplace can uninstall its plugins and delete saved plugin data.
+A marketplace tracking a branch can pick up new commits, so review a fork
+before installing it. For the experimental switch and rollback, see the
 [recorded trial](https://github.com/shakacode/shaka/blob/8217cfe3ed4e6cce89f4b182a8c0bec1e2b0cb81/docs/pstack.md#hand-maintenance-results-back-to-shaka).
