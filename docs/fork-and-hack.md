@@ -19,6 +19,11 @@ The agent sets up a branch for your changes and tells you which version your
 coding agent loads. Keep a separate development clone for edits so the installed
 copy stays usable. See [manual installation](manual-installation.md) for prerequisites.
 
+When switching, have the agent explicitly select the official source or your
+fork's URL and branch. Use a separate checkout for the selected version, keep
+the previous checkout, and point the skill links to the selected source. Ask
+the agent to verify the active links, source and commit before starting a new chat.
+
 ## Hack on it
 
 Try a small change with a visible result:
@@ -49,8 +54,6 @@ new chat. Updating the fork on GitHub and updating the installed copy are separa
 If the installed branch's history was rewritten, ask the agent to merge the
 installed commit back into that branch while keeping your current changes.
 
-<a id="share-your-fork"></a>
-
 ## Contribute back
 
 If a change could help other Shaka users, ask your agent to prepare a focused PR:
@@ -63,9 +66,11 @@ Start from the official default branch and leave out your other customizations.
 See [Contributing](https://github.com/shakacode/shaka/blob/main/CONTRIBUTING.md)
 and [AGENTS.md](https://github.com/shakacode/shaka/blob/main/AGENTS.md).
 For a suggestion without code, use the [issue tracker](https://github.com/shakacode/shaka/issues/new/choose).
+
+<a id="share-your-fork"></a>
+
 See [Names and logos](https://github.com/shakacode/shaka#names-and-logos) for use
 of the Shaka name.
-
 
 ## Troubleshooting
 
@@ -74,6 +79,6 @@ The examples below use `mine` for your fork's branch name.
 | What you see | What to do |
 | --- | --- |
 | `Installation origin differs from the expected repository` | Pass `--repository` with the URL you cloned, exactly as `git config --get remote.origin.url` prints it. |
-| `Installation checkout has uncommitted changes` | Move the edit to your working clone, push it to `mine`, and run `install --update`. |
-| `The registered branch (origin/mine of ...) was rewritten` | `mine` was rewritten. Merge the installed commit back in, as [Keep your fork current](#keep-your-fork-current) shows. |
+| `Installation checkout has uncommitted changes` | Move the edit to your working clone, push it to the registered branch, and [update the installation](manual-installation.md#verify-and-update). |
+| `The registered branch (origin/mine of ...) was rewritten` | `mine` was rewritten. Merge the installed commit back in, as described in [Keep your fork current](#keep-your-fork-current). |
 | `Installation checkout is not on the registered branch` or `Installation branch mine does not follow origin/mine` | Run the `git` command at the end of the message to return to the branch you installed. |

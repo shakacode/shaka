@@ -18,11 +18,14 @@ uses, and leaves an empty lock file in each skills directory. Project settings
 stay in the project. See [where Shaka keeps things](settings-guide.md#where-shaka-keeps-things)
 and the [local timing log](reference/timings.md#local-timing-log).
 
+The installer does not use `sudo`, edit your shell profile or `PATH`, or install
+gems. It refuses installation folders other accounts can write to.
+
 ## Install
 
 If you prefer the terminal, use Ruby 3.4 or later, Git 2.41 or later, and an
 authenticated [GitHub CLI](https://cli.github.com/). Read the source and the
-[installer](../bin/install) before running it.
+[installer](https://github.com/shakacode/shaka/blob/main/bin/install) before running it.
 
 <details>
 <summary>Manual installation commands</summary>
@@ -75,6 +78,25 @@ The agent can check the source checkout, skill links, and Ruby. Finish active
 Shaka chats before updating. Then ask the agent to update and verify the
 installation, and start a new chat. Updates can stop if the installed checkout
 has local changes or its history no longer matches the recorded branch.
+Set `SHAKA_NOTICES=off` if you want to silence Shaka's local reminders.
+
+<details>
+<summary>Check or update from a terminal</summary>
+
+For the default installation, locate the helper and check it:
+
+```bash
+shaka_helper="$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka"
+"$shaka_helper" install --status
+"$shaka_helper" install --verify
+```
+
+Use the corresponding path if you installed elsewhere. After active chats finish,
+run `"$shaka_helper" install --update` if you choose to update. For a broken
+installation, `"$shaka_helper" install --repair` checks for recoverable problems
+and stops when it needs a decision.
+
+</details>
 
 ### Repair a broken installation
 
@@ -109,3 +131,14 @@ and local changes. Verify the installation afterward.
 The agent checks which copy is installed and explains what it needs to move.
 Ask it to confirm your development work is still available before removing any
 old checkout.
+
+<details>
+<summary>If the installer was force-stopped while moving the checkout</summary>
+
+If the old checkout has no active installation record and the new checkout is
+unregistered, restore the newest `.git/shaka-install.retired-*.json` in the old
+checkout to `.git/shaka-install.json`. Then retry the move and verify the skill
+links. Leave any active record in place and ask the agent to inspect the state
+if either checkout still has one.
+
+</details>
