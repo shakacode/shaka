@@ -1,27 +1,46 @@
 # Start a Shaka task from Linear
 
-Open a Linear issue in Codex CLI with its prompt, repository, and suggested
-branch already supplied. The optional macOS adapter opens Terminal and starts
-Shaka's existing Codex launcher. You still choose the repository in Linear and
-keep your usual Codex account and model settings.
+Open a Linear issue in Codex CLI with the issue and project already selected.
+You need macOS, the Linear desktop app, Codex CLI, and a
+[source installation of Shaka](manual-installation.md). The integration opens
+Terminal and keeps your usual Codex account and model settings.
+
+## Configure Linear
 
 Ask your agent:
 
 ```text
-Set up Linear's custom script to open issues with Shaka in Codex CLI.
-Use my installed Shaka checkout and preserve any existing Linear configuration.
+Set up Linear to open issues with Shaka in Codex CLI. Keep my existing Linear settings.
 ```
 
-You need macOS, the Linear desktop app, a working Codex CLI in a new Terminal
-window, and a [source installation of Shaka](manual-installation.md). This
-adapter uses macOS's system Ruby and Terminal. Shaka's launcher uses the Ruby
-recorded by its installer. Windows, Linux, and other terminal apps are not
-covered by this recipe.
-
-## Configure Linear
-
 In Linear, enable **Custom script** under **Settings → Code & reviews →
-Configure coding tools**. Run it once to generate `~/.linear/coding-tools.json`.
+Configure coding tools**. The agent connects the script to your installed copy
+of Shaka. See the adapter configuration below and
+[Linear's custom script guide](https://linear.app/docs/open-issues-with-custom-scripts).
+
+## Try an issue
+
+Choose **Work on issue → Custom script**, then select the local folder for the
+project. If macOS asks, allow Linear to open Terminal. In the new window, check
+that Codex started and recognizes the issue and project before it begins work.
+Your usual Shaka review and merge choices apply.
+
+## Fix a setup problem
+
+| What you see | What to check |
+| --- | --- |
+| Terminal opens but cannot find Codex | Ask the agent to check that Codex CLI is available in a new Terminal window and signed in. |
+| Linear cannot open Terminal | Check macOS **System Settings → Privacy & Security → Automation** for Linear. |
+| Codex opens the wrong project or issue | Stop and choose the correct issue and local folder. |
+
+If the setup still fails, tell your agent what you selected and paste the error.
+
+<a id="configure-the-adapter"></a>
+
+<details>
+<summary>Adapter configuration</summary>
+
+Run the [custom script](https://linear.app/docs/open-issues-with-custom-scripts) once to generate `~/.linear/coding-tools.json`.
 Edit its `openIssue` entry to match this example, retaining unrelated entries:
 
 ```json
@@ -44,18 +63,7 @@ requires all four values and refuses a missing or relative working directory.
 [Linear's custom script documentation](https://linear.app/docs/open-issues-with-custom-scripts)
 describes how Linear supplies them.
 
-## Try an issue
+The adapter treats issue content as data, and does not change issue status.
+Check the new Codex window for the selected project and issue.
 
-Select **Work on issue → Custom script**, then choose the issue's local Git
-checkout. macOS may ask permission for Linear to control Terminal; allow it to
-open the session. Codex starts with the installed Shaka workflow and the issue
-context. Shaka uses the suggested tracker branch when claiming the task.
-
-The issue's contents are passed as data; the adapter does not run commands from
-the issue or change its Linear status. Normal Shaka review and merge choices
-still apply. Opening Terminal confirms only the handoff: check the new window
-to verify that Codex starts and recognizes the selected issue and repository.
-
-If the window reports that `codex` is missing, install or expose Codex CLI in
-your Terminal login environment. If macOS refuses to open Terminal, check
-**System Settings → Privacy & Security → Automation** for the requesting app.
+</details>
