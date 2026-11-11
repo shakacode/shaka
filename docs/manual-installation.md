@@ -47,6 +47,17 @@ Replace `codex` with your coding agent: `claude`, `cursor`, `opencode`, or `copi
 Repeat `--agent` to select more than one. Pi loads the shared skill linked for
 `codex`. Keep the checkout outside `~/.agents/`, which holds settings.
 
+| Agent | Skills directory |
+| --- | --- |
+| Codex | `~/.agents/skills` |
+| Claude Code | `~/.claude/skills` |
+| Cursor | `~/.cursor/skills` |
+| OpenCode | `~/.config/opencode/skills` |
+| GitHub Copilot | `~/.copilot/skills` |
+
+The installer links `shaka` inside each selected directory. Pass
+`--skills-dir DIR` for a custom directory in place of `--agent`.
+
 </details>
 
 The installer reports which checkout and skill links it uses. Start a new chat,
@@ -110,7 +121,12 @@ finish, run `"$shaka_helper" install --update` to update a branch installation.
 For a pinned release, use the [tested release prompt](#keep-a-tested-release)
 to install a newer release.
 `"$shaka_helper" install --repair` can fix recoverable problems and stops
-when it needs a decision.
+when it needs a decision. It keeps local commits on a `kept-<commit>` branch
+and renames unused records so you can inspect them later.
+
+To enable Claude Code's startup reminder, run
+`"$shaka_source/bin/install" --directory "$shaka_source" --agent claude --session-hook`.
+Run it again without `--session-hook` to remove the reminder.
 
 </details>
 
@@ -152,7 +168,9 @@ old checkout.
 <summary>Move the installation from a terminal</summary>
 
 From the currently registered checkout, run this to move the links to a
-dedicated checkout. Choose another directory if the default is already in use.
+dedicated checkout. The old checkout keeps its files, branches, and worktrees.
+Choose a destination with no linked worktrees or extra branches. If the default
+directory is in use, choose a separate destination.
 
 ```bash
 ./bin/install --directory "$HOME/.local/share/shaka/source" --take-over

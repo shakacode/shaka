@@ -86,8 +86,14 @@ Before updating, confirm that `origin` points to the user's fork and
 missing. If either remote points to a different repository, stop and report
 the mismatch before fetching or integrating changes.
 Fetch upstream and inspect the diff. Fast-forward when possible.
-Keep the installed branch's history intact. Preserve fork changes by merging
-or rebasing on a feature branch, then merge into the installed branch.
+Work in the development clone. Keep the install branch's history intact.
+Preserve fork changes by merging or rebasing on a feature branch, then merge
+into the install branch and test the integration commit there.
+Before installing that integration, verify the fork's push URL and publish
+the tested commit to the fork's install branch with the user's authorization.
+If it is already published, skip the push. Fetch that branch and confirm its
+tip contains the tested commit. Stop if the commit is absent, the push fails,
+or publishing requires authorization the user has not given.
 Use `install --update` when the latest branch tip is acceptable. It fetches
 and verifies the tip it receives.
 

@@ -44,6 +44,25 @@ and [testing a local candidate](https://github.com/shakacode/shaka/blob/main/con
 Keep existing settings keys and PR record markers compatible so Shaka can still
 read older projects and PRs. Follow the repository's rules when changing the workflow.
 
+<details>
+<summary>Set up a development clone from a terminal</summary>
+
+Set `fork_url` to your fork's clone URL, `fork_branch` to the branch you
+installed, and `dev_dir` to a new directory outside your installed checkout.
+
+```bash
+git clone --branch "$fork_branch" "$fork_url" "$dev_dir" &&
+  cd "$dev_dir" &&
+  git remote add upstream https://github.com/shakacode/shaka.git &&
+  .agents/shaka/bin/setup &&
+  .agents/shaka/bin/validate
+```
+
+Run the validation command again after editing. To see the workflow the agent
+reads, run `skills/shaka/scripts/shaka workflow` from the development clone.
+
+</details>
+
 ## Keep your fork current
 
 ```text
@@ -53,10 +72,33 @@ resolve conflicts, and test the result. Install the exact commit that passed tes
 
 Bring upstream changes into your working branch without rewriting the installed
 branch's history. The updater needs to move forward from the installed commit.
-After testing, finish active Shaka chats, install the tested update, and start a
-new chat. Updating the fork on GitHub and updating the installed copy are separate.
+Publish the tested commit to your fork's install branch before installing it.
+Finish active Shaka chats, install the tested commit, and start a new chat.
+
+<details>
+<summary>Publish the tested update from a terminal</summary>
+
+In the development clone, switch to your fork's install branch, merge your
+integration, and run `.agents/shaka/bin/validate`. Set `tested_commit` to the
+commit you validated. Check that both `git remote get-url origin` and
+`git remote get-url --push origin` point to your fork. Use the same
+`fork_branch` as above to publish the tested commit and confirm it is on the
+remote branch:
+
+```bash
+git push origin "$tested_commit:refs/heads/$fork_branch" &&
+  git fetch origin "$fork_branch" &&
+  git merge-base --is-ancestor "$tested_commit" FETCH_HEAD
+```
+
+If any command fails, stop before updating the installation. Ask your agent to
+install that exact commit from the fork.
+
+</details>
+
 If the branch was rewritten, the updater leaves the installed copy in place.
-From that checkout, run `git fetch origin` and compare the two histories with
+From that checkout, confirm `origin` points to your fork. Run `git fetch origin`
+and compare the two histories with
 `git log --oneline --left-right HEAD...origin/mine`, using your branch name in
 place of `mine`. You can ask your coding agent to help even if Shaka cannot
 start. Choose which history to keep before changing either checkout.
