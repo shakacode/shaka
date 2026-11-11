@@ -1,144 +1,64 @@
-# Configure a repository
+# Set up Shaka for your team
 
-Use shared configuration when your team wants repository-wide settings. For a
-setup just for you without a setup PR, see
-[individual setup](expected-experience.md#individual-setup).
-The procedures below publish team configuration.
+<a id="configure-a-repository"></a>
+<a id="use-shaka-across-projects"></a>
 
-## Use Shaka across projects
+Set up shared settings so people working in the same repository use the same
+checks, reviewers, and merge choices. Use one Shaka installation across projects;
+each repository keeps its own settings.
 
-Use the same skill across your organization’s repositories or the open-source
-projects you maintain. Each repository chooses its checks, reviewers, and merge
-policy through a small configuration boundary, called the **seam**.
+To try Shaka on your own first, choose **Just for me** in
+[Start here](getting-started.md#2-set-up-your-project).
 
-For example, a library can use its Ruby test suite and require your merge approval,
-while a documentation project uses link checks and allows Auto after required
-checks and reviews. Updating the shared skill keeps these project choices in
-repository configuration; you do not need a separate copy of the workflow for each.
+Examples use `/shaka`. In Codex, use `$shaka` instead.
 
-Use [Choose your settings](settings-guide.md) to decide what suits your team.
+<a id="before-you-start"></a>
 
-## Before you start
+## Required checks
 
-Shaka waits for your CI checks before it calls a PR ready, and before it merges one
-in Auto mode. It uses the checks GitHub requires on your default branch through a
-ruleset or branch protection. When GitHub requires none, as on any private
-repository on the GitHub Free plan, list them in
-[`merge.required_checks`](settings.md#mergerequired_checks) instead.
+Shaka uses the checks GitHub requires for the branch a PR targets. If GitHub
+requires none, the agent can suggest checks to require in Shaka settings. Shaka
+waits for those checks on tasks using those settings, including an explicit preview. GitHub does not enforce that
+separate list when you merge there yourself.
 
-Setup works this out for you. To see where you stand first:
-
-```text
-$shaka Which CI checks does GitHub require on this repository's default branch?
-If none, which check names appear on recent PRs?
-```
-
-A repository with no required checks can still use Shaka in Ask mode: the agent runs
-local validation and review, then you merge on GitHub or tell the agent to merge
-that commit. Auto merge needs at least one required check, because nothing else
-would gate an unattended merge.
+You can use **Ask** without a required check. **Auto** needs at least one.
+See [required-check settings](settings.md#mergerequired_checks) and
+[what happens if a check already fails](working-with-shaka.md#choose-a-merge-policy).
 
 ## Set up
 
-Connect your existing tools to Shaka:
+Ask your agent:
 
 ```text
-$shaka Set up Shaka for this repository.
+/shaka Set up Shaka for my team in this repository.
 ```
 
-The agent finds your test and lint commands, explains AI review choices, and keeps
-merge policy Ask. It prepares a separate setup PR using your commands.
-Review the choices and **merge this first setup PR yourself on GitHub** to make
-them the team's defaults. The agent reviews it and names the commit for you to merge.
-To try the choices on one task first,
-[select that settings PR](settings.md#preview-settings-before-adopting-them).
+The agent finds your existing checks, explains reviewer choices, and prepares a
+separate setup PR. It starts with **Ask**, so you decide when work merges.
+Review and merge the first setup PR yourself on GitHub under the existing branch
+protection. After it merges, new tasks use those shared settings. To try the settings first, see
+[preview a settings PR](settings.md#preview-settings-before-adopting-them).
 
-To change a choice later, ask:
-
-```text
-$shaka Wait for all configured CI reviewers.
-```
-
-You do not need to edit configuration files by hand. Start with the
-[settings guide](settings-guide.md); use the [reference](settings.md) when you
-need exact options and defaults.
-
-## Add hosted Claude review
-
-Shaka ships a [Claude review workflow](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/claude-code-review.yml)
-that reviews PRs opened from branches in your repository, and fits teams where only
-some people use Shaka. It skips drafts, Dependabot, and PRs from forks; review those
-another way. It reviews pushes from Cursor cloud agents. A push from another GitHub
-App fails the review job until you add that app to the workflow's `allowed_bots` line.
-When a PR's author already published a Shaka local review of the pushed commit
-with Claude among its reviewers, Claude makes a short pass for serious bugs the
-local reviewers missed. Every other PR gets a full review, including one only
-Codex reviewed locally. Both report only issues Claude can tie to a concrete failure,
-so routine pushes stay quiet.
-
-During [setup](#set-up), the agent offers it. For a repository that already uses
-Shaka, ask:
-
-```text
-$shaka Add the hosted Claude review workflow from
-https://github.com/shakacode/shaka/blob/main/skills/shaka/config/claude-code-review.yml
-and list claude-review as a CI review job.
-```
-
-The agent adds the workflow and lists the `CLAUDE_CODE_OAUTH_TOKEN` repository
-secret you need to create. The workflow waits up to two minutes for the local
-review before choosing the full review; edit `LOCAL_REVIEW_WAIT_SECONDS` in it to
-change that. Only the PR author's own comment selects the short pass, so another
-person's comment cannot weaken review of someone else's PR.
-
+For later changes, use [Choose your settings](settings-guide.md). See the
+[built-in defaults](../skills/shaka/config/defaults.yml) and
+[Shaka's own overrides](../.agents/shaka/config.yml) for a working example.
 
 ## Files the agent prepares
 
-The configuration records project choices; the scripts connect existing checks;
-the comment allowlist identifies whose public comments the agent may read.
-This inventory is useful when
-reviewing the setup PR.
-
 | File | Purpose |
 | --- | --- |
-| `.agents/shaka/config.yml` | Review, merge, branch, and WIP settings |
-| `.agents/shaka/bin/setup` | Install project dependencies |
-| `.agents/shaka/bin/test` | Run tests; accept focused test arguments |
-| `.agents/shaka/bin/validate` | Run the complete pre-PR checks |
-| `.agents/shaka/bin/validate-local` (optional) | Run a faster local check before review |
-| `.agents/shaka/bin/trigger-hosted-ci` (optional) | Start deferred CI after local fixes; requires `validate-local` |
-| `.agents/shaka/trusted-github-actors.yml` | Whose public GitHub comments the agent may read |
-| `.agents/shaka.md` | Pointer to this configuration for people browsing the repository |
-| `AGENTS.md` (optional) | Existing project instructions and constraints; Shaka does not create or edit it |
+| `.agents/shaka/config.yml` | Your team's checks, reviewer choices, and merge settings |
+| `.agents/shaka/bin/` | Scripts that connect Shaka to your existing setup and checks |
+| `.agents/shaka.md` | A pointer to the settings for people browsing the repository |
 
-`.agents/shaka.md` names the Shaka version that set up the repository, and later
-setup runs leave it alone. After updating Shaka, you can bring it up to date:
+Review the setup PR to see which files were added or updated. See the
+[settings reference](settings.md) for optional files and exact settings.
 
-```text
-Refresh Shaka configuration for the current version.
-```
+<a id="add-hosted-claude-review"></a>
 
-The PR shows what changed, including any edits of your own the new text replaces.
+For an optional GitHub review job, see [hosted Claude review](settings.md#hosted-claude-review).
 
-The scripts usually wrap existing commands. In Shaka's repository, `.agents/shaka/bin/setup`
-installs development dependencies; `bin/install` installs the skill.
+<a id="run-the-scripts-in-a-ci-container"></a>
 
-Shaka's own [configuration](https://github.com/shakacode/shaka/tree/main/.agents/shaka)
-provides working examples of the required files.
-
-### Run the scripts in a CI container
-
-The scripts Shaka writes ask Git for the repository root before they run your
-command. When a CI job runs inside a container, Git may refuse the checkout because
-another user owns it, and the script exits with status 128. Before any Shaka script
-or command runs, mark the checkout safe by its top-level path. In a GitHub Actions
-container job that checks out into the workspace, add this step:
-
-```yaml
-- run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-```
-
-If the job checks out into a subdirectory, such as `actions/checkout` with
-`path: app`, mark that directory instead. Other CI systems need the same
-`git config` command with their checkout path. Jobs that run directly on a
-GitHub-hosted runner need no change.
+If your CI uses a container, see [standard command scripts](settings.md#run-the-scripts-in-a-ci-container)
+for checkout ownership and script setup.

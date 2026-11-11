@@ -52,8 +52,10 @@ decision; they do not settle every product choice or prove every claim.
 Ask for an interactive tour when you want to understand a PR before deciding:
 
 ```text
-$shaka Walk me through https://github.com/OWNER/REPO/pull/123 one concept at a time.
+/shaka Walk me through https://github.com/OWNER/REPO/pull/123 one concept at a time.
 ```
+
+In Codex, use `$shaka` instead of `/shaka`.
 
 The agent starts with a short agenda, explains one concept, and pauses for your
 questions. Say `next` to continue, or ask to change the depth, revisit a concept,
