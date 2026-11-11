@@ -129,7 +129,8 @@ You can keep asking for changes before merging.
 
 ### Step 7: Accept the change
 
-When you're satisfied with the counter and its checks, tell the agent in the same chat:
+Confirm that the PR is the version you reviewed. When you're satisfied with the
+counter and its checks, tell the agent in the same chat:
 
 ```text
 You can merge.

@@ -69,8 +69,9 @@ runs checks, and arranges review. It asks when it needs your input.
 Open the resulting PR. Read what changed, what was checked, and what remains
 unverified. Try the changed feature when relevant.
 
-Ask for revisions in the same chat. When you're satisfied, merge through GitHub
-or tell the agent:
+Ask for revisions in the same chat. Before approving a merge, confirm that the PR
+is the version you reviewed. When you're satisfied, merge through GitHub or tell
+the agent:
 
 ```text
 You can merge.
