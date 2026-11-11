@@ -34,6 +34,7 @@ Return to the original chat. Use **WIP Details → Chat link** in the PR descrip
 when a link is available. If you cannot find or continue that chat, make sure the
 previous agent has stopped, then use
 [Resume unfinished work](working-with-shaka.md#resume-unfinished-work).
+On a public PR, WIP Details and other expandable sections are public too.
 
 Before a PR exists, the work may still be only on the original computer. Keep the
 checkout and chat available. Tell the agent the task and where the work was saved.

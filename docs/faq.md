@@ -70,7 +70,8 @@ Add "Do not merge" to your task:
 
 This tells the agent to leave the PR open. Shaka's instructions rely on the agent
 following them. To enforce a restriction through GitHub permissions, use branch
-protection and an account without permission to bypass or change those rules.
+protection that requires approval from another eligible reviewer. The agent's
+account must lack permission to bypass or change those rules.
 
 <a id="does-a-green-review-job-mean-the-pr-was-reviewed"></a>
 
@@ -135,8 +136,9 @@ For an installation problem, use [manual installation and repair](manual-install
 
 Keep each rule in one place. Shaka reads `AGENTS.md` from the trusted Git revision,
 including a repository symlink target such as `CLAUDE.md`. Your coding tool also
-needs to load the project instructions. For consistent Claude Code loading,
-use a `CLAUDE.md` containing `@AGENTS.md`. See Claude Code's
+needs to load the project instructions. Claude Code does not read `AGENTS.md`
+in every session. When `AGENTS.md` holds the rules, use a `CLAUDE.md` containing
+`@AGENTS.md` to load them consistently. See Claude Code's
 [AGENTS.md support](https://code.claude.com/docs/en/memory#agents-md) and
 [coding agents](coding-agents.md).
 
