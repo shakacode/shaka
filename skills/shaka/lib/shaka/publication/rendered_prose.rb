@@ -8,14 +8,23 @@ module Shaka
   module RenderedProse
     ESCAPE = /\\[nrt]/
     SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
+    ESCAPED = 'Rendered output contains a literal escape sequence; supply real line breaks.'
 
     module_function
 
     def check!(body, html)
-      if bare(html).match?(ESCAPE)
-        raise Error, 'Rendered output contains a literal escape sequence; supply real line breaks.'
-      end
+      raise Error, ESCAPED if bare(html).match?(ESCAPE)
 
+      tables!(body, html)
+    end
+
+    # Without GitHub's renderer, the escape check reads the source: Markdown keeps a backslash
+    # before a letter, so an escape outside code renders as written.
+    def source_escapes!(body)
+      raise Error, ESCAPED if PublicationText.prose(body).gsub(/<!--.*?-->/m, '').match?(ESCAPE)
+    end
+
+    def tables!(body, html)
       expected = PublicationText.prose(body).lines.count { |line| line.match?(SEPARATOR) }
       rendered = html.scan('<table').size
       return if rendered >= expected
