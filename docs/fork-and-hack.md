@@ -61,6 +61,23 @@ From that checkout, run `git fetch origin` and compare the two histories with
 place of `mine`. You can ask your coding agent to help even if Shaka cannot
 start. Choose which history to keep before changing either checkout.
 
+<details>
+<summary>Keep the rewritten contents and restore the installed commit to the history</summary>
+
+Use a clean development checkout on the rewritten branch. Set
+`shaka_source` to the path of the installed checkout, then run:
+
+```bash
+git fetch "$shaka_source" HEAD
+git merge --no-ff -s ours FETCH_HEAD
+```
+
+This records the installed commit as an ancestor while keeping the rewritten
+branch's files. Check the result, push your branch, then
+[update the installation](manual-installation.md#verify-and-update).
+
+</details>
+
 ## Contribute back
 
 If a change could help other Shaka users, ask your agent to prepare a focused PR:
@@ -87,5 +104,5 @@ The examples below use `mine` for your fork's branch name.
 | --- | --- |
 | `Installation origin differs from the expected repository` | Pass `--repository` with the URL you cloned, exactly as `git config --get remote.origin.url` prints it. |
 | `Installation checkout has uncommitted changes` | Move the edit to your working clone, push it to the registered branch, and [update the installation](manual-installation.md#verify-and-update). |
-| `The registered branch (origin/mine of ...) was rewritten` | `mine` was rewritten. Merge the installed commit back in, as described in [Keep your fork current](#keep-your-fork-current). |
+| `The registered branch (origin/mine of ...) was rewritten` | `mine` was rewritten. Compare the histories and choose a recovery path in [Keep your fork current](#keep-your-fork-current). |
 | `Installation checkout is not on the registered branch` or `Installation branch mine does not follow origin/mine` | Run the `git` command at the end of the message to return to the branch you installed. |

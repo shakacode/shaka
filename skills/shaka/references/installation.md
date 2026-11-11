@@ -41,8 +41,8 @@ When the user requests a fork, create or select it on GitHub. Create and push a
 dedicated branch, such as `mine`, so the fork's `main` can follow upstream.
 With no registered installation, clone the fork into a dedicated directory
 and check out its install branch. Review that source and installer before
-running `bin/install --repository URL --branch BRANCH --agent HOST` there.
-Use the fork as `origin` and the official repository as `upstream`. See
+running `bin/install --directory DIR --repository URL --branch BRANCH
+--agent HOST` with that prepared checkout as `DIR`. Use the fork as `origin` and the official repository as `upstream`. See
 [official installation](official-installation.md) for prerequisites.
 
 To switch sources, record the active directory, origin, branch or release,
@@ -82,9 +82,10 @@ installer can locate the owner. Verify the restored source and revision.
 For updates, fetch upstream and inspect the diff. Fast-forward when possible.
 Preserve fork changes by merging or rebasing on a feature branch, then merge
 into the installed branch. Test the exact remote tip you intend to install.
-If the tip changes, validate it before updating. `install --update` only
-fast-forwards, so never rewrite the installed branch. Verify the installed
-revision before starting a new chat. Contribute improvements through a branch
+If the tip changes, validate it before updating. `install --update` follows
+the tip it fetches and only fast-forwards. To install one exact tested commit,
+prepare a separate checkout at that commit and check its HEAD before take-over.
+Verify the installed revision before starting a new chat. Contribute improvements through a branch
 and PR to upstream when the user authorizes that publication. Never overwrite
 local customizations to make an update succeed.
 
