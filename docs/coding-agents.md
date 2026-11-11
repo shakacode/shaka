@@ -60,7 +60,9 @@ This installation is for local use; it does not install Shaka in Copilot's cloud
 A cloud agent can make changes and open a PR when it has the necessary tools and
 repository access. If it cannot run a required review or check, it should report
 what remains and stop before calling the PR ready.
-[Resume locally](working-with-shaka.md#resume-unfinished-work) to finish the work.
+If a PR exists, [resume it locally](working-with-shaka.md#resume-unfinished-work).
+Before the first push, return to the original chat and checkout to continue.
+That checkout may still be on the cloud machine.
 See [cloud review options](reference/reviewer-setup.md#cloud-reviewers) for details.
 
 ## Give consent once

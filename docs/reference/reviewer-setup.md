@@ -93,8 +93,10 @@ ask for consent each time.
          model_family: claude
    ```
 
-   Shaka reads this file from the default branch, so merge the change before
-   relying on it. A change on a task's own branch does not choose its reviewer.
+   Merge the change for tasks that use shared default-branch settings. To try it
+   first, [select the settings PR](../settings.md#preview-settings-before-adopting-them).
+   In a repository without shared settings, you can choose Claude during
+   [individual setup](../settings.md#which-settings-apply).
 2. **Sign in to Claude Code.** Install the `claude` CLI on the machine that runs
    Codex, run `claude`, and sign in with `/login`. The review uses that sign-in.
    It does not need `ANTHROPIC_API_KEY`.
@@ -111,9 +113,11 @@ ask for consent each time.
    $shaka doctor
    ```
 
-   Doctor reads the settings in that checkout. It marks Claude `configured`
-   when they list it, otherwise `optional`, and shows whether the `claude` CLI is on your `PATH`. It
-   does not check the sign-in.
+   Doctor reads the settings in that checkout and shows whether the `claude` CLI
+   is on your `PATH`. Claude is `configured` when the settings list it for
+   routine review. If Doctor says `optional: runs only when a task names it`,
+   the settings list Claude but [provider coverage](../settings.md#reviewprovider_coverage)
+   excludes Anthropic. Check sign-in separately.
    On your next task, Shaka quotes your statement instead of asking. It then
    sends Claude a tiny access check that contains no code but may use quota.
 
@@ -128,7 +132,7 @@ also stays in force.
 
 | What you see | What it means | What to do |
 | --- | --- | --- |
-| A Codex reviewer runs instead of Claude | The default branch does not list Claude, or the `claude` CLI is not on your `PATH` | Run the step 4 check. If doctor marks Claude `optional`, merge the setting from step 1. If `claude` is missing, repeat step 2 |
+| A Codex reviewer runs instead of Claude | The settings omit Claude, provider coverage excludes Anthropic, or the `claude` CLI is missing | Run the step 4 check. If the settings omit Claude, follow step 1. If coverage excludes Anthropic, name Claude for this task or update coverage. If `claude` is missing, follow step 2 |
 | `Not logged in · Please run /login` | The `claude` CLI is not signed in | Run `claude`, then `/login`, and retry the task. This is not a consent problem |
 | Shaka asks for consent again | Your statement from step 3 does not name this provider, repository, and content, or Codex does not read the file that holds it | Fix the statement or move it to the file Codex reads, or answer the question for this task |
 | Codex Auto-review denies `shaka review run` | Codex blocked the command before it started, so nothing reached Claude | Follow [When Codex denies the review](#when-codex-denies-the-review). Do not answer the consent question again or switch reviewers |
