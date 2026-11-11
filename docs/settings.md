@@ -3,7 +3,8 @@
 <a id="settings"></a>
 
 Start with [Choose your settings](settings-guide.md) for common choices and
-prompts you can give your agent. This reference covers each option and its limits.
+prompts you can give your agent. See [Coding agents](coding-agents.md) for how to
+start a prompt in your tool. This reference covers each option and its limits.
 
 Settings live in `.agents/shaka/config.yml`. Ask your agent to
 [configure the repository](configure-repository.md), or edit the file in a PR.
@@ -103,14 +104,14 @@ Keep proposed settings in an open PR and try them before making them your team's
 defaults. Teammates can select the same PR for their tasks:
 
 ```text
-$shaka <task or issue link>
+/shaka <task or issue link>
 Use settings from PR #123.
 ```
 
 To switch an existing task:
 
 ```text
-$shaka Switch this task to settings from PR #123.
+/shaka Switch this task to settings from PR #123.
 ```
 
 The selected PR supplies the complete configuration, including reviewer choices
@@ -421,7 +422,7 @@ needs its CLI installed and signed in, or its API credentials on the machine doi
 
 Ask your agent:
 
-> $shaka Prefer Claude for code review.
+> /shaka Prefer Claude for code review.
 
 ```yaml
 review:
@@ -535,7 +536,7 @@ Most warnings allow the review to run. An unsupported Claude effort stops it;
 choose one of Claude’s listed effort values to continue.
 
 Put project-specific review criteria in `AGENTS.md`. To check that your AI accounts
-can run the chosen reviewers, ask `$shaka Probe this project's configured reviewers.`
+can run the chosen reviewers, ask `/shaka Probe this project's configured reviewers.`
 To choose how many hosted review reports to wait for, use
 [`review.ci_review_wait`](#reviewci_review_wait).
 
@@ -643,7 +644,7 @@ the other.
 
 Ask your agent:
 
-> $shaka Have Claude and Codex review every commit.
+> /shaka Have Claude and Codex review every commit.
 
 ```yaml
 review:
@@ -890,7 +891,7 @@ its head, as with `checkpoint.enabled: false`.
 [`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) sets which ratings the agent may
 merge, and [`merge.limits`](#mergelimits) sends larger PRs to a person. To see the rubric
 and your file in the order the reviewer reads them, ask
-`$shaka Show what my checkpoint reviewer receives.` To ask for a way to lower ratings,
+`/shaka Show what my checkpoint reviewer receives.` To ask for a way to lower ratings,
 [open a feature request](https://github.com/shakacode/shaka/issues/new/choose).
 
 ## `medium_risk_areas`
@@ -1011,7 +1012,7 @@ checkpoint later. A rule that must act before the description belongs in `AGENTS
 To write a guide for your repository, start from a miss you have already seen:
 
 ```text
-$shaka Add PR evidence guidance: when a change alters email templates, attach
+/shaka Add PR evidence guidance: when a change alters email templates, attach
 rendered before and after screenshots.
 ```
 
@@ -1033,7 +1034,7 @@ A failed check does not block publication or merging. With an opening reviewer
 configured, each description with new text and each walkthrough with a new opening
 adds one call to it.
 
-> $shaka Use Codex for opening checks.
+> /shaka Use Codex for opening checks.
 
 ```yaml
 pr_description:
