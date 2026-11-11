@@ -38,7 +38,7 @@ module Shaka
       existing = prepared_reply(target, mark, trust_config, machine_path)
       html = rendering_before_write(content, verbatim, stored_check)
       written = confirmed(write_reply(existing, content, target, headers: html ? [] : [FULL]), content)
-      html ? written : checked_after_write(existing, written, target, verbatim, stored_check)
+      html ? written : checked_after_write(existing, written, target, stored_check)
     end
 
     # gh uploads each "PATH#ALT TEXT" attachment, rewriting a body reference to the file;

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require 'cgi'
 require_relative 'text'
 
 module Shaka
@@ -19,9 +20,10 @@ module Shaka
     end
 
     # Without GitHub's renderer, the escape check reads the source: Markdown keeps a backslash
-    # before a letter, so an escape outside code renders as written.
+    # before a letter, so an escape outside code renders as written, including one spelled as an entity.
     def source_escapes!(body)
-      raise Error, ESCAPED if PublicationText.prose(body).gsub(/<!--.*?-->/m, '').match?(ESCAPE)
+      text = CGI.unescapeHTML(PublicationText.prose(body).gsub(/<!--.*?-->/m, '').gsub(/&(?:bsol|Backslash);/, '\\'))
+      raise Error, ESCAPED if text.match?(ESCAPE)
     end
 
     def tables!(body, html)

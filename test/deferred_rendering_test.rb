@@ -80,10 +80,20 @@ class DeferredRenderingTest < Minitest::Test
     @markdown = ['', 'gh: Bad credentials (HTTP 401)', STATUS.new(1)]
     assert_raises(Shaka::Error) { publish(stored_check: ->(_) {}) }
     @markdown = ['', REFUSED, STATUS.new(1)]
-    error = assert_raises(Shaka::Error) { publish(body: 'Line one\nline two', stored_check: ->(_) {}) }
-
-    assert_includes error.message, 'literal escape'
+    ['Line one\nline two', 'Line one&#92;nline two'].each do |body|
+      error = assert_raises(Shaka::Error) { publish(body:, stored_check: ->(_) {}) }
+      assert_includes error.message, 'literal escape'
+    end
     assert_empty created
+  end
+
+  def test_a_table_inside_a_quoted_report_cannot_stand_in_for_a_broken_one_around_it
+    report = "| r |\n| --- |\n| s |"
+    @stored_html = '<table></table>'
+    body = "| a | b |\n| --- |\n| c |\n\n#{report}"
+    error = assert_raises(Shaka::Error) { publish(body:, verbatim: [report], stored_check: ->(_) {}) }
+
+    assert_match(/rendered 1 of 2 table.*deleted/, error.message)
   end
 
   def test_a_quoted_report_may_hold_escapes_the_surrounding_text_may_not

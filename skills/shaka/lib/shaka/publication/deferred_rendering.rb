@@ -27,13 +27,14 @@ module Shaka
       nil
     end
 
-    def checked_after_write(existing, written, target, verbatim, stored_check)
+    def checked_after_write(existing, written, target, stored_check)
       stored = written.equal?(existing) ? api(comment_path(written, target), headers: [FULL]) : written
       html = stored['body_html']
       raise Error, 'GitHub returned no stored rendering to check.' unless html.is_a?(String)
 
       normalized = StoredRendering.normalize(html, written['body'])
-      RenderedProse.tables!(quoted_out(written['body'], verbatim), normalized)
+      # Stored HTML holds the quoted text too, so its tables are expected as well; a broken one fails closed.
+      RenderedProse.tables!(written['body'], normalized)
       stored_check.call(normalized)
       written
     rescue Error => e
