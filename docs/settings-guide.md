@@ -57,8 +57,7 @@ Ask for a separate settings PR. For example:
 ```
 
 The agent explains what changes and what the team needs to do. Review the PR
-before merging. If it introduces a setting older Shaka versions do not recognize,
-follow the update instructions in the PR.
+before merging. Follow any update instructions in the settings PR.
 
 <a id="common-situations"></a>
 
@@ -144,7 +143,7 @@ to assess. Required work still needs to be completed before merge.
 ## Resume unfinished work
 
 **WIP Details** in the PR description helps you find the owning chat and next action.
-To keep your project folder's path out of the PR, ask:
+To hide your project folder's path in **WIP Details**, ask:
 
 ```text
 Hide my project folder's path in WIP Details. Keep the chat link.

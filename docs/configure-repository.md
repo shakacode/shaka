@@ -18,7 +18,7 @@ Examples use `/shaka`. In Codex, use `$shaka` instead.
 
 Shaka uses the checks GitHub requires for the branch a PR targets. If GitHub
 requires none, the agent can suggest checks to require in Shaka settings. Shaka
-waits for those checks before calling the PR ready. GitHub does not enforce that
+waits for those checks once the shared settings take effect. GitHub does not enforce that
 separate list when you merge there yourself.
 
 You can use **Ask** without a required check. **Auto** needs at least one.
@@ -35,8 +35,8 @@ Ask your agent:
 
 The agent finds your existing checks, explains reviewer choices, and prepares a
 separate setup PR. It starts with **Ask**, so you decide when work merges.
-Review and merge the first setup PR yourself on GitHub. After it merges, new tasks
-use those shared settings. To try the settings first, see
+Review and merge the first setup PR yourself on GitHub under the existing branch
+protection. After it merges, new tasks use those shared settings. To try the settings first, see
 [preview a settings PR](settings.md#preview-settings-before-adopting-them).
 
 For later changes, use [Choose your settings](settings-guide.md). See the
