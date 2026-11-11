@@ -492,9 +492,8 @@ begin
            when 'attention'
              state = options.fetch(:state)
              if state == 'merge'
-               config = seam if seam&.sha
                review = merge_wait.merge(waiver: options[:review_waiver])
-               Shaka::MergeHandoff.new(github, config:, review:, ci_review_wait: options[:ci_review_wait]).call
+               Shaka::MergeHandoff.new(github, seam_required_checks:, review:).call
              else
                # Leaving the merge wait means the PR changes; a checkpoint for an older head must not look ready.
                Shaka::Attention.new(github).call(state:).merge('stale_checkpoint' => Shaka::PostImplementationStale.new(github).call)

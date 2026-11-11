@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'cli_merge_fixture'
-require 'shaka/publication/throughput_stats'
 
 # The merge label through the real command, trusted settings, and a fake gh that records writes.
 module CliAttentionFixture
@@ -24,11 +23,6 @@ module CliAttentionFixture
       pull['baseRefName'] = 'release' if retargeted
       end
       puts JSON.generate('data' => { 'repository' => { 'pullRequest' => pull } })
-    elsif path == 'repos/owner/repo/pulls/1'
-      File.write("#{ENV.fetch('LABEL_FILE')}.body", '') if ARGV.include?('PATCH')
-      body = ENV.fetch('PR_BODY', '')
-      puts JSON.generate('head' => { 'sha' => pull['headRefOid'] }, 'base' => { 'ref' => 'main' },
-                         'state' => 'open', 'body' => body)
     elsif ARGV[0, 2] == %w[pr checks]
       rows = JSON.parse(ENV.fetch('PR_CHECKS', '[]'))
       rows.select! { |row| row['name'] == 'validate' } if ARGV.include?('--required')
@@ -151,33 +145,20 @@ class CliAttentionReviewTest < Minitest::Test
   end
 end
 
-class CliAttentionTimingTest < Minitest::Test
+class CliAttentionGateTest < Minitest::Test
   include CliAttentionFixture
 
-  def test_merge_handoff_requires_a_fresh_description_after_ci_finishes
-    assert_refused_handoff(timing_env('pass'), 'Republish the PR description')
+  def test_merge_handoff_waits_for_required_ci
+    assert_refused_handoff(check_env('PENDING', 'pending'), 'Required check is not passing')
   end
 
-  def test_merge_handoff_applies_the_label_after_republication
-    body = Shaka::ThroughputStats.update(with_preview(pending_body), 't2' => '2026-11-11T00:37:00Z')
+  def test_merge_handoff_applies_the_label_after_required_ci_passes
     with_policy('meaningful_changes') do |root, ref|
-      env = timing_env('pass').merge('PR_BODY' => body)
-      _output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)], env:)
+      _output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)],
+                                                env: check_env('SUCCESS', 'pass'))
 
       assert_predicate status, :success?, error
       assert_path_exists @label_file
-      refute_path_exists "#{@label_file}.body"
-    end
-  end
-
-  def test_merge_handoff_waits_for_required_ci
-    with_policy('meaningful_changes') do |root, ref|
-      _output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)], env: timing_env('pending'))
-
-      refute_predicate status, :success?
-      assert_includes error, 'Required check is not passing'
-      refute_path_exists @label_file
-      refute_path_exists "#{@label_file}.body"
     end
   end
 
@@ -194,12 +175,12 @@ class CliAttentionTimingTest < Minitest::Test
     refute_path_exists "#{@label_file}.deleted"
   end
 
-  def test_merge_handoff_asks_for_a_fresh_preview_before_labeling
-    env = timing_env('pass').merge('PR_BODY' => with_preview(pending_body))
-    assert_refused_handoff(env, 'Republish the PR description')
-  end
-
   private
+
+  def check_env(state, bucket)
+    checks = [{ 'name' => 'validate', 'state' => state, 'bucket' => bucket }]
+    { 'PR_CHECKS' => JSON.generate(checks) }
+  end
 
   def assert_refused_handoff(env, message, comments: [review_comment(CLEAN_OUTCOME)])
     with_policy('meaningful_changes') do |root, ref|
@@ -208,36 +189,7 @@ class CliAttentionTimingTest < Minitest::Test
       refute_predicate status, :success?
       assert_includes error, message
       refute_path_exists @label_file
-      refute_path_exists "#{@label_file}.body"
     end
-  end
-
-  def with_preview(body)
-    marker = "<!-- shaka:rendering-preview #{HEAD} -->"
-    body.sub('<!-- shaka:end -->') { "#{marker}\n<!-- shaka:end -->" }
-  end
-
-  def timing_env(bucket)
-    { 'PR_BODY' => pending_body, 'PR_CHECKS' => JSON.generate(checks(bucket)) }
-  end
-
-  def pending_body
-    stats = { 'head' => HEAD, 'spend' => '$3.31', 't0' => '2026-11-11T00:03:00Z', 't1' => '2026-11-11T00:29:00Z' }
-    <<~MARKDOWN
-      Human introduction.
-      <!-- shaka:begin -->
-      **Estimated token costs:** $3.31 · ready pending
-      <!-- shaka:stats #{JSON.generate(stats)} -->
-      **This head:** Prompt to CI 26m · CI to ready pending · Ready to merged pending
-      <!-- shaka:end -->
-      Human footer.
-    MARKDOWN
-  end
-
-  def checks(bucket)
-    [{ 'name' => 'validate', 'state' => (bucket == 'pass' ? 'SUCCESS' : 'PENDING'),
-       'bucket' => bucket, 'completedAt' => '2026-11-11T00:37:00Z' },
-     { 'name' => 'claude-review', 'bucket' => 'pass', 'completedAt' => '2026-11-11T00:29:30Z' }]
   end
 end
 
