@@ -38,7 +38,7 @@ If you use Shaka on several computers, give each one a short public name so
 Help me name this machine "laptop" in Shaka.
 ```
 
-The agent configures `SHAKA_MACHINE_ALIAS` for your coding tool and checks it with
+Ask the agent to set `SHAKA_MACHINE_ALIAS` for your coding tool and check it with
 Shaka's doctor. The name also appears in [PR timings](reference/timings.md).
 
 ## GitHub Copilot

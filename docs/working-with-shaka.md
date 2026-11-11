@@ -60,7 +60,8 @@ Show dates as YYYY-MM-DD in the export.
 
 You can also comment on GitHub and paste the comment link into the chat.
 Comments reach the agent automatically only while follow-up is active; the PR
-handoff says whether it is. Otherwise, return to the chat.
+handoff says whether it is. Keep that chat available and wait for the agent's
+response before merging. Otherwise, return to the chat.
 Before editing files yourself, ask the agent to pause. Tell it when you finish
 so you do not both edit the same files.
 
@@ -102,8 +103,7 @@ then give Shaka the PR:
 ```
 
 The agent checks the current state and explains what remains. It records the
-handover on the PR. Confirm the merge choice for the new chat when asked;
-a previous chat's recorded choice does not authorize a new one.
+handover on the PR and rechecks merge authority before continuing.
 
 Before a PR exists, return to the original chat and checkout. An issue's start
 comment may identify the machine holding the work. See
@@ -175,6 +175,8 @@ coding tool; a prompt cannot switch the running model. See
 [coding agents](coding-agents.md) for tool setup and naming your machines, or
 [settings](settings-guide.md) to hide the checkout path in PRs.
 
+<a id="try-a-new-skill-pack-with-shaka"></a>
+
 ## Combine Shaka with other skills
 
 Name an installed skill when it helps your task:
@@ -224,8 +226,6 @@ Shaka uses the results in the PR's evidence: what ran, which version was checked
 what it showed, and what remains unverified. After a change, the agent reruns
 affected checks. Shaka keeps control of delivery; pstack's separate delivery
 playbooks are not part of this flow.
-
-<a id="try-a-new-skill-pack-with-shaka"></a>
 
 ## Review a session for improvements
 
