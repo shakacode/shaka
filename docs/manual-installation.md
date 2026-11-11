@@ -106,7 +106,9 @@ Status shows the next step. When it asks you to reinstall to record Ruby again,
 run `ruby "$shaka_source/bin/install"` from that checkout.
 
 Check the result with `"$shaka_helper" install --verify`. After active chats
-finish, run `"$shaka_helper" install --update` if you want to update.
+finish, run `"$shaka_helper" install --update` to update a branch installation.
+For a pinned release, use the [tested release prompt](#keep-a-tested-release)
+to install a newer release.
 `"$shaka_helper" install --repair` can fix recoverable problems and stops
 when it needs a decision.
 

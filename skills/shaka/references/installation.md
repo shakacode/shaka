@@ -39,10 +39,11 @@ Agents can also use an existing editor or browser overlay; ImageMagick is not re
 
 When the user requests a fork, create or select it on GitHub. Create and push a
 dedicated branch, such as `mine`, so the fork's `main` can follow upstream.
-With no registered installation, clone the fork into a dedicated directory
-and check out its install branch. Review that source and installer before
-running `bin/install --directory DIR --repository URL --branch BRANCH
---agent HOST` with that prepared checkout as `DIR`. Use the fork as `origin` and the official repository as `upstream`. See
+With no registered installation, clone the fork directly at its install branch
+with `git clone --branch BRANCH URL DIR`. Review that source and installer before
+running `bin/install --directory DIR --repository URL --branch BRANCH --agent HOST`
+with that prepared checkout. Use the fork as `origin` and the official repository
+as `upstream`. See
 [official installation](official-installation.md) for prerequisites.
 
 To switch sources, record the active directory, origin, branch or release,
@@ -56,8 +57,9 @@ If the previous checkout is under `~/.agents/shaka`, it cannot be a take-over
 destination. Explain this before switching. If rollback is required, identify
 a supported directory and verify the saved source and revision are still
 installable there before moving any links.
-Clone and prepare the actual destination checkout at the selected branch
-tip or release. For a fork, add the official repository as `upstream`.
+Clone the actual destination directly at the selected branch with
+`git clone --branch BRANCH URL DIR`, or prepare it at the selected release.
+For a fork, add the official repository as `upstream`.
 Inspect that revision before invoking take-over, which runs the incoming
 helper. Pass the prepared checkout as the destination.
 
@@ -84,10 +86,17 @@ Before updating, confirm that `origin` points to the user's fork and
 repository, stop and report the mismatch before fetching or integrating changes.
 Fetch upstream and inspect the diff. Fast-forward when possible.
 Preserve fork changes by merging or rebasing on a feature branch, then merge
-into the installed branch. Test the exact remote tip you intend to install.
-If the tip changes, validate it before updating. `install --update` follows
-the tip it fetches and only fast-forwards. To install one exact tested commit,
-prepare a separate checkout at that commit and check its HEAD before take-over.
+into the installed branch. Use `install --update` when the latest branch tip
+is acceptable. It fetches and verifies the tip it receives.
+
+When the user asks to install the tested or inspected commit, use take-over.
+Clone directly at the install branch in a separate directory. Set that local
+branch to the tested commit and keep it tracking `origin/BRANCH`. Before
+take-over, check that the checkout is clean, on that branch, and at the tested
+commit, with the expected tracking branch.
+`install --update` can fetch and run a newer revision if the branch advances
+after testing.
+
 Verify the installed revision before starting a new chat. Contribute improvements through a branch
 and PR to upstream when the user authorizes that publication. Never overwrite
 local customizations to make an update succeed.
