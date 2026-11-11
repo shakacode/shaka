@@ -45,18 +45,24 @@ With no registered installation, install the fork in a dedicated directory as in
 repository as `upstream`.
 
 To switch sources, record the active directory, origin, branch or release,
-revision, and linked hosts and skills. Take-over moves all those links; if the
+revision, and linked hosts, skills, and skills directories. Take-over moves all those links; if the
 request covers only one host, show the wider scope and ask before proceeding.
 Prepare a separate dedicated checkout at the selected branch tip or release.
-Inspect the selected revision before executing any code from it.
+For a fork, add the official repository as `upstream`. Inspect the selected
+revision before executing any code from it.
 
 From the currently registered checkout's trusted installer, run
 `bin/install --take-over --directory DIR --repository URL --branch BRANCH`;
 use `--release VERSION` for a pinned release. Keep the old checkout and remotes
-intact. Run `bin/install --verify` from the newly active checkout. To switch
-back, invoke the trusted installer in the now-active checkout, targeting the
-retained directory with its recorded URL and branch or release. Verify the
-restored source and revision.
+intact. Run `bin/install --verify` from the newly active checkout. If take-over
+reports an error, check which checkout owns the links before retrying.
+
+To switch back, compare the retained checkout's HEAD with the saved revision.
+If it differs, stop and explain the mismatch before moving links. Run take-over
+with a trusted installer, targeting the retained directory with its saved URL
+and branch or release. Pass `--skills-dir DIR` for an active custom skills
+directory so the trusted installer can locate the owner. Verify the restored
+source and revision.
 
 For updates, fetch upstream and inspect the diff. Fast-forward when possible;
 otherwise preserve fork changes while merging or rebasing on a feature branch.
