@@ -819,15 +819,6 @@ phases:
         while they remain. Repair or reframe within authorized scope, then repeat affected
         validation and review; a changed goal or disputed value needs a maintainer decision.
         Review-only work keeps its requested stopping point.
-      - After hosted checks and preview builds settle, republish the description before the
-        final handoff, including an Ask handoff. Resolve `deployment: auto` again for the
-        current head after the builds settle.
-        When the provider supplies the preview solely in a comment or log, supply its verified
-        current-head URL. Preserve an explicit choice that this repository deploys nothing.
-        Complete the trusted `pr_evidence` guide after this last publication, including any
-        required rendering preview on the PR itself. Inspect the live result. A sample comment
-        does not complete self-preview; a failed preview blocks handoff until resolved.
-        Repeat after a new head or later publication.
       - Reassess scope and authority for the final head, including the base the PR actually
         targets: `pr` reports it as `baseRefName`, and a retarget after planning is the case
         that silently moves an Auto merge onto a branch nobody agreed to. Refresh the
@@ -858,6 +849,15 @@ phases:
         for every named job in `review.ci_review_jobs` on the current head and do not merge while the state is
         UNSTABLE. Pass `merge --ref` from intake and `--ci-review-wait MODE` only for a this-task override. Read
         completed feedback before merge and report pending optional reviews.
+      - After hosted checks and preview builds settle, republish the description before the
+        final handoff, including an Ask handoff. Resolve `deployment: auto` again for the
+        current head after the builds settle.
+        When the provider supplies the preview solely in a comment or log, supply its verified
+        current-head URL. Preserve an explicit choice that this repository deploys nothing.
+        Complete the trusted `pr_evidence` guide after this last publication, including any
+        required rendering preview on the PR itself. Inspect the live result. A sample comment
+        does not complete self-preview; a failed preview blocks handoff until resolved.
+        Repeat after a new head or later publication.
       - `merge` refuses a PR over the trusted `merge.limits` for changed files, changed lines, or
         commits, or whose size GitHub does not report. It also refuses any head whose checkpoint
         rating is above the trusted `merge.auto_merge_max_risk` or that changes a high-risk file. That refusal switches

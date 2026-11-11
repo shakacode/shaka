@@ -496,7 +496,8 @@ begin
                Shaka::MergeHandoff.new(github, seam_required_checks:, review:).call
              else
                # Leaving the merge wait means the PR changes; a checkpoint for an older head must not look ready.
-               Shaka::Attention.new(github).call(state:).merge('stale_checkpoint' => Shaka::PostImplementationStale.new(github).call)
+               labels = Shaka::Attention.new(github).call(state:)
+               labels.merge('stale_checkpoint' => Shaka::PostImplementationStale.new(github).call)
              end
            when 'squash-message'
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))

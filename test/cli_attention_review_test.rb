@@ -18,13 +18,17 @@ module CliAttentionFixture
         count = File.exist?(reads) ? File.read(reads).to_i + 1 : 1
         File.write(reads, count)
         pull['state'] = 'CLOSED' if change == 'reopen' && count <= 2
-        retargeted = change == 'retarget2' && count >= 2
+        retargeted = change == 'retarget_gate' && count >= 3
       retargeted ||= File.exist?("#{ENV.fetch('LABEL_FILE')}.retargeted")
       pull['baseRefName'] = 'release' if retargeted
+      pull['headRefOid'] = 'b' * 40 if File.exist?("#{ENV.fetch('LABEL_FILE')}.moved")
       end
       puts JSON.generate('data' => { 'repository' => { 'pullRequest' => pull } })
     elsif ARGV[0, 2] == %w[pr checks]
       rows = JSON.parse(ENV.fetch('PR_CHECKS', '[]'))
+      if File.exist?("#{ENV.fetch('LABEL_FILE')}.rerun")
+        rows.each { |row| row.update('state' => 'PENDING', 'bucket' => 'pending') }
+      end
       rows.select! { |row| row['name'] == 'validate' } if ARGV.include?('--required')
       puts JSON.generate(rows)
     elsif path.start_with?('repos/owner/repo/rules/branches/main')
@@ -32,6 +36,7 @@ module CliAttentionFixture
     elsif path == 'user'
       puts JSON.generate('login' => 'shaka-agent')
     elsif path.include?('/issues/1/comments')
+      File.write("#{ENV.fetch('LABEL_FILE')}.rerun", '') if ENV['PR_CHANGE'] == 'rerun'
       puts ENV.fetch('PR_COMMENTS', '[]')
     elsif path.include?('/issues/1/labels') && ARGV.include?('POST')
       File.write(ENV.fetch('LABEL_FILE'), 'labeled')
@@ -42,6 +47,7 @@ module CliAttentionFixture
         File.write("#{ENV.fetch('LABEL_FILE')}.retargeted", '')
         puts JSON.generate([{ 'name' => 'awaiting-resume' }])
       else
+        File.write("#{ENV.fetch('LABEL_FILE')}.moved", '') if ENV['PR_CHANGE'] == 'head_labels'
         puts '[]'
       end
     elsif path.include?('/labels/')
@@ -167,12 +173,21 @@ class CliAttentionGateTest < Minitest::Test
   end
 
   def test_merge_handoff_refuses_a_retarget_while_reading_the_gate
-    assert_refused_handoff({ 'PR_CHANGE' => 'retarget2' }, 'PR base changed')
+    assert_refused_handoff({ 'PR_CHANGE' => 'retarget_gate' }, 'PR base changed')
   end
 
   def test_merge_handoff_refuses_a_retarget_before_labeling
     assert_refused_handoff({ 'PR_CHANGE' => 'retarget_labels' }, 'PR base changed')
     refute_path_exists "#{@label_file}.deleted"
+  end
+
+  def test_merge_handoff_reads_required_ci_after_local_review
+    env = check_env('SUCCESS', 'pass').merge('PR_CHANGE' => 'rerun')
+    assert_refused_handoff(env, 'Required check is not passing')
+  end
+
+  def test_merge_handoff_refuses_a_moved_head_before_labeling
+    assert_refused_handoff({ 'PR_CHANGE' => 'head_labels' }, 'PR head changed')
   end
 
   private
