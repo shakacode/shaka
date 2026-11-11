@@ -85,18 +85,30 @@ to your user settings in `~/.claude/settings.json`.
 <details>
 <summary>Check or update from a terminal</summary>
 
-For the default installation, start by checking which checkout owns your links:
+Start with the checkout you installed. If you switched sources, use the
+destination the installer printed. From a custom skills folder, run
+`./shaka/scripts/shaka install --status` to find the active checkout.
+If the helper cannot start, inspect the `shaka` link. Its target is
+`skills/shaka` inside the active checkout.
+
+For the default checkout, run:
 
 ```bash
-shaka_helper="$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka"
+shaka_source="$HOME/.local/share/shaka/source"
+shaka_helper="$shaka_source/skills/shaka/scripts/shaka"
 "$shaka_helper" install --status
 ```
 
-Use the corresponding path if you installed elsewhere. If you switched sources,
-set `shaka_helper` to `skills/shaka/scripts/shaka` inside the active checkout
-shown by status. Run `"$shaka_helper" install --verify`. After active chats finish, run `"$shaka_helper" install --update` if you choose to update. For a broken
-installation, `"$shaka_helper" install --repair` checks for recoverable problems
-and stops when it needs a decision.
+If you installed elsewhere, set `shaka_source` to the active checkout before
+setting `shaka_helper`. If the helper says its recorded Ruby is unavailable,
+use Ruby 3.4 or later and run `ruby "$shaka_source/bin/install" --status`.
+Status shows the next step. When it asks you to reinstall to record Ruby again,
+run `ruby "$shaka_source/bin/install"` from that checkout.
+
+Check the result with `"$shaka_helper" install --verify`. After active chats
+finish, run `"$shaka_helper" install --update` if you want to update.
+`"$shaka_helper" install --repair` can fix recoverable problems and stops
+when it needs a decision.
 
 </details>
 
@@ -135,20 +147,24 @@ Ask it to confirm your development work is still available before removing any
 old checkout.
 
 <details>
-<summary>If the installer was force-stopped while moving the checkout</summary>
+<summary>Move the installation from a terminal</summary>
 
-If the old checkout has no active installation record and the new checkout is
-unregistered, restore the newest `.git/shaka-install.retired-*.json` in the old
-checkout to `.git/shaka-install.json`. From that checkout, retry the move to
-the same destination. For example, if the destination was the default path:
+From the currently registered checkout, run this to move the links to a
+dedicated checkout. Choose another directory if the default is already in use.
 
 ```bash
 ./bin/install --directory "$HOME/.local/share/shaka/source" --take-over
 ```
 
-Use the original source and destination options for a different move. Run
-`bin/install --verify` from the active checkout afterward. If either checkout
-still has an active record, leave it in place and ask the agent to inspect
-the state.
+If you run it from another checkout and use a custom skills folder, pass
+that folder with `--skills-dir`. Verify from the new checkout with
+`bin/install --verify`.
+
+If the installer was force-stopped during the move and neither checkout has an
+active installation record, restore the newest
+`.git/shaka-install.retired-*.json` in the old checkout to
+`.git/shaka-install.json`. Retry with the same source and destination options,
+then verify. If either checkout still has an active record, leave it in place
+and check the installation state before retrying.
 
 </details>

@@ -25,7 +25,7 @@ For a requested interactive code walkthrough, follow the
 [interactive walkthrough](references/interactive-walkthrough.md) and stop after each concept.
 For a request to see what a reviewer receives, or to explain or change this repository's
 settings, follow the [configure procedure](references/configure.md).
-For a request to install or update Shaka itself, follow
+For a request to install, update, or repair Shaka itself, follow
 [official installation](references/official-installation.md). For fork setup,
 updates, or switching between a fork and official Shaka, use the
 [fork procedure](references/installation.md#install-from-a-personal-fork). Stop after verification.
