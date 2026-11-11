@@ -19,14 +19,7 @@ Adjust the providers, repository, and exclusions. Write `OWNER/*` in place of
 `OWNER/REPO` to cover every repository that owner has. For the DeepSeek
 reviewer, name OpenRouter too, because the request passes through it:
 
-```text
-Shaka review consent: local reviews of OWNER/REPO may send the committed diff,
-its head commit with its files and checkout path, the review instructions and criteria, the
-repository's review prompt, the PR description, and earlier review findings to
-Anthropic (Claude CLI) and OpenAI (Codex CLI).
-Never send secrets, credentials, .env files, or private data unrelated to the
-change. Approved by NAME on DATE.
-```
+Copy the [consent template](../coding-agents.md#give-consent-once) and adjust it for your repository and reviewers.
 
 The exclusions are your instruction to the agent, not a limit on the reviewer.
 A reviewer given the checkout path can read other files its own sandbox allows,
@@ -47,16 +40,15 @@ Code, when that reviewer uses the same account and route: your agent already
 sends that provider the review packet. It then runs a tiny reviewer access check,
 enabled by
 [`review.startup_check`](../settings.md#reviewstartup_check). Standing consent is
-reused without another question. In Codex, Auto-review still decides each
-actual command.
+reused without another question. In Codex, tool approval is separate.
 
 ## Approve private-code reviews in Codex
 
 Shaka's local review sends your change to the reviewer you configured, such as
 Claude or Codex, using your own credentials. When Codex runs with
 [Auto-review](https://learn.chatgpt.com/docs/sandboxing/auto-review), a separate
-reviewer agent checks that command first. It can deny sending private code to
-another provider.
+reviewer agent evaluates eligible approval requests. Commands already allowed by
+your tool rules proceed without another review.
 
 Three separate permissions apply:
 
@@ -64,9 +56,9 @@ Three separate permissions apply:
 - **Your consent.** You agree that named providers may receive this
   repository's code for review, as [Give consent once](#give-consent-once)
   describes.
-- **Codex's decision.** Auto-review, or your organization's managed policy,
-  still decides each command. Your consent gives it context; it does not make
-  Codex run the command.
+- **Codex's decision.** Your sandbox, command rules, and organization policy
+  determine which actions need approval. Consent to share code does not grant
+  tool permission.
 
 A custom Auto-review policy, set with `[auto_review].policy` in Codex's
 `config.toml`, replaces the default policy instead of adding to it. Copy the
@@ -152,8 +144,9 @@ available, resume the PR in a local session.
 The opt-in [DeepSeek reviewer](../settings.md#reviewlocal_review_agents) runs through
 Shaka's Ruby OpenRouter API adapter. It does not require native DeepSeek support in
 Codex, Claude Code or Cursor, and does not change the coding host's model.
-It needs Ruby, outbound HTTPS and `OPENROUTER_API_KEY` in the process that
-runs Shaka.
+To use it, add DeepSeek to the repository's reviewer list and set
+`OPENROUTER_API_KEY` as a secret in the cloud environment running Shaka. It needs
+Ruby and outbound HTTPS.
 
 Try one review in the target environment before relying on it. A
 [recorded Claude Code web trial](https://github.com/shakacode/shaka/issues/277#issuecomment-6541487155)

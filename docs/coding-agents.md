@@ -70,7 +70,24 @@ It shows which repository, provider, and information the approval covers. If you
 expect to use that reviewer again, choose **Yes, and don't ask again** to save
 that consent in your own instructions. See [review consent details](reference/reviewer-setup.md#give-consent-once).
 
-Your coding tool may separately ask to run the reviewer command. Save a narrow
+<details open>
+<summary>Consent template</summary>
+
+```text
+Shaka review consent: local reviews of OWNER/REPO may send the committed diff,
+its head commit with its files and checkout path, the review instructions and criteria, the
+repository's review prompt, the PR description, and earlier review findings to
+Anthropic (Claude CLI) and OpenAI (Codex CLI).
+Never send secrets, credentials, .env files, or private data unrelated to the
+change. Approved by NAME on DATE.
+```
+
+</details>
+
+### Save a tool approval for future chats
+
+Your coding tool may separately ask to run the reviewer command.
+ Save a narrow
 approval for future chats when you use that command regularly and understand its
 scope. The tool's rules and any organization policy still apply.
 
@@ -78,7 +95,7 @@ scope. The tool's rules and any organization policy still apply.
 | --- | --- |
 | Codex | In the CLI, accept a narrow command rule when Codex offers one. It saves the rule for later sessions. See [Codex command rules](https://learn.chatgpt.com/docs/agent-configuration/rules). |
 | Claude Code | When offered, choose **Yes, and don't ask again** for the specific command. Claude Code saves a project-local permission rule. See [Claude Code settings](https://code.claude.com/docs/en/settings). |
-| Cursor | In **Settings → Agents → Approvals & Execution**, add the reviewed command to the terminal allowlist. See [terminal approvals](https://cursor.com/help/ai-features/terminal) and [permission scope](https://cursor.com/docs/reference/permissions). |
+| Cursor | In **Settings → Agents → Approvals & Execution**, add a narrow entry to the terminal allowlist if editable. Entries match prefixes and can cover extra arguments. If the editor is read-only, see [which file or team policy controls it](https://cursor.com/docs/reference/permissions). |
 
 **Approve for me** in Codex desktop selects automatic approval review. In the
 CLI, `/approve` can approve a denied action for one retry. Neither choice saves
