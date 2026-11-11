@@ -6,6 +6,7 @@ for local testing. The preparation and reporting workflow below needs an open PR
 
 Try an unmerged Shaka change on a real fix before deciding whether it belongs in
 the product. Ask your agent in a preparation chat:
+
 ```text
 /shaka Try Shaka from https://github.com/shakacode/shaka/pull/359
 on this task: fix the search bug in /path/to/my/project.

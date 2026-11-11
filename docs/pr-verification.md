@@ -50,6 +50,7 @@ decision; they do not settle every product choice or prove every claim.
 ## Walk through the code together
 
 Ask for an interactive tour when you want to understand a PR before deciding:
+
 ```text
 /shaka Walk me through https://github.com/OWNER/REPO/pull/123 one concept at a time.
 ```
