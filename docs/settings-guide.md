@@ -30,14 +30,15 @@ See [which settings apply](settings.md#which-settings-apply) and
 
 ## Use individual or team settings
 
-To try Shaka without adding configuration to a project that has no shared settings:
+To try a task in a project that has no shared Shaka settings:
 
 ```text
-/shaka Set up Shaka just for me in this project.
+/shaka Fix search when the query contains an apostrophe. Set up Shaka just for me.
 ```
 
-Individual setup supports the same review, merge, and PR choices as team setup.
-To share your team's choices:
+Individual settings can choose reviewers and PR preferences. Local settings do
+not authorize automatic merging or supply fallback required checks. To share your
+team's choices:
 
 ```text
 /shaka Set up Shaka for my team in this repository.
@@ -45,8 +46,6 @@ To share your team's choices:
 
 Review and merge the separate setup PR on GitHub. Its settings then become the
 team's defaults. See [team setup](configure-repository.md).
-
-<a id="common-situations"></a>
 
 ## Change your team's settings
 
@@ -60,6 +59,8 @@ The agent explains what changes and what the team needs to do. Review the PR
 before merging. If it introduces a setting older Shaka versions do not recognize,
 follow the update instructions in the PR.
 
+<a id="common-situations"></a>
+
 ### Try settings before adopting them
 
 You can use a settings PR for one task:
@@ -68,7 +69,9 @@ You can use a settings PR for one task:
 /shaka Fix search when the query contains an apostrophe. Use settings from PR #123.
 ```
 
-That task uses the selected configuration. Other tasks keep their usual settings.
+That task uses the selected configuration. Each teammate can choose the same PR
+for their own trial. For a supported choice on one task, state it in the prompt,
+such as "Ask me before merging." Other tasks keep their usual settings.
 GitHub's required checks and approvals still apply. Ask explicitly to switch to a
 newer version of the settings PR. See [settings previews](settings.md#preview-settings-before-adopting-them).
 
@@ -97,8 +100,7 @@ then uses your configured order. Additional reviewers can add cost and time.
 See [reviewer choices](settings.md#reviewlocal_review_agents) and
 [reviewer count](settings.md#reviewlocal_review_count).
 
-For rules that apply to every reviewer, use `AGENTS.md`. To add instructions for
-Shaka's local reviewer, ask:
+Use `AGENTS.md` for project rules. To add guidance for Shaka's local reviewer, ask:
 
 ```text
 /shaka Add local review guidance to flag API changes that break existing clients.
