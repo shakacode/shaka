@@ -15,7 +15,8 @@ each coding agent you use. Each project keeps its own settings.
 
 Use the [installation prompt](getting-started.md#1-install-shaka), or follow
 [manual installation](manual-installation.md). On macOS, you can also
-[start a task from Linear](linear.md) in Codex CLI. For multi-repository coordination, see [control towers](control-towers.md).
+[start a task from Linear](linear.md) in Codex CLI. For [control towers](control-towers.md), use the desktop app: Codex towers need
+desktop task tools, and Claude Code towers need desktop session tools.
 
 ## Name your machines
 
@@ -72,6 +73,8 @@ that consent in your own instructions. See [review consent details](reference/re
 <details open>
 <summary>Consent template</summary>
 
+Before saving this, keep only the providers and repositories you want to cover.
+
 ```text
 Shaka review consent: local reviews of OWNER/REPO may send the committed diff,
 its head commit with its files and checkout path, the review instructions and criteria, the
@@ -89,7 +92,8 @@ Your coding tool may separately ask to run the reviewer command.
 Save a narrow
 approval for future chats when you use that command regularly and understand its
 scope. A saved rule can let matching commands run without another approval.
-Review what it covers before saving it; organization policy still applies.
+Review what it covers before saving it. If it matches more than you want,
+approve only this run. Organization policy still applies.
 
 | Coding tool | Remember an approval |
 | --- | --- |
