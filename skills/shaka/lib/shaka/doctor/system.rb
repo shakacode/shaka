@@ -18,9 +18,11 @@ module Shaka
             installation_status: -> { Install::Status.new(source: PACKAGE_ROOT).call }, home: home)
       end
 
-      # Without a resolvable home, the companion-skills check reports itself not checked.
+      # Without a resolvable home, the companion-skills check reports itself not checked. An empty
+      # HOME makes Dir.home return "", which would point the check at folders under the root.
       def self.home
-        Dir.home
+        home = Dir.home
+        home.empty? ? nil : home
       rescue ArgumentError
         nil
       end

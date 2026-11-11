@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'open3'
+require 'rbconfig'
 require_relative 'doctor_companion_skills_support'
 
 # A folder or plugin record doctor cannot read degrades the check; it never raises or reads as healthy.
@@ -98,6 +100,15 @@ class DoctorCompanionSkillsFaultsTest < Minitest::Test
 
   def test_a_missing_home_is_reported_not_raised
     assert_includes doctor(home: nil).first, '[DEGRADED] Companion skills — not checked: no home directory'
+  end
+
+  # A child process, so the empty HOME never reaches the other tests running in this one.
+  def test_an_empty_home_resolves_to_no_home
+    lib = File.expand_path('../skills/shaka/lib', __dir__)
+    out, status = Open3.capture2({ 'HOME' => '' }, RbConfig.ruby, "-I#{lib}", '-rshaka/doctor',
+                                 '-e', 'p Shaka::Doctor::System.home', chdir: @home)
+    assert_predicate status, :success?
+    assert_equal "nil\n", out
   end
 
   private
