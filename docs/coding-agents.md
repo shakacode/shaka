@@ -10,13 +10,12 @@ each coding agent you use. Each project keeps its own settings.
 | Claude Code | `/shaka` | Desktop app or CLI |
 | Cursor | `/shaka` | Start a new Agent chat after installation |
 | GitHub Copilot | `/shaka` | Copilot CLI or VS Code Agent chat; see [Copilot setup](#github-copilot) |
-| OpenCode | `/shaka` | Use the installed skill in a session |
+| OpenCode | `/shaka` | Use the installed skill in a session; an optional launcher is available |
 | Pi | Load the installed Shaka skill | Uses Pi's existing permissions |
 
 Use the [installation prompt](getting-started.md#1-install-shaka), or follow
 [manual installation](manual-installation.md). On macOS, you can also
-[start a task from Linear](linear.md) in Codex CLI. For optional launchers or
-multi-repository coordination, see [control towers](control-towers.md).
+[start a task from Linear](linear.md) in Codex CLI. For multi-repository coordination, see [control towers](control-towers.md).
 
 ## Name your machines
 
@@ -87,14 +86,15 @@ change. Approved by NAME on DATE.
 ### Save a tool approval for future chats
 
 Your coding tool may separately ask to run the reviewer command.
- Save a narrow
+Save a narrow
 approval for future chats when you use that command regularly and understand its
-scope. The tool's rules and any organization policy still apply.
+scope. A saved rule can let matching commands run without another approval.
+Review what it covers before saving it; organization policy still applies.
 
 | Coding tool | Remember an approval |
 | --- | --- |
-| Codex | In the CLI, accept a narrow command rule when Codex offers one. It saves the rule for later sessions. See [Codex command rules](https://learn.chatgpt.com/docs/agent-configuration/rules). |
-| Claude Code | When offered, choose **Yes, and don't ask again** for the specific command. Claude Code saves a project-local permission rule. See [Claude Code settings](https://code.claude.com/docs/en/settings). |
+| Codex | In the CLI, accept a narrow command rule when Codex offers one. It saves a user-level prefix rule that can match in other projects and with extra arguments. See [Codex command rules](https://learn.chatgpt.com/docs/agent-configuration/rules). |
+| Claude Code | In the CLI, choose **Yes, and don't ask again** when the offered pattern is appropriate. Claude Code saves a project-local rule; a prefix or wildcard can match other arguments. See [Claude Code settings](https://code.claude.com/docs/en/settings). |
 | Cursor | In **Settings → Agents → Approvals & Execution**, add a narrow entry to the terminal allowlist if editable. Entries match prefixes and can cover extra arguments. If the editor is read-only, see [which file or team policy controls it](https://cursor.com/docs/reference/permissions). |
 
 **Approve for me** in Codex desktop selects automatic approval review. In the

@@ -17,7 +17,7 @@ and `~/.codex/AGENTS.md` for Codex (`AGENTS.override.md` there if you have one),
 or the same file under `CLAUDE_CONFIG_DIR` or `CODEX_HOME` when you set one.
 Adjust the providers, repository, and exclusions. Write `OWNER/*` in place of
 `OWNER/REPO` to cover every repository that owner has. For the DeepSeek
-reviewer, name OpenRouter too, because the request passes through it:
+reviewer, name OpenRouter too, because the request passes through it.
 
 Copy the [consent template](../coding-agents.md#give-consent-once) and adjust it for your repository and reviewers.
 
@@ -48,7 +48,8 @@ Shaka's local review sends your change to the reviewer you configured, such as
 Claude or Codex, using your own credentials. When Codex runs with
 [Auto-review](https://learn.chatgpt.com/docs/sandboxing/auto-review), a separate
 reviewer agent evaluates eligible approval requests. Commands already allowed by
-your tool rules proceed without another review.
+your tool rules proceed without another review. Auto-review can deny an
+eligible request to send private code to another provider.
 
 Three separate permissions apply:
 
@@ -139,7 +140,9 @@ review does not count as one of its rounds.
 ## Cloud reviewers
 
 Local review requires a reviewer the cloud environment can run. If none is
-available, resume the PR in a local session.
+available, resume the PR in a local session. Cloud machines may lack the
+local reviewer CLI, its sign-in, or Ruby 3.4. Restricted GitHub access can also
+leave some PR details unavailable; check the gaps before continuing.
 
 The opt-in [DeepSeek reviewer](../settings.md#reviewlocal_review_agents) runs through
 Shaka's Ruby OpenRouter API adapter. It does not require native DeepSeek support in
