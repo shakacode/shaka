@@ -358,9 +358,39 @@ review:
   ci_review_wait: one
 ```
 
-The [hosted Claude review](configure-repository.md#add-hosted-claude-review) workflow
+The [hosted Claude review](#hosted-claude-review) workflow
 Shaka ships produces `claude-review`. The agent reads reports according to
 `ci_review_wait`; a green job alone does not prove review completed. GitHub's required merge checks are configured separately.
+
+## Hosted Claude review
+
+Shaka ships a [Claude review workflow](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/claude-code-review.yml)
+that reviews PRs opened from branches in your repository, and fits teams where only
+some people use Shaka. It skips drafts, Dependabot, and PRs from forks; review those
+another way. It reviews pushes from Cursor cloud agents. A push from another GitHub
+App fails the review job until you add that app to the workflow's `allowed_bots` line.
+When a PR's author already published a Shaka local review of the pushed commit
+with Claude among its reviewers, Claude makes a short pass for serious bugs the
+local reviewers missed. Every other PR gets a full review, including one only
+Codex reviewed locally. Both report only issues Claude can tie to a concrete failure,
+so routine pushes stay quiet.
+
+The agent can offer this during [team setup](configure-repository.md#set-up). For a repository that already uses
+Shaka, ask:
+
+```text
+/shaka Add the hosted Claude review workflow from
+https://github.com/shakacode/shaka/blob/main/skills/shaka/config/claude-code-review.yml
+and list claude-review as a CI review job.
+```
+
+In Codex, use `$shaka` instead of `/shaka`.
+
+The agent adds the workflow and lists the `CLAUDE_CODE_OAUTH_TOKEN` repository
+secret you need to create. The workflow waits up to two minutes for the local
+review before choosing the full review; edit `LOCAL_REVIEW_WAIT_SECONDS` in it to
+change that. Only the PR author's own comment selects the short pass, so another
+person's comment cannot weaken review of someone else's PR.
 
 ## `review.ci_review_wait`
 
@@ -666,7 +696,7 @@ unavailable. The PR description's [Verification](reference/pr-record.md#verifica
 Writing the change does not count as reviewing it.
 
 To pay for one local review instead, leave this unset and set `local_review_count: 1`. With
-the [hosted Claude review](configure-repository.md#add-hosted-claude-review), a PR that only
+the [hosted Claude review](#hosted-claude-review), a PR that only
 Codex reviewed locally still gets a full Claude review on GitHub.
 
 ## `review.custom_instructions_file`
@@ -1177,6 +1207,33 @@ directory, Shaka runs the default branch's copy of the script against that
 branch's files and removes the copy afterward. The script still runs the branch's
 own tools, so `exec bin/ci-local` runs that branch's `bin/ci-local`. The result
 records the trusted copy as its command source.
+
+### Run the scripts in a CI container
+
+
+The scripts Shaka writes ask Git for the repository root before they run your
+command. When a CI job runs inside a container, Git may refuse the checkout because
+another user owns it, and the script exits with status 128. Before any Shaka script
+or command runs, mark the checkout safe by its top-level path. In a GitHub Actions
+container job that checks out into the workspace, add this step:
+
+```yaml
+- run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+```
+
+If the job checks out into a subdirectory, such as `actions/checkout` with
+`path: app`, mark that directory instead. Other CI systems need the same
+`git config` command with their checkout path. Jobs that run directly on a
+GitHub-hosted runner need no change.
+
+### Setup records
+
+The setup PR can include `.agents/shaka.md`, which points to the settings and
+records the Shaka version used for setup. Later setup runs leave it alone.
+Ask your agent to refresh the configuration if you need the pointer updated.
+
+The optional `.agents/shaka/trusted-github-actors.yml` lists additional trusted
+comment authors for public repositories. See the [trust model](workflow.md#trust-model).
 
 ## `base_branch`
 
