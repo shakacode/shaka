@@ -93,7 +93,7 @@ Review what it covers before saving it; organization policy still applies.
 
 | Coding tool | Remember an approval |
 | --- | --- |
-| Codex | In the CLI, accept a narrow command rule when Codex offers one. It saves a user-level prefix rule that can match in other projects and with extra arguments. See [Codex command rules](https://learn.chatgpt.com/docs/agent-configuration/rules). |
+| Codex | In the CLI, accept a narrow command rule when Codex offers one. A matching command can run outside the sandbox without prompting, including in other projects or with extra arguments. See [Codex command rules](https://learn.chatgpt.com/docs/agent-configuration/rules). |
 | Claude Code | In the CLI, choose **Yes, and don't ask again** when the offered pattern is appropriate. Claude Code saves a project-local rule; a prefix or wildcard can match other arguments. See [Claude Code settings](https://code.claude.com/docs/en/settings). |
 | Cursor | In **Settings → Agents → Approvals & Execution**, add a narrow entry to the terminal allowlist if editable. Entries match prefixes and can cover extra arguments. If the editor is read-only, see [which file or team policy controls it](https://cursor.com/docs/reference/permissions). |
 
