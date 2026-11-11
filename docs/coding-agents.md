@@ -74,6 +74,8 @@ that consent in your own instructions. See [review consent details](reference/re
 <summary>Consent template</summary>
 
 Before saving this, keep only the providers and repositories you want to cover.
+If the reviewer receives a checkout path, it can read other files its own
+sandbox allows. Keep secrets out of the checkout.
 
 ```text
 Shaka review consent: local reviews of OWNER/REPO may send the committed diff,
@@ -86,7 +88,7 @@ change. Approved by NAME on DATE.
 
 </details>
 
-### Save a tool approval for future chats
+## Save a tool approval for future chats
 
 Your coding tool may separately ask to run the reviewer command.
 Save a narrow
@@ -146,4 +148,4 @@ from `CLAUDE.md` if it does not load the existing file directly.
 <a id="codex-desktop-follow-up"></a>
 
 For PR follow-up in Codex desktop, see
-[Resume unfinished work](working-with-shaka.md#resume-unfinished-work).
+[Give feedback](working-with-shaka.md#give-feedback).
