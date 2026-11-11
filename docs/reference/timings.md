@@ -180,6 +180,7 @@ Limits:
 
 The agent can inspect Shaka's local timing log at `~/.local/state/shaka/calls.jsonl`
 for a retrospective. It records helper commands, durations, outcomes, and repository,
-PR, and commit identifiers. It does not record paths or task text. Shaka does not
+PR, and commit identifiers. When available it also records the reviewer model and
+the Git tree hash for validation. It does not record paths or task text. Shaka does not
 upload the log itself. Set `SHAKA_CALL_LOG=off` to stop recording, or set it to a
 file path to move the log.

@@ -46,8 +46,9 @@ with that prepared checkout. Keep the fork as `origin` and add the official
 repository with `git -C DIR remote add upstream https://github.com/shakacode/shaka.git`.
 See [official installation](official-installation.md) for prerequisites.
 
-To switch sources, record the active directory, origin, branch or release,
-revision, linked hosts and skills directories, and any Shaka Claude Code
+Before any take-over, including an exact-commit update, record the active
+directory, origin, branch or release, revision, linked hosts and skills
+directories, and any Shaka Claude Code
 `SessionStart` hook. Take-over moves every registered link. If Claude's hook
 follows one of those links, it will run the new source at chat startup.
 Explain the effect before switching. If the request covers only one host,

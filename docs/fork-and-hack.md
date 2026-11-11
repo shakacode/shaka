@@ -67,7 +67,8 @@ reads, run `skills/shaka/scripts/shaka workflow` from the development clone.
 
 ```text
 Bring the latest official Shaka changes into my fork. Keep my customizations,
-resolve conflicts, and test the result. Install the exact commit that passed testing.
+resolve conflicts, and test the result. Publish the tested commit to my fork's
+install branch, then install that exact commit.
 ```
 
 Bring upstream changes into your working branch without rewriting the installed
@@ -86,9 +87,13 @@ commit you validated. Check that both `git remote get-url origin` and
 remote branch:
 
 ```bash
-git push origin "$tested_commit:refs/heads/$fork_branch" &&
-  git fetch origin "$fork_branch" &&
-  git merge-base --is-ancestor "$tested_commit" FETCH_HEAD
+git fetch origin "$fork_branch" && {
+  if ! git merge-base --is-ancestor "$tested_commit" FETCH_HEAD; then
+    git push origin "$tested_commit:refs/heads/$fork_branch" &&
+      git fetch origin "$fork_branch" &&
+      git merge-base --is-ancestor "$tested_commit" FETCH_HEAD
+  fi
+}
 ```
 
 If any command fails, stop before updating the installation. Ask your agent to
@@ -118,7 +123,8 @@ git fetch "$shaka_source" HEAD &&
 If Git finds no common ancestor, stop. The histories are unrelated, and this
 recipe cannot restore the installed commit to the branch. When the merge
 succeeds, it records the installed commit as an ancestor while keeping the
-rewritten branch's files. Check the result, push your branch, then
+rewritten branch's files. The next update installs those files. Run
+`git diff FETCH_HEAD HEAD` to see what will change before you push, then
 [update the installation](manual-installation.md#verify-and-update).
 
 </details>
