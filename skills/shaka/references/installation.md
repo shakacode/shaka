@@ -39,10 +39,11 @@ Agents can also use an existing editor or browser overlay; ImageMagick is not re
 
 When the user requests a fork, create or select it on GitHub. Create and push a
 dedicated branch, such as `mine`, so the fork's `main` can follow upstream.
-With no registered installation, install the fork in a dedicated directory as in
-[official installation](official-installation.md), passing `--repository URL
---branch BRANCH --agent HOST`. Use the fork as `origin` and keep the official
-repository as `upstream`.
+With no registered installation, clone the fork into a dedicated directory
+and check out its install branch. Review that source and installer before
+running `bin/install --repository URL --branch BRANCH --agent HOST` there.
+Use the fork as `origin` and the official repository as `upstream`. See
+[official installation](official-installation.md) for prerequisites.
 
 To switch sources, record the active directory, origin, branch or release,
 revision, linked hosts and skills directories, and any Shaka Claude Code
@@ -55,9 +56,10 @@ If the previous checkout is under `~/.agents/shaka`, it cannot be a take-over
 destination. Explain this before switching. If rollback is required, identify
 a supported directory and verify the saved source and revision are still
 installable there before moving any links.
-Prepare a separate dedicated checkout at the selected branch tip or release.
-For a fork, add the official repository as `upstream`. Inspect the selected
-revision before executing any code from it.
+Clone and prepare the actual destination checkout at the selected branch
+tip or release. For a fork, add the official repository as `upstream`.
+Inspect that revision before invoking take-over, which runs the incoming
+helper. Pass the prepared checkout as the destination.
 
 From the currently registered checkout's trusted installer, run
 `bin/install --take-over --directory DIR --repository URL --branch BRANCH`;
@@ -65,19 +67,26 @@ use `--release VERSION` for a pinned release. Keep the old checkout and remotes
 intact. Run `bin/install --verify` from the newly active checkout. If take-over
 reports an error, check which checkout owns the links before retrying.
 
-To switch back, compare the retained checkout's HEAD with the saved revision.
-If it differs, stop and explain the mismatch before moving links. Use a trusted installer, such as the retained official
-checkout's `bin/install`. Pass the saved source explicitly with `--repository`
-and `--branch` or `--release`. Target the retained checkout if supported. Pass `--skills-dir DIR` for an active custom skills
-directory so the trusted installer can locate the owner. Verify the restored
-source and revision.
+To switch back, use the retained checkout if it is a supported destination.
+Otherwise prepare a supported checkout at the saved revision. In the actual
+destination, check the saved origin and branch or release and compare
+`git -C DIR rev-parse HEAD` with the saved commit. Stop before take-over
+if the destination is empty, the source differs, or HEAD does not match.
 
-For updates, fetch upstream and inspect the diff. Fast-forward when possible;
-otherwise preserve fork changes while merging or rebasing on a feature branch.
-Validate the result, then merge it into the installed branch; `install --update`
-only fast-forwards, so never rewrite that branch. Contribute improvements
-through a branch and PR to upstream when the user authorizes that publication.
-Never overwrite local customizations to make an update succeed.
+Use a trusted installer, such as the retained official checkout's
+`bin/install`. Pass the checked destination with `--directory`, the saved
+URL with `--repository`, and the saved `--branch` or `--release`.
+Pass `--skills-dir DIR` for an active custom skills directory so the
+installer can locate the owner. Verify the restored source and revision.
+
+For updates, fetch upstream and inspect the diff. Fast-forward when possible.
+Preserve fork changes by merging or rebasing on a feature branch, then merge
+into the installed branch. Test the exact remote tip you intend to install.
+If the tip changes, validate it before updating. `install --update` only
+fast-forwards, so never rewrite the installed branch. Verify the installed
+revision before starting a new chat. Contribute improvements through a branch
+and PR to upstream when the user authorizes that publication. Never overwrite
+local customizations to make an update succeed.
 
 ## Configure a repository
 

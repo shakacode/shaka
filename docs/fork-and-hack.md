@@ -55,8 +55,11 @@ Bring upstream changes into your working branch without rewriting the installed
 branch's history. The updater needs to move forward from the installed commit.
 After testing, finish active Shaka chats, install the tested update, and start a
 new chat. Updating the fork on GitHub and updating the installed copy are separate.
-If the installed branch's history was rewritten, ask the agent to merge the
-installed commit back into that branch while keeping your current changes.
+If the branch was rewritten, the updater leaves the installed copy in place.
+From that checkout, run `git fetch origin` and compare the two histories with
+`git log --oneline --left-right HEAD...origin/mine`, using your branch name in
+place of `mine`. You can ask your coding agent to help even if Shaka cannot
+start. Choose which history to keep before changing either checkout.
 
 ## Contribute back
 
