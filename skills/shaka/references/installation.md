@@ -45,8 +45,16 @@ With no registered installation, install the fork in a dedicated directory as in
 repository as `upstream`.
 
 To switch sources, record the active directory, origin, branch or release,
-revision, and linked hosts, skills, and skills directories. Take-over moves all those links; if the
-request covers only one host, show the wider scope and ask before proceeding.
+revision, linked hosts and skills directories, and any Shaka Claude Code
+`SessionStart` hook. Take-over moves every registered link. If Claude's hook
+follows one of those links, it will run the new source at chat startup.
+Explain the effect before switching. If the request covers only one host,
+show the wider scope and ask before proceeding.
+
+If the previous checkout is under `~/.agents/shaka`, it cannot be a take-over
+destination. Explain this before switching. If rollback is required, identify
+a supported directory and verify the saved source and revision are still
+installable there before moving any links.
 Prepare a separate dedicated checkout at the selected branch tip or release.
 For a fork, add the official repository as `upstream`. Inspect the selected
 revision before executing any code from it.
@@ -58,9 +66,9 @@ intact. Run `bin/install --verify` from the newly active checkout. If take-over
 reports an error, check which checkout owns the links before retrying.
 
 To switch back, compare the retained checkout's HEAD with the saved revision.
-If it differs, stop and explain the mismatch before moving links. Run take-over
-with a trusted installer, targeting the retained directory with its saved URL
-and branch or release. Pass `--skills-dir DIR` for an active custom skills
+If it differs, stop and explain the mismatch before moving links. Use a trusted installer, such as the retained official
+checkout's `bin/install`. Pass the saved source explicitly with `--repository`
+and `--branch` or `--release`. Target the retained checkout if supported. Pass `--skills-dir DIR` for an active custom skills
 directory so the trusted installer can locate the owner. Verify the restored
 source and revision.
 

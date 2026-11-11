@@ -85,16 +85,16 @@ to your user settings in `~/.claude/settings.json`.
 <details>
 <summary>Check or update from a terminal</summary>
 
-For the default installation, locate the helper and check it:
+For the default installation, start by checking which checkout owns your links:
 
 ```bash
 shaka_helper="$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka"
 "$shaka_helper" install --status
-"$shaka_helper" install --verify
 ```
 
-Use the corresponding path if you installed elsewhere. After active chats finish,
-run `"$shaka_helper" install --update` if you choose to update. For a broken
+Use the corresponding path if you installed elsewhere. If you switched sources,
+use the helper in the active checkout shown by status. Run
+`"$shaka_helper" install --verify` there. After active chats finish, run `"$shaka_helper" install --update` if you choose to update. For a broken
 installation, `"$shaka_helper" install --repair` checks for recoverable problems
 and stops when it needs a decision.
 
@@ -139,8 +139,16 @@ old checkout.
 
 If the old checkout has no active installation record and the new checkout is
 unregistered, restore the newest `.git/shaka-install.retired-*.json` in the old
-checkout to `.git/shaka-install.json`. Then retry the move and verify the skill
-links. Leave any active record in place and ask the agent to inspect the state
-if either checkout still has one.
+checkout to `.git/shaka-install.json`. From that checkout, retry the move to
+the same destination. For example, if the destination was the default path:
+
+```bash
+./bin/install --directory "$HOME/.local/share/shaka/source" --take-over
+```
+
+Use the original source and destination options for a different move. Run
+`bin/install --verify` from the active checkout afterward. If either checkout
+still has an active record, leave it in place and ask the agent to inspect
+the state.
 
 </details>
