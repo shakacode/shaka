@@ -491,21 +491,28 @@ begin
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention'
              state = options.fetch(:state)
-             snapshot = Shaka::Status.new(github, seam_required_checks:).call if state == 'merge'
-             review = if snapshot
-                        Shaka::MergeWaitReview.new(github, **merge_wait, waiver: options[:review_waiver])
-                                              .check!(snapshot)
-                      end
-             Shaka::RequiredChecks.verify_passing!(snapshot['requiredChecks']) if snapshot&.fetch('state') == 'OPEN'
-             head = snapshot&.fetch('headRefOid')
-             labels = Shaka::Attention.new(github).call(state:, head:)
-             # Leaving the merge wait means the PR changes; a checkpoint for an older head must not look ready.
+             attention = Shaka::Attention.new(github)
              if state == 'merge'
+               snapshot = Shaka::Status.new(github, seam_required_checks:).call
+               raise Shaka::Error, 'Pull request is not open.' unless snapshot['state'] == 'OPEN'
+
+               review_gate = Shaka::MergeWaitReview.new(github, **merge_wait, waiver: options[:review_waiver])
+               review = review_gate.check!(snapshot)
+               Shaka::RequiredChecks.verify_passing!(snapshot['requiredChecks'])
                gate = Shaka::ReadyTime.gate(seam, override: options[:ci_review_wait]) if seam&.sha
-               timing = Shaka::ReadyTime.refresh(github, gate, head:)
-               labels.merge('review' => review, 'timing_refresh' => timing)
+               timing = Shaka::ReadyTime.refresh(github, gate, expected: snapshot)
+               if timing == 'preview_needed'
+                 raise Shaka::Error,
+                       'Republish the rendering preview after CI completes to record ready time, then retry.'
+               end
+
+               if %w[changed unavailable].include?(timing)
+                 warn 'Shaka could not refresh the ready time. Update the description to retry.'
+               end
+               attention.call(state:, expected: snapshot).merge('review' => review, 'timing_refresh' => timing)
              else
-               labels.merge('stale_checkpoint' => Shaka::PostImplementationStale.new(github).call)
+               # Leaving the merge wait means the PR changes; a checkpoint for an older head must not look ready.
+               attention.call(state:).merge('stale_checkpoint' => Shaka::PostImplementationStale.new(github).call)
              end
            when 'squash-message'
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))

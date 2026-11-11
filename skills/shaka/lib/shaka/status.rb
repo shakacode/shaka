@@ -36,9 +36,7 @@ module Shaka
       compared = base_checks(reader, first['baseRefName'], checks) if @base_checks
       current = reader.snapshot
       raise Error, 'PR head changed while reading status; retry.' unless current['headRefOid'] == first['headRefOid']
-      if compared && current['baseRefName'] != first['baseRefName']
-        raise Error, 'PR base changed while reading status; retry.'
-      end
+      raise Error, 'PR base changed while reading status; retry.' if current['baseRefName'] != first['baseRefName']
 
       current.merge(checks, compared || {})
     end

@@ -12,6 +12,14 @@ module CliAttentionFixture
     path = ARGV[1].to_s
     pull = { 'number' => 1, 'headRefOid' => 'a' * 40, 'baseRefName' => 'main', 'state' => 'OPEN' }
     if ARGV[0, 2] == %w[api graphql]
+      request = JSON.parse($stdin.read)
+      if request.fetch('query').include?('headRefOid') && (change = ENV['PR_CHANGE'])
+        reads = "#{ENV.fetch('LABEL_FILE')}.reads"
+        count = File.exist?(reads) ? File.read(reads).to_i + 1 : 1
+        File.write(reads, count)
+        pull['state'] = 'CLOSED' if change == 'reopen' && count <= 2
+        pull['baseRefName'] = 'release' if change.start_with?('retarget') && count >= change[-1].to_i
+      end
       puts JSON.generate('data' => { 'repository' => { 'pullRequest' => pull } })
     elsif path == 'repos/owner/repo/pulls/1'
       if ARGV.include?('PATCH')
@@ -21,7 +29,8 @@ module CliAttentionFixture
         body = ENV.fetch('PR_BODY', '')
       body += "\nConcurrent edit." if File.exist?("#{ENV.fetch('LABEL_FILE')}.changed")
       end
-      puts JSON.generate('head' => { 'sha' => pull['headRefOid'] }, 'state' => 'open', 'body' => body)
+      puts JSON.generate('head' => { 'sha' => pull['headRefOid'] }, 'base' => { 'ref' => 'main' },
+                         'state' => 'open', 'body' => body)
     elsif ARGV[0, 2] == %w[pr checks]
       if ENV['EDIT_WHILE_READING_CHECKS'] && ARGV.last.include?('completedAt')
         File.write("#{ENV.fetch('LABEL_FILE')}.changed", '')
@@ -179,7 +188,36 @@ class CliAttentionTimingTest < Minitest::Test
     end
   end
 
+  def test_merge_handoff_refuses_a_closed_snapshot_even_if_the_pr_reopens
+    assert_refused_handoff({ 'PR_CHANGE' => 'reopen' }, 'Pull request is not open.', comments: [])
+  end
+
+  def test_merge_handoff_refuses_a_retarget_while_reading_the_gate
+    assert_refused_handoff({ 'PR_CHANGE' => 'retarget2' }, 'PR base changed')
+  end
+
+  def test_merge_handoff_refuses_a_retarget_before_labeling
+    assert_refused_handoff({ 'PR_CHANGE' => 'retarget3' }, 'PR base changed')
+  end
+
+  def test_merge_handoff_asks_for_a_fresh_preview_before_labeling
+    marker = "<!-- shaka:rendering-preview #{HEAD} -->"
+    body = pending_body.sub('<!-- shaka:end -->') { "#{marker}\n<!-- shaka:end -->" }
+    assert_refused_handoff(timing_env('pass').merge('PR_BODY' => body), 'Republish the rendering preview')
+  end
+
   private
+
+  def assert_refused_handoff(env, message, comments: [review_comment(CLEAN_OUTCOME)])
+    with_policy('meaningful_changes') do |root, ref|
+      _output, error, status = label(root, ref, comments:, env:)
+
+      refute_predicate status, :success?
+      assert_includes error, message
+      refute_path_exists @label_file
+      refute_path_exists "#{@label_file}.body"
+    end
+  end
 
   def timing_env(bucket)
     { 'PR_BODY' => pending_body, 'PR_CHECKS' => JSON.generate(checks(bucket)) }

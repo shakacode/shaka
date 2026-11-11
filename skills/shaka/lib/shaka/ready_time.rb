@@ -33,15 +33,15 @@ module Shaka
     end
 
     # Refresh only the ready time in an existing description for the head being handed off.
-    def refresh(github, gate, head:)
+    def refresh(github, gate, expected:)
       return 'unchanged' unless gate
 
       path = "repos/#{github.repository}/pulls/#{github.number}"
       pull = github.api(path)
-      return 'unchanged' unless open_head?(pull, head)
+      return 'changed' unless revision(pull) == ['open', *expected.values_at('headRefOid', 'baseRefName')]
 
       body = pull['body']
-      updated = refresh_body(body, github, gate, head)
+      updated = refresh_body(body, github, gate, expected.fetch('headRefOid'))
       return 'unchanged' unless updated
 
       write_if_current(github, path, pull, updated)
@@ -50,14 +50,16 @@ module Shaka
     end
 
     def write_if_current(github, path, pull, updated)
+      return 'preview_needed' if RenderingPreview.current?(pull['body'], pull.dig('head', 'sha'))
+
       current = github.api(path)
-      return 'changed' unless open_head?(current, pull.dig('head', 'sha')) && current['body'] == pull['body']
+      return 'changed' unless revision(current) == revision(pull) && current['body'] == pull['body']
 
       github.api(path, method: 'PATCH', fields: { body: updated })
       'updated'
     end
 
-    def open_head?(pull, head) = pull['state'] == 'open' && pull.dig('head', 'sha') == head
+    def revision(pull) = [pull['state'], pull.dig('head', 'sha'), pull.dig('base', 'ref')]
 
     def refresh_body(body, github, gate, head)
       region = Publishing.managed_region(body)
