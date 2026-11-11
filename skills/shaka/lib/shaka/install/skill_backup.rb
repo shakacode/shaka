@@ -26,19 +26,27 @@ module Shaka
         Dir.mktmpdir(prefix, parent)
       rescue Errno::EACCES, Errno::EPERM, Errno::EROFS
         home = File.realpath(Dir.home)
-        raise if home == skills || home.start_with?("#{skills}/")
+        if home == skills || home.start_with?("#{skills}/")
+          raise ArgumentError, 'No writable backup location outside the skills directory'
+        end
 
         Dir.mktmpdir(prefix, home)
       end
 
       def relocate(source, backup)
-        FileUtils.mv(source, backup)
-        target = File.readlink(backup) if File.symlink?(backup)
-        return unless target && Pathname.new(target).relative?
+        target = File.readlink(source) if File.symlink?(source)
+        return FileUtils.mv(source, backup) unless target && Pathname.new(target).relative?
 
         absolute_link = "#{backup}.absolute"
         File.symlink(File.join(File.dirname(source), target), absolute_link)
-        File.rename(absolute_link, backup)
+        FileUtils.mv(source, backup)
+        File.rename(absolute_link, backup) if same_link?(backup, target)
+      ensure
+        File.unlink(absolute_link) if absolute_link && File.symlink?(absolute_link)
+      end
+
+      def same_link?(path, target)
+        File.symlink?(path) && File.readlink(path) == target
       end
     end
   end
