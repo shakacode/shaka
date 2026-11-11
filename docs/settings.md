@@ -176,6 +176,10 @@ does not stop anyone from clicking merge. Nothing ties a name to a specific
 workflow either, so a PR could add a job with a listed name. For protection that
 GitHub enforces, use a ruleset or branch protection.
 
+If neither GitHub nor Shaka requires any checks, **Ask** can still hand you the PR.
+Merge it on GitHub, or approve the exact commit for the agent to merge after it
+explains that no required checks gate it. **Auto** needs at least one required check.
+
 ## `merge.limits`
 
 **Optional.** Size limits for a merge the agent submits. A PR at a limit still

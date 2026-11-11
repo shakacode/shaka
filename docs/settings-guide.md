@@ -23,8 +23,9 @@ usually in `.agents/shaka/config.yml`:
 | Individual | In your local checkout, outside commits |
 | Team | In the repository's default branch, shared through PRs |
 
-Team settings take precedence. Your local settings do not overlay them.
-A personal starting template can supply initial choices for individual setup.
+Team settings take precedence. If the repository leaves the PR display time zone
+unset, Shaka can use your personal time zone. Other local settings do not fill in
+team settings. A personal starting template can supply initial choices for individual setup.
 See [which settings apply](settings.md#which-settings-apply) and
 [start individual setups from your preferences](settings.md#start-individual-setups-from-your-preferences).
 

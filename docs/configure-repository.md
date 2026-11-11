@@ -17,8 +17,9 @@ Examples use `/shaka`. In Codex, use `$shaka` instead.
 ## Required checks
 
 Shaka uses the checks GitHub requires for the branch a PR targets. If GitHub
-requires none, the agent can suggest checks for Shaka to wait for. GitHub does
-not enforce that separate list when you merge there yourself.
+requires none, the agent can suggest checks to require in Shaka settings. Shaka
+waits for those checks before calling the PR ready. GitHub does not enforce that
+separate list when you merge there yourself.
 
 You can use **Ask** without a required check. **Auto** needs at least one.
 See [required-check settings](settings.md#mergerequired_checks) and
