@@ -81,7 +81,7 @@ class DeferredRenderingTest < Minitest::Test
     @markdown = ['', 'gh: Bad credentials (HTTP 401)', STATUS.new(1)]
     assert_raises(Shaka::Error) { publish(stored_check: ->(_) {}) }
     @markdown = ['', REFUSED, STATUS.new(1)]
-    ['Line one\nline two', 'Line one&#92;nline two'].each do |body|
+    ['Line one\nline two', 'Line one&#92;nline two', 'Use \`x \n\` ok'].each do |body|
       error = assert_raises(Shaka::Error) { publish(body:, stored_check: ->(_) {}) }
       assert_includes error.message, 'literal escape'
     end

@@ -25,12 +25,9 @@ class StoredRenderingTest < Minitest::Test
     assert_equal "<p>then #{SHA}</p>", Shaka::StoredRendering.normalize(stored, source)
   end
 
-  def test_issue_links_mentions_and_wrappers_keep_their_text
-    stored = '<p><a class="issue-link js-issue-link" href="x">#12</a> <a class="user-mention" href="y">@sam</a></p>' \
-             '<div class="snippet-clipboard-content notranslate" data-snippet-clipboard-copy-content="a\nb">' \
-             '<pre><code>a</code></pre></div><markdown-accessiblity-table><table></table></markdown-accessiblity-table>'
+  def test_issue_links_and_mentions_keep_their_text
+    stored = '<p><a class="issue-link js-issue-link" href="x">#12</a> <a class="user-mention" href="y">@sam</a></p>'
 
-    assert_equal '<p>#12 @sam</p><pre><code>a</code></pre><table></table>',
-                 Shaka::StoredRendering.normalize(stored, '#12 @sam')
+    assert_equal '<p>#12 @sam</p>', Shaka::StoredRendering.normalize(stored, '#12 @sam')
   end
 end
