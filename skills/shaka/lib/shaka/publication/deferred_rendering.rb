@@ -14,10 +14,13 @@ module Shaka
     # GitHub refused `POST /markdown`; nothing was written.
     class Refused < Error; end
 
+    # What the stored comment is checked against once written.
+    Pending = Struct.new(:content, :verbatim, :check)
+
     private
 
     # GitHub's rendering of the text, or nil when the renderer is refused and `stored_check`
-    # will check the stored comment after writing. The escape check then reads the source.
+    # will check the stored comment after writing. A source escape check stops the plain cases first.
     def rendering_before_write(content, verbatim, stored_check)
       verify_rendering(content, verbatim:)
     rescue Refused
@@ -27,18 +30,30 @@ module Shaka
       nil
     end
 
-    def checked_after_write(existing, written, target, stored_check)
+    def checked_after_write(existing, written, target, pending)
+      confirmed(written, pending.content)
+      normalized = StoredRendering.normalize(stored_html(existing, written, target), written['body'])
+      # Stored HTML holds the quoted text too, so its tables are expected as well; a broken one fails closed.
+      RenderedProse.tables!(written['body'], normalized)
+      stored_escapes!(normalized, pending.verbatim)
+      pending.check.call(normalized)
+      written
+    rescue Error => e
+      undo(existing, written, target, e)
+    end
+
+    def stored_html(existing, written, target)
       stored = written.equal?(existing) ? api(comment_path(written, target), headers: [FULL]) : written
       html = stored['body_html']
       raise Error, 'GitHub returned no stored rendering to check.' unless html.is_a?(String)
 
-      normalized = StoredRendering.normalize(html, written['body'])
-      # Stored HTML holds the quoted text too, so its tables are expected as well; a broken one fails closed.
-      RenderedProse.tables!(written['body'], normalized)
-      stored_check.call(normalized)
-      written
-    rescue Error => e
-      undo(existing, written, target, e)
+      html
+    end
+
+    # Quoted text is published as written, so the stored comment may show as many escapes as it holds, no more.
+    def stored_escapes!(html, verbatim)
+      allowed = verbatim.sum { |text| text.scan(RenderedProse::ESCAPE).size }
+      raise Error, RenderedProse::ESCAPED if RenderedProse.bare(html).scan(RenderedProse::ESCAPE).size > allowed
     end
 
     # An unchanged comment was already live; a changed one gets its earlier body back, and a new one goes.
