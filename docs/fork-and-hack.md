@@ -21,9 +21,9 @@ copy stays usable. See [manual installation](manual-installation.md) for prerequ
 
 Before switching, ask the agent to record the current source, branch or release,
 and commit. Select the official Shaka source or your fork's URL and branch. The
-installer can register a different source in the installed checkout. Ask the agent
-to verify the active links and commit, and explain how to restore the recorded
-version before you start a new chat.
+installer switches your skill links to a separate checkout and keeps the previous
+checkout available. Ask the agent to verify the active links and commit, and
+explain how to switch back before you start a new chat.
 
 ## Hack on it
 

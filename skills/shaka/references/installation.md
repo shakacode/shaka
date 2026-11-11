@@ -37,15 +37,20 @@ Agents can also use an existing editor or browser overlay; ImageMagick is not re
 
 ## Install from a personal fork
 
-When the user requests a fork, create or select it on GitHub and install it as the
-dedicated checkout in [official installation](official-installation.md). Clone it into the installation directory, set `origin` to their fork
-and `upstream` to `https://github.com/shakacode/shaka.git`, and inspect both remotes
-before updating. When Shaka is already installed there, do not clone or install a
-second checkout: rename its `origin` to `upstream` and add the fork as `origin`.
-Create and push a dedicated branch, such as `mine`, so the fork's `main` can match
-upstream. Then run `bin/install --directory DIR --repository URL
---branch BRANCH --agent HOST`, where `URL` is the exact `origin` URL and `BRANCH`
-is that dedicated branch.
+When the user requests a fork, create or select it on GitHub. Create and push a
+dedicated branch, such as `mine`, so the fork's `main` can follow upstream.
+With no registered installation, install the fork in a dedicated directory as in
+[official installation](official-installation.md), passing `--repository URL
+--branch BRANCH --agent HOST`. Use the fork as `origin` and keep the official
+repository as `upstream`.
+
+To switch sources, record the active directory, origin, branch or release, and
+revision. From the trusted installer, run `bin/install --take-over --directory
+DIR --repository URL --branch BRANCH` for a separate dedicated checkout; select
+`--release VERSION` instead of a branch for a pinned release. Keep the previous
+checkout and its remotes unchanged. Verify the new install with `bin/install
+--verify` from its checkout. Explain how to take over from the previous
+directory and verify the restored source and revision.
 
 For updates, fetch upstream and inspect the diff. Fast-forward when possible;
 otherwise preserve fork changes while merging or rebasing on a feature branch.
