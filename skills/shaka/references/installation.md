@@ -42,9 +42,9 @@ dedicated branch, such as `mine`, so the fork's `main` can follow upstream.
 With no registered installation, clone the fork directly at its install branch
 with `git clone --branch BRANCH URL DIR`. Review that source and installer before
 running `bin/install --directory DIR --repository URL --branch BRANCH --agent HOST`
-with that prepared checkout. Use the fork as `origin` and the official repository
-as `upstream`. See
-[official installation](official-installation.md) for prerequisites.
+with that prepared checkout. Keep the fork as `origin` and add the official
+repository with `git -C DIR remote add upstream https://github.com/shakacode/shaka.git`.
+See [official installation](official-installation.md) for prerequisites.
 
 To switch sources, record the active directory, origin, branch or release,
 revision, linked hosts and skills directories, and any Shaka Claude Code
@@ -82,18 +82,22 @@ Pass `--skills-dir DIR` for an active custom skills directory so the
 installer can locate the owner. Verify the restored source and revision.
 
 Before updating, confirm that `origin` points to the user's fork and
-`upstream` points to `shakacode/shaka`. If either remote points to a different
-repository, stop and report the mismatch before fetching or integrating changes.
+`upstream` points to `shakacode/shaka`. Add the official `upstream` if it is
+missing. If either remote points to a different repository, stop and report
+the mismatch before fetching or integrating changes.
 Fetch upstream and inspect the diff. Fast-forward when possible.
-Preserve fork changes by merging or rebasing on a feature branch, then merge
-into the installed branch. Use `install --update` when the latest branch tip
-is acceptable. It fetches and verifies the tip it receives.
+Keep the installed branch's history intact. Preserve fork changes by merging
+or rebasing on a feature branch, then merge into the installed branch.
+Use `install --update` when the latest branch tip is acceptable. It fetches
+and verifies the tip it receives.
 
 When the user asks to install the tested or inspected commit, use take-over.
-Clone directly at the install branch in a separate directory. Set that local
-branch to the tested commit and keep it tracking `origin/BRANCH`. Before
-take-over, check that the checkout is clean, on that branch, and at the tested
-commit, with the expected tracking branch.
+Clone directly at the install branch in a separate directory. In that clean
+clone, run `git -C DIR reset --keep TESTED_SHA` to set the branch to the tested
+commit while keeping its `origin/BRANCH` tracking configuration. Before
+take-over, verify the checkout is clean, the branch tracks `origin/BRANCH`,
+and HEAD matches the tested commit. Stop if the commit is unavailable or a
+check fails.
 `install --update` can fetch and run a newer revision if the branch advances
 after testing.
 

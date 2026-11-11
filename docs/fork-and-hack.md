@@ -48,7 +48,7 @@ read older projects and PRs. Follow the repository's rules when changing the wor
 
 ```text
 Bring the latest official Shaka changes into my fork. Keep my customizations,
-resolve conflicts, and test the result before updating my installation.
+resolve conflicts, and test the result. Install the exact commit that passed testing.
 ```
 
 Bring upstream changes into your working branch without rewriting the installed
