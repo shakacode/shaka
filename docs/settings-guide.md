@@ -136,9 +136,9 @@ Ask the agent to record what every relevant PR should show. For example:
 /shaka Add a PR requirement: explain the database backfill plan before merging.
 ```
 
-The agent can propose a settings PR. Use a check for requirements your tools can
-test and [project guidance](settings.md#project_guidance) for evidence people need
-to assess. Required work still needs to be completed before merge.
+The agent can propose a settings PR. Use CI or your validation script for
+requirements tools can test. Use [project guidance](settings.md#project_guidance)
+for evidence the agent should assess and report in the PR.
 
 ## Resume unfinished work
 
