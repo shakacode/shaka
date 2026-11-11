@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'rbconfig'
 require_relative 'refusal'
 
 module Shaka
@@ -29,9 +30,8 @@ module Shaka
       end
 
       def move_aside(path)
-        create = Refusal.command('mktemp', '-d', "#{File.dirname(path)}.before-shaka.XXXXXXXX")
-        move = Refusal.command('mv', '--', path)
-        %(backup=$(#{create}) && #{move} "$backup/" && printf 'Backed up to %s\\n' "$backup")
+        Refusal.command(RbConfig.ruby, '-r', File.join(__dir__, 'skill_backup'),
+                        '-e', 'Shaka::Install::SkillBackup.move(ARGV.fetch(0))', '--', path)
       end
     end
   end

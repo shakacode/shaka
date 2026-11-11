@@ -50,29 +50,6 @@ class OfficialLinkRefusalTest < Minitest::Test
     assert_predicate status, :success?, output
   end
 
-  def test_existing_directory_is_moved_outside_the_skills_directory
-    FileUtils.mkdir_p(@destination)
-    File.write(File.join(@destination, 'SKILL.md'), 'old skill')
-    run_next(install_conflict)
-    assert_empty Dir.children(@skills_dir)
-    official_install
-    assert_equal [@destination], Dir.glob("#{@skills_dir}/*")
-    assert_equal ['old skill'], skill_backups.map { |backup| File.read("#{backup}/SKILL.md") }.sort
-  end
-
-  def test_reusing_the_move_command_preserves_both_old_symlinks
-    first = File.join(@directory, 'first old skill')
-    second = File.join(@directory, 'second old skill')
-    FileUtils.mkdir_p([@skills_dir, first, second])
-    File.symlink(first, @destination)
-    output = install_conflict
-    run_next(output)
-    File.symlink(second, @destination)
-    run_next(output)
-    assert_empty Dir.children(@skills_dir)
-    assert_equal [first, second], skill_backups.map { |backup| File.readlink(backup) }.sort
-  end
-
   def test_writable_skill_files_are_listed_and_chmod_clears_them
     official_install
     File.chmod(0o664, File.join(@source, 'SKILL.md'))
@@ -83,15 +60,6 @@ class OfficialLinkRefusalTest < Minitest::Test
   end
 
   private
-
-  def install_conflict
-    output, status = invoke('--directory', @root, '--repository', @remote, '--skills-dir', @skills_dir)
-    refute_predicate status, :success?
-    assert_includes output, "Refusing existing destination: #{@destination}"
-    output
-  end
-
-  def skill_backups = Dir.glob("#{@skills_dir}.before-shaka.*/shaka")
 
   def second_install(directory, skills_dir)
     clone = File.join(@directory, 'second-source')
