@@ -113,9 +113,9 @@ adds a label when it stops for you and removes it when work resumes.
   actually began. A start read from a usage report is the agent's first response in
   that report, moments after the request. A task that moved to a new chat before
   its PR opened shows only the new chat's time.
-- The ready time appears once a description update or a watch sees the gate green,
-  so it can be missing until the description next updates. It stays missing when
-  the configured CI review did not run, such as a review skipped for a small change.
+- The ready time appears when a description update, an Ask merge handoff, or a
+  watch sees the gate green. It stays missing when the configured CI review did
+  not run, such as a review skipped for a small change.
 - Every labeled wait counts, however short. A wait of a few seconds can be a
   quick reply or the agent relabeling the PR; the label history cannot tell them apart.
 - When a PR has waited many times, the table shows the latest 30 stretches. The

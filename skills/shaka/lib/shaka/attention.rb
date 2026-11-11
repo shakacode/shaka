@@ -24,11 +24,11 @@ module Shaka
       @github = github
     end
 
-    def call(state:, refuse_merge: false)
+    def call(state:, refuse_merge: false, head: nil)
       raise Error, "State must be one of: #{STATES.join(', ')}." unless STATES.include?(state)
 
       wanted = LABELS[state]
-      raise Error, 'Pull request is not open.' if wanted && @github.snapshot['state'] != 'OPEN'
+      verify_open!(head) if wanted
 
       keep_only(wanted, refuse_merge:)
       { 'state' => state, 'labels' => [wanted].compact }
@@ -55,6 +55,12 @@ module Shaka
     def current(names = all) = names.select { |name| attention?(name) }
 
     private
+
+    def verify_open!(head)
+      pull = @github.snapshot
+      raise Error, 'Pull request is not open.' unless pull['state'] == 'OPEN'
+      raise Error, 'PR head changed while preparing the merge wait; retry.' if head && pull['headRefOid'] != head
+    end
 
     def path(label = nil) = ["repos/#{@github.repository}/issues/#{@github.number}/labels", label].compact.join('/')
 

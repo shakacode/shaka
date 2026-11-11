@@ -2,8 +2,8 @@
 
 require_relative 'cli_merge_fixture'
 
-# The merge label through the real command, trusted settings, and a fake gh that records label writes.
-class CliAttentionReviewTest < Minitest::Test
+# The merge label through the real command, trusted settings, and a fake gh that records writes.
+module CliAttentionFixture
   include CliMergeFixture
 
   FAKE = <<~'RUBY_SCRIPT'
@@ -13,6 +13,24 @@ class CliAttentionReviewTest < Minitest::Test
     pull = { 'number' => 1, 'headRefOid' => 'a' * 40, 'baseRefName' => 'main', 'state' => 'OPEN' }
     if ARGV[0, 2] == %w[api graphql]
       puts JSON.generate('data' => { 'repository' => { 'pullRequest' => pull } })
+    elsif path == 'repos/owner/repo/pulls/1'
+      if ARGV.include?('PATCH')
+        body = JSON.parse($stdin.read).fetch('body')
+        File.write(ENV.fetch('LABEL_FILE') + '.body', body)
+      else
+        body = ENV.fetch('PR_BODY', '')
+      body += "\nConcurrent edit." if File.exist?("#{ENV.fetch('LABEL_FILE')}.changed")
+      end
+      puts JSON.generate('head' => { 'sha' => pull['headRefOid'] }, 'state' => 'open', 'body' => body)
+    elsif ARGV[0, 2] == %w[pr checks]
+      if ENV['EDIT_WHILE_READING_CHECKS'] && ARGV.last.include?('completedAt')
+        File.write("#{ENV.fetch('LABEL_FILE')}.changed", '')
+      end
+      rows = JSON.parse(ENV.fetch('PR_CHECKS', '[]'))
+      rows.select! { |row| row['name'] == 'validate' } if ARGV.include?('--required')
+      puts JSON.generate(rows)
+    elsif path.start_with?('repos/owner/repo/rules/branches/main')
+      puts '[]'
     elsif path == 'user'
       puts JSON.generate('login' => 'shaka-agent')
     elsif path.include?('/issues/1/comments')
@@ -44,10 +62,10 @@ class CliAttentionReviewTest < Minitest::Test
     end
   end
 
-  def label(root, ref, *extra, comments: [])
+  def label(root, ref, *extra, comments: [], env: {})
     @label_file = File.join(root, 'label-written')
     run_command('attention', 'owner/repo', '1', '--state', 'merge', '--root', root, '--ref', ref, *extra,
-                root:, env: { 'PR_COMMENTS' => JSON.generate(comments), 'LABEL_FILE' => @label_file })
+                root:, env: { 'PR_COMMENTS' => JSON.generate(comments), 'LABEL_FILE' => @label_file }.merge(env))
   end
 
   def review_comment(outcome)
@@ -57,6 +75,10 @@ class CliAttentionReviewTest < Minitest::Test
                 "**Reviewed revision:** #{HEAD}\n\n**Outcome:** #{outcome}\n\n" \
                 "REVIEWED #{HEAD} BY openai/codex EFFORT high FINDINGS 3\n" }
   end
+end
+
+class CliAttentionReviewTest < Minitest::Test
+  include CliAttentionFixture
 
   def test_no_published_review_leaves_the_label_off
     with_policy('meaningful_changes') do |root, ref|
@@ -116,6 +138,70 @@ class CliAttentionReviewTest < Minitest::Test
 
     refute_predicate status, :success?
     assert_includes error, '--review-waiver is only for merge and attention --state merge'
+  end
+end
+
+class CliAttentionTimingTest < Minitest::Test
+  include CliAttentionFixture
+
+  def test_merge_handoff_refreshes_ready_pending_after_ci_finishes
+    with_policy('meaningful_changes') do |root, ref|
+      output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)], env: timing_env('pass'))
+
+      assert_predicate status, :success?, error
+      assert_equal 'updated', JSON.parse(output)['timing_refresh']
+      body = File.read("#{@label_file}.body")
+      assert_includes body, '**Estimated token costs:** $3.31 · ready in 34m'
+      assert_includes body, 'CI to ready 8m'
+      assert body.start_with?("Human introduction.\n") && body.end_with?("Human footer.\n")
+    end
+  end
+
+  def test_merge_handoff_waits_for_required_ci
+    with_policy('meaningful_changes') do |root, ref|
+      _output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)], env: timing_env('pending'))
+
+      refute_predicate status, :success?
+      assert_includes error, 'Required check is not passing'
+      refute_path_exists @label_file
+      refute_path_exists "#{@label_file}.body"
+    end
+  end
+
+  def test_merge_handoff_does_not_overwrite_a_concurrent_description_edit
+    with_policy('meaningful_changes') do |root, ref|
+      env = timing_env('pass').merge('EDIT_WHILE_READING_CHECKS' => '1')
+      output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)], env:)
+
+      assert_predicate status, :success?, error
+      assert_equal 'changed', JSON.parse(output)['timing_refresh']
+      refute_path_exists "#{@label_file}.body"
+    end
+  end
+
+  private
+
+  def timing_env(bucket)
+    { 'PR_BODY' => pending_body, 'PR_CHECKS' => JSON.generate(checks(bucket)) }
+  end
+
+  def pending_body
+    stats = { 'head' => HEAD, 'spend' => '$3.31', 't0' => '2026-11-11T00:03:00Z', 't1' => '2026-11-11T00:29:00Z' }
+    <<~MARKDOWN
+      Human introduction.
+      <!-- shaka:begin -->
+      **Estimated token costs:** $3.31 · ready pending
+      <!-- shaka:stats #{JSON.generate(stats)} -->
+      **This head:** Prompt to CI 26m · CI to ready pending · Ready to merged pending
+      <!-- shaka:end -->
+      Human footer.
+    MARKDOWN
+  end
+
+  def checks(bucket)
+    [{ 'name' => 'validate', 'state' => (bucket == 'pass' ? 'SUCCESS' : 'PENDING'),
+       'bucket' => bucket, 'completedAt' => '2026-11-11T00:37:00Z' },
+     { 'name' => 'claude-review', 'bucket' => 'pass', 'completedAt' => '2026-11-11T00:29:30Z' }]
   end
 end
 

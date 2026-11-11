@@ -491,14 +491,19 @@ begin
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention'
              state = options.fetch(:state)
-             review = if state == 'merge'
+             snapshot = Shaka::Status.new(github, seam_required_checks:).call if state == 'merge'
+             review = if snapshot
                         Shaka::MergeWaitReview.new(github, **merge_wait, waiver: options[:review_waiver])
-                                              .check!(github.snapshot)
+                                              .check!(snapshot)
                       end
-             labels = Shaka::Attention.new(github).call(state:)
+             Shaka::RequiredChecks.verify_passing!(snapshot['requiredChecks']) if snapshot&.fetch('state') == 'OPEN'
+             head = snapshot&.fetch('headRefOid')
+             labels = Shaka::Attention.new(github).call(state:, head:)
              # Leaving the merge wait means the PR changes; a checkpoint for an older head must not look ready.
              if state == 'merge'
-               labels.merge('review' => review)
+               gate = Shaka::ReadyTime.gate(seam, override: options[:ci_review_wait]) if seam&.sha
+               timing = Shaka::ReadyTime.refresh(github, gate, head:)
+               labels.merge('review' => review, 'timing_refresh' => timing)
              else
                labels.merge('stale_checkpoint' => Shaka::PostImplementationStale.new(github).call)
              end
