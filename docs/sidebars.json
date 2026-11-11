@@ -36,6 +36,7 @@
       "items": [
         "pr-verification",
         "reference/pr-record",
+        "reference/reviewer-setup",
         "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
