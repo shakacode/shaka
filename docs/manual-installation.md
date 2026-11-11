@@ -60,11 +60,11 @@ and learn how to switch back to the official version.
 ## Keep a tested release
 
 ```text
-Install the latest stable Shaka release if one is available.
+Install the latest published stable Shaka release if the installer supports it.
 Keep my current version available for rollback.
 ```
 
-If there is no stable release, ask the agent to explain the available official
+If no suitable stable release is available, ask the agent to explain the official
 installation options before choosing one. A release stays at its recorded commit.
 The installer can keep the earlier version available while it moves the skill links.
 

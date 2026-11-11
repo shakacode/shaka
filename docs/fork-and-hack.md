@@ -19,10 +19,11 @@ The agent sets up a branch for your changes and tells you which version your
 coding agent loads. Keep a separate development clone for edits so the installed
 copy stays usable. See [manual installation](manual-installation.md) for prerequisites.
 
-When switching, have the agent explicitly select the official source or your
-fork's URL and branch. Use a separate checkout for the selected version, keep
-the previous checkout, and point the skill links to the selected source. Ask
-the agent to verify the active links, source and commit before starting a new chat.
+Before switching, ask the agent to record the current source, branch or release,
+and commit. Select the official Shaka source or your fork's URL and branch. The
+installer can register a different source in the installed checkout. Ask the agent
+to verify the active links and commit, and explain how to restore the recorded
+version before you start a new chat.
 
 ## Hack on it
 
@@ -34,11 +35,13 @@ Run the relevant checks and show me a sample description.
 ```
 
 Ask the agent to run the candidate on a small README task in a practice project
-without replacing your installation. Check that the PR shows **Verification**
-above **Intent**, then leave the practice PR unmerged.
+without replacing your installation. Include "Do not merge" in that task. Check
+that the open PR shows **Verification** above **Intent**.
 When the result is right, ask the agent to install the tested version of your fork.
 See [developing Shaka](https://github.com/shakacode/shaka/blob/main/contributing/development.md#where-changes-belong)
 and [testing a local candidate](https://github.com/shakacode/shaka/blob/main/contributing/evaluating-changes.md#test-before-pushing-or-opening-a-pr).
+Keep existing settings keys and PR record markers compatible so Shaka can still
+read older projects and PRs. Follow the repository's rules when changing the workflow.
 
 ## Keep your fork current
 
