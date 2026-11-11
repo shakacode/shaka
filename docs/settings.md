@@ -3,8 +3,7 @@
 <a id="settings"></a>
 
 Start with [Choose your settings](settings-guide.md) for common choices and
-prompts you can give your agent. See [Coding agents](coding-agents.md) for how to
-start a prompt in your tool. This reference covers each option and its limits.
+prompts you can give your agent. This reference covers each option and its limits.
 
 Settings live in `.agents/shaka/config.yml`. Ask your agent to
 [configure the repository](configure-repository.md), or edit the file in a PR.
@@ -102,6 +101,8 @@ high-risk areas, or a prompt file, or when a value is invalid.
 
 Keep proposed settings in an open PR and try them before making them your team's
 defaults. Teammates can select the same PR for their tasks:
+
+Examples use `/shaka`. In Codex, use `$shaka`.
 
 ```text
 /shaka <task or issue link>
