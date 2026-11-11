@@ -30,8 +30,9 @@ to request revisions, provide missing access, or merge.
 
 ## Interrupted work
 
-Return to the original chat using **WIP Details → Chat link** in the PR description.
-If that chat cannot continue, make sure the previous agent has stopped, then use
+Return to the original chat. Use **WIP Details → Chat link** in the PR description
+when a link is available. If you cannot find or continue that chat, make sure the
+previous agent has stopped, then use
 [Resume unfinished work](working-with-shaka.md#resume-unfinished-work).
 
 Before a PR exists, the work may still be only on the original computer. Keep the
@@ -43,9 +44,10 @@ before restoring or recreating anything. Unsaved work may be lost.
 <a id="individual-trials-available-tools-incomplete-guided-experience"></a>
 <a id="individual-setup"></a>
 
-Individual settings can have recovery copies, but those copies do not protect
-feature changes or the conversation. See [individual settings](settings.md#which-settings-apply)
-and [return points](reference/pr-record.md#recovery).
+See [individual setup](settings-guide.md#use-individual-or-team-settings) to keep
+settings local. The agent can carry saved individual settings into a separate
+checkout for a later task. Those recovery copies contain settings only. See
+[return points](reference/pr-record.md#recovery) for what work can be restored.
 
 ## When the coding agent denies access
 

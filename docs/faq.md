@@ -39,8 +39,8 @@ For a supported task choice, say what you want, such as "Ask me before merging."
 For a lasting change, ask for a settings PR. You can explicitly
 [try that settings PR](settings.md#preview-settings-before-adopting-them) before it merges.
 
-Local settings do not override team settings. Shaka uses one settings source,
-including its defaults. See [which settings apply](settings.md#which-settings-apply).
+Local settings do not override team settings. See
+[which settings apply](settings.md#which-settings-apply).
 
 ## Why did the agent stop to ask about model and effort?
 
@@ -74,8 +74,8 @@ protection and an account without permission to bypass or change those rules.
 
 <a id="does-a-green-review-job-mean-the-pr-was-reviewed"></a>
 
-See [Review the PR and improve the process](pr-verification.md) for the result
-the agent should present when work is ready.
+See [how Shaka counts review results](settings.md#reviewci_review_jobs) and
+[what a ready PR shows](pr-verification.md).
 
 ## Can the agent review its own work?
 
@@ -166,7 +166,7 @@ task. GitHub's required checks and approvals still apply.
 ## What is a checkpoint?
 
 The checkpoint assesses the finished result and recommends what to do next.
-Open the **Checkpoint** link near the top of the PR description. See
+When present, open the **Checkpoint** link near the top of the PR description. See
 [the checkpoint reference](reference/pr-record.md#checkpoint) for report details.
 A recommendation to merge does not authorize a merge.
 
@@ -178,7 +178,7 @@ Yes. Ask your agent:
 Hide my project folder's path in WIP Details. Keep the chat link.
 ```
 
-The path then appears as `REDACTED`, and the chat link remains available.
+The path then appears as `REDACTED`. Any available chat link stays in place.
 See [WIP settings](settings.md#wipinclude_checkout_path).
 
 ## What does Shaka enforce, and what relies on the agent?
