@@ -28,12 +28,10 @@ module Shaka
         managed_target?(name, old_target(name)) ? "a managed copy in #{@managed}" : 'no registered installation'
       end
 
-      # Never suggests a destination that already exists, so moving aside cannot replace an earlier backup.
       def move_aside(path)
-        backup = base = "#{path}.before-shaka"
-        index = 1
-        backup = "#{base}-#{index += 1}" while File.exist?(backup) || File.symlink?(backup)
-        Refusal.command('mv', path, backup)
+        create = Refusal.command('mktemp', '-d', "#{File.dirname(path)}.before-shaka.XXXXXXXX")
+        move = Refusal.command('mv', '--', path)
+        %(backup=$(#{create}) && #{move} "$backup/" && printf 'Backed up to %s\\n' "$backup")
       end
     end
   end
