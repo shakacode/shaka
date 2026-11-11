@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-seed = 'cfdbfc06f24786210ab5bdfa57edb6590f938a54'
-source = 'https://github.com/shakacode/shaka-277-trial.git'
+seed = '0eebcc10cc0d05ae33e0d1a95bc6a052cea4f5fd'
+source = 'https://github.com/shaka-eval-repos/shaka-first-task-1131-20261110-r2.git'
 abort 'Usage: eval/bin/first-task-seed NEW_DIRECTORY' unless ARGV.size == 1
 
 destination = File.expand_path(ARGV.fetch(0))
