@@ -6,12 +6,13 @@ for local testing. The preparation and reporting workflow below needs an open PR
 
 Try an unmerged Shaka change on a real fix before deciding whether it belongs in
 the product. Ask your agent in a preparation chat:
-
 ```text
-$shaka Try Shaka from https://github.com/shakacode/shaka/pull/359
+/shaka Try Shaka from https://github.com/shakacode/shaka/pull/359
 on this task: fix the search bug in /path/to/my/project.
 Prepare a pinned trial and give me the prompt for a fresh chat.
 ```
+
+In Codex, use `$shaka` instead of `/shaka`.
 
 Replace the candidate PR, project, and task. The preparation command copies the
 selected revision outside your project and returns a skill path and startup
