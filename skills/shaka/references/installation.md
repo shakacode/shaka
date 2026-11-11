@@ -79,7 +79,10 @@ URL with `--repository`, and the saved `--branch` or `--release`.
 Pass `--skills-dir DIR` for an active custom skills directory so the
 installer can locate the owner. Verify the restored source and revision.
 
-For updates, fetch upstream and inspect the diff. Fast-forward when possible.
+Before updating, confirm that `origin` points to the user's fork and
+`upstream` points to `shakacode/shaka`. If either remote points to a different
+repository, stop and report the mismatch before fetching or integrating changes.
+Fetch upstream and inspect the diff. Fast-forward when possible.
 Preserve fork changes by merging or rebasing on a feature branch, then merge
 into the installed branch. Test the exact remote tip you intend to install.
 If the tip changes, validate it before updating. `install --update` follows
