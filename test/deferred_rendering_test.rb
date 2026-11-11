@@ -10,6 +10,7 @@ class DeferredRenderingTest < Minitest::Test
   REFUSED = 'gh: This GitHub API path is not available: sessions are bound to their configured repositories. (HTTP 403)'
   FULL = 'Accept: application/vnd.github.full+json'
   URL = 'https://github.com/owner/repo/pull/42#issuecomment-9'
+  COMMENTS = 'repos/owner/repo/issues/42/comments'
 
   def setup
     @calls = []
@@ -46,10 +47,10 @@ class DeferredRenderingTest < Minitest::Test
   end
 
   def test_an_unchanged_comment_is_read_back_and_never_rewritten
-    @comments = [{ 'id' => 9, 'body' => "#{mark}\nHello.", 'user' => { 'login' => 'agent' } }]
+    @comments = [{ 'id' => 9, 'body' => "#{mark}\nHello.", 'user' => { 'login' => 'agent' }, 'html_url' => URL }]
     error = assert_raises(Shaka::Error) { publish(stored_check: ->(_) { raise Shaka::Error, 'Layout broke.' }) }
 
-    assert_equal 'Layout broke.', error.message
+    assert_equal "Layout broke. The same text was already published at #{URL}.", error.message
     assert(@calls.any? { |argv, _| argv.include?('repos/owner/repo/issues/comments/9') && argv.include?(FULL) })
     refute(@calls.any? { |argv, _| argv.include?('PATCH') || argv.include?('DELETE') })
   end
@@ -96,9 +97,10 @@ class DeferredRenderingTest < Minitest::Test
     assert_match(/rendered 1 of 2 table.*deleted/, error.message)
   end
 
-  def test_a_quoted_report_may_hold_escapes_the_surrounding_text_may_not
+  def test_quoted_reports_and_generated_code_may_hold_escapes_the_surrounding_text_may_not
     report = 'Report says \n literally.'
     assert publish(body: "Intro.\n\n#{report}", verbatim: [report], stored_check: ->(_) {})
+    assert publish(body: 'Subject <code>&#70;ix &#92;n handling</code>.', stored_check: ->(_) {})
   end
 
   private
@@ -109,9 +111,7 @@ class DeferredRenderingTest < Minitest::Test
     Shaka::GitHub.new('owner/repo', 42, runner: method(:answer)).reply(body:, key: 'loop', **)
   end
 
-  def created
-    @calls.select { |argv, _| argv.include?('repos/owner/repo/issues/42/comments') && argv.include?('POST') }
-  end
+  def created = @calls.select { |argv, _| argv.include?(COMMENTS) && argv.include?('POST') }
 
   def deleted? = @calls.any? { |argv, _| argv.include?('DELETE') }
 

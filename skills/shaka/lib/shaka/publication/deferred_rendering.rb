@@ -43,7 +43,8 @@ module Shaka
 
     # An unchanged comment was already live; a changed one gets its earlier body back, and a new one goes.
     def undo(existing, written, target, error)
-      raise error if written.equal?(existing)
+      raise Error, "#{error.message} The same text was already published at #{written['html_url']}." if
+        written.equal?(existing)
 
       begin
         take_back(existing, comment_path(written, target))
