@@ -93,8 +93,8 @@ shaka_helper="$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka"
 ```
 
 Use the corresponding path if you installed elsewhere. If you switched sources,
-use the helper in the active checkout shown by status. Run
-`"$shaka_helper" install --verify` there. After active chats finish, run `"$shaka_helper" install --update` if you choose to update. For a broken
+set `shaka_helper` to `skills/shaka/scripts/shaka` inside the active checkout
+shown by status. Run `"$shaka_helper" install --verify`. After active chats finish, run `"$shaka_helper" install --update` if you choose to update. For a broken
 installation, `"$shaka_helper" install --repair` checks for recoverable problems
 and stops when it needs a decision.
 
