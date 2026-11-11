@@ -41,7 +41,7 @@ protection. After it merges, new tasks use those shared settings. To try the set
 
 For later changes, use [Choose your settings](settings-guide.md). See the
 [built-in defaults](../skills/shaka/config/defaults.yml) and
-[Shaka's own overrides](../.agents/shaka/config.yml) for a working example.
+[Shaka's own overrides](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a working example.
 
 ## Files the agent prepares
 
