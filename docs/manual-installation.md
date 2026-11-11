@@ -78,7 +78,9 @@ The agent can check the source checkout, skill links, and Ruby. Finish active
 Shaka chats before updating. Then ask the agent to update and verify the
 installation, and start a new chat. Updates can stop if the installed checkout
 has local changes or its history no longer matches the recorded branch.
-Set `SHAKA_NOTICES=off` if you want to silence Shaka's local reminders.
+Set `SHAKA_NOTICES=off` if you want to silence Shaka's local reminders. In Claude
+Code, you can opt in to reminders at chat start; that adds a `SessionStart` hook
+to your user settings in `~/.claude/settings.json`.
 
 <details>
 <summary>Check or update from a terminal</summary>

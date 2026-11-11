@@ -44,13 +44,19 @@ With no registered installation, install the fork in a dedicated directory as in
 --branch BRANCH --agent HOST`. Use the fork as `origin` and keep the official
 repository as `upstream`.
 
-To switch sources, record the active directory, origin, branch or release, and
-revision. From the trusted installer, run `bin/install --take-over --directory
-DIR --repository URL --branch BRANCH` for a separate dedicated checkout; select
-`--release VERSION` instead of a branch for a pinned release. Keep the previous
-checkout and its remotes unchanged. Verify the new install with `bin/install
---verify` from its checkout. Explain how to take over from the previous
-directory and verify the restored source and revision.
+To switch sources, record the active directory, origin, branch or release,
+revision, and linked hosts and skills. Take-over moves all those links; if the
+request covers only one host, show the wider scope and ask before proceeding.
+Prepare a separate dedicated checkout at the selected branch tip or release.
+Inspect the selected revision before executing any code from it.
+
+From the currently registered checkout's trusted installer, run
+`bin/install --take-over --directory DIR --repository URL --branch BRANCH`;
+use `--release VERSION` for a pinned release. Keep the old checkout and remotes
+intact. Run `bin/install --verify` from the newly active checkout. To switch
+back, invoke the trusted installer in the now-active checkout, targeting the
+retained directory with its recorded URL and branch or release. Verify the
+restored source and revision.
 
 For updates, fetch upstream and inspect the diff. Fast-forward when possible;
 otherwise preserve fork changes while merging or rebasing on a feature branch.
