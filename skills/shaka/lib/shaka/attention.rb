@@ -28,9 +28,9 @@ module Shaka
       raise Error, "State must be one of: #{STATES.join(', ')}." unless STATES.include?(state)
 
       wanted = LABELS[state]
-      verify_open!(expected) if wanted
+      verify_open!(nil) if wanted && !expected
 
-      keep_only(wanted, refuse_merge:)
+      keep_only(wanted, refuse_merge:, expected:)
       { 'state' => state, 'labels' => [wanted].compact }
     end
 
@@ -75,11 +75,12 @@ module Shaka
     end
 
     # Deletes every other attention label, then adds the wanted one when it is missing.
-    def keep_only(wanted, refuse_merge: false)
+    def keep_only(wanted, refuse_merge: false, expected: nil)
       current = current_labels
       refuse_merge_label(current) if refuse_merge
       missing = wanted && current.none? { |name| name.casecmp?(wanted) }
       ensure_repository_label(wanted) if missing
+      verify_open!(expected) if expected
       remove_other_attention_labels(current, wanted)
       @github.api(path, method: 'POST', fields: { labels: [wanted] }, expected: Array) if missing
     end

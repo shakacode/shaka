@@ -28,8 +28,8 @@ module Shaka
     private
 
     # Every head read sits between the two snapshots, so a head that moves meanwhile is refused
-    # rather than paired with another commit's checks. A base comparison names the first snapshot's
-    # base, so a retarget meanwhile is refused too.
+    # rather than paired with another commit's checks. The base names the branch whose rules
+    # the check list uses, so a retarget meanwhile is refused too.
     def read(reader)
       first = reader.snapshot
       checks = required_checks(reader)

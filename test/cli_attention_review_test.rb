@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'cli_merge_fixture'
+require 'shaka/publication/throughput_stats'
 
 # The merge label through the real command, trusted settings, and a fake gh that records writes.
 module CliAttentionFixture
@@ -18,23 +19,17 @@ module CliAttentionFixture
         count = File.exist?(reads) ? File.read(reads).to_i + 1 : 1
         File.write(reads, count)
         pull['state'] = 'CLOSED' if change == 'reopen' && count <= 2
-        pull['baseRefName'] = 'release' if change.start_with?('retarget') && count >= change[-1].to_i
+        retargeted = change == 'retarget2' && count >= 2
+      retargeted ||= File.exist?("#{ENV.fetch('LABEL_FILE')}.retargeted")
+      pull['baseRefName'] = 'release' if retargeted
       end
       puts JSON.generate('data' => { 'repository' => { 'pullRequest' => pull } })
     elsif path == 'repos/owner/repo/pulls/1'
-      if ARGV.include?('PATCH')
-        body = JSON.parse($stdin.read).fetch('body')
-        File.write(ENV.fetch('LABEL_FILE') + '.body', body)
-      else
-        body = ENV.fetch('PR_BODY', '')
-      body += "\nConcurrent edit." if File.exist?("#{ENV.fetch('LABEL_FILE')}.changed")
-      end
+      File.write("#{ENV.fetch('LABEL_FILE')}.body", '') if ARGV.include?('PATCH')
+      body = ENV.fetch('PR_BODY', '')
       puts JSON.generate('head' => { 'sha' => pull['headRefOid'] }, 'base' => { 'ref' => 'main' },
                          'state' => 'open', 'body' => body)
     elsif ARGV[0, 2] == %w[pr checks]
-      if ENV['EDIT_WHILE_READING_CHECKS'] && ARGV.last.include?('completedAt')
-        File.write("#{ENV.fetch('LABEL_FILE')}.changed", '')
-      end
       rows = JSON.parse(ENV.fetch('PR_CHECKS', '[]'))
       rows.select! { |row| row['name'] == 'validate' } if ARGV.include?('--required')
       puts JSON.generate(rows)
@@ -48,7 +43,13 @@ module CliAttentionFixture
       File.write(ENV.fetch('LABEL_FILE'), 'labeled')
       puts '[]'
     elsif path.include?('/issues/1/labels')
-      puts '[]'
+      File.write("#{ENV.fetch('LABEL_FILE')}.deleted", '') if ARGV.include?('DELETE')
+      if ENV['PR_CHANGE'] == 'retarget_labels'
+        File.write("#{ENV.fetch('LABEL_FILE')}.retargeted", '')
+        puts JSON.generate([{ 'name' => 'awaiting-resume' }])
+      else
+        puts '[]'
+      end
     elsif path.include?('/labels/')
       puts JSON.generate('name' => 'awaiting-merge-approval')
     else
@@ -153,16 +154,19 @@ end
 class CliAttentionTimingTest < Minitest::Test
   include CliAttentionFixture
 
-  def test_merge_handoff_refreshes_ready_pending_after_ci_finishes
+  def test_merge_handoff_requires_a_fresh_description_after_ci_finishes
+    assert_refused_handoff(timing_env('pass'), 'Republish the PR description')
+  end
+
+  def test_merge_handoff_applies_the_label_after_republication
+    body = Shaka::ThroughputStats.update(with_preview(pending_body), 't2' => '2026-11-11T00:37:00Z')
     with_policy('meaningful_changes') do |root, ref|
-      output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)], env: timing_env('pass'))
+      env = timing_env('pass').merge('PR_BODY' => body)
+      _output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)], env:)
 
       assert_predicate status, :success?, error
-      assert_equal 'updated', JSON.parse(output)['timing_refresh']
-      body = File.read("#{@label_file}.body")
-      assert_includes body, '**Estimated token costs:** $3.31 · ready in 34m'
-      assert_includes body, 'CI to ready 8m'
-      assert body.start_with?("Human introduction.\n") && body.end_with?("Human footer.\n")
+      assert_path_exists @label_file
+      refute_path_exists "#{@label_file}.body"
     end
   end
 
@@ -177,17 +181,6 @@ class CliAttentionTimingTest < Minitest::Test
     end
   end
 
-  def test_merge_handoff_does_not_overwrite_a_concurrent_description_edit
-    with_policy('meaningful_changes') do |root, ref|
-      env = timing_env('pass').merge('EDIT_WHILE_READING_CHECKS' => '1')
-      output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)], env:)
-
-      assert_predicate status, :success?, error
-      assert_equal 'changed', JSON.parse(output)['timing_refresh']
-      refute_path_exists "#{@label_file}.body"
-    end
-  end
-
   def test_merge_handoff_refuses_a_closed_snapshot_even_if_the_pr_reopens
     assert_refused_handoff({ 'PR_CHANGE' => 'reopen' }, 'Pull request is not open.', comments: [])
   end
@@ -197,13 +190,13 @@ class CliAttentionTimingTest < Minitest::Test
   end
 
   def test_merge_handoff_refuses_a_retarget_before_labeling
-    assert_refused_handoff({ 'PR_CHANGE' => 'retarget3' }, 'PR base changed')
+    assert_refused_handoff({ 'PR_CHANGE' => 'retarget_labels' }, 'PR base changed')
+    refute_path_exists "#{@label_file}.deleted"
   end
 
   def test_merge_handoff_asks_for_a_fresh_preview_before_labeling
-    marker = "<!-- shaka:rendering-preview #{HEAD} -->"
-    body = pending_body.sub('<!-- shaka:end -->') { "#{marker}\n<!-- shaka:end -->" }
-    assert_refused_handoff(timing_env('pass').merge('PR_BODY' => body), 'Republish the rendering preview')
+    env = timing_env('pass').merge('PR_BODY' => with_preview(pending_body))
+    assert_refused_handoff(env, 'Republish the PR description')
   end
 
   private
@@ -217,6 +210,11 @@ class CliAttentionTimingTest < Minitest::Test
       refute_path_exists @label_file
       refute_path_exists "#{@label_file}.body"
     end
+  end
+
+  def with_preview(body)
+    marker = "<!-- shaka:rendering-preview #{HEAD} -->"
+    body.sub('<!-- shaka:end -->') { "#{marker}\n<!-- shaka:end -->" }
   end
 
   def timing_env(bucket)
