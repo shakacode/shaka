@@ -68,12 +68,15 @@ Use a clean development checkout on the rewritten branch. Set
 `shaka_source` to the path of the installed checkout, then run:
 
 ```bash
-git fetch "$shaka_source" HEAD
-git merge --no-ff -s ours FETCH_HEAD
+git fetch "$shaka_source" HEAD &&
+  git merge-base HEAD FETCH_HEAD &&
+  git merge --no-ff -s ours FETCH_HEAD
 ```
 
-This records the installed commit as an ancestor while keeping the rewritten
-branch's files. Check the result, push your branch, then
+If Git finds no common ancestor, stop. The histories are unrelated, and this
+recipe cannot restore the installed commit to the branch. When the merge
+succeeds, it records the installed commit as an ancestor while keeping the
+rewritten branch's files. Check the result, push your branch, then
 [update the installation](manual-installation.md#verify-and-update).
 
 </details>
