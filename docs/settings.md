@@ -102,7 +102,8 @@ high-risk areas, or a prompt file, or when a value is invalid.
 Keep proposed settings in an open PR and try them before making them your team's
 defaults. Teammates can select the same PR for their tasks:
 
-Examples use `/shaka`. In Codex, use `$shaka`.
+Examples use `/shaka`. In Codex, use `$shaka`. See [Coding agents](coding-agents.md)
+for other tools.
 
 ```text
 /shaka <task or issue link>
