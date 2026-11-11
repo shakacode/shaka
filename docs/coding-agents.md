@@ -29,6 +29,18 @@ To support another coding agent, [contribute](../CONTRIBUTING.md) installation
 instructions, a demonstrated task, and known limitations. Keep environment-specific
 code separate from the shared workflow.
 
+## Name your machines
+
+If you use Shaka on several computers, give each one a short public name so
+**WIP Details → Owner** identifies where the chat is running:
+
+```text
+Help me name this machine "laptop" in Shaka.
+```
+
+Ask the agent to set `SHAKA_MACHINE_ALIAS` for your coding tool and check it with
+Shaka's doctor. The name also appears in [PR timings](reference/timings.md).
+
 ## GitHub Copilot
 
 Ask Copilot to install Shaka, then start a new CLI session or VS Code Agent chat:
