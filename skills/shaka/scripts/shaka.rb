@@ -20,7 +20,7 @@ require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/github/pull_timeline'
 require_relative '../lib/shaka/publication/timeline_steps'
 require_relative '../lib/shaka/attention'
-require_relative '../lib/shaka/merge_wait_review'
+require_relative '../lib/shaka/merge_handoff'
 require_relative '../lib/shaka/post_implementation/stale'
 require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
@@ -491,15 +491,12 @@ begin
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention'
              state = options.fetch(:state)
-             review = if state == 'merge'
-                        Shaka::MergeWaitReview.new(github, **merge_wait, waiver: options[:review_waiver])
-                                              .check!(github.snapshot)
-                      end
-             labels = Shaka::Attention.new(github).call(state:)
-             # Leaving the merge wait means the PR changes; a checkpoint for an older head must not look ready.
              if state == 'merge'
-               labels.merge('review' => review)
+               review = merge_wait.merge(waiver: options[:review_waiver])
+               Shaka::MergeHandoff.new(github, seam_required_checks:, review:).call
              else
+               # Leaving the merge wait means the PR changes; a checkpoint for an older head must not look ready.
+               labels = Shaka::Attention.new(github).call(state:)
                labels.merge('stale_checkpoint' => Shaka::PostImplementationStale.new(github).call)
              end
            when 'squash-message'

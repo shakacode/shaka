@@ -26,11 +26,7 @@ module Shaka
       raise Error, 'No observable required checks; native readiness is unknown' unless checks.is_a?(Array)
       return verify_empty_confirmation(head, confirmed_head) if checks.empty?
 
-      checks.each do |check|
-        next if passing_check?(check)
-
-        raise Error, "Required check is not passing or is malformed: #{check.inspect}"
-      end
+      RequiredChecks.verify_passing!(checks)
     end
 
     # Under Auto, GitHub has to report CLEAN, as with ci_review_wait: all. Named base failures keep
@@ -82,14 +78,6 @@ module Shaka
     # What the last check read excused as base failures, so the result names the base commit it verified.
     def base_failure_evidence = @base_failures ? @base_failures.evidence : {}
 
-    def passing_check?(check)
-      return false unless check.is_a?(Hash) && check['name'].is_a?(String) && !check['name'].strip.empty?
-
-      case check['state']
-      when 'SUCCESS' then check['bucket'] == 'pass'
-      when 'NEUTRAL', 'SKIPPED' then check['bucket'] == 'skipping'
-      else false
-      end
-    end
+    def passing_check?(check) = RequiredChecks.passing?(check)
   end
 end
