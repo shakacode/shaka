@@ -38,7 +38,8 @@ agent. Ask your agent to build it around the sources you choose:
 ```text
 Build a script to update my coding-agent skill packs. Read a manifest of each
 pack's repository URL, branch or pinned commit, skill folders, and destinations
-for each coding agent. Show the plan before applying it.
+for each coding agent. A dry run should show the plan without making changes.
+Apply the plan only when I explicitly request it.
 
 Only update a clean checkout. For a tracking branch, confirm the expected branch
 and no unpushed commits. For a pin, check that the checkout still matches its
@@ -52,8 +53,9 @@ upstream and which use a pinned release, commit, or fork.
 ```
 
 Have the agent check the actual skills directories your tools read. Start with
-a plan and a manual update. Once you trust the result, you can ask for a scheduled
-run. For a new pack, [try a small task](working-with-shaka.md#try-a-new-skill-pack-with-shaka)
+a dry run and a manual update. A scheduled run can report changes for review.
+If you want it to apply updates, choose which sources it may update automatically.
+For a new pack, [try a small task](working-with-shaka.md#try-a-new-skill-pack-with-shaka)
 before relying on it.
 
 ## Keep Claude Code current
@@ -80,6 +82,7 @@ If the checks still match the app, the agent can report that and stop. If it fin
 corrections, Shaka checks and reviews them before opening its PR.
 
 Removing a marketplace can uninstall its plugins and delete saved plugin data.
-A marketplace tracking a branch can pick up new commits, so review a fork
+Before removing it, ask your agent to uninstall its plugins while keeping their
+data. A marketplace tracking a branch can pick up new commits, so review a fork
 before installing it. For the experimental switch and rollback, see the
 [recorded trial](https://github.com/shakacode/shaka/blob/8217cfe3ed4e6cce89f4b182a8c0bec1e2b0cb81/docs/pstack.md#hand-maintenance-results-back-to-shaka).
