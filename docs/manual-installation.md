@@ -135,11 +135,12 @@ Before running `"$shaka_helper" install --repair`, check the status output.
 If it proposes a take-over for a split installation, the command names the
 checkout that will receive the skill links. Check which agents will switch.
 If Claude Code's startup hook follows a link that moves, new Claude chats
-will run the new checkout. If status asks you to choose, follow the action it
-prints for your choice and check status again before running repair.
-Run repair once you're ready for those changes. Repair keeps local commits on a
-`kept-<commit>` branch and renames unused records so you can inspect them later.
-It stops when it needs a decision.
+will run the new checkout. Run repair if you want that move.
+If status gives you a decision instead of a command, leave the links in place
+and ask your agent to inspect the checkouts before you choose which to keep.
+
+Repair keeps local commits on a `kept-<commit>` branch and renames unused
+records so you can inspect them later. It stops when it needs a decision.
 
 To enable Claude Code's startup reminder, run
 `"$shaka_source/bin/install" --directory "$shaka_source" --agent claude --session-hook`.
