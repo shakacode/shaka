@@ -374,7 +374,7 @@ class ClaudeUsagePriceTest < Minitest::Test
       file = transcript(directory, 'session.jsonl', [prompt('new'), fast])
       output = report('--host', 'claude-code', '--file', file)
       assert_metric output, 'USD estimate', '$0.002158'
-      assert_includes output, 'fast mode is priced for Opus models with a published rate'
+      assert_includes output, 'fast mode is priced for models with a published rate'
     end
   end
 end

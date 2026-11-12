@@ -307,7 +307,7 @@ report.
 | Standard Codex credits | Configured supported OpenAI model. A response with cache writes is unpriced because their credit rate is unpublished. |
 | Standard API-equivalent USD | Ordinary input excludes cache reads and writes, which use their own published rates. |
 | Cursor on-demand USD | Configured supported Grok model and recorded Fast/standard mode. Cache writes remain ordinary input because no separate rate is published. |
-| Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published Opus fast mode are priced. |
+| Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published fast-mode rates are priced. |
 | Pi native nominal USD | Copy the host's recorded cost instead of applying a rate card. |
 
 Rate notes and source links apply only to supported provider/model pairs. A

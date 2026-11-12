@@ -80,7 +80,7 @@ older estimates can be interpreted after prices change.
 OpenAI reports distinguish standard Codex plan credits from API-equivalent USD
 estimates. Cursor estimates use its on-demand list prices. Anthropic estimates
 charge uncached input, cache reads, and cache writes separately. A one-hour
-cache write costs more than a five-minute write. Supported Opus fast-mode
+cache write costs more than a five-minute write. Supported fast-mode
 responses use their published fast-mode rates. Standard-speed responses use
 standard rates. Fast-mode responses without a published rate remain unpriced. Pi uses its recorded nominal USD instead of repricing it.
 OpenRouter uses the response's reported account charge in USD credits instead of
