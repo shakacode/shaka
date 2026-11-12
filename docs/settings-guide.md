@@ -78,10 +78,10 @@ newer version of the settings PR. See [settings previews](settings.md#preview-se
 ## Choose a merge policy
 
 See [merge choices](working-with-shaka.md#choose-a-merge-policy) for **Ask** and
-**Auto**, including when you still need to review. To change the team default:
+`auto`, including when you still need to review. To change the team default:
 
 ```text
-/shaka Propose making Auto the default merge choice for this repository.
+/shaka Propose making automatic merging the default for this repository.
 ```
 
 The new default applies after the settings PR merges. See

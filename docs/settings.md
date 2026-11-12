@@ -173,7 +173,7 @@ names `gh pr checks` shows: CircleCI, for example, reports one check per workflo
 not per job.
 
 The list governs only what Shaka does. In Ask mode, the agent waits for these checks
-before it reports a PR ready and labels it `awaiting-merge-approval`. In Auto mode,
+before it reports a PR ready and labels it `awaiting-merge-approval`. In `auto` mode,
 `shaka merge` refuses to merge until they pass. GitHub does not know about the list, so it
 does not stop anyone from clicking merge. Nothing ties a name to a specific
 workflow either, so a PR could add a job with a listed name. For protection that
@@ -181,7 +181,7 @@ GitHub enforces, use a ruleset or branch protection.
 
 If neither GitHub nor Shaka requires any checks, **Ask** can still hand you the PR.
 Merge it on GitHub, or approve the exact commit for the agent to merge after it
-explains that no required checks gate it. **Auto** needs at least one required check.
+explains that no required checks gate it. `auto` needs at least one required check.
 
 ## `merge.limits`
 
@@ -239,11 +239,11 @@ There is no `high` setting: high-risk PRs always go to you. So do these, whateve
 - a PR without a checkpoint rating.
 
 To let the agent merge one of them anyway, approve it as you would a PR past
-[`merge.limits`](#mergelimits). The agent labels each PR it merges under Auto `auto-merged`, so you
+[`merge.limits`](#mergelimits). The agent labels each PR it merges under `auto` `auto-merged`, so you
 can review them later ([exceptions](reference/pr-record.md#merge-approval)).
 
 Try it before you switch to `auto`. While `preference` is still `ask`, each checkpoint comment
-says whether Auto would merge the PR, and if not, why: for example, `db/migrate/1_add_index.rb`
+says whether `auto` would merge the PR, and if not, why: for example, `db/migrate/1_add_index.rb`
 is in high-risk area `database`.
 
 ## `merge.hold_labels`
@@ -808,7 +808,7 @@ change the rating, see [Change how risk is rated](#change-how-risk-is-rated).
 
 The PR records the conclusion, reasons, execution settings, and available native
 usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not merge”, or
-unresolved substantive concerns block readiness and Auto; green technical checks
+unresolved substantive concerns block readiness and `auto`; green technical checks
 and changed settings do not clear them. Earlier executions stay visible on the PR.
 Setting `enabled: false` in the selected configuration opts out and
 requires a visible note. Individual setup applies these choices too. Final
@@ -898,7 +898,7 @@ What each rating asks:
 | High or unknown | Meant for a person to merge after a careful review that starts with whether the verification proves the change works. |
 
 [`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) sets which ratings the agent may merge under
-Auto; by default only low. Without a trusted settings commit, merge and the rating use the default level and
+`auto`; by default only low. Without a trusted settings commit, merge and the rating use the default level and
 areas.
 
 ### Change how risk is rated

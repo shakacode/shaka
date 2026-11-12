@@ -16,7 +16,7 @@ Before shipping, Shaka compares the finished solution with the original goal, th
 recommends **Merge**, **Merge after maintainer decision**, **Revise before merge**,
 **Reconsider approach**, or **Do not merge**.
 A working implementation can still warrant reconsideration. Each recommendation
-includes a reason and next step; Merge still follows your checks and Ask or Auto choice.
+includes a reason and next step; Merge still follows your checks and Ask or `auto` choice.
 
 When Shaka recommends a model and effort, it aims to minimize the task's total work.
 Effort is not priced per token, the input the agent reads dominates spend, and rework

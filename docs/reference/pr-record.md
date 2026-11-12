@@ -35,7 +35,7 @@ does. A blocked checkpoint's level still shows, though merge waits for a ready o
 Low is meant for auto-merge with a later audit, medium for a person to merge after
 a skim, and high for a careful review that starts with the verification. A change in
 one of the repository's [`high_risk_areas`](../settings.md#high_risk_areas) always
-counts as high. Under Auto, [`merge.auto_merge_max_risk`](../settings.md#mergeauto_merge_max_risk)
+counts as high. Under `auto`, [`merge.auto_merge_max_risk`](../settings.md#mergeauto_merge_max_risk)
 sets the highest rating the agent merges without you; the default is low.
 
 The **Risk and review** section follows Intent and precedes Verification. It says what the level asks
@@ -68,7 +68,7 @@ supporting evidence. The written **Code Walkthrough** explains the implementatio
 | **Merge after maintainer decision** | A question or concern needs your decision before merging. |
 
 The reviewer's conclusion is **Proceed**, **Simplify/reframe**, or **Do not merge**.
-Substantive unresolved concerns hold readiness and Auto even when checks pass.
+Substantive unresolved concerns hold readiness and `auto` even when checks pass.
 With **Proceed**, you can explicitly accept a listed concern; the agent records
 it under **Concerns recorded as accepted by the maintainer**. Shaka checks that
 decisions are recorded, not who made them or whether they are sound. Acceptance
@@ -77,7 +77,7 @@ does not override **Simplify/reframe** or **Do not merge**.
 The checkpoint also judges verification as **Adequate**, **Adequate, with gaps the
 reviewer judged acceptable**, **Inadequate**, or **Cannot judge**. The reviewer's
 acceptance of a gap is not yours. With Ask, the verdict informs your decision.
-With Auto, **Inadequate** or **Cannot judge** stops merging until you approve that
+With `auto`, **Inadequate** or **Cannot judge** stops merging until you approve that
 commit. A recommendation grants no merge authority. See
 [checkpoint settings](../settings.md#checkpoint).
 
@@ -110,10 +110,10 @@ still needs an eligible reviewer; chat approval does not replace it. GitHub does
 not let PR authors approve their own PRs. Return to the owning chat unless its
 handoff names active automatic follow-up.
 
-Under Auto, every reported check must pass; skipped and neutral count as passing.
+Under `auto`, every reported check must pass; skipped and neutral count as passing.
 A job that has not started is unseen, so make a check required if it must always
 hold the merge. Failed optional checks return work to you, except one the agent names
-as failing on the PR's target branch too ([failures the target branch shares](../working-with-shaka.md#choose-a-merge-policy)). An Auto merge normally
+as failing on the PR's target branch too ([failures the target branch shares](../working-with-shaka.md#choose-a-merge-policy)). An `auto` merge normally
 gets the `auto-merged` label; queued merges and failed label writes are exceptions.
 
 If GitHub needs a branch update, the agent revalidates and reviews the new commit.

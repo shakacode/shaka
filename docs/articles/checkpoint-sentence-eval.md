@@ -97,7 +97,7 @@ checkpoint called the effect unknown. This study measured it.
   is merged, but the agent decides when to pass `--empty-checks-confirmed-head`.
   They also noted that no reported test covers that decision. All 3 runs with this
   repository's prompt concluded Simplify/reframe. They asked for a decision replay
-  covering approved Ask, unapproved Ask, Auto and a changed head, without a real
+  covering approved Ask, unapproved Ask, `auto` and a changed head, without a real
   merge.
 - **Without the sentence:** all 5 runs concluded Proceed. Their main complaint
   was a missing instruction-growth report.

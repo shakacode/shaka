@@ -86,7 +86,7 @@ You can also [merge through GitHub](reference/pr-record.md#merge-messages).
 Confirm that its commit is the version you reviewed. Required checks and
 approvals still apply.
 
-Under **Auto**, the agent merges when the change is ready.
+Under `auto`, the agent merges when the change is ready.
 
 <a id="check-the-cost-of-getting-the-result"></a>
 <a id="revisit-a-merged-change"></a>

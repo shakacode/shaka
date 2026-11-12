@@ -53,7 +53,7 @@ See [give it an outcome](working-with-shaka.md#give-it-an-outcome).
 ## Why didn't the agent merge my PR?
 
 Shaka uses **Ask** by default. When the PR is ready, merge it on GitHub or tell
-the agent, "You can merge." For **Auto**, say "Merge when ready."
+the agent, "You can merge." For `auto`, say "Merge when ready."
 
 Required checks, reviews, approvals, and unresolved concerns can still hold a
 merge. Large or risky changes may need your decision. Ask the agent what is
