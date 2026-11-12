@@ -9,7 +9,7 @@ Tell me about the Shaka configuration.
 The agent can explain your project's choices, where they are saved, and what
 each setting changes. See the [settings reference](settings.md),
 [built-in defaults](../skills/shaka/config/defaults.yml), and
-[Shaka's own overrides](../.agents/shaka/config.yml) for a working example.
+[Shaka's own overrides](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a working example.
 
 Examples use `/shaka`. In Codex, use `$shaka` instead.
 
