@@ -8,7 +8,7 @@ For checks, reviewers, or merge choices in one project, use
 
 ## Fork and install
 
-Ask your coding agent:
+To create your own fork and install it, ask your coding agent:
 
 ```text
 Fork https://github.com/shakacode/shaka and install my fork for this coding agent.
@@ -16,8 +16,19 @@ Explain how I switch between using my fork and the official version.
 ```
 
 The agent sets up a branch for your changes and tells you which version your
-coding agent loads. Keep a separate development clone for edits so the installed
-copy stays usable. See [manual installation](manual-installation.md) for prerequisites.
+coding agent loads. See [manual installation](manual-installation.md) for prerequisites.
+
+### Install a fork you already have
+
+Give your coding agent the fork's URL and the branch you want to install. For example:
+
+```text
+Install my Shaka fork from https://github.com/OWNER/shaka on branch mine.
+Show me which coding agents will switch and how to switch back.
+```
+
+Replace `OWNER` and `mine` with the fork's GitHub owner and branch. Keep a
+separate development clone for edits so the installed copy stays usable.
 
 Before switching, ask the agent to record the current source, branch or release,
 and commit. Select the official Shaka source or your fork's URL and branch. The

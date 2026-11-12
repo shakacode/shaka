@@ -1,8 +1,11 @@
 # Installation details
 
-Use [official installation](official-installation.md) to install, update, and verify Shaka.
-This reference covers prerequisites, forks, removal, and each coding host.
-The [getting started guide](https://github.com/shakacode/shaka/blob/main/docs/getting-started.md) supplies the prompts.
+This procedure is for coding agents handling Shaka installation requests.
+Send people to [Install Shaka manually](https://github.com/shakacode/shaka/blob/main/docs/manual-installation.md)
+or [Fork Shaka and make it yours](https://github.com/shakacode/shaka/blob/main/docs/fork-and-hack.md)
+for prompts and terminal instructions.
+Use [official installation](official-installation.md) for the agent procedure
+to install, update, and verify the official version.
 Use source installation: the published name-reservation gem
 predates the current workflow. Confirm the requested source, version, and coding
 environment before installation. Preserve existing customizations during updates.
@@ -11,7 +14,7 @@ this repository.
 
 ## Prerequisites
 
-You need Ruby 3.4, Git 2.41 or later, an authenticated [GitHub CLI](https://cli.github.com/), and
+Check for Ruby 3.4 or later, Git 2.41 or later, an authenticated [GitHub CLI](https://cli.github.com/), and
 a [supported coding agent](installation.md#development-environment-details).
 
 ```bash
@@ -20,25 +23,26 @@ ruby --version
 gh auth status
 ```
 
-Use `gh auth login` if you are not signed in.
+If GitHub CLI needs authentication, direct the person installing Shaka to `gh auth login`.
 
-Shaka keeps its own Ruby, separate from your projects. The installer records the
+Shaka keeps its own Ruby, separate from the projects it works on. The installer records the
 Ruby that runs it, and the installed `scripts/shaka` starts with that Ruby in every
 project. It also ignores a project's `RUBYOPT`, Bundler setup, and installed gems,
 because Shaka needs only Ruby's standard library. Run the installer where
 `ruby --version` reports 3.4 or later; an older Ruby stops with that requirement.
-If that Ruby or its record is removed, `scripts/shaka` stops and asks you to
+If that Ruby or its record is removed, `scripts/shaka` stops and prompts the operator to
 install again or set `SHAKA_RUBY` to another Ruby 3.4 interpreter. Without a
 registered installation or PR trial package, `scripts/shaka` uses `ruby` from `PATH`.
 
 Optional: [ImageMagick 7](https://imagemagick.org/script/download.php) can draw
 [annotations and pixel diagnostics](visual-diff.md). Check it with `magick --version`.
-Agents can also use an existing editor or browser overlay; ImageMagick is not required.
+An existing editor or browser overlay can also supply the annotations.
 
 ## Install from a personal fork
 
-When the user requests a fork, create or select it on GitHub. Create and push a
-dedicated branch, such as `mine`, so the fork's `main` can follow upstream.
+Confirm which GitHub fork and branch to install. Create the fork if requested.
+If the request needs a new install branch, create and publish a dedicated branch
+such as `mine` so the fork's `main` can follow upstream.
 With no registered installation, clone the fork directly at its install branch
 with `git clone --branch BRANCH URL DIR`. Review that source and installer before
 running `bin/install --directory DIR --repository URL --branch BRANCH --agent HOST`
@@ -93,7 +97,7 @@ or publishing requires authorization the user has not given.
 Use `install --update` when the latest branch tip is acceptable. It fetches
 and verifies the tip it receives.
 
-When the user asks to install the tested or inspected commit, use take-over.
+Use take-over when the request is to install the exact tested or inspected commit.
 Clone directly at the install branch in a separate directory. In that clean
 clone, run `git -C DIR reset --keep TESTED_SHA` to set the branch to the tested
 commit while keeping its `origin/BRANCH` tracking configuration. Before
@@ -137,7 +141,7 @@ Then remove that link:
 unlink "$HOME/.agents/skills/shaka"
 ```
 
-Use the appropriate directory for other environments. If you installed tower skills,
+Use the appropriate directory for other environments. If the installation includes tower skills,
 inspect and remove their links too: `mct` and `rct`, or `mct-claude` and `rct-claude`.
 Preserve unrelated files. Removing skill links leaves repositories and PRs intact.
 After every Shaka link in that skills directory is removed and no install is
@@ -157,10 +161,11 @@ limitations. [Official installation](official-installation.md) lists each host's
 
 ## Codex
 
-In the app, open a task in your repository and invoke `$shaka`.
+To confirm discovery in the app, have the user open a task in their repository
+and invoke `$shaka`.
 
 For a terminal session, the optional launcher creates a separate session directory
-and gives the Codex sandbox write access to that directory and your checkout:
+and gives the Codex sandbox write access to that directory and the project checkout:
 
 ```bash
 "$HOME/.local/share/shaka/source/bin/install" --skills-dir "$HOME/agent-tools/shaka-pilot/skills"
@@ -170,16 +175,17 @@ and gives the Codex sandbox write access to that directory and your checkout:
 
 Replace the path and task. Native trust and command-approval prompts still apply.
 The launcher refuses paths that overlap the trusted installation. Choose a
-`TMPDIR` outside the checkout if your current one is inside it.
+`TMPDIR` outside the checkout if the current one is inside it.
 
 The optional `mct` and `rct` skills need the **Codex app's** task and project tools.
 Select them independently with `--with-mct` and `--with-rct`; terminal-only installations use the [control-tower role prompts](control-towers.md#role-prompts).
 
 ## Claude Code
 
-Install into `~/.claude/skills`, then start `claude` in your repository and invoke
-`/shaka`. Shaka has no Claude Code launcher. Your existing permission mode applies;
-keep its trusted source outside the checkout and any writable `--add-dir` path.
+Install into `~/.claude/skills`. To confirm discovery, have the user start
+`claude` in their repository and invoke `/shaka`. Claude Code uses its configured
+permission mode. Shaka has no Claude Code launcher. Keep the trusted
+installation outside the project and any writable `--add-dir` path.
 
 The desktop app can also use `mct-claude` and `rct-claude`. Install them with
 `--with-claude-towers` and follow [control-tower setup](control-towers.md).
@@ -187,7 +193,8 @@ Those skills require desktop session tools and cannot run in the terminal CLI.
 
 ## Cursor
 
-Install into `~/.cursor/skills` and start a new Agent chat to confirm discovery.
+Install into `~/.cursor/skills` and have the user start a new Agent chat to
+confirm discovery.
 The recorded trial did not discover the skill through `~/.agents/skills`.
 
 To save token usage, add this entry to the `stop` array in `~/.cursor/hooks.json`,
@@ -210,7 +217,7 @@ with status 1.
 }
 ```
 
-Start a new chat after changing hooks. User-level hooks run from `~/.cursor`, so
+Have the user start a new chat after changing hooks. User-level hooks run from `~/.cursor`, so
 this relative path reaches the installed skill. The hook saves aggregate usage
 fields; it does not save prompt text. When this conversation already published a
 description, the hook then fills that description's Cursor usage row.
@@ -220,7 +227,7 @@ explains what is counted.
 ## GitHub Copilot
 
 Select `--agent copilot` with the [official installer](official-installation.md#install).
-Start a new Copilot CLI session or VS Code Agent chat and invoke `/shaka`.
+Have the user start a new Copilot CLI session or VS Code Agent chat and invoke `/shaka`.
 In Copilot CLI, use `/skills list` to check discovery and `/skills info` to inspect
 its location.
 For limitations and supported surfaces, see the [Copilot guide](https://github.com/shakacode/shaka/blob/main/docs/coding-agents.md#github-copilot).
@@ -231,7 +238,7 @@ Use `~/.config/opencode/skills` to avoid overlapping compatibility installations
 Keep the skill outside the repository's `.opencode/skills`, where candidate code
 could replace it.
 
-You can also start the interactive TUI through the installed helper:
+To launch the interactive TUI, use the installed helper:
 
 ```bash
 "$HOME/.config/opencode/skills/shaka/scripts/shaka" work \
@@ -239,8 +246,8 @@ You can also start the interactive TUI through the installed helper:
 ```
 
 The launcher disables project-local OpenCode configuration, plugins, and
-instructions. Trusted global configuration still loads, and your existing
-permissions apply. Account and model settings are unchanged.
+instructions. Trusted global configuration still loads with the host's configured
+permissions, account, and model settings.
 
 For usage, provide the session ID from `opencode session list`:
 
@@ -255,8 +262,8 @@ Pi launcher or tower skill. Its usage reader needs a persistent v3 session with
 matching `PI_SESSION_FILE` and `PI_SESSION_ID` values. Missing or unsupported
 records produce `UNKNOWN`.
 
-For actual session renaming, manually add the installed skill's absolute
-`extensions/pi-session-name.js` path to the `extensions` array in your personal Pi
+To enable session renaming, add the installed skill's absolute
+`extensions/pi-session-name.js` path to the `extensions` array in the user's Pi
 settings file (`~/.pi/agent/settings.json`, or under `PI_CODING_AGENT_DIR`). Preserve
 existing settings and extension entries. For example:
 

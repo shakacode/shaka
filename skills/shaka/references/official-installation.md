@@ -1,6 +1,8 @@
 # Official installation
 
-Use this procedure for everyday installation, update, and verification.
+Use this procedure when handling an official Shaka installation, update, or
+verification request. For people who want to run the commands themselves, share
+[Install Shaka manually](https://github.com/shakacode/shaka/blob/main/docs/manual-installation.md).
 Require Ruby 3.4 or later, Git, and authenticated GitHub CLI; see
 [prerequisite details](installation.md#prerequisites). Shaka records its own Ruby
 and ignores project Ruby and Bundler settings. Never edit the dedicated checkout.
@@ -8,7 +10,7 @@ and ignores project Ruby and Bundler settings. Never edit the dedicated checkout
 ## Install
 
 Review the source and installer, then clone into a directory outside the
-repositories your agent will edit:
+project repositories the user works in:
 
 ```bash
 umask 022
@@ -52,8 +54,9 @@ may be selected. Default installation includes only Shaka.
 If an older installer lacks a tower flag, update Shaka first, then run
 `bin/install` to select that tower.
 Use installer-owned or root-owned protected files and directories, without group
-or world write access. Reinstallation preserves recognized towers and registered hosts. Start a new chat
-and look for **Shaka**; restart the host if its list is stale. Tower flags apply
+or world write access. Reinstallation preserves recognized towers and registered hosts.
+Ask the user to start a new chat and look for **Shaka**. If the list is stale,
+ask them to restart the host. Tower flags apply
 to every selected host; install hosts separately when their roles differ.
 For an existing permission error, remove group/world write access from the named
 paths you own, or select a protected location. Preserve file contents and executable bits.
@@ -96,7 +99,7 @@ The installer prints an update reminder for every host and custom skills directo
 the checkout moved; its guidance says whether `install --update` can record the move. An `unknown` result names its reason.
 `bin/install --agent claude --session-hook` reports the saved `update-check` answer when each Claude Code chat
 starts; installing with `--agent claude` and without the flag removes that hook.
-Use the registered helper with your chosen path:
+Use the registered helper at the installation's actual path:
 
 ```bash
 "$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --verify
@@ -122,12 +125,14 @@ running `bin/install` with Ruby 3.4 or later. Maintenance uses registered select
 change hosts or towers through installation first. A known interrupted update
 completes on the next installation or update run.
 
-Finish active Shaka chats before updating this mutable path. Doctor reads recorded identity;
+Ask the user to finish active Shaka chats before updating the linked checkout. Doctor reads recorded identity;
 verification rechecks it. Project settings use [repository migration](migration.md).
 
 ## Teams and forks
 
-Use the [fork guide](https://github.com/shakacode/shaka/blob/main/docs/fork-and-hack.md).
+Follow the [agent procedure for forks](installation.md#install-from-a-personal-fork)
+for fork installation and updates. Share the [fork guide](https://github.com/shakacode/shaka/blob/main/docs/fork-and-hack.md)
+with people setting up their own fork.
 Keep local `.git` installation records per machine. For forks or SSH origins, register the exact `--repository URL` and optional `--branch NAME`.
 Publish upstream integrations separately before updating.
 

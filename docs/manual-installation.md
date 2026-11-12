@@ -65,8 +65,9 @@ check the installation, and [set up your project](getting-started.md#2-set-up-yo
 
 ## Install your own fork
 
-Use [Fork Shaka and make it yours](fork-and-hack.md) to install your own version
-and learn how to switch back to the official version.
+See [create and install a fork](fork-and-hack.md#fork-and-install) or
+[install a fork you already have](fork-and-hack.md#install-a-fork-you-already-have).
+The fork guide also shows how to switch back to the official version.
 
 ## Keep a tested release
 
