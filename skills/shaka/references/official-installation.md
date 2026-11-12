@@ -84,8 +84,9 @@ New gem installations select their own version. To reuse an existing custom inst
 run its registered helper or pass `--directory DIR`; installation there keeps its source
 selection. An explicit repository or branch overrides the gem default.
 
-To change versions or roll back, follow [Before take-over](#before-take-over)
-and use a separate directory with `--release VERSION --take-over`.
+Follow [Before take-over](#before-take-over) when changing releases.
+To install a new release, use a separate directory with `--release VERSION --take-over`.
+To roll back, [restore the saved installation](installation.md#restore-the-saved-installation).
 Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
 that the remote tag still resolves to the recorded commit; it never advances to `main`
 or another release. A missing or moved tag fails. `update-check` reports the local pin,

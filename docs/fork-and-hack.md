@@ -41,6 +41,33 @@ be affected. If you asked to switch one coding agent, it should ask before
 moving any other agent's links. After the switch, have it verify the active
 links and commit and explain how to switch back.
 
+<details>
+<summary>Install an existing fork from a terminal</summary>
+
+Use this for a fresh installation. To replace an existing installation, use
+the prompt above so your agent can check which links would move and save the
+current version for rollback.
+
+Set `fork_url` to your fork's clone URL, `fork_branch` to the branch you pushed
+to GitHub, and `shaka_source` to a new checkout path.
+
+```bash
+umask 022
+git clone --branch "$fork_branch" "$fork_url" "$shaka_source"
+```
+
+Inspect the cloned source and its installer. When you're ready to use that
+revision, run this example for Codex. For other agents, see the
+[terminal installation options](manual-installation.md#install).
+
+```bash
+"$shaka_source/bin/install" --directory "$shaka_source" \
+  --repository "$fork_url" --branch "$fork_branch" --agent codex &&
+  "$shaka_source/bin/install" --verify
+```
+
+</details>
+
 ## Hack on it
 
 Try a small change with a visible result:

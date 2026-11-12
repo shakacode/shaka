@@ -140,7 +140,8 @@ If status gives you a decision instead of a command, leave the links in place
 and ask your agent to inspect the checkouts before you choose which to keep.
 
 Repair keeps local commits on a `kept-<commit>` branch and renames unused
-records so you can inspect them later. It stops when it needs a decision.
+records so you can inspect them later. It deletes only the temporary checkout
+left by an interrupted update. It stops when it needs a decision.
 
 To enable Claude Code's startup reminder, run
 `"$shaka_source/bin/install" --directory "$shaka_source" --agent claude --session-hook`.

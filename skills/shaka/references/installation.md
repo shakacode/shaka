@@ -69,14 +69,16 @@ use `--release VERSION` for a pinned release. Keep the old checkout and remotes
 intact. Run `bin/install --verify` from the newly active checkout. If take-over
 reports an error, check which checkout owns the links before retrying.
 
+<a id="restore-the-saved-installation"></a>
+
 To switch back, use the retained checkout if it is a supported destination.
 Otherwise prepare a supported checkout at the saved revision. In the actual
 destination, check the saved origin and branch or release and compare
 `git -C DIR rev-parse HEAD` with the saved commit. Stop before take-over
 if the destination is empty, the source differs, or HEAD does not match.
 
-Use a trusted installer, such as the retained official checkout's
-`bin/install`. Pass the checked destination with `--directory`, the saved
+Run `bin/install --take-over` from a trusted checkout, such as the retained
+official checkout. Pass the checked destination with `--directory`, the saved
 URL with `--repository`, and the saved `--branch` or `--release`.
 Pass `--skills-dir DIR` for an active custom skills directory so the
 installer can locate the owner. Verify the restored source and revision.
