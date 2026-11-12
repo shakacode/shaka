@@ -120,9 +120,14 @@ Check the result with `"$shaka_helper" install --verify`. After active chats
 finish, run `"$shaka_helper" install --update` to update a branch installation.
 For a pinned release, use the [tested release prompt](#keep-a-tested-release)
 to install a newer release.
-`"$shaka_helper" install --repair` can fix recoverable problems and stops
-when it needs a decision. It keeps local commits on a `kept-<commit>` branch
-and renames unused records so you can inspect them later.
+
+Before running `"$shaka_helper" install --repair`, check the status output.
+If it shows a split installation, it names the checkout that will receive
+the skill links. Check which agents will switch. If Claude Code's startup
+hook follows a link that moves, new Claude chats will run the new checkout.
+Run repair once you're ready for those changes. Repair keeps local commits on a
+`kept-<commit>` branch and renames unused records so you can inspect them later.
+It stops when it needs a decision.
 
 To enable Claude Code's startup reminder, run
 `"$shaka_source/bin/install" --directory "$shaka_source" --agent claude --session-hook`.
@@ -168,7 +173,9 @@ old checkout.
 <summary>Move Shaka's skill links to a dedicated checkout</summary>
 
 Run the command below from the checkout your coding agents currently use.
-It moves the skill links to a dedicated checkout. The old checkout keeps
+It moves every skill link registered to that checkout. Check which agents
+will switch before you run it. A Claude Code startup hook that follows a
+moved link will run the new checkout in new chats. The old checkout keeps
 its files, branches, and worktrees.
 Choose a destination with no linked worktrees or extra branches. If the default
 directory is in use, choose a separate destination.
