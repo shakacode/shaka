@@ -12,6 +12,7 @@ To create your own fork and install it, ask your coding agent:
 
 ```text
 Fork https://github.com/shakacode/shaka and install my fork for this coding agent.
+Ask me before moving another coding agent's skill link.
 Explain how I switch between using my fork and the official version.
 ```
 
@@ -24,6 +25,7 @@ Give your coding agent the fork's URL and the branch you want to install. For ex
 
 ```text
 Install my Shaka fork from https://github.com/OWNER/shaka on branch mine.
+Ask me before moving another coding agent's skill link.
 Show me which coding agents will switch and how to switch back.
 ```
 
@@ -34,8 +36,10 @@ Before switching, ask the agent to record the current source, branch or release,
 and commit. Select the official Shaka source or your fork's URL and branch. The
 installer switches your skill links to a separate checkout and keeps the previous
 checkout available. If other coding agents use that installation, switching
-moves their links too. Ask the agent to show which links will move and verify the active links and commit, and
-explain how to switch back before you start a new chat.
+moves their links too. Ask the agent to show which links and startup hooks will
+be affected. If you asked to switch one coding agent, it should ask before
+moving any other agent's links. After the switch, have it verify the active
+links and commit and explain how to switch back.
 
 ## Hack on it
 
@@ -77,9 +81,10 @@ reads, run `skills/shaka/scripts/shaka workflow` from the development clone.
 ## Keep your fork current
 
 ```text
-Bring the latest official Shaka changes into my fork. Keep my customizations,
-resolve conflicts, and test the result. Publish the tested commit to my fork's
-install branch, then install that exact commit.
+Inspect the latest official Shaka changes before merging them into my fork.
+Keep my customizations, resolve conflicts, and test the result. Publish the
+tested commit to my fork's install branch, then install that exact commit.
+Ask me before moving another coding agent's skill link.
 ```
 
 Bring upstream changes into your working branch without rewriting the installed
@@ -90,8 +95,9 @@ Finish active Shaka chats, install the tested commit, and start a new chat.
 <details>
 <summary>Publish the tested update from a terminal</summary>
 
-In the development clone, switch to your fork's install branch, merge your
-integration, and run `.agents/shaka/bin/validate`. Set `tested_commit` to the
+Review the upstream changes in your development clone before merging them.
+Switch to your fork's install branch, merge your integration, and run
+`.agents/shaka/bin/validate`. Set `tested_commit` to the
 commit you validated. Check that both `git remote get-url origin` and
 `git remote get-url --push origin` point to your fork. Use the same
 `fork_branch` as above to publish the tested commit and confirm it is on the
