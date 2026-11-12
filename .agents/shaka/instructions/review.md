@@ -14,3 +14,9 @@
 - For a new user-invoked procedure, check that the documented entry point routes
   to it, and that any behavior trial started from that entry point rather than
   naming the procedure file.
+- For documentation changes, read each changed file in full. Apply the
+  `AGENTS.md` audience rules to headings, prose, prompts, and links. Flag a
+  passage that makes the reader guess whether they should act, ask their
+  agent, or wait for the agent. For example, a public fork guide addresses the
+  person installing Shaka, and the skill procedure tells the agent to
+  confirm the fork URL and branch.
