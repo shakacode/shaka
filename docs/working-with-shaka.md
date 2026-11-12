@@ -35,17 +35,19 @@ To use Auto for a task, add:
 Merge when ready.
 ```
 
-Required checks, reviews, and approvals still apply. Large or risky changes can
-still need your approval. See [merge settings](settings.md#mergepreference) and
-[size limits](settings.md#mergelimits) for the defaults and team choices.
+Required checks, reviews, and approvals still apply. By default, Auto can merge
+only PRs rated low risk. See [Risk and review](reference/pr-record.md#risk-and-review)
+for the rating and reasons. Shaka asks for your approval if the rating is
+missing, exceeds your [Auto risk limit](settings.md#mergeauto_merge_max_risk),
+or the PR exceeds your [size limits](settings.md#mergelimits).
 
-If a CI check fails on both the PR and its target branch, the agent compares the
-logs. A failure the PR did not cause belongs in a separate fix. Auto can proceed
-past an optional check when Shaka confirms the same check fails on the target
-branch and the agent establishes that the PR leaves the failure unchanged.
-[Waiting for every CI review](settings.md#reviewci_review_wait) still returns
-these PRs to you. Required checks continue to block; Shaka does not bypass
-GitHub protection.
+Auto can merge past an optional CI failure that the PR leaves unchanged. Shaka
+verifies that the same check fails on the PR and on the latest commit of its
+target branch. The agent compares the logs and confirms that the PR doesn’t
+change anything the check uses. Handle the existing failure as a separate fix.
+
+If your repository [waits for every CI review](settings.md#reviewci_review_wait),
+Auto hands the PR back to you. A failed required check still blocks the merge.
 
 ## Give feedback
 
