@@ -117,8 +117,17 @@ use Ruby 3.4 or later and run `ruby "$shaka_source/bin/install" --status`.
 Status shows the next step. When it asks you to reinstall to record Ruby again,
 run `ruby "$shaka_source/bin/install"` from that checkout.
 
-Check the result with `"$shaka_helper" install --verify`. After active chats
-finish, run `"$shaka_helper" install --update` to update a branch installation.
+Check the result with `"$shaka_helper" install --verify`. To inspect an update
+to a branch installation, confirm `origin` points to the repository you
+installed from. Then run this from the active checkout:
+
+```bash
+git fetch origin && git diff HEAD '@{upstream}'
+```
+
+The comparison leaves your installed files and skill links in place.
+After active chats finish, run `"$shaka_helper" install --update` to apply a
+branch update. The updater fetches the branch again when it runs.
 For a pinned release, use the [tested release prompt](#keep-a-tested-release)
 to install a newer release.
 
@@ -126,8 +135,8 @@ Before running `"$shaka_helper" install --repair`, check the status output.
 If it proposes a take-over for a split installation, the command names the
 checkout that will receive the skill links. Check which agents will switch.
 If Claude Code's startup hook follows a link that moves, new Claude chats
-will run the new checkout. If status asks you to choose, make that decision
-before running repair.
+will run the new checkout. If status asks you to choose, follow the action it
+prints for your choice and check status again before running repair.
 Run repair once you're ready for those changes. Repair keeps local commits on a
 `kept-<commit>` branch and renames unused records so you can inspect them later.
 It stops when it needs a decision.
