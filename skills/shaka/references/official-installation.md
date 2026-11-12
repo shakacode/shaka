@@ -19,14 +19,16 @@ git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/sourc
 
 Default: `~/.local/share/shaka/source`; respect chosen locations with `--directory DIR`.
 The installer refuses `~/.agents/` and every directory under it, where settings live. An install
-registered there refuses every action; run the take-over command its message names, then tell the user
+registered there refuses every action. Follow [Before take-over](#before-take-over), run the
+command its message names, then tell the user
 the old checkout can be deleted. Never delete it for them. When the message names a decision instead, show it
 to the user; never move the default location's contents yourself.
 Use the registered helper to preserve an existing installation’s chosen path; the default applies to new installations.
 Keep it for direct links and develop separately. `~/agent-tools/shaka` is an optional example.
 Every action refuses a checkout that is itself a linked worktree; reinstall from a separate clone as its message says.
 Installation refuses a checkout with linked worktrees or extra local branches; verify and update warn.
-To move links off such a development clone, run the take-over its message names. When it names commands that
+To move links off such a development clone, follow [Before take-over](#before-take-over)
+and run the take-over its message names. When it names commands that
 remove worktrees or branches instead, show them to the user. Never delete the checkout's branches or worktrees
 for the user.
 This directory is the Shaka source, not configuration; each project keeps its settings in its own `.agents/shaka/`.
@@ -56,6 +58,16 @@ to every selected host; install hosts separately when their roles differ.
 For an existing permission error, remove group/world write access from the named
 paths you own, or select a protected location. Preserve file contents and executable bits.
 
+## Before take-over
+
+Before any take-over, record the active checkout, origin, branch or release,
+commit, linked hosts and skills directories, and any Shaka Claude Code
+`SessionStart` hook. Take-over moves every registered link of the checkout
+it replaces. If the Claude hook follows one of those links, it runs the
+incoming source when a chat starts. Explain which links and hooks are affected.
+If the request covers only one host and another host's link would move, get
+the user's approval for the wider change before running take-over.
+
 ## Verify and update
 
 ### Install a published release
@@ -69,9 +81,9 @@ New gem installations select their own version. To reuse an existing custom inst
 run its registered helper or pass `--directory DIR`; installation there keeps its source
 selection. An explicit repository or branch overrides the gem default.
 
-To change versions or roll back, use a separate directory with `--release VERSION --take-over`.
-The existing take-over procedure moves all registered host links and preserves both
-checkouts. Keep the previous helper for active chats. Release `install --update` checks
+To change versions or roll back, follow [Before take-over](#before-take-over)
+and use a separate directory with `--release VERSION --take-over`.
+Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
 that the remote tag still resolves to the recorded commit; it never advances to `main`
 or another release. A missing or moved tag fails. `update-check` reports the local pin,
 without checking for newer releases.
@@ -99,7 +111,9 @@ and next step. When the helper stops because its recorded Ruby is unavailable, r
 `ruby DIR/bin/install --status` with Ruby 3.4 or later instead. Status is read-only and
 offline; run the next command it names only with the user's approval.
 `install --repair` runs the next commands status names that repair can run, until a decision
-remains; run it only with the user's approval and relay its final state.
+remains. Check status first. If repair will run take-over to reunite a split
+installation, follow [Before take-over](#before-take-over). Run repair only with
+the user's approval and relay its final state.
 Update validates the fetched tree before advancing the recorded origin branch. Dirty tracked or untracked files, unexpected checkout changes,
 and divergent updates stop it. After a manual pull of the registered branch,
 `install --update` records the pulled revision; local commits still stop it. Preserve changes in a development checkout;

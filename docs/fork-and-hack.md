@@ -109,9 +109,11 @@ place of `mine`. You can ask your coding agent to help even if Shaka cannot
 start. Choose which history to keep before changing either checkout.
 
 <details>
-<summary>Keep the rewritten contents and restore the installed commit to the history</summary>
+<summary>Restore updates after rewriting your fork branch</summary>
 
-Use a clean development checkout on the rewritten branch. Set
+Use this when you want to keep the rewritten files and make the installed
+commit part of the branch's history again. In a clean development checkout
+on the rewritten branch, set
 `shaka_source` to the path of the installed checkout, then run:
 
 ```bash

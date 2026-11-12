@@ -165,10 +165,11 @@ Ask it to confirm your development work is still available before removing any
 old checkout.
 
 <details>
-<summary>Move the installation from a terminal</summary>
+<summary>Move Shaka's skill links to a dedicated checkout</summary>
 
-From the currently registered checkout, run this to move the links to a
-dedicated checkout. The old checkout keeps its files, branches, and worktrees.
+Run the command below from the checkout your coding agents currently use.
+It moves the skill links to a dedicated checkout. The old checkout keeps
+its files, branches, and worktrees.
 Choose a destination with no linked worktrees or extra branches. If the default
 directory is in use, choose a separate destination.
 
