@@ -16,9 +16,10 @@ is the reusable default.
 - Assume the reader is new to Shaka and wants to get useful work done.
 - When writing product documentation, follow [documentation structure](internal/documentation.md)
   so readers can start with the skill and consult guides as needed.
-- In `docs/`, write to the person using Shaka. Say what they can do, what to
-  ask their agent, and what the agent will do. Explain choices and their
-  effects with examples. Put development records under `internal/`.
+- In product guides under `docs/`, write to the person using Shaka. Say what they can do, what to
+  ask their agent, and what the agent will do. Explain why rules exist and
+  compare choices and their effects with examples. Put development records
+  under `internal/`.
 - `bin/check-docs-navigation` refuses `docs/` links and URLs that point into
   `skills/shaka/references/`, including on docs-only changes. Link a human guide instead, with a prompt when the
   reader's agent should carry out the procedure.
