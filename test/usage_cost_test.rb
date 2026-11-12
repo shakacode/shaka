@@ -341,7 +341,7 @@ class UsageAnthropicCostTest < Minitest::Test
   def test_standard_opus_prices_each_cache_write_at_its_own_ttl_rate
     report = estimate(anthropic_record)
     assert_metric report, 'USD estimate', '$0.001110'
-    assert_includes report, 'Anthropic API list prices, verified 2026-09-23'
+    assert_includes report, 'Anthropic API list prices, verified 2026-11-12'
     assert_includes report, ANTHROPIC_LINK
     refute_includes report, ANTHROPIC_FAST_LINK
     refute_includes report, 'Credits estimate'

@@ -317,10 +317,10 @@ of its unknown estimate. The table's model is the one actually priced.
 ### Anthropic details
 
 Input, cache reads, and writes are separate. Use the recorded 5-minute/1-hour
-`cache_creation` split; an unsplit write total stays unknown. Fast mode is priced
-at twice standard token rates for Opus 5.5, Opus 5, and Opus 4.8; cache multipliers
-stack on top. Fast mode for other models and unrecorded speed stay unknown. Standard
-and fast responses remain separate columns.
+`cache_creation` split; an unsplit write total stays unknown. For models with
+`fast: true` in the rate card, fast mode doubles all token rates, including cache
+rates. Unsupported fast mode and unrecorded speed stay unknown. Standard and
+fast responses remain separate columns.
 
 Add the recorded web-search charge. An absent server-tool group or search counter
 means no searches; a present malformed group or invalid count is unknown. Fetch

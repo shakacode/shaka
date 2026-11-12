@@ -367,13 +367,14 @@ class ClaudeUsagePriceTest < Minitest::Test
     assert_includes output, 'Server tool usage UNKNOWN'
   end
 
-  def test_published_fast_mode_is_priced_at_its_dedicated_rate
+  def test_fable_52_fast_mode_is_priced_at_its_published_rate
     Dir.mktmpdir do |directory|
-      fast = priced_reply('m1', 100)
+      fast = priced_reply('m1', 100, model: 'claude-fable-5-2')
       fast[:message][:usage][:speed] = 'fast'
       file = transcript(directory, 'session.jsonl', [prompt('new'), fast])
       output = report('--host', 'claude-code', '--file', file)
-      assert_metric output, 'USD estimate', '$0.002158'
+      assert_metric output, 'USD estimate', '$0.003404'
+      assert_metric output, 'Metric', 'claude-fable-5-2-fast'
       assert_includes output, 'fast mode is priced for models with a published rate'
     end
   end
