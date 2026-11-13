@@ -73,9 +73,10 @@ design could reuse. The two changes touch different files.
    entities in a code span literally. Each artifact renders as an angle-bracket link.
    For example, `command: bundle exec rake test` renders as `` `bundle exec rake test` ``.
 
-   These fields are published as written. The agent removes credentials and private
-   paths from them before publishing, as it does for every other description field;
-   Ruby does not scan them.
+   These fields are published as written apart from that escaping. The agent removes
+   credentials before publishing, as it does for every other description field; Ruby
+   does not scan for credentials. Ruby does refuse local absolute paths, as decision 3
+   lists.
 3. **Ruby checks the shape and the commit, not the truth.** Publication refuses an entry
    in these cases:
    - it lacks `skill`, `command`, `checked`, `result`, `not_covered`, `commit`, or
@@ -87,8 +88,9 @@ design could reuse. The two changes touch different files.
    - `checked`, `result`, or `not_covered` is empty or more than one line;
    - `commit` is not a full SHA;
    - an artifact is not an `http` or `https` URL without spaces or angle brackets;
-   - `command` or an artifact contains a local absolute path such as `/Users/` or
-     `/home/`, using the pattern local review already refuses.
+   - any text field or artifact contains a local absolute path such as `/Users/` or
+     `/home/`. This is a new check; local review today redacts such paths rather than
+     refusing them.
 
    These are shape checks. The rendered `command` code span meets the test
    `IntentVerification::EVIDENCE` applies to each Verification check, but neither proves
