@@ -9,6 +9,9 @@ remains unverified.
 Use that record to decide what happens next. Keep it for regular retrospectives
 that improve future work, including automatic merges.
 
+See [Do pull requests still matter in the age of agents?](articles/pull-requests-in-the-age-of-agents.md)
+for an illustrated example.
+
 <a id="what-the-evidence-packet-gives-you"></a>
 <a id="start-with-the-change"></a>
 <a id="see-what-needs-your-decision"></a>

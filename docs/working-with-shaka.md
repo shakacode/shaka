@@ -27,7 +27,7 @@ chat. It can proceed with a clear task and asks when it needs your decision.
 | **Ask** (default) | You merge the ready PR on GitHub, or tell the agent, "You can merge." |
 | `auto` | The agent merges when the PR is ready. |
 
-![A ready PR follows Ask, where you merge or approve it, or automatic merging, where the agent merges. A PR that is too large or risky returns to you when automatic merging is on.](img/merge-policy.svg)
+![A ready PR follows Ask, where you merge or approve it, or automatic merging, where the agent merges eligible PRs. A PR that is too large or risky returns to you when automatic merging is on.](img/merge-policy.svg)
 
 To use `auto` for a task, add:
 
