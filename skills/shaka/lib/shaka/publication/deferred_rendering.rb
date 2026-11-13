@@ -38,7 +38,7 @@ module Shaka
       RenderedProse.tables!(written['body'], normalized)
       stored_escapes!(normalized)
       pending.check.call(normalized)
-      written
+      written.except('body_html', 'body_text')
     rescue StandardError => e # any failure after the write, not only a check's, takes the write back
       undo(existing, written, target, e)
     end

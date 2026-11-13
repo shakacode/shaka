@@ -55,7 +55,7 @@ class DeferredRenderingTest < Minitest::Test
     checked = []
     written = publish(stored_check: ->(html) { checked << html })
 
-    assert_equal 9, written['id']
+    assert_equal [9, nil], written.values_at('id', 'body_html')
     assert_equal [@stored_html], checked
     assert_includes created.first.first, FULL
     refute_predicate self, :deleted?
