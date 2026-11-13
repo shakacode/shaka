@@ -549,7 +549,6 @@ phases:
         issue in this repository. The helper renders a numbered task as the Task line in
         Intent, so leave that task's link and its `Fixes` or `Part of` out of the summary.
         Supply optional `intent.user_impact` as one line when the repository guide calls for it.
-        It renders directly after Why.
         Supply `intent.task_understanding` from the intake readback, incorporating human
         corrections and checking it for private content. Publish a paraphrase of the assignment
         and success criteria as `goal` and `done_when`, one line each, excluding raw prompts and
