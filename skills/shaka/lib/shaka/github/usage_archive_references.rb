@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../publication/usage_details'
+
 module Shaka
   # Checks the complete ordered inventory before any archive data reaches carry.
   module UsageArchiveReferences
@@ -80,8 +82,13 @@ module Shaka
         first['record'] < second['record']
     end
 
-    # A table record keeps only hidden columns and notes, which the table and pricing notes already show.
-    def hidden?(block) = inner(block).gsub(/<!--.*?-->/m, '').strip.empty?
+    # A table record holds only its hidden columns and pricing note, which the table and pricing notes already
+    # show. Any other report renders its own text.
+    def hidden?(block)
+      text = inner(block)
+      text.match?(UsageDetails::HIDDEN) &&
+        text.sub(UsageDetails::HIDDEN, '').sub(UsagePricing::HIDDEN, '').sub(UsagePricing::REFERENCE, '').strip.empty?
+    end
 
     def indices(ref) = ref.fetch('records') { [ref.fetch('record')] }
 
