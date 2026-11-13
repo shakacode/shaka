@@ -74,7 +74,7 @@ module Shaka
       first.slice('comments', 'sha256').merge('records' => blocks.map { |block| references[block].fetch('record') })
     end
 
-    # Indices only increase within a reference, so no edit can restore one record many times.
+    # Indices only increase within one reference, so a reference cannot restore one record many times.
     def follows?(first, second)
       first && second && first.values_at('comments', 'sha256') == second.values_at('comments', 'sha256') &&
         first['record'] < second['record']
