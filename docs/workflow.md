@@ -47,8 +47,9 @@ run before anyone looks. When a PR already targets some other branch, the agent
 confirms it with you and waits for your merge decision.
 
 Your check scripts under `.agents/shaka/bin/` are the exception: Shaka runs them
-from the PR's own branch, so a PR can change what `validate` does. The agent
-inspects changes to them before running them. Review those changes like other code.
+from the PR's own branch, so a PR can change what `validate` does. Shaka's
+instructions tell the agent to inspect changes to them before running them, but
+nothing checks that it did. Review those changes like other code.
 
 ![Maintainers, the default branch, and your decisions steer the agent. Public comments, fork PR diffs, and settings changed in the PR are read as data only.](img/trust-boundary.svg)
 

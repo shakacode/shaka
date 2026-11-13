@@ -22,9 +22,11 @@ are complete. See [what is enforced](../workflow.md#what-is-enforced).
 **Shaka settings used** shows how long each check ran and on what kind of machine,
 such as `27m on m5 (Apple M5 Max, 18 cores, 128 GB RAM, 3 GB free, load 140→450)`.
 The hardware and the load at start and end help you tell a busy machine from slower
-hardware; they are context, not proof of the cause. Shaka publishes only the CPU
-model, these counts, and your [machine alias](../coding-agents.md#name-your-machines),
-never the machine's own name, your user name, or paths.
+hardware; they are context, not proof of the cause. For the machine, this table
+shows only your [machine alias](../coding-agents.md#name-your-machines), CPU model,
+core count, memory, and load, never the machine's own name, your user name, or
+paths. WIP Details is separate: it shows your checkout path unless you
+[hide it](../settings.md#wipinclude_checkout_path).
 
 The **Code Review** link opens the review record. Check coverage, unresolved
 findings, and the number of rounds; repeated rounds can signal work worth
@@ -210,7 +212,7 @@ larger than the original charge." No call order changed, so no diagram is needed
 
 The walkthrough can leave a few notes on the changed lines, written for you as the
 reviewer. Each says how to read the lines it sits on: where to start, what to read
-closely, what to skim, or why the code took this approach. Notes are reading
+closely, what to skim, or an alternative the code rejected. Notes are reading
 guidance, not findings to fix. For the duplicate-refund fix:
 
 > **Start here:** this check is the whole behavior change; the controller and
