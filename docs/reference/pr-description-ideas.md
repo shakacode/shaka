@@ -127,9 +127,10 @@ production line. pstack is Tan's public skill set in `cursor/plugins`.
   [opening-a-pr playbook](https://github.com/cursor/plugins/blob/c742dd61706fbacc1b95f1a20b7b988cf096ce6c/pstack/skills/poteto-mode/playbooks/opening-a-pr.md)
   gives a one-minute briefing with an always-present Scope. Each Verification bullet
   is a real run path and its outcome. Other detail goes to linked artifacts.
-- **In Shaka:** Intent holds Why, Safe because, and Scope, plus a review line and
-  optional lines such as Task, Root cause, and Leaves out. Verification holds up to
-  three checks. Audit detail is collapsed.
+- **In Shaka:** Intent holds Why, Safe because, and Scope, plus optional lines such as
+  Task, Root cause, and Leaves out. Its review line gave way to a Risk and review section
+  after Intent ([#1081](https://github.com/shakacode/shaka/pull/1081)). Verification
+  holds up to three checks. Audit detail is collapsed.
 - **Result:** the visible text now names the problem, the scope, and the safety
   fact. On [#543](https://github.com/shakacode/shaka/pull/543), it named none of
   them.
@@ -182,14 +183,15 @@ production line. pstack is Tan's public skill set in `cursor/plugins`.
   - #553 refuses a description with a missing field.
   - [#740](https://github.com/shakacode/shaka/pull/740) writes the validation and
     review line from recorded results.
-  - [#757](https://github.com/shakacode/shaka/pull/757) refuses a review effort below
-    a floor computed from the changed paths.
+  - [#757](https://github.com/shakacode/shaka/pull/757) refused a review effort below
+    a floor computed from the changed paths, until
+    [#1081](https://github.com/shakacode/shaka/pull/1081) retired the rating.
 - **Result:** 11 of 12 PRs had spent two of three checks on restated passes. Now 32
   of 101 spend one, mostly to add test totals, and none spends two. #553 had asked only for what ran and
   its outcome. Ratings of 1 on workflow or Ruby changes
   ([#690](https://github.com/shakacode/shaka/pull/690),
   [#694](https://github.com/shakacode/shaka/pull/694),
-  [#704](https://github.com/shakacode/shaka/pull/704)) can no longer publish.
+  [#704](https://github.com/shakacode/shaka/pull/704)) could no longer publish.
 - **Limit:** the windows differ, and nobody ran a controlled comparison. Shaka's
   [rule table](https://github.com/shakacode/shaka/pull/145), which records what
   enforces each workflow rule, predates this post.
@@ -251,12 +253,14 @@ predates this work.
   has a Human read required section. The Code Nobody Reads sizes human attention to
   blast radius: a lighter pass for small changes to less sensitive code, and careful
   review for core paths.
-- **In Shaka:** by that account, these led to #757, which computes a review floor from the changed
-  paths. Agents may rate higher, never lower. Tan's `correct` ladder pointed the same
-  way. Floors come from the default branch, so a PR can't lower its own. factory has
+- **In Shaka:** by that account, these led to #757, which computed a review floor from the
+  changed paths. Agents could rate higher, never lower. Tan's `correct` ladder pointed the
+  same way. Floors came from the default branch, so a PR couldn't lower its own. factory has
   the same rule against an agent rewriting its own constraints.
   [#812](https://github.com/shakacode/shaka/pull/812) later let Auto merge only PRs at
   or below a chosen floor. That came from #780 and the study below, not from factory.
+  [#1081](https://github.com/shakacode/shaka/pull/1081) then replaced the floors with the
+  checkpoint's risk rating, which the repository's risk areas can raise but not lower.
 - **Result:** a [study of 309 PRs](../articles/one-shot-pr-study.md) supports paths over size.
   A person gave feedback on 65, and 64 of those changed docs or agent instructions.
   Within the size limits, 0 of 73 PRs that left those files and Shaka's settings
@@ -267,7 +271,7 @@ predates this work.
     [maintainer's choice](https://github.com/shakacode/shaka/pull/757#discussion_r4331436333).
   - [#827](https://github.com/shakacode/shaka/pull/827) replayed 60 PRs at floor 2,
     and 14 would have merged without a person.
-- **Limit:** a path floor misses one risky line inside a low-floor file.
+- **Limit:** a path floor missed one risky line inside a low-floor file.
   [#922](https://github.com/shakacode/shaka/pull/922) added Closer reading for that.
   4 PRs with an Intent block name no floor, because they changed only design records
   under `internal/`.
@@ -359,7 +363,8 @@ predates this work.
   arrived in [#1044](https://github.com/shakacode/shaka/pull/1044) after this window.
 - [#780](https://github.com/shakacode/shaka/issues/780) closed with
   [#1081](https://github.com/shakacode/shaka/pull/1081): the checkpoint's risk rating,
-  not a review floor, now sets what Auto may merge. This repository still runs Ask.
+  raised by the repository's high- and medium-risk areas, now sets what Auto may merge.
+  This repository still runs Ask.
 - [#976](https://github.com/shakacode/shaka/issues/976): usage records that survive
   model switches, restarts, and host handoffs.
 

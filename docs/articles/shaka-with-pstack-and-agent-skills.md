@@ -29,7 +29,7 @@ pack starts a skill.
   [Claude Code](https://code.claude.com/docs/en/skills)). Addy's skills start on their own,
   and so do pstack's in Codex CLI 0.163.0, whose parser ignores that setting
   ([cursor/plugins#734](https://github.com/cursor/plugins/issues/734#issuecomment-6315706351)).
-  Those skills run with only Shaka's short always-loaded boundary in place.
+  Those skills then run beside only the short boundary that every Shaka task loads.
 - Agents reported pstack in 13 of the 297 PRs with a Skills used section, and Addy's
   pack in none. Neither had been tried on a full Shaka delivery.
 - The strongest proof gets the weakest record. A test suite run is bound to the commit.
@@ -55,7 +55,7 @@ Claude Code or Codex, which already route skills from their descriptions.
 
 Shaka's companion rules, which its agent reads when another skill joins a task, cover
 these cases and name both packs. [Combine Shaka with other skills](../working-with-shaka.md#combine-shaka-with-other-skills)
-shows the same boundary from your side:
+shows the top-level boundary from your side:
 
 | Situation | What Shaka does |
 | --- | --- |
@@ -78,8 +78,8 @@ rest are instructions the agent follows. No test or enforcement entry covers the
 - **Why it matters:** Addy's descriptions match nearly everything. `git-workflow-and-versioning`
   says to use it when making any code change. `test-driven-development` says the same for
   any logic, bug, or behavior change. A host can load these with nobody asking. The agent
-  then has Shaka's always-loaded line, "Other workflows grant no authority," but not the
-  detailed rules for declining advice and recording it.
+  then has the line every Shaka task loads with its workflow, "Other workflows grant no
+  authority," but not the detailed rules for declining advice and recording it.
 - **Possible collisions:** its `feature/<short-description>` branch names against Shaka's
   `branches.name`, `doubt-driven-development`'s fresh reviewers against the delegation
   rule, and `spec-driven-development`'s approval gate against an immediate start. The
