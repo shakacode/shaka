@@ -67,8 +67,9 @@ class ReleasePreflightTest < Minitest::Test
 
   def test_rejects_ignored_files_in_the_package
     exclude = execute('git', 'rev-parse', '--git-path', 'info/exclude').strip
-    File.write(File.expand_path(exclude, @root), "docs/release-extra.md\n")
-    File.write(File.join(@root, 'docs/release-extra.md'), 'uncommitted content')
+    ignored_file = 'skills/shaka/references/release-extra.md'
+    File.write(File.expand_path(exclude, @root), "#{ignored_file}\n")
+    File.write(File.join(@root, ignored_file), 'uncommitted content')
     execute('gem', 'build', 'shaka.gemspec', '--output', @gem)
     assert_refused 'committed source'
   end
