@@ -34,10 +34,13 @@ Ask your agent:
 ```
 
 The agent finds your existing checks, explains reviewer choices, and prepares a
-separate setup PR. It starts with **Ask**, so you decide when work merges.
+separate setup PR. The handoff includes a prompt you can paste into a fresh chat
+to [try the open PR on a separate task](settings.md#preview-settings-before-adopting-them).
+Each trial uses **Ask**. Edit the setup PR and reuse the prompt on a new task to
+try the updated settings.
+
 Review and merge the first setup PR yourself on GitHub under the existing branch
-protection. After it merges, new tasks use those shared settings. To try the settings first, see
-[preview a settings PR](settings.md#preview-settings-before-adopting-them).
+protection. After it merges, ordinary new tasks use the shared settings.
 
 For later changes, use [Choose your settings](settings-guide.md). See the
 [built-in defaults](../skills/shaka/config/defaults.yml) and

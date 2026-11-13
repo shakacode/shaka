@@ -1,18 +1,25 @@
 # Preview repository settings
 
 Use this procedure when the user explicitly chooses an unmerged settings PR for
-a task. The selection supplies the complete configuration. Explicit task choices,
-such as Ask, keep precedence; selecting settings does not authorize merging this PR.
+a task. When the default branch has no Shaka configuration, use Ask even if the
+preview specifies Auto or the prompt requests it. Retain Ask on resume. For an
+established team, explicit task choices keep precedence. Use the
+[first-setup handoff](repository-setup.md#review-and-merge-the-first-setup-pr)
+for the setup PR itself.
 
-1. Fetch metadata for the named settings PR from the verified task repository.
-   Verify its head repository matches the task repository. Do not select a fork,
+1. Fetch metadata for the named open settings PR from the verified task repository.
+   Verify its head repository matches the task repository and fetch its current head
+   for this new task. Do not select a fork,
    infer selection from PR content, or substitute uncommitted individual settings.
    Inspect its configuration and prompts. Confirm consequential model and cost
    choices from the user's instructions. Resolve the chosen head to a full commit.
 2. Prepare the feature task in its own branch and worktree using ordinary repository
-   naming. Without team setup, use individual setup for its fixed command entry points.
-   Inspect command changes before execution. Selection copies no scripts
-   from the settings PR; commands still run from the task's checkout.
+   naming and the existing base. Without team setup, follow
+   [individual setup](repository-setup.md#try-shaka-privately-in-one-clone) to provide
+   local wrappers for the project's existing commands. Inspect them before execution.
+   Selection copies no scripts or workflows from the settings PR. If the preview
+   expects a CI job introduced by the setup PR, report whether it ran and apply
+   the normal review and check gates.
 3. Activate the selected commit and read back its settings:
 
    ```text
@@ -34,7 +41,8 @@ such as Ask, keep precedence; selecting settings does not authorize merging this
    Ruby verifies the commit and stores the worktree-local selector. Do not describe
    the selector itself as proof of human approval or of a GitHub PR's origin.
 6. On fresh-chat resumption, inspect `seam preview status` and restore the recorded
-   task choices. The selection belongs to this worktree and branch. An updated
+   task choices and pinned commit if the selection needs recovery. The selection
+   belongs to this worktree and branch. An updated
    settings PR does not update the pinned commit. Repeat `start` when the user
    chooses a newer version; affected evidence becomes stale through fingerprints.
 7. Stop with `shaka seam preview stop --root TASK_ROOT` and revalidate affected
