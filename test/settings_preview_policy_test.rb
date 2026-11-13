@@ -5,6 +5,7 @@ require_relative 'merge_test'
 require 'shaka/seam'
 require 'shaka/prefix'
 require_relative 'claim_helpers'
+require_relative 'cli_merge_fixture'
 
 class SettingsPreviewPolicyTest < Minitest::Test
   include SettingsPreviewFixture
@@ -44,6 +45,26 @@ class SettingsPreviewPolicyTest < Minitest::Test
     output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root, '--ref', trusted)
     assert_predicate status, :success?, error
     JSON.parse(output)
+  end
+end
+
+class FirstSetupPreviewMergeTest < Minitest::Test
+  include SettingsPreviewFixture
+  include CliMergeFixture
+
+  def test_first_setup_preview_refuses_auto_before_submitting
+    with_preview_repository do |root, _trusted, preview|
+      absent = remove_trusted_setup(root)
+      select_preview(root, preview)
+      install_fake_github(root)
+      mutation = File.join(root, 'mutation.json')
+
+      _, error, status = run_merge(root, absent, mutation, '--auto')
+
+      refute_predicate status, :success?
+      assert_match(/first setup settings preview uses Ask/, error)
+      refute_path_exists mutation
+    end
   end
 end
 

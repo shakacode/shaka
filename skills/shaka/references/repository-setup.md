@@ -205,11 +205,9 @@ is installed or the user declines.
 
 ## Review and merge the first setup PR
 
-When the default branch has no Shaka configuration, every `--ref` command stops
-with `Cannot read .agents/shaka/config.yml at REF`. That includes
-`seam check`, `reviewer`, and `merge`. The refusal is correct: the setup PR must not
-grant itself review or merge policy. Do not work around it with the candidate's
-own YAML. Handle that one PR this way:
+When the default branch has no Shaka configuration, review the setup PR under
+the repository's existing policy. Reserve [settings previews](settings-preview.md)
+for separate tasks.
 
 1. Validate with `shaka seam check --root . --local` and the new wrapper scripts.
    The local check proves syntax only.
@@ -232,8 +230,17 @@ own YAML. Handle that one PR this way:
    executable wrappers and merge policy, so ask them to review those files before
    they merge it on GitHub under the repository's existing protection.
 
-After that merge, each later task resolves the current default-branch commit at
-intake and passes it as `--ref`.
+At handoff, offer this copyable prompt for a separate chat. Substitute the actual
+setup PR URL and use the host's Shaka invocation:
+
+```text
+$shaka <task or issue link>
+Use settings from <setup PR URL>. Keep merge preference Ask.
+```
+
+Explain that the setup PR can stay open while the team tries its settings. Each
+new task started with the prompt pins the PR's current commit. After the setup
+PR merges, ordinary new tasks use the default-branch settings.
 
 
 ## What `seam init` writes

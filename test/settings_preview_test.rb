@@ -110,7 +110,7 @@ class SettingsPreviewBoundaryTest < Minitest::Test
       assert_equal 'preview/local', Shaka::Evidence::Inputs.resolve_source(root, absent).last
       refute_empty capture(root, absent)['digest']
       policy = Shaka::TrustedConfigSource.from_ref(root:, ref: absent, private_trial: true)
-      assert_equal 'auto', policy.merge['preference']
+      assert_equal 'ask', policy.merge['preference']
       assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: absent) }
     end
   end

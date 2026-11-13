@@ -120,6 +120,20 @@ def require_merge_ref!(options)
   raise Shaka::Error, 'merge requires --ref so policy comes from a trusted commit'
 end
 
+def merge_policy(options)
+  root = options[:root] || Dir.pwd
+  ref = options[:ref]
+  # Individual settings grant no policy. An explicit preview can supply policy, but
+  # the first setup cannot enable Auto while the default branch has no configuration.
+  seam = Shaka::TrustedConfigSource.from_ref(root:, ref:, private_trial: true)
+  if options[:auto] && Shaka::Configuration::SettingsPreview.ref(root:) &&
+     !Shaka::Configuration::Layout.commit(root:, sha: ref, allow_missing: true)
+    raise Shaka::Error, 'The first setup settings preview uses Ask. Merge requires a task-scoped decision.'
+  end
+
+  seam
+end
+
 # Reads effective limits through the opening check's guarded Git; unavailable settings are reported.
 def description_prose_limits(root, ref)
   return [Shaka::ProseLimits.new, {}] unless ref
@@ -397,9 +411,7 @@ begin
   if %w[pr walkthrough handoff squash-message attention].include?(command) && options[:ref]
     seam = Shaka::Configuration.resolve_source(root: options[:root] || Dir.pwd, ref: options[:ref]).first
   elsif command == 'merge'
-    # Private trial settings grant no policy, so merge applies defaults and GitHub's gates under them.
-    seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref],
-                                               private_trial: true)
+    seam = merge_policy(options)
   end
   seam_required_checks = seam.merge['required_checks'] if seam&.sha
   if command == 'merge' && !options[:squash_message]
