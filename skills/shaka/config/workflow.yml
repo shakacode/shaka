@@ -536,15 +536,14 @@ phases:
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
         whose summary names usage is refused; walkthroughs also require `head`.
         `intent` holds one line each for `why`, `scope`, and `safe_because`: the problem,
-        what changes, and the concrete safeguard.
-        Supply `intent.user_impact` for every description. In one line under Why, say what
-        changes for the product’s users. If no change is expected, say so and name what the
-        tests you ran cover. If you ran no tests, say what you verified.
-        Add optional `leaves_out` for a deliberate exclusion readers would reasonably expect.
-        Intent ends with
+        what changes, and the concrete safeguard. Add optional `leaves_out` only for a deliberate
+        deferred part readers would reasonably expect; otherwise omit it. Intent ends with
         `scope`, GitHub's file/line counts, and path-based buckets. When a few files or ranges need
         more care than the rest, list them in `review_focus`, each with `path`, a one-line `reason`, and
         optional `from` with `to` or `block` as `code_links` take them.
+        Supply `intent.user_impact` for every description. In one line under Why, say what
+        changes for the product’s users. If no change is expected, say so and name what the
+        tests you ran cover. If you ran no tests, say what you verified.
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
         Name the task in provenance as the
