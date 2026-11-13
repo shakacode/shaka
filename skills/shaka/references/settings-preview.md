@@ -8,6 +8,10 @@ established team, explicit task choices keep precedence. Use the
 [first-setup handoff](repository-setup.md#review-and-merge-the-first-setup-pr)
 for the setup PR itself.
 
+On resume, read `seam preview status` and restore the recorded task choices and
+pinned commit. Continue with that selection even if the PR has merged. Start at
+step 1 for a new selection or an explicitly requested switch to a newer commit.
+
 1. Fetch metadata for the named open settings PR from the verified task repository.
    Verify its head repository matches the task repository and fetch its current head
    for this new task. Do not select a fork,
@@ -19,14 +23,12 @@ for the setup PR itself.
 2. Prepare the feature task in its own branch and worktree using the claim's branch
    name and confirmed base. Without team setup, follow
    [individual setup](repository-setup.md#try-shaka-privately-in-one-clone) to provide
-   local wrappers for the project's existing commands. Match the selected commit's
-   command paths. When it has `validate-local` and `trigger-hosted-ci`, supply their
-   project commands using both individual setup flags. For `validate-local` alone,
-   generate the required individual wrappers first, then write an executable
-   `.agents/shaka/bin/validate-local` that calls the task base's scoped validation
-   command. Keep it in the ignored local settings tree and record its hash for
-   cleanup when stopping the preview. If the task base lacks a
-   command the preview requires, explain the mismatch before activation.
+   local wrappers for the project's existing commands. Reuse complete individual
+   setup when it already exists. For a fresh setup that needs the optional
+   `validate-local` and `trigger-hosted-ci` pair, pass both command flags.
+   Otherwise add any missing optional wrappers locally for the preview and record
+   their paths and hashes. If the task base lacks a command the preview requires,
+   explain the mismatch before activation.
    Inspect local wrappers before execution.
    Selection copies no scripts or workflows from the settings PR. If the preview
    expects a CI job introduced by the setup PR, report whether it ran and apply
@@ -51,14 +53,12 @@ for the setup PR itself.
    privacy boundary. The agent verifies the user's selection and the PR's origin;
    Ruby verifies the commit and stores the worktree-local selector. Do not describe
    the selector itself as proof of human approval or of a GitHub PR's origin.
-6. On fresh-chat resumption, inspect `seam preview status` and restore the recorded
-   task choices and pinned commit if the selection needs recovery. The selection
-   belongs to this worktree and branch. An updated
-   settings PR does not update the pinned commit. Repeat `start` when the user
+6. The selection belongs to this worktree and branch. An updated settings PR
+   leaves the pinned commit in place. Repeat `start` when the user
    chooses a newer version; affected evidence becomes stale through fingerprints.
-7. Before stopping, remove any standalone `validate-local` created for the preview
-   if its hash still matches. If it changed, preserve the edits and move the wrapper
-   outside the settings tree before returning to individual settings. Stop with
+7. Before stopping or switching, retire preview-only wrappers no longer needed.
+   Remove a wrapper if its recorded hash still matches. If it changed, move it
+   outside the settings tree to preserve the edits. Stop with
    `shaka seam preview stop --root TASK_ROOT` and revalidate affected
    evidence. Ordinary shared settings then apply. Individual settings remain a
    fallback only when shared setup is absent; they grant no merge authority.

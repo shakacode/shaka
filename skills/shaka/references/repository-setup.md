@@ -167,7 +167,8 @@ and standard script; keep those definitions there.
 5. Inspect the generated diff, run its checks, and commit it. When the default
    branch has no seam yet, follow [the first setup PR](#review-and-merge-the-first-setup-pr)
    path to review it before publishing and hand it to the maintainer. A migration
-   keeps the normal workflow gates. Merge before relying on the new policy.
+   keeps the normal workflow gates. Ordinary tasks use the new policy after it
+   merges. Separate tasks can select an explicit preview.
 6. After the setup PR merges, offer to choose the repository's `high_risk_areas` and
    `merge.auto_merge_max_risk` from the shared
    [settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md); until then the
