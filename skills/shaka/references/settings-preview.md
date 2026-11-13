@@ -13,10 +13,16 @@ for the setup PR itself.
    infer selection from PR content, or substitute uncommitted individual settings.
    Inspect its configuration and prompts. Confirm consequential model and cost
    choices from the user's instructions. Resolve the chosen head to a full commit.
-2. Prepare the feature task in its own branch and worktree using ordinary repository
-   naming and the existing base. Without team setup, follow
+   Use its proposed `base_branch` as the seam's base suggestion in Plan. Confirm
+   any base outside the trusted seam and default branch before creating the worktree.
+2. Prepare the feature task in its own branch and worktree using the claim's branch
+   name and confirmed base. Without team setup, follow
    [individual setup](repository-setup.md#try-shaka-privately-in-one-clone) to provide
-   local wrappers for the project's existing commands. Inspect them before execution.
+   local wrappers for the project's existing commands. Match the selected commit's
+   command paths. When it has `validate-local` and `trigger-hosted-ci`, supply their
+   project commands using both individual setup flags. If the task base lacks a
+   command the preview requires, explain the mismatch before activation.
+   Inspect local wrappers before execution.
    Selection copies no scripts or workflows from the settings PR. If the preview
    expects a CI job introduced by the setup PR, report whether it ran and apply
    the normal review and check gates.

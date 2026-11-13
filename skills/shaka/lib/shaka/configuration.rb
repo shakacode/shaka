@@ -40,10 +40,10 @@ module Shaka
     end
 
     def preview_source(root:, ref:, preview:, candidate_commands:)
-      team_setup = Layout.commit(root:, sha: ref, allow_missing: true)
-      trusted(root:, ref:, candidate_commands: false) if team_setup
+      first_setup = !Layout.commit(root:, sha: ref, allow_missing: true)
+      trusted(root:, ref:, candidate_commands: false) unless first_setup
       config = trusted(root:, ref: preview, candidate_commands:)
-      config.merge['preference'] = Defaults.fetch('merge', 'preference') unless team_setup
+      config.merge['preference'] = Defaults.fetch('merge', 'preference') if first_setup
       [config, { trusted_ref: ref, preview_ref: preview }, 'preview/local']
     end
     private_class_method :preview_source
