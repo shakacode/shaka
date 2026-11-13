@@ -55,6 +55,22 @@ class UsageArchiveGroupingTest < Minitest::Test
     assert_builder_refuses(github, damaged)
   end
 
+  # GitHub ends a comment at `--!>`, so this report shows text that a lazy comment pattern would call hidden.
+  def test_a_report_with_comment_like_text_keeps_its_own_reference
+    github = DescriptionUsageArchiveTest::MemoryGitHub.new
+    github.description(body: "#{large_pair}\n\n#{comment_like_report}\n")
+    references = github.stored['body'].scan(Shaka::UsageArchive::REFERENCES)
+    shapes = references.map { |json, _display| JSON.parse(json).keys.sort }
+    assert_equal [%w[comments records sha256], %w[comments record sha256]], shapes
+    assert_includes references.last.last, 'shown'
+  end
+
+  def comment_like_report
+    fields = DEFAULTS.merge('host' => 'codex', 'sources' => ['odd'], 'responses' => ['odd-response'])
+    "#{Shaka::UsageRecords.begin_mark(fields)}\n<!-- note --!> shown -->\n#{Shaka::UsageRecords::END_MARK}"
+  end
+  private :comment_like_report
+
   # Each edit below also rewrites the inventory, so only the reference checks can catch it.
   def test_a_grouped_reference_that_repeats_a_record_is_refused
     github = DescriptionUsageArchiveTest::MemoryGitHub.new
