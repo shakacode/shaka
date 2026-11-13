@@ -1,6 +1,6 @@
 # 0007: Show companion skill results on the PR
 
-Status: proposed; awaiting maintainer approval.
+Status: design answers accepted on 2026-11-12; build waits for decision 1's trigger.
 Date: 2026-11-09. Tracks [issue #1075](https://github.com/shakacode/shaka/issues/1075).
 
 ## Context
@@ -66,8 +66,8 @@ design could reuse. The two changes touch different files.
    tells them apart. The helper renders the list as one collapsed
    `Companion skill results` section, one entry per run. Every field except `command`
    and `artifacts` goes through `PublicationText.summary_text`, including `skill`,
-   `source`, and `revision`. That is the escaping Skills used cells get before their table
-   escaping, so HTML an agent copied from a skill's output cannot close the collapsed
+   `source`, and `revision`, after decision 3 matches their raw values. That is the
+   escaping Skills used cells get before their table escaping, so HTML an agent copied from a skill's output cannot close the collapsed
    section. Markdown passes through, as it does in Skills used cells.
    The helper wraps `command` in a code span without HTML escaping, because GitHub shows
    entities in a code span literally. Each artifact renders as an angle-bracket link.
@@ -124,17 +124,15 @@ design could reuse. The two changes touch different files.
    guidance stays in companion-skills, which loads only when a task uses a companion
    skill.
 
-## Open for the maintainer
+## Maintainer answers
 
-Decision 4 keeps the Verification summary line agent-written, so no `stale` label
-reaches the line a reader sees first. Two other options:
+On 2026-11-12 the maintainer accepted both recommendations the review left open:
 
-- Drop the summary line and let the collapsed entry carry the claim and its label.
-- Have the helper write the line from the entry, with the label.
-
-The ADR recommends the agent-written line because it keeps Verification at three
-readable checks and changes no existing renderer. Approving the ADR accepts that
-recommendation unless the maintainer picks another option.
+- The Verification summary line stays agent-written with no `stale` label, as decision 4
+  says. Dropping the line, or having the helper write it from the entry with the label,
+  were the alternatives.
+- An entry matches Skills used by the raw `skill`, `source`, and `revision` values, and
+  the helper escapes them only when it renders.
 
 ## Alternatives considered
 
