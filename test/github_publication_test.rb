@@ -124,6 +124,13 @@ class GitHubDescriptionTest < Minitest::Test
     assert_raises(Shaka::Error) { github.description(body: BODY) }
   end
 
+  def test_a_description_quoting_a_nul_escape_confirms_after_github_rewrites_it
+    body = "#{BODY}A path like `/bad\\u0000path` fails.\n"
+    stored = "<!-- shaka:begin -->\n#{BODY}A path like `/bad\\^@path` fails.\n<!-- shaka:end -->"
+    github = client(pull_response(''), RENDERED, html_response('<p>ok</p>'), pull_response(''), pull_response(stored))
+    assert_equal stored, github.description(body:)['body']
+  end
+
   def test_a_table_that_github_does_not_render_is_reported
     table = "#{BODY}\n| A | B |\n| --- | --- |\n| 1 | 2 |\n"
     github = client(pull_response(''), RENDERED, html_response('<p>| A | B |</p>'))
