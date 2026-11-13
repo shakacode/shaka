@@ -53,6 +53,15 @@ class OpenrouterUsageTest < Minitest::Test
     end
   end
 
+  def test_cost_without_tokens_keeps_response_identity_in_local_results
+    with_metadata(usage: { 'cost' => 0.0024 }) do |file|
+      record = usage_report(file).fetch('record')
+
+      assert_equal 1, record.fetch('responses').size
+      assert_equal '$0.002400', record.fetch('columns').first.fetch('usd')
+    end
+  end
+
   def test_metadata_can_render_in_the_existing_pr_usage_table
     with_metadata do |file|
       data = usage_report(file)

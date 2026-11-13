@@ -26,8 +26,9 @@ Supply `--ci-review-job NAME` with a matching review policy when a real CI revie
 job exists. [Offer local reviewers](#offer-local-reviewers) before running setup. If the repository defers hosted CI, supply
 `--validate-local-command COMMAND` and `--trigger-hosted-ci-command COMMAND`
 together. The private generator reuses the normal new-layout wrappers and records
-Ask and `wip.include_checkout_path: true`, matching team setup. WIP Details include the
-checkout path and session link by default. Local files remain local while the PR
+Ask and defaults `wip.include_checkout_path` to `false`. A personal setting can override
+that default. Check the effective value with `--plan`. With the default, WIP Details show
+`REDACTED` for the checkout path and keep any supported session link. Local files remain local while the PR
 records permitted settings, with sensitive configuration fields marked `REDACTED`.
 A local `merge.preference` cannot establish merge authority. An explicit
 task instruction may authorize Auto separately. Private setup cannot set fallback
@@ -93,7 +94,8 @@ installation resumes. Changed options leave a differing prepared copy, so setup
 refuses to replace it. Compare that copy and move it to a safe location before
 starting fresh with corrected options.
 After `git clean -fdx`, setup refuses to replace a recovery copy that differs
-from the generated defaults. Run `private inspect` after editing private files
+from the generated defaults. A copy matching the previous default exactly can
+resume with its existing checkout-path setting. Run `private inspect` after editing private files
 and before cleaning: edits made since the last inspection cannot be recovered
 once clean deletes them. Restore the copy to an outside inspection path, compare it, then
 copy the chosen files back into `.agents/shaka/` only when no tracked team settings

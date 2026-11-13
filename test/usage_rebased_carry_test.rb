@@ -148,3 +148,75 @@ class UsageRebasedCarryTest < Minitest::Test
     assert_equal 2, body.scan('<!-- usage-note-ref').size
   end
 end
+
+class RedactedUsageCarryTest < Minitest::Test
+  def test_an_incomplete_refresh_does_not_double_count_a_complete_legacy_snapshot
+    fixture = UsageRebasedCarryTest.new('publish')
+    body, = fixture.publish('', [fixture.implementation('a', ['shared'])])
+    updated, = fixture.publish(body, [fixture.implementation('b', %w[shared next], complete: false)])
+
+    assert_includes updated, 'Earlier snapshots may overlap the current reports.'
+    assert_includes updated, '| **Total** | $3.27+ |'
+    assert_equal 2, fixture.reports(updated, 'implementation').size
+  end
+
+  def test_first_refresh_does_not_add_a_partially_overlapping_legacy_snapshot_to_the_total
+    fixture = UsageRebasedCarryTest.new('publish')
+    body, = fixture.publish('', [fixture.implementation('a', %w[first shared])])
+    updated, = fixture.publish(body, [fixture.implementation('b', %w[shared third])])
+
+    assert_includes updated, 'Earlier snapshots may overlap the current reports.'
+    assert_includes updated, '| **Total** | $3.27+ |'
+    assert_equal 2, fixture.reports(updated, 'implementation').size
+  end
+
+  def test_repeating_the_same_public_snapshot_keeps_one_record
+    fixture = UsageRebasedCarryTest.new('publish')
+    fresh = fixture.implementation('a', ['private-response'])
+    body = ''
+    4.times do
+      rendered, = fixture.publish(body, [fresh])
+      body = Shaka::PublicUsageIdentity.redact(rendered)
+    end
+
+    assert_equal 1, fixture.reports(body, 'implementation').size
+    refute_includes body, 'Earlier snapshots may overlap'
+    refute_includes body, 'private-response'
+  end
+
+  def test_an_unmeasured_refresh_keeps_the_earlier_measured_cost_in_the_total
+    fixture = UsageRebasedCarryTest.new('publish')
+    body, = fixture.publish('', [fixture.implementation('a', ['first'])])
+    unknown = UsageRebasedCarryTest::COLUMN.transform_values { 'UNKNOWN' }
+    unknown = UsageRebasedCarryTest::COLUMN.merge(unknown.slice('usd', 'input', 'cached_input', 'output',
+                                                                'reasoning_output', 'cache_writes'))
+    empty = fixture.record(unknown, sources: ['unreadable'], responses: [], from: 'UNKNOWN', to: 'UNKNOWN')
+    updated, = fixture.publish(Shaka::PublicUsageIdentity.redact(body), [empty])
+
+    refute_includes updated, 'Earlier snapshots may overlap the current reports.'
+    assert_includes updated, 'AI spend: $3.27+'
+  end
+
+  def test_duplicate_redacted_snapshots_stay_out_of_the_total_after_a_host_switch
+    fixture = UsageRebasedCarryTest.new('publish')
+    body, = fixture.publish('', [fixture.implementation('a', ['first']), fixture.implementation('a', ['second'])])
+    fresh = fixture.record(host: 'codex', responses: ['third'])
+    updated, = fixture.publish(Shaka::PublicUsageIdentity.redact(body), [fresh])
+
+    assert_includes updated, 'Earlier snapshots may overlap the current reports.'
+    assert_includes updated, '| **Total** | $3.27+ |'
+    assert_equal 3, fixture.reports(updated, 'implementation').size
+  end
+
+  def test_a_redacted_earlier_snapshot_is_kept_out_of_the_total_when_it_may_overlap
+    fixture = UsageRebasedCarryTest.new('publish')
+    body, = fixture.publish('', [fixture.implementation('a', %w[private-response])])
+    redacted = Shaka::PublicUsageIdentity.redact(body)
+    updated, = fixture.publish(redacted, [fixture.implementation('b', %w[private-response next-response])])
+
+    refute_includes redacted, 'private-response'
+    assert_includes updated, 'Earlier snapshots may overlap the current reports.'
+    assert_includes updated, '| **Total** | $3.27+ |'
+    assert_equal 2, fixture.reports(updated, 'implementation').size
+  end
+end

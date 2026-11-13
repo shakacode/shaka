@@ -56,8 +56,9 @@ it never means zero.
 
 ## Save usage on the PR
 
-Append native response records to the PR when work may change hands. A later owner
-recovers them from GitHub without the earlier machine's transcripts.
+In a private repository, append native response records to the PR when work may
+change hands. A later owner recovers them from GitHub. The journal retains native
+fingerprints for deduplication. Public PRs can report aggregate counts in the description.
 
 ```text
 shaka usage publish OWNER/REPO NUMBER --commit SHA --contribution implementation --event commit --all-turns
@@ -124,6 +125,11 @@ handoff between hosts or models keeps every contribution. The kept text is the
 earlier marked report: a record's row rejoins the table, and a report from before
 the table existed stays below it. A report that read no source gives way to a
 complete report from the same host that measured the same contribution and commits.
+Descriptions and newly written archives omit source and response identifiers
+unless GitHub confirms the repository is private.
+Without those identifiers, earlier snapshots that may overlap current reports
+appear separately and stay out of the total. Refreshing a saved snapshot with
+identical published metadata, counters, and pricing does not add another copy.
 Fork PRs never carry reports.
 The command prints how many reports it retained, replaced, and dropped. A newer
 report that kept only some counters can still replace an earlier report.

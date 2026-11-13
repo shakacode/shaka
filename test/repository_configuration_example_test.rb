@@ -6,6 +6,7 @@ require 'shaka/defaults'
 require 'shaka/repository_config'
 require 'shaka/local_review/runner'
 require 'shaka/post_implementation/risk'
+require 'shaka/seam/private_setup'
 
 # The repository contract doubles as the browsable example of shipped defaults.
 class RepositoryConfigurationExampleTest < Minitest::Test
@@ -42,6 +43,11 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   def test_example_post_implementation_defaults_match
     assert_equal Shaka::Defaults.fetch('checkpoint'),
                  @example.fetch('checkpoint').except('replacement_prompt_file')
+  end
+
+  def test_private_setup_defaults_to_a_redacted_checkout_path
+    setup = Shaka::Seam::PrivateSetup.new(root: ROOT, ref: nil, options: {})
+    assert_equal({ 'include_checkout_path' => false }, setup.send(:wip_policy))
   end
 
   def test_example_matches_packaged_defaults_without_changing_repository_choices

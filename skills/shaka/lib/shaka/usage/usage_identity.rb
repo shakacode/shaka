@@ -22,7 +22,7 @@ module Shaka
     end
 
     # Digests let a later host match responses and sources without publishing local paths or IDs.
-    # Complete means every selected response had at least one readable token counter. It does not
+    # Complete means every selected response had a readable token counter or native cost. It does not
     # say which fields were read, because readers legitimately leave some fields UNKNOWN.
     def record_identity
       { 'host' => @options[:host], 'sources' => @options[:files].map { |file| digest(file) }.uniq,
@@ -44,13 +44,21 @@ module Shaka
       { 'from' => from || 'UNKNOWN', 'to' => to || 'UNKNOWN' }
     end
 
-    # A response without a readable token counter cannot stand in for one an earlier report measured.
+    # A response without a readable counter or native cost cannot replace a measured response.
     def measured_responses
       fields = Usage::METRIC_FIELDS.map(&:last)
       @selected_responses.filter_map do |id, record|
         usage = record['usage']
-        id if usage.is_a?(Hash) && usage.values_at(*fields).any? { |value| value.is_a?(Integer) && value >= 0 }
+        id if measured?(usage, fields)
       end
+    end
+
+    def measured?(usage, fields)
+      return false unless usage.is_a?(Hash)
+
+      cost = usage['native_cost_usd']
+      (cost.is_a?(Numeric) && cost.finite? && cost >= 0) ||
+        usage.values_at(*fields).any? { |value| value.is_a?(Integer) && value >= 0 }
     end
 
     def digest(value) = Digest::SHA256.hexdigest("#{@options[:host]}\0#{value}")[0, 12]

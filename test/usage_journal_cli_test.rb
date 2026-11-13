@@ -89,6 +89,8 @@ class UsageJournalCliTest < Minitest::Test
       if ARGV.include?('markdown')
         tables = JSON.parse(raw).fetch('text').lines.count { |line| line.match?(/\\A\\s*\\|[\\s|:-]*-{3}[\\s|:-]*\\|\\s*\\z/) }
         puts '<p>Rendered.</p>' + ('<table></table>' * tables)
+      elsif ARGV[1] == 'repos/owner/repo'
+        puts JSON.generate('visibility' => 'private')
       elsif ARGV[1].include?('/permission')
         login = ARGV[1][%r{collaborators/([^/]+)/}, 1]
         puts JSON.generate('permission' => login == 'writer' ? 'write' : 'read', 'user' => { 'login' => login })

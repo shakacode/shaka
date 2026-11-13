@@ -17,12 +17,25 @@ module UsageJournalFixture
   end
 end
 
+class PublicUsageJournalTest < Minitest::Test
+  include UsageJournalFixture
+
+  def test_a_public_repository_cannot_receive_native_usage_records
+    github = UsageJournalTest::GitHub.new
+    github.visibility = 'public'
+
+    error = assert_raises(Shaka::Error) { reader(github).publish([record('private-response')], event: 'commit') }
+    assert_includes error.message, 'Publish aggregate usage'
+    assert_empty github.writes
+  end
+end
+
 class UsageJournalTest < Minitest::Test
   include UsageJournalFixture
 
   class GitHub
     attr_reader :repository, :number, :comments, :writes
-    attr_accessor :stale, :fail_after, :author
+    attr_accessor :stale, :fail_after, :author, :visibility
 
     def initialize
       @repository = 'owner/repo'
@@ -30,14 +43,14 @@ class UsageJournalTest < Minitest::Test
       @comments = []
       @writes = []
       @author = 'writer'
+      @visibility = 'private'
     end
 
     def api_list(_path) = @stale ? [] : @comments.dup
     def verify_rendering(_body) = ''
 
     def api(path, method: 'GET', fields: {})
-      return permission(path) if path.include?('/permission')
-      return { 'head' => { 'sha' => 'a' * 40 } } if path.include?('/pulls/')
+      return read(path) if method == 'GET'
 
       raise 'usage must append; never PATCH a shared body' unless method == 'POST'
 
@@ -48,6 +61,14 @@ class UsageJournalTest < Minitest::Test
                                                     'user' => { 'login' => author })
       @comments << comment
       comment
+    end
+
+    def read(path)
+      return { 'visibility' => visibility } if path == "repos/#{repository}"
+      return permission(path) if path.include?('/permission')
+      return { 'head' => { 'sha' => 'a' * 40 } } if path.include?('/pulls/')
+
+      raise "Unexpected GET #{path}"
     end
 
     def permission(path)

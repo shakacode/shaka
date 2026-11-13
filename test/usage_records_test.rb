@@ -18,6 +18,10 @@ module UsageRecordsFixture
       "#{Shaka::UsageRecords::END_MARK}"
   end
 
+  def archive_commits(count)
+    Array.new(count) { |index| format('%040x', index) }
+  end
+
   def described(usage_body)
     { 'summary' => 'S', 'details' => [{ 'summary' => 'Usage and cost', 'body' => usage_body }] }
   end

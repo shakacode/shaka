@@ -33,8 +33,20 @@ class DescriptionUsageArchiveTest < Minitest::Test
     def markdown(body) = "<p>Summary.</p>#{'<table><tr><td>Usage</td></tr></table>' * body.scan('| ---').size}"
   end
 
+  class VisibilityChangeGitHub < MemoryGitHub
+    def api(request, **options)
+      super.tap do
+        next unless options[:method] == 'POST'
+
+        @stored = @stored.merge('base' => { 'sha' => 'b' * 40, 'repo' => { 'visibility' => 'public' } })
+      end
+    end
+  end
+
   def large_record
-    record('codex', 'Measured implementation', responses: Array.new(6000) { |i| "response-#{i}" })
+    commits = Array.new(1800) { |index| format('%040x', index) }
+    record('codex', 'Measured implementation', commits:, sources: ['private-source-id'],
+                                               responses: ['private-response-id'])
   end
 
   def test_oversized_description_publishes_and_a_new_client_restores_before_carry
@@ -53,6 +65,7 @@ class DescriptionUsageArchiveTest < Minitest::Test
     assert_includes github.stored['body'], 'Independent review'
     restored = Shaka::UsageArchive.new(github).expand(github.stored['body'])
     assert_equal 2, Shaka::UsageRecords.parsed_blocks(restored).size
+    refute_match(/private-(?:source|response)-id/, restored)
   end
   private :assert_carry_recovery
 
@@ -72,6 +85,16 @@ class DescriptionUsageArchiveTest < Minitest::Test
     assert_equal original, github.stored['body']
   end
 
+  def test_a_private_repository_keeps_archive_identities_for_accounting
+    github = MemoryGitHub.new
+    github.stored['base']['repo']['visibility'] = 'private'
+    github.description(body: "#{large_record}\n")
+
+    restored = Shaka::UsageArchive.new(github).expand(github.stored.fetch('body'))
+    assert_includes restored, 'private-source-id'
+    assert_includes restored, 'private-response-id'
+  end
+
   def test_a_concurrent_edit_prevents_archive_uploads
     github = MemoryGitHub.new
     github.define_singleton_method(:markdown) do |body|
@@ -81,6 +104,28 @@ class DescriptionUsageArchiveTest < Minitest::Test
     assert_raises(Shaka::Error) { github.description(body: "#{large_record}\n") }
     assert_empty github.writes
     assert_equal 'Concurrent human edit.', github.stored['body']
+  end
+
+  def test_a_visibility_change_prevents_native_archive_uploads
+    github = MemoryGitHub.new
+    github.stored['base']['repo']['visibility'] = 'private'
+    github.define_singleton_method(:markdown) do |body|
+      @stored = @stored.merge('base' => { 'sha' => 'b' * 40, 'repo' => { 'visibility' => 'public' } })
+      super(body)
+    end
+
+    assert_raises(Shaka::Error) { github.description(body: "#{large_record}\n") }
+    assert_empty github.writes
+    assert_empty github.stored.fetch('body')
+  end
+
+  def test_a_visibility_change_stops_remaining_archive_parts
+    github = VisibilityChangeGitHub.new
+    github.stored['base']['repo']['visibility'] = 'private'
+
+    assert_raises(Shaka::Error) { github.description(body: "#{large_record}\n") }
+    assert_equal 1, github.comments.size
+    assert_empty github.stored.fetch('body')
   end
 
   def test_an_archive_upload_failure_does_not_replace_the_description

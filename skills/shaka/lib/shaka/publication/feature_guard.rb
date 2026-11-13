@@ -36,9 +36,11 @@ module Shaka
     def unchanged!(github, existing, original)
       current = github.api("repos/#{github.repository}/pulls/#{github.number}")
       return if current['body'].to_s == existing && current.dig('head', 'sha') == original.dig('head', 'sha') &&
-                current.dig('base', 'sha') == original.dig('base', 'sha')
+                current.dig('base', 'sha') == original.dig('base', 'sha') &&
+                current.dig('base', 'repo', 'visibility') == original.dig('base', 'repo', 'visibility')
 
-      raise Error, 'The description or PR revision changed while this update was prepared; publish again.'
+      raise Error, 'The description or PR revision changed while this update was prepared, ' \
+                   'or repository visibility changed; publish again.'
     end
 
     def valid_file?(file)

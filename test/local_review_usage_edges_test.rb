@@ -118,7 +118,7 @@ class LocalReviewUsageOverlapTest < Minitest::Test
   def test_a_missing_source_refresh_preserves_recorded_cost_without_token_counters
     with_captured_review(native: { usage: {} }) do |ledger, result|
       triage_and_remove_source(ledger, result)
-      assert_empty result.fetch('usage_record').fetch('responses')
+      assert_equal 1, result.fetch('usage_record').fetch('responses').size
       assert_single_record(result, Shaka::LocalReviewUsageCapture.capture(result))
     end
   end

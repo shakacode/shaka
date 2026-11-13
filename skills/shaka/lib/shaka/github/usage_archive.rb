@@ -28,8 +28,9 @@ module Shaka
       def publish = writer.call
     end
 
-    def initialize(github)
+    def initialize(github, &before_write)
       @github = github
+      @before_write = before_write
       @references = {}
     end
 
