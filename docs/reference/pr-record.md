@@ -19,14 +19,16 @@ Tests support the behavior they exercised. A review with no findings still has
 coverage limits. The agent reports these limits; Shaka does not prove the reports
 are complete. See [what is enforced](../workflow.md#what-is-enforced).
 
-**Shaka settings used** shows how long each check ran and on what kind of machine,
-such as `27m on m5 (Apple M5 Max, 18 cores, 128 GB RAM, 3 GB free, load 140→450)`.
+Under **Shaka metrics → Details**, **Shaka settings used** shows how long each
+check ran and on what kind of machine, such as
+`27m on m5 (Apple M5 Max, 18 cores, 128 GB RAM, 3 GB free, load 140→450)`.
 The hardware and the load at start and end help you tell a busy machine from slower
 hardware; they are context, not proof of the cause. For the machine, this table
 shows only your [machine alias](../coding-agents.md#name-your-machines), CPU model,
-core count, memory, and load, never the machine's own name, your user name, or
-paths. WIP Details is separate: it shows your checkout path unless you
-[hide it](../settings.md#wipinclude_checkout_path).
+core count, memory, and load, never the machine's own name or paths. The alias is
+the one name you choose. Shaka checks that it isn't your machine's own name, not
+that it leaves out your user name, so pick one that doesn't identify you, such as `m5`. WIP Details is separate: it shows
+your checkout path unless you [hide it](../settings.md#wipinclude_checkout_path).
 
 The **Code Review** link opens the review record. Check coverage, unresolved
 findings, and the number of rounds; repeated rounds can signal work worth
@@ -106,7 +108,8 @@ Comments that only run a command, such as `+deploy`, can be
 
 ## Skills used
 
-Expand **Skills used** to see the skills the agent reported during planning,
+Under **Shaka metrics**, expand **Details**, then **Skills used**, to see the
+skills the agent reported during planning,
 implementation, review, and integration, with their sources and revisions when
 available. **Agent-reported** means the agent says it applied the skill. The agent
 selects **Corroborated** when a record confirms the skill was invoked or loaded.
@@ -152,13 +155,15 @@ A fix for a review finding is a new commit, and the PR's evidence has to cover i
 | Code walkthrough | Reused, with only the affected steps rewritten, while the goal, scope, dependencies, and settings stay the same |
 
 Evidence for an earlier commit stays labeled with that commit. To skip the
-checkpoint for one fix whose outcome is unchanged, tell your agent:
+checkpoint for one fix, tell your agent and give a reason, which appears as a
+note on the PR:
 
 ```text
-Skip the checkpoint for this fix; the outcome is unchanged.
+Skip the checkpoint for this fix; it only corrects a typo the review found.
 ```
 
-The PR can still merge, and it shows that no checkpoint review ran for that commit.
+Shaka does not check the reason. The PR can still merge, and it shows that no
+checkpoint review ran for that commit.
 A skip does not settle findings or concerns already published.
 
 ## Merge messages
@@ -219,7 +224,8 @@ guidance, not findings to fix. For the duplicate-refund fix:
 > retry job only call it.
 
 A newer walkthrough resolves the older notes nobody replied to. Reply to a note
-like any review comment, and the agent answers it.
+like any review comment; the agent answers it the next time it handles feedback
+on the PR.
 
 ## Recovery
 
