@@ -20,6 +20,10 @@ module Shaka
     VERBATIM = 'Quoted text.'
     REPLY_PAGES = 20
 
+    # GitHub stores the literal text backslash-u-0000 as backslash-caret-at (seen on PR #1115),
+    # so a body quoting that escape reads back changed. Only that rewrite is applied.
+    def self.as_stored(text) = text.gsub('\\u0000', '\\^@')
+
     # `verbatim` names quoted text the rendering check leaves to the caller; see verify_rendering.
     def reply(body:, key:, comment: nil, trust_config: nil, verbatim: [], # rubocop:disable Metrics/ParameterLists
               machine_path: PublicComments::TrustConfig::MACHINE_PATH)
@@ -140,11 +144,9 @@ module Shaka
       body
     end
 
-    # GitHub stores the literal text backslash-u-0000 as backslash-caret-at, so a report quoting
-    # that escape would otherwise never confirm. Only that rewrite is tolerated.
     def confirmed(published, expected)
       raise Error, 'GitHub API response must be an object.' unless published.is_a?(Hash)
-      return published if [expected, expected.gsub('\\u0000', '\\^@')].include?(published['body'])
+      return published if [expected, Publishing.as_stored(expected)].include?(published['body'])
 
       raise Error, 'The stored body does not match what was submitted; inspect the pull request before retrying.'
     end
