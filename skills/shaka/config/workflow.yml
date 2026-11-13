@@ -155,8 +155,8 @@ phases:
         Activate a settings preview in the confirmed task worktree and
         resolve its merge preference as the preview procedure describes. Reuse that worktree
         during Implement.
-      - Resolve command paths and review settings from the validated seam. Run the reported
-        scripts, not prose reconstructions. `AGENTS.md` adds constraints, not contract fields.
+      - Resolve command paths and review settings from the validated seam and run the reported scripts,
+        not prose reconstructions. `AGENTS.md` adds constraints, not contract fields.
         Verify each configured reviewer's identity from repository metadata and trusted
         workflows, and whether it runs on GitHub or locally with provider credentials.
       - The PR must target the base this task validated against, whatever that base is. Compare
