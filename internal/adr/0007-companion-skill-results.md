@@ -80,13 +80,15 @@ design could reuse. The two changes touch different files.
    in these cases:
    - it lacks `skill`, `command`, `checked`, `result`, `not_covered`, `commit`, or
      `artifacts`, or it has a key outside the list in decision 2;
-   - its `skill`, with any `source` and `revision` it gives, matches no Skills used
+   - its raw `skill`, with any raw `source` and `revision` it gives, matches no Skills used
      record, or still matches records that differ in source or revision;
    - `command` is empty, more than one line, or contains a backtick or `</`, which could
      end the collapsed section early;
    - `checked`, `result`, or `not_covered` is empty or more than one line;
    - `commit` is not a full SHA;
-   - an artifact is not an `http` or `https` URL without spaces or angle brackets.
+   - an artifact is not an `http` or `https` URL without spaces or angle brackets;
+   - `command` or an artifact contains a local absolute path such as `/Users/` or
+     `/home/`, using the pattern local review already refuses.
 
    These are shape checks. The rendered `command` code span meets the test
    `IntentVerification::EVIDENCE` applies to each Verification check, but neither proves
@@ -94,7 +96,8 @@ design could reuse. The two changes touch different files.
 
    An entry whose commit is not the head renders with a visible `stale` label. The
    helper computes it each time it publishes the description, against the head it
-   reads then, so it is current as of the last publish. The workflow republishes before
+   reads then, so it is current as of the last publish. When the helper has no head to
+   compare, such as a publish without a pull request, the entry shows `head unknown`. The workflow republishes before
    the final handoff; a commit pushed after a publish shows no label until the next one. Ruby does
    not refuse it. Rerunning a model check or harness can be expensive, and a reviewer can
    judge whether a later commit touched what the run checked.
@@ -113,7 +116,11 @@ design could reuse. The two changes touch different files.
    stays limited to URLs.
 5. **No new uploader.** `artifacts` accepts links only. A screenshot, or a diagram
    rendered to an image, goes up through the existing [UI evidence publication](../../skills/shaka/references/ui-verification.md#publish-ui-evidence)
-   path, and the entry links the uploaded file.
+   path, and the entry links the uploaded file. That path folds this account's earlier
+   UI checks and refuses a check that drops a capture an open check still shows, so a
+   diagram-only upload on a PR with open UI captures must embed or retire them. The
+   implementation PR may choose a plain comment attachment instead if that proves
+   simpler.
 6. **Rewrite the existing guidance, add none.** When the code ships, the "Consume
    verification evidence" sentence in companion-skills that sends the command, commit,
    result, artifacts, and gaps into the Verification record is rewritten to send them to
