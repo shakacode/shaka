@@ -3,6 +3,7 @@
 require 'json'
 require_relative 'inputs'
 require_relative 'result'
+require_relative '../configuration/paths'
 
 module Shaka
   module Evidence
@@ -10,6 +11,8 @@ module Shaka
     # A trusted review.required of none drops review from the required kinds, matching merge;
     # a review result supplied anyway must still bind.
     class Verification
+      VALIDATE_LOCAL = Configuration::Paths::OPTIONAL_COMMANDS.fetch('validate_local')
+
       def initialize(root:, ref:, repository:, head:, paths:)
         @root = root
         @ref = ref
@@ -50,9 +53,12 @@ module Shaka
         return if original.dig('task_overrides', 'arguments') == []
 
         binding['reasons'] << 'repository validation used command arguments'
-        binding['guidance'] = 'Run repository validation without arguments. When it needs inputs such as ' \
-                              'spec mappings, see references/repository-setup.md#required-validation-inputs ' \
-                              'in the installed Shaka skill.'
+        binding['guidance'] = 'Run repository validation without arguments. For a narrower run that should ' \
+                              "count, such as changed files only, put it in #{VALIDATE_LOCAL}; a passing " \
+                              'validate_local run without arguments counts when the settings that apply to this ' \
+                              'task have that script. When validation needs inputs such as spec mappings, ' \
+                              'see references/repository-setup.md#required-validation-inputs in the ' \
+                              'installed Shaka skill.'
       end
 
       def check_kind(kind, original, binding)

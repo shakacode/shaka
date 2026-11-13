@@ -679,7 +679,10 @@ rules:
     enforced_by: agent
     note: >-
       `handoff` reads live GitHub state and exits 2 while the PR lacks exactly one attention
-      label (or, with `--woken-by`, still carries one), holds `awaiting-merge-approval` with required checks not passing,
+      label (or, with `--woken-by`, still carries one; with `--woken-by`, a required check held for a manual
+      approval voids it and is owed until a person approves it or the agent drops `--woken-by`), holds
+      `awaiting-merge-approval` with
+      required checks not passing,
       with findings open in the published local review (`attention --state merge` refuses the same state before
       labeling), or without this account's checkpoint and, unless the base has a merge queue, squash message for
       the live head, or has a walkthrough

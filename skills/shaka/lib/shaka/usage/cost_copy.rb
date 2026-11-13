@@ -49,7 +49,7 @@ module Shaka
 
       "Anthropic API list prices, verified #{@rate_card.anthropic_verified}. Uncached input, cache reads and " \
         'cache writes are separate charges, and a 1-hour cache write costs more than a 5-minute one. ' \
-        'Standard-speed responses are priced; fast mode is priced for Opus models with a published rate.'
+        'Standard-speed responses are priced; fast mode is priced for models with a published rate.'
     end
 
     def openai_priced?(priced) = priced.any? { |column| openai_rated?(column) }

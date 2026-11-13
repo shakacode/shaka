@@ -27,7 +27,7 @@ chat. It can proceed with a clear task and asks when it needs your decision.
 | **Ask** (default) | You merge the ready PR on GitHub, or tell the agent, "You can merge." |
 | `auto` | The agent merges when the PR is ready. |
 
-![A ready PR follows Ask, where you merge or approve it, or automatic merging, where the agent merges. A PR that is too large or risky returns to you when automatic merging is on.](img/merge-policy.svg)
+![A ready PR follows Ask, where you merge or approve it, or automatic merging, where the agent merges eligible PRs. A PR that is too large or risky returns to you when automatic merging is on.](img/merge-policy.svg)
 
 To use `auto` for a task, add:
 
@@ -93,6 +93,8 @@ Open your repository's **Pull requests** tab on GitHub and search:
 | `is:open label:awaiting-resume` | Open **WIP Details → Chat link** and paste **Next action** there. |
 
 A label does not wake the agent. See [merge and queue details](reference/pr-record.md#merge-messages).
+
+A required check waiting for a deployment approval shows as `blocked (approval hold)`, and the PR keeps its label until you approve the run.
 
 ## Resume unfinished work
 

@@ -60,6 +60,7 @@
       "label": "Articles",
       "collapsed": true,
       "items": [
+        "articles/pull-requests-in-the-age-of-agents",
         "articles/review-process-study",
         "articles/checkpoint-sentence-eval",
         "articles/one-shot-pr-study",
