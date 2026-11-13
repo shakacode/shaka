@@ -1,5 +1,11 @@
 # PR evidence for shakacode/shaka
 
+## PR summary
+
+Lead the PR summary with what changes for users. If no behavior change is
+expected, say so in the opening sentence and name what the tests you ran
+cover. If you ran no tests, state what you verified and any gaps.
+
 ## Rendering changes
 
 When a PR changes how Shaka renders something it publishes on a PR, such as the
