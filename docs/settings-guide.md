@@ -57,7 +57,9 @@ Ask for a separate settings PR. For example:
 ```
 
 The agent explains what changes and what the team needs to do. Review the PR
-before merging. Follow any update instructions in the settings PR.
+before merging. Follow any update instructions in the settings PR: a copy of
+Shaka older than a new setting refuses the settings file, so every task on that
+copy stops until it updates.
 
 <a id="common-situations"></a>
 

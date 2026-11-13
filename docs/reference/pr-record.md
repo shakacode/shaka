@@ -19,6 +19,13 @@ Tests support the behavior they exercised. A review with no findings still has
 coverage limits. The agent reports these limits; Shaka does not prove the reports
 are complete. See [what is enforced](../workflow.md#what-is-enforced).
 
+**Shaka settings used** shows how long each check ran and on what kind of machine,
+such as `27m on m5 (Apple M5 Max, 18 cores, 128 GB RAM, 3 GB free, load 140→450)`.
+The hardware and the load at start and end help you tell a busy machine from slower
+hardware; they are context, not proof of the cause. Shaka publishes only the CPU
+model, these counts, and your [machine alias](../coding-agents.md#name-your-machines),
+never the machine's own name, your user name, or paths.
+
 The **Code Review** link opens the review record. Check coverage, unresolved
 findings, and the number of rounds; repeated rounds can signal work worth
 investigating. Detailed findings remain available for later agent analysis.
@@ -95,6 +102,16 @@ summarized content. See [review safety](../workflow.md#trust-model) and
 Comments that only run a command, such as `+deploy`, can be
 [left out of the list](../settings.md#pr_descriptionignored_human_comments).
 
+## Skills used
+
+Expand **Skills used** to see the skills the agent reported during planning,
+implementation, review, and integration, with their sources and revisions when
+available. **Agent-reported** means the agent says it applied the skill. The agent
+selects **Corroborated** when a record confirms the skill was invoked or loaded.
+Shaka checks the shape of these entries, not that record or whether the agent
+followed the skill, and the list may be incomplete. Shaka itself is not listed;
+**Execution details** names the Shaka version that ran.
+
 ## Before and after merge
 
 When actions outside the code are needed, the PR description includes a **Before
@@ -119,6 +136,28 @@ gets the `auto-merged` label; queued merges and failed label writes are exceptio
 If GitHub needs a branch update, the agent revalidates and reviews the new commit.
 Your decision carries forward if the approved behavior is preserved. A branch
 rule may still require fresh GitHub approval. Changed behavior returns to you.
+
+## Fixes after review
+
+A fix for a review finding is a new commit, and the PR's evidence has to cover it:
+
+| Part | After the fix |
+| --- | --- |
+| The finding's thread | A reply with how the problem was reproduced, and the fix commit |
+| Repository validation and required checks | Run again on the new commit |
+| Local review | The configured reviewers review the new commit |
+| Checkpoint | Run again; merging needs a checkpoint, or your explicit skip, for that commit |
+| Code walkthrough | Reused, with only the affected steps rewritten, while the goal, scope, dependencies, and settings stay the same |
+
+Evidence for an earlier commit stays labeled with that commit. To skip the
+checkpoint for one fix whose outcome is unchanged, tell your agent:
+
+```text
+Skip the checkpoint for this fix; the outcome is unchanged.
+```
+
+The PR can still merge, and it shows that no checkpoint review ran for that commit.
+A skip does not settle findings or concerns already published.
 
 ## Merge messages
 
@@ -166,6 +205,19 @@ RefundRetryJob#perform ────┴── Refunds.issue
 
 A smaller change can use a sentence: "RefundPolicy.check now rejects refunds
 larger than the original charge." No call order changed, so no diagram is needed.
+
+## Notes on the diff
+
+The walkthrough can leave a few notes on the changed lines, written for you as the
+reviewer. Each says how to read the lines it sits on: where to start, what to read
+closely, what to skim, or why the code took this approach. Notes are reading
+guidance, not findings to fix. For the duplicate-refund fix:
+
+> **Start here:** this check is the whole behavior change; the controller and
+> retry job only call it.
+
+A newer walkthrough resolves the older notes nobody replied to. Reply to a note
+like any review comment, and the agent answers it.
 
 ## Recovery
 
