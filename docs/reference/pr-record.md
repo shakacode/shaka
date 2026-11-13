@@ -25,10 +25,11 @@ check ran and on what kind of machine, such as
 The hardware and the load at start and end help you tell a busy machine from slower
 hardware; they are context, not proof of the cause. For the machine, this table
 shows only your [machine alias](../coding-agents.md#name-your-machines), CPU model,
-core count, memory, and load, never the machine's own name or paths. The alias is
-the one name you choose. Shaka checks that it isn't your machine's own name, not
-that it leaves out your user name, so pick one that doesn't identify you, such as `m5`. WIP Details is separate: it shows
-your checkout path unless you [hide it](../settings.md#wipinclude_checkout_path).
+core count, total and free memory, and load at start and end, never the host name
+or paths. The alias is the one name you choose. Shaka checks that it isn't this
+machine's host name, not that it leaves out your user name, so pick one that
+doesn't identify you, such as `m5`. WIP Details is separate: it shows your
+checkout path unless you [hide it](../settings.md#wipinclude_checkout_path).
 
 The **Code Review** link opens the review record. Check coverage, unresolved
 findings, and the number of rounds; repeated rounds can signal work worth
@@ -162,7 +163,7 @@ note on the PR:
 Skip the checkpoint for this fix; it only corrects a typo the review found.
 ```
 
-Shaka does not check the reason. The PR can still merge, and it shows that no
+Shaka requires a reason but does not judge it. The PR can still merge, and it shows that no
 checkpoint review ran for that commit.
 A skip does not settle findings or concerns already published.
 
@@ -224,8 +225,8 @@ guidance, not findings to fix. For the duplicate-refund fix:
 > retry job only call it.
 
 A newer walkthrough resolves the older notes nobody replied to. Reply to a note
-like any review comment; the agent answers it the next time it handles feedback
-on the PR.
+like any review comment, then ask your agent to answer it; it replies and resolves
+the thread.
 
 ## Recovery
 
