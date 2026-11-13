@@ -1230,7 +1230,8 @@ exec bin/ci-local --changed
 
 The script counts once it is in the settings that apply to the task, as
 [Which settings apply?](#which-settings-apply) describes. With team settings, add
-it in its own settings PR; it counts after that PR merges. Individual setup
+it in a settings PR. It counts during an [explicit preview](#preview-settings-before-adopting-them)
+when the task has the matching wrapper, and for ordinary tasks after the PR merges. Individual setup
 needs `validate-local` and `trigger-hosted-ci` together, or neither; with only
 one, Shaka cannot use your individual settings.
 
