@@ -392,8 +392,7 @@ Prompt tasks and numbered GitHub tasks take neither field.
 With a number or key, the optional `task_relation` says how this PR relates to the
 task: `fixes`, `part_of`, `follow_up`, or `refs`. Only a GitHub issue number takes `fixes`.
 
-In Intent, the helper renders the Task line after User impact when present,
-or directly after Why when omitted:
+The Task line in Intent shows where the work came from:
 
 | Provenance | Task line |
 | --- | --- |

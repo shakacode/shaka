@@ -536,8 +536,12 @@ phases:
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
         whose summary names usage is refused; walkthroughs also require `head`.
         `intent` holds one line each for `why`, `scope`, and `safe_because`: the problem,
-        what changes, and the concrete safeguard. Add optional `leaves_out` only for a deliberate
-        deferred part readers would reasonably expect; otherwise omit it. Intent ends with
+        what changes, and the concrete safeguard.
+        Supply `intent.user_impact` for every description. In one line under Why, say what
+        changes for the product’s users. If no change is expected, say so and name what the
+        tests you ran cover. If you ran no tests, say what you verified.
+        Add optional `leaves_out` for a deliberate exclusion readers would reasonably expect.
+        Intent ends with
         `scope`, GitHub's file/line counts, and path-based buckets. When a few files or ranges need
         more care than the rest, list them in `review_focus`, each with `path`, a one-line `reason`, and
         optional `from` with `to` or `block` as `code_links` take them.
@@ -548,7 +552,6 @@ phases:
         describes, with an optional `task_relation`; use `fixes` when the PR fully resolves an
         issue in this repository. The helper renders a numbered task as the Task line in
         Intent, so leave that task's link and its `Fixes` or `Part of` out of the summary.
-        Supply optional `intent.user_impact` as one line when the repository guide calls for it.
         Supply `intent.task_understanding` from the intake readback, incorporating human
         corrections and checking it for private content. Publish a paraphrase of the assignment
         and success criteria as `goal` and `done_when`, one line each, excluding raw prompts and

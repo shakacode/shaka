@@ -1,12 +1,5 @@
 # PR evidence for shakacode/shaka
 
-## User impact
-
-In Intent, put **User impact** directly under **Why** using `intent.user_impact`.
-Say what changes for the product’s users, such as site visitors or library
-callers. If no change is expected, say so and name what the tests cover.
-
-
 ## Rendering changes
 
 When a PR changes how Shaka renders something it publishes on a PR, such as the
