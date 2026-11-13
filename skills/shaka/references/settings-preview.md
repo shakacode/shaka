@@ -2,7 +2,8 @@
 
 Use this procedure when the user explicitly chooses an unmerged settings PR for
 a task. When the default branch has no Shaka configuration, use Ask even if the
-preview specifies Auto or the prompt requests it. Retain Ask on resume. For an
+preview specifies Auto or the prompt requests it. Record Ask as the task choice
+and retain it when resuming, including after team adoption. For an
 established team, explicit task choices keep precedence. Use the
 [first-setup handoff](repository-setup.md#review-and-merge-the-first-setup-pr)
 for the setup PR itself.
@@ -20,7 +21,10 @@ for the setup PR itself.
    [individual setup](repository-setup.md#try-shaka-privately-in-one-clone) to provide
    local wrappers for the project's existing commands. Match the selected commit's
    command paths. When it has `validate-local` and `trigger-hosted-ci`, supply their
-   project commands using both individual setup flags. If the task base lacks a
+   project commands using both individual setup flags. For `validate-local` alone,
+   generate the required individual wrappers first, then write an executable
+   `.agents/shaka/bin/validate-local` that calls the task base's scoped validation
+   command. Keep it in the ignored local settings tree. If the task base lacks a
    command the preview requires, explain the mismatch before activation.
    Inspect local wrappers before execution.
    Selection copies no scripts or workflows from the settings PR. If the preview
