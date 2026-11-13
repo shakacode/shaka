@@ -39,7 +39,7 @@ module Shaka
       stored_escapes!(normalized)
       pending.check.call(normalized)
       written
-    rescue Error => e
+    rescue StandardError => e # any failure after the write, not only a check's, takes the write back
       undo(existing, written, target, e)
     end
 

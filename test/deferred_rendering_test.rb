@@ -12,6 +12,7 @@ module DeferredRenderingRunner
 
   private
 
+  def mark = '<!-- shaka:reply:loop -->'
   def created = @calls.select { |argv, _| argv.include?(COMMENTS) && argv.include?('POST') }
   def deleted? = @calls.any? { |argv, _| argv.include?('DELETE') }
 
@@ -60,10 +61,11 @@ class DeferredRenderingTest < Minitest::Test
     refute_predicate self, :deleted?
   end
 
-  def test_a_new_comment_that_fails_its_stored_check_is_deleted
-    error = assert_raises(Shaka::Error) { publish(stored_check: ->(_) { raise Shaka::Error, 'Layout broke.' }) }
-
-    assert_equal 'Layout broke. The comment was deleted.', error.message
+  def test_a_new_comment_that_fails_its_stored_check_or_breaks_it_is_deleted
+    [Shaka::Error, TypeError].each do |failure|
+      error = assert_raises(Shaka::Error) { publish(stored_check: ->(_) { raise failure, 'Layout broke.' }) }
+      assert_equal 'Layout broke. The comment was deleted.', error.message
+    end
     assert_predicate self, :deleted?
   end
 
@@ -161,8 +163,6 @@ class DeferredRenderingTest < Minitest::Test
   end
 
   private
-
-  def mark = '<!-- shaka:reply:loop -->'
 
   def publish(body: 'Hello.', **)
     Shaka::GitHub.new('owner/repo', 42, runner: method(:answer)).reply(body:, key: 'loop', **)
