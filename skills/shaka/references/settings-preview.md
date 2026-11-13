@@ -24,7 +24,8 @@ for the setup PR itself.
    project commands using both individual setup flags. For `validate-local` alone,
    generate the required individual wrappers first, then write an executable
    `.agents/shaka/bin/validate-local` that calls the task base's scoped validation
-   command. Keep it in the ignored local settings tree. If the task base lacks a
+   command. Keep it in the ignored local settings tree and record its hash for
+   cleanup when stopping the preview. If the task base lacks a
    command the preview requires, explain the mismatch before activation.
    Inspect local wrappers before execution.
    Selection copies no scripts or workflows from the settings PR. If the preview
@@ -55,7 +56,10 @@ for the setup PR itself.
    belongs to this worktree and branch. An updated
    settings PR does not update the pinned commit. Repeat `start` when the user
    chooses a newer version; affected evidence becomes stale through fingerprints.
-7. Stop with `shaka seam preview stop --root TASK_ROOT` and revalidate affected
+7. Before stopping, remove any standalone `validate-local` created for the preview
+   if its hash still matches. If it changed, preserve the edits and move the wrapper
+   outside the settings tree before returning to individual settings. Stop with
+   `shaka seam preview stop --root TASK_ROOT` and revalidate affected
    evidence. Ordinary shared settings then apply. Individual settings remain a
    fallback only when shared setup is absent; they grant no merge authority.
 
