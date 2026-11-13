@@ -21,7 +21,7 @@ settings with shared team settings.
 
 | Repository setup | Settings used |
 | --- | --- |
-| A settings PR is explicitly selected for this task | The complete configuration at its selected commit. |
+| A settings PR is explicitly selected for this task | The configuration at its selected commit. First-setup previews use Ask. |
 | Shared Shaka settings exist on the default branch | The default-branch configuration, including when reviewing a PR that changes it. |
 | No shared settings; individual setup is configured | Your local `.agents/shaka/config.yml`, kept out of Git. |
 
@@ -116,10 +116,11 @@ To switch an existing task:
 /shaka Switch this task to settings from PR #123.
 ```
 
-The selected PR supplies the complete configuration, including reviewer choices
-and merge preferences. Individual settings do not overlay it. An explicit task
-choice, such as Ask, still takes precedence where supported. GitHub's required
-checks and approvals still apply.
+The selected PR supplies the task's configuration, including reviewer choices.
+When you preview your first team setup PR, the task uses Ask even if you request
+Auto. With shared setup in place, the preview supplies the merge preference
+and explicit task choices take precedence. GitHub's required checks and approvals
+still apply.
 
 The agent records the selected PR and pinned commit on the task's PR. The selection
 survives a fresh chat and stays with that task's branch and worktree. Updates require
@@ -1229,7 +1230,8 @@ exec bin/ci-local --changed
 
 The script counts once it is in the settings that apply to the task, as
 [Which settings apply?](#which-settings-apply) describes. With team settings, add
-it in its own settings PR; it counts after that PR merges. Individual setup
+it in a settings PR. It counts during an [explicit preview](#preview-settings-before-adopting-them)
+when the task has the matching wrapper, and for ordinary tasks after the PR merges. Individual setup
 needs `validate-local` and `trigger-hosted-ci` together, or neither; with only
 one, Shaka cannot use your individual settings.
 

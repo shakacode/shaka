@@ -17,7 +17,8 @@ No. Ask your agent:
 ```
 
 The agent inspects the project, reuses existing checks, and explains the choices.
-For team setup, review and merge the setup PR before using the shared settings.
+For team setup, you can try the setup PR on a separate task before merging it.
+Merging the PR makes its settings the team's defaults.
 See [repository setup](configure-repository.md).
 
 ## Can I try it without changing team configuration?
