@@ -1,10 +1,12 @@
 # PR evidence for shakacode/shaka
 
-## PR summary
+## User impact
 
-Lead the PR summary with what changes for users. If no behavior change is
-expected, say so in the opening sentence and name what the tests you ran
-cover. If you ran no tests, state what you verified and any gaps.
+In Intent, put **User impact** directly under **Why** using `intent.user_impact`.
+Describe what changes for the people who use the product. Consider what site
+visitors see, what library callers can do, or what operators configure. If no
+change is expected for those users, say so and name what the tests cover.
+If you ran no tests, say what you verified and where evidence is missing.
 
 ## Rendering changes
 

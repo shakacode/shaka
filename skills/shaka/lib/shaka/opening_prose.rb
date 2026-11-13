@@ -6,8 +6,8 @@ module Shaka
   # What a description's author wrote that a reader sees without opening anything. Lines the helper writes,
   # such as the validation gate, stay out because the author cannot reword them.
   module OpeningProse
-    INTENT = { 'why' => 'Why', 'root_cause' => 'Root cause', 'safe_because' => 'Safe because',
-               'leaves_out' => 'Leaves out', 'scope' => 'Scope' }.freeze
+    INTENT = { 'why' => 'Why', 'user_impact' => 'User impact', 'root_cause' => 'Root cause',
+               'safe_because' => 'Safe because', 'leaves_out' => 'Leaves out', 'scope' => 'Scope' }.freeze
 
     module_function
 

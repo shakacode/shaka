@@ -30,12 +30,12 @@ module Shaka
        verification(spec, gate_line)]
     end
 
-    # The task follows Why, so a reader sees the problem and then where the work came from.
+    # User impact follows Why when supplied, then the task names where the work came from.
     def intent(spec, pull, task = nil)
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
-      lines.insert(1, *task_with_understanding(task, spec['task_understanding']), *root_cause(spec))
+      lines.insert(1, *user_impact(spec), *task_with_understanding(task, spec['task_understanding']), *root_cause(spec))
       lines.concat(exclusions(spec['leaves_out']))
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
     end
@@ -64,6 +64,12 @@ module Shaka
     def legacy_understanding(value)
       paragraphs = PublicationText.required(value, 'intent task_understanding').strip.split(/\n\s*\n/)
       "- **As understood:** #{paragraphs.map { |text| text.strip.gsub("\n", "\n  ") }.join("\n\n  ")}"
+    end
+
+    def user_impact(spec)
+      return [] if spec['user_impact'].nil?
+
+      ["**User impact:** #{PublicationText.single_line(spec['user_impact'], 'intent user_impact')}"]
     end
 
     def root_cause(spec)
@@ -142,7 +148,7 @@ module Shaka
     end
 
     private_class_method :intent, :task_with_understanding, :understanding_items, :legacy_understanding,
-                         :scope, :exclusions, :diff_size, :verification,
+                         :user_impact, :scope, :exclusions, :diff_size, :verification,
                          :not_verified, :merge_limitations, :checks, :evidenced, :object
   end
 end
