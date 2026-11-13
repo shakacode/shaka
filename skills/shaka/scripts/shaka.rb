@@ -125,9 +125,11 @@ def merge_policy(options)
   ref = options[:ref]
   # Individual settings grant no policy. An explicit preview can supply policy, but
   # the first setup cannot enable Auto while the default branch has no configuration.
-  seam = Shaka::TrustedConfigSource.from_ref(root:, ref:, private_trial: true)
-  if options[:auto] && Shaka::Configuration::SettingsPreview.ref(root:) &&
-     !Shaka::Configuration::Layout.commit(root:, sha: ref, allow_missing: true)
+  seam, source, kind = Shaka::Configuration.resolve_source(root:, ref:)
+  return if kind == 'private/local'
+
+  if options[:auto] && kind == 'preview/local' &&
+     !Shaka::Configuration::Layout.commit(root:, sha: source.fetch(:trusted_ref), allow_missing: true)
     raise Shaka::Error, 'The first setup settings preview uses Ask. Merge requires a task-scoped decision.'
   end
 

@@ -206,8 +206,8 @@ is installed or the user declines.
 ## Review and merge the first setup PR
 
 When the default branch has no Shaka configuration, review the setup PR under
-the repository's existing policy. Reserve [settings previews](settings-preview.md)
-for separate tasks.
+the repository's existing policy. Its proposed settings cannot govern its own
+review or merge. Reserve [settings previews](settings-preview.md) for separate tasks.
 
 1. Validate with `shaka seam check --root . --local` and the new wrapper scripts.
    The local check proves syntax only.

@@ -117,8 +117,8 @@ To switch an existing task:
 ```
 
 The selected PR supplies the task's configuration, including reviewer choices.
-When you preview your first team setup PR, the task uses Ask until shared setup
-is in place. With shared setup in place, the preview supplies the merge preference
+When you preview your first team setup PR, the task uses Ask even if you request
+Auto. With shared setup in place, the preview supplies the merge preference
 and explicit task choices take precedence. GitHub's required checks and approvals
 still apply.
 
