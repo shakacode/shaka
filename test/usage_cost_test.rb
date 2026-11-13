@@ -341,7 +341,7 @@ class UsageAnthropicCostTest < Minitest::Test
   def test_standard_opus_prices_each_cache_write_at_its_own_ttl_rate
     report = estimate(anthropic_record)
     assert_metric report, 'USD estimate', '$0.001110'
-    assert_includes report, 'Anthropic API list prices, verified 2026-09-23'
+    assert_includes report, 'Anthropic API list prices, verified 2026-11-12'
     assert_includes report, ANTHROPIC_LINK
     refute_includes report, ANTHROPIC_FAST_LINK
     refute_includes report, 'Credits estimate'
@@ -367,7 +367,7 @@ class UsageAnthropicCostTest < Minitest::Test
     { 'claude-opus-5-5' => '$0.000880', 'claude-opus-4-5' => '$0.001110',
       'claude-sonnet-4-5' => '$0.000666',
       'claude-haiku-4-5' => '$0.000222', 'claude-fable-5-1' => '$0.002190',
-      'claude-fable-5' => '$0.002220' }.each do |model, expected|
+      'claude-fable-5' => '$0.002220', 'claude-fable-5-2' => '$0.001752' }.each do |model, expected|
       report = estimate(anthropic_record(configuration: ['anthropic', 'UNKNOWN', model, 'xhigh']))
       assert_metric report, 'USD estimate', expected
     end
@@ -437,7 +437,7 @@ class UsageAnthropicUnknownTest < Minitest::Test
     assert_metric fast, 'USD estimate', '$0.002220'
     assert_includes fast, ANTHROPIC_LINK
     assert_includes fast, ANTHROPIC_FAST_LINK
-    assert_includes fast, 'fast mode is priced for Opus models with a published rate'
+    assert_includes fast, 'fast mode is priced for models with a published rate'
     silent = estimate(anthropic_record(billing: 'UNKNOWN'))
     assert_metric silent, 'USD estimate', 'UNKNOWN'
     assert_includes silent, 'Billing speed UNKNOWN'
