@@ -154,10 +154,11 @@ phases:
       - If the preview needs confirmation of a different base, obtain it before activation.
         Activate a settings preview in the confirmed task worktree and
         resolve its merge preference as the preview procedure describes. Reuse that worktree
-        during Implement. Resolve command paths and review settings from the validated seam.
-        Run the reported scripts, not prose reconstructions. `AGENTS.md` adds constraints,
-        not contract fields. Verify each configured reviewer's identity and where it runs
-        from repository metadata, trusted workflows, and local reviewer configuration.
+        during Implement.
+      - Resolve command paths and review settings from the validated seam. Run the reported
+        scripts, not prose reconstructions. `AGENTS.md` adds constraints, not contract fields.
+        Verify each configured reviewer's identity from repository metadata and trusted
+        workflows, and whether it runs on GitHub or locally with provider credentials.
       - The PR must target the base this task validated against, whatever that base is. Compare
         `baseRefName` to it before merging. They differ when the PR was retargeted after
         planning, or when a stated base was never applied to an adopted PR. Stop and get one decision: retarget the
@@ -829,6 +830,7 @@ phases:
         targets: `pr` reports it as `baseRefName`, and a retarget after planning is the case
         that silently moves an Auto merge onto a branch nobody agreed to. Refresh the
         trusted seam and resolve the preference again using Intake's precedence.
+        For a settings preview, apply its recorded task choice and the preview procedure.
         Default to Ask when preference resolution is missing. Under Ask, keep the
         approval wait when decision evidence is missing. Honor
         review-only and PR-only scope and existing
