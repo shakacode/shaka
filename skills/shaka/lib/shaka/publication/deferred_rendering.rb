@@ -21,8 +21,9 @@ module Shaka
 
     # GitHub's rendering of the text, or nil when the renderer is refused and `stored_check`
     # will check the stored comment after writing. A source escape check stops the plain cases first.
+    # A caller that skipped its own check because the renderer was refused gets it here when it answers.
     def rendering_before_write(content, verbatim, stored_check)
-      verify_rendering(content, verbatim:)
+      verify_rendering(content, verbatim:).tap { |html| stored_check&.call(html) }
     rescue Refused
       raise unless stored_check
 

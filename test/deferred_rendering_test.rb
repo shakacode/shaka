@@ -8,8 +8,12 @@ require 'shaka/github'
 module DeferredRenderingRunner
   STATUS = Struct.new(:exitstatus)
   URL = 'https://github.com/owner/repo/pull/42#issuecomment-9'
+  COMMENTS = 'repos/owner/repo/issues/42/comments'
 
   private
+
+  def created = @calls.select { |argv, _| argv.include?(COMMENTS) && argv.include?('POST') }
+  def deleted? = @calls.any? { |argv, _| argv.include?('DELETE') }
 
   def answer(argv, stdin_data:)
     @calls << [argv, stdin_data]
@@ -38,7 +42,6 @@ class DeferredRenderingTest < Minitest::Test
 
   REFUSED = 'gh: This GitHub API path is not available: sessions are bound to their configured repositories. (HTTP 403)'
   FULL = 'Accept: application/vnd.github.full+json'
-  COMMENTS = 'repos/owner/repo/issues/42/comments'
 
   def setup
     @calls = []
@@ -105,6 +108,12 @@ class DeferredRenderingTest < Minitest::Test
     assert_includes error.message, URL
   end
 
+  def test_an_answering_renderer_after_a_refused_preflight_still_runs_the_check_before_writing
+    @markdown = ['<p>Hello.</p>', '', DeferredRenderingRunner::STATUS.new(0)]
+    assert_raises(Shaka::Error) { publish(stored_check: ->(_) { raise Shaka::Error, 'Layout broke.' }) }
+    assert_empty created
+  end
+
   def test_without_an_opt_in_a_refused_renderer_stops_before_writing
     error = assert_raises(Shaka::Error) { publish }
 
@@ -158,8 +167,4 @@ class DeferredRenderingTest < Minitest::Test
   def publish(body: 'Hello.', **)
     Shaka::GitHub.new('owner/repo', 42, runner: method(:answer)).reply(body:, key: 'loop', **)
   end
-
-  def created = @calls.select { |argv, _| argv.include?(COMMENTS) && argv.include?('POST') }
-
-  def deleted? = @calls.any? { |argv, _| argv.include?('DELETE') }
 end

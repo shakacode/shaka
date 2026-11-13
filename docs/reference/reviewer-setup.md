@@ -153,6 +153,8 @@ A review decision, merge queue state, or issue link in GitHub's Development
 sidebar may be unknown. Where GitHub's Markdown preview is blocked too, publishing a local
 review checks each comment after GitHub stores it and takes back one that renders wrong,
 including a reviewer report that shows `\n` outside code; publish that review locally.
+If the comment was already published unchanged, or taking it back fails, the error names
+the live comment.
 Other PR actions still need GraphQL.
 
 The opt-in [DeepSeek reviewer](../settings.md#reviewlocal_review_agents) runs through
