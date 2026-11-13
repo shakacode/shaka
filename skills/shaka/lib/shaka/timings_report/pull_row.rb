@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'time'
-require_relative '../evidence/phase_log'
+require_relative '../publication/phases'
 require_relative '../publication/agent_time'
 require_relative '../publication/task_timing'
 require_relative '../publication/timeline_steps'
@@ -39,7 +39,7 @@ module Shaka
       def buckets(steps, sessions)
         totals = Hash.new(0)
         steps.each { |step| step_time(totals, step) }
-        phases = Evidence::PhaseLog.combine(steps.filter_map { |step| step['phases'] })
+        phases = Phases.combine(steps.filter_map { |step| step['phases'] })
         phases.each { |name, value| totals["Validation phase: #{name}"] += value }
         sessions.each { |entry| agent_time(totals, entry) }
         totals.reject { |_name, value| value.zero? }

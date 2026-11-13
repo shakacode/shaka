@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../evidence/machine_facts'
-require_relative '../evidence/phase_log'
+require_relative 'phases'
 
 module Shaka
   # Says how long a recorded check took and on what kind of machine, such as
@@ -24,7 +24,7 @@ module Shaka
 
     # The phases the validation command reported, such as "· tests 4m 10s · rubocop 1m 2s".
     def phases(phases)
-      summary = Evidence::PhaseLog.summary(Evidence::PhaseLog.sanitize(phases), method(:duration))
+      summary = Phases.summary(Phases.sanitize(phases), method(:duration))
       "· #{summary}" unless summary.empty?
     end
 

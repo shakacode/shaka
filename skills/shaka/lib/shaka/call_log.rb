@@ -3,7 +3,7 @@
 require 'fileutils'
 require 'json'
 require 'time'
-require_relative 'evidence/phase_log'
+require_relative 'publication/phases'
 require_relative 'stopwatch'
 
 module Shaka
@@ -65,7 +65,7 @@ module Shaka
 
     # Adds the phases a validation command reported to this call's record, returning them when any were kept.
     def phases(list)
-      list = Evidence::PhaseLog.sanitize(list)
+      list = Phases.sanitize(list)
       extras['phases'] = list unless list.empty?
     end
 

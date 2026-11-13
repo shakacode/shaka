@@ -29,6 +29,7 @@ module Shaka
         lib/shaka/configuration/fingerprint.rb
         lib/shaka/configuration/fingerprint/*.rb
         lib/shaka/{call_log,defaults,error,pr_template,prompt_section,repository_identity,stopwatch}.rb
+        lib/shaka/publication/phases.rb
         lib/shaka/{review_prompt,reviewer_selection,reviewer_settings,subcommands,version,workflow_version}.rb
         lib/shaka/repository_config/{post_implementation_schema,prompt_files,review_limit,review_schema}.rb
         lib/shaka/configuration.rb

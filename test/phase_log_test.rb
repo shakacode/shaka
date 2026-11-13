@@ -35,12 +35,12 @@ class PhaseLogTest < Minitest::Test
 
   def test_sanitize_keeps_short_names_and_whole_milliseconds_up_to_the_cap
     phases = [['tests', 10], ['a' * 25, 1], ['x', -1], ['y', 1.5], [:z, 1], ['huge', 10**400],
-              ['tests', PhaseLog::MAX_MS], ['tests', -5],
+              ['tests', Shaka::Phases::MAX_MS], ['tests', -5],
               *('a'..'j').map { |name| [name, 1] }]
 
-    kept = PhaseLog.sanitize(phases)
+    kept = Shaka::Phases.sanitize(phases)
 
-    assert_equal PhaseLog::MAX_PHASES, kept.size
+    assert_equal Shaka::Phases::MAX_PHASES, kept.size
     assert_equal 10, kept['tests']
     assert_equal %w[tests a b c d e f g], kept.keys
   end

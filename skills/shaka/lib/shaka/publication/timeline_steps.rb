@@ -5,7 +5,7 @@ require 'json'
 require 'time'
 require_relative '../call_log'
 require_relative '../doctor/machine_alias'
-require_relative '../evidence/phase_log'
+require_relative 'phases'
 require_relative 'managed_region'
 require_relative 'provenance'
 
@@ -136,7 +136,7 @@ module Shaka
     # The awake time and a validation command's own phases, when recorded; the session never leaves the log.
     def measured(step)
       awake = step['awake_ms']
-      phases = step['command'] == 'evidence run' ? Evidence::PhaseLog.sanitize(step['phases']) : []
+      phases = step['command'] == 'evidence run' ? Phases.sanitize(step['phases']) : []
       { 'awake_ms' => (awake if awake.is_a?(Integer) && awake.between?(0, step['duration_ms'])),
         'phases' => (phases unless phases.empty?) }
     end

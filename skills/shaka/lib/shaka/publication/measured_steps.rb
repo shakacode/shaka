@@ -2,7 +2,7 @@
 
 require 'time'
 require_relative 'run_summary'
-require_relative '../evidence/phase_log'
+require_relative 'phases'
 require_relative 'time_zone'
 require_relative 'timeline_steps'
 
@@ -47,8 +47,8 @@ module Shaka
       reported = validations.reject { |step| step['phases'].to_h.empty? }
       return if reported.empty?
 
-      summary = Evidence::PhaseLog.summary(Evidence::PhaseLog.combine(reported.map { |step| step['phases'] }),
-                                           RunSummary.method(:duration))
+      summary = Phases.summary(Phases.combine(reported.map { |step| step['phases'] }),
+                               RunSummary.method(:duration))
       "**Validation phases:** #{summary} (#{reported.size} of #{validations.size} validation runs reported phases)"
     end
 
