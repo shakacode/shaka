@@ -38,9 +38,11 @@ how each held up. For how Shaka works with those sources today, read
   - `Floor N:` in the Review effort line;
   - a `**Setup gaps:**` line naming configured reviewers.
 - **Labels:** this page uses the labels from the window. Since then, Review effort
-  became **Human review** ([#1024](https://github.com/shakacode/shaka/pull/1024)), and
-  adequate with accepted gaps became **Adequate, with gaps the reviewer judged
-  acceptable** ([#1021](https://github.com/shakacode/shaka/pull/1021)).
+  became **Human review** ([#1024](https://github.com/shakacode/shaka/pull/1024)), which
+  the checkpoint's low, medium, or high **Risk** rating then replaced
+  ([#1081](https://github.com/shakacode/shaka/pull/1081)). Adequate with accepted gaps
+  became **Adequate, with gaps the reviewer judged acceptable**
+  ([#1021](https://github.com/shakacode/shaka/pull/1021)).
 - **Restated checks:** "11 of 12" is #740's own count of the PRs merged after #553.
   "32 of 101" comes from the window above, where 101 descriptions list check bullets
   under Verification. A description counts when one of those bullets matches this
@@ -355,9 +357,9 @@ predates this work.
 - [#421](https://github.com/shakacode/shaka/issues/421) stays open. An evaluation of
   how implementing agents verify is not done. The plan-time restatement (idea 6)
   arrived in [#1044](https://github.com/shakacode/shaka/pull/1044) after this window.
-- [#780](https://github.com/shakacode/shaka/issues/780): this repository previews
-  Auto at floor 2 and still runs Ask. A planned settings PR would switch
-  `merge.preference` to `auto`.
+- [#780](https://github.com/shakacode/shaka/issues/780) closed with
+  [#1081](https://github.com/shakacode/shaka/pull/1081): the checkpoint's risk rating,
+  not a review floor, now sets what Auto may merge. This repository still runs Ask.
 - [#976](https://github.com/shakacode/shaka/issues/976): usage records that survive
   model switches, restarts, and host handoffs.
 
@@ -368,7 +370,7 @@ Ask your agent:
 ```text
 $shaka For PRs merged in this repository last week, count how many
 descriptions have an Intent block, Shaka's validation and review line, and a
-Human review rating (Review effort on older PRs). List the ones that don't.
+risk rating (Human review or Review effort on older PRs). List the ones that don't.
 ```
 
 In Claude Code, start the prompt with `/shaka` instead of `$shaka`.

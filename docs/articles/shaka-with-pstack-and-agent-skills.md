@@ -9,7 +9,8 @@ at `eb07f19` by reading them. Shaka's word count is the workflow `shaka workflow
 `3b0aca0`, split on whitespace. No run has tested the combinations. Usage numbers come from
 the 429 pull requests (PRs) merged here in October 2026. Codex and a fresh Claude session
 reviewed it before publication. Updated on 2026-11-04 (UTC), after Shaka added a readback
-before coding.*
+before coding, and on 2026-11-12 to say how each host starts pstack's skills and to follow
+Shaka's rewritten guides.*
 
 Shaka runs delivery: it takes a task through validation, review, publication, and the
 merge decision. pstack and agent-skills teach engineering technique, and each can also
@@ -30,7 +31,7 @@ pack starts a skill.
   ([cursor/plugins#734](https://github.com/cursor/plugins/issues/734#issuecomment-6315706351)).
   Those skills run with only Shaka's short always-loaded boundary in place.
 - Agents reported pstack in 13 of the 297 PRs with a Skills used section, and Addy's
-  pack in none. Shaka's guide says neither has been tried on a full delivery.
+  pack in none. Neither had been tried on a full Shaka delivery.
 - The strongest proof gets the weakest record. A test suite run is bound to the commit.
   A harness that drives the real app, run outside `validate`, ends up as a sentence.
 - Both packs have the agent restate the goal before it starts. Shaka added that step on
@@ -52,8 +53,9 @@ Claude Code or Codex, which already route skills from their descriptions.
 
 ## What Shaka already handles
 
-[Shaka's guide](../working-with-shaka.md#combine-shaka-with-other-skills) covers these
-cases, and its companion rules name both packs:
+Shaka's companion rules, which its agent reads when another skill joins a task, cover
+these cases and name both packs. [Combine Shaka with other skills](../working-with-shaka.md#combine-shaka-with-other-skills)
+shows the same boundary from your side:
 
 | Situation | What Shaka does |
 | --- | --- |

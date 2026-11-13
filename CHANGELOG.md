@@ -28,10 +28,6 @@ qualification remain evidence requirements; the version number does not establis
 - Ask for an interactive code walkthrough with a short agenda and pauses for
   questions. Larger PR walkthroughs use a lightweight coverage map; selective
   notes on the diff remain unchanged.
-- Read how Shaka works with pstack and Addy Osmani's agent skills, and where it falls
-  short, in a new [article](docs/articles/shaka-with-pstack-and-agent-skills.md). A new
-  [reference page](docs/reference/pr-description-ideas.md) traces where the ideas in Shaka's
-  PR descriptions came from and how each held up.
 - Keep complete usage accounting when a PR description outgrows GitHub's limit.
   The description retains its tables and pricing notes, with checksummed links to
   accounting comments. A missing or changed archive blocks later updates.
