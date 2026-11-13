@@ -12,8 +12,21 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
 
 1. Change `Shaka::VERSION` in `skills/shaka/lib/shaka/version.rb` through a reviewed pull
    request and merge it. The gemspec reads that constant, and `shaka seam init` stamps it
-   into the `.agents/shaka.md` it generates. In the same PR, rename `## [Unreleased]`
-   in `CHANGELOG.md` to `## [VERSION] - YYYY-MM-DD` with the planned publication date,
+   into the `.agents/shaka.md` it generates. In the same PR, write the version's
+   `CHANGELOG.md` entry. Feature PRs leave that file alone and put their note in the
+   description's Changelog section. List the PRs merged since the previous tag:
+
+   ```bash
+   git log --first-parent --format=%s PREVIOUS_TAG..origin/main
+   ```
+
+   Each subject ends with `(#N)`. Read each PR's Changelog section with
+   `gh pr view N --repo shakacode/shaka --json body`. Check the note against what the
+   PR merged, and skip notes that say `None`. When a PR has no Changelog section or
+   left it blank, check `## [Unreleased]` before writing a note: PRs merged before
+   this process recorded their notes there. Merge the notes with any entries already
+   under `## [Unreleased]`, grouped as the file's header format asks. Rename that heading
+   to `## [VERSION] - YYYY-MM-DD` with the planned publication date,
    and add an empty `## [Unreleased]` above it. At the bottom, add a `[VERSION]` link
    comparing the previous tag to the intended tag, and change `[Unreleased]` to compare
    the intended tag to `HEAD`. If publication slips past that date, correct the heading before

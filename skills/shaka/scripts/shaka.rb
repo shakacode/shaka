@@ -20,7 +20,7 @@ require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/github/pull_timeline'
 require_relative '../lib/shaka/publication/timeline_steps'
 require_relative '../lib/shaka/attention'
-require_relative '../lib/shaka/merge_wait_review'
+require_relative '../lib/shaka/merge_handoff'
 require_relative '../lib/shaka/post_implementation/stale'
 require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
@@ -37,6 +37,8 @@ require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/evidence/command'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
+require_relative '../lib/shaka/merge_base_failures'
+require_relative '../lib/shaka/merge_risk_gate'
 require_relative '../lib/shaka/merge_limits'
 require_relative '../lib/shaka/opening_publication'
 require_relative '../lib/shaka/opening_prose'
@@ -106,6 +108,12 @@ def merge_limits(options, seam)
   Shaka::MergeLimits.new(seam ? seam.merge.fetch('limits') : {}, confirmed_head: options[:confirmed_head])
 end
 
+# merge.auto_merge_max_risk limits what an agent may merge without a confirmed head to that risk level and
+# below. Without trusted settings the packaged level and high-risk areas apply.
+def auto_merge_gate(seam, checkpoint, confirmed_head)
+  Shaka::MergeRiskGate.new(seam, checkpoint, confirmed_head:)
+end
+
 def require_merge_ref!(options)
   return if options[:ref].is_a?(String) && !options[:ref].strip.empty?
 
@@ -169,9 +177,19 @@ end
 def render_description(carried, version, pull, settings, timeline, options, github) # rubocop:disable Metrics/ParameterLists
   pull = pull.merge('shaka_changed_files' => Shaka::FeaturePublication.files(github, pull))
   pull = pull.merge('shaka_review_focus' => Shaka::ReviewFocus.resolve(carried, github, pull))
+  pull = pull.merge('shaka_risk' => described_risk(carried, github, pull, settings))
   Shaka::RenderingPreview.publish(options, pull, github) do
     Shaka::Publication.description(carried, version, pull, settings, timeline, environment: ENV)
   end
+end
+
+# The risk level comes from this head's checkpoint and the trusted areas, as merge reads them. A description
+# without a checkpoint shows no level, and a rated one without trusted settings withholds it.
+def described_risk(carried, github, pull, settings)
+  return unless carried['checkpoint'].is_a?(Hash)
+
+  Shaka::PostImplementationPublishedRisk.assessment(settings.config, github, pull.dig('head', 'sha'),
+                                                    Shaka::PostImplementationEvidence.new(github))
 end
 
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.
@@ -221,16 +239,25 @@ def merge_flags(flags, options)
   end
   flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
   confirmation_flags(flags, options)
-  flags.on('--auto', 'Merge under Auto: every head check must pass; label auto-merged') { options[:auto] = true }
+  auto_flags(flags, options)
   flags.on('--woken-by WHAT', 'For handoff: what will wake this session') { |value| options[:woken_by] = value }
   flags.on('--codex-wake PATH', 'For handoff: native Codex registration evidence as JSON') do |path|
     options[:codex_wake] = path
   end
 end
 
+def auto_flags(flags, options)
+  flags.on('--auto', 'Merge under Auto: every head check but --base-failure ones must pass; label auto-merged') do
+    options[:auto] = true
+  end
+  flags.on('--base-failure NAME', 'With --auto: a non-required check that fails on the base branch too') do |name|
+    (options[:base_failures] ||= []) << name
+  end
+end
+
 # Heads a user approved for merge although a gate would otherwise hand them back.
 def confirmation_flags(flags, options)
-  flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits/floor') { |sha| options[:confirmed_head] = sha }
+  flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits/risk') { |sha| options[:confirmed_head] = sha }
   flags.on('--empty-checks-confirmed-head SHA', 'Head the user told you to merge with no required checks') do |sha|
     options[:empty_checks_confirmed_head] = sha
   end
@@ -327,6 +354,9 @@ begin
     raise OptionParser::InvalidArgument, '--adequacy-confirmed-head is only for merge'
   end
   raise OptionParser::InvalidArgument, '--auto is only for merge' if options[:auto] && command != 'merge'
+  if options[:base_failures] && !options[:auto]
+    raise OptionParser::InvalidArgument, '--base-failure is only for merge --auto'
+  end
   if options[:auto] && options.values_at(:confirmed_head, :empty_checks_confirmed_head, :adequacy_confirmed_head).any?
     raise OptionParser::InvalidArgument, '--auto refuses user confirmations: a confirmed head is an Ask merge'
   end
@@ -383,7 +413,7 @@ begin
     Shaka::PostImplementationEvidence.new(github, **checkpoint).call(head)
   end
   result = case command
-           when 'pr' then Shaka::Status.new(github, seam_required_checks:, rest_fallback: true).call
+           when 'pr' then Shaka::Status.new(github, seam_required_checks:, rest_fallback: true, base_checks: true).call
            when 'comments'
              issue_only = options.fetch(:issue_only, false)
              raise OptionParser::InvalidArgument, '--head does not apply to issues' if issue_only && options[:head]
@@ -453,21 +483,20 @@ begin
                                               seam_required_checks:)
              merge.empty_checks_confirmed_head = options[:empty_checks_confirmed_head]
              merge.auto = options[:auto]
-             merge.review_floor = Shaka::MergeReviewFloor.from(seam, confirmed_head: options[:confirmed_head])
+             merge.base_failures = options[:base_failures] &&
+                                   Shaka::MergeBaseFailures.new(github, options[:base_failures])
+             merge.risk_gate = auto_merge_gate(seam, review.fetch(:checkpoint), options[:confirmed_head])
              merge.hold = Shaka::MergeHold.from(seam)
              merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention'
              state = options.fetch(:state)
-             review = if state == 'merge'
-                        Shaka::MergeWaitReview.new(github, **merge_wait, waiver: options[:review_waiver])
-                                              .check!(github.snapshot)
-                      end
-             labels = Shaka::Attention.new(github).call(state:)
-             # Leaving the merge wait means the PR changes; a checkpoint for an older head must not look ready.
              if state == 'merge'
-               labels.merge('review' => review)
+               review = merge_wait.merge(waiver: options[:review_waiver])
+               Shaka::MergeHandoff.new(github, seam_required_checks:, review:).call
              else
+               # Leaving the merge wait means the PR changes; a checkpoint for an older head must not look ready.
+               labels = Shaka::Attention.new(github).call(state:)
                labels.merge('stale_checkpoint' => Shaka::PostImplementationStale.new(github).call)
              end
            when 'squash-message'

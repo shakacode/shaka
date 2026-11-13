@@ -12,6 +12,7 @@ module Shaka
         'source' => %w[private/local preview/local trusted/team],
         'installation.source' => %w[revision development uninstalled],
         'merge.preference' => %w[ask auto],
+        'merge.auto_merge_max_risk' => %w[low medium],
         'merge.private_trial_default' => %w[ask],
         'review.required' => %w[always meaningful_changes none],
         'review.ci_review_wait' => %w[none one all],
@@ -25,7 +26,6 @@ module Shaka
       BOOLEANS = %w[wip.include_checkout_path opening_check.enabled
                     pr_description.show_shaka_credit pr_description.show_human_comments].freeze
       NUMBERS = %w[merge.limits.max_changed_files merge.limits.max_changed_lines merge.limits.max_commits
-                   merge.auto_max_review_floor
                    prose_limits.max_sentence_words prose_limits.max_paragraph_words prose_limits.max_description_words
                    prose_limits.words_per_changed_line pr_description.max_human_comments].freeze
       REDACTED = %w[commands paths review.prompts review.ci_review_jobs merge.required_checks branches base_branch

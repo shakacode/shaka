@@ -20,6 +20,7 @@
       "items": [
         "configure-repository",
         "settings-guide",
+        "changelog-in-pr-descriptions",
         "coding-agents",
         "linear",
         "pstack",
@@ -35,6 +36,7 @@
       "items": [
         "pr-verification",
         "reference/pr-record",
+        "reference/reviewer-setup",
         "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",

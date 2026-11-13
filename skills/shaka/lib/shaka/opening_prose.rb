@@ -4,7 +4,7 @@ require_relative 'publication/intent_verification'
 
 module Shaka
   # What a description's author wrote that a reader sees without opening anything. Lines the helper writes,
-  # such as review effort and the validation gate, stay out because the author cannot reword them.
+  # such as the validation gate, stay out because the author cannot reword them.
   module OpeningProse
     INTENT = { 'why' => 'Why', 'root_cause' => 'Root cause', 'safe_because' => 'Safe because',
                'leaves_out' => 'Leaves out', 'scope' => 'Scope' }.freeze
@@ -14,7 +14,7 @@ module Shaka
     def call(content)
       intent, verification = content.values_at('intent', 'verification')
       lines = [*INTENT.map { |field, label| [label, intent[field]] },
-               *Array(intent['review_focus']).map { |entry| ['Closer reading', entry['reason']] },
+               *Array(intent['review_focus']).map { |entry| ['Flagged by the implementer', entry['reason']] },
                *verification_lines(verification)]
       lines.filter_map { |label, text| "#{label}: #{text}" unless text.to_s.strip.empty? }.join("\n")
     end

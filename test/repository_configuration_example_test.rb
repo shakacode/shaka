@@ -1,32 +1,19 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require 'yaml'
 require 'shaka/defaults'
 require 'shaka/repository_config'
 require 'shaka/local_review/runner'
-require 'shaka/publication/review_effort_floor'
+require 'shaka/post_implementation/risk'
 
 # The repository contract doubles as the browsable example of shipped defaults.
 class RepositoryConfigurationExampleTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   POLICY_KEYS = %w[
     required ci_review_jobs local_review_agents local_review_count post_implementation replacement_prompt_file
-    provider_coverage custom_instructions_file
-    human_review_floors auto_max_review_floor time_zone
+    provider_coverage custom_instructions_file time_zone
   ].freeze
-  # The only files this repository removes from a shipped floor: its Ruby library code leaves the
-  # agent-instructions floor so merge.auto_max_review_floor can merge it.
-  FLOOR_EXEMPTIONS = { 'changes agent instructions' => %w[skills/shaka/lib/**/*.rb] }.freeze
-  # Where this repository's floors put its files; Auto merges only those at 2 or below.
-  FLOOR_LEVELS = {
-    'skills/shaka/lib/shaka/doctor/checks.rb' => 2, 'test/doctor_test.rb' => 2,
-    'skills/shaka/lib/shaka/install/links.rb' => 3, 'bin/validate' => 3, '.rubocop.yml' => 3,
-    'skills/shaka/SKILL.md' => 3,
-    'skills/shaka/lib/shaka/required_checks.rb' => 4, 'skills/shaka/lib/shaka/merge_review_floor.rb' => 4,
-    'skills/shaka/lib/shaka/publication/review_effort_floor.rb' => 4,
-    'skills/shaka/lib/shaka/repository_config/merge_schema.rb' => 4, 'docs/settings.md' => 5,
-    'docs/reference/timings.md' => 2, 'skills/shaka/lib/AGENTS.md' => 3, 'test/AGENTS.md' => 3
-  }.freeze
 
   def setup
     config = Shaka::RepositoryConfig.load(root: ROOT)
@@ -38,7 +25,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
 
   def test_example_includes_effective_default_sections
     @defaults.except('version', 'commands', 'paths', 'review', 'merge').each do |section, defaults|
-      defaults = defaults.except('human_review_floors', 'time_zone') if section == 'pr_description'
+      defaults = defaults.except('time_zone') if section == 'pr_description'
       assert_equal defaults, example_section(section), "Update the #{section} example when defaults change"
     end
   end
@@ -48,7 +35,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   end
 
   def test_example_merge_defaults_match_without_changing_repository_choices
-    policy_keys = %w[preference required_checks auto_max_review_floor]
+    policy_keys = %w[preference required_checks]
     assert_equal @defaults.fetch('merge').except(*policy_keys), @example.fetch('merge').except(*policy_keys)
   end
 
@@ -69,26 +56,6 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     end
   end
 
-  # This repository adds its own floors and paths but keeps every shipped floor, removing files from
-  # one only through FLOOR_EXEMPTIONS.
-  def test_example_floors_keep_every_shipped_floor
-    floors = @example.fetch('pr_description').fetch('human_review_floors')
-    Shaka::Defaults.fetch('pr_description', 'human_review_floors').each { |shipped| assert_floor_kept(shipped, floors) }
-  end
-
-  # A misspelled path would let that code fall to floor 2 and merge without a person.
-  def test_example_floor_paths_this_repository_adds_name_real_files
-    shipped = Shaka::Defaults.fetch('pr_description', 'human_review_floors').flat_map { |floor| floor['paths'] }
-    added = @example.fetch('pr_description').fetch('human_review_floors').flat_map { |floor| floor['paths'] } - shipped
-    added.flat_map { |glob| alternatives(glob) }.each { |glob| refute_empty Dir.glob(glob, base: ROOT), glob }
-  end
-
-  def test_example_floors_hold_settings_merge_and_install_code_above_code_fixes
-    floors = @example.fetch('pr_description').fetch('human_review_floors')
-    levels = FLOOR_LEVELS.to_h { |path, _| [path, Shaka::ReviewEffortFloor.for([path], floors).fetch('level')] }
-    assert_equal FLOOR_LEVELS, levels
-  end
-
   def test_review_deadline_defaults_applied_outside_repository_config
     %w[anthropic/claude openai/codex xai/grok deepseek/openrouter].each do |reviewer|
       options = { reviewer: }
@@ -100,31 +67,55 @@ class RepositoryConfigurationExampleTest < Minitest::Test
 
   private
 
-  def assert_floor_kept(shipped, floors)
-    floor = floors.find { |candidate| candidate.values_at('level', 'reason') == shipped.values_at('level', 'reason') }
-    assert floor, "Keep the shipped floor: #{shipped['reason']}"
-    assert_empty shipped.fetch('paths', []) - floor.fetch('paths', []), shipped['reason']
-    assert_equal kept_floor(shipped, floor), floor, shipped['reason']
-  end
-
-  # Each name in a brace list, so one real file cannot hide a misspelled one beside it.
-  def alternatives(glob)
-    match = glob.match(/\{([^{}]*)\}/)
-    match ? match[1].split(',').flat_map { |name| alternatives(match.pre_match + name + match.post_match) } : [glob]
-  end
-
-  # A kept floor may add paths; its except may add only this repository's exemptions.
-  def kept_floor(shipped, floor)
-    except = shipped.fetch('except', []) + FLOOR_EXEMPTIONS.fetch(shipped['reason'], [])
-    shipped.merge('paths' => floor['paths'], 'except' => except).reject { |_, value| value == [] }
-  end
-
   def example_section(section)
     case section
     # The opening reviewer is this repository's choice, like the code reviewers.
     when 'opening_check' then @example.fetch('pr_description').fetch(section).except('reviewer')
-    when 'pr_description' then @example.fetch(section).except('opening_check', 'human_review_floors', 'time_zone')
+    when 'pr_description' then @example.fetch(section).except('opening_check', 'time_zone')
     else @example.fetch(section)
     end
+  end
+end
+
+# Shaka's own settings hold its merge and trust code from Auto, as the retired review floors did.
+class RepositoryConfigurationExampleRiskAreasTest < Minitest::Test
+  def test_shaka_merge_and_trust_code_counts_as_high
+    areas = Shaka::RepositoryConfig.load(root: File.expand_path('..', __dir__)).high_risk_areas
+    %w[skills/shaka/lib/shaka/merge_risk_gate.rb skills/shaka/lib/shaka/evidence/public_settings.rb
+       skills/shaka/lib/shaka/trusted_config_source.rb
+       skills/shaka/lib/shaka/repository_config/merge_schema.rb skills/shaka/config/post-implementation-risk.md
+       skills/shaka/lib/shaka/post_implementation/adequacy.rb skills/shaka/lib/shaka/post_implementation_runner.rb
+       skills/shaka/config/workflow.yml skills/shaka/config/defaults.yml skills/shaka/SKILL.md
+       skills/shaka/scripts/shaka.rb].each do |path|
+      assert_equal 'merge_and_trust', Shaka::PostImplementationRisk.hits(areas, [path]).first&.fetch('area'), path
+    end
+  end
+end
+
+# Areas the example shows from the packaged defaults keep the packaged patterns, so the example cannot drift.
+class RepositoryConfigurationExampleAreaDriftTest < Minitest::Test
+  def test_example_areas_match_the_packaged_patterns
+    example = YAML.safe_load_file(File.expand_path('../.agents/shaka/config.yml', __dir__))
+    %w[high_risk_areas medium_risk_areas].each do |section|
+      Shaka::Defaults.fetch(section).each do |area, patterns|
+        assert_equal patterns, example.fetch(section).fetch(area), "#{section}.#{area}"
+      end
+    end
+  end
+end
+
+# Shaka's user guides and its validation and install code go to a person for a skim, as their floors did.
+class RepositoryConfigurationExampleMediumAreasTest < Minitest::Test
+  def test_shaka_guides_and_install_code_count_as_medium
+    config = Shaka::RepositoryConfig.load(root: File.expand_path('..', __dir__))
+    { 'docs/getting-started.md' => 'user_docs', 'docs/articles/one-shot-pr-study.md' => 'user_docs',
+      'bin/validate' => 'validation_install', 'shaka.gemspec' => 'validation_install',
+      'skills/shaka/lib/shaka/install/checkout.rb' => 'validation_install' }.each do |path, area|
+      assessment = Shaka::PostImplementationRisk.assess('low', config.high_risk_areas, [path], config.medium_risk_areas)
+      assert_equal [area], assessment['medium_areas_hit'].map { it['area'] }, path
+    end
+    reference = Shaka::PostImplementationRisk.assess('low', config.high_risk_areas, ['docs/reference/pr-record.md'],
+                                                     config.medium_risk_areas)
+    assert_equal 'low', reference['level']
   end
 end

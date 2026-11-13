@@ -55,6 +55,8 @@ module Shaka
       raise OptionParser::InvalidArgument, parser.to_s unless known_operation?(operation)
       return Pointer.refuse_foreign_options(@options) if operation == 'pointer'
 
+      raise OptionParser::InvalidArgument, '--readme applies only to pointer' if @options.key?(:readme)
+
       operation == 'check' ? validate_check_options : validate_init_options
     end
 
@@ -73,7 +75,7 @@ module Shaka
     end
 
     def render_config(operation)
-      return Pointer.emit if operation == 'pointer'
+      return Pointer.emit(readme: @options.key?(:readme)) if operation == 'pointer'
       return CheckReport.emit(Initializer.new(root:, options: @options).call.to_h) if operation == 'init'
 
       warn "shaka: #{CheckReport::IMPLICIT_DIAGNOSTIC}" if implicit_local?
@@ -95,6 +97,7 @@ module Shaka
         flags.banner = usage
         add_common_options(flags)
         add_init_options(flags)
+        flags.on('--readme', 'With pointer, print the pointer file that init writes') { @options[:readme] = true }
         flags.on('-h', '--help', 'Show usage') { @options[:help] = true }
       end
     end
@@ -104,7 +107,7 @@ module Shaka
         "shaka seam init --root DIR [options]\n       " \
         "shaka seam migrate --root DIR --from-ref SHA [--plan | --apply]\n       " \
         "shaka seam private setup|check|inspect|list|restore --root DIR [options]\n       " \
-        'shaka seam pointer'
+        'shaka seam pointer [--readme]'
     end
 
     def add_common_options(flags)

@@ -38,7 +38,7 @@ class PostImplementationPacketTest < Minitest::Test
      CHECKPOINT_CONTENT.merge('verification' => VERIFICATION.merge('checks' => [])),
      CHECKPOINT_CONTENT.merge('intent' => INTENT.except('safe_because')),
      CHECKPOINT_CONTENT.except('summary'), own('evidence' => ['']),
-     CHECKPOINT_CONTENT.merge('intent' => INTENT.merge('review_focus' => [{ 'path' => 'lib/a.rb', 'level' => 2,
+     CHECKPOINT_CONTENT.merge('intent' => INTENT.merge('review_focus' => [{ 'path' => '/lib/a.rb',
                                                                             'reason' => 'r.' }]))].each do |packet|
       assert_refused_before_invocation(packet)
     end

@@ -2,8 +2,8 @@
 
 require_relative 'cli_merge_fixture'
 
-# The merge label through the real command, trusted settings, and a fake gh that records label writes.
-class CliAttentionReviewTest < Minitest::Test
+# The merge label through the real command, trusted settings, and a fake gh that records writes.
+module CliAttentionFixture
   include CliMergeFixture
 
   FAKE = <<~'RUBY_SCRIPT'
@@ -12,16 +12,44 @@ class CliAttentionReviewTest < Minitest::Test
     path = ARGV[1].to_s
     pull = { 'number' => 1, 'headRefOid' => 'a' * 40, 'baseRefName' => 'main', 'state' => 'OPEN' }
     if ARGV[0, 2] == %w[api graphql]
+      request = JSON.parse($stdin.read)
+      if request.fetch('query').include?('headRefOid') && (change = ENV['PR_CHANGE'])
+        reads = "#{ENV.fetch('LABEL_FILE')}.reads"
+        count = File.exist?(reads) ? File.read(reads).to_i + 1 : 1
+        File.write(reads, count)
+        pull['state'] = 'CLOSED' if change == 'reopen' && count <= 2
+        retargeted = change == 'retarget_gate' && count >= 3
+      retargeted ||= File.exist?("#{ENV.fetch('LABEL_FILE')}.retargeted")
+      pull['baseRefName'] = 'release' if retargeted
+      pull['headRefOid'] = 'b' * 40 if File.exist?("#{ENV.fetch('LABEL_FILE')}.moved")
+      end
       puts JSON.generate('data' => { 'repository' => { 'pullRequest' => pull } })
+    elsif ARGV[0, 2] == %w[pr checks]
+      rows = JSON.parse(ENV.fetch('PR_CHECKS', '[]'))
+      if File.exist?("#{ENV.fetch('LABEL_FILE')}.rerun")
+        rows.each { |row| row.update('state' => 'PENDING', 'bucket' => 'pending') }
+      end
+      rows.select! { |row| row['name'] == 'validate' } if ARGV.include?('--required')
+      puts JSON.generate(rows)
+    elsif path.start_with?('repos/owner/repo/rules/branches/main')
+      puts '[]'
     elsif path == 'user'
       puts JSON.generate('login' => 'shaka-agent')
     elsif path.include?('/issues/1/comments')
+      File.write("#{ENV.fetch('LABEL_FILE')}.rerun", '') if ENV['PR_CHANGE'] == 'rerun'
       puts ENV.fetch('PR_COMMENTS', '[]')
     elsif path.include?('/issues/1/labels') && ARGV.include?('POST')
       File.write(ENV.fetch('LABEL_FILE'), 'labeled')
       puts '[]'
     elsif path.include?('/issues/1/labels')
-      puts '[]'
+      File.write("#{ENV.fetch('LABEL_FILE')}.deleted", '') if ARGV.include?('DELETE')
+      if ENV['PR_CHANGE'] == 'retarget_labels'
+        File.write("#{ENV.fetch('LABEL_FILE')}.retargeted", '')
+        puts JSON.generate([{ 'name' => 'awaiting-resume' }])
+      else
+        File.write("#{ENV.fetch('LABEL_FILE')}.moved", '') if ENV['PR_CHANGE'] == 'head_labels'
+        puts '[]'
+      end
     elsif path.include?('/labels/')
       puts JSON.generate('name' => 'awaiting-merge-approval')
     else
@@ -44,10 +72,10 @@ class CliAttentionReviewTest < Minitest::Test
     end
   end
 
-  def label(root, ref, *extra, comments: [])
+  def label(root, ref, *extra, comments: [], env: {})
     @label_file = File.join(root, 'label-written')
     run_command('attention', 'owner/repo', '1', '--state', 'merge', '--root', root, '--ref', ref, *extra,
-                root:, env: { 'PR_COMMENTS' => JSON.generate(comments), 'LABEL_FILE' => @label_file })
+                root:, env: { 'PR_COMMENTS' => JSON.generate(comments), 'LABEL_FILE' => @label_file }.merge(env))
   end
 
   def review_comment(outcome)
@@ -57,6 +85,10 @@ class CliAttentionReviewTest < Minitest::Test
                 "**Reviewed revision:** #{HEAD}\n\n**Outcome:** #{outcome}\n\n" \
                 "REVIEWED #{HEAD} BY openai/codex EFFORT high FINDINGS 3\n" }
   end
+end
+
+class CliAttentionReviewTest < Minitest::Test
+  include CliAttentionFixture
 
   def test_no_published_review_leaves_the_label_off
     with_policy('meaningful_changes') do |root, ref|
@@ -116,6 +148,63 @@ class CliAttentionReviewTest < Minitest::Test
 
     refute_predicate status, :success?
     assert_includes error, '--review-waiver is only for merge and attention --state merge'
+  end
+end
+
+class CliAttentionGateTest < Minitest::Test
+  include CliAttentionFixture
+
+  def test_merge_handoff_waits_for_required_ci
+    assert_refused_handoff(check_env('PENDING', 'pending'), 'Required check is not passing')
+  end
+
+  def test_merge_handoff_applies_the_label_after_required_ci_passes
+    with_policy('meaningful_changes') do |root, ref|
+      _output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)],
+                                                env: check_env('SUCCESS', 'pass'))
+
+      assert_predicate status, :success?, error
+      assert_path_exists @label_file
+    end
+  end
+
+  def test_merge_handoff_refuses_a_closed_snapshot_even_if_the_pr_reopens
+    assert_refused_handoff({ 'PR_CHANGE' => 'reopen' }, 'Pull request is not open.', comments: [])
+  end
+
+  def test_merge_handoff_refuses_a_retarget_while_reading_the_gate
+    assert_refused_handoff({ 'PR_CHANGE' => 'retarget_gate' }, 'PR base changed')
+  end
+
+  def test_merge_handoff_refuses_a_retarget_before_labeling
+    assert_refused_handoff({ 'PR_CHANGE' => 'retarget_labels' }, 'PR base changed')
+    refute_path_exists "#{@label_file}.deleted"
+  end
+
+  def test_merge_handoff_reads_required_ci_after_local_review
+    env = check_env('SUCCESS', 'pass').merge('PR_CHANGE' => 'rerun')
+    assert_refused_handoff(env, 'Required check is not passing')
+  end
+
+  def test_merge_handoff_refuses_a_moved_head_before_labeling
+    assert_refused_handoff({ 'PR_CHANGE' => 'head_labels' }, 'PR head changed')
+  end
+
+  private
+
+  def check_env(state, bucket)
+    checks = [{ 'name' => 'validate', 'state' => state, 'bucket' => bucket }]
+    { 'PR_CHECKS' => JSON.generate(checks) }
+  end
+
+  def assert_refused_handoff(env, message, comments: [review_comment(CLEAN_OUTCOME)])
+    with_policy('meaningful_changes') do |root, ref|
+      _output, error, status = label(root, ref, comments:, env:)
+
+      refute_predicate status, :success?
+      assert_includes error, message
+      refute_path_exists @label_file
+    end
   end
 end
 

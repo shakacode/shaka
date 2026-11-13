@@ -48,8 +48,8 @@ class PostImplementationMergeWarningTest < Minitest::Test
 
       assert_equal 0, status
       assert github.snapshot['isDraft']
-      assert_includes banner, "Not ready to merge — waiting for the maintainer's decision."
-      assert_includes banner, 'Maintainer: answer under Decisions to make.'
+      assert_includes banner, Shaka::MergeWarningRegion::AWAITING.first
+      refute_includes banner, 'Ask Justin.'
       refute_includes banner, 'Do not merge'
     end
   end

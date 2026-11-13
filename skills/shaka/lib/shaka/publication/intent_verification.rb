@@ -4,8 +4,6 @@ require_relative '../error'
 require_relative 'text'
 require_relative 'verification_gates'
 require_relative 'diff_buckets'
-require_relative 'human_review'
-require_relative 'review_focus_list'
 
 module Shaka
   # Renders what a pull request is for and how it was proved, so a maintainer can decide whether to trust it.
@@ -22,24 +20,23 @@ module Shaka
     module_function
 
     # The verdict binds the validation and review results; nil when description received none.
-    # The floor comes from the PR's changed paths; without a pull request there is none.
     # The shortfall compares the bound reviews with the trusted reviewer count; nil when none.
-    def render(content, verdict = nil, floor = nil, pull = nil, task: nil, shortfall: nil) # rubocop:disable Metrics/ParameterLists
+    # An intent review_effort, the retired 1-5 rating, is ignored.
+    def render(content, verdict = nil, pull = nil, task: nil, shortfall: nil)
       gate_line = VerificationGates.render(verdict, content['review'], shortfall)
       spec = object(content, 'verification')
       evidence(spec, content['wip'].nil? ? CHECKS : (0..CHECKS.max))
-      [intent(object(content, 'intent'), floor, pull, task),
+      [intent(object(content, 'intent'), pull, task),
        verification(spec, gate_line)]
     end
 
     # The task follows Why, so a reader sees the problem and then where the work came from.
-    def intent(spec, floor, pull, task = nil)
+    def intent(spec, pull, task = nil)
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
       lines.insert(1, *task_with_understanding(task, spec['task_understanding']), *root_cause(spec))
-      lines << HumanReview.render(spec['review_effort'], floor)
-      lines.concat(ReviewFocusList.render(spec, pull), exclusions(spec['leaves_out']))
+      lines.concat(exclusions(spec['leaves_out']))
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
     end
 

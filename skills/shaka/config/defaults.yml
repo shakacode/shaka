@@ -19,15 +19,32 @@ checkpoint: # The finished-result checkpoint before merge readiness.
   # Added after the checkpoint prompt when it exists. Naming it in config.yml makes the file required.
   custom_instructions_file: .agents/shaka/instructions/checkpoint.md
 
+high_risk_areas: # A change here is always high risk, whatever the checkpoint rates it.
+  database: [db/migrate/**/*, '**/migrations/**/*', db/schema.rb, db/structure.sql, '**/*.sql', '**/schema.prisma']
+  persistence: [config/database.yml, config/storage.yml, 'config/cache*.yml', config/redis.yml, config/sidekiq.yml]
+  infrastructure: ['**/*.tf', '**/*.tfvars', infra/**/*, k8s/**/*, '**/charts/**/*', '**/Dockerfile*',
+                   '**/docker-compose*.yml', .controlplane/**/*, fly.toml]
+  ci_and_trust: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS]
+  # A path segment named for a word, alone or joined by _ or -, as auth_controller.rb or oauth/; not authors.md.
+  security:
+    - '**/{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,.*,_*,-*}'
+    - '**/*[_-]{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,.*,_*,-*}'
+    - '**/{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,_*,-*}/**/*'
+    - '**/*[_-]{auth,oauth,authentication,authorization,permission,secret,credential}{,s}{,_*,-*}/**/*'
+  shaka: [.agents/shaka/**/*]
+
+medium_risk_areas: # A change here counts as at least medium risk, so a person skims it before it merges.
+  agent_instructions: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', .claude/**/*, .cursor/**/*]
+
 merge:
   preference: ask # Setup writes this; config.yml must state a preference.
   limits: # A merge past any limit needs confirmation of the exact head.
     max_changed_files: 29
     max_changed_lines: 999 # Additions plus deletions.
     max_commits: 9
-  # The highest human review floor (pr_description.human_review_floors) a PR may set and still
-  # merge without a person confirming its head. 5 holds nothing back.
-  auto_max_review_floor: 5
+  # The highest checkpoint risk the agent may merge without a person confirming the head: low merges low
+  # only; medium merges low and medium. High never merges this way, nor does a PR in a high_risk_areas entry.
+  auto_merge_max_risk: low
   hold_labels: [hold] # A PR carrying any of these never merges through Shaka until a person removes it.
 
 branches:
@@ -40,26 +57,9 @@ pr_description:
   show_shaka_credit: true # Show a quiet Shaka website credit below the PR summary.
   show_human_comments: true # List the comments people wrote on the PR.
   max_human_comments: 20 # Rows that list shows, open comments first.
+  # Comments the list leaves out when their whole text matches one of these; * matches any characters but whitespace.
+  ignored_human_comments: []
   time_zone: UTC # Zone of the times in the Timings section; a repository that sets none uses the user's.
-  # The lowest human review effort a PR may claim, from the files it changes.
-  # Matching rules: skills/shaka/references/human-review-floors.md.
-  human_review_floors:
-    - level: 5
-      reason: changes Shaka's repository configuration
-      paths: [.agents/shaka/**/*]
-    - level: 4
-      reason: changes trust, merge, authentication, or release paths
-      paths: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS]
-      words: [auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
-              credential]
-      except: ['**/*.md', '**/*.{png,jpg,jpeg,gif,svg,webp}']
-    - level: 3
-      reason: changes agent instructions
-      paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]
-    - level: 2
-      reason: changes code or configuration
-      paths: ['**/*']
-      except: ['**/*.md', docs/**/*, '**/*.{png,jpg,jpeg,gif,svg,webp}']
   opening_check:
     enabled: true # Check description and walkthrough openings, and description terms, after publication.
     effort: low # Independent of the code-review effort.

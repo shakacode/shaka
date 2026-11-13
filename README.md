@@ -1,7 +1,7 @@
 # Shaka
 
 Shaka is a free, open-source skill for AI coding agents, including Claude Code,
-Codex, Cursor, OpenCode, and Pi.
+Codex, Cursor, GitHub Copilot, OpenCode, and Pi.
 
 You give a task. The agent builds, verifies, and reviews. You get a pull request
 (PR) you can judge quickly.
@@ -27,8 +27,8 @@ and your agents can examine results, token use, and timing to improve the PR
 workflow, including automatic merges.
 
 By default, you merge the PR. You can also approve the agent's merge or choose
-[Auto](docs/working-with-shaka.md#choose-a-merge-policy).
-Even with Auto, large or risky changes need your merge decision.
+[`auto`](docs/working-with-shaka.md#choose-a-merge-policy).
+Even with `auto`, large or risky changes need your merge decision.
 
 ![You give a task. The agent builds, verifies, and reviews. You review the PR and decide what happens next.](docs/img/task-to-pr.svg)
 
@@ -52,7 +52,7 @@ Then give it a small task:
 $shaka Fix search when the query contains an apostrophe. Go.
 ```
 
-Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode.
+Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, GitHub Copilot, or OpenCode.
 For Pi, load the installed skill. See [other coding agents](docs/coding-agents.md).
 Your agent checks setup and tells you if
 anything is missing.

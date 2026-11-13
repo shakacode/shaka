@@ -28,7 +28,6 @@ class ConfigureSettingsCoverageTest < Minitest::Test
              'merge' => ['preference', *SCHEMA::MergeSchema::OPTIONAL],
              'pr_description' => SCHEMA::PrDescriptionSchema::KEYS, 'branches' => SCHEMA::BranchSchema::KEYS,
              'wip' => [SCHEMA::WipSchema::KEY] }.flat_map { |section, names| names.map { |name| "#{section}.#{name}" } }
-
     assert_empty(keys.reject { |key| covered?(key) })
   end
 
@@ -53,13 +52,13 @@ class ConfigureSettingsCommandTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
   def test_rows_say_what_the_repository_sets_and_whether_it_matches_the_default
-    merge = merge_policy.merge('limits' => { 'max_commits' => 9 }, 'auto_max_review_floor' => 3)
+    merge = merge_policy.merge('limits' => { 'max_commits' => 9 }, 'auto_merge_max_risk' => 'medium')
     with_trusted('merge' => merge) do |root, ref|
       rows = rows(report(root, '--ref', ref))
 
       assert_equal [true, true], rows.fetch('merge.limits').values_at('set', 'matches_default')
-      assert_equal [true, false, 3, 5], rows.fetch('merge.auto_max_review_floor')
-                                            .values_at('set', 'matches_default', 'effective', 'default')
+      assert_equal [true, false, 'medium', 'low'], rows.fetch('merge.auto_merge_max_risk')
+                                                       .values_at('set', 'matches_default', 'effective', 'default')
       assert_equal [false, nil, 1], rows.fetch('review.local_review_count')
                                         .values_at('set', 'matches_default', 'effective')
     end

@@ -1,193 +1,191 @@
 # Frequently asked questions
 
+Examples use `/shaka`. In Codex, use `$shaka` instead.
+
 ## What should I try first?
 
-Pick a small bug or improvement in a project you know. Follow [Start here](getting-started.md)
-to install Shaka, ask the agent to configure the repository, and run your task.
-[Working with Shaka](working-with-shaka.md) explains the PR you get and your merge decision.
+Choose a small change in a project you know and follow [Start here](getting-started.md).
+For a practice project, use [Shaka in pictures](shaka-in-pictures.md).
+Then [review the PR](pr-verification.md) to decide what happens next.
 
 ## Do I need to write configuration by hand?
 
-No. Ask the skill to inspect your project and reuse its existing checks.
-For shared setup, review the agent's choices and merge the initial setup PR yourself.
+No. Ask your agent:
+
+```text
+/shaka Help me set up Shaka for this project.
+```
+
+The agent inspects the project, reuses existing checks, and explains the choices.
+For team setup, review and merge the setup PR before using the shared settings.
 See [repository setup](configure-repository.md).
 
 ## Can I try it without changing team configuration?
 
-Yes, if the repository has no shared Shaka settings:
+Yes, when the project has no shared Shaka settings:
 
 ```text
-$shaka <task or issue link>
-Set up Shaka just for me. Go.
+/shaka Fix search when the query contains an apostrophe. Set up Shaka just for me.
 ```
 
-Settings stay out of commits. See [individual support and acceptance gaps](expected-experience.md#individual-setup).
-With team settings, local choices do not override them. You can explicitly
-[select a settings PR](settings.md#preview-settings-before-adopting-them) for one task.
-Trying a different Shaka implementation is separate: see [try a Shaka PR](trying-pr-versions.md).
+Your settings stay out of commits. Existing team settings still apply if present.
+To try different team settings for one task, use a
+[settings preview](settings.md#preview-settings-before-adopting-them).
+Trying a change to Shaka itself is separate: see [try a Shaka PR](trying-pr-versions.md).
 
 ## Can I use a different setting than my team?
 
-For one task, say it in your request, such as `Use Ask for this task`, where the
-setting allows it. For a lasting change, propose a settings PR and
-[select it for your tasks](settings.md#preview-settings-before-adopting-them) until
-it merges.
+For a supported task choice, say what you want, such as "Ask me before merging."
+For a lasting change, ask for a settings PR. You can explicitly
+[try that settings PR](settings.md#preview-settings-before-adopting-them) before it merges.
 
-Individual settings do not apply in a repository with team settings, even for a value
-the team leaves out: Shaka uses its own default there. Settings always come from one
-source, so you can tell which choices governed a task. See
+Local settings do not override team settings. See
 [which settings apply](settings.md#which-settings-apply).
 
 ## Why did the agent stop to ask about model and effort?
 
-Before it changes code, Shaka recommends a model and effort for the task.
-“Go” without naming either accepts your agent's current settings, even when
-they differ from the recommendation or cannot be reported. If you name either
-setting, Shaka pauses when the settings are unavailable, unverified, or differ
-from its recommendation. See [give it an outcome](working-with-shaka.md#give-it-an-outcome).
+Shaka recommends a model and effort before implementation. If you specify either,
+the agent pauses when the choice is unavailable, cannot be verified, or differs
+from its recommendation. If you say "Go" without specifying either, it continues
+with the coding tool's current settings. A prompt cannot switch the running model.
+See [give it an outcome](working-with-shaka.md#give-it-an-outcome).
 
 ## Why didn't the agent merge my PR?
 
-Under **Ask**, the default, the agent labels the PR `awaiting-merge-approval` and
-names the commit to merge. Merge it on GitHub, or approve that commit and the
-agent merges it. Under **Auto**, a PR
-past the [size limits](settings.md#mergelimits), or one that changes trust,
-authentication, releases, or other consequential areas, still comes back to you.
-See [choose a merge policy](working-with-shaka.md#choose-a-merge-policy).
+Shaka uses **Ask** by default. When the PR is ready, merge it on GitHub or tell
+the agent, "You can merge." For `auto`, say "Merge when ready."
+
+Required checks, reviews, approvals, and unresolved concerns can still hold a
+merge. Large or risky changes may need your decision. Ask the agent what is
+blocking this PR and what it needs from you. See
+[merge choices](working-with-shaka.md#choose-a-merge-policy).
 
 ## Can I make sure the agent never merges?
 
-Under **Ask**, the agent merges only after you approve that PR's commit. To have
-a task end at the PR, say so in your prompt, for example `Open a PR and stop`.
-Ask relies on the agent following its instructions, and the agent acts with your
-GitHub permissions. To have GitHub block the merge, protect the base branch:
-require an approving review, and give no bypass to administrators or to any role,
-team, or app that includes your account. The agent opens PRs as you, so someone
-else then has to approve each one. An administrator can still change these rules,
-so the block holds only when the agent's account is not an administrator.
+Add "Do not merge" to your task:
 
-## Does a green review job mean the PR was reviewed?
+```text
+/shaka Add CSV export to the orders page. Do not merge.
+```
 
-No. A job can pass without producing a review. The agent reads the report and
-counts only one that covers the current commit. See
-[`review.ci_review_jobs`](settings.md#reviewci_review_jobs).
+This tells the agent to leave the PR open. Shaka's instructions rely on the agent
+following them. To enforce a restriction through GitHub permissions, use branch
+protection that requires approval from another eligible reviewer. The agent's
+account must lack permission to bypass or change those rules.
+
+<a id="does-a-green-review-job-mean-the-pr-was-reviewed"></a>
+
+See [how Shaka counts review results](settings.md#reviewci_review_jobs) and
+[what a ready PR shows](pr-verification.md).
 
 ## Can the agent review its own work?
 
-It prefers a reviewer from a different provider, in the order set by
-[`review.local_review_agents`](settings.md#reviewlocal_review_agents). Next it
-uses a listed reviewer from the same provider. When no listed reviewer is
-available, a fresh session with the implementation model reviews the change
-without the implementation conversation.
+Shaka prefers a reviewer from another provider. A fresh review session can also
+use the implementation model without its earlier conversation. This gives the
+change another examination; it does not guarantee that every problem is caught.
+See [reviewer choices](settings.md#reviewlocal_review_agents).
 
 <a id="why-does-shaka-review-with-a-separate-cli-instead-of-a-subagent"></a>
+<a id="why-does-shaka-use-a-separate-review-session"></a>
+<a id="do-multiple-reviews-run-one-after-another"></a>
 
-## Why does Shaka use a separate review session?
-
-A fresh session reviews without the implementation conversation. This supplies
-another perspective, without guaranteeing quality. Shaka uses a restricted CLI
-or its supported API adapter and records the reviewed commit, findings, and
-available usage. It does not count a same-host subagent as the local review.
-
-Reviewers have different access to unchanged code. See
-[reviewer choices and limits](settings.md#reviewlocal_review_agents) and
-[what Shaka enforces](workflow.md#what-is-enforced).
-
-## Do multiple reviews run one after another?
-
-The agent runs them concurrently and combines their findings before repairs.
-Additional reviewers add cost and may increase elapsed time.
-See [reviewer count](settings.md#reviewlocal_review_count).
+For review-session access and concurrency details, see
+[reviewer limits](settings.md#reviewlocal_review_agents) and
+[reviewer count](settings.md#reviewlocal_review_count).
 
 ## Why did the agent ignore a PR comment?
 
-Shaka trusts the people who maintain the project: anyone with write access, plus
-the users, bots, and teams listed in `.agents/shaka/trusted-github-actors.yml` or your
-machine's allowlist. On a public repository, anyone else can comment, and that
-text could try to steer the agent. The agent withholds those comments and keeps
-their links for you to read. To change the allowlist, ask:
+The agent may no longer be running or receiving automatic follow-up. Return to
+the chat and paste the comment link. See
+[resume unfinished work](working-with-shaka.md#resume-unfinished-work).
+
+### Comments on public open-source PRs
+
+Anyone can comment on a public PR. Shaka passes trusted comments to the agent
+and withholds comments from other authors, keeping their links for a maintainer
+to inspect. Maintainers can read the feedback and give the agent their own
+instructions. See [comment trust](workflow.md#trust-model).
+
+To trust an additional contributor, ask:
 
 ```text
-$shaka Add USER to this project's trusted GitHub actors.
+/shaka Add USER to this project's trusted GitHub actors.
 ```
 
-## Where is Shaka installed, and is that my configuration?
+<a id="where-is-shaka-installed-and-is-that-my-configuration"></a>
 
-New installs put the Shaka source in `~/.local/share/shaka/source`. That
-checkout is not configuration, and you never edit it. Your settings live in
-each project's `.agents/shaka/` folder and in `~/.agents/trusted-github-actors.yml`.
+## Where are the skill and settings saved?
 
-Older installs used `~/.agents/shaka`, which looked like settings. The installer
-now refuses that location and prints one command that clones Shaka into the new
-default and moves your skill links there. Run it, then delete the old checkout.
-If the new default already holds something else, the message says what to move
-aside first.
-`install --status` names the same command.
+The installed skill contains Shaka's workflow. Project settings choose how that
+workflow runs for your project. Ask your agent:
+
+```text
+Tell me about the Shaka configuration.
+```
+
+The agent can explain which settings apply and where they are saved, separately
+from where the skill is installed. See [where settings live](settings-guide.md).
+For an installation problem, use [manual installation and repair](manual-installation.md).
 
 ## Where do I put project rules?
 
-| What | Where |
+| What you want to record | Where it belongs |
 | --- | --- |
-| Commands, merge policy, and review jobs | [Settings](settings.md) in `.agents/shaka/config.yml` |
-| Project constraints, review criteria, and writing style | `AGENTS.md` |
-| What the local reviewer looks for and how it reports | [`review.replacement_prompt_file`](settings.md#reviewreplacement_prompt_file), replacing Shaka's defaults |
-| Changes to Shaka's workflow | A [fork of Shaka](fork-and-hack.md) |
+| Project standards, constraints, and writing preferences | `AGENTS.md` |
+| Check commands, reviewers, and merge choices | [Shaka settings](settings-guide.md) |
 
-Shaka reads `AGENTS.md` from Git at the trusted commit. When `AGENTS.md` is a
-symlink to another file in the repository, such as `CLAUDE.md`, Shaka reads that
-file at the same commit. Claude Code is a separate case: recent versions can read
-`AGENTS.md` directly, but not in every session, and not by default when a
-`CLAUDE.md` exists. To give Claude the same instructions every time, add a
-`CLAUDE.md` containing `@AGENTS.md`. See Claude Code's
-[AGENTS.md support](https://code.claude.com/docs/en/memory#agents-md).
+Keep each rule in one place. Shaka reads `AGENTS.md` from the trusted Git revision,
+including a repository symlink target such as `CLAUDE.md`. Your coding tool also
+needs to load the project instructions. Claude Code does not read `AGENTS.md`
+in every session. When `AGENTS.md` holds the rules, use a `CLAUDE.md` containing
+`@AGENTS.md` to load them consistently. See Claude Code's
+[AGENTS.md support](https://code.claude.com/docs/en/memory#agents-md) and
+[coding agents](coding-agents.md).
 
 ## Can I customize the prompt Shaka gives its local reviewer?
 
-Yes. Write your own rules in `.agents/shaka/instructions/review.md`. Shaka adds them
-after its [default instructions](../skills/shaka/config/review-prompt.md), so you keep
-Shaka's rules and add yours; [`review.custom_instructions_file`](settings.md#reviewcustom_instructions_file)
-names another file. To remove one of Shaka's rules instead, set
-[`review.replacement_prompt_file`](settings.md#reviewreplacement_prompt_file) to a copy of the
-default instructions, or set `replacement_prompt_file` on one agent's entry in
-`local_review_agents`. Paths are relative to the repository root.
+Yes. Put project-wide criteria in `AGENTS.md`, or ask the agent to add local
+review instructions:
 
-With shared settings, Shaka reads the default-branch version, so a PR that edits it
-is reviewed with the current version. With individual setup, keep the file in
-`.agents/shaka/`, where it stays out of commits.
-Criteria in `AGENTS.md` still apply on top of the prompt file.
-The prompt file configures local reviews; a CI review job takes its prompt from
-its own workflow.
+```text
+Have the local reviewer flag API changes that break existing clients.
+```
 
-The [settings reference](settings.md#reviewreplacement_prompt_file) explains which instructions
-apply and links the review protocol.
+The agent proposes the instructions and settings change while keeping Shaka's
+default review criteria. See [custom review instructions](settings.md#reviewcustom_instructions_file)
+for adding to or replacing those defaults. CI review jobs have their own prompts.
 
 ## Can a PR change Shaka's settings or rules for itself?
 
-Editing settings in a PR does not select them automatically. Shared settings and
-review criteria normally come from the default branch. A maintainer can explicitly
-[select a settings PR's pinned configuration](settings.md#preview-settings-before-adopting-them)
-for experiments. A fork PR cannot choose its own review rules. See
-[which settings apply](settings.md#which-settings-apply).
+Editing settings does not select them automatically. Shared settings and review
+criteria normally come from the default branch. A maintainer can explicitly
+[preview a settings PR](settings.md#preview-settings-before-adopting-them) for one
+task. GitHub's required checks and approvals still apply.
 
 <a id="what-is-a-decision-checkpoint"></a>
 <a id="what-is-an-evaluation-checkpoint"></a>
 
 ## What is a checkpoint?
 
-It helps the task owner choose what to do next. See the
-[checkpoint guide](reference/pr-record.md#checkpoint) for its terms,
-how it differs from the code walkthrough, and current report labels.
+The checkpoint assesses the finished result and recommends what to do next.
+When present, open the **Checkpoint** link near the top of the PR description. See
+[the checkpoint reference](reference/pr-record.md#checkpoint) for report details.
+A recommendation to merge does not authorize a merge.
 
 ## Can I hide my checkout path while keeping the chat locator?
 
-Yes. Set `wip.include_checkout_path: false`. WIP Details then show `REDACTED` for
-the checkout path and keep the chat locator, which helps resume the owning chat.
+Yes. Ask your agent:
+
+```text
+Hide my project folder's path in WIP Details. Keep the chat link.
+```
+
+The path then appears as `REDACTED`. Any available chat link stays in place.
 See [WIP settings](settings.md#wipinclude_checkout_path).
 
 ## What does Shaka enforce, and what relies on the agent?
 
-Ruby checks settings and trusted comment authors. When the agent merges, it also
-checks the reviewed commit and, when review is required, that posted review
-covers it or that a reason for skipping review was given. How thorough that review
-was, test quality, screenshots, and privacy rely on the agent's judgment. See
-[what is enforced](workflow.md#what-is-enforced).
+Shaka's helper checks settings, trusted comment authors, and merge evidence.
+The agent judges whether tests and reviews are thorough enough, evidence is
+clear, and publication protects private information. See
+[what is enforced](workflow.md#what-is-enforced) for the exact boundaries.

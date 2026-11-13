@@ -6,11 +6,11 @@ require 'json'
 require 'yaml'
 require 'shaka/merge_hold'
 require 'shaka/merge_limits'
-require 'shaka/merge_review_floor'
+require 'shaka/defaults'
 require 'shaka/version'
 
 GENERATED_MERGE = { 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS,
-                    'auto_max_review_floor' => Shaka::MergeReviewFloor::DEFAULT,
+                    'auto_merge_max_risk' => Shaka::Defaults.fetch('merge', 'auto_merge_max_risk'),
                     'hold_labels' => Shaka::MergeHold::DEFAULT }.freeze
 
 module SeamInitializerTestHelpers
@@ -132,6 +132,13 @@ module SeamInitializerTestHelpers
 end
 
 module SeamInitializerAssertions
+  def assert_checkpoint_comment(root)
+    config = File.read(File.join(root, SeamInitializerTestHelpers::CONTRACT))
+    assert_includes config, '# Or replace the built-in checkpoint prompt with your own file.'
+    assert_includes config, "# Shaka's rules, report format, and rubrics for verification and risk still apply:"
+    refute_includes config, 'whole checkpoint prompt'
+  end
+
   def assert_refuses_changed_mode(root, relative, mode)
     path = File.join(root, relative)
     File.chmod(mode, path)
@@ -153,6 +160,7 @@ class SeamInitializerTest < Minitest::Test
       assert_predicate status, :success?, error
       assert_complete_seam(root, output)
       assert_equal '{login}-{host}/{issue}-{description}', JSON.parse(output).dig('branches', 'name')
+      assert_checkpoint_comment(root)
     end
   end
 
@@ -563,6 +571,19 @@ class SeamInitializerPointerTest < Minitest::Test
       assert_predicate status, :success?, error
       refute_path_exists File.join(root, '.agents/README.md')
       assert_pointer_file(File.join(root, '.agents/shaka.md'))
+    end
+  end
+
+  # Break: a refresh command whose text drifts from init would rewrite existing
+  # pointers with content a fresh setup never produces.
+  def test_pointer_readme_prints_exactly_what_init_writes
+    with_repository do |root|
+      assert_predicate init(root).last, :success?
+
+      output, error, status = Open3.capture3(*COMMAND, 'seam', 'pointer', '--readme')
+
+      assert_predicate status, :success?, error
+      assert_equal File.read(File.join(root, '.agents/shaka.md')), output
     end
   end
 

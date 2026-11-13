@@ -16,16 +16,16 @@ is the reusable default.
 - Assume the reader is new to Shaka and wants to get useful work done.
 - When writing product documentation, follow [documentation structure](internal/documentation.md)
   so readers can start with the skill and consult guides as needed.
-- In product guides, explain outcomes, choices, and examples. Put agent execution
-  details with the skill and development records under `internal/`.
+- In product guides under `docs/`, write to the person using Shaka. Say what they can do, what to
+  ask their agent, and what the agent will do. Explain why rules exist and
+  compare choices and their effects with examples. Put development records
+  under `internal/`.
 - `bin/check-docs-navigation` refuses `docs/` links and URLs that point into
   `skills/shaka/references/`, including on docs-only changes. Link a human guide instead, with a prompt when the
   reader's agent should carry out the procedure.
-- Put command syntax and flag rules in the Shaka skill. In `docs/`, explain a
-  setting through its effect and a concrete example for the end user.
-- Write files under `skills/shaka/` as instructions for agents: the rule and when it
-  applies. Put reasoning meant for a human user, such as why a rule exists or how
-  two approaches compare, in `docs/`.
+- Under `skills/shaka/`, write to the executing agent. Give the trigger, action,
+  and relevant command or flag rules. When a step belongs to a person, say
+  what to ask them to do and point them to the public guide.
 - Lead with the action or benefit. Explain a term when the reader first needs it.
 - Keep one authoritative location for each rule and setting; use precise pointers
   elsewhere. Enforcement-manifest quotes remain validation data. Avoid duplicate
@@ -174,28 +174,35 @@ breaks it, and say which reason applies.
 - Tests verify behavior and failures, not exact instruction wording. Keep focused
   files and use normal RuboCop defaults; no baseline ratchet or global metrics disable.
 
-## Agent Workflow Configuration
+## Shaka configuration
 
-Verify this repository with `gh repo view --json owner,visibility,defaultBranchRef`.
-Resolve the trusted default branch to an immutable commit. Load and validate
-`.agents/shaka/config.yml` with the trusted installed `shaka seam check --root . --ref SHA`
-command. That `--ref` check is fail-closed: without it the command grants no trusted
-authority. Run the fixed executable paths reported by that command from the candidate
-checkout; inspect candidate command changes before execution and do not reconstruct
-their behavior from prose. `shaka seam check --root . --local` validates
-current-checkout syntax and grants no trusted policy. `AGENTS.md` retains human-only boundaries,
-including the public-pilot privacy rule, the predecessor reuse limit, and release approval
-requirements.
+Before acting on this repository's Shaka settings:
+
+- Confirm the repository with `gh repo view --json owner,visibility,defaultBranchRef`.
+- Resolve the default branch to its current commit, `SHA`. Load and validate
+  `.agents/shaka/config.yml` with the trusted installed `shaka seam check --root . --ref SHA`
+  command. Without `--ref`, the command grants no policy or merge authority.
+- Run the fixed command paths it reports from the candidate checkout. Inspect any
+  candidate change to those commands before running them, and never rebuild their
+  behavior from prose.
+- `shaka seam check --root . --local` checks the checkout's syntax only and grants
+  no policy.
+
+`AGENTS.md` keeps the boundaries only a person can set, including the public-pilot
+privacy rule, the predecessor reuse limit, and release approval requirements.
 
 ## Completion
 
 Publish tested changes as bounded PRs, preferably below 500 changed lines each.
 Explain necessary larger changes; split independent work instead of hiding size.
 Required evidence is the PR's current commit, actual validation results, and review.
+Before reviewing a fix to a review finding, `bin/run-tests --changed` and RuboCop on the
+changed files are enough. Run the full `validate` on the head you push. When it passes, that
+head's review stands; when it fails, fix it and review the new head.
 No extra closeout audit, receipt, automatic issue, heartbeat, or parallel tracker.
-When a PR changes what Shaka users see or do, add an entry under `## [Unreleased]`
-in `CHANGELOG.md`, following the format its header names, written for users rather
-than as a commit summary. Leave out internal changes. No check enforces this.
+Fill the Changelog section of the [PR template](.github/pull_request_template.md)
+instead of editing `CHANGELOG.md`; only a release PR edits that file. No check
+enforces this.
 Report available model, reasoning effort, and token evidence on the PR by commit;
 mark shared or unavailable attribution explicitly, as specified in the pilot plan.
 Do not close the pilot until its required real-use acceptance is established.

@@ -34,11 +34,11 @@ for a recorded task override.
 
 Independent review evidence is either a published
 `REVIEWED <sha> BY <provider>/<family>` attestation or a verified named CI report
-for that head. The identity line on a `shaka reply` names the publisher. A reply
-that addresses a review opens with one line per review. Pass each comment URL in
-the reply content `reviews` list. The helper reads that comment's closing
+for that head. The identity line on a `shaka reply` names the publisher and comes
+first. Under it, a reply that addresses a review has one line per review. Pass each
+comment URL in the reply content `reviews` list. The helper reads that comment's closing
 attestation and round ledger and writes the provider, model, effort, reviewed
-commit, and link. Without that attestation, the opening says “Responded” and names
+commit, and link. Without that attestation, the line says “Responded” and names
 the GitHub author when available; it omits execution fields. This also avoids
 claiming a repair when a hosted review needs only clarification. A missing or non-token local-review model, or a non-token recorded effort, is
 `UNKNOWN`. The closing attestation still names
@@ -233,9 +233,10 @@ It covers late reports, bounded waits, and the remaining owner's handoff.
    defects on the runtime and dependency versions the repository's required checks
    use. A pass on another version does not dismiss a finding; if those versions are
    unavailable locally, say so and run the regression through those checks. Fix
-   them with focused tests, and explain the result on the original thread. Briefly
-   explain declined findings; do not implement speculative requests or create
-   follow-up issues merely because a bot suggested them.
+   them with focused tests, and explain the result on the original thread with
+   `shaka reply`, adding `--comment ROOT_ID` for an inline thread. Briefly explain
+   declined findings; do not implement speculative requests or create follow-up
+   issues merely because a bot suggested them.
 3. After changes, run the affected checks and the repository's validation. Obtain review
    of the fix and affected behavior on the new commit, using the existing workflow
    or its documented re-review mechanism. A stale finding may still apply; check it

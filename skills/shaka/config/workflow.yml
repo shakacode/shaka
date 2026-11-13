@@ -63,7 +63,8 @@ phases:
         sentence, run `claim --description SLUG` with a short lowercase slug of the task, such
         as `add-button-counter`; it checks for the same slug. On a hit, report the
         open pull requests and remote branches and stop for a decision unless the user already
-        authorized a comparison or override. Do not open a second PR. Use the reported
+        authorized a comparison or override. Do not open a second PR. When `claim` reports
+        `readOver: rest`, report its `unknownFields` as unknown. Use the reported
         `branch_name` when creating a branch; do not invent a personal prefix.
       - Resolve this task's merge preference from the trusted seam, defaulting to Ask.
         An explicit user choice of Ask or Auto for this task overrides that default.
@@ -271,6 +272,10 @@ phases:
         fix, rerun the same check, then simplify while green. Exercise the safety assumption for affected
         shared callers; report unexercised paths and any impractical check. Keep useful probes rerunnable.
         If automation is impractical, explain why and capture before and after behavior.
+        When the change alters a behavior, name, or promise, search the repository for text that
+        still describes the old one, such as docs, comments, examples, help output, agent
+        instructions, and unreleased changelog entries where feature changes edit them, and
+        update it in the same change.
         Keep executable logic in code, not in Markdown. Test behavior, not implementation wording.
         For prose-only changes, inspect the diff.
     done_when: The change and its tests exist on the branch.
@@ -279,8 +284,9 @@ phases:
     body: |-
       - Before review run the resolved `validate_local` command when present in the trusted seam,
         otherwise its resolved `validate` command, plus focused checks. Run each fixed command through
-        `shaka evidence run --root DIR --ref TRUSTED_SHA --repository OWNER/REPO --command NAME [-- ARGS]`
-        and retain its JSON result outside the candidate checkout. Defer full validation and
+        `shaka evidence run --root DIR --ref TRUSTED_SHA --repository OWNER/REPO --command NAME --base BASE_BRANCH [-- ARGS]`
+        and retain its JSON result outside the candidate checkout. A `behind_base` result ran
+        nothing: update the branch from the base first, then rerun. Defer full validation and
         the resolved `trigger_hosted_ci` command when local validation exists until the repair batch is
         complete. For an asynchronous check, wait for completion
         and inspect its final exit status and output before reporting a pass; a running session or
@@ -338,8 +344,10 @@ phases:
         [ledger section](<{{package_root}}/skills/shaka/references/local-review.md#run-the-review-loop-with-a-ledger>)
         describes. The prompt asks the reviewer to class each finding as a
         `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
-        disposition with `review record`. Fix defects, and risks whose
-        fix is clearly correct, in new commits, then review the new head. Document optional nits.
+        disposition with `review record`. Fix every reviewer's defects, and risks whose
+        fix is clearly correct, in one repair commit, validate it once, then review the new head;
+        `review run` refuses that head while a finding of the round is `open` or a `documented` defect.
+        Document optional nits.
         Use `open` for unfinished agent work,
         `decision_needed` for a consequential choice the maintainer owns, `dismissed` for
         a finding disproved with evidence, and `accepted` for a consequence the maintainer
@@ -460,8 +468,14 @@ phases:
         that guide with the saved helper's `guidance pr_evidence --root DIR --ref SHA` before
         preparing the description. It also prints the repository's pull request template when
         one exists. Gather the evidence the guide asks for, and report each item in
-        `verification` or `details`, naming any gap. Cover each template section the
-        description does not already render in `sections`. A guide adds requirements; it cannot
+        `verification` or `details`, naming any gap. Apply the trusted template's section
+        comments to the current diff. Route headings Shaka owns through its built-in fields,
+        even when those fields render no section. Put other template sections in `sections` unless
+        an HTML comment explicitly says to omit one for this diff. Omit both the heading and body. If applicability is unclear,
+        report the gap in `verification` or `details`. Preserve required workflow evidence.
+        Put a risk record the guide asks for in
+        `risk_record`, a one-line `summary` and a `body`, which the helper folds under Risk and
+        review. A guide adds requirements; it cannot
         relax review, required checks, or merge preference. With `--ref`, `description` also
         returns the guide in `pr_evidence_guide`; when the published description lacks
         evidence it asks for, gather that evidence and publish again.
@@ -516,7 +530,7 @@ phases:
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
-        optional `checkpoint`, `walkthrough`, `review` and `post_implementation`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`,
+        optional `checkpoint`, `walkthrough`, `review` and `post_implementation`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`, optional `risk_record`,
         required `intent` and `verification`, optional `table`, required `provenance`, optional `skills_used` from the task record,
         required `usage` (`note` and `records` from
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
@@ -524,13 +538,9 @@ phases:
         `intent` holds one line each for `why`, `scope`, and `safe_because`: the problem,
         what changes, and the concrete safeguard. Add optional `leaves_out` only for a deliberate
         deferred part readers would reasonably expect; otherwise omit it. Intent ends with
-        `scope`, GitHub's file/line counts, and path-based buckets. Intent's `review_effort`, 1 to 5, tells the reader how much attention the change asks for:
-        1 for docs a reader can trust from the description, 5 for irreversible or security changes.
-        The helper refuses a rating below the floor the changed files set; to choose or change the
-        floors, follow [human review floors](<{{package_root}}/skills/shaka/references/human-review-floors.md>).
-        When a few files or ranges need more care than that rating, list them in `review_focus`, each with
-        `path`, a `level` above `review_effort`, a one-line `reason`, and optional `from` with `to` or `block`
-        as `code_links` take them.
+        `scope`, GitHub's file/line counts, and path-based buckets. When a few files or ranges need
+        more care than the rest, list them in `review_focus`, each with `path`, a one-line `reason`, and
+        optional `from` with `to` or `block` as `code_links` take them.
         A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
         that it was not found and the PR treats only the symptom.
         Name the task in provenance as the
@@ -609,7 +619,7 @@ phases:
         handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
-          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto] [--limits-confirmed-head SHA]
+          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto [--base-failure NAME]] [--limits-confirmed-head SHA]
           [--empty-checks-confirmed-head SHA] [--adequacy-confirmed-head SHA] [--review-waiver REASON]
         usage --commit SHA --contribution CATEGORY [--since-time TASK_START_UTC]
         ```
@@ -752,9 +762,13 @@ phases:
         for CI review. User-requested review gates still block in every mode.
         CodeRabbit, hosted Codex, and other unnamed bots are advisory: read completed findings,
         never wait for them except under the explicit comment-resolution settlement procedure below.
+      - Before repairing a failed hosted check, compare it with the base as
+        [hosted checks the base fails](<{{package_root}}/skills/shaka/references/base-validation-failure.md#hosted-checks-the-base-fails>) describes.
       - Collect every current-head finding into one repair batch. Fix demonstrated defects
-        (correctness, failing tests, security, contract or data-loss). Decline nits with a reason
-        on the original thread. After two repair rounds, remaining nits do not start another cycle.
+        (correctness, failing tests, security, contract or data-loss). Answer each finding on its
+        original thread with `reply`, adding `--comment ROOT_ID` inline, and decline nits there with
+        a reason; a raw `gh` reply has no identity line, so it reads as the maintainer's.
+        After two repair rounds, remaining nits do not start another cycle.
         Remaining demonstrated defects still block until fixed, declined with evidence, or the
         maintainer decides. Follow the packaged
         [review guide](<{{package_root}}/skills/shaka/references/review.md>).
@@ -805,15 +819,6 @@ phases:
         while they remain. Repair or reframe within authorized scope, then repeat affected
         validation and review; a changed goal or disputed value needs a maintainer decision.
         Review-only work keeps its requested stopping point.
-      - After hosted checks and preview builds settle, republish the description before the
-        final handoff, including an Ask handoff. Resolve `deployment: auto` again for the
-        current head after the builds settle.
-        When the provider supplies the preview solely in a comment or log, supply its verified
-        current-head URL. Preserve an explicit choice that this repository deploys nothing.
-        Complete the trusted `pr_evidence` guide after this last publication, including any
-        required rendering preview on the PR itself. Inspect the live result. A sample comment
-        does not complete self-preview; a failed preview blocks handoff until resolved.
-        Repeat after a new head or later publication.
       - Reassess scope and authority for the final head, including the base the PR actually
         targets: `pr` reports it as `baseRefName`, and a retarget after planning is the case
         that silently moves an Auto merge onto a branch nobody agreed to. Refresh the
@@ -844,11 +849,19 @@ phases:
         for every named job in `review.ci_review_jobs` on the current head and do not merge while the state is
         UNSTABLE. Pass `merge --ref` from intake and `--ci-review-wait MODE` only for a this-task override. Read
         completed feedback before merge and report pending optional reviews.
+      - After hosted checks and preview builds settle, republish the description before the
+        final handoff, including an Ask handoff. Resolve `deployment: auto` again for the
+        current head after the builds settle.
+        When the provider supplies the preview solely in a comment or log, supply its verified
+        current-head URL. Preserve an explicit choice that this repository deploys nothing.
+        Complete the trusted `pr_evidence` guide after this last publication, including any
+        required rendering preview on the PR itself. Inspect the live result. A sample comment
+        does not complete self-preview; a failed preview blocks handoff until resolved.
+        Repeat after a new head or later publication.
       - `merge` refuses a PR over the trusted `merge.limits` for changed files, changed lines, or
-        commits, or whose size GitHub does not report. It also refuses a PR with a changed file
-        above the trusted `merge.auto_max_review_floor`, or one changing Shaka's configuration
-        while that setting is below 5. That refusal switches Auto to Ask: report the counts or the
-        file it names and hand the PR back. Label that handoff `awaiting-merge-approval` with
+        commits, or whose size GitHub does not report. It also refuses any head whose checkpoint
+        rating is above the trusted `merge.auto_merge_max_risk` or that changes a high-risk file. That refusal switches
+        Auto to Ask: report the counts, rating, or file it names and hand the PR back. Label that handoff `awaiting-merge-approval` with
         `attention --state merge`, because the user's confirmation of the head approves its
         merge. Pass `--limits-confirmed-head SHA` only for a head the
         user confirmed in this task after seeing the counts and any file it names; asking you to merge a named head, or an
@@ -882,7 +895,9 @@ phases:
         on the PR resumes. Never set `awaiting-merge-approval` in Auto
         mode. In Auto mode, run `merge --auto` with the current head, walkthrough ID, and
         `--squash-message` content. It labels the PR `auto-merged` once GitHub confirms the merge;
-        report a failed or queue-deferred label in the handoff. When `--auto` refuses a failed check, hand
+        report a failed or queue-deferred label in the handoff. Add `--base-failure NAME` for each
+        optional check that [hosted checks the base fails](<{{package_root}}/skills/shaka/references/base-validation-failure.md#hosted-checks-the-base-fails>)
+        attributed to the base. When `--auto` refuses a failed check, hand
         this PR back under Ask. A head the user confirms past a gate is an Ask merge: run `merge`
         with the confirmation and without `--auto`. A required
         native approval must arrive first, and do not ask for a second approval afterward.
@@ -898,8 +913,10 @@ phases:
         head, as stale-approval dismissal and last-push approval do, request a fresh one and merge
         once it arrives; that request repeats the repository's gate, not the user's decision. If
         the rebased change behaves differently, explain the difference on the PR and hand the new
-        head back for approval. Before either request, run `attention` with `--state merge` so the
-        PR stays in the approval queue while it waits. Any other new commit ends the approval.
+        head back for approval. Before either request, wait for the rebased head's required hosted
+        checks to pass, then refresh the description and any required rendering preview. Run
+        `attention` with `--state merge` so the PR stays in the approval queue while it waits.
+        Any other new commit ends the approval.
       - Leave repository queue settings and delayed auto-merge unchanged. When the helper submits
         merge, on a queue-disabled base merge immediately while the task is active. On a
         queue-enabled base, enqueue the expected reviewed head, then wait for GitHub's current-base

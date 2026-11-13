@@ -133,7 +133,7 @@ Below the stretches, the section adds up each kind of step, for example
 `Measured steps: Validation 13m (1 run) · Local review 58s (1 run)`. With the bars,
 a second line names the models and machines that ran them. The machine reads
 `UNKNOWN` when `SHAKA_MACHINE_ALIAS` is not set; setting it is described in
-[Getting started](../getting-started.md).
+[Name your machines](../coding-agents.md#name-your-machines).
 
 Steps that passed or finished appear only in the bars. A step that did not gets a
 row with its exit code. A validation run reads `failed`. A review or checkpoint reads
@@ -175,3 +175,13 @@ Limits:
   the interval stays unavailable.
 
 [Usage and cost](usage-and-cost.md) explains the section beside it.
+
+## Local timing log
+
+For a retrospective, ask your agent to read Shaka's local timing log at
+`~/.local/state/shaka/calls.jsonl`. It records helper commands, durations,
+outcomes, repository and commit identifiers, and issue or PR numbers. When
+available, it also records the reviewer model and the Git tree hash for
+validation. It does not record paths or task text. The log stays on your
+machine. Set `SHAKA_CALL_LOG=off` to stop recording, or set it to a file path
+to move the log.

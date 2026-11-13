@@ -17,10 +17,10 @@ module Shaka
     include MergeRequiredChecks
 
     # The head a user told the agent to merge although no required check gates it, the
-    # MergeReviewFloor that sends PRs changing higher-floor paths back to the user, the MergeHold
-    # that stops a merge, and whether the agent merges under Auto, where every head check must
-    # pass and the merge is labeled.
-    attr_writer :empty_checks_confirmed_head, :review_floor, :hold, :auto
+    # MergeRiskGate that sends PRs above merge.auto_merge_max_risk back to the user, the MergeHold
+    # that stops a merge, whether the agent merges under Auto, where every head check must pass
+    # and the merge is labeled, and the MergeBaseFailures Auto may merge past.
+    attr_writer :empty_checks_confirmed_head, :risk_gate, :hold, :auto, :base_failures
 
     # `review` takes MergeReviewEvidence's technical settings and final product checkpoint.
     def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
@@ -33,14 +33,15 @@ module Shaka
 
     # `squash_message` is a SquashMessage, or nil for the repository's squash default.
     def call(head:, base:, walkthrough:, limits: MergeLimits.new, squash_message: nil)
-      @target = MergeTarget.required!(head, base, limits, @review_floor, @hold)
+      @target = MergeTarget.required!(head, base, limits, @risk_gate, @hold)
       @submission.message = squash_message
       @head = head
       initial = @github.snapshot
       verify_snapshot(initial, head, @target)
       gate = verify_gate
       evidence = verify_reviews(head, base, walkthrough, gate).merge(excused_checks(gate, head))
-      AutoMergedLabel.new(@github, enabled: @auto).mark(submit(initial, @github.snapshot, head)).merge(evidence)
+      merged = submit(initial, @github.snapshot, head)
+      AutoMergedLabel.new(@github, enabled: @auto).mark(merged).merge(evidence, base_failure_evidence)
     end
 
     private
@@ -53,13 +54,10 @@ module Shaka
       @review_evidence.final_check(head)
       # Under Auto no person looked at the findings, so open ones stop it however late they were published.
       MergeWaitReview.new(@github).refuse_open_findings! if @auto
+      # Base failures let Auto accept UNSTABLE, which no longer shows a check that failed since the
+      # first read, so every check is read again last.
+      verify_gate if @auto && @base_failures
       @submission.call(current, head)
-    end
-
-    def verify_gate
-      gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
-      verify_checks(gate.fetch('checks'), head: @head, confirmed_head: @empty_checks_confirmed_head)
-      gate
     end
 
     # The walkthrough explains the change; the attestation records that a separate review ran.

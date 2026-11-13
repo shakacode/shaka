@@ -4,50 +4,37 @@ require_relative '../error'
 require_relative 'text'
 
 module Shaka
-  # Renders the few files or line ranges a PR asks reviewers to read more closely than its
-  # review effort, each with its own level and reason. ReviewFocus finds their lines at the head.
+  # Renders the few files or line ranges the implementer asks reviewers to read more closely than the rest, each
+  # with its reason, under Risk and review. ReviewFocus finds their lines at the head.
   module ReviewFocusList
+    # level is the retired 1-5 rating; an agent may still send it for a while, and it is ignored.
     FIELDS = %w[path level reason from to block].freeze
     SAFE_PATH = %r{\A[\w.@+/ -]+\z}
+    LABEL = '**Flagged by the implementer:**'
 
     module_function
 
     # The pull's shaka_review_focus holds, in content order, each entry's head link and line range;
     # without it, paths render unlinked.
     def render(intent, pull = nil)
-      effort = intent['review_effort']
       resolved = pull&.dig('shaka_review_focus')
       listed = PublicationText.list(intent['review_focus'], 'intent review_focus')
-      checked = listed.each_with_index.map { |entry, index| checked(entry, effort, "review_focus #{index + 1}") }
+      checked = listed.each_with_index.map { |entry, index| checked(entry, "review_focus #{index + 1}") }
       return [] if checked.empty?
 
-      ["**Closer reading:**\n#{ordered(checked, resolved).map { |entry, link| line(entry, link) }.join("\n")}"]
+      ["#{LABEL}\n#{checked.zip(Array(resolved)).map { |entry, link| line(entry, link) }.join("\n")}"]
     end
 
-    # Highest level first; entries at one level keep the order the author gave.
-    def ordered(entries, resolved)
-      paired = entries.zip(Array(resolved)).each_with_index
-      paired.sort_by { |(entry, _link), index| [-entry['level'], index] }.map(&:first)
-    end
-
-    def checked(entry, effort, label)
+    def checked(entry, label)
       raise Error, "Publication intent #{label} must be an object." unless entry.is_a?(Hash)
 
       unknown = entry.keys - FIELDS
       raise Error, "Publication intent #{label} has unknown fields: #{unknown.join(', ')}." if unknown.any?
 
-      level!(entry['level'], effort, label)
       path!(entry['path'], label)
       anchor!(entry, label)
       PublicationText.single_line(entry['reason'], "intent #{label} reason")
       entry
-    end
-
-    def level!(level, effort, label)
-      return if level.is_a?(Integer) && level > effort && level <= 5
-
-      raise Error, "Publication intent #{label} level must be a whole number above review_effort #{effort} " \
-                   'and at most 5.'
     end
 
     def path!(path, label)
@@ -76,7 +63,7 @@ module Shaka
 
     def line(entry, link)
       reason = PublicationText.single_line(entry['reason'], 'intent review_focus reason')
-      "- #{entry['level']} of 5: #{target(entry['path'], link)}, #{reason}"
+      "- #{target(entry['path'], link)}, #{reason}"
     end
 
     # A changed filename comes from the PR author, so only a plain one reaches the description;
@@ -93,6 +80,6 @@ module Shaka
       "[#{name}#{span}](#{link['url']})"
     end
 
-    private_class_method :ordered, :checked, :level!, :path!, :anchor!, :range_end!, :text?, :line, :target
+    private_class_method :checked, :path!, :anchor!, :range_end!, :text?, :line, :target
   end
 end

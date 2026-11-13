@@ -2,6 +2,7 @@
 
 require_relative 'publication_test'
 require 'shaka/usage/publisher_attribution'
+require 'shaka/review_reply'
 
 # Builds the `shaka comments --head SHA` output a description lists human comments from.
 module HumanCommentsFixture
@@ -40,6 +41,7 @@ module HumanCommentsFixture
 
   # comments is what `shaka description --comments PATH` read from the file, or nil without the flag.
   # summaries is the agent's one line for each longer comment, keyed by the comment's URL.
+  # settings is the public settings snapshot, or resolved PublicationSettings.
   def describe(comments, pull: self.pull, summaries: nil, settings: nil, **changes)
     content = { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
                 'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
@@ -49,7 +51,8 @@ module HumanCommentsFixture
                 'details' => [] }.merge(changes)
     content['human_comments'] = comments if comments
     content['human_comment_summaries'] = summaries if summaries
-    Shaka::Publication.description(content, nil, pull, settings && Shaka::PublicationSettings.new(current: settings))
+    settings = Shaka::PublicationSettings.new(current: settings) if settings.is_a?(Hash)
+    Shaka::Publication.description(content, nil, pull, settings)
   end
 
   LONG = 'It is a little confusing what internal testers are versus external testers, and listings feel abstract.'
@@ -312,6 +315,67 @@ class PublicationHumanCommentSettingsTest < Minitest::Test
     assert_equal 2, rows(rendered).size
     assert_includes rendered, '_3 more not shown; open comments come first._'
   end
+
+  def ignoring(patterns) = Shaka::PublicationSettings.new(ignored_human_comments: patterns)
+
+  def test_a_comment_that_only_runs_a_command_is_left_out_and_counted
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', '+review-app-deploy'),
+                                       issue_comment(2, 'Bob', "  +Review-App-Help\n"),
+                                       issue_comment(3, 'Bob', 'Please retain the Ruby update.')])
+    rendered = describe(comments, settings: ignoring(['+review-app-*']))
+
+    said = cells(rendered).map { |row| row[1][/“(.*)”/, 1].delete('\\') }
+
+    assert_equal ['Please retain the Ruby update.'], said
+    assert_equal '**1 open** · 1 from 1 reviewer', counts(rendered)
+    assert_includes rendered, '_2 command comments not listed._'
+  end
+
+  def test_a_command_with_prose_a_verdict_or_another_line_stays_listed
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', '+deploy, but it failed on staging.'),
+                                       issue_comment(2, 'Bob', "+deploy\nThe image is stale.")],
+                      review_summaries: %w[APPROVED CHANGES_REQUESTED DISMISSED].each_with_index.map do |state, at|
+                        review(3 + at, 'Bob', '+deploy', state:)
+                      end,
+                      excluded_interactions: [excluded(9, 'outsider')])
+
+    assert_equal 6, rows(describe(comments, settings: ignoring(['+deploy*', '*']))).size
+  end
+
+  def test_a_command_followed_by_a_tab_or_unicode_space_and_prose_stays_listed
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', "+deploy\tfailed on staging."),
+                                       issue_comment(2, 'Bob', "+deploy\u00a0failed on staging.")])
+
+    assert_equal 2, rows(describe(comments, settings: ignoring(['+deploy*']))).size
+  end
+
+  def test_a_summary_of_a_left_out_comment_does_not_stop_publication
+    url = "#{URL}#issuecomment-1"
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', "https://example.com/#{'a' * 120}")])
+    rendered = describe(comments, summaries: { url => 'A long link.' }, settings: ignoring(['https://*']))
+
+    assert_includes rendered, '_1 command comment not listed._'
+  end
+
+  def test_settings_from_before_the_setting_hide_nothing
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', '/deploy')])
+    older = Object.new.tap do |settings|
+      def settings.human_comments? = true
+      def settings.human_comment_rows = 20
+    end
+
+    assert_equal 1, Shaka::HumanComments.for({ 'human_comments' => comments }, pull, older).join.scan(%r{/deploy}).size
+  end
+
+  def test_only_commands_still_show_the_note_and_no_settings_hide_nothing
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', '/deploy')])
+    rendered = describe(comments, settings: ignoring(['/deploy']))
+
+    assert_empty rows(rendered)
+    assert_equal 'None open', counts(rendered)
+    assert_includes rendered, '_1 command comment not listed._'
+    assert_equal 1, rows(describe(comments)).size
+  end
 end
 
 # On a public repository anyone can comment or submit a review, so the reader withholds what
@@ -506,5 +570,47 @@ class PublicationHumanCommentsSourceTest < Minitest::Test
     end
 
     assert_includes error.message, '--comments'
+  end
+end
+
+# REPLY keeps the older order, with the review line above the identity line. `shaka reply` now
+# names its reviews under the identity line, and the Response still quotes the answer.
+class PublicationReviewReplyExcerptTest < Minitest::Test
+  include HumanCommentsFixture
+
+  ANSWER = 'Removed both placeholders. The example now runs in one chat.'
+  ATTESTED = "# Local Adversarial Review\n\n| Commit | Reviewer |\n| --- | --- |\n" \
+             "| `aaaaaaa` | anthropic/claude<br>model claude-opus-5-5<br>effort high |\n\n" \
+             "REVIEWED #{'a' * 40} BY anthropic/claude EFFORT high FINDINGS 0\n".freeze
+
+  # Built by `shaka reply` itself, so a change to how it names a review shows up here.
+  def test_a_reply_that_names_its_reviews_under_the_identity_line_quotes_its_answer
+    reply = "<!-- shaka:reply:maintainer-1 -->\n#{review_reply}"
+    rendered = describe(packet(inline_comments: [inline(1, 'ann', 'Why?'), inline(2, 'ann', reply)]))
+
+    assert_includes reply, "\nAddressed the [Local Adversarial Review]"
+    assert_includes reply, "\nResponded to the [Review]"
+    assert_equal "[“Removed both placeholders\\. The example now runs in one chat\\.”](#{URL}#discussion_r2)",
+                 cells(rendered).first[2]
+  end
+
+  # Only the marked lines are skipped, so an answer worded like a review line keeps its opening.
+  def test_an_answer_worded_like_a_review_line_is_still_quoted
+    reply = "#{IDENTITY}\n\nResponded to the [comment](#{URL}#discussion_r1).\n\nFixed the race."
+    rendered = describe(packet(inline_comments: [inline(1, 'ann', 'Why?'), inline(2, 'ann', reply)]))
+
+    assert_includes cells(rendered).first[2], 'Responded to the comment'
+  end
+
+  private
+
+  def review_reply
+    local = { 'id' => 8, 'html_url' => "#{URL}#issuecomment-8", 'body' => ATTESTED }
+    hosted = { 'id' => 9, 'html_url' => "#{URL}#issuecomment-9", 'body' => "# Review\n",
+               'user' => { 'login' => 'ann' } }
+    github = Struct.new(:repository, :number, :issue_comments).new('owner/repo', 7, [local, hosted])
+    identity = { 'agent' => 'Codex', 'provider' => 'OpenAI', 'model' => 'gpt-test', 'effort' => 'high' }
+    Shaka::ReviewReply.compose({ 'identity' => identity, 'summary' => ANSWER,
+                                 'reviews' => [local['html_url'], hosted['html_url']] }, github)
   end
 end

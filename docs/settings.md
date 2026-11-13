@@ -83,7 +83,7 @@ preferences: local reviewers and how often they run, checkpoint and opening-chec
 reviewers, how PR descriptions read, writing limits, branch names, and WIP reporting.
 Setup stops and names the file and key when the file holds anything that describes a
 repository instead, such as commands, CI review jobs, merge policy, project guidance,
-human review floors, or a prompt file, or when a value is invalid.
+high-risk areas, or a prompt file, or when a value is invalid.
 
 - **Read once.** Shaka reads the file only while a new individual setup runs. Editing it
   later changes no repository you already set up; change that copy's
@@ -102,15 +102,18 @@ human review floors, or a prompt file, or when a value is invalid.
 Keep proposed settings in an open PR and try them before making them your team's
 defaults. Teammates can select the same PR for their tasks:
 
+Examples use `/shaka`. In Codex, use `$shaka`. See [Coding agents](coding-agents.md)
+for other tools.
+
 ```text
-$shaka <task or issue link>
+/shaka <task or issue link>
 Use settings from PR #123.
 ```
 
 To switch an existing task:
 
 ```text
-$shaka Switch this task to settings from PR #123.
+/shaka Switch this task to settings from PR #123.
 ```
 
 The selected PR supplies the complete configuration, including reviewer choices
@@ -170,11 +173,15 @@ names `gh pr checks` shows: CircleCI, for example, reports one check per workflo
 not per job.
 
 The list governs only what Shaka does. In Ask mode, the agent waits for these checks
-before it reports a PR ready and labels it `awaiting-merge-approval`. In Auto mode,
+before it reports a PR ready and labels it `awaiting-merge-approval`. In `auto` mode,
 `shaka merge` refuses to merge until they pass. GitHub does not know about the list, so it
 does not stop anyone from clicking merge. Nothing ties a name to a specific
 workflow either, so a PR could add a job with a listed name. For protection that
 GitHub enforces, use a ruleset or branch protection.
+
+If neither GitHub nor Shaka requires any checks, **Ask** can still hand you the PR.
+Merge it on GitHub, or approve the exact commit for the agent to merge after it
+explains that no required checks gate it. `auto` needs at least one required check.
 
 ## `merge.limits`
 
@@ -206,40 +213,38 @@ merged. Whether you actually confirmed it is the agent's responsibility; the
 [enforcement reference](workflow.md#what-is-enforced) explains the boundary.
 Put other project restrictions in `AGENTS.md`.
 
-## `merge.auto_max_review_floor`
+## `merge.auto_merge_max_risk`
 
-**Optional. Default: 5, which holds nothing back.** Lets the agent merge only the PRs whose
-[human review floor](#pr_descriptionhuman_review_floors) is at or below this number. Use it
-with `preference: auto` when you want small code fixes merged for you but docs and agent
-instructions brought back to you.
+Shaka rejects the former `merge.auto_max_review_floor` and
+`pr_description.human_review_floors` settings. Remove them after moving their paths
+into [`high_risk_areas`](#high_risk_areas) or [`medium_risk_areas`](#medium_risk_areas).
+
+**Optional. Default: `low`.** The highest [risk](#high_risk_areas) the agent may merge without
+your approval. Each level includes the ones below it. Under `preference: ask` you approve every
+merge anyway, so this setting matters under `preference: auto`.
+
+- `low` lets the agent merge only a PR whose checkpoint rates it low risk.
+- `medium` lets the agent merge a PR rated low or medium.
 
 ```yaml
 merge:
   preference: auto
-  auto_max_review_floor: 2
+  auto_merge_max_risk: medium
 ```
 
-With the default floors, this merges a PR that changes only code, tests, and Markdown docs. A
-PR that also edits `SKILL.md` sets floor 3, so the agent hands it back as Ask and names the
-file: `skills/shaka/SKILL.md sets review floor 3 (changes agent instructions)`. To let the agent
-merge it anyway, confirm that commit the same way as a PR past [`merge.limits`](#mergelimits).
-Docs sit at floor 1 by default, so raise their floor first if a person should read them.
+There is no `high` setting: high-risk PRs always go to you. So do these, whatever their rating:
 
-A PR that changes Shaka's settings in `.agents/shaka/` always comes back to you once this is
-below 5, whatever floors you set. If Shaka cannot read the PR's complete list of changed files
-from GitHub, the PR comes back too.
+- a change in a [high-risk area](#high_risk_areas);
+- a change to Shaka's own settings;
+- a PR without a checkpoint rating.
 
-Try a number before you switch to `auto`. While `preference` is still `ask`, each ready
-checkpoint comment on a PR says whether it passes the floor and `merge.limits`, or names what
-would send it back, such as
-`Auto merge preview: with merge.preference: auto, the agent would hand this PR back: skills/shaka/SKILL.md sets review floor 3`.
-A PR that passes still gets the agent's own judgment of risk and compatibility under Auto.
+To let the agent merge one of them anyway, approve it as you would a PR past
+[`merge.limits`](#mergelimits). The agent labels each PR it merges under `auto` `auto-merged`, so you
+can review them later ([exceptions](reference/pr-record.md#merge-approval)).
 
-The agent's rating does not hold a PR back. Rating it above its floor, or listing a file under
-**Closer reading**, tells a reader where to look but does not stop Auto from merging it.
-
-Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
-something after merge, so the agent hands those PRs back on its own judgment.
+Try it before you switch to `auto`. While `preference` is still `ask`, each checkpoint comment
+says whether `auto` would merge the PR, and if not, why: for example, `db/migrate/1_add_index.rb`
+is in high-risk area `database`.
 
 ## `merge.hold_labels`
 
@@ -360,9 +365,39 @@ review:
   ci_review_wait: one
 ```
 
-The [hosted Claude review](configure-repository.md#add-hosted-claude-review) workflow
+The [hosted Claude review](#hosted-claude-review) workflow
 Shaka ships produces `claude-review`. The agent reads reports according to
 `ci_review_wait`; a green job alone does not prove review completed. GitHub's required merge checks are configured separately.
+
+## Hosted Claude review
+
+Shaka ships a [Claude review workflow](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/claude-code-review.yml)
+that reviews PRs opened from branches in your repository, and fits teams where only
+some people use Shaka. It skips drafts, Dependabot, and PRs from forks; review those
+another way. It reviews pushes from Cursor cloud agents. A push from another GitHub
+App fails the review job until you add that app to the workflow's `allowed_bots` line.
+When a PR's author already published a Shaka local review of the pushed commit
+with Claude among its reviewers, Claude makes a short pass for serious bugs the
+local reviewers missed. Every other PR gets a full review, including one only
+Codex reviewed locally. Both report only issues Claude can tie to a concrete failure,
+so routine pushes stay quiet.
+
+The agent can offer this during [team setup](configure-repository.md#set-up). For a repository that already uses
+Shaka, ask:
+
+```text
+/shaka Add the hosted Claude review workflow from
+https://github.com/shakacode/shaka/blob/main/skills/shaka/config/claude-code-review.yml
+and list claude-review as a CI review job.
+```
+
+In Codex, use `$shaka` instead of `/shaka`.
+
+The agent adds the workflow and lists the `CLAUDE_CODE_OAUTH_TOKEN` repository
+secret you need to create. The workflow waits up to two minutes for the local
+review before choosing the full review; edit `LOCAL_REVIEW_WAIT_SECONDS` in it to
+change that. Only the PR author's own comment selects the short pass, so another
+person's comment cannot weaken review of someone else's PR.
 
 ## `review.ci_review_wait`
 
@@ -423,7 +458,7 @@ needs its CLI installed and signed in, or its API credentials on the machine doi
 
 Ask your agent:
 
-> $shaka Prefer Claude for code review.
+> /shaka Prefer Claude for code review.
 
 ```yaml
 review:
@@ -537,7 +572,7 @@ Most warnings allow the review to run. An unsupported Claude effort stops it;
 choose one of Claude’s listed effort values to continue.
 
 Put project-specific review criteria in `AGENTS.md`. To check that your AI accounts
-can run the chosen reviewers, ask `$shaka Probe this project's configured reviewers.`
+can run the chosen reviewers, ask `/shaka Probe this project's configured reviewers.`
 To choose how many hosted review reports to wait for, use
 [`review.ci_review_wait`](#reviewci_review_wait).
 
@@ -645,7 +680,7 @@ the other.
 
 Ask your agent:
 
-> $shaka Have Claude and Codex review every commit.
+> /shaka Have Claude and Codex review every commit.
 
 ```yaml
 review:
@@ -668,7 +703,7 @@ unavailable. The PR description's [Verification](reference/pr-record.md#verifica
 Writing the change does not count as reviewing it.
 
 To pay for one local review instead, leave this unset and set `local_review_count: 1`. With
-the [hosted Claude review](configure-repository.md#add-hosted-claude-review), a PR that only
+the [hosted Claude review](#hosted-claude-review), a PR that only
 Codex reviewed locally still gets a full Claude review on GitHub.
 
 ## `review.custom_instructions_file`
@@ -767,9 +802,13 @@ A task's explicit choices take precedence. See
 [the checkpoint](reference/pr-record.md#checkpoint)
 for what the checkpoint means for your merge decision.
 
+The checkpoint also rates the PR's risk as low, medium, or high, raised to high inside a
+[high-risk area](#high_risk_areas), and says what that rating asks of the merge. To
+change the rating, see [Change how risk is rated](#change-how-risk-is-rated).
+
 The PR records the conclusion, reasons, execution settings, and available native
 usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not merge”, or
-unresolved substantive concerns block readiness and Auto; green technical checks
+unresolved substantive concerns block readiness and `auto`; green technical checks
 and changed settings do not clear them. Earlier executions stay visible on the PR.
 Setting `enabled: false` in the selected configuration opts out and
 requires a visible note. Individual setup applies these choices too. Final
@@ -799,9 +838,9 @@ Ask whether the change adds a step maintainers must remember.
 
 When your file conflicts with a built-in question or your `AGENTS.md` criteria, the
 reviewer follows your file.
-Shaka tells the reviewer that your file cannot relax its safety rules or change the
-report format. Shaka checks the report's format; the reviewer is trusted to keep the
-other rules.
+Shaka tells the reviewer that your file cannot relax its safety rules, change the
+report format, or lower a [risk rating](#change-how-risk-is-rated). Shaka checks the
+report's format; the reviewer is trusted to keep the other rules.
 
 That path is the default of `checkpoint.custom_instructions_file`. To keep the file elsewhere,
 name it with a path relative to the repository root:
@@ -818,8 +857,97 @@ checkpoint:
 | Set | Missing or empty | Settings validation fails |
 | Set to another path | Also present at the default path | The named file is added; `seam check` and `doctor` warn that the default one is ignored |
 
-To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to replace the whole prompt;
-you then keep that copy in step with Shaka's changes.
+To remove a built-in question instead, set `checkpoint.replacement_prompt_file` to a copy
+of the built-in prompt without that question. You then keep that copy in step with
+Shaka's changes. The copy replaces the whole built-in prompt, including its guidance on
+what to report. Shaka's rules, report format, and rubrics for verification and
+[risk](#change-how-risk-is-rated) still apply.
+
+## `high_risk_areas`
+
+**Optional. Default: the areas below.** The checkpoint rates each PR's risk as low,
+medium, or high by what a mistake would reach and whether a revert undoes it. A change
+in a high-risk area always counts as high, whatever the reviewer rates it, because the
+reviewer reads a diff and description that the PR's author controls.
+
+| Area | Default paths |
+| --- | --- |
+| `database` | migrations, `db/schema.rb`, `db/structure.sql`, SQL files, Prisma schemas |
+| `persistence` | database, storage, cache, Redis, and Sidekiq configuration |
+| `infrastructure` | Terraform, `infra/`, `k8s/`, Helm charts, Dockerfiles, Compose files, Control Plane and Fly configuration |
+| `ci_and_trust` | GitHub workflows and actions, `CODEOWNERS` |
+| `security` | a file or folder named for auth, OAuth, authentication, authorization, permissions, secrets, or credentials, alone or joined by `_` or `-`, such as `auth_controller.rb` or `oauth/` |
+| `shaka` | `.agents/shaka/` and `.agents/shaka.md`, which count here even if you turn the area off |
+
+[`defaults.yml`](../skills/shaka/config/defaults.yml) lists the exact patterns. A list
+you set for an area replaces that area's patterns, and `[]` turns it off. A new name adds
+an area:
+
+```yaml
+high_risk_areas:
+  database: [db/migrate/**/*, db/schema.rb]
+  billing: [app/billing/**/*]
+```
+
+What each rating asks:
+
+| Risk | What it asks |
+| --- | --- |
+| Low | Meant for auto-merge, with a later audit. |
+| Medium | Meant for a person to merge after a skim of the description, the reasons, and the verification, then of only the files the reasons name. |
+| High or unknown | Meant for a person to merge after a careful review that starts with whether the verification proves the change works. |
+
+[`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) sets which ratings the agent may merge under
+`auto`; by default only low. Without a trusted settings commit, merge and the rating use the default level and
+areas.
+
+### Change how risk is rated
+
+You can raise a PR's risk rating in two ways. No setting lowers a rating below the
+reviewer's.
+
+- Risk areas. List paths in a [high-risk](#high_risk_areas) or
+  [medium-risk area](#medium_risk_areas). After the reviewer rates, Shaka's code raises
+  the rating of a change to those paths.
+- Rating guidance, for a rule that paths cannot express. Write it in your
+  [checkpoint instructions file](#add-your-own-checkpoint-questions), for example:
+
+  ```markdown
+  Rate a change to a public API response as at least medium.
+  ```
+
+  Shaka's [risk rubric](../skills/shaka/config/post-implementation-risk.md) tells the
+  reviewer that guidance may raise a rating but never lower one. The same holds for
+  guidance in `AGENTS.md` or a replacement prompt. Shaka does not check the reviewer's
+  rating against your guidance.
+
+Shaka also counts a PR as high when the reviewer rates it `unknown`, when GitHub cannot
+list its changed files, when it changes Shaka's own settings, or when no checkpoint rated
+its head, as with `checkpoint.enabled: false`.
+[`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) sets which ratings the agent may
+merge, and [`merge.limits`](#mergelimits) sends larger PRs to a person. To see the rubric
+and your file in the order the reviewer reads them, ask
+`/shaka Show what my checkpoint reviewer receives.` To ask for a way to lower ratings,
+[open a feature request](https://github.com/shakacode/shaka/issues/new/choose).
+
+## `medium_risk_areas`
+
+**Optional. Default: the area below.** A change in a medium-risk area counts as at least
+medium risk: a reviewer's low rating is raised to medium, so under the default
+[`merge.auto_merge_max_risk`](#mergeauto_merge_max_risk) of `low` a person skims the PR
+before it merges. A high rating, or a change in a [high-risk area](#high_risk_areas), stays high.
+
+| Area | Default paths |
+| --- | --- |
+| `agent_instructions` | `AGENTS.md`, `CLAUDE.md`, and `SKILL.md` anywhere, `.claude/`, `.cursor/` |
+
+Lists work as in `high_risk_areas`: a list you set for an area replaces its patterns, `[]`
+turns it off, and a new name adds an area:
+
+```yaml
+medium_risk_areas:
+  prompts: [prompts/**/*]
+```
 
 ## `project_guidance`
 
@@ -837,7 +965,8 @@ project_guidance:
   library can ask for a compatibility run against its oldest supported version, and
   the agent reports that run in the description's verification. Shaka also shows the
   guide to the agent each time it publishes the description, so a skipped read still
-  surfaces it.
+  surfaces it. A risk record the guide asks for, such as your own risk classes, appears
+  folded under the description's [Risk and review](reference/pr-record.md#risk-and-review).
 - `merge_readiness`: read before the [checkpoint](reference/pr-record.md#checkpoint).
   For example, a data service can require a confirmed backfill plan. The agent lists
   each requirement and its status, and an unmet one blocks the merge-ready claim.
@@ -848,12 +977,30 @@ project_guidance:
   a large table and how to roll it back. The guide adds to Shaka's own walkthrough
   rules, such as opening with the behavior that changed; it does not replace them.
 
-When `pr_evidence` is set and your repository has a pull request template, the agent
-also reads that template and fills any of its sections Shaka's description does not
-already cover. The template gives the description its shape; the guide says what to
-run or check before writing it. Shaka looks for `pull_request_template.md` in `.github/`,
-the repository root, then `docs/`. With several templates, name the one to use as
-`pr_evidence`.
+Set `pr_evidence` to have Shaka show the agent your pull request template alongside
+a separate evidence guide. You can also use the template as the guide, for example by
+setting `pr_evidence` to `.github/pull_request_template.md`. Use the template for
+sections you want in the PR description. Use the evidence guide for what to run or
+report, and `AGENTS.md` for standing instructions such as when to update the changelog.
+
+Put instructions for a specific section in an HTML comment directly below its
+heading. GitHub hides the comment in the rendered description. For example, a
+Changelog comment can ask for a short note about what users can now do and say to
+write `None` for internal work. Keep the release-only rule for editing
+`CHANGELOG.md` in `AGENTS.md`.
+
+Shaka's built-in headings keep their usual behavior. For example, **Decisions to
+make** appears only if there's a decision to make. Extra template sections appear
+unless an HTML comment says to omit them for the current diff. A **Settings
+changes** comment can ask Shaka to omit its heading and body when the diff leaves
+repository settings alone. Required verification still appears. Extra sections
+follow metrics and any WIP Details. See
+[Keep changelog notes in PR descriptions](changelog-in-pr-descriptions.md) for setup.
+
+With a separate evidence guide, Shaka looks for `pull_request_template.md` or
+`PULL_REQUEST_TEMPLATE.md` in `.github/`, the repository root, then `docs/`. It
+selects the first file it can resolve. If that template fails the read checks, the
+agent sees the evidence guide and a skip message.
 
 Put anything a command can check in your [validate script](#standard-command-scripts)
 or CI, where a failure stops the PR. Keep the guides for judgment calls, such as
@@ -901,7 +1048,7 @@ checkpoint later. A rule that must act before the description belongs in `AGENTS
 To write a guide for your repository, start from a miss you have already seen:
 
 ```text
-$shaka Add PR evidence guidance: when a change alters email templates, attach
+/shaka Add PR evidence guidance: when a change alters email templates, attach
 rendered before and after screenshots.
 ```
 
@@ -923,7 +1070,7 @@ A failed check does not block publication or merging. With an opening reviewer
 configured, each description with new text and each walkthrough with a new opening
 adds one call to it.
 
-> $shaka Use Codex for opening checks.
+> /shaka Use Codex for opening checks.
 
 ```yaml
 pr_description:
@@ -1061,6 +1208,40 @@ directories holding the configuration and scripts must be real directories.
 Removing an optional check already on the default branch requires an explicit,
 maintainer-approved policy change.
 
+A long-lived branch cut before you added these scripts, such as a release branch,
+still gets validation evidence. When the branch has no `.agents/shaka/bin`
+directory, Shaka runs the default branch's copy of the script against that
+branch's files and removes the copy afterward. The script still runs the branch's
+own tools, so `exec bin/ci-local` runs that branch's `bin/ci-local`. The result
+records the trusted copy as its command source.
+
+### Run the scripts in a CI container
+
+
+The scripts Shaka writes ask Git for the repository root before they run your
+command. When a CI job runs inside a container, Git may refuse the checkout because
+another user owns it, and the script exits with status 128. Before any Shaka script
+or command runs, mark the checkout safe by its top-level path. In a GitHub Actions
+container job that checks out into the workspace, add this step:
+
+```yaml
+- run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+```
+
+If the job checks out into a subdirectory, such as `actions/checkout` with
+`path: app`, mark that directory instead. Other CI systems need the same
+`git config` command with their checkout path. Jobs that run directly on a
+GitHub-hosted runner need no change.
+
+### Setup records
+
+The setup PR can include `.agents/shaka.md`, which points to the settings and
+records the Shaka version used for setup. Later setup runs leave it alone.
+Ask your agent to refresh the configuration if you need the pointer updated.
+
+The optional `.agents/shaka/trusted-github-actors.yml` lists additional trusted
+comment authors for public repositories. See the [trust model](workflow.md#trust-model).
+
 ## `base_branch`
 
 **Optional. Default: the repository's default branch.**
@@ -1159,6 +1340,29 @@ one is already on the PR, so the list shows the agent's one-line summary and lin
 to it. So does a short comment with a list beside code, where code is hard to tell
 from prose.
 
+## `pr_description.ignored_human_comments`
+
+**Optional. Default: none.**
+
+Leaves comments that only run a command, such as `+review-app-deploy` or `/deploy`,
+out of the **Human comments** list, so the list shows what people actually said. A
+line under the list says how many it left out.
+
+```yaml
+pr_description:
+  ignored_human_comments:
+    - '+review-app-*'
+    - '/deploy'
+    - '/deploy *'
+```
+
+A comment is left out when its whole text matches an entry, ignoring case and
+surrounding spaces. `*` matches any characters except whitespace, such as spaces, tabs, and line breaks, so `+review-app-*`
+matches `+review-app-deploy` but not `+review-app-deploy failed on staging`. Write
+`/deploy *` to match a command with one argument, such as `/deploy staging`. A
+review that approves, requests changes, or was dismissed stays listed whatever its
+text says.
+
 ## `pr_description.time_zone`
 
 **Optional. Default: `UTC`.**
@@ -1187,75 +1391,6 @@ UTC and labels it UTC, as does any update that cannot read the repository's sett
 zone never stops a PR update. `shaka configure settings`
 reports the zone that applies, so you can check a new value. Only the display changes:
 Shaka still stores UTC, and other commands' timestamps stay in UTC.
-
-## `pr_description.human_review_floors`
-
-**Optional. Default: the floors below.**
-
-Every PR description says where a person's attention matters, from 1 (the description should be
-enough) to 5 (read the riskiest files closely). Shaka sets a minimum from the files the PR
-changes, so an agent can't rate a risky change as light reading.
-
-The rating points at files. It does not ask for the whole PR to be studied. In a repository that
-sets its docs at 5, as this one does, a code PR with one guide in it reads:
-
-> **Human review:** 5 of 5. Read `docs/settings.md` (changes docs for Shaka's users). The rest
-> set a lower floor.
-
-Nothing checks how closely anyone read.
-
-What deserves close review depends on your project, so set these floors for each repository.
-The easiest way is to ask your agent:
-
-> Help me choose Shaka's human review floors for this repository. Look at our folders and
-> recent PRs, ask me which changes I review most carefully, and open a settings PR.
-
-Your agent knows the matching rules and checks its proposal against your recent PRs. You
-decide what matters; for example, a project whose guides are read by its customers may want
-`docs/` changes at 5.
-
-In [a study of 309 PRs in this repository](articles/one-shot-pr-study.md), people asked for
-changes on many docs and agent-instruction PRs and on no PR that changed only code and tests.
-So by default agent instructions sit above code. Docs stay at 1 because who reads them differs
-by project; set them higher when they reach your users, as this repository does.
-
-| Floor | Changed file |
-| --- | --- |
-| 5 | Shaka's settings in `.agents/shaka/` |
-| 4 | GitHub Actions workflows, `CODEOWNERS`, and code named for auth, merge, release, trust, permissions, secrets, or credentials |
-| 3 | Agent instructions, such as `AGENTS.md`, `SKILL.md`, and `skills/` |
-| 2 | Any other code or configuration |
-| 1 | Markdown docs and images |
-
-The PR's floor is the highest one any of its files reaches. A PR changing a guide and a GitHub
-Actions workflow needs at least 4.
-
-Each floor lists the files it covers, and can list exceptions that leave a file out of that floor
-only. For example, the default floor 4 covers `docs/merge-guide.md` by its name but excepts
-Markdown, so the guide falls to the next floor that covers it, or to 1. The same guide under
-`skills/` still gets 3 from the agent-instructions floor.
-
-Your list replaces the default one. This repository adds three floors ahead of the defaults,
-so a guide gets the closest review and a page under `docs/reference/` gets a skim:
-
-```yaml
-pr_description:
-  human_review_floors:
-    - level: 5
-      reason: changes docs for Shaka's users
-      paths: [docs/**/*]
-      except: [docs/reference/**/*]
-    - level: 2
-      reason: changes a reference page
-      paths: [docs/reference/**/*]
-    - level: 4
-      reason: changes evidence or settings checks
-      paths: [skills/shaka/lib/shaka/evidence/**/*, skills/shaka/lib/shaka/seam/**/*]
-    # ...followed by the default floors
-```
-
-Shaka reads the floors from the same settings as everything else on this page, never from the
-PR's own branch, so a PR can't lower its own floor. An empty list, `[]`, turns floors off.
 
 ## `wip.include_checkout_path`
 

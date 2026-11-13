@@ -15,6 +15,16 @@ qualification remain evidence requirements; the version number does not establis
 
 ### Added
 
+- Rate each PR's risk as low, medium, or high in the checkpoint, with reasons, and say
+  what that rating asks of the merge: a skim for medium, a careful review that starts
+  with the verification for high. A missing rating shows as unknown and counts as high.
+  Changes to databases, persistence, infrastructure, CI and trust, auth, permissions,
+  secrets, or credentials always count as high; set `high_risk_areas` to change those
+  paths. Shaka's own settings in `.agents/shaka/` and `.agents/shaka.md` count as high
+  even if the `shaka` area is turned off. Changes to agent instructions count as at
+  least medium; set `medium_risk_areas` to change those paths. The agent merges only PRs
+  at or below `merge.auto_merge_max_risk` without a person confirming the head: `low` by
+  default, or `medium` to add medium risk. High risk always goes to a person.
 - Ask for an interactive code walkthrough with a short agenda and pauses for
   questions. Larger PR walkthroughs use a lightweight coverage map; selective
   notes on the diff remain unchanged.
@@ -29,6 +39,9 @@ qualification remain evidence requirements; the version number does not establis
 - Install pstack beside Shaka in Cursor, Claude Code, or Codex, and keep it current,
   with the [pstack guide](docs/pstack.md). The guide also gives a prompt for building
   your own updater for agent skill packs.
+- Install Shaka for GitHub Copilot CLI and VS Code, then start tasks with `/shaka`.
+  Installation is tested; a real Copilot delivery has not yet been validated.
+
 - Show a PR's Timings as text bars, so you can see where the time went, what ran
   together, and when the PR waited on a person. Steps that passed or finished now
   appear only in the bars, and the table keeps a row for each step that did not.
@@ -79,6 +92,19 @@ qualification remain evidence requirements; the version number does not establis
   `--apply --digest PREVIEW_DIGEST`. Later commits no longer include `seam upgrade`.
 - **Breaking:** The `wip.include_locations` setting is gone; set
   `wip.include_checkout_path` instead.
+- **Breaking:** The 1-to-5 human review rating is gone. PR descriptions no longer show
+  **Human review: N of 5**, a rating below the changed files' floor no longer refuses
+  publication, and **Closer reading** entries list a file and reason without a level.
+  Auto under the default settings now hands back medium- and high-risk PRs; before, the
+  default floor of 5 held nothing back.
+  `merge.auto_max_review_floor` and `pr_description.human_review_floors` are retired:
+  for one release a configuration that still sets them loads with a warning and the
+  next release refuses them. `merge.auto_merge_max_risk` now limits what the agent
+  merges without a person confirming the head; under Ask that approval is the
+  confirmation. While `auto_max_review_floor` is set below 5, the agent merges nothing
+  without a confirmed head, because the floors may have held paths that no risk area
+  names yet: move those paths into `high_risk_areas` or `medium_risk_areas`, then remove
+  the setting. The packaged areas cover only the paths named above.
 
 ### Fixed
 
@@ -123,10 +149,6 @@ qualification remain evidence requirements; the version number does not establis
 - Say **Adequate, with gaps the reviewer judged acceptable** on a checkpoint, in place of
   **Adequate with accepted gaps**, which read as if the maintainer had accepted them.
   Published checkpoints still parse.
-- Stop PR descriptions from asking for every line to be reviewed. The **Review effort** line
-  is now **Human review**: it names the files that set the rating, and it
-  no longer promises reproduction or a second reviewer. Settings keep their names, and Auto
-  merge holds back the same PRs. See [#1001].
 - Show `ready in` and `merged in` on more PRs. The description now reads the task
   start from a usage report that covers the whole task, and records the ready time
   each time it updates instead of only while a watch runs.
@@ -139,4 +161,3 @@ current workflow; install from source as described in
 
 [Unreleased]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...HEAD
 [0.1.0.pre.1]: https://github.com/shakacode/shaka/releases/tag/v0.1.0.pre.1
-[#1001]: https://github.com/shakacode/shaka/issues/1001

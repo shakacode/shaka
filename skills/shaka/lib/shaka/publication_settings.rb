@@ -6,7 +6,6 @@ require_relative 'repository_config'
 require_relative 'published_results'
 require_relative 'publication/feature_guard'
 require_relative 'opening_publication'
-require_relative 'publication/review_effort_floor'
 require_relative 'review_coverage'
 require_relative 'ready_time'
 require_relative 'local_review/ledger'
@@ -27,15 +26,15 @@ module Shaka
     end
 
     def self.prepare(root:, ref:, pull:, options:, github:)
-      changed_paths = FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
+      FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
       required = verdict&.key?('checks')
-      current, floors, review, config = (current_settings(root:, ref:, repository:, required:) if ref)
+      current, review, config = (current_settings(root:, ref:, repository:, required:) if ref)
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
-          review_effort_floor: ReviewEffortFloor.for(changed_paths, floors),
           reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone,
-          ready_gate: ReadyTime.gate(config, override: options[:ci_review_wait]))
+          ignored_human_comments: config&.pr_description&.fetch('ignored_human_comments', nil),
+          ready_gate: ReadyTime.gate(config, override: options[:ci_review_wait]), config:)
     end
 
     # Current results win. Failing those, a commit whose description already shows verified results
@@ -82,12 +81,12 @@ module Shaka
                                                                      reviewer: result['reviewer']).map(&:downcase)
     end
 
-    # Returns the public settings snapshot, the trusted review-effort floors, the trusted review
-    # settings, and the loaded settings. A bad personal time zone must not lose the first three.
+    # Returns the public settings snapshot, the trusted review settings, and the loaded settings. A bad personal
+    # time zone must not lose the first two.
     def self.current_settings(root:, ref:, repository:, required: false)
       OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
         config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
-        [current, config.pr_description['human_review_floors'], config.review, config]
+        [current, config.review, config]
       end
     rescue Error, SystemCallError
       raise if required
@@ -105,11 +104,12 @@ module Shaka
     end
 
     def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil, # rubocop:disable Metrics/ParameterLists
-                   review_effort_floor: nil, reviewer_shortfall: nil, time_zone: nil, ready_gate: nil)
+                   reviewer_shortfall: nil, time_zone: nil, ready_gate: nil, config: nil, ignored_human_comments: nil)
+      @config = config
       @ready_gate = ready_gate
+      @ignored_human_comments = ignored_human_comments
       @reviewer_shortfall = reviewer_shortfall
       @time_zone = time_zone
-      @review_effort_floor = review_effort_floor
       @repository = repository
       @verdict = verdict
       @current = current
@@ -138,8 +138,13 @@ module Shaka
       rows.is_a?(Integer) && rows.positive? ? rows : RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('max_human_comments')
     end
 
-    # The bound results Verification reports, the floor the changed paths set, and what gates readiness;
-    # nil when not read.
-    attr_reader :verdict, :review_effort_floor, :ready_gate
+    # Unread settings hide nothing, so every comment a person wrote stays listed.
+    def ignored_human_comments = @ignored_human_comments.is_a?(Array) ? @ignored_human_comments.grep(String) : []
+
+    # The bound results Verification reports and what gates readiness; nil when not read.
+    attr_reader :verdict, :ready_gate
+
+    # The trusted settings read at --ref, so the description rates risk with the areas merge uses; nil without them.
+    attr_reader :config
   end
 end

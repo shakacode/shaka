@@ -3,6 +3,7 @@
 require_relative '../error'
 require_relative '../post_implementation_report'
 require_relative 'history'
+require_relative 'published_risk'
 
 module Shaka
   # Checks this account's published checkpoint facts, not the reviewer's product judgment.
@@ -26,6 +27,13 @@ module Shaka
                           "<!-- #{MARK} ([0-9a-f]{40}) (?:ready|blocked) -->\\s*\\z")
     def self.adequacy(verdict) = "<!-- #{MARK}-adequacy #{verdict.tr(' ', '_')} -->"
 
+    # The reviewer's risk rating sits directly above the verdict, so merge can read it under merge.auto_merge_max_risk.
+    RISK = Regexp.new("\n<!-- #{MARK}-risk (#{PostImplementationReport::RISK.join('|')}) -->" \
+                      "\n<!-- #{MARK}-adequacy (?:#{ADEQUACY_SLUGS.keys.join('|')}) -->" \
+                      "\n(?:<!-- #{MARK}-disposition (?:#{RECOMMENDATION}) -->\n)?" \
+                      "<!-- #{MARK} ([0-9a-f]{40}) (ready|blocked) -->\\s*\\z")
+    def self.risk(rating) = "<!-- #{MARK}-risk #{rating} -->"
+
     def initialize(github, enabled: true)
       @github = github
       @enabled = enabled
@@ -47,6 +55,27 @@ module Shaka
 
     # The latest checkpoint's verification verdict, or nil when that checkpoint is for another head or has none.
     def adequacy(head) = adequacy_in(latest, head)
+
+    # The latest checkpoint's risk rating, or nil when that checkpoint is for another head, is blocked, or has none.
+    def risk(head)
+      rating, reviewed, state = latest&.fetch('body', '').to_s.match(RISK)&.captures
+      rating if reviewed == head && state == 'ready'
+    end
+
+    # What the latest checkpoint printed about risk for this head, ready or blocked, since a blocked checkpoint
+    # still shows its rating: the rating, the reviewer's reasons, and the comment's link. Nil for another head or
+    # a checkpoint without a rating. Merge reads risk(head), which requires a ready checkpoint.
+    def published_risk(head)
+      comment = latest
+      return unless comment
+
+      body = comment.fetch('body', '').to_s
+      rating, reviewed = body.match(RISK)&.captures
+      return unless rating && reviewed == head
+
+      reasons = PostImplementationPublishedRisk.reasons_in(body)
+      { 'rating' => rating, 'reasons' => reasons, 'url' => comment['html_url'] }
+    end
 
     # The latest checkpoint's owner recommendation, or nil when that checkpoint is for another head or has none.
     def recommendation(head)

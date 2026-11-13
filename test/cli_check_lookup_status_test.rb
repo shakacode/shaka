@@ -8,7 +8,7 @@ class CliCheckLookupStatusTest < Minitest::Test
 
   def test_rate_limited_check_lookup_names_its_http_status_on_merge
     with_merge_repository do |root, ref, mutation|
-      _, error, status = run_merge(root, ref, mutation, env: { 'RATE_LIMITED' => '1' })
+      _, error, status = run_merge(root, ref, mutation, *CONFIRMED, env: { 'RATE_LIMITED' => '1' })
 
       refute_predicate status, :success?
       assert_match(/HTTP 403/, error)

@@ -1,6 +1,8 @@
 # Official installation
 
-Use this procedure for everyday installation, update, and verification.
+Use this procedure when handling an official Shaka installation, update, or
+verification request. For people who want to run the commands themselves, share
+[Install Shaka manually](https://github.com/shakacode/shaka/blob/main/docs/manual-installation.md).
 Require Ruby 3.4 or later, Git, and authenticated GitHub CLI; see
 [prerequisite details](installation.md#prerequisites). Shaka records its own Ruby
 and ignores project Ruby and Bundler settings. Never edit the dedicated checkout.
@@ -8,7 +10,7 @@ and ignores project Ruby and Bundler settings. Never edit the dedicated checkout
 ## Install
 
 Review the source and installer, then clone into a directory outside the
-repositories your agent will edit:
+project repositories the user works in:
 
 ```bash
 umask 022
@@ -19,14 +21,16 @@ git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/sourc
 
 Default: `~/.local/share/shaka/source`; respect chosen locations with `--directory DIR`.
 The installer refuses `~/.agents/` and every directory under it, where settings live. An install
-registered there refuses every action; run the take-over command its message names, then tell the user
+registered there refuses every action. Follow [Before take-over](#before-take-over), run the
+command its message names, then tell the user
 the old checkout can be deleted. Never delete it for them. When the message names a decision instead, show it
 to the user; never move the default location's contents yourself.
 Use the registered helper to preserve an existing installation’s chosen path; the default applies to new installations.
 Keep it for direct links and develop separately. `~/agent-tools/shaka` is an optional example.
 Every action refuses a checkout that is itself a linked worktree; reinstall from a separate clone as its message says.
 Installation refuses a checkout with linked worktrees or extra local branches; verify and update warn.
-To move links off such a development clone, run the take-over its message names. When it names commands that
+To move links off such a development clone, follow [Before take-over](#before-take-over)
+and run the take-over its message names. When it names commands that
 remove worktrees or branches instead, show them to the user. Never delete the checkout's branches or worktrees
 for the user.
 This directory is the Shaka source, not configuration; each project keeps its settings in its own `.agents/shaka/`.
@@ -41,6 +45,7 @@ This directory is the Shaka source, not configuration; each project keeps its se
 | `claude` | `~/.claude/skills` | `/shaka` |
 | `cursor` | `~/.cursor/skills` | `/shaka` in a new Agent chat |
 | `opencode` | `~/.config/opencode/skills` | `/shaka` in a new session |
+| `copilot` | `~/.copilot/skills` | `/shaka` in Copilot CLI or VS Code Agent chat |
 
 Repeat `--agent` for several hosts, or use `--directory SOURCE --skills-dir DIR` for a custom directory.
 Add `--with-mct` for the Codex master, `--with-rct` for its repository tower,
@@ -49,11 +54,22 @@ may be selected. Default installation includes only Shaka.
 If an older installer lacks a tower flag, update Shaka first, then run
 `bin/install` to select that tower.
 Use installer-owned or root-owned protected files and directories, without group
-or world write access. Reinstallation preserves recognized towers and registered hosts. Start a new chat
-and look for **Shaka**; restart the host if its list is stale. Tower flags apply
+or world write access. Reinstallation preserves recognized towers and registered hosts.
+Ask the user to start a new chat and look for **Shaka**. If the list is stale,
+ask them to restart the host. Tower flags apply
 to every selected host; install hosts separately when their roles differ.
 For an existing permission error, remove group/world write access from the named
 paths you own, or select a protected location. Preserve file contents and executable bits.
+
+## Before take-over
+
+Before any take-over, record the active checkout, origin, branch or release,
+commit, linked hosts and skills directories, and any Shaka Claude Code
+`SessionStart` hook. Take-over moves every registered link of the checkout
+it replaces. If the Claude hook follows one of those links, it runs the
+incoming source when a chat starts. Explain which links and hooks are affected.
+If the request covers only one host and another host's link would move, get
+the user's approval for the wider change before running take-over.
 
 ## Verify and update
 
@@ -68,9 +84,10 @@ New gem installations select their own version. To reuse an existing custom inst
 run its registered helper or pass `--directory DIR`; installation there keeps its source
 selection. An explicit repository or branch overrides the gem default.
 
-To change versions or roll back, use a separate directory with `--release VERSION --take-over`.
-The existing take-over procedure moves all registered host links and preserves both
-checkouts. Keep the previous helper for active chats. Release `install --update` checks
+Follow [Before take-over](#before-take-over) when changing releases.
+To install a new release, use a separate directory with `--release VERSION --take-over`.
+To roll back, [restore the saved installation](installation.md#restore-the-saved-installation).
+Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
 that the remote tag still resolves to the recorded commit; it never advances to `main`
 or another release. A missing or moved tag fails. `update-check` reports the local pin,
 without checking for newer releases.
@@ -83,7 +100,7 @@ The installer prints an update reminder for every host and custom skills directo
 the checkout moved; its guidance says whether `install --update` can record the move. An `unknown` result names its reason.
 `bin/install --agent claude --session-hook` reports the saved `update-check` answer when each Claude Code chat
 starts; installing with `--agent claude` and without the flag removes that hook.
-Use the registered helper with your chosen path:
+Use the registered helper at the installation's actual path:
 
 ```bash
 "$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --verify
@@ -98,7 +115,9 @@ and next step. When the helper stops because its recorded Ruby is unavailable, r
 `ruby DIR/bin/install --status` with Ruby 3.4 or later instead. Status is read-only and
 offline; run the next command it names only with the user's approval.
 `install --repair` runs the next commands status names that repair can run, until a decision
-remains; run it only with the user's approval and relay its final state.
+remains. Check status first. If repair will run take-over to reunite a split
+installation, follow [Before take-over](#before-take-over). Run repair only with
+the user's approval and relay its final state.
 Update validates the fetched tree before advancing the recorded origin branch. Dirty tracked or untracked files, unexpected checkout changes,
 and divergent updates stop it. After a manual pull of the registered branch,
 `install --update` records the pulled revision; local commits still stop it. Preserve changes in a development checkout;
@@ -107,12 +126,14 @@ running `bin/install` with Ruby 3.4 or later. Maintenance uses registered select
 change hosts or towers through installation first. A known interrupted update
 completes on the next installation or update run.
 
-Finish active Shaka chats before updating this mutable path. Doctor reads recorded identity;
+Ask the user to finish active Shaka chats before updating the linked checkout. Doctor reads recorded identity;
 verification rechecks it. Project settings use [repository migration](migration.md).
 
 ## Teams and forks
 
-Use the [fork guide](https://github.com/shakacode/shaka/blob/main/docs/fork-and-hack.md).
+Follow the [agent procedure for forks](installation.md#install-from-a-personal-fork)
+for fork installation and updates. Share the [fork guide](https://github.com/shakacode/shaka/blob/main/docs/fork-and-hack.md)
+with people setting up their own fork.
 Keep local `.git` installation records per machine. For forks or SSH origins, register the exact `--repository URL` and optional `--branch NAME`.
 Publish upstream integrations separately before updating.
 

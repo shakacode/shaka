@@ -23,20 +23,34 @@ The **Code Review** link opens the review record. Check coverage, unresolved
 findings, and the number of rounds; repeated rounds can signal work worth
 investigating. Detailed findings remain available for later agent analysis.
 
-## Human review
+<a id="human-review"></a>
 
-Current installations show **Human review** under **Intent**, from 1 for a brief
-review to 5 for close reading of the riskiest files. **Closer reading**, when
-present, links to code needing particular attention.
+## Risk and review
 
-Repositories set [minimum ratings by changed file](../settings.md#pr_descriptionhuman_review_floors).
-Current Auto settings can return work to you when a changed file's minimum
-exceeds the [configured threshold](../settings.md#mergeauto_max_review_floor).
+The lead line shows the checkpoint's **Risk** for the current commit beside its
+**Recommendation**, with a colored mark: 🟢 low, 🟡 medium, 🔴 high, and ⚪ when no
+level shows. The section repeats the mark. Shaka reads the level from the checkpoint published for that
+commit and applies the repository's high-risk areas to its changed files, as merge
+does. A blocked checkpoint's level still shows, though merge waits for a ready one.
+Low is meant for auto-merge with a later audit, medium for a person to merge after
+a skim, and high for a careful review that starts with the verification. A change in
+one of the repository's [`high_risk_areas`](../settings.md#high_risk_areas) always
+counts as high. Under `auto`, [`merge.auto_merge_max_risk`](../settings.md#mergeauto_merge_max_risk)
+sets the highest rating the agent merges without you; the default is low.
 
-[PR #1081](https://github.com/shakacode/shaka/pull/1081) proposes a checkpoint risk
-assessment of low, medium, or high. Risk governs automatic merging only when that
-feature is installed and the repository opts into low-risk-only Auto merging.
-A low rating alone does not enable Auto.
+The **Risk and review** section follows Intent and precedes Verification. It says what the level asks
+of you, then lists:
+
+- **Flagged by the implementer**: code needing particular attention, each with its reason.
+- The checkpoint reviewer's reasons, quoted. When a high-risk area raised the level, the
+  section names the file and area and shows the reviewer's own rating. Low-risk
+  reasons are folded.
+- Your repository's own risk record, folded, when your
+  [PR evidence guide](../settings.md#project_guidance) asks for one.
+
+Until the checkpoint rates the current commit, the level reads **not rated yet**.
+When Shaka cannot read the repository's trusted settings, it reads **not shown**:
+Shaka's default areas could rate the change lower than the repository's own.
 
 ## Checkpoint
 
@@ -54,7 +68,7 @@ supporting evidence. The written **Code Walkthrough** explains the implementatio
 | **Merge after maintainer decision** | A question or concern needs your decision before merging. |
 
 The reviewer's conclusion is **Proceed**, **Simplify/reframe**, or **Do not merge**.
-Substantive unresolved concerns hold readiness and Auto even when checks pass.
+Substantive unresolved concerns hold readiness and `auto` even when checks pass.
 With **Proceed**, you can explicitly accept a listed concern; the agent records
 it under **Concerns recorded as accepted by the maintainer**. Shaka checks that
 decisions are recorded, not who made them or whether they are sound. Acceptance
@@ -63,7 +77,7 @@ does not override **Simplify/reframe** or **Do not merge**.
 The checkpoint also judges verification as **Adequate**, **Adequate, with gaps the
 reviewer judged acceptable**, **Inadequate**, or **Cannot judge**. The reviewer's
 acceptance of a gap is not yours. With Ask, the verdict informs your decision.
-With Auto, **Inadequate** or **Cannot judge** stops merging until you approve that
+With `auto`, **Inadequate** or **Cannot judge** stops merging until you approve that
 commit. A recommendation grants no merge authority. See
 [checkpoint settings](../settings.md#checkpoint).
 
@@ -77,6 +91,9 @@ only in chat is not included.
 Untrusted comments appear as linked **Unverified** entries without quoted or
 summarized content. See [review safety](../workflow.md#trust-model) and
 [human-comment settings](../settings.md#pr_descriptionshow_human_comments).
+
+Comments that only run a command, such as `+deploy`, can be
+[left out of the list](../settings.md#pr_descriptionignored_human_comments).
 
 ## Before and after merge
 
@@ -93,9 +110,10 @@ still needs an eligible reviewer; chat approval does not replace it. GitHub does
 not let PR authors approve their own PRs. Return to the owning chat unless its
 handoff names active automatic follow-up.
 
-Under Auto, every reported check must pass; skipped and neutral count as passing.
+Under `auto`, every reported check must pass; skipped and neutral count as passing.
 A job that has not started is unseen, so make a check required if it must always
-hold the merge. Failed optional checks return work to you. An Auto merge normally
+hold the merge. Failed optional checks return work to you, except one the agent names
+as failing on the PR's target branch too ([failures the target branch shares](../working-with-shaka.md#choose-a-merge-policy)). An `auto` merge normally
 gets the `auto-merged` label; queued merges and failed label writes are exceptions.
 
 If GitHub needs a branch update, the agent revalidates and reviews the new commit.

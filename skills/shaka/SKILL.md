@@ -6,7 +6,7 @@ description: Deliver a task through verified GitHub PRs, or help get started and
 # Shaka
 
 Own one task through its requested PR outcome. `$shaka` (`/shaka` in Claude Code, OpenCode,
-and Cursor) alone offers a guided start. Work solo unless delegation is authorized and useful; reuse
+Cursor, and GitHub Copilot) alone offers a guided start. Work solo unless delegation is authorized and useful; reuse
 relevant evidence.
 
 Before any branch change, resolve this installed skill to its trusted source outside every
@@ -25,10 +25,11 @@ For a requested interactive code walkthrough, follow the
 [interactive walkthrough](references/interactive-walkthrough.md) and stop after each concept.
 For a request to see what a reviewer receives, or to explain or change this repository's
 settings, follow the [configure procedure](references/configure.md).
-For a request to install or update Shaka itself, follow
-[official installation](references/official-installation.md), or for a fork install or
-its update, the [fork procedure](references/installation.md#install-from-a-personal-fork),
-and stop after verification.
+For installation status or verification, or to install, update, or repair
+Shaka itself, follow
+[the agent procedure for official installation](references/official-installation.md). For fork setup,
+updates, or switching between a fork and official Shaka, use the
+[the agent procedure for forks](references/installation.md#install-from-a-personal-fork). Stop after verification.
 For a task, continue below.
 
 Run the trusted helper's `workflow` command now and follow the complete validated procedure it

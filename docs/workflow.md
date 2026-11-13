@@ -6,7 +6,7 @@ Shaka supplies the process; your repository supplies the commands and constraint
 | --- | --- |
 | Intake | Confirm the task, repository, ownership, and merge preference |
 | Plan | Assess value, scope, risk, model, and effort |
-| Implement | Reproduce bugs or test new behavior, then make the change |
+| Implement | Reproduce bugs or test new behavior, make the change, and update any text that still describes the old behavior |
 | Verify | Run local checks, review independently, and fix findings |
 | Explain | Publish the PR, walkthrough, evidence, and usage |
 | Review | Handle GitHub review findings and required checks |
@@ -16,7 +16,7 @@ Before shipping, Shaka compares the finished solution with the original goal, th
 recommends **Merge**, **Merge after maintainer decision**, **Revise before merge**,
 **Reconsider approach**, or **Do not merge**.
 A working implementation can still warrant reconsideration. Each recommendation
-includes a reason and next step; Merge still follows your checks and Ask or Auto choice.
+includes a reason and next step; Merge still follows your checks and Ask or `auto` choice.
 
 When Shaka recommends a model and effort, it aims to minimize the task's total work.
 Effort is not priced per token, the input the agent reads dominates spend, and rework

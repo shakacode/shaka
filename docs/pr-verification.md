@@ -35,11 +35,12 @@ Start near the top of the PR description:
 | Look for | What it tells you |
 | --- | --- |
 | **Summary** and **Intent** | What changed, why, and whether it matches your request. |
+| **Risk** and **Risk and review** | How carefully to review, and which code to read first. |
 | **Verification** | What was checked and what remains unproven. |
 | **Decisions to make**, when present | Questions needing your judgment, with options and a recommendation. |
 | **Checkpoint** link | The assessment of whether the result is worth merging, including unresolved concerns. |
 
-Check [whether human review is needed](reference/pr-record.md#human-review).
+See [what each risk level asks of you](reference/pr-record.md#risk-and-review).
 Inspect screenshots or try the changed feature when your judgment depends on the
 result. Open **Code Review** or **Code Walkthrough** for closer examination.
 
@@ -51,8 +52,10 @@ decision; they do not settle every product choice or prove every claim.
 Ask for an interactive tour when you want to understand a PR before deciding:
 
 ```text
-$shaka Walk me through https://github.com/OWNER/REPO/pull/123 one concept at a time.
+/shaka Walk me through https://github.com/OWNER/REPO/pull/123 one concept at a time.
 ```
+
+In Codex, use `$shaka` instead of `/shaka`.
 
 The agent starts with a short agenda, explains one concept, and pauses for your
 questions. Say `next` to continue, or ask to change the depth, revisit a concept,
@@ -83,7 +86,7 @@ You can also [merge through GitHub](reference/pr-record.md#merge-messages).
 Confirm that its commit is the version you reviewed. Required checks and
 approvals still apply.
 
-Under **Auto**, the agent merges when the change is ready.
+Under `auto`, the agent merges when the change is ready.
 
 <a id="check-the-cost-of-getting-the-result"></a>
 <a id="revisit-a-merged-change"></a>
