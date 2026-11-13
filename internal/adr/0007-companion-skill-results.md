@@ -129,6 +129,9 @@ design could reuse. The two changes touch different files.
    `companion_results`, with one summary line in Verification for a merge-relevant
    result. The matching paragraph in `docs/working-with-shaka.md`, which tells readers
    the PR's verification lists the harness command and its results, changes to match.
+   The next sentence, "Shaka's current-head requirements override a companion's
+   verdict-reuse policy," becomes: a result from an earlier commit stays listed with a
+   `stale` label, and the agent reruns it when a later commit touches what it checked.
    `workflow.yml` gains only `companion_results` in its list of description keys; the
    guidance stays in companion-skills, which loads only when a task uses a companion
    skill.
