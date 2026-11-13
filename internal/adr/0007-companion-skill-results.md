@@ -116,19 +116,20 @@ design could reuse. The two changes touch different files.
    GitHub draws from text) stays in a `sections` item, and the entry's `result`
    names its heading. Neither item has an anchor a link could target, so `artifacts`
    stays limited to URLs.
-5. **No new uploader.** `artifacts` accepts links only. A screenshot, or a diagram
-   rendered to an image, goes up through the existing [UI evidence publication](../../skills/shaka/references/ui-verification.md#publish-ui-evidence)
-   path, and the entry links the uploaded file. That path folds this account's earlier
-   UI checks and refuses a check that drops a capture an open check still shows, so a
-   diagram-only upload on a PR with open UI captures must embed or retire them. The
-   implementation PR may choose a plain comment attachment instead if that proves
-   simpler.
+5. **Links only; the upload route waits.** `artifacts` accepts links only, and this ADR
+   adds no uploader. How a screenshot or a diagram rendered to an image gets uploaded is
+   left to the implementation PR. The existing [UI evidence publication](../../skills/shaka/references/ui-verification.md#publish-ui-evidence)
+   path is scoped to UI changes and folds earlier UI checks, so that PR weighs it against
+   a plain comment attachment.
 6. **Rewrite the existing guidance, add none.** When the code ships, the "Consume
    verification evidence" sentence in companion-skills that sends the command, commit,
    result, artifacts, and gaps into the Verification record is rewritten to send them to
    `companion_results`, with one summary line in Verification for a merge-relevant
    result. The matching paragraph in `docs/working-with-shaka.md`, which tells readers
-   the PR's verification lists the harness command and its results, changes to match.
+   the PR's verification lists the harness command and its results, changes to say
+   that the PR's companion results list the command, the commit, what it showed, its
+   screenshots or logs, and what it didn't cover, and that a result from an earlier
+   commit shows as stale.
    The next sentence, "Shaka's current-head requirements override a companion's
    verdict-reuse policy," becomes: a result from an earlier commit stays listed with a
    `stale` label, and the agent reruns it when a later commit touches what it checked.
@@ -145,6 +146,11 @@ On 2026-11-12 the maintainer accepted both recommendations the review left open:
   were the alternatives.
 - An entry matches Skills used by the raw `skill`, `source`, and `revision` values, and
   the helper escapes them only when it renders.
+
+On 2026-11-13 the maintainer also chose to leave these to the implementation PR:
+how older installations treat `companion_results`, the exact local-path rule, the
+upload route in decision 5, and whether result text may carry Markdown links and
+images.
 
 ## Alternatives considered
 
