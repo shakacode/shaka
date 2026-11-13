@@ -193,6 +193,24 @@ class GitHubReplyTest < Minitest::Test
     assert_equal 'POST', sent_method(4)
   end
 
+  # GitHub stores the six characters backslash-u-0000 as backslash-caret-at (seen on PR #1115).
+  def test_a_quoted_nul_escape_that_github_rewrites_still_confirms
+    body = "#{BODY}A path like `/bad\\u0000path` fails.\n"
+    stored = "<!-- shaka:reply:fix-1 -->\n#{BODY}A path like `/bad\\^@path` fails.\n"
+    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
+                    response({ 'id' => 9, 'body' => stored }))
+    assert_equal stored, github.reply(body:, key: 'fix-1')['body']
+  end
+
+  def test_a_stored_difference_beyond_the_nul_rewrite_is_still_reported
+    body = "#{BODY}A path like `/bad\\u0000path` fails.\n"
+    stored = "<!-- shaka:reply:fix-1 -->\n#{BODY}A path like `/bad\\^@path` failed.\n"
+    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
+                    response({ 'id' => 9, 'body' => stored }))
+    error = assert_raises(Shaka::Error) { github.reply(body:, key: 'fix-1') }
+    assert_includes error.message, 'does not match what was submitted'
+  end
+
   def test_an_invalid_reply_key_never_contacts_github
     ['', 'has space', 'a' * 65, nil].each do |key|
       assert_raises(Shaka::Error) { client.reply(body: BODY, key: key) }

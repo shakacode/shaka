@@ -13,7 +13,7 @@ require_relative '../github/description_publishing'
 
 module Shaka
   # Publishes rendered Markdown, checking GitHub's own rendering before anything is written
-  # and confirming the stored bytes afterwards.
+  # and confirming the stored body afterwards.
   module Publishing
     include DescriptionPublishing
 
@@ -140,9 +140,11 @@ module Shaka
       body
     end
 
+    # GitHub stores the literal text backslash-u-0000 as backslash-caret-at, so a report quoting
+    # that escape would otherwise never confirm. Only that rewrite is tolerated.
     def confirmed(published, expected)
       raise Error, 'GitHub API response must be an object.' unless published.is_a?(Hash)
-      return published if published['body'] == expected
+      return published if [expected, expected.gsub('\\u0000', '\\^@')].include?(published['body'])
 
       raise Error, 'The stored body does not match what was submitted; inspect the pull request before retrying.'
     end
