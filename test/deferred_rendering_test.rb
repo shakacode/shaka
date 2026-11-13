@@ -131,16 +131,6 @@ class DeferredRenderingTest < Minitest::Test
     assert_match(/literal escape.*deleted/, error.message)
   end
 
-  # Break caught: an escape a quote keeps in code excused one in the surrounding prose.
-  def test_a_quote_escape_inside_code_cannot_excuse_one_in_the_surrounding_prose
-    report = "```\nputs 'a\\n'\n```"
-    @stored_html = "<p>Use `x \\n` ok</p><pre><code>puts 'a\\n'</code></pre>"
-    body = "Use \\`x \\n\\` ok\n\n#{report}"
-    error = assert_raises(Shaka::Error) { publish(body:, verbatim: [report], stored_check: ->(_) {}) }
-
-    assert_match(/literal escape.*deleted/, error.message)
-  end
-
   def test_a_table_inside_a_quoted_report_cannot_stand_in_for_a_broken_one_around_it
     report = "| r |\n| --- |\n| s |"
     @stored_html = '<table></table>'
@@ -150,10 +140,15 @@ class DeferredRenderingTest < Minitest::Test
     assert_match(/rendered 1 of 2 table.*deleted/, error.message)
   end
 
-  def test_quoted_reports_and_generated_code_may_hold_escapes_the_surrounding_text_may_not
-    report = 'Report says \n literally.'
-    assert publish(body: "Intro.\n\n#{report}", verbatim: [report], stored_check: ->(_) {})
+  def test_escapes_in_code_pass_and_a_quoted_escape_outside_code_is_taken_back
+    report = "Report says \\n literally.\n\n```\nputs 'a\\n'\n```"
+    @stored_html = "<pre><code>puts 'a\\n'</code></pre><p><code>&#70;ix \\n</code></p>"
+    assert publish(body: "Intro.\n\n```\nputs 'a\\n'\n```", stored_check: ->(_) {})
     assert publish(body: 'Subject <code>&#70;ix &#92;n handling</code>.', stored_check: ->(_) {})
+
+    @stored_html = '<p>Report says \\n literally.</p>'
+    error = assert_raises(Shaka::Error) { publish(body: "Intro.\n\n#{report}", verbatim: [report], stored_check: ->(_) {}) }
+    assert_match(/literal escape.*deleted/, error.message)
   end
 
   private

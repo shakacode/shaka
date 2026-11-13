@@ -15,7 +15,7 @@ module Shaka
     class Refused < Error; end
 
     # What the stored comment is checked against once written.
-    Pending = Struct.new(:content, :verbatim, :check)
+    Pending = Struct.new(:content, :check)
 
     private
 
@@ -35,7 +35,7 @@ module Shaka
       normalized = StoredRendering.normalize(stored_html(existing, written, target), written['body'])
       # Stored HTML holds the quoted text too, so its tables are expected as well; a broken one fails closed.
       RenderedProse.tables!(written['body'], normalized)
-      stored_escapes!(normalized, pending.verbatim)
+      stored_escapes!(normalized)
       pending.check.call(normalized)
       written
     rescue Error => e
@@ -50,11 +50,10 @@ module Shaka
       html
     end
 
-    # Quoted text is published as written, so the stored comment may show outside code as many escapes as
-    # the quotes hold outside code, no more; an escape a quote keeps in code cannot excuse one around it.
-    def stored_escapes!(html, verbatim)
-      allowed = verbatim.sum { |text| PublicationText.prose(text).scan(RenderedProse::ESCAPE).size }
-      raise Error, RenderedProse::ESCAPED if RenderedProse.bare(html).scan(RenderedProse::ESCAPE).size > allowed
+    # No escape may show outside code, even in quoted text: telling a quote's escapes from the text
+    # around it would mean reparsing Markdown the way GitHub does.
+    def stored_escapes!(html)
+      raise Error, RenderedProse::ESCAPED if RenderedProse.bare(html).match?(RenderedProse::ESCAPE)
     end
 
     # An unchanged comment was already live; a changed one gets its earlier body back, and a new one goes.

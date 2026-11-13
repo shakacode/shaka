@@ -40,7 +40,7 @@ module Shaka
       written = write_reply(existing, content, target, headers: html ? [] : [FULL])
       return confirmed(written, content) if html
 
-      checked_after_write(existing, written, target, Pending.new(content, verbatim, stored_check))
+      checked_after_write(existing, written, target, Pending.new(content, stored_check))
     end
 
     # gh uploads each "PATH#ALT TEXT" attachment, rewriting a body reference to the file;
