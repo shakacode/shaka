@@ -94,6 +94,8 @@ Open your repository's **Pull requests** tab on GitHub and search:
 
 A label does not wake the agent. See [merge and queue details](reference/pr-record.md#merge-messages).
 
+A required check waiting for a deployment approval shows as `blocked (approval hold)`, and the PR keeps its label until you approve the run.
+
 ## Resume unfinished work
 
 Return to the original chat through **WIP Details → Chat link** in the PR
