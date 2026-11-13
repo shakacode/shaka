@@ -56,7 +56,7 @@ Here the reviewer asks, “Is there a test for turning the filter off?” The de
 
 In our to-do list example, we might have a PR for where you add a task. The next PR might let you mark it done. The third PR might let you hide completed tasks. Each PR should be tested before merging it. Each PR gives the team one behavior to understand and verify before other work builds on it.
 
-![Three tested PRs build a to-do app. First add “Book flights” and “Pack bag,” then check off “Book flights,” then hide completed tasks so only “Pack bag” remains visible.](../img/pull-requests-in-the-age-of-agents/todo-app-one-pr-at-a-time.webp)
+![Three tested PRs build a to-do app. First add “Book flights” and “Pack bag,” then check off “Book flights,” then hide completed tasks so only “Pack bag” remains visible.](../img/pull-requests-in-the-age-of-agents/task-list-one-pr-at-a-time.webp)
 
 A PR can include several commits as the developer builds the feature and responds to reviews. A common way to merge is to combine them into one commit on the **main branch**, where the project’s accepted changes go.
 
@@ -132,7 +132,7 @@ In this example of the to-do list, suppose the maintainer accepts the gap and me
 
 Before publishing, the team might compare the new version with the one users have. When this app added the “Hide completed” switch, that comparison told the team what to check and what to announce.
 
-![A teammate compares two releases. The next version of the to-do app adds a Hide completed switch.](../img/pull-requests-in-the-age-of-agents/compare-todo-releases.webp)
+![A teammate compares two releases. The next version of the to-do app adds a Hide completed switch.](../img/pull-requests-in-the-age-of-agents/compare-task-list-releases.webp)
 
 ## What the next agent inherits
 
