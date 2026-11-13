@@ -1,8 +1,8 @@
 # Explain UI changes with annotations
 
-Present the new screenshot with a few numbered boxes, highlights, or arrows that
-explain meaningful changes. Keep the original captures available. This procedure
-uses existing tools; it adds no Shaka command or automatic verification gate.
+When reviewers need to compare before and after, lead with one annotated image
+that shows both captures side by side. Use it to show what moved, what disappeared,
+or how spacing changed. Otherwise, lead with an annotated after capture.
 
 ## Inspect the comparison
 
@@ -17,16 +17,16 @@ uses existing tools; it adds no Shaka command or automatic verification gate.
    Retain desktop and mobile evidence for the views the change affects, and a short
    recording when timing or interaction matters.
 
-## Annotate the after capture
+## Annotate the captures
 
-- Keep its normal colors and text readable. Draw thin outlines or restrained
-  highlights around meaningful regions, with numbered markers and short captions.
+- In a side-by-side image, give each viewport its own labeled Before and After
+  pair. Use matching crops when a full view would make the details hard to read.
+- Keep the captures' normal colors and text readable. Draw thin outlines or
+  restrained highlights, with numbered markers and short captions.
   Use color with numbers or text so the meaning does not depend on color alone.
 - Give each callout a specific explanation: “1: Added expected-experience guide”
   or “2: Unexpected footer shift.” Label unresolved differences as unresolved.
-  Inspecting the full view remains necessary beyond the selected callouts.
-- Use arrows for movement or spacing changes. Show a labeled before crop beside
-  the after capture when explaining a removal or a detail that needs comparison.
+- Use arrows for movement or spacing changes.
 - Choose regions from the inspected comparison, rather than boxing every cluster
   of changed pixels. Keep captions and markers clear of important UI content.
 - Work on a copy or a separate overlay. Preserve the captured pixels beneath the
@@ -48,9 +48,9 @@ specific captions and explain the limitation.
 
 ## Publish the comparison
 
-Lead the PR's visual evidence with the annotated after capture and numbered
-captions. Attach or link the original before and after captures in the same
-comment; keep supporting captures in expandable details when they distract.
+Put the annotated image first in the PR's visual evidence. Attach or link the
+original before and after captures in the same comment. Put them in collapsed
+details when the comparison is enough for the first pass.
 Label the compared revisions, route/state, viewport, and alignment limits.
 A historical example names its original revisions and is a presentation trial,
 not fresh verification of that PR.

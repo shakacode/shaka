@@ -141,7 +141,8 @@ PR title and an empty body.
 
 ## Visual evidence
 
-Annotated before-and-after desktop and mobile screenshots help assess UX changes.
+When reviewers need to compare before and after, one annotated image puts both
+views side by side. The original captures can go in collapsed details.
 Recordings can show a flow and animations. The explanation names what was tested
 and what remains unverified. Captures and tests provide different evidence:
 
