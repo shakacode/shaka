@@ -150,7 +150,10 @@ Local review requires a reviewer the cloud environment can run. If none is
 available, resume the PR in a local session. Cloud machines may lack the
 local reviewer CLI, its sign-in, or Ruby 3.4. If GitHub GraphQL is blocked, Doctor and PR status can fall back to REST.
 A review decision, merge queue state, or issue link in GitHub's Development
-sidebar may be unknown. Other PR actions still need GraphQL.
+sidebar may be unknown. Where GitHub's Markdown preview is blocked too, publishing a local
+review checks each comment after GitHub stores it and takes back one that renders wrong,
+including a reviewer report that shows `\n` outside code; publish that review locally.
+Other PR actions still need GraphQL.
 
 The opt-in [DeepSeek reviewer](../settings.md#reviewlocal_review_agents) runs through
 Shaka's Ruby OpenRouter API adapter. It does not require native DeepSeek support in
