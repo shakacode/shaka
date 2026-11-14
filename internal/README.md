@@ -11,8 +11,7 @@ instructions or private company plans.
 - [Install locations and no-compatibility decision record](adr/0002-install-locations-and-no-compatibility.md) — accepted install defaults, worktree refusal, opt-in updates, and no backward compatibility before 1.0; not yet shipped.
 - [Configuration walkthrough decision record](adr/0003-configure-walkthrough.md) — accepted `configure` entry, settings and prompt reports from Ruby, and migration-flow settings PRs; not yet shipped.
 - [Per-machine reviewers decision record](adr/0005-per-machine-reviewers.md) — accepted quieting of reviewer setup warnings that selection never needs, and an optional per-machine reviewer list with model and effort; not yet shipped.
-- [Companion skill hooks decision record](adr/0007-companion-skill-hooks.md): proposed hook points where ShakaPerf, pstack, and AI Hero skills are used or suggested, plus repository and machine catalogs for other packs.
-- [PR retrospective decision record](adr/0008-retrospective-over-merged-prs.md): proposed PR record report beside `timings report`, a cross-PR retrospective, and an opt-in after-merge run.
+- [Companion skill points decision record](adr/0009-companion-skill-points.md) — proposed skill points in the procedures that already load conditionally, where ShakaPerf, pstack, and AI Hero skills are used or suggested once a maintainer turns the pack on.
 - [Experiment index](../eval/README.md) — retained repositories, outcomes, and the next proposed case.
 - [Review outcomes](review-outcomes.md) — proposed record of review decisions and later assessments, not shipped behavior.
 - [Improving Shaka](improving-shaka.md) — maintainer method for investigating observed workflow failures.
