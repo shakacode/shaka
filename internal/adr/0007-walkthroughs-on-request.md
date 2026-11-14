@@ -25,7 +25,7 @@ The last 40 merged PRs (#1114 to #1171, measured 2026-11-13) show:
   its **Why** section restate the description's Summary and Intent. The remaining
   sections retell the diff, mechanism by mechanism, with links.
 - **It costs upkeep.** Open issues #1148, #1175, and #1176 track walkthrough bookkeeping.
-  Open PR #1173 labels inline walkthrough comments.
+  #1173, merged during this design, added labels to inline walkthrough comments.
 
 Method: `gh pr list --state merged --limit 40` gave the PRs. For each one, the reviews API
 gave the reviews whose body contains `Code Walkthrough`. The review comments API gave the
@@ -99,7 +99,11 @@ so the old behavior stays available as a setting.
    The current exceptions stay:
    - the hold while the description lists decisions;
    - publication sooner when someone asks;
+   - the hold while an unsubmitted review is pending, since GitHub refuses a new
+     review beside it;
    - the checkpoint check's skip for blocked, failed, and opted-out results.
+
+   A request in a PR comment counts only from an author the `comments` command admits.
 
    When none of the three cases applies, `merge` does not require `--walkthrough`, and
    still verifies one if it is supplied. `handoff` and the checkpoint owe nothing. Reviewer notes are never owed, and the
@@ -166,8 +170,8 @@ so the old behavior stays available as a setting.
   The workflow's Explain and Finish passages say when a walkthrough is due, and its
   `merge` usage lines and Auto-merge instruction pass `--walkthrough` only then.
 - **Related open work.** #1148, #1175, and #1176 apply only when a walkthrough is
-  published, so they lose urgency but stay valid. #1173 labels inline comments and
-  still applies to reviewer notes. #421 can build on the description rather than the
+  published, so they lose urgency but stay valid. The labels #1173 added still apply
+  to reviewer notes. #421 can build on the description rather than the
   walkthrough.
 - **Expected size.** The implementation PR changes the setting, three gates, the links
   line, a notes-only rendering path, the workflow and enforcement text, the docs, and
