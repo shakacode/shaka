@@ -101,9 +101,11 @@ Three earlier pieces cover nearby ground:
   holds the loop open. The classes are fixed rules in
   [`review_prompt.rb`](../../skills/shaka/lib/shaka/review_prompt.rb), and the hosted prompt is
   in [`claude-code-review.yml`](../../skills/shaka/config/claude-code-review.yml). Shaka tested
-  its filter once. In the [hosted prompt comparison](hosted-review-prompt-comparison.md), the
-  strict prompt caught 0 of 21 missed bugs and the looser one caught 3. The strict prompt
-  stayed.
+  its filter once, after the fact. In the
+  [hosted prompt comparison](hosted-review-prompt-comparison.md), the strict prompt caught 0 of
+  21 missed bugs and the looser one caught 3. The looser prompt fell short of the preset bar of
+  5 more catches, and the strict one stayed. The study says that result doesn't clear the
+  strict prompt either.
 
 ### 3. Review that blocks the merge
 
@@ -139,7 +141,9 @@ Three earlier pieces cover nearby ground:
   [#1081](https://github.com/shakacode/shaka/pull/1081) made this rating Shaka's only risk
   scale.
 - **Shaka lacks:** a second classifier and any measure of rating quality. #1081 left measuring
-  ratings on live PRs out of scope. Shaka has no trusted-author list for review. Its
+  ratings on live PRs out of scope. [#975](https://github.com/shakacode/shaka/issues/975)
+  proposes measuring them and replaying past PRs to compare rating prompts. Shaka has no
+  trusted-author list for review. Its
   [trusted people](../workflow.md#trust-model) affect only whose input the agent reads.
 - **Evidence:** `merge` refuses a head rated above the limit or changing a high-risk file. The
   [risk rubric](../../skills/shaka/config/post-implementation-risk.md) tells the checkpoint
@@ -159,8 +163,8 @@ Three earlier pieces cover nearby ground:
 - **Shaka lacks:** a way for GitHub to tell the agent from you. The agent posts and merges
   with your account, marked only by its 🤖 identity line. After a conflict fix, `merge` no
   longer accepts the earlier review, and the head needs a new review or a waiver. The agent
-  alone decides whether the fix changed behavior, and carries
-  your approval forward when it judges that nothing changed. The post asks for a new approval
+  alone decides whether the fix changed behavior, and carries your approval forward when it
+  judges that nothing changed. The post asks for a new approval
   instead. Shaka sets no GitHub approval rule. Its own repository requires no approving
   review, and dismisses stale approvals when new commits arrive.
 - **Evidence:** `merge` refuses when GitHub's required review is unsatisfied, or when the head
@@ -205,6 +209,7 @@ Three earlier pieces cover nearby ground:
   [#640](https://github.com/shakacode/shaka/pull/640) shipped without a score against past
   misses. Hosted findings dropped, and [#1016](https://github.com/shakacode/shaka/pull/1016)
   counted the misses afterward. Shaka also keeps no list of reverted or incident-causing PRs.
+  #975 proposes replaying past PRs for the risk rating, not for code review.
 - **Evidence:** #640's tests cover only when the hosted review runs a short pass. No eval in
   the index reruns on its own.
 
@@ -275,7 +280,8 @@ None of these ideas has shipped:
 
 1. **Score reviewers against past misses before changing them.** Keep the 21 bugs from the
    hosted prompt comparison as a fixed set, and add each later miss. Rerun the set when a
-   review prompt or model changes. No issue tracks this.
+   review prompt or model changes. #975 covers only the risk rating; no issue covers code
+   review.
 2. **Run the diff-only re-review test.** The #1072 preregistration is priced and waits for
    approval.
 3. **Suggest the GitHub rules the post relies on.** Setup could offer required thread
@@ -299,4 +305,4 @@ None of these ideas has shipped:
   [enforcement map](../../skills/shaka/config/enforcement.yml), the review prompt and hosted
   review workflow linked above, and the studies linked above.
 - The "Protect main" ruleset of `shakacode/shaka`, read through the GitHub API on
-  2026-11-14.
+  2026-11-14 (UTC).
