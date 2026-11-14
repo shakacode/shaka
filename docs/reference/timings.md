@@ -117,6 +117,8 @@ adds a label when it stops for you and removes it when work resumes.
 - The ready time appears once a description update or a watch sees the gate green,
   so it can be missing until the description next updates. It stays missing when
   the configured CI review did not run, such as a review skipped for a small change.
+  A fork PR refresh can lose a previously displayed ready time when GitHub no
+  longer supplies enough check evidence to reconstruct it.
 - Every labeled wait counts, however short. A wait of a few seconds can be a
   quick reply or the agent relabeling the PR; the label history cannot tell them apart.
 - When a PR has waited many times, the table shows the latest 30 stretches. The

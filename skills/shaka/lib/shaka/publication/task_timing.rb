@@ -66,7 +66,7 @@ module Shaka
     def timestamp(value, now)
       return unless value.is_a?(String) && value.match?(/(?:Z|[+-]\d{2}:\d{2})\z/)
 
-      time = Time.iso8601(value).utc
+      time = Time.iso8601(value).utc.round(9)
       time if time <= now
     rescue ArgumentError
       nil

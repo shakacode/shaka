@@ -1,15 +1,17 @@
 # frozen_string_literal: true
 
-require_relative 'task_timing'
-require_relative 'throughput_stats'
+require_relative 'publication/task_timing'
+require_relative 'publication/throughput_stats'
 
 module Shaka
   # Inspect the managed body GitHub returned after its write, excluding human-authored text.
   module PublishedTiming
+    METRICS_START = /^#{Regexp.escape(UsageEstimate::MARKER)}\r?\n/
+
     module_function
 
     def check(body, head:, started:, lookup_note: nil, now: Time.now.utc)
-      region = Publishing.managed_region(body).to_s
+      region = Publishing.managed_region(body).to_s.split(METRICS_START, 2)[1].to_s
       state = ThroughputStats.read(region)
       issue = problem(state, body, head, started, now)
       return result('unverified', issue, lookup_note) if issue
@@ -38,7 +40,7 @@ module Shaka
     def summarize(state, metric, lookup_note)
       return result('unavailable', lookup_note, nil, metric) if lookup_note
       return result('pending', 'CI readiness time not recorded yet.', lookup_note, metric) if metric == 'ready pending'
-      return result('verified', nil, lookup_note, metric) unless metric.end_with?('UNKNOWN')
+      return result('matched', nil, lookup_note, metric) unless metric.end_with?('UNKNOWN')
 
       reason = if state['t0'].nil? || state['t0'] == 'UNKNOWN'
                  'Task start timestamp unavailable.'

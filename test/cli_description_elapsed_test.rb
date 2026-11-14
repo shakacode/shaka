@@ -2,7 +2,7 @@
 
 require_relative 'cli_description_decisions_test'
 require_relative 'publication_test'
-require 'shaka/publication/published_timing'
+require 'shaka/published_timing'
 
 # With no supplied start and no running watch, a description update still works out the time to ready.
 class CliDescriptionElapsedTest < Minitest::Test
@@ -32,7 +32,7 @@ class CliDescriptionElapsedTest < Minitest::Test
     @codex_start = { 'thread_id' => THREAD, 'turn_id' => TURN }
     body = published('PR_CHECKS' => JSON.generate(CHECKS), 'PR_HEAD_REPO' => 'fork/repo')
     assert_includes body, '· ready in 2h 29m'
-    assert_equal({ 'status' => 'verified', 'metric' => 'ready in 2h 29m' }, @timing)
+    assert_equal({ 'status' => 'matched', 'metric' => 'ready in 2h 29m' }, @timing)
     assert_includes body, '"task_started_at":"2026-10-18T06:00:00.750000000Z"'
     refute_includes body, THREAD
     refute_includes body, TURN
@@ -66,6 +66,15 @@ class CliDescriptionElapsedTest < Minitest::Test
                                           head: state['head'], started: Time.iso8601(state['t0']))
     assert_equal 'unverified', result['status']
     assert_equal 'Stored elapsed time does not match the timing record.', result['reason']
+  end
+
+  def test_an_example_before_the_metrics_does_not_change_the_verdict
+    body = published('PR_CHECKS' => JSON.generate(CHECKS))
+    state = Shaka::ThroughputStats.read(body)
+    example = "**Estimated token costs:** UNKNOWN · ready in 2h 0m\n"
+    body = body.sub('## Shaka metrics', "#{example}\n## Shaka metrics")
+    result = Shaka::PublishedTiming.check(body, head: state['head'], started: Time.iso8601(state['t0']))
+    assert_equal 'matched', result['status']
   end
 
   def description_content
