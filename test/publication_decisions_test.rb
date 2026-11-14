@@ -58,7 +58,7 @@ class PublicationDecisionsTest < Minitest::Test
     refute_includes rendered, 'Code Walkthrough'
   end
 
-  # The request text is what tells merge and handoff that a walkthrough is due.
+  # The request text is for readers only; the gates read this account's walkthrough-request comment.
   def test_a_requested_walkthrough_says_so
     rendered = render('walkthrough' => 'requested')
 
