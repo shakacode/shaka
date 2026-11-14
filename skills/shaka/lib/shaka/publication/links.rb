@@ -25,8 +25,10 @@ module Shaka
     # Open decisions come first while they last, even over a Merge checkpoint, and take the label's place.
     # The head check keeps a stale recommendation off the page, so the text need not name the commit.
     # settings is the PublicationSettings whose walkthrough.publish decides whether the walkthrough has a slot.
+    # A rendering preview loads these renderers beside an installed settings object that may predate it.
     def lead(content, pull, decisions, settings = nil)
-      links = links(content, pull, deciding: decisions.any?, publish: settings&.walkthrough_publish)
+      publish = settings.walkthrough_publish if settings.respond_to?(:walkthrough_publish)
+      links = links(content, pull, deciding: decisions.any?, publish:)
       return [*decisions, links] unless content.key?('checkpoint')
 
       checkpoint = current_checkpoint(content['checkpoint'], pull)

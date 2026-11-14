@@ -58,6 +58,13 @@ class PublicationDecisionsTest < Minitest::Test
     refute_includes rendered, 'Code Walkthrough'
   end
 
+  # A rendering preview pairs these renderers with an installed settings object that predates the setting.
+  def test_links_render_beside_settings_without_the_walkthrough_setting
+    lead = Shaka::PublicationLinks.lead({ 'deployment' => 'none' }, nil, [], Object.new)
+
+    assert_equal ['Checkpoint: _Not published yet._'], lead
+  end
+
   # The request text is for readers only; the gates read this account's walkthrough-request comment.
   def test_a_requested_walkthrough_says_so
     rendered = render('walkthrough' => 'requested')
