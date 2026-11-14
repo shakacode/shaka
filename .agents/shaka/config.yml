@@ -33,7 +33,9 @@ review:
   # Ours: reviewers from other providers first, in this order.
   local_review_agents:
     - provider: anthropic
-      model_family: claude # No model or effort: use the Claude CLI's defaults.
+      model_family: claude
+      # Ours: Sonnet 5.5, because `claude -p` otherwise runs Haiku 5.5 and weakens the required Anthropic review.
+      model: claude-sonnet-5-5 # Default: the Claude CLI's default model. No effort: the CLI's default.
       # replacement_prompt_file: .agents/shaka/review-prompt-claude.md # Default: review.replacement_prompt_file.
     - provider: openai
       model_family: codex
