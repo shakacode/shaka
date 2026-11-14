@@ -3,14 +3,17 @@
 require_relative 'publication_test'
 
 class PublicationDecisionsTest < Minitest::Test
-  def render(**changes)
+  # A repository that publishes a walkthrough on every PR keeps its slot on the links line.
+  ALWAYS = Shaka::PublicationSettings.new(config: Struct.new(:walkthrough).new({ 'publish' => 'always' }))
+
+  def render(settings = nil, **changes)
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
         'steps_besides_merging' => 'none',
         'intent' => INTENT, 'verification' => VERIFICATION,
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
-        'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }.merge(changes)
+        'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }.merge(changes), nil, nil, settings
     )
   end
 
@@ -33,7 +36,7 @@ class PublicationDecisionsTest < Minitest::Test
   end
 
   def test_open_decisions_explain_the_pending_checkpoint_without_a_circular_link
-    rendered = render('decisions' => ['Keep the label?'], 'walkthrough' => nil)
+    rendered = render(ALWAYS, 'decisions' => ['Keep the label?'], 'walkthrough' => nil)
 
     assert_includes rendered, "\n\nCode Walkthrough: _After the decisions._ · " \
                               "Checkpoint: _Not published yet._\n\n## Summary"
@@ -41,10 +44,25 @@ class PublicationDecisionsTest < Minitest::Test
   end
 
   def test_without_decisions_the_links_still_say_not_published
-    rendered = render('decisions' => [], 'walkthrough' => nil)
+    rendered = render(ALWAYS, 'decisions' => [], 'walkthrough' => nil)
 
     assert_includes rendered, "\n\n_Not published yet._ · Checkpoint: _Not published yet._\n\n## Summary"
     refute_includes rendered, 'After the decisions'
+  end
+
+  # By default a walkthrough comes only on request, so an unrequested one leaves no placeholder behind.
+  def test_an_unrequested_walkthrough_leaves_no_slot_by_default
+    rendered = render('decisions' => ['Keep the label?'], 'walkthrough' => nil)
+
+    assert_includes rendered, "\n\nCheckpoint: _Not published yet._\n\n## Summary"
+    refute_includes rendered, 'Code Walkthrough'
+  end
+
+  # The request text is what tells merge and handoff that a walkthrough is due.
+  def test_a_requested_walkthrough_says_so
+    rendered = render('walkthrough' => 'requested')
+
+    assert_includes rendered, "\n\n#{Shaka::WalkthroughDue::REQUESTED} · Checkpoint: _Not published yet._\n\n"
   end
 
   # A walkthrough someone asked for early, or a published checkpoint, is evidence the reader can open.

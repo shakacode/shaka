@@ -10,6 +10,7 @@ require_relative 'merge_wait_review'
 require_relative 'merge_required_checks'
 require_relative 'merge_limits'
 require_relative 'auto_merged_label'
+require_relative 'merge_walkthrough'
 
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
@@ -21,6 +22,8 @@ module Shaka
     # that stops a merge, whether the agent merges under Auto, where every head check must pass
     # and the merge is labeled, and the MergeBaseFailures Auto may merge past.
     attr_writer :empty_checks_confirmed_head, :risk_gate, :hold, :auto, :base_failures
+    # The WalkthroughDue that says whether this PR owes a walkthrough when none is named.
+    attr_writer :walkthrough_due
 
     # `review` takes MergeReviewEvidence's technical settings and final product checkpoint.
     def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
@@ -32,7 +35,7 @@ module Shaka
     end
 
     # `squash_message` is a SquashMessage, or nil for the repository's squash default.
-    def call(head:, base:, walkthrough:, limits: MergeLimits.new, squash_message: nil)
+    def call(head:, base:, walkthrough: nil, limits: MergeLimits.new, squash_message: nil)
       @target = MergeTarget.required!(head, base, limits, @risk_gate, @hold)
       @submission.message = squash_message
       @head = head
@@ -63,7 +66,7 @@ module Shaka
     # The walkthrough explains the change; the attestation records that a separate review ran.
     # GitHub cannot catch a seam check that fails while these are read, so it is read again.
     def verify_reviews(head, base, walkthrough, gate)
-      verify_walkthrough(@github.review(walkthrough), head, walkthrough)
+      MergeWalkthrough.new(@github, @walkthrough_due).verify!(walkthrough, head)
       evidence = { 'review_evidence' => @review_evidence.call(head, base:) }
       verify_gate if gate['source'] == 'seam'
       evidence
@@ -139,15 +142,6 @@ module Shaka
       return if pull.key?('reviewDecision') && [nil, 'APPROVED'].include?(pull['reviewDecision'])
 
       raise Error, 'Required reviews are not satisfied or their state is unknown'
-    end
-
-    def verify_walkthrough(review, head, id)
-      unless review.is_a?(Hash) && review['id'].to_s == id.to_s && review['commit_id'] == head
-        raise Error, 'Walkthrough must identify a review on this PR at the expected head'
-      end
-      return if review['state'] == 'COMMENTED' && review['body'].is_a?(String) && !review['body'].strip.empty?
-
-      raise Error, 'Walkthrough must be a submitted COMMENT review with a nonempty body'
     end
   end
 end

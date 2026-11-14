@@ -109,10 +109,12 @@ rules:
       disable it. The agent compares the result and maintenance cost with the original task.
   - id: checkpoint-after-walkthrough
     phase: finish
-    quote: A ready checkpoint must follow this head's walkthrough.
+    quote: A ready checkpoint must follow this head's walkthrough when one is due.
     enforced_by: code
     detector: >-
-      `PostImplementation#ready_message` refuses a ready publication unless this account's
+      `PostImplementation#ready_message` asks `WalkthroughDue` whether a walkthrough is due: the trusted
+      `walkthrough.publish` is `always`, the description's managed region records a request, or this
+      account already published one. When one is due, it refuses a ready publication unless this account's
       current walkthrough review is bound to the checkpoint's head. Blocked, failed, and
       opted-out results skip the check. It compares heads, not times: a walkthrough
       published again for the same head lands below the checkpoint.
@@ -458,8 +460,8 @@ rules:
     quote: Do not bury that URL in the opening paragraph.
     enforced_by: agent
     note: >-
-      `PublicationLinks.links` always renders the Code Walkthrough link above the summary, so
-      the link has a home. Nothing stops a summary from repeating the URL as prose.
+      `PublicationLinks.links` renders the Code Walkthrough link above the summary whenever a URL or
+      request is supplied, so the link has a home. Nothing stops a summary from repeating the URL as prose.
   - id: excluded-comment-bodies
     phase: explain
     quote: Never fetch excluded bodies through raw `gh`
@@ -505,6 +507,16 @@ rules:
     note: >-
       A trusted author is still not an instruction. `comments` decides whose prose is admitted
       and never what it means, so nothing catches an agent that acts on an admitted comment.
+  - id: walkthrough-request-recorded
+    phase: explain
+    quote: >-
+      On a request, publish `description` with `walkthrough` set to `requested`
+      before other PR work
+    enforced_by: agent
+    note: >-
+      Ruby reads the recorded request: `WalkthroughDue` finds the rendered `Requested` text in the
+      description's managed region, and `merge`, `handoff`, and the ready checkpoint then require a
+      walkthrough. Nothing detects a request made in chat or a PR comment that the agent never records.
   - id: walkthrough-length
     phase: explain
     quote: length comes from the change, never from the writer
@@ -687,6 +699,8 @@ rules:
       labeling), or without this account's checkpoint and, unless the base has a merge queue, squash message for
       the live head, or has a walkthrough
       for an older head (unless its description lists decisions and it is not awaiting merge approval),
+      or awaits merge approval with no walkthrough while one is due (`walkthrough.publish: always` or a
+      request recorded in the description),
       or WIP Details for an older head. Nothing runs it when a turn ends unless the host wires it into a
       stop hook.
   - id: required-checks

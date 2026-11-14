@@ -31,15 +31,34 @@ class EvaluationCheckpointMessageTest < Minitest::Test
     end
   end
 
-  def test_ready_checkpoint_waits_for_the_walkthrough_of_its_head
+  # A walkthrough is due once this account published one, or once the description records a request.
+  def test_ready_checkpoint_waits_for_the_walkthrough_this_account_already_started
+    assert_refused_ready { |github| github.walkthrough = 'b' * 40 }
+  end
+
+  def test_ready_checkpoint_waits_for_a_requested_walkthrough
+    assert_refused_ready do |github|
+      github.walkthrough = nil
+      github.description_body = github.description_body.sub('Feature summary', Shaka::WalkthroughDue::REQUESTED)
+    end
+  end
+
+  def assert_refused_ready
     with_result do |result, path|
       result['disposition'] = disposition('Merge')
-      [nil, 'b' * 40].each do |walkthrough|
-        github = PostImplementationPublicationFixture::GitHub.new('a' * 40)
-        github.walkthrough = walkthrough
-        assert_equal 1, publish(result, path, github:)[1]
-        assert_empty github.bodies
-      end
+      github = PostImplementationPublicationFixture::GitHub.new('a' * 40)
+      yield github
+      assert_equal 1, publish(result, path, github:)[1]
+      assert_empty github.bodies
+    end
+  end
+
+  def test_ready_checkpoint_needs_no_walkthrough_nobody_asked_for
+    with_result do |result, path|
+      result['disposition'] = disposition('Merge')
+      github = PostImplementationPublicationFixture::GitHub.new('a' * 40)
+      github.walkthrough = nil
+      assert_equal 0, publish(result, path, github:)[1]
     end
   end
 

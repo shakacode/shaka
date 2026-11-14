@@ -66,6 +66,7 @@ module Shaka
       *%w[show_shaka_credit show_human_comments max_human_comments
           ignored_human_comments].map { |key| description(key) },
       setting('pr_description.time_zone') { |context| TimeZone.renderable(context.config.time_zone) },
+      setting('walkthrough.publish') { |context| context.config.walkthrough['publish'] },
       setting('wip.include_checkout_path') do |context|
         context.config.wip['include_checkout_path']
       end,

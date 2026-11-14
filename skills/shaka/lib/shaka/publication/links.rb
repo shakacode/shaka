@@ -6,6 +6,7 @@ require_relative '../post_implementation_report'
 require_relative 'text'
 require_relative '../publication_sections'
 require_relative 'risk_review'
+require_relative 'walkthrough_link'
 
 module Shaka
   # Renders the links a reader needs before any description section.
@@ -15,6 +16,7 @@ module Shaka
     REVIEW_URL = POST_IMPLEMENTATION_URL
     UNPUBLISHED = '_Not published yet._'
     AFTER_DECISIONS = 'Code Walkthrough: _After the decisions._'
+    REQUESTED = 'Code Walkthrough: _Requested._'
     CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
 
     module_function
@@ -22,8 +24,9 @@ module Shaka
     # The first line is the decision a maintainer acts on, beside the evidence links that support it.
     # Open decisions come first while they last, even over a Merge checkpoint, and take the label's place.
     # The head check keeps a stale recommendation off the page, so the text need not name the commit.
-    def lead(content, pull, decisions)
-      links = links(content, pull, deciding: decisions.any?)
+    # settings is the PublicationSettings whose walkthrough.publish decides whether the walkthrough has a slot.
+    def lead(content, pull, decisions, settings = nil)
+      links = links(content, pull, deciding: decisions.any?, publish: settings&.walkthrough_publish)
       return [*decisions, links] unless content.key?('checkpoint')
 
       checkpoint = current_checkpoint(content['checkpoint'], pull)
@@ -72,8 +75,9 @@ module Shaka
 
     # Keep both review surfaces together before an optional deployment preview.
     # Open decisions explain why unpublished evidence is pending, without linking back to the same question.
-    def links(content, pull, deciding: false)
-      reviews = [walkthrough(content['walkthrough'], deciding:), review(content['review']),
+    # Without a publish setting the walkthrough is on request, the packaged default.
+    def links(content, pull, deciding: false, publish: nil)
+      reviews = [WalkthroughLink.call(content['walkthrough'], deciding:, publish:), review(content['review']),
                  post_implementation(content['post_implementation'])].compact.join(' · ')
       preview = deployment(content['deployment']) ||
                 deployment_not_found(content['deployment_not_found_for'], pull&.dig('head', 'sha'))
@@ -140,19 +144,6 @@ module Shaka
 
       commit = repository ? PublicationText.commit(head, repository) : "`#{head}`"
       "_Walkthrough for commit #{commit}. This is a COMMENT, not an approval._"
-    end
-
-    def walkthrough(url, deciding:)
-      if url.nil? || (url.is_a?(String) && url.strip.empty?)
-        return deciding ? AFTER_DECISIONS : UNPUBLISHED
-      end
-
-      url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'walkthrough')
-      unless url.match?(WALKTHROUGH_URL)
-        raise Error, 'Publication walkthrough must be a GitHub pull request review URL.'
-      end
-
-      "[Code Walkthrough](#{url})"
     end
   end
 end

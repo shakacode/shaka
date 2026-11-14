@@ -9,7 +9,7 @@ process needs through it.
 
 | Decision | Owner | Evidence |
 | --- | --- | --- |
-| Merge the change | Shaka prepares it; you or your merge setting decide. | Current-commit tests, review, walkthrough, and unresolved concerns. |
+| Merge the change | Shaka prepares it; you or your merge setting decide. | Current-commit tests, review, any due walkthrough, and unresolved concerns. |
 | Promote the release | Your project | The exact release range, current staging results, migration and dependency checks, and approval. |
 | Close the observation window | Your project | Fresh post-deployment observations, responder handoff, and any recovery verification. |
 

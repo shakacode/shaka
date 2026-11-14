@@ -5,6 +5,7 @@ require_relative '../pending_review'
 require_relative '../public_comments/bounded_list'
 require_relative '../publication/publishing'
 require_relative '../walkthrough/history'
+require_relative '../repository_config/walkthrough_schema'
 
 module Shaka
   # Adds the walkthrough fact to the handoff report.
@@ -47,9 +48,12 @@ module Shaka
     module WalkthroughFact
       private
 
+      # Without one, a walkthrough is owed only when the repository publishes one on every PR or the
+      # description records a request; an earlier walkthrough makes every later head owe one too.
       def walkthrough_fact(live)
         revision = walkthrough_reader.revision
         unless revision
+          return unless walkthrough_requested?
           return owe('no walkthrough', 'Publish a walkthrough before asking for merge.') if merge_requested?
 
           return note('no walkthrough', 'No walkthrough yet; one is required before merge.')
@@ -75,6 +79,10 @@ module Shaka
 
       def walkthrough_reader = @walkthrough_reader ||= Walkthrough.new(@github)
 
+      def walkthrough_requested?
+        WalkthroughDue.new(@github, publish: @walkthrough_publish, reader: walkthrough_reader).due?
+      end
+
       # The unsubmitted review is visible only to its author, so the PR waits on that person's answer
       # even when something would wake the agent.
       def pending_review_fact
@@ -90,3 +98,5 @@ module Shaka
     include WalkthroughFact
   end
 end
+
+require_relative '../walkthrough/due'

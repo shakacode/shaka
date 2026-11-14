@@ -10,6 +10,7 @@ require_relative 'post_implementation/auto_merge_preview'
 require_relative 'trusted_config_source'
 require_relative 'github'
 require_relative 'handoff/walkthrough'
+require_relative 'walkthrough/due'
 require_relative 'merge_queue_commit'
 require_relative 'publication/checkpoint_recommendation'
 require_relative 'publication/squash_message'
@@ -106,11 +107,11 @@ module Shaka
       { 'state' => 'failed', 'reason' => e.message, 'head' => head }
     end
 
-    # A ready checkpoint closes the PR's reports, so the walkthrough it follows has to be there already,
+    # A ready checkpoint closes the PR's reports, so a due walkthrough it follows has to be there already,
     # and no question can still be open beside it.
     # A merge queue takes no message, so its checkpoint says what the queue writes instead.
     def ready_message(github, head, pull)
-      unless Handoff::Walkthrough.new(github).revision == head
+      if WalkthroughDue.new(github, publish: RepositoryConfig::WalkthroughSchema.publish(trusted_seam)).missing_for?(head)
         raise Error, "Ready checkpoint follows this account's walkthrough for #{head}; publish the walkthrough first."
       end
 

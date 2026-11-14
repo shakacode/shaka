@@ -8,7 +8,7 @@ Shaka supplies the process; your repository supplies the commands and constraint
 | Plan | Assess value, scope, risk, model, and effort |
 | Implement | Reproduce bugs or test new behavior, make the change, and update any text that still describes the old behavior |
 | Verify | Run local checks, review independently, and fix findings |
-| Explain | Publish the PR, walkthrough, evidence, and usage |
+| Explain | Publish the PR, evidence, usage, and a walkthrough when one is due |
 | Review | Handle GitHub review findings and required checks |
 | Finish | Merge when authorized, or return the reviewed PR for your merge |
 

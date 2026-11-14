@@ -33,8 +33,10 @@ module Shaka
     # A Stop hook or script can refuse to end the turn on this status without parsing the report.
     def self.exit_status(result) = result.fetch('owed').empty? ? 0 : OWED_EXIT
 
-    def initialize(github, seam_required_checks: nil, post_implementation: nil, review: nil)
+    # walkthrough_publish is the repository's walkthrough.publish, which decides whether a missing walkthrough is owed.
+    def initialize(github, seam_required_checks: nil, post_implementation: nil, review: nil, walkthrough_publish: nil)
       @github = github
+      @walkthrough_publish = walkthrough_publish || RepositoryConfig::WalkthroughSchema.publish(nil)
       @status = Status.new(github, seam_required_checks:)
       @checkpoint = PostImplementationEvidence.new(github, **post_implementation) if post_implementation
       @review = MergeWaitReview.new(github, **review) if review

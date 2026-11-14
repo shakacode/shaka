@@ -127,6 +127,9 @@ module Shaka
     end
 
     # Only resolved settings can establish whether the repository opted out.
+    # When the repository publishes a code walkthrough, which decides whether the links line holds its slot.
+    def walkthrough_publish = RepositoryConfig::WalkthroughSchema.publish(@config)
+
     def attribution? = @current&.fetch('pr_description.show_shaka_credit', false) == true
 
     # An unread setting leaves the list on: the agent passed a comment read for it, and leaving

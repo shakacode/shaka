@@ -50,6 +50,9 @@ merge:
 branches:
   name: '{login}-{host}/{issue}-{description}' # Feature branch-name template.
 
+walkthrough:
+  publish: on_request # Publish a full code walkthrough only when someone asks; always publishes one on every PR.
+
 wip:
   include_checkout_path: true # Publish the checkout path in WIP Details.
 

@@ -65,6 +65,7 @@ require_relative '../lib/shaka/usage/publisher_attribution'
 require_relative '../lib/shaka/usage/cursor_usage_refresh'
 require_relative '../lib/shaka/walkthrough/code_links'
 require_relative '../lib/shaka/walkthrough/notes'
+require_relative '../lib/shaka/walkthrough/due'
 require_relative '../lib/shaka/trial/command'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
@@ -408,6 +409,7 @@ begin
 
   checkpoint = { enabled: !seam&.sha || seam.review.dig('post_implementation', 'enabled') != false }
   merge_wait = { required: (seam.review['required'] if seam&.sha), root: options[:root] || Dir.pwd }
+  walkthrough_publish = Shaka::RepositoryConfig::WalkthroughSchema.publish(seam)
   if %w[merge squash-message].include?(command)
     head = options.fetch(:head)
     Shaka::PostImplementationEvidence.new(github, **checkpoint).call(head)
@@ -485,9 +487,10 @@ begin
              merge.auto = options[:auto]
              merge.base_failures = options[:base_failures] &&
                                    Shaka::MergeBaseFailures.new(github, options[:base_failures])
+             merge.walkthrough_due = Shaka::WalkthroughDue.new(github, publish: walkthrough_publish)
              merge.risk_gate = auto_merge_gate(seam, review.fetch(:checkpoint), options[:confirmed_head])
              merge.hold = Shaka::MergeHold.from(seam)
-             merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
+             merge.call(head:, base: options.fetch(:base), walkthrough: options[:walkthrough],
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention'
              state = options.fetch(:state)
@@ -503,7 +506,8 @@ begin
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))
              github.squash_comment(head: options.fetch(:head), message:)
            when 'handoff'
-             Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint, review: merge_wait)
+             Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint, review: merge_wait,
+                                        walkthrough_publish:)
                            .tap { |handoff| handoff.hold = Shaka::MergeHold.from(seam) }
                            .call(head: options[:head], woken_by: options[:woken_by])
            end

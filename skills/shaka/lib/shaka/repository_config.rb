@@ -12,6 +12,7 @@ require_relative 'configuration/layout'
 require_relative 'configuration/personal_settings'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
+require_relative 'repository_config/walkthrough_schema'
 require_relative 'repository_config/prompt_files'
 
 module Shaka
@@ -21,7 +22,7 @@ module Shaka
     DEFAULT_PR_DESCRIPTION = Defaults.fetch('pr_description').except('opening_check').freeze
 
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
-    attr_reader :base_branch, :commands, :review, :merge, :wip, :pr_description,
+    attr_reader :base_branch, :commands, :review, :merge, :wip, :walkthrough, :pr_description,
                 :opening_check, :prose_limits, :project_guidance, :sha, :config_path
 
     def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil, candidate_commands: true,
@@ -73,6 +74,7 @@ module Shaka
     # Callers read this as the effective contract, so defaults belong in it.
     def to_h
       @data.merge('commands' => commands, 'review' => review, 'merge' => merge, 'wip' => wip,
+                  'walkthrough' => walkthrough,
                   'paths' => { 'policy_configuration' => config_path,
                                'candidate_configuration' => @candidate_detected&.contract,
                                'trusted_command_directory' => Configuration::Paths::COMMAND_DIRECTORY,
@@ -124,6 +126,7 @@ module Shaka
                  'hold_labels' => MergeHold::DEFAULT }
                .merge(merge, 'limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = WipSchema.resolve(@data.fetch('wip', {}))
+      @walkthrough = WalkthroughSchema.resolve(@data.fetch('walkthrough', {}))
       assign_presentation
     end
 

@@ -378,7 +378,9 @@ Use these questions to place detail:
 - Would a later reader need it from the merged PR alone? Keep it in the description.
 
 A rollback may need an operational summary in the description and code-level
-reasoning in the walkthrough. File paths alone do not decide placement.
+reasoning in the walkthrough. File paths alone do not decide placement. When no
+walkthrough is due, the description's `review_focus` names the spots that need a
+closer read and why, and its `details` holds the rollback.
 
 ### How a walkthrough is ordered
 

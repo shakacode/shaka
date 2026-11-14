@@ -62,7 +62,7 @@ module SeamInitializerTestHelpers
     config = JSON.parse(output)
     assert_equal %w[main ask], [config.fetch('base_branch'), config.dig('merge', 'preference')]
     assert_equal %w[base_branch branches commands merge opening_check paths pr_description
-                    prose_limits review version wip], config.keys.sort
+                    prose_limits review version walkthrough wip], config.keys.sort
     assert_equal(GENERATED_MERGE, config.fetch('merge'))
     assert_includes File.read(File.join(root, CONTRACT)), GENERATED_MARKER
     wrapper_files(root).each { |path| assert_generated_wrapper(path) }

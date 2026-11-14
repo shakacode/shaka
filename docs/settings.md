@@ -1421,6 +1421,40 @@ zone never stops a PR update. `shaka configure settings`
 reports the zone that applies, so you can check a new value. Only the display changes:
 Shaka still stores UTC, and other commands' timestamps stay in UTC.
 
+## `walkthrough.publish`
+
+**Optional. Default: `on_request`.**
+
+Choose whether every PR gets a code walkthrough, the guided tour of the change that the
+agent publishes as a review comment.
+
+```yaml
+walkthrough:
+  publish: always
+```
+
+- **`on_request`**: a PR gets a walkthrough only when someone asks for one, in the task,
+  in the chat, or on the PR. The agent records the request on the PR description, and from
+  then on the PR needs a current walkthrough before it merges. Otherwise reviewers read the
+  description's intent and verification, and the files it marks for close reading.
+- **`always`**: every PR gets a walkthrough before it merges, as before this setting existed.
+  `merge` refuses a PR without one for its current commit.
+
+Either way, once a PR has a walkthrough, each new commit needs a new one, because an
+explanation of an older commit can mislead. `merge` accepts only the walkthrough your own
+account published for the current commit.
+
+Choose `always` when reviewers read code they did not write, such as a team reviewing each
+other's changes. When the person reviewing is the person who asked for the work, and mostly
+checks what changed and how it was verified, the default saves the agent from writing a
+tour that nobody reads.
+
+A [walkthrough guide](#project_guidance) applies only when a walkthrough is published. If
+you rely on one, set `always` so every PR still gets a walkthrough that covers it.
+
+The packaged default changed from a walkthrough on every PR to `on_request` on 2026-11-14.
+Set `always` to keep the earlier behavior.
+
 ## `wip.include_checkout_path`
 
 **Optional. Default: `true`.**

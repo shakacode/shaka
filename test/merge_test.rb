@@ -73,12 +73,19 @@ module MergeFixtures
     @client.snapshots = [snapshot]
     @client.checks = [{ 'name' => 'Validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
     @client.comments = [attestation_comment]
-    @client.review_result = { 'id' => 17, 'commit_id' => HEAD, 'state' => 'COMMENTED', 'body' => 'Walkthrough' }
+    @client.review_result = walkthrough_review
     @client.mutation_result = { 'mergePullRequest' => { 'pullRequest' => {
       'headRefOid' => HEAD, 'baseRefName' => BASE, 'state' => 'MERGED', 'merged' => true,
       'mergeCommit' => { 'oid' => 'b' * 40 }
     } } }
     @merge = Shaka::Merge.new(@client)
+  end
+
+  # The rendered walkthrough the merging account published for HEAD.
+  def walkthrough_review(head: HEAD, login: 'shaka-agent')
+    body = "🤖 Claude Code · Anthropic · model · high\n\n# Code Walkthrough\n\nTour.\n\n" \
+           "_Walkthrough for commit `#{head}`. This is a COMMENT, not an approval._"
+    { 'id' => 17, 'commit_id' => HEAD, 'state' => 'COMMENTED', 'body' => body, 'user' => { 'login' => login } }
   end
 
   def attestation_comment
@@ -374,10 +381,33 @@ class MergeWalkthroughTest < Minitest::Test
 
   def test_pending_approving_or_blank_reviews_do_not_count_as_walkthroughs
     [{ 'state' => 'PENDING' }, { 'state' => 'APPROVED' }, { 'body' => '  ' }, { 'body' => nil }].each do |changes|
-      @client.review_result = { 'id' => 17, 'commit_id' => HEAD, 'state' => 'COMMENTED',
-                                'body' => 'Tour' }.merge(changes)
-      assert_blocked(/submitted COMMENT review/)
+      @client.review_result = walkthrough_review.merge(changes)
+      assert_blocked(/submitted walkthrough/)
     end
+  end
+
+  # Reviewer notes and other accounts' comments are COMMENT reviews too, so neither may stand in for it.
+  def test_only_this_accounts_walkthrough_for_the_head_counts
+    [walkthrough_review(login: 'someone-else'), walkthrough_review.merge('body' => 'Reviewer notes for this commit.'),
+     walkthrough_review(head: 'c' * 40)].each do |review|
+      @client.review_result = review
+      assert_blocked(/submitted walkthrough for the expected head/)
+    end
+  end
+
+  def test_merges_without_a_walkthrough_when_none_is_due
+    @merge.walkthrough_due = Struct.new(:due?).new(false)
+
+    assert_predicate @merge.call(head: HEAD, base: BASE, walkthrough: nil), :any?
+    assert_nil @client.requested_review
+  end
+
+  def test_a_due_walkthrough_must_be_named
+    @merge.walkthrough_due = Struct.new(:due?).new(true)
+
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: nil) }
+    assert_match(/walkthrough is due/, error.message)
+    assert_empty @client.mutations
   end
 end
 

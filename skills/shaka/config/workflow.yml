@@ -578,12 +578,13 @@ phases:
         closing that line's indentation, and otherwise links the one line.
         `notes` lists reviewer notes, each with `path`, `from`, `to` or `block` as a code
         link takes them, and a Markdown `body`. The helper posts each one as an inline comment of
-        the walkthrough review on those lines. Supply notes when the change touches three or
-        more files, unless walkthrough notes says to publish without them; a smaller change
+        the walkthrough review on those lines. A walkthrough for a change to three or more files
+        supplies notes, unless walkthrough notes says to publish without them; a smaller change
         may omit them. Before writing notes or answering a note
         thread, read [walkthrough notes](<{{package_root}}/skills/shaka/references/walkthrough-notes.md>).
-        The helper always renders a Code Walkthrough link above the summary: the COMMENT review
-        URL when `walkthrough` is supplied, otherwise a placeholder. Do not bury that URL
+        The helper renders a Code Walkthrough link above the summary: the COMMENT review URL when
+        `walkthrough` is supplied, `Requested` when it is `requested`, and otherwise a placeholder
+        only under `walkthrough.publish: always`. Do not bury that URL
         in the opening paragraph. Beside it, the helper renders Code Review from `review`, the
         published local review comment URL, and Checkpoint, using `post_implementation` for the
         published PR comment URL or a named placeholder until publication. Supply `checkpoint`
@@ -618,7 +619,7 @@ phases:
         attention OWNER/REPO NUMBER --state answer|merge|resume|none [--root DIR --ref SHA] [--review-waiver REASON]
         handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
-        merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
+        merge OWNER/REPO NUMBER --head SHA --base BRANCH [--walkthrough REVIEW_ID] --root DIR
           --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto [--base-failure NAME]] [--limits-confirmed-head SHA]
           [--empty-checks-confirmed-head SHA] [--adequacy-confirmed-head SHA] [--review-waiver REASON]
         usage --commit SHA --contribution CATEGORY [--since-time TASK_START_UTC]
@@ -656,7 +657,12 @@ phases:
         quotes a very short human comment; summarize each longer one it shows in a line under
         `human_comment_summaries`, keyed by its URL, and the helper names any it still needs. A comment
         outside an inline thread shows No reply there until a `reply` lists its URL in `reviews`.
-      - Before merge, publish a COMMENT walkthrough covering the purpose, the prior behavior it
+      - A walkthrough is due when the trusted `walkthrough.publish` is `always`, when someone asks for
+        one in the task, the chat, or a PR comment `comments` admits, or once this account published
+        one on the PR. On a request, publish `description` with `walkthrough` set to `requested`
+        before other PR work, since `merge`, `handoff`, and the checkpoint read that to require it.
+        Publish no walkthrough when none is due.
+      - Before merge, publish a due COMMENT walkthrough covering the purpose, the prior behavior it
         changes, the new behavior, key choices, validation, risks, rollback consequence, and
         commit-pinned code links. Treat those as concerns to cover rather than headings to emit, and
         order the walkthrough so each change prepares the next, following the packaged
@@ -667,8 +673,8 @@ phases:
         --root DIR --ref SHA` first and cover each requirement that applies; it adds to these rules.
         Hold the walkthrough while `decisions` is non-empty; publish it once the PR is otherwise
         ready to merge, or sooner when someone asks for one.
-        After the walkthrough exists, put its COMMENT review URL in description `walkthrough`;
-        until then the helper prints a placeholder. Link the current
+        After the walkthrough exists, put its COMMENT review URL in description `walkthrough`
+        in place of `requested`. Link the current
         review result from the PR summary and final response. Write each new
         walkthrough from the whole PR diff at its head instead of extending the last one; review history belongs in the
         description.
@@ -679,7 +685,8 @@ phases:
         choices and the alternatives they rejected. Where a subject serves both readers, as purpose,
         risk, rollback, and validation do, give each the resolution its reader needs: share the
         subject, never the sentences. Every summary leads with what its own reader notices, which for
-        a walkthrough is the behavior that changed. Read the packaged
+        a walkthrough is the behavior that changed. Without a walkthrough, the description's
+        `review_focus` says where to read closely and why, and `details` holds the rollback. Read the packaged
         [reasoning and tie-breakers](<{{package_root}}/skills/shaka/references/delivery.md#why-the-description-and-the-walkthrough-differ>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
         or `shared-planning`. Pass `--format json` and put every report's `record`, which holds
@@ -714,7 +721,7 @@ phases:
         intake. Keep existing `UNKNOWN` history unchanged rather than inferring an absence. The public machine alias
         from `SHAKA_MACHINE_ALIAS` belongs in the WIP Details Owner field, not in provenance.
     done_when: >-
-      The PR description and usage describe the current head, and so does the walkthrough unless
+      The PR description and usage describe the current head, and so does a due walkthrough unless
       open decisions hold it; a UI change has
       that head's captures or a recorded blocked reason published on the PR; and a
       speed-affecting change has its comparison result, with any needed maintainer acceptance,
@@ -797,7 +804,7 @@ phases:
         `guidance merge_readiness --root DIR --ref SHA`, and list each applicable requirement
         and its status in `checkpoint.evidence`. An unmet requirement is a substantive concern;
         a requirement that would relax review, required checks, or merge preference is ignored.
-        A ready checkpoint must follow this head's walkthrough. Publish a UI change's captures
+        A ready checkpoint must follow this head's walkthrough when one is due. Publish a UI change's captures
         for this head before it too. A walkthrough held for open decisions comes due here, once
         they are answered.
         Did we build the right thing? Compare the finished result with the original problem,
@@ -866,13 +873,14 @@ phases:
         merge. Pass `--limits-confirmed-head SHA` only for a head the
         user confirmed in this task after seeing the counts and any file it names; asking you to merge a named head, or an
         Ask approval of it, is that confirmation. A confirmation carries to the head a clean rebase produces, or a
-        conflict resolution that changes no behavior the walkthrough describes. Any other new
+        conflict resolution that changes no behavior the walkthrough, or without one the description's
+        Intent, describes. Any other new
         commit needs a new confirmation.
       - `merge` also refuses a head whose checkpoint verdict on verification is `inadequate` or
         `cannot judge`. That refusal switches Auto to Ask the same way, and
         `--adequacy-confirmed-head SHA` follows the limits confirmation rule. The verdict leaves
         readiness and the Ask handoff unchanged.
-      - In Ask mode, after that refresh, the walkthrough, and required gates, finish remaining
+      - In Ask mode, after that refresh, any due walkthrough, and required gates, finish remaining
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
         stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge
         click, run `attention OWNER/REPO NUMBER --state merge --root DIR --ref SHA` to label the PR
@@ -893,7 +901,7 @@ phases:
         `requiredChecksSource` is `seam`, GitHub will not stop that click, so name each seam-declared
         check and its state at that SHA in the handoff. Run `attention` with `--state none` when work
         on the PR resumes. Never set `awaiting-merge-approval` in Auto
-        mode. In Auto mode, run `merge --auto` with the current head, walkthrough ID, and
+        mode. In Auto mode, run `merge --auto` with the current head, any due walkthrough's ID, and
         `--squash-message` content. It labels the PR `auto-merged` once GitHub confirms the merge;
         report a failed or queue-deferred label in the handoff. Add `--base-failure NAME` for each
         optional check that [hosted checks the base fails](<{{package_root}}/skills/shaka/references/base-validation-failure.md#hosted-checks-the-base-fails>)
@@ -907,8 +915,9 @@ phases:
         withdraws it. Comment trust alone grants no approval. That
         approval covers the reviewed change, so a moved base does not send it back.
         When GitHub needs the branch updated, rebase onto this task's base. If the rebased change
-        keeps the behavior the walkthrough describes, whether or not Git reported conflicts,
-        revalidate, complete review for the new head, publish its walkthrough, and run `merge` for
+        keeps the behavior the walkthrough, or without one the description's Intent, describes, whether
+        or not Git reported conflicts, revalidate, complete review for the new head, publish any due
+        walkthrough for it, and run `merge` for
         that head without asking again. When a native branch rule requires an approval of the new
         head, as stale-approval dismissal and last-push approval do, request a fresh one and merge
         once it arrives; that request repeats the repository's gate, not the user's decision. If

@@ -45,8 +45,13 @@ module CliMergeFixture
       puts '[]'
     elsif ARGV[0, 2] == ['pr', 'checks']
       puts JSON.generate([{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }])
+    elsif ARGV[0, 2] == ['api', 'user']
+      puts JSON.generate('login' => 'agent')
     elsif ARGV[0, 2] == ['api', 'repos/owner/repo/pulls/1/reviews/17']
-      puts JSON.generate('id' => 17, 'commit_id' => head, 'state' => 'COMMENTED', 'body' => 'Walkthrough')
+      body = "🤖 Codex · OpenAI · model · high\n\n# Code Walkthrough\n\nTour.\n\n" \
+             "_Walkthrough for commit `#{head}`. This is a COMMENT, not an approval._"
+      puts JSON.generate('id' => 17, 'commit_id' => head, 'state' => 'COMMENTED', 'body' => body,
+                         'user' => { 'login' => 'agent' })
     elsif ARGV[0] == 'api' && ARGV[1].start_with?('repos/owner/repo/pulls/1/commits?')
       puts JSON.generate([{ 'sha' => head, 'commit' => { 'message' => 'Fix' } }])
     else

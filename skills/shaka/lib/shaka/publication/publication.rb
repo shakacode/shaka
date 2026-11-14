@@ -82,7 +82,7 @@ module Shaka
 
     def human_comments = HumanComments.for(@content, @pull, @settings)
 
-    def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']))
+    def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']), @settings)
 
     # The steps besides merging sit right under the summary so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)

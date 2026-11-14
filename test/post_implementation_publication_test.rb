@@ -5,7 +5,8 @@ require 'shaka/post_implementation'
 
 module PostImplementationPublicationFixture
   class GitHub < Shaka::GitHub
-    attr_reader :bodies, :description_body
+    attr_reader :bodies
+    attr_accessor :description_body
     attr_writer :walkthrough
 
     def initialize(head)

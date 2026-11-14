@@ -48,12 +48,6 @@ class HandoffTest < Minitest::Test
     assert(result['owed'].any? { |item| item.include?('Remove awaiting-resume') })
   end
 
-  def test_merge_approval_without_a_walkthrough_is_owed
-    result = handoff(labels: ['awaiting-merge-approval'], reviews: [])
-
-    assert(result['owed'].any? { |item| item.include?('Publish a walkthrough') })
-  end
-
   def test_a_check_whose_state_and_bucket_disagree_is_not_passing
     result = handoff(labels: ['awaiting-merge-approval'],
                      checks: [{ 'name' => 'validate', 'state' => 'FAILURE', 'bucket' => 'pass' }])
@@ -112,7 +106,7 @@ class HandoffTest < Minitest::Test
   def test_a_walkthrough_for_an_older_head_is_owed_but_a_missing_one_is_only_noted
     assert(handoff(reviews: [walkthrough(OLD)]).fetch('owed').any? { |item| item.include?('walkthrough') })
 
-    missing = handoff(reviews: [])
+    missing = handoff(reviews: [], walkthrough_publish: 'always')
     assert_empty missing['owed']
     assert(missing['notes'].any? { |item| item.include?('No walkthrough') })
   end
@@ -147,7 +141,7 @@ class HandoffEvidenceTest < Minitest::Test
   include HandoffHarness
 
   def test_a_walkthrough_whose_footer_disagrees_with_its_commit_does_not_count
-    result = handoff(reviews: [walkthrough(HEAD, commit: OLD)])
+    result = handoff(reviews: [walkthrough(HEAD, commit: OLD)], walkthrough_publish: 'always')
 
     assert(result['notes'].any? { |item| item.include?('No walkthrough') })
   end
@@ -183,5 +177,28 @@ class HandoffCliTest < Minitest::Test
 
     refute_predicate status, :success?
     assert_includes error, '--woken-by is only for handoff'
+  end
+end
+
+# Whether a missing walkthrough is owed depends on walkthrough.publish and a recorded request.
+class HandoffWalkthroughDueTest < Minitest::Test
+  include HandoffHarness
+
+  def test_merge_approval_without_a_walkthrough_is_owed_where_every_pr_gets_one
+    result = handoff(labels: ['awaiting-merge-approval'], reviews: [], walkthrough_publish: 'always')
+
+    assert(result['owed'].any? { |item| item.include?('Publish a walkthrough') })
+  end
+
+  # Under the on_request default a PR without a walkthrough owes none, until the description records a request.
+  def test_a_walkthrough_is_owed_only_once_requested
+    quiet = handoff(labels: ['awaiting-merge-approval'], reviews: [])
+    refute(quiet['owed'].any? { |item| item.include?('walkthrough') })
+    refute_includes quiet['status'], 'walkthrough'
+
+    requested = handoff(labels: ['awaiting-merge-approval'], reviews: [],
+                        body: description.sub(Shaka::Publishing::CLOSE_MARK,
+                                              "#{Shaka::WalkthroughDue::REQUESTED}\n#{Shaka::Publishing::CLOSE_MARK}"))
+    assert(requested['owed'].any? { |item| item.include?('Publish a walkthrough') })
   end
 end
