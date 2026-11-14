@@ -12,7 +12,7 @@ and copies the same choices from one clone to the next. Nothing records them onc
 `shaka seam private setup` (`Seam::PrivateSetup`, a subclass of `Seam::Initializer`)
 writes only part of a configuration: the command wrappers, `review.required`,
 `review.ci_review_jobs`, `review.local_review_agents`, `merge.preference: ask`, the default
-`branches.name`, and `wip.include_checkout_path: true`. Everything else a developer wants,
+`branches.name`, and `wip.include_checkout_path: false`. Everything else a developer wants,
 such as `prose_limits`, `pr_description.opening_check`, `checkpoint`, or
 `review.provider_coverage`, is a manual edit to `.agents/shaka/config.yml` after setup.
 `--from ID` copies another worktree of the same clone, not another repository.

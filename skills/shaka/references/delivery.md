@@ -179,8 +179,8 @@ exists. A link's availability depends on the owner's machine being reachable.
 Never create or publish a link that shares conversation content, such as a
 share or export URL, to fill this field.
 
-**Privacy:** both team setup and private trials default `wip.include_checkout_path`
-to `true`. Supply the selected default-branch `--ref` to `description`.
+**Privacy:** team setup defaults `wip.include_checkout_path` to `true`. New
+individual setups use `false`. Supply the selected default-branch `--ref` to `description`.
 The renderer uses `REDACTED` for Workspace only when the setting is explicitly
 false. Unread or unavailable settings
 withhold Workspace and explain the recovery action:

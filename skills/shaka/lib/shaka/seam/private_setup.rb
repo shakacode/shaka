@@ -47,6 +47,8 @@ module Shaka
         Error.new("Private setup interrupted at #{error.message}#{guidance}")
       end
 
+      def wip_policy = { 'include_checkout_path' => Defaults.fetch('runtime', 'private_setup_include_checkout_path') }
+
       def merge_policy = { 'preference' => Defaults.fetch('merge', 'preference') }
 
       def validate_policies

@@ -72,8 +72,9 @@ prose_limits: # Visible PR description and walkthrough prose.
 
 project_guidance: {} # None: no repository guides for PR evidence, merge readiness, or walkthroughs.
 
-# Command-line defaults; config.yml does not set these, but the flags override them per run.
+# Defaults for command execution and generated configuration.
 runtime:
+  private_setup_include_checkout_path: false
   review_timeout_seconds: # shaka review run --timeout-seconds, by reviewer.
     default: 300
     deepseek/openrouter: 600

@@ -77,9 +77,11 @@ module Shaka
           'review' => review_policy,
           'merge' => merge_policy,
           'branches' => { 'name' => Defaults.fetch('branches', 'name') },
-          'wip' => RepositoryConfig::DEFAULT_WIP
+          'wip' => wip_policy
         }.compact
       end
+
+      def wip_policy = RepositoryConfig::DEFAULT_WIP
 
       def merge_policy
         { 'preference' => @options.fetch(:merge_preference) { Defaults.fetch('merge', 'preference') },

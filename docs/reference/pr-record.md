@@ -28,8 +28,9 @@ shows only your [machine alias](../coding-agents.md#name-your-machines), CPU mod
 core count, total and free memory, and load at start and end, never the host name
 or paths. The alias is the one name you choose. Shaka checks that it isn't this
 machine's host name, not that it leaves out your user name, so pick one that
-doesn't identify you, such as `m5`. WIP Details is separate: it shows your
-checkout path unless you [hide it](../settings.md#wipinclude_checkout_path).
+doesn't identify you, such as `m5`. WIP Details is separate: team setup shows your
+checkout path, and new individual setups hide it. You can
+[change either](../settings.md#wipinclude_checkout_path).
 
 The **Code Review** link opens the review record. Check coverage, unresolved
 findings, and the number of rounds; repeated rounds can signal work worth
