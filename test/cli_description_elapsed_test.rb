@@ -39,6 +39,8 @@ class CliDescriptionElapsedTest < Minitest::Test
     assert_includes body, '· ready in 2h 29m'
     assert_equal({ 'status' => 'matched', 'metric' => 'ready in 2h 29m' }, @timing)
     refute_match(/#{THREAD}|#{TURN}/o, body)
+    published('PR_CHECKS' => JSON.generate(CHECKS), 'PR_CREATED_AT' => '', 'PR_TIMELINE_OPENED' => '')
+    assert_equal 'PR opening time unavailable.', @timing['reason']
   end
 
   def test_an_unavailable_codex_turn_reports_the_lookup_gap_and_keeps_the_fallback

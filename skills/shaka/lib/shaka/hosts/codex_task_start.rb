@@ -17,11 +17,10 @@ module Shaka
       selected = content.fetch(KEY)
       described = content.reject { |key, _| key == KEY }
       return [described, nil] unless described['task_started_at'].nil?
-      return [described, 'PR opening time unavailable.'] unless opened
 
       started = selected_start(selected, environment, now)
       return [described, 'Selected Codex turn timestamp unavailable.'] unless started
-      return [described, 'Selected Codex turn is after PR opening.'] if started > opened
+      return [described, 'Selected Codex turn is after PR opening.'] if opened && started > opened
 
       [described.merge('task_started_at' => started.iso8601(9)), nil]
     end
