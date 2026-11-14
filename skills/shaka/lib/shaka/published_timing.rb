@@ -37,7 +37,7 @@ module Shaka
     end
 
     def endpoint_gap(state, timeline, now)
-      return 'GitHub merge time unavailable.' if timeline['merged_pr'] && !state['t3']
+      return 'GitHub merge time unavailable.' if timeline['merged_pr'] && !timeline['merged']
 
       endpoint = state['t3'] ? %w[t3 merged] : %w[t2 ready_at]
       recorded = state[endpoint.first]
