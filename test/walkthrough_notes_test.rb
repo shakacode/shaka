@@ -49,7 +49,7 @@ class WalkthroughNotesTest < Minitest::Test
   def test_a_note_on_one_line_anchors_that_line_on_the_new_side
     note = notes({ 'path' => 'lib/package.rb', 'from' => 'def publish', 'body' => 'Start here.' }).first
     assert_equal({ 'path' => 'lib/package.rb', 'line' => 11, 'side' => 'RIGHT' }, note.except('body'))
-    assert_equal "#{Shaka::Walkthrough::Notes::MARKER}\n🤖 Claude · Anthropic · model · high\n\nStart here.",
+    assert_equal "#{Shaka::Walkthrough::Notes::MARKER}\n🤖 Claude · Anthropic · model · high * walkthrough\n\nStart here.",
                  note['body']
   end
 
