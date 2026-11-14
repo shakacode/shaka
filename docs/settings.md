@@ -1434,8 +1434,9 @@ walkthrough:
 ```
 
 - **`on_request`**: a PR gets a walkthrough only when someone asks for one, in the task,
-  in the chat, or on the PR. When the PR is ready, the agent offers one: a tour in the chat,
-  one concept at a time, or a walkthrough published on the PR. For a published one, the agent
+  in the chat, or on the PR. In its final report, the agent offers one: a tour in the chat,
+  one concept at a time, or a walkthrough published on the PR. Under Auto that report comes
+  after the merge, so ask before then if the walkthrough should inform it. For a published one, the agent
   records the request in a PR comment from its own account and shows it on the description.
   From then on the PR needs a current walkthrough before it merges. Otherwise reviewers read the
   description's intent and verification, and the files it marks for close reading.

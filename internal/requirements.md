@@ -25,7 +25,7 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   A walkthrough remains readable after merge and substitutes for neither approval
   nor required acknowledgment.
   Offer an [interactive tour](../skills/shaka/references/interactive-walkthrough.md)
-  when requested, with an agenda and a lightweight coverage map for larger PRs.
+  when requested, and in the final report of a PR without a walkthrough, with an agenda and a lightweight coverage map for larger PRs.
   Keep published walkthroughs and their selective inline notes.
 - **R9 — Accept work from any tracker.** Use a task link or description, resolve its
   checkout, and ask for missing context. Requirements remain in the original
