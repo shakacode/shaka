@@ -34,23 +34,31 @@ Replies are the comments whose `in_reply_to_id` names a note.
 
 Published research points the same way:
 
-- **Context helps reviewers who don't own the code.** Bacchelli and Bird (ICSE 2013)
+- **Context helps reviewers who don't own the code.**
+  [Bacchelli and Bird (ICSE 2013)](https://web.eecs.umich.edu/~weimerw/2018-481/readings/codereview.pdf)
   found that understanding a change is the reviewer's hardest need. Reviewers who don't
   own the files rely on the description; owners go straight to the code. Here the
   maintainer owns the code and is the only reviewer, which is the case where a
   walkthrough helps least.
-- **Reading order matters for large changes.** In Fregnan et al. (FSE 2022), files
-  shown later got less scrutiny. In Gonçalves et al. (2025 preprint), reviewers read
-  linearly up to about 176 changed lines and looked for the core of the change beyond
-  that.
-- **Sparse "why" comments are common advice, not measured evidence.** GitHub Docs,
-  Red Gate, and the Cal.com handbook recommend that authors comment on their own PR at
-  surprising spots, such as a rejected alternative or a caveat. No controlled study
-  isolates the effect.
-- **Agent-written PRs call for different review evidence.** Simon Willison asks for
-  proof in the PR that the code works. Addy Osmani proposes a "PR contract" of intent,
-  evidence, risk, and one or two focus areas. Both concern intent and verification
-  rather than a tour of the code.
+- **Reading order matters for large changes.**
+  [Fregnan et al. (FSE 2022)](https://arxiv.org/abs/2208.04259) found that files shown
+  later got less scrutiny. [Gonçalves et al.](https://arxiv.org/html/2503.21455v1) is a
+  2025 preprint that observed 25 reviews in a think-aloud study. Its reviewers read
+  linearly up to about 176 changed lines and used several strategies beyond that,
+  often starting from the core of the change. The study observed behavior; it did
+  not test an intervention.
+- **Sparse "why" comments are common advice, not measured evidence.**
+  [GitHub Docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/getting-started/helping-others-review-your-changes),
+  [Red Gate](https://www.red-gate.com/simple-talk/development/dotnet-development/the-zen-of-code-reviews-pre-review-comments/),
+  and the [Cal.com handbook](https://handbook.cal.com/engineering/self-reviews) recommend
+  that authors comment on their own PR at surprising spots, such as a rejected
+  alternative or a caveat. No controlled study isolates the effect.
+- **Agent-written PRs call for different review evidence.**
+  [Simon Willison](https://simonwillison.net/2025/Dec/18/code-proven-to-work/) asks for
+  proof in the PR that the code works.
+  [Addy Osmani](https://addyosmani.com/blog/code-review-in-the-age-of-ai/) proposes a
+  "PR contract" of intent, evidence, risk, and one or two focus areas. Both concern
+  intent and verification rather than a tour of the code.
 
 Shaka already covers intent and verification. The description carries Intent,
 Verification, and `review_focus` ([ADR 0004](0004-review-focus.md)), and the checkpoint
@@ -92,7 +100,10 @@ so the old behavior stays available as a setting.
    replaces it. Ruby sees only what the agent records. Recording a request made in chat
    or a PR comment is an agent rule, which the implementation classifies in
    `enforcement.yml`. When a walkthrough is due:
-   - `merge` requires `--walkthrough`, and verifies it as it does now.
+   - `merge` requires `--walkthrough`. It also gains the check `handoff` already
+     applies: the review must be this account's rendered walkthrough. Today `merge`
+     accepts any non-empty COMMENT review at the head, which would let a reviewer-notes
+     review or another account's comment pass as the walkthrough.
    - `handoff` owes it for the current head.
    - The ready checkpoint has to follow it.
 
@@ -156,6 +167,13 @@ so the old behavior stays available as a setting.
   does not apply to reviewer notes. A repository that set it asked for walkthroughs that
   cover its requirements, so the release notes tell it to set `always` to keep them.
   Shaka does not infer `always` from the guide; the two settings stay independent.
+- **Rebased heads need a new reference for consent.** Two Finish rules carry a
+  person's confirmation across a rebase. One covers the limits confirmation; the
+  other covers an Ask approval. Both carry it over when the new head "keeps the
+  behavior the walkthrough describes". Without a walkthrough, the reference becomes
+  the behavior the description's Intent states. That text describes behavior at the
+  same level the merge decision used. The rule's strictness stays the same: any
+  change to that behavior still needs a new confirmation.
 - **Enforcement entries change.** In `enforcement.yml`, four entries take the new
   condition:
   - `checkpoint-after-walkthrough`;
@@ -178,7 +196,17 @@ so the old behavior stays available as a setting.
   R4. It also rewrites `skills/shaka/references/walkthrough-notes.md` for notes
   published alone. That file now assumes a walkthrough body carries rollback and that a
   newer walkthrough resolves older notes. A notes-only review stays under the same
-  `prose_limits` that apply to a walkthrough. The estimate is 400 to 600 changed lines.
+  `prose_limits` that apply to a walkthrough. Three notes-only side effects also change:
+  - Nothing resolves notes on older heads, so the agent resolves its own unanswered
+    notes when it publishes notes for a newer head.
+  - `handoff` stops listing open reviewer-note threads as answered threads awaiting
+    confirmation.
+  - The conversation-resolution refusal no longer tells the agent to publish a
+    walkthrough without notes.
+
+  The estimate is 400 to 600 changed lines. If the implementation exceeds 500, it
+  splits into two PRs: first the setting and the gates, then notes-only publication,
+  the links line, and the docs.
 
 ## Alternatives considered
 
