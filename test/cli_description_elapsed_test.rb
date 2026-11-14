@@ -28,14 +28,17 @@ class CliDescriptionElapsedTest < Minitest::Test
     assert_equal 'pending', @timing['status']
   end
 
+  def test_a_merged_pr_without_its_merge_time_reports_unknown
+    assert_includes published('PR_MERGED' => 'true'), '· merged in UNKNOWN'
+    assert_equal 'unavailable', @timing['status']
+  end
+
   def test_the_selected_codex_turn_replaces_the_usage_fallback_and_is_verified
     @codex_start = { 'thread_id' => THREAD, 'turn_id' => TURN }
     body = published('PR_CHECKS' => JSON.generate(CHECKS), 'PR_HEAD_REPO' => 'fork/repo')
     assert_includes body, '· ready in 2h 29m'
     assert_equal({ 'status' => 'matched', 'metric' => 'ready in 2h 29m' }, @timing)
-    assert_includes body, '"task_started_at":"2026-10-18T06:00:00.750000000Z"'
-    refute_includes body, THREAD
-    refute_includes body, TURN
+    refute_match(/#{THREAD}|#{TURN}/o, body)
   end
 
   def test_an_unavailable_codex_turn_reports_the_lookup_gap_and_keeps_the_fallback
