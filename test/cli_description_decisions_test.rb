@@ -235,7 +235,8 @@ DESCRIPTION_GH = <<~'RUBY'
       puts JSON.generate(request)
     else
       puts JSON.generate('body' => ENV.fetch('EXISTING_BODY', ''),
-                         'head' => { 'sha' => 'c' * 40, 'repo' => { 'full_name' => 'owner/repo' } },
+                         'created_at' => ENV.fetch('PR_CREATED_AT', '2026-10-18T08:00:00Z'),
+                         'head' => { 'sha' => 'c' * 40, 'repo' => { 'full_name' => ENV.fetch('PR_HEAD_REPO', 'owner/repo') } },
                          'base' => { 'repo' => { 'full_name' => 'owner/repo' } }, 'changed_files' => 0,
                          'merged' => ENV['PR_MERGED'] == 'true')
     end
@@ -252,7 +253,7 @@ DESCRIPTION_GH = <<~'RUBY'
       items = { 'pageInfo' => { 'hasNextPage' => false }, 'nodes' => [waited] }
       commits = JSON.parse(ENV.fetch('PR_COMMITS', '[]'))
       first = commits.first(1).map { |node| { 'commit' => node['commit'].slice('committedDate') } }
-      pull = { 'createdAt' => '2026-10-18T08:00:00Z', 'firstCommit' => { 'nodes' => first },
+      pull = { 'createdAt' => ENV.fetch('PR_TIMELINE_OPENED', '2026-10-18T08:00:00Z'), 'firstCommit' => { 'nodes' => first },
                'commits' => { 'nodes' => commits }, 'timelineItems' => items }
       puts JSON.generate('data' => { 'repository' => { 'pullRequest' => pull } })
     else

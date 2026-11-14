@@ -44,7 +44,14 @@ module Shaka
       earlier ? previous : seen
     end
 
+    def iso_timestamp(time) = time.utc.iso8601(time.nsec.zero? ? 0 : 9)
+
     private
+
+    def carried_start(timeline, carried)
+      recorded = carried['t0']
+      recorded unless timeline['opened'] && parse_time(recorded)&.>(timeline['opened'])
+    end
 
     def marker(state) = "<!-- shaka:stats #{JSON.generate(ordered(state))} -->"
     def ordered(state) = ThroughputStats::KEYS.filter_map { |key| [key, state[key]] if state.key?(key) }.to_h
@@ -100,7 +107,7 @@ module Shaka
       "#{days}d #{hours}h"
     end
 
-    def stamp(value) = parse_time(value) && (value.is_a?(Time) ? value.utc.iso8601 : value)
+    def stamp(value) = parse_time(value) && (value.is_a?(Time) ? iso_timestamp(value) : value)
 
     def parse_time(value)
       return value.utc if value.is_a?(Time)

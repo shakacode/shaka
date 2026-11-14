@@ -25,6 +25,7 @@ require_relative '../lib/shaka/post_implementation/stale'
 require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
 require_relative '../lib/shaka/hosts/codex_wake'
+require_relative '../lib/shaka/hosts/codex_task_start'
 require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
@@ -46,6 +47,7 @@ require_relative '../lib/shaka/publication/squash_message'
 require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/guidance'
 require_relative '../lib/shaka/publication/publication'
+require_relative '../lib/shaka/published_timing'
 require_relative '../lib/shaka/publication/rendering_preview'
 require_relative '../lib/shaka/review_focus'
 require_relative '../lib/shaka/review_reply'
@@ -158,16 +160,16 @@ def rendered_description(described, github, pull, workflow_version, options)
   root = options.fetch(:root)
   carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
   settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
-  timeline = description_timeline(carried, github, pull, settings)
+  timeline = description_timeline(options.fetch(:timeline), carried, github, pull, settings)
   rendered = render_description(carried, workflow_version, pull, settings, timeline, options, github)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
   Shaka::CheckpointRecommendation.require_decisions!(carried, pull, github.repository)
   Shaka::CheckpointRecommendation.refuse_decisions_under_merge!(carried, pull, github)
-  [rendered, carried, usage_records, settings.verdict&.key?('kept_line')]
+  [rendered, carried, usage_records, settings.verdict&.key?('kept_line'), timeline]
 end
 
-def description_timeline(carried, github, pull, settings)
-  timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
+def description_timeline(timeline, carried, github, pull, settings)
+  timeline = Shaka::PullTimeline.with_decisions(timeline, carried)
   timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
   timeline = Shaka::TaskTiming.attach(timeline, carried, pull)
   Shaka::ReadyTime.attach(timeline, github, settings.ready_gate)
@@ -194,9 +196,17 @@ end
 
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.
 def resolved_description(content, github, options)
+  content = Shaka::PublisherAttribution.prepare(content)
   content = Shaka::LocalReviewUsage.attach(content, options[:review])
   resolved = Shaka::CheckpointRecommendation.resolve(Shaka::DeploymentLink.resolve(content, github), github)
   with_human_comments(resolved, options[:comments])
+end
+
+def description_input(content, github, pull, options)
+  timeline = Shaka::PullTimeline.new(github).call
+  Shaka::TaskTiming.attach_lifecycle(timeline, pull)
+  timing_content, note = Shaka::CodexTaskStart.resolve(content, opened: timeline['opened'])
+  [resolved_description(timing_content, github, options), note, timeline]
 end
 
 # The rendered review body and its inline notes; a prerendered body file carries no notes.
@@ -423,7 +433,8 @@ begin
            when 'description'
              root = options[:root] || Dir.pwd
              prose, prose_note = description_prose_limits(root, options[:ref])
-             guide = description_pr_evidence(root, options[:ref])
+             notes = prose_note.merge(description_pr_evidence(root, options[:ref]))
+             description_content = content(options.fetch(:content_file))
              Shaka::OpeningPublication.with_safe_path(root:) do |candidate_root, gh, neutral|
                raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
 
@@ -432,25 +443,26 @@ begin
                github = Shaka::GitHub.new(repository, number, runner: lambda do |argv, stdin_data:|
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
-               attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
-               described = resolved_description(attributed, github, options)
-               usage_records = carried = kept = nil
+               described = lookup_note = usage_records = carried = kept = timeline = head = nil
                published = github.description(prose:) do |pull|
-                 rendered, carried, usage_records, kept = rendered_description(described, github, pull,
-                                                                               workflow_version, options.merge(root:))
+                 described, lookup_note, timeline = description_input(description_content, github, pull, options)
+                 rendered, carried, usage_records, kept, timeline = rendered_description(
+                   described, github, pull, workflow_version, options.merge(root:, timeline:)
+                 )
+                 head = pull.dig('head', 'sha')
                  rendered
                end
                attention = Shaka::DecisionLabels.sync(github, carried)
                opening = opening_result(options.merge(root:), described['summary'],
                                         prose: Shaka::OpeningProse.call(described))
                refresh = Shaka::CursorUsageRefresh.bind(repository, number, carried['usage']) if carried.is_a?(Hash)
-               notes = prose_note.merge(guide).merge(Shaka::ClosingIssues.note(described, github))
+               notes.merge!(Shaka::ClosingIssues.note(described, github))
                notes['evidence_kept'] = Shaka::VerificationGates::KEPT if kept
                published.merge('opening' => opening, 'usage_records' => usage_records).merge(notes).tap do |result|
                  result['attention'] = attention if attention
                  result['stale_checkpoint'] = Shaka::PostImplementationStale.new(github).call
                  result['cursor_usage_refresh'] = refresh if refresh
-               end
+               end.merge('timing' => Shaka::PublishedTiming.from_publication(published, head:, timeline:, lookup_note:))
              end
            when 'reply'
              # A review lookup contacts GitHub, so a missing key fails before that lookup.

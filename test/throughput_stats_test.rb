@@ -104,7 +104,7 @@ class ThroughputStatsTest < Minitest::Test
   def republish(merged, sha, pushed)
     times = { 'task_started_at' => START, 'ci_started_at' => pushed }
     times['merged'] = merged if merged
-    describe('$4.12', timeline: times, pull: { 'head' => { 'sha' => sha }, 'body' => filled_block })
+    describe('$4.12', timeline: times, pull: refresh_pull(sha:))
   end
 end
 
