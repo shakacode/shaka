@@ -28,8 +28,11 @@ in the job or in a wrapper script. Include the directories that contain your
 `git` and `gh` executables. Check the job's output even when the scheduler
 reports success.
 
-Before enabling a schedule, run the installed helper with `update-check` once.
-Use the full path, for example `"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" update-check`.
+Before enabling a schedule, use the helper from your registered installation.
+Run `"$shaka_helper" install --status` using the [terminal setup steps](../manual-installation.md#verify-and-update).
+Confirm the inventory identifies that checkout as your installed branch. For a
+PR trial, switch back to the helper from your registered installation. Then run
+`"$shaka_helper" update-check` once with that helper.
 Continue when the result is `current`, `recent`, or `available`. For other
 results, follow the returned guidance first. If the reason is
 `unsupported_source` or `development_source`, ask your agent to compare with
@@ -94,6 +97,7 @@ Double literal backslashes and escape embedded double quotes with a backslash.
 For a path with other special characters, see [systemd service command lines](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Command%20lines).
 If Git or `gh` lives outside the service's `PATH`,
 set `Environment=PATH=...` in the service with the absolute directories it needs.
+The service starts at `/` so the check starts outside any project checkout.
 
 ```ini
 [Service]
@@ -148,7 +152,7 @@ exit $LASTEXITCODE
 ```
 
 In Windows Task Scheduler, create a daily task under your Windows account.
-Select **Run only when user is logged on**, the mode used in the WSL test.
+Select **Run only when user is logged on**.
 Set **Program/script** to `powershell.exe`. In **Add arguments**, enter
 `-NoProfile -File "C:\Users\me\shaka-schedule.ps1"`, using your script's absolute
 path. Your PowerShell execution policy must allow the script. If the first run
