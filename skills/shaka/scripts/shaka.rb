@@ -171,9 +171,8 @@ end
 def description_timeline(carried, github, pull, settings)
   timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
   timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
+  Shaka::TaskTiming.attach_lifecycle(timeline, pull)
   timeline = Shaka::TaskTiming.attach(timeline, carried, pull)
-  timeline['merged_pr'] = pull['merged'] == true
-  timeline['merged'] ||= Shaka::TaskTiming.timestamp(pull['merged_at'], Time.now.utc) if timeline['merged_pr']
   Shaka::ReadyTime.attach(timeline, github, settings.ready_gate)
 end
 

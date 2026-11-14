@@ -98,7 +98,7 @@ module Shaka
       end
 
       def ready_stamp(ready, carried)
-        seen = ready == :unknown ? 'UNKNOWN' : ready.utc.iso8601
+        seen = ready == :unknown ? 'UNKNOWN' : ThroughputStats.iso_timestamp(ready)
         ThroughputStats.keep_earlier(seen, carried, 't2', @head)
       end
 

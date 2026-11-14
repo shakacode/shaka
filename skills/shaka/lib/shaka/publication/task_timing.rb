@@ -16,6 +16,15 @@ module Shaka
 
     module_function
 
+    def attach_lifecycle(timeline, pull, now: Time.now.utc)
+      timeline['opened'] ||= timestamp(pull['created_at'], now)
+      return unless pull['merged'] == true
+
+      timeline['merged_pr'] = true
+      timeline['merged'] ||= timestamp(pull['merged_at'], now)
+      timeline['unavailable'] ||= 'GitHub merge time unavailable.' unless timeline['merged']
+    end
+
     def attach(timeline, content, pull, now: Time.now.utc)
       saved = TimelineSteps.same_repository?(pull) ? read(pull['body'], now) : {}
       started = start(content['task_started_at'], saved, timeline, now) || usage_start(content, timeline, now)
