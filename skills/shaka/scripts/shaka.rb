@@ -165,7 +165,7 @@ def rendered_description(described, github, pull, workflow_version, options)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
   Shaka::CheckpointRecommendation.require_decisions!(carried, pull, github.repository)
   Shaka::CheckpointRecommendation.refuse_decisions_under_merge!(carried, pull, github)
-  [rendered, carried, usage_records, settings.verdict&.key?('kept_line'), timeline]
+  [rendered, carried, usage_records, settings.verdict&.key?('kept_line'), timeline['task_started_at']]
 end
 
 def description_timeline(carried, github, pull, settings)
@@ -443,13 +443,13 @@ begin
                github = Shaka::GitHub.new(repository, number, runner: lambda do |argv, stdin_data:|
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
-               described = lookup_note = usage_records = carried = kept = timing = nil
+               described = lookup_note = usage_records = carried = kept = started = head = nil
                published = github.description(prose:) do |pull|
                  described, lookup_note = description_input(description_content, github, pull, options)
-                 rendered, carried, usage_records, kept, timeline = rendered_description(
+                 rendered, carried, usage_records, kept, started = rendered_description(
                    described, github, pull, workflow_version, options.merge(root:)
                  )
-                 timing = Shaka::PublishedTiming.expected(timeline, pull)
+                 head = pull.dig('head', 'sha')
                  rendered
                end
                attention = Shaka::DecisionLabels.sync(github, carried)
@@ -462,7 +462,7 @@ begin
                  result['attention'] = attention if attention
                  result['stale_checkpoint'] = Shaka::PostImplementationStale.new(github).call
                  result['cursor_usage_refresh'] = refresh if refresh
-               end.merge('timing' => Shaka::PublishedTiming.check(published['body'], expected: timing, lookup_note:))
+               end.merge('timing' => Shaka::PublishedTiming.check(published['body'], head:, started:, lookup_note:))
              end
            when 'reply'
              # A review lookup contacts GitHub, so a missing key fails before that lookup.

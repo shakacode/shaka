@@ -62,7 +62,8 @@ class CliDescriptionElapsedTest < Minitest::Test
   def test_the_stored_metric_is_verified_separately_from_the_timestamps
     body = published('PR_CHECKS' => JSON.generate(CHECKS))
     state = Shaka::ThroughputStats.read(body)
-    result = Shaka::PublishedTiming.check(body.sub('· ready in 1h 30m', '· ready in 2h 0m'), expected: state)
+    result = Shaka::PublishedTiming.check(body.sub('· ready in 1h 30m', '· ready in 2h 0m'),
+                                          head: state['head'], started: Time.iso8601(state['t0']))
     assert_equal 'unverified', result['status']
     assert_equal 'Stored elapsed time does not match the timing record.', result['reason']
   end

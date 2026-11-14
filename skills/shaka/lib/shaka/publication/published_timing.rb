@@ -8,14 +8,10 @@ module Shaka
   module PublishedTiming
     module_function
 
-    def expected(timeline, pull)
-      ThroughputStats.state({}, timeline, pull).merge(timeline.slice('task_started_at'))
-    end
-
-    def check(body, expected:, lookup_note: nil, now: Time.now.utc)
+    def check(body, head:, started:, lookup_note: nil, now: Time.now.utc)
       region = Publishing.managed_region(body).to_s
       state = ThroughputStats.read(region)
-      issue = problem(state, body, expected, now)
+      issue = problem(state, body, head, started, now)
       return result('unverified', issue, lookup_note) if issue
 
       metric = ThroughputStats.took(state).delete_prefix(' · ')
@@ -27,24 +23,14 @@ module Shaka
       result('unverified', 'Stored timing record is unreadable.', lookup_note)
     end
 
-    def problem(state, body, expected, now)
-      unless state && expected['head'] && state['head'] == expected['head']
-        return 'No stored timing record for the published head.'
-      end
-      return 'Stored CI readiness time does not match the current head.' unless state['t2'] == expected['t2']
-      unless state.values_at('t1', 't3') == expected.values_at('t1', 't3')
-        return 'Stored CI start or merge time does not match.'
-      end
-      return 'Stored task start does not match the selected timestamp.' unless state['t0'] == expected['t0']
-
-      start_problem(body, expected['task_started_at'], now)
-    end
-
-    def start_problem(body, started, now)
+    # Publication already checks that GitHub stored the submitted body. Check the
+    # selected start and the visible metric without rebuilding the CI timeline.
+    def problem(state, body, head, started, now)
+      return 'No stored timing record for the published head.' unless head && state&.fetch('head', nil) == head
       return unless started
 
       marker = TaskTiming.read(body, now)['task_started_at']
-      return if marker == started
+      return if marker == started && TaskTiming.timestamp(state['t0'], now) == started
 
       'Stored task start does not match the selected timestamp.'
     end
