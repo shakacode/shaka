@@ -1,6 +1,7 @@
 # Interactive code walkthrough
 
-Read this when the user requests a live code walkthrough, one concept at a time.
+Read this when the user requests a live code walkthrough, one concept at a time, including
+by accepting the walkthrough offer at handoff.
 A request to publish a complete walkthrough follows the normal delivery workflow.
 
 Keep the tour in the current owning task. This request authorizes reading and explanation;

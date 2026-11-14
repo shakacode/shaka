@@ -945,7 +945,10 @@ phases:
         the description alone. Report every PR link and outcome, brief validation, and remaining
         work or blocker. After the report, list again every `before merge` or `after merge` step
         besides merging that is still open, with who does it, so a merged PR does not leave one
-        behind; say `none` when the description recorded none.
+        behind; say `none` when the description recorded none. When the PR has no walkthrough, offer
+        one in a line: a tour in this chat, one concept at a time, through the
+        [interactive walkthrough](<{{package_root}}/skills/shaka/references/interactive-walkthrough.md>),
+        or a walkthrough published on the PR. The offer leaves no chat decision pending.
       - Omit both archive messages for machine-only output, task transfers, blockers, pending
         chat decisions, or unfinished work besides merging.
         When a verified PR awaits only merge at GitHub's merge control, end with exactly
