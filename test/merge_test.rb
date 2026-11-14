@@ -402,6 +402,12 @@ class MergeWalkthroughTest < Minitest::Test
     assert_nil @client.requested_review
   end
 
+  # A caller that sets no WalkthroughDue keeps the earlier rule.
+  def test_without_a_due_check_a_walkthrough_must_be_named
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: nil) }
+    assert_match(/walkthrough is due/, error.message)
+  end
+
   def test_a_due_walkthrough_must_be_named
     @merge.walkthrough_due = Struct.new(:due?).new(true)
 

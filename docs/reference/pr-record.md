@@ -68,7 +68,8 @@ Shaka's default areas could rate the change lower than the repository's own.
 
 Open **Checkpoint**, linked near the top of the PR description, for the assessment
 of whether the result solves the problem, earns its maintenance cost, and has
-supporting evidence. The written **Code Walkthrough** explains the implementation.
+supporting evidence. When the PR has a **Code Walkthrough**, it explains the implementation;
+ask the agent for one if you want it.
 
 | Label | Meaning |
 | --- | --- |
@@ -235,7 +236,8 @@ the thread.
 ## Recovery
 
 Reverting code may not undo sent emails, issued refunds, or changed data. Look for
-recovery consequences in the walkthrough before merging. The agent writes this
+recovery consequences in the description's details, or in the walkthrough when the PR
+has one, before merging. The agent writes this
 assessment; missing recovery details do not establish that a revert is enough.
 
 A **return point**, labeled C1, C2, and so on in the PR description, connects earlier

@@ -510,13 +510,14 @@ rules:
   - id: walkthrough-request-recorded
     phase: explain
     quote: >-
-      On a request, record it with `reply --key walkthrough-request`, naming who
-      asked, before other PR work
+      On a request, record it with `reply --key walkthrough-request` as a PR-level
+      comment, without `--comment`, naming who asked, before other PR work
     enforced_by: agent
     note: >-
       Ruby reads the recorded request: `WalkthroughDue` looks for this account's comment that starts with
       the `walkthrough-request` reply marker, and `merge`, `handoff`, and the ready checkpoint then require a
-      walkthrough. Nothing detects a request made in chat or a PR comment that the agent never records.
+      walkthrough. Nothing detects a request made in chat or a PR comment that the agent never records,
+      or one it records as an inline thread reply, which `WalkthroughDue` does not read.
   - id: walkthrough-length
     phase: explain
     quote: length comes from the change, never from the writer

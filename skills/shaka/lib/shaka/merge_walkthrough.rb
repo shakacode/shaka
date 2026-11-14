@@ -7,7 +7,7 @@ module Shaka
   # A walkthrough is optional until one is due. A named one must be the walkthrough this account
   # published for this head, so reviewer notes or another account's comment cannot stand in for it.
   class MergeWalkthrough
-    # due is a WalkthroughDue, or nil when nothing makes one due.
+    # due is a WalkthroughDue; without one, a missing walkthrough is refused as before.
     def initialize(github, due)
       @github = github
       @due = due
@@ -28,7 +28,7 @@ module Shaka
     private
 
     def missing!
-      return unless @due&.due?
+      return if @due && !@due.due?
 
       raise Error, 'A walkthrough is due for this PR; publish it for this head and pass --walkthrough'
     end
