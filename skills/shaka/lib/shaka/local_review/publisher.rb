@@ -58,7 +58,9 @@ module Shaka
       head = body[/\A<!-- shaka:reply:local-review-(\h{40}) -->\n/, 1]
       return false unless head
 
-      held = loop_comment.reports(head).count { |report| body.include?(report) }
+      held = loop_comment.reports(head).count do |report|
+        body.include?(report) || body.include?(Publishing.as_stored(report))
+      end
       held.positive? && held == body.scan(/<summary>Round \d+ · #{head[0, 7]} · /).size
     end
 
