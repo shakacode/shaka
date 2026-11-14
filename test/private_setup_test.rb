@@ -141,27 +141,6 @@ class PrivateSetupTest < Minitest::Test
   end
 end
 
-class PrivateSetupDefaultUpgradeTest < Minitest::Test
-  include PrivateSetupFixture
-
-  def test_a_prepared_checkout_path_choice_survives_the_default_change
-    with_setup do |root, ref|
-      path = config_path(File.realpath(root))
-      prepare_previous_default(root, ref, path)
-
-      assert_equal 'complete', setup_private(root, ref).fetch('status')
-      assert_includes File.read(path), 'include_checkout_path: true'
-    end
-  end
-
-  def prepare_previous_default(root, ref, path)
-    setup = Shaka::Seam::PrivateSetup.new(root:, ref:, options: options)
-    files = setup.send(:generated_files)
-    files[path] = files.fetch(path).sub('include_checkout_path: false', 'include_checkout_path: true')
-    recovery(root).prepare(files)
-  end
-end
-
 class PrivateSetupOptionalTest < Minitest::Test
   include PrivateSetupFixture
 

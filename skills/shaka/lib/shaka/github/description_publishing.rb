@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'usage_archive'
-require_relative '../publication/public_usage_identity'
 require_relative '../prose_limits'
 
 module Shaka
@@ -10,9 +9,7 @@ module Shaka
     # A block builds the body from the pull request it replaces, using this same read.
     def description(body: nil, prose: ProseLimits.new)
       current = pull
-      archive = UsageArchive.new(self) do
-        check_unchanged(current['body'].to_s, current) if PublicUsageIdentity.private?(current)
-      end
+      archive = UsageArchive.new(self)
       readable = archive_pull(current, archive)
       rendered = publishable(block_given? ? yield(readable) : body)
       plan = description_plan(archive, current, rendered)
@@ -24,7 +21,7 @@ module Shaka
 
     def description_plan(archive, current, rendered)
       base = MergeWarningRegion.answered_by_merge(current['body'].to_s, @repository, current)
-      archive.prepare(merge(base, PublicUsageIdentity.for_pull(rendered, current)))
+      archive.prepare(merge(base, rendered))
     end
 
     def publish_archive(plan, current, prose)

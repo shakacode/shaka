@@ -25,16 +25,6 @@ module Shaka
         partial_checkout_matches?(expected)
       end
 
-      # Only a byte-for-byte match can resume with the previous workspace default.
-      def keep_prepared_workspace_choice(files)
-        return unless storage
-
-        path = File.join(@root, PRIVATE_DIRECTORY, 'config.yml')
-        proposed = files.fetch(path)
-        previous = proposed.sub(/^  include_checkout_path: false$/, '  include_checkout_path: true')
-        files[path] = previous if previous != proposed && prepared_matches?(files.merge(path => previous))
-      end
-
       private
 
       def partial_checkout_matches?(expected)

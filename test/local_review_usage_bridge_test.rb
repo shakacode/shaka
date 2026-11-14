@@ -88,12 +88,9 @@ class LocalReviewUsageBridgeTest < Minitest::Test
 
   def assert_description_republish(attached)
     first = Shaka::UsageDetails.new(attached.fetch('usage')).detail
-    public_body = Shaka::PublicUsageIdentity.redact(first.fetch('body'))
-    pull = { 'body' => "<!-- shaka:begin -->\n#{public_body}\n<!-- shaka:end -->",
+    pull = { 'body' => "<!-- shaka:begin -->\n#{first['body']}\n<!-- shaka:end -->",
              'head' => { 'repo' => { 'full_name' => 'o/r' } }, 'base' => { 'repo' => { 'full_name' => 'o/r' } } }
-    carried, stats = Shaka::UsageRecords.carry_from(attached, pull)
-    assert_equal 1, stats['retained']
-    updated = Shaka::UsageDetails.new(carried.fetch('usage')).detail
-    assert_equal first.fetch('estimate'), updated.fetch('estimate')
+    carried, = Shaka::UsageRecords.carry_from(attached, pull)
+    assert_equal first, Shaka::UsageDetails.new(carried.fetch('usage')).detail
   end
 end

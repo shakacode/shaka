@@ -68,14 +68,11 @@ module Shaka
       end
 
       def preflight(recovery, files)
-        recovery.keep_prepared_workspace_choice(files) unless seeding? || personal_workspace_redaction?
         resumable = source_available?(recovery, files)
         refuse_adoption!(recovery)
         preflight_destinations(files)
         resumable
       end
-
-      def personal_workspace_redaction? = personal&.values&.dig('wip', 'include_checkout_path') == false
 
       # A plan has no assigned identity, and so no recovery copy, until setup first runs.
       def source_available?(recovery, files)

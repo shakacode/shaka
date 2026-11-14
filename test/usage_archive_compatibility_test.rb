@@ -67,13 +67,13 @@ class UsageArchiveCompatibilityTest < Minitest::Test
 
   def test_a_refresh_that_fits_keeps_raw_accounting_and_removes_the_guard
     github = DescriptionUsageArchiveTest::MemoryGitHub.new
-    entry = record('codex', 'Original accounting', commits: archive_commits(1000), responses: [])
+    entry = record('codex', 'Original accounting', responses: Array.new(2500) { |i| "response-#{i}" })
     github.description(body: "#{entry}\n<!-- fixture metadata #{'x' * 30_000} -->\n")
     assert_includes github.stored['body'], Shaka::Publishing::ARCHIVE_GUARD
     github.description(body: "#{entry}\n")
     body = github.stored.fetch('body')
     refute_includes body, Shaka::Publishing::ARCHIVE_GUARD
-    assert_includes body, Shaka::PublicUsageIdentity.redact(entry)
+    assert_includes body, entry
     assert_includes LegacyDescriptionWriter.merge(body, 'Replacement.'), 'Replacement.'
   end
 end

@@ -94,8 +94,7 @@ installation resumes. Changed options leave a differing prepared copy, so setup
 refuses to replace it. Compare that copy and move it to a safe location before
 starting fresh with corrected options.
 After `git clean -fdx`, setup refuses to replace a recovery copy that differs
-from the generated defaults. A copy matching the previous default exactly can
-resume with its existing checkout-path setting. Run `private inspect` after editing private files
+from the generated defaults. Run `private inspect` after editing private files
 and before cleaning: edits made since the last inspection cannot be recovered
 once clean deletes them. Restore the copy to an outside inspection path, compare it, then
 copy the chosen files back into `.agents/shaka/` only when no tracked team settings

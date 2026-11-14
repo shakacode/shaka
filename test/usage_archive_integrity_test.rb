@@ -8,7 +8,7 @@ class UsageArchiveIntegrityTest < Minitest::Test
 
   def archived_pair
     github = DescriptionUsageArchiveTest::MemoryGitHub.new
-    first = record('codex', 'First', commits: archive_commits(1800), responses: [])
+    first = record('codex', 'First', responses: Array.new(6000) { |i| "response-#{i}" })
     second = record('claude-code', 'Second', responses: ['second-response'], contribution: 'review')
     github.description(body: "#{first}\n#{second}\n")
     github
@@ -95,7 +95,7 @@ class UsageArchiveIntegrityTest < Minitest::Test
 
   def test_archive_attribution_does_not_repeat_a_frozen_spend_total
     github = DescriptionUsageArchiveTest::MemoryGitHub.new
-    entry = record('codex', 'Large', commits: archive_commits(1800), responses: [])
+    entry = record('codex', 'Large', responses: Array.new(6000) { |i| "response-#{i}" })
     github.description(body: "🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN - AI spend: $99\n\n#{entry}\n")
     github.comments.each_value do |comment|
       assert_equal '🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN', comment.fetch('body').lines.first.chomp
@@ -109,7 +109,7 @@ class UsageArchiveIntegrityTest < Minitest::Test
 
       super(body)
     end
-    entry = record('codex', 'Large accounting', commits: archive_commits(12_000), responses: [])
+    entry = record('codex', 'Large accounting', responses: Array.new(30_000) { |i| "response-#{i}" })
     github.description(body: "#{entry}\n")
     assert_operator github.stored['body'].length, :<=, 65_536
   end

@@ -6,8 +6,6 @@ require_relative '../usage/usage_records'
 require_relative 'text'
 require_relative 'usage_rows'
 require_relative 'usage_pricing'
-require_relative 'usage_overlap'
-require_relative 'public_usage_identity'
 
 module Shaka
   # Checks each usage column is the flat, single-line record `shaka usage --format json` prints.
@@ -75,7 +73,6 @@ module Shaka
     end
 
     include UsageColumnCheck
-    include UsageOverlap
 
     SUMMARY = 'Usage and cost'
     GUIDE = '[Understand the columns and accounting rules](https://shaka.shakacode.com/docs/reference/usage-and-cost).'
@@ -93,7 +90,7 @@ module Shaka
     def detail
       checked
       fresh = @records.flat_map { |entry| hosted(entry['columns'], entry['identity']) }
-      rows = UsageRows.new(fresh + carried_columns, earlier: earlier_reports.any? || overlapping_carried.any?)
+      rows = UsageRows.new(fresh + carried_columns, earlier: earlier_reports.any?)
       { 'summary' => SUMMARY, 'body' => body(rows),
         'estimate' => rows.summary&.delete_suffix(' estimated') || 'UNKNOWN' }
     end
@@ -103,7 +100,8 @@ module Shaka
     def body(rows)
       parts = [rows.table, rows.legend, GUIDE, UsagePricing.details(pricing_pairs)]
       parts << UsagePricing.concise(@note) unless @note.empty?
-      parts.concat(earlier_reports + overlapping_reports + record_blocks)
+      parts.concat(earlier_reports)
+      parts.concat(record_blocks)
       parts.compact.join("\n\n")
     end
 
@@ -113,8 +111,8 @@ module Shaka
       refuse_keys(@spec.keys - (REQUIRED + OPTIONAL), 'has unknown fields')
       refuse_keys(REQUIRED - @spec.keys, 'is missing fields')
       @note = note(@spec['note'])
+      @carried = carried_blocks
       @records = records
-      @carried = remove_repeated_public_snapshots(carried_blocks)
     end
 
     def refuse_keys(keys, problem)
@@ -141,7 +139,7 @@ module Shaka
     end
 
     def carried_columns
-      (@carried - overlapping_carried).flat_map do |block|
+      @carried.flat_map do |block|
         hidden = block[HIDDEN, 1]
         hidden ? hosted(columns(parse_hidden(hidden)), UsageRecords.text_records(block).first) : []
       end
@@ -199,13 +197,12 @@ module Shaka
 
     # Carried record blocks stay hidden and keep their identity and columns, so the next publish can read
     # them again. Only where each note is written in full may move.
-    def record_blocks = UsagePricing.shared(@carried.grep(HIDDEN) + fresh_blocks)
-
-    def fresh_blocks
-      @records.map do |entry|
+    def record_blocks
+      fresh = @records.map do |entry|
         hidden = ["<!-- usage-columns #{JSON.generate(entry['columns'])} -->", UsagePricing.hidden(entry['note'])]
         "#{UsageRecords.begin_mark(entry['identity'])}\n#{hidden.compact.join("\n")}\n#{UsageRecords::END_MARK}"
       end
+      UsagePricing.shared(@carried.grep(HIDDEN) + fresh)
     end
   end
 end

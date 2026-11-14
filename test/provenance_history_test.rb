@@ -90,14 +90,12 @@ class ProvenanceHistoryTest < Minitest::Test
 
   def test_history_survives_a_publication_that_carries_usage
     publish(HEADS[0])
-    column = PublicationRegressionTest::USAGE_COLUMN.merge('input' => '2')
-    record = USAGE_RECORD.merge('responses' => ['c2'], 'columns' => [column])
+    record = USAGE_RECORD.merge('responses' => ['c2'], 'columns' => [PublicationRegressionTest::USAGE_COLUMN])
     rendered = publish(HEADS[1], usage: { 'note' => 'Later.', 'records' => [record] }, 'active_effort' => 'high')
 
     assert_equal 2, history_rows(rendered).size
-    identities = Shaka::UsageRecords.text_records(rendered)
-    assert_equal 2, identities.size
-    assert_equal [[], []], identities.map { |identity| identity.fetch('responses') }.to_a
+    assert_includes rendered, '"responses":["c1"]'
+    assert_includes rendered, '"responses":["c2"]'
   end
 
   def test_known_absence_round_trips_without_reclassifying_old_unknown_requests

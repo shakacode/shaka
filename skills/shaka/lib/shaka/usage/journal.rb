@@ -55,17 +55,13 @@ module Shaka
     def publish(records, event:)
       raise Error, "Usage event must be one of #{EVENTS.join(', ')}." unless EVENTS.include?(event)
 
-      require_private_repository!
       fresh = unpublished(records)
       return [] if fresh.empty?
 
       # Preflight every chunk. Retries append only records absent from confirmed earlier writes.
       bodies = chunks(fresh).map { |chunk| body(chunk, event) }
       bodies.each { |text| @github.verify_rendering(text) }
-      bodies.map do |text|
-        require_private_repository!
-        append(text)
-      end
+      bodies.map { |text| append(text) }
     end
 
     def append(text)
@@ -83,12 +79,6 @@ module Shaka
     end
 
     private
-
-    def require_private_repository!
-      return if @github.api("repos/#{@github.repository}")['visibility'] == 'private'
-
-      raise Error, 'The usage journal requires a private repository. Publish aggregate usage in the PR description.'
-    end
 
     def unpublished(records)
       normalized = UsageJournalRecords.parse(snapshot(UsageJournalRecords.combine(records)))

@@ -79,7 +79,6 @@ module Shaka
 
     def write(chunk)
       body = "#{@writer}\n\n#{UsageArchive::HEADER}```base64\n#{chunk}\n```\n"
-      @before_write&.call
       comment = @github.api("repos/#{@github.repository}/issues/#{@github.number}/comments",
                             method: 'POST', fields: { body: })
       unless comment['body'] == body && comment['id'].is_a?(Integer) && comment['id'].positive?

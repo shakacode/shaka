@@ -4,7 +4,6 @@ require_relative '../error'
 require_relative 'text'
 require_relative 'links'
 require_relative 'usage_details'
-require_relative 'public_usage_identity'
 require_relative 'throughput_stats'
 require_relative 'timings_details'
 require_relative 'provenance'
@@ -31,8 +30,8 @@ module Shaka
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil, # rubocop:disable Metrics/ParameterLists
                          environment: nil, host_name: nil)
       new(content, description: true, workflow_version:, pull:, settings:, timeline:, environment:, host_name:)
-        .render(%i[steps intent_verification human_comments evidence metrics wip sections credit], lead: %i[lead])
-        .tap { QuotedMarkers.refuse!(content) }.then { |body| pull ? PublicUsageIdentity.for_pull(body, pull) : body }
+        .render(%i[steps intent_verification human_comments evidence metrics wip sections credit],
+                lead: %i[lead]).tap { QuotedMarkers.refuse!(content) }
     end
 
     def self.comment(content) = new(content).render([])

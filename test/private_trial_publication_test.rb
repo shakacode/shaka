@@ -28,9 +28,6 @@ module PrivateTrialPublicationHelpers
       body = publish_trial(dir, root, ref, validation, review)
       assert_public_settings(body, ref)
       assert_public_handoff(body)
-      refute_includes body, 'private-source-digest-277'
-      refute_includes body, 'private-response-digest-277'
-      assert_includes body, '"input":"1"'
       refute_private_values(body, root, validation, review)
     end
   end
@@ -82,17 +79,9 @@ module PrivateTrialPublicationHelpers
     supplied = description_content.merge('wip' => HandoffFixtures::WIP.merge(
       'revision' => "feature @ #{@head}", 'workspace' => CHECKOUT, 'thread' => SESSION
     ))
-    supplied['usage'] = usage_with_private_identity(supplied.fetch('usage'))
     path = File.join(dir, 'content.json')
     File.write(path, JSON.generate(supplied))
     path
-  end
-
-  def usage_with_private_identity(usage)
-    records = usage.fetch('records').map do |record|
-      record.merge('sources' => ['private-source-digest-277'], 'responses' => ['private-response-digest-277'])
-    end
-    usage.merge('records' => records)
   end
 
   def result_flags(dir, validation, review)

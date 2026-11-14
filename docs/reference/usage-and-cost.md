@@ -95,19 +95,13 @@ its recorded estimate; current provider prices may differ.
 
 ## Keep usage when work changes hands
 
-In a private repository, usage saved as comments survives a change of model or coding tool.
-A new owner reads those comments instead of the earlier machine's records, and each response
-counts once even if two agents saved it. Comments from accounts without write access are ignored.
-Review previously saved usage before making a private repository public. GitHub keeps its
-existing PR bodies and comments when you change visibility.
+Usage saved as comments on the PR survives a change of model or coding tool. A new owner
+reads those comments instead of the earlier machine's records, and each response counts
+once even if two agents saved it. Comments from accounts without write access are ignored.
 
 Ask the agent:
 
 > Save this task's usage on the PR before handing it over.
-
-On a public PR, ask the agent to update the usage section in the description before handoff.
-It shows aggregate counts and costs. Earlier snapshots that may overlap appear separately
-because the public report omits the identifiers needed to reconcile individual responses.
 
 ## Read the limitations beside the numbers
 

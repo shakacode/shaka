@@ -38,7 +38,7 @@ module CursorUsageRefreshFixture
   def published_pull(usage, extra: nil, records: nil)
     block = Shaka::UsageDetailsBlock.markdown('note' => usage['note'], 'records' => records || [usage['record']])
     block = block.sub("</details>\n", "#{extra}\n</details>\n") if extra
-    body = Shaka::PublicUsageIdentity.redact("<!-- shaka:begin -->\nA summary.\n\n#{block}\n<!-- shaka:end -->")
+    body = "<!-- shaka:begin -->\nA summary.\n\n#{block}\n<!-- shaka:end -->"
     repo = { 'full_name' => 'owner/repo' }
     { 'body' => body, 'head' => { 'sha' => HEAD, 'repo' => repo }, 'base' => { 'sha' => BASE, 'repo' => repo } }
   end
@@ -127,7 +127,6 @@ class CursorUsageRefreshTest < Minitest::Test
 
   def test_stop_hook_fills_the_cursor_usage_row_it_just_wrote
     Dir.mktmpdir do |directory|
-      File.write(File.join(directory, "#{SESSION}.jsonl"), '')
       updated = refreshed_body(directory)
       assert_includes updated, '"effort":"medium"'
       assert_includes updated, '"input":"100"'
@@ -150,9 +149,7 @@ class CursorUsageRefreshTest < Minitest::Test
       bind_pull_request(directory, usage)
       _out, err, status = run_hook(hook_env(directory, published_pull(usage, extra: kept_report), log))
       assert_predicate status, :success?, err
-      body = patched_body(log)
-      assert_includes body, '"label":"kept-review"'
-      refute_includes body, 'kept-source'
+      assert_includes patched_body(log), 'kept-source'
     end
   end
 

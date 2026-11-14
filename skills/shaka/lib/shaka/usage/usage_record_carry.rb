@@ -72,7 +72,7 @@ module Shaka
     # A report that read no source records nothing about its commits. Once a complete report from
     # the same host measured the same contribution and commits, the empty one only adds noise.
     def read_nothing_covered?(old, reports)
-      return false unless unidentified?(old)
+      return false unless old['sources'].empty? && old['responses'].empty?
 
       reports.any? do |new|
         new['host'] == old['host'] && new['complete'] == true && new['responses'].any? &&
@@ -80,19 +80,13 @@ module Shaka
       end
     end
 
-    def unidentified?(fields) = !fields['identity_withheld'] && fields.values_at('sources', 'responses').all?(&:empty?)
-
     TOKEN = /\A[A-Za-z0-9][A-Za-z0-9._:-]{0,79}\z/
     STAMP = /\A(?:UNKNOWN|\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z)\z/
     CONTRIBUTIONS = %w[implementation review integration shared-planning].freeze
 
     # Only the checked fields are kept, since the identity is written into an HTML comment.
     def identity(fields)
-      return unless shape?(fields) && route?(fields) && lists?(fields)
-
-      identity = fields.slice(*UsageRecords::FIELDS)
-      identity['identity_withheld'] = true if fields['identity_withheld'] == true
-      identity
+      fields.slice(*UsageRecords::FIELDS) if shape?(fields) && route?(fields) && lists?(fields)
     end
 
     def shape?(fields)
