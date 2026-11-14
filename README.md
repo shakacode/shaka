@@ -49,13 +49,17 @@ Install Shaka from https://github.com/shakacode/shaka
 Then give it a small task:
 
 ```text
-$shaka Fix search when the query contains an apostrophe. Go
+$shaka Fix search when the query contains an apostrophe
 ```
 
 Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, GitHub Copilot, or OpenCode.
 For Pi, load the installed skill. See [other coding agents](docs/coding-agents.md).
 Your agent checks setup and tells you if
 anything is missing.
+
+Before coding, the agent recommends a model and effort and may wait for your reply.
+To skip that stop and start with your current settings, end the task with `Go`.
+See [why the agent asks](docs/faq.md#why-did-the-agent-stop-to-ask-about-model-and-effort).
 
 Read the PR, ask for revisions if needed, and decide whether to merge.
 

@@ -10,13 +10,15 @@ module Shaka
       In Pi, load the installed Shaka skill and give it the same request.
 
       Start small:
-        $shaka Fix search when the query contains an apostrophe. Go
+        $shaka Fix search when the query contains an apostrophe
       Set up a project:
         $shaka Configure this repository for Shaka. Keep merge policy ask
       Resume a PR:
         $shaka https://github.com/OWNER/REPO/pull/123
       Check your setup:
         $shaka doctor
+
+      End a task with Go to skip the model and effort stop and use your current settings.
 
       Terminal commands:
         shaka doctor             Check this machine and repository; get setup advice.
