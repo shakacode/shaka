@@ -62,6 +62,11 @@ class ThroughputReadyTest < Minitest::Test
     assert_includes rendered, '· ready in 1h 19m'
   end
 
+  def test_a_green_gate_with_no_timestamp_renders_unknown
+    rendered = describe('$4.12', timeline: push_times.merge('ready_at' => :unknown), pull: head_pull)
+    assert_includes rendered, '· ready in UNKNOWN'
+  end
+
   def test_a_new_head_does_not_keep_the_old_heads_ready_time
     pull = refresh_pull(sha: NEXT)
     assert_includes describe('$4.12', timeline: push_times, pull:), 'CI to ready pending'

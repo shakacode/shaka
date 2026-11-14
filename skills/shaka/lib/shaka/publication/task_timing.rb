@@ -81,7 +81,10 @@ module Shaka
     end
 
     def timing_details(metrics)
-      metrics[%r{^<summary>Timings · [^\r\n]+</summary>\r?\n(.*?)^</details>}m, 1].to_s
+      pattern = %r{^<summary>Timings · [^\r\n]+</summary>\r?\n\r?\n
+                   (?=<!--\ shaka:stats\ )(.*?)^</details>}mx
+      sections = metrics.scan(pattern)
+      sections.one? ? sections.first.first : ''
     end
 
     def timestamp(value, now)

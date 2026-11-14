@@ -37,14 +37,17 @@ module Shaka
     end
 
     def endpoint_gap(state, timeline, now)
-      return 'GitHub merge time unavailable.' if timeline['merged_pr'] && !timeline['merged']
+      return 'GitHub merge time unavailable.' if timeline.values_at('merged_pr', 'merged') == [true, nil]
 
       endpoint = state['t3'] ? %w[t3 merged] : %w[t2 ready_at]
+      observed = timeline[endpoint.last]
+      return 'GitHub readiness time unavailable.' if observed == :unknown
+
       recorded = state[endpoint.first]
       return unless recorded
 
-      observed = timeline[endpoint.last]
-      return if observed && observed == TaskTiming.timestamp(recorded, now)
+      actual = TaskTiming.timestamp(recorded, now)
+      return if actual && actual == observed
 
       'The elapsed endpoint could not be verified from current GitHub evidence.'
     end
