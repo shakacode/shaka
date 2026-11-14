@@ -6,14 +6,16 @@ needs Ruby 3.4 or later and runs without installing a coding-agent skill.
 
 ## Validate team configuration
 
-Once Shaka 1.0.0 is published on RubyGems, run these commands from the project
-root. Use the same version for installation and execution so another installed
-version cannot change the validation rules.
+From the project root, choose an exact version published on RubyGems that
+supports `seam check --local`. The example uses 1.0.0, which must be published
+before this install works. RubyGems selects the same version when running the
+check, even if another Shaka executable is on your path.
 
 ```sh
 SHAKA_VERSION=1.0.0
 gem install shaka --version "$SHAKA_VERSION" --no-document
-shaka "_${SHAKA_VERSION}_" seam check --root . --local
+ruby -rrubygems -e 'load Gem.activate_bin_path("shaka", "shaka", ARGV.shift)' \
+  "$SHAKA_VERSION" seam check --root . --local
 ```
 
 In CI, check out the proposed change, set up Ruby 3.4 or later, and run the same
@@ -27,6 +29,9 @@ scripts. A passing result reports `local/candidate` mode with policy and merge
 authority both disabled.
 
 ## Install the skill
+
+Shaka gives your coding agent a workflow for testing changes, getting an
+independent review, and opening a pull request with evidence you can inspect.
 
 Use Ruby 3.4 or later, Git, and an authenticated
 [GitHub CLI](https://cli.github.com/). After the release is available on RubyGems,
