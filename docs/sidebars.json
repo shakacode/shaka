@@ -61,6 +61,7 @@
       "items": [
         "articles/pull-requests-in-the-age-of-agents",
         "articles/review-process-study",
+        "articles/claude-code-team-review",
         "articles/checkpoint-sentence-eval",
         "articles/one-shot-pr-study",
         "articles/ci-and-hosted-review-repairs",
