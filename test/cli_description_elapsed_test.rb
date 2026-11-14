@@ -53,7 +53,7 @@ class CliDescriptionElapsedTest < Minitest::Test
   def test_a_codex_turn_after_pr_opening_keeps_the_fallback
     @codex_start = { 'thread_id' => THREAD, 'turn_id' => TURN }
     body = published('PR_CHECKS' => JSON.generate(CHECKS), 'PR_TIMELINE_OPENED' => '2026-10-18T05:59:00Z')
-    assert_includes body, '· ready in UNKNOWN'
+    assert_includes body, '<summary>Missing values</summary>'
     assert_equal 'Selected Codex turn is after PR opening.', @timing['reason']
   end
 

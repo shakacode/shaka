@@ -18,16 +18,21 @@ module Shaka
       issue = problem(state, body, head, timeline, now)
       return result('unverified', issue, lookup_note) if issue
 
-      metric = ThroughputStats.took(state).delete_prefix(' · ')
+      suffix = ThroughputStats.took(state)
       return result('unverified', 'Stored elapsed time does not match the timing record.', lookup_note) unless
-        region[ThroughputStats::COST]&.end_with?(" · #{metric}")
+        stored_suffix(region) == suffix
 
-      summarize(state, metric, lookup_note || evidence_gap(state, timeline, now))
+      summarize(state, suffix.delete_prefix(' · '), lookup_note || evidence_gap(state, timeline, now))
     rescue Error
       result('unverified', 'Stored timing record is unreadable.', lookup_note)
     end
 
     def metrics_region(body) = UsageEstimate.metrics(Publishing.managed_region(body).to_s).to_s
+
+    def stored_suffix(region)
+      cost = region.match(ThroughputStats::COST)
+      cost[0].delete_prefix(cost[1]) if cost
+    end
 
     def evidence_gap(state, timeline, now)
       return 'PR opening time unavailable.' if timeline['task_started_at'] && !timeline['opened']
@@ -66,15 +71,14 @@ module Shaka
 
     def summarize(state, metric, lookup_note)
       return result('unavailable', lookup_note, nil, metric) if lookup_note
+      return result('unavailable', 'Task start timestamp unavailable.', nil) if metric.empty?
       return result('pending', 'CI readiness time not recorded yet.', lookup_note, metric) if metric == 'ready pending'
       return result('matched', nil, lookup_note, metric) unless metric.end_with?('UNKNOWN')
 
-      reason = if state['t0'].nil? || state['t0'] == 'UNKNOWN'
-                 'Task start timestamp unavailable.'
-               else
-                 'Elapsed time unavailable from the recorded timestamps.'
-               end
-      result('unavailable', reason, lookup_note, metric)
+      return result('unavailable', 'Task start timestamp unavailable.', nil, metric) unless
+        ThroughputStats.task_started?(state)
+
+      result('unavailable', 'Elapsed time unavailable from the recorded timestamps.', nil, metric)
     end
 
     def result(status, reason, lookup_note, metric = nil)

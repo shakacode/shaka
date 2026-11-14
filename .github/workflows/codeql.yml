@@ -1,9 +1,12 @@
 name: CodeQL
 
+# A change that touches only Markdown under docs/ or internal/ has no Ruby to analyze.
 on:
   pull_request:
+    paths-ignore: ['docs/**/*.md', 'internal/**/*.md']
   push:
     branches: [main]
+    paths-ignore: ['docs/**/*.md', 'internal/**/*.md']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}

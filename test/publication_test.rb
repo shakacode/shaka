@@ -99,7 +99,7 @@ class PublicationRegressionTest < Minitest::Test
     timeline = { 'opened' => Time.utc(2026, 10, 18, 8), 'merged' => Time.utc(2026, 10, 18, 9), 'labels' => [] }
     rendered = Shaka::Publication.description(description_content, nil, nil, nil, timeline)
     assert_operator rendered.index('<summary>Usage'), :<, rendered.index('<summary>Timings · 1h 0m between checkpoints')
-    intervals = '**This head:** Prompt to CI UNKNOWN · CI to ready UNKNOWN · Ready to merged UNKNOWN'
+    intervals = '**This head:** Prompt to CI not recorded · CI to ready UNKNOWN · Ready to merged UNKNOWN'
     assert_includes rendered, "#{intervals}\n\n**Totals:** 1h 0m"
     refute_includes Shaka::Publication.description(description_content), '<summary>Timings'
   end
@@ -239,9 +239,9 @@ class PublicationStructureTest < Minitest::Test
   def test_a_details_summary_cannot_close_its_own_disclosure
     rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    # Metrics, provenance, skills, settings, usage with pricing notes, and supplied details.
-    assert_equal 8, rendered.scan('</summary>').size
-    assert_equal 8, rendered.scan('</details>').size
+    # Metrics, missing values, provenance, skills, settings, usage with pricing notes, and supplied details.
+    assert_equal 9, rendered.scan('</summary>').size
+    assert_equal 9, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing

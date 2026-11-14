@@ -5,10 +5,13 @@ name: Windows
 # the others, and so a red step does not block merge. Justin decides when to require it.
 # Pull requests and pushes run the quick steps. The full test suite takes about
 # 20 minutes, so it runs nightly and when someone starts this workflow by hand.
+# A change that touches only Markdown under docs/ or internal/ skips it.
 on:
   pull_request:
+    paths-ignore: ['docs/**/*.md', 'internal/**/*.md']
   push:
     branches: [main]
+    paths-ignore: ['docs/**/*.md', 'internal/**/*.md']
   schedule:
     - cron: '17 7 * * *'
   workflow_dispatch:
