@@ -73,8 +73,13 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    | `delivery#when-a-task-needs-several-prs` | a larger task needs splitting |
    | `ui-verification#ui-changes` | the change is something a person sees on screen |
    | `performance-verification#verify-a-speed-affecting-change` | the change affects speed |
-   | `post-implementation-validation#recommend-the-next-action` | the checkpoint rates the change high risk |
+   | `post-implementation-validation#recommend-the-next-action` | every task at Finish; the line runs only for a high risk rating |
    | `retrospective#use-the-companion-when-it-is-installed` | the user asks for a retrospective |
+
+   The checkpoint procedure is the one exception to conditional loading: it runs on every
+   task. Its point line therefore states its own condition, the checkpoint's `high` rating
+   from [the risk rubric](../../skills/shaka/config/post-implementation-risk.md), so low and
+   medium risk work never sees a high-risk suggestion.
 
    The command reads repository settings at the trusted `--ref`, the way `guidance` does, and
    applies every layering and trust rule below in Ruby. It prints, for each skill, the mode,
@@ -98,7 +103,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
 
    Starting entries, all `suggest` until a study supports `use` (decision 6):
 
-   | Skill point | Skill | Mode after promotion |
+   | Skill point | Skill | Mode |
    | --- | --- | --- |
    | design first | AI Hero `grill-me`, `prototype`; pstack `architect` | suggest |
    | task splitting | AI Hero `to-spec`, `to-tickets`, `wayfinder` | suggest |
@@ -110,13 +115,15 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    | retrospective | pstack `reflect`, `correct`; AI Hero `retro` | suggest |
    | (any) | pstack `poteto-mode` playbooks; AI Hero `implement`, `implement-spec` | decline: orchestrator |
    | (any) | pstack `tdd`; AI Hero `tdd` | decline: Implement owns failing-test-first |
-   | (any) | pstack `unslop`, `technical-writing` | decline: no separate rewrite skill at publication |
 
    performance-verification.md keeps running `shaka-perf compare` as it does today; a pack
-   setting never weakens what a procedure already requires. The last decline follows the
-   workflow's enforced "do not invoke a separate rewrite skill" rule. Whether that rule should
-   change belongs to the writing-style work in [#210](https://github.com/shakacode/shaka/issues/210),
-   not to this record.
+   setting never weakens what a procedure already requires.
+
+   pstack `unslop` and `technical-writing` get no skill point and no decline. companion-skills.md
+   already applies their prose advice to the content Shaka supplies, and the workflow's
+   agent-enforced rule says not to invoke a separate rewrite skill at publication. Whether
+   either should change belongs to the writing-style work in
+   [#210](https://github.com/shakacode/shaka/issues/210), not to this record.
 
    Skills that load on their own by description, such as pstack `blast-radius` or
    `typescript-best-practices` and AI Hero `diagnosing-bugs`, need no point. The host already
@@ -138,8 +145,10 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    ```
 
    - A repository adds its own skills with a pack file under `.agents/shaka/packs/`, read
-     from the trusted settings source. A project skill whose file differs from the trusted
-     commit comes back declined, because a candidate branch grants nothing.
+     from the trusted settings source. A project skill is loaded from the trusted commit,
+     its whole directory and not only `SKILL.md`, so a candidate branch cannot change what
+     it says or runs. A project skill that is new or changed on the candidate branch comes
+     back declined, because a candidate branch grants nothing.
    - `~/.agents/shaka/companions.yml` on a machine, beside the reviewer list from
      [ADR 0005](0005-per-machine-reviewers.md), can turn packs on and decline skills for its
      owner. It has no `use` key, and it cannot lift a repository's decline, for the same
@@ -158,7 +167,9 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    it would add to this task and offer the pack's install command. Install only after a yes
    in this task, or under standing consent the user saved, using the same consent pattern as
    review consent. Offer each pack at most once per task, and keep going without it when the
-   user declines. Packs that are not packaged keep today's rule.
+   user declines. Packs that are not packaged keep today's rule, and the retrospective point
+   keeps retrospective.md's stricter "Do not install one," since a retrospective request
+   authorizes analysis only.
 
 5. **Users can ask for suggestions.** `/shaka suggest skills` (or "suggest skills" mid-task)
    runs `shaka companions --all` and lists, for each point this task is likely to reach, the
@@ -167,12 +178,17 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    task, records the answer in the task record, and keeps a declined suggestion quiet for the
    rest of the task.
 
-6. **An entry moves from `suggest` to `use` on ADR 0001's evidence.** Every published PR
-   already records `skills_used` with phase and revision, plus token usage and timing. A
-   candidate gets eval arms with and without it on the same tasks, and it is promoted only
-   when the comparison passes the noise and regression rules in
-   [ADR 0001](0001-eval-and-release-gating.md) D8, run as a D11 comparison. A packaged `use`
+6. **An entry moves from `suggest` to `use` on ADR 0001's evidence.** A candidate gets paired
+   eval runs with and without it on the same tasks, using the comparison
+   [ADR 0001](0001-eval-and-release-gating.md) proposes, with the skill's presence as the one
+   varied factor. It is promoted when one of review rounds, confirmed findings, or cost per
+   merged PR improves by more than D8's noise floor and D8 flags no regression. D8 alone only
+   flags losses, so the gain has to be shown, not just the absence of harm. A packaged `use`
    entry links the study behind it, and the loader refuses a packaged `use` without one.
+   ADR 0001's comparison runs are not built yet, so until they are, nothing is promoted and
+   every packaged entry stays `suggest`. PRs that report `skills_used` add real-use context,
+   but those entries are optional and agent-reported, so they inform a study rather than
+   replace it.
 
 ## Alternatives considered
 
@@ -187,8 +203,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
   bug, checking shared callers, and editing agent instructions, which no procedure owns. It
   costs a marker on each point in every rendered workflow plus an instruction to use them,
   and a third file anchored to workflow text whose `when` conditions repeat what the linked
-  procedures already say. Procedure ownership loses those three moments and costs one line
-  in each of six procedures that load only when needed.
+  procedures already say. Procedure ownership loses those three moments and costs six lines
+  in five procedure files, all but one of which load only when needed.
 - **Points as fields inside workflow.yml phases.** Fewer files, but every catalog change would
   edit the always-loaded workflow, which is already over 1,000 lines.
 - **A broad registry search (skills.sh and similar).** More coverage, but no trust boundary,
@@ -208,7 +224,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
   The installed-skill scan moves out of `Doctor::CompanionSkills` so doctor and the command
   share it.
 - companion-skills.md gains a skill points section, the three modes, and the install offer,
-  and replaces "Do not install it" for packaged packs. Six procedures gain one line each.
+  and replaces "Do not install it" for packaged packs. Five procedure files gain six point
+  lines; delivery.md holds two.
   retrospective.md's companion section shrinks to its point line plus its stricter rule.
 - `defaults.yml`, docs/settings.md, and the `.agents/shaka/config.yml` example gain the
   `companions` section. The machine file is a new home-directory exception that
@@ -217,8 +234,9 @@ the ownership rule companion-skills.md already follows, so there is no code to r
   trusted commit are new reads the configuration boundary test will need to admit.
 - Suggestions add some prompts to a task. The once-per-point limit and `companions.suggest:
   false` bound that.
-- Each `use` entry loads another skill into context. The eval gate is there so that cost has
-  to pay for itself.
+- Each `use` entry loads another skill into context. Decision 6 requires a measured gain
+  before promotion, so that cost has to pay for itself.
+- Delivery step 3 waits on ADR 0001's comparison runs.
 - When an upstream pack renames or removes a skill, its pack entry goes stale. The command
   warns, and doctor names entries whose skill is missing from an installed pack.
 
@@ -232,5 +250,6 @@ Proposed as three PRs:
 2. Packaged pack files for ShakaPerf, pstack, and AI Hero in `suggest` mode only, repository
    and machine pack files, `/shaka suggest skills`, the install offer, doctor reporting, and
    the `companions` settings.
-3. Eval arms for the first `use` candidates, `benchmark-checklist` and
-   `principle-explain-the-number`, and promotion of what the results support.
+3. Once ADR 0001's comparison runs exist, eval runs for the first `use` candidates,
+   `benchmark-checklist` and `principle-explain-the-number`, and promotion of what the
+   results support.
