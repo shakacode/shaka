@@ -32,6 +32,8 @@ module Shaka
     def metrics_region(body) = Publishing.managed_region(body).to_s.split(METRICS_START, 2)[1].to_s
 
     def evidence_gap(state, timeline, now)
+      return 'PR opening time unavailable.' if timeline['task_started_at'] && !timeline['opened']
+
       endpoint_gap(state, timeline, now) ||
         ('Task start could not be verified.' if state['t0'] && !timeline['task_started_at'])
     end

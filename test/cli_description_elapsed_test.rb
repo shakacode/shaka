@@ -66,7 +66,7 @@ class CliDescriptionElapsedTest < Minitest::Test
   def test_the_stored_metric_is_verified_separately_from_the_timestamps
     body = published('PR_CHECKS' => JSON.generate(CHECKS))
     state = Shaka::ThroughputStats.read(body)
-    timeline = { 'task_started_at' => Time.iso8601(state['t0']) }
+    timeline = { 'task_started_at' => Time.iso8601(state['t0']), 'opened' => Time.iso8601('2026-10-18T08:00:00Z') }
     result = Shaka::PublishedTiming.check(body.sub('· ready in 1h 30m', '· ready in 2h 0m'),
                                           head: state['head'], timeline:)
     assert_equal 'unverified', result['status']
@@ -76,13 +76,12 @@ class CliDescriptionElapsedTest < Minitest::Test
   def test_an_example_before_the_metrics_does_not_change_the_verdict
     body = published('PR_CHECKS' => JSON.generate(CHECKS))
     state = Shaka::ThroughputStats.read(body)
-    example = <<~MARKDOWN
-      **Estimated token costs:** UNKNOWN · ready in 2h 0m
-      <!-- task-timing {"task_started_at":"2026-10-18T06:00:00Z"} -->
-    MARKDOWN
-    body = body.sub('## Shaka metrics', "#{example}\n## Shaka metrics")
-    timeline = { 'task_started_at' => Time.iso8601(state['t0']), 'ready_at' => Time.iso8601(state['t2']) }
-    result = Shaka::PublishedTiming.check(body, head: state['head'], timeline:)
+    example = "**Estimated token costs:** UNKNOWN · ready in 2h 0m\n" \
+              "<!-- task-timing {\"task_started_at\":\"2026-10-18T06:00:00Z\"} -->\n"
+    timeline = { 'task_started_at' => Time.iso8601(state['t0']), 'ready_at' => Time.iso8601(state['t2']),
+                 'opened' => Time.iso8601('2026-10-18T08:00:00Z') }
+    result = Shaka::PublishedTiming.check(body.sub('## Shaka metrics', "#{example}\n## Shaka metrics"),
+                                          head: state['head'], timeline:)
     assert_equal 'matched', result['status']
   end
 
