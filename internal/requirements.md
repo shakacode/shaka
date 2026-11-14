@@ -21,7 +21,7 @@ must cite that evidence before claiming the pilot's real-use acceptance.
 - **R4 — Explain the implementation.** Explain intent and verification in the PR
   description. Publish a conceptual walkthrough with links to reviewed code as a
   commit-bound COMMENT review on request, or on every PR when the repository sets
-  `walkthrough.publish: always` ([ADR 0007](adr/0007-walkthroughs-on-request.md)).
+  `walkthrough.publish: always`.
   A walkthrough remains readable after merge and substitutes for neither approval
   nor required acknowledgment.
   Offer an [interactive tour](../skills/shaka/references/interactive-walkthrough.md)
