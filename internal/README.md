@@ -18,3 +18,4 @@ instructions or private company plans.
 - [Rendering preview](rendering-preview.md) — how an agent shows a rendering change on its own PR.
 - [Conditional workflow loading](conditional-workflow-loading.md) — bounded extraction and Ponytail structure comparison.
 - [Predecessor retirement](retirement.md) — temporary migration record; remove after its acceptance conditions are met.
+
