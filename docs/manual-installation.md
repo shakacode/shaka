@@ -118,12 +118,13 @@ Status shows the next step. When it asks you to reinstall to record Ruby again,
 run `ruby "$shaka_source/bin/install"` from that checkout.
 
 Check the result with `"$shaka_helper" install --verify`. To inspect an update
-to a branch installation, confirm `origin` and `@{upstream}` match the
-repository and branch shown by `install --status`. If they differ, use the
-status output to diagnose the checkout first. Then run this from the active checkout:
+to a branch installation, confirm `origin` matches the repository shown by
+`install --status`. Set `shaka_branch` to the branch shown there, then run this
+from the active checkout.
 
 ```bash
-git fetch origin && git diff HEAD '@{upstream}'
+shaka_branch=main
+git fetch origin "refs/heads/$shaka_branch" && git diff HEAD FETCH_HEAD
 ```
 
 The comparison leaves your installed files and skill links in place.
@@ -340,17 +341,20 @@ skill-link problems.
 
 Before moving, pause the schedule and let any running update finish.
 
-- On macOS, check the job's state with `launchctl print gui/$(id -u)/com.shakacode.update-check`.
-  Wait until it has finished, then unload it with the `launchctl bootout` command above.
+- On macOS, disable new launches with `launchctl disable "gui/$(id -u)/com.shakacode.update-check"`.
+  Use `launchctl print` with the same target to wait for an active run, then
+  unload the job with the `launchctl bootout` command above.
 - On Linux, run `systemctl --user disable --now shaka-update-check.timer`.
   Check `systemctl --user status shaka-update-check.service` for a running invocation.
 - On Windows, disable the task in Task Scheduler and wait for it to finish if it is running.
 
 After the move, set the new helper path and run `install --verify` and `update-check`
 from that path. Confirm verification passes and the check refers to the active
-installation. Load the edited job using the platform steps above. An update job
-can catch up immediately when re-enabled, so keep Shaka chats closed until that
-run finishes.
+installation. An update job can catch up immediately when re-enabled, so close
+Shaka chats before restarting the schedule. On macOS, use `launchctl enable`
+with the same target, then bootstrap the edited plist. On Linux, reload the
+user manager and enable and start the edited timer as shown above. On Windows,
+enable the existing task in Task Scheduler after editing its PowerShell script.
 
 ### Repair a broken installation
 
