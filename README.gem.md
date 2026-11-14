@@ -1,7 +1,30 @@
 # Shaka RubyGem
 
-Shaka gives your coding agent a workflow for testing a change, getting an
-independent review, and opening a pull request with evidence you can inspect.
+Use the Shaka gem to validate a project's team configuration in
+`.agents/shaka/` before pushing a change or merging a pull request. The check
+needs Ruby 3.4 or later and runs without installing a coding-agent skill.
+
+## Validate team configuration
+
+Once Shaka 1.0.0 is published on RubyGems, run these commands from the project
+root. Use the same version for installation and execution so another installed
+version cannot change the validation rules.
+
+```sh
+SHAKA_VERSION=1.0.0
+gem install shaka --version "$SHAKA_VERSION" --no-document
+shaka "_${SHAKA_VERSION}_" seam check --root . --local
+```
+
+In CI, check out the proposed change, set up Ruby 3.4 or later, and run the same
+commands from the checkout root. If the job runs from another directory, pass
+the checkout path to `--root` (for example, `--root "$GITHUB_WORKSPACE"` in GitHub
+Actions).
+
+The check validates `.agents/shaka/config.yml` and the command paths it names.
+It exits nonzero for invalid settings, unsafe paths, or missing or non-executable
+scripts. A passing result reports `local/candidate` mode with policy and merge
+authority both disabled.
 
 ## Install the skill
 
