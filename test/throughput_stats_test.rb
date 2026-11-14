@@ -6,7 +6,7 @@ require_relative 'throughput_helper'
 class ThroughputStatsTest < Minitest::Test
   include ThroughputHelper
 
-  PENDING = '**This head:** Prompt to CI UNKNOWN · CI to ready pending · Ready to merged pending'
+  PENDING = '**This head:** Prompt to CI not recorded · CI to ready pending · Ready to merged pending'
 
   def test_the_model_line_shows_spend_and_timings_shows_the_intervals
     rendered = describe
@@ -112,15 +112,27 @@ end
 class ThroughputSummaryTest < Minitest::Test
   include ThroughputHelper
 
-  def test_cost_line_keeps_unknown_timing_when_task_start_was_not_recorded
+  def test_cost_line_leaves_off_timing_and_details_say_why_when_task_start_was_not_recorded
     times = { 'ci_started_at' => PUSH, 'ready_at' => READY }
     rendered = describe('$7.27', timeline: times)
-    visible = rendered.split('<summary>Details</summary>').first
-    assert_includes visible, "**Estimated token costs:** $7.27 · ready in UNKNOWN\n"
+    visible, details = rendered.split('<summary>Details</summary>')
+    assert_includes visible, "**Estimated token costs:** $7.27\n"
+    refute_includes visible, 'in UNKNOWN'
     assert_includes rendered, 'CI to ready 41m'
-    times['merged'] = MERGED
-    assert_includes describe('$7.27', timeline: times),
-                    "**Estimated token costs:** $7.27 · merged in UNKNOWN\n"
+    assert_includes details, "<summary>Missing values</summary>\n\n- **Task start** was not recorded"
+    assert_includes details, '`task_started_at`'
+  end
+
+  def test_merged_cost_line_leaves_off_timing_without_a_task_start
+    merged = describe('$7.27', timeline: { 'ci_started_at' => PUSH, 'ready_at' => READY, 'merged' => MERGED })
+    assert_includes merged, "**Estimated token costs:** $7.27\n"
+    assert_equal merged, Shaka::ThroughputStats.update(merged, {})
+  end
+
+  def test_missing_values_are_omitted_when_the_task_start_was_recorded
+    rendered = describe('$7.27', timeline: { 'task_started_at' => START, 'ci_started_at' => PUSH, 'ready_at' => READY })
+    assert_match(/\*\*Estimated token costs:\*\* \$7\.27 · ready in \d/, rendered)
+    refute_includes rendered, 'Missing values'
   end
 
   def test_pending_timing_is_visible_and_replaced_once_when_ready

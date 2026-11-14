@@ -112,7 +112,7 @@ class UsageTest < Minitest::Test
     assert_includes report, '2 responses'
     assert_includes report, '2026-09-14T12:00:00Z'
     assert_includes report, 'PARTIAL'
-    assert_includes report, 'External reviewer/tool-model usage: UNKNOWN'
+    refute_includes report, 'reviewer usage'
   end
 
   def test_missing_fields_stay_unknown_and_each_turn_keeps_its_configured_model
@@ -335,8 +335,7 @@ class UsageReviewCoverageTest < Minitest::Test
     header = report.split('<details>').first
     assert_includes report, "#{COMMIT} / review"
     assert_includes header, 'Local adversarial reviewer usage: included below'
-    assert_includes header, 'External reviewer/tool-model usage: UNKNOWN'
-    refute_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+    refute_includes header, 'External reviewer'
     assert_metric report, 'Input', 100
   end
 
@@ -344,7 +343,7 @@ class UsageReviewCoverageTest < Minitest::Test
   # hide a missing review snapshot behind a green usage table.
   def test_implementation_snapshot_does_not_count_as_local_review
     header = run_report([context('current'), usage('current', 'current', 100)]).split('<details>').first
-    assert_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+    refute_includes header, 'reviewer usage'
   end
 
   # Conflicting copies keep a response row whose usage is empty. Calling that
@@ -353,7 +352,7 @@ class UsageReviewCoverageTest < Minitest::Test
     report = run_report([context('current'), usage('replayed', 'current', 100),
                          usage('replayed', 'current', 200)], '--contribution', 'review')
     header = report.split('<details>').first
-    assert_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+    assert_includes header, 'Local adversarial reviewer usage: not countable'
     refute_includes header, 'included below'
   end
 
@@ -365,7 +364,7 @@ class UsageReviewCoverageTest < Minitest::Test
     second = usage('b', 'current', 20)
     second[:payload][:usage] = { output_tokens: 20 }
     header = run_report([context('current'), first, second], '--contribution', 'review').split('<details>').first
-    assert_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+    assert_includes header, 'Local adversarial reviewer usage: not countable'
     refute_includes header, 'included below'
   end
 end

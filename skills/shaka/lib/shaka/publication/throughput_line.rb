@@ -18,13 +18,14 @@ module Shaka
     # Appended to the model line.
     def header(state) = "#{SPEND}#{shown_spend(state)}"
 
-    # Appended to the estimated cost line: task start to merge once merged, otherwise to ready.
+    # Appended to the estimated cost line: task start to merge once merged, otherwise to ready. A span
+    # that cannot be measured is left off; Missing values in Details says why.
     def took(state)
       ended, label = state['t3'] ? [state['t3'], 'merged'] : [state['t2'], 'ready']
       return ' · ready pending' unless ended
 
-      span = state['t0'] && ended && ended != 'UNKNOWN' ? interval(state['t0'], ended) : 'UNKNOWN'
-      " · #{label} in #{span}"
+      span = state['t0'] && ended != 'UNKNOWN' ? interval(state['t0'], ended) : 'UNKNOWN'
+      span == 'UNKNOWN' ? '' : " · #{label} in #{span}"
     end
 
     def earliest_start(commit)
@@ -57,7 +58,7 @@ module Shaka
     def spend_text?(text) = text.is_a?(String) && !text.strip.empty?
 
     def prompt(state)
-      return 'UNKNOWN' if state['t0'].nil?
+      return 'not recorded' if state['t0'].nil?
       return state['t3'].nil? ? 'pending' : 'UNKNOWN' if state['t1'].nil?
 
       interval(state['t0'], state['t1'])
