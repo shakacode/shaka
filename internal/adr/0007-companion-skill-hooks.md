@@ -37,6 +37,15 @@ third is our own performance tool:
   `shaka-perf-discover-abtests`), coverage of changed components (`shaka-perf-coverage`,
   `shaka-perf-add-coverage`), and bug hunting against the base (`shaka-perf-find-bugs`).
 
+AI Hero also has two unreleased skills on its `animatic-skill` branch, read at
+`7100905`: `setup-animatic` picks a voice, renderer, and stitcher for a repository,
+and `animatic` turns a storyboard into a short narrated MP4 of still frames. Its PR mode
+aims at a 90-second video on every major PR, attached to the PR as a comment. Its arc (title,
+the problem, the shape of the change with a reading order, the key hunks, then proof and
+risk) is close to what a Shaka description already holds: `intent.why`, the walkthrough
+order, the risk record, and verification evidence on the current head. It also has a review
+mode that tours several merged PRs.
+
 Other packs, such as Addy Osmani's skills, can come later. Decision 3 lets any repository or
 developer add their own packs in the meantime.
 
@@ -90,6 +99,7 @@ changes.
    | `verify.speed` | Speed verification, or any measured number the PR reports |
    | `verify.high_risk` | The checkpoint rates the change high risk |
    | `explain.content` | Content Shaka supplies to `description`, `walkthrough`, or `reply` |
+   | `explain.video` | The description is published and the checkpoint rates the change medium or high risk |
    | `retrospective` | `/shaka retrospective`, or the same correction twice in one task |
 
 2. **A packaged catalog maps skills to hooks with one of three modes.**
@@ -122,12 +132,22 @@ changes.
    | `verify.high_risk` | pstack `interrogate` | suggest (fans out) |
    | `verify.high_risk` | ShakaPerf `shaka-perf-find-bugs` | suggest, for UI changes when twin servers exist |
    | `explain.content` | pstack `unslop`, `technical-writing` | use, on supplied content only |
+   | `explain.video` | AI Hero `animatic`, after `setup-animatic` once per repository | suggest, once AI Hero releases it |
    | `retrospective` | pstack `reflect`, `correct`; AI Hero `retro` | suggest |
    | (any) | pstack `poteto-mode` playbooks; AI Hero `implement`, `implement-spec` | decline |
    | (any) | pstack `tdd`; AI Hero `tdd` | decline: Implement already owns failing-test-first |
 
    `explain.content` keeps the existing rule that the helper renders the body: the skills edit
    the content JSON before `description` runs and never rewrite the rendered body.
+
+   `explain.video` hands `animatic` Shaka's own description content as its source: the
+   intent, the walkthrough order, the risk record, and the verification evidence with the head
+   it ran on. The animatic's PR arc reads those in place of re-deriving them from the PR body
+   and diff, so the video says what the PR says and its proof is evidence Shaka checked. The
+   storyboard and narration go through the same privacy check as any publication, since a
+   video on a public PR is public too. The MP4 is attached with the existing evidence upload
+   (`gh pr comment --attach`, then confirm the link), and the hook reruns after a commit that
+   changes what the video claims, the same refresh rule screenshots follow.
 
    Skills that load on their own by file type, such as pstack `typescript-best-practices`,
    need no hook. The host already loads them.
@@ -242,3 +262,6 @@ Proposed as three PRs:
    the install offer, doctor reporting, and the `companions` settings.
 3. Eval arms for the first `use` candidates: `blast-radius`, `diagnosing-bugs`,
    `benchmark-checklist`, `shaka-perf` compare, and `unslop` on supplied content. Promote what the results support.
+4. The `explain.video` entry, after AI Hero merges the animatic skills to its main branch.
+   Measure whether reviewers who get a video spend less time to first review or ask fewer
+   clarifying questions before deciding whether to suggest it more widely.

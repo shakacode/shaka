@@ -69,7 +69,11 @@ Not done yet. Check `shakacode/agent-workflows` for PR-history analysis before i
    Findings use the existing table (observed behavior, evidence, proposed improvement,
    expected benefit, maintenance cost), with PR links as evidence. The report gives medians
    and the number of PRs behind each claim, and calls a pattern from fewer than five PRs
-   insufficient evidence. Then it stops, and selected findings become ordinary Shaka tasks,
+   insufficient evidence. When AI Hero's `animatic` skill is installed (ADR 0007's
+   `explain.video` entry), the report offers its several-PR review mode as an optional
+   narrated tour of the window: what landed, where time went, and which files to read first.
+   It builds from the PR record report, posts nothing, and leaves the MP4 with the user.
+   Then it stops, and selected findings become ordinary Shaka tasks,
    exactly as the session mode does today.
 
 3. **A repository can opt in to a short retrospective after each merge.** A new setting:
