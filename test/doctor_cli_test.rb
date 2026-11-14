@@ -36,6 +36,8 @@ class DoctorCliTest < Minitest::Test
     refute_predicate status, :success?, 'a missing repository seam must block'
     assert_includes output, 'Repository seam'
     assert_includes output, 'Machine alias'
+    assert_includes output, 'schedule `shaka update-check`'
+    assert_includes output, 'manual-installation#schedule-a-daily-update-check'
     assert_empty error
   end
 
