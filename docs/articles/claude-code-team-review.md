@@ -31,9 +31,9 @@ Three earlier pieces cover nearby ground:
 
 ## Main results
 
-- Shaka has two of the nine practices in full: checks and a fresh-context review before the
-  PR, and a risk rating set by the change. Six more are partly there. Reviewer evals built
-  from past incidents are missing.
+- Shaka has the core of two of the nine practices: checks and a fresh-context review before
+  the PR, and a risk rating set by the change. Both still have the gaps the table names. Six
+  more are partly there. Reviewer evals built from past incidents are missing.
 - The largest gap is where review blocks. Osmani's team blocks every merge on any open
   finding and resolves every thread. Shaka blocks on open local review findings only in
   commands the agent runs. A merge you click on GitHub skips them.
