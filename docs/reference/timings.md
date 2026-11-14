@@ -84,9 +84,10 @@ such as a ready time no update recorded before the merge. Neither means zero.
 | Between checkpoints | The PR opens, or a wait ends | The next wait starts, the PR merges or closes, or this update |
 | Waiting on a person | The agent asks for your answer, your merge approval, or a manual resume | The agent resumes, or the PR merges or closes |
 
-The task start comes from the agent, or otherwise from the earliest implementation
-usage report that covers the whole task, and is retained across description
-updates. Shaka uses it to include planning and implementation before the first commit. The
+Shaka can read the selected original turn’s timestamp from a local Codex
+session. It also accepts an explicit timestamp and can fall back to a saved
+start or a whole-task implementation usage report. This includes planning and
+implementation before the first commit. The
 **Before first recorded validation** interval shows the elapsed wall-clock time
 from that start to the earliest recorded validation run, including a focused test.
 It overlaps the stretches and is not added to the totals again. Missing start or
@@ -109,10 +110,10 @@ adds a label when it stops for you and removes it when work resumes.
 - Without a recorded task start, the timeline starts at the first commit and
   excludes earlier work. A rebase can move that date; when it falls after the PR
   opened, the first row is omitted.
-- Ruby checks the task start's timestamp and order, but does not verify when work
-  actually began. A start read from a usage report is the agent's first response in
-  that report, moments after the request. A task that moved to a new chat before
-  its PR opened shows only the new chat's time.
+- The agent selects which request began the task. A start inferred from usage
+  measures from the first response in the report and may omit earlier planning.
+- The `shaka description` result reports whether the stored timing matched, was
+  still pending, or had a gap such as an unavailable Codex turn.
 - The ready time appears once a description update or a watch sees the gate green,
   so it can be missing until the description next updates. It stays missing when
   the configured CI review did not run, such as a review skipped for a small change.

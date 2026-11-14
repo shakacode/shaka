@@ -11,7 +11,7 @@ module Shaka
 
     module_function
 
-    def resolve(content, environment: ENV, now: Time.now.utc)
+    def resolve(content, opened: Time.now.utc, environment: ENV, now: Time.now.utc)
       return [content, nil] unless content.key?(KEY)
 
       selected = content.fetch(KEY)
@@ -22,6 +22,7 @@ module Shaka
       file = CodexUsage.session_file(thread, environment:)
       started = turn_start(file, turn, now) if file
       return [described, 'Selected Codex turn timestamp unavailable.'] unless started
+      return [described, 'Selected Codex turn is after PR opening.'] if started > opened
 
       [described.merge('task_started_at' => started.iso8601(9)), nil]
     end
@@ -34,7 +35,9 @@ module Shaka
     end
 
     def turn_start(file, turn, now)
-      matches = File.foreach(file, encoding: 'UTF-8').filter_map { |line| start_event(line, turn) }
+      matches = File.foreach(file, encoding: 'UTF-8').filter_map do |line|
+        start_event(line, turn) if line.include?('task_started')
+      end
       TaskTiming.timestamp(matches.first.fetch('timestamp', nil), now) if matches.one?
     rescue SystemCallError, EncodingError
       nil

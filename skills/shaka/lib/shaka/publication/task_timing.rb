@@ -4,10 +4,13 @@ require_relative '../error'
 require_relative 'timeline_steps'
 require_relative 'run_summary'
 require_relative 'time_zone'
+require_relative 'throughput_line'
 
 module Shaka
   # Retains the task start, supplied or read from a usage report, separately from GitHub's first commit.
   module TaskTiming
+    extend ThroughputLine
+
     MARKER = /^<!-- task-timing (\{.*\}) -->$/
     FIELDS = %w[task_started_at first_validation_at].freeze
 
@@ -84,7 +87,7 @@ module Shaka
     def clock(time, zone) = TimeZone.strftime(time, zone, '%Y-%m-%d %H:%M %Z')
 
     def hidden(timeline)
-      data = timeline.slice(*FIELDS).compact.transform_values(&:iso8601)
+      data = timeline.slice(*FIELDS).compact.transform_values { |time| iso_timestamp(time) }
       "<!-- task-timing #{JSON.generate(data)} -->" unless data.empty?
     end
   end

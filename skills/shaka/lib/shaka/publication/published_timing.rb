@@ -32,6 +32,9 @@ module Shaka
         return 'No stored timing record for the published head.'
       end
       return 'Stored CI readiness time does not match the current head.' unless state['t2'] == expected['t2']
+      unless state.values_at('t1', 't3') == expected.values_at('t1', 't3')
+        return 'Stored CI start or merge time does not match.'
+      end
       return 'Stored task start does not match the selected timestamp.' unless state['t0'] == expected['t0']
 
       start_problem(body, expected['task_started_at'], now)
@@ -41,12 +44,13 @@ module Shaka
       return unless started
 
       marker = TaskTiming.read(body, now)['task_started_at']
-      return if marker&.iso8601 == started.iso8601
+      return if marker == started
 
       'Stored task start does not match the selected timestamp.'
     end
 
     def summarize(state, metric, lookup_note)
+      return result('unavailable', lookup_note, nil, metric) if lookup_note
       return result('pending', 'CI readiness time not recorded yet.', lookup_note, metric) if metric == 'ready pending'
       return result('verified', nil, lookup_note, metric) unless metric.end_with?('UNKNOWN')
 

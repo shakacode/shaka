@@ -202,6 +202,13 @@ def resolved_description(content, github, options)
   with_human_comments(resolved, options[:comments])
 end
 
+def description_input(content, github, pull, options)
+  now = Time.now.utc
+  opened = Shaka::TaskTiming.timestamp(pull['created_at'], now) || now
+  timing_content, note = Shaka::CodexTaskStart.resolve(content, opened:)
+  [resolved_description(timing_content, github, options), note]
+end
+
 # The rendered review body and its inline notes; a prerendered body file carries no notes.
 def walkthrough_parts(options, github)
   return [File.read(options.fetch(:body_file), encoding: 'UTF-8'), []] if options[:body_file]
@@ -427,7 +434,7 @@ begin
              root = options[:root] || Dir.pwd
              prose, prose_note = description_prose_limits(root, options[:ref])
              notes = prose_note.merge(description_pr_evidence(root, options[:ref]))
-             timing_content, lookup_note = Shaka::CodexTaskStart.resolve(content(options.fetch(:content_file)))
+             description_content = content(options.fetch(:content_file))
              Shaka::OpeningPublication.with_safe_path(root:) do |candidate_root, gh, neutral|
                raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
 
@@ -436,9 +443,9 @@ begin
                github = Shaka::GitHub.new(repository, number, runner: lambda do |argv, stdin_data:|
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
-               described = resolved_description(timing_content, github, options)
-               usage_records = carried = kept = timing = nil
+               described = lookup_note = usage_records = carried = kept = timing = nil
                published = github.description(prose:) do |pull|
+                 described, lookup_note = description_input(description_content, github, pull, options)
                  rendered, carried, usage_records, kept, timeline = rendered_description(
                    described, github, pull, workflow_version, options.merge(root:)
                  )

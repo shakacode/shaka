@@ -31,9 +31,9 @@ class CliDescriptionElapsedTest < Minitest::Test
   def test_the_selected_codex_turn_replaces_the_usage_fallback_and_is_verified
     @codex_start = { 'thread_id' => THREAD, 'turn_id' => TURN }
     body = published('PR_CHECKS' => JSON.generate(CHECKS), 'PR_HEAD_REPO' => 'fork/repo')
-    assert_includes body, '· ready in 2h 30m'
-    assert_equal({ 'status' => 'verified', 'metric' => 'ready in 2h 30m' }, @timing)
-    assert_includes body, '"task_started_at":"2026-10-18T06:00:00Z"'
+    assert_includes body, '· ready in 2h 29m'
+    assert_equal({ 'status' => 'verified', 'metric' => 'ready in 2h 29m' }, @timing)
+    assert_includes body, '"task_started_at":"2026-10-18T06:00:00.750000000Z"'
     refute_includes body, THREAD
     refute_includes body, TURN
   end
@@ -41,7 +41,22 @@ class CliDescriptionElapsedTest < Minitest::Test
   def test_an_unavailable_codex_turn_reports_the_lookup_gap_and_keeps_the_fallback
     @codex_start = { 'thread_id' => THREAD, 'turn_id' => THREAD }
     assert_includes published('PR_CHECKS' => JSON.generate(CHECKS)), '· ready in 1h 30m'
-    assert_equal 'Selected Codex turn timestamp unavailable.', @timing['lookup_note']
+    assert_equal 'unavailable', @timing['status']
+    assert_equal 'Selected Codex turn timestamp unavailable.', @timing['reason']
+  end
+
+  def test_a_codex_turn_after_pr_opening_keeps_the_fallback
+    @codex_start = { 'thread_id' => THREAD, 'turn_id' => TURN }
+    body = published('PR_CHECKS' => JSON.generate(CHECKS), 'PR_CREATED_AT' => '2026-10-18T05:59:00Z')
+    assert_includes body, '· ready in 1h 30m'
+    assert_equal 'Selected Codex turn is after PR opening.', @timing['reason']
+  end
+
+  def test_a_fork_refresh_does_not_verify_readiness_from_its_previous_body
+    earlier_body = published('PR_CHECKS' => JSON.generate(CHECKS))
+    fork_body = published('PR_HEAD_REPO' => 'fork/repo', 'EXISTING_BODY' => earlier_body)
+    assert_includes fork_body, '· ready pending'
+    assert_equal 'pending', @timing['status']
   end
 
   def test_the_stored_metric_is_verified_separately_from_the_timestamps

@@ -100,7 +100,9 @@ module Shaka
       "#{days}d #{hours}h"
     end
 
-    def stamp(value) = parse_time(value) && (value.is_a?(Time) ? value.utc.iso8601 : value)
+    def stamp(value) = parse_time(value) && (value.is_a?(Time) ? iso_timestamp(value) : value)
+
+    def iso_timestamp(time) = time.utc.iso8601(time.nsec.zero? ? 0 : 9)
 
     def parse_time(value)
       return value.utc if value.is_a?(Time)

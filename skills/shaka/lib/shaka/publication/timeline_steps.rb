@@ -56,6 +56,13 @@ module Shaka
       head.is_a?(String) && head == base
     end
 
+    def throughput_body(pull)
+      return unless pull.is_a?(Hash)
+      return if pull.dig('base', 'repo', 'full_name') && !same_repository?(pull)
+
+      Publishing.managed_region(pull['body']) || pull['body']
+    end
+
     # Steps are sorted by start time, and a step both carried and logged again appears once.
     # The id breaks ties, so the same steps are cut at the limit on every update.
     def merge(*lists) = lists.flatten.uniq { |step| step['id'] }.sort_by { |step| step.values_at('at', 'id') }
