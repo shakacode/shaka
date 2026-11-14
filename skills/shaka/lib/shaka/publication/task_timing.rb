@@ -54,7 +54,10 @@ module Shaka
     end
 
     def read(body, now)
-      line = Publishing.managed_region(body).to_s[MARKER, 1]
+      region = Publishing.managed_region(body).to_s
+      metrics = region.split(/^<!-- shaka:estimated-cost -->\r?\n/, 2)
+      records = metrics.last.to_s.scan(MARKER)
+      line = records.first.first if records.one?
       data = line ? JSON.parse(line) : {}
       return {} unless data.is_a?(Hash)
 

@@ -5,7 +5,6 @@ require_relative '../error'
 require_relative 'usage_details'
 require_relative 'throughput_line'
 require_relative 'throughput_gate'
-require_relative 'timeline_steps'
 
 module Shaka
   # The spend after the model line and the intervals in Timings. Later updates replace only those two.
@@ -75,7 +74,7 @@ module Shaka
         {}
       end
 
-      def pull_body(pull) = TimelineSteps.throughput_body(pull)
+      def pull_body(pull) = pull.is_a?(Hash) ? pull['body'] : nil
 
       def state_for(content, timeline, carried, head)
         base = fresh_state(content, timeline, carried)

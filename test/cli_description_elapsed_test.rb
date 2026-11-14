@@ -55,15 +55,17 @@ class CliDescriptionElapsedTest < Minitest::Test
   def test_a_fork_refresh_does_not_verify_readiness_from_its_previous_body
     earlier_body = published('PR_CHECKS' => JSON.generate(CHECKS))
     fork_body = published('PR_HEAD_REPO' => 'fork/repo', 'EXISTING_BODY' => earlier_body)
-    assert_includes fork_body, '· ready pending'
-    assert_equal 'pending', @timing['status']
+    assert_includes fork_body, '· ready in 1h 30m'
+    assert_equal 'unavailable', @timing['status']
+    assert_includes @timing['reason'], 'prior fork description'
   end
 
   def test_the_stored_metric_is_verified_separately_from_the_timestamps
     body = published('PR_CHECKS' => JSON.generate(CHECKS))
     state = Shaka::ThroughputStats.read(body)
+    timeline = { 'task_started_at' => Time.iso8601(state['t0']) }
     result = Shaka::PublishedTiming.check(body.sub('· ready in 1h 30m', '· ready in 2h 0m'),
-                                          head: state['head'], started: Time.iso8601(state['t0']))
+                                          head: state['head'], timeline:)
     assert_equal 'unverified', result['status']
     assert_equal 'Stored elapsed time does not match the timing record.', result['reason']
   end
@@ -71,9 +73,13 @@ class CliDescriptionElapsedTest < Minitest::Test
   def test_an_example_before_the_metrics_does_not_change_the_verdict
     body = published('PR_CHECKS' => JSON.generate(CHECKS))
     state = Shaka::ThroughputStats.read(body)
-    example = "**Estimated token costs:** UNKNOWN · ready in 2h 0m\n"
+    example = <<~MARKDOWN
+      **Estimated token costs:** UNKNOWN · ready in 2h 0m
+      <!-- task-timing {"task_started_at":"2026-10-18T06:00:00Z"} -->
+    MARKDOWN
     body = body.sub('## Shaka metrics', "#{example}\n## Shaka metrics")
-    result = Shaka::PublishedTiming.check(body, head: state['head'], started: Time.iso8601(state['t0']))
+    timeline = { 'task_started_at' => Time.iso8601(state['t0']) }
+    result = Shaka::PublishedTiming.check(body, head: state['head'], timeline:)
     assert_equal 'matched', result['status']
   end
 

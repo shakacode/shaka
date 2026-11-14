@@ -10,26 +10,39 @@ module Shaka
 
     module_function
 
-    def check(body, head:, started:, lookup_note: nil, now: Time.now.utc)
-      region = Publishing.managed_region(body).to_s.split(METRICS_START, 2)[1].to_s
+    def from_publication(published, head:, timeline:, lookup_note:)
+      check(published['body'], head: published.dig('head', 'sha') || head, timeline:, lookup_note:)
+    end
+
+    def check(body, head:, timeline:, lookup_note: nil, now: Time.now.utc)
+      region = metrics_region(body)
       state = ThroughputStats.read(region)
-      issue = problem(state, body, head, started, now)
+      issue = problem(state, body, head, timeline, now)
       return result('unverified', issue, lookup_note) if issue
 
       metric = ThroughputStats.took(state).delete_prefix(' · ')
       return result('unverified', 'Stored elapsed time does not match the timing record.', lookup_note) unless
         region[ThroughputStats::COST]&.end_with?(" · #{metric}")
 
-      summarize(state, metric, lookup_note)
+      summarize(state, metric, lookup_note || fork_gap(state, timeline))
     rescue Error
       result('unverified', 'Stored timing record is unreadable.', lookup_note)
     end
 
+    def metrics_region(body) = Publishing.managed_region(body).to_s.split(METRICS_START, 2)[1].to_s
+
+    def fork_gap(state, timeline)
+      return unless timeline['fork'] && state['t2']
+      return if timeline['task_started_at'] && timeline['ready_at'] == TaskTiming.timestamp(state['t2'], Time.now.utc)
+
+      'The prior fork description supplies timing that could not be verified.'
+    end
+
     # Publication already checks that GitHub stored the submitted body. Check the
     # selected start and the visible metric without rebuilding the CI timeline.
-    def problem(state, body, head, started, now)
+    def problem(state, body, head, timeline, now)
       return 'No stored timing record for the published head.' unless head && state&.fetch('head', nil) == head
-      return unless started
+      return unless (started = timeline['task_started_at'])
 
       marker = TaskTiming.read(body, now)['task_started_at']
       return if marker == started && TaskTiming.timestamp(state['t0'], now) == started
