@@ -1434,8 +1434,9 @@ walkthrough:
 ```
 
 - **`on_request`**: a PR gets a walkthrough only when someone asks for one, in the task,
-  in the chat, or on the PR. The agent records the request on the PR description, and from
-  then on the PR needs a current walkthrough before it merges. Otherwise reviewers read the
+  in the chat, or on the PR. The agent records the request in a PR comment from its own
+  account and shows it on the description. From then on the PR needs a current walkthrough
+  before it merges. Otherwise reviewers read the
   description's intent and verification, and the files it marks for close reading.
 - **`always`**: every PR gets a walkthrough before it merges, as before this setting existed.
   `merge` refuses a PR without one for its current commit.

@@ -346,8 +346,9 @@ as the Explain step defines them. Provenance, usage, and the WIP Details note ar
 audit material the helper keeps collapsed.
 Keep optional review history and routine rollback detail collapsed.
 
-Supply the current COMMENT review URL in the `walkthrough` field. The helper
-renders its link above the summary, or a placeholder until it exists.
+When a walkthrough exists, supply its current COMMENT review URL in the `walkthrough`
+field, or `requested` while a requested one is pending. The helper renders it above
+the summary. Leave the field out when no walkthrough is due.
 Set the required `deployment` field to `auto`, an https URL, or `none`. `auto` reads
 the GitHub Deployments API for the PR head and links the newest successful
 deployment's `environment_url`, the same link GitHub shows as "View deployment";

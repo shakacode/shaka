@@ -36,7 +36,7 @@ module Shaka
     # walkthrough_publish is the repository's walkthrough.publish, which decides whether a missing walkthrough is owed.
     def initialize(github, seam_required_checks: nil, post_implementation: nil, review: nil, walkthrough_publish: nil)
       @github = github
-      @walkthrough_publish = walkthrough_publish || RepositoryConfig::WalkthroughSchema.publish(nil)
+      @walkthrough_publish = walkthrough_publish || RepositoryConfig::WalkthroughSchema.gate(nil)
       @status = Status.new(github, seam_required_checks:)
       @checkpoint = PostImplementationEvidence.new(github, **post_implementation) if post_implementation
       @review = MergeWaitReview.new(github, **review) if review

@@ -62,7 +62,7 @@ class PublicationDecisionsTest < Minitest::Test
   def test_a_requested_walkthrough_says_so
     rendered = render('walkthrough' => 'requested')
 
-    assert_includes rendered, "\n\n#{Shaka::WalkthroughDue::REQUESTED} · Checkpoint: _Not published yet._\n\n"
+    assert_includes rendered, "\n\n#{Shaka::PublicationLinks::REQUESTED} · Checkpoint: _Not published yet._\n\n"
   end
 
   # A walkthrough someone asked for early, or a published checkpoint, is evidence the reader can open.

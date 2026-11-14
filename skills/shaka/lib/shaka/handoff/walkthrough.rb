@@ -19,18 +19,23 @@ module Shaka
       # Superseded walkthroughs are wrapped in a pointer, so only the current one still renders as a
       # walkthrough. Only this account's reviews count, so a commenter's copy cannot change what is owed.
       def revision
-        current = reviews.reverse.find do |review|
-          review.dig('user', 'login') == account && review['state'] == 'COMMENTED' &&
-            WalkthroughText.rendered?(review['body'].to_s)
-        end
+        current = reviews.reverse.find { |review| own_walkthrough?(review) }
         current && bound_revision(current)
       end
 
       def pending? = !PendingReview.find(reviews, account).nil?
 
-      private
+      # Any walkthrough this account published, bound to its commit or not, makes later heads owe one.
+      def published? = reviews.any? { |review| own_walkthrough?(review) }
 
       def account = @account ||= @github.api('user')['login']
+
+      private
+
+      def own_walkthrough?(review)
+        review.dig('user', 'login') == account && review['state'] == 'COMMENTED' &&
+          WalkthroughText.rendered?(review['body'].to_s)
+      end
 
       def reviews
         path = "repos/#{@github.repository}/pulls/#{@github.number}/reviews"
@@ -48,12 +53,12 @@ module Shaka
     module WalkthroughFact
       private
 
-      # Without one, a walkthrough is owed only when the repository publishes one on every PR or the
-      # description records a request; an earlier walkthrough makes every later head owe one too.
+      # Without one, a walkthrough is owed only when the repository publishes one on every PR or this
+      # account recorded a request; an earlier walkthrough makes every later head owe one too.
       def walkthrough_fact(live)
         revision = walkthrough_reader.revision
         unless revision
-          return unless walkthrough_requested?
+          return unless walkthrough_due?
           return owe('no walkthrough', 'Publish a walkthrough before asking for merge.') if merge_requested?
 
           return note('no walkthrough', 'No walkthrough yet; one is required before merge.')
@@ -79,7 +84,7 @@ module Shaka
 
       def walkthrough_reader = @walkthrough_reader ||= Walkthrough.new(@github)
 
-      def walkthrough_requested?
+      def walkthrough_due?
         WalkthroughDue.new(@github, publish: @walkthrough_publish, reader: walkthrough_reader).due?
       end
 

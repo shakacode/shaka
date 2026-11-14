@@ -409,7 +409,8 @@ begin
 
   checkpoint = { enabled: !seam&.sha || seam.review.dig('post_implementation', 'enabled') != false }
   merge_wait = { required: (seam.review['required'] if seam&.sha), root: options[:root] || Dir.pwd }
-  walkthrough_publish = Shaka::RepositoryConfig::WalkthroughSchema.publish(seam)
+  # Private trial settings carry no trusted commit, so they cannot relax a walkthrough gate either.
+  walkthrough_publish = Shaka::RepositoryConfig::WalkthroughSchema.gate((seam if seam&.sha))
   if %w[merge squash-message].include?(command)
     head = options.fetch(:head)
     Shaka::PostImplementationEvidence.new(github, **checkpoint).call(head)

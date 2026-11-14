@@ -7,7 +7,7 @@ module PostImplementationPublicationFixture
   class GitHub < Shaka::GitHub
     attr_reader :bodies
     attr_accessor :description_body
-    attr_writer :walkthrough
+    attr_writer :comments, :walkthrough
 
     def initialize(head)
       super('example/test', '1')
@@ -54,7 +54,7 @@ module PostImplementationPublicationFixture
 
     def viewer_login = 'test-author'
 
-    def issue_comments = [@published]
+    def issue_comments = [@published] + Array(@comments)
 
     def reply(body:, key:)
       @bodies << [body, key]
@@ -106,13 +106,13 @@ module PostImplementationPublicationFixture
     message
   end
 
-  def publish(result, path, github: GitHub.new('a' * 40))
+  def publish(result, path, github: GitHub.new('a' * 40), flags: [])
     message = message_file(path)
     File.write(path, JSON.generate(result))
     status = nil
     output = capture_io do
       status = Shaka::PostImplementation.run(
-        ['publish', 'example/test', '1', '--content-file', path, '--squash-message', message], github:
+        ['publish', 'example/test', '1', '--content-file', path, '--squash-message', message, *flags], github:
       )
     end.first
     [github, status, output]

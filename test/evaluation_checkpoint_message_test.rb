@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'post_implementation_disposition_test'
+require 'shaka/trusted_config_source'
 
 class EvaluationCheckpointMessageTest < Minitest::Test
   include PostImplementationDispositionFixture
@@ -39,7 +40,8 @@ class EvaluationCheckpointMessageTest < Minitest::Test
   def test_ready_checkpoint_waits_for_a_requested_walkthrough
     assert_refused_ready do |github|
       github.walkthrough = nil
-      github.description_body = github.description_body.sub('Feature summary', Shaka::WalkthroughDue::REQUESTED)
+      github.comments = [{ 'user' => { 'login' => github.viewer_login },
+                           'body' => "#{Shaka::WalkthroughDue::REQUEST_MARKER}\nAsked." }]
     end
   end
 
@@ -53,13 +55,30 @@ class EvaluationCheckpointMessageTest < Minitest::Test
     end
   end
 
+  # This repository's trusted settings use the on_request default.
   def test_ready_checkpoint_needs_no_walkthrough_nobody_asked_for
     with_result do |result, path|
       result['disposition'] = disposition('Merge')
       github = PostImplementationPublicationFixture::GitHub.new('a' * 40)
       github.walkthrough = nil
-      assert_equal 0, publish(result, path, github:)[1]
+      with_trusted_settings do
+        assert_equal 0, publish(result, path, github:, flags: ['--ref', 'c' * 40])[1]
+      end
     end
+  end
+
+  def with_trusted_settings
+    trusted = Shaka::RepositoryConfig.load(root: File.expand_path('..', __dir__))
+    original = Shaka::TrustedConfigSource.method(:from_ref)
+    Shaka::TrustedConfigSource.define_singleton_method(:from_ref) { |**| trusted }
+    yield
+  ensure
+    Shaka::TrustedConfigSource.define_singleton_method(:from_ref, original)
+  end
+
+  # Without readable trusted settings the gate keeps the earlier rule.
+  def test_without_trusted_settings_a_ready_checkpoint_waits_for_a_walkthrough
+    assert_refused_ready { |github| github.walkthrough = nil }
   end
 
   def test_blocked_checkpoint_needs_no_walkthrough

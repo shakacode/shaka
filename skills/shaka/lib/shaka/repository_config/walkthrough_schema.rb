@@ -15,6 +15,9 @@ module Shaka
       # A missing or unreadable configuration takes the packaged default.
       def self.publish(config) = config&.walkthrough&.fetch(KEY) || Defaults.fetch('walkthrough', KEY)
 
+      # A gate that cannot read trusted settings keeps the earlier rule that every PR needs a walkthrough.
+      def self.gate(config) = config ? publish(config) : 'always'
+
       # Loading the configuration validates the section here, beside its default.
       def self.resolve(walkthrough)
         new(walkthrough).validate

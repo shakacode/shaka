@@ -106,7 +106,7 @@ class HandoffTest < Minitest::Test
   def test_a_walkthrough_for_an_older_head_is_owed_but_a_missing_one_is_only_noted
     assert(handoff(reviews: [walkthrough(OLD)]).fetch('owed').any? { |item| item.include?('walkthrough') })
 
-    missing = handoff(reviews: [], walkthrough_publish: 'always')
+    missing = handoff(reviews: [])
     assert_empty missing['owed']
     assert(missing['notes'].any? { |item| item.include?('No walkthrough') })
   end
@@ -141,7 +141,7 @@ class HandoffEvidenceTest < Minitest::Test
   include HandoffHarness
 
   def test_a_walkthrough_whose_footer_disagrees_with_its_commit_does_not_count
-    result = handoff(reviews: [walkthrough(HEAD, commit: OLD)], walkthrough_publish: 'always')
+    result = handoff(reviews: [walkthrough(HEAD, commit: OLD)])
 
     assert(result['notes'].any? { |item| item.include?('No walkthrough') })
   end
@@ -184,21 +184,38 @@ end
 class HandoffWalkthroughDueTest < Minitest::Test
   include HandoffHarness
 
+  # Without trusted settings the gate keeps the earlier rule, as walkthrough.publish: always does.
   def test_merge_approval_without_a_walkthrough_is_owed_where_every_pr_gets_one
-    result = handoff(labels: ['awaiting-merge-approval'], reviews: [], walkthrough_publish: 'always')
+    result = handoff(labels: ['awaiting-merge-approval'], reviews: [])
 
     assert(result['owed'].any? { |item| item.include?('Publish a walkthrough') })
   end
 
-  # Under the on_request default a PR without a walkthrough owes none, until the description records a request.
+  # Under the on_request default a PR without a walkthrough owes none, until this account records a request.
+  REQUEST = { 'user' => { 'login' => 'shaka-agent' },
+              'body' => "#{Shaka::WalkthroughDue::REQUEST_MARKER}\nAsked." }.freeze
+
   def test_a_walkthrough_is_owed_only_once_requested
-    quiet = handoff(labels: ['awaiting-merge-approval'], reviews: [])
+    quiet = on_request
     refute(quiet['owed'].any? { |item| item.include?('walkthrough') })
     refute_includes quiet['status'], 'walkthrough'
 
-    requested = handoff(labels: ['awaiting-merge-approval'], reviews: [],
-                        body: description.sub(Shaka::Publishing::CLOSE_MARK,
-                                              "#{Shaka::WalkthroughDue::REQUESTED}\n#{Shaka::Publishing::CLOSE_MARK}"))
-    assert(requested['owed'].any? { |item| item.include?('Publish a walkthrough') })
+    assert(on_request(comments: [REQUEST])['owed'].any? { |item| item.include?('Publish a walkthrough') })
+  end
+
+  # A PR body or another account's comment can be edited by people the gate must not trust.
+  def test_only_this_accounts_request_counts
+    contributor = REQUEST.merge('user' => { 'login' => 'contributor' })
+    refute(on_request(comments: [contributor])['owed'].any? { |item| item.include?('walkthrough') })
+  end
+
+  # An earlier walkthrough keeps every later head owing one, even when its footer no longer binds it.
+  def test_an_earlier_walkthrough_keeps_one_due
+    owed = on_request(reviews: [walkthrough(HEAD, commit: OLD)])['owed']
+    assert(owed.any? { |item| item.include?('Publish a walkthrough') })
+  end
+
+  def on_request(**changes)
+    handoff(labels: ['awaiting-merge-approval'], reviews: [], walkthrough_publish: 'on_request', **changes)
   end
 end

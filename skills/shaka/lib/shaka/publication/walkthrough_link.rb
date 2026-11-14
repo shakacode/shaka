@@ -10,7 +10,7 @@ module Shaka
       module_function
 
       # Without a request, a repository that publishes walkthroughs only on request has no slot to fill.
-      # The request text is what tells the merge gate a walkthrough is due, so it renders as written.
+      # `requested` tells readers one is coming; the gates read the agent's request comment instead.
       def call(url, deciding:, publish:)
         url = url.strip if url.is_a?(String)
         return REQUESTED if url == 'requested'

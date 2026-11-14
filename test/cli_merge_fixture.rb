@@ -47,6 +47,10 @@ module CliMergeFixture
       puts JSON.generate([{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }])
     elsif ARGV[0, 2] == ['api', 'user']
       puts JSON.generate('login' => 'agent')
+    elsif ARGV[0] == 'api' && ARGV[1].start_with?('repos/owner/repo/pulls/1/reviews?')
+      puts(ARGV[1].end_with?('page=1') ? ENV.fetch('PR_REVIEWS', '[]') : '[]')
+    elsif ARGV[0] == 'api' && ARGV[1].start_with?('repos/owner/repo/issues/1/comments?')
+      puts(ARGV[1].end_with?('page=1') ? ENV.fetch('PR_COMMENTS', '[]') : '[]')
     elsif ARGV[0, 2] == ['api', 'repos/owner/repo/pulls/1/reviews/17']
       body = "🤖 Codex · OpenAI · model · high\n\n# Code Walkthrough\n\nTour.\n\n" \
              "_Walkthrough for commit `#{head}`. This is a COMMENT, not an approval._"
@@ -62,10 +66,10 @@ module CliMergeFixture
 
   private
 
-  def with_merge_repository(merge = merge_policy)
-    with_repository('merge' => merge,
-                    'review' => review_policy('required' => 'none').except('ci_review_jobs'),
-                    'checkpoint' => { 'enabled' => false }) do |root|
+  def with_merge_repository(merge = merge_policy, **settings)
+    with_repository({ 'merge' => merge,
+                      'review' => review_policy('required' => 'none').except('ci_review_jobs'),
+                      'checkpoint' => { 'enabled' => false } }.merge(settings.transform_keys(&:to_s))) do |root|
       commit_repository(root)
       ref, = Open3.capture3('git', '-C', root, 'rev-parse', 'HEAD')
       ref = ref.strip
@@ -90,8 +94,11 @@ module CliMergeFixture
   end
 
   def run_merge(root, ref, mutation, *extra, env: {})
-    run_command('merge', 'owner/repo', '1', '--root', root, '--ref', ref,
-                '--head', HEAD, '--base', 'main', '--walkthrough', '17',
+    run_merge_without_walkthrough(root, ref, mutation, '--walkthrough', '17', *extra, env:)
+  end
+
+  def run_merge_without_walkthrough(root, ref, mutation, *extra, env: {})
+    run_command('merge', 'owner/repo', '1', '--root', root, '--ref', ref, '--head', HEAD, '--base', 'main',
                 '--squash-message', File.join(root, 'message.json'), *extra,
                 root:, env: { 'MUTATION_FILE' => mutation }.merge(env))
   end

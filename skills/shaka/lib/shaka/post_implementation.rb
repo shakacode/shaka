@@ -111,7 +111,7 @@ module Shaka
     # and no question can still be open beside it.
     # A merge queue takes no message, so its checkpoint says what the queue writes instead.
     def ready_message(github, head, pull)
-      if WalkthroughDue.new(github, publish: RepositoryConfig::WalkthroughSchema.publish(trusted_seam)).missing_for?(head)
+      if WalkthroughDue.new(github, publish: RepositoryConfig::WalkthroughSchema.gate(trusted_seam)).missing_for?(head)
         raise Error, "Ready checkpoint follows this account's walkthrough for #{head}; publish the walkthrough first."
       end
 
