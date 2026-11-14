@@ -112,7 +112,7 @@ class UsageTest < Minitest::Test
     assert_includes report, '2 responses'
     assert_includes report, '2026-09-14T12:00:00Z'
     assert_includes report, 'PARTIAL'
-    refute_includes report, 'reviewer usage'
+    assert_includes report, 'Hosted reviewer and tool-model usage is not counted.'
   end
 
   def test_missing_fields_stay_unknown_and_each_turn_keeps_its_configured_model
@@ -343,7 +343,7 @@ class UsageReviewCoverageTest < Minitest::Test
   # hide a missing review snapshot behind a green usage table.
   def test_implementation_snapshot_does_not_count_as_local_review
     header = run_report([context('current'), usage('current', 'current', 100)]).split('<details>').first
-    refute_includes header, 'reviewer usage'
+    assert_includes header, 'Local adversarial reviewer usage: not in this report'
   end
 
   # Conflicting copies keep a response row whose usage is empty. Calling that

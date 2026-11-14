@@ -5,14 +5,13 @@ module Shaka
   module MissingValues
     SUMMARY = 'Missing values'
     TASK_START = '**Task start** was not recorded, so Shaka cannot measure the time to ready or merge, or ' \
-                 'Prompt to CI. To fill it, the agent passes ' \
-                 '`task_started_at` from the initiating request when it publishes the description, or ' \
-                 'reports implementation usage with `shaka usage --all-turns` or `--since-time`.'
+                 'Prompt to CI. To fill it, the agent passes the time of the first request as ' \
+                 '`task_started_at` when it publishes the description.'
 
     module_function
 
     def detail(throughput)
-      reasons = [(TASK_START if throughput['t0'].nil?)].compact
+      reasons = [(TASK_START unless ThroughputStats.task_started?(throughput))].compact
       { 'summary' => SUMMARY, 'body' => reasons.map { |reason| "- #{reason}" }.join("\n") } unless reasons.empty?
     end
   end

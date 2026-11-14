@@ -74,12 +74,17 @@ module Shaka
       [{ 'configuration' => context_row, 'usage' => {} }]
     end
 
-    # Only a review report states its own reviewer usage; the PARTIAL line already covers usage no source records.
+    # An implementation report says plainly that it holds no reviewer usage, so a missing review report stays visible.
     def reviewer_coverage
-      local = "Local adversarial reviewer usage: #{local_review_included? ? 'included below' : 'not countable'}." \
-        if @options[:contribution] == 'review'
       gaps = "Not counted: #{@source.gaps.uniq.join('; ')}." if @source.gaps.any?
-      [local, gaps].compact.join(' ')
+      ["Local adversarial reviewer usage: #{local_review_coverage}.",
+       'Hosted reviewer and tool-model usage is not counted.', gaps].compact.join(' ')
+    end
+
+    def local_review_coverage
+      return 'not in this report' unless @options[:contribution] == 'review'
+
+      local_review_included? ? 'included below' : 'not countable'
     end
 
     def local_review_included?
