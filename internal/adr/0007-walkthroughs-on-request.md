@@ -81,8 +81,9 @@ so the old behavior stays available as a setting.
    cases:
    - under `always`;
    - when the description records a request;
-   - when the PR already has one for an older head, because a stale explanation
-     misleads.
+   - when this account already published one for an older head, because a stale
+     explanation misleads. A walkthrough someone else posts does not count, as
+     `handoff` already ignores other accounts' reviews.
 
    To record a request, the agent sets description `walkthrough` to `requested`. The
    links line then shows **Code Walkthrough: _Requested._** until the review URL
@@ -110,7 +111,12 @@ so the old behavior stays available as a setting.
    commit-bound walkthrough on request, or on every PR when the repository sets
    `always`. A walkthrough remains readable after merge and substitutes for neither
    approval nor required acknowledgment. The interactive tour, the coverage map, and
-   the selective notes sentences stay as they are.
+   the selective notes sentences stay as they are. Requirements text that treats the
+   walkthrough as an unconditional gate changes to "a due walkthrough" in three places:
+   - R5's "After the walkthrough and required gates";
+   - the merge-queue sentence that says submission does not relax walkthrough gates;
+   - the acceptance step that publishes and reads back a walkthrough. It now reads back
+     a walkthrough on a PR where one was due.
 
 ## Consequences
 
@@ -119,10 +125,11 @@ so the old behavior stays available as a setting.
   - Merge decisions still rest on the description's Intent and Verification, the code
     review, and the checkpoint's risk judgment.
   - A team that relies on the tour sets `always`.
-  - Rollback moves to the description only where it affects the merge decision, as
-    the existing [placement rule](../../skills/shaka/references/delivery.md#why-the-description-and-the-walkthrough-differ)
-    already says. Nothing enforces that rule, so a routine PR's rollback consequence
-    goes unstated.
+  - Rollback already belongs in the description. The workflow puts it under the
+    description's `details`, and the
+    [placement rule](../../skills/shaka/references/delivery.md#why-the-description-and-the-walkthrough-differ)
+    keeps routine rollback there collapsed. Nothing enforces either rule, so the
+    walkthrough was the only place that reliably stated it.
 - **A requested walkthrough costs upkeep.** Once a PR has one, every later head owes
   a new one, as every PR does today. The cost now falls only on PRs where someone
   wanted the walkthrough.
@@ -131,8 +138,17 @@ so the old behavior stays available as a setting.
   The new key follows the settings migration flow. It goes in `defaults.yml`,
   `docs/settings.md`, and the `.agents/shaka/config.yml` example. This repository uses
   the default.
-- **Enforcement entries change.** The `enforcement.yml` entries for checkpoint after
-  walkthrough, link placement, and walkthrough evidence take the setting's condition.
+- **Enforcement entries change.** In `enforcement.yml`, four entries take the new
+  condition:
+  - `checkpoint-after-walkthrough`;
+  - `walkthrough-link-placement`;
+  - `stop-time-handoff`, whose note describes the owed walkthrough;
+  - `post-implementation-conclusion`, whose quote names the final walkthrough, which
+    a default PR no longer has.
+
+  `walkthrough-length` and `walkthrough-whole-diff` still describe a full walkthrough
+  when one is published. The loader catches a quote that leaves the workflow but not a
+  note that turned wrong, so the implementation review checks each of these notes.
   The workflow's Explain and Finish passages say when a walkthrough is due, and its
   `merge` usage lines and Auto-merge instruction pass `--walkthrough` only then.
 - **Related open work.** #1148, #1175, and #1176 apply only when a walkthrough is
