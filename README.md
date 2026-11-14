@@ -67,8 +67,8 @@ New to pull requests? Try [Shaka in pictures](docs/shaka-in-pictures.md).
 
 Want to see Shaka on a real task, or fit it to how your team works?
 [Book a 30-minute call with Justin Gordon](https://meetings.hubspot.com/justingordon/30-minute-consultation),
-ShakaCode's founder. He can give you a demo, answer questions about how Shaka works,
-or walk you through [forking Shaka and changing it](docs/fork-and-hack.md).
+ShakaCode's founder, for a demo, answers about how Shaka works, or a walkthrough of
+[forking Shaka and changing it](docs/fork-and-hack.md).
 
 ## For open-source repositories
 
