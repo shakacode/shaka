@@ -68,9 +68,11 @@ Before a ready time is recorded, the summary shows `ready pending`. Pending mean
 ready time was recorded; it does not establish whether the PR is ready to merge.
 Skipped CI reviews can leave that measurement pending until merge.
 
-When the agent recorded no task start, the cost line shows no time at all, and
-**Missing values** under Shaka metrics → Details says so. To fill it next time,
-ask your agent to pass the time of your first request as `task_started_at`.
+Without a task start, the cost line shows no time at all, and **Missing values**
+under Shaka metrics → Details says so. A description published before Shaka
+added that note keeps `ready in UNKNOWN` until the agent publishes it again. The
+agent supplies the task start as `task_started_at` from the time of your first
+request, or reads it from a usage report that covers the whole task.
 
 The Timings section breaks that down for the current head. Prompt to CI runs
 from the task start to the head's earliest check. CI to ready runs from that

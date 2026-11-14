@@ -45,7 +45,8 @@ class CliDescriptionProseLimitsTest < Minitest::Test
   def description_content = super.merge('summary' => @summary)
 
   # Renders tables as tables and other blocks as paragraphs, enough for the prose limits to measure.
-  # Like GitHub, it leaves folded prose collapsed; tables stay so the table count still checks.
+  # Like GitHub, it leaves folded prose collapsed. GitHub still renders tables inside a fold, so they stay
+  # and the rendered table count matches the description's tables.
   def fake_gh
     super.sub("when 'markdown' then puts JSON.generate('<table></table>' * 10)", <<~'RUBY'.chomp)
       when 'markdown'
