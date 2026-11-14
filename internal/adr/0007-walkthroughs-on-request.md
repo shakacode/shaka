@@ -82,13 +82,16 @@ so the old behavior stays available as a setting.
    cases:
    - under `always`;
    - when the description records a request;
-   - when this account already published one for an older head, because a stale
-     explanation misleads. A walkthrough someone else posts does not count, as
-     `handoff` already ignores other accounts' reviews.
+   - when this account already published one on the PR, for any head. A stale
+     explanation misleads, so once a PR has a walkthrough, every head needs one. A
+     walkthrough someone else posts does not count, as `handoff` already ignores
+     other accounts' reviews.
 
    To record a request, the agent sets description `walkthrough` to `requested`. The
    links line then shows **Code Walkthrough: _Requested._** until the review URL
-   replaces it, so Ruby can see a request made in chat. When a walkthrough is due:
+   replaces it. Ruby sees only what the agent records. Recording a request made in chat
+   or a PR comment is an agent rule, which the implementation classifies in
+   `enforcement.yml`. When a walkthrough is due:
    - `merge` requires `--walkthrough`, and verifies it as it does now.
    - `handoff` owes it for the current head.
    - The ready checkpoint has to follow it.
@@ -98,8 +101,8 @@ so the old behavior stays available as a setting.
    - publication sooner when someone asks;
    - the checkpoint check's skip for blocked, failed, and opted-out results.
 
-   When none of the three cases applies, `merge` accepts no `--walkthrough`, and
-   `handoff` and the checkpoint owe nothing. Reviewer notes are never owed, and the
+   When none of the three cases applies, `merge` does not require `--walkthrough`, and
+   still verifies one if it is supplied. `handoff` and the checkpoint owe nothing. Reviewer notes are never owed, and the
    helper does not count them as a walkthrough. A note on an older head stays as an
    outdated thread. The existing refusal of notes on a base that requires
    conversation resolution keeps them from blocking a merge.
@@ -109,8 +112,8 @@ so the old behavior stays available as a setting.
    `review_focus` stay as they are.
 5. **R4 changes to match.** Its new text: Shaka explains intent and verification in
    the description. It adds reviewer notes where code needs a why. It publishes a
-   commit-bound walkthrough on request, or on every PR when the repository sets
-   `always`. A walkthrough remains readable after merge and substitutes for neither
+   conceptual walkthrough with links to reviewed code, as a commit-bound COMMENT
+   review, on request or on every PR when the repository sets `always`. A walkthrough remains readable after merge and substitutes for neither
    approval nor required acknowledgment. The interactive tour, the coverage map, and
    the selective notes sentences stay as they are. Requirements text that treats the
    walkthrough as an unconditional gate changes to "a due walkthrough" in three places:
@@ -145,6 +148,10 @@ so the old behavior stays available as a setting.
   The new key follows the settings migration flow. It goes in `defaults.yml`,
   `docs/settings.md`, and the `.agents/shaka/config.yml` example. This repository uses
   the default.
+- **Walkthrough guidance applies only to full walkthroughs.** `project_guidance.walkthrough`
+  does not apply to reviewer notes. A repository that set it asked for walkthroughs that
+  cover its requirements, so the release notes tell it to set `always` to keep them.
+  Shaka does not infer `always` from the guide; the two settings stay independent.
 - **Enforcement entries change.** In `enforcement.yml`, four entries take the new
   condition:
   - `checkpoint-after-walkthrough`;
@@ -164,7 +171,10 @@ so the old behavior stays available as a setting.
   walkthrough.
 - **Expected size.** The implementation PR changes the setting, three gates, the links
   line, a notes-only rendering path, the workflow and enforcement text, the docs, and
-  R4. The estimate is 400 to 600 changed lines.
+  R4. It also rewrites `skills/shaka/references/walkthrough-notes.md` for notes
+  published alone. That file now assumes a walkthrough body carries rollback and that a
+  newer walkthrough resolves older notes. A notes-only review stays under the same
+  `prose_limits` that apply to a walkthrough. The estimate is 400 to 600 changed lines.
 
 ## Alternatives considered
 
