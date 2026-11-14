@@ -39,16 +39,10 @@
 
 ## Review evidence
 
-- Supply the Intake record's `task_started_at` as an ISO 8601 UTC timestamp.
-  If missing, recover the original request's timestamp from host history,
-  including a planning request that began the task. If you cannot verify it or
-  it falls after PR opening, omit it to preserve the saved start or let the
-  helper use a whole-task implementation usage report.
-  On the post-CI description refresh, compare the saved start in the
-  `task-timing` marker to the verified request time at whole-second precision.
-  Supply the verified start if the saved value is missing or differs, even
-  when the PR already shows a duration. Verify the displayed time to CI
-  readiness and report any remaining timing gap.
+- Pass the Intake timing input to `description` on every refresh. Use
+  `codex_task_start` with the original Codex `thread_id` and `turn_id`, or
+  `task_started_at` with a verified ISO 8601 timestamp if host lookup is unavailable.
+  The command returns a `timing` result for the stored description.
   Pass a recorded `--ci-review-wait` task override to `description` too.
 
 - Verification opens with bound validation/review status and an optional linked `summary`.

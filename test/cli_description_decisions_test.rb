@@ -235,7 +235,7 @@ DESCRIPTION_GH = <<~'RUBY'
       puts JSON.generate(request)
     else
       puts JSON.generate('body' => ENV.fetch('EXISTING_BODY', ''),
-                         'head' => { 'sha' => 'c' * 40, 'repo' => { 'full_name' => 'owner/repo' } },
+                         'head' => { 'sha' => 'c' * 40, 'repo' => { 'full_name' => ENV.fetch('PR_HEAD_REPO', 'owner/repo') } },
                          'base' => { 'repo' => { 'full_name' => 'owner/repo' } }, 'changed_files' => 0,
                          'merged' => ENV['PR_MERGED'] == 'true')
     end
