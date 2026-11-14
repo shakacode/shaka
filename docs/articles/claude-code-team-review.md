@@ -160,12 +160,14 @@ Three earlier pieces cover nearby ground:
   click merge on GitHub or approve in chat. Someone you named as a merge approver can also
   approve on GitHub. The agent posts its walkthrough as a comment review, which GitHub
   doesn't count as an approval. Your approval covers one commit, and a later commit ends it.
-  A rebase that keeps the reviewed behavior carries your approval forward.
+  Under the workflow, a rebase that keeps the reviewed behavior carries your approval
+  forward. An approval on GitHub still follows the repository's own dismissal
+  rule.
 - **Shaka lacks:** a way for GitHub to tell the agent from you. The agent posts and merges
   with your account, marked only by its 🤖 identity line. After a conflict fix, `merge` no
   longer accepts the earlier review, and the head needs a new review or a waiver. The agent
   alone decides whether the fix changed behavior, and carries your approval forward when it
-  judges that nothing changed. The post asks for a new approval
+  judges that nothing changed. No code checks that judgment. The post asks for a new approval
   instead. Shaka sets no GitHub approval rule. Its own repository requires no approving
   review, and dismisses stale approvals when new commits arrive.
 - **Evidence:** `merge` refuses when GitHub's required review is unsatisfied, or when the head
@@ -248,15 +250,16 @@ Three earlier pieces cover nearby ground:
 
 ## Where the evidence disagrees
 
-Lauren Tan, who works on pstack, called adversarial reviews "mostly a waste of tokens"
+Lauren Tan, pstack's author, called adversarial reviews "mostly a waste of tokens"
 ([post](https://x.com/poteto/status/2117437607940681849), 2026-11-02). The Claude Code team's
 numbers point the other way for review as a whole. Substantive comments reached 54% of PRs,
 and reverts fell while merges doubled. The post credits all its layers together for that
 result. Shaka's review signal study found every sampled fix real.
 
-On repeated review, the post and Shaka's data agree that later cycles add less than the
-first. They differ on what those cycles find, as practice 6 describes. The review signal
-study weighs both sides, and the #1072 test would settle the question for Shaka.
+On repeated review, the post says its repeated cycles rarely found new bugs. In Shaka's
+data, most fixed defects came from the first cycle. The two differ on what later cycles find,
+as practice 6 describes. The review signal study weighs both sides, and the #1072 test would
+settle the question for Shaka.
 
 ## From the companion post
 
