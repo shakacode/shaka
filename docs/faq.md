@@ -13,7 +13,7 @@ Then [review the PR](pr-verification.md) to decide what happens next.
 No. Ask your agent:
 
 ```text
-/shaka Help me set up Shaka for this project.
+/shaka Help me set up Shaka for this project
 ```
 
 The agent inspects the project, reuses existing checks, and explains the choices.
@@ -25,7 +25,7 @@ See [repository setup](configure-repository.md).
 Yes, when the project has no shared Shaka settings:
 
 ```text
-/shaka Fix search when the query contains an apostrophe. Set up Shaka just for me.
+/shaka Fix search when the query contains an apostrophe. Set up Shaka just for me
 ```
 
 Your settings stay out of commits. Existing team settings still apply if present.
@@ -65,7 +65,7 @@ blocking this PR and what it needs from you. See
 Add "Do not merge" to your task:
 
 ```text
-/shaka Add CSV export to the orders page. Do not merge.
+/shaka Add CSV export to the orders page. Do not merge
 ```
 
 This tells the agent to leave the PR open. Shaka's instructions rely on the agent
@@ -109,7 +109,7 @@ instructions. See [comment trust](workflow.md#trust-model).
 To trust an additional contributor, ask:
 
 ```text
-/shaka Add USER to this project's trusted GitHub actors.
+/shaka Add USER to this project's trusted GitHub actors
 ```
 
 <a id="where-is-shaka-installed-and-is-that-my-configuration"></a>
@@ -120,7 +120,7 @@ The installed skill contains Shaka's workflow. Project settings choose how that
 workflow runs for your project. Ask your agent:
 
 ```text
-Tell me about the Shaka configuration.
+Tell me about the Shaka configuration
 ```
 
 The agent can explain which settings apply and where they are saved, separately
@@ -148,7 +148,7 @@ Yes. Put project-wide criteria in `AGENTS.md`, or ask the agent to add local
 review instructions:
 
 ```text
-Have the local reviewer flag API changes that break existing clients.
+Have the local reviewer flag API changes that break existing clients
 ```
 
 The agent proposes the instructions and settings change while keeping Shaka's
@@ -177,7 +177,7 @@ A recommendation to merge does not authorize a merge.
 Yes. Ask your agent:
 
 ```text
-Hide my project folder's path in WIP Details. Keep the chat link.
+Hide my project folder's path in WIP Details. Keep the chat link
 ```
 
 The path then appears as `REDACTED`. Any available chat link stays in place.

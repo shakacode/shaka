@@ -10,7 +10,7 @@ the product. Ask your agent in a preparation chat:
 ```text
 /shaka Try Shaka from https://github.com/shakacode/shaka/pull/359
 on this task: fix the search bug in /path/to/my/project.
-Prepare a pinned trial and give me the prompt for a fresh chat.
+Prepare a pinned trial and give me the prompt for a fresh chat
 ```
 
 In Codex, use `$shaka` instead of `/shaka`.
@@ -40,7 +40,7 @@ After trying the change, ask your agent:
 ```text
 Report this trial back to the Shaka candidate PR. Link our public result PR,
 explain what helped and what I had to correct, and recommend keep, revise,
-or drop. Review the summary for private details before publishing.
+or drop. Review the summary for private details before publishing
 ```
 
 For private work, authorize a public-safe summary with no project link or private

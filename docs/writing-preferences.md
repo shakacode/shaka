@@ -8,7 +8,7 @@ For a task, tell the agent how you want it to write:
 
 ```text
 Keep PR descriptions short. Lead with what changed for the user,
-use before/after examples, and put implementation details in the walkthrough.
+use before/after examples, and put implementation details in the walkthrough
 ```
 
 For persistent repository preferences, you may create or edit `AGENTS.md` yourself.

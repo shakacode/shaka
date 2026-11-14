@@ -24,7 +24,7 @@ If you use Shaka on several computers, give each one a short public name so
 **WIP Details → Owner** identifies where the chat is running:
 
 ```text
-Help me name this machine "laptop" in Shaka.
+Help me name this machine "laptop" in Shaka
 ```
 
 Ask the agent to set `SHAKA_MACHINE_ALIAS` for your coding tool and check it with
@@ -126,7 +126,7 @@ If a command was denied, see [retry a denied review](reference/reviewer-setup.md
 Ask your agent to check the review tools in your project:
 
 ```text
-Help me use Claude for Shaka code reviews in this project. Check that it can run.
+Help me use Claude for Shaka code reviews in this project. Check that it can run
 ```
 
 The agent checks the configured reviewers, the installed tools, and sign-in. It
@@ -139,7 +139,7 @@ and [reviewer settings](settings.md#reviewlocal_review_agents).
 Keep project rules in one place. Ask your agent to check the rules it loads:
 
 ```text
-Check that this coding agent reads our existing AGENTS.md. Explain how to connect it if needed.
+Check that this coding agent reads our existing AGENTS.md. Explain how to connect it if needed
 ```
 
 See the project instruction guides for

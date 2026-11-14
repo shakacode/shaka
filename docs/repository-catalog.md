@@ -8,7 +8,7 @@ Ask your agent:
 
 ```text
 Refresh the Shaka catalog for my repositories. Report duplicate prefixes
-and compare their review and merge settings before proposing changes.
+and compare their review and merge settings before proposing changes
 ```
 
 The catalog lists repositories and duplicate prefixes. The agent compares each

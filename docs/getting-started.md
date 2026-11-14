@@ -13,7 +13,7 @@ Use a project you already work on. If you want a practice project, follow
 Ask your coding agent:
 
 ```text
-Install Shaka from https://github.com/shakacode/shaka.
+Install Shaka from https://github.com/shakacode/shaka
 ```
 
 Prefer to install it manually? Follow [manual installation](manual-installation.md).
@@ -50,7 +50,7 @@ If you're trying Shaka for the first time, start with **Just for me**. You can a
 shared settings later. Ask your agent:
 
 ```text
-/shaka Set up Shaka just for me in this project.
+/shaka Set up Shaka just for me in this project
 ```
 
 <a id="3-start-a-task"></a>
@@ -60,7 +60,7 @@ shared settings later. Ask your agent:
 Choose a small change you can check yourself. For example:
 
 ```text
-/shaka Fix search when the query contains an apostrophe.
+/shaka Fix search when the query contains an apostrophe
 ```
 
 Replace the example with your own task or an issue link. The agent makes the change,
@@ -74,7 +74,7 @@ is the version you reviewed. When you're satisfied, merge through GitHub or tell
 the agent:
 
 ```text
-You can merge.
+You can merge
 ```
 
 Required checks and approvals still apply. See
