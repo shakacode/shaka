@@ -4,7 +4,7 @@
 Justin Gordon asked it to compare Addy Osmani's
 [post](https://x.com/addyosmani/status/2119332146485891501) of 2026-11-07 with Shaka.
 The agent read the post and Shaka's docs, workflow, and enforcement map at
-[`5d412a3`](https://github.com/shakacode/shaka/tree/5d412a3ed216). No experiment was run.
+[`e13cc94`](https://github.com/shakacode/shaka/tree/e13cc94b4cdf). No experiment was run.
 Codex and a fresh Claude session reviewed it before publication.*
 
 Addy Osmani argues that an engineer working with coding agents is already managing.
@@ -27,7 +27,7 @@ an instruction the agent follows.
   refused by a command, 2 reported by one, 1 refused by GitHub, and 89 backed by nothing
   but the agent.
 - The post argues against heavy process. The workflow `shaka workflow` prints is about
-  11,800 words, with 41 reference procedures the agent loads when a task needs them.
+  12,000 words, with 41 reference procedures the agent loads when a task needs them.
 - Three ideas in the post have no Shaka counterpart: splitting one change into many PRs
   automatically, counting reverts beside throughput, and dropping rules once newer models
   no longer need them.
@@ -225,7 +225,7 @@ version of micromanagement, and suggests dropping rules newer models no longer n
 
 - Addy Osmani, ["Your coding agents made you a manager"](https://x.com/addyosmani/status/2119332146485891501),
   2026-11-07.
-- Shaka at [`5d412a3`](https://github.com/shakacode/shaka/tree/5d412a3ed216):
+- Shaka at [`e13cc94`](https://github.com/shakacode/shaka/tree/e13cc94b4cdf):
   [workflow and enforcement](../workflow.md), the
   [enforcement map](../../skills/shaka/config/enforcement.yml), and the output of
   `shaka enforcement`.
