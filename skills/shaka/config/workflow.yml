@@ -510,8 +510,6 @@ phases:
         phrasing. Keep exact commands, identifiers, domain terms, risks, and evidence. Skip chatbot
         wrappers and inflated significance. A reply leads with the decision and uses the thread's
         shared context.
-      - Pass the recorded `task_started_at` to `description` and check the published timing
-        using the [publication procedure](<{{package_root}}/skills/shaka/references/publication.md#review-evidence>).
       - `description` and `walkthrough` report an advisory `opening` result for the `summary`;
         `description` adds its visible Intent and Verification prose.
         Pass the verified default-branch full commit SHA with `--ref SHA`. Opening settings live under

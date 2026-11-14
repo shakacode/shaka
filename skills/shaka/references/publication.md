@@ -40,13 +40,14 @@
 ## Review evidence
 
 - Supply the Intake record's `task_started_at` as an ISO 8601 UTC timestamp.
-  If missing, look up the original request in the host's message history. For a
-  task that began with planning, use the planning request's timestamp. If the
-  timestamp is unavailable or later than PR opening, omit it. The helper retains
-  a previously recorded start or uses a whole-task implementation usage report.
-  After CI readiness is recorded, read the live PR's **Shaka metrics**. If it
-  shows `ready in UNKNOWN` and the original start is recoverable, republish with
-  that timestamp and verify the elapsed time.
+  If missing, recover the original request's timestamp from host history,
+  including a planning request that began the task. If you cannot verify it or
+  it falls after PR opening, omit it to preserve the saved start or let the
+  helper use a whole-task implementation usage report.
+  On the post-CI description refresh, confirm the saved start in **Timings**
+  matches the verified request time and the elapsed time runs to CI readiness.
+  Supply the verified start if the saved value is missing or differs, even
+  when the PR already shows a duration. Report any remaining timing gap.
   Pass a recorded `--ci-review-wait` task override to `description` too.
 
 - Verification opens with bound validation/review status and an optional linked `summary`.
