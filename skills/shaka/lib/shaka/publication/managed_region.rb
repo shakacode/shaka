@@ -6,6 +6,8 @@ module Shaka
     OPEN_MARK = '<!-- shaka:begin -->'
     CLOSE_MARK = '<!-- shaka:end -->'
     # Older writers reject the extra opener instead of overwriting accounting they cannot read.
+    # The text stays the same for every archive format: new text would hide the region from older
+    # readers. A reference's shape tells archive formats apart.
     ARCHIVE_GUARD = "#{CLOSE_MARK}\n<!-- shaka:usage-archive:v2; update Shaka; " \
                     "do not remove this guard or archive references -->\n#{OPEN_MARK}".freeze
 

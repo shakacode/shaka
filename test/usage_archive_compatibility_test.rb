@@ -20,6 +20,64 @@ module LegacyDescriptionWriter
   end
 end
 
+# Frozen reference format from a8cd8c4: one reference per record, each repeating the record.
+module VersionTwoArchive
+  module_function
+
+  # The installed reader raises this from check_references, before its builder runs or anything is written.
+  def reference(json)
+    value = JSON.parse(json)
+    unless value.is_a?(Hash) && value.keys.sort == %w[comments record sha256] && valid_reference?(value)
+      raise Shaka::Error, 'Malformed usage archive reference.'
+    end
+
+    value
+  end
+
+  def valid_reference?(value)
+    ids, digest, index = value.values_at('comments', 'sha256', 'record')
+    valid_ids?(ids) && digest.is_a?(String) && digest.match?(/\A[0-9a-f]{64}\z/) &&
+      index.is_a?(Integer) && index >= 0
+  end
+
+  def valid_ids?(ids)
+    ids.is_a?(Array) && ids.size.between?(1, 128) && ids.all? { |id| id.is_a?(Integer) && id.positive? }
+  end
+
+  # What that writer published for these records, all archived in one set of comments.
+  def body(original, github)
+    blocks = Shaka::UsageRecords.parsed_blocks(original).map(&:first)
+    payload = JSON.generate(blocks)
+    ids = [payload].pack('m0').scan(Shaka::UsageArchive::CHUNKS).map { |chunk| upload(github, chunk) }
+    refs = []
+    compact = original.gsub(Shaka::UsageRecords::BLOCK) do |block|
+      refs << { 'comments' => ids, 'sha256' => Digest::SHA256.hexdigest(payload), 'record' => blocks.index(block) }
+      archived(block, refs.last)
+    end
+    guarded(compact, refs)
+  end
+
+  def archived(block, ref)
+    links = ref['comments'].map.with_index { |id, index| "[part #{index + 1}](#issuecomment-#{id})" }.join(', ')
+    inner = block.sub(/\A[^\n]*\n/, '').delete_suffix(Shaka::UsageRecords::END_MARK)
+    "#{Shaka::UsageArchive::PREFIX}#{JSON.generate(ref)} -->\n#{inner}\n" \
+      "Usage archive: #{links}. SHA256: `#{ref['sha256']}`.\n#{Shaka::UsageArchive::END_MARK}"
+  end
+
+  def upload(github, chunk)
+    body = "🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN\n\n#{Shaka::UsageArchive::HEADER}```base64\n#{chunk}\n```\n"
+    github.api('repos/owner/repo/issues/42/comments', method: 'POST', fields: { body: })['id']
+  end
+
+  def guarded(compact, refs)
+    entries = refs.map { |ref| ref.values_at('comments', 'sha256', 'record') }
+    inventory = Digest::SHA256.hexdigest(JSON.generate(entries))
+    compact.sub(Shaka::Publishing::OPEN_MARK) do |mark|
+      "#{mark}#{Shaka::UsageArchiveReferences::INVENTORY_PREFIX}#{inventory} -->\n"
+    end.sub(Shaka::Publishing::CLOSE_MARK, Shaka::Publishing::ARCHIVE_GUARD)
+  end
+end
+
 # A format change must protect native records and older aggregate reports across versions.
 class UsageArchiveCompatibilityTest < Minitest::Test
   include UsageRecordsFixture
@@ -40,6 +98,28 @@ class UsageArchiveCompatibilityTest < Minitest::Test
     assert_raises(Shaka::Error) { LegacyDescriptionWriter.merge(compact, 'Fresh usage only.') }
     assert_equal original, archive.expand(compact)
     assert_equal 2, Shaka::UsageRecords.parsed_blocks(archive.expand(compact)).size
+  end
+
+  def test_a_per_record_archive_is_restored_and_republished_without_new_uploads
+    github = UsageArchiveTest::Comments.new
+    original = mixed_body
+    archived = VersionTwoArchive.body(original, github)
+    archive = Shaka::UsageArchive.new(github)
+    uploads = github.comments.size
+    assert_equal original, archive.expand(archived)
+    compact = archive.prepare(original).publish
+    assert_equal uploads, github.comments.size, 'Republishing must reuse the existing archive comments.'
+    assert_equal [%w[comments records sha256], %w[comments record sha256]], reference_shapes(compact)
+  end
+
+  def reference_shapes(body) = body.scan(Shaka::UsageArchive::REFERENCES).map { |json, _| JSON.parse(json).keys.sort }
+  private :reference_shapes
+
+  def test_the_per_record_reader_refuses_grouped_table_records_but_reads_reports_with_visible_text
+    compact = Shaka::UsageArchive.new(UsageArchiveTest::Comments.new).prepare(mixed_body).publish
+    native, legacy = compact.scan(Shaka::UsageArchive::REFERENCES).map(&:first)
+    assert_raises(Shaka::Error) { VersionTwoArchive.reference(native) }
+    assert_equal 1, VersionTwoArchive.reference(legacy)['record']
   end
 
   def test_repository_casing_does_not_make_a_same_pr_archive_unreadable
