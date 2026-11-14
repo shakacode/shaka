@@ -21,6 +21,7 @@ module Shaka
   # that tells the startup notice doctor has run here.
   class Doctor
     SEVERITY = { 'healthy' => 0, 'degraded' => 1, 'failed' => 2 }.freeze
+    UPDATE_CHECK_GUIDE = 'https://shaka.shakacode.com/docs/manual-installation#schedule-a-daily-update-check'
     # Long enough that a slow network answer is not mistaken for a hang, short enough that a
     # stalled credential helper does not look like a working command.
     TIMEOUT = 15
@@ -97,10 +98,15 @@ module Shaka
 
     def report
       ["Shaka doctor: #{overall.upcase}", context, installation_summary, '',
-       *ordered.map { |item| render(item) }, '', next_step].join("\n")
+       *ordered.map { |item| render(item) }, '', update_advice, '', next_step].join("\n")
     end
 
     private
+
+    def update_advice
+      'If you use a GitHub branch installation and leave Shaka chats running overnight, ' \
+        "schedule `shaka update-check` and apply updates between chats. Setup guide: #{UPDATE_CHECK_GUIDE}"
+    end
 
     # Worst first, and stable within a status so the check order stays predictable.
     def ordered = checks.sort_by.with_index { |item, index| [-SEVERITY.fetch(item.fetch(:status)), index] }
