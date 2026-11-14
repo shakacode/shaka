@@ -169,12 +169,17 @@ so the old behavior stays available as a setting.
   cover its requirements, so the release notes tell it to set `always` to keep them.
   Shaka does not infer `always` from the guide; the two settings stay independent.
 - **Rebased heads need a new reference for consent.** Two Finish rules carry a
-  person's confirmation across a rebase. One covers the limits confirmation; the
-  other covers an Ask approval. Both carry it over when the new head "keeps the
-  behavior the walkthrough describes". Without a walkthrough, the reference becomes
-  the behavior the description's Intent states. That text describes behavior at the
-  same level the merge decision used. The rule's strictness stays the same: any
-  change to that behavior still needs a new confirmation.
+  person's confirmation across a rebase:
+  - The limits confirmation carries to a clean rebase with no comparison. It also
+    carries to "a conflict resolution that changes no behavior the walkthrough
+    describes".
+  - An Ask approval carries over when the rebased change "keeps the behavior the
+    walkthrough describes".
+
+  Only those two walkthrough references change. Without a walkthrough, they point to
+  the behavior the description's Intent states, the text the merge decision used. The
+  clean-rebase clause stays as it is, and so does each rule's strictness: a change to
+  that behavior still needs a new confirmation.
 - **Enforcement entries change.** In `enforcement.yml`, four entries take the new
   condition:
   - `checkpoint-after-walkthrough`;
@@ -203,8 +208,11 @@ so the old behavior stays available as a setting.
   `prose_limits` that apply to a walkthrough. Three notes-only side effects also change:
   - Without a newer walkthrough, nothing resolves notes on older heads. The
     notes-only publish path resolves this account's unanswered notes through the same
-    `Walkthrough::NoteThreads` helper that walkthrough publication uses. The `resolve`
-    command's reply-before-resolve check stays as it is.
+    `Walkthrough::NoteThreads` helper that walkthrough publication uses. That helper
+    finds notes by `Notes::MARKER`, so notes-only reviews keep the same marker. A test
+    checks that publishing notes for a newer head resolves an unanswered older note and
+    leaves an answered one open. The `resolve` command's reply-before-resolve check
+    stays as it is.
   - `handoff` stops listing open reviewer-note threads as answered threads awaiting
     confirmation.
   - The conversation-resolution refusal no longer tells the agent to publish a
