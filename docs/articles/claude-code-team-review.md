@@ -17,8 +17,8 @@ each merge and fast rollback after it.
 
 Shaka is a skill that takes one task to a reviewed PR. Nine of the post's practices apply to
 that work. For each, this article lists what Shaka has, what it lacks, and the evidence in
-Shaka's code, settings, and published studies. The post's later layers, such as merge queues,
-feature flags, and staged rollouts, come after the merge and fall outside Shaka.
+Shaka's code, settings, and published studies. The post's later layers, such as feature flags,
+staged rollouts, and fast rollback, come after the merge and fall outside Shaka.
 
 Three earlier pieces cover nearby ground:
 
@@ -113,7 +113,8 @@ Three earlier pieces cover nearby ground:
   while a finding from either one is open. The author fixes it or resolves the thread with a
   short reason.
 - **Shaka has:** blocking in the commands the agent runs. `review run` refuses the next commit
-  while any finding from the last round is open. `attention --state merge`, which marks a PR
+  while a finding from the last round is still open, or a defect is only documented. A pending
+  maintainer decision doesn't block it. `attention --state merge`, which marks a PR
   ready for your merge, and `merge --auto` both refuse while the published local review
   reports open findings. A finding closes as fixed with its commit, dismissed with evidence, or
   accepted by the maintainer. On GitHub, `handoff` lists every review thread the agent hasn't
