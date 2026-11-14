@@ -6,8 +6,6 @@ require_relative 'publication/throughput_stats'
 module Shaka
   # Inspect the managed body GitHub returned after its write, excluding human-authored text.
   module PublishedTiming
-    METRICS_START = /^#{Regexp.escape(UsageEstimate::MARKER)}\r?\n/
-
     module_function
 
     def from_publication(published, head:, timeline:, lookup_note:)
@@ -29,13 +27,10 @@ module Shaka
       result('unverified', 'Stored timing record is unreadable.', lookup_note)
     end
 
-    def metrics_region(body) = Publishing.managed_region(body).to_s.split(METRICS_START, 2)[1].to_s
+    def metrics_region(body) = UsageEstimate.metrics(Publishing.managed_region(body).to_s).to_s
 
     def evidence_gap(state, timeline, now)
       return 'PR opening time unavailable.' if timeline['task_started_at'] && !timeline['opened']
-      if TaskTiming.after_opening?(TaskTiming.timestamp(state['t0'], now), timeline)
-        return 'Stored task start is after PR opening.'
-      end
 
       endpoint_gap(state, timeline, now) ||
         ('Task start could not be verified.' if state['t0'] && !timeline['task_started_at'])

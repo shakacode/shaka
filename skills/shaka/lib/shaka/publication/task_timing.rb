@@ -5,6 +5,7 @@ require_relative 'timeline_steps'
 require_relative 'run_summary'
 require_relative 'time_zone'
 require_relative 'throughput_line'
+require_relative 'usage_details'
 
 module Shaka
   # Retains the task start, supplied or read from a usage report, separately from GitHub's first commit.
@@ -68,8 +69,8 @@ module Shaka
 
     def read(body, now)
       region = Publishing.managed_region(body).to_s
-      metrics = region.split(/^<!-- shaka:estimated-cost -->\r?\n/, 2)
-      records = timing_details(metrics).scan(MARKER)
+      metrics = UsageEstimate.metrics(region)
+      records = (metrics ? timing_details(metrics) : region).scan(MARKER)
       line = records.first.first if records.one?
       data = line ? JSON.parse(line) : {}
       return {} unless data.is_a?(Hash)
@@ -80,9 +81,7 @@ module Shaka
     end
 
     def timing_details(metrics)
-      return metrics.first.to_s if metrics.size < 2
-
-      metrics.last[%r{^<summary>Timings · [^\r\n]+</summary>\r?\n(.*?)^</details>}m, 1].to_s
+      metrics[%r{^<summary>Timings · [^\r\n]+</summary>\r?\n(.*?)^</details>}m, 1].to_s
     end
 
     def timestamp(value, now)
