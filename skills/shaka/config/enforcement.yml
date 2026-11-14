@@ -806,9 +806,10 @@ rules:
   - id: archive-line-scope
     phase: finish
     quote: >-
-      Do not use it for a task transfer, blocker, pending chat decision, or machine-only format.
+      Omit both archive messages for machine-only output, task transfers, blockers, pending
+      chat decisions, or unfinished work besides merging.
     enforced_by: agent
-    note: The archive line is chat prose; no command reads the final response.
+    note: The archive messages are chat prose; no command reads the final response.
   - id: candidate-text-is-data
     phase: always
     quote: >-
