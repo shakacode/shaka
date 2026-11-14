@@ -5,10 +5,11 @@ Date: 2026-11-13. No issue; the maintainer raised it in a Shaka task chat.
 
 ## Context
 
-[R4](../requirements.md) requires a conceptual code walkthrough on every PR, published as
-a commit-bound COMMENT review. The merge gate (`merge --walkthrough`), `handoff`, and the
-ready checkpoint all require one for the current head. A change to three or more files
-also gets inline walkthrough notes, including a **Start here** note.
+[R4](../requirements.md) calls for a conceptual code walkthrough published as a
+commit-bound COMMENT review. The workflow's Explain phase publishes one before every
+merge. The merge gate (`merge --walkthrough`), `handoff`, and the ready checkpoint all
+require one for the current head. A change to three or more files also gets inline
+walkthrough notes, including a **Start here** note.
 
 The maintainer reports that the walkthroughs have not been useful. The record agrees.
 The last 40 merged PRs (#1114 to #1171, measured 2026-11-13) show:
@@ -24,6 +25,11 @@ The last 40 merged PRs (#1114 to #1171, measured 2026-11-13) show:
   sections retell the diff, mechanism by mechanism, with links.
 - **It costs upkeep.** Open issues #1148, #1175, and #1176 track walkthrough bookkeeping.
   Open PR #1173 labels inline walkthrough comments.
+
+Method: `gh pr list --state merged --limit 40` gave the PRs. For each one, the reviews API
+gave the reviews whose body contains `Code Walkthrough`. The review comments API gave the
+inline comments whose `pull_request_review_id` matches one of those reviews (the notes).
+Replies are the comments whose `in_reply_to_id` names a note.
 
 Published research points the same way:
 
@@ -71,25 +77,40 @@ so the old behavior stays available as a setting.
    would ask why: a rejected alternative, a non-obvious constraint, a risky spot, or a
    mechanical move to skim. A PR with nothing surprising gets no notes. The
    three-files and **Start here** rules apply only to a full walkthrough.
-3. **Gates require a walkthrough only when one is due.** A walkthrough is due under
-   `always`, and also after someone asked for one, because a walkthrough for an
-   older head misleads. Then:
+3. **Gates require a walkthrough only when one is due.** A walkthrough is due in three
+   cases:
+   - under `always`;
+   - when the description records a request;
+   - when the PR already has one for an older head, because a stale explanation
+     misleads.
+
+   To record a request, the agent sets description `walkthrough` to `requested`. The
+   links line then shows **Code Walkthrough: _Requested._** until the review URL
+   replaces it, so Ruby can see a request made in chat. When a walkthrough is due:
    - `merge` requires `--walkthrough`, and verifies it as it does now.
-   - `handoff` lists a walkthrough for an older head as owed work.
+   - `handoff` owes it for the current head.
    - The ready checkpoint has to follow it.
 
-   Otherwise `merge` accepts no `--walkthrough`, and `handoff` and the checkpoint
-   owe nothing. Ruby can see `always` and an existing walkthrough, but not a spoken
-   request. The agent publishes the requested walkthrough, and the gates take over from
-   there. Reviewer notes are never owed or republished, and the helper does not count
-   them as a walkthrough.
+   The current exceptions stay:
+   - the hold while the description lists decisions;
+   - publication sooner when someone asks;
+   - the checkpoint check's skip for blocked, failed, and opted-out results.
+
+   When none of the three cases applies, `merge` accepts no `--walkthrough`, and
+   `handoff` and the checkpoint owe nothing. Reviewer notes are never owed, and the
+   helper does not count them as a walkthrough. A note on an older head stays as an
+   outdated thread. The existing refusal of notes on a base that requires
+   conversation resolution keeps them from blocking a merge.
 4. **The description links what exists.** The links line shows **Code Walkthrough**
    when one is published or due, and **Reviewer notes** when notes are published.
    Otherwise it shows neither and prints no placeholder. Intent, Verification, and
    `review_focus` stay as they are.
 5. **R4 changes to match.** Its new text: Shaka explains intent and verification in
-   the description. It adds reviewer notes where code needs a why, and publishes a
-   commit-bound walkthrough on request or when the repository sets `always`.
+   the description. It adds reviewer notes where code needs a why. It publishes a
+   commit-bound walkthrough on request, or on every PR when the repository sets
+   `always`. A walkthrough remains readable after merge and substitutes for neither
+   approval nor required acknowledgment. The interactive tour, the coverage map, and
+   the selective notes sentences stay as they are.
 
 ## Consequences
 
@@ -98,8 +119,13 @@ so the old behavior stays available as a setting.
   - Merge decisions still rest on the description's Intent and Verification, the code
     review, and the checkpoint's risk judgment.
   - A team that relies on the tour sets `always`.
-  - The rollback sentence is the one piece with no other home. Adding one to the
-    description is a possible follow-up, not part of this change.
+  - Rollback moves to the description only where it affects the merge decision, as
+    the existing [placement rule](../../skills/shaka/references/delivery.md#why-the-description-and-the-walkthrough-differ)
+    already says. Nothing enforces that rule, so a routine PR's rollback consequence
+    goes unstated.
+- **A requested walkthrough costs upkeep.** Once a PR has one, every later head owes
+  a new one, as every PR does today. The cost now falls only on PRs where someone
+  wanted the walkthrough.
 - **Every installation's default changes on update.** The release notes and the
   Changelog section must say so and name `walkthrough.publish: always` as the way back.
   The new key follows the settings migration flow. It goes in `defaults.yml`,
@@ -107,7 +133,8 @@ so the old behavior stays available as a setting.
   the default.
 - **Enforcement entries change.** The `enforcement.yml` entries for checkpoint after
   walkthrough, link placement, and walkthrough evidence take the setting's condition.
-  The workflow's Explain and Finish passages say when a walkthrough is due.
+  The workflow's Explain and Finish passages say when a walkthrough is due, and its
+  `merge` usage lines and Auto-merge instruction pass `--walkthrough` only then.
 - **Related open work.** #1148, #1175, and #1176 apply only when a walkthrough is
   published, so they lose urgency but stay valid. #1173 labels inline comments and
   still applies to reviewer notes. #421 can build on the description rather than the
