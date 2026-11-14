@@ -81,10 +81,10 @@ module Shaka
     end
 
     def timing_details(metrics)
-      pattern = %r{^<summary>Timings\ ·\ [^\r\n]+</summary>\r?\n\r?\n
-                   (?=<!--\ shaka:stats\ )(.*?)^</details>}mx
-      sections = metrics.scan(pattern)
-      sections.one? ? sections.first.first : ''
+      sections = metrics.scan(%r{^<summary>Timings · [^\r\n]+</summary>\r?\n(.*?)^</details>}m).flatten
+      current = sections.select { |section| section.start_with?("\n<!-- shaka:stats ", "\r\n<!-- shaka:stats ") }
+      eligible = current.empty? ? sections : current
+      eligible.one? ? eligible.first : ''
     end
 
     def timestamp(value, now)
