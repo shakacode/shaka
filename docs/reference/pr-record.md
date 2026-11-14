@@ -145,7 +145,11 @@ rule may still require fresh GitHub approval. Changed behavior returns to you.
 
 ## Fixes after review
 
-A fix for a review finding is a new commit, and the PR's evidence has to cover it:
+A fix for a review finding is a new commit. The agent is asked to refresh the PR's
+evidence for it as below. When the agent merges, Shaka checks that the checkpoint,
+or your skip, and any required review cover the merged commit, and GitHub enforces
+required checks; the other rows rely on the agent. See
+[what is enforced](../workflow.md#what-is-enforced).
 
 | Part | After the fix |
 | --- | --- |
@@ -153,7 +157,7 @@ A fix for a review finding is a new commit, and the PR's evidence has to cover i
 | Repository validation and required checks | Run again on the new commit |
 | Local review | The configured reviewers review the new commit |
 | Checkpoint | Run again; merging needs a checkpoint, or your explicit skip, for that commit |
-| Code walkthrough | Reused, with only the affected steps rewritten, while the goal, scope, dependencies, and settings stay the same |
+| Code walkthrough | Reused, with only the affected steps rewritten, when the commit repairs specific findings and leaves the goal, scope, dependencies, and settings unchanged |
 
 Evidence for an earlier commit stays labeled with that commit. To skip the
 checkpoint for one fix, tell your agent and give a reason, which appears as a
