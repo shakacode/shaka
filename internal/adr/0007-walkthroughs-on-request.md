@@ -7,8 +7,9 @@ Date: 2026-11-13. No issue; the maintainer raised it in a Shaka task chat.
 
 [R4](../requirements.md) calls for a conceptual code walkthrough published as a
 commit-bound COMMENT review. The workflow's Explain phase publishes one before every
-merge. The merge gate (`merge --walkthrough`), `handoff`, and the ready checkpoint all
-require one for the current head. A change to three or more files also gets inline
+merge. The merge gate (`merge --walkthrough`) and the ready checkpoint require one for
+the current head. `handoff` owes one once merge is requested, or when this account's
+walkthrough explains an older head. A change to three or more files also gets inline
 walkthrough notes, including a **Start here** note.
 
 The maintainer reports that the walkthroughs have not been useful. The record agrees.
@@ -124,6 +125,12 @@ so the old behavior stays available as a setting.
   ordered code tour, or **Start here** pointer.
   - Merge decisions still rest on the description's Intent and Verification, the code
     review, and the checkpoint's risk judgment.
+  - It also loses the `WalkthroughEvidence` check, which refuses a walkthrough that
+    lacks a commit-pinned link to a changed file or a name for each completed
+    required and review check. That record is redundant for merging, for two
+    reasons. `merge` enforces required checks itself, and the description's
+    Verification takes the validation and review lines from their result files.
+    The PR still loses one sentence naming every completed check.
   - A team that relies on the tour sets `always`.
   - Rollback already belongs in the description. The workflow puts it under the
     description's `details`, and the
