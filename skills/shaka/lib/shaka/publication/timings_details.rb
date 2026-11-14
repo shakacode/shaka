@@ -46,13 +46,19 @@ module Shaka
 
     def visible(steps, dropped)
       # The reason can quote gh output, so it stays out of the public body.
-      unavailable = @timeline.key?('unavailable')
+      unavailable = timeline_gap
       chart = bars(steps, unavailable)
-      [*(unavailable ? [UNAVAILABLE, chart] : stretches(chart)), TaskTiming.summary(@timeline, @zone),
+      [*(unavailable ? [unavailable, chart] : stretches(chart)), TaskTiming.summary(@timeline, @zone),
        *MeasuredSteps.new(@zone).parts(steps, dropped, charted: !chart.nil?), (GUIDE unless unavailable)]
     end
 
-    def summary = "#{SUMMARY} · #{@timeline.key?('unavailable') ? 'timeline unavailable' : totals(timing_rows)}"
+    def summary = "#{SUMMARY} · #{timeline_gap ? 'timeline unavailable' : totals(timing_rows)}"
+
+    def timeline_gap
+      return UNAVAILABLE if @timeline.key?('unavailable')
+
+      'GitHub did not supply the merge time.' if @timeline['merged_pr'] && !@timeline['merged']
+    end
 
     def timing_rows = @timing_rows ||= TimingStretches.new(@timeline, @now).rows
 

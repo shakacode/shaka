@@ -22,7 +22,6 @@ module Shaka
 
       timeline['merged_pr'] = true
       timeline['merged'] ||= timestamp(pull['merged_at'], now)
-      timeline['unavailable'] ||= 'GitHub merge time unavailable.' unless timeline['merged']
     end
 
     def attach(timeline, content, pull, now: Time.now.utc)
