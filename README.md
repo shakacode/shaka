@@ -57,8 +57,9 @@ For Pi, load the installed skill. See [other coding agents](docs/coding-agents.m
 Your agent checks setup and tells you if
 anything is missing.
 
-Before coding, the agent recommends a model and effort and may wait for your reply.
-To skip that stop and start with your current settings, end the task with `Go`.
+Before coding, the agent recommends a model and effort. If your coding agent uses
+different settings, or the agent can't tell which it uses, it waits for your reply.
+To keep your current settings and start right away, end the task with `Go`.
 See [why the agent asks](docs/faq.md#why-did-the-agent-stop-to-ask-about-model-and-effort).
 
 Read the PR, ask for revisions if needed, and decide whether to merge.

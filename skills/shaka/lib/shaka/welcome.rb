@@ -18,7 +18,8 @@ module Shaka
       Check your setup:
         $shaka doctor
 
-      End a task with Go to skip the model and effort stop and use your current settings.
+      The agent waits for your reply when your model or effort is unknown or differs from its recommendation.
+      End a task with Go to keep your current settings and start right away.
 
       Terminal commands:
         shaka doctor             Check this machine and repository; get setup advice.
