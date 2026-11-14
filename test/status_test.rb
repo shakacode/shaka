@@ -15,6 +15,16 @@ class StatusTest < Minitest::Test
     assert_equal 'github', result['requiredChecksSource']
   end
 
+  # GitHub reports a run held for a deployment-environment approval as WAITING until someone approves it.
+  def test_status_marks_a_required_check_held_for_approval
+    checks = [{ 'name' => 'deploy', 'state' => 'WAITING', 'bucket' => 'pending' },
+              { 'name' => 'validate', 'state' => 'IN_PROGRESS', 'bucket' => 'pending' }]
+    result = Shaka::Status.new(client(snapshot_response, response(checks, status: 8), *no_configured_requirements,
+                                      snapshot_response)).call
+
+    assert_equal [checks.first.merge('blocked' => 'approval hold'), checks.last], result['requiredChecks']
+  end
+
   def test_status_reports_seam_required_checks_when_github_enforces_none
     empty = ['', "no required checks reported on the 'main' branch\n", STATUS.new(1)]
     head = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' },

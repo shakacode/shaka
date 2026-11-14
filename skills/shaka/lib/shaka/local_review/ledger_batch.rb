@@ -36,6 +36,8 @@ module Shaka
       unrecorded = batch.find { |index| !recorded?(rounds[index]) }
       raise Error, "Record round #{unrecorded + 1}'s findings with `shaka review record` before the next round." if
         unrecorded
+
+      check_round_settled!
     end
 
     # Another reviewer may join the last batch until it is triaged; any other repeat of a commit

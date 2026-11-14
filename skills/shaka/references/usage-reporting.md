@@ -307,7 +307,7 @@ report.
 | Standard Codex credits | Configured supported OpenAI model. A response with cache writes is unpriced because their credit rate is unpublished. |
 | Standard API-equivalent USD | Ordinary input excludes cache reads and writes, which use their own published rates. |
 | Cursor on-demand USD | Configured supported Grok model and recorded Fast/standard mode. Cache writes remain ordinary input because no separate rate is published. |
-| Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published Opus fast mode are priced. |
+| Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published fast-mode rates are priced. |
 | Pi native nominal USD | Copy the host's recorded cost instead of applying a rate card. |
 
 Rate notes and source links apply only to supported provider/model pairs. A
@@ -317,10 +317,10 @@ of its unknown estimate. The table's model is the one actually priced.
 ### Anthropic details
 
 Input, cache reads, and writes are separate. Use the recorded 5-minute/1-hour
-`cache_creation` split; an unsplit write total stays unknown. Fast mode is priced
-at twice standard token rates for Opus 5.5, Opus 5, and Opus 4.8; cache multipliers
-stack on top. Fast mode for other models and unrecorded speed stay unknown. Standard
-and fast responses remain separate columns.
+`cache_creation` split; an unsplit write total stays unknown. For models with
+`fast: true` in the rate card, fast mode doubles all token rates, including cache
+rates. Unsupported fast mode and unrecorded speed stay unknown. Standard and
+fast responses remain separate columns.
 
 Add the recorded web-search charge. An absent server-tool group or search counter
 means no searches; a present malformed group or invalid count is unknown. Fetch
@@ -400,6 +400,7 @@ The helper renders the Task line after Why in Intent:
 | issue `1234`, `part_of` | `GitHub #1234 · part of` |
 | issue `1234`, `fixes` | `GitHub · fixes #1234`, which closes the issue when the PR merges into the default branch |
 | `linear`, `MKT-1234`, `task_url` | `Linear MKT-1234`, linked to the supplied URL |
+| issue with a Shortcut story `task_url` | `Shortcut 1234`, with the story number taken from the URL |
 | issue or PR with an omission reason | `issue · URL omitted: Private task.` or `pull request · URL omitted: Tracker unavailable.` |
 
 The optional `intent.task_understanding` is an object with one-line `goal` and
@@ -460,8 +461,9 @@ saved response items and token records do not supply a served-model identity.
 Missing, ambiguous, or unreadable session metadata leaves unavailable fields
 `UNKNOWN` with a warning and reason. A new turn without context clears earlier settings.
 
-Claude Code publications resolve the chat through `CLAUDE_CODE_SESSION_ID` the same
-way. Ruby reads the served model and effort from the current turn's latest response
+For Claude Code publications, Ruby selects the newest valid transcript matching
+`CLAUDE_CODE_SESSION_ID`. Usage discovery still rejects duplicate transcripts.
+Ruby reads the served model and effort from the current turn's latest response
 and ignores subagent responses. The model is the served one, so the header carries
 no `(configured)` label. The provider stays as supplied. A note appears only when
 the model or effort is `UNKNOWN`. A subagent shares its parent's session ID, so a

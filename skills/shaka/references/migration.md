@@ -22,8 +22,8 @@ Older keys are deliberately rejected during this pilot:
 | `plan` | Point to the requirements document from `AGENTS.md` |
 | YAML `commands` mapping | Fixed `.agents/shaka/bin/` scripts |
 | `protection`, `trusted_actions`, `merge.method`, `merge.release` | Live GitHub settings, workflow files, or the repository's actual security tooling |
-| `merge.auto_max_review_floor` | `merge.auto_merge_max_risk` (default `low`); for one release the old key warns, and below 5 it holds every agent merge until its paths move into `high_risk_areas` or `medium_risk_areas` and it is removed |
-| `pr_description.human_review_floors` | `high_risk_areas` for paths that must reach a person; for one release the old key warns and is ignored |
+| `merge.auto_max_review_floor` | `merge.auto_merge_max_risk` (default `low`); move the paths its floors held into `high_risk_areas` or `medium_risk_areas`, then remove the old key |
+| `pr_description.human_review_floors` | `high_risk_areas` for paths that must reach a person, or `medium_risk_areas` for paths that raise the risk to medium; remove the old key |
 
 For the old command-path mapping, migrate in this order:
 

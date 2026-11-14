@@ -63,7 +63,8 @@ module Shaka
       setting('branches.name') do |context|
         Claim::Names.new(query: nil, template: context.config.to_h.dig('branches', 'name')).reported
       end,
-      *%w[show_shaka_credit show_human_comments max_human_comments].map { |key| description(key) },
+      *%w[show_shaka_credit show_human_comments max_human_comments
+          ignored_human_comments].map { |key| description(key) },
       setting('pr_description.time_zone') { |context| TimeZone.renderable(context.config.time_zone) },
       setting('wip.include_checkout_path') do |context|
         context.config.wip['include_checkout_path']

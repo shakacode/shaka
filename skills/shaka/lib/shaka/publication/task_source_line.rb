@@ -11,6 +11,7 @@ module Shaka
     RELATIONS = { 'fixes' => 'fixes', 'part_of' => 'part of', 'follow_up' => 'follow-up', 'refs' => 'related' }.freeze
     TRACKERS = { 'jira' => 'Jira', 'linear' => 'Linear' }.freeze
     KEY = /\A[A-Z][A-Z0-9_]*-\d+\z/
+    SHORTCUT_STORY = %r{\Ahttps://(?i:app\.shortcut\.com)/[^/?#]+/story/(\d+)(?=[/?#]|\z)}
 
     # A relation names a numbered or keyed task, and only a GitHub issue can be closed by merging.
     def self.validate!(spec)
@@ -116,9 +117,11 @@ module Shaka
 
     def self.task(spec)
       return "GitHub#{' PR' if spec['task_source'] == 'pull_request'} ##{spec['task_number']}" if spec['task_number']
-      return spec['task_source'] == 'pull_request' ? 'pull request' : 'issue' unless spec['task_tracker']
+      return "#{TRACKERS.fetch(spec['task_tracker'])} #{spec['task_key']}" if spec['task_tracker']
+      return 'pull request' if spec['task_source'] == 'pull_request'
 
-      "#{TRACKERS.fetch(spec['task_tracker'])} #{spec['task_key']}"
+      story = spec['task_url']&.[](SHORTCUT_STORY, 1)
+      story ? "Shortcut #{story}" : 'issue'
     end
 
     def self.suffix(spec)

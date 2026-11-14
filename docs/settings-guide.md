@@ -1,191 +1,156 @@
 # Choose your settings
 
-Give Shaka a task:
+Ask your agent what applies before changing a setting:
 
 ```text
-$shaka <task or issue link>
+Tell me about the Shaka configuration.
 ```
 
-If the project has no Shaka setup, the agent asks whether to prepare individual
-or team settings. It finds your existing checks, explains the AI review choices,
-and defaults to Ask. The [settings reference](settings.md) owns the options and defaults.
+The agent can explain your project's choices, where they are saved, and what
+each setting changes. See the [settings reference](settings.md),
+[built-in defaults](../skills/shaka/config/defaults.yml), and
+[Shaka's own overrides](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a working example.
+
+Examples use `/shaka`. In Codex, use `$shaka` instead.
 
 ## Where Shaka keeps things
 
-Using Shaka is separate from your team adopting it. You can use Shaka on any
-repository without changing it, and adopt it as a team later through an ordinary PR.
+Shaka is installed as a skill for your coding agent. Each project has its own settings,
+usually in `.agents/shaka/config.yml`:
 
-| What | Where | Who decides |
-| --- | --- | --- |
-| Shaka itself | Your Shaka installation, linked into your coding agent | You, when you install or update |
-| Individual settings | `.agents/shaka/` in your copy of the repository, kept out of commits | You, until the team adopts Shaka |
-| Your starting point for individual setup | `~/.agents/shaka/config.yml`, read when an individual setup starts, and for your time zone when a PR's repository sets none | You |
-| Team settings | `.agents/shaka/`, committed on the default branch | Your team, through settings PRs |
+| Settings | Where they are saved |
+| --- | --- |
+| Individual | In your local checkout, outside commits |
+| Team | In the repository's default branch, shared through PRs |
 
-Each task uses one of these settings sources, never a mix, apart from your time zone. See
-[which settings apply](settings.md#which-settings-apply).
+Team settings take precedence. If the repository leaves the PR display time zone
+unset, Shaka can use your personal time zone. Other local settings do not fill in
+team settings. A personal starting template can supply initial choices for individual setup.
+See [which settings apply](settings.md#which-settings-apply) and
+[start individual setups from your preferences](settings.md#start-individual-setups-from-your-preferences).
 
 ## Use individual or team settings
 
-**Individual setup** lets you try Shaka before your team adopts it. Your choices
-stay in your local copy of a repository without shared Shaka settings, outside commits.
-To choose it upfront:
+To try a task in a project that has no shared Shaka settings:
 
 ```text
-$shaka <task or issue link>
-Set up Shaka just for me. Go.
+/shaka Fix search when the query contains an apostrophe. Set up Shaka just for me.
 ```
 
-Individual settings support the same choices as shared settings: reviewers, custom
-code-review instructions, checkpoint choices, writing limits, opening instructions,
-and WIP preferences.
-See [current experience and recovery limits](expected-experience.md#individual-setup).
-
-If you try Shaka on several repositories, write those preferences once in
-`~/.agents/shaka/config.yml`. Each new individual setup starts from them, and you
-still review the proposal before Shaka writes it. See
-[start individual setups from your preferences](settings.md#start-individual-setups-from-your-preferences).
-
-For shared team settings:
+Individual settings can choose reviewers and PR preferences. Local settings do
+not authorize automatic merging or supply fallback required checks. To share your
+team's choices:
 
 ```text
-$shaka Set up Shaka for this repository.
+/shaka Set up Shaka for my team in this repository.
 ```
 
-The agent opens a settings PR for you to review. Its choices become the team's
-defaults after it merges into the default branch. Individual settings do not
-override team settings.
-
-You can [try a settings PR on one task](settings.md#preview-settings-before-adopting-them)
-before adoption. The PR keeps the experiment visible.
+Review and merge the separate setup PR on GitHub. Its settings then become the
+team's defaults. See [team setup](configure-repository.md).
 
 ## Change your team's settings
 
-Settings changes get their own PR. Shaka's checks before push and its PR description
-publisher both refuse a feature PR that also changes files under `.agents/shaka/`, so a
-settings change never hides inside other work.
-
-To see where you stand first, ask your agent:
+Ask for a separate settings PR. For example:
 
 ```text
-$shaka Explain this repository's Shaka settings.
+/shaka Propose waiting for all configured CI reviews before merging.
 ```
 
-It goes through the settings a group at a time, with each value, whether it is the
-default, and a link to its [reference](settings.md) section. To see the full instructions a
-reviewer gets, ask `$shaka Show what my code reviewer receives.` or name the checkpoint or
-the opening check.
+The agent explains what changes and what the team needs to do. Review the PR
+before merging. Follow any update instructions in the settings PR: a copy of
+Shaka older than a new setting or option refuses the settings file, so every
+task on that copy stops until it updates.
 
-1. Ask for the change, for example:
+<a id="common-situations"></a>
 
-   ```text
-   $shaka Propose using Codex first for local reviews in this repository.
-   ```
+### Try settings before adopting them
 
-   The agent prepares the change as its own settings PR. An older Shaka refuses a
-   settings file with a setting or option it does not know, so every task stops until it
-   updates. The PR therefore lists updating Shaka as a step after merge, with the date
-   each new setting or option first appeared when Shaka can find it, so you can tell
-   whether anyone's copy is that old. A PR that only removes settings, or only edits a
-   prompt file, lists no update. You can also edit
-   `.agents/shaka/config.yml` in a PR yourself.
-2. To try it before it merges, select it for your tasks. Teammates can select the
-   same PR:
+You can use a settings PR for one task:
 
-   ```text
-   $shaka <task or issue link>
-   Use settings from PR #123.
-   ```
+```text
+/shaka Fix search when the query contains an apostrophe. Use settings from PR #123.
+```
 
-3. Merge the settings PR. Its choices become the team's defaults.
-
-## Common situations
-
-| Situation | What to do |
-| --- | --- |
-| Try Shaka on a repository your team has not adopted | Ask for individual setup. Feature PRs contain no Shaka files. |
-| Share a trial setup with a teammate | Put the settings in a settings PR; each of you selects it for your tasks. |
-| Adopt Shaka as a team | Ask Shaka to set up the repository; review and merge its settings PR. |
-| Change one setting for one task | Say it in the request, such as `Use Ask for this task`, where the setting allows it. |
-| Change a team setting for good | Follow [change your team's settings](#change-your-teams-settings). |
+That task uses the selected configuration. Each teammate can choose the same PR
+for their own trial. For a supported choice on one task, state it in the prompt,
+such as "Ask me before merging." Other tasks keep their usual settings.
+GitHub's required checks and approvals still apply. Ask explicitly to switch to a
+newer version of the settings PR. See [settings previews](settings.md#preview-settings-before-adopting-them).
 
 ## Choose a merge policy
 
-With **Ask**, review the ready PR, then merge it yourself or tell the agent to merge.
-With **Auto**, the agent merges after required checks, reviews, and approvals.
-Some changes still need your decision.
+See [merge choices](working-with-shaka.md#choose-a-merge-policy) for **Ask** and
+`auto`, including when you still need to review. To change the team default:
 
 ```text
-$shaka <task or issue link>
-Use merge policy Auto. Go.
+/shaka Propose making automatic merging the default for this repository.
 ```
 
-`Go` starts work; it does not authorize merging. See
-[merge choices](working-with-shaka.md#choose-a-merge-policy).
+The new default applies after the settings PR merges. See
+[merge preference](settings.md#mergepreference).
 
 ## Choose AI reviewers
 
-A separate AI session reviews the code before publication. Choose reviewers you can
-access through their tools or API credentials:
+Ask for the reviewer you want and have the agent check access:
 
 ```text
-$shaka Prefer Claude for code review.
+/shaka Propose using Claude first for code review in this repository.
 ```
 
-Shaka first prefers a provider that did not implement the change, then follows your
-configured order. The list supplies choices; the [reviewer count](settings.md#reviewlocal_review_count)
-determines how many run. Reviews can run concurrently. Additional reviewers add
-cost and may increase elapsed time. A fresh context does not guarantee a better review.
+Shaka prefers a reviewer from a different provider than the implementation agent,
+then uses your configured order. Additional reviewers can add cost and time.
+See [reviewer choices](settings.md#reviewlocal_review_agents) and
+[reviewer count](settings.md#reviewlocal_review_count).
 
-For custom instructions:
+Use `AGENTS.md` for project rules. To add guidance for Shaka's local reviewer, ask:
 
 ```text
-$shaka Focus code reviews on compatibility.
+/shaka Add local review guidance to flag API changes that break existing clients.
 ```
 
-The agent starts from Shaka's defaults when preparing replacement instructions.
-Use one prompt for all local reviewers or one for a particular reviewer. Team
-instructions come from the default branch; individual instructions stay in your
-local settings folder. See
-[custom review instructions](settings.md#reviewreplacement_prompt_file).
+Those instructions can add to Shaka's defaults. CI review jobs have their own
+prompts. See [custom review instructions](settings.md#reviewcustom_instructions_file).
 
 ## Keep PR explanations useful
 
+Tell the agent who reads your PRs and what they need to decide:
+
 ```text
-$shaka Keep PR descriptions under 200 words.
+/shaka Write PR explanations for someone who knows the product but hasn't read the code.
+Keep supporting evidence expandable.
 ```
 
-Shaka checks [writing limits](settings.md#prose_limits) before publishing descriptions
-and code walkthroughs, including with individual settings. Recommendations and
-review replies follow agent instructions; code does not check their length.
-
-An [opening check](settings.md#opening_check) advises whether the first sentence
-of a description or walkthrough leads with what improves for the reader, and
-suggests plainer words for terms in a description that a maintainer new to Shaka
-would not follow. It does not verify the whole text.
-You can choose its reviewer, model, and effort separately from code review, or
-turn it off, in team or individual settings.
+Use [writing preferences](writing-preferences.md) and
+[prose limits](settings.md#prose_limits) to guide descriptions and walkthroughs.
+The [opening check](settings.md#opening_check) can suggest a clearer first sentence.
 
 ## Decide what happens next
 
-Shaka recommends what to do next at a
-[checkpoint](reference/pr-record.md#checkpoint) and records the owner's
-choice for later. See that guide for the terms and current report labels.
-[Checkpoint settings](settings.md#checkpoint) choose who evaluates
-the result, with team or individual setup.
+The [checkpoint](reference/pr-record.md#checkpoint) evaluates the finished result
+and recommends the next action. You can choose its reviewer, model, and effort
+separately from code review. See [checkpoint settings](settings.md#checkpoint).
 
 ## Add your own PR requirements
 
+Ask the agent to record what every relevant PR should show. For example:
+
 ```text
-$shaka Add project guidance: before merge, confirm the database backfill plan.
+/shaka Add a PR requirement: explain the database backfill plan before merging.
 ```
 
-The agent reads your [PR evidence, merge-readiness, and walkthrough guides](settings.md#project_guidance)
-when it writes the PR description and the code walkthrough, and before the checkpoint.
+The agent can propose a settings PR. Use CI or your validation script for
+requirements tools can test. Use [project guidance](settings.md#project_guidance)
+for evidence the agent should assess and report in the PR.
 
 ## Resume unfinished work
 
-**WIP Details** records the chat locator, checkout path, state, and next action.
-A locator helps you resume the owning chat when your host can reach it.
-[The checkout-path setting](settings.md#wipinclude_checkout_path) hides the path
-and keeps the locator.
+**WIP Details** in the PR description helps you find the owning chat and next action.
+To hide your project folder's path in **WIP Details**, ask:
+
+```text
+Hide my project folder's path in WIP Details. Keep the chat link.
+```
+
+The path appears as `REDACTED`. Any available chat link stays in place. See
+[WIP settings](settings.md#wipinclude_checkout_path) and
+[resume unfinished work](working-with-shaka.md#resume-unfinished-work).

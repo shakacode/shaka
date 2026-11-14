@@ -14,3 +14,9 @@
 - For a new user-invoked procedure, check that the documented entry point routes
   to it, and that any behavior trial started from that entry point rather than
   naming the procedure file.
+- For documentation changes, read each changed file in full. Check that
+  headings, prose, prompts, and links fit its intended reader. For product
+  guides and skill procedures, use the audience rules in `AGENTS.md`. Flag
+  any passage where the reader must guess who acts. A public guide can say
+  “Give your agent the fork URL and branch.” A skill procedure can say
+  “Confirm which fork and branch to install.”

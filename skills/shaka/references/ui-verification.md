@@ -10,10 +10,9 @@ For UI changes, meaning anything a person sees on screen other than command-line
 use the change by hand on the head you will push, and capture before and after screenshots
 on desktop and mobile, adding a short video when interaction or timing matters. Inspect each capture
 for the intended state and compare the whole affected view for unexpected changes.
-Present an annotated after capture with a few numbered boxes, highlights, or arrows
-explaining meaningful changes, following the [visual-evidence procedure](visual-diff.md).
-Keep the original before and after captures available, label intended and unexpected
-changes, and explain any alignment limits. Exact pixel differences are optional
+Follow the [visual-evidence procedure](visual-diff.md) to choose and annotate
+the lead image and keep the original captures available. Label intended and
+unexpected changes, and explain any alignment limits. Exact pixel differences are optional
 diagnostic evidence; put them in collapsed details when useful.
 After a later commit that changes runtime behavior, repeat the manual pass and refresh
 the affected captures and annotations, including any diagnostic differences.

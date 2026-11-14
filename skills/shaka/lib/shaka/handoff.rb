@@ -6,6 +6,7 @@ require_relative 'error'
 require_relative 'merge_queue_commit'
 require_relative 'merge_required_checks'
 require_relative 'status'
+require_relative 'handoff/approval_hold'
 require_relative 'handoff/conversation'
 require_relative 'handoff/hold'
 require_relative 'handoff/merge_wait'
@@ -23,6 +24,7 @@ module Shaka
     include MergeRequiredChecks
     include HandoffRendering
     include HandoffHold
+    include HandoffApprovalHold
     include HandoffMergeWait
 
     OWED_EXIT = 2
@@ -39,7 +41,8 @@ module Shaka
     end
 
     # woken_by names what will wake this session, such as a host PR monitor or a background watcher;
-    # the PR then needs no attention label, because the agent, not a person, acts next.
+    # the PR then needs no attention label, because the agent, not a person, acts next, unless a required
+    # check is held for approval.
     def call(head: nil, woken_by: nil)
       @woken_by = wake_source(woken_by)
       pr = @status.call
@@ -83,7 +86,7 @@ module Shaka
 
     # One label names the one decision the PR waits on, so a missing label hides the PR from its searches.
     def label_fact(checks)
-      return woken_fact if @woken_by
+      return woken_fact if @woken_by && !held?(checks)
       return owe('no awaiting label', 'Set the attention label for what the PR waits on.') if @labels.empty?
       return owe(@labels.join('+'), "Keep exactly one attention label; found #{list}.") if @labels.length > 1
 
@@ -105,7 +108,7 @@ module Shaka
       return 'no required checks' if checks.empty?
 
       counts = checks.map { |check| check['bucket'] }.tally.map { |bucket, count| "#{count} #{bucket}" }
-      "required checks #{counts.join(', ')}"
+      ["required checks #{counts.join(', ')}", held_fact(checks)].compact.join(' · ')
     end
 
     # Judges each check with the merge gate's own test. An empty set passes, as Ask allows.

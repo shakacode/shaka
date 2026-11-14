@@ -36,6 +36,7 @@
       "items": [
         "pr-verification",
         "reference/pr-record",
+        "reference/reviewer-setup",
         "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
@@ -58,6 +59,7 @@
       "label": "Articles",
       "collapsed": true,
       "items": [
+        "articles/pull-requests-in-the-age-of-agents",
         "articles/review-process-study",
         "articles/checkpoint-sentence-eval",
         "articles/one-shot-pr-study",

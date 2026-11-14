@@ -14,7 +14,7 @@ module Shaka
     def call(content)
       intent, verification = content.values_at('intent', 'verification')
       lines = [*INTENT.map { |field, label| [label, intent[field]] },
-               *Array(intent['review_focus']).map { |entry| ['Closer reading', entry['reason']] },
+               *Array(intent['review_focus']).map { |entry| ['Flagged by the implementer', entry['reason']] },
                *verification_lines(verification)]
       lines.filter_map { |label, text| "#{label}: #{text}" unless text.to_s.strip.empty? }.join("\n")
     end

@@ -12,14 +12,22 @@ require_relative '../github/squash_comment'
 require_relative '../merge_queue_commit'
 
 module Shaka
+  # What a blocked checkpoint's merge warning reads: the owner's recommendation and next step, each nil without an
+  # owner disposition, and the reviewer's verdict, nil when the review did not complete.
+  module PostImplementationWarningFields
+    def disposition = @owner&.fetch('recommendation')
+    def next_action = @owner&.fetch('next_action', nil)
+    def conclusion = @report&.fetch('conclusion')
+  end
+
   # Presents the checkpoint's action without confusing configuration with observations.
   class PostImplementationPublication
     include PostImplementationPublisherIdentity
     include PostImplementationExecutionText
     include PostImplementationAdequacy
+    include PostImplementationWarningFields
 
-    # disposition is the owner's recommendation, or nil when the result supplies none.
-    attr_reader :state, :disposition
+    attr_reader :state
 
     def summary = @summary || PublicationText.required(@result.fetch('reason'), 'checkpoint failure reason')
 
@@ -29,6 +37,7 @@ module Shaka
       'Do not merge' => ['Do not merge; decide whether to close or replace',
                          'Bring the close-or-replace decision to the maintainer.']
     }.freeze
+    CONCERNS = ['Resolve concerns before merging', 'Resolve substantive concerns, then repeat affected review.'].freeze
     SCOPE = 'Ruby checked this report\'s format and commit; the reviewer judged value, not correctness. ' \
             'Required checks, reviews, and merge authority still apply.'
 
@@ -79,7 +88,7 @@ module Shaka
     def known(value) = (value.strip if value.is_a?(String) && !value.strip.empty? && !value.strip.casecmp?('UNKNOWN'))
 
     def completed_body
-      report = PostImplementationReport.read(@result.fetch('report'), head: @head)
+      report = @report = PostImplementationReport.read(@result.fetch('report'), head: @head)
       @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
       action, next_action = recommendation(report)
       summary = @summary = report.fetch('summary', report.fetch('reasons').first)
@@ -112,9 +121,7 @@ module Shaka
     end
 
     def recommendation(report)
-      if report['conclusion'] == 'Proceed' && !report['concerns'].empty?
-        return ['Resolve concerns before merging', 'Resolve substantive concerns, then repeat affected review.']
-      end
+      return CONCERNS if report['conclusion'] == 'Proceed' && !report['concerns'].empty?
 
       ACTIONS.fetch(report.fetch('conclusion'))
     end

@@ -56,6 +56,21 @@ module Shaka
       true
     end
 
+    # One repair commit answers every finding of a round, so a fix is not validated and reviewed
+    # while another of the round still waits. A maintainer decision may stay pending, and a risk or
+    # nit may be documented, but a defect may not.
+    def check_round_settled!
+      waiting = recorded_findings(last_head).select { |finding| unsettled?(finding) }.map(&:id)
+      return if waiting.empty?
+
+      raise Error, "Finding #{waiting.join(', ')} of #{last_head[0, 7]} is unsettled; fix or settle every " \
+                   'finding of the round in one repair commit before the next round.'
+    end
+
+    def unsettled?(finding)
+      finding.disposition == 'open' || (finding.disposition == 'documented' && finding.kind == 'defect')
+    end
+
     def recorded_findings(head)
       rounds.select { |round| round['head'] == head }
             .flat_map { |round| LocalReviewFinding.list(round['findings'], 'recorded finding') }

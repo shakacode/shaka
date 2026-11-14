@@ -57,7 +57,7 @@ class CliDescriptionReviewFocusTest < Minitest::Test
       assert_predicate status, :success?, error
       link = "[`lib/queue.rb` lines 2–4](https://github.com/owner/repo/blob/#{HEAD}/lib/queue.rb#L2-L4)"
       assert_includes File.read(File.join(dir, 'published.md')),
-                      "**Closer reading:**\n- #{link}, submits the queue entry."
+                      "**Flagged by the implementer:**\n- #{link}, submits the queue entry."
     end
   end
 end

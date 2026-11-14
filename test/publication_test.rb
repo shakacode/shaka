@@ -855,7 +855,11 @@ class PublicationUsagePricingTest < Minitest::Test
   def test_only_the_known_anthropic_explanation_is_shortened
     explanation = 'Uncached input, cache reads and cache writes are separate charges, and a 1-hour cache write ' \
                   'costs more than a 5-minute one. Standard-speed responses are priced; fast mode is priced ' \
-                  'for Opus models with a published rate.'
+                  'for %<family>smodels with a published rate.'
+    ['', 'Opus '].each { |family| assert_shortened_anthropic_explanation(format(explanation, family: family)) }
+  end
+
+  def assert_shortened_anthropic_explanation(explanation)
     note = "#{ANTHROPIC} #{explanation}"
     rendered = render(usage: { 'note' => 'n', 'records' => [record(COLUMN, note:)] })
     visible = rendered.gsub(/<!--.*?-->/m, '')
@@ -995,7 +999,8 @@ end
 
 RECOMMENDATION_LEAD = [
   PENDING_STATS,
-  '**Recommendation: Revise before merge** · _Not published yet._ · Checkpoint: _Not published yet._',
+  '**Recommendation: Revise before merge** · ⚪ **Risk: not rated yet** · _Not published yet._ · ' \
+  'Checkpoint: _Not published yet._',
   '**Next:** Justin: choose the simpler parser before another review round.',
   "## Summary\n\nReview the current result."
 ].join("\n\n").freeze
@@ -1079,7 +1084,7 @@ class PublicationCheckpointTest < Minitest::Test
     data = content
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
-    assert_includes body, '**No recommendation yet** · _Not published yet._'
+    assert_includes body, '**No recommendation yet** · ⚪ **Risk: not rated yet** · _Not published yet._'
     refute_includes body, 'Recommendation:'
   end
 

@@ -19,22 +19,50 @@ Tests support the behavior they exercised. A review with no findings still has
 coverage limits. The agent reports these limits; Shaka does not prove the reports
 are complete. See [what is enforced](../workflow.md#what-is-enforced).
 
+Under **Shaka metrics → Details**, **Shaka settings used** shows how long each
+check ran and on what kind of machine, such as
+`27m on m5 (Apple M5 Max, 18 cores, 128 GB RAM, 3 GB free, load 140→450)`.
+The hardware and the load at start and end help you tell a busy machine from slower
+hardware; they are context, not proof of the cause. For the machine, this table
+shows only your [machine alias](../coding-agents.md#name-your-machines), CPU model,
+core count, total and free memory, and load at start and end, never the host name
+or paths. The alias is the one name you choose. Shaka checks that it isn't this
+machine's host name, not that it leaves out your user name, so pick one that
+doesn't identify you, such as `m5`. WIP Details is separate: it shows your
+checkout path unless you [hide it](../settings.md#wipinclude_checkout_path).
+
 The **Code Review** link opens the review record. Check coverage, unresolved
 findings, and the number of rounds; repeated rounds can signal work worth
 investigating. Detailed findings remain available for later agent analysis.
 
-## Human review
+<a id="human-review"></a>
 
-The checkpoint rates each PR's **Risk** as low, medium, or high, with reasons.
-Low is meant for auto-merge with a later audit, medium for a person to merge
-after a skim, and high for a careful review that starts with the verification.
-A change in one of the repository's
-[`high_risk_areas`](../settings.md#high_risk_areas) always counts as high.
-Under Auto, [`merge.auto_merge_max_risk`](../settings.md#mergeauto_merge_max_risk)
+## Risk and review
+
+The lead line shows the checkpoint's **Risk** for the current commit beside its
+**Recommendation**, with a colored mark: 🟢 low, 🟡 medium, 🔴 high, and ⚪ when no
+level shows. The section repeats the mark. Shaka reads the level from the checkpoint published for that
+commit and applies the repository's high-risk areas to its changed files, as merge
+does. A blocked checkpoint's level still shows, though merge waits for a ready one.
+Low is meant for auto-merge with a later audit, medium for a person to merge after
+a skim, and high for a careful review that starts with the verification. A change in
+one of the repository's [`high_risk_areas`](../settings.md#high_risk_areas) always
+counts as high. Under `auto`, [`merge.auto_merge_max_risk`](../settings.md#mergeauto_merge_max_risk)
 sets the highest rating the agent merges without you; the default is low.
 
-**Closer reading**, under **Intent** when present, links to the code needing
-particular attention, each with its reason.
+The **Risk and review** section follows Intent and precedes Verification. It says what the level asks
+of you, then lists:
+
+- **Flagged by the implementer**: code needing particular attention, each with its reason.
+- The checkpoint reviewer's reasons, quoted. When a high-risk area raised the level, the
+  section names the file and area and shows the reviewer's own rating. Low-risk
+  reasons are folded.
+- Your repository's own risk record, folded, when your
+  [PR evidence guide](../settings.md#project_guidance) asks for one.
+
+Until the checkpoint rates the current commit, the level reads **not rated yet**.
+When Shaka cannot read the repository's trusted settings, it reads **not shown**:
+Shaka's default areas could rate the change lower than the repository's own.
 
 ## Checkpoint
 
@@ -52,7 +80,7 @@ supporting evidence. The written **Code Walkthrough** explains the implementatio
 | **Merge after maintainer decision** | A question or concern needs your decision before merging. |
 
 The reviewer's conclusion is **Proceed**, **Simplify/reframe**, or **Do not merge**.
-Substantive unresolved concerns hold readiness and Auto even when checks pass.
+Substantive unresolved concerns hold readiness and `auto` even when checks pass.
 With **Proceed**, you can explicitly accept a listed concern; the agent records
 it under **Concerns recorded as accepted by the maintainer**. Shaka checks that
 decisions are recorded, not who made them or whether they are sound. Acceptance
@@ -61,7 +89,7 @@ does not override **Simplify/reframe** or **Do not merge**.
 The checkpoint also judges verification as **Adequate**, **Adequate, with gaps the
 reviewer judged acceptable**, **Inadequate**, or **Cannot judge**. The reviewer's
 acceptance of a gap is not yours. With Ask, the verdict informs your decision.
-With Auto, **Inadequate** or **Cannot judge** stops merging until you approve that
+With `auto`, **Inadequate** or **Cannot judge** stops merging until you approve that
 commit. A recommendation grants no merge authority. See
 [checkpoint settings](../settings.md#checkpoint).
 
@@ -75,6 +103,20 @@ only in chat is not included.
 Untrusted comments appear as linked **Unverified** entries without quoted or
 summarized content. See [review safety](../workflow.md#trust-model) and
 [human-comment settings](../settings.md#pr_descriptionshow_human_comments).
+
+Comments that only run a command, such as `+deploy`, can be
+[left out of the list](../settings.md#pr_descriptionignored_human_comments).
+
+## Skills used
+
+Under **Shaka metrics**, expand **Details**, then **Skills used**, to see the
+skills the agent reported during planning,
+implementation, review, and integration, with their sources and revisions when
+available. **Agent-reported** means the agent says it applied the skill. The agent
+selects **Corroborated** when a record confirms the skill was invoked or loaded.
+Shaka checks the shape of these entries, not that record or whether the agent
+followed the skill, and the list may be incomplete. Shaka itself is not listed;
+**Execution details** names the Shaka version that ran.
 
 ## Before and after merge
 
@@ -91,14 +133,43 @@ still needs an eligible reviewer; chat approval does not replace it. GitHub does
 not let PR authors approve their own PRs. Return to the owning chat unless its
 handoff names active automatic follow-up.
 
-Under Auto, every reported check must pass; skipped and neutral count as passing.
+Under `auto`, every reported check must pass; skipped and neutral count as passing.
 A job that has not started is unseen, so make a check required if it must always
-hold the merge. Failed optional checks return work to you. An Auto merge normally
+hold the merge. Failed optional checks return work to you, except one the agent names
+as failing on the PR's target branch too ([failures the target branch shares](../working-with-shaka.md#choose-a-merge-policy)). An `auto` merge normally
 gets the `auto-merged` label; queued merges and failed label writes are exceptions.
 
 If GitHub needs a branch update, the agent revalidates and reviews the new commit.
 Your decision carries forward if the approved behavior is preserved. A branch
 rule may still require fresh GitHub approval. Changed behavior returns to you.
+
+## Fixes after review
+
+A fix for a review finding is a new commit. The agent is asked to refresh the PR's
+evidence for it as below. When the agent merges, Shaka checks that the checkpoint,
+or your skip, and any required review cover the merged commit, and GitHub enforces
+required checks; the other rows rely on the agent. See
+[what is enforced](../workflow.md#what-is-enforced).
+
+| Part | After the fix |
+| --- | --- |
+| The finding's thread | A reply with how the problem was reproduced, and the fix commit |
+| Repository validation and required checks | Run again on the new commit |
+| Local review | The configured reviewers review the new commit |
+| Checkpoint | Run again; merging needs a checkpoint, or your explicit skip, for that commit |
+| Code walkthrough | Reused, with only the affected steps rewritten, when the commit repairs specific findings and leaves the goal, scope, dependencies, and settings unchanged |
+
+Evidence for an earlier commit stays labeled with that commit. To skip the
+checkpoint for one fix, tell your agent and give a reason, which appears as a
+note on the PR:
+
+```text
+Skip the checkpoint for this fix; it only corrects a typo the review found.
+```
+
+Shaka requires a reason but does not judge it. The PR can still merge, and it shows that no
+checkpoint review ran for that commit.
+A skip does not settle findings or concerns already published.
 
 ## Merge messages
 
@@ -121,7 +192,8 @@ PR title and an empty body.
 
 ## Visual evidence
 
-Annotated before-and-after desktop and mobile screenshots help assess UX changes.
+When reviewers need to compare before and after, one annotated image puts both
+views side by side. The original captures can go in collapsed details.
 Recordings can show a flow and animations. The explanation names what was tested
 and what remains unverified. Captures and tests provide different evidence:
 
@@ -145,6 +217,20 @@ RefundRetryJob#perform ────┴── Refunds.issue
 
 A smaller change can use a sentence: "RefundPolicy.check now rejects refunds
 larger than the original charge." No call order changed, so no diagram is needed.
+
+## Notes on the diff
+
+The walkthrough can leave a few notes on the changed lines, written for you as the
+reviewer. Each says how to read the lines it sits on: where to start, what to read
+closely, what to skim, or an alternative the code rejected. Notes are reading
+guidance, not findings to fix. For the duplicate-refund fix:
+
+> **Start here:** this check is the whole behavior change; the controller and
+> retry job only call it.
+
+A newer walkthrough resolves the older notes nobody replied to. Reply to a note
+like any review comment, then ask your agent to answer it; it replies and resolves
+the thread.
 
 ## Recovery
 

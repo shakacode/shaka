@@ -185,6 +185,34 @@ class SeamInitializerNewLayoutTest < Minitest::Test
   def mode(root, relative) = File.stat(File.join(root, relative)).mode & 0o777
 end
 
+class SeamInitializerPreviousCommentTest < Minitest::Test
+  include SeamInitializerTestHelpers
+
+  def test_repeat_init_accepts_the_previous_generated_comment_without_rewriting_it
+    with_repository do |root|
+      assert_predicate init(root).last, :success?
+      restore_previous_comment(root)
+      original = snapshot(root)
+
+      _output, error, status = init(root)
+
+      assert_predicate status, :success?, error
+      assert_equal original, snapshot(root)
+    end
+  end
+
+  private
+
+  def restore_previous_comment(root)
+    path = File.join(root, CONTRACT)
+    fresh = File.read(path)
+    previous = fresh.sub(/^#   # Or replace the built-in checkpoint prompt[^\n]*\n#   # Shaka's rules[^\n]*\n/,
+                         "#   # Or replace Shaka's whole checkpoint prompt with your own file:\n")
+    refute_equal fresh, previous
+    File.write(path, previous)
+  end
+end
+
 class SeamInitializerExistingLayoutTest < Minitest::Test
   include SeamInitializerTestHelpers
   include SeamInitializerLayoutHelpers

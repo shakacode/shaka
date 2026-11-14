@@ -191,7 +191,10 @@ rules:
       titles, bodies, and comments, and from branch names on `origin`. It misses a fork branch
       that never names the work item, and it matches any PR whose text happens to contain the
       number. `claim --description SLUG` matches only branch names built from the template with
-      `ad-hoc` and that slug, so a differently worded slug for the same task is missed. Nothing
+      `ad-hoc` and that slug, so a differently worded slug for the same task is missed. Where
+      GitHub refuses GraphQL, claim lists open PRs and runs the same search through REST
+      `search/issues`, which cannot see a PR linked
+      only from the issue's Development sidebar; it names that field as unknown. Nothing
       then stops the second PR: acting on the collision is the agent's.
   - id: seam-branch-name
     phase: intake
@@ -676,7 +679,10 @@ rules:
     enforced_by: agent
     note: >-
       `handoff` reads live GitHub state and exits 2 while the PR lacks exactly one attention
-      label (or, with `--woken-by`, still carries one), holds `awaiting-merge-approval` with required checks not passing,
+      label (or, with `--woken-by`, still carries one; with `--woken-by`, a required check held for a manual
+      approval voids it and is owed until a person approves it or the agent drops `--woken-by`), holds
+      `awaiting-merge-approval` with
+      required checks not passing,
       with findings open in the published local review (`attention --state merge` refuses the same state before
       labeling), or without this account's checkpoint and, unless the base has a merge queue, squash message for
       the live head, or has a walkthrough

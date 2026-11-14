@@ -20,6 +20,7 @@ module Shaka
                 'verification: does the evidence prove the change works, before the code?'
     }.freeze
     LEVELS = %w[low medium high].freeze
+    UNREAD_FILES = 'Changed files could not be read, so high-risk areas were not checked.'
 
     module_function
 
@@ -92,8 +93,7 @@ module Shaka
     def section(assessment, reasons)
       lines = ["**Risk:** #{heading(assessment)} #{action(assessment)}"]
       lines.concat(reasons.map { |reason| "- #{reason}" })
-      lines << '- Changed files could not be read, so high-risk areas were not checked.' unless
-        assessment['paths_read']
+      lines << "- #{UNREAD_FILES}" unless assessment['paths_read']
       "#{lines.join("\n")}\n\n#{footnote(assessment)}"
     end
 

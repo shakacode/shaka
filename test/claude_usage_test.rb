@@ -37,8 +37,8 @@ module ClaudeUsageFixture
                                                 ephemeral_1h_input_tokens: 4 } }, **overrides)
   end
 
-  def transcript(directory, name, records)
-    path = File.join(directory, 'projects', 'repo', name)
+  def transcript(directory, name, records, project: 'repo')
+    path = File.join(directory, 'projects', project, name)
     FileUtils.mkdir_p(File.dirname(path))
     File.write(path, "#{records.map { |record| JSON.generate(record) }.join("\n")}\n")
     path
@@ -172,6 +172,28 @@ class ClaudeUsageTest < Minitest::Test
       assert_includes output, 'Conflicting response copies'
       refute_includes output, '| 100 |'
     end
+  end
+end
+
+class ClaudeUsageDiscoveryTest < Minitest::Test
+  include ClaudeUsageFixture
+
+  def test_duplicate_session_keeps_usage_unavailable
+    Dir.mktmpdir do |directory|
+      project_session(directory, 'repo', 999, 100)
+      project_session(directory, 'worktree', 100, 200)
+      output = discovered(directory)
+      assert_includes output, 'Responses: UNKNOWN'
+      refute_match(/\| (100|300|999) \|/, output)
+    end
+  end
+
+  private
+
+  def project_session(directory, project, input, modified)
+    file = transcript(directory, "#{SESSION}.jsonl", [prompt('new'), reply('m1', input)], project:)
+    transcript(directory, "#{SESSION}/subagents/agent.jsonl", [prompt('new'), reply('s1', 200)], project:)
+    File.utime(Time.at(modified), Time.at(modified), file)
   end
 end
 
@@ -345,14 +367,15 @@ class ClaudeUsagePriceTest < Minitest::Test
     assert_includes output, 'Server tool usage UNKNOWN'
   end
 
-  def test_published_fast_mode_is_priced_at_its_dedicated_rate
+  def test_fable_52_fast_mode_is_priced_at_its_published_rate
     Dir.mktmpdir do |directory|
-      fast = priced_reply('m1', 100)
+      fast = priced_reply('m1', 100, model: 'claude-fable-5-2')
       fast[:message][:usage][:speed] = 'fast'
       file = transcript(directory, 'session.jsonl', [prompt('new'), fast])
       output = report('--host', 'claude-code', '--file', file)
-      assert_metric output, 'USD estimate', '$0.002158'
-      assert_includes output, 'fast mode is priced for Opus models with a published rate'
+      assert_metric output, 'USD estimate', '$0.003404'
+      assert_metric output, 'Metric', 'claude-fable-5-2-fast'
+      assert_includes output, 'fast mode is priced for models with a published rate'
     end
   end
 end

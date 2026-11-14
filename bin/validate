@@ -3,6 +3,9 @@
 
 Dir.chdir(File.expand_path('..', __dir__)) do
   warn 'Instruction report unavailable; continuing validation' unless system('ruby', 'bin/report-instruction-growth')
+  unless ENV['CI'] || system('ruby', 'bin/lefthook/installed')
+    warn 'Commit hooks are not installed; run `bundle exec lefthook install` to lint changed files at commit time.'
+  end
   abort 'Docs navigation failed' unless system('ruby', 'bin/check-docs-navigation')
   abort 'Tests failed' unless system('bundle', 'exec', 'ruby', 'bin/run-tests')
   exit(system('bundle', 'exec', 'rubocop') ? 0 : 1)

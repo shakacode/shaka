@@ -6,7 +6,7 @@ Shaka supplies the process; your repository supplies the commands and constraint
 | --- | --- |
 | Intake | Confirm the task, repository, ownership, and merge preference |
 | Plan | Assess value, scope, risk, model, and effort |
-| Implement | Reproduce bugs or test new behavior, then make the change |
+| Implement | Reproduce bugs or test new behavior, make the change, and update any text that still describes the old behavior |
 | Verify | Run local checks, review independently, and fix findings |
 | Explain | Publish the PR, walkthrough, evidence, and usage |
 | Review | Handle GitHub review findings and required checks |
@@ -16,7 +16,7 @@ Before shipping, Shaka compares the finished solution with the original goal, th
 recommends **Merge**, **Merge after maintainer decision**, **Revise before merge**,
 **Reconsider approach**, or **Do not merge**.
 A working implementation can still warrant reconsideration. Each recommendation
-includes a reason and next step; Merge still follows your checks and Ask or Auto choice.
+includes a reason and next step; Merge still follows your checks and Ask or `auto` choice.
 
 When Shaka recommends a model and effort, it aims to minimize the task's total work.
 Effort is not priced per token, the input the agent reads dominates spend, and rework
@@ -45,6 +45,11 @@ PR targets. The agent never takes it from an issue, a PR description, or a comme
 because that text would then choose which code the setup and validation commands
 run before anyone looks. When a PR already targets some other branch, the agent
 confirms it with you and waits for your merge decision.
+
+Your check scripts under `.agents/shaka/bin/` are the exception: Shaka runs them
+from the PR's own branch, so a PR can change what `validate` does. Shaka does
+not inspect a changed script before running it. Before you ask an agent to work on
+a PR that changes them, such as one from a fork, read those changes like other code.
 
 ![Maintainers, the default branch, and your decisions steer the agent. Public comments, fork PR diffs, and settings changed in the PR are read as data only.](img/trust-boundary.svg)
 

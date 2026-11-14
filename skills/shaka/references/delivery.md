@@ -15,11 +15,21 @@ Ask before an answer becomes expensive to change. Use existing context and earli
 answers, recommend a path, and continue independent work while a question is pending.
 Silence is not approval.
 
-In each description `decisions` item, explain the choice in plain language,
-the practical consequence of each option, and your recommendation with its reason.
-Link directly to supporting evidence when needed; a link back to the question adds no context.
-Say how to answer, such as replying in the owning chat or commenting on the PR.
-Keep the decision understandable without opening another document.
+Write every question for a person this way: a chat question, a description `decisions`
+item, and the checkpoint `reason` for Merge after maintainer decision, which the PR's
+warning shows.
+
+- Open with the question itself. Name who decides when you know.
+- Say what happened in the reader's terms. Say whether the code has a problem or
+  evidence is missing, and what evidence exists.
+- Give your recommendation with its reason, then the alternative and its consequence.
+- Say what an answer authorizes and what happens next. Accepting an exception or a risk
+  does not approve merging.
+- Leave out workflow terms such as checkpoint, task owner, and gates. Link supporting
+  evidence; a link back to the question adds no context.
+- Say how to answer, such as replying in the owning chat or commenting on the PR.
+
+Keep each question understandable without opening another document.
 
 | Situation | Action |
 | --- | --- |
