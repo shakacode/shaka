@@ -53,8 +53,8 @@
   Count each current filename once: Tests, then Docs/instructions, Code, or Other.
   Inspect the expandable paths for ambiguous classifications; buckets describe paths, not effort.
   Supply `leaves_out` only for a deliberately deferred part readers would reasonably expect.
-- Shaka metrics keeps estimated token costs visible, then folds usage, timings, execution,
-  settings, skills, provenance history, and task history under Details, in that order.
+- Shaka metrics keeps estimated token costs visible, then folds missing values, usage, timings,
+  execution, settings, skills, provenance history, and task history under Details, in that order.
 
 - Put the current-head recommendation, main reason, and next action before analysis.
 - Name model settings with their provenance; a configured model is not proof of a served model.
