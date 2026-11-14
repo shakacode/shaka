@@ -6,6 +6,12 @@ module Shaka
     module Command
       BANNER = 'Usage: shaka doctor [--root DIR] [--host NAME] [--brief] [--startup-review | --probe-reviewers]'
 
+      def help(parser)
+        puts parser
+        0
+      end
+      private :help
+
       def option_parser(options)
         OptionParser.new do |flags|
           flags.banner = BANNER
