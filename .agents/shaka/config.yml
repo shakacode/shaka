@@ -109,6 +109,9 @@ merge:
 branches:
   name: '{login}-{host}/{issue}-{description}' # Default branch-name template.
 
+walkthrough:
+  publish: on_request # Default: a full code walkthrough only when someone asks; always publishes one on every PR.
+
 wip:
   include_checkout_path: true # Default: show the local checkout path in unfinished PRs.
 
