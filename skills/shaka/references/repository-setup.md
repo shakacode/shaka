@@ -90,9 +90,9 @@ interruption, rerun the same command; if it refuses a partly written file, follo
 If setup is denied or interrupted, report the failed path the error names and
 use normal host approval when needed to fix access. Inspect the
 copy and retry setup with the same options after fixing access; a matching partial
-installation resumes. Changed options leave a differing prepared copy, so setup
-refuses to replace it. Compare that copy and move it to a safe location before
-starting fresh with corrected options.
+installation resumes. Changed options, or a Shaka update that changed the generated
+defaults, leave a differing prepared copy, so setup refuses to replace it. Compare
+that copy and move it to a safe location before starting fresh with corrected options.
 After `git clean -fdx`, setup refuses to replace a recovery copy that differs
 from the generated defaults. Run `private inspect` after editing private files
 and before cleaning: edits made since the last inspection cannot be recovered
