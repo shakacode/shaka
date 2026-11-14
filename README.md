@@ -8,7 +8,8 @@ You give a task. The agent builds, verifies, and reviews. You get a pull request
 
 [Watch the 52-second demo](https://www.youtube.com/watch?v=T6Fstx2fGJI) ·
 [See a Shaka PR](https://github.com/shakacode/shaka/pull/667) ·
-[Docs website](https://shaka.shakacode.com/)
+[Docs website](https://shaka.shakacode.com/) ·
+[**Book a live demo**](https://meetings.hubspot.com/justingordon/30-minute-consultation)
 
 <a id="why-use-it"></a>
 
@@ -61,6 +62,13 @@ Read the PR, ask for revisions if needed, and decide whether to merge.
 
 Prefer to install it manually? Follow [manual installation](docs/manual-installation.md).
 New to pull requests? Try [Shaka in pictures](docs/shaka-in-pictures.md).
+
+## Book a live demo
+
+Want to see Shaka on a real task, or fit it to how your team works?
+[Book a 30-minute call with Justin Gordon](https://meetings.hubspot.com/justingordon/30-minute-consultation),
+ShakaCode's founder, for a demo, answers about how Shaka works, or a walkthrough of
+[forking Shaka and changing it](docs/fork-and-hack.md).
 
 ## For open-source repositories
 
