@@ -175,9 +175,10 @@ overlap any run, keep the job on `update-check`. To move a pinned installation
 to a newer version, [install a newer release](#keep-a-tested-release).
 
 Find your installed checkout with `install --status` as shown above. Use its
-absolute helper path in the job. If you move the installation, update the job
-to use the new path and run a check again. Run the job under the account that installed
-Shaka, with Git and the authenticated GitHub CLI available to that account.
+absolute helper path in the job. Before moving the installation, disable the
+job. After the move, set the new path and run `update-check` against it before
+re-enabling the job. Run it under the account that installed Shaka, with Git
+and the authenticated GitHub CLI available to that account.
 Scheduled jobs may get a different `PATH` from your terminal. If needed, set it
 in the job or in a wrapper script. Include the directories that contain your
 `git` and `gh` executables. Check the job's output even when the scheduler
@@ -261,6 +262,7 @@ WantedBy=timers.target
 
 `Persistent=true` catches up on a missed run when the timer starts. Remove it
 if you want the job to wait for the next scheduled time after the timer restarts.
+A timer that stays active during sleep can still catch up when the system wakes.
 A user timer runs while your user manager is active. If it should run when
 you're logged out, check whether your system allows `loginctl enable-linger`.
 See [systemd timer settings](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html).
