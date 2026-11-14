@@ -935,10 +935,12 @@ phases:
         work or blocker. After the report, list again every `before merge` or `after merge` step
         besides merging that is still open, with who does it, so a merged PR does not leave one
         behind; say `none` when the description recorded none.
-      - When the task is genuinely finished in a prose-capable chat, put exactly
-        `This chat is ready for archiving.` on the last line. Do not use it for a task transfer,
-        blocker, pending chat decision, or machine-only format. A remaining GitHub merge click after
-        Ask gates pass is not a pending chat decision.
+      - Put the applicable archive message on the last line of a prose-capable chat.
+        When the task is complete, use `This chat is ready for archiving.`
+        When only a verified PR's merge remains after handoff to GitHub's merge control,
+        use `This chat is ready for archiving after merge.`
+        Omit both messages during a task transfer, blocker, pending chat decision,
+        or while other work remains.
     done_when: >-
       Checkpoint justifies the final result with no substantive concern
       unresolved, and the PR is merged or handed to GitHub's merge control with the report sent.

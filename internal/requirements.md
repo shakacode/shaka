@@ -32,10 +32,9 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   reasons, blockers, and decisions in familiar terms. Follow task/repository writing
   preferences and ask consequential questions early with a recommendation. Keep
   material risks visible and supporting evidence in expandable details.
-- **R15 — Make completion clear.** End a genuinely finished prose-capable chat with
-  exactly `This chat is ready for archiving.` Omit it while work, a blocker, handoff,
-  or chat decision remains, and in machine-only formats. A remaining GitHub merge
-  click after Ask gates pass is not a pending chat decision.
+- **R15 — Make completion clear.** In a prose-capable chat, use the
+  [Finish instructions](../skills/shaka/config/workflow.yml) to distinguish work
+  that is complete from work that only awaits merge.
 
 ### Use trusted policy and verified evidence
 
