@@ -10,7 +10,7 @@ Terminal and keeps your usual Codex account and model settings.
 Ask your agent:
 
 ```text
-Set up Linear to open issues with Shaka in Codex CLI. Keep my existing Linear settings.
+Set up Linear to open issues with Shaka in Codex CLI. Keep my existing Linear settings
 ```
 
 In Linear, enable **Custom script** under **Settings → Code & reviews →

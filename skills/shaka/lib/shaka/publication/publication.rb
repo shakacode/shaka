@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'agent_time'
 require_relative 'text'
 require_relative 'links'
 require_relative 'usage_details'
@@ -50,7 +51,8 @@ module Shaka
       @workflow_version = workflow_version
       @pull = pull
       @settings = settings || PublicationSettings.new
-      @timeline = timeline
+      # The running session's agent time joins here, so a rendering preview shows it too.
+      @timeline = description ? AgentTime.attach(timeline, pull, env: environment || ENV) : timeline
       @environment = environment
       @host_name = host_name
     end

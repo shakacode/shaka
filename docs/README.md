@@ -9,13 +9,13 @@ regular retrospectives.
 Ask your coding agent to install Shaka:
 
 ```text
-Install Shaka from https://github.com/shakacode/shaka.
+Install Shaka from https://github.com/shakacode/shaka
 ```
 
 Then open your project in the agent and give Shaka a small task. For example:
 
 ```text
-/shaka Fix search when the query contains an apostrophe.
+/shaka Fix search when the query contains an apostrophe
 ```
 
 Replace the example with your own task or an issue link. In Codex, use `$shaka`
@@ -42,7 +42,7 @@ or [open an example PR](https://github.com/shakacode/shaka/pull/667).
 Ask your agent, or choose a guide below:
 
 ```text
-Explain what I need to check before merging this PR: <PR link>.
+Explain what I need to check before merging this PR: <PR link>
 ```
 
 | I want to… | Guide |

@@ -35,7 +35,7 @@ The agent checks the required tools during installation.
 Ask your coding agent:
 
 ```text
-Install Shaka from https://github.com/shakacode/shaka.
+Install Shaka from https://github.com/shakacode/shaka
 ```
 
 Start a new chat and enter `/shaka`. Follow the agent's instructions if anything
@@ -46,7 +46,7 @@ is missing.
 ```text
 Create a private GitHub repository named shaka-playground, outside my other
 projects. Give it a one-page website with a button and one automated test.
-Upload it to GitHub.
+Upload it to GitHub
 ```
 
 Open the repository link to confirm the files arrived. A **repository** is the
@@ -55,7 +55,7 @@ project's home on GitHub; your agent edits a local copy in a project folder.
 Then ask:
 
 ```text
-Help me start a new chat in the shaka-playground folder.
+Help me start a new chat in the shaka-playground folder
 ```
 
 In the new chat, ask:
@@ -80,7 +80,7 @@ before continuing.
 
 ```text
 /shaka Add a counter that shows how many times the button was clicked.
-Set up Shaka just for me. Ask me before merging.
+Set up Shaka just for me. Ask me before merging
 ```
 
 "Just for me" keeps Shaka's settings local, without adding them to the shared
@@ -105,7 +105,7 @@ Open the PR link. Read the summary to understand what changed. Look under
 Ask your agent:
 
 ```text
-Open the updated playground website so I can try the counter.
+Open the updated playground website so I can try the counter
 ```
 
 Click the button several times. Confirm that each click increases the counter by
@@ -118,7 +118,7 @@ one. Ask about any failed checks or unresolved concerns before merging.
 In the same chat:
 
 ```text
-Make the counter number bigger.
+Make the counter number bigger
 ```
 
 The agent updates the same PR. When it finishes, ask it to show the updated
@@ -133,7 +133,7 @@ Confirm that the PR is the version you reviewed. When you're satisfied with the
 counter and its checks, tell the agent in the same chat:
 
 ```text
-You can merge.
+You can merge
 ```
 
 The agent merges the PR when required checks and approvals allow it. Open the PR
@@ -147,7 +147,7 @@ review the latest changes first.
 ### See what you gained
 
 ```text
-Open the playground website so I can click the button.
+Open the playground website so I can click the button
 ```
 
 Try a few clicks. You have practiced requesting a change, checking it, revising

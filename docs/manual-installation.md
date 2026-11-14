@@ -3,7 +3,7 @@
 For most installations, ask your coding agent:
 
 ```text
-Install Shaka from https://github.com/shakacode/shaka for this coding agent.
+Install Shaka from https://github.com/shakacode/shaka for this coding agent
 ```
 
 Use [Start here](getting-started.md) for your first task. This page also explains
@@ -73,7 +73,7 @@ The fork guide also shows how to switch back to the official version.
 
 ```text
 Install the latest published stable Shaka release if the installer supports it.
-Keep my current version available for rollback.
+Keep my current version available for rollback
 ```
 
 If no suitable stable release is available, ask the agent to explain the official
@@ -153,7 +153,7 @@ Run it again without `--session-hook` to remove the reminder.
 
 ```text
 Check my Shaka installation and help me fix what's broken.
-Preserve my changes and tell me if you need a decision.
+Preserve my changes and tell me if you need a decision
 ```
 
 The agent checks what your coding tool loads, fixes what it can, and verifies
@@ -165,7 +165,7 @@ checkout until the new one works.
 ## Develop Shaka in a separate clone
 
 ```text
-Set up a separate clone for developing Shaka. Keep my installed copy working.
+Set up a separate clone for developing Shaka. Keep my installed copy working
 ```
 
 Your coding agent loads the installed checkout directly. A separate development
@@ -176,7 +176,7 @@ Avoid installing from a temporary worktree that could disappear after its PR mer
 
 ```text
 Move my Shaka installation to its own checkout. Preserve my branches, worktrees,
-and local changes. Verify the installation afterward.
+and local changes. Verify the installation afterward
 ```
 
 The agent checks which copy is installed and explains what it needs to move.
