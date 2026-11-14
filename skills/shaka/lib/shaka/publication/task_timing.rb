@@ -81,7 +81,7 @@ module Shaka
     end
 
     def timing_details(metrics)
-      pattern = %r{^<summary>Timings · [^\r\n]+</summary>\r?\n\r?\n
+      pattern = %r{^<summary>Timings\ ·\ [^\r\n]+</summary>\r?\n\r?\n
                    (?=<!--\ shaka:stats\ )(.*?)^</details>}mx
       sections = metrics.scan(pattern)
       sections.one? ? sections.first.first : ''
