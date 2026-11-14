@@ -24,25 +24,27 @@ module Shaka
       return result('unverified', 'Stored elapsed time does not match the timing record.', lookup_note) unless
         region[ThroughputStats::COST]&.end_with?(" · #{metric}")
 
-      summarize(state, metric, lookup_note || evidence_gap(state, timeline))
+      summarize(state, metric, lookup_note || evidence_gap(state, timeline, now))
     rescue Error
       result('unverified', 'Stored timing record is unreadable.', lookup_note)
     end
 
     def metrics_region(body) = Publishing.managed_region(body).to_s.split(METRICS_START, 2)[1].to_s
 
-    def evidence_gap(state, timeline)
-      endpoint_gap(state, timeline) ||
+    def evidence_gap(state, timeline, now)
+      endpoint_gap(state, timeline, now) ||
         ('Task start could not be verified.' if state['t0'] && !timeline['task_started_at'])
     end
 
-    def endpoint_gap(state, timeline)
+    def endpoint_gap(state, timeline, now)
       return 'GitHub merge time unavailable.' if timeline['merged_pr'] && !state['t3']
 
       endpoint = state['t3'] ? %w[t3 merged] : %w[t2 ready_at]
       recorded = state[endpoint.first]
       return unless recorded
-      return if timeline[endpoint.last] == TaskTiming.timestamp(recorded, Time.now.utc) && recorded != 'UNKNOWN'
+
+      observed = timeline[endpoint.last]
+      return if observed && observed == TaskTiming.timestamp(recorded, now)
 
       'The elapsed endpoint could not be verified from current GitHub evidence.'
     end
