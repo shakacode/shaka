@@ -32,8 +32,12 @@ module Shaka
     def metrics_region(body) = Publishing.managed_region(body).to_s.split(METRICS_START, 2)[1].to_s
 
     def fork_gap(state, timeline)
-      return unless timeline['fork'] && state['t2']
-      return if timeline['task_started_at'] && timeline['ready_at'] == TaskTiming.timestamp(state['t2'], Time.now.utc)
+      return unless timeline['fork']
+
+      endpoint = state['t3'] ? %w[t3 merged] : %w[t2 ready_at]
+      recorded = state[endpoint.first]
+      return unless recorded
+      return if timeline['task_started_at'] && timeline[endpoint.last] == TaskTiming.timestamp(recorded, Time.now.utc)
 
       'The prior fork description supplies timing that could not be verified.'
     end

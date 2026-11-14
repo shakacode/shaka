@@ -56,7 +56,7 @@ module Shaka
     def read(body, now)
       region = Publishing.managed_region(body).to_s
       metrics = region.split(/^<!-- shaka:estimated-cost -->\r?\n/, 2)
-      records = metrics.last.to_s.scan(MARKER)
+      records = timing_details(metrics).scan(MARKER)
       line = records.first.first if records.one?
       data = line ? JSON.parse(line) : {}
       return {} unless data.is_a?(Hash)
@@ -64,6 +64,12 @@ module Shaka
       FIELDS.to_h { |key| [key, timestamp(data[key], now)] }.compact
     rescue JSON::ParserError
       {}
+    end
+
+    def timing_details(metrics)
+      return metrics.first.to_s if metrics.one?
+
+      metrics.last[%r{^<summary>Timings · [^\r\n]+</summary>\r?\n(.*?)^</details>}m, 1].to_s
     end
 
     def timestamp(value, now)
