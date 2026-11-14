@@ -21,7 +21,7 @@ commands from the checkout root. If the job runs from another directory, pass
 the checkout path to `--root` (for example, `--root "$GITHUB_WORKSPACE"` in GitHub
 Actions).
 
-The check validates `.agents/shaka/config.yml` and the command paths it names.
+The check validates `.agents/shaka/config.yml` and the project’s required Shaka command scripts.
 It exits nonzero for invalid settings, unsafe paths, or missing or non-executable
 scripts. A passing result reports `local/candidate` mode with policy and merge
 authority both disabled.
