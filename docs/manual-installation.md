@@ -175,10 +175,12 @@ overlap any run, keep the job on `update-check`. To move a pinned installation
 to a newer version, [install a newer release](#keep-a-tested-release).
 
 Find your installed checkout with `install --status` as shown above. Use its
-absolute helper path in the job. Before moving the installation, disable the
-job. After the move, set the new path and run `update-check` against it before
-re-enabling the job. Run it under the account that installed Shaka, with Git
-and the authenticated GitHub CLI available to that account.
+absolute helper path in the job. Before moving the installation, stop future
+runs and wait for any running update to finish. On Linux, use
+`systemctl --user disable --now shaka-update-check.timer`. After the move, set
+the new path and run `update-check` against it before re-enabling the job.
+Run it under the account that installed Shaka, with Git and the authenticated
+GitHub CLI available to that account.
 Scheduled jobs may get a different `PATH` from your terminal. If needed, set it
 in the job or in a wrapper script. Include the directories that contain your
 `git` and `gh` executables. Check the job's output even when the scheduler
