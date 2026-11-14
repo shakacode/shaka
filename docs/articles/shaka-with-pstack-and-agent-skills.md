@@ -149,8 +149,8 @@ Neither pack's skills changed after the pinned commits in ways this article depe
 pstack's last merged change was on 2026-10-27, and native Codex support
 ([cursor/plugins#1143](https://github.com/cursor/plugins/pull/1143)) awaits review. By
 2026-11-13, Shaka's workflow had grown to 12,011 words and Addy's five matching skills to
-10,905, so the comparison in gap 5 still holds. Both authors have since written about
-review and verification:
+10,905. The figures above stay at the pinned revisions, and gap 5's comparison holds at
+both. Both authors have since written about review and verification:
 
 - **Tan now doubts adversarial review.** Tan called it "mostly a waste of tokens," wrote
   that pstack now leans less on `interrogate`

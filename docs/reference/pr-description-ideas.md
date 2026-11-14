@@ -243,7 +243,8 @@ predates this work.
 - **Limit:** [#923](https://github.com/shakacode/shaka/pull/923) added a line for
   missing reviewers, and it counted only the result files the agent passed. #984
   traced all 8 such lines: 6 were false, and on 2 the agent never ran the second
-  reviewer. `description` now refuses results from one ledger batch that leave out a reviewer.
+  reviewer. When it can read the review ledger, `description` now refuses results from one
+  ledger batch that leave out a reviewer.
   A result rebuilt with `review check`, as on #974, still gets through.
 
 ### 8. Send human attention to load-bearing paths
