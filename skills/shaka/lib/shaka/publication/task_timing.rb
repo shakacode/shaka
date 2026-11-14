@@ -67,7 +67,7 @@ module Shaka
     end
 
     def timing_details(metrics)
-      return metrics.first.to_s if metrics.one?
+      return metrics.first.to_s if metrics.size < 2
 
       metrics.last[%r{^<summary>Timings · [^\r\n]+</summary>\r?\n(.*?)^</details>}m, 1].to_s
     end
