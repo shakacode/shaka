@@ -44,7 +44,7 @@ module PersonalSettingsFixture
     config = written(root)
     assert_equal PREFERENCES['review']['local_review_agents'], config['review']['local_review_agents']
     assert_equal({ 'max_sentence_words' => 30 }, config['prose_limits'])
-    assert_equal true, config['wip']['include_checkout_path']
+    assert config['wip']['include_checkout_path']
     assert_equal 'none', config['review']['required']
   end
 
