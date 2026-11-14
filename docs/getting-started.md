@@ -33,6 +33,9 @@ before starting your task.
 
 If Shaka doesn't appear, restart your coding tool and try again.
 
+See [schedule daily checks or updates](manual-installation.md#schedule-daily-checks-or-updates)
+to keep a branch installation current.
+
 <a id="2-choose-private-trial-or-team-setup"></a>
 <a id="2-choose-individual-trial-or-team-setup"></a>
 
