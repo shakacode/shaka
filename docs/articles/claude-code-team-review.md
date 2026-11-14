@@ -5,7 +5,7 @@ Justin Gordon started it after a refresh of the
 [pstack and agent-skills analysis](https://github.com/shakacode/shaka/pull/985) found
 Addy Osmani's post and gave it one paragraph. The agent read Osmani's two posts on X and
 Shaka's code, settings, and studies at
-[`8526899`](https://github.com/shakacode/shaka/tree/852689932a9c). No experiment was run.
+[`0476a78`](https://github.com/shakacode/shaka/tree/0476a78ff0e0). No experiment was run.
 Codex and a fresh Claude session reviewed it before publication.*
 
 Addy Osmani writes as a member of Anthropic's Claude Code team. His
@@ -38,8 +38,8 @@ Three earlier pieces cover nearby ground:
   finding and resolves every thread. Shaka blocks on open local review findings only in
   commands the agent runs. A merge you click on GitHub skips them.
 - The post's reviewers vote on findings. Shaka's reviewers instead label each one a defect, a
-  risk, or a nit. The agent never fixes a nit inside the review loop. Nits were still 49%
-  of findings in the review signal study.
+  risk, or a nit. The agent never fixes a nit inside the review loop, though each nit still
+  reaches the agent to read.
 - A Shaka review loop stops after five reviewed commits by default. The post asks for a
   rethink after three. Each Shaka round still re-reviews the whole diff.
 - Every finding gets a recorded outcome, much like the post's noise measure. The
@@ -77,9 +77,10 @@ Three earlier pieces cover nearby ground:
   states whether it received them, and nothing shows it applied them. Nothing gathers
   findings that recur across PRs. [#1077](https://github.com/shakacode/shaka/issues/1077)
   proposes reading them in a retrospective.
-- **Evidence:** `merge` refuses without a posted review line naming the commit it merges
-  ([`review.required`](../settings.md#reviewrequired)). #1102's section on checks covers the
-  rest of this layer.
+- **Evidence:** `merge` refuses without a posted review that covers the merged commit. The
+  [`review.required`](../settings.md#reviewrequired) setting lists the exceptions, such as a
+  maintainer's waiver or later commits that change only ordinary Markdown. #1102's section on
+  checks covers the rest of this layer.
 
 ### 2. AI review on every PR, voted and filtered
 
@@ -156,8 +157,9 @@ Three earlier pieces cover nearby ground:
   doesn't count as an approval. Your approval covers one commit, and a later commit ends it.
   A rebase that keeps the reviewed behavior carries your approval forward.
 - **Shaka lacks:** a way for GitHub to tell the agent from you. The agent posts and merges
-  with your account, marked only by its 🤖 identity line. After a conflict fix, `merge`
-  demands a new review. The agent alone decides whether the fix changed behavior, and carries
+  with your account, marked only by its 🤖 identity line. After a conflict fix, `merge` no
+  longer accepts the earlier review, and the head needs a new review or a waiver. The agent
+  alone decides whether the fix changed behavior, and carries
   your approval forward when it judges that nothing changed. The post asks for a new approval
   instead. Shaka sets no GitHub approval rule. Its own repository requires no approving
   review, and dismisses stale approvals when new commits arrive.
@@ -184,9 +186,9 @@ Three earlier pieces cover nearby ground:
   ([#1072](https://github.com/shakacode/shaka/pull/1072)) designs that test. Its dry run found
   that Shaka's review loop currently refuses a round limited to new commits. The paid pilot
   awaits the maintainer's approval.
-- **Evidence:** `review run` refuses the round past the limit. The review signal study checked
-  Shaka's loop. Of 17 sampled later-cycle findings, 6 sat in code the first cycle had seen,
-  against the post's 59%. Most of the rest sat in code the loop's own fixes had written.
+- **Evidence:** `review run` refuses the round past the limit. The review signal study
+  compared Shaka's later cycles with the post's 59% figure. Most of Shaka's sampled later
+  findings sat in code written during the loop, much of it by earlier fixes.
 
 ### 7. Reviewer evals from past incidents
 
@@ -214,8 +216,7 @@ Three earlier pieces cover nearby ground:
   cycles second.
 - **Shaka has:** a recorded outcome for every local finding: fixed, dismissed, accepted,
   documented, or awaiting your decision. Each PR's review comment publishes them. The review
-  signal study counted them: nits were 49% of findings, and dismissals 15%. The same study
-  checked 40 sampled fixes and found all of them real.
+  signal study counted those outcomes and found every sampled fix real.
 - **Shaka lacks:** a person's response. The implementing agent records each outcome. Agents
   wrote about 97% of PR discussion in the
   [October review study](review-process-study.md). Shaka has no run on known-clean PRs, and no
@@ -245,14 +246,11 @@ Lauren Tan, who works on pstack, called adversarial reviews "mostly a waste of t
 ([post](https://x.com/poteto/status/2117437607940681849), 2026-11-02). The Claude Code team's
 numbers point the other way for review as a whole. Substantive comments reached 54% of PRs,
 and reverts fell while merges doubled. The post credits all its layers together for that
-result. In Shaka's review signal study, all 40 sampled fixes were real.
+result. Shaka's review signal study found every sampled fix real.
 
 On repeated review, the post and Shaka's data agree that later cycles add less than the
-first. In Shaka's data, 58% of fixed defects came from the first cycle. The two differ on
-what later cycles find. The post's later cycles mostly flagged code from the first pass.
-Shaka's mostly flagged code written during the loop, much of it by earlier fixes. A diff-only
-re-review would still see that code. The review signal study weighs both sides, and the #1072
-test would settle the question for Shaka.
+first. They differ on what those cycles find, as practice 6 describes. The review signal
+study weighs both sides, and the #1072 test would settle the question for Shaka.
 
 ## From the companion post
 
@@ -296,7 +294,7 @@ None of these ideas has shipped:
   X, 2026-11-02.
 - Lauren Tan, [post on adversarial review](https://x.com/poteto/status/2117437607940681849), X,
   2026-11-02.
-- Shaka at [`8526899`](https://github.com/shakacode/shaka/tree/852689932a9c): the
+- Shaka at [`0476a78`](https://github.com/shakacode/shaka/tree/0476a78ff0e0): the
   [settings reference](../settings.md), the
   [enforcement map](../../skills/shaka/config/enforcement.yml), the review prompt and hosted
   review workflow linked above, and the studies linked above.
