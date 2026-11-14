@@ -118,15 +118,20 @@ Status shows the next step. When it asks you to reinstall to record Ruby again,
 run `ruby "$shaka_source/bin/install"` from that checkout.
 
 Check the result with `"$shaka_helper" install --verify`. To inspect an update
-to a branch installation, confirm `origin` matches the repository shown by
-`install --status`. Set `shaka_branch` to the branch shown there (for example,
-`shaka_branch=main`), then run this from the active checkout.
+to a branch installation, run `install --status` and resolve any origin or
+branch mismatch it reports before fetching. Set `shaka_branch` to the branch shown there (for example,
+`shaka_branch=main`), then run this from the active checkout in Bash or Git Bash.
 
 ```bash
-git fetch origin "refs/heads/${shaka_branch:?Set the registered Shaka branch first}" && git diff HEAD FETCH_HEAD
+git fetch origin "refs/heads/${shaka_branch:?Set the registered Shaka branch first}" &&
+  shaka_fetched=$(git rev-parse --verify FETCH_HEAD) &&
+  git log --oneline --left-right "HEAD...$shaka_fetched" &&
+  git diff HEAD "$shaka_fetched"
 ```
 
-The comparison leaves your installed files and skill links in place.
+The log shows commits on the installed side (`<`) and the branch side (`>`),
+even if both versions have the same file contents. The comparison leaves your
+installed files and skill links in place.
 After active chats finish, run `"$shaka_helper" install --update` to apply a
 branch update. The updater fetches the branch again when it runs.
 For a pinned release, use the [tested release prompt](#keep-a-tested-release)
@@ -307,6 +312,14 @@ agent to [compare the installed branch with its upstream](#verify-and-update).
 The current `update-check` helper expects Unix-style paths when it looks up Git
 and the GitHub CLI. The WSL task checks the separate Shaka installation inside
 that distribution.
+
+#### Stop a scheduled check
+
+- On macOS, unload the LaunchAgent with
+  `launchctl bootout "gui/$(id -u)/com.shakacode.update-check"` and move its plist
+  out of `~/Library/LaunchAgents` to keep it from loading at the next login.
+- On Linux, run `systemctl --user disable --now shaka-update-check.timer`.
+- On Windows, disable the task in Task Scheduler.
 
 #### Move an installation with a scheduled check
 
