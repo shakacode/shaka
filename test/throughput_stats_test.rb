@@ -129,6 +129,26 @@ class ThroughputSummaryTest < Minitest::Test
     assert_equal merged, Shaka::ThroughputStats.update(merged, {})
   end
 
+  # A body published before the note existed keeps UNKNOWN on watcher updates, so nothing is hidden unexplained.
+  def test_watcher_updates_keep_unknown_in_a_body_without_the_note
+    published = describe('$7.27', timeline: { 'ci_started_at' => PUSH })
+    legacy = published.sub(%r{<details>\n<summary>Missing values</summary>.*?</details>\n\n}m, '')
+    refute_includes legacy, 'Missing values'
+    ready = Shaka::ThroughputStats.update(legacy, 't2' => READY.iso8601)
+    assert_includes ready, "**Estimated token costs:** $7.27 · ready in UNKNOWN\n"
+    assert_includes ready, 'Prompt to CI UNKNOWN'
+    merged = Shaka::ThroughputStats.update(ready, 't3' => MERGED.iso8601)
+    assert_includes merged, '· merged in UNKNOWN'
+    assert_equal merged, Shaka::ThroughputStats.update(merged, {})
+  end
+
+  def test_watcher_updates_leave_the_time_off_a_body_with_the_note
+    published = describe('$7.27', timeline: { 'ci_started_at' => PUSH })
+    explained = Shaka::ThroughputStats.update(published, 't2' => READY.iso8601)
+    assert_includes explained, "**Estimated token costs:** $7.27\n"
+    assert_includes explained, 'Prompt to CI not recorded'
+  end
+
   def test_missing_values_are_omitted_when_the_task_start_was_recorded
     rendered = describe('$7.27', timeline: { 'task_started_at' => START, 'ci_started_at' => PUSH, 'ready_at' => READY })
     assert_match(/\*\*Estimated token costs:\*\* \$7\.27 · ready in \d/, rendered)

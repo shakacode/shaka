@@ -25,7 +25,7 @@ module Shaka
       end
     end
 
-    def missing_values = [MissingValues.detail(throughput)].compact.map { |item| details_block(item) }
+    def missing_values = (detail = MissingValues.detail(throughput)) ? [details_block(detail)] : []
 
     def throughput = @throughput ||= ThroughputStats.state(@content, @timeline, @pull)
 
