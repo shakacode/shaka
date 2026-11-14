@@ -121,7 +121,7 @@ Check the result with `"$shaka_helper" install --verify`. To inspect an update
 to a branch installation, run `"$shaka_helper" install --status` and resolve any
 origin or branch mismatch before fetching. Set `shaka_branch` to the branch
 shown in the checkout inventory, such as `shaka_branch=main`. Run the following
-from the installed checkout in Bash or Git Bash.
+from the installed checkout in Bash or Git Bash when no other process is fetching there.
 
 ```bash
 git fetch origin "refs/heads/${shaka_branch:?Set the registered Shaka branch first}" &&
@@ -156,8 +156,9 @@ Run it again without `--session-hook` to remove the reminder.
 
 </details>
 
-If you leave Shaka chats running overnight, [schedule a daily update check](reference/scheduled-update-checks.md)
-and apply updates between chats.
+If you installed from a GitHub branch and leave Shaka chats running overnight,
+[schedule a daily update check](reference/scheduled-update-checks.md) and apply
+updates between chats.
 
 ### Repair a broken installation
 
@@ -184,13 +185,13 @@ Avoid installing from a temporary worktree that could disappear after its PR mer
 
 ### Move Shaka out of a clone you develop in
 
-If you have a scheduled job, follow the [scheduled check steps](reference/scheduled-update-checks.md#move-an-installation-with-a-scheduled-check)
-after moving the installation.
-
 ```text
 Move my Shaka installation to its own checkout. Preserve my branches, worktrees,
 and local changes. Verify the installation afterward
 ```
+
+If you scheduled a daily check, [point it to the new checkout](reference/scheduled-update-checks.md#move-an-installation-with-a-scheduled-check)
+after moving the installation.
 
 The agent checks which copy is installed and explains what it needs to move.
 Ask it to confirm your development work is still available before removing any

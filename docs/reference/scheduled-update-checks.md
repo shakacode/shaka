@@ -1,15 +1,19 @@
 # Schedule a daily update check
 
 ```text
-Schedule a daily Shaka update check
+Check whether my Shaka installation supports daily update checks. If it does, set one up using https://shaka.shakacode.com/docs/reference/scheduled-update-checks
 ```
 
-Your agent can find the installed helper, configure the scheduler, and run one
-check to confirm the log. To set it up yourself, use the steps for your system.
+Ask your agent to identify the installed helper and follow the steps for your
+system, then run one check and read its log. You can also follow the steps yourself.
 
-If you leave Shaka chats running overnight, schedule `update-check`. It reports
-the status of a supported GitHub branch without changing the installed revision.
-If its `reason` is `unsupported_source`, use the [manual upstream comparison](../manual-installation.md#verify-and-update).
+If you installed from a GitHub branch, such as the default `main`, and leave
+Shaka chats running overnight, schedule `update-check`. It reports the status
+of a supported branch without changing the installed revision. For a pinned
+release, ask your agent about [installing a newer release](../manual-installation.md#keep-a-tested-release).
+If the check reports the reason `unsupported_source`, ask your agent to compare with
+official Shaka `main` or use the [manual comparison](../manual-installation.md#verify-and-update)
+to check the branch you installed from.
 Read the job's log for `status` and `guidance`. If the guidance recommends an
 update, finish your active Shaka chats first. Then ask your agent to
 [update and verify Shaka](../manual-installation.md#verify-and-update). An `unknown`
@@ -19,7 +23,8 @@ an update is available.
 The default checkout is `~/.local/share/shaka/source`. If you installed
 elsewhere, ask your agent which checkout it uses or follow the terminal steps
 in the [installation guide](../manual-installation.md#verify-and-update). Use
-the absolute path to `skills/shaka/scripts/shaka` inside that checkout. Run it under the account that installed Shaka,
+the absolute path to `skills/shaka/scripts/shaka` inside that checkout. Run it
+under the account that installed Shaka,
 with Git and the authenticated GitHub CLI available to that account.
 Scheduled jobs may get a different `PATH` from your terminal. If needed, set it
 in the job or in a wrapper script. Include the directories that contain your
@@ -88,6 +93,7 @@ set `Environment=PATH=...` in the service with the absolute directories it needs
 ```ini
 [Service]
 Type=oneshot
+WorkingDirectory=/
 UMask=0077
 ExecStart="%h/.local/share/shaka/source/skills/shaka/scripts/shaka" update-check
 StandardOutput=append:%h/shaka-schedule.log
@@ -137,6 +143,7 @@ exit $LASTEXITCODE
 ```
 
 In Windows Task Scheduler, create a daily task under your Windows account.
+Select **Run only when user is logged on**, the mode used in the WSL test.
 Set **Program/script** to `powershell.exe`. In **Add arguments**, enter
 `-NoProfile -File "C:\Users\me\shaka-schedule.ps1"`, using your script's absolute
 path. Your PowerShell execution policy must allow the script. If the first run
