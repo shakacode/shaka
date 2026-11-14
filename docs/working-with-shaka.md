@@ -96,10 +96,12 @@ A label does not wake the agent. See [merge and queue details](reference/pr-reco
 
 A required check waiting for a deployment approval shows as `blocked (approval hold)`, and the PR keeps its label until you approve the run.
 
-When the agent posts with your GitHub account, a review you started on the PR and
-haven't submitted blocks its walkthrough: GitHub shows a pending review only to its
-author and allows one per person. The PR then shows `awaiting-answer` with a question
-asking you to submit or discard it. A PR already awaiting merge keeps its label.
+When the agent posts with your GitHub account, an unsubmitted review from that
+account blocks its walkthrough: GitHub shows a pending review only to its author and
+allows one per person. The agent then asks you under **Decisions to make** to submit
+or discard it, which sets `awaiting-answer`. If the walkthrough already covers the
+current commit, a PR awaiting merge keeps its label, and the handoff names the
+pending review.
 
 ## Resume unfinished work
 
@@ -203,9 +205,10 @@ Compatibility varies by skill and coding tool.
 
 Some skills run their own delivery: AI Hero's `implement-spec`, pstack's Shipping,
 Babysit, Orchestrate, and Autopilot playbooks, and Addy Osmani's `/build auto` and
-`/ship`. They plan, review, watch PRs, or merge on their own, so they can't run as a
-step of a Shaka task. Inside Shaka, the agent uses only their techniques and offers
-to try the full playbook separately.
+`/ship`. They plan, review, watch PRs, or merge on their own. Shaka's instructions
+tell the agent to use only their techniques inside a Shaka task and decline their
+delivery steps. To try one, ask for a separate trial that names the spec,
+repository, and stopping point.
 
 <a id="hand-over-a-spec-and-tickets"></a>
 <a id="what-each-kind-of-skill-can-do"></a>
