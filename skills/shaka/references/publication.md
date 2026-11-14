@@ -44,10 +44,11 @@
   including a planning request that began the task. If you cannot verify it or
   it falls after PR opening, omit it to preserve the saved start or let the
   helper use a whole-task implementation usage report.
-  On the post-CI description refresh, confirm the saved start in **Timings**
-  matches the verified request time and the elapsed time runs to CI readiness.
+  On the post-CI description refresh, compare the saved start in the
+  `task-timing` marker to the verified request time at whole-second precision.
   Supply the verified start if the saved value is missing or differs, even
-  when the PR already shows a duration. Report any remaining timing gap.
+  when the PR already shows a duration. Verify the displayed time to CI
+  readiness and report any remaining timing gap.
   Pass a recorded `--ci-review-wait` task override to `description` too.
 
 - Verification opens with bound validation/review status and an optional linked `summary`.
