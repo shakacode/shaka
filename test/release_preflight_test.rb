@@ -42,7 +42,7 @@ class ReleasePreflightTest < Minitest::Test
   end
 
   def test_rejects_changed_package_even_with_the_same_version
-    path = File.join(@root, 'README.md')
+    path = File.join(@root, 'README.gem.md')
     original = File.binread(path)
     File.write(path, 'wrong artifact')
     execute('gem', 'build', 'shaka.gemspec', '--output', @gem)
