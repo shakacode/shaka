@@ -43,13 +43,13 @@ Even with `auto`, large or risky changes need your merge decision.
 You don't need to study the docs first. Ask your coding agent to install Shaka:
 
 ```text
-Install Shaka from https://github.com/shakacode/shaka.
+Install Shaka from https://github.com/shakacode/shaka
 ```
 
 Then give it a small task:
 
 ```text
-$shaka Fix search when the query contains an apostrophe. Go.
+$shaka Fix search when the query contains an apostrophe. Go
 ```
 
 Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, GitHub Copilot, or OpenCode.

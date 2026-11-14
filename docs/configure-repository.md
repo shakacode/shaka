@@ -30,7 +30,7 @@ See [required-check settings](settings.md#mergerequired_checks) and
 Ask your agent:
 
 ```text
-/shaka Set up Shaka for my team in this repository.
+/shaka Set up Shaka for my team in this repository
 ```
 
 The agent finds your existing checks, explains reviewer choices, and prepares a
