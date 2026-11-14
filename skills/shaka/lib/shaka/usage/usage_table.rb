@@ -76,7 +76,7 @@ module Shaka
 
     # An implementation report says plainly that it holds no reviewer usage, so a missing review report stays visible.
     def reviewer_coverage
-      gaps = "Not counted: #{@source.gaps.uniq.join('; ')}." if @source.gaps.any?
+      gaps = "Gaps: #{@source.gaps.uniq.join('; ')}." if @source.gaps.any?
       ["Local adversarial reviewer usage: #{local_review_coverage}.",
        'Hosted reviewer and tool-model usage is not counted.', gaps].compact.join(' ')
     end
