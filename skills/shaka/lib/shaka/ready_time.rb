@@ -26,8 +26,6 @@ module Shaka
 
       ready = ThroughputStats.ready_at(github.check_times, required: required_names(github, gate),
                                                            review_jobs: gate[:jobs], wait: gate[:wait])
-      return timeline.merge('ready_unknown' => 'UNKNOWN') if ready == :unknown
-
       ready.is_a?(Time) ? timeline.merge('ready_at' => ready) : timeline
     rescue Error
       timeline

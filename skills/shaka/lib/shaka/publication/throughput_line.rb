@@ -39,9 +39,7 @@ module Shaka
 
     def keep_earlier(seen, carried, key, head)
       previous = carried['head'] == head ? carried[key] : nil
-      return seen if same_second_upgrade?(seen, previous)
-
-      kept = parse_time(previous)
+      kept = parse_time(previous) if previous.is_a?(String) && previous != 'UNKNOWN'
       earlier = kept && (seen == 'UNKNOWN' || kept <= parse_time(seen))
       earlier ? previous : seen
     end
@@ -105,12 +103,6 @@ module Shaka
     end
 
     def stamp(value) = parse_time(value) && (value.is_a?(Time) ? iso_timestamp(value) : value)
-
-    def same_second_upgrade?(current, previous)
-      return false unless current&.include?('.') && previous && !previous.include?('.')
-
-      parse_time(current)&.to_i == parse_time(previous)&.to_i
-    end
 
     def parse_time(value)
       return value.utc if value.is_a?(Time)
