@@ -110,7 +110,7 @@ branches:
   name: '{login}-{host}/{issue}-{description}' # Default branch-name template.
 
 wip:
-  include_checkout_path: true # Team default. New individual setups hide the checkout path.
+  include_checkout_path: true # Default: show the local checkout path in unfinished PRs.
 
 pr_description:
   show_shaka_credit: true # Default: a small Shaka link under the PR summary.
