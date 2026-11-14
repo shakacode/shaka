@@ -17,6 +17,7 @@ require_relative 'repos'
 require_relative 'review_prompt'
 require_relative 'reviewer'
 require_relative 'seam'
+require_relative 'timings_report'
 require_relative 'trial/command'
 require_relative 'ui_check'
 require_relative 'update_check'
@@ -55,6 +56,7 @@ module Shaka
       'review-prompt' => entry { |arguments| ReviewPrompt.run(arguments) },
       'reviewer' => entry { |arguments| Reviewer.run(arguments) },
       'seam' => entry(Seam::OPERATIONS) { |arguments| Seam.run(arguments) },
+      'timings' => entry(TimingsReport::OPERATIONS) { |arguments| TimingsReport.run(arguments) },
       'trial' => entry(Trial::Command::ACTIONS) { |arguments| Trial::Command.run(arguments) },
       'ui-check' => entry { |arguments| UiCheck.run(arguments) },
       'update-check' => entry { |arguments| UpdateCheck.run(arguments) },

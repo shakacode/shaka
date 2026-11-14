@@ -242,6 +242,17 @@ to choose what to change. Use completed PRs for regular retrospectives on
 quality, token use, cost, and timing. See [PR timings](reference/timings.md) for
 timing records and local logging controls.
 
+## Find what slows delivery across many PRs
+
+```text
+$shaka retrospective of PR timings since 2026-11-01: rank what to speed up
+```
+
+The agent adds up the timings that merged PRs carry in their descriptions. It ranks
+where the time went, such as validation phases, local review, and the agent's own
+model and tool time, then shows how each week compares. PRs opened from forks are
+left out, because their authors can edit those numbers.
+
 ## Suggest improvements to Shaka
 
 Tell your agent what happened and what you expected:

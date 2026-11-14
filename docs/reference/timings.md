@@ -135,6 +135,13 @@ a second line names the models and machines that ran them. The machine reads
 `UNKNOWN` when `SHAKA_MACHINE_ALIAS` is not set; setting it is described in
 [Name your machines](../coding-agents.md#name-your-machines).
 
+When a validation script reports its phases, a line adds them up across runs, for
+example `Validation phases: tests 8m 20s · rubocop 1m 40s (2 of 3 validation runs
+reported phases)`. [Configure your repository](../configure-repository.md#show-where-validation-time-goes)
+explains how a script reports them. When the machine slept while steps ran, such as
+a laptop closed during validation, `Machine asleep during steps` says how much of the
+step time that was.
+
 Steps that passed or finished appear only in the bars. A step that did not gets a
 row with its exit code. A validation run reads `failed`. A review or checkpoint reads
 `not completed`, because its result says only whether it finished; its findings and
@@ -174,6 +181,36 @@ Limits:
   published. If older steps were already dropped before that time was saved,
   the interval stays unavailable.
 
+## Agent time
+
+The last line shows where the agent's own time went in each chat session that
+updated the description, for example:
+
+`Agent time: 2h 10m working in 2 sessions: model 1h 20m · validation 25m · Shaka helper 15m · files 5m. Waiting on a person: 12m on questions, 5h between turns.`
+
+- **Working** is time inside the agent's turns, from your message, or a wake such as
+  a finished background job, to the agent's last action in that turn.
+- **Model** is working time when no tool was running: reading, thinking, and writing.
+- Each tool category is how long those tool calls took. Calls in one category that
+  ran in parallel count once; calls in different categories that overlapped count in
+  each, so the categories can add up to more than working time. Shell commands are sorted by what they ran: validation for tests and
+  lint, review for local reviews, Shaka helper for other `shaka` commands, and
+  git/GitHub for `git` and `gh`. A command run inside `$(...)` or a script file counts as other
+  shell.
+- **On questions** is time the agent's questions to you stayed open. **Between turns**
+  is time between the agent finishing and your next message.
+
+Shaka reads the chat transcript of the session updating the description, from the
+recorded task start, or the PR's first commit when no start was recorded. It works
+for Claude Code and Codex. Only the totals reach the
+description; commands, prompts, and output stay on your machine. A command started in
+the background counts only the moment it took to start, so its time appears under
+measured steps instead. Each session keeps its latest totals, so a session that never
+updated the description is missing.
+
+To compare these numbers across many PRs, see
+[find what slows delivery across many PRs](../working-with-shaka.md#find-what-slows-delivery-across-many-prs).
+
 [Usage and cost](usage-and-cost.md) explains the section beside it.
 
 ## Local timing log
@@ -181,7 +218,8 @@ Limits:
 For a retrospective, ask your agent to read Shaka's local timing log at
 `~/.local/state/shaka/calls.jsonl`. It records helper commands, durations,
 outcomes, repository and commit identifiers, and issue or PR numbers. When
-available, it also records the reviewer model and the Git tree hash for
-validation. It does not record paths or task text. The log stays on your
-machine. Set `SHAKA_CALL_LOG=off` to stop recording, or set it to a file path
-to move the log.
+available, it also records the reviewer model, the Git tree hash for
+validation, the validation phases, the time the machine was awake, and the chat
+session that ran the command. It does not record paths or task text. The log
+stays on your machine. Set `SHAKA_CALL_LOG=off` to stop recording, or set it to
+a file path to move the log.

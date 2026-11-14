@@ -2,6 +2,7 @@
 
 require 'time'
 require_relative 'run_summary'
+require_relative 'phases'
 require_relative 'time_zone'
 require_relative 'timeline_steps'
 
@@ -24,7 +25,8 @@ module Shaka
       return [] if steps.empty?
 
       listed = charted ? steps.reject { |step| step['exit'].zero? } : steps
-      [totals(steps), (settings(steps) if charted), (FAILED_HEADING if charted && listed.any?), table(listed),
+      [totals(steps), phases(steps), asleep(steps), (settings(steps) if charted),
+       (FAILED_HEADING if charted && listed.any?), table(listed),
        omitted(steps.size, listed.size, dropped, charted), LEGEND]
     end
 
@@ -37,6 +39,23 @@ module Shaka
         "#{name} #{RunSummary.duration(group.sum { |step| step['duration_ms'] })} (#{runs})"
       end
       "**Measured steps:** #{parts.join(' · ')}"
+    end
+
+    # Where validation time went inside the runs whose command reported its phases.
+    def phases(steps)
+      validations = steps.select { |step| step['command'] == 'evidence run' }
+      reported = validations.reject { |step| step['phases'].to_h.empty? }
+      return if reported.empty?
+
+      summary = Phases.summary(Phases.combine(reported.map { |step| step['phases'] }),
+                               RunSummary.method(:duration))
+      "**Validation phases:** #{summary} (#{reported.size} of #{validations.size} validation runs reported phases)"
+    end
+
+    # A step's clock keeps running while the machine sleeps, so slept time is named apart from work.
+    def asleep(steps)
+      slept = steps.sum { |step| step['awake_ms'] ? step['duration_ms'] - step['awake_ms'] : 0 }
+      "**Machine asleep during steps:** #{RunSummary.duration(slept)}, included in the times above" if slept >= 60_000
     end
 
     def settings(steps)

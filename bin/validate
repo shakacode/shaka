@@ -1,12 +1,30 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'json'
+
+# When run through `shaka evidence run`, SHAKA_PHASE_LOG names a file for one JSON line per phase,
+# so the PR's Timings section shows which phase took the time.
+PHASE_LOG = ENV.fetch('SHAKA_PHASE_LOG', '')
+
+def phase(name)
+  started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  yield
+ensure
+  unless PHASE_LOG.empty?
+    duration = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
+    File.write(PHASE_LOG, "#{JSON.generate('phase' => name, 'duration_ms' => duration)}\n", mode: 'a')
+  end
+end
+
 Dir.chdir(File.expand_path('..', __dir__)) do
-  warn 'Instruction report unavailable; continuing validation' unless system('ruby', 'bin/report-instruction-growth')
+  phase('instruction-report') do
+    warn 'Instruction report unavailable; continuing validation' unless system('ruby', 'bin/report-instruction-growth')
+  end
   unless ENV['CI'] || system('ruby', 'bin/lefthook/installed')
     warn 'Commit hooks are not installed; run `bundle exec lefthook install` to lint changed files at commit time.'
   end
-  abort 'Docs navigation failed' unless system('ruby', 'bin/check-docs-navigation')
-  abort 'Tests failed' unless system('bundle', 'exec', 'ruby', 'bin/run-tests')
-  exit(system('bundle', 'exec', 'rubocop') ? 0 : 1)
+  phase('docs-navigation') { abort 'Docs navigation failed' unless system('ruby', 'bin/check-docs-navigation') }
+  phase('tests') { abort 'Tests failed' unless system('bundle', 'exec', 'ruby', 'bin/run-tests') }
+  exit(phase('rubocop') { system('bundle', 'exec', 'rubocop') } ? 0 : 1)
 end

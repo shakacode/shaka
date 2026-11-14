@@ -1,6 +1,6 @@
 # Retrospective
 
-Follow this procedure when the user asks for a retrospective of coding sessions.
+Follow this procedure when the user asks for a retrospective of coding sessions or of PR timings.
 Never start one unasked: not after a PR, not on a schedule, and not because a
 session went badly. The request authorizes analysis and a findings report only.
 
@@ -9,6 +9,11 @@ session went badly. The request authorizes analysis and a findings report only.
 Analyze the sessions the user names. With none named, analyze the current session.
 Do not search other chats, memory stores, or repository history for other
 sessions' material.
+
+For a retrospective of PR timings over a date range, run the saved helper's
+`timings report --repository OWNER/REPO --since DATE` instead of reading sessions, and
+rank tool-overhead findings by its totals. When it says the search stopped at its limit,
+rerun with a larger `--limit N`.
 
 Report source material you cannot read as `UNKNOWN` and name it: another chat's
 transcript, context lost to summarization, an expired CI log. Do not reconstruct
@@ -49,10 +54,12 @@ For tool overhead, read the helper's call log when it exists: the file `SHAKA_CA
 names, or `~/.local/state/shaka/calls.jsonl` when it is unset. When it is `off`, no log
 is kept, so skip this step. Each line is one helper
 call other than a `work` launch: its UTC start `at`, `command`, `exit`, and `duration_ms`, plus `check` on an
-`evidence run` line. A line may also carry `repository`, `number` (an issue or PR), and
-`head`; a `review run` or `post-implementation run` line may carry `provider`, `model`,
-and `effort`. Use only lines inside a named session's time range. Attribute a line to the
-session when the session shows that call. Otherwise, when no other session worked the same
+`evidence run` line. A line may also carry `repository`, `number` (an issue or PR),
+`head`, `session` (the host's session ID), `awake_ms` (the duration less machine sleep), and,
+on an `evidence run` line, `phases` (milliseconds per phase the command reported); a
+`review run` or `post-implementation run` line may carry `provider`, `model`, and `effort`.
+Use only lines inside a named session's time range. Attribute a line to the session whose
+ID its `session` names, or when the session shows that call. Otherwise, when no other session worked the same
 task in that range, attribute a line whose `repository` matches the task and whose `number`
 or `head` does too. Report other lines in the range as unattributed.
 
