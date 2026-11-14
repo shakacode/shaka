@@ -1423,7 +1423,7 @@ Shaka still stores UTC, and other commands' timestamps stay in UTC.
 
 ## `wip.include_checkout_path`
 
-**Optional. Default: `true`.**
+**Optional. Default: `true`. New individual setups write `false`.**
 
 ```yaml
 wip:

@@ -12,7 +12,7 @@ module PersonalSettingsFixture
                   'local_max_rounds' => 3 },
     'prose_limits' => { 'max_sentence_words' => 30 },
     'pr_description' => { 'opening_check' => { 'enabled' => false } },
-    'wip' => { 'include_checkout_path' => false }
+    'wip' => { 'include_checkout_path' => true }
   }.freeze
 
   def with_personal(settings = PREFERENCES)
@@ -44,7 +44,7 @@ module PersonalSettingsFixture
     config = written(root)
     assert_equal PREFERENCES['review']['local_review_agents'], config['review']['local_review_agents']
     assert_equal({ 'max_sentence_words' => 30 }, config['prose_limits'])
-    refute config['wip']['include_checkout_path']
+    assert_equal true, config['wip']['include_checkout_path']
     assert_equal 'none', config['review']['required']
   end
 
