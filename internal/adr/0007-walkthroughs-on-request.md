@@ -153,8 +153,9 @@ so the old behavior stays available as a setting.
   - Rollback already belongs in the description. The workflow puts it under the
     description's `details`, and the
     [placement rule](../../skills/shaka/references/delivery.md#why-the-description-and-the-walkthrough-differ)
-    keeps routine rollback there collapsed. Nothing enforces either rule, so the
-    walkthrough was the only place that reliably stated it.
+    keeps routine rollback there collapsed. Nothing enforces these rules or the
+    walkthrough's rollback instruction. In practice, though, each walkthrough in the
+    40-PR sample was the place a rollback consequence appeared.
 - **A requested walkthrough costs upkeep.** Once a PR has one, every later head owes
   a new one, as every PR does today. The cost now falls only on PRs where someone
   wanted the walkthrough.
@@ -193,12 +194,17 @@ so the old behavior stays available as a setting.
   walkthrough.
 - **Expected size.** The implementation PR changes the setting, three gates, the links
   line, a notes-only rendering path, the workflow and enforcement text, the docs, and
-  R4. It also rewrites `skills/shaka/references/walkthrough-notes.md` for notes
-  published alone. That file now assumes a walkthrough body carries rollback and that a
+  R4. It also updates the passages that send content to the walkthrough: the
+  workflow's passage dividing the description from the walkthrough, and the
+  code-level rollback sentence in `delivery.md`. Without a walkthrough, rejected
+  alternatives go to reviewer notes and rollback goes to the description. It also
+  rewrites `skills/shaka/references/walkthrough-notes.md` for notes published alone. That file now assumes a walkthrough body carries rollback and that a
   newer walkthrough resolves older notes. A notes-only review stays under the same
   `prose_limits` that apply to a walkthrough. Three notes-only side effects also change:
-  - Nothing resolves notes on older heads, so the agent resolves its own unanswered
-    notes when it publishes notes for a newer head.
+  - Without a newer walkthrough, nothing resolves notes on older heads. The
+    notes-only publish path resolves this account's unanswered notes through the same
+    `Walkthrough::NoteThreads` helper that walkthrough publication uses. The `resolve`
+    command's reply-before-resolve check stays as it is.
   - `handoff` stops listing open reviewer-note threads as answered threads awaiting
     confirmation.
   - The conversation-resolution refusal no longer tells the agent to publish a
