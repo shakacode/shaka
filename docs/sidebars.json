@@ -59,6 +59,7 @@
       "label": "Articles",
       "collapsed": true,
       "items": [
+        "articles/engineering-teams-software-factory",
         "articles/pull-requests-in-the-age-of-agents",
         "articles/review-process-study",
         "articles/checkpoint-sentence-eval",
