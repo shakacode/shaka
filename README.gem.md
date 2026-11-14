@@ -5,7 +5,7 @@ independent review, and opening a pull request with evidence you can inspect.
 
 ## Install the skill
 
-Use Ruby 3.4 or later, Git 2.41 or later, and an authenticated
+Use Ruby 3.4 or later, Git, and an authenticated
 [GitHub CLI](https://cli.github.com/). After the release is available on RubyGems,
 install the gem and link the skill to your coding agent:
 

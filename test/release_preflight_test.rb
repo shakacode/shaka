@@ -18,7 +18,7 @@ class ReleasePreflightTest < Minitest::Test
   end
 
   def test_rejects_a_dirty_checkout
-    File.write(File.join(@root, 'README.md'), 'changed')
+    File.write(File.join(@root, 'README.gem.md'), 'changed')
     assert_refused 'clean checkout'
   end
 
