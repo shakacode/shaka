@@ -23,7 +23,7 @@ module Shaka
     CLAIM = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+(#{LIST})/i
     # Partial work names its issue with no keyword, so the task's issue is expected to stay open.
     PARTIAL = /\bpart\s+of:?\s+(#{LIST})/i
-    FIELDS = %w[why scope root_cause].freeze
+    FIELDS = %w[why user_impact scope root_cause].freeze
     # GitHub links no keyword inside code, so a quoted example such as `Fixes #1` claims nothing.
     CODE = /(`+).*?\1/m
     # A read that fails or comes back partial is reported, never raised, because the note is advisory.

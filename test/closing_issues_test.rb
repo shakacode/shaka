@@ -95,11 +95,11 @@ class ClosingIssuesTest < Minitest::Test
 
   def test_intent_fields_count_and_other_forms_normalize
     intent = { 'why' => 'Closes other/lib#3.', 'scope' => 'Resolves https://github.com/Owner/Repo/issues/9.',
-               'leaves_out' => 'Fixes #99 later.' }
+               'user_impact' => 'Fixes #7.', 'leaves_out' => 'Fixes #99 later.' }
     claimed = Shaka::ClosingIssues.claimed(Shaka::ClosingIssues.texts('summary' => 'x', 'intent' => intent),
                                            'owner/repo')
 
-    assert_equal ['other/lib#3', 'owner/repo#9'], claimed
+    assert_equal ['other/lib#3', 'owner/repo#7', 'owner/repo#9'], claimed
   end
 
   def test_several_missing_issues_are_named_together
