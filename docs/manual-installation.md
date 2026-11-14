@@ -167,11 +167,11 @@ to update and verify Shaka as described [above](#verify-and-update). An `unknown
 result or an error without a status means the check could not determine whether
 an update is available.
 
-For a branch installation, schedule `install --update` only if every Shaka chat
-using that installation will be closed whenever the job can run. Shaka does
-not check for active chats before updating the shared checkout. Account for
-missed runs that start late, such as when your computer wakes. If chats could
-overlap any run, keep the job on `update-check`. To move a pinned installation
+For a branch installation, schedule `install --update` only if your setup
+keeps Shaka chats closed for every possible run, including missed runs that
+start late. Shaka does not check for active chats before updating the shared
+checkout. If you rely on remembering to close chats, keep the job on
+`update-check` and apply updates between chats. To move a pinned installation
 to a newer version, [install a newer release](#keep-a-tested-release).
 
 Find your installed checkout with `install --status` as shown above. Use its
@@ -241,6 +241,8 @@ This example uses systemd 240 or later to append to a log file.
 Create `~/.config/systemd/user/shaka-update-check.service`. `%h` expands to your
 home directory. Create the parent directory if needed. Replace the helper path
 if you installed elsewhere. Write literal `%` characters in your path as `%%`.
+Double literal backslashes and escape embedded double quotes with a backslash.
+For a path with other special characters, see [systemd service command lines](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Command%20lines).
 If Git or `gh` lives outside the service's `PATH`,
 set `Environment=PATH=...` in the service with the absolute directories it needs.
 
@@ -362,6 +364,9 @@ clone lets you change Shaka without breaking the version you use in other projec
 Avoid installing from a temporary worktree that could disappear after its PR merges.
 
 ### Move Shaka out of a clone you develop in
+
+If you have a scheduled job, follow the [stop and re-enable steps](#schedule-daily-checks-or-updates)
+before moving the installation.
 
 ```text
 Move my Shaka installation to its own checkout. Preserve my branches, worktrees,
