@@ -2,6 +2,7 @@
 
 require_relative 'cli_description_decisions_test'
 require 'shaka/publication/timeline_steps'
+require 'shaka/publication/throughput_stats'
 
 # The published description carries the timings the helper read from the label timeline.
 class CliDescriptionTimingsTest < Minitest::Test
@@ -62,10 +63,18 @@ class CliDescriptionTimingsTest < Minitest::Test
       Dir.mktmpdir do |dir|
         _output, error, status = run_description(dir, root:, decisions: [])
         assert_predicate status, :success?, error
-        published = File.read(File.join(dir, 'published.md'))
-        assert_metrics_layout(published)
+        assert_metrics_layout(File.read(File.join(dir, 'published.md')))
       end
     end
+  end
+
+  def test_a_saved_start_after_pr_opening_is_discarded
+    @task_started_at = '2026-10-18T07:00:00Z'
+    earlier_body = publish_timings
+    refute_nil Shaka::ThroughputStats.read(earlier_body)['t0']
+    @task_started_at = nil
+    refreshed = publish_timings('EXISTING_BODY' => earlier_body, 'PR_TIMELINE_OPENED' => '2026-10-18T06:30:00Z')
+    assert_nil Shaka::ThroughputStats.read(refreshed)['t0']
   end
 
   def description_content
@@ -74,6 +83,17 @@ class CliDescriptionTimingsTest < Minitest::Test
   end
 
   private
+
+  def publish_timings(env = {})
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, decisions: [], env:)
+        assert_predicate status, :success?, error
+        File.read(File.join(dir, 'published.md'))
+      end
+    end
+  end
 
   def assert_metrics_layout(published)
     before, metrics = published.split("<details>\n<summary>Details</summary>", 2)

@@ -5,6 +5,7 @@ require_relative '../error'
 require_relative 'usage_details'
 require_relative 'throughput_line'
 require_relative 'throughput_gate'
+require_relative 'timeline_steps'
 
 module Shaka
   # The spend after the model line and the intervals in Timings. Later updates replace only those two.
@@ -69,12 +70,12 @@ module Shaka
 
       # Republishing writes a fresh block, so a damaged one must not stop it.
       def carried_body(pull)
-        read(pull_body(pull)) || {}
+        return {} unless pull.is_a?(Hash) && TimelineSteps.same_repository?(pull)
+
+        read(Publishing.managed_region(pull['body'])) || {}
       rescue Error
         {}
       end
-
-      def pull_body(pull) = pull.is_a?(Hash) ? pull['body'] : nil
 
       def state_for(content, timeline, carried, head)
         base = fresh_state(content, timeline, carried)

@@ -113,13 +113,12 @@ adds a label when it stops for you and removes it when work resumes.
 - The agent selects which request began the task. A start inferred from usage
   measures from the first response in the report and may omit earlier planning.
 - The `shaka description` result reports whether the stored timing matched, was
-  still pending, or had a gap such as an unavailable Codex turn.
+  still pending, was unavailable from current evidence, or could not be verified
+  against the published record.
 - The ready time appears once a description update or a watch sees the gate green,
   so it can be missing until the description next updates. It stays missing when
   the configured CI review did not run, such as a review skipped for a small change.
-  A fork PR can retain its previous ready time. The command reports a gap
-  when current evidence cannot verify the start or endpoint of the headline
-  duration.
+  A fork PR's description refresh uses current evidence for its ready time.
 - Every labeled wait counts, however short. A wait of a few seconds can be a
   quick reply or the agent relabeling the PR; the label history cannot tell them apart.
 - When a PR has waited many times, the table shows the latest 30 stretches. The

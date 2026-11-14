@@ -55,12 +55,11 @@ class CliDescriptionElapsedTest < Minitest::Test
     assert_equal 'Selected Codex turn is after PR opening.', @timing['reason']
   end
 
-  def test_a_fork_refresh_does_not_verify_readiness_from_its_previous_body
+  def test_a_fork_refresh_does_not_carry_readiness_from_its_previous_body
     earlier_body = published('PR_CHECKS' => JSON.generate(CHECKS))
     fork_body = published('PR_HEAD_REPO' => 'fork/repo', 'EXISTING_BODY' => earlier_body)
-    assert_includes fork_body, '· ready in 1h 30m'
-    assert_equal 'unavailable', @timing['status']
-    assert_includes @timing['reason'], 'current GitHub evidence'
+    assert_includes fork_body, '· ready pending'
+    assert_equal 'pending', @timing['status']
   end
 
   def test_the_stored_metric_is_verified_separately_from_the_timestamps
