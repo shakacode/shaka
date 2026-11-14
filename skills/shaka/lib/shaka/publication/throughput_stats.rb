@@ -91,7 +91,7 @@ module Shaka
 
       def carried_state(base, carried)
         base.merge('t1' => earlier(base, carried, 't1'), 't2' => earlier(base, carried, 't2'),
-                   't3' => base['t3'] == 'UNKNOWN' ? carried['t3'] || base['t3'] : base['t3'] || carried['t3'])
+                   't3' => base['t3'] || carried['t3'])
       end
 
       def earlier(base, carried, key)
