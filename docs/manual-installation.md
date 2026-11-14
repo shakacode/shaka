@@ -179,8 +179,9 @@ absolute helper path in the job. Before moving the installation, stop future
 runs and wait for any running update to finish. On Linux, use
 `systemctl --user disable --now shaka-update-check.timer`. After the move, set
 the new path and run `update-check` against it before re-enabling the job.
-Run it under the account that installed Shaka, with Git and the authenticated
-GitHub CLI available to that account.
+An update job can catch up immediately when you re-enable it. Wait until all
+Shaka chats are closed. Run the job under the account that installed Shaka,
+with Git and the authenticated GitHub CLI available to that account.
 Scheduled jobs may get a different `PATH` from your terminal. If needed, set it
 in the job or in a wrapper script. Include the directories that contain your
 `git` and `gh` executables. Check the job's output even when the scheduler
@@ -239,7 +240,8 @@ the Mac wakes. See [Apple's guide to scheduled jobs](https://developer.apple.com
 This example uses systemd 240 or later to append to a log file.
 Create `~/.config/systemd/user/shaka-update-check.service`. `%h` expands to your
 home directory. Create the parent directory if needed. Replace the helper path
-if you installed elsewhere. If Git or `gh` lives outside the service's `PATH`,
+if you installed elsewhere. Write literal `%` characters in your path as `%%`.
+If Git or `gh` lives outside the service's `PATH`,
 set `Environment=PATH=...` in the service with the absolute directories it needs.
 
 ```ini
