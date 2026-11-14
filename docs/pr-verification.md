@@ -37,7 +37,7 @@ Start near the top of the PR description:
 
 | Look for | What it tells you |
 | --- | --- |
-| **Summary** and **Intent** | What changed, why, and whether it matches your request. |
+| **Summary** and **Intent** | What changed, why, what users will notice, and whether it matches your request. |
 | **Risk** and **Risk and review** | How carefully to review, and which code to read first. |
 | **Verification** | What was checked and what remains unproven. |
 | **Decisions to make**, when present | Questions needing your judgment, with options and a recommendation. |
