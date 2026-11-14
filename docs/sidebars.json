@@ -37,6 +37,7 @@
         "pr-verification",
         "reference/pr-record",
         "reference/reviewer-setup",
+        "reference/scheduled-update-checks",
         "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
