@@ -43,12 +43,12 @@ class PackageTest < Minitest::Test
     run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
     files = Gem::Package.new(archive).spec.files
 
-    %w[README.md skills/shaka/SKILL.md skills/shaka/config/workflow.yml
+    %w[README.gem.md skills/shaka/SKILL.md skills/shaka/config/workflow.yml
        skills/shaka/references/review.md skills/shaka/references/writing.md
        skills/shaka/references/publication.md].each do |path|
       assert_includes files, path
     end
-    assert_empty files.grep(%r{\A(?:docs/|contributing/|CONTRIBUTING\.md\z)})
+    assert_empty files.grep(%r{\A(?:docs/|contributing/|(?:CONTRIBUTING|README)\.md\z)})
   end
 
   def test_packaged_markdown_links_resolve_inside_the_package

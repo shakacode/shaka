@@ -27,10 +27,10 @@ and your agents can examine results, token use, and timing to improve the PR
 workflow, including automatic merges.
 
 By default, you merge the PR. You can also approve the agent's merge or choose
-[`auto`](https://shaka.shakacode.com/docs/working-with-shaka#choose-a-merge-policy).
+[`auto`](docs/working-with-shaka.md#choose-a-merge-policy).
 Even with `auto`, large or risky changes need your merge decision.
 
-![You give a task. The agent builds, verifies, and reviews. You review the PR and decide what happens next.](https://raw.githubusercontent.com/shakacode/shaka/main/docs/img/task-to-pr.svg)
+![You give a task. The agent builds, verifies, and reviews. You review the PR and decide what happens next.](docs/img/task-to-pr.svg)
 
 <a id="example-prompts"></a>
 <a id="get-started"></a>
@@ -53,20 +53,20 @@ $shaka Fix search when the query contains an apostrophe. Go.
 ```
 
 Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, GitHub Copilot, or OpenCode.
-For Pi, load the installed skill. See [other coding agents](https://shaka.shakacode.com/docs/coding-agents).
+For Pi, load the installed skill. See [other coding agents](docs/coding-agents.md).
 Your agent checks setup and tells you if
 anything is missing.
 
 Read the PR, ask for revisions if needed, and decide whether to merge.
 
-Prefer to install it manually? Follow [manual installation](https://shaka.shakacode.com/docs/manual-installation).
-New to pull requests? Try [Shaka in pictures](https://shaka.shakacode.com/docs/shaka-in-pictures).
+Prefer to install it manually? Follow [manual installation](docs/manual-installation.md).
+New to pull requests? Try [Shaka in pictures](docs/shaka-in-pictures.md).
 
 ## For open-source repositories
 
 To reduce prompt-injection risk, Shaka ignores comments from untrusted authors.
 Maintainers can choose whose comments the agent reads.
-See [review safety](https://shaka.shakacode.com/docs/workflow#trust-model).
+See [review safety](docs/workflow.md#trust-model).
 
 ## Make it work for your team
 
@@ -82,10 +82,10 @@ improve your development team's efficiency.
 
 ## When you want more detail
 
-Ask your agent how to use Shaka, or open the [documentation](https://shaka.shakacode.com/docs/).
-[Start here](https://shaka.shakacode.com/docs/getting-started) walks through your first task.
+Ask your agent how to use Shaka, or open the [documentation](docs/README.md).
+[Start here](docs/getting-started.md) walks through your first task.
 
-[Contributing](https://github.com/shakacode/shaka/blob/main/CONTRIBUTING.md) · [MIT license](LICENSE)
+[Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
 
 ## Names and logos
 
