@@ -8,12 +8,9 @@ Ask your agent to identify the installed helper and follow the steps for your
 system, then run one check and read its log. You can also follow the steps yourself.
 
 If you installed from a GitHub branch, such as the default `main`, and leave
-Shaka chats running overnight, schedule `update-check`. It reports the status
-of a supported branch without changing the installed revision. For a pinned
+Shaka chats running overnight, a daily check can tell you when an update is
+available without changing the installed revision. For a pinned
 release, ask your agent about [installing a newer release](../manual-installation.md#keep-a-tested-release).
-If the check reports the reason `unsupported_source`, ask your agent to compare with
-official Shaka `main` or use the [manual comparison](../manual-installation.md#verify-and-update)
-to check the branch you installed from.
 Read the job's log for `status` and `guidance`. If the guidance recommends an
 update, finish your active Shaka chats first. Then ask your agent to
 [update and verify Shaka](../manual-installation.md#verify-and-update). An `unknown`
@@ -30,6 +27,14 @@ Scheduled jobs may get a different `PATH` from your terminal. If needed, set it
 in the job or in a wrapper script. Include the directories that contain your
 `git` and `gh` executables. Check the job's output even when the scheduler
 reports success.
+
+Before enabling a schedule, run the installed helper with `update-check` once.
+Use the full path, for example `"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" update-check`.
+Continue when the result is `current`, `recent`, or `available`. For other
+results, follow the returned guidance first. If the reason is
+`unsupported_source` or `development_source`, ask your agent to compare with
+official Shaka `main`. To inspect the branch you installed from, use the
+[manual comparison](../manual-installation.md#verify-and-update).
 
 ## macOS
 
