@@ -133,7 +133,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    applies only after the repository's settings or the developer's machine file lists its
    pack under `companions.packs`. Until then it acts as `suggest`. This keeps trust where the
    [trust model](../../docs/workflow.md#trust-model) puts it: ShakaCode chose the packaged
-   list, but the maintainer chooses which third-party instructions run without asking.
+   list, but the maintainer, or a developer for their own machine, chooses which third-party
+   instructions run without asking.
 
    ```yaml
    companions:
@@ -145,9 +146,10 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    ```
 
    - A repository adds its own skills with a pack file under `.agents/shaka/packs/`, read
-     from the trusted settings source. A project skill is loaded from the trusted commit,
-     its whole directory and not only `SKILL.md`, so a candidate branch cannot change what
-     it says or runs. A project skill that is new or changed on the candidate branch comes
+     from the trusted settings source. When Shaka uses a project skill, it loads it from the
+     trusted commit, its whole directory and not only `SKILL.md`, so a candidate branch
+     cannot change what it says or runs. Hosts may still load checkout skills by
+     description, outside this mechanism. A project skill that is new or changed on the candidate branch comes
      back declined, because a candidate branch grants nothing.
    - `~/.agents/shaka/companions.yml` on a machine, beside the reviewer list from
      [ADR 0005](0005-per-machine-reviewers.md), can turn packs on and decline skills for its
@@ -179,12 +181,15 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    rest of the task.
 
 6. **An entry moves from `suggest` to `use` on ADR 0001's evidence.** A candidate gets paired
-   eval runs with and without it on the same tasks, using the comparison
-   [ADR 0001](0001-eval-and-release-gating.md) proposes, with the skill's presence as the one
-   varied factor. It is promoted when one of review rounds, confirmed findings, or cost per
-   merged PR improves by more than D8's noise floor and D8 flags no regression. D8 alone only
-   flags losses, so the gain has to be shown, not just the absence of harm. A packaged `use`
-   entry links the study behind it, and the loader refuses a packaged `use` without one.
+   eval runs with and without it on the same tasks, using
+   [ADR 0001](0001-eval-and-release-gating.md)'s quality score and cost accounting. It is
+   promoted when the mean per-task quality delta is at least D8's threshold tau with p below
+   0.05, the same test D8 uses for a loss turned toward a gain, and the cache-neutral cost
+   ratio stays within D9's 1.2 limit or the higher cost is accepted in writing. Review rounds,
+   confirmed findings, and cost per merged PR are supporting evidence, not the test. ADR 0001
+   does not yet name skill presence as a comparison axis or state a gain rule, so both are
+   additions it needs, not new bars this record sets. A packaged `use` entry links the study
+   behind it, and the loader refuses a packaged `use` without one.
    ADR 0001's comparison runs are not built yet, so until they are, nothing is promoted and
    every packaged entry stays `suggest`. PRs that report `skills_used` add real-use context,
    but those entries are optional and agent-reported, so they inform a study rather than
@@ -226,7 +231,9 @@ the ownership rule companion-skills.md already follows, so there is no code to r
 - companion-skills.md gains a skill points section, the three modes, and the install offer,
   and replaces "Do not install it" for packaged packs. Five procedure files gain six point
   lines; delivery.md holds two.
-  retrospective.md's companion section shrinks to its point line plus its stricter rule.
+  retrospective.md's companion section shrinks to its point line plus its stricter rules,
+  which all stay: choose the companion by description, never use a skill that resolves
+  inside the checkout, apply only its analysis, and install nothing.
 - `defaults.yml`, docs/settings.md, and the `.agents/shaka/config.yml` example gain the
   `companions` section. The machine file is a new home-directory exception that
   docs/settings.md names beside the machine reviewer list.
