@@ -172,6 +172,7 @@ def description_timeline(carried, github, pull, settings)
   timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
   timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
   timeline = Shaka::TaskTiming.attach(timeline, carried, pull)
+  timeline['merged_pr'] = pull['merged'] == true
   Shaka::ReadyTime.attach(timeline, github, settings.ready_gate)
 end
 
@@ -204,7 +205,7 @@ end
 
 def description_input(content, github, pull, options)
   now = Time.now.utc
-  opened = Shaka::TaskTiming.timestamp(pull['created_at'], now) || now
+  opened = Shaka::TaskTiming.timestamp(pull['created_at'], now)
   timing_content, note = Shaka::CodexTaskStart.resolve(content, opened:)
   [resolved_description(timing_content, github, options), note]
 end
