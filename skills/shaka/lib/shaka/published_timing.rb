@@ -24,12 +24,17 @@ module Shaka
       return result('unverified', 'Stored elapsed time does not match the timing record.', lookup_note) unless
         region[ThroughputStats::COST]&.end_with?(" · #{metric}")
 
-      summarize(state, metric, lookup_note || fork_gap(state, timeline))
+      summarize(state, metric, lookup_note || evidence_gap(state, timeline))
     rescue Error
       result('unverified', 'Stored timing record is unreadable.', lookup_note)
     end
 
     def metrics_region(body) = Publishing.managed_region(body).to_s.split(METRICS_START, 2)[1].to_s
+
+    def evidence_gap(state, timeline)
+      fork_gap(state, timeline) ||
+        ('Task start could not be verified.' if state['t0'] && !timeline['task_started_at'])
+    end
 
     def fork_gap(state, timeline)
       return unless timeline['fork']

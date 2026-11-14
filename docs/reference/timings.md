@@ -118,7 +118,8 @@ adds a label when it stops for you and removes it when work resumes.
   so it can be missing until the description next updates. It stays missing when
   the configured CI review did not run, such as a review skipped for a small change.
   A fork PR can retain its previous ready time. The command reports a gap
-  when it cannot verify the carried timing from current evidence.
+  when current evidence cannot verify the start or endpoint of the headline
+  duration.
 - Every labeled wait counts, however short. A wait of a few seconds can be a
   quick reply or the agent relabeling the PR; the label history cannot tell them apart.
 - When a PR has waited many times, the table shows the latest 30 stretches. The
