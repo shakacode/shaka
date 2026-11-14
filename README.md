@@ -78,6 +78,10 @@ services you use.
 [ShakaCode](https://www.shakacode.com) can help customize the Shaka skill to
 improve your development team's efficiency.
 
+[Book a 30-minute call with Justin Gordon](https://meetings.hubspot.com/justingordon/30-minute-consultation)
+to see a demo, ask how Shaka works, or get a walkthrough of
+[forking Shaka and changing it](docs/fork-and-hack.md) for your team.
+
 <a id="documentation"></a>
 
 ## When you want more detail
