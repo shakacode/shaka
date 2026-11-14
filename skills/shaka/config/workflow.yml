@@ -685,8 +685,7 @@ phases:
         choices and the alternatives they rejected. Where a subject serves both readers, as purpose,
         risk, rollback, and validation do, give each the resolution its reader needs: share the
         subject, never the sentences. Every summary leads with what its own reader notices, which for
-        a walkthrough is the behavior that changed. Without a walkthrough, the description's
-        `review_focus` says where to read closely and why, and `details` holds the rollback. Read the packaged
+        a walkthrough is the behavior that changed. Read the packaged
         [reasoning and tie-breakers](<{{package_root}}/skills/shaka/references/delivery.md#why-the-description-and-the-walkthrough-differ>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
         or `shared-planning`. Pass `--format json` and put every report's `record`, which holds

@@ -32,7 +32,7 @@ class EvaluationCheckpointMessageTest < Minitest::Test
     end
   end
 
-  # A walkthrough is due once this account published one, or once the description records a request.
+  # Under trusted on_request settings, a walkthrough is due once this account published one or recorded a request.
   def test_ready_checkpoint_waits_for_the_walkthrough_this_account_already_started
     assert_refused_ready { |github| github.walkthrough = 'b' * 40 }
   end
@@ -50,7 +50,7 @@ class EvaluationCheckpointMessageTest < Minitest::Test
       result['disposition'] = disposition('Merge')
       github = PostImplementationPublicationFixture::GitHub.new('a' * 40)
       yield github
-      assert_equal 1, publish(result, path, github:)[1]
+      with_trusted_settings { assert_equal 1, publish(result, path, github:, flags: ['--ref', 'c' * 40])[1] }
       assert_empty github.bodies
     end
   end
@@ -78,7 +78,12 @@ class EvaluationCheckpointMessageTest < Minitest::Test
 
   # Without readable trusted settings the gate keeps the earlier rule.
   def test_without_trusted_settings_a_ready_checkpoint_waits_for_a_walkthrough
-    assert_refused_ready { |github| github.walkthrough = nil }
+    with_result do |result, path|
+      result['disposition'] = disposition('Merge')
+      github = PostImplementationPublicationFixture::GitHub.new('a' * 40)
+      github.walkthrough = nil
+      assert_equal 1, publish(result, path, github:)[1]
+    end
   end
 
   def test_blocked_checkpoint_needs_no_walkthrough

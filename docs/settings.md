@@ -1453,8 +1453,7 @@ tour that nobody reads.
 A [walkthrough guide](#project_guidance) applies only when a walkthrough is published. If
 you rely on one, set `always` so every PR still gets a walkthrough that covers it.
 
-The packaged default changed from a walkthrough on every PR to `on_request` on 2026-11-14.
-Set `always` to keep the earlier behavior.
+Before this setting, every PR got a walkthrough. Set `always` to keep that.
 
 ## `wip.include_checkout_path`
 

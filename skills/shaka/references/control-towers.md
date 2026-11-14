@@ -339,7 +339,7 @@ assigns work there. Their PRs and checks are not adoption dependencies.
    does not release other pauses, renew limits, or restart scheduled tasks.
 3. Apply the role to one existing RCT and complete one real Shaka task. Require
    the correct repository, no duplicate owner, actual checks, current review when
-   required, a commit-bound walkthrough, and the authorized merge or PR handoff.
+   required, a commit-bound walkthrough when one is due, and the authorized merge or PR handoff.
 4. Read back GitHub's final state and have the master consume the result. Record
    the tested source revision and outcome once in the existing rollout record.
    Delivery, acknowledgment, and verified completion are different facts.
