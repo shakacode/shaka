@@ -147,8 +147,10 @@ rest are instructions the agent follows. No test or enforcement entry covers the
 
 Neither pack's skills changed after the pinned commits in ways this article depends on.
 pstack's last merged change was on 2026-10-27, and native Codex support
-([cursor/plugins#1143](https://github.com/cursor/plugins/pull/1143)) awaits review. Both
-authors have since written about review and verification:
+([cursor/plugins#1143](https://github.com/cursor/plugins/pull/1143)) awaits review. By
+2026-11-13, Shaka's workflow had grown to 12,011 words and Addy's five matching skills to
+10,905, so the comparison in gap 5 still holds. Both authors have since written about
+review and verification:
 
 - **Tan now doubts adversarial review.** Tan called it "mostly a waste of tokens," wrote
   that pstack now leans less on `interrogate`
@@ -158,7 +160,7 @@ authors have since written about review and verification:
   adversarial, and this repository asks two reviewers to read each commit. A task that
   uses pstack's verification still gets that review; whether the verification should
   count for more is gap 3's question.
-- **Osmani, now on the Claude Code team, described how it reviews code**
+- **Osmani, writing as a member of the Claude Code team, described how it reviews code**
   ([post](https://x.com/addyosmani/status/2114604912520921136)) and how to keep thinking
   critically when agents do the work
   ([post](https://x.com/addyosmani/status/2117512471930167377)). Several choices match
