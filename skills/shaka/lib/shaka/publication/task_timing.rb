@@ -26,6 +26,7 @@ module Shaka
 
     def attach(timeline, content, pull, now: Time.now.utc)
       saved = TimelineSteps.same_repository?(pull) ? read(pull['body'], now) : {}
+      saved.delete('task_started_at') if after_opening?(saved['task_started_at'], timeline)
       started = start(content['task_started_at'], saved, timeline, now) || usage_start(content, timeline, now)
       first = first_validation(timeline, saved, now)
       timeline.merge('task_started_at' => started, 'first_validation_at' => first)
@@ -35,9 +36,13 @@ module Shaka
       return saved['task_started_at'] if supplied.nil?
 
       started = timestamp(supplied, now)
-      return started if started && (!timeline['opened'] || started <= timeline['opened'])
+      return started if started && !after_opening?(started, timeline)
 
       raise Error, 'Publication task_started_at needs an ISO 8601 timestamp no later than PR opening or now.'
+    end
+
+    def after_opening?(started, timeline)
+      started && timeline['opened'] && started > timeline['opened']
     end
 
     # A report covering the whole task opens when the work did, so it stands in for a start nobody supplied.

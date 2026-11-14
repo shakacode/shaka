@@ -35,7 +35,7 @@ class CliDescriptionElapsedTest < Minitest::Test
 
   def test_the_selected_codex_turn_replaces_the_usage_fallback_and_is_verified
     @codex_start = { 'thread_id' => THREAD, 'turn_id' => TURN }
-    body = published('PR_CHECKS' => JSON.generate(CHECKS), 'PR_HEAD_REPO' => 'fork/repo')
+    body = published('PR_CHECKS' => JSON.generate(CHECKS), 'PR_HEAD_REPO' => 'fork/repo', 'PR_CREATED_AT' => '')
     assert_includes body, '· ready in 2h 29m'
     assert_equal({ 'status' => 'matched', 'metric' => 'ready in 2h 29m' }, @timing)
     refute_match(/#{THREAD}|#{TURN}/o, body)
@@ -50,8 +50,8 @@ class CliDescriptionElapsedTest < Minitest::Test
 
   def test_a_codex_turn_after_pr_opening_keeps_the_fallback
     @codex_start = { 'thread_id' => THREAD, 'turn_id' => TURN }
-    body = published('PR_CHECKS' => JSON.generate(CHECKS), 'PR_CREATED_AT' => '2026-10-18T05:59:00Z')
-    assert_includes body, '· ready in 1h 30m'
+    body = published('PR_CHECKS' => JSON.generate(CHECKS), 'PR_TIMELINE_OPENED' => '2026-10-18T05:59:00Z')
+    assert_includes body, '· ready in UNKNOWN'
     assert_equal 'Selected Codex turn is after PR opening.', @timing['reason']
   end
 

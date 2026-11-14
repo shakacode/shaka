@@ -160,7 +160,7 @@ def rendered_description(described, github, pull, workflow_version, options)
   root = options.fetch(:root)
   carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
   settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
-  timeline = description_timeline(carried, github, pull, settings)
+  timeline = description_timeline(options.fetch(:timeline), carried, github, pull, settings)
   rendered = render_description(carried, workflow_version, pull, settings, timeline, options, github)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
   Shaka::CheckpointRecommendation.require_decisions!(carried, pull, github.repository)
@@ -168,10 +168,9 @@ def rendered_description(described, github, pull, workflow_version, options)
   [rendered, carried, usage_records, settings.verdict&.key?('kept_line'), timeline]
 end
 
-def description_timeline(carried, github, pull, settings)
-  timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
+def description_timeline(timeline, carried, github, pull, settings)
+  timeline = Shaka::PullTimeline.with_decisions(timeline, carried)
   timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
-  Shaka::TaskTiming.attach_lifecycle(timeline, pull)
   timeline = Shaka::TaskTiming.attach(timeline, carried, pull)
   Shaka::ReadyTime.attach(timeline, github, settings.ready_gate)
 end
@@ -204,10 +203,10 @@ def resolved_description(content, github, options)
 end
 
 def description_input(content, github, pull, options)
-  now = Time.now.utc
-  opened = Shaka::TaskTiming.timestamp(pull['created_at'], now)
-  timing_content, note = Shaka::CodexTaskStart.resolve(content, opened:)
-  [resolved_description(timing_content, github, options), note]
+  timeline = Shaka::PullTimeline.new(github).call
+  Shaka::TaskTiming.attach_lifecycle(timeline, pull)
+  timing_content, note = Shaka::CodexTaskStart.resolve(content, opened: timeline['opened'])
+  [resolved_description(timing_content, github, options), note, timeline]
 end
 
 # The rendered review body and its inline notes; a prerendered body file carries no notes.
@@ -446,9 +445,9 @@ begin
                end)
                described = lookup_note = usage_records = carried = kept = timeline = head = nil
                published = github.description(prose:) do |pull|
-                 described, lookup_note = description_input(description_content, github, pull, options)
+                 described, lookup_note, timeline = description_input(description_content, github, pull, options)
                  rendered, carried, usage_records, kept, timeline = rendered_description(
-                   described, github, pull, workflow_version, options.merge(root:)
+                   described, github, pull, workflow_version, options.merge(root:, timeline:)
                  )
                  head = pull.dig('head', 'sha')
                  rendered

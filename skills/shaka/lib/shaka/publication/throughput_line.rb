@@ -48,6 +48,11 @@ module Shaka
 
     private
 
+    def carried_start(timeline, carried)
+      recorded = carried['t0']
+      recorded unless timeline['opened'] && parse_time(recorded)&.>(timeline['opened'])
+    end
+
     def marker(state) = "<!-- shaka:stats #{JSON.generate(ordered(state))} -->"
     def ordered(state) = ThroughputStats::KEYS.filter_map { |key| [key, state[key]] if state.key?(key) }.to_h
 

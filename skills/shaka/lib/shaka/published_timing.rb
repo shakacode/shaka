@@ -33,6 +33,9 @@ module Shaka
 
     def evidence_gap(state, timeline, now)
       return 'PR opening time unavailable.' if timeline['task_started_at'] && !timeline['opened']
+      if TaskTiming.after_opening?(TaskTiming.timestamp(state['t0'], now), timeline)
+        return 'Stored task start is after PR opening.'
+      end
 
       endpoint_gap(state, timeline, now) ||
         ('Task start could not be verified.' if state['t0'] && !timeline['task_started_at'])

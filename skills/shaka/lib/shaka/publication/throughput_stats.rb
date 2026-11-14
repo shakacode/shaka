@@ -84,7 +84,7 @@ module Shaka
       end
 
       def fresh_state(content, timeline, carried)
-        { 'spend' => spend(content), 't0' => stamp(timeline['task_started_at']) || carried['t0'],
+        { 'spend' => spend(content), 't0' => stamp(timeline['task_started_at']) || carried_start(timeline, carried),
           't1' => stamp(timeline['ci_started_at']), 't2' => stamp(timeline['ready_at']),
           't3' => stamp(timeline['merged']) || ('UNKNOWN' if timeline['merged_pr']) }
       end
