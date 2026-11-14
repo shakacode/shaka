@@ -81,10 +81,10 @@ module Shaka
     end
 
     def timing_details(metrics)
-      sections = metrics.scan(%r{^<summary>Timings · [^\r\n]+</summary>\r?\n(.*?)^</details>}m).flatten
-      current = sections.select { |section| section.start_with?("\n<!-- shaka:stats ", "\r\n<!-- shaka:stats ") }
-      eligible = current.empty? ? sections : current
-      eligible.one? ? eligible.first : ''
+      summary = %r{^<summary>Timings · [^\r\n]+</summary>\r?\n}
+      generated = metrics.scan(%r{#{summary}\r?\n(?=<!-- shaka:stats )(.*?)^</details>}m)
+      sections = generated.empty? ? metrics.scan(%r{#{summary}(.*?)^</details>}m) : generated
+      sections.one? ? sections.first.first : ''
     end
 
     def timestamp(value, now)
