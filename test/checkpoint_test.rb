@@ -11,7 +11,8 @@ class CheckpointTest < Minitest::Test
     'settings_conflict' => { 'recommended_model' => 'gpt-5.6-sol' },
     'settings_unverified' => { 'active_effort' => nil },
     'settings_inactive' => { 'active_model' => 'gpt-5.6-sol' },
-    'immediate_start_not_authorized' => { 'immediate_start' => false }
+    'immediate_start_not_authorized' => { 'immediate_start' => false, 'requested_model' => nil,
+                                          'requested_effort' => nil, 'active_effort' => 'high' }
   }.freeze
 
   # Regression: a branch that always pauses would add a redundant user turn even
@@ -23,13 +24,6 @@ class CheckpointTest < Minitest::Test
   def test_unavailable_settings_pause_with_an_available_settings_action
     assert_pause Shaka::Checkpoint.new(default_content.merge('settings_available' => false)).result,
                  'settings_unavailable'
-  end
-
-  # Characterization from issue #58: matching settings alone do not make an
-  # ambiguous intake an immediate implementation request.
-  def test_matching_settings_without_immediate_start_pause_for_ready
-    assert_pause Shaka::Checkpoint.new(default_content.merge('immediate_start' => false)).result,
-                 'immediate_start_not_authorized'
   end
 
   def test_go_with_active_recommended_settings_needs_no_explicit_settings

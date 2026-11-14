@@ -44,10 +44,12 @@ Local settings do not override team settings. See
 
 ## Why did the agent stop to ask about model and effort?
 
-Shaka recommends a model and effort before implementation. If you specify either,
-the agent pauses when the choice is unavailable, cannot be verified, or differs
-from its recommendation. If you say "Go" without specifying either, it continues
-with the coding tool's current settings. A prompt cannot switch the running model.
+Shaka recommends a model and effort before implementation. When your coding tool
+already uses those settings, the agent starts without asking. Otherwise it waits
+for your reply, unless you said "Go" without naming a model or effort; then it
+continues with the coding tool's current settings. If you name either setting, the
+agent pauses when the choice is unavailable, cannot be verified, or differs from
+its recommendation. A prompt cannot switch the running model.
 See [give it an outcome](working-with-shaka.md#give-it-an-outcome).
 
 ## Why didn't the agent merge my PR?

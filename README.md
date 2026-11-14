@@ -60,7 +60,8 @@ anything is missing.
 
 Before coding, the agent recommends a model and effort. If your coding agent uses
 different settings, or the agent can't tell which it uses, it waits for your reply.
-To keep your current settings and start right away, end the task with `Go`.
+To keep your current settings and start right away, end the task with `Go`
+(without naming a model or effort).
 See [why the agent asks](docs/faq.md#why-did-the-agent-stop-to-ask-about-model-and-effort).
 
 Read the PR, ask for revisions if needed, and decide whether to merge.

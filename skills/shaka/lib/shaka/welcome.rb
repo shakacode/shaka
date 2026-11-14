@@ -19,7 +19,7 @@ module Shaka
         $shaka doctor
 
       The agent waits for your reply when your model or effort is unknown or differs from its recommendation.
-      End a task with Go to keep your current settings and start right away.
+      End a task with Go, naming no model or effort, to keep your settings and start right away.
 
       Terminal commands:
         shaka doctor             Check this machine and repository; get setup advice.
