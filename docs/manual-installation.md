@@ -118,8 +118,9 @@ Status shows the next step. When it asks you to reinstall to record Ruby again,
 run `ruby "$shaka_source/bin/install"` from that checkout.
 
 Check the result with `"$shaka_helper" install --verify`. To inspect an update
-to a branch installation, confirm `origin` points to the repository you
-installed from. Then run this from the active checkout:
+to a branch installation, confirm `origin` and `@{upstream}` match the
+repository and branch shown by `install --status`. If they differ, use the
+status output to diagnose the checkout first. Then run this from the active checkout:
 
 ```bash
 git fetch origin && git diff HEAD '@{upstream}'
@@ -175,12 +176,7 @@ checkout. If you rely on remembering to close chats, keep the job on
 to a newer version, [install a newer release](#keep-a-tested-release).
 
 Find your installed checkout with `install --status` as shown above. Use its
-absolute helper path in the job. Before moving the installation, stop future
-runs and wait for any running update to finish. On Linux, use
-`systemctl --user disable --now shaka-update-check.timer`. After the move, set
-the new path and run `update-check` against it before re-enabling the job.
-An update job can catch up immediately when you re-enable it. Wait until all
-Shaka chats are closed. Run the job under the account that installed Shaka,
+absolute helper path in the job. Run it under the account that installed Shaka,
 with Git and the authenticated GitHub CLI available to that account.
 Scheduled jobs may get a different `PATH` from your terminal. If needed, set it
 in the job or in a wrapper script. Include the directories that contain your
@@ -340,6 +336,22 @@ helper to verify the checkout and skill links. If the update fails, read the
 job log for the error. Use `install --status` to diagnose local checkout or
 skill-link problems.
 
+#### Move an installation with a scheduled job
+
+Before moving, pause the schedule and let any running update finish.
+
+- On macOS, check the job's state with `launchctl print gui/$(id -u)/com.shakacode.update-check`.
+  Wait until it has finished, then unload it with the `launchctl bootout` command above.
+- On Linux, run `systemctl --user disable --now shaka-update-check.timer`.
+  Check `systemctl --user status shaka-update-check.service` for a running invocation.
+- On Windows, disable the task in Task Scheduler and wait for it to finish if it is running.
+
+After the move, set the new helper path and run `install --verify` and `update-check`
+from that path. Confirm verification passes and the check refers to the active
+installation. Load the edited job using the platform steps above. An update job
+can catch up immediately when re-enabled, so keep Shaka chats closed until that
+run finishes.
+
 ### Repair a broken installation
 
 ```text
@@ -365,7 +377,7 @@ Avoid installing from a temporary worktree that could disappear after its PR mer
 
 ### Move Shaka out of a clone you develop in
 
-If you have a scheduled job, follow the [stop and re-enable steps](#schedule-daily-checks-or-updates)
+If you have a scheduled job, follow the [stop and re-enable steps](#move-an-installation-with-a-scheduled-job)
 before moving the installation.
 
 ```text
