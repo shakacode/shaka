@@ -51,6 +51,9 @@ phases:
         outcome, scope, success criteria, and consequential assumptions. Retain it in the
         existing task record and update it when the human corrects the direction.
         Apply the existing question rules; a readback is not human approval.
+      - Capture the original task request's UTC timestamp in that task record as
+        `task_started_at` when the host exposes it. Keep it across planning, approval,
+        and resumed chats for the same task.
       - Before planning or making any edit, verify the selected problem still exists and is not
         already fixed, duplicate, or superseded. An evidence-backed no-change
         outcome is allowed: report it, skip the rest of Intake, and stop before Plan;
@@ -507,6 +510,8 @@ phases:
         phrasing. Keep exact commands, identifiers, domain terms, risks, and evidence. Skip chatbot
         wrappers and inflated significance. A reply leads with the decision and uses the thread's
         shared context.
+      - Pass the recorded `task_started_at` to `description` and check the published timing
+        using the [publication procedure](<{{package_root}}/skills/shaka/references/publication.md#review-evidence>).
       - `description` and `walkthrough` report an advisory `opening` result for the `summary`;
         `description` adds its visible Intent and Verification prose.
         Pass the verified default-branch full commit SHA with `--ref SHA`. Opening settings live under

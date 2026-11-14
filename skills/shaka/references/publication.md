@@ -39,10 +39,14 @@
 
 ## Review evidence
 
-- Supply description `task_started_at` from the original task's initiating
-  instruction timestamp in UTC. Omit it when unavailable or later than PR opening; the helper
-  then uses the earliest `--all-turns` or `--since-time` implementation usage report.
-  The helper retains it across updates; a resumed chat's start is not a new task start.
+- Supply the Intake record's `task_started_at` as an ISO 8601 UTC timestamp.
+  If missing, look up the original request in the host's message history. For a
+  task that began with planning, use the planning request's timestamp. If the
+  timestamp is unavailable or later than PR opening, omit it. The helper retains
+  a previously recorded start or uses a whole-task implementation usage report.
+  After CI readiness is recorded, read the live PR's **Shaka metrics**. If it
+  shows `ready in UNKNOWN` and the original start is recoverable, republish with
+  that timestamp and verify the elapsed time.
   Pass a recorded `--ci-review-wait` task override to `description` too.
 
 - Verification opens with bound validation/review status and an optional linked `summary`.
