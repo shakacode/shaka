@@ -12,7 +12,7 @@ module Shaka
   module TaskTiming
     extend ThroughputLine
 
-    MARKER = /^<!-- task-timing (\{.*\}) -->$/
+    MARKER = /^<!-- task-timing (\{[^\r\n]*\}) -->\r?$/
     FIELDS = %w[task_started_at first_validation_at].freeze
 
     module_function

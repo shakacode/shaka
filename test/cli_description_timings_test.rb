@@ -70,8 +70,8 @@ class CliDescriptionTimingsTest < Minitest::Test
 
   def test_a_saved_start_after_pr_opening_is_discarded
     @task_started_at = '2026-10-18T07:00:00Z'
-    earlier_body = publish_timings
-    refute_nil Shaka::ThroughputStats.read(earlier_body)['t0']
+    earlier_body = publish_timings.gsub("\n", "\r\n")
+    assert_equal Time.iso8601(@task_started_at), Shaka::TaskTiming.read(earlier_body, Time.now.utc)['task_started_at']
     @task_started_at = nil
     refreshed = publish_timings('EXISTING_BODY' => earlier_body, 'PR_TIMELINE_OPENED' => '2026-10-18T06:30:00Z')
     assert_nil Shaka::ThroughputStats.read(refreshed)['t0']
