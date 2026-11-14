@@ -11,6 +11,8 @@ module Shaka
     HEAD_CHECKS = 'oid status { contexts { createdAt } } ' \
                   'checkSuites(first: 100) { nodes { createdAt checkRuns(first: 100) { nodes { startedAt } } } }'
     SPEND = ' - AI spend: '
+    # Set only while updating a body that has no Missing values note; never written to the stats block.
+    UNEXPLAINED = 'unexplained'
     INTERVALS = '**This head:** '
 
     def line(state) = "#{marker(state)}\n#{INTERVALS}#{intervals(state)}"
@@ -18,14 +20,19 @@ module Shaka
     # Appended to the model line.
     def header(state) = "#{SPEND}#{shown_spend(state)}"
 
-    # Appended to the estimated cost line: task start to merge once merged, otherwise to ready.
+    # Appended to the estimated cost line: task start to merge once merged, otherwise to ready. Without a
+    # task start the span is left off, and Missing values in Details says why; a body published before that
+    # note existed keeps UNKNOWN until it is republished.
     def took(state)
       ended, label = state['t3'] ? [state['t3'], 'merged'] : [state['t2'], 'ready']
       return ' · ready pending' unless ended
+      return (state[UNEXPLAINED] ? " · #{label} in UNKNOWN" : '') unless task_started?(state)
 
-      span = state['t0'] && ended && ended != 'UNKNOWN' ? interval(state['t0'], ended) : 'UNKNOWN'
-      " · #{label} in #{span}"
+      " · #{label} in #{ended == 'UNKNOWN' ? 'UNKNOWN' : interval(state['t0'], ended)}"
     end
+
+    # No later update records a task start, so a Missing values note about it never goes stale.
+    def task_started?(state) = !state['t0'].nil? && state['t0'] != 'UNKNOWN'
 
     def earliest_start(commit)
       return unless commit.is_a?(Hash)
@@ -57,7 +64,7 @@ module Shaka
     def spend_text?(text) = text.is_a?(String) && !text.strip.empty?
 
     def prompt(state)
-      return 'UNKNOWN' if state['t0'].nil?
+      return (state[UNEXPLAINED] ? 'UNKNOWN' : 'not recorded') unless task_started?(state)
       return state['t3'].nil? ? 'pending' : 'UNKNOWN' if state['t1'].nil?
 
       interval(state['t0'], state['t1'])

@@ -3,7 +3,7 @@
 require_relative 'cursor_usage_refresh_test'
 require 'cgi'
 
-PENDING_LINE = '**This head:** Prompt to CI UNKNOWN · CI to ready pending · Ready to merged pending'
+PENDING_LINE = '**This head:** Prompt to CI not recorded · CI to ready pending · Ready to merged pending'
 
 # A stop hook must update the visible total alongside the nested usage report.
 class CursorUsageEstimateRefreshTest < Minitest::Test

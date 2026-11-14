@@ -105,8 +105,8 @@ Use explicit host selection for a child agent launched inside Pi, which inherits
 Pi's process marker. Selecting Pi never falls back to unrelated Codex records.
 
 Report local review from the **reviewer's** source with `--contribution review`.
-Include available retry and contributor records. Hosted reviewers and tool-model
-calls remain `UNKNOWN` when their records are absent.
+Include available retry and contributor records. Reports say hosted reviewer and
+tool-model usage is not counted; it is absent, not zero.
 
 An interval associated with several commits is **SHARED**. Never divide its tokens
 into invented per-commit amounts. Preserve the original mapping after squash and
@@ -392,7 +392,7 @@ Prompt tasks and numbered GitHub tasks take neither field.
 With a number or key, the optional `task_relation` says how this PR relates to the
 task: `fixes`, `part_of`, `follow_up`, or `refs`. Only a GitHub issue number takes `fixes`.
 
-The helper renders the Task line after Why in Intent:
+The Task line in Intent shows where the work came from:
 
 | Provenance | Task line |
 | --- | --- |
