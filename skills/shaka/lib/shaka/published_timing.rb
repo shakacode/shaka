@@ -32,19 +32,17 @@ module Shaka
     def metrics_region(body) = Publishing.managed_region(body).to_s.split(METRICS_START, 2)[1].to_s
 
     def evidence_gap(state, timeline)
-      fork_gap(state, timeline) ||
+      endpoint_gap(state, timeline) ||
         ('Task start could not be verified.' if state['t0'] && !timeline['task_started_at'])
     end
 
-    def fork_gap(state, timeline)
-      return unless timeline['fork']
-
+    def endpoint_gap(state, timeline)
       endpoint = state['t3'] ? %w[t3 merged] : %w[t2 ready_at]
       recorded = state[endpoint.first]
       return unless recorded
-      return if timeline['task_started_at'] && timeline[endpoint.last] == TaskTiming.timestamp(recorded, Time.now.utc)
+      return if timeline[endpoint.last] == TaskTiming.timestamp(recorded, Time.now.utc) && recorded != 'UNKNOWN'
 
-      'The prior fork description supplies timing that could not be verified.'
+      'The elapsed endpoint could not be verified from current GitHub evidence.'
     end
 
     # Publication already checks that GitHub stored the submitted body. Check the

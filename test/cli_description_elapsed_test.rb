@@ -57,7 +57,7 @@ class CliDescriptionElapsedTest < Minitest::Test
     fork_body = published('PR_HEAD_REPO' => 'fork/repo', 'EXISTING_BODY' => earlier_body)
     assert_includes fork_body, '· ready in 1h 30m'
     assert_equal 'unavailable', @timing['status']
-    assert_includes @timing['reason'], 'prior fork description'
+    assert_includes @timing['reason'], 'current GitHub evidence'
   end
 
   def test_the_stored_metric_is_verified_separately_from_the_timestamps

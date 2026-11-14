@@ -172,7 +172,6 @@ def description_timeline(carried, github, pull, settings)
   timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
   timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
   timeline = Shaka::TaskTiming.attach(timeline, carried, pull)
-  timeline['fork'] = !Shaka::TimelineSteps.same_repository?(pull)
   Shaka::ReadyTime.attach(timeline, github, settings.ready_gate)
 end
 
