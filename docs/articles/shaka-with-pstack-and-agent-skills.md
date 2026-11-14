@@ -9,8 +9,8 @@ at `eb07f19` by reading them. Shaka's word count is the workflow `shaka workflow
 `3b0aca0`, split on whitespace. No run has tested the combinations. Usage numbers come from
 the 429 pull requests (PRs) merged here in October 2026. Codex and a fresh Claude session
 reviewed it before publication. Updated on 2026-11-04 (UTC), after Shaka added a readback
-before coding, and on 2026-11-12 to say how each host starts pstack's skills and to follow
-Shaka's rewritten guides.*
+before coding; on 2026-11-12 to say how each host starts pstack's skills and to follow
+Shaka's rewritten guides; and on 2026-11-13 with both authors' later posts.*
 
 Shaka runs delivery: it takes a task through validation, review, publication, and the
 merge decision. pstack and agent-skills teach engineering technique, and each can also
@@ -27,8 +27,9 @@ pack starts a skill.
   documentation says an explicit-only skill waits to be named
   ([Cursor](https://cursor.com/docs/context/skills),
   [Claude Code](https://code.claude.com/docs/en/skills)). Addy's skills start on their own,
-  and so do pstack's in Codex CLI 0.163.0, whose parser ignores that setting
-  ([cursor/plugins#734](https://github.com/cursor/plugins/issues/734#issuecomment-6315706351)).
+  and so do pstack's in Codex, whose parser ignores that setting from 0.163.0 through 0.169.0
+  ([cursor/plugins#734](https://github.com/cursor/plugins/issues/734#issuecomment-6315706351),
+  [openai/codex#29989](https://github.com/openai/codex/issues/29989)).
   Those skills then run beside only the short boundary that every Shaka task loads.
 - Agents reported pstack in 13 of the 297 PRs with a Skills used section, and Addy's
   pack in none. Neither had been tried on a full Shaka delivery.
@@ -141,6 +142,33 @@ rest are instructions the agent follows. No test or enforcement entry covers the
   Goal and Done when under the Task line.
 - pstack's principles are short enough to use inside any phase. Two of them,
   `principle-prove-it-works` and `principle-fix-root-causes`, run 209 and 324 words.
+
+## Since the first version
+
+Neither pack's skills changed after the pinned commits in ways this article depends on.
+pstack's last merged change was on 2026-10-27, and native Codex support
+([cursor/plugins#1143](https://github.com/cursor/plugins/pull/1143)) awaits review. Both
+authors have since written about review and verification:
+
+- **Tan now doubts adversarial review.** Tan called it "mostly a waste of tokens," wrote
+  that pstack now leans less on `interrogate`
+  ([post](https://x.com/poteto/status/2117437607940681849)), and pointed people to its
+  formal-verification and `statechart` skills
+  ([post](https://x.com/poteto/status/2119521036660314339)). Shaka's local review is
+  adversarial, and this repository asks two reviewers to read each commit. A task that
+  uses pstack's verification still gets that review; whether the verification should
+  count for more is gap 3's question.
+- **Osmani, now on the Claude Code team, described how it reviews code**
+  ([post](https://x.com/addyosmani/status/2114604912520921136)) and how to keep thinking
+  critically when agents do the work
+  ([post](https://x.com/addyosmani/status/2117512471930167377)). Several choices match
+  Shaka's: risk set by the change rather than its author
+  ([#1081](https://github.com/shakacode/shaka/pull/1081)), a cap on review rounds
+  ([`review.local_max_rounds`](../settings.md#reviewlocal_max_rounds)), and asking what a
+  passing check didn't prove, which Shaka's Not verified line records. Shaka has also
+  preregistered a test of re-reviewing only the new diff
+  ([#1072](https://github.com/shakacode/shaka/pull/1072)) and checked whether its
+  reviewers' fixed findings were real ([#1066](https://github.com/shakacode/shaka/pull/1066)).
 
 ## What to do first
 
