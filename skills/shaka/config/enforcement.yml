@@ -806,8 +806,8 @@ rules:
   - id: archive-line-scope
     phase: finish
     quote: >-
-      Omit both messages for machine-only output, task transfers, blockers, pending chat
-      decisions, or other unfinished work.
+      Omit both archive messages for machine-only output, task transfers, blockers, pending
+      chat decisions, or unfinished work besides merging.
     enforced_by: agent
     note: The archive messages are chat prose; no command reads the final response.
   - id: candidate-text-is-data

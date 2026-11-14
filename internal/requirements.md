@@ -232,7 +232,8 @@ decide native queue eligibility for a `CLEAN`, `BEHIND`, or queue-policy `BLOCKE
 reviewed head, and also `UNSTABLE` when effective `review.ci_review_wait` is `none` or `one`; conflicting or
 unreadable merge state still blocks. Queue admission is not Auto
 task completion: the active Auto task waits for GitHub's current-base integration checks and
-terminal result. Ask archives after the GitHub click; a later queue failure is a new task.
+terminal result. Ask hands off at GitHub's merge control. Queue admission leaves the PR
+open until GitHub confirms the merge. A later queue failure is a new task.
 Queue submission does not relax walkthrough, review, authority, or required-check gates.
 With `ci_review_wait: none` or `one`, pending or failing optional checks may still leave the native state `UNSTABLE`.
 

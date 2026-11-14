@@ -41,7 +41,7 @@ after archiving. In the PR, WIP Details, and final handoff:
   `$shaka https://github.com/OWNER/REPO/pull/N`.
 
 This fallback needs no worker or scheduled automation. With no actionable feedback
-left, the chat may be archived after this explicit handoff, closure, or confirmed transfer.
+left, archive after the PR merges or closes, or after a confirmed task transfer.
 
 ## 2. Start one monitor
 
