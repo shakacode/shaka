@@ -73,7 +73,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    | `delivery#when-a-task-needs-several-prs` | a larger task needs splitting |
    | `ui-verification#ui-changes` | the change is something a person sees on screen |
    | `performance-verification#verify-a-speed-affecting-change` | the change affects speed |
-   | `post-implementation-validation#recommend-the-next-action` | every task at Finish; the line runs only for a high risk rating |
+   | `post-implementation-validation#recommend-the-next-action` | every task, at Finish and at any mid-task checkpoint; the line runs only for a high risk rating |
 
    The checkpoint procedure is the one exception to conditional loading: it runs on every
    task. Its point line therefore states its own condition, the checkpoint's `high` rating
@@ -114,7 +114,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    | UI | pstack `create-verification-skill`, once per repository | suggest |
    | UI | ShakaPerf `shaka-perf-coverage`, then `shaka-perf-add-coverage` | suggest |
    | speed | ShakaPerf `shaka-perf-dockerize`, `shaka-perf-discover-abtests`, until `abtests.config.ts` exists | suggest |
-   | speed | pstack `benchmark-checklist`, `principle-explain-the-number` | use candidate |
+   | speed | pstack `benchmark-checklist`, `principle-explain-the-number` | suggest; first `use` candidates |
    | high risk | pstack `interrogate` (fans out); ShakaPerf `shaka-perf-find-bugs` when twin servers exist | suggest |
    | (any) | pstack `poteto-mode` playbooks; AI Hero `implement`, `implement-spec` | decline: orchestrator |
    | (any) | pstack `tdd`; AI Hero `tdd` | decline: Implement owns failing-test-first |
@@ -142,7 +142,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    ```yaml
    companions:
      packs: [shakaperf]   # packaged `use` entries from these packs apply
-     use: []              # promote a packaged suggest entry, within the fixed limits
+     use: []              # promote a packaged suggest entry for this repository, within the fixed limits
      decline: []          # a skill or a whole pack, never raised in this repository
      pins: {}             # pack: revision; doctor warns when the installed one differs
      suggest: true        # false stops suggestions nobody asked for
@@ -158,7 +158,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
      [ADR 0005](0005-per-machine-reviewers.md), can turn packs on and decline skills for its
      owner. It has no `use` key, and it cannot lift a repository's decline, for the same
      reason individual settings never override team settings. Personal packs go in
-     `~/.agents/shaka/packs/`.
+     `~/.agents/shaka/packs/`, and their `use` entries act as `suggest` for the same reason.
    - Ruby applies declines last and matches skills by their installed path, not their label,
      so re-declaring a packaged skill under another pack name inherits every limit on it.
 
@@ -190,7 +190,11 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    confirmed findings, and cost per merged PR are supporting evidence, not the test. ADR 0001
    does not yet name skill presence as a comparison axis or state a gain rule, so both are
    additions it needs, not new bars this record sets. A packaged `use` entry links the study
-   behind it, and the loader refuses a packaged `use` without one.
+   behind it, and the loader refuses a packaged `use` without one. The study rule binds what
+   ShakaCode ships to everyone. A repository's own `companions.use` promotion, or a `use`
+   entry in its own pack file, is the maintainer's choice: it needs no study and no `packs`
+   entry, and it stays within the fixed limits on explicit-only, fan-out, setup, and declined
+   skills.
    ADR 0001's comparison runs are not built yet, so until they are, nothing is promoted and
    every packaged entry stays `suggest`. PRs that report `skills_used` add real-use context,
    but those entries are optional and agent-reported, so they inform a study rather than
