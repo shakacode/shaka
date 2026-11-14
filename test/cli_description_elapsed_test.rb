@@ -78,7 +78,7 @@ class CliDescriptionElapsedTest < Minitest::Test
       <!-- task-timing {"task_started_at":"2026-10-18T06:00:00Z"} -->
     MARKDOWN
     body = body.sub('## Shaka metrics', "#{example}\n## Shaka metrics")
-    timeline = { 'task_started_at' => Time.iso8601(state['t0']) }
+    timeline = { 'task_started_at' => Time.iso8601(state['t0']), 'ready_at' => Time.iso8601(state['t2']) }
     result = Shaka::PublishedTiming.check(body, head: state['head'], timeline:)
     assert_equal 'matched', result['status']
   end
