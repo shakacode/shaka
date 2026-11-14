@@ -510,8 +510,9 @@ rules:
   - id: walkthrough-request-recorded
     phase: explain
     quote: >-
-      On a request, record it with `reply --key walkthrough-request` as a PR-level
-      comment, without `--comment`, naming who asked, before other PR work
+      On a request to publish, record it with `reply --key
+      walkthrough-request` as a PR-level comment, without `--comment`, naming who asked, before other PR
+      work
     enforced_by: agent
     note: >-
       Ruby reads the recorded request: `WalkthroughDue` looks for this account's comment that starts with

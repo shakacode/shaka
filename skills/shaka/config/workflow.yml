@@ -661,10 +661,12 @@ phases:
         `human_comment_summaries`, keyed by its URL, and the helper names any it still needs. A comment
         outside an inline thread shows No reply there until a `reply` lists its URL in `reviews`.
       - A walkthrough is due when the trusted `walkthrough.publish` is `always`, when someone asks for
-        one in the task, the chat, or a PR comment `comments` admits, or once this account published
-        one on the PR. On a request, record it with `reply --key walkthrough-request` as a PR-level
-        comment, without `--comment`, naming who asked, before other PR work: `merge`, `handoff`, and the checkpoint read that comment to require
-        one. Set description `walkthrough` to `requested` so readers see it. Publish no walkthrough when none is due.
+        one published on the PR, in the task, the chat, or a PR comment `comments` admits, or once this
+        account published one on the PR. A request for a tour in the chat follows the interactive
+        walkthrough and makes none due. On a request to publish, record it with `reply --key
+        walkthrough-request` as a PR-level comment, without `--comment`, naming who asked, before other PR
+        work: `merge`, `handoff`, and the checkpoint read that comment to require one. Set description
+        `walkthrough` to `requested` so readers see it. Publish no walkthrough when none is due.
       - Before merge, publish a due COMMENT walkthrough covering the purpose, the prior behavior it
         changes, the new behavior, key choices, validation, risks, rollback consequence, and
         commit-pinned code links. Treat those as concerns to cover rather than headings to emit, and
