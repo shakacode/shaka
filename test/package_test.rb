@@ -38,15 +38,17 @@ class PackageTest < Minitest::Test
     assert_equal File.read(File.join(ROOT, 'LICENSE')), File.read(license)
   end
 
-  def test_built_gem_contains_the_guides_its_workflow_links_to
+  def test_built_gem_contains_agent_guides_and_excludes_public_documentation
     archive = File.join(@directory, 'guides.gem')
     run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
     files = Gem::Package.new(archive).spec.files
 
-    %w[docs/getting-started.md skills/shaka/references/review.md skills/shaka/references/writing.md
-       skills/shaka/references/publication.md contributing/packaging.md CONTRIBUTING.md].each do |path|
+    %w[README.gem.md skills/shaka/SKILL.md skills/shaka/config/workflow.yml
+       skills/shaka/references/review.md skills/shaka/references/writing.md
+       skills/shaka/references/publication.md].each do |path|
       assert_includes files, path
     end
+    assert_empty files.grep(%r{\A(?:docs/|contributing/|(?:CONTRIBUTING|README)\.md\z)})
   end
 
   def test_packaged_markdown_links_resolve_inside_the_package
