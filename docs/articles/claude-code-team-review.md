@@ -5,7 +5,7 @@ Justin Gordon started it after a refresh of the
 [pstack and agent-skills analysis](https://github.com/shakacode/shaka/pull/985) found
 Addy Osmani's post and gave it one paragraph. The agent read Osmani's two posts on X and
 Shaka's code, settings, and studies at
-[`0476a78`](https://github.com/shakacode/shaka/tree/0476a78ff0e0). No experiment was run.
+[`e13cc94`](https://github.com/shakacode/shaka/tree/e13cc94b4cdf). No experiment was run.
 Codex and a fresh Claude session reviewed it before publication.*
 
 Addy Osmani writes as a member of Anthropic's Claude Code team. His
@@ -294,7 +294,7 @@ None of these ideas has shipped:
   X, 2026-11-02.
 - Lauren Tan, [post on adversarial review](https://x.com/poteto/status/2117437607940681849), X,
   2026-11-02.
-- Shaka at [`0476a78`](https://github.com/shakacode/shaka/tree/0476a78ff0e0): the
+- Shaka at [`e13cc94`](https://github.com/shakacode/shaka/tree/e13cc94b4cdf): the
   [settings reference](../settings.md), the
   [enforcement map](../../skills/shaka/config/enforcement.yml), the review prompt and hosted
   review workflow linked above, and the studies linked above.
