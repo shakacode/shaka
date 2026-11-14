@@ -129,8 +129,9 @@ so the old behavior stays available as a setting.
    the description. It adds reviewer notes where code needs a why. It publishes a
    conceptual walkthrough with links to reviewed code, as a commit-bound COMMENT
    review, on request or on every PR when the repository sets `always`. A walkthrough remains readable after merge and substitutes for neither
-   approval nor required acknowledgment. The interactive tour, the coverage map, and
-   the selective notes sentences stay as they are. Requirements text that treats the
+   approval nor required acknowledgment. The interactive tour and coverage map sentence
+   stays. "Keep the published walkthrough and its selective inline notes" becomes "Keep
+   published walkthroughs and reviewer notes." Requirements text that treats the
    walkthrough as an unconditional gate changes to "a due walkthrough" in three places:
    - R5's "After the walkthrough and required gates";
    - the merge-queue sentence that says submission does not relax walkthrough gates;
@@ -219,8 +220,9 @@ so the old behavior stays available as a setting.
     walkthrough without notes.
 
   The estimate is 400 to 600 changed lines. If the implementation exceeds 500, it
-  splits into two PRs: first the setting and the gates, then notes-only publication,
-  the links line, and the docs.
+  splits into two PRs. The first holds the setting, the gates, and the setting's
+  documentation, configuration example, and default-change notice. The second holds
+  notes-only publication, the links line, and their guidance.
 
 ## Alternatives considered
 
