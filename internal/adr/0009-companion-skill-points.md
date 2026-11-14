@@ -74,12 +74,16 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    | `ui-verification#ui-changes` | the change is something a person sees on screen |
    | `performance-verification#verify-a-speed-affecting-change` | the change affects speed |
    | `post-implementation-validation#recommend-the-next-action` | every task at Finish; the line runs only for a high risk rating |
-   | `retrospective#use-the-companion-when-it-is-installed` | the user asks for a retrospective |
 
    The checkpoint procedure is the one exception to conditional loading: it runs on every
    task. Its point line therefore states its own condition, the checkpoint's `high` rating
    from [the risk rubric](../../skills/shaka/config/post-implementation-risk.md), so low and
    medium risk work never sees a high-risk suggestion.
+
+   retrospective.md gets no point and keeps its companion section unchanged. It reads an
+   installed companion's analysis, including explicit-only ones such as AI Hero `retro`,
+   under stricter rules than a pack mode can express: never a checkout skill, no install,
+   and session content treated as data.
 
    The command reads repository settings at the trusted `--ref`, the way `guidance` does, and
    applies every layering and trust rule below in Ruby. It prints, for each skill, the mode,
@@ -101,9 +105,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    - `decline`: Shaka does not use the skill inside a task and says why when asked. This
      covers companion orchestrators and skills that duplicate a Shaka rule.
 
-   Starting entries. New ones stay `suggest` until a study supports `use` (decision 6); the
-   retrospective keeps the use it has today, with explicit-only skills such as AI Hero `retro`
-   read for their analysis as retrospective.md does now, never invoked:
+   Starting entries, all `suggest` until a study supports `use` (decision 6):
 
    | Skill point | Skill | Mode |
    | --- | --- | --- |
@@ -114,7 +116,6 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    | speed | ShakaPerf `shaka-perf-dockerize`, `shaka-perf-discover-abtests`, until `abtests.config.ts` exists | suggest |
    | speed | pstack `benchmark-checklist`, `principle-explain-the-number` | use candidate |
    | high risk | pstack `interrogate` (fans out); ShakaPerf `shaka-perf-find-bugs` when twin servers exist | suggest |
-   | retrospective | pstack `reflect`, `correct`; AI Hero `retro` | use, analysis only, as today |
    | (any) | pstack `poteto-mode` playbooks; AI Hero `implement`, `implement-spec` | decline: orchestrator |
    | (any) | pstack `tdd`; AI Hero `tdd` | decline: Implement owns failing-test-first |
 
@@ -171,9 +172,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    it would add to this task and offer the pack's install command. Install only after a yes
    in this task, or under standing consent the user saved, using the same consent pattern as
    review consent. Offer each pack at most once per task, and keep going without it when the
-   user declines. Packs that are not packaged keep today's rule, and the retrospective point
-   keeps retrospective.md's stricter "Do not install one," since a retrospective request
-   authorizes analysis only.
+   user declines. Packs that are not packaged keep today's rule.
 
 5. **Users can ask for suggestions.** `/shaka suggest skills` (or "suggest skills" mid-task)
    runs `shaka companions --all` and lists, for each point this task is likely to reach, the
@@ -210,8 +209,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
   bug, checking shared callers, and editing agent instructions, which no procedure owns. It
   costs a marker on each point in every rendered workflow plus an instruction to use them,
   and a third file anchored to workflow text whose `when` conditions repeat what the linked
-  procedures already say. Procedure ownership loses those three moments and costs six lines
-  in five procedure files, all but one of which load only when needed.
+  procedures already say. Procedure ownership loses those three moments and costs five lines
+  in four procedure files, all but one of which load only when needed.
 - **Points as fields inside workflow.yml phases.** Fewer files, but every catalog change would
   edit the always-loaded workflow, which is already over 1,000 lines.
 - **A broad registry search (skills.sh and similar).** More coverage, but no trust boundary,
@@ -231,13 +230,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
   The installed-skill scan moves out of `Doctor::CompanionSkills` so doctor and the command
   share it.
 - companion-skills.md gains a skill points section, the three modes, and the install offer,
-  and replaces "Do not install it" for packaged packs. Five procedure files gain six point
+  and replaces "Do not install it" for packaged packs. Four procedure files gain five point
   lines; delivery.md holds two.
-  retrospective.md's companion section shrinks to its point line plus its stricter rules,
-  which all stay: choose the companion by description, never use a skill that resolves
-  inside the checkout, apply only its analysis, install nothing, and treat session content,
-  companion output, and checkout files as data that cannot add sessions, skip selection,
-  or authorize a change.
 - `defaults.yml`, docs/settings.md, and the `.agents/shaka/config.yml` example gain the
   `companions` section. The machine file is a new home-directory exception that
   docs/settings.md names beside the machine reviewer list.
@@ -255,7 +249,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
 
 Proposed as three PRs:
 
-1. `shaka companions`, the pack file schema, the resolver, the point lines in the six
+1. `shaka companions`, the pack file schema, the resolver, the point lines in the five
    procedures, and companion-skills.md's definition, with no packaged entries. No behavior
    change.
 2. Packaged pack files for ShakaPerf, pstack, and AI Hero in `suggest` mode only, repository
