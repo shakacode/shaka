@@ -38,18 +38,16 @@ Shaka then keeps the full records in comments on the same PR. A **Usage archive*
 with links and a SHA256 checksum identifies each set of those comments; the tables and
 pricing notes stay in the description. Table reports archived together share one such
 line, so an update adds a few hundred characters however many of them it archives. A
-report from before the usage table keeps its own line, because it shows its own text.
+report that shows its own text keeps its own line.
 Keep those comments. A later update checks their contents before using them and stops
 if a comment is missing or changed. The checksum detects changes; it does not make a
 GitHub comment immutable.
 Updates reuse unchanged records and upload only new or changed records. Keep
 superseded archive comments as accounting history; they are not deleted when a
 record is replaced. An ordered inventory also detects missing description references.
-Older Shaka helpers refuse to replace an archived description. One installed before
-these grouped lines stops with `Malformed usage archive reference.`: update Shaka, and
-leave the references as they are. Reverting the helper does not undo an existing
-archive. An interrupted upload can leave unreferenced comments while the description
-keeps its earlier contents.
+Older Shaka helpers refuse to replace an archived description. Update Shaka before
+refreshing one; reverting the helper does not undo an existing archive. An interrupted
+upload can leave unreferenced comments while the description keeps its earlier contents.
 
 If an archive is deleted, recover its original records from saved reports or a saved
 description. Have a maintainer verify that every record is recovered before replacing
