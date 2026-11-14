@@ -47,7 +47,7 @@ module Shaka
 
         body = PublicationText.required(note['body'], "walkthrough #{label}")
         first, last = locator.locate(label, note)
-        anchor(note['path'], first, last).merge('body' => "#{MARKER}\n#{identity}\n\n#{body.strip}")
+        anchor(note['path'], first, last).merge('body' => "#{MARKER}\n#{identity} * walkthrough\n\n#{body.strip}")
       end
 
       # GitHub anchors a comment on its last line and, for a range, also its first.
