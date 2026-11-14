@@ -400,6 +400,7 @@ The helper renders the Task line after Why in Intent:
 | issue `1234`, `part_of` | `GitHub #1234 · part of` |
 | issue `1234`, `fixes` | `GitHub · fixes #1234`, which closes the issue when the PR merges into the default branch |
 | `linear`, `MKT-1234`, `task_url` | `Linear MKT-1234`, linked to the supplied URL |
+| issue with a Shortcut story `task_url` | `Shortcut 1234`, with the story number taken from the URL |
 | issue or PR with an omission reason | `issue · URL omitted: Private task.` or `pull request · URL omitted: Tracker unavailable.` |
 
 The optional `intent.task_understanding` is an object with one-line `goal` and
