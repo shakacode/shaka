@@ -18,7 +18,7 @@ Shaka PR already publishes a structured record on GitHub, the
 [PR record](../../docs/reference/pr-record.md):
 
 - **Timings:** time before the PR opened, time between checkpoints, and each wait on a person
-  with its kind (answer, merge approval), per [timings](../../docs/reference/timings.md).
+  with its kind (answer, merge approval, or resume), per [timings](../../docs/reference/timings.md).
 - **Usage and cost:** tokens and estimated dollars by model, including local review, in the
   description's Usage and cost table, with older rows in archive comments the description
   references by checksum.
@@ -55,11 +55,13 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
 1. **Add a PR record report beside `timings report`.** Keep `timings report` as it is and add
    a sibling, `shaka pr-record report --repository OWNER/REPO` with `--prs N,M`, `--last N`, or
    `--since DATE`. It shares `timings report`'s merge-date search for `--since`; the other two
-   options need their own lookups. It writes one JSON record per merged PR:
+   options need their own lookups. It takes `--limit` like `timings report` and says when a
+   search stopped at it. It writes one JSON record per merged PR, followed by the medians and
+   PR counts for each field across the window, so two runs over the same PRs agree:
 
    - the step and agent-time totals `timings report` computes, using the same code, so a PR
      list or last-N run has them too;
-   - waits on a person with their kind (answer or merge approval), taken from the attention
+   - waits on a person with their kind (answer, merge approval, or resume), taken from the attention
      label history on GitHub, which `timings.md` names as their source. The description's
      Timings table can miss the final merge-approval wait when someone merges on GitHub
      without a later update, so the collector does not read waits from it;
@@ -89,20 +91,21 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
      review floor; long answer waits suggest questions that intake could have asked earlier.
    - **Slow checks:** validation steps that dominate a PR's measured time suggest scoped
      validation or a faster local command.
-   - **Review value:** per reviewer, how many findings were fixed versus dismissed, and how
-     many hosted review findings arrived after local review passed. This suggests reviewer
-     order, count, or prompt changes.
+   - **Review value:** per local reviewer, how many findings were fixed versus dismissed.
+     This suggests reviewer order, count, or prompt changes. Counting hosted review findings
+     that arrive after local review would need a trust rule for review apps first, so it is
+     left out.
    - **CI repairs:** failures the branch caused that local validation should have caught.
-   - **Effort and cost:** spend per PR by model and effort against the risk rating, to spot
-     high effort on low-risk work.
+   - **Cost:** spend per PR by model against the risk rating, to spot expensive low-risk
+     work. The usage table has no effort column, so effort is not compared.
    - **Skills:** outcomes for PRs that report each companion skill in `skills_used` against
      PRs that do not. `skills_used` is optional and agent-reported, so a skill missing from it
      is unreported, not proven unused, and the report says so. If the companion proposal in
      #1177 lands, this is real-use context for its promotion decision, not a controlled study.
 
    Findings use the existing table (observed behavior, evidence, proposed improvement,
-   expected benefit, maintenance cost), with PR links as evidence. The report gives medians
-   and the number of PRs behind each claim, and calls a pattern from fewer than five PRs
+   expected benefit, maintenance cost), with PR links as evidence. Each claim cites the
+   medians and PR counts the report computed, and calls a pattern from fewer than five PRs
    insufficient evidence. Then it stops, and selected findings become ordinary Shaka tasks,
    exactly as the session mode does today.
 
