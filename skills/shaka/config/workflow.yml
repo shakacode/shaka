@@ -195,9 +195,9 @@ phases:
         model or effort, briefly note the observed values and whether each matches the
         recommendation; mark unreported values UNKNOWN without guessing.
         When the user supplied either setting, apply the settings checks below.
-        Proceed without another response when
-        immediate start is unambiguous, the recommended settings are active and usable in the host,
-        and any settings the user supplied match the recommendation. For a pause that needs a user
+        Proceed without another response, even without a start word, when the recommended
+        settings are active and usable in the host and any settings the user supplied match
+        the recommendation. For a pause that needs a user
         decision, explain the next action and wait for ready. On resumption verify the settings
         when possible; a prompt cannot change the runner. Differing settings stay the user's
         decision; unreported active settings need the user's confirmation; unavailable settings
