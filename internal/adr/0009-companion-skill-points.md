@@ -67,18 +67,20 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    longer matches its file and heading. workflow.yml gains nothing, and no file lists moments
    a second time. companion-skills.md defines the term once. Starting points:
 
-   | Skill point | The procedure loads when |
+   | Skill point | The point line runs when |
    | --- | --- |
    | `delivery#agree-on-the-design-first` | the user chooses to agree on the design first |
    | `delivery#when-a-task-needs-several-prs` | a larger task needs splitting |
    | `ui-verification#ui-changes` | the change is something a person sees on screen |
    | `performance-verification#verify-a-speed-affecting-change` | the change affects speed |
-   | `post-implementation-validation#recommend-the-next-action` | every task, at Finish and at any mid-task checkpoint; the line runs only for a high risk rating |
+   | `post-implementation-validation#recommend-the-next-action` | a checkpoint, at Finish or mid-task, rates the change high risk |
 
-   The checkpoint procedure is the one exception to conditional loading: it runs on every
-   task. Its point line therefore states its own condition, the checkpoint's `high` rating
-   from [the risk rubric](../../skills/shaka/config/post-implementation-risk.md), so low and
-   medium risk work never sees a high-risk suggestion.
+   delivery.md and the checkpoint procedure load on most tasks, not only when their point
+   applies: the plan step reads delivery.md for the value line, and the checkpoint runs on
+   every task. Each point line therefore states the condition it runs under: the user chose
+   to agree on the design first, the task needs several PRs, or the checkpoint rated the
+   change `high` under [the risk rubric](../../skills/shaka/config/post-implementation-risk.md).
+   A task that meets none of them sees no suggestion from those files.
 
    retrospective.md gets no point and keeps its companion section unchanged. It reads an
    installed companion's analysis, including explicit-only ones such as AI Hero `retro`,
@@ -214,7 +216,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
   costs a marker on each point in every rendered workflow plus an instruction to use them,
   and a third file anchored to workflow text whose `when` conditions repeat what the linked
   procedures already say. Procedure ownership loses those three moments and costs five lines
-  in four procedure files, all but one of which load only when needed.
+  in four procedure files, two of which load only when needed; the other two state their
+  own conditions.
 - **Points as fields inside workflow.yml phases.** Fewer files, but every catalog change would
   edit the always-loaded workflow, which is already over 1,000 lines.
 - **A broad registry search (skills.sh and similar).** More coverage, but no trust boundary,
