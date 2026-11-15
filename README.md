@@ -46,7 +46,8 @@ instructions would cost tokens on every task; as code, they run the same way eac
 | Measured in November 2026 | Size |
 | --- | --- |
 | Ruby code in the installed skill | 84% of its lines: about 45,000 lines in 485 files |
-| Instructions the agent reads for a task | About 12,400 words |
+| Instructions the agent reads at the start of every task | About 12,400 words |
+| Procedures the agent loads only when needed, such as review | 42 files, about 51,000 words in total |
 | Tests for that Ruby, kept in this repository | About 76,000 lines |
 
 See [how these numbers were measured](docs/architecture.md#put-repeatable-checks-in-code).

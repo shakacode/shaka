@@ -37,10 +37,18 @@ Measured in November 2026, the installed `skills/shaka` directory held:
 | Markdown references and prompts (52 files) | 5,942 (11%) | 0.36 MB (16%) |
 | YAML workflow, settings, and data (5 files) | 2,311 (4%) | 0.16 MB (7%) |
 
-For a task, the agent reads `SKILL.md` (316 words) and the workflow that
-`shaka workflow` prints (about 12,100 words). It loads a reference only when that
-reference's condition applies, such as a review or a retrospective. The Ruby has
-about 76,000 lines of tests under `test/`, which stay out of the installed skill.
+Not all of that text reaches the agent, and not all at once:
+
+| Text | Who reads it, and when | Words |
+| --- | --- | --- |
+| `SKILL.md` and the workflow `shaka workflow` prints | The agent, at the start of every task | About 12,400 |
+| 42 references, such as review and retrospective procedures | The agent, each one only when its condition applies | About 51,000 in total |
+| 8 reviewer and checkpoint prompts | Reviewer models, which Ruby sends them to | About 1,500 |
+| Enforcement records, defaults, and model rates (YAML) | Ruby only | About 8,500 |
+| These guides under `docs/` | People; they are not part of the installed skill | About 49,000 |
+
+The Ruby has about 76,000 lines of tests under `test/`, which also stay out of
+the installed skill.
 
 Words and bytes show size, not tokens; each model counts tokens differently. To
 check the instruction size yourself, ask your agent:
