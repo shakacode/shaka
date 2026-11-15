@@ -57,12 +57,16 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
    `--since DATE`. It shares `timings report`'s merge-date search for `--since`; the other two
    options need their own lookups. It writes one JSON record per merged PR:
 
-   - the timing categories `timings report` already reads;
-   - each labeled stretch of the PR's timings, which that report does not read: waits on a
-     person with their kind (answer or merge approval) and the time between checkpoints;
+   - the step and agent-time totals `timings report` computes, using the same code, so a PR
+     list or last-N run has them too;
+   - waits on a person with their kind (answer or merge approval), taken from the attention
+     label history on GitHub, which `timings.md` names as their source. The description's
+     Timings table can miss the final merge-approval wait when someone merges on GitHub
+     without a later update, so the collector does not read waits from it;
    - usage by model, review rounds and finding dispositions by reviewer, risk rating, skills
      used;
-   - from GitHub's own API, Actions runs on each head with their outcome, and the merge time.
+   - from GitHub's own API, Actions runs on each head with their outcome, the label history,
+     and the merge time.
 
    A field the PR does not carry is `UNKNOWN`, as in the PR itself. Ruby does the reading and
    arithmetic; the agent does the interpretation. Only the PR record and GitHub's own data are
@@ -72,17 +76,18 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
 
    Like `timings report`, the collector skips PRs from forks, whose authors can edit the
    numbers. It reads usage from the description first and follows archive comments by their
-   checksum, and it ignores comments from accounts without write access, the same rule the
-   usage table already applies. A forged block from anyone else changes no number.
+   checksum. It ignores every comment from an account without write access, including review
+   and checkpoint comments, the same rule the usage table already applies. A forged block from
+   anyone else changes no number.
 
 2. **The PR timings retrospective grows into a PR retrospective.** `/shaka retrospective last
-   20 PRs` (or a date range or PR list) runs both reports and analyzes across PRs. Timing
-   findings keep using `timings report` totals, as retrospective.md says today, and wait
-   findings use the labeled stretches from the new report. It looks for:
+   20 PRs` (or a date range or PR list) runs the new report and analyzes across PRs. A date
+   range also runs `timings report`, as retrospective.md does today, for its weekly
+   grouping. It looks for:
 
    - **Waiting on people:** long merge-approval waits on low-risk PRs suggest Auto with a
      review floor; long answer waits suggest questions that intake could have asked earlier.
-   - **Slow checks:** validation steps that dominate time between checkpoints suggest scoped
+   - **Slow checks:** validation steps that dominate a PR's measured time suggest scoped
      validation or a faster local command.
    - **Review value:** per reviewer, how many findings were fixed versus dismissed, and how
      many hosted review findings arrived after local review passed. This suggests reviewer
