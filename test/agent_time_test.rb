@@ -136,7 +136,8 @@ class ToolCategoryTest < Minitest::Test
     'npm --workspace web run lint' => 'validation', 'pnpm -r test' => 'validation',
     'npm -w web test' => 'validation', 'npm -w web run lint' => 'validation', 'npm -w web run build' => 'shell',
     'yarn workspaces foreach -A run test' => 'validation', 'pnpm -w lint' => 'validation',
-    'npm --loglevel silent test' => 'validation'
+    'npm --loglevel silent test' => 'validation', 'npm exec -- echo run lint' => 'shell',
+    'npm run build -- run test' => 'shell'
   }.freeze
 
   def test_shell_calls_are_classed_by_the_programs_they_run
@@ -201,6 +202,25 @@ class AgentTimeOpenCallsTest < Minitest::Test
 
     assert_equal [300_000, 180_000], entry.values_at('active_ms', 'model_ms')
     assert_equal({ 'files' => 120_000 }, entry['tools'])
+  end
+
+  # Calls from one model message run together, so a running call is not dropped when its sibling finishes.
+  def test_a_running_call_beside_a_finished_one_in_its_message_counts
+    records = [user('10:00:00', 'Go'), in_message(tool_use('10:01:00', 'v', 'Bash', 'bin/validate'), 'm1'),
+               in_message(tool_use('10:02:00', 'r', 'Read'), 'm1'), result('10:04:00', 'r')]
+
+    assert_equal({ 'validation' => 180_000, 'files' => 120_000 }, summarize(records)['tools'])
+  end
+
+  # A call from before the task start that never returned does not stretch the first turn over the idle time.
+  def test_an_unanswered_call_from_before_the_task_start_opens_no_turn
+    records = [user('09:50:00', 'Go'), in_message(tool_use('09:58:00', 'v', 'Bash', 'bin/validate'), 'm0'),
+               user('14:00:00', 'Continue'), in_message(assistant('14:01:00', 'end_turn'), 'm1')]
+
+    entry = summarize(records, since: START)
+
+    assert_equal 60_000, entry['active_ms']
+    assert_empty entry['tools']
   end
 
   def test_codex_calls_cross_the_task_start_and_end_with_a_new_task

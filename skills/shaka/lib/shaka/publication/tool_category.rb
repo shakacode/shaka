@@ -21,7 +21,8 @@ module Shaka
     PACKAGE_MANAGERS = %w[npm yarn pnpm bun].freeze
     VALIDATION_SCRIPT = /\A(?:test|lint)(?:[:._-].*)?\z/
     # Options whose value comes before the script; `-w` takes a workspace in npm but none in pnpm.
-    PACKAGE_VALUED = { 'npm' => %w[--prefix -C --workspace -w --loglevel], 'yarn' => %w[--cwd],
+    PACKAGE_VALUED = { 'npm' => %w[--prefix -C --workspace -w --loglevel],
+                       'yarn' => %w[--cwd --include --exclude --from],
                        'pnpm' => %w[--filter -F --dir -C], 'bun' => %w[--cwd --filter -F] }.freeze
     # Words that run the command after them: `bundle exec rubocop` runs rubocop.
     WRAPPERS = %w[env time nice command exec nohup].freeze
@@ -120,15 +121,15 @@ module Shaka
       end
     end
 
-    # The script a package manager runs: the word after `run`, as in `yarn workspaces foreach -A run test`, or the
-    # first word, which npm runs only for `test`. `yarn workspace NAME` comes before it.
+    # The script a package manager runs: the word after a leading `run`, or the first word, which npm runs only for
+    # `test`. `yarn workspace NAME` and `yarn workspaces foreach` come before it.
     def package_script(program, arguments)
       words = positional(arguments, PACKAGE_VALUED.fetch(program))
-      words = words.drop(2) if program == 'yarn' && words.first == 'workspace'
-      run = words.index { |word| %w[run run-script].include?(word) }
-      return words[run + 1] if run
+      words = words.drop(2) if program == 'yarn' && %w[workspace workspaces].include?(words.first)
+      first, second = words
+      return second if %w[run run-script].include?(first)
 
-      words.first if program != 'npm' || words.first == 'test'
+      first if program != 'npm' || first == 'test'
     end
 
     # The words that are neither options nor the values of the program's valued options.

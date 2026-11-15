@@ -213,7 +213,7 @@ for Claude Code and Codex. Only the totals reach the
 description; commands, prompts, and output stay on your machine. A command started in
 the background counts only the moment it took to start, so its time appears under
 measured steps instead. A command still running when the description updates counts
-up to that update, and one that started before the task start counts from the start. Each session keeps its latest totals, so a session that never
+up to the agent's last action, and one that started before the task start counts from the start. Each session keeps its latest totals, so a session that never
 updated the description is missing.
 
 To compare these numbers across many PRs, see

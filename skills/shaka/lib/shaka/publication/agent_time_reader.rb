@@ -43,7 +43,9 @@ module Shaka
     # started before the task counts from the task start.
     def calls
       last = @turns.last&.to
-      running = @open.values.filter_map { |started, category| [category, clip(started), last] if last }
+      running = @open.values.filter_map do |started, category|
+        [category, [clip(started), @turns.first.from].max, last] if last
+      end
       @calls + running.select { |_category, from, to| to >= from }
     end
 
@@ -55,7 +57,6 @@ module Shaka
       return unless at
 
       @before = @since && at < @since
-      straddle
       agent = %w[response_item event_msg].include?(record['type']) ? codex?(record, at) : claude?(record, at)
       return if @before || !agent
 
@@ -63,11 +64,6 @@ module Shaka
       start_turn(at, prompted: false) if @turns.empty?
       # A record written out of order never moves the turn's end earlier.
       @turns.last.to = [@turns.last.to, at].max
-    end
-
-    # A call still running when the task started puts the task start inside a turn.
-    def straddle
-      start_turn(@since, prompted: false) if !@before && @turns.empty? && @open.any?
     end
 
     # A person's prompt opens a turn; tool calls and their results pair by id.
@@ -140,7 +136,11 @@ module Shaka
 
     def close_call(id, at)
       started, category = @open.delete(id)
-      @calls << [category, clip(started), at] if started && at >= clip(started)
+      return unless started && at >= clip(started)
+
+      # A result for a call that was running when the task started puts the task start inside a turn.
+      start_turn(@since, prompted: false) if @turns.empty? && started < @since
+      @calls << [category, clip(started), at]
     end
 
     def clip(started) = @since && started < @since ? @since : started
