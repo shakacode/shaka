@@ -7,7 +7,7 @@ each coding agent you use. Each project keeps its own settings.
 | Coding agent | Start a task | Where to use it |
 | --- | --- | --- |
 | Codex | `$shaka` | Desktop app or CLI |
-| Claude Code | `/shaka` | Desktop app or CLI |
+| Claude Code | `/shaka` | Desktop app or CLI; on the web, see [Claude Code on the web](#claude-code-on-the-web) |
 | Cursor | `/shaka` | Start a new Agent chat after installation |
 | GitHub Copilot | `/shaka` | Copilot CLI or VS Code Agent chat; see [Copilot setup](#github-copilot) |
 | OpenCode | `/shaka` | Use the installed skill in a session; an optional launcher is available |
@@ -94,16 +94,20 @@ fi
 ```
 
 Building Ruby adds a few minutes to each new container. The script installs
-Shaka from its own clone, not from your project, because Shaka refuses to run a
-copy of itself from the repository it is changing. The script applies to new
+Shaka from its own clone, separate from your project, so the branch you are
+changing cannot change the Shaka that checks it. The script applies to new
 sessions; a session that is already running keeps what it has.
 
-A cloud session cannot yet finish a Shaka PR. Claude Code blocks GitHub's GraphQL
-API there, and the Shaka commands that write the PR description, walkthrough,
-review comment, and merge use it. Shaka's doctor reports this as a failed
-**GitHub GraphQL** check. Use the cloud session to make and validate the change,
-then [resume the PR](working-with-shaka.md#resume-unfinished-work) in a local
-session to finish it.
+A cloud session cannot yet open or finish a Shaka PR. Claude Code blocks GitHub's
+GraphQL API there, and Shaka uses it to create the PR and publish its
+description, walkthrough, and review, and to merge. Shaka's doctor reports a
+failed **GitHub GraphQL** check. See [cloud reviewers](reference/reviewer-setup.md#cloud-reviewers)
+for what still works. Make and validate the change in the cloud session, ask it
+to push the branch, then continue in a local session:
+
+```text
+/shaka Continue the pushed branch BRANCH and open its PR
+```
 
 ## Give consent once
 

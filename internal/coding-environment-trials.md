@@ -75,4 +75,16 @@ do not establish the same behavior in other images, network policies, or CLI ver
 | Codex sandbox | `codex sandbox` ran `git log` in the checkout and refused a write with `Read-only file system`. |
 | GitHub | `gh api repos/shakacode/shaka` succeeded with push permission. Every GraphQL call returned `HTTP 403: GitHub GraphQL is not available from Claude Code sessions`, so `shaka pr` failed and doctor's Repository access check failed. |
 | ChatGPT sign-in | `codex login --device-auth` printed `https://auth.openai.com/codex/device` and a one-time code that expires in 15 minutes. |
-| Not tested | A real OpenAI key, completing the ChatGPT sign-in and reviewing on it, a limited network policy, `/shaka` in a session started after a setup script, and whether a saved review consent survives into a new session. [Issue 277](https://github.com/shakacode/shaka/issues/277#issuecomment-6541487155) tracks the pending checks. |
+| Not tested | A real OpenAI key, completing the ChatGPT sign-in and reviewing on it, a limited network policy, and whether a saved review consent survives into a new session. [Issue 277](https://github.com/shakacode/shaka/issues/277#issuecomment-6541487155) tracks the pending checks. |
+
+## November 2026 setup script trial
+
+On November 15, 2026, at Shaka revision `04cd784f1eb5af10c7475c39235dfffbb57de509`,
+the setup script in the [Claude Code on the web guide](../docs/coding-agents.md#claude-code-on-the-web)
+was saved to a personal cloud environment with unrestricted network access.
+
+| Fact | Observed |
+| --- | --- |
+| Same session | Each script step, run by hand, built Ruby 3.4.10 and linked `~/.claude/skills/shaka`; `update-check` reported `current`. |
+| New session | A session started afterwards ran the script before Claude started; Ruby build and install took under 3 minutes. `~/.claude/skills/shaka` linked to the official clone, `update-check` reported `current`, doctor reported Ruby 3.4.10 healthy and failed only GitHub GraphQL, and `shaka` appeared in the session's skill list. |
+| GitHub | `gh pr create --dry-run` and `shaka comments` both failed with the GraphQL 403. |
