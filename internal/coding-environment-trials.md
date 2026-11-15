@@ -87,4 +87,4 @@ was saved to a personal cloud environment with unrestricted network access.
 | --- | --- |
 | Same session | Each script step, run by hand, built Ruby 3.4.10 and linked `~/.claude/skills/shaka`; `update-check` reported `current`. |
 | New session | A session started afterwards ran the script before Claude started; Ruby build and install took under 3 minutes. `~/.claude/skills/shaka` linked to the official clone, `update-check` reported `current`, doctor reported Ruby 3.4.10 healthy and failed only GitHub GraphQL, and `shaka` appeared in the session's skill list. |
-| GitHub | `gh pr create --dry-run` and `shaka comments` both failed with the GraphQL 403. |
+| GitHub | `gh pr create --dry-run` and `shaka comments` both failed with the GraphQL 403. `git push` of a branch named by the default `branches.name` template (`justin808-claude/ad-hoc-cloud-setup-docs`) succeeded and kept its name. |

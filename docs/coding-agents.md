@@ -103,7 +103,9 @@ GraphQL API there, and Shaka uses it to create the PR and publish its
 description, walkthrough, and review, and to merge. Shaka's doctor reports a
 failed **GitHub GraphQL** check. See [cloud reviewers](reference/reviewer-setup.md#cloud-reviewers)
 for what still works. Make and validate the change in the cloud session, ask it
-to push the branch, then continue in a local session:
+to push the branch, then continue in a local session. Validation and review
+results stay in the cloud container, so the local session runs them again on the
+pushed branch before it opens the PR:
 
 ```text
 /shaka Continue the pushed branch BRANCH and open its PR
