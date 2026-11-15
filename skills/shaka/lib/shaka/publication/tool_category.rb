@@ -22,7 +22,7 @@ module Shaka
     VALIDATION_SCRIPT = /\A(?:test|lint)(?:[:._-].*)?\z/
     # Options whose value comes before the script; `-w` takes a workspace in npm but none in pnpm.
     PACKAGE_VALUED = { 'npm' => %w[--prefix -C --workspace -w --loglevel],
-                       'yarn' => %w[--cwd --include --exclude --from],
+                       'yarn' => %w[--cwd --include --exclude --from --jobs -j],
                        'pnpm' => %w[--filter -F --dir -C], 'bun' => %w[--cwd --filter -F] }.freeze
     # Words that run the command after them: `bundle exec rubocop` runs rubocop.
     WRAPPERS = %w[env time nice command exec nohup].freeze
@@ -135,13 +135,20 @@ module Shaka
       first if program != 'npm' || first == 'test'
     end
 
-    # The words that are neither options nor the values of the program's valued options.
+    # The first four words that are neither options nor option values, enough for `yarn workspace NAME run SCRIPT`.
+    # The scan stops there, so a command with thousands of file arguments costs no more.
     def positional(words, valued)
-      first, *rest = words
-      return [] if first.nil?
-      return positional(valued.include?(first) ? rest.drop(1) : rest, valued) if first.start_with?('-')
+      found = []
+      skip = false
+      words.each do |word|
+        break if found.size == 4
 
-      [first, *positional(rest, valued)]
+        if skip then skip = false
+        elsif word.start_with?('-') then skip = valued.include?(word)
+        else found << word
+        end
+      end
+      found
     end
   end
 end

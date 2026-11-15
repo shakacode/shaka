@@ -137,11 +137,18 @@ class ToolCategoryTest < Minitest::Test
     'npm -w web test' => 'validation', 'npm -w web run lint' => 'validation', 'npm -w web run build' => 'shell',
     'yarn workspaces foreach -A run test' => 'validation', 'pnpm -w lint' => 'validation',
     'npm --loglevel silent test' => 'validation', 'npm exec -- echo run lint' => 'shell',
-    'npm run build -- run test' => 'shell', 'pnpm vitest' => 'validation', 'yarn eslint .' => 'validation'
+    'npm run build -- run test' => 'shell', 'pnpm vitest' => 'validation', 'yarn eslint .' => 'validation',
+    'yarn workspaces foreach -A --jobs 2 run test' => 'validation'
   }.freeze
 
   def test_shell_calls_are_classed_by_the_programs_they_run
     assert_equal(SHELL_CASES, SHELL_CASES.keys.to_h { |command| [command, Shaka::ToolCategory.call('Bash', command)] })
+  end
+
+  def test_a_package_script_with_many_file_arguments_is_classed
+    command = "npm run lint -- #{Array.new(20_000) { |index| "f#{index}.js" }.join(' ')}"
+
+    assert_equal 'validation', Shaka::ToolCategory.call('Bash', command)
   end
 
   def test_codex_scripts_and_argument_lists_are_classed_by_their_commands
