@@ -54,10 +54,12 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
 
 1. **Add a PR record report beside `timings report`.** Keep `timings report` as it is and add
    a sibling, `shaka pr-record report --repository OWNER/REPO` with `--prs N,M`, `--last N`, or
-   `--since DATE`. It shares `timings report`'s merge-date search for `--since`; the other two
-   options need their own lookups. It takes `--limit` like `timings report` and says when a
-   search stopped at it. It writes one JSON record per merged PR, followed by the medians and
-   PR counts for each field across the window, so two runs over the same PRs agree:
+   `--since DATE` with an optional `--until DATE`. It shares `timings report`'s merge-date
+   search for the date range; the other two options need their own lookups. It takes `--limit` like `timings report` and says when a
+   search stopped at it. It writes one JSON record per merged PR, followed by the totals the
+   analyses below compare: medians for numbers and counts for categories, across the window
+   and broken down by risk rating, by local reviewer, and by reported skill. Two runs over the
+   same PRs then agree on every number a finding cites:
 
    - the step and agent-time totals `timings report` computes, using the same code, so a PR
      list or last-N run has them too;
@@ -73,7 +75,7 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
    A field the PR does not carry is `UNKNOWN`, as in the PR itself. Ruby does the reading and
    arithmetic; the agent does the interpretation. Only the PR record and GitHub's own data are
    read, so no transcript or private session content enters the analysis. Actions logs expire
-   and reruns hide earlier attempts, so older PRs report CI attempts as `UNKNOWN` where the
+   and deleted runs disappear, so older PRs report CI attempts as `UNKNOWN` where the
    API no longer has them.
 
    Like `timings report`, the collector skips PRs from forks, whose authors can edit the
