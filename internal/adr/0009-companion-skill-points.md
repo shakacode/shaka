@@ -100,7 +100,9 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    - `use`: Shaka applies the technique inside the procedure's phase without asking. Only
      model-invocable skills that stay inside the phase and run no workers qualify.
    - `suggest`: Shaka names the skill, says in one line why it fits this task, and either
-     runs it after a yes or hands the user the invocation to type. Explicit-only skills,
+     runs it after a yes or hands the user the invocation to type. A yes to a skill that fans
+     out workers counts as delegation authorization for that run only when the suggestion
+     named the workers it starts. Explicit-only skills,
      skills that fan out workers, and one-time setup skills are always `suggest`. Ruby takes
      the stricter of the pack file's explicit-only flag and the installed skill's front
      matter, so an upstream change cannot raise a mode.
@@ -181,7 +183,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    skill, its mode, whether it is installed, and one line on why. It changes nothing until the
    user picks. Without that request, Shaka raises a `suggest` entry at most once per point per
    task, records the answer in the task record, and keeps a declined suggestion quiet for the
-   rest of the task.
+   rest of the task. SKILL.md gains one routing line that sends the request to
+   companion-skills.md, whether it arrives alone or mid-task; workflow.yml still gains nothing.
 
 6. **An entry moves from `suggest` to `use` on ADR 0001's evidence.** A candidate gets paired
    eval runs with and without it on the same tasks, using
@@ -236,6 +239,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
   for each layering and trust rule, and a test that derives points from procedure lines.
   The installed-skill scan moves out of `Doctor::CompanionSkills` so doctor and the command
   share it.
+- SKILL.md gains one line routing `/shaka suggest skills` to companion-skills.md.
 - companion-skills.md gains a skill points section, the three modes, and the install offer,
   and replaces "Do not install it" for packaged packs. Four procedure files gain five point
   lines; delivery.md holds two.
@@ -260,7 +264,7 @@ Proposed as three PRs:
    procedures, and companion-skills.md's definition, with no packaged entries. No behavior
    change.
 2. Packaged pack files for ShakaPerf, pstack, and AI Hero in `suggest` mode only, repository
-   and machine pack files, `/shaka suggest skills`, the install offer, doctor reporting, and
+   and machine pack files, `/shaka suggest skills` with its SKILL.md route, the install offer, doctor reporting, and
    the `companions` settings.
 3. Once ADR 0001's comparison runs exist, eval runs for the first `use` candidates,
    `benchmark-checklist` and `principle-explain-the-number`, and promotion of what the
