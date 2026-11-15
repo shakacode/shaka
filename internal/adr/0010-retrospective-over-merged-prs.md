@@ -14,18 +14,22 @@ pursue. It never starts unasked, "not after a PR, not on a schedule."
 
 Sessions are a hard source. Transcripts live in one host, get summarized away, and are private,
 so a session retrospective can only cover the chats the user still has open. Meanwhile every
-Shaka PR already publishes a structured record on GitHub:
+Shaka PR already publishes a structured record on GitHub, the
+[PR record](../../docs/reference/pr-record.md):
 
 - **Timings:** time before the PR opened, time between checkpoints, and each wait on a person
   with its kind (answer, merge approval), per [timings](../../docs/reference/timings.md).
-- **Usage and cost:** tokens and estimated dollars by model, including local review, in
-  append-only comments.
+- **Usage and cost:** tokens and estimated dollars by model, including local review, in the
+  description's Usage and cost table, with older rows in archive comments the description
+  references by checksum.
 - **Review evidence:** each reviewed commit's findings with dispositions (`fixed`, `dismissed`,
-  `accepted`, and so on) and which reviewer reported them, per issue #395.
+  `accepted`, and so on) and which reviewer reported them, in the published local review.
 - **Verification and risk:** the checkpoint's risk rating, what ran on which head, and what
   stayed unverified.
 - **Skills used:** each applied skill with source, revision, phase, and contribution.
-- **CI and merge:** Actions runs on each head, and the merge time `pr watch` records.
+
+GitHub itself keeps the rest: Actions runs on each head and the merge time. Shaka does not
+publish those.
 
 [#1135](https://github.com/shakacode/shaka/pull/1135) added `shaka timings report`, which
 totals timing categories across merged PRs, ranks them, and groups them by week, and taught
@@ -57,15 +61,19 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
    - each labeled stretch of the PR's timings, which that report does not read: waits on a
      person with their kind (answer or merge approval) and the time between checkpoints;
    - usage by model, review rounds and finding dispositions by reviewer, risk rating, skills
-     used, CI attempts with their outcome, and merge time.
+     used;
+   - from GitHub's own API, Actions runs on each head with their outcome, and the merge time.
 
    A field the PR does not carry is `UNKNOWN`, as in the PR itself. Ruby does the reading and
-   arithmetic; the agent does the interpretation. Only published PR data is read, so no
-   transcript or private session content enters the analysis.
+   arithmetic; the agent does the interpretation. Only the PR record and GitHub's own data are
+   read, so no transcript or private session content enters the analysis. Actions logs expire
+   and reruns hide earlier attempts, so older PRs report CI attempts as `UNKNOWN` where the
+   API no longer has them.
 
    Like `timings report`, the collector skips PRs from forks, whose authors can edit the
-   numbers. It also reads a usage or review comment only when the helper's account or a trusted
-   actor wrote it, so a forged block from anyone else changes no number.
+   numbers. It reads usage from the description first and follows archive comments by their
+   checksum, and it ignores comments from accounts without write access, the same rule the
+   usage table already applies. A forged block from anyone else changes no number.
 
 2. **The PR timings retrospective grows into a PR retrospective.** `/shaka retrospective last
    20 PRs` (or a date range or PR list) runs both reports and analyzes across PRs. Timing
