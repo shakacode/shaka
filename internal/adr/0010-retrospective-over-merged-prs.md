@@ -48,18 +48,29 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
 
 ## Decisions
 
-1. **Extend `timings report` into a PR record report.** Keep `timings report` as it is and add
+1. **Add a PR record report beside `timings report`.** Keep `timings report` as it is and add
    a sibling, `shaka pr-record report --repository OWNER/REPO` with `--prs N,M`, `--last N`, or
-   `--since DATE`, that reuses its PR search and limit handling. It writes one JSON record per
-   merged PR: the timing categories `timings report` already reads, usage by model, review
-   rounds and finding dispositions by reviewer, risk rating, skills used, CI attempts with
-   their outcome, and merge time. A field the PR does not carry is `UNKNOWN`, as in the PR itself. Ruby does
-   the reading and arithmetic; the agent does the interpretation. Only published PR data is
-   read, so no transcript or private session content enters the analysis.
+   `--since DATE`. It shares `timings report`'s merge-date search for `--since`; the other two
+   options need their own lookups. It writes one JSON record per merged PR:
+
+   - the timing categories `timings report` already reads;
+   - each labeled stretch of the PR's timings, which that report does not read: waits on a
+     person with their kind (answer or merge approval) and the time between checkpoints;
+   - usage by model, review rounds and finding dispositions by reviewer, risk rating, skills
+     used, CI attempts with their outcome, and merge time.
+
+   A field the PR does not carry is `UNKNOWN`, as in the PR itself. Ruby does the reading and
+   arithmetic; the agent does the interpretation. Only published PR data is read, so no
+   transcript or private session content enters the analysis.
+
+   Like `timings report`, the collector skips PRs from forks, whose authors can edit the
+   numbers. It also reads a usage or review comment only when the helper's account or a trusted
+   actor wrote it, so a forged block from anyone else changes no number.
 
 2. **The PR timings retrospective grows into a PR retrospective.** `/shaka retrospective last
    20 PRs` (or a date range or PR list) runs both reports and analyzes across PRs. Timing
-   findings keep using `timings report` totals, as retrospective.md says today. It looks for:
+   findings keep using `timings report` totals, as retrospective.md says today, and wait
+   findings use the labeled stretches from the new report. It looks for:
 
    - **Waiting on people:** long merge-approval waits on low-risk PRs suggest Auto with a
      review floor; long answer waits suggest questions that intake could have asked earlier.
@@ -71,8 +82,10 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
    - **CI repairs:** failures the branch caused that local validation should have caught.
    - **Effort and cost:** spend per PR by model and effort against the risk rating, to spot
      high effort on low-risk work.
-   - **Skills:** outcomes with and without each companion skill in `skills_used`. If the
-     companion proposal in #1177 lands, this is real-use data for its promotion decision.
+   - **Skills:** outcomes for PRs that report each companion skill in `skills_used` against
+     PRs that do not. `skills_used` is optional and agent-reported, so a skill missing from it
+     is unreported, not proven unused, and the report says so. If the companion proposal in
+     #1177 lands, this is real-use context for its promotion decision, not a controlled study.
 
    Findings use the existing table (observed behavior, evidence, proposed improvement,
    expected benefit, maintenance cost), with PR links as evidence. The report gives medians
