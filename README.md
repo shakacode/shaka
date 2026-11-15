@@ -33,6 +33,24 @@ Even with `auto`, large or risky changes need your merge decision.
 
 ![You give a task. The agent builds, verifies, and reviews. You review the PR and decide what happens next.](docs/img/task-to-pr.svg)
 
+<a id="mostly-ruby"></a>
+
+### Mostly Ruby, so your agent reads less
+
+Shaka is mostly tested Ruby code, not instructions. Ruby validates settings,
+filters untrusted comments, collects evidence, and checks merge conditions. The
+agent runs these commands without reading their code and works from their short
+output. Its instructions focus on judgment calls. Writing these checks as
+instructions would cost tokens on every task; as code, they run the same way each time.
+
+| Measured in November 2026 | Size |
+| --- | --- |
+| Ruby code in the installed skill | 84% of its lines: about 45,000 lines in 485 files |
+| Instructions the agent reads for a task | About 12,400 words |
+| Tests for that Ruby, kept in this repository | About 76,000 lines |
+
+See [how these numbers were measured](docs/architecture.md#put-repeatable-checks-in-code).
+
 <a id="example-prompts"></a>
 <a id="get-started"></a>
 <a id="requirements"></a>

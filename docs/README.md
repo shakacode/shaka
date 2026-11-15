@@ -6,6 +6,11 @@ request (PR) with checks and review results. By default, you decide whether it m
 Use the PR's evidence to decide what to do next and improve the process through
 regular retrospectives.
 
+Shaka is mostly Ruby. About 84% of the installed skill's lines are tested Ruby
+code that your agent runs without reading, so it reads about 12,400 words of
+instructions for a task and gets the same checks every time.
+[See the numbers](architecture.md#put-repeatable-checks-in-code).
+
 Ask your coding agent to install Shaka:
 
 ```text

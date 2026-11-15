@@ -27,3 +27,24 @@ purpose. The note helps someone continue the work.
 Ruby handles configuration validation, comment filtering, and merge checks. Skill
 instructions guide the agent’s decisions. This keeps repeatable checks testable
 and reduces the instructions the agent must interpret.
+
+The agent runs Ruby commands and reads their output; it does not load their source.
+Measured in November 2026, the installed `skills/shaka` directory held:
+
+| Content | Lines | Size |
+| --- | --- | --- |
+| Ruby (485 files) | 44,942 (84%) | 1.74 MB (77%) |
+| Markdown references and prompts (52 files) | 5,942 (11%) | 0.36 MB (16%) |
+| YAML workflow, settings, and data (5 files) | 2,311 (4%) | 0.16 MB (7%) |
+
+For a task, the agent reads `SKILL.md` (316 words) and the workflow that
+`shaka workflow` prints (about 12,100 words). It loads a reference only when that
+reference's condition applies, such as a review or a retrospective. The Ruby has
+about 76,000 lines of tests under `test/`, which stay out of the installed skill.
+
+Words and bytes show size, not tokens; each model counts tokens differently. To
+check the instruction size yourself, ask your agent:
+
+```text
+Run bin/report-instruction-growth in my Shaka checkout and summarize the word counts
+```
