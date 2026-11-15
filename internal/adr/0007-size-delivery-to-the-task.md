@@ -107,7 +107,9 @@ would catch something on this change, and records a one-line reason when it skip
   skip it changes that authority rule (decision 4).
 - The opening check. It runs inside `description` whenever its setting is on, so
   skipping it needs a `description` change (decision 4).
-- UI captures and speed comparisons, which are already conditional.
+- UI captures and speed comparisons. These already run only when the change touches UI
+  or page speed. A step that does not apply is not a skip and needs no reason; waiving
+  one that applies is a skip.
 
 The walkthrough, checkpoint, and opening check are enforced or run by commands, so the
 agent can skip them only once decision 4's code ships.
