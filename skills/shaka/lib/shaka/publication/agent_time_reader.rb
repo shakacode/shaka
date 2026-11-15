@@ -36,6 +36,7 @@ module Shaka
       rescue JSON::ParserError, EncodingError
         next
       end
+      @open.each_value { |started, _category| cross(started) } if @turns.any?
       self
     end
 
@@ -43,9 +44,7 @@ module Shaka
     # started before the task counts from the task start.
     def calls
       last = @turns.last&.to
-      running = @open.values.filter_map do |started, category|
-        [category, [clip(started), @turns.first.from].max, last] if last
-      end
+      running = @open.values.filter_map { |started, category| [category, clip(started), last] if last }
       @calls + running.select { |_category, from, to| to >= from }
     end
 
@@ -138,9 +137,16 @@ module Shaka
       started, category = @open.delete(id)
       return unless started && at >= clip(started)
 
-      # A result for a call that was running when the task started puts the task start inside a turn.
-      start_turn(@since, prompted: false) if @turns.empty? && started < @since
+      cross(started)
       @calls << [category, clip(started), at]
+    end
+
+    # A call that ran across the task start, shown by its result or by still running at the end, puts the task
+    # start inside the first turn.
+    def cross(started)
+      return unless @since && started < @since
+
+      @turns.empty? ? start_turn(@since, prompted: false) : @turns.first.from = @since
     end
 
     def clip(started) = @since && started < @since ? @since : started

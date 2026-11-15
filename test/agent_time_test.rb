@@ -137,7 +137,7 @@ class ToolCategoryTest < Minitest::Test
     'npm -w web test' => 'validation', 'npm -w web run lint' => 'validation', 'npm -w web run build' => 'shell',
     'yarn workspaces foreach -A run test' => 'validation', 'pnpm -w lint' => 'validation',
     'npm --loglevel silent test' => 'validation', 'npm exec -- echo run lint' => 'shell',
-    'npm run build -- run test' => 'shell'
+    'npm run build -- run test' => 'shell', 'pnpm vitest' => 'validation', 'yarn eslint .' => 'validation'
   }.freeze
 
   def test_shell_calls_are_classed_by_the_programs_they_run
@@ -221,6 +221,26 @@ class AgentTimeOpenCallsTest < Minitest::Test
 
     assert_equal 60_000, entry['active_ms']
     assert_empty entry['tools']
+  end
+
+  # The first turn opens at the task start even when another record comes before the crossing call's result.
+  def test_a_crossing_call_moves_the_first_turn_to_the_task_start
+    records = [codex('2026-11-08T09:50:00Z', 'event_msg', 'type' => 'task_started'),
+               codex_call('09:58:00', 'v', 'bundle exec rspec'),
+               codex(at('10:01:00'), 'response_item', 'type' => 'message'), codex_output('10:03:00', 'v'),
+               codex(at('10:05:00'), 'event_msg', 'type' => 'task_complete')]
+
+    assert_equal [300_000, 120_000], summarize(records, since: START).values_at('active_ms', 'model_ms')
+  end
+
+  def test_a_crossing_call_still_running_counts_from_the_task_start
+    records = [user('09:50:00', 'Go'), in_message(tool_use('09:58:00', 'v', 'Bash', 'bin/validate'), 'm1'),
+               in_message(tool_use('10:02:00', 'r', 'Read'), 'm1'), result('10:04:00', 'r')]
+
+    entry = summarize(records, since: START)
+
+    assert_equal [240_000, 0], entry.values_at('active_ms', 'model_ms')
+    assert_equal({ 'validation' => 240_000, 'files' => 120_000 }, entry['tools'])
   end
 
   def test_codex_calls_cross_the_task_start_and_end_with_a_new_task

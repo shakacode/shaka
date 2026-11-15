@@ -113,13 +113,16 @@ module Shaka
 
     def validation?(program, arguments)
       return true if VALIDATION.include?(program)
-      return VALIDATION_SCRIPT.match?(package_script(program, arguments).to_s) if PACKAGE_MANAGERS.include?(program)
+      return validation_script?(package_script(program, arguments).to_s) if PACKAGE_MANAGERS.include?(program)
       return arguments.include?('test') if TEST_RUNNERS.include?(program)
 
       program == 'ruby' && arguments.any? do |word|
         word.end_with?('_test.rb') || VALIDATION.include?(File.basename(word))
       end
     end
+
+    # A `test` or `lint` script, or a validation tool the package manager runs, as in `pnpm vitest`.
+    def validation_script?(script) = VALIDATION_SCRIPT.match?(script) || VALIDATION.include?(script)
 
     # The script a package manager runs: the word after a leading `run`, or the first word, which npm runs only for
     # `test`. `yarn workspace NAME` and `yarn workspaces foreach` come before it.
