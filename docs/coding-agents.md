@@ -65,6 +65,46 @@ Before the first push, return to the original chat and checkout to continue.
 That checkout may still be on the cloud machine.
 See [cloud review options](reference/reviewer-setup.md#cloud-reviewers) for details.
 
+### Claude Code on the web
+
+Claude Code sessions on claude.ai/code start in a fresh container each time, so
+Shaka is not there unless the cloud environment installs it. The container also
+ships Ruby 3.3, and Shaka needs Ruby 3.4. Give the environment a setup script so
+`/shaka` is ready in every new session. Ask Claude in a cloud session:
+
+```text
+Add a setup script to this cloud environment that installs Ruby 3.4 and Shaka for Claude Code
+```
+
+You approve the change on a card. To add it yourself, open the cloud environment
+menu in the session's title bar, choose **Edit**, and paste this under
+**Setup script**:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+MAKE_OPTS=-j8 RUBY_CONFIGURE_OPTS=--disable-install-doc /opt/rbenv/bin/rbenv install -s 3.4.10
+export PATH=/opt/rbenv/versions/3.4.10/bin:$PATH
+umask 022
+mkdir -p "$HOME/.local/share/shaka"
+if [ ! -d "$HOME/.local/share/shaka/source" ]; then
+  git clone -q https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
+fi
+"$HOME/.local/share/shaka/source/bin/install" --agent claude
+```
+
+Building Ruby adds a few minutes to each new container. The script installs
+Shaka from its own clone, not from your project, because Shaka refuses to run a
+copy of itself from the repository it is changing. The script applies to new
+sessions; a session that is already running keeps what it has.
+
+A cloud session cannot yet finish a Shaka PR. Claude Code blocks GitHub's GraphQL
+API there, and the Shaka commands that write the PR description, walkthrough,
+review comment, and merge use it. Shaka's doctor reports this as a failed
+**GitHub GraphQL** check. Use the cloud session to make and validate the change,
+then [resume the PR](working-with-shaka.md#resume-unfinished-work) in a local
+session to finish it.
+
 ## Give consent once
 
 Shaka may ask whether it can send your change to another provider for review.
