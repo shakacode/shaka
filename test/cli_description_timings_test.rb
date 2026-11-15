@@ -64,9 +64,7 @@ class CliDescriptionTimingsTest < Minitest::Test
     with_repository do |root|
       commit(root)
       Dir.mktmpdir do |dir|
-        write_transcript(dir, claude_records)
-        env = { 'CLAUDE_CODE_SESSION_ID' => SESSION, 'CLAUDE_CONFIG_DIR' => dir, 'CODEX_THREAD_ID' => nil }
-        _output, error, status = run_description(dir, root:, decisions: [], env:)
+        _output, error, status = run_description(dir, root:, decisions: [], env: session_env(dir))
 
         assert_predicate status, :success?, error
         assert_includes File.read(File.join(dir, 'published.md')), '**Agent time:** 10m working in 1 session'
@@ -101,6 +99,12 @@ class CliDescriptionTimingsTest < Minitest::Test
     ['Execution details', 'Skills used', 'Usage and cost', 'Timings', 'Shaka settings'].each do |title|
       assert_includes metrics, "<summary>#{title}"
     end
+  end
+
+  # A Claude Code session whose transcript the description reads.
+  def session_env(dir)
+    write_transcript(dir, claude_records)
+    { 'CLAUDE_CODE_SESSION_ID' => SESSION, 'CLAUDE_CONFIG_DIR' => dir, 'CODEX_THREAD_ID' => nil }
   end
 
   # This machine logged a review of the pull request's commit.
