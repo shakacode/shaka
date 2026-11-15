@@ -49,6 +49,8 @@ module AgentTimeFixture
       'message' => { 'content' => [{ 'type' => 'tool_result', 'tool_use_id' => id }] } }
   end
 
+  def in_message(record, id) = record.merge('message' => record['message'].merge('id' => id))
+
   def codex(time, type, payload) = { 'timestamp' => time, 'type' => type, 'payload' => payload }
 
   def codex_call(clock, id, command)

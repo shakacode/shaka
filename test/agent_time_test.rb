@@ -192,6 +192,17 @@ class AgentTimeOpenCallsTest < Minitest::Test
     assert_equal({ 'validation' => 180_000 }, entry['tools'])
   end
 
+  # Claude Code does not always record a call's result; a newer message means the call had already returned.
+  def test_a_call_without_a_result_ends_when_the_next_message_starts
+    records = [user('10:00:00', 'Go'), in_message(tool_use('10:01:00', 'g', 'Grep'), 'm1'),
+               in_message(tool_use('10:03:00', 'r', 'Read'), 'm2'), result('10:05:00', 'r')]
+
+    entry = summarize(records)
+
+    assert_equal [300_000, 180_000], entry.values_at('active_ms', 'model_ms')
+    assert_equal({ 'files' => 120_000 }, entry['tools'])
+  end
+
   def test_codex_calls_cross_the_task_start_and_end_with_a_new_task
     records = [codex('2026-11-08T09:50:00Z', 'event_msg', 'type' => 'task_started'),
                codex_call('09:58:00', 'v', 'bundle exec rspec'), codex_output('10:03:00', 'v'),

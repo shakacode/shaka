@@ -78,8 +78,14 @@ module Shaka
       content = message['content']
       blocks = content.is_a?(Array) ? content.grep(Hash) : []
       claude_turn(record, content, blocks, at)
-      blocks.each { |block| claude_block(block, at) }
+      blocks.each { |block| claude_block(block, at, message['id']) }
       true
+    end
+
+    # The model starts a new message only after every earlier call returned, so a call still open then
+    # finished without a recorded result. Like a call never answered, it is left out.
+    def settle(message)
+      @open.reject! { |_id, (_at, _category, opener)| opener && message && opener != message }
     end
 
     # After a reply that ended its turn, the next record starts one even without a person's message, such
@@ -93,14 +99,16 @@ module Shaka
 
     # A call with no result by the end of its turn was interrupted; it is not left running for hours.
     def end_turn(record)
-      stop = hash(record['message'])['stop_reason']
+      message = hash(record['message'])
+      settle(message['id']) if record['type'] == 'assistant'
+      stop = message['stop_reason']
       @ended = record['type'] == 'assistant' && !stop.nil? && stop != 'tool_use'
       @open.clear if @ended
     end
 
-    def claude_block(block, at)
+    def claude_block(block, at, message)
       case block['type']
-      when 'tool_use' then open_call(block['id'], block['name'], hash(block['input'])['command'], at)
+      when 'tool_use' then open_call(block['id'], block['name'], hash(block['input'])['command'], at, message)
       when 'tool_result' then close_call(block['tool_use_id'], at)
       end
     end
@@ -124,10 +132,10 @@ module Shaka
 
     def start_turn(at, prompted: true) = @turns << Turn.new(at, at, prompted)
 
-    def open_call(id, name, command, at)
+    def open_call(id, name, command, at, message = nil)
       return unless id.is_a?(String) && name.is_a?(String)
 
-      @open[id] = [at, ToolCategory.call(name, command.is_a?(Array) ? command : command.to_s)]
+      @open[id] = [at, ToolCategory.call(name, command.is_a?(Array) ? command : command.to_s), message]
     end
 
     def close_call(id, at)
