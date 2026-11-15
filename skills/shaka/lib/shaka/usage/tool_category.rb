@@ -13,9 +13,13 @@ module Shaka
               'subagents' => %w[Agent Task spawn_agent] }.freeze
     # When a call runs several command lines, the first category in this order names it.
     PRIORITY = %w[validation review helper git_github].freeze
-    VALIDATION = %w[rubocop rspec pytest jest vitest eslint stylelint phpunit run-tests validate validate-local].freeze
-    # Tools whose `test` subcommand runs the tests: `go test`, `cargo test`, `npm test`.
-    TEST_RUNNERS = %w[npm yarn pnpm bun rake go cargo make mix dotnet].freeze
+    VALIDATION = %w[rubocop standardrb rspec pytest jest vitest eslint stylelint phpunit run-tests validate
+                    validate-local].freeze
+    # Tools whose `test` subcommand runs the tests: `go test`, `cargo test`.
+    TEST_RUNNERS = %w[rake go cargo make mix dotnet].freeze
+    # Package managers whose `test` and `lint` scripts validate: `npm run lint`, `yarn test:unit`, `pnpm lint`.
+    PACKAGE_MANAGERS = %w[npm yarn pnpm bun].freeze
+    VALIDATION_SCRIPT = /\A(?:test|lint)(?:[:._-].*)?\z/
     # Words that run the command after them: `bundle exec rubocop` runs rubocop.
     WRAPPERS = %w[env time nice command exec nohup].freeze
     # `timeout` runs the command after its duration, whatever options come first.
@@ -105,11 +109,21 @@ module Shaka
 
     def validation?(program, arguments)
       return true if VALIDATION.include?(program)
+      return VALIDATION_SCRIPT.match?(package_script(program, arguments).to_s) if PACKAGE_MANAGERS.include?(program)
       return arguments.include?('test') if TEST_RUNNERS.include?(program)
 
       program == 'ruby' && arguments.any? do |word|
         word.end_with?('_test.rb') || VALIDATION.include?(File.basename(word))
       end
+    end
+
+    # The script a package manager runs: the word after `run`, or the first word, which npm runs only for `test`.
+    # Options are skipped but their values are not, so `pnpm --filter web lint` reads `web` and counts as other shell.
+    def package_script(program, arguments)
+      first, second = arguments.reject { |word| word.start_with?('-') }
+      return second if %w[run run-script].include?(first)
+
+      first if program != 'npm' || first == 'test'
     end
   end
 end
