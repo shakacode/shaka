@@ -51,6 +51,13 @@ module AgentTimeFixture
 
   def codex(time, type, payload) = { 'timestamp' => time, 'type' => type, 'payload' => payload }
 
+  def codex_call(clock, id, command)
+    codex(at(clock), 'response_item', 'type' => 'function_call', 'call_id' => id, 'name' => 'exec_command',
+                                      'arguments' => JSON.generate('cmd' => command))
+  end
+
+  def codex_output(clock, id) = codex(at(clock), 'response_item', 'type' => 'function_call_output', 'call_id' => id)
+
   def write_transcript(home, records)
     directory = File.join(home, 'projects', 'project')
     FileUtils.mkdir_p(directory)

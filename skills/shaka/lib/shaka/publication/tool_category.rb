@@ -20,8 +20,9 @@ module Shaka
     # Package managers whose `test` and `lint` scripts validate: `npm run lint`, `yarn test:unit`, `pnpm lint`.
     PACKAGE_MANAGERS = %w[npm yarn pnpm bun].freeze
     VALIDATION_SCRIPT = /\A(?:test|lint)(?:[:._-].*)?\z/
-    # Package-manager options whose value names a workspace or directory, not the script.
-    PACKAGE_VALUED = %w[--filter -F --prefix -C --dir --cwd --workspace].freeze
+    # Options whose value comes before the script; `-w` takes a workspace in npm but none in pnpm.
+    PACKAGE_VALUED = { 'npm' => %w[--prefix -C --workspace -w --loglevel], 'yarn' => %w[--cwd],
+                       'pnpm' => %w[--filter -F --dir -C], 'bun' => %w[--cwd --filter -F] }.freeze
     # Words that run the command after them: `bundle exec rubocop` runs rubocop.
     WRAPPERS = %w[env time nice command exec nohup].freeze
     # `timeout` runs the command after its duration, whatever options come first.
@@ -119,24 +120,24 @@ module Shaka
       end
     end
 
-    # The script a package manager runs: the word after `run`, or the first word, which npm runs only for `test`.
-    # A workspace or directory option and `yarn workspace NAME` come before it.
+    # The script a package manager runs: the word after `run`, as in `yarn workspaces foreach -A run test`, or the
+    # first word, which npm runs only for `test`. `yarn workspace NAME` comes before it.
     def package_script(program, arguments)
-      words = positional(arguments)
+      words = positional(arguments, PACKAGE_VALUED.fetch(program))
       words = words.drop(2) if program == 'yarn' && words.first == 'workspace'
-      first, second = words
-      return second if %w[run run-script].include?(first)
+      run = words.index { |word| %w[run run-script].include?(word) }
+      return words[run + 1] if run
 
-      first if program != 'npm' || first == 'test'
+      words.first if program != 'npm' || words.first == 'test'
     end
 
-    # The words that are not options or the values of PACKAGE_VALUED options.
-    def positional(words)
+    # The words that are neither options nor the values of the program's valued options.
+    def positional(words, valued)
       first, *rest = words
       return [] if first.nil?
-      return positional(PACKAGE_VALUED.include?(first) ? rest.drop(1) : rest) if first.start_with?('-')
+      return positional(valued.include?(first) ? rest.drop(1) : rest, valued) if first.start_with?('-')
 
-      [first, *positional(rest)]
+      [first, *positional(rest, valued)]
     end
   end
 end

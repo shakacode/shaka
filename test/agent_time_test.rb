@@ -133,7 +133,10 @@ class ToolCategoryTest < Minitest::Test
     'yarn add lint-staged' => 'shell', 'npm install test' => 'shell', 'npm lint' => 'shell',
     'pnpm --filter web test' => 'validation', 'yarn workspace web lint' => 'validation',
     'npm --prefix app test' => 'validation',
-    'npm --workspace web run lint' => 'validation', 'pnpm -r test' => 'validation'
+    'npm --workspace web run lint' => 'validation', 'pnpm -r test' => 'validation',
+    'npm -w web test' => 'validation', 'npm -w web run lint' => 'validation', 'npm -w web run build' => 'shell',
+    'yarn workspaces foreach -A run test' => 'validation', 'pnpm -w lint' => 'validation',
+    'npm --loglevel silent test' => 'validation'
   }.freeze
 
   def test_shell_calls_are_classed_by_the_programs_they_run
@@ -182,6 +185,19 @@ class AgentTimeOpenCallsTest < Minitest::Test
   def test_a_call_crossing_the_task_start_counts_from_the_start
     records = [user('09:50:00', 'Go'), tool_use('09:58:00', 'v', 'Bash', 'bin/validate'), result('10:03:00', 'v'),
                assistant('10:05:00', 'end_turn')]
+
+    entry = summarize(records, since: START)
+
+    assert_equal [300_000, 120_000], entry.values_at('active_ms', 'model_ms')
+    assert_equal({ 'validation' => 180_000 }, entry['tools'])
+  end
+
+  def test_codex_calls_cross_the_task_start_and_end_with_a_new_task
+    records = [codex('2026-11-08T09:50:00Z', 'event_msg', 'type' => 'task_started'),
+               codex_call('09:58:00', 'v', 'bundle exec rspec'), codex_output('10:03:00', 'v'),
+               codex_call('10:04:00', 'k', 'bundle exec rspec'),
+               codex('2026-11-08T10:30:00Z', 'event_msg', 'type' => 'task_started'),
+               codex('2026-11-08T10:31:00Z', 'event_msg', 'type' => 'task_complete')]
 
     entry = summarize(records, since: START)
 
