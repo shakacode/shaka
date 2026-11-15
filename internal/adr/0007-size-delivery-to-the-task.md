@@ -167,8 +167,10 @@ With that record:
 
 - `merge`, `handoff`, and `attention` accept a missing walkthrough.
 - `merge` and `squash-message` accept a missing checkpoint outside the risky areas in
-  decision 2. This widens today's opt-out authority, which allows only trusted
-  instructions or a direct user instruction.
+  decision 2. Code checks only the trusted path lists there: `high_risk_areas`,
+  `medium_risk_areas`, and agent-instruction paths. The agent alone enforces the other
+  areas and a person's request for a full review. This widens today's opt-out
+  authority, which allows only trusted instructions or a direct user instruction.
 - `description` skips the opening check.
 
 The agent already decides some skips: the workflow tells it to pass `--review-waiver` for
@@ -229,11 +231,11 @@ review or validation, which this design keeps.
   things limit the damage: risky areas keep review and the checkpoint, skips force Ask,
   and the PR shows every skip to the person merging. Before that, the agent skips only
   bookkeeping.
-- Decisions 3 and 4 change `merge`, `handoff`, `attention`, and `description`, their
-  tests, and the enforcement manifest entries for the changed rules. Their cost is
-  real, and the measured savings they buy are small: the checkpoint's median is 44
-  seconds, and the walkthrough is unmeasured. So the code waits for a measurement (open
-  decision 4).
+- Decisions 3 and 4 change `merge`, `squash-message`, `handoff`, `attention`, and
+  `description`, their tests, and the enforcement manifest entries for the changed
+  rules. Their cost is real, and the measured savings they buy are small: the
+  checkpoint's median is 44 seconds, and the walkthrough is unmeasured. So the code
+  waits for a measurement (open decision 4).
 - Success means a small config task reaches a merge-ready PR with fewer steps and fewer
   model calls, while every gate above still runs. Before implementation, measure one
   small config task under the current workflow so the comparison has a baseline. Read
