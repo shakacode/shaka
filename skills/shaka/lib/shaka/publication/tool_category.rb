@@ -20,6 +20,8 @@ module Shaka
     # Package managers whose `test` and `lint` scripts validate: `npm run lint`, `yarn test:unit`, `pnpm lint`.
     PACKAGE_MANAGERS = %w[npm yarn pnpm bun].freeze
     VALIDATION_SCRIPT = /\A(?:test|lint)(?:[:._-].*)?\z/
+    # Package-manager options whose value names a workspace or directory, not the script.
+    PACKAGE_VALUED = %w[--filter -F --prefix -C --dir --cwd --workspace].freeze
     # Words that run the command after them: `bundle exec rubocop` runs rubocop.
     WRAPPERS = %w[env time nice command exec nohup].freeze
     # `timeout` runs the command after its duration, whatever options come first.
@@ -118,12 +120,23 @@ module Shaka
     end
 
     # The script a package manager runs: the word after `run`, or the first word, which npm runs only for `test`.
-    # Options are skipped but their values are not, so `pnpm --filter web lint` reads `web` and counts as other shell.
+    # A workspace or directory option and `yarn workspace NAME` come before it.
     def package_script(program, arguments)
-      first, second = arguments.reject { |word| word.start_with?('-') }
+      words = positional(arguments)
+      words = words.drop(2) if program == 'yarn' && words.first == 'workspace'
+      first, second = words
       return second if %w[run run-script].include?(first)
 
       first if program != 'npm' || first == 'test'
+    end
+
+    # The words that are not options or the values of PACKAGE_VALUED options.
+    def positional(words)
+      first, *rest = words
+      return [] if first.nil?
+      return positional(PACKAGE_VALUED.include?(first) ? rest.drop(1) : rest) if first.start_with?('-')
+
+      [first, *positional(rest)]
     end
   end
 end

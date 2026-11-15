@@ -2,12 +2,14 @@
 
 require_relative 'cli_description_decisions_test'
 require 'shaka/publication/timeline_steps'
+require_relative 'agent_time_fixture'
 
 # The published description carries the timings the helper read from the label timeline.
 class CliDescriptionTimingsTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include CliOpeningCheckFakes
   include CliDescriptionDecisionsRun
+  include AgentTimeFixture
 
   COMMAND = CliDescriptionDecisionsTest::COMMAND
   ROOT = CliDescriptionDecisionsTest::ROOT
@@ -52,6 +54,22 @@ class CliDescriptionTimingsTest < Minitest::Test
         assert_predicate status, :success?, error
         published = File.read(File.join(dir, 'published.md'))
         assert_includes published, '**Before first recorded validation:** 1h 5m'
+      end
+    end
+  end
+
+  # The helper reads the running session's transcript and passes its totals to publication.
+  def test_description_publishes_the_running_sessions_agent_time
+    @task_started_at = '2026-10-18T07:00:00Z'
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        write_transcript(dir, claude_records)
+        env = { 'CLAUDE_CODE_SESSION_ID' => SESSION, 'CLAUDE_CONFIG_DIR' => dir, 'CODEX_THREAD_ID' => nil }
+        _output, error, status = run_description(dir, root:, decisions: [], env:)
+
+        assert_predicate status, :success?, error
+        assert_includes File.read(File.join(dir, 'published.md')), '**Agent time:** 10m working in 1 session'
       end
     end
   end

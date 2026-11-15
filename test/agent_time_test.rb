@@ -130,7 +130,10 @@ class ToolCategoryTest < Minitest::Test
     'npm run lint' => 'validation', 'yarn lint' => 'validation', 'pnpm lint' => 'validation',
     'bundle exec standardrb' => 'validation', 'npm run test:unit' => 'validation', 'npm test' => 'validation',
     'yarn run lint:fix' => 'validation', 'bun run test' => 'validation', 'npm run build' => 'shell',
-    'yarn add lint-staged' => 'shell', 'npm install test' => 'shell', 'npm lint' => 'shell'
+    'yarn add lint-staged' => 'shell', 'npm install test' => 'shell', 'npm lint' => 'shell',
+    'pnpm --filter web test' => 'validation', 'yarn workspace web lint' => 'validation',
+    'npm --prefix app test' => 'validation',
+    'npm --workspace web run lint' => 'validation', 'pnpm -r test' => 'validation'
   }.freeze
 
   def test_shell_calls_are_classed_by_the_programs_they_run

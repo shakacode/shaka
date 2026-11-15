@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'digest'
-require_relative 'agent_time_reader'
+require_relative '../publication/agent_time_reader'
 require_relative '../publication/agent_time'
 require_relative 'claude_usage'
 require_relative 'codex_usage'
