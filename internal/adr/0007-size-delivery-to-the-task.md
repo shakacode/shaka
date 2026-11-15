@@ -86,7 +86,8 @@ recovered:
   A maintainer who finds that slow lowers its cost with
   [`validate-local`](../../docs/settings.md#count-a-faster-check-as-validation). The agent
   does not skip it.
-- Required checks, merge preference, and every refusal `merge` makes today.
+- Required checks, merge preference, and every refusal `merge` makes today, except the
+  walkthrough check that decision 4 changes.
 - Read public comments only through `comments`.
 - WIP Details on an open PR, which `handoff` requires so another session can resume it.
 - List the steps outside the code that the change needs, such as a migration, an
@@ -101,14 +102,21 @@ would catch something on this change, and records a one-line reason when it skip
   Skipping it stays limited to trivial prose and no-op changes.
 - The walkthrough. Its inline notes are already optional below three changed files.
   A change whose description already explains every changed line needs no walkthrough.
-- The final checkpoint ("did we build the right thing?"). Skipping it means publishing
-  the merge message with `squash-message`, as an opted-out checkpoint does today.
-- The reviewer startup probe. `review run` reports an unavailable reviewer anyway.
-- The opening check.
+- The final checkpoint ("did we build the right thing?"). Today only trusted
+  instructions or a direct user instruction may opt out of it, so letting the agent
+  skip it changes that authority rule (decision 4).
+- The opening check. It runs inside `description` whenever its setting is on, so
+  skipping it needs a `description` change (decision 4).
 - UI captures and speed comparisons, which are already conditional.
 
-**Bookkeeping runs only when someone will use it:**
+The walkthrough, checkpoint, and opening check are enforced or run by commands, so the
+agent can skip them only once decision 4's code ships.
 
+**Bookkeeping runs only when someone will use it.** None of these steps verifies the
+change, and no command requires them:
+
+- Run the reviewer startup probe only when the task has a reason to doubt a reviewer,
+  such as a new machine. `review run` reports an unavailable reviewer anyway.
 - Rename the chat once a PR exists, not before the first reply.
 - Record a return point when the person confirms a direction worth returning to, not at
   every task start.
@@ -124,8 +132,10 @@ counts only as supporting evidence, never as the reason.
 
 The agent may not skip the local review or the final checkpoint when the change touches:
 
-- a trusted `high_risk_areas` or `medium_risk_areas` path (agent instructions are already
-  in `medium_risk_areas`);
+- a trusted `high_risk_areas` or `medium_risk_areas` path;
+- agent instructions as [`review.required`](../../docs/settings.md#reviewrequired)
+  defines them, which include every file under `skills/` and `.agents/`, so the
+  workflow itself is covered;
 - authentication, permissions, releases, deployments, destructive migrations, or merge
   guards (the workflow already sends these to explicit human review);
 - anything a person asked to have reviewed in full.
@@ -140,21 +150,34 @@ sees what did not run.
 A task that skipped an evidence step uses Ask for its merge, even when Auto is set. The
 person who merges sees the recorded skips first. Auto still requires the full evidence
 it requires today. A skipped checkpoint already blocks Auto, because Auto refuses a PR
-without a checkpoint rating. For other skips, `merge --auto` refuses any head whose
-description records a skip.
+without a checkpoint rating. For other skips, `merge --auto` refuses any head with a
+skip record. This rule ships with decision 4, because before then the agent can skip
+only bookkeeping, which needs no person to see it.
 
 ### 4. Code accepts a recorded skip, only under Ask
 
-`merge`, `handoff`, and `attention` accept a skipped walkthrough when the published
-description records the skip for the current head. A new commit needs a new record, the
-same way it needs new validation.
+The agent records each skip in a PR comment for the exact head, published by the
+account that will run `merge`. That is how `merge` and `squash-message` already read
+the checkpoint: this account's latest one for the current head. A new commit needs a
+new record, the same way it needs new validation. The description shows the skips, but
+code never reads them from the description: a PR's author can edit its body, including
+the author of a PR from a fork without write access.
 
-The agent writes that record, unlike today's `--review-waiver`, which a maintainer
-records. The [trust model](../../docs/workflow.md#trust-model) permits this. The agent
-acts for the maintainer, and outside input cannot add a skip: only accounts with write
-access can edit a PR description, and the record lives in the region `description`
-manages. The record is accepted
-only on an Ask merge, so the maintainer still decides with the skip in front of them.
+With that record:
+
+- `merge`, `handoff`, and `attention` accept a missing walkthrough.
+- `merge` and `squash-message` accept a missing checkpoint outside the risky areas in
+  decision 2. This widens today's opt-out authority, which allows only trusted
+  instructions or a direct user instruction.
+- `description` skips the opening check.
+
+The agent already decides some skips: the workflow tells it to pass `--review-waiver` for
+a nit-only follow-up, a prose-only exception, or a head a CI review covered. What is new
+is skipping on the agent's judgment of what the change touches. The
+[trust model](../../docs/workflow.md#trust-model) permits this: the agent acts for the
+maintainer, outside input cannot write a comment as the merging account, and the record
+is accepted only on an Ask merge, so the maintainer decides with the skip in front of
+them.
 
 ### 5. Load what the task uses
 
@@ -177,13 +200,13 @@ saved.
 | Steps besides merging | Runs | Runs, and matters most here: restart or deploy order |
 | Startup probe, plan recommendation | Run before implementation | Skipped |
 | Chat rename, return point | Run at task start | Only when used |
-| Walkthrough | Required; notes optional below three files | Depends on open decision 1 |
-| Opening check | Runs | Skipped, with a reason |
+| Walkthrough | Required; notes optional below three files | Required until decision 4 ships; then depends on open decision 1 |
+| Opening check | Runs | Runs until decision 4 ships; then skipped, with a reason |
 | Workflow text loaded | All of it | Gates and the steps that run |
 | Merge | A person merges (high risk) | A person merges |
 
-The saving on this task is the bookkeeping, the probe, the opening check, the text the
-agent reads, and possibly the walkthrough. Until the reported session is read, nobody
+The first, prose-only PR saves the bookkeeping, the probe, and some of the text the agent
+reads. The opening check and possibly the walkthrough wait for decision 4. Until the reported session is read, nobody
 knows whether that matches where its time went. Its time may instead have gone to the
 review or validation, which this design keeps.
 
@@ -202,9 +225,10 @@ review or validation, which this design keeps.
 
 ## Consequences
 
-- The agent can misjudge what a change touches. Three things limit the damage: risky
-  areas keep review and the checkpoint, skips force Ask, and the PR shows every skip to
-  the person merging.
+- The agent can misjudge what a change touches. Once evidence steps can be skipped, three
+  things limit the damage: risky areas keep review and the checkpoint, skips force Ask,
+  and the PR shows every skip to the person merging. Before that, the agent skips only
+  bookkeeping.
 - Decisions 3 and 4 change `merge`, `handoff`, `attention`, and `description`, their
   tests, and the enforcement manifest entries for the changed rules. Their cost is
   real, and the measured savings they buy are small: the checkpoint's median is 44
@@ -227,7 +251,9 @@ review or validation, which this design keeps.
    `.agents/shaka/config.yml` through the settings migration flow. Add it only if a
    maintainer asks for it.
 4. Order of delivery. Recommended:
-   1. a prose-only PR for decisions 1, 2, and 5, which needs no code;
+   1. a prose-only PR for the bookkeeping part of decision 1 and for decision 5. No
+      command checks those steps, so prose alone can change them;
    2. a measured run of a small config task before and after that PR;
-   3. the code for decisions 3 and 4, only if that run shows the walkthrough still costs
-      enough to justify it.
+   3. the evidence skips, together: decision 2's limits, decision 3's Ask rule, and
+      decision 4's code. Ship this only if that run shows the walkthrough, checkpoint,
+      and opening check still cost enough to justify it.
