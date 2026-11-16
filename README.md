@@ -50,7 +50,7 @@ instructions would cost tokens on every task; as code, they run the same way eac
 | Procedures the agent loads only when needed, such as review | 42 files, about 51,000 words in total |
 | Tests for that Ruby, kept in this repository | About 76,000 lines |
 
-See [how these numbers were measured](docs/architecture.md#put-repeatable-checks-in-code).
+See [how these numbers were measured](docs/architecture.md#most-of-shaka-is-ruby).
 
 <a id="example-prompts"></a>
 <a id="get-started"></a>
