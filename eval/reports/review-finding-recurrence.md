@@ -28,9 +28,9 @@ model runs. No person has rechecked the classification.*
 - **Recurring share:** 406 findings (24%) fall into 18 kinds that each appear on 3 or
   more PRs. They touch 183 of the 323 PRs.
 - **Unclassified:** the other 1,304 findings have no kind. A hand check of 150 of them
-  found 30 (20%) that fit a kind defined before the check. If that rate held for all
-  1,304, the recurring share would be about 40%. The same classifier judged both, so
-  40% is an extrapolation, not a count.
+  found 30 (20%) that fit a kind defined before the check, so 24% is a lower bound.
+  Those hits were then added to the counts, so the sample rate does not carry over to
+  the 1,304 that remain.
 - **Mostly one-off in the sample:** 104 of the 150 checked findings fit no kind. They
   concern one change, such as one function's wrong default or one guide's missing step.
 - **Biggest kinds compare prose with code.** The largest kind, docs or instructions
@@ -131,7 +131,7 @@ check would flag mechanically. Cost covers writing the check and keeping it corr
 | A rule restated in a second instruction file | 11 / 10 | 14 | 13 / 1 | 5 | Near-duplicate sentence report in `bin/report-instruction-growth` | Close copies only | Low, report-only | Evaluate first |
 | A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | 5 / 5 | 10 | Test refusing English string literals over about 25 words in `skills/shaka/lib` | 3 prompt-text cases on 3 PRs, 1 of them dismissed; the 4 numeric ones were dismissed as constants | Low | Evaluate first: run it on `main` and count hits |
 | `enforcement.yml` out of step with the workflow | 8 / 3 | 10 | 5 / 5 | 3 | Loader already checks quotes; add that entry names cited in docs exist | 1 | Low | Defer |
-| Seam upgrade reference scanner misses or misfires | 7 / 7 | 38 | 33 / 5 | 23 | None: the scanner was itself the check, removed in #997 | n/a | Was 1,832 lines | Evidence of check upkeep |
+| Seam upgrade reference scanner misses or misfires | 7 / 7 | 38 | 33 / 5 | 23 | None: the scanner was itself the check, removed in #997 | n/a | Was 1,832 lines | Evidence of the review cost of building a check |
 | Docs link to a missing anchor | 6 / 3 | 7 | 3 / 4 | 1 | Exists: `bin/check-docs-navigation` since #616 | The 3 fixed were outside its reach | Already paid | No new check |
 | Git subprocess picks up the caller's Git environment or config | 5 / 5 | 13 | 9 / 4 | 7 | Boundary test: every Git spawn in `skills/shaka/lib` uses one runner that clears `GIT_*`, global config, filters and hooks | 4 to 6 of 13, where isolation was missing; #710 dismissed 2 under the trust model, since filters came from the maintainer's own config | Medium: about 35 library files name `git` and 14 set `GIT_*` themselves | Evaluate first: map each finding to the test |
 | GitHub list read stops at the first page | 4 / 3 | 4 | 3 / 1 | 3 | Lint list calls to `gh api` for `--paginate` or a limit check | Most | Low to medium; single-page reads need an allowlist | Defer |
@@ -211,7 +211,7 @@ below the threshold.
 - **One classifier.** Claude Opus 5.5 assigned every kind. No second reader checked it.
   Titles were the main input; dismissal reasons were read for some kinds.
 - **Recall.** The 150-finding check found 20% of unclassified findings in a counted
-  kind. Counts are lower bounds, and the 40% figure assumes that rate holds.
+  kind. Counts are lower bounds.
 - **Dismissals are the agent's own judgment.** No dismissed finding was rerun or
   rechecked, unlike the [review signal study](review-signal.md). The prompt change for
   unnamed callers could hide a real risk; trial it before adopting it.

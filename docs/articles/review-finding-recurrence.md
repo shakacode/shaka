@@ -148,8 +148,7 @@ from prose to checks.
 - **Classifier:** one agent, Claude Opus 5.5, read and sorted every counted finding,
   mostly from titles. No second reader checked it.
 - **Recall:** a hand check of 150 unmatched findings found 30 that belonged to a counted
-  kind. Counts are lower bounds. If that rate held for all 1,304, the share would be about
-  40%, an untested extrapolation.
+  kind. Counts are lower bounds.
 - **Dismissals:** the agent's own judgment. No dismissed finding was rerun or rechecked.
 - **Catch and cost:** estimates, not measurements. No candidate check was built or
   replayed against history.
