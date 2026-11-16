@@ -8,7 +8,7 @@ module Shaka
     HEADING = "<summary>#{SUMMARY}</summary>".freeze
     TASK_START = '- **Task start** was not recorded, so the cost line shows no time from task start to ready ' \
                  'or merge, and Timings shows Prompt to CI as not recorded. To fill it, the agent passes the ' \
-                 'original request timing when it publishes the description.'
+                 'original request as `codex_task_start` or its timestamp as `task_started_at`.'
 
     module_function
 
