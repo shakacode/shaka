@@ -25,6 +25,13 @@ class StoredRenderingTest < Minitest::Test
     assert_equal "<p>then #{SHA}</p>", Shaka::StoredRendering.normalize(stored, source)
   end
 
+  def test_a_sha_inside_an_indented_tilde_fence_is_not_what_github_linked
+    source = "   ~~~\n   REVIEWED 1b571dc BY x\n   ~~~\n\nREVIEWED #{SHA} BY x"
+    stored = "<pre><code>REVIEWED 1b571dc BY x</code></pre><p>REVIEWED #{commit_link('1b571dc')} BY x</p>"
+
+    assert_includes Shaka::StoredRendering.normalize(stored, source), "<p>REVIEWED #{SHA} BY x</p>"
+  end
+
   def test_issue_links_and_mentions_keep_their_text
     stored = '<p><a class="issue-link js-issue-link" href="x">#12</a> <a class="user-mention" href="y">@sam</a></p>'
 

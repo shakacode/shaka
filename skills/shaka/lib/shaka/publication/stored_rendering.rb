@@ -9,7 +9,7 @@ module Shaka
   module StoredRendering
     LINK = %r{<a\b[^>]*\bclass="[^"]*\b(?:commit-link|issue-link|user-mention|team-mention)\b[^"]*"[^>]*>(.*?)</a>}m
     # Source text GitHub never links: comments, code, link targets, and HTML tags.
-    UNLINKED = [/<!--.*?-->/m, /^~~~.*?^~~~/m, /```.*?```/m, /(`+)(?:(?!\1).)*\1(?!`)/m, /\]\([^)\s]*\)/,
+    UNLINKED = [/<!--.*?-->/m, /^ {0,3}~~~.*?^ {0,3}~~~/m, /```.*?```/m, /(`+)(?:(?!\1).)*\1(?!`)/m, /\]\([^)\s]*\)/,
                 /<[^>]*>/].freeze
 
     module_function

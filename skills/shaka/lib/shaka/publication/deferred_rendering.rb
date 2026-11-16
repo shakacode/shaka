@@ -47,6 +47,7 @@ module Shaka
       stored = written.equal?(existing) ? api(comment_path(written, target), headers: [FULL]) : written
       html = stored['body_html']
       raise Error, 'GitHub returned no stored rendering to check.' unless html.is_a?(String)
+      raise Error, 'The comment changed after it was listed.' unless stored['body'] == written['body']
 
       html
     end

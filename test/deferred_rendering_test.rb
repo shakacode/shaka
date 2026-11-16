@@ -12,6 +12,10 @@ module DeferredRenderingRunner
 
   private
 
+  def publish(body: 'Hello.', **)
+    Shaka::GitHub.new('owner/repo', 42, runner: method(:answer)).reply(body:, key: 'loop', **)
+  end
+
   def mark = '<!-- shaka:reply:loop -->'
   def created = @calls.select { |argv, _| argv.include?(COMMENTS) && argv.include?('POST') }
   def deleted? = @calls.any? { |argv, _| argv.include?('DELETE') }
@@ -160,11 +164,5 @@ class DeferredRenderingTest < Minitest::Test
     @stored_html = '<p>Report says \\n literally.</p>'
     error = assert_raises(Shaka::Error) { publish(body: "Intro.\n\n#{report}", verbatim: [report], stored_check: ->(_) {}) }
     assert_match(/literal escape.*deleted/, error.message)
-  end
-
-  private
-
-  def publish(body: 'Hello.', **)
-    Shaka::GitHub.new('owner/repo', 42, runner: method(:answer)).reply(body:, key: 'loop', **)
   end
 end
