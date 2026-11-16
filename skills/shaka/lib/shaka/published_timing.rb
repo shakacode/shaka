@@ -44,17 +44,23 @@ module Shaka
     def endpoint_gap(state, timeline, now)
       return 'GitHub merge time unavailable.' if timeline.values_at('merged_pr', 'merged') == [true, nil]
 
-      endpoint = state['t3'] ? %w[t3 merged] : %w[t2 ready_at]
+      endpoint = elapsed_endpoint(state, timeline)
       observed = timeline[endpoint.last]
       return 'GitHub readiness time unavailable.' if observed == :unknown
 
-      recorded = state[endpoint.first]
-      return unless recorded
-
-      actual = TaskTiming.timestamp(recorded, now)
-      return if actual && actual == observed
+      return if endpoint_matches?(state[endpoint.first], observed, now)
 
       'The elapsed endpoint could not be verified from current GitHub evidence.'
+    end
+
+    def elapsed_endpoint(state, timeline)
+      timeline['merged'] || state['t3'] ? %w[t3 merged] : %w[t2 ready_at]
+    end
+
+    def endpoint_matches?(recorded, observed, now)
+      return recorded.nil? if observed.nil?
+
+      TaskTiming.timestamp(recorded, now) == observed
     end
 
     # Publication already checks that GitHub stored the submitted body. Check the

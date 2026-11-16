@@ -425,9 +425,9 @@ of that reviewer's findings became which finding. A solo report has no collation
 Once a batch is recorded, no reviewer can join it. A round whose start checks read a ledger that changed while it ran, other than by
 another reviewer of its commit, is refused; run it again.
 
-The trusted `review.local_max_rounds` (default 5) caps the commits reviewed in this ledger; several reviewers of one commit count once.
+The trusted `review.local_max_rounds` (default 8) caps the commits reviewed in this ledger; several reviewers of one commit count once.
 `review run` refuses the next round with `failure_stage: round_cap` before launching a reviewer.
-The ledger records the cap used, and publication uses that value; older ledgers default to 5.
+The ledger records the cap used, and publication uses that value; a ledger with no recorded cap uses the shipped default.
 For an explicit maintainer extension, pass `--max-review-executions TOTAL --budget-reason TEXT`
 to `review run --ledger PATH`. Record a public-safe reason describing that authorization.
 TOTAL is an absolute task limit, including all existing ledger reviews; overlapping prompts

@@ -13,9 +13,17 @@ module Shaka
               'subagents' => %w[Agent Task spawn_agent] }.freeze
     # When a call runs several command lines, the first category in this order names it.
     PRIORITY = %w[validation review helper git_github].freeze
-    VALIDATION = %w[rubocop rspec pytest jest vitest eslint stylelint phpunit run-tests validate validate-local].freeze
-    # Tools whose `test` subcommand runs the tests: `go test`, `cargo test`, `npm test`.
-    TEST_RUNNERS = %w[npm yarn pnpm bun rake go cargo make mix dotnet].freeze
+    VALIDATION = %w[rubocop standardrb rspec pytest jest vitest eslint stylelint phpunit run-tests validate
+                    validate-local].freeze
+    # Tools whose `test` subcommand runs the tests: `go test`, `cargo test`.
+    TEST_RUNNERS = %w[rake go cargo make mix dotnet].freeze
+    # Package managers whose `test` and `lint` scripts validate: `npm run lint`, `yarn test:unit`, `pnpm lint`.
+    PACKAGE_MANAGERS = %w[npm yarn pnpm bun].freeze
+    VALIDATION_SCRIPT = /\A(?:test|lint)(?:[:._-].*)?\z/
+    # Options whose value comes before the script; `-w` takes a workspace in npm but none in pnpm.
+    PACKAGE_VALUED = { 'npm' => %w[--prefix -C --workspace -w --loglevel],
+                       'yarn' => %w[--cwd --include --exclude --from --jobs -j],
+                       'pnpm' => %w[--filter -F --dir -C], 'bun' => %w[--cwd --filter -F] }.freeze
     # Words that run the command after them: `bundle exec rubocop` runs rubocop.
     WRAPPERS = %w[env time nice command exec nohup].freeze
     # `timeout` runs the command after its duration, whatever options come first.
@@ -105,11 +113,42 @@ module Shaka
 
     def validation?(program, arguments)
       return true if VALIDATION.include?(program)
+      return validation_script?(package_script(program, arguments).to_s) if PACKAGE_MANAGERS.include?(program)
       return arguments.include?('test') if TEST_RUNNERS.include?(program)
 
       program == 'ruby' && arguments.any? do |word|
         word.end_with?('_test.rb') || VALIDATION.include?(File.basename(word))
       end
+    end
+
+    # A `test` or `lint` script, or a validation tool the package manager runs, as in `pnpm vitest`.
+    def validation_script?(script) = VALIDATION_SCRIPT.match?(script) || VALIDATION.include?(script)
+
+    # The script a package manager runs: the word after a leading `run`, or the first word, which npm runs only for
+    # `test`. `yarn workspace NAME` and `yarn workspaces foreach` come before it.
+    def package_script(program, arguments)
+      words = positional(arguments, PACKAGE_VALUED.fetch(program))
+      words = words.drop(2) if program == 'yarn' && %w[workspace workspaces].include?(words.first)
+      first, second = words
+      return second if %w[run run-script].include?(first)
+
+      first if program != 'npm' || first == 'test'
+    end
+
+    # The first four words that are neither options nor option values, enough for `yarn workspace NAME run SCRIPT`.
+    # The scan stops there, so a command with thousands of file arguments costs no more.
+    def positional(words, valued)
+      found = []
+      skip = false
+      words.each do |word|
+        break if found.size == 4
+
+        if skip then skip = false
+        elsif word.start_with?('-') then skip = valued.include?(word)
+        else found << word
+        end
+      end
+      found
     end
   end
 end

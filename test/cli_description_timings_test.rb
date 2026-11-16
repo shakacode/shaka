@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'cli_description_decisions_test'
+require_relative 'agent_time_fixture'
 require 'shaka/publication/timeline_steps'
 require 'shaka/publication/throughput_stats'
 
@@ -9,6 +10,7 @@ class CliDescriptionTimingsTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include CliOpeningCheckFakes
   include CliDescriptionDecisionsRun
+  include AgentTimeFixture
 
   COMMAND = CliDescriptionDecisionsTest::COMMAND
   ROOT = CliDescriptionDecisionsTest::ROOT
@@ -16,17 +18,9 @@ class CliDescriptionTimingsTest < Minitest::Test
   HEAD = 'a' * 40
 
   def test_description_shows_the_timings_read_from_the_label_timeline
-    with_repository do |root|
-      commit(root)
-      Dir.mktmpdir do |dir|
-        _output, error, status = run_description(dir, root:, decisions: [])
-
-        assert_predicate status, :success?, error
-        published = File.read(File.join(dir, 'published.md'))
-        assert_includes published, '<summary>Timings · 10m between checkpoints ·'
-        assert_match(/\| Waiting on a person: answer \| 2026-10-18 08:10 \| [^|]+ \(resumed\) \|/, published)
-      end
-    end
+    published = publish_timings
+    assert_includes published, '<summary>Timings · 10m between checkpoints ·'
+    assert_match(/\| Waiting on a person: answer \| 2026-10-18 08:10 \| [^|]+ \(resumed\) \|/, published)
   end
 
   def test_description_lists_logged_steps_and_keeps_the_carried_ones
@@ -45,27 +39,25 @@ class CliDescriptionTimingsTest < Minitest::Test
 
   def test_description_counts_work_before_the_first_commit_and_validation
     @task_started_at = '2026-10-18T07:00:00Z'
+    assert_includes publish_timings { |dir| steps_env(dir) }, '**Before first recorded validation:** 1h 5m'
+  end
+
+  # The helper reads the running session's transcript and passes its totals to publication.
+  def test_description_publishes_the_running_sessions_agent_time
+    @task_started_at = '2026-10-18T07:00:00Z'
     with_repository do |root|
       commit(root)
       Dir.mktmpdir do |dir|
-        _output, error, status = run_description(dir, root:, decisions: [], env: steps_env(dir))
+        _output, error, status = run_description(dir, root:, decisions: [], env: session_env(dir))
 
         assert_predicate status, :success?, error
-        published = File.read(File.join(dir, 'published.md'))
-        assert_includes published, '**Before first recorded validation:** 1h 5m'
+        assert_includes File.read(File.join(dir, 'published.md')), '**Agent time:** 10m working in 1 session'
       end
     end
   end
 
   def test_publication_groups_metadata_but_leaves_change_evidence_and_cost_visible
-    with_repository do |root|
-      commit(root)
-      Dir.mktmpdir do |dir|
-        _output, error, status = run_description(dir, root:, decisions: [])
-        assert_predicate status, :success?, error
-        assert_metrics_layout(File.read(File.join(dir, 'published.md')))
-      end
-    end
+    assert_metrics_layout(publish_timings)
   end
 
   def test_a_saved_start_after_pr_opening_is_discarded
@@ -88,7 +80,7 @@ class CliDescriptionTimingsTest < Minitest::Test
     with_repository do |root|
       commit(root)
       Dir.mktmpdir do |dir|
-        _output, error, status = run_description(dir, root:, decisions: [], env:)
+        _output, error, status = run_description(dir, root:, decisions: [], env: block_given? ? yield(dir) : env)
         assert_predicate status, :success?, error
         File.read(File.join(dir, 'published.md'))
       end
@@ -103,6 +95,12 @@ class CliDescriptionTimingsTest < Minitest::Test
     ['Execution details', 'Skills used', 'Usage and cost', 'Timings', 'Shaka settings'].each do |title|
       assert_includes metrics, "<summary>#{title}"
     end
+  end
+
+  # A Claude Code session whose transcript the description reads.
+  def session_env(dir)
+    write_transcript(dir, claude_records)
+    { 'CLAUDE_CODE_SESSION_ID' => SESSION, 'CLAUDE_CONFIG_DIR' => dir, 'CODEX_THREAD_ID' => nil }
   end
 
   # This machine logged a review of the pull request's commit.

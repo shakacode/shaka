@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'throughput_helper'
+require 'shaka/published_timing'
 
 # The ready time is when the current head's required checks and configured reviews last turned green.
 class ThroughputReadyTest < Minitest::Test
@@ -65,6 +66,17 @@ class ThroughputReadyTest < Minitest::Test
   def test_a_green_gate_with_no_timestamp_renders_unknown
     rendered = describe('$4.12', timeline: push_times.merge('ready_at' => :unknown), pull: head_pull)
     assert_includes rendered, '· ready in UNKNOWN'
+  end
+
+  def test_verification_flags_an_endpoint_missing_from_the_published_body
+    rendered = describe('$4.12', timeline: push_times, pull: head_pull)
+    body = "<!-- shaka:begin -->\n#{rendered}\n<!-- shaka:end -->"
+    %w[ready_at merged].each do |endpoint|
+      timeline = push_times.merge('opened' => START, endpoint => READY)
+      verdict = Shaka::PublishedTiming.check(body, head: HEAD, timeline:)
+      assert_equal 'unavailable', verdict['status']
+      assert_includes verdict['reason'], 'elapsed endpoint'
+    end
   end
 
   def test_a_new_head_does_not_keep_the_old_heads_ready_time

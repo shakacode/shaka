@@ -293,14 +293,15 @@ rules:
   - id: checkpoint-proceed
     phase: plan
     quote: >-
-      Proceed without another response when immediate start is unambiguous, the recommended
-      settings are active and usable in the host, and any settings the user supplied match the
-      recommendation.
+      Proceed without another response, even without a start word, when the recommended
+      settings are active and usable in the host and any settings the user supplied match
+      the recommendation.
     enforced_by: agent
     note: >-
-      With immediate start and neither requested setting, `checkpoint` accepts current settings
-      regardless of host observations or recommended availability. Otherwise the reported
-      settings checks apply. Value and recommendation checks still apply in both cases.
+      `checkpoint` proceeds without `immediate_start` when the reported active settings match the
+      recommendation, settings are available, and any requested settings match. With immediate
+      start and neither requested setting, it accepts current settings regardless of host
+      observations or recommended availability. Otherwise it pauses. Value and recommendation checks still apply in both cases.
       It reads only the fields the agent sends it; it does not inspect the host.
   - id: keep-current-settings
     phase: plan
