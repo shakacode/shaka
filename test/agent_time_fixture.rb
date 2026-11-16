@@ -3,7 +3,7 @@
 require 'fileutils'
 require 'json'
 require 'tmpdir'
-require 'shaka/publication/agent_time'
+require 'shaka/usage/agent_time_session'
 
 # Synthetic Claude Code and Codex transcripts for agent-time tests.
 module AgentTimeFixture
@@ -16,7 +16,7 @@ module AgentTimeFixture
     Dir.mktmpdir do |directory|
       path = File.join(directory, 'session.jsonl')
       File.write(path, records.map { |record| JSON.generate(record) }.join("\n"))
-      Shaka::AgentTime.summarize(Shaka::AgentTimeReader.read(path, since:))
+      Shaka::AgentTimeSession.summarize(Shaka::AgentTimeReader.read(path, since:))
     end
   end
 
@@ -49,7 +49,16 @@ module AgentTimeFixture
       'message' => { 'content' => [{ 'type' => 'tool_result', 'tool_use_id' => id }] } }
   end
 
+  def in_message(record, id) = record.merge('message' => record['message'].merge('id' => id))
+
   def codex(time, type, payload) = { 'timestamp' => time, 'type' => type, 'payload' => payload }
+
+  def codex_call(clock, id, command)
+    codex(at(clock), 'response_item', 'type' => 'function_call', 'call_id' => id, 'name' => 'exec_command',
+                                      'arguments' => JSON.generate('cmd' => command))
+  end
+
+  def codex_output(clock, id) = codex(at(clock), 'response_item', 'type' => 'function_call_output', 'call_id' => id)
 
   def write_transcript(home, records)
     directory = File.join(home, 'projects', 'project')
@@ -66,6 +75,8 @@ module AgentTimeFixture
   def body(sessions)
     "<!-- shaka:begin -->\n#{Shaka::AgentTime.hidden(sessions)}\n<!-- shaka:end -->"
   end
+
+  def region(text) = "<!-- shaka:begin -->\n#{text}\n<!-- shaka:end -->"
 
   def same_repository_pull(text)
     repo = { 'repo' => { 'full_name' => 'shakacode/shaka' } }

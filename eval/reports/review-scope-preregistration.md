@@ -127,8 +127,9 @@ Full SHAs are in the review comments linked above. Every reviewed commit is fetc
 - Each run gets a repository built from a Git bundle with two branches and no remote:
   - the historical head branch name at the reviewed commit, holding only its ancestry;
   - `main`, one commit on the item's merge base that replaces the root `AGENTS.md` and
-    `.agents/shaka/` with the trusted `main` copies pinned at pilot start. No other file
-    changes, so no later code enters the fixture.
+    `.agents/shaka/` with the trusted `main` copies pinned at pilot start, setting
+    `review.local_max_rounds` to 5 as the round cap below requires. No other file changes,
+    so no later code enters the fixture.
 - The dry run found two leaks this layout closes. A plain local clone carries 725 refs,
   including `origin/main` with #902's merged fix, which a read-only Codex reviewer could read.
   And `--criteria-ref MERGE_BASE` fails on #810: the current helper refuses its older settings
@@ -331,10 +332,11 @@ cross-PR K items, and every unfixed same-file finding.
   failure records the attempt as failed. Stage 1 runs, judge calls, and verifier sessions
   resend the identical prompt, a verifier in a fresh session. A Stage 2 implementer session
   sends the resume prompt below.
-- **Round cap:** Stage 2 keeps the trusted `review.local_max_rounds` of 5 reviewed commits per
-  ledger, the shared cycle 1 included. Each arm therefore reviews at most 4 commits after the
-  fork. An arm that reaches the cap ends there, recorded, and is not extended; its final head is
-  scored as it stands.
+- **Round cap:** Stage 2 keeps a trusted `review.local_max_rounds` of 5 reviewed commits per
+  ledger, the shared cycle 1 included. The fixture sets it explicitly because Shaka's default
+  and this repository's value rose to 8 after this preregistration. Each arm therefore reviews
+  at most 4 commits after the fork. An arm that reaches the cap ends there, recorded, and is
+  not extended; its final head is scored as it stands.
 - **Frozen text:** a changed arm, bar, decoy, item rule, or stop rule after the first priced
   call is a new eval with a new preregistration. So is a changed judge or verifier prompt.
 - **Pinned scorer prompts:** the [judge prompt](review-scope/judge-prompt.md) and the

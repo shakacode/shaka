@@ -200,7 +200,8 @@ updated the description, for example:
 - Each tool category is how long those tool calls took. Calls in one category that
   ran in parallel count once; calls in different categories that overlapped count in
   each, so the categories can add up to more than working time. Shell commands are sorted by what they ran: validation for tests and
-  lint, review for local reviews, Shaka helper for other `shaka` commands, and
+  lint, including package scripts named `test` or `lint` such as `npm run lint` or
+  `yarn test:unit`, review for local reviews, Shaka helper for other `shaka` commands, and
   git/GitHub for `git` and `gh`. A command run inside `$(...)` or a script file counts as other
   shell.
 - **On questions** is time the agent's questions to you stayed open. **Between turns**
@@ -211,7 +212,8 @@ recorded task start, or the PR's first commit when no start was recorded. It wor
 for Claude Code and Codex. Only the totals reach the
 description; commands, prompts, and output stay on your machine. A command started in
 the background counts only the moment it took to start, so its time appears under
-measured steps instead. Each session keeps its latest totals, so a session that never
+measured steps instead. A command still running when the description updates counts
+up to the agent's last action, and one that started before the task start counts from the start. Each session keeps its latest totals, so a session that never
 updated the description is missing.
 
 To compare these numbers across many PRs, see
