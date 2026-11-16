@@ -1,6 +1,6 @@
 # 0008: Show companion skill results on the PR
 
-Status: design answers accepted on 2026-11-12; build waits for decision 1's trigger.
+Status: design answers accepted on 2026-11-12 and 2026-11-13; build waits for decision 1's trigger.
 Date: 2026-11-09. Tracks [issue #1075](https://github.com/shakacode/shaka/issues/1075).
 
 ## Context
@@ -125,11 +125,11 @@ design could reuse. The two changes touch different files.
    verification evidence" sentence in companion-skills that sends the command, commit,
    result, artifacts, and gaps into the Verification record is rewritten to send them to
    `companion_results`, with one summary line in Verification for a merge-relevant
-   result. The matching paragraph in `docs/working-with-shaka.md`, which tells readers
-   the PR's verification lists the harness command and its results, changes to say
-   that the PR's companion results list the command, the commit, what it showed, its
-   screenshots or logs, and what it didn't cover, and that a result from an earlier
-   commit shows as stale.
+   result. In `docs/working-with-shaka.md`, the sentence "Shaka uses the results in
+   the PR's evidence: what ran, which version was checked, what it showed, and what
+   remains unverified" changes to name the PR's companion results as that place, and
+   the next sentence, "After a change, the agent reruns affected checks," adds that a
+   result from an earlier commit shows as stale until it is rerun.
    The next sentence, "Shaka's current-head requirements override a companion's
    verdict-reuse policy," becomes: a result from an earlier commit stays listed with a
    `stale` label, and the agent reruns it when a later commit touches what it checked.
