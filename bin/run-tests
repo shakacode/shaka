@@ -11,7 +11,11 @@ require 'etc'
 require 'json'
 require 'tempfile'
 
-workers = Integer(ENV.fetch('SHAKA_TEST_WORKERS', [Etc.nprocessors, 4].min))
+# By default, one worker per processor up to 4, then half the processors up to 8. Tests spawn many
+# subprocesses, and the spare processors keep them fast. On 18 processors, 8 workers took two-thirds
+# of 4 workers' time.
+cores = Etc.nprocessors
+workers = Integer(ENV.fetch('SHAKA_TEST_WORKERS', [[cores / 2, 4].max, cores, 8].min))
 abort 'SHAKA_TEST_WORKERS must be at least 1' if workers < 1
 # --changed [BASE] runs only the tests a change since BASE's merge base can reach, for quick
 # reruns while fixing review findings. Repository validation still runs the whole suite.

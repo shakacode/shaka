@@ -1,14 +1,16 @@
 # Shaka
 
+**Read the guides at [shaka.shakacode.com](https://shaka.shakacode.com/)**
+
 Shaka is a free, open-source skill for AI coding agents, including Claude Code,
 Codex, Cursor, GitHub Copilot, OpenCode, and Pi.
 
 You give a task. The agent builds, verifies, and reviews. You get a pull request
 (PR) you can judge quickly.
 
+![A Shaka pull request opens with "Recommendation: Merge". Below it come what changed and why, the proof (tests passed, independent review, screenshots), the risk and what was not verified, and Merge or Revise buttons. Callouts read: starts with the answer, every claim has evidence, you decide.](docs/img/pr-at-a-glance.webp)
+
 [Watch the 52-second demo](https://www.youtube.com/watch?v=T6Fstx2fGJI) ·
-[See a Shaka PR](https://github.com/shakacode/shaka/pull/667) ·
-[Docs website](https://shaka.shakacode.com/) ·
 [**Book a live demo**](https://meetings.hubspot.com/justingordon/30-minute-consultation)
 
 <a id="why-use-it"></a>
