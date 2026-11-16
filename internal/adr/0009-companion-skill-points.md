@@ -88,7 +88,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    and session content treated as data.
 
    The command reads repository settings at the trusted `--ref`, the way `guidance` does, and
-   applies every layering and trust rule below in Ruby. It prints, for each skill, the mode,
+   applies every layering and trust rule below in Ruby. Without a trusted ref it reads no
+   repository settings, so only packaged `suggest` entries and the machine layer apply. It prints, for each skill, the mode,
    why that mode applies, whether it is installed, and the pack's revision.
 
 2. **Each pack file maps its skills to points with one of three modes.** Packaged packs live
@@ -161,13 +162,16 @@ the ownership rule companion-skills.md already follows, so there is no code to r
      branch has no trusted copy, so it comes back declined.
    - `~/.agents/shaka/companions.yml` on a machine would sit beside the machine reviewer list
      from [ADR 0005](0005-per-machine-reviewers.md), which already fills reviewer model and
-     effort that a repository leaves out. It can turn packs on and decline skills for its
+     effort that a repository leaves out. The existing `~/.agents/shaka/config.yml` cannot
+     carry these keys, because Shaka reads it only while starting a new individual setup. The
+     companions file is read on every task. It can turn packs on and decline skills for its
      owner. Turning a pack on there is the developer's own trust grant for their tasks on that
      machine: the pack's packaged `use` entries then apply there, and repository declines
      still win. Shaka otherwise keeps individual settings apart from team settings
      ([settings](../../docs/settings.md)), so this file is another narrow machine exception:
      it has no `use` key, and it cannot lift a repository's decline. Personal packs go in `~/.agents/shaka/packs/`, and their `use` entries act as
-     `suggest` for the same reason.
+     `suggest`: only a packaged entry backed by a study, or a repository's own choice,
+     reaches `use`.
    - Ruby applies declines last and matches skills by their installed path, not their label,
      so re-declaring a packaged skill under another pack name inherits every limit on it.
 
@@ -179,8 +183,9 @@ the ownership rule companion-skills.md already follows, so there is no code to r
 4. **Shaka offers to install a missing packaged pack.** The rule "Do not install it" changes
    to: when a skill point lists a skill from a packaged pack that is not installed, say what
    it would add to this task and offer the pack's install command. Install only after a yes
-   in this task, or under standing consent the user saved, using the same consent pattern as
-   review consent. Offer each pack at most once per task, and keep going without it when the
+   in this task, or under standing consent the user saved, recorded the way
+   [review consent](../../skills/shaka/references/review-consent.md) is. Consent to install a
+   pack is separate from the delegation authorization a worker skill needs. Offer each pack at most once per task, and keep going without it when the
    user declines. Packs that are not packaged keep today's rule, and retrospective.md keeps
    its own "Do not install one."
 
@@ -193,11 +198,12 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    companion-skills.md, whether it arrives alone or mid-task; workflow.yml still gains nothing.
 
 6. **An entry moves from `suggest` to `use` on ADR 0001's evidence.** A candidate gets paired
-   eval runs with and without it on the same tasks, judged by
-   [ADR 0001](0001-eval-and-release-gating.md)'s rules. ADR 0001 has no skill-presence axis
-   among its D11 comparisons and no rule for a gain, only for a loss, so promotion waits
-   until an amendment to ADR 0001 adds both. This record sets no threshold of its own.
-   Review rounds, confirmed findings, and cost per merged PR are supporting evidence. A packaged `use` entry links the study
+   eval runs on [ADR 0001](0001-eval-and-release-gating.md)'s `skill` axis (D2): the same
+   package with the entry at `use` against it at `suggest`. It is promoted when the run meets
+   D7's acceptance for a PR eval: the entry's own tasks score higher, no regression or D8 flag
+   appears, the named core tasks stay within tau, and the cost ratio stays at or below 1.2 or
+   the higher cost is justified. This record sets no threshold of its own. Review rounds,
+   confirmed findings, and cost per merged PR are supporting evidence. A packaged `use` entry links the study
    behind it, and the loader refuses a packaged `use` without one. The study rule binds what
    ShakaCode ships to everyone. A repository's own `companions.use` promotion, or a `use`
    entry in its own pack file, is the maintainer's choice: it needs no study and no `packs`
@@ -262,7 +268,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
   false` bound that.
 - Each `use` entry loads another skill into context. Decision 6 requires a measured gain
   before promotion, so that cost has to pay for itself.
-- Delivery step 3 waits on ADR 0001's comparison runs and on an ADR 0001 amendment that adds a skill-presence axis and a gain rule.
+- Delivery step 3 waits on ADR 0001's comparison runs.
 - When an upstream pack renames or removes a skill, its pack entry goes stale. The command
   warns, and doctor names entries whose skill is missing from an installed pack.
 
@@ -274,8 +280,10 @@ Proposed as three PRs:
    procedures, and companion-skills.md's definition, with no packaged entries. No behavior
    change.
 2. Packaged pack files for ShakaPerf, pstack, and AI Hero in `suggest` mode only, repository
-   and machine pack files, `/shaka suggest skills` with its SKILL.md route, the install offer, doctor reporting, and
-   the `companions` settings.
-3. Once ADR 0001's comparison runs and that amendment exist, eval runs for the first `use` candidates,
+   and machine pack files, `/shaka suggest skills` with its SKILL.md route, the install offer,
+   doctor reporting, and the `companions` settings `use`, `decline`, and `suggest`. The
+   `packs` and `pins` keys wait for the first packaged `use` entry, since nothing uses them
+   before then.
+3. Once ADR 0001's comparison runs exist, eval runs for the first `use` candidates,
    `benchmark-checklist` and `principle-explain-the-number`, and promotion of what the
    results support.
