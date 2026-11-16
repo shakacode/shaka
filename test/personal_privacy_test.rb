@@ -149,6 +149,16 @@ class PersonalPrivacyFileTest < Minitest::Test
     end
   end
 
+  def test_a_file_where_the_folder_belongs_hides_both
+    with_home(nil) do |path|
+      FileUtils.rm_rf(File.dirname(path))
+      File.write(File.dirname(path), "version: 1\nwip:\n  include_checkout_path: false\n")
+      privacy = Shaka::Configuration::PersonalPrivacy.load
+      refute privacy.checkout_path? || privacy.chat_link?
+      assert_includes privacy.warning, path
+    end
+  end
+
   def test_a_file_shaka_cannot_read_hides_both_and_says_why
     ["not: [valid\n", "wip: {}\n", { 'wip' => { 'include_chat_link' => 'no' } },
      { 'wip' => ['include_checkout_path'] }].each do |file|
