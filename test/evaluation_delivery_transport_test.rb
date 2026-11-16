@@ -28,10 +28,24 @@ class EvaluationDeliveryTransportTest < Minitest::Test
   end
 
   def test_deadline_terminates_and_reaps_the_native_child
-    # A shell records its pid within milliseconds; the Ruby fixture could miss the deadline on a loaded machine.
-    File.write(@gh, "#!/bin/sh\necho $$ > \"${0%/*}/pid\"\nexec sleep 60\n")
-    assert_raises(IOError) { reader(seconds: 2).read(node_id: NODE, review_id: 5_566_107_686, actor: 'fixture-agent') }
-    pid = Integer(File.read(File.join(@directory, 'pid')), 10)
-    assert_raises(Errno::ESRCH) { Process.kill(0, pid) }
+    File.write(@gh, "#!/bin/sh\nexec sleep 60\n")
+    pids = spawned_by_open3 do
+      transport = reader(seconds: 2)
+      assert_raises(IOError) { transport.read(node_id: NODE, review_id: 5_566_107_686, actor: 'fixture-agent') }
+    end
+    assert_equal 1, pids.size
+    assert_raises(Errno::ESRCH) { Process.kill(0, pids.first) }
+  end
+
+  private
+
+  # The pids Open3 spawns, so the test needs no report from a child the deadline may stop before it runs.
+  def spawned_by_open3
+    pids = []
+    Open3.define_singleton_method(:spawn) { |*arguments| Process.spawn(*arguments).tap { pids << it } }
+    yield
+    pids
+  ensure
+    Open3.singleton_class.remove_method(:spawn)
   end
 end
