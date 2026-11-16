@@ -60,6 +60,14 @@ class InstructionTokensTest < Minitest::Test
     assert(rows.all? { |row| row['tokens'] == 'UNKNOWN' && !row.key?('delta') })
   end
 
+  def test_failed_head_count_skips_the_baseline_request
+    attempts = []
+    offline = ->(uri, *) { attempts << uri.host and raise SocketError, 'getaddrinfo failed' }
+    InstructionTokens.compare(before: 'a', after: 'b', env: KEYS, transport: offline)
+
+    assert_equal %w[api.anthropic.com api.openai.com], attempts
+  end
+
   def test_rejected_or_malformed_answers_are_unknown
     answers = { '401' => '{}', '200' => 'not json',
                 '404' => '{"error":{"type":"invalid_request_error","code":"model_not_found","message":"key sk-x"}}' }

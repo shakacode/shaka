@@ -32,7 +32,8 @@ module InstructionTokens
     PROVIDERS.map do |name, provider|
       model = MODELS.fetch(name)
       counter = ->(text) { count(provider, model, text, env, transport) }
-      row(name, model, before && counter.call(before), counter.call(after))
+      head = counter.call(after)
+      row(name, model, before && !head.key?(:reason) ? counter.call(before) : nil, head)
     end
   end
 

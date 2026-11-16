@@ -157,4 +157,14 @@ class InstructionGrowthTokensTest < Minitest::Test
   def test_default_report_stays_offline_without_token_counts
     with_repository { |root| refute report(root).key?('startup_tokens') }
   end
+
+  def test_command_line_flag_adds_unknown_counts_without_keys
+    command = File.expand_path('../bin/report-instruction-growth', __dir__)
+    env = { 'ANTHROPIC_API_KEY' => nil, 'OPENAI_API_KEY' => nil }
+    output, status = Open3.capture2(env, RbConfig.ruby, command, '--tokens', 'HEAD')
+
+    assert_predicate status, :success?
+    reasons = JSON.parse(output).dig('startup_tokens', 'providers').map { |row| row['reason'] }
+    assert_equal ['ANTHROPIC_API_KEY is not set', 'OPENAI_API_KEY is not set'], reasons
+  end
 end
