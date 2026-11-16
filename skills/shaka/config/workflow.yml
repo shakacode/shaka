@@ -356,7 +356,7 @@ phases:
         Stop the repair loop when no agent-owned fixes or assessments remain.
         Wait for a needed decision before dependent work. A clean later review leaves earlier
         open findings visible.
-      - The trusted `review.local_max_rounds` bounds the ledger (default 5). If the last round at
+      - The trusted `review.local_max_rounds` bounds the ledger (default 8). If the last round at
         the cap leaves an unresolved defect, stop before pushing and tell the user which defects
         remain. Do not push unless the user chooses to. Reassess the task or split it with the
         maintainer; an authorized push publishes the visible Loop bound reached section and

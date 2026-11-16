@@ -6,10 +6,10 @@ require_relative 'seam_check_helpers'
 class LocalReviewCapSettingTest < Minitest::Test
   include SeamCheckHelpers
 
-  def test_seam_defaults_to_five_rounds
+  def test_seam_defaults_to_eight_rounds
     with_repository do |root|
       commit_repository(root)
-      assert_equal 5, check_config(root, '--ref', 'HEAD').dig('review', 'local_max_rounds')
+      assert_equal 8, check_config(root, '--ref', 'HEAD').dig('review', 'local_max_rounds')
     end
   end
 
