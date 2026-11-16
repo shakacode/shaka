@@ -145,8 +145,9 @@ reports, GitHub refuses, or only the agent follows it.
 - **Idea:** before an unattended run, answer five questions. What is done? How does it
   check itself? What are its boundaries and guardrails? Who approves the output?
 - **In Shaka:** done is the success criteria from intake. Self-checking is the Verify
-  step. Boundaries come from the [trust model](../workflow.md#trust-model): settings come
-  from the default branch, and the target branch never comes from an issue or comment.
+  step. Boundaries come from the [trust model](../workflow.md#trust-model): shared settings
+  come from the default branch unless you [choose other settings](../settings.md#which-settings-apply)
+  for a task, and the target branch never comes from an issue or comment.
   Approval is Ask or Auto.
 - **Backed by:** the merge helper, for merge conditions. `seam check --ref` reads settings
   from the commit it is given, and `comments` withholds untrusted comments. The agent
