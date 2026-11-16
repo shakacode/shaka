@@ -1,6 +1,6 @@
 # 0007: Let the agent size delivery to the task
 
-Status: proposed.
+Status: accepted on 2026-11-15; not yet implemented.
 Date: 2026-11-13.
 
 ## Context
@@ -142,7 +142,7 @@ The agent may not skip the local review or the final checkpoint when the change 
   guards (the workflow already sends these to explicit human review);
 - anything a person asked to have reviewed in full.
 
-Open decision 1 asks whether a walkthrough may still be skipped in those areas.
+The agent may still skip the walkthrough in those areas (maintainer decision 1).
 
 The description renders the skips under Evidence and limitations, so the person merging
 sees what did not run.
@@ -204,7 +204,7 @@ saved.
 | Steps besides merging | Runs | Runs, and matters most here: restart or deploy order |
 | Startup probe, plan recommendation | Run before implementation | Skipped |
 | Chat rename, return point | Run at task start | Only when used |
-| Walkthrough | Required; notes optional below three files | Required until decision 4 ships; then depends on open decision 1 |
+| Walkthrough | Required; notes optional below three files | Required until decision 4 ships; then skippable (maintainer decision 1) |
 | Opening check | Runs | Runs until decision 4 ships; then skipped, with a reason |
 | Workflow text loaded | All of it | Gates and the steps that run |
 | Merge | A person merges (high risk) | A person merges |
@@ -237,27 +237,30 @@ review or validation, which this design keeps.
   `description`, their tests, and the enforcement manifest entries for the changed
   rules. Their cost is real, and the measured savings they buy are small: the
   checkpoint's median is 44 seconds, and the walkthrough is unmeasured. So the code
-  waits for a measurement (open decision 4).
+  waits for a measurement (maintainer decision 4).
 - Success means a small config task reaches a merge-ready PR with fewer steps and fewer
   model calls, while every gate above still runs. Before implementation, measure one
   small config task under the current workflow so the comparison has a baseline. Read
   the reported session, if it becomes available, to confirm which steps it spent time on.
 
-## Open decisions
+## Maintainer decisions
 
-1. In a high-risk or medium-risk area, may the agent skip the walkthrough when the
-   description explains every changed line? Recommended: yes. A person merges those PRs
-   anyway, and for a one-file change the diff is the walkthrough.
-2. Should skipping local review stay limited to trivial prose and no-op changes?
-   Recommended: yes.
-3. Should repositories get a setting that forbids skips, defaulting to allowing them?
-   Recommended: not yet. A new setting changes every repository's
-   `.agents/shaka/config.yml` through the settings migration flow. Add it only if a
+The maintainer accepted every recommendation on 2026-11-15:
+
+1. In a high-risk or medium-risk area, the agent may skip the walkthrough when the
+   description explains every changed line. A person merges those PRs anyway, and for a
+   one-file change the diff is the walkthrough.
+2. Skipping local review stays limited to trivial prose and no-op changes.
+3. No setting forbids skips yet. A new setting changes every repository's
+   `.agents/shaka/config.yml` through the settings migration flow, so add one only if a
    maintainer asks for it.
-4. Order of delivery. Recommended:
+4. Delivery order:
    1. a prose-only PR for the bookkeeping part of decision 1 and for decision 5. No
       command checks those steps, so prose alone can change them;
    2. a measured run of a small config task before and after that PR;
    3. the evidence skips, together: decision 2's limits, decision 3's Ask rule, and
       decision 4's code. Ship this only if that run shows the walkthrough, checkpoint,
       and opening check still cost enough to justify it.
+
+Still open, to settle before step 3: whether a speed change that finishes with a recorded
+unmeasured gap, which the workflow allows today, counts as a skip and so loses Auto.
