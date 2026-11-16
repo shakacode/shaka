@@ -3,6 +3,8 @@
 Shaka is a skill for AI coding agents. Give your agent a task and get a pull
 request (PR) with checks and review results. By default, you decide whether it merges.
 
+![A Shaka pull request opens with "Recommendation: Merge". Below it come what changed and why, the proof (tests passed, independent review, screenshots), the risk and what was not verified, and Merge or Revise buttons. Callouts read: starts with the answer, every claim has evidence, you decide.](img/pr-at-a-glance.webp)
+
 Use the PR's evidence to decide what to do next and improve the process through
 regular retrospectives.
 
@@ -33,8 +35,7 @@ instead of `/shaka`. For Pi, load the installed skill.
 
 [Start here](getting-started.md) covers setup and checking your installation.
 If you need a practice project, follow [Shaka in pictures](shaka-in-pictures.md).
-[Watch the demo](https://www.youtube.com/watch?v=T6Fstx2fGJI)
-or [open an example PR](https://github.com/shakacode/shaka/pull/667).
+[Watch the demo](https://www.youtube.com/watch?v=T6Fstx2fGJI).
 
 <a id="configure-and-understand"></a>
 <a id="learn-as-you-go"></a>
