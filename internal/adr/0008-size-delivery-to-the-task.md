@@ -1,4 +1,4 @@
-# 0007: Let the agent size delivery to the task
+# 0008: Let the agent size delivery to the task
 
 Status: accepted on 2026-11-15; not yet implemented.
 Date: 2026-11-13.
@@ -56,6 +56,8 @@ Other repositories will have different validation times.
 
 Earlier work in this direction:
 
+- [ADR 0007](0007-walkthroughs-on-request.md), proposed at the same time, publishes
+  walkthroughs only on request by default. This record leaves the walkthrough to it.
 - Issue [#468](https://github.com/shakacode/shaka/issues/468), delivered by
   [#519](https://github.com/shakacode/shaka/pull/519), limited repeated work after a
   correction to an existing PR. It did not cover a new small task.
@@ -86,8 +88,7 @@ recovered:
   A maintainer who finds that slow lowers its cost with
   [`validate-local`](../../docs/settings.md#count-a-faster-check-as-validation). The agent
   does not skip it.
-- Required checks, merge preference, and every refusal `merge` makes today, except the
-  walkthrough check that decision 4 changes.
+- Required checks, merge preference, and every refusal `merge` makes today.
 - Read public comments only through `comments`.
 - WIP Details on an open PR, which `handoff` requires so another session can resume it.
 - List the steps outside the code that the change needs, such as a migration, an
@@ -100,8 +101,9 @@ would catch something on this change, and records a one-line reason when it skip
 - The local adversarial review. It stays on for every change that alters behavior, as
   today, because it costs a median 8 minutes and catches defects the author misses.
   Skipping it stays limited to trivial prose and no-op changes.
-- The walkthrough. Its inline notes are already optional below three changed files.
-  A change whose description already explains every changed line needs no walkthrough.
+- The walkthrough. [ADR 0007](0007-walkthroughs-on-request.md) proposes publishing it
+  only on request by default, so `merge`, `handoff`, and the checkpoint stop requiring
+  it. This design follows ADR 0007 and adds no walkthrough skip of its own.
 - The final checkpoint ("did we build the right thing?"). Code already accepts a
   skip: `post-implementation run --opt-out REASON` publishes an `opted_out` result, and
   `merge` and `squash-message` accept it for the head. Only prose limits who may opt
@@ -113,8 +115,8 @@ would catch something on this change, and records a one-line reason when it skip
   or page speed. A step that does not apply is not a skip and needs no reason; waiving
   one that applies is a skip.
 
-The walkthrough and opening check are enforced or run by commands, so the agent can
-skip them only once decision 4's code ships. The checkpoint skip also waits for
+The opening check runs inside a command, so the agent can skip it only once decision 4's
+code ships. The checkpoint skip also waits for
 decision 4, because nothing in code yet keeps an opt-out out of the risky areas in
 decision 2.
 
@@ -146,7 +148,7 @@ The agent may not skip the local review or the final checkpoint when the change 
   guards (the workflow already sends these to explicit human review);
 - anything a person asked to have reviewed in full.
 
-The agent may still skip the walkthrough in those areas (maintainer decision 1).
+ADR 0007 decides when a walkthrough is published, in these areas too.
 
 The description renders the skips under Evidence and limitations, so the person merging
 sees what did not run.
@@ -171,7 +173,6 @@ the author of a PR from a fork without write access.
 
 With that record:
 
-- `merge`, `handoff`, and `attention` accept a missing walkthrough.
 - `merge` and `squash-message` keep accepting the existing `opted_out` checkpoint, but
   refuse it for a head in the risky areas of decision 2 unless a person confirmed that
   head, the way `--limits-confirmed-head` works today. Without that refusal, `--opt-out`
@@ -211,14 +212,14 @@ saved.
 | Steps besides merging | Runs | Runs, and matters most here: restart or deploy order |
 | Startup probe, plan recommendation | Run before implementation | Skipped |
 | Chat rename, return point | Run at task start | Only when used |
-| Walkthrough | Required; notes optional below three files | Required until decision 4 ships; then skippable (maintainer decision 1) |
+| Walkthrough | Required; notes optional below three files | On request, if ADR 0007 ships |
 | Opening check | Runs | Runs until decision 4 ships; then skipped, with a reason |
 | Workflow text loaded | All of it | Gates and the steps that run |
 | Merge | A person merges (high risk) | A person merges |
 
 The first, prose-only PR saves the bookkeeping, the probe, and some of the text the agent
-reads. The opening check and possibly the walkthrough wait for decision 4. Until the reported session is read, nobody
-knows whether that matches where its time went. Its time may instead have gone to the
+reads. The opening check waits for decision 4, and the walkthrough for ADR 0007. Until
+the reported session is read, nobody knows whether that matches where its time went. Its time may instead have gone to the
 review or validation, which this design keeps.
 
 ## Alternatives considered
@@ -240,12 +241,10 @@ review or validation, which this design keeps.
   things limit the damage: risky areas keep review and the checkpoint, skips force Ask,
   and the PR shows every skip to the person merging. Before that, the agent skips only
   bookkeeping.
-- Decisions 3 and 4 change `merge`, `squash-message`, `handoff`, `attention`, and
-  `description`, their tests, and the enforcement manifest entries for the changed
+- Decisions 3 and 4 change `merge`, `squash-message`, and `description`, their tests, and the enforcement manifest entries for the changed
   rules. The checkpoint part is smaller than the rest, because it reuses the existing
   opt-out. The cost is still real, and the measured savings are small: the checkpoint's
-  median is 44 seconds, and the walkthrough is unmeasured. So the code
-  waits for a measurement (maintainer decision 4).
+  median is 44 seconds. So the code waits for a measurement (maintainer decision 4).
 - Success means a small config task reaches a merge-ready PR with fewer steps and fewer
   model calls, while every gate above still runs. Before implementation, measure one
   small config task under the current workflow so the comparison has a baseline. Read
@@ -256,8 +255,9 @@ review or validation, which this design keeps.
 The maintainer accepted every recommendation on 2026-11-15:
 
 1. In a high-risk or medium-risk area, the agent may skip the walkthrough when the
-   description explains every changed line. A person merges those PRs anyway, and for a
-   one-file change the diff is the walkthrough.
+   description explains every changed line. ADR 0007, merged after this decision,
+   supersedes it: walkthroughs become on request by default, and a repository that sets
+   `always` keeps them required.
 2. Skipping local review stays limited to trivial prose and no-op changes.
 3. No setting forbids skips yet. A new setting changes every repository's
    `.agents/shaka/config.yml` through the settings migration flow, so add one only if a
@@ -267,8 +267,8 @@ The maintainer accepted every recommendation on 2026-11-15:
       command checks those steps, so prose alone can change them;
    2. a measured run of a small config task before and after that PR;
    3. the evidence skips, together: decision 2's limits, decision 3's Ask rule, and
-      decision 4's code. Ship this only if that run shows the walkthrough, checkpoint,
-      and opening check still cost enough to justify it.
+      decision 4's code. Ship this only if that run shows the checkpoint and opening
+      check still cost enough to justify it.
 
 Still open, to settle before step 3: whether a speed change that finishes with a recorded
 unmeasured gap, which the workflow allows today, counts as a skip and so loses Auto.
