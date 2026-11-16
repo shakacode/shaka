@@ -164,7 +164,7 @@ checkpoint for one fix, tell your agent and give a reason, which appears as a
 note on the PR:
 
 ```text
-Skip the checkpoint for this fix; it only corrects a typo the review found.
+Skip the checkpoint for this fix; it only corrects a typo the review found
 ```
 
 Shaka requires a reason but does not judge it. The PR can still merge, and it shows that no

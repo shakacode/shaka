@@ -13,7 +13,7 @@ To create your own fork and install it, ask your coding agent:
 ```text
 Fork https://github.com/shakacode/shaka and install my fork for this coding agent.
 Ask me before moving another coding agent's skill link.
-Explain how I switch between using my fork and the official version.
+Explain how I switch between using my fork and the official version
 ```
 
 The agent sets up a branch for your changes and tells you which version your
@@ -26,7 +26,7 @@ Give your coding agent the fork's URL and the branch you want to install. For ex
 ```text
 Install my Shaka fork from https://github.com/OWNER/shaka on branch mine.
 Ask me before moving another coding agent's skill link.
-Show me which coding agents will switch and how to switch back.
+Show me which coding agents will switch and how to switch back
 ```
 
 Replace `OWNER` and `mine` with the fork's GitHub owner and branch. Keep a
@@ -74,7 +74,7 @@ Try a small change with a visible result:
 
 ```text
 In my Shaka development clone, move Verification above Intent in PR descriptions.
-Run the relevant checks and show me a sample description.
+Run the relevant checks and show me a sample description
 ```
 
 Ask the agent to run the candidate on a small README task in a practice project
@@ -111,7 +111,7 @@ reads, run `skills/shaka/scripts/shaka workflow` from the development clone.
 Inspect the latest official Shaka changes before merging them into my fork.
 Keep my customizations, resolve conflicts, and test the result. Publish the
 tested commit to my fork's install branch, then install that exact commit.
-Ask me before moving another coding agent's skill link.
+Ask me before moving another coding agent's skill link
 ```
 
 Bring upstream changes into your working branch without rewriting the installed
@@ -180,7 +180,7 @@ rewritten branch's files. The next update installs those files. Run
 If a change could help other Shaka users, ask your agent to prepare a focused PR:
 
 ```text
-Prepare an upstream Shaka PR for this one change. Include what I tested and what it showed.
+Prepare an upstream Shaka PR for this one change. Include what I tested and what it showed
 ```
 
 Start from the official default branch and leave out your other customizations.

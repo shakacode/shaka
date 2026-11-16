@@ -3,19 +3,27 @@
 Shaka is a skill for AI coding agents. Give your agent a task and get a pull
 request (PR) with checks and review results. By default, you decide whether it merges.
 
+![A Shaka pull request opens with "Recommendation: Merge". Below it come what changed and why, the proof (tests passed, independent review, screenshots), the risk and what was not verified, and Merge or Revise buttons. Callouts read: starts with the answer, every claim has evidence, you decide.](img/pr-at-a-glance.webp)
+
 Use the PR's evidence to decide what to do next and improve the process through
 regular retrospectives.
+
+Shaka is mostly Ruby. About 84% of the installed skill's lines are tested Ruby
+code that your agent runs without reading. It starts each task with about 12,400
+words of instructions, loads other procedures only when needed, and gets the same
+checks every time.
+[See the numbers](architecture.md#most-of-shaka-is-ruby).
 
 Ask your coding agent to install Shaka:
 
 ```text
-Install Shaka from https://github.com/shakacode/shaka.
+Install Shaka from https://github.com/shakacode/shaka
 ```
 
 Then open your project in the agent and give Shaka a small task. For example:
 
 ```text
-/shaka Fix search when the query contains an apostrophe.
+/shaka Fix search when the query contains an apostrophe
 ```
 
 Replace the example with your own task or an issue link. In Codex, use `$shaka`
@@ -27,8 +35,7 @@ instead of `/shaka`. For Pi, load the installed skill.
 
 [Start here](getting-started.md) covers setup and checking your installation.
 If you need a practice project, follow [Shaka in pictures](shaka-in-pictures.md).
-[Watch the demo](https://www.youtube.com/watch?v=T6Fstx2fGJI)
-or [open an example PR](https://github.com/shakacode/shaka/pull/667).
+[Watch the demo](https://www.youtube.com/watch?v=T6Fstx2fGJI).
 
 <a id="configure-and-understand"></a>
 <a id="learn-as-you-go"></a>
@@ -42,7 +49,7 @@ or [open an example PR](https://github.com/shakacode/shaka/pull/667).
 Ask your agent, or choose a guide below:
 
 ```text
-Explain what I need to check before merging this PR: <PR link>.
+Explain what I need to check before merging this PR: <PR link>
 ```
 
 | I want to… | Guide |
@@ -62,7 +69,7 @@ Explain what I need to check before merging this PR: <PR link>.
 - [Settings reference](settings.md), [workflow and safeguards](workflow.md), and [writing preferences](writing-preferences.md)
 - [Releases after merge](releases-after-merge.md)
 - [Control towers](control-towers.md) and [repository catalog](repository-catalog.md)
-- [Architecture](architecture.md), [PR trials](trying-pr-versions.md), [canary runs](canary.md), and [Contributing](../CONTRIBUTING.md)
+- [How Shaka is built](architecture.md), [PR trials](trying-pr-versions.md), [canary runs](canary.md), and [Contributing](../CONTRIBUTING.md)
 - [Articles](articles/review-process-study.md) about measured experiments with AI review
 
 </details>

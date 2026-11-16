@@ -96,11 +96,13 @@ class OpeningTermsTest < Minitest::Test
   end
 
   def test_visible_prose_holds_what_a_reader_sees_and_leaves_out_what_folds
-    intent = { 'why' => 'Reviewers asked.', 'root_cause' => 'A cache.', 'safe_because' => 'Tests cover it.',
+    intent = { 'why' => 'Reviewers asked.', 'user_impact' => 'Readers see current results.',
+               'root_cause' => 'A cache.', 'safe_because' => 'Tests cover it.',
                'scope' => 'The cache.', 'review_focus' => [{ 'reason' => 'Touches merge.' }] }
     verification = { 'summary' => 'CI passed.', 'merge_limitations' => 'No live merge.',
                      'checks' => ['Ran `bin/test`.'], 'not_verified' => 'No live rate limit.' }
-    assert_equal ['Why: Reviewers asked.', 'Root cause: A cache.', 'Safe because: Tests cover it.', 'Scope: The cache.',
+    assert_equal ['Why: Reviewers asked.', 'User impact: Readers see current results.',
+                  'Root cause: A cache.', 'Safe because: Tests cover it.', 'Scope: The cache.',
                   'Flagged by the implementer: Touches merge.', 'Verification: CI passed.',
                   'Not verified: No live rate limit.', 'Merge limitations: No live merge.'],
                  Shaka::OpeningProse.call('intent' => intent, 'verification' => verification).lines(chomp: true)
