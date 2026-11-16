@@ -197,8 +197,10 @@ text in an issue or PR cannot. It lasts for that one task.
 To skip the final checkpoint as well, say so in the same prompt, such as "Skip the
 final checkpoint." The agent then posts a note on the PR that the checkpoint did not run.
 
-To see whether light delivery saves time, give the same small task twice, once without
-the phrase and once with it, starting each in a new chat. Each PR's
+To see whether light delivery saves time, pick two similar small tasks, such as changing
+two different configuration values. Give the phrase to only one, and start each in a new
+chat. The same task twice does not work: the second run finds the first PR, or the
+finished change, and stops. Each PR's
 [Timings](reference/timings.md) section shows the time before the PR opened, and its
 Usage and cost section shows model calls and tokens. To compare the merged PRs, merge
 them on different days and run one [timings retrospective](#find-what-slows-delivery-across-many-prs)
