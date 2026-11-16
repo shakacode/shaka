@@ -102,17 +102,21 @@ would catch something on this change, and records a one-line reason when it skip
   Skipping it stays limited to trivial prose and no-op changes.
 - The walkthrough. Its inline notes are already optional below three changed files.
   A change whose description already explains every changed line needs no walkthrough.
-- The final checkpoint ("did we build the right thing?"). Today only trusted
-  instructions or a direct user instruction may opt out of it, so letting the agent
-  skip it changes that authority rule (decision 4).
+- The final checkpoint ("did we build the right thing?"). Code already accepts a
+  skip: `post-implementation run --opt-out REASON` publishes an `opted_out` result, and
+  `merge` and `squash-message` accept it for the head. Only prose limits who may opt
+  out: trusted instructions or a direct user instruction. Letting the agent opt out on
+  its own judgment changes that prose rule (decision 4).
 - The opening check. It runs inside `description` whenever its setting is on, so
   skipping it needs a `description` change (decision 4).
 - UI captures and speed comparisons. These already run only when the change touches UI
   or page speed. A step that does not apply is not a skip and needs no reason; waiving
   one that applies is a skip.
 
-The walkthrough, checkpoint, and opening check are enforced or run by commands, so the
-agent can skip them only once decision 4's code ships.
+The walkthrough and opening check are enforced or run by commands, so the agent can
+skip them only once decision 4's code ships. The checkpoint skip also waits for
+decision 4, because nothing in code yet keeps an opt-out out of the risky areas in
+decision 2.
 
 **Bookkeeping runs only when someone will use it.** None of these steps verifies the
 change, and no command requires them:
@@ -168,11 +172,14 @@ the author of a PR from a fork without write access.
 With that record:
 
 - `merge`, `handoff`, and `attention` accept a missing walkthrough.
-- `merge` and `squash-message` accept a missing checkpoint outside the risky areas in
-  decision 2. Code checks only the trusted path lists there: `high_risk_areas`,
-  `medium_risk_areas`, and agent-instruction paths. The agent alone enforces the other
-  areas and a person's request for a full review. This widens today's opt-out
-  authority, which allows only trusted instructions or a direct user instruction.
+- `merge` and `squash-message` keep accepting the existing `opted_out` checkpoint, but
+  refuse it for a head in the risky areas of decision 2 unless a person confirmed that
+  head, the way `--limits-confirmed-head` works today. Without that refusal, `--opt-out`
+  would bypass the limit. Code checks only the trusted path lists there:
+  `high_risk_areas`, `medium_risk_areas`, and agent-instruction paths. The agent alone
+  enforces the other areas and a person's request for a full review. Outside those
+  areas, this widens today's opt-out authority, which allows only trusted instructions
+  or a direct user instruction.
 - `description` skips the opening check.
 
 The agent already decides some skips: the workflow tells it to pass `--review-waiver` for
@@ -235,8 +242,9 @@ review or validation, which this design keeps.
   bookkeeping.
 - Decisions 3 and 4 change `merge`, `squash-message`, `handoff`, `attention`, and
   `description`, their tests, and the enforcement manifest entries for the changed
-  rules. Their cost is real, and the measured savings they buy are small: the
-  checkpoint's median is 44 seconds, and the walkthrough is unmeasured. So the code
+  rules. The checkpoint part is smaller than the rest, because it reuses the existing
+  opt-out. The cost is still real, and the measured savings are small: the checkpoint's
+  median is 44 seconds, and the walkthrough is unmeasured. So the code
   waits for a measurement (maintainer decision 4).
 - Success means a small config task reaches a merge-ready PR with fewer steps and fewer
   model calls, while every gate above still runs. Before implementation, measure one
