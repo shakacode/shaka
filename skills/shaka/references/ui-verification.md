@@ -20,6 +20,10 @@ Read the current public
 [verification guide](https://github.com/shakacode/shaka/blob/main/docs/reference/pr-record.md#visual-evidence) for examples when deciding what evidence a
 change needs. Follow this installed workflow if the current public guide differs.
 
+Skill point: run the saved helper's
+`companions ui-verification#ui-changes --root DIR --ref SHA` and follow it as
+[skill points](companion-skills.md#skill-points) describe.
+
 ## Publish UI evidence
 
 Check captures for credentials as part of the workflow's privacy inspection.

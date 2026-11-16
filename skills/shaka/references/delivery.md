@@ -273,6 +273,10 @@ user asks for one, and deliver it as the first PR of the task's split, with the
 implementation PR following on its own branch. Without permission
 to write the work item, ask for it or offer the design PR.
 
+Skill point, once the user chose to agree on the design first: run the saved helper's
+`companions delivery#agree-on-the-design-first --root DIR --ref SHA` and follow it as
+[skill points](companion-skills.md#skill-points) describe.
+
 Then stop and wait for the user to approve the design in chat, or, for a design PR,
 for an approving review as `comments` reports it from a GitHub login the user named
 in this task as a design approver. A design PR is not ready to merge until then;
@@ -306,6 +310,10 @@ scope, not a quota. Keep tests with the behavior they verify.
 Recommend a short ordered list of outcomes, dependencies, and verification. Make
 routine splits within the authorized task; ask about changed product scope or
 risky partial releases. Each slice must be safe with its prerequisites.
+
+Skill point, when the task needs several PRs: run the saved helper's
+`companions delivery#when-a-task-needs-several-prs --root DIR --ref SHA` and follow it as
+[skill points](companion-skills.md#skill-points) describe.
 
 Keep one task owner and use the [current task plan](#keep-the-task-plan-recoverable)
 for dependencies and remaining scope. Link each PR to it when sharing is

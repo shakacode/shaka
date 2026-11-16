@@ -10,6 +10,11 @@ but the repository has no `abtests.config.ts`, the ShakaPerf config that names t
 to compare, offer to run `shaka-perf init` and its twin-server setup, which runs the base
 and the change as two local servers side by side. Once both are in place, run
 `shaka-perf compare` with the base as control and the change as experiment.
+
+Skill point: run the saved helper's
+`companions performance-verification#verify-a-speed-affecting-change --root DIR --ref SHA`
+and follow it as [skill points](companion-skills.md#skill-points) describe.
+
 For either comparison, include pages or scenarios, and metrics, that reach the changed
 behavior; a result that covers none of them counts as unmeasured. Record the verdict for
 the PR as improvement, wash, regression, or ambiguous with the pages covered, metrics,

@@ -9,7 +9,8 @@ module Shaka
   # A path this account cannot read is recorded in `unread`; the rest of the scan continues.
   class InstalledSkills
     # `origin` is the host key for a skills folder, or "NAME plugin" for a Claude Code plugin.
-    Skill = Data.define(:name, :path, :origin)
+    # `revision` is the plugin record's commit or version; nil for a folder skill.
+    Skill = Data.define(:name, :path, :origin, :revision)
 
     CLAUDE = Install::Locations::HOSTS.fetch('claude')
     PLUGINS = File.join('.claude', 'plugins', 'installed_plugins.json')
@@ -28,7 +29,7 @@ module Shaka
     # Every loadable skill: host folders first, then Claude Code plugins.
     def all
       folders = host_paths.filter_map do |host, folder|
-        skills(folder).map { |path| Skill.new(File.basename(path), path, host) } if File.directory?(folder)
+        skills(folder).map { |path| Skill.new(File.basename(path), path, host, nil) } if File.directory?(folder)
       end
       folders.flatten + plugin_skills
     end
@@ -36,8 +37,8 @@ module Shaka
     # Skills in Claude Code's own folder and in its enabled plugins, which it loads side by side.
     def claude_skills
       folder = File.join(@home, CLAUDE)
-      own = File.directory?(folder) ? skills(folder).map { |path| Skill.new(File.basename(path), path, 'claude') } : []
-      own + plugin_skills
+      own = File.directory?(folder) ? skills(folder) : []
+      own.map { |path| Skill.new(File.basename(path), path, 'claude', nil) } + plugin_skills
     end
 
     # An unreadable folder is named in the report; the other folders are still checked.
@@ -84,7 +85,8 @@ module Shaka
       folder = File.join(install_path(user), 'skills') if user
       return unless folder && File.directory?(folder)
 
-      skills(folder).each { |path| found << Skill.new(File.basename(path), path, "#{name} plugin") }
+      revision = user['gitCommitSha'] || user['version']
+      skills(folder).each { |path| found << Skill.new(File.basename(path), path, "#{name} plugin", revision) }
     rescue KeyError, TypeError, NoMethodError, ArgumentError => e
       @unread << "#{name} plugin skills not read: #{first_line(e.message)}"
     end
