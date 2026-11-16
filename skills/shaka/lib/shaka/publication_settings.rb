@@ -9,6 +9,7 @@ require_relative 'opening_publication'
 require_relative 'review_coverage'
 require_relative 'ready_time'
 require_relative 'local_review/ledger'
+require_relative 'configuration/personal_privacy'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
@@ -34,7 +35,8 @@ module Shaka
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
           reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone,
           ignored_human_comments: config&.pr_description&.fetch('ignored_human_comments', nil),
-          ready_gate: ReadyTime.gate(config, override: options[:ci_review_wait]), config:)
+          ready_gate: ReadyTime.gate(config, override: options[:ci_review_wait]), config:,
+          privacy: Configuration::PersonalPrivacy.load)
     end
 
     # Current results win. Failing those, a commit whose description already shows verified results
@@ -104,7 +106,9 @@ module Shaka
     end
 
     def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil, # rubocop:disable Metrics/ParameterLists
-                   reviewer_shortfall: nil, time_zone: nil, ready_gate: nil, config: nil, ignored_human_comments: nil)
+                   reviewer_shortfall: nil, time_zone: nil, ready_gate: nil, config: nil, ignored_human_comments: nil,
+                   privacy: Configuration::PersonalPrivacy.new({}))
+      @privacy = privacy
       @config = config
       @ready_gate = ready_gate
       @ignored_human_comments = ignored_human_comments
@@ -119,12 +123,17 @@ module Shaka
     # An unknown policy cannot authorize publishing the checkout path, even on unfinished PRs.
     def include_checkout_path? = @current&.fetch('wip.include_checkout_path', false) == true
 
+    # The repository's choice first, then the user's, which can only hide the path. Unread settings keep the
+    # diagnostic, because it names the recovery step.
     def path_redaction
-      return if include_checkout_path?
       return 'REDACTED' if @current&.fetch('wip.include_checkout_path', nil) == false
+      return @location_diagnostic unless include_checkout_path?
 
-      @location_diagnostic
+      Configuration::PersonalPrivacy::REDACTION unless @privacy.checkout_path?
     end
+
+    # The user's own choices, read for this publication; nothing hidden when none were read.
+    attr_reader :privacy
 
     # Only resolved settings can establish whether the repository opted out.
     def attribution? = @current&.fetch('pr_description.show_shaka_credit', false) == true

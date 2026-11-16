@@ -182,8 +182,9 @@ share or export URL, to fill this field.
 
 **Privacy:** team setup defaults `wip.include_checkout_path` to `true`. New
 individual setups use `false`. Supply the selected default-branch `--ref` to `description`.
-The renderer uses `REDACTED` for Workspace only when the setting is explicitly
-false. Unread or unavailable settings
+The renderer uses `REDACTED` for Workspace when the setting is explicitly false, and
+`REDACTED (personal setting)` when the user's `~/.agents/shaka/config.yml` sets
+`wip.include_checkout_path: false`. Unread or unavailable settings
 withhold Workspace and explain the recovery action:
 rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
 republishing when loading failed. No setting hides Chat link; supply `UNKNOWN`
