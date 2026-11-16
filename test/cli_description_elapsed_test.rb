@@ -61,7 +61,7 @@ class CliDescriptionElapsedTest < Minitest::Test
     earlier_body = published('PR_CHECKS' => JSON.generate(CHECKS))
     fork_body = published('PR_HEAD_REPO' => 'fork/repo', 'EXISTING_BODY' => earlier_body)
     assert_includes fork_body, '· ready in 1h 30m'
-    assert_match(/\Aunavailable .*current GitHub evidence/, @timing.values_at('status', 'reason').join(' '))
+    assert_equal 'unavailable: GitHub readiness time unavailable.', @timing.values_at('status', 'reason').join(': ')
   end
 
   def test_the_stored_metric_is_verified_separately_from_the_timestamps

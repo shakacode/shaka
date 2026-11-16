@@ -54,6 +54,9 @@ module Shaka
       observed = timeline[endpoint.last]
       return 'GitHub readiness time unavailable.' if observed == :unknown
 
+      fork_gap = fork_readiness_gap(state, timeline) if endpoint.first == 't2'
+      return fork_gap if fork_gap
+
       return if endpoint_matches?(state[endpoint.first], observed, now)
 
       'The elapsed endpoint could not be verified from current GitHub evidence.'
