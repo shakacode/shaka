@@ -38,14 +38,27 @@ class EvaluationDeliverySnapshotFailuresTest < Minitest::Test
   end
 
   def test_snapshot_deadline_reaps_the_active_native_child
-    assert_raises(IOError) { capture([pull, 'hang'], seconds: 2) }
-    pid = Integer(File.read(File.join(@directory, 'pid')), 10)
-    assert_raises(Errno::ESRCH) { Process.kill(0, pid) }
+    pids = spawned_by_open3 { assert_raises(IOError) { capture([pull, 'hang'], seconds: 2) } }
+    refute_empty pids
+    pids.each { |pid| assert_raises(Errno::ESRCH) { Process.kill(0, pid) } }
   end
 
   def test_invalid_declared_apps_are_refused_before_native_access
     bad = plan.merge('check_apps' => { 'validate' => '15368' })
     assert_raises(ArgumentError) { Shaka::Evaluation::DeliverySnapshot.new(bad, github: @gh) }
     refute_path_exists File.join(@directory, 'requests')
+  end
+
+  private
+
+  # The pids Open3 spawns, so the test needs no report from a child the deadline may stop before it runs.
+  # The reads share one deadline, so on a loaded machine it can stop the first child instead of the hanging one.
+  def spawned_by_open3
+    pids = []
+    Open3.define_singleton_method(:spawn) { |*arguments| Process.spawn(*arguments).tap { pids << it } }
+    yield
+    pids
+  ensure
+    Open3.singleton_class.remove_method(:spawn)
   end
 end
