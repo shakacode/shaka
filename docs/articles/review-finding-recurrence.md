@@ -21,8 +21,8 @@ lists the method, every kind, and the
    caller's Git setup produced 7 defects on 5 PRs. A test that every call uses one
    isolating runner would catch the 4 to 6 findings where isolation was missing.
 4. **Reviewers still raise risks a check already answers.** Where an anchor check and a
-   quote loader existed, reviewers raised 6 risks those checks cover. The agent
-   dismissed all 6, citing the check or a search.
+   quote loader existed, reviewers raised 4 risks those checks cover. The agent
+   dismissed all 4, 3 of them by citing the check.
 5. **Checks cost upkeep too.** One deterministic scanner in this window drew 38 review
    findings over 7 PRs before it was removed.
 6. **Recommendation: evaluate first.** Map the Git findings to a runner test before
@@ -97,8 +97,8 @@ report lists 7 more kinds with their checks and costs.
 - **In Shaka:** `bin/check-docs-navigation` has checked docs anchors since
   [#616](https://github.com/shakacode/shaka/pull/616). The `enforcement.yml` loader fails
   when a quoted rule leaves the workflow.
-- **Result:** reviewers still raised 6 risks that an edit might break an anchor or a
-  quote the checks read. The agent dismissed each one; 4 cite the check and 2 a search. The 3 anchor
+- **Result:** reviewers still raised 4 risks that an edit might break an anchor or a
+  quote the checks read. The agent dismissed each one, 3 by citing the check. The 3 anchor
   findings that were fixed fell outside the check's reach.
 - **Limit:** the month has no period before either check, so it cannot show whether the
   checks reduced defects. The reviewer packet does not list the checks that passed.
@@ -135,7 +135,7 @@ from prose to checks.
 | Test refusing long English string literals in `skills/shaka/lib` | Prompt text in Ruby came up on 3 PRs; numeric literals were dismissed as constants | Evaluate: run it on `main` and count hits |
 | CI step refusing `CHANGELOG.md` edits on non-release PRs | The rule changed mid-month; 1 finding broke its current form | Defer |
 | Report-only changed-line coverage | Up to 26 of 51 test findings name an untested path; coverage misses paths unit tests already run | Evaluate on the next 10 PRs |
-| Tell reviewers which checks passed, and to name a caller before warning about one | 20 risks dismissed by citing a check or showing callers unaffected; dismissals were not rechecked | Evaluate: compare dismissals over a week |
+| Tell reviewers which checks passed, and to name a caller before warning about one | 18 risks dismissed by citing a check or showing callers unaffected; dismissals were not rechecked | Evaluate: compare dismissals over a week |
 | Check every docs claim about enforcement | High upkeep, cannot judge truth | Defer |
 
 ## Data and limits

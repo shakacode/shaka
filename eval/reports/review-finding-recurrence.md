@@ -45,10 +45,9 @@ model runs. No person has rechecked the classification.*
   - Untested changed lines: up to 26 of the 51 test findings name an untested path.
     Line coverage misses a path whose lines a unit test already runs.
 - **Reviewers still raised risks a check already answered.** With the anchor check and
-  the `enforcement.yml` loader in place, reviewers raised 6 risks that an edit might
-  break an anchor or quote the checks read. The agent dismissed all 6; 4 dismissals cite
-  the check and 2 a search. 14
-  more dismissed risks warned that an unnamed caller might break. The window has no
+  the `enforcement.yml` loader in place, reviewers raised 4 risks that an edit might
+  break an anchor or quote the checks read. The agent dismissed all 4; 3 dismissals cite
+  the check and 1 a heading slug. 14 more dismissed risks warned that an unnamed caller might break. The window has no
   period before either check, so it cannot show whether the checks cut defects.
 - **Checks cost upkeep too.** The seam upgrade reference scanner was a deterministic
   check of 1,832 lines. Its edge cases drew 38 findings over 7 PRs before
@@ -168,12 +167,13 @@ below the threshold.
 
 - **Anchors.** `bin/check-docs-navigation` has checked links and anchors in `docs/` and
   `skills/` since [#616](https://github.com/shakacode/shaka/pull/616) on 2026-10-17.
-  Later, reviewers raised 3 risks on 2 PRs that a docs link might target a missing anchor
-  ([#825](https://github.com/shakacode/shaka/pull/825),
-  [#844](https://github.com/shakacode/shaka/pull/844)). The agent dismissed each one. One
-  dismissal cites the check; two cite a heading slug or a grep. A fourth, on
-  [#667](https://github.com/shakacode/shaka/pull/667), concerned a file the check does
-  not read. The 3 fixed anchor findings fall outside the check: anchors
+  Later, one risk said a new docs link might target a missing anchor
+  ([#825](https://github.com/shakacode/shaka/pull/825)). The agent dismissed it by citing
+  the heading slug. Three more dismissed anchor risks fall partly outside the check.
+  Two on [#844](https://github.com/shakacode/shaka/pull/844) concerned removed anchors
+  that pages outside `docs/` and `skills/` might link to; the agent dismissed them with
+  a wider grep. One on [#667](https://github.com/shakacode/shaka/pull/667) concerned a
+  file the check does not read. The 3 fixed anchor findings fall outside the check: anchors
   that outside pages link to (#1036), a link that broke only against a newer `main`
   (#1102), and a heading anchor a setting needed (#1089).
 - **Enforcement quotes.** The `enforcement.yml` loader fails when a quote leaves the
