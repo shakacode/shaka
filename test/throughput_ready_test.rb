@@ -68,6 +68,15 @@ class ThroughputReadyTest < Minitest::Test
     assert_includes rendered, '· ready in UNKNOWN'
   end
 
+  def test_a_fork_carries_only_same_head_readiness_until_github_supplies_a_time
+    body = Shaka::ThroughputStats.update(filled_block, 't3' => MERGED.iso8601)
+    fork = refresh_pull(body:)
+    fork['head']['repo'] = { 'full_name' => 'fork/repo' }
+    assert_equal({ 'head' => HEAD, 'spend' => 'UNKNOWN', 't2' => READY.iso8601 },
+                 Shaka::ThroughputStats.state({}, { 'ready_at' => :unknown }, fork))
+    assert_equal LATER.iso8601, Shaka::ThroughputStats.state({}, { 'ready_at' => LATER }, fork)['t2']
+  end
+
   def test_verification_flags_an_endpoint_missing_from_the_published_body
     rendered = describe('$4.12', timeline: push_times, pull: head_pull)
     body = "<!-- shaka:begin -->\n#{rendered}\n<!-- shaka:end -->"

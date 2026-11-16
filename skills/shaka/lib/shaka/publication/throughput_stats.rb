@@ -67,22 +67,24 @@ module Shaka
         raise Error, 'Description has an unreadable shaka:stats block.'
       end
 
-      def publish_state(content, timeline, pull) = state_for(content, timeline, carried_body(pull), head_sha(pull))
-
-      # Republishing writes a fresh block, so a damaged one must not stop it.
-      def carried_body(pull)
-        return {} unless pull.is_a?(Hash) && TimelineSteps.same_repository?(pull)
-
-        read(Publishing.managed_region(pull['body'])) || {}
-      rescue Error
-        {}
+      def publish_state(content, timeline, pull)
+        carried = carried_body(pull, timeline['ready_at'])
+        head = head_sha(pull)
+        base = fresh_state(content, timeline, carried).merge('head' => head)
+        (head && carried['head'] == head ? carried_state(base, carried) : base).compact
       end
 
-      def state_for(content, timeline, carried, head)
-        base = fresh_state(content, timeline, carried)
-        base['head'] = head if head
-        same = head && carried['head'] == head
-        (same ? carried_state(base, carried) : base).compact
+      # Republishing writes a fresh block, so a damaged one must not stop it.
+      def carried_body(pull, ready)
+        return {} unless pull.is_a?(Hash)
+
+        carried = read(Publishing.managed_region(pull['body'])) || {}
+        return carried if TimelineSteps.same_repository?(pull)
+
+        # A fork's body can supply a display fallback. Its timestamp never overrides GitHub's.
+        ready.is_a?(Time) || !parse_time(carried['t2']) ? {} : carried.slice('head', 't2')
+      rescue Error
+        {}
       end
 
       def fresh_state(content, timeline, carried)
@@ -110,8 +112,7 @@ module Shaka
       def head_sha(pull)
         return unless pull.is_a?(Hash)
 
-        nested = pull['head']
-        sha = pull['headRefOid'] || (nested['sha'] if nested.is_a?(Hash))
+        sha = pull['headRefOid'] || (pull['head']['sha'] if pull['head'].is_a?(Hash))
         sha if sha.is_a?(String) && sha.match?(/\A[0-9a-f]{40}\z/)
       end
 
