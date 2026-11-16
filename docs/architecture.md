@@ -44,6 +44,22 @@ check the instruction size yourself, ask your agent:
 Run bin/report-instruction-growth in my Shaka checkout and summarize the word counts
 ```
 
+To see how many tokens each provider counts for the text loaded at the start of
+every task, ask for token counts as well:
+
+```text
+Run bin/report-instruction-growth --tokens in my Shaka checkout and summarize the token changes
+```
+
+The `--tokens` option sends `SKILL.md` plus the rendered workflow, for both your
+branch and its merge base, to Anthropic's free token-counting endpoint and
+OpenAI's input-token endpoint. It reads `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`
+and counts with the models under `runtime.instruction_tokens` in Shaka's
+`defaults.yml`. Each count includes a few tokens of message wrapping, which cancel
+out in the change. A provider without a key or network access shows `UNKNOWN` and
+the reason; the report itself still succeeds. Without `--tokens` the report makes
+no network requests.
+
 <a id="keep-facts-where-people-look-for-them"></a>
 
 ## Where Shaka keeps facts

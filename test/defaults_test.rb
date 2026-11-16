@@ -7,6 +7,7 @@ require 'shaka/ci_review_wait'
 require 'shaka/claim'
 require 'shaka/pr_watch'
 require 'shaka/local_review/runner'
+require_relative '../lib/instruction_tokens'
 
 class DefaultsTest < Minitest::Test
   # Each defaults.yml path and the constant that must read it.
@@ -23,7 +24,8 @@ class DefaultsTest < Minitest::Test
     %w[runtime review_timeout_seconds deepseek/openrouter] => Shaka::OpenrouterReview::DEFAULT_TIMEOUT_SECONDS,
     %w[runtime pr_watch interval_seconds] => Shaka::PrWatch::DEFAULT_INTERVAL,
     %w[runtime pr_watch timeout_seconds] => Shaka::PrWatch::DEFAULT_TIMEOUT,
-    %w[runtime pr_watch settle_seconds] => Shaka::PrWatch::DEFAULT_SETTLE
+    %w[runtime pr_watch settle_seconds] => Shaka::PrWatch::DEFAULT_SETTLE,
+    %w[runtime instruction_tokens] => InstructionTokens::MODELS
   }.freeze
 
   def test_code_defaults_come_from_the_packaged_file
