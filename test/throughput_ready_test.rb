@@ -77,6 +77,26 @@ class ThroughputReadyTest < Minitest::Test
     assert_equal LATER.iso8601, Shaka::ThroughputStats.state({}, { 'ready_at' => LATER }, fork)['t2']
   end
 
+  def test_a_merged_fork_reports_its_carried_readiness_as_unavailable
+    fork = refresh_pull
+    fork['head']['repo'] = { 'full_name' => 'fork/repo' }
+    timeline = push_times.merge('opened' => START, 'merged' => MERGED, 'fork' => true)
+    rendered = describe('$4.12', timeline:, pull: fork)
+    body = "<!-- shaka:begin -->\n#{rendered}\n<!-- shaka:end -->"
+    assert_includes body, 'Ready to merged 2h 5m'
+    verdict = Shaka::PublishedTiming.check(body, head: HEAD, timeline:)
+    assert_equal ['unavailable', 'GitHub readiness time unavailable.'], verdict.values_at('status', 'reason')
+  end
+
+  def test_a_watch_replaces_carried_fork_readiness_with_the_github_time
+    observed = (READY + 3600.75).iso8601(9)
+    pull = { 'headRefOid' => HEAD, 'isCrossRepository' => true }
+    github = ThroughputFakeGitHub.new(filled_block, pull, [check('validate', observed)])
+    publisher = Shaka::PrWatch::ThroughputPublisher.new(github, head: HEAD, review_jobs: [], wait: 'none')
+    publisher.call(required: ['validate'])
+    assert_equal observed, Shaka::ThroughputStats.read(github.patches.fetch(0))['t2']
+  end
+
   def test_verification_flags_an_endpoint_missing_from_the_published_body
     rendered = describe('$4.12', timeline: push_times, pull: head_pull)
     body = "<!-- shaka:begin -->\n#{rendered}\n<!-- shaka:end -->"

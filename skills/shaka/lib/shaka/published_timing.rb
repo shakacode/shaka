@@ -37,8 +37,14 @@ module Shaka
     def evidence_gap(state, timeline, now)
       return 'PR opening time unavailable.' if timeline['task_started_at'] && !timeline['opened']
 
-      endpoint_gap(state, timeline, now) ||
+      endpoint_gap(state, timeline, now) || fork_readiness_gap(state, timeline) ||
         ('Task start could not be verified.' if state['t0'] && !timeline['task_started_at'])
+    end
+
+    def fork_readiness_gap(state, timeline)
+      return unless timeline['fork'] && state['t2'] && !timeline['ready_at'].is_a?(Time)
+
+      'GitHub readiness time unavailable.'
     end
 
     def endpoint_gap(state, timeline, now)

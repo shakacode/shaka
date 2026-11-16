@@ -11,7 +11,7 @@ module Shaka
       QUERY = <<~GRAPHQL.freeze
         query($owner: String!, $name: String!, $number: Int!) {
           repository(owner: $owner, name: $name) {
-            pullRequest(number: $number) { headRefOid mergedAt
+            pullRequest(number: $number) { headRefOid mergedAt isCrossRepository
               commits(last: 1) { nodes { commit { #{ThroughputLine::HEAD_CHECKS} } } } } } }
       GRAPHQL
 
@@ -80,11 +80,12 @@ module Shaka
       def fields(pull, required, carried, times)
         ready = ThroughputStats.ready_at(times, required:, review_jobs: @review_jobs, wait: @wait)
         { 'head' => @head, 't1' => prompt_time(pull.dig('commits', 'nodes', 0, 'commit'), carried),
-          't2' => ready_time(ready, carried) }
+          't2' => ready_time(ready, carried, fork: pull['isCrossRepository']) }
       end
 
       # Times recorded for another head must not be relabelled as this head's.
-      def ready_time(ready, carried)
+      def ready_time(ready, carried, fork:)
+        return ThroughputStats.iso_timestamp(ready) if fork && ready.is_a?(Time)
         return ready_stamp(ready, carried) if ready
 
         carried['t2'] if carried['head'] == @head

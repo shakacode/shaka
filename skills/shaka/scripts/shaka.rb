@@ -206,6 +206,7 @@ end
 
 def description_input(content, github, pull, options)
   timeline = Shaka::PullTimeline.new(github).call
+  timeline['fork'] = !Shaka::TimelineSteps.same_repository?(pull)
   Shaka::TaskTiming.attach_lifecycle(timeline, pull)
   timing_content, note = Shaka::CodexTaskStart.resolve(content, opened: timeline['opened'])
   [resolved_description(timing_content, github, options), note, timeline]
