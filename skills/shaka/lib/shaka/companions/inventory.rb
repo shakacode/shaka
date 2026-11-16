@@ -31,6 +31,7 @@ module Shaka
       # A file without front matter allows model invocation. Front matter that is unterminated or
       # cannot be parsed counts as explicit-only, so a broken header never raises a mode.
       def explicit_front(text)
+        return true unless text.valid_encoding?
         return false unless text.match?(/\A---\r?\n/)
 
         match = text.match(/\A---\r?\n(.*?)\r?\n---[ \t]*\r?$/m)
@@ -145,9 +146,16 @@ module Shaka
                  .with(candidate_only: File.file?(File.join(@root, file)))
         end
 
-        text = TrustedConfigSource.new(root: @root).read_prompt(resolved, @sha, file)
         build(pack, skill, identity: "repository:#{File.dirname(resolved)}", installed: true,
-                           location: "#{@sha}:#{skill.path}", revision: @sha, explicit_front: explicit_front(text))
+                           location: "#{@sha}:#{skill.path}", revision: @sha, explicit_front: trusted_front(resolved))
+      end
+
+      # A trusted SKILL.md the reader refuses, such as an empty or oversized one, counts as explicit-only.
+      def trusted_front(resolved)
+        explicit_front(TrustedConfigSource.new(root: @root).read_prompt(resolved, @sha, 'project skill'))
+      rescue Error => e
+        @warnings << e.message
+        true
       end
 
       # The path of a regular file at the trusted commit, following its links, or nil.

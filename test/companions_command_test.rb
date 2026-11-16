@@ -51,4 +51,19 @@ class CompanionsCommandTest < Minitest::Test
       assert_includes run_command(root:, ref: sha).fetch('warnings').first, 'unknown skill point old#gone ignored'
     end
   end
+
+  def test_the_command_prints_every_point_as_json_and_refuses_a_missing_point
+    with_trusted_repository do |root, sha|
+      output, = capture_io { assert_equal 0, run_cli('--all', '--root', root, '--ref', sha) }
+      _, error = capture_io { assert_equal 1, run_cli('--root', root) }
+      json = JSON.parse(output)
+
+      assert_equal [sha, %w[team-check]], [json['settings_ref'], json['skills'].map { |row| row['skill'] }]
+      assert_includes error, 'Usage: shaka companions POINT|--all'
+    end
+  end
+
+  private
+
+  def run_cli(*arguments) = Shaka::Companions::Command.run(arguments, home: @home)
 end

@@ -41,13 +41,24 @@ class CompanionsInstalledCopiesTest < Minitest::Test
   def test_each_installed_copy_keeps_its_own_front_matter
     write(@home, '.claude/skills/coverage/SKILL.md', "---\nname: coverage\ndisable-model-invocation: true\n---\n")
     write(@home, '.agents/skills/coverage/SKILL.md', "---\nname: coverage\n---\n")
-    third_party = { 'coverage' => { 'points' => { POINT => mode('use') } } }
-    team = pack('team', third_party, source: 'https://github.com/example/perf', match: { 'paths' => ['*/coverage'] })
-    with_trusted_repository(extra: { '.agents/shaka/packs/team.yml' => team }) do |root, sha|
+    with_trusted_repository(extra: { '.agents/shaka/packs/team.yml' => team_with_coverage }) do |root, sha|
       rows = run_command(root:, ref: sha).fetch('skills')
 
       assert_equal [['~/.agents/skills/coverage', 'use'], ['~/.claude/skills/coverage', 'suggest']],
                    rows.map { |row| row.values_at('location', 'mode') }.sort
+    end
+  end
+
+  def test_unreadable_skill_files_count_as_explicit_only
+    write(@home, '.agents/skills/coverage/SKILL.md', "---\nname: coverage\n\xFF---\n".b)
+    files = { '.agents/shaka/packs/team.yml' => team_with_coverage({ 'team-check' => project(TEAM_CHECK) }),
+              "#{TEAM_CHECK}/SKILL.md" => '' }
+    with_trusted_repository(extra: files) do |root, sha|
+      result = run_command(root:, ref: sha)
+
+      assert_equal [%w[coverage suggest], %w[team-check suggest]],
+                   result.fetch('skills').map { |row| row.values_at('skill', 'mode') }.sort
+      refute_empty result.fetch('warnings')
     end
   end
 end

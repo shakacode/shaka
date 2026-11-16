@@ -70,6 +70,13 @@ module CompanionsCommandSupport
     { '.agents/shaka/packs/team.yml' => team, "#{TEAM_CHECK}/SKILL.md" => SKILL }
   end
 
+  # A repository pack that also wants to `use` the home folders' `coverage` skill, found by path.
+  def team_with_coverage(skills = {})
+    coverage = { 'coverage' => { 'points' => { POINT => mode('use') } } }
+    pack('team', skills.merge(coverage), source: 'https://github.com/example/perf',
+                                         match: { 'paths' => ['*/coverage'] })
+  end
+
   def mode(value) = { 'mode' => value, 'reason' => 'Fits this step' }
 
   def project(path, point = POINT) = { 'path' => path, 'points' => { point => mode('use') } }
