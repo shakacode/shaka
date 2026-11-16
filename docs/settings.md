@@ -107,13 +107,13 @@ for other tools.
 
 ```text
 /shaka <task or issue link>
-Use settings from PR #123.
+Use settings from PR #123
 ```
 
 To switch an existing task:
 
 ```text
-/shaka Switch this task to settings from PR #123.
+/shaka Switch this task to settings from PR #123
 ```
 
 The selected PR supplies the complete configuration, including reviewer choices
@@ -388,7 +388,7 @@ Shaka, ask:
 ```text
 /shaka Add the hosted Claude review workflow from
 https://github.com/shakacode/shaka/blob/main/skills/shaka/config/claude-code-review.yml
-and list claude-review as a CI review job.
+and list claude-review as a CI review job
 ```
 
 In Codex, use `$shaka` instead of `/shaka`.
@@ -418,7 +418,7 @@ checks (`UNSTABLE`) for `none` and `one`; `all` requires `CLEAN`.
 
 ## `review.local_max_rounds`
 
-**Optional. Default: `5`.** A positive integer, validated by `shaka seam check`.
+**Optional. Default: `8`.** A positive integer, validated by `shaka seam check`.
 
 This bounds the commits reviewed in one local review ledger. For example, `3` lets
 an initial review and two follow-up reviews run before the helper refuses another.
@@ -426,7 +426,7 @@ With [`local_review_count`](#reviewlocal_review_count) above 1, all the reviewer
 commit together use one of these turns, so `3` with two reviewers allows six reviews
 across three commits.
 The runner reads the setting from the supplied trusted `--settings-ref` (or
-`--criteria-ref`). Without a reference, it uses the default of five.
+`--criteria-ref`). Without a reference, it uses the default of eight.
 
 If the cap leaves an unfixed defect, the agent stops before pushing and tells you.
 You can reassess the task, split it, or choose to push anyway. An authorized push
@@ -443,7 +443,7 @@ You can authorize a bounded continuation for one task while preserving its revie
 
 ```text
 Continue this task with at most fifteen review executions in total,
-including its five existing reviews. Keep merge policy ask. Go.
+including its eight existing reviews. Keep merge policy ask. Go
 ```
 
 The total counts reviewer runs, not commits: with two reviewers per commit, each round
@@ -1049,7 +1049,7 @@ To write a guide for your repository, start from a miss you have already seen:
 
 ```text
 /shaka Add PR evidence guidance: when a change alters email templates, attach
-rendered before and after screenshots.
+rendered before and after screenshots
 ```
 
 <a id="opening_check"></a>

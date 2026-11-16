@@ -8,7 +8,8 @@ You give a task. The agent builds, verifies, and reviews. You get a pull request
 
 [Watch the 52-second demo](https://www.youtube.com/watch?v=T6Fstx2fGJI) ·
 [See a Shaka PR](https://github.com/shakacode/shaka/pull/667) ·
-[Docs website](https://shaka.shakacode.com/)
+[Docs website](https://shaka.shakacode.com/) ·
+[**Book a live demo**](https://meetings.hubspot.com/justingordon/30-minute-consultation)
 
 <a id="why-use-it"></a>
 
@@ -32,6 +33,25 @@ Even with `auto`, large or risky changes need your merge decision.
 
 ![You give a task. The agent builds, verifies, and reviews. You review the PR and decide what happens next.](docs/img/task-to-pr.svg)
 
+<a id="mostly-ruby"></a>
+
+### Mostly Ruby, so your agent reads less
+
+Shaka is mostly tested Ruby code, not instructions. Ruby validates settings,
+filters untrusted comments, collects evidence, and checks merge conditions. The
+agent runs these commands without reading their code and works from their short
+output. Its instructions focus on judgment calls. Writing these checks as
+instructions would cost tokens on every task; as code, they run the same way each time.
+
+| Measured in November 2026 | Size |
+| --- | --- |
+| Ruby code in the installed skill | 84% of its lines: about 45,000 lines in 485 files |
+| Instructions the agent reads at the start of every task | About 12,400 words |
+| Procedures the agent loads only when needed, such as review | 42 files, about 51,000 words in total |
+| Tests for that Ruby, kept in this repository | About 76,000 lines |
+
+See [how these numbers were measured](docs/architecture.md#most-of-shaka-is-ruby).
+
 <a id="example-prompts"></a>
 <a id="get-started"></a>
 <a id="requirements"></a>
@@ -43,13 +63,13 @@ Even with `auto`, large or risky changes need your merge decision.
 You don't need to study the docs first. Ask your coding agent to install Shaka:
 
 ```text
-Install Shaka from https://github.com/shakacode/shaka.
+Install Shaka from https://github.com/shakacode/shaka
 ```
 
 Then give it a small task:
 
 ```text
-$shaka Fix search when the query contains an apostrophe. Go.
+$shaka Fix search when the query contains an apostrophe
 ```
 
 Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, GitHub Copilot, or OpenCode.
@@ -57,10 +77,23 @@ For Pi, load the installed skill. See [other coding agents](docs/coding-agents.m
 Your agent checks setup and tells you if
 anything is missing.
 
+Before coding, the agent recommends a model and effort. If your coding agent uses
+different settings, or the agent can't tell which it uses, it waits for your reply.
+To keep your current settings and start right away, end the task with `Go`
+(without naming a model or effort).
+See [why the agent asks](docs/faq.md#why-did-the-agent-stop-to-ask-about-model-and-effort).
+
 Read the PR, ask for revisions if needed, and decide whether to merge.
 
 Prefer to install it manually? Follow [manual installation](docs/manual-installation.md).
 New to pull requests? Try [Shaka in pictures](docs/shaka-in-pictures.md).
+
+## Book a live demo
+
+Want to see Shaka on a real task, or fit it to how your team works?
+[Book a 30-minute call with Justin Gordon](https://meetings.hubspot.com/justingordon/30-minute-consultation),
+ShakaCode's founder, for a demo, answers about how Shaka works, or a walkthrough of
+[forking Shaka and changing it](docs/fork-and-hack.md).
 
 ## For open-source repositories
 

@@ -24,7 +24,7 @@ module ConfigurationBoundaryFileIO
     seam/private_recovery/seed.rb seam/private_seed.rb ui_check.rb install/refusal.rb install/ruby_record.rb
     install/status_checkout.rb install/status_inventory.rb install/checkout_record.rb install/take_over.rb
     update_check/cache.rb install/session_hook.rb ruby_requirement.rb startup_notice/marks.rb
-    evidence/machine_facts.rb local_review/custom_instructions.rb local_review/commit_export.rb
+    evidence/machine_facts.rb evidence/phase_log.rb local_review/custom_instructions.rb local_review/commit_export.rb
     canary/body.rb canary/cli.rb canary/gate.rb canary/run.rb canary/text.rb publication/time_zone.rb
     doctor/companion_skills.rb evidence/trusted_command.rb
   ].freeze

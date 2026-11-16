@@ -6,7 +6,9 @@
 # SHAKA_TEST_WORKERS to choose the count; 1 runs the suite in one process.
 # When the shell sets no locale, workers run under C.UTF-8, the locale GitHub's runners set,
 # or under en_US.UTF-8 on macOS, whose older releases lack C.UTF-8.
+# The report ends with the slowest test classes, so a slow suite shows where to look first.
 require 'etc'
+require 'json'
 require 'tempfile'
 
 workers = Integer(ENV.fetch('SHAKA_TEST_WORKERS', [Etc.nprocessors, 4].min))
@@ -27,16 +29,33 @@ files = (ARGV.empty? ? Dir.glob('test/**/*_test.rb') : ARGV).map { |path| File.e
 utf8_locale = RUBY_PLATFORM.include?('darwin') ? 'en_US.UTF-8' : 'C.UTF-8'
 locale = %w[LC_ALL LC_CTYPE LANG].any? { !ENV.fetch(it, '').empty? } ? {} : { 'LANG' => utf8_locale }
 
+SLOWEST = 10
+
 runs = Array.new(workers) do |index|
+  times = Tempfile.new("run-tests-times-#{index}")
   code = <<~RUBY
     #{files.inspect}.each { |path| require path }
     classes = Minitest::Runnable.runnables
     named, anonymous = classes.partition(&:name)
     kept = named.sort_by(&:name).select.with_index { |_, i| i % #{workers} == #{index} }
     classes.replace(#{index}.zero? ? kept + anonymous : kept)
+    seconds = Hash.new(0.0)
+    lock = Mutex.new
+    # Each test is timed, so classes that run their tests in parallel threads are counted too.
+    Minitest::Test.prepend(Module.new do
+      define_method(:run) do
+        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        super()
+      ensure
+        took = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+        lock.synchronize { seconds[self.class.name.to_s] += took }
+      end
+    end)
+    Minitest.after_run { File.write(#{times.path.inspect}, JSON.generate(seconds)) }
   RUBY
   log = Tempfile.new("run-tests-#{index}")
-  { log:, pid: Process.spawn(locale, RbConfig.ruby, '-Itest', '-e', code, out: log.path, err: %i[child out]) }
+  pid = Process.spawn(locale, RbConfig.ruby, '-Itest', '-rjson', '-e', code, out: log.path, err: %i[child out])
+  { log:, times:, pid: }
 end
 
 totals = Hash.new(0)
@@ -50,6 +69,17 @@ results = runs.map do |run|
   counts.each { |count, name| totals[name] += count.to_i } if counts.size == 5
   status.success? && counts.size == 5
 end
+
+seconds = runs.each_with_object(Hash.new(0.0)) do |run, sums|
+  JSON.parse(File.read(run[:times].path)).each { |name, value| sums[name] += value }
+rescue JSON::ParserError
+  nil
+ensure
+  run[:times].close!
+end
+slowest = seconds.reject { |name, _| name.empty? }.max_by(SLOWEST) { |_, value| value }
+lines = slowest.map { |name, value| format('  %<seconds>6.1fs %<name>s', seconds: value, name:) }
+puts 'Slowest test classes:', lines if lines.any?
 
 counted = %w[runs assertions failures errors skips].to_h { |name| [name.to_sym, totals[name]] }
 puts format('Total: %<runs>d runs, %<assertions>d assertions, %<failures>d failures, %<errors>d errors, ' \

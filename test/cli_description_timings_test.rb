@@ -2,12 +2,14 @@
 
 require_relative 'cli_description_decisions_test'
 require 'shaka/publication/timeline_steps'
+require_relative 'agent_time_fixture'
 
 # The published description carries the timings the helper read from the label timeline.
 class CliDescriptionTimingsTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include CliOpeningCheckFakes
   include CliDescriptionDecisionsRun
+  include AgentTimeFixture
 
   COMMAND = CliDescriptionDecisionsTest::COMMAND
   ROOT = CliDescriptionDecisionsTest::ROOT
@@ -56,6 +58,20 @@ class CliDescriptionTimingsTest < Minitest::Test
     end
   end
 
+  # The helper reads the running session's transcript and passes its totals to publication.
+  def test_description_publishes_the_running_sessions_agent_time
+    @task_started_at = '2026-10-18T07:00:00Z'
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, decisions: [], env: session_env(dir))
+
+        assert_predicate status, :success?, error
+        assert_includes File.read(File.join(dir, 'published.md')), '**Agent time:** 10m working in 1 session'
+      end
+    end
+  end
+
   def test_publication_groups_metadata_but_leaves_change_evidence_and_cost_visible
     with_repository do |root|
       commit(root)
@@ -83,6 +99,12 @@ class CliDescriptionTimingsTest < Minitest::Test
     ['Execution details', 'Skills used', 'Usage and cost', 'Timings', 'Shaka settings'].each do |title|
       assert_includes metrics, "<summary>#{title}"
     end
+  end
+
+  # A Claude Code session whose transcript the description reads.
+  def session_env(dir)
+    write_transcript(dir, claude_records)
+    { 'CLAUDE_CODE_SESSION_ID' => SESSION, 'CLAUDE_CONFIG_DIR' => dir, 'CODEX_THREAD_ID' => nil }
   end
 
   # This machine logged a review of the pull request's commit.

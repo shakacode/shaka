@@ -11,7 +11,7 @@ Ask your coding agent:
 
 ```text
 Install pstack from cursor/plugins alongside Shaka. Preserve my existing skills
-and tell me how pstack stays up to date in this coding agent.
+and tell me how pstack stays up to date in this coding agent
 ```
 
 Cursor and Claude Code can install pstack as a plugin. In Codex, use selected
@@ -49,7 +49,7 @@ use a distinct prefix rather than overwriting it.
 
 Add a status command that shows the installed revision, whether it is behind
 its source, broken links, and duplicate names. Let me choose which packs track
-upstream and which use a pinned release, commit, or fork.
+upstream and which use a pinned release, commit, or fork
 ```
 
 Have the agent check the actual skills directories your tools read. Start with
@@ -75,7 +75,7 @@ is still a draft.
 
 ```text
 /shaka Use pstack's maintain-verification-skill to update this project's app checks.
-Return the changes, evidence, and remaining gaps. Leave PR publication to Shaka.
+Return the changes, evidence, and remaining gaps. Leave PR publication to Shaka
 ```
 
 If the checks still match the app, the agent can report that and stop. If it finds
