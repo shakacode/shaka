@@ -20,12 +20,20 @@ module Shaka
         return new({}) if home.nil? || home.empty?
 
         path = File.join(home, Paths::PERSONAL_SETTINGS)
-        return new({}, path:) unless File.exist?(path)
+        return new({}, path:) if absent?(path)
 
         new(choices(path), path:)
-      rescue Error => e
+      rescue Error, SystemCallError => e
         new(KEYS.to_h { [it, false] }, path:, warning: "#{e.message}. Hiding the checkout path and chat link " \
                                                        'on publications until the file is fixed.')
+      end
+
+      # Only a missing file or folder is absent: a folder Shaka cannot open hides the file, not the choice.
+      def self.absent?(path)
+        File.stat(path)
+        false
+      rescue Errno::ENOENT, Errno::ENOTDIR
+        true
       end
 
       def self.choices(path)

@@ -699,7 +699,7 @@ phases:
         and its task field, published as Chat name, the current host title read before
         publication using that procedure; a suggested title alone is not a confirmed name.
         Its thread field, published as Chat link, carries the host's link back to this session whatever
-        `wip.include_checkout_path` says; the helper withholds it when the user's personal file hides it. Inspect other supplied prose for private
+        `wip.include_checkout_path` says. Inspect other supplied prose for private
         content. The chat link follows the guide's rule for the host: Codex builds it from
         `CODEX_THREAD_ID`, Claude Code asks the host for this session's metadata and publishes
         the `link` it returns, and any host the guide does not cover, or that reports no link,

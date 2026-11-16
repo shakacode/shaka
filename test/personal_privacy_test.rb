@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require_relative 'repository_fixture'
 require 'shaka/configuration/personal_privacy'
 require 'shaka/publication_settings'
 require 'shaka/publication/wip_details'
@@ -8,10 +9,32 @@ require 'shaka/handoff/wip_note'
 require 'shaka/task_start'
 require 'tmpdir'
 require 'yaml'
+require 'json'
+
+# Points HOME at a fresh directory holding the given personal file for the block.
+module PersonalHome
+  private
+
+  # File contents: nil writes none, a String is written as is, and a Hash becomes a version 1 file.
+  def with_home(file)
+    Dir.mktmpdir('shaka-home') do |home|
+      path = File.join(home, '.agents/shaka/config.yml')
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, file.is_a?(String) ? file : YAML.dump({ 'version' => 1 }.merge(file))) unless file.nil?
+      original = Dir.home
+      ENV['HOME'] = home
+      yield path
+    ensure
+      ENV['HOME'] = original
+    end
+  end
+end
 
 # A user's own ~/.agents/shaka/config.yml can hide the checkout path and chat link on everything
 # they publish, but never shows what a repository hides.
 class PersonalPrivacyTest < Minitest::Test
+  include PersonalHome
+
   PATH = '/private/customer/project'
   THREAD_ID = '0199a213-81c0-7800-8aa1-bbab2a035a53'
   LOCATOR = "codex://threads/#{THREAD_ID}".freeze
@@ -63,22 +86,10 @@ class PersonalPrivacyTest < Minitest::Test
     end
   end
 
-  def test_no_file_hides_nothing
-    with_home(nil) do
-      privacy = Shaka::Configuration::PersonalPrivacy.load
-      assert privacy.checkout_path? && privacy.chat_link? && privacy.warning.nil?
-      assert_same WIP, privacy.apply(WIP)
-    end
-  end
-
-  def test_a_file_shaka_cannot_read_hides_both_and_says_why
-    ["not: [valid\n", "wip: {}\n", { 'wip' => { 'include_chat_link' => 'no' } },
-     { 'wip' => ['include_checkout_path'] }].each do |file|
-      with_home(file) do |path|
-        privacy = Shaka::Configuration::PersonalPrivacy.load
-        refute privacy.checkout_path? || privacy.chat_link?, file.inspect
-        assert_includes privacy.warning, path
-      end
+  def test_unread_settings_keep_their_recovery_step_when_your_file_hides_the_path
+    with_home('wip' => { 'include_checkout_path' => false }) do
+      unread = Shaka::PublicationSettings.new(privacy: Shaka::Configuration::PersonalPrivacy.load)
+      assert_includes wip_body(unread), 'rerun description with --ref'
     end
   end
 
@@ -103,18 +114,40 @@ class PersonalPrivacyTest < Minitest::Test
     session = { environment: CODEX, disclosure: content['wip_disclosure'] }
     Shaka::WipDetails.new(content['wip'], path_redaction: settings.path_redaction, session:).detail.fetch('body')
   end
+end
 
-  # File contents: nil writes none, a String is written as is, and a Hash becomes a version 1 file.
-  def with_home(file)
-    Dir.mktmpdir('shaka-home') do |home|
-      path = File.join(home, '.agents/shaka/config.yml')
-      FileUtils.mkdir_p(File.dirname(path))
-      File.write(path, file.is_a?(String) ? file : YAML.dump({ 'version' => 1 }.merge(file))) unless file.nil?
-      original = Dir.home
-      ENV['HOME'] = home
-      yield path
+# A missing file hides nothing; a file Shaka cannot read hides both, so a broken choice cannot publish.
+class PersonalPrivacyFileTest < Minitest::Test
+  include PersonalHome
+
+  def test_no_file_hides_nothing
+    with_home(nil) do
+      privacy = Shaka::Configuration::PersonalPrivacy.load
+      assert privacy.checkout_path? && privacy.chat_link? && privacy.warning.nil?
+      assert_same PersonalPrivacyTest::WIP, privacy.apply(PersonalPrivacyTest::WIP)
+    end
+  end
+
+  def test_a_folder_shaka_cannot_open_hides_both
+    skip 'root opens every folder' if Process.uid.zero?
+    with_home('wip' => { 'include_checkout_path' => true }) do |path|
+      File.chmod(0o000, File.dirname(path))
+      privacy = Shaka::Configuration::PersonalPrivacy.load
+      refute privacy.checkout_path? || privacy.chat_link?
+      assert_includes privacy.warning, path
     ensure
-      ENV['HOME'] = original
+      File.chmod(0o755, File.dirname(path))
+    end
+  end
+
+  def test_a_file_shaka_cannot_read_hides_both_and_says_why
+    ["not: [valid\n", "wip: {}\n", { 'wip' => { 'include_chat_link' => 'no' } },
+     { 'wip' => ['include_checkout_path'] }].each do |file|
+      with_home(file) do |path|
+        privacy = Shaka::Configuration::PersonalPrivacy.load
+        refute privacy.checkout_path? || privacy.chat_link?, file.inspect
+        assert_includes privacy.warning, path
+      end
     end
   end
 end
@@ -131,5 +164,71 @@ class PersonalChatLinkSetupTest < Minitest::Test
       Shaka::Configuration::PersonalSettings.new('config.yml', { 'wip' => { 'include_chat_link' => 'no' } })
     end
     assert_includes error.message, 'wip.include_chat_link must be true or false'
+  end
+end
+
+# The real `start` command reads the personal file and says why a broken one hides everything.
+class PersonalPrivacyStartCommandTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+
+  FAKE_GH = <<~RUBY
+    require 'json'
+    raw = STDIN.read
+    request = raw.strip.empty? ? {} : JSON.parse(raw)
+    case ARGV[1]
+    when 'repos/owner/repo/issues/42' then puts JSON.generate('number' => 42, 'title' => 'Task')
+    when 'user' then puts JSON.generate('login' => 'author')
+    when %r{\\Arepos/owner/repo/issues/42/comments}
+      if ARGV.include?('POST')
+        File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
+        puts JSON.generate(request.merge('id' => 9))
+      else puts '[]'
+      end
+    when 'markdown' then puts JSON.generate('<table></table>' * 10)
+    else abort "unexpected gh request: \#{ARGV.inspect}"
+    end
+  RUBY
+
+  def test_a_broken_personal_file_hides_both_on_the_issue_comment
+    with_repository('wip' => { 'include_checkout_path' => true }) do |root|
+      ref = commit_settings(root)
+      Dir.mktmpdir('shaka-home') do |home|
+        error = start(home, root, ref)
+        body = File.read(File.join(home, 'published.md'))
+        assert_includes error, 'Hiding the checkout path and chat link'
+        assert_includes body, '| Workspace | REDACTED (personal setting) |'
+        [PersonalPrivacyTest::PATH, PersonalPrivacyTest::THREAD_ID].each { |value| refute_includes body, value }
+      end
+    end
+  end
+
+  private
+
+  def start(home, root, ref)
+    write_home(home)
+    content = File.join(home, 'content.json')
+    File.write(content, JSON.generate('identity' => { 'agent' => 'Codex' }, 'summary' => 'Started.',
+                                      'wip' => PersonalPrivacyTest::WIP))
+    env = SESSION_ENV_CLEARED.merge('HOME' => home, 'PATH' => "#{home}:#{ENV.fetch('PATH')}")
+    _output, error, status = Open3.capture3(env, *SHAKA_COMMAND, 'start', 'owner/repo', '42', '--root', root,
+                                            '--ref', ref, '--content-file', content)
+    assert_predicate status, :success?, error
+    error
+  end
+
+  # A broken personal file and a fake gh that keeps the comment it would post.
+  def write_home(home)
+    FileUtils.mkdir_p(File.join(home, '.agents/shaka'))
+    File.write(File.join(home, '.agents/shaka/config.yml'), "not: [valid\n")
+    gh = File.join(home, 'gh')
+    File.write(gh, "#!#{RbConfig.ruby}\n#{FAKE_GH}")
+    File.chmod(0o755, gh)
+  end
+
+  def commit_settings(root)
+    [%w[init -q -b main], %w[add -A], %w[-c user.name=t -c user.email=t@example.com commit -qm settings]].each do |args|
+      system(TEST_GIT, '-C', root, *args, exception: true)
+    end
+    Open3.capture2(TEST_GIT, '-C', root, 'rev-parse', 'HEAD').first.strip
   end
 end

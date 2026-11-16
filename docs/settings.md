@@ -1443,8 +1443,8 @@ whether to include the checkout path.
   `UNKNOWN` when the host has no supported locator.
 
 Owner, revision, state, and next action also stay visible. When settings were
-not read or could not load, the description withholds the checkout path, says
-how to reload the settings, and still shows the chat locator.
+not read or could not load, the description withholds the checkout path and says
+how to reload the settings. The chat locator still shows unless your personal file hides it.
 
 A supported chat locator, such as `codex://threads/...` or `claude://...`, is an
 identifier, not a copy of the conversation. It opens the chat only in the owner's

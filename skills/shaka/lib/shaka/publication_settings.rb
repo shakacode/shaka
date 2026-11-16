@@ -123,13 +123,13 @@ module Shaka
     # An unknown policy cannot authorize publishing the checkout path, even on unfinished PRs.
     def include_checkout_path? = @current&.fetch('wip.include_checkout_path', false) == true
 
-    # The repository's choice first, then the user's, which can only hide the path.
+    # The repository's choice first, then the user's, which can only hide the path. Unread settings keep the
+    # diagnostic, because it names the recovery step.
     def path_redaction
       return 'REDACTED' if @current&.fetch('wip.include_checkout_path', nil) == false
-      return Configuration::PersonalPrivacy::REDACTION unless @privacy.checkout_path?
-      return if include_checkout_path?
+      return @location_diagnostic unless include_checkout_path?
 
-      @location_diagnostic
+      Configuration::PersonalPrivacy::REDACTION unless @privacy.checkout_path?
     end
 
     # The user's own choices, read for this publication; nothing hidden when none were read.
