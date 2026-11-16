@@ -34,7 +34,8 @@ is the reusable default.
   Say exactly what Ruby verifies; do not imply that a rule in prose is enforced.
 - Give the reader a useful prompt before a long command sequence. Keep an example
   prompt to what the agent cannot infer, such as the task link and a non-default
-  choice. List optional additions below the prompt.
+  choice. List optional additions below the prompt. In product guides, end a prompt
+  without a period, and never put punctuation right after a URL.
 - Remove repetition, vague qualifiers, detail a reader could act correctly
   without, and explanations of the document's own organization unless they help
   navigation.

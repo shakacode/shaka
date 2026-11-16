@@ -105,8 +105,8 @@ Use explicit host selection for a child agent launched inside Pi, which inherits
 Pi's process marker. Selecting Pi never falls back to unrelated Codex records.
 
 Report local review from the **reviewer's** source with `--contribution review`.
-Include available retry and contributor records. Hosted reviewers and tool-model
-calls remain `UNKNOWN` when their records are absent.
+Include available retry and contributor records. Reports say hosted reviewer and
+tool-model usage is not counted; it is absent, not zero.
 
 An interval associated with several commits is **SHARED**. Never divide its tokens
 into invented per-commit amounts. Preserve the original mapping after squash and
@@ -392,7 +392,7 @@ Prompt tasks and numbered GitHub tasks take neither field.
 With a number or key, the optional `task_relation` says how this PR relates to the
 task: `fixes`, `part_of`, `follow_up`, or `refs`. Only a GitHub issue number takes `fixes`.
 
-The helper renders the Task line after Why in Intent:
+The Task line in Intent shows where the work came from:
 
 | Provenance | Task line |
 | --- | --- |
@@ -400,6 +400,7 @@ The helper renders the Task line after Why in Intent:
 | issue `1234`, `part_of` | `GitHub #1234 · part of` |
 | issue `1234`, `fixes` | `GitHub · fixes #1234`, which closes the issue when the PR merges into the default branch |
 | `linear`, `MKT-1234`, `task_url` | `Linear MKT-1234`, linked to the supplied URL |
+| issue with a Shortcut story `task_url` | `Shortcut 1234`, with the story number taken from the URL |
 | issue or PR with an omission reason | `issue · URL omitted: Private task.` or `pull request · URL omitted: Tracker unavailable.` |
 
 The optional `intent.task_understanding` is an object with one-line `goal` and

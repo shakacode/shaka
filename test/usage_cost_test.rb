@@ -365,7 +365,7 @@ class UsageAnthropicCostTest < Minitest::Test
 
   def test_every_served_model_family_has_a_rate_including_the_cheaper_fable_cache_read
     { 'claude-opus-5-5' => '$0.000880', 'claude-opus-4-5' => '$0.001110',
-      'claude-sonnet-4-5' => '$0.000666',
+      'claude-sonnet-4-5' => '$0.000666', 'claude-sonnet-5-5' => '$0.000440',
       'claude-haiku-4-5' => '$0.000222', 'claude-fable-5-1' => '$0.002190',
       'claude-fable-5' => '$0.002220', 'claude-fable-5-2' => '$0.001752' }.each do |model, expected|
       report = estimate(anthropic_record(configuration: ['anthropic', 'UNKNOWN', model, 'xhigh']))

@@ -150,6 +150,18 @@ class LocalReviewPublishCleanupTest < LocalReviewPublishCleanupSupport
     assert_preserved_history(github)
   end
 
+  # GitHub stored the earlier comment's backslash-u-0000 as backslash-caret-at.
+  def test_a_per_commit_report_github_rewrote_is_still_collapsed
+    quoted = "1. [P2] A path like `/bad\\u0000path` fails.\n"
+    content = { 'rounds' => [round(EARLIER, findings: [], report: report(EARLIER, body: quoted, findings: 0)),
+                             round(HEAD, findings: [], report: report(HEAD, findings: 0))] }
+    github = Timeline.new
+    github.add_per_commit_report(EARLIER, 50, Shaka::Publishing.as_stored(File.read(content['rounds'][0]['report'])))
+
+    _, result = publish(github, content)
+    assert_equal [50], result.fetch('cleanup').fetch('collapsed')
+  end
+
   def test_republishing_keeps_one_archive_disclosure_and_one_loop_comment
     github = per_commit_timeline
     content = loop_content

@@ -5,6 +5,7 @@ require_relative '../error'
 require_relative 'usage_details'
 require_relative 'throughput_line'
 require_relative 'throughput_gate'
+require_relative 'missing_values'
 
 module Shaka
   # The spend after the model line and the intervals in Timings. Later updates replace only those two.
@@ -26,7 +27,7 @@ module Shaka
       state = read(original)
       return original unless state
 
-      state = apply(state, changes)
+      state = apply(state, changes).merge(ThroughputLine::UNEXPLAINED => !original.include?(MissingValues::HEADING))
       replacement = line(state)
       original.sub(BLOCK) { |found| found.include?("\r\n") ? replacement.gsub("\n", "\r\n") : replacement }
               .sub(HEADER) { "#{Regexp.last_match(1)}#{header(state)}" }

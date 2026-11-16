@@ -68,9 +68,11 @@ module Shaka
 
     private
 
+    # Active recommended settings need no start word; a start word accepts current settings
+    # only when the user named neither model nor effort.
     def proceed?
-      value_established? && recommendation_present? && immediate_start? &&
-        (current_settings? || (matching_settings? && active_settings? && settings_available?))
+      value_established? && recommendation_present? &&
+        ((matching_settings? && active_settings? && settings_available?) || (immediate_start? && current_settings?))
     end
 
     # Absent means the user named the task, which already establishes its value.
@@ -113,7 +115,6 @@ module Shaka
       return 'settings_conflict' unless matching_settings?
       return 'settings_unverified' unless active_settings_reported?
       return 'settings_inactive' unless active_settings?
-      return 'immediate_start_not_authorized' unless immediate_start?
 
       raise Error, 'Checkpoint has no pause reason.'
     end

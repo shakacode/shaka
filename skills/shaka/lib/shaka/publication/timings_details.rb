@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'agent_time'
 require_relative 'measured_steps'
 require_relative 'timeline_steps'
 require_relative 'timing_bars'
@@ -38,7 +39,9 @@ module Shaka
       steps = Array(@timeline['steps'])
       dropped = @timeline.fetch('dropped_steps', 0)
       # The hidden line lets the next update, from any session, keep these steps.
-      parts = [*visible(steps, dropped), TimelineSteps.hidden(steps, dropped), TaskTiming.hidden(@timeline)]
+      sessions = Array(@timeline['agent_time'])
+      parts = [*visible(steps, dropped), TimelineSteps.hidden(steps, dropped), TaskTiming.hidden(@timeline),
+               AgentTime.hidden(sessions)]
       { 'summary' => summary, 'body' => parts.compact.join("\n\n") }
     end
 
@@ -49,7 +52,8 @@ module Shaka
       unavailable = @timeline.key?('unavailable')
       chart = bars(steps, unavailable)
       [*(unavailable ? [UNAVAILABLE, chart] : stretches(chart)), TaskTiming.summary(@timeline, @zone),
-       *MeasuredSteps.new(@zone).parts(steps, dropped, charted: !chart.nil?), (GUIDE unless unavailable)]
+       *MeasuredSteps.new(@zone).parts(steps, dropped, charted: !chart.nil?),
+       AgentTime.summary(Array(@timeline['agent_time'])), (GUIDE unless unavailable)]
     end
 
     def summary = "#{SUMMARY} · #{@timeline.key?('unavailable') ? 'timeline unavailable' : totals(timing_rows)}"

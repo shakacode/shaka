@@ -18,7 +18,7 @@ class ReleasePreflightTest < Minitest::Test
   end
 
   def test_rejects_a_dirty_checkout
-    File.write(File.join(@root, 'README.md'), 'changed')
+    File.write(File.join(@root, 'README.gem.md'), 'changed')
     assert_refused 'clean checkout'
   end
 
@@ -42,7 +42,7 @@ class ReleasePreflightTest < Minitest::Test
   end
 
   def test_rejects_changed_package_even_with_the_same_version
-    path = File.join(@root, 'README.md')
+    path = File.join(@root, 'README.gem.md')
     original = File.binread(path)
     File.write(path, 'wrong artifact')
     execute('gem', 'build', 'shaka.gemspec', '--output', @gem)
@@ -67,8 +67,9 @@ class ReleasePreflightTest < Minitest::Test
 
   def test_rejects_ignored_files_in_the_package
     exclude = execute('git', 'rev-parse', '--git-path', 'info/exclude').strip
-    File.write(File.expand_path(exclude, @root), "docs/release-extra.md\n")
-    File.write(File.join(@root, 'docs/release-extra.md'), 'uncommitted content')
+    ignored_file = 'skills/shaka/references/release-extra.md'
+    File.write(File.expand_path(exclude, @root), "#{ignored_file}\n")
+    File.write(File.join(@root, ignored_file), 'uncommitted content')
     execute('gem', 'build', 'shaka.gemspec', '--output', @gem)
     assert_refused 'committed source'
   end

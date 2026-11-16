@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../evidence/machine_facts'
+require_relative 'phases'
 
 module Shaka
   # Says how long a recorded check took and on what kind of machine, such as
@@ -13,10 +14,18 @@ module Shaka
       milliseconds = result['duration_ms'] if result.is_a?(Hash)
       return unless milliseconds.is_a?(Integer) && !milliseconds.negative?
 
-      facts = known(result['machine'])
+      [duration(milliseconds), *where(known(result['machine'])), phases(result['phases'])].compact.join(' ')
+    end
+
+    def where(facts)
       details = machine(facts)
-      [duration(milliseconds), ("on #{facts['alias']}" if facts['alias']),
-       ("(#{details.join(', ')})" unless details.empty?)].compact.join(' ')
+      [("on #{facts['alias']}" if facts['alias']), ("(#{details.join(', ')})" unless details.empty?)]
+    end
+
+    # The phases the validation command reported, such as "· tests 4m 10s · rubocop 1m 2s".
+    def phases(phases)
+      summary = Phases.summary(Phases.sanitize(phases), method(:duration))
+      "· #{summary}" unless summary.empty?
     end
 
     def known(machine) = Evidence::MachineFacts.sanitize(machine).reject { |_field, value| value == 'UNKNOWN' }
