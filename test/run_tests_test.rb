@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'fileutils'
+require 'json'
 require 'rbconfig'
 
 class RunTestsTest < Minitest::Test
@@ -10,28 +11,35 @@ class RunTestsTest < Minitest::Test
   def setup
     @directory = Dir.mktmpdir('run-tests')
     @marker = File.join(@directory, 'ran.txt')
+    @durations = File.join(@directory, 'durations.json')
   end
 
   def teardown
     FileUtils.remove_entry(@directory)
   end
 
-  def test_every_test_runs_exactly_once_across_workers
+  # The first run has no record and splits by name; it records class times, which balance the second.
+  def test_every_test_runs_exactly_once_across_workers_with_and_without_recorded_times
     files = %w[alpha beta gamma].map { |name| fixture(name, %w[one two]) }
-    output, status = run_tests(files, workers: 2)
-
-    assert_predicate status, :success?, output
     expected = %w[alpha beta gamma].product(%w[one two]).map { |pair| pair.join('#') }
-    assert_equal expected, File.readlines(@marker, chomp: true).sort
-    assert_includes output, 'Total: 6 runs'
+    ['split by class name', 'balanced by recorded class times'].each do |split|
+      FileUtils.rm_f(@marker)
+      output, status = run_tests(files, workers: 2)
+
+      assert_predicate status, :success?, output
+      assert_equal expected, File.readlines(@marker, chomp: true).sort
+      assert_match(/^Total: 6 runs, .* across 2 workers, #{split}$/, output)
+    end
   end
 
-  def test_a_failure_in_any_worker_fails_the_run
+  def test_a_failure_in_any_worker_fails_the_run_and_keeps_the_record
     files = [fixture('alpha', %w[one]), fixture('beta', %w[one], failing: true)]
+    File.write(@durations, '{"AlphaFixtureTest":2.0}')
     output, status = run_tests(files, workers: 2)
 
     refute_predicate status, :success?
     assert_includes output, 'beta one failed'
+    assert_equal({ 'AlphaFixtureTest' => 2.0 }, JSON.parse(File.read(@durations)))
   end
 
   def test_a_worker_that_cannot_load_its_files_fails_the_run
@@ -111,7 +119,7 @@ class RunTestsTest < Minitest::Test
 
   # bin/validate starts the runner under bundle exec, so its workers load the bundle's Minitest.
   def run_tests(files, workers:, env: {})
-    env = { 'MARKER' => @marker, 'SHAKA_TEST_WORKERS' => workers.to_s,
+    env = { 'MARKER' => @marker, 'SHAKA_TEST_WORKERS' => workers.to_s, 'SHAKA_TEST_DURATIONS' => @durations,
             'BUNDLE_GEMFILE' => File.expand_path('../Gemfile', __dir__) }.merge(env)
     Open3.capture2e(env, 'bundle', 'exec', RbConfig.ruby, RUNNER, *files)
   end

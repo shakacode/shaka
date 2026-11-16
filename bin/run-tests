@@ -2,7 +2,9 @@
 # frozen_string_literal: true
 
 # Runs Minitest files in several worker processes. Every worker loads every file,
-# then keeps every Nth test class, so each test runs exactly once. Set
+# then keeps its share of the test classes, so each test runs exactly once. Shares are balanced
+# by the class times a passing run recorded in the clone's Git directory; set SHAKA_TEST_DURATIONS
+# to use another file. Without a record, worker N keeps every Nth class by name. Set
 # SHAKA_TEST_WORKERS to choose the count; 1 runs the suite in one process.
 # When the shell sets no locale, workers run under C.UTF-8, the locale GitHub's runners set,
 # or under en_US.UTF-8 on macOS, whose older releases lack C.UTF-8.
@@ -28,7 +30,13 @@ if ARGV.first == '--changed'
   ARGV.replace(selected || [])
   Dir.chdir(File.expand_path('..', __dir__))
 end
-files = (ARGV.empty? ? Dir.glob('test/**/*_test.rb') : ARGV).map { |path| File.expand_path(path) }
+whole_suite = ARGV.empty?
+files = (whole_suite ? Dir.glob('test/**/*_test.rb') : ARGV).map { |path| File.expand_path(path) }
+require_relative '../test/support/worker_plan'
+plan = File.expand_path('../test/support/worker_plan.rb', __dir__)
+record = WorkerPlan.record_path(File.expand_path('..', __dir__))
+# Read once, so a record another run rewrites meanwhile cannot give workers different splits.
+recorded = JSON.generate(WorkerPlan.read(record))
 
 utf8_locale = RUBY_PLATFORM.include?('darwin') ? 'en_US.UTF-8' : 'C.UTF-8'
 locale = %w[LC_ALL LC_CTYPE LANG].any? { !ENV.fetch(it, '').empty? } ? {} : { 'LANG' => utf8_locale }
@@ -39,9 +47,11 @@ runs = Array.new(workers) do |index|
   times = Tempfile.new("run-tests-times-#{index}")
   code = <<~RUBY
     #{files.inspect}.each { |path| require path }
+    require #{plan.inspect}
     classes = Minitest::Runnable.runnables
     named, anonymous = classes.partition(&:name)
-    kept = named.sort_by(&:name).select.with_index { |_, i| i % #{workers} == #{index} }
+    share = WorkerPlan.assign(named.map(&:name), #{workers}, JSON.parse(#{recorded.inspect}))[#{index}]
+    kept = named.select { share.include?(it.name) }
     classes.replace(#{index}.zero? ? kept + anonymous : kept)
     seconds = Hash.new(0.0)
     lock = Mutex.new
@@ -85,7 +95,10 @@ slowest = seconds.reject { |name, _| name.empty? }.max_by(SLOWEST) { |_, value| 
 lines = slowest.map { |name, value| format('  %<seconds>6.1fs %<name>s', seconds: value, name:) }
 puts 'Slowest test classes:', lines if lines.any?
 
+WorkerPlan.write(record, seconds, whole: whole_suite) if results.all?
+
 counted = %w[runs assertions failures errors skips].to_h { |name| [name.to_sym, totals[name]] }
+split = recorded == '{}' ? 'split by class name' : 'balanced by recorded class times'
 puts format('Total: %<runs>d runs, %<assertions>d assertions, %<failures>d failures, %<errors>d errors, ' \
-            '%<skips>d skips across %<workers>d workers', **counted, workers:)
+            '%<skips>d skips across %<workers>d workers, %<split>s', **counted, workers:, split:)
 exit(results.all?)
