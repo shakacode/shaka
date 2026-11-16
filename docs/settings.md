@@ -418,7 +418,7 @@ checks (`UNSTABLE`) for `none` and `one`; `all` requires `CLEAN`.
 
 ## `review.local_max_rounds`
 
-**Optional. Default: `5`.** A positive integer, validated by `shaka seam check`.
+**Optional. Default: `8`.** A positive integer, validated by `shaka seam check`.
 
 This bounds the commits reviewed in one local review ledger. For example, `3` lets
 an initial review and two follow-up reviews run before the helper refuses another.
@@ -426,7 +426,7 @@ With [`local_review_count`](#reviewlocal_review_count) above 1, all the reviewer
 commit together use one of these turns, so `3` with two reviewers allows six reviews
 across three commits.
 The runner reads the setting from the supplied trusted `--settings-ref` (or
-`--criteria-ref`). Without a reference, it uses the default of five.
+`--criteria-ref`). Without a reference, it uses the default of eight.
 
 If the cap leaves an unfixed defect, the agent stops before pushing and tells you.
 You can reassess the task, split it, or choose to push anyway. An authorized push
@@ -443,7 +443,7 @@ You can authorize a bounded continuation for one task while preserving its revie
 
 ```text
 Continue this task with at most fifteen review executions in total,
-including its five existing reviews. Keep merge policy ask. Go
+including its eight existing reviews. Keep merge policy ask. Go
 ```
 
 The total counts reviewer runs, not commits: with two reviewers per commit, each round

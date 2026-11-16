@@ -59,8 +59,9 @@ not add a confirmation turn. If the host reports either setting, briefly note
 its value and whether it matches the recommendation. Mark unreported values
 UNKNOWN; a prompt cannot change the runner.
 
-When the user names either setting, proceed only when immediate start is clear,
-the recommended settings are active and usable, and the supplied settings match
+When the host already runs the recommended settings, proceed without asking,
+even without a start word. When the user names either setting, proceed only when
+the recommended settings are active and usable and the supplied settings match
 the recommendation. Otherwise pause with one next action. Check host settings
 on resume when available. Planning-only work returns its plan and usage without
 an implementation checkpoint.

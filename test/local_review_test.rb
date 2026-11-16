@@ -1543,16 +1543,16 @@ class LocalReviewCapRunnerTest < Minitest::Test
     Array(@results).each { |result| cleanup_artifacts(result) }
   end
 
-  def test_refuses_a_sixth_round_without_launching_the_reviewer
+  def test_refuses_a_ninth_round_without_launching_the_reviewer
     in_loop do |head|
-      5.times do |index|
+      8.times do |index|
         loop_round(head, findings: 0)
         commit!(@root, "fix #{index}", 'Fix another defect')
         head = git!(@root, 'rev-parse', 'HEAD').strip
       end
       FileUtils.rm(@trace)
       output, _error, status = run_review(@root, @base, head, @bin, ledger: @ledger)
-      assert_cap_refusal(output, status, 5)
+      assert_cap_refusal(output, status, 8)
     end
   end
 
