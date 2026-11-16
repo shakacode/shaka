@@ -12,7 +12,7 @@ command requires them:
 | Step | With light delivery |
 | --- | --- |
 | Reviewer startup probe (Plan) | Run `doctor --startup-review` only when there is a reason to doubt a selected reviewer: a new machine or host, a recent `review run` failure for that reviewer, or a `doctor` notice about it. Otherwise skip it and say so in the plan, even when `review.startup_check` is on; the user's opt-in chooses that for this task. `review run` still reports an unavailable reviewer. Resolve review consent before implementation as usual. |
-| Plan recommendation | Still choose a model and effort and pass them to `checkpoint`. Render `recommendation` only when it changes what happens next: an open design question, user-supplied settings, settings that differ from the recommendation, or value the user has not confirmed. |
+| Plan recommendation | Still choose a model and effort and pass them to `checkpoint`. Render `recommendation` only for a planning-only request or when it changes what happens next: an open design question, user-supplied settings, settings that differ from the recommendation, or value the user has not confirmed. |
 | Chat name | Do not rename the chat before the first reply. Rename it when this task creates or adopts its PR, in the `PR #NUMBER` form. |
 | Initial return point | Do not record C1 at task start. Record a return point when the person confirms a direction worth returning to, as the workflow's Always section says. |
 

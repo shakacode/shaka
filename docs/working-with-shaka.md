@@ -202,7 +202,7 @@ two different configuration values. Give the phrase to only one, and start each 
 chat. The same task twice does not work: the second run finds the first PR, or the
 finished change, and stops. Each PR's
 [Timings](reference/timings.md) section shows the time before the PR opened, and its
-Usage and cost section shows model calls and tokens. To compare the merged PRs, merge
+Usage and cost section shows tokens and estimated cost. To compare the merged PRs, merge
 them on different days and run one [timings retrospective](#find-what-slows-delivery-across-many-prs)
 for each day:
 
