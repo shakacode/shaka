@@ -162,7 +162,9 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    - `~/.agents/shaka/companions.yml` on a machine would sit beside the machine reviewer list
      from [ADR 0005](0005-per-machine-reviewers.md), which already fills reviewer model and
      effort that a repository leaves out. It can turn packs on and decline skills for its
-     owner. Shaka otherwise keeps individual settings apart from team settings
+     owner. Turning a pack on there is the developer's own trust grant for their tasks on that
+     machine: the pack's packaged `use` entries then apply there, and repository declines
+     still win. Shaka otherwise keeps individual settings apart from team settings
      ([settings](../../docs/settings.md)), so this file is another narrow machine exception:
      it has no `use` key, and it cannot lift a repository's decline. Personal packs go in `~/.agents/shaka/packs/`, and their `use` entries act as
      `suggest` for the same reason.
@@ -179,7 +181,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    it would add to this task and offer the pack's install command. Install only after a yes
    in this task, or under standing consent the user saved, using the same consent pattern as
    review consent. Offer each pack at most once per task, and keep going without it when the
-   user declines. Packs that are not packaged keep today's rule.
+   user declines. Packs that are not packaged keep today's rule, and retrospective.md keeps
+   its own "Do not install one."
 
 5. **Users can ask for suggestions.** `/shaka suggest skills` (or "suggest skills" mid-task)
    runs `shaka companions --all` and lists, for each point this task is likely to reach, the
@@ -190,23 +193,21 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    companion-skills.md, whether it arrives alone or mid-task; workflow.yml still gains nothing.
 
 6. **An entry moves from `suggest` to `use` on ADR 0001's evidence.** A candidate gets paired
-   eval runs with and without it on the same tasks, using
-   [ADR 0001](0001-eval-and-release-gating.md)'s quality score and cost accounting. It is
-   promoted when the mean per-task quality delta is at least D8's threshold tau with p below
-   0.05, the same test D8 uses for a loss turned toward a gain, and the cache-neutral cost
-   ratio stays within D9's 1.2 limit or the higher cost is accepted in writing. Review rounds,
-   confirmed findings, and cost per merged PR are supporting evidence, not the test. ADR 0001
-   does not yet name skill presence as a comparison axis or state a gain rule, so both are
-   additions it needs, not new bars this record sets. A packaged `use` entry links the study
+   eval runs with and without it on the same tasks, judged by
+   [ADR 0001](0001-eval-and-release-gating.md)'s rules. ADR 0001 has no skill-presence axis
+   among its D11 comparisons and no rule for a gain, only for a loss, so promotion waits
+   until an amendment to ADR 0001 adds both. This record sets no threshold of its own.
+   Review rounds, confirmed findings, and cost per merged PR are supporting evidence. A packaged `use` entry links the study
    behind it, and the loader refuses a packaged `use` without one. The study rule binds what
    ShakaCode ships to everyone. A repository's own `companions.use` promotion, or a `use`
    entry in its own pack file, is the maintainer's choice: it needs no study and no `packs`
-   entry. Two limits stay fixed even then. An explicit-only skill is never started by Shaka,
-   because its own author marked it that way, and a skill that fans out workers needs the
-   user's delegation authorization, as companion-skills.md already requires. The packaged
-   declines of orchestrators also stay fixed, because those skills publish and merge outside
-   the helper's checked gates. Setup suggestions and other packaged declines are defaults a
-   repository may override.
+   entry. A skill that fans out workers still needs the user's delegation authorization, as
+   companion-skills.md already requires. An explicit-only skill stays `suggest` because its
+   front matter tells the coding host that the model must not start it. A maintainer who
+   wants it used changes that front matter, not Shaka settings. Packaged declines, including
+   those of orchestrators, and setup suggestions are defaults a repository may override. A
+   repository that lifts an orchestrator decline accepts that the skill publishes and merges
+   outside the helper's checked gates.
    ADR 0001's comparison runs are not built yet, so until they are, nothing is promoted and
    every packaged entry stays `suggest`. PRs that report `skills_used` add real-use context,
    but those entries are optional and agent-reported, so they inform a study rather than
@@ -261,7 +262,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
   false` bound that.
 - Each `use` entry loads another skill into context. Decision 6 requires a measured gain
   before promotion, so that cost has to pay for itself.
-- Delivery step 3 waits on ADR 0001's comparison runs.
+- Delivery step 3 waits on ADR 0001's comparison runs and on an ADR 0001 amendment that adds a skill-presence axis and a gain rule.
 - When an upstream pack renames or removes a skill, its pack entry goes stale. The command
   warns, and doctor names entries whose skill is missing from an installed pack.
 
@@ -275,6 +276,6 @@ Proposed as three PRs:
 2. Packaged pack files for ShakaPerf, pstack, and AI Hero in `suggest` mode only, repository
    and machine pack files, `/shaka suggest skills` with its SKILL.md route, the install offer, doctor reporting, and
    the `companions` settings.
-3. Once ADR 0001's comparison runs exist, eval runs for the first `use` candidates,
+3. Once ADR 0001's comparison runs and that amendment exist, eval runs for the first `use` candidates,
    `benchmark-checklist` and `principle-explain-the-number`, and promotion of what the
    results support.
