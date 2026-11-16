@@ -68,6 +68,16 @@ class InstructionTokensTest < Minitest::Test
     assert_equal %w[api.anthropic.com api.openai.com], attempts
   end
 
+  # The head is counted first; a baseline failure still hides the head count, since a lone count has no delta.
+  def test_failed_baseline_count_leaves_the_row_unknown
+    answered = Hash.new(0)
+    head_only = ->(uri, *) { (answered[uri.host] += 1) == 1 ? ['200', '{"input_tokens":3}'] : ['503', '{}'] }
+    rows = InstructionTokens.compare(before: 'a', after: 'b', env: KEYS, transport: head_only)
+
+    assert_equal(['HTTP 503'] * 2, rows.map { |row| row['reason'] })
+    assert(rows.none? { |row| row.key?('after') })
+  end
+
   def test_rejected_or_malformed_answers_are_unknown
     answers = { '401' => '{}', '200' => 'not json',
                 '404' => '{"error":{"type":"invalid_request_error","code":"model_not_found","message":"key sk-x"}}' }
