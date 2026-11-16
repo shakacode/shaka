@@ -52,8 +52,8 @@ module Shaka
       @workflow_version = workflow_version
       @pull = pull
       @settings = settings || PublicationSettings.new
-      # The running session's agent time joins here, so a rendering preview shows it too.
-      @timeline = description ? AgentTime.attach(timeline, pull, env: environment || ENV) : timeline
+      # Carried agent time joins here, so a rendering preview shows it too; the running session's comes from the helper.
+      @timeline = description ? AgentTime.attach(timeline, pull) : timeline
       @environment = environment
       @host_name = host_name
     end

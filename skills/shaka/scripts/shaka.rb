@@ -19,6 +19,7 @@ Shaka::StartupNotice.call(ARGV)
 require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/github/pull_timeline'
 require_relative '../lib/shaka/publication/timeline_steps'
+require_relative '../lib/shaka/usage/agent_time_session'
 require_relative '../lib/shaka/attention'
 require_relative '../lib/shaka/merge_handoff'
 require_relative '../lib/shaka/post_implementation/stale'
@@ -171,6 +172,7 @@ def description_timeline(carried, github, pull, settings)
   timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
   timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
   timeline = Shaka::TaskTiming.attach(timeline, carried, pull)
+  timeline = Shaka::AgentTimeSession.attach(timeline, pull)
   Shaka::ReadyTime.attach(timeline, github, settings.ready_gate)
 end
 

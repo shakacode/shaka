@@ -118,14 +118,21 @@ Status shows the next step. When it asks you to reinstall to record Ruby again,
 run `ruby "$shaka_source/bin/install"` from that checkout.
 
 Check the result with `"$shaka_helper" install --verify`. To inspect an update
-to a branch installation, confirm `origin` points to the repository you
-installed from. Then run this from the active checkout:
+to a branch installation, run `"$shaka_helper" install --status` and resolve any
+origin or branch mismatch before fetching. Set `shaka_branch` to the branch
+shown in the checkout inventory, such as `shaka_branch=main`. Run the following
+from the installed checkout in Bash or Git Bash when no other process is fetching there.
 
 ```bash
-git fetch origin && git diff HEAD '@{upstream}'
+git fetch origin "refs/heads/${shaka_branch:?Set the registered Shaka branch first}" &&
+  shaka_fetched=$(git rev-parse --verify FETCH_HEAD) &&
+  git log --oneline --left-right "HEAD...$shaka_fetched" &&
+  git diff HEAD "$shaka_fetched"
 ```
 
-The comparison leaves your installed files and skill links in place.
+The log shows commits on the installed side (`<`) and the branch side (`>`),
+even if both versions have the same file contents. The comparison leaves your
+installed files and skill links in place.
 After active chats finish, run `"$shaka_helper" install --update` to apply a
 branch update. The updater fetches the branch again when it runs.
 For a pinned release, use the [tested release prompt](#keep-a-tested-release)
@@ -148,6 +155,10 @@ To enable Claude Code's startup reminder, run
 Run it again without `--session-hook` to remove the reminder.
 
 </details>
+
+If you installed from a GitHub branch and leave Shaka chats running overnight,
+[schedule a daily update check](reference/scheduled-update-checks.md) and apply
+updates between chats.
 
 ### Repair a broken installation
 
@@ -179,6 +190,9 @@ Move my Shaka installation to its own checkout. Preserve my branches, worktrees,
 and local changes. Verify the installation afterward
 ```
 
+If you scheduled a daily check, [point it to the new checkout](reference/scheduled-update-checks.md#move-an-installation-with-a-scheduled-check)
+after moving the installation.
+
 The agent checks which copy is installed and explains what it needs to move.
 Ask it to confirm your development work is still available before removing any
 old checkout.
@@ -200,7 +214,7 @@ directory is in use, choose a separate destination.
 
 If you run it from another checkout and use a custom skills folder, pass
 that folder with `--skills-dir`. Verify from the new checkout with
-`bin/install --verify`.
+`./bin/install --verify`.
 
 If the installer was force-stopped during the move and neither checkout has an
 active installation record, restore the newest

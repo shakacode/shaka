@@ -2,6 +2,7 @@
 
 require 'json'
 require 'time'
+require_relative 'agent_time_codex'
 require_relative 'tool_category'
 
 module Shaka
@@ -13,9 +14,11 @@ module Shaka
     # The host writes its own wakes, such as a finished background task or a CI event, as user
     # messages that open with one of these tags. A person's message can open with other tags.
     HOST_MESSAGE = /\A\s*<(?:task-notification|ci-monitor-event|side-sessions-event|system-reminder)>/
+    include AgentTimeCodex
+
     Turn = Struct.new(:from, :to, :prompted)
 
-    attr_reader :turns, :calls
+    attr_reader :turns
 
     def self.read(path, since: nil) = new(since).tap { |reader| reader.parse(path) }
 
@@ -33,15 +36,28 @@ module Shaka
       rescue JSON::ParserError, EncodingError
         next
       end
+      @open.each_value { |started, _category| cross(started) } if @turns.any?
       self
+    end
+
+    # Finished calls, and each call still running counted to the last record, in its category. A call that
+    # started before the task counts from the task start.
+    def calls
+      last = @turns.last&.to
+      running = @open.values.filter_map { |started, category| [category, clip(started), last] if last }
+      @calls + running.select { |_category, from, to| to >= from }
     end
 
     private
 
-    # Only the agent's own records extend a turn; host bookkeeping written later does not.
+    # Only the agent's own records extend a turn; host bookkeeping written later does not. Records before the
+    # task start only open and close calls, so a call running across the start pairs with its result.
     def visit(record, at)
-      return unless at && (@since.nil? || at >= @since)
-      return unless %w[response_item event_msg].include?(record['type']) ? codex?(record, at) : claude?(record, at)
+      return unless at
+
+      @before = @since && at < @since
+      agent = %w[response_item event_msg].include?(record['type']) ? codex?(record, at) : claude?(record, at)
+      return if @before || !agent
 
       # A turn already running when the task started opens at the first record inside the task.
       start_turn(at, prompted: false) if @turns.empty?
@@ -57,8 +73,14 @@ module Shaka
       content = message['content']
       blocks = content.is_a?(Array) ? content.grep(Hash) : []
       claude_turn(record, content, blocks, at)
-      blocks.each { |block| claude_block(block, at) }
+      blocks.each { |block| claude_block(block, at, message['id']) }
       true
+    end
+
+    # The model starts a new message only after every earlier call returned, so a call still open then
+    # finished without a recorded result. Like a call never answered, it is left out.
+    def settle(message)
+      @open.reject! { |_id, (_at, _category, opener)| opener && message && opener != message }
     end
 
     # After a reply that ended its turn, the next record starts one even without a person's message, such
@@ -66,14 +88,22 @@ module Shaka
     def claude_turn(record, content, blocks, at)
       prompted = record['type'] == 'user' && prompt?(content, blocks)
       # A message sent while a tool still runs joins the running turn rather than ending it.
-      start_turn(at, prompted:) if (prompted && @open.empty?) || @ended
-      stop = hash(record['message'])['stop_reason']
-      @ended = record['type'] == 'assistant' && !stop.nil? && stop != 'tool_use'
+      start_turn(at, prompted:) if !@before && ((prompted && @open.empty?) || @ended)
+      end_turn(record)
     end
 
-    def claude_block(block, at)
+    # A call with no result by the end of its turn was interrupted; it is not left running for hours.
+    def end_turn(record)
+      message = hash(record['message'])
+      settle(message['id']) if record['type'] == 'assistant'
+      stop = message['stop_reason']
+      @ended = record['type'] == 'assistant' && !stop.nil? && stop != 'tool_use'
+      @open.clear if @ended
+    end
+
+    def claude_block(block, at, message)
       case block['type']
-      when 'tool_use' then open_call(block['id'], block['name'], hash(block['input'])['command'], at)
+      when 'tool_use' then open_call(block['id'], block['name'], hash(block['input'])['command'], at, message)
       when 'tool_result' then close_call(block['tool_use_id'], at)
       end
     end
@@ -95,50 +125,31 @@ module Shaka
             .reject(&:empty?)
     end
 
-    def codex?(record, at)
-      payload = record['payload']
-      return false unless payload.is_a?(Hash)
-
-      codex_event(payload, at)
-      record['type'] == 'response_item' || %w[task_started task_complete].include?(payload['type'])
-    end
-
-    def codex_event(payload, at)
-      case payload['type']
-      when 'task_started' then start_turn(at)
-      when 'function_call', 'custom_tool_call', 'local_shell_call'
-        open_call(payload['call_id'], payload['name'] || 'local_shell', codex_command(payload), at)
-      when 'function_call_output', 'custom_tool_call_output' then close_call(payload['call_id'], at)
-      end
-    end
-
-    # A local shell call keeps its command as a word list under `action`; the list stays a list.
-    def codex_command(payload)
-      arguments_command(payload['arguments']) || payload['input'] || hash(payload['action'])['command']
-    end
-
-    # A function call's arguments are JSON that names its command in `cmd` or `command`.
-    def arguments_command(arguments)
-      return unless arguments.is_a?(String)
-
-      parsed = JSON.parse(arguments)
-      parsed.is_a?(Hash) ? parsed['cmd'] || parsed['command'] || arguments : arguments
-    rescue JSON::ParserError
-      arguments
-    end
-
     def start_turn(at, prompted: true) = @turns << Turn.new(at, at, prompted)
 
-    def open_call(id, name, command, at)
+    def open_call(id, name, command, at, message = nil)
       return unless id.is_a?(String) && name.is_a?(String)
 
-      @open[id] = [at, ToolCategory.call(name, command.is_a?(Array) ? command : command.to_s)]
+      @open[id] = [at, ToolCategory.call(name, command.is_a?(Array) ? command : command.to_s), message]
     end
 
     def close_call(id, at)
       started, category = @open.delete(id)
-      @calls << [category, started, at] if started && at >= started
+      return unless started && at >= clip(started)
+
+      cross(started)
+      @calls << [category, clip(started), at]
     end
+
+    # A call that ran across the task start, shown by its result or by still running at the end, puts the task
+    # start inside the first turn.
+    def cross(started)
+      return unless @since && started < @since
+
+      @turns.empty? ? start_turn(@since, prompted: false) : @turns.first.from = @since
+    end
+
+    def clip(started) = @since && started < @since ? @since : started
 
     def time(value)
       Time.iso8601(value).utc if value.is_a?(String)

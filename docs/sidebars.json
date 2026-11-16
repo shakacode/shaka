@@ -37,6 +37,7 @@
         "pr-verification",
         "reference/pr-record",
         "reference/reviewer-setup",
+        "reference/scheduled-update-checks",
         "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
@@ -65,7 +66,8 @@
         "articles/one-shot-pr-study",
         "articles/ci-and-hosted-review-repairs",
         "articles/hosted-review-prompt-comparison",
-        "articles/review-signal-study"
+        "articles/review-signal-study",
+        "articles/evidence-first-review"
       ]
     },
     {
