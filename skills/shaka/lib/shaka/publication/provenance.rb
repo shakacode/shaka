@@ -11,12 +11,17 @@ module Shaka
   class ExecutionProvenance
     FIELDS = %w[task_source initial_prompt requested_model requested_effort
                 recommended_model recommended_effort active_model active_effort].freeze
-    OPTIONAL_FIELDS = %w[task_number task_relation task_tracker task_key task_url task_url_omission_reason].freeze
+    OPTIONAL_FIELDS = %w[task_number task_relation task_tracker task_key task_url task_url_omission_reason
+                         recommendation_change_reason].freeze
     TASK_SOURCES = %w[description issue pull_request].freeze
     TASK_PATHS = { 'issue' => 'issues', 'pull_request' => 'pull' }.freeze
     REQUESTED_FIELDS = %w[requested_model requested_effort].freeze
     NOT_SPECIFIED = 'Not specified'
     SAFE_VALUE = /\A(?:UNKNOWN|[A-Za-z0-9][A-Za-z0-9._:-]{0,79})\z/
+    # One table cell inside a hidden HTML comment: no line break, pipe, or angle bracket.
+    REASON = /\A[^\r\n|<>]{1,200}\z/
+
+    def self.reason?(value) = value.is_a?(String) && value.strip == value && value.match?(REASON)
 
     def initialize(spec, workflow_version: nil, pull: nil)
       @spec = spec
@@ -78,6 +83,7 @@ module Shaka
       validate_fields
       validate_task_source
       validate_task_number
+      validate_recommendation_change_reason
       TaskSourceLine.validate!(@spec)
       validate_prompt_exclusion
     end
@@ -100,6 +106,13 @@ module Shaka
                 @spec['task_number'].positive?
 
       raise Error, 'Publication provenance task_number must be a positive issue or pull request number.'
+    end
+
+    def validate_recommendation_change_reason
+      return if !@spec.key?('recommendation_change_reason') || self.class.reason?(@spec['recommendation_change_reason'])
+
+      raise Error, 'Publication provenance recommendation_change_reason must be one line of at most 200 ' \
+                   'characters without |, <, or >.'
     end
 
     def validate_prompt_exclusion

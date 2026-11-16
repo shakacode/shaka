@@ -48,8 +48,9 @@ shape the implementation.
 
 ## Choose a small execution context
 
-Assess scope and risk, recommend an available model and effort, and explain the
-choice. Honor explicit user settings. Consider total planning, implementation,
+Assess scope and risk, recommend a model the host offers and an effort, and explain
+the choice. When planning and implementation suit different models, put the
+implementation model in `model` and the planning model in `reason`. Honor explicit user settings. Consider total planning, implementation,
 retries, and review; waiting or a tool error alone does not justify more effort.
 
 Use the workflow's `recommendation` and `checkpoint` commands. When the user says
@@ -66,8 +67,8 @@ the recommendation. Otherwise pause with one next action. Check host settings
 on resume when available. Planning-only work returns its plan and usage without
 an implementation checkpoint.
 
-If the checkpoint reports `recommendation_missing`, supply the omitted model or
-effort recommendation and rerun it. This is an agent input to complete before
+If the checkpoint reports `recommendation_missing`, supply the omitted or `UNKNOWN`
+model or effort recommendation and rerun it. This is an agent input to complete before
 bringing a decision to the user.
 
 Work solo unless delegation is authorized and useful. Obtain a fresh-context

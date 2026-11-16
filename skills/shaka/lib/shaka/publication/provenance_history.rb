@@ -4,6 +4,7 @@ require 'json'
 require_relative '../error'
 require_relative 'managed_region'
 require_relative 'provenance'
+require_relative 'provenance_history_table'
 
 module Shaka
   # Keeps one entry per change of workflow commit or route across a PR's publications, since
@@ -18,6 +19,8 @@ module Shaka
     LEAD = 'One row per publication that changed the Shaka skill version or model / effort, oldest first. ' \
            'A head repeats when it was republished with different values. The last row holds the values above.'
     FIELDS = %w[head workflow requested recommended active].freeze
+    # Only an entry that replaced the recommendation carries the reason the agent gave.
+    REASON = 'reason'
     ROUTES = %w[requested recommended active].freeze
     # The entries after the first that a long-lived PR keeps.
     RECENT = 20
@@ -30,8 +33,9 @@ module Shaka
     module_function
 
     # A fork author can edit the body, so a fork's history is never carried, as with usage.
-    def carry(pull, current)
+    def carry(pull, current, reason: nil)
       entry = current.merge('head' => head(pull))
+      entry[REASON] = reason if reason
       history = same_repository?(pull) ? previous(pull['body']) : fresh
       entries = history.fetch('entries')
       return history if entries.any? && changes(entries.last) == changes(entry)
@@ -47,6 +51,13 @@ module Shaka
       return if entries.size < 2
 
       [LEAD, omission(history.fetch('omitted')), table(entries)].compact.join("\n\n")
+    end
+
+    # The newest entry a same-repository PR body records, if any.
+    def last_entry(pull)
+      return unless pull && same_repository?(pull)
+
+      previous(pull['body']).fetch('entries').last
     end
 
     def head(pull)
@@ -91,11 +102,15 @@ module Shaka
       entries.is_a?(Array) && entries.size.between?(1, RECENT + 1) && entries.all? { |entry| valid_entry?(entry) }
     end
 
-    def valid_entry?(entry)
-      entry.is_a?(Hash) && entry.keys.sort == FIELDS.sort && entry.values.all?(String) &&
+    def valid_entry?(entry) = entry.is_a?(Hash) && valid_reason?(entry) && valid_fields?(entry.except(REASON))
+
+    def valid_fields?(entry)
+      entry.keys.sort == FIELDS.sort && entry.values.all?(String) &&
         entry['head'].match?(HEAD) && entry['workflow'].match?(WORKFLOW) &&
         ROUTES.all? { |route| valid_route?(entry[route], requested: route == 'requested') }
     end
+
+    def valid_reason?(entry) = !entry.key?(REASON) || ExecutionProvenance.reason?(entry[REASON])
 
     # A route renders as `model / effort`, each an allowlisted provenance value.
     def valid_route?(route, requested: false)
@@ -112,7 +127,7 @@ module Shaka
                 "restore or remove its #{PREFIX.strip} marker, then publish again.")
     end
 
-    def changes(entry) = entry.except('head')
+    def changes(entry) = entry.except('head', REASON)
 
     def bounded(entries, omitted)
       extra = entries.size - (RECENT + 1)
@@ -127,16 +142,9 @@ module Shaka
       "#{omitted} #{omitted == 1 ? 'entry' : 'entries'} after the first #{omitted == 1 ? 'is' : 'are'} omitted."
     end
 
-    def table(entries)
-      rows = entries.map do |entry|
-        "| `#{entry['head'][0, 7]}` | #{entry['workflow']} | #{ROUTES.map { |route| entry[route] }.join(' | ')} |"
-      end
-      ['| Head | Shaka skill version | User-requested model / effort | ' \
-       'Recommended model / effort | Active model / effort |',
-       '| --- | --- | --- | --- | --- |', *rows].join("\n")
-    end
+    def table(entries) = ProvenanceHistoryTable.render(entries, ROUTES, REASON)
 
     private_class_method :head, :same_repository?, :previous, :fresh, :validated, :valid_entries?, :valid_entry?,
-                         :valid_route?, :invalid, :changes, :bounded, :omission, :table
+                         :valid_fields?, :valid_reason?, :valid_route?, :invalid, :changes, :bounded, :omission, :table
   end
 end

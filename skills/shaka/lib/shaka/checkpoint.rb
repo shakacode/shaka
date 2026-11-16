@@ -134,9 +134,11 @@ module Shaka
       ACTIONS.fetch(reason) { raise Error, "Unknown checkpoint pause reason: #{reason}." }
     end
 
+    # UNKNOWN is a placeholder, not a recommendation; the agent makes one before starting.
     def recommendation_present?
       %w[recommended_model recommended_effort].all? do |field|
-        @content[field].is_a?(String) && !@content[field].strip.empty?
+        value = @content[field]
+        value.is_a?(String) && !value.strip.empty? && !value.strip.casecmp?('UNKNOWN')
       end
     end
   end

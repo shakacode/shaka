@@ -32,12 +32,14 @@ module Shaka
 
     def throughput = @throughput ||= ThroughputStats.state(@content, @timeline, @pull)
 
+    # The table and the history both show the recommendation the history kept.
     def provenance
-      execution = ExecutionProvenance.new(provenance_spec, workflow_version: @workflow_version, pull: @pull)
+      recommendation = ProvenanceRecommendation.resolve(@pull, provenance_spec)
+      execution = ExecutionProvenance.new(recommendation.spec, workflow_version: @workflow_version, pull: @pull)
       detail = execution.detail
       return details_block(detail) unless @pull
 
-      history = ProvenanceHistory.carry(@pull, execution.entry)
+      history = ProvenanceHistory.carry(@pull, execution.entry, reason: recommendation.reason)
       body = [detail['body'], ProvenanceHistory.section(history), ProvenanceHistory.marker(history)].compact
       details_block(detail.merge('body' => body.join("\n\n")))
     end

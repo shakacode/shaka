@@ -52,7 +52,8 @@ class ProvenanceHistoryTest < Minitest::Test
 
   CHANGED = 'b' * 40
   HIGH = { 'requested_effort' => 'high' }.freeze
-  OPUS = HIGH.merge('recommended_model' => 'claude-opus-5-5').freeze
+  OPUS = HIGH.merge('recommended_model' => 'claude-opus-5-5',
+                    'recommendation_change_reason' => 'The design grew past the first plan.').freeze
   # Each step changes one compared value from the step before it: [routes, commit, modified, expected].
   STEPS = [
     [{}, 'a' * 40, false, 'gpt-5.6-terra / medium | gpt-5.6-terra / medium | gpt-5.6-terra / medium |'],

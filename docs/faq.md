@@ -44,7 +44,10 @@ Local settings do not override team settings. See
 
 ## Why did the agent stop to ask about model and effort?
 
-Shaka recommends a model and effort before implementation. When your coding tool
+Shaka recommends a model and effort before implementation. The recommendation can
+name any model your coding tool offers, not only the one running, so it may suggest
+switching, for example to a stronger model for planning. The PR keeps that
+plan-time recommendation unless the agent records why the plan changed. When your coding tool
 already uses those settings, the agent starts without asking. Otherwise it waits
 for your reply, unless you said "Go" without naming a model or effort; then it
 continues with the coding tool's current settings. If you name either setting, the
