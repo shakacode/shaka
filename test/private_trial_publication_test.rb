@@ -41,8 +41,9 @@ module PrivateTrialPublicationHelpers
 
   def assert_unfinished_private(body, root)
     assert_includes body, 'No matching check records supplied'
-    assert_includes body, '| wip.include_checkout_path | true |'
-    assert_includes body, "| Workspace | #{CHECKOUT} |"
+    assert_includes body, '| wip.include_checkout_path | false |'
+    assert_includes body, '| Workspace | REDACTED |'
+    refute_includes body, CHECKOUT
     assert_includes body, "| Chat link | #{SESSION} |"
     refute_includes body, PRIVATE_LINK
     refute_includes body, root
@@ -157,8 +158,9 @@ class PrivateTrialPublicationTest < Minitest::Test
     assert_includes body, '| source.configuration | private/local | private/local | private/local |'
     assert_includes body, '| review.required | none | none | none |'
     assert_includes body, "| source.revision | #{([ref] * 3).join(' | ')} |"
-    assert_includes body, '| wip.include_checkout_path | true | true | true |'
-    assert_includes body, "| Workspace | #{CHECKOUT} |"
+    assert_includes body, '| wip.include_checkout_path | false | false | false |'
+    assert_includes body, '| Workspace | REDACTED |'
+    refute_includes body, CHECKOUT
     assert_includes body, "| Chat link | #{SESSION} |"
     assert_includes body, 'Local files remain local'
   end

@@ -1,4 +1,4 @@
-# 0008: Show companion skill results on the PR
+# 0011: Show companion skill results on the PR
 
 Status: design answers accepted on 2026-11-12 and 2026-11-13; build waits for decision 1's trigger.
 Date: 2026-11-09. Tracks [issue #1075](https://github.com/shakacode/shaka/issues/1075).
