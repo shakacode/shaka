@@ -91,8 +91,9 @@ recorded before the merge. None of them means zero.
 | Waiting on a person | The agent asks for your answer, your merge approval, or a manual resume | The agent resumes, or the PR merges or closes |
 
 Shaka can read the selected original turn’s timestamp from a local Codex
-session. It also accepts an explicit timestamp and can fall back to a saved
-start or a whole-task implementation usage report. This includes planning and
+session. It also accepts an explicit timestamp or uses a whole-task
+implementation usage report. When the PR branch is in the same repository,
+Shaka can also reuse the start saved in its description. This includes planning and
 implementation before the first commit. The
 **Before first recorded validation** interval shows the elapsed wall-clock time
 from that start to the earliest recorded validation run, including a focused test.
