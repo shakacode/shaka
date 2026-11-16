@@ -124,7 +124,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    | (any) | pstack `tdd`; AI Hero `tdd` | decline: Implement owns failing-test-first |
 
    performance-verification.md keeps running `shaka-perf compare` as it does today; a pack
-   setting never weakens what a procedure already requires.
+   setting never weakens what a procedure already requires. Its own `shaka-perf init` offer
+   gives way to the ShakaPerf setup suggestion at this point, so the user sees one setup offer.
 
    pstack `unslop` and `technical-writing` get no skill point and no decline. companion-skills.md
    already applies their prose advice to the content Shaka supplies, and the workflow's
@@ -156,13 +157,15 @@ the ownership rule companion-skills.md already follows, so there is no code to r
      from the trusted settings source. When Shaka uses a project skill, it loads it from the
      trusted commit, its whole directory and not only `SKILL.md`, so a candidate branch
      cannot change what it says or runs. Hosts may still load checkout skills by
-     description, outside this mechanism. A project skill that is new or changed on the candidate branch comes
-     back declined, because a candidate branch grants nothing.
-   - `~/.agents/shaka/companions.yml` on a machine, beside the reviewer list from
-     [ADR 0005](0005-per-machine-reviewers.md), can turn packs on and decline skills for its
-     owner. It has no `use` key, and it cannot lift a repository's decline, for the same
-     reason individual settings never override team settings. Personal packs go in
-     `~/.agents/shaka/packs/`, and their `use` entries act as `suggest` for the same reason.
+     description, outside this mechanism. A project skill that exists only on the candidate
+     branch has no trusted copy, so it comes back declined.
+   - `~/.agents/shaka/companions.yml` on a machine would be a new home-directory file, in the
+     place [ADR 0005](0005-per-machine-reviewers.md) proposes for its reviewer list, which is
+     not shipped either. It can turn packs on and decline skills for its owner. Shaka today
+     never combines individual settings with team settings ([settings](../../docs/settings.md)),
+     so this file is a narrow exception: it has no `use` key, and it cannot lift a repository's
+     decline. Personal packs go in `~/.agents/shaka/packs/`, and their `use` entries act as
+     `suggest` for the same reason.
    - Ruby applies declines last and matches skills by their installed path, not their label,
      so re-declaring a packaged skill under another pack name inherits every limit on it.
 
@@ -198,8 +201,12 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    behind it, and the loader refuses a packaged `use` without one. The study rule binds what
    ShakaCode ships to everyone. A repository's own `companions.use` promotion, or a `use`
    entry in its own pack file, is the maintainer's choice: it needs no study and no `packs`
-   entry, and it stays within the fixed limits on explicit-only, fan-out, setup, and declined
-   skills.
+   entry. Two limits stay fixed even then. An explicit-only skill is never started by Shaka,
+   because its own author marked it that way, and a skill that fans out workers needs the
+   user's delegation authorization, as companion-skills.md already requires. The packaged
+   declines of orchestrators also stay fixed, because those skills publish and merge outside
+   the helper's checked gates. Setup suggestions and other packaged declines are defaults a
+   repository may override.
    ADR 0001's comparison runs are not built yet, so until they are, nothing is promoted and
    every packaged entry stays `suggest`. PRs that report `skills_used` add real-use context,
    but those entries are optional and agent-reported, so they inform a study rather than
@@ -248,6 +255,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
   docs/settings.md names beside the machine reviewer list.
 - Reading installed `SKILL.md` front matter and comparing a project skill's file with the
   trusted commit are new reads the configuration boundary test will need to admit.
+- Shaka no longer names `blast-radius`, `diagnosing-bugs`, or `writing-for-agents` at the
+  moments where they help; the host loads them by description, as it does today.
 - Suggestions add some prompts to a task. The once-per-point limit and `companions.suggest:
   false` bound that.
 - Each `use` entry loads another skill into context. Decision 6 requires a measured gain
@@ -260,7 +269,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
 
 Proposed as three PRs:
 
-1. `shaka companions`, the pack file schema, the resolver, the point lines in the five
+1. `shaka companions`, the pack file schema, the resolver, the point lines in the four
    procedures, and companion-skills.md's definition, with no packaged entries. No behavior
    change.
 2. Packaged pack files for ShakaPerf, pstack, and AI Hero in `suggest` mode only, repository
