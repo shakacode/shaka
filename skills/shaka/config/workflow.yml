@@ -229,7 +229,7 @@ phases:
         pilot, so do not create or merge them.
     done_when: >-
       The seam, settings, and PR shape are settled, review consent is resolved,
-      selected CLI reviewers passed the startup probe or it is disabled, any fresh-host fallback
+      selected CLI reviewers passed the startup probe, or it is disabled or skipped under light delivery, any fresh-host fallback
       has an established review path, and the checkpoint says proceed.
   - id: implement
     title: Implement

@@ -43,7 +43,8 @@ rules:
     note: >-
       Ruby validates the switch, ref format, configured probe identities, and probe outcome.
       The agent resolves human consent and follows phase order; Ruby cannot authenticate consent
-      or prevent implementation tools from running.
+      or prevent implementation tools from running. Under light delivery the agent may skip the
+      probe without a reason to doubt a reviewer; nothing checks that choice.
   - id: github-writer-identifier
     phase: explain
     quote: >-

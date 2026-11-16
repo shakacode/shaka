@@ -200,8 +200,9 @@ final checkpoint." The agent then posts a note on the PR that the checkpoint did
 To see whether light delivery saves time, give the same small task twice, once without
 the phrase and once with it, starting each in a new chat. Each PR's
 [Timings](reference/timings.md) section shows the time before the PR opened, and its
-Usage and cost section shows model calls and tokens. After both PRs merge on different
-days, compare the two days with a [timings retrospective](#find-what-slows-delivery-across-many-prs):
+Usage and cost section shows model calls and tokens. To compare the merged PRs, merge
+them on different days and run one [timings retrospective](#find-what-slows-delivery-across-many-prs)
+for each day:
 
 ```text
 /shaka retrospective of PR timings from 2026-11-20 to 2026-11-20
