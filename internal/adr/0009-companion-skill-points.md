@@ -1,7 +1,7 @@
 # 0009: Suggest and use companion skills at skill points
 
 Status: proposed.
-Date: 2026-11-14. Revisions read: Shaka `c3e92e8`, pstack (`cursor/plugins`) `3dbd22f`,
+Date: 2026-11-14. Revisions read: Shaka `b44d5b7a`, pstack (`cursor/plugins`) `3dbd22f`,
 AI Hero (`mattpocock/skills`) `5863806`, ShakaPerf (`shakacode/shakaperf`) `cd7eae5`,
 `shakacode/agent-workflows` `d85ecea`.
 Related: [issue #206](https://github.com/shakacode/shaka/issues/206) tracks skill and plugin
@@ -122,7 +122,7 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    | speed | pstack `benchmark-checklist`, `principle-explain-the-number` | suggest; first `use` candidates |
    | high risk | pstack `interrogate` (fans out); ShakaPerf `shaka-perf-find-bugs` when twin servers exist | suggest |
    | (any) | pstack `poteto-mode` playbooks; AI Hero `implement`, `implement-spec` | decline: orchestrator |
-   | (any) | pstack `tdd`; AI Hero `tdd` | decline: Implement owns failing-test-first |
+   | (any) | pstack `tdd`; AI Hero `tdd` | decline: duplicates Implement's reproduce-a-failure-first step |
 
    performance-verification.md keeps running `shaka-perf compare` as it does today; a pack
    setting never weakens what a procedure already requires. Its own `shaka-perf init` offer
@@ -199,7 +199,9 @@ the ownership rule companion-skills.md already follows, so there is no code to r
 
 6. **An entry moves from `suggest` to `use` on ADR 0001's evidence.** A candidate gets paired
    eval runs on [ADR 0001](0001-eval-and-release-gating.md)'s `skill` axis (D2): the same
-   package with the entry at `use` against it at `suggest`. It is promoted when the run meets
+   package with the entry at `use` against it at `suggest`. A promotion changes what the agent
+   runs, so it counts as an instruction change under D7, not as configuration. It is promoted
+   when the run meets
    D7's acceptance for a PR eval: the entry's own tasks score higher, no regression or D8 flag
    appears, the named core tasks stay within tau, and the cost ratio stays at or below 1.2 or
    the higher cost is justified. This record sets no threshold of its own. Review rounds,
@@ -210,7 +212,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    entry. A skill that fans out workers still needs the user's delegation authorization, as
    companion-skills.md already requires. An explicit-only skill stays `suggest` because its
    front matter tells the coding host that the model must not start it. A maintainer who
-   wants it used changes that front matter, not Shaka settings. Packaged declines, including
+   wants it used changes that front matter and, for a packaged skill, clears the
+   explicit-only flag in the repository's own pack entry for it; Ruby needs both to allow it. Packaged declines, including
    those of orchestrators, and setup suggestions are defaults a repository may override. A
    repository that lifts an orchestrator decline accepts that the skill publishes and merges
    outside the helper's checked gates.
@@ -283,7 +286,7 @@ Proposed as three PRs:
    and machine pack files, `/shaka suggest skills` with its SKILL.md route, the install offer,
    doctor reporting, and the `companions` settings `use`, `decline`, and `suggest`. The
    `packs` and `pins` keys wait for the first packaged `use` entry, since nothing uses them
-   before then.
+   before then. Until that entry exists, the machine file holds only `decline` and `suggest`.
 3. Once ADR 0001's comparison runs exist, eval runs for the first `use` candidates,
    `benchmark-checklist` and `principle-explain-the-number`, and promotion of what the
    results support.
