@@ -444,7 +444,8 @@ class OpencodeUsageFailuresTest < Minitest::Test
       File.chmod(0o755, executable)
       output = report('--host', 'opencode', environment: stub_environment(directory))
       assert_includes output, 'Responses: UNKNOWN'
-      assert_includes output, 'Pass an OpenCode session with --session ID.'
+      assert_includes output, 'Gaps: Pass an OpenCode session with --session ID.'
+      refute_includes output, 'ID..'
     end
   end
 end

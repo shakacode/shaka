@@ -15,7 +15,7 @@ module Shaka
       MACHINE_ALLOWLIST = '~/.agents/trusted-github-actors.yml'
       MACHINE_REVIEWERS = '.agents/shaka/local-reviewers.yml' # Relative to the home directory.
       PACKS = '.agents/shaka/packs' # Companion pack files, under the repository root or the home directory.
-      PERSONAL_SETTINGS = '.agents/shaka/config.yml' # Relative to the home directory; read only by private setup.
+      PERSONAL_SETTINGS = '.agents/shaka/config.yml' # Relative to the home directory.
 
       REQUIRED_COMMANDS = {
         'setup' => '.agents/shaka/bin/setup',

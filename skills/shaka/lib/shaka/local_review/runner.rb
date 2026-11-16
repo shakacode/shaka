@@ -415,10 +415,21 @@ module Shaka
         end
       end
       validate_criteria_ref!
-      validate_timeout!
-      validate_reviewer!
+      validate_reviewer_and_timeout!
       validate_model_name!
       validate_checkout!
+    end
+
+    # The first deadline bounds the settings reads that may choose a checkpoint's reviewer;
+    # without --timeout-seconds, the chosen reviewer then sets the deadline.
+    def validate_reviewer_and_timeout!
+      timeout_given = @options.key?(:timeout_seconds)
+      validate_timeout!
+      validate_reviewer!
+      return if timeout_given
+
+      @options.delete(:timeout_seconds)
+      validate_timeout!
     end
 
     # An unset MODEL variable must fail here, not launch the reviewer with an empty model.
