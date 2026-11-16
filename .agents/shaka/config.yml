@@ -144,5 +144,6 @@ prose_limits: # Defaults: word limits for PR descriptions and walkthroughs.
 
 # Commands live in bin/ beside this file: setup, test, and validate. Optional, unused here:
 # validate-local (faster checks before local review) and trigger-hosted-ci (needs validate-local).
-# Review timeouts and pr watch timing are command flags, not settings (runtime in defaults.yml).
+# Review timeouts, pr watch timing, and instruction token models are command defaults, not settings
+# (runtime in defaults.yml).
 # Whose public comments the agent may read: trusted-github-actors.yml.

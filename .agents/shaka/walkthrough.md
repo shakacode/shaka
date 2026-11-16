@@ -8,6 +8,8 @@ When the PR changes agent instructions, such as files under `skills/shaka/` or
 `AGENTS.md`, say when each changed instruction file loads: on every task, or only
 under its stated condition. Cite the word and byte deltas from
 `bin/report-instruction-growth BASE` for the rendered workflow and entry point.
+When either of those changes, also cite each provider's startup token delta from its
+`--tokens` option, or the reason a provider shows UNKNOWN.
 
 ## Who enforces a rule
 
