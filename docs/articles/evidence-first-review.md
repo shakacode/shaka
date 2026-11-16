@@ -20,11 +20,13 @@ below point into the video.
    videos, diagrams, and formal checks (9:10 to 10:00). Skipping the first step would
    speed up approval of the same code.
 2. **Shaka already leads with evidence.** A Shaka PR opens with its verification
-   results. Screenshots, speed comparisons, and test results are tied to the exact
-   commit. A checkpoint grades whether the evidence is adequate.
-3. **Shaka's data does not support dropping code review yet.** In an earlier Shaka
+   results. Shaka's commands record which commit the validation and review results
+   cover. The agent is asked to add screenshots and speed comparisons when they apply.
+   A checkpoint grades whether the evidence is adequate.
+3. **Shaka's data does not support dropping AI code review yet.** In an earlier Shaka
    study, AI review often found inputs the tests had missed. Review was producing
-   missing verification, which fits the talk's goal.
+   missing verification, which fits the talk's goal. The study did not measure human
+   review.
 4. **Shaka's own rules sit mostly at the top of Tan's pyramid.** In the current
    enforcement audit, 89 of 100 workflow rules depend on the agent following prose.
 5. **The talk's quality number is weak evidence.** A 0.5% revert rate counts rolled-back
@@ -99,15 +101,19 @@ below point into the video.
 
 - **Idea:** once the code is constrained, reviewers look at verification artifacts.
 - **In Shaka:** the PR description puts Summary, Risk, and Verification first. Code
-  Review and the Code Walkthrough are links for closer reading. UI changes need desktop
-  and mobile screenshots, and speed changes need a before-and-after comparison
-  ([visual evidence](../reference/pr-record.md#visual-evidence)). Results name the commit
-  they cover. The checkpoint grades verification as adequate, inadequate, or cannot
-  judge ([checkpoint](../reference/pr-record.md#checkpoint)). Under `auto`, an inadequate
-  grade stops the merge until the maintainer approves that commit.
-- **Result:** Shaka is stricter than the talk on one point. The talk never addresses
-  whether a screenshot shows the version under review. Shaka also keeps two AI code
-  reviewers on every commit of this repository.
+  Review and the Code Walkthrough are links for closer reading. The agent is asked to
+  capture before-and-after screenshots for visible changes
+  ([visual evidence](../reference/pr-record.md#visual-evidence)). The agent is also asked
+  to compare speed for a speed claim
+  ([performance](../reference/pr-record.md#performance-and-blocked-work)). The checkpoint
+  grades verification as adequate, inadequate, or cannot judge
+  ([checkpoint](../reference/pr-record.md#checkpoint)). Under `auto`, an inadequate grade
+  stops the merge until the maintainer approves that commit.
+- **Result:** Shaka's commands record which commit the validation and review results
+  cover. The merge command checks that a review covers the commit being merged. Nothing
+  checks that a screenshot shows that commit. The talk does not say how its team checks
+  that either. Shaka also keeps two AI code reviewers on every commit of this
+  repository.
 - **Limit:** Shaka cannot make a user's codebase safe for evidence-only review. The
   base of the pyramid belongs to each project.
 
@@ -131,7 +137,10 @@ below point into the video.
   release fuzzer opens bug-fix PRs that merge themselves (16:21).
 - **In Shaka:** each repository chooses Ask or `auto`
   ([merge approval](../reference/pr-record.md#merge-approval)). Under `auto`, the agent
-  merges after required checks, independent review, and the checkpoint pass.
+  merges after required checks, independent review, and the checkpoint pass. The
+  checkpoint's risk rating must also be at or below
+  [`merge.auto_merge_max_risk`](../settings.md#mergeauto_merge_max_risk), which defaults
+  to low.
 - **Result:** Shaka supports agent merging but keeps code review among its gates.
 - **Limit:** Shaka does not track reverts or follow-up fixes after merge. No Shaka
   number compares with the talk's 0.5%.
@@ -140,8 +149,8 @@ below point into the video.
 
 | Option | Evidence | Verdict |
 | --- | --- | --- |
-| Keep the evidence-first PR layout and the adequacy grade | Matches the talk's strongest idea and adds commit binding the talk lacks. | Proceed |
-| Drop or shrink code review in favor of evidence | Review found inputs the tests missed in 18 sampled Shaka fixes. What evidence alone would catch is unknown. | Evaluate first |
+| Keep the evidence-first PR layout and the adequacy grade | Matches the talk's strongest idea. | Proceed |
+| Drop or shrink AI code review in favor of evidence | AI review found inputs the tests missed in 18 sampled Shaka fixes. What evidence alone would catch is unknown. | Evaluate first |
 | Turn repeated corrections into checks in the user's repository | Matches the talk and pstack. How often review findings repeat is unknown. | Evaluate first |
 | Track revert rate after merge | Easy to count, but blind to forward fixes. | Defer until paired with a count of follow-up fixes |
 
