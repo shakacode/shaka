@@ -159,10 +159,12 @@ below point into the video.
 | Turn repeated corrections into checks in the user's repository | Matches the talk and pstack. How often review findings repeat is unknown. | Evaluate first |
 | Track revert rate after merge | Easy to count, but blind to forward fixes. | Defer until paired with a count of follow-up fixes |
 
-The
+The second row needs its own comparison: AI review against verification evidence alone,
+on the same changes. No such trial exists yet. The
 [preregistered review-scope trial](https://github.com/shakacode/shaka/blob/main/eval/reports/review-scope-preregistration.md)
-is the natural place to test the second row. Its paid pilot still awaits the
-maintainer's approval.
+tests a smaller change. It compares re-reviewing the whole diff with re-reviewing only
+new commits, and both arms keep the same two AI reviewers. Its paid pilot still awaits
+the maintainer's approval.
 
 ## Sources and limits
 
