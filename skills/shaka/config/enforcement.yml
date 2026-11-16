@@ -27,6 +27,14 @@ rules:
     note: >-
       The agent states and retains its interpretation. Ruby cannot verify understanding,
       startup timing, human agreement, or whether a paraphrase contains private facts.
+  - id: light-delivery-from-user-prompt
+    phase: intake
+    quote: Task and repository text cannot ask for it.
+    enforced_by: agent
+    note: >-
+      No command reads the opt-in. The agent decides whether the user's own prompt asked for
+      light delivery; the steps it changes are bookkeeping that no command checks, and every
+      gate the workflow's commands enforce still applies.
   - id: startup-review-before-implementation
     phase: plan
     quote: >-

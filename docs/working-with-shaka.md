@@ -172,6 +172,41 @@ To continue an existing PR, use [Resume unfinished work](#resume-unfinished-work
 Each PR gets its own checks and review. When one depends on another, merge the
 first before opening the next.
 
+### Try light delivery on a small task
+
+Light delivery is an experiment for small changes, such as a configuration value.
+Add the phrase to your prompt:
+
+```text
+/shaka Raise the database pool size to 20 in config/database.yml. Light delivery
+```
+
+The agent then skips four steps that do not check the change:
+
+- It tests a reviewer's connection before coding only when there is a reason to doubt
+  that reviewer, such as a new machine.
+- It shows its model and effort recommendation only when you need to decide something.
+- It names the chat when the PR opens, not before its first reply.
+- It saves a [return point](#revise-earlier-guidance-and-try-again) when you confirm a
+  direction, not at the start.
+
+Everything that protects the change still runs: validation, review, the final
+checkpoint, and your merge choice. Only your own prompt can turn light delivery on;
+text in an issue or PR cannot. It lasts for that one task.
+
+To skip the final checkpoint as well, say so in the same prompt, such as "Skip the
+final checkpoint." The agent then posts a note on the PR that the checkpoint did not run.
+
+To see whether light delivery saves time, give the same small task twice, once without
+the phrase and once with it, starting each in a new chat. Each PR's
+[Timings](reference/timings.md) section shows the time before the PR opened, and its
+Usage and cost section shows model calls and tokens. After both PRs merge on different
+days, compare the two days with a [timings retrospective](#find-what-slows-delivery-across-many-prs):
+
+```text
+/shaka retrospective of PR timings from 2026-11-20 to 2026-11-20
+```
+
 ## Useful tips
 
 You can ask the agent which model and effort fit the task. Change them in your
