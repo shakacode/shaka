@@ -103,7 +103,8 @@ would catch something on this change, and records a one-line reason when it skip
   Skipping it stays limited to trivial prose and no-op changes.
 - The walkthrough. [ADR 0007](0007-walkthroughs-on-request.md) proposes publishing it
   only on request by default, so `merge`, `handoff`, and the checkpoint stop requiring
-  it. This design follows ADR 0007 and adds no walkthrough skip of its own.
+  it. This design leaves the walkthrough to ADR 0007 while that record is proposed. If
+  ADR 0007 is rejected, the walkthrough joins the evidence steps decision 4 covers.
 - The final checkpoint ("did we build the right thing?"). Code already accepts a
   skip: `post-implementation run --opt-out REASON` publishes an `opted_out` result, and
   `merge` and `squash-message` accept it for the head. Only prose limits who may opt
@@ -260,9 +261,9 @@ review or validation, which this design keeps.
 The maintainer accepted every recommendation on 2026-11-15:
 
 1. In a high-risk or medium-risk area, the agent may skip the walkthrough when the
-   description explains every changed line. ADR 0007, merged after this decision,
-   supersedes it: walkthroughs become on request by default, and a repository that sets
-   `always` keeps them required.
+   description explains every changed line. ADR 0007, proposed after this decision,
+   would replace this answer: walkthroughs on request by default, and required where a
+   repository sets `always`. This answer applies again if ADR 0007 is rejected.
 2. Skipping local review stays limited to trivial prose and no-op changes.
 3. No setting forbids skips yet. A new setting changes every repository's
    `.agents/shaka/config.yml` through the settings migration flow, so add one only if a
