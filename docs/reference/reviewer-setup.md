@@ -139,6 +139,7 @@ also stays in force.
 | `Not logged in · Please run /login` | The `claude` CLI is not signed in | Run `claude`, then `/login`, and retry the task. This is not a consent problem |
 | Shaka asks for consent again | Your statement from step 3 does not name this provider, repository, and content, or Codex does not read the file that holds it | Fix the statement or move it to the file Codex reads, or answer the question for this task |
 | Codex Auto-review denies `shaka review run` | Codex blocked the command before it started, so nothing reached Claude | Follow [When Codex denies the review](#when-codex-denies-the-review). Do not answer the consent question again or switch reviewers |
+| A Claude review fails with `timed out after 600s` | Claude reviews stop after 600 seconds by default; Codex and Grok reviews stop after 300 | Ask your agent to find the cause first. If the diff is large and the reviewer was still working, ask it to retry with a longer deadline, up to 3600 seconds |
 | A missing `ANTHROPIC_API_KEY` | Another tool, such as a repository script, needs an Anthropic API key. The Claude reviewer does not | Set the key for that tool. Without it, the agent reports that check as failed rather than skipping it |
 
 Shaka cannot get around your organization's managed Codex policy. A denied
