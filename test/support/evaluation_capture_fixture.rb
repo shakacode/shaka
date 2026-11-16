@@ -3,6 +3,7 @@
 require 'rbconfig'
 require 'tmpdir'
 require 'fileutils'
+require_relative 'ready_clock'
 
 module EvaluationCaptureFixture
   def setup
@@ -23,14 +24,14 @@ module EvaluationCaptureFixture
                  directory: @directory, seconds:, clock_id: 'test-controller', &)
   end
 
-  # A shell starts in milliseconds, where Ruby can take longer than a short deadline on a loaded
-  # machine, so a deadline test's child reaches the state it sets up before the deadline passes.
+  # Runs a shell script whose deadline starts once the script creates `ready` in the working directory.
   def run_shell(script, seconds:)
+    ReadyClock.hold(@capture, File.join(@root, 'ready'))
     @capture.run(command: ['/bin/sh', '-c', script], cwd: @root, directory: @directory, seconds:,
                  clock_id: 'test-controller')
   end
 
-  # The pid the capture spawned, known even when the deadline passed before the child ran a line.
+  # The pid the capture spawned, which the child need not report.
   def spawned_pid = @capture.instance_variable_get(:@pid)
 
   def native_stream

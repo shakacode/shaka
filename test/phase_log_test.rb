@@ -38,8 +38,8 @@ class PhaseLogTest < Minitest::Test
   def test_evidence_run_returns_the_failing_test_classes_its_command_reported
     with_checkout do |root, _ref|
       write_test_command(root, <<~SH)
-        printf '{"failed_tests":["ZetaTest","AlphaTest","bad name",7]}\n{"failed_tests":"NotAList"}\n' >> "$SHAKA_PHASE_LOG"
-        printf '{"failed_tests":["Shaka::BetaTest","AlphaTest","GammaTest"]}\n' >> "$SHAKA_PHASE_LOG"
+        printf '{"failed_tests":["GammaTest","AlphaTest","bad name",7]}\n{"failed_tests":"NotAList"}\n' >> "$SHAKA_PHASE_LOG"
+        printf '{"failed_tests":["Shaka::BetaTest","AlphaTest"]}\n' >> "$SHAKA_PHASE_LOG"
       SH
       git(root, 'add', '-A')
       commit(root)
@@ -56,6 +56,7 @@ class PhaseLogTest < Minitest::Test
 
     assert_equal ['GoodTest'], Shaka::FailedTests.sanitize(names)
     assert_empty Shaka::FailedTests.sanitize('GoodTest')
+    assert_empty Shaka::FailedTests.sanitize(%w[ATest BTest CTest DTest]), 'A run naming many classes records none'
   end
 
   def test_sanitize_keeps_short_names_and_whole_milliseconds_up_to_the_cap

@@ -104,7 +104,11 @@ puts 'Slowest test classes:', lines if lines.any?
 failed = failed.reject(&:empty?).uniq.sort
 puts "Failing test classes: #{failed.join(', ')}" if failed.any?
 phase_log = ENV.fetch('SHAKA_PHASE_LOG', '')
-File.write(phase_log, "#{JSON.generate('failed_tests' => failed)}\n", mode: 'a') if failed.any? && !phase_log.empty?
+begin
+  File.write(phase_log, "#{JSON.generate('failed_tests' => failed)}\n", mode: 'a') if failed.any? && !phase_log.empty?
+rescue SystemCallError => e
+  warn "Could not record failing test classes: #{e.message}"
+end
 
 counted = %w[runs assertions failures errors skips].to_h { |name| [name.to_sym, totals[name]] }
 puts format('Total: %<runs>d runs, %<assertions>d assertions, %<failures>d failures, %<errors>d errors, ' \

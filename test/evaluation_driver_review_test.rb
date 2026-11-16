@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require_relative '../eval/lib/shaka/evaluation/driver_review'
 require_relative '../eval/lib/shaka/evaluation/delivery_ask'
 require_relative 'support/evaluation_delivery_fixture'
+require_relative 'support/ready_clock'
 
 class EvaluationDriverReviewTest < Minitest::Test
   include EvaluationDeliveryFixture
@@ -68,15 +69,14 @@ class EvaluationDriverReviewTest < Minitest::Test
   end
 
   def test_verifier_timeout_leaves_no_post_and_reaps_the_child
-    # The head check shares the verifier's deadline. A shell answers it within milliseconds, where the
-    # Ruby fixture could use the whole deadline on a loaded machine and the verifier would never start.
-    repo = { full_name: 'fixture-org/cell' }
-    pull = JSON.generate(number: 1, state: 'open', merged: false, head: { sha: HEAD, repo: }, base: { repo: })
-    File.write(@gh, "#!/bin/sh\ncat > /dev/null\nprintf '%s' '#{pull}'\n")
-    writer = driver(seconds: 1)
-    assert_raises(IOError) { run_driver(command: ['/bin/sh', '-c', 'exec sleep 30'], writer:) }
-    # The verifier's own pid, so the check holds even when the deadline passed before the child ran.
-    pid = writer.instance_variable_get(:@verifier).instance_variable_get(:@pid)
+    answer_head_check_from_shell
+    writer = driver(seconds: 2)
+    verifier = writer.instance_variable_get(:@verifier)
+    ReadyClock.hold(verifier, File.join(@directory, 'ready'))
+    assert_raises(IOError) { run_driver(command: ['/bin/sh', '-c', ': > ready; exec sleep 30'], writer:) }
+    pid = verifier.instance_variable_get(:@pid)
+    refute_nil pid, 'The verifier never started its child'
+    assert_path_exists File.join(@directory, 'ready')
     assert_raises(Errno::ESRCH) { Process.kill(0, pid) }
     refute_path_exists File.join(@directory, 'posted.json')
   end

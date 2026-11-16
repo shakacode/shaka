@@ -87,8 +87,9 @@ reports its four phases this way.
 
 Your test runner can also name the test classes that failed, so you can tell a
 flaky test from a real failure. Append one line such as
-`{"failed_tests":["CheckoutTest","Billing::InvoiceTest"]}`. Shaka keeps up to three
-names per run, each a class name of up to 64 characters. When you ask your agent
+`{"failed_tests":["CheckoutTest","Billing::InvoiceTest"]}`. Each name is a class
+name of up to 64 characters. A run that names more than three classes records
+none, because that many failures usually mean a broken change, not a flaky test. When you ask your agent
 for a retrospective of PR timings, its report ranks the classes named most often.
 A failed run counts there only when the PR later committed the tree it tested,
 which is what happens when a rerun passes without changes, the usual sign of a

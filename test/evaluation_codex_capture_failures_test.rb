@@ -8,16 +8,18 @@ class EvaluationCodexCaptureFailuresTest < Minitest::Test
   include EvaluationCaptureFixture
 
   def test_deadline_reaps_a_process_that_closed_its_output
-    result = run_shell('exec >&- 2>&-; exec sleep 30', seconds: 0.3)
+    result = run_shell('exec >&- 2>&-; : > ready; exec sleep 30', seconds: 0.3)
     assert_equal 'timed_out', result.fetch('transport_status')
     assert_nil result.fetch('terminal')
+    assert_path_exists File.join(@root, 'ready')
     refute_process(spawned_pid)
   end
 
   def test_deadline_kills_and_reaps_a_child_that_ignores_term
-    result = run_shell("trap '' TERM; exec sleep 30", seconds: 0.3)
+    result = run_shell("trap '' TERM; : > ready; exec sleep 30", seconds: 0.3)
     assert_equal 'timed_out', result.fetch('transport_status')
     assert_nil result.fetch('terminal')
+    assert_path_exists File.join(@root, 'ready')
     refute_process(spawned_pid)
   end
 
