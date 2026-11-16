@@ -5,6 +5,7 @@ require 'tmpdir'
 require 'open3'
 require 'fileutils'
 require 'rbconfig'
+require 'yaml'
 require_relative '../skills/shaka/lib/shaka/executable_file'
 
 # The helpers and fakes the tests spawn need only Ruby's standard library. Under bundle exec
@@ -133,4 +134,12 @@ module Minitest
     include UsageIdentityText
     include BooleanAssert
   end
+end
+
+# Writes ~/.agents/shaka/config.yml under HOME with these wip choices and returns its path.
+def write_personal_wip(home, wip)
+  path = File.join(home, '.agents/shaka/config.yml')
+  FileUtils.mkdir_p(File.dirname(path))
+  File.write(path, YAML.dump('version' => 1, 'wip' => wip))
+  path
 end

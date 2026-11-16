@@ -39,6 +39,13 @@ module PrivateTrialPublicationHelpers
     end
   end
 
+  # The repository would show both values; the user's own file hides them.
+  def assert_personally_hidden(body)
+    ['| wip.include_checkout_path | true |', '| Workspace | REDACTED (personal setting) |',
+     '| Chat link | UNKNOWN |'].each { |row| assert_includes body, row }
+    [CHECKOUT, SESSION].each { |value| refute_includes body, value }
+  end
+
   def assert_unfinished_private(body, root)
     assert_includes body, 'No matching check records supplied'
     assert_includes body, '| wip.include_checkout_path | true |'
@@ -126,6 +133,18 @@ class PrivateTrialPublicationTest < Minitest::Test
       Dir.mktmpdir do |dir|
         body = publish_trial(dir, root, ref)
         assert_unfinished_private(body, root)
+      end
+    end
+  end
+
+  def test_your_personal_file_hides_what_the_repository_would_show
+    with_setup do |root, ref|
+      setup_private(root, ref)
+      @head = ref
+      Dir.mktmpdir do |dir|
+        write_personal_wip(dir, 'include_checkout_path' => false, 'include_chat_link' => false)
+        body = publish_trial(dir, root, ref)
+        assert_personally_hidden(body)
       end
     end
   end

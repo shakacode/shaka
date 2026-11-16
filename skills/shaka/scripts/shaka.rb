@@ -177,6 +177,7 @@ end
 
 # Evidence is prepared first; a preview can only replace the rendering that follows it.
 def render_description(carried, version, pull, settings, timeline, options, github) # rubocop:disable Metrics/ParameterLists
+  carried = warned(settings.privacy).apply(carried)
   pull = pull.merge('shaka_changed_files' => Shaka::FeaturePublication.files(github, pull))
   pull = pull.merge('shaka_review_focus' => Shaka::ReviewFocus.resolve(carried, github, pull))
   pull = pull.merge('shaka_risk' => described_risk(carried, github, pull, settings))
@@ -219,12 +220,18 @@ def opening_result(options, summary, prose: nil)
                                 effort: options[:opening_effort]).call(summary, prose:)
 end
 
+# The user's privacy choices, after saying why a file Shaka could not read hides everything.
+def warned(privacy)
+  warn "shaka: #{privacy.warning}" if privacy.warning
+  privacy
+end
+
 # The issue is as public as the repository, so the checkout path follows the same setting as WIP Details.
-def start_redaction(options, repository)
+def start_redaction(options, repository, privacy)
   root = options[:root] || Dir.pwd
   current, = Shaka::PublicationSettings.current_settings(root:, ref: options[:ref], repository:, required: true)
-  Shaka::PublicationSettings.new(current:, location_diagnostic: Shaka::PublicationSettings::UNAVAILABLE_SETTINGS)
-                            .path_redaction
+  Shaka::PublicationSettings.new(current:, location_diagnostic: Shaka::PublicationSettings::UNAVAILABLE_SETTINGS,
+                                 privacy:).path_redaction
 end
 
 def usage_banner
@@ -463,7 +470,9 @@ begin
                           key: key, comment: options[:comment])
            when 'start'
              started = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
-             body = Shaka::TaskStart.compose(started, path_redaction: start_redaction(options, repository))
+             privacy = warned(Shaka::Configuration::PersonalPrivacy.load)
+             body = Shaka::TaskStart.compose(started, path_redaction: start_redaction(options, repository, privacy),
+                                                      privacy:)
              github.start_comment(body:, key: Shaka::TaskStart.key(started))
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))

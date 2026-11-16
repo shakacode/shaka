@@ -11,10 +11,11 @@ module Shaka
     # The helper adds this from the host's publisher settings; it never comes from the content file.
     HELPER_FIELDS = %w[publisher_note].freeze
 
-    def self.compose(content, path_redaction: nil)
+    # The user's privacy choices may withhold the chat link, which the content file cannot.
+    def self.compose(content, path_redaction: nil, privacy: nil)
       validate(content)
       settings = Struct.new(:path_redaction).new(path_redaction)
-      Publication.new(content, settings:).render([:wip])
+      Publication.new(privacy ? privacy.apply(content) : content, settings:).render([:wip])
     end
 
     # Keyed by owner tag: the same owner's retry replaces its comment, and a new owner posts its own.

@@ -10,8 +10,9 @@ module Shaka
   module Configuration
     # Preferences from ~/.agents/shaka/config.yml that pre-fill a new clone's private setup. It may
     # set only the preference leaves below, so commands, CI review jobs, merge policy, and
-    # prompt-file paths stay repository facts. Only setup reads the file, except for the time zone:
-    # publication reads that for a repository that sets none, so setup leaves it out of the clone.
+    # prompt-file paths stay repository facts. Only setup reads the file, except for the time zone
+    # and the privacy choices that PersonalPrivacy reads on every publication. Setup leaves the time
+    # zone and the chat link choice, which no repository setting holds, out of the clone.
     class PersonalSettings
       ALLOWED = %w[
         review.local_review_agents review.provider_coverage review.local_review_count
@@ -23,11 +24,12 @@ module Shaka
         pr_description.time_zone
         prose_limits.max_sentence_words prose_limits.max_paragraph_words prose_limits.max_description_words
         prose_limits.words_per_changed_line
-        branches.name wip.include_checkout_path
+        branches.name wip.include_checkout_path wip.include_chat_link
       ].freeze
       REVIEWER_KEYS = %w[provider model_family model effort].freeze
       REVIEWER_IDENTITIES = %w[checkpoint.reviewer pr_description.opening_check.reviewer].freeze
       TIME_ZONE = 'pr_description.time_zone'
+      CHAT_LINK = 'wip.include_chat_link'
 
       # Nil when the file is absent or no home directory is known.
       def self.load(home:)
@@ -68,9 +70,11 @@ module Shaka
 
       def initialize(path, values)
         @path = path
-        @keys = leaves(values, '') - [TIME_ZONE]
+        @keys = leaves(values, '') - [TIME_ZONE, CHAT_LINK]
         time_zone!(values['pr_description'])
-        @values = values.merge('pr_description' => values['pr_description']&.except('time_zone')).compact
+        chat_link!(values['wip'])
+        @values = values.merge('pr_description' => values['pr_description']&.except('time_zone'),
+                               'wip' => values['wip']&.except('include_chat_link')).compact
         reviewer_entries!
         reviewer_identities!
       end
@@ -92,6 +96,14 @@ module Shaka
         return unless section.is_a?(Hash) && section.key?('time_zone')
 
         TimeZone.validate!(section['time_zone'], "#{path} #{TIME_ZONE}")
+      end
+
+      # No repository schema checks this key, because setup does not copy it.
+      def chat_link!(section)
+        return unless section.is_a?(Hash) && section.key?('include_chat_link')
+        return if [true, false].include?(section['include_chat_link'])
+
+        raise Error, "#{path} #{CHAT_LINK} must be true or false"
       end
 
       # The schema's own parse error names the value but not the key.

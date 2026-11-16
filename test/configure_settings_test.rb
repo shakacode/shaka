@@ -106,6 +106,19 @@ class ConfigureSettingsCommandTest < Minitest::Test
     end
   end
 
+  def test_the_report_says_what_your_publications_show_and_which_file_hides_it
+    with_trusted('wip' => { 'include_checkout_path' => true }) do |root, ref|
+      Dir.mktmpdir('shaka-home') do |home|
+        personal = write_personal_wip(home, 'include_checkout_path' => false)
+        output, error, status = Open3.capture3({ 'HOME' => home }, *SHAKA_COMMAND, 'configure', 'settings',
+                                               '--root', root, '--ref', ref)
+        assert_predicate status, :success?, error
+        assert_equal [personal, 'hidden by your personal file', 'shown when the host has a link'],
+                     JSON.parse(output)['your_publications'].values_at('personal_file', 'checkout_path', 'chat_link')
+      end
+    end
+  end
+
   private
 
   def with_trusted(overrides = {})
