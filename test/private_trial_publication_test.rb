@@ -78,6 +78,7 @@ module PrivateTrialPublicationHelpers
                                             'description', 'shakacode/shaka', '1', '--root', root, '--ref', ref,
                                             '--content-file', path, *flags)
     assert_predicate status, :success?, error
+    @publish_error = error
     File.read(File.join(dir, 'published.md'))
   end
 
@@ -145,6 +146,19 @@ class PrivateTrialPublicationTest < Minitest::Test
         write_personal_wip(dir, 'include_checkout_path' => false)
         body = publish_trial(dir, root, ref)
         assert_personally_hidden(body)
+      end
+    end
+  end
+
+  def test_a_broken_personal_file_hides_the_path_and_says_why
+    with_setup do |root, ref|
+      setup_private(root, ref)
+      @head = ref
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, '.agents/shaka'))
+        File.write(File.join(dir, '.agents/shaka/config.yml'), "not: [valid\n")
+        assert_personally_hidden(publish_trial(dir, root, ref))
+        assert_includes @publish_error, 'Hiding the checkout path on publications'
       end
     end
   end
