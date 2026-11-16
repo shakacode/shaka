@@ -19,8 +19,8 @@ below point into the video.
    review then has less to look for. Only then does review shrink to screenshots,
    videos, diagrams, and formal checks (9:10 to 10:00). Skipping the first step would
    speed up approval of the same code.
-2. **Shaka already leads with evidence.** A Shaka PR opens with its verification
-   results. Shaka's commands record which commit the validation and review results
+2. **Shaka already leads with evidence.** A Shaka PR puts its summary, risk, and
+   verification results above the code links. Shaka's commands record which commit the validation and review results
    cover. The agent is asked to add screenshots and speed comparisons when they apply.
    A checkpoint grades whether the evidence is adequate.
 3. **Shaka's data does not support dropping AI code review yet.** In an earlier Shaka
@@ -107,8 +107,8 @@ below point into the video.
   to compare speed for a speed claim
   ([performance](../reference/pr-record.md#performance-and-blocked-work)). The checkpoint
   grades verification as adequate, inadequate, or cannot judge
-  ([checkpoint](../reference/pr-record.md#checkpoint)). Under `auto`, an inadequate grade
-  stops the merge until the maintainer approves that commit.
+  ([checkpoint](../reference/pr-record.md#checkpoint)). Under `auto`, an inadequate or
+  cannot-judge grade stops the merge until the maintainer approves that commit.
 - **Result:** Shaka's commands record which commit the validation and review results
   cover. The merge command checks that a review covers the commit being merged. Nothing
   checks that a screenshot shows that commit. The talk does not say how its team checks
