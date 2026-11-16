@@ -951,6 +951,7 @@ phases:
         one in a line: a tour in this chat, one concept at a time, through the
         [interactive walkthrough](<{{package_root}}/skills/shaka/references/interactive-walkthrough.md>),
         or, while the PR is open, a walkthrough published on it. The offer leaves no chat decision pending.
+        A walkthrough published after the ready checkpoint needs that checkpoint published again.
       - Omit both archive messages for machine-only output, task transfers, blockers, pending
         chat decisions, or unfinished work besides merging.
         When a verified PR awaits only merge at GitHub's merge control, end with exactly

@@ -1,6 +1,6 @@
 # 0007: Publish code walkthroughs on request
 
-Status: proposed.
+Status: accepted on 2026-11-14 and implemented in [#1186](https://github.com/shakacode/shaka/pull/1186), with the amendments at the end.
 Date: 2026-11-13. No issue; the maintainer raised it in a Shaka task chat.
 
 ## Context
@@ -233,3 +233,26 @@ so the old behavior stays available as a setting.
 - **Keep the current default and let repositories opt out.** This leaves the measured
   problem in place for the repository that showed it. It also contradicts the
   predecessor's on-request design, which nobody reported missing.
+
+## Amendments
+
+Implementation review and the maintainer changed three decisions on 2026-11-14.
+
+- **An offer replaces reviewer notes (decision 2).** The maintainer chose an offer over
+  notes. When a PR has no walkthrough, the agent's final report offers one: a tour in the
+  chat, one concept at a time, or, while the PR is open, a walkthrough published on it.
+  Nothing publishes notes without a walkthrough, so the planned second PR, the
+  **Reviewer notes** link (decision 4), and the notes-only side effects are dropped. The
+  description's `review_focus` carries the "look here, and why" hints.
+- **This account's comment records a request (decision 3).** Review showed that a request
+  kept in the PR body is dropped by the next description refresh and can be edited by
+  anyone who can change the body. The agent records a request to publish with
+  `reply --key walkthrough-request`, and the gates read only this account's comment. The
+  description's `requested` value is for readers only. A request for a chat tour makes no
+  walkthrough due.
+- **Gates fail closed without trusted settings.** `merge`, `handoff`, and the ready
+  checkpoint treat missing, unreadable, or private-trial settings as `always`, the rule
+  before this change.
+
+R4 names the offer instead of reviewer notes. The work shipped as one PR of about 500
+changed lines.
