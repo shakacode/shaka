@@ -6,6 +6,12 @@ request (PR) with checks and review results. By default, you decide whether it m
 Use the PR's evidence to decide what to do next and improve the process through
 regular retrospectives.
 
+Shaka is mostly Ruby. About 84% of the installed skill's lines are tested Ruby
+code that your agent runs without reading. It starts each task with about 12,400
+words of instructions, loads other procedures only when needed, and gets the same
+checks every time.
+[See the numbers](architecture.md#most-of-shaka-is-ruby).
+
 Ask your coding agent to install Shaka:
 
 ```text
@@ -62,7 +68,7 @@ Explain what I need to check before merging this PR: <PR link>
 - [Settings reference](settings.md), [workflow and safeguards](workflow.md), and [writing preferences](writing-preferences.md)
 - [Releases after merge](releases-after-merge.md)
 - [Control towers](control-towers.md) and [repository catalog](repository-catalog.md)
-- [Architecture](architecture.md), [PR trials](trying-pr-versions.md), [canary runs](canary.md), and [Contributing](../CONTRIBUTING.md)
+- [How Shaka is built](architecture.md), [PR trials](trying-pr-versions.md), [canary runs](canary.md), and [Contributing](../CONTRIBUTING.md)
 - [Articles](articles/review-process-study.md) about measured experiments with AI review
 
 </details>
