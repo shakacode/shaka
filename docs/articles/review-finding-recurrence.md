@@ -1,0 +1,157 @@
+# Which review findings repeat, and which could a check catch?
+
+*An AI agent wrote this article: Claude Code running Claude Opus 5.5, on 2026-11-16.
+The agent sorted 1,716 fixed or dismissed review findings from one month of Shaka pull
+requests (PRs) into kinds. It read every finding it counted and drafted the text. No
+person has rechecked the classification. The
+[report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-finding-recurrence.md)
+lists the method, every kind, and the
+[412 classified findings](https://github.com/shakacode/shaka/blob/main/eval/reports/review-finding-recurrence.json).*
+
+## Conclusions
+
+1. **About a quarter of review findings repeat a kind seen on 3 or more PRs.** 406 of
+   1,716 fit 18 recurring kinds. A hand check suggests the true share is nearer 40%. The
+   rest belong to their own change.
+2. **The kinds that repeat most compare prose with code.** Docs that promise behavior
+   the code lacks appear on 53 PRs. A test that checks names would catch about 1 in 10
+   of them. The rest need someone, or something, to read both.
+3. **A few kinds have a cheap, exact check.** Git calls that inherit the caller's Git
+   setup, packaged prompt text kept in Ruby, and `CHANGELOG.md` edits outside a release
+   PR each fit one test.
+4. **A check does not stop reviewers raising the same risk.** Where an anchor check and
+   a quote loader existed, reviewers still raised 8 matching risks. The agent dismissed
+   all 8 by citing the check.
+5. **Checks cost upkeep too.** One deterministic scanner in this window drew 38 review
+   findings over 7 PRs before it was removed.
+6. **Recommendation: evaluate first.** Build two small checks now. Trial a report-only
+   coverage check. Keep the prose kinds with review.
+
+## Why this ran
+
+Lauren Tan's talk
+[All Code Is Slop (Except Mine)](https://www.youtube.com/watch?v=O_zcc6Xl12g) puts lint
+rules, types, and tests at the base of a trust pyramid, and prose at the narrow top. Each
+time an agent needs correcting, she turns the correction into a check where she can.
+pstack's
+[encode-lessons-in-structure skill](https://github.com/cursor/plugins/blob/bf0c7cd80a/pstack/skills/principle-encode-lessons-in-structure/SKILL.md)
+gives the same advice.
+
+The [evidence-first review article](evidence-first-review.md) marked this advice
+Evaluate first for Shaka, because nobody knew how often findings repeat. Shaka leans the
+other way today: `shaka enforcement` reports that 89 of 100 audited workflow rules are
+enforced by nothing but the agent.
+
+## Main results
+
+| Kind | PRs | Findings | Share a named check would catch | Verdict |
+| --- | ---: | ---: | --- | --- |
+| Docs or instructions describe behavior the code lacks | 53 | 71 | About 1 in 10 | Evaluate first |
+| A changed path has no test, or the test passes without the fix | 39 | 51 | About half, by line coverage | Evaluate first |
+| Unexpected input escapes as a raw Ruby error | 38 | 45 | Up to 32, with a reader for every input | Evaluate first |
+| Prose says code enforces a rule only the agent follows | 19 | 25 | Flags candidates only | Defer |
+| An older installed helper meets newer settings | 15 | 19 | Most fixed ones | Evaluate first |
+| A study's claim does not match its data | 14 | 43 | About 8 arithmetic errors | Defer |
+| Symlinks, case-insensitive disks, or Windows | 14 | 18 | Most fixed ones, on more CI platforms | Evaluate first |
+| An unnamed caller might break | 13 | 14 | None; all 14 were dismissed | Change the review prompt |
+| A default or packaged prompt kept as a Ruby literal | 10 | 10 | The 3 prompt-text cases | Proceed |
+| Git subprocess inherits the caller's Git environment | 5 | 13 | Most | Proceed |
+| `CHANGELOG.md` edited outside a release PR | 4 | 4 | 1 of 4 | Proceed |
+
+The report lists 7 more kinds with their checks and costs.
+
+- 1,716 defects and risks were fixed or dismissed on 323 PRs. The recurring kinds touch
+  183 of those PRs.
+- 30% of the in-scope findings were dismissed. Unnamed-caller risks were never fixed.
+- Hosted claude-review added little: 22 reports listed findings, 21 of them before
+  2026-10-19.
+
+## The ideas, tested
+
+### 1. Turn each repeated correction into a check
+
+- **Idea:** a repeated correction is a missing lint rule, type, or test.
+- **In Shaka:** review findings are the corrections. A local AI reviewer reads every
+  commit, and the agent fixes or dismisses each finding with a reason.
+- **Result:** repeats exist, but most fall where code cannot judge. The two largest
+  prose kinds cover 53 and 19 PRs. Checking them needs a comparison of what a sentence
+  means with what the code does.
+- **Exceptions:**
+  - Git subprocess isolation produced 7 defects on 5 PRs, including filters that could
+    run during an export ([#962](https://github.com/shakacode/shaka/pull/962)).
+  - `AGENTS.md` says of two rules that no test enforces them: defaults belong in
+    `defaults.yml`, and only release PRs edit `CHANGELOG.md`. Both rules recur.
+- **Limit:** the catch shares are the agent's judgment from finding titles. No check was
+  built.
+
+### 2. Checks replace review
+
+- **Idea:** once a check exists, review has less to look for.
+- **In Shaka:** `bin/check-docs-navigation` has checked docs anchors since
+  [#616](https://github.com/shakacode/shaka/pull/616). The `enforcement.yml` loader fails
+  when a quoted rule leaves the workflow.
+- **Result:** the checks took the defects. Reviewers still raised 8 risks that an edit
+  might break an anchor or a quote, and the agent dismissed each one by citing the check.
+  The 3 anchor findings that were fixed fell outside the check's reach.
+- **Limit:** the reviewer packet does not list the checks that passed. Whether listing
+  them would cut these risks is untested.
+
+### 3. Prose is the weakest layer
+
+- **Idea:** rules written as prose sit at the top of the pyramid, where they hold least.
+- **In Shaka:** 89 of 100 audited workflow rules are agent-only.
+- **Result:** reviewers rarely see those rules. They read the diff and the PR
+  description, so none of the 412 classified findings reports an agent breaking a
+  delivery rule mid-task. What reviewers do catch is prose describing enforcement wrongly:
+  - 19 PRs called an agent-only rule enforced.
+  - 8 PRs let `enforcement.yml` drift from the workflow.
+- **Limit:** this data cannot say how often agents break the 89 rules.
+
+### 4. A check is cheap to keep
+
+- **Idea:** deterministic checks cost less than repeated review.
+- **Result:** not always. The seam upgrade reference scanner was 1,832 lines of Ruby that
+  parsed Markdown and shell. It drew 38 findings over 7 PRs, each fix exposing the next
+  edge case, until [#997](https://github.com/shakacode/shaka/pull/997) removed it.
+  `enforcement.yml` has 897 lines and changed in 26 commits this month.
+- **Limit:** one scanner is one example. Most proposed checks here are much smaller.
+
+## Recommendation
+
+**Evaluate first.** The data supports a few small checks, not a general shift from
+prose to checks.
+
+| Option | Evidence | Verdict |
+| --- | --- | --- |
+| Boundary test: every Git subprocess uses one runner that clears `GIT_*`, global config, filters, and hooks | 13 findings, 7 defects, 5 PRs; several could redirect writes or run code | Proceed, in its own PR |
+| Test refusing long English string literals in `skills/shaka/lib` | 10 PRs flagged Ruby literals; the prompt-text cases are clear, numeric ones were dismissed | Proceed |
+| CI step refusing `CHANGELOG.md` edits on non-release PRs | Stated rule with no check; catches 1 of 4 findings | Proceed, small value |
+| Report-only changed-line coverage | About 26 of 51 test findings name an untested path | Evaluate on the next 10 PRs |
+| Tell reviewers which checks passed, and to name a caller before warning about one | 22 risks dismissed by citing a check or finding no caller | Evaluate: compare dismissals over a week |
+| Check every docs claim about enforcement | High upkeep, cannot judge truth | Defer |
+
+## Data and limits
+
+- **Data:** Shaka's published local review ledgers updated 2026-10-15 to 2026-11-16:
+  672 ledgers, 3,533 findings on 370 PRs. In scope are defects and risks that were fixed
+  or dismissed.
+- **Classifier:** one agent, Claude Opus 5.5, read and sorted every counted finding,
+  mostly from titles. No second reader checked it.
+- **Recall:** a hand check of 150 unmatched findings found 30 that belonged to a counted
+  kind. Counts are lower bounds.
+- **Catch and cost:** estimates, not measurements. No candidate check was built or
+  replayed against history.
+- **Scope:** one repository, one maintainer, one month, changing review prompts.
+  CodeRabbit and other bots were out of scope.
+
+## Rerun it
+
+The [report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-finding-recurrence.md)
+gives the parsing rule and kind definitions. The JSON file gives every verdict. To run
+the study on your own repository, ask your agent:
+
+```text
+$shaka Find which kinds of fixed or dismissed review findings recur across this repository's PRs over the last month, and for each kind name a check that could catch it
+```
+
+In Claude Code, start the prompt with `/shaka` instead of `$shaka`.
