@@ -103,8 +103,9 @@ the ownership rule companion-skills.md already follows, so there is no code to r
    - `suggest`: Shaka names the skill, says in one line why it fits this task, and either
      runs it after a yes or hands the user the invocation to type. A yes to a skill that fans
      out workers counts as delegation authorization for that run only when the suggestion
-     named the workers it starts. Explicit-only skills,
-     skills that fan out workers, and one-time setup skills are always `suggest`. Ruby takes
+     named the workers it starts. Skills that fan out workers are always `suggest`.
+     Explicit-only and one-time setup skills are `suggest` unless the maintainer overrides them
+     as decision 6 describes. Ruby takes
      the stricter of the pack file's explicit-only flag and the installed skill's front
      matter, so an upstream change cannot raise a mode.
    - `decline`: Shaka does not use the skill inside a task and says why when asked. This
@@ -147,10 +148,10 @@ the ownership rule companion-skills.md already follows, so there is no code to r
 
    ```yaml
    companions:
-     packs: [shakaperf]   # packaged `use` entries from these packs apply
+     packs: [shakaperf]   # packaged `use` entries from these packs apply (added with the first one)
      use: []              # promote a packaged suggest entry for this repository, within the fixed limits
      decline: []          # a skill or a whole pack, never raised in this repository
-     pins: {}             # pack: revision; doctor warns when the installed one differs
+     pins: {}             # pack: revision; doctor warns on drift (added with packs)
      suggest: true        # false stops suggestions nobody asked for
    ```
 
@@ -174,6 +175,8 @@ the ownership rule companion-skills.md already follows, so there is no code to r
      reaches `use`.
    - Ruby applies declines last and matches skills by their installed path, not their label,
      so re-declaring a packaged skill under another pack name inherits every limit on it.
+     Only the repository's own pack entry for the same installed path can clear a packaged
+     flag; a personal pack or a different pack name cannot.
 
    Trusting a source is different from knowing what ran. Packs update themselves, so Shaka
    records the installed revision in `skills_used`, which it already does when the revision is
