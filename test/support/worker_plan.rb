@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'json'
 require 'open3'
 
@@ -33,11 +34,12 @@ module WorkerPlan
 
   # Kept in the repository's shared Git directory, so every worktree of a clone reuses it.
   def record_path(root)
-    ENV.fetch('SHAKA_TEST_DURATIONS') do
-      common, status = Open3.capture2('git', '-C', root, 'rev-parse', '--path-format=absolute', '--git-common-dir',
-                                      err: File::NULL)
-      File.join(common.strip, 'shaka-test-durations.json') if status.success?
-    end
+    chosen = ENV.fetch('SHAKA_TEST_DURATIONS', '')
+    return chosen unless chosen.empty?
+
+    common, status = Open3.capture2('git', '-C', root, 'rev-parse', '--path-format=absolute', '--git-common-dir',
+                                    err: File::NULL)
+    File.join(common.strip, 'shaka-test-durations.json') if status.success?
   end
 
   def read(path)
@@ -56,6 +58,6 @@ module WorkerPlan
     File.write(temporary, JSON.generate(times.sort.to_h))
     File.rename(temporary, path)
   rescue SystemCallError
-    nil
+    FileUtils.rm_f(temporary) if temporary
   end
 end

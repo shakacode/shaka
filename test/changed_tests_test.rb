@@ -64,7 +64,7 @@ class ChangedTestsTest < Minitest::Test
   end
 
   def test_changes_it_cannot_map_run_the_whole_suite
-    [[%w[M test/test_helper.rb]], [%w[M Gemfile.lock]], [%w[M bin/run-tests]],
+    [[%w[M test/test_helper.rb]], [%w[M Gemfile.lock]], [%w[M bin/run-tests]], [%w[M test/support/worker_plan.rb]],
      [%w[M skills/shaka/lib/shaka/unused.rb]], [%w[D skills/shaka/lib/shaka/beta.rb]],
      [%w[M docs/settings.md]], [%w[M test/alpha_test.rb], %w[M test/test_helper.rb]], []].each do |changes|
       assert_nil @selector.tests_for(changes), changes.inspect

@@ -9,7 +9,7 @@ class RunTestsTest < Minitest::Test
   RUNNER = File.expand_path('../bin/run-tests', __dir__)
 
   def setup
-    @directory = Dir.mktmpdir('run-tests')
+    @directory = Dir.mktmpdir('run-tests').tap { FileUtils.mkdir_p(File.join(it, 'test')) }
     @marker = File.join(@directory, 'ran.txt')
     @durations = File.join(@directory, 'durations.json')
   end
@@ -29,6 +29,17 @@ class RunTestsTest < Minitest::Test
       assert_predicate status, :success?, output
       assert_equal expected, File.readlines(@marker, chomp: true).sort
       assert_match(/^Total: 6 runs, .* across 2 workers, #{split}$/, output)
+    end
+  end
+
+  def test_a_partial_run_updates_the_record_and_a_whole_suite_run_replaces_it
+    file = fixture('alpha', %w[one])
+    File.write(@durations, '{"RemovedTest":1.0}')
+    [[[file], %w[AlphaFixtureTest RemovedTest]], [[], %w[AlphaFixtureTest]]].each do |files, recorded|
+      output, status = run_tests(files, workers: 1)
+
+      assert_predicate status, :success?, output
+      assert_equal recorded, JSON.parse(File.read(@durations)).keys
     end
   end
 
@@ -101,11 +112,10 @@ class RunTestsTest < Minitest::Test
   end
 
   def fixture(name, tests, failing: false)
-    path = File.join(@directory, "#{name}_test.rb")
-    methods = tests.map { |test| fixture_method(name, test, failing) }
-    File.write(path, "require 'minitest/autorun'\n\nclass #{name.capitalize}FixtureTest < Minitest::Test\n" \
-                     "#{methods.join}end\n")
-    path
+    File.join(@directory, 'test', "#{name}_test.rb").tap do |path|
+      File.write(path, "require 'minitest/autorun'\n\nclass #{name.capitalize}FixtureTest < Minitest::Test\n" \
+                       "#{tests.map { |test| fixture_method(name, test, failing) }.join}end\n")
+    end
   end
 
   def fixture_method(name, test, failing)
@@ -118,9 +128,10 @@ class RunTestsTest < Minitest::Test
   end
 
   # bin/validate starts the runner under bundle exec, so its workers load the bundle's Minitest.
+  # With no files, the runner takes the whole suite: every fixture under the temporary test directory.
   def run_tests(files, workers:, env: {})
     env = { 'MARKER' => @marker, 'SHAKA_TEST_WORKERS' => workers.to_s, 'SHAKA_TEST_DURATIONS' => @durations,
             'BUNDLE_GEMFILE' => File.expand_path('../Gemfile', __dir__) }.merge(env)
-    Open3.capture2e(env, 'bundle', 'exec', RbConfig.ruby, RUNNER, *files)
+    Open3.capture2e(env, 'bundle', 'exec', RbConfig.ruby, RUNNER, *files, chdir: @directory)
   end
 end
