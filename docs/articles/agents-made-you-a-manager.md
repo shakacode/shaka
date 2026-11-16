@@ -4,7 +4,7 @@
 Justin Gordon asked it to compare Addy Osmani's
 [post](https://x.com/addyosmani/status/2119332146485891501) of 2026-11-07 with Shaka.
 The agent read the post and Shaka's docs, workflow, and enforcement map at
-[`e13cc94`](https://github.com/shakacode/shaka/tree/e13cc94b4cdf). No experiment was run.
+[`04a6773`](https://github.com/shakacode/shaka/tree/04a6773281b0). No experiment was run.
 Codex and a fresh Claude session reviewed it before publication.*
 
 Addy Osmani argues that an engineer working with coding agents is already managing.
@@ -152,7 +152,7 @@ reports, GitHub refuses, or only the agent follows it.
   from the commit it is given, and `comments` withholds untrusted comments. The agent
   must pass the default branch's commit and must read comments through `comments`.
   Choosing the target branch is the agent's alone.
-- **Limit:** Shaka has no default turn or spend limit. Local review stops after five
+- **Limit:** Shaka has no default turn or spend limit. Local review stops after eight
   reviewed commits by default, and PRs report usage after the fact.
 
 ### Watching many agents
@@ -225,7 +225,7 @@ version of micromanagement, and suggests dropping rules newer models no longer n
 
 - Addy Osmani, ["Your coding agents made you a manager"](https://x.com/addyosmani/status/2119332146485891501),
   2026-11-07.
-- Shaka at [`e13cc94`](https://github.com/shakacode/shaka/tree/e13cc94b4cdf):
+- Shaka at [`04a6773`](https://github.com/shakacode/shaka/tree/04a6773281b0):
   [workflow and enforcement](../workflow.md), the
   [enforcement map](../../skills/shaka/config/enforcement.yml), and the output of
   `shaka enforcement`.
