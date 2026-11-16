@@ -113,8 +113,8 @@ class ConfigureSettingsCommandTest < Minitest::Test
         output, error, status = Open3.capture3({ 'HOME' => home }, *SHAKA_COMMAND, 'configure', 'settings',
                                                '--root', root, '--ref', ref)
         assert_predicate status, :success?, error
-        assert_equal [personal, 'hidden by your personal file', 'shown when the host has a link'],
-                     JSON.parse(output)['your_publications'].values_at('personal_file', 'checkout_path', 'chat_link')
+        assert_equal({ 'personal_file' => personal, 'checkout_path' => 'hidden by your personal file' },
+                     JSON.parse(output)['your_publications'])
       end
     end
   end

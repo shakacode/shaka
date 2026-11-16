@@ -177,7 +177,7 @@ end
 
 # Evidence is prepared first; a preview can only replace the rendering that follows it.
 def render_description(carried, version, pull, settings, timeline, options, github) # rubocop:disable Metrics/ParameterLists
-  carried = warned(settings.privacy).apply(carried)
+  warned(settings.privacy)
   pull = pull.merge('shaka_changed_files' => Shaka::FeaturePublication.files(github, pull))
   pull = pull.merge('shaka_review_focus' => Shaka::ReviewFocus.resolve(carried, github, pull))
   pull = pull.merge('shaka_risk' => described_risk(carried, github, pull, settings))
@@ -220,7 +220,7 @@ def opening_result(options, summary, prose: nil)
                                 effort: options[:opening_effort]).call(summary, prose:)
 end
 
-# The user's privacy choices, after saying why a file Shaka could not read hides everything.
+# The user's privacy choice, after saying why a file Shaka could not read hides the path.
 def warned(privacy)
   warn "shaka: #{privacy.warning}" if privacy.warning
   privacy
@@ -471,8 +471,7 @@ begin
            when 'start'
              started = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
              privacy = warned(Shaka::Configuration::PersonalPrivacy.load)
-             body = Shaka::TaskStart.compose(started, path_redaction: start_redaction(options, repository, privacy),
-                                                      privacy:)
+             body = Shaka::TaskStart.compose(started, path_redaction: start_redaction(options, repository, privacy))
              github.start_comment(body:, key: Shaka::TaskStart.key(started))
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))

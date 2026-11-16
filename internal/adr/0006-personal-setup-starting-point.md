@@ -1,8 +1,8 @@
 # 0006: Start new individual setups from personal preferences
 
 Status: accepted on 2026-10-28, with the per-run `--no-personal-file` option. Later
-changes made publication read two parts of the file on every update: the time zone and the
-`wip` privacy choices, which can only hide values. Decision 1 holds for everything else.
+changes made publication read two parts of the file on every update: the time zone and
+`wip.include_checkout_path`, which can only hide the checkout path. Decision 1 holds for everything else.
 Date: 2026-10-28. Tracks [issue #936](https://github.com/shakacode/shaka/issues/936).
 
 ## Context

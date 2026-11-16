@@ -39,11 +39,11 @@ module PrivateTrialPublicationHelpers
     end
   end
 
-  # The repository would show both values; the user's own file hides them.
+  # The repository would show the path; the user's own file hides it and leaves the chat link.
   def assert_personally_hidden(body)
     ['| wip.include_checkout_path | true |', '| Workspace | REDACTED (personal setting) |',
-     '| Chat link | UNKNOWN |'].each { |row| assert_includes body, row }
-    [CHECKOUT, SESSION].each { |value| refute_includes body, value }
+     "| Chat link | #{SESSION} |"].each { |row| assert_includes body, row }
+    refute_includes body, CHECKOUT
   end
 
   def assert_unfinished_private(body, root)
@@ -142,7 +142,7 @@ class PrivateTrialPublicationTest < Minitest::Test
       setup_private(root, ref)
       @head = ref
       Dir.mktmpdir do |dir|
-        write_personal_wip(dir, 'include_checkout_path' => false, 'include_chat_link' => false)
+        write_personal_wip(dir, 'include_checkout_path' => false)
         body = publish_trial(dir, root, ref)
         assert_personally_hidden(body)
       end

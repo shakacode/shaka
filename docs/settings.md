@@ -30,16 +30,16 @@ Shaka uses its own default for it, never your individual setting. For example, i
 team settings leave out `prose_limits`, PR descriptions use the default limit of
 300 words, whatever your individual setup says. Two parts of your personal file are
 exceptions: [`pr_description.time_zone`](#pr_descriptiontime_zone), a display choice that
-falls back to your file when the repository sets none, and your
-[privacy choices](#hide-your-checkout-path-and-chat-link-in-every-repository), which can only hide
-values the repository would show.
+falls back to your file when the repository sets none, and
+[`wip.include_checkout_path`](#hide-your-checkout-path-in-every-repository), which can only hide a
+checkout path the repository would show.
 
 Shaka keeps no settings in your home directory, with two exceptions about your machine:
 the comment allowlist, which adds people and bots whose public comments the agent may read,
 and the [machine reviewer list](#choose-reviewers-for-your-machine). Your
 [starting point for individual setup](#start-individual-setups-from-your-preferences) also
 lives there, but it is not a settings source: setup copies it into a new copy of a
-repository once, and tasks read only its time zone and privacy choices.
+repository once, and tasks read only its time zone and `wip.include_checkout_path`.
 
 Omitted optional values use Shaka's defaults, all listed in
 [Shaka's defaults file](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/defaults.yml).
@@ -90,10 +90,9 @@ high-risk areas, or a prompt file, or when a value is invalid.
 - **Read once.** Shaka reads the file only while a new individual setup runs. Editing it
   later changes no repository you already set up; change that copy's
   `.agents/shaka/config.yml` instead. Team settings, task settings, and `shaka seam
-  init` never read it. Two parts are exceptions that every PR description update reads, and
-  issue start comments read the privacy choices too:
-  [`pr_description.time_zone`](#pr_descriptiontime_zone) and your
-  [privacy choices](#hide-your-checkout-path-and-chat-link-in-every-repository).
+  init` never read it. Two parts are exceptions that every PR description update reads:
+  [`pr_description.time_zone`](#pr_descriptiontime_zone) and
+  [`wip.include_checkout_path`](#hide-your-checkout-path-in-every-repository), which issue start comments read too.
 - **Your choices for one repository win.** A reviewer list you give during setup replaces
   the file's list. To set up one repository without the file, ask the agent to skip your
   personal starting point.
@@ -1439,13 +1438,12 @@ whether to include the checkout path.
 
 - **Workspace** is the checkout path. It can reveal local directory names. With
   `false`, the description shows `REDACTED` in its place.
-- **Chat link** is the chat locator. This setting does not hide it, but
-  [your personal file can](#hide-your-checkout-path-and-chat-link-in-every-repository). It reads
-  `UNKNOWN` when the host has no supported locator.
+- **Chat link** is the chat locator. It stays in WIP Details whatever this
+  setting says, and reads `UNKNOWN` when the host has no supported locator.
 
 Owner, revision, state, and next action also stay visible. When settings were
-not read or could not load, the description withholds the checkout path and says
-how to reload the settings. The chat locator still shows unless your personal file hides it.
+not read or could not load, the description withholds the checkout path, says
+how to reload the settings, and still shows the chat locator.
 
 A supported chat locator, such as `codex://threads/...` or `claude://...`, is an
 identifier, not a copy of the conversation. It opens the chat only in the owner's
@@ -1463,44 +1461,39 @@ withheld. An invalid alias, a machine's own name, and a thread id that is not a
 UUID stay `UNKNOWN`, and the message omits those values. The note records each
 field as available, unavailable, withheld, or invalid, so a later handoff does not
 need the original session. Links from other hosts can have different access rules. Tell
-the agent before it publishes when a chat locator should stay off the PR, or hide it on
-every PR with your personal file.
+the agent before it publishes when a chat locator should stay off the PR.
 
 This setting controls the Workspace field only. It does not remove private
 information elsewhere in a PR, and expandable sections on public PRs are public too.
 
-### Hide your checkout path and chat link in every repository
+### Hide your checkout path in every repository
 
-To keep both out of the WIP Details on every PR description and issue start comment you
-publish, in every repository, add this to your `~/.agents/shaka/config.yml`:
+To keep your checkout path out of the WIP Details on every PR description and issue start
+comment you publish, in every repository, add this to your `~/.agents/shaka/config.yml`:
 
 ```yaml
 version: 1
 wip:
   include_checkout_path: false
-  include_chat_link: false
 ```
 
-Shaka reads these choices on every PR description and issue start comment, so an edit
-applies to the next update. Use them when a team publishes checkout paths and you would
-rather not show yours, or when you don't want your chat locator on public PRs.
+Shaka reads it on every PR description and issue start comment, so an edit applies to the
+next update. Use it when a team publishes checkout paths and you would rather not show yours.
 
 - **Your file can only hide.** When a repository hides the checkout path, it stays
   hidden even if your file says `true`.
 - **Readers can tell who hid it.** A path you hide shows `REDACTED (personal setting)`,
-  while the settings table still shows the repository's value. A chat link you hide
-  shows `UNKNOWN`, so someone resuming the PR can't follow it back to your chat.
-- **A broken file hides both.** If Shaka can't read the file, it hides the checkout path
-  and chat link, and warns until you fix it.
-- **Only those two cells change.** A path the agent writes in prose, a walkthrough, or a
-  review reply stays, so read what it publishes as you would without this setting.
-- **Setup still reads it once.** `include_checkout_path` also sets the value a new
-  individual setup writes. `include_chat_link` stays in your file, because no repository
-  setting holds it.
+  while the settings table still shows the repository's value.
+- **A broken file hides it.** If Shaka can't read the file, it hides the checkout path
+  and warns until you fix it.
+- **Only the Workspace cell changes.** A path the agent writes in prose, a walkthrough,
+  or a review reply stays, so read what it publishes as you would without this setting.
+- **Setup still reads it once.** The same key sets the value a new individual setup writes.
 
-`shaka configure settings` reports `your_publications`: whether each value is shown, and
-whether the repository or your file hides it. Your machine alias is not one of these
-choices: you control it with [`SHAKA_MACHINE_ALIAS`](coding-agents.md#name-your-machines).
+`shaka configure settings` reports `your_publications`: whether your checkout path is shown,
+and whether the repository or your file hides it. The chat locator is not hidden here,
+because it opens only in your own app. Your machine alias is not either: you control it
+with [`SHAKA_MACHINE_ALIAS`](coding-agents.md#name-your-machines).
 
 ## `repo_prefix`
 

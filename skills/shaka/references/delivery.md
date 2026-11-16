@@ -187,10 +187,8 @@ The renderer uses `REDACTED` for Workspace when the setting is explicitly false,
 `wip.include_checkout_path: false`. Unread or unavailable settings
 withhold Workspace and explain the recovery action:
 rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
-republishing when loading failed. No repository setting hides Chat link. When the user's
-personal file sets `wip.include_chat_link: false`, `description` and `start` withhold it
-themselves; otherwise supply `UNKNOWN` with `wip_disclosure.thread` set to `withheld`
-when the user asks to keep it off the PR. Unfinished publication remains possible without
+republishing when loading failed. No setting hides Chat link; supply `UNKNOWN`
+with `wip_disclosure.thread` set to `withheld` when the user asks to keep it off the PR. Unfinished publication remains possible without
 validation/review evidence; the diagnostic establishes no readiness. Retain the
 fields and public owner alias. Inspect all other supplied prose before publication.
 A repository where even the owner alias is sensitive should not publish these notes.
@@ -220,8 +218,7 @@ object holding every field above as work begins: Revision is the new local branc
 its base SHA, Unfinished work `branch not pushed yet`, Stopped because `running`, State
 the current step, and Next action the resume prompt, such as `$shaka ISSUE_URL`. Until
 the first push, the branch exists only on the machine Owner names. The helper renders the
-fields as WIP Details, applies `wip.include_checkout_path` and the user's personal privacy
-choices, refuses a PR number, and
+fields as WIP Details, applies `wip.include_checkout_path`, refuses a PR number, and
 keys the comment by owner tag, so a rerun replaces it and a new owner posts its own.
 Post it once; after the PR exists, its WIP Details is the record.
 
