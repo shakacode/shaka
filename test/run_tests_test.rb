@@ -18,9 +18,11 @@ class RunTestsTest < Minitest::Test
 
   def test_every_test_runs_exactly_once_across_workers
     files = %w[alpha beta gamma].map { |name| fixture(name, %w[one two]) }
-    output, status = run_tests(files, workers: 2)
+    log = File.join(@directory, 'phases.jsonl')
+    output, status = run_tests(files, workers: 2, env: { 'SHAKA_PHASE_LOG' => log })
 
     assert_predicate status, :success?, output
+    refute_path_exists log, 'A passing run names no failing classes'
     expected = %w[alpha beta gamma].product(%w[one two]).map { |pair| pair.join('#') }
     assert_equal expected, File.readlines(@marker, chomp: true).sort
     assert_includes output, 'Total: 6 runs'
@@ -32,6 +34,18 @@ class RunTestsTest < Minitest::Test
 
     refute_predicate status, :success?
     assert_includes output, 'beta one failed'
+  end
+
+  def test_failing_classes_are_named_and_written_to_the_phase_log
+    skipped = File.join(@directory, 'skipped_test.rb')
+    File.write(skipped, "require 'minitest/autorun'\nclass SkippedFixtureTest < Minitest::Test\n  " \
+                        "def test_later = skip('later')\nend\n")
+    files = [fixture('alpha', %w[one]), fixture('beta', %w[one two], failing: true), skipped]
+    log = File.join(@directory, 'phases.jsonl')
+    output, = run_tests(files, workers: 2, env: { 'SHAKA_PHASE_LOG' => log })
+
+    assert_includes output, 'Failing test classes: BetaFixtureTest'
+    assert_equal([{ 'failed_tests' => ['BetaFixtureTest'] }], File.readlines(log).map { JSON.parse(it) })
   end
 
   def test_a_worker_that_cannot_load_its_files_fails_the_run

@@ -5,6 +5,7 @@ require 'json'
 require 'time'
 require_relative '../call_log'
 require_relative '../doctor/machine_alias'
+require_relative 'failed_tests'
 require_relative 'phases'
 require_relative 'managed_region'
 require_relative 'provenance'
@@ -119,7 +120,7 @@ module Shaka
     def step(record, machine)
       identity = record.values_at('at', 'command', 'check', 'head', 'tree', 'provider', 'duration_ms')
       checked(record.slice('command', 'check', 'at', 'duration_ms', 'awake_ms', 'exit', 'provider', 'model', 'effort',
-                           'phases')
+                           'phases', 'failed_tests')
                     .merge('id' => Digest::SHA256.hexdigest(JSON.generate(identity))[0, 16], 'machine' => machine))
     end
 
@@ -133,12 +134,15 @@ module Shaka
           .merge('at' => at, **tags, 'machine' => machine(step['machine']), **measured(step)).compact
     end
 
-    # The awake time and a validation command's own phases, when recorded; the session never leaves the log.
+    # The awake time and a validation command's own phases and failing test classes, when recorded; the
+    # session never leaves the log.
     def measured(step)
       awake = step['awake_ms']
-      phases = step['command'] == 'evidence run' ? Phases.sanitize(step['phases']) : []
+      validation = step['command'] == 'evidence run'
+      phases = validation ? Phases.sanitize(step['phases']) : []
+      failed = validation ? FailedTests.sanitize(step['failed_tests']) : []
       { 'awake_ms' => (awake if awake.is_a?(Integer) && awake.between?(0, step['duration_ms'])),
-        'phases' => (phases unless phases.empty?) }
+        'phases' => (phases unless phases.empty?), 'failed_tests' => (failed unless failed.empty?) }
     end
 
     def machine(value) = (value if value.is_a?(String) && ExecutionProvenance::SAFE_VALUE.match?(value))
