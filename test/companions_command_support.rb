@@ -61,7 +61,7 @@ module CompanionsCommandSupport
     fans_out = project(TEAM_CHECK).merge('fans_out' => true, 'points' => { POINT => mode('suggest') })
     team = pack('team', { 'team-check' => fans_out, 'alias' => project('.agents/skills/alias') })
     { '.agents/shaka/packs/team.yml' => team, "#{TEAM_CHECK}/SKILL.md" => SKILL,
-      '.agents/skills/alias' => :link }
+      '.agents/skills/alias' => [:link, 'team-check'] }
   end
 
   # The trusted commit's pack names two project skills; only the first exists there.
@@ -85,7 +85,11 @@ module CompanionsCommandSupport
     YAML.dump({ 'version' => 1, 'pack' => name, **top.transform_keys(&:to_s), 'skills' => skills })
   end
 
+  # A [:link, TARGET] value makes a symbolic link instead of a file.
   def add_file(root, path, text)
-    text == :link ? File.symlink('team-check', File.join(root, path)) : write(root, path, text)
+    return write(root, path, text) unless text.is_a?(Array)
+
+    FileUtils.mkdir_p(File.dirname(File.join(root, path)))
+    File.symlink(text.last, File.join(root, path))
   end
 end

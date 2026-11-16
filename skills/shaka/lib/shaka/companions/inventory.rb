@@ -28,7 +28,7 @@ module Shaka
         true
       end
 
-      # A file without front matter allows model invocation. Front matter that is unterminated or
+      # A file with no `---` header allows model invocation. Front matter that is unterminated or
       # cannot be parsed counts as explicit-only, so a broken header never raises a mode.
       def explicit_front(text)
         return true unless text.valid_encoding?
@@ -136,8 +136,9 @@ module Shaka
         Resolver::Entry.new(layer: pack.layer, pack: pack.name, skill:, candidate_only: false, **facts)
       end
 
-      # The identity is the skill's real directory in this checkout, the same path an installed link to it
-      # resolves to, so an alias or a home-folder link shares its limits. Its content still comes from the commit.
+      # The identity is the skill directory resolved in the trusted tree and placed under the checkout
+      # root, which is where a home-folder link to it resolves. An alias shares its limits, and neither
+      # a linked SKILL.md nor a link the candidate branch adds changes the identity.
       def project_entry(pack, skill)
         file = "#{skill.path}/SKILL.md"
         resolved = trusted_file(file)
@@ -147,9 +148,11 @@ module Shaka
                  .with(candidate_only: File.file?(File.join(@root, file)))
         end
 
-        build(pack, skill, identity: real(File.join(@root, File.dirname(resolved))), installed: true,
+        build(pack, skill, identity: File.join(real(@root), trusted_directory(skill.path)), installed: true,
                            location: "#{@sha}:#{skill.path}", revision: @sha, explicit_front: trusted_front(resolved))
       end
+
+      def trusted_directory(path) = TrustedPathResolver.new(root: @root, sha: @sha).resolve(path).first
 
       # A trusted SKILL.md the reader refuses, such as an empty or oversized one, counts as explicit-only.
       def trusted_front(resolved)

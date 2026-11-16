@@ -73,4 +73,37 @@ class CompanionsInstalledCopiesTest < Minitest::Test
       assert_equal(['decline'], run_command(root:, ref: sha).fetch('skills').map { |row| row['mode'] })
     end
   end
+
+  def test_a_linked_skill_file_keeps_the_skill_directory_as_identity
+    files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
+              'shared/team-check.md' => SKILL, "#{TEAM_CHECK}/SKILL.md" => [:link, '../../../shared/team-check.md'] }
+    with_trusted_repository(extra: files) do |root, sha|
+      decline_linked_team_check(root)
+
+      assert_equal(['decline'], run_command(root:, ref: sha).fetch('skills').map { |row| row['mode'] })
+    end
+  end
+
+  def test_a_link_added_on_the_candidate_branch_does_not_change_identity
+    files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
+              "#{TEAM_CHECK}/SKILL.md" => SKILL, '.agents/skills/other/SKILL.md' => SKILL }
+    with_trusted_repository(extra: files) do |root, sha|
+      FileUtils.rm_r(File.join(root, TEAM_CHECK))
+      File.symlink('other', File.join(root, TEAM_CHECK))
+      decline_linked_team_check(root, target: '.agents/skills/other')
+
+      assert_includes run_command(root:, ref: sha).fetch('skills').map { |row| row['mode'] }, 'use'
+    end
+  end
+
+  private
+
+  # Links the home folder to a checkout skill and declines that copy in a personal pack.
+  def decline_linked_team_check(root, target: TEAM_CHECK)
+    FileUtils.mkdir_p(File.join(@home, '.agents/skills'))
+    File.symlink(File.join(root, target), File.join(@home, '.agents/skills/team-check'))
+    write(@home, '.agents/shaka/packs/mine.yml',
+          pack('mine', { 'team-check' => { 'points' => { POINT => mode('decline') } } },
+               source: 'https://github.com/example/team', match: { 'paths' => ['*/team-check', '*/other'] }))
+  end
 end
