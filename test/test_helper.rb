@@ -16,6 +16,8 @@ if defined?(Bundler)
 end
 # Helper calls the tests spawn stay out of the developer's own call log.
 ENV['SHAKA_CALL_LOG'] = 'off'
+# A runner a test spawns must not report its fixtures' failures into the validation run's own phase log.
+ENV.delete('SHAKA_PHASE_LOG')
 # This checkout is not the developer's linked installation, so every spawned call would say so.
 ENV['SHAKA_NOTICES'] = 'off'
 # Background maintenance outlives a fixture repository and races Dir.mktmpdir's cleanup.

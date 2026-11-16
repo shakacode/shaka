@@ -14,8 +14,8 @@ module Shaka
       module_function
 
       def call(report)
-        [heading(report), buckets(report['buckets']), weeks(report['weeks']), slowest(report['slowest'])]
-          .compact.join("\n\n")
+        [heading(report), buckets(report['buckets']), weeks(report['weeks']), failing_tests(report['failing_tests']),
+         slowest(report['slowest'])].compact.join("\n\n")
       end
 
       def heading(report)
@@ -55,6 +55,16 @@ module Shaka
           "| #{cells.join(' | ')} |"
         end
         [*WEEKS, *rows].join("\n")
+      end
+
+      FAILING = ['Test classes named by failed validation runs, most often first:', '',
+                 '| Test class | Failed runs | PRs |', '| --- | ---: | ---: |'].freeze
+
+      def failing_tests(tests)
+        return if tests.to_a.empty?
+
+        rows = tests.map { |test| "| `#{test['name']}` | #{test['failed_runs']} | #{test['pull_requests']} |" }
+        [*FAILING, *rows].join("\n")
       end
 
       def slowest(rows)

@@ -13,7 +13,8 @@ module Shaka
           'until' => options[:until]&.iso8601, 'merged_pull_requests' => considered, 'with_timings' => rows.size,
           'limit' => options[:limit], 'truncated' => considered >= options[:limit].to_i,
           'partial' => rows.count { |row| row['dropped_steps'].positive? },
-          'buckets' => ranked(rows), 'weeks' => weeks(rows), 'slowest' => slowest(rows) }
+          'buckets' => ranked(rows), 'weeks' => weeks(rows), 'failing_tests' => failing_tests(rows),
+          'slowest' => slowest(rows) }
       end
 
       # Buckets ranked by their total across all pull requests: the order to look for savings in.
@@ -50,6 +51,19 @@ module Shaka
         day = Date.iso8601(time[0, 10])
         day - (day.cwday - 1)
       end
+
+      FAILING_TESTS = 10
+
+      # Test classes ranked by how many failed validation runs named them. A failing run reaches a pull
+      # request when it tested a tree the pull request later committed, so a class failing on the same
+      # tree that then passed, a likely flaky test, ranks high.
+      def failing_tests(rows)
+        tallies = rows.map { |row| row['failed_tests'] }
+        ranked = tallies.flat_map(&:keys).uniq.map { |name| failing_test(name, tallies.filter_map { it[name] }) }
+        ranked.sort_by { |test| [-test['failed_runs'], -test['pull_requests'], test['name']] }.first(FAILING_TESTS)
+      end
+
+      def failing_test(name, counts) = { 'name' => name, 'failed_runs' => counts.sum, 'pull_requests' => counts.size }
 
       def slowest(rows)
         rows.max_by(5) { |row| row['task_to_merge_ms'] }.map { |row| row.slice('number', 'url', 'task_to_merge_ms') }

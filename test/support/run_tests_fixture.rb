@@ -64,6 +64,9 @@ module RunTestsFixture
     Open3.capture2e(env, 'bundle', 'exec', RbConfig.ruby, RUNNER, *files, chdir: @directory)
   end
 
+  # Every fixture test that ran, as "class#test", sorted; a test that ran twice appears twice.
+  def tests_ran = File.readlines(@marker).map { it.split.last }.sort
+
   # The fixture names each worker ran, one sorted list per worker process.
   def workers_ran
     runs = File.readlines(@marker, chomp: true).map(&:split)

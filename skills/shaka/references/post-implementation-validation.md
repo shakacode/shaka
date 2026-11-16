@@ -101,7 +101,7 @@ Codex: `low`, `medium`, `high`, `xhigh`, `max`; Claude: `low`, `medium`, `high`,
 Grok: `low`, `medium`, `high`. Model availability and effort support also depend on
 the installed CLI and selected model; CLI rejection is an explicit failure.
 
-`--timeout-seconds` defaults to 300, with a range of 1–3600. The existing neutral,
+`--timeout-seconds` defaults to the selected reviewer's [local review deadline](local-review.md#cli-reviewers), with a range of 1–3600. The existing neutral,
 restricted provider runners execute the selected settings. Missing executables,
 credentials, timeouts, invalid settings, missing prompts, malformed reports, and
 reports for another head return `not_completed` and a nonzero exit. Inspect the JSON
