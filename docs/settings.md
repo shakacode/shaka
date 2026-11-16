@@ -1423,15 +1423,16 @@ Shaka still stores UTC, and other commands' timestamps stay in UTC.
 
 ## `wip.include_checkout_path`
 
-**Optional. Default: `true`.**
+**Optional. Default: `true`. New individual setups write `false`.**
 
 ```yaml
 wip:
   include_checkout_path: false
 ```
 
-WIP Details include the chat locator to help resume unfinished work. Choose
-whether to include the checkout path.
+WIP Details include the chat locator to help resume unfinished work. New individual
+setups write `false` so the checkout path stays private by default. Team setup uses
+the schema default.
 
 - **Workspace** is the checkout path. It can reveal local directory names. With
   `false`, the description shows `REDACTED` in its place.

@@ -13,6 +13,7 @@ instructions or private company plans.
 - [Per-machine reviewers decision record](adr/0005-per-machine-reviewers.md) — accepted quieting of reviewer setup warnings that selection never needs, and an optional per-machine reviewer list with model and effort; not yet shipped.
 - [Walkthroughs on request decision record](adr/0007-walkthroughs-on-request.md) — proposed default of reviewer notes, with full walkthroughs on request or when a repository sets `always`; not yet shipped.
 - [Size delivery to the task decision record](adr/0008-size-delivery-to-the-task.md) — accepted gates, risk-scaled evidence steps, and on-demand bookkeeping; not yet shipped.
+- [PR retrospective decision record](adr/0010-retrospective-over-merged-prs.md) — proposed PR record report beside `timings report`, and a retrospective across merged PRs that reads it.
 - [Experiment index](../eval/README.md) — retained repositories, outcomes, and the next proposed case.
 - [Review outcomes](review-outcomes.md) — proposed record of review decisions and later assessments, not shipped behavior.
 - [Improving Shaka](improving-shaka.md) — maintainer method for investigating observed workflow failures.
