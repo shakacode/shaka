@@ -121,21 +121,22 @@ design could reuse. The two changes touch different files.
    left to the implementation PR. The existing [UI evidence publication](../../skills/shaka/references/ui-verification.md#publish-ui-evidence)
    path is scoped to UI changes and folds earlier UI checks, so that PR weighs it against
    a plain comment attachment.
-6. **Rewrite the existing guidance, add none.** When the code ships, the "Consume
-   verification evidence" sentence in companion-skills that sends the command, commit,
-   result, artifacts, and gaps into the Verification record is rewritten to send them to
-   `companion_results`, with one summary line in Verification for a merge-relevant
-   result. In `docs/working-with-shaka.md`, the sentence "Shaka uses the results in
-   the PR's evidence: what ran, which version was checked, what it showed, and what
-   remains unverified" changes to name the PR's companion results as that place, and
-   the next sentence, "After a change, the agent reruns affected checks," adds that a
-   result from an earlier commit shows as stale until it is rerun.
-   The next sentence, "Shaka's current-head requirements override a companion's
-   verdict-reuse policy," becomes: a result from an earlier commit stays listed with a
-   `stale` label, and the agent reruns it when a later commit touches what it checked.
-   `workflow.yml` gains only `companion_results` in its list of description keys; the
-   guidance stays in companion-skills, which loads only when a task uses a companion
-   skill.
+6. **Rewrite the existing guidance, add none.** When the code ships:
+   - In `skills/shaka/references/companion-skills.md`, the "Consume verification
+     evidence" sentence that sends the command, commit, result, artifacts, and gaps into
+     the Verification record is rewritten to send them to `companion_results`, with one
+     summary line in Verification for a merge-relevant result. The sentence after it,
+     "Shaka's current-head requirements override a companion's verdict-reuse policy,"
+     becomes: a result from an earlier commit stays listed with a `stale` label, and the
+     agent reruns it when a later commit touches what it checked.
+   - In `docs/working-with-shaka.md`, the sentence "Shaka uses the results in the PR's
+     evidence: what ran, which version was checked, what it showed, and what remains
+     unverified" changes to name the PR's companion results as that place, and "After a
+     change, the agent reruns affected checks" adds that a result from an earlier commit
+     shows as stale until it is rerun.
+   - `workflow.yml` gains only `companion_results` in its list of description keys; the
+     guidance stays in companion-skills, which loads only when a task uses a companion
+     skill.
 
 ## Maintainer answers
 
