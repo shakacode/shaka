@@ -61,4 +61,16 @@ class CompanionsInstalledCopiesTest < Minitest::Test
       refute_empty result.fetch('warnings')
     end
   end
+
+  def test_a_personal_decline_reaches_a_project_skill_installed_by_link
+    with_trusted_repository do |root, sha|
+      FileUtils.mkdir_p(File.join(@home, '.agents/skills'))
+      File.symlink(File.join(root, TEAM_CHECK), File.join(@home, '.agents/skills/team-check'))
+      write(@home, '.agents/shaka/packs/mine.yml',
+            pack('mine', { 'team-check' => { 'points' => { POINT => mode('decline') } } },
+                 source: 'https://github.com/example/team', match: { 'paths' => ['*/team-check'] }))
+
+      assert_equal(['decline'], run_command(root:, ref: sha).fetch('skills').map { |row| row['mode'] })
+    end
+  end
 end

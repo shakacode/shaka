@@ -136,7 +136,8 @@ module Shaka
         Resolver::Entry.new(layer: pack.layer, pack: pack.name, skill:, candidate_only: false, **facts)
       end
 
-      # The identity is the skill's directory after links resolve, so an alias shares its limits.
+      # The identity is the skill's real directory in this checkout, the same path an installed link to it
+      # resolves to, so an alias or a home-folder link shares its limits. Its content still comes from the commit.
       def project_entry(pack, skill)
         file = "#{skill.path}/SKILL.md"
         resolved = trusted_file(file)
@@ -146,7 +147,7 @@ module Shaka
                  .with(candidate_only: File.file?(File.join(@root, file)))
         end
 
-        build(pack, skill, identity: "repository:#{File.dirname(resolved)}", installed: true,
+        build(pack, skill, identity: real(File.join(@root, File.dirname(resolved))), installed: true,
                            location: "#{@sha}:#{skill.path}", revision: @sha, explicit_front: trusted_front(resolved))
       end
 
