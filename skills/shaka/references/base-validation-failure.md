@@ -3,7 +3,8 @@
 Use this path when required validation fails for a reason already present on the
 trusted base. It permits committing and publishing a blocked draft, not treating
 failed evidence as passing or bypassing a merge gate. This is an agent procedure;
-Ruby does not verify the base comparison or a maintainer's acceptance.
+Ruby does not verify the base comparison or a maintainer's acceptance. For hosted
+checks, the last section says what Ruby verifies.
 
 ## Establish the failure before committing
 
@@ -69,10 +70,47 @@ failed evidence failed and leave readiness evidence UNKNOWN where Ruby cannot
 bind it. The agent establishes accepted local validation, not a fabricated ready
 verdict from `evidence verify`.
 
-Security and trust failures cannot be waived through this path. Native required
-checks, seam-required merge checks, protection, and current-head review still
+Security and trust failures cannot be waived through this blocked-draft path. Native
+required checks, seam-required merge checks, protection, and current-head review still
 block readiness when unsatisfied, even after acceptance. Auto remains blocked
-while the failure is unresolved. Resume normal Explain, Review, and Finish only
+while this local failure is unresolved. Resume normal Explain, Review, and Finish only
 when the remaining gates permit readiness; then mark the PR ready for review and
 refresh its description, walkthrough, and handoff. Task-scoped acceptance of a
 local failure never grants merge authorization.
+
+## Hosted checks the base fails
+
+Use this section when a hosted check fails on the pushed head. `shaka pr` lists each
+failing check under `baseChecks`: `base` is the same-named check's result on the newest
+commit of the PR's base branch, beside links to both runs.
+
+- `fail`: open both logs. The base owns the failure when they show the same diagnostic
+  and the task diff leaves the check's inputs unchanged, as step 3 above describes. A
+  different diagnostic, an affected input, or a task regression returns to ordinary repair.
+- `pending`, or `missing` while the base commit's CI still runs: run `pr` again once it
+  finishes. A check that stays `missing` never runs on the base; the base owns it only
+  after step 2 reproduces it there.
+- `pass` or `mixed`: the base does not share the failure. When the base newly passes,
+  update the branch and read the check again; otherwise repair it here.
+- `baseChecksUnavailable` in place of `baseChecks`: run `pr` again. While the base stays
+  unread, the base owns nothing.
+
+Leave a failure the base owns unrepaired in this PR, then:
+
+- An optional check does not block an Ask handoff; name it there. Under Auto, pass
+  `merge --auto --base-failure NAME`. Ruby merges past it only when the check is not
+  required and fails on both the head and the newest base commit, and reports it in
+  `base_failures_excused`. A trusted `review.ci_review_wait: all` never accepts the
+  UNSTABLE state an optional failure leaves, so Auto refuses and the PR goes back under Ask.
+- A required check blocks the merge: GitHub enforces it, and Shaka does not bypass
+  protection. Finish the rest of the task, record the comparison in the description,
+  and publish `decisions` asking the maintainer to wait for the base repair or merge
+  with their own override.
+
+Unlike the blocked-draft path above, this section's exception covers an optional
+security scan whose finding the base already has. A required security check still blocks.
+
+Unless an existing issue or PR owns the base repair, give the user a ready prompt that
+starts it as its own task, naming the check, base branch, base commit, and diagnostic,
+such as `/shaka Fix the lint check failing on main at abc1234: "unused import in app/models/user.rb"`.
+Put the same prompt in the handoff. Filing an issue for it still needs the user's approval.

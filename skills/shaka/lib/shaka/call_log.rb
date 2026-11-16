@@ -3,6 +3,8 @@
 require 'fileutils'
 require 'json'
 require 'time'
+require_relative 'publication/phases'
+require_relative 'stopwatch'
 
 module Shaka
   # Appends one timing record per helper call to a local file, so a retrospective can
@@ -16,15 +18,15 @@ module Shaka
     # Only these names are recorded, so a mistyped call cannot put an argument in the log.
     COMMANDS = %w[attention checkpoint claim comments configure description doctor enforcement evidence guidance
                   handoff install issue-create merge post-implementation pr prefix prompt recommendation reply repos
-                  resolve review review-prompt reviewer seam squash-message start trial ui-check update-check usage
-                  walkthrough work workflow].freeze
+                  resolve review review-prompt reviewer seam squash-message start timings trial ui-check update-check
+                  usage walkthrough work workflow].freeze
     # Commands whose second word selects the operation; any other second word is an argument.
     # A test keeps them equal to each command's own list.
     OPERATIONS = { 'configure' => %w[settings], 'evidence' => %w[run bind verify guard],
                    'post-implementation' => %w[run publish], 'pr' => %w[watch], 'prompt' => %w[show],
                    'repos' => %w[add refresh],
                    'review' => %w[run check record assess publish collapse],
-                   'seam' => %w[check init pointer migrate private preview],
+                   'seam' => %w[check init pointer migrate private preview], 'timings' => %w[report],
                    'trial' => %w[prepare report], 'usage' => %w[publish collect] }.freeze
     # The fixed commands `evidence run` accepts; any other `--command` value is not recorded.
     CHECKS = %w[setup test validate validate_local trigger_hosted_ci].freeze
@@ -36,6 +38,10 @@ module Shaka
              'head' => /\A[0-9a-f]{40}\z/, 'tree' => /\A[0-9a-f]{40}\z/, 'provider' => /\A[a-z][a-z0-9-]*\z/,
              'model' => %r{\A[A-Za-z0-9][\w.:+/-]*\z}, 'effort' => /\A[a-z][a-z-]*\z/ }.freeze
     MAX_TAG_LENGTH = 100
+    # The host's own session ID, so a retrospective can match each line to its chat. It stays in this
+    # local file; nothing that publishes steps copies it.
+    SESSION_VARIABLES = %w[CLAUDE_CODE_SESSION_ID CODEX_THREAD_ID].freeze
+    SESSION = /\A[0-9a-f-]{36}\z/
 
     module_function
 
@@ -43,13 +49,27 @@ module Shaka
       path = path(env)
       return unless path
 
-      identity = identity(arguments)
+      identity = identity(arguments).merge(session(env))
       started_at = Time.now.utc
-      started = clock
+      started = Stopwatch.start
       at_exit do
-        append(path, { 'at' => started_at.iso8601, **identity, **tags, 'exit' => exit_status, **elapsed(started) })
+        append(path, { 'at' => started_at.iso8601, **identity, **tags, 'exit' => exit_status, **elapsed(started),
+                       **extras })
       end
     end
+
+    def session(env)
+      value = SESSION_VARIABLES.lazy.map { |name| env[name] }.find { |id| id.is_a?(String) && SESSION.match?(id) }
+      value ? { 'session' => value } : {}
+    end
+
+    # Adds the phases a validation command reported to this call's record, returning them when any were kept.
+    def phases(list)
+      list = Phases.sanitize(list)
+      extras['phases'] = list unless list.empty?
+    end
+
+    def extras = (@extras ||= {})
 
     # Adds each value that has its key's shape to this call's record and drops the rest.
     def tag(values)
@@ -80,14 +100,12 @@ module Shaka
     # Runs the block and returns its value with when it started and how long it took.
     def measure
       started_at = Time.now.utc
-      started = clock
+      started = Stopwatch.start
       value = yield
       [value, { 'started_at' => started_at.iso8601, **elapsed(started) }]
     end
 
-    def clock = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-
-    def elapsed(started) = { 'duration_ms' => ((clock - started) * 1000).round }
+    def elapsed(started) = Stopwatch.elapsed(started)
 
     def path(env)
       value = env[VARIABLE].to_s

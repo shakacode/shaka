@@ -6,6 +6,7 @@ require_relative '../error'
 require_relative '../ruby_requirement'
 require_relative '../configuration'
 require_relative 'check'
+require_relative 'companion_skills'
 require_relative 'configured_reviewers'
 require_relative 'git_runtime'
 require_relative 'machine_alias'
@@ -36,7 +37,8 @@ module Shaka
         seam, *basics = brief
         [*basics, seam, reviewer_settings(seam), @reviewer_clis.call(seam),
          MachineAlias.new(@environment, host_name: @system.host_name).call,
-         UsageSourceCheck.new(host: @host, system: @system).call, InstallationState.new(system: @system).call]
+         UsageSourceCheck.new(host: @host, system: @system).call, InstallationState.new(system: @system).call,
+         CompanionSkills.new(home: @system.home).call]
       end
 
       # What a task start needs: whose settings the checkout holds, and whether the helper's own

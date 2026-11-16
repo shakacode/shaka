@@ -41,6 +41,7 @@ module HumanCommentsFixture
 
   # comments is what `shaka description --comments PATH` read from the file, or nil without the flag.
   # summaries is the agent's one line for each longer comment, keyed by the comment's URL.
+  # settings is the public settings snapshot, or resolved PublicationSettings.
   def describe(comments, pull: self.pull, summaries: nil, settings: nil, **changes)
     content = { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
                 'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
@@ -50,7 +51,8 @@ module HumanCommentsFixture
                 'details' => [] }.merge(changes)
     content['human_comments'] = comments if comments
     content['human_comment_summaries'] = summaries if summaries
-    Shaka::Publication.description(content, nil, pull, settings && Shaka::PublicationSettings.new(current: settings))
+    settings = Shaka::PublicationSettings.new(current: settings) if settings.is_a?(Hash)
+    Shaka::Publication.description(content, nil, pull, settings)
   end
 
   LONG = 'It is a little confusing what internal testers are versus external testers, and listings feel abstract.'
@@ -312,6 +314,67 @@ class PublicationHumanCommentSettingsTest < Minitest::Test
 
     assert_equal 2, rows(rendered).size
     assert_includes rendered, '_3 more not shown; open comments come first._'
+  end
+
+  def ignoring(patterns) = Shaka::PublicationSettings.new(ignored_human_comments: patterns)
+
+  def test_a_comment_that_only_runs_a_command_is_left_out_and_counted
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', '+review-app-deploy'),
+                                       issue_comment(2, 'Bob', "  +Review-App-Help\n"),
+                                       issue_comment(3, 'Bob', 'Please retain the Ruby update.')])
+    rendered = describe(comments, settings: ignoring(['+review-app-*']))
+
+    said = cells(rendered).map { |row| row[1][/“(.*)”/, 1].delete('\\') }
+
+    assert_equal ['Please retain the Ruby update.'], said
+    assert_equal '**1 open** · 1 from 1 reviewer', counts(rendered)
+    assert_includes rendered, '_2 command comments not listed._'
+  end
+
+  def test_a_command_with_prose_a_verdict_or_another_line_stays_listed
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', '+deploy, but it failed on staging.'),
+                                       issue_comment(2, 'Bob', "+deploy\nThe image is stale.")],
+                      review_summaries: %w[APPROVED CHANGES_REQUESTED DISMISSED].each_with_index.map do |state, at|
+                        review(3 + at, 'Bob', '+deploy', state:)
+                      end,
+                      excluded_interactions: [excluded(9, 'outsider')])
+
+    assert_equal 6, rows(describe(comments, settings: ignoring(['+deploy*', '*']))).size
+  end
+
+  def test_a_command_followed_by_a_tab_or_unicode_space_and_prose_stays_listed
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', "+deploy\tfailed on staging."),
+                                       issue_comment(2, 'Bob', "+deploy\u00a0failed on staging.")])
+
+    assert_equal 2, rows(describe(comments, settings: ignoring(['+deploy*']))).size
+  end
+
+  def test_a_summary_of_a_left_out_comment_does_not_stop_publication
+    url = "#{URL}#issuecomment-1"
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', "https://example.com/#{'a' * 120}")])
+    rendered = describe(comments, summaries: { url => 'A long link.' }, settings: ignoring(['https://*']))
+
+    assert_includes rendered, '_1 command comment not listed._'
+  end
+
+  def test_settings_from_before_the_setting_hide_nothing
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', '/deploy')])
+    older = Object.new.tap do |settings|
+      def settings.human_comments? = true
+      def settings.human_comment_rows = 20
+    end
+
+    assert_equal 1, Shaka::HumanComments.for({ 'human_comments' => comments }, pull, older).join.scan(%r{/deploy}).size
+  end
+
+  def test_only_commands_still_show_the_note_and_no_settings_hide_nothing
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', '/deploy')])
+    rendered = describe(comments, settings: ignoring(['/deploy']))
+
+    assert_empty rows(rendered)
+    assert_equal 'None open', counts(rendered)
+    assert_includes rendered, '_1 command comment not listed._'
+    assert_equal 1, rows(describe(comments)).size
   end
 end
 

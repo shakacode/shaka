@@ -32,17 +32,17 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   reasons, blockers, and decisions in familiar terms. Follow task/repository writing
   preferences and ask consequential questions early with a recommendation. Keep
   material risks visible and supporting evidence in expandable details.
-- **R15 — Make completion clear.** End a genuinely finished prose-capable chat with
-  exactly `This chat is ready for archiving.` Omit it while work, a blocker, handoff,
-  or chat decision remains, and in machine-only formats. A remaining GitHub merge
-  click after Ask gates pass is not a pending chat decision.
+- **R15 — Make completion clear.** In a prose-capable chat, use the
+  [Finish instructions](../skills/shaka/config/workflow.yml) to distinguish work
+  that is complete from work that only awaits merge.
 
 ### Use trusted policy and verified evidence
 
 - **R2 — Use the repository's checks.** Read policy and optional script availability
   from the trusted default-branch seam: `.agents/shaka/config.yml` with the fixed
   `.agents/shaka/bin/` interface. Follow prose constraints in trusted `AGENTS.md`; run the candidate
-  scripts at those fixed paths. Reject invalid configuration. Failed checks and
+  scripts at those fixed paths, or the trusted copies when the candidate predates the
+  `.agents/shaka/bin/` directory. Reject invalid configuration. Failed checks and
   evidence from another commit cannot establish current readiness.
 - **R6 — Merge the verified revision.** Refresh GitHub state and require the expected
   head. Missing evidence, pending or failed required checks, stale heads, conflicts,
@@ -232,7 +232,8 @@ decide native queue eligibility for a `CLEAN`, `BEHIND`, or queue-policy `BLOCKE
 reviewed head, and also `UNSTABLE` when effective `review.ci_review_wait` is `none` or `one`; conflicting or
 unreadable merge state still blocks. Queue admission is not Auto
 task completion: the active Auto task waits for GitHub's current-base integration checks and
-terminal result. Ask archives after the GitHub click; a later queue failure is a new task.
+terminal result. Ask hands off at GitHub's merge control. Queue admission leaves the PR
+open until GitHub confirms the merge. A later queue failure is a new task.
 Queue submission does not relax walkthrough, review, authority, or required-check gates.
 With `ci_review_wait: none` or `one`, pending or failing optional checks may still leave the native state `UNSTABLE`.
 

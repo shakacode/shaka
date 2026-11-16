@@ -11,13 +11,17 @@ module Shaka
       HOME = 'https://github.com/shakacode/shaka'
       DOCS = "#{HOME}/blob/main/docs".freeze
       INIT_COMMAND = 'shaka seam init'
+      CHECKPOINT_REPLACEMENT_COMMENT = [
+        '  # Or replace the built-in checkpoint prompt with your own file.',
+        "  # Shaka's rules, report format, and rubrics for verification and risk still apply:"
+      ].freeze
       # Shows the default a maintainer most often changes, so config.yml names the file Shaka reads.
       CONFIG_TRAILER = ['', 'Defaults you can change (https://shaka.shakacode.com/docs/settings#checkpoint):',
                         'checkpoint:',
                         '  # Your instructions, added after the checkpoint prompt. Commented out, the file is',
                         '  # optional; uncommented, a missing file fails settings validation.',
                         "  custom_instructions_file: #{Defaults.fetch('checkpoint', 'custom_instructions_file')}",
-                        "  # Or replace Shaka's whole checkpoint prompt with your own file:",
+                        *CHECKPOINT_REPLACEMENT_COMMENT,
                         '  # replacement_prompt_file: .agents/shaka/checkpoint-prompt.md'].freeze
 
       # The one renderer for .agents/shaka.md, shared by init, migrate, and `seam pointer --readme`.

@@ -9,7 +9,7 @@ module Shaka
     module Options
       # Each action accepts only the flags it reads, so a flag meant for another action
       # is refused instead of silently ignored.
-      VALUE_FLAGS = { 'run' => %w[command], 'bind' => %w[result head], 'verify' => %w[head],
+      VALUE_FLAGS = { 'run' => %w[command base], 'bind' => %w[result head], 'verify' => %w[head],
                       'guard' => %w[base head flow] }.freeze
 
       private
@@ -23,7 +23,7 @@ module Shaka
 
       def parser(action)
         OptionParser.new do |flags|
-          suffix = { 'run' => '--command NAME [-- ARGS]', 'bind' => '--result PATH --head SHA',
+          suffix = { 'run' => '--command NAME [--base BRANCH] [-- ARGS]', 'bind' => '--result PATH --head SHA',
                      'verify' => '--head SHA --validation PATH --review PATH',
                      'guard' => '--base REF --head SHA [--flow feature|setup|migration]' }.fetch(action)
           flags.banner = "Usage: shaka evidence #{action} --root DIR --ref SHA --repository OWNER/REPO #{suffix}"

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'error'
+
 module Shaka
   # Chooses the checks that gate a PR. GitHub's native required checks win; the trusted
   # seam's merge.required_checks applies only when GitHub enforces none, as on a private
@@ -23,6 +25,26 @@ module Shaka
       return github([]) unless @seam_names&.any?
 
       { 'source' => 'seam', 'checks' => check_rows(@seam_names) }
+    end
+
+    def self.verify_passing!(checks)
+      raise Error, 'No observable required checks; native readiness is unknown' unless checks.is_a?(Array)
+
+      checks.each do |check|
+        next if passing?(check)
+
+        raise Error, "Required check is not passing or is malformed: #{check.inspect}"
+      end
+    end
+
+    def self.passing?(check)
+      return false unless check.is_a?(Hash) && check['name'].is_a?(String) && !check['name'].strip.empty?
+
+      case check['state']
+      when 'SUCCESS' then check['bucket'] == 'pass'
+      when 'NEUTRAL', 'SKIPPED' then check['bucket'] == 'skipping'
+      else false
+      end
     end
 
     private

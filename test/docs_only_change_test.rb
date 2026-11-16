@@ -88,6 +88,26 @@ class DocsOnlyChangeTest < DocsOnlyChangeTestSupport
     assert_includes output, 'Documentation-only change'
   end
 
+  def test_accepts_internal_markdown_at_any_depth
+    write('internal/plan.md', "Plan\n")
+    write('internal/adr/0001-choice.md', "Decision\n")
+    output, status = classify
+    assert_predicate status, :success?, output
+  end
+
+  # test/skill_test.rb reads the maintenance guide, so editing it must run the tests.
+  def test_rejects_the_maintenance_guide_the_tests_read
+    write('internal/improving-shaka.md', "Guide\n")
+    _output, status = classify
+    refute_predicate status, :success?
+  end
+
+  def test_rejects_non_markdown_under_internal
+    write('internal/adr/diagram.svg', "<svg/>\n")
+    _output, status = classify
+    refute_predicate status, :success?
+  end
+
   def test_accepts_an_untracked_doc
     write('docs/new.md', "New\n")
     _output, status = classify

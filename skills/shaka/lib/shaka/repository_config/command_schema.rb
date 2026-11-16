@@ -34,6 +34,8 @@ module Shaka
         return trusted_names(names) unless @candidate_commands
 
         validate_interface_directory
+        return trusted_names(names) if predates_commands?
+
         validate_dependencies(names)
         names.to_h do |name|
           path = LAYOUT.commands.fetch(name)
@@ -50,6 +52,9 @@ module Shaka
       def trusted_commands(names)
         names.to_h { |name| [name, LAYOUT.commands.fetch(name)] }.freeze
       end
+
+      # A branch cut before the repository added its command directory runs the trusted commands instead.
+      def predates_commands? = @available_commands && !command_entry?(LAYOUT.command_directory)
 
       def validate_interface_directory
         [Configuration::Paths::DIRECTORY, File.dirname(LAYOUT.contract),

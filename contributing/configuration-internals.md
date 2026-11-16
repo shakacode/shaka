@@ -9,7 +9,7 @@ shows where Shaka reads and enforces them.
 | Input | Consumer | Authority |
 | --- | --- | --- |
 | `.agents/shaka/config.yml` | `shaka seam check --ref SHA` | Policy from the resolved default-branch commit |
-| `.agents/shaka/bin/*` | Agent and CI | Optional capability from the trusted commit; executable code from the candidate checkout |
+| `.agents/shaka/bin/*` | Agent and CI | Optional capability from the trusted commit; executable code from the candidate checkout, or from the trusted commit when the candidate has no command directory (`evidence/trusted_command.rb`) |
 | `.agents/shaka/trusted-github-actors.yml` | `shaka comments` | Current default-branch allowlist, combined with the machine allowlist |
 | `AGENTS.md` | Agent | Trusted repository instructions; candidate edits are review data |
 

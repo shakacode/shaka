@@ -15,6 +15,10 @@ module Shaka
     CHECKPOINT_URL = %r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+#issuecomment-\d+\z}
     # A record body folds inside details, so it must not open or close one.
     FOLD_TAG = %r{</?(?:details|summary)\b}i
+    # A colored mark beside each level lets a reader see it at a glance; the word stays beside it for anyone who
+    # cannot tell the colors apart and for plain-text views. Every unrated state shares the blank mark.
+    MARK = { 'low' => '🟢', 'medium' => '🟡', 'high' => '🔴' }.freeze
+    UNRATED = '⚪'
 
     module_function
 
@@ -23,9 +27,9 @@ module Shaka
       return unless content['checkpoint'].is_a?(Hash)
 
       level = assessment(pull)&.fetch('level')
-      return "**Risk: #{level.capitalize}**" if level
+      return "#{MARK.fetch(level)} **Risk: #{level.capitalize}**" if level
 
-      withheld?(pull) ? '**Risk: not shown**' : '**Risk: not rated yet**'
+      "#{UNRATED} #{withheld?(pull) ? '**Risk: not shown**' : '**Risk: not rated yet**'}"
     end
 
     # Intent's own renderer refuses a missing intent, after this section.
@@ -36,7 +40,7 @@ module Shaka
       rated = assessment(pull)
       return [] unless rated || focus.any? || record.any?
 
-      opening = rated ? level_line(rated) : unrated(content, pull)
+      opening = rated ? "#{MARK.fetch(rated['level'])} #{level_line(rated)}" : "#{UNRATED} #{unrated(content, pull)}"
       ["#{HEADING}\n\n#{[opening, *focus, *(rated ? notes(rated) : []), *record].join("\n\n")}"]
     end
 

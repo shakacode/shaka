@@ -3,3 +3,4 @@
 /.DS_Store
 /*.gem
 /pkg/
+/test/lint-probe[0-9]*/

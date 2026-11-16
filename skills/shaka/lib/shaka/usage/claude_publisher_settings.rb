@@ -14,8 +14,8 @@ module Shaka
     UNAVAILABLE = 'Claude Code current turn settings unavailable'
 
     def self.read(environment)
-      file = ClaudeUsage.session_file(environment['CLAUDE_CODE_SESSION_ID'], environment:)
-      return { 'reason' => 'Claude Code session unavailable or ambiguous' } unless file
+      file = ClaudeUsage.session_file(environment['CLAUDE_CODE_SESSION_ID'], environment:, latest: true)
+      return { 'reason' => 'Claude Code session unavailable' } unless file
 
       new.read(file)
     end

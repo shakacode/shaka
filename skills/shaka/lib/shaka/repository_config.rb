@@ -13,7 +13,6 @@ require_relative 'configuration/personal_settings'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
 require_relative 'repository_config/prompt_files'
-require_relative 'repository_config/retired_settings'
 
 module Shaka
   # Loads the small, typed repository contract used by the workflow.
@@ -77,8 +76,15 @@ module Shaka
                   'paths' => { 'policy_configuration' => config_path,
                                'candidate_configuration' => @candidate_detected&.contract,
                                'trusted_command_directory' => Configuration::Paths::COMMAND_DIRECTORY,
-                               'candidate_command_directory' => Configuration::Paths::COMMAND_DIRECTORY },
+                               'candidate_command_directory' => candidate_command_directory },
                   'opening_check' => opening_check, 'prose_limits' => prose_limits, 'pr_description' => pr_description)
+    end
+
+    # Nil when the checkout predates the command directory, so a report names no scripts it lacks.
+    def candidate_command_directory
+      directory = Configuration::Paths::COMMAND_DIRECTORY
+      path = File.join(@root, directory)
+      directory if File.exist?(path) || File.symlink?(path)
     end
 
     # The repository's choice wins, then the user's, then the shipped default.
@@ -96,8 +102,7 @@ module Shaka
 
     def prompt_files = self.class.prompt_files(review:, opening: opening_check, guidance: project_guidance)
 
-    def warnings = PromptFiles.warnings(root: @root, sha:, review:) + RetiredSettings.warnings(@data)
-    def retired_floor = RetiredSettings.held_floor(@data)
+    def warnings = PromptFiles.warnings(root: @root, sha:, review:)
 
     private
 
@@ -114,7 +119,7 @@ module Shaka
     def assign_sections
       @base_branch = @data['base_branch']
       @review = with_default_review_wait(PostImplementationSchema.fold(@data))
-      merge = @data.fetch('merge').except(RetiredSettings::MERGE)
+      merge = @data.fetch('merge')
       @merge = { 'auto_merge_max_risk' => Defaults.fetch('merge', 'auto_merge_max_risk'),
                  'hold_labels' => MergeHold::DEFAULT }
                .merge(merge, 'limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
@@ -124,7 +129,7 @@ module Shaka
 
     def assign_presentation
       @pr_description = DEFAULT_PR_DESCRIPTION.merge(@data.fetch('pr_description', {})
-                                                       .except('opening_check', RetiredSettings::PR_DESCRIPTION))
+                                                       .except('opening_check'))
       @prose_limits = ProseLimits.new(@data.fetch('prose_limits', {})).to_h
       @project_guidance = ProjectGuidanceSchema.resolve(@data)
     end

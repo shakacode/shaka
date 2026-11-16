@@ -5,12 +5,15 @@ require 'open3'
 require_relative '../call_log'
 require_relative '../error'
 require_relative '../local_review/path_guard'
+require_relative 'base_freshness'
 require_relative 'candidate_tree'
 require_relative 'inputs'
 require_relative 'machine_facts'
 require_relative 'options'
+require_relative 'timed_check'
 require_relative 'result'
 require_relative 'tree_watch'
+require_relative 'trusted_command'
 require_relative 'verification'
 require_relative '../configuration/feature_guard'
 
@@ -68,7 +71,8 @@ module Shaka
         raise Error, "Missing --#{e.key}"
       end
 
-      def run_fixed = execute_run(prepare_run)
+      # A head behind the base would need a rebase and a rerun, so the check stops before it starts.
+      def run_fixed = prepare_run.then { |run| BaseFreshness.gate(run, @options[:base]) { execute_run(run) } }
 
       def prepare_run
         root, ref, repository = common
@@ -78,25 +82,20 @@ module Shaka
         task_overrides = { 'command' => name, 'arguments' => @arguments }
         config, settings, kind, public_settings = Inputs.capture(root:, ref:, repository:, task_overrides:)
         { root:, ref:, repository:, name:, task_overrides:, settings:, kind:, public_settings:,
-          path: config.command(name) }
+          path: config.command(name), trusted_copy: TrustedCommand.needed?(root:, kind:) }
       end
 
       def execute_run(context)
         root = context.fetch(:root)
         before_tree = CandidateTree.tested(root:)
-        outcome, timing = timed_check(root, context.fetch(:path), before_tree)
+        outcome, timing = timed_check(context, before_tree)
         after_tree = CandidateTree.capture(root:)
-        _config, after_settings, after_kind = Inputs.capture(root:, ref: context.fetch(:ref),
-                                                             repository: context.fetch(:repository),
-                                                             task_overrides: context.fetch(:task_overrides))
+        _config, after_settings, after_kind = Inputs.capture(**context.slice(:root, :ref, :repository, :task_overrides))
         run_result(context, Execution.new(outcome:, before_tree:, after_tree:, after_settings:, after_kind:))
-          .merge(outcome.stop_fields, timing)
+          .merge(outcome.stop_fields, timing, TrustedCommand.source(context))
       end
 
-      def timed_check(root, path, tree)
-        command = [{ 'PATH' => @original_path }, File.join(root, path), *@arguments]
-        MachineFacts.measure { CallLog.measure { TreeWatch.new(command, root:, tree:).run } }
-      end
+      def timed_check(context, tree) = TimedCheck.run(context, tree, path: @original_path, arguments: @arguments)
 
       def run_result(context, execution)
         changed = inputs_changed?(context, execution)

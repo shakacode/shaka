@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'agent_time'
 require_relative 'text'
 require_relative 'links'
 require_relative 'usage_details'
@@ -15,6 +16,7 @@ require_relative 'steps_besides_merging'
 require_relative 'human_comments'
 require_relative 'skills_used'
 require_relative 'metrics'
+require_relative 'missing_values'
 require_relative 'intent_verification'
 require_relative 'risk_review'
 require_relative 'quoted_markers'
@@ -30,7 +32,7 @@ module Shaka
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil, # rubocop:disable Metrics/ParameterLists
                          environment: nil, host_name: nil)
       new(content, description: true, workflow_version:, pull:, settings:, timeline:, environment:, host_name:)
-        .render(%i[steps risk_review intent_verification sections evidence metrics wip credit],
+        .render(%i[steps intent_verification human_comments evidence metrics wip sections credit],
                 lead: %i[lead]).tap { QuotedMarkers.refuse!(content) }
     end
 
@@ -50,7 +52,8 @@ module Shaka
       @workflow_version = workflow_version
       @pull = pull
       @settings = settings || PublicationSettings.new
-      @timeline = timeline
+      # Carried agent time joins here, so a rendering preview shows it too; the running session's comes from the helper.
+      @timeline = description ? AgentTime.attach(timeline, pull) : timeline
       @environment = environment
       @host_name = host_name
     end
@@ -76,25 +79,25 @@ module Shaka
     end
 
     # Only a description is rendered with its pull request, so only a description lists what people wrote.
-    def sections = PublicationSections.render(@content, HumanComments.for(@content, @pull, @settings))
+    def sections = PublicationSections.render(@content)
+
+    def human_comments = HumanComments.for(@content, @pull, @settings)
 
     def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']))
 
     # The steps besides merging sit right under the summary so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)
 
-    # How carefully to review and where to start come before what the change is for.
-    def risk_review = RiskReview.render(@content, @pull)
-
     # The Task line names the prompt after the agent that wrote the description.
     def task_line = ExecutionProvenance.new(provenance_spec, pull: @pull).line(@content.dig('identity', 'agent'))
 
     def credit = PublicationLinks.credit(@settings)
 
-    # Intent and verification answer whether to trust the merge, so they come before any section.
+    # Keep review guidance between the purpose and its proof.
     def intent_verification
-      IntentVerification.render(@content, @settings.verdict, @pull, task: task_line,
-                                                                    shortfall: @settings.reviewer_shortfall)
+      intent, verification = IntentVerification.render(@content, @settings.verdict, @pull,
+                                                       task: task_line, shortfall: @settings.reviewer_shortfall)
+      [intent, *RiskReview.render(@content, @pull), verification]
     end
 
     def evidence
@@ -106,8 +109,7 @@ module Shaka
 
     # Verification carries the proof, so a table only adds facts that fit no check.
     def table
-      spec = @content['table']
-      return [] if spec.nil?
+      return [] if (spec = @content['table']).nil?
 
       columns = table_columns(spec)
       [[table_line(columns), table_line(['---'] * columns.size), *table_data_rows(spec, columns.size)].join("\n")]

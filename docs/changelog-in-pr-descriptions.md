@@ -13,9 +13,11 @@ reviewers still read the note beside the change.
 Ask your agent:
 
 ```text
-$shaka Move this repository's changelog notes into PR descriptions, following
+/shaka Move this repository's changelog notes into PR descriptions, following
 https://github.com/shakacode/shaka/blob/main/docs/changelog-in-pr-descriptions.md
 ```
+
+In Codex, use `$shaka` instead of `/shaka`.
 
 The setup PR makes three changes:
 

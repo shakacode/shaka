@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Exits 0 when this clone's pre-commit hook runs lefthook. Git resolves the hook
+# path, so linked worktrees and core.hooksPath are honored.
+hook = IO.popen(%w[git rev-parse --path-format=absolute --git-path hooks/pre-commit], err: File::NULL, &:read).strip
+exit(!hook.empty? && File.file?(hook) && File.read(hook).include?('lefthook'))

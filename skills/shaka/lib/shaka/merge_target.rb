@@ -20,6 +20,9 @@ module Shaka
       def self.verify!(_github, _head) = nil
     end
 
+    # The branch the change was validated against.
+    attr_reader :base
+
     def self.required!(head, base, limits, risk_gate = nil, hold = nil)
       raise Error, 'Expected a full commit SHA' unless head.is_a?(String) && head.match?(/\A[0-9a-f]{40}\z/)
       unless base.is_a?(String) && !base.strip.empty?

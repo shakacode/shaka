@@ -64,17 +64,23 @@ Shaka metrics, the estimated cost adds how long the work took from the recorded
 task start once that is known: `ready in 1h 19m` while the PR is open, then
 `merged in 3h 24m`.
 
-Before a ready time is recorded, the summary shows `ready pending`. Missing
-timestamps produce `ready in UNKNOWN` or `merged in UNKNOWN`. Pending means no
+Before a ready time is recorded, the summary shows `ready pending`. Pending means no
 ready time was recorded; it does not establish whether the PR is ready to merge.
 Skipped CI reviews can leave that measurement pending until merge.
+
+Without a task start, the cost line shows no time at all, and **Missing values**
+under Shaka metrics → Details says so. A description published before Shaka
+added that note keeps `ready in UNKNOWN` until the agent publishes it again. The
+agent supplies the task start as `task_started_at` from the time of your first
+request, or reads it from a usage report that covers the whole task.
 
 The Timings section breaks that down for the current head. Prompt to CI runs
 from the task start to the head's earliest check. CI to ready runs from that
 check until the head's required checks and configured CI reviews are green.
 Ready to merged runs from then until the merge. After a new push, the intervals
-measure the new head. `pending` is not known yet. `UNKNOWN` was not established,
-such as a ready time no update recorded before the merge. Neither means zero.
+measure the new head. `pending` is not known yet. `not recorded` means no task
+start was recorded. `UNKNOWN` was not established, such as a ready time no update
+recorded before the merge. None of them means zero.
 
 ## What each stretch means
 
@@ -133,7 +139,14 @@ Below the stretches, the section adds up each kind of step, for example
 `Measured steps: Validation 13m (1 run) · Local review 58s (1 run)`. With the bars,
 a second line names the models and machines that ran them. The machine reads
 `UNKNOWN` when `SHAKA_MACHINE_ALIAS` is not set; setting it is described in
-[Getting started](../getting-started.md).
+[Name your machines](../coding-agents.md#name-your-machines).
+
+When a validation script reports its phases, a line adds them up across runs, for
+example `Validation phases: tests 8m 20s · rubocop 1m 40s (2 of 3 validation runs
+reported phases)`. [Configure your repository](../configure-repository.md#show-where-validation-time-goes)
+explains how a script reports them. When the machine slept while steps ran, such as
+a laptop closed during validation, `Machine asleep during steps` says how much of the
+step time that was.
 
 Steps that passed or finished appear only in the bars. A step that did not gets a
 row with its exit code. A validation run reads `failed`. A review or checkpoint reads
@@ -174,4 +187,47 @@ Limits:
   published. If older steps were already dropped before that time was saved,
   the interval stays unavailable.
 
+## Agent time
+
+The last line shows where the agent's own time went in each chat session that
+updated the description, for example:
+
+`Agent time: 2h 10m working in 2 sessions: model 1h 20m · validation 25m · Shaka helper 15m · files 5m. Waiting on a person: 12m on questions, 5h between turns.`
+
+- **Working** is time inside the agent's turns, from your message, or a wake such as
+  a finished background job, to the agent's last action in that turn.
+- **Model** is working time when no tool was running: reading, thinking, and writing.
+- Each tool category is how long those tool calls took. Calls in one category that
+  ran in parallel count once; calls in different categories that overlapped count in
+  each, so the categories can add up to more than working time. Shell commands are sorted by what they ran: validation for tests and
+  lint, including package scripts named `test` or `lint` such as `npm run lint` or
+  `yarn test:unit`, review for local reviews, Shaka helper for other `shaka` commands, and
+  git/GitHub for `git` and `gh`. A command run inside `$(...)` or a script file counts as other
+  shell.
+- **On questions** is time the agent's questions to you stayed open. **Between turns**
+  is time between the agent finishing and your next message.
+
+Shaka reads the chat transcript of the session updating the description, from the
+recorded task start, or the PR's first commit when no start was recorded. It works
+for Claude Code and Codex. Only the totals reach the
+description; commands, prompts, and output stay on your machine. A command started in
+the background counts only the moment it took to start, so its time appears under
+measured steps instead. A command still running when the description updates counts
+up to the agent's last action, and one that started before the task start counts from the start. Each session keeps its latest totals, so a session that never
+updated the description is missing.
+
+To compare these numbers across many PRs, see
+[find what slows delivery across many PRs](../working-with-shaka.md#find-what-slows-delivery-across-many-prs).
+
 [Usage and cost](usage-and-cost.md) explains the section beside it.
+
+## Local timing log
+
+For a retrospective, ask your agent to read Shaka's local timing log at
+`~/.local/state/shaka/calls.jsonl`. It records helper commands, durations,
+outcomes, repository and commit identifiers, and issue or PR numbers. When
+available, it also records the reviewer model, the Git tree hash for
+validation, the validation phases, the time the machine was awake, and the chat
+session that ran the command. It does not record paths or task text. The log
+stays on your machine. Set `SHAKA_CALL_LOG=off` to stop recording, or set it to
+a file path to move the log.

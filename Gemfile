@@ -2,6 +2,8 @@
 
 source 'https://rubygems.org'
 
+# Contributor git hooks (.lefthook.yml); Shaka users never load it.
+gem 'lefthook', '~> 2.1', require: false
 gem 'minitest', '~> 6.0'
 # bin/check-docs-navigation parses SVGs; rexml is a bundled gem, so a bundled Ruby needs it listed.
 gem 'rexml', '~> 3.4'

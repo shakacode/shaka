@@ -5,7 +5,7 @@
 review:
   startup_check: true # Probe selected local reviewers before implementation; may consume quota.
   ci_review_wait: one # Wait for one configured hosted review report before merge.
-  local_max_rounds: 5 # Committed heads one local review ledger may review.
+  local_max_rounds: 8 # Committed heads one local review ledger may review.
   local_review_count: 1 # Local reviewers run on each committed head; unused when provider_coverage lists providers.
   provider_coverage: [] # One local reviewer per listed provider, in place of local_review_count.
   # Added after the code review prompt when it exists. Naming it in config.yml makes the file required.
@@ -57,6 +57,8 @@ pr_description:
   show_shaka_credit: true # Show a quiet Shaka website credit below the PR summary.
   show_human_comments: true # List the comments people wrote on the PR.
   max_human_comments: 20 # Rows that list shows, open comments first.
+  # Comments the list leaves out when their whole text matches one of these; * matches any characters but whitespace.
+  ignored_human_comments: []
   time_zone: UTC # Zone of the times in the Timings section; a repository that sets none uses the user's.
   opening_check:
     enabled: true # Check description and walkthrough openings, and description terms, after publication.

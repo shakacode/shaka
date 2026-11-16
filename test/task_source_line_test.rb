@@ -47,6 +47,23 @@ class TaskSourceLineTest < Minitest::Test
     assert_includes error.message, 'task_url_omission_reason'
   end
 
+  def test_a_shortcut_story_link_names_its_number
+    %w[https://app.shortcut.com/example/story/1234
+       https://app.shortcut.com/example/story/1234/example-title?source=notification].each do |url|
+      spec = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_url' => url)
+      assert_equal "**Task:** [Shortcut 1234](#{url})", line(spec)
+    end
+  end
+
+  def test_other_links_keep_their_generic_issue_label
+    %w[https://app.shortcut.com.example.org/example/story/1234
+       https://app.shortcut.com/example/epic/1234
+       https://app.shortcut.com/example/story/1234abc].each do |url|
+      spec = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_url' => url)
+      assert_equal "**Task:** [issue](#{url})", line(spec)
+    end
+  end
+
   def test_an_unlinked_ticket_explains_why_its_url_was_omitted
     assert_equal '**Task:** Linear MKT-1234 · URL omitted: Tracker access unavailable.',
                  line(LINEAR.merge('task_url_omission_reason' => 'Tracker access unavailable.'))

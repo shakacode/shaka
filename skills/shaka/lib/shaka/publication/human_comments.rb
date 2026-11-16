@@ -29,7 +29,9 @@ module Shaka
       return [] unless settings.human_comments?
 
       packet = content[KEY]
-      packet.nil? ? carried(pull) : new(packet, pull, summaries(content[SUMMARIES]), settings.human_comment_rows).blocks
+      return carried(pull) if packet.nil?
+
+      new(packet, pull, summaries(content[SUMMARIES]), settings).blocks
     end
 
     def self.summaries(given)
@@ -65,24 +67,30 @@ module Shaka
       raise Error, "Publication #{HEADING} is rendered from --comments, not supplied as a section."
     end
 
-    def initialize(packet, pull, summaries, shown)
+    def initialize(packet, pull, summaries, settings)
       author = pull.dig('user', 'login')
       @head = pull.dig('head', 'sha')
-      @shown = shown
+      @shown = shown = settings.human_comment_rows
       check(packet, author, @head)
       prefix = "https://github.com/#{pull.dig('base', 'repo', 'full_name')}/pull/#{pull['number']}#"
-      @rows, @cells = HumanCommentRows.new(HumanCommentEntries.new(packet), author:, prefix:, summaries:).call(shown)
+      entries = HumanCommentEntries.new(packet, ignored: ignored(settings))
+      @ignored = entries.ignored_count
+      @rows, @cells = HumanCommentRows.new(entries, author:, prefix:, summaries:).call(shown)
     end
 
     def blocks
-      return [] if @rows.empty?
+      return [] if @rows.empty? && @ignored.zero?
 
       lines = @cells.map { |cells| "| #{cells.join(' | ')} |" }
-      body = [counts, [HEADER, *lines].join("\n"), *omitted].join("\n\n")
+      table = @rows.empty? ? [] : [[HEADER, *lines].join("\n")]
+      body = [counts, *table, *omitted, *ignored_note].join("\n\n")
       ["#{OPEN_MARK}\n## #{HEADING}\n\n#{body}\n\n#{CLOSE_MARK}"]
     end
 
     private
+
+    # A rendering preview pairs this file with the installed settings, which may predate the setting.
+    def ignored(settings) = settings.respond_to?(:ignored_human_comments) ? settings.ignored_human_comments : []
 
     def check(packet, author, head)
       unless packet.is_a?(Hash)
@@ -97,7 +105,8 @@ module Shaka
 
     def counts
       open = @rows.count(&:open)
-      "#{open.zero? ? 'None open' : "**#{open} open**"} · #{sources.join(', ')} · read at `#{@head[0, 7]}`"
+      [open.zero? ? 'None open' : "**#{open} open**", *(sources.join(', ') unless sources.empty?),
+       "read at `#{@head[0, 7]}`"].join(' · ')
     end
 
     def sources
@@ -108,6 +117,13 @@ module Shaka
       [("#{reviewed.size} from #{people} reviewer#{'s' if people > 1}" if people.positive?),
        ("#{authored} from the PR author" if authored.positive?),
        ("#{unverified} unverified" if unverified.positive?)].compact
+    end
+
+    # The repository's ignored_human_comments setting leaves these out; the note keeps them countable.
+    def ignored_note
+      return [] if @ignored.zero?
+
+      ["_#{@ignored} command comment#{'s' if @ignored > 1} not listed._"]
     end
 
     def omitted

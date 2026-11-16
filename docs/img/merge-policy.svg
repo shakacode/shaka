@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 234" role="img" aria-labelledby="t d">
 <title id="t">Ask and Auto merge policies</title>
-<desc id="d">When a pull request is ready, Ask, the default, returns it to you: you merge on GitHub or approve so the agent merges. With Auto the agent merges. A pull request that is too large or risky goes back to you even under Auto.</desc>
+<desc id="d">When a pull request is ready, Ask, the default, returns it to you: you merge on GitHub or approve so the agent merges. In Auto, the agent merges eligible pull requests. A pull request that is too large or risky goes back to you even under Auto.</desc>
 <style>
 .bg{fill:#fff;stroke:#d9e0e7}
 text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
@@ -38,9 +38,9 @@ text{fill:#e6edf5}
 <path class="a" d="M200 125H240V70H278" marker-end="url(#ar)"/>
 <path class="a" d="M240 125V180H278" marker-end="url(#ar)"/>
 <g class="you"><rect x="280" y="40" width="240" height="60" rx="6"/><text class="h c" x="400" y="66">Ask (default)</text><text class="s c" x="400" y="84">You merge, or approve it</text></g>
-<g class="shaka"><rect x="280" y="150" width="240" height="60" rx="6"/><text class="h c" x="400" y="176">Auto</text><text class="s c" x="400" y="194">The agent merges</text></g>
+<g class="shaka"><rect x="280" y="150" width="240" height="60" rx="6"/><text class="h c" x="400" y="176">Auto</text><text class="s c" x="400" y="194">The agent merges eligible PRs</text></g>
 <path class="a dash" d="M400 150V102" marker-end="url(#ar)"/>
-<text class="s m" x="410" y="130">Too large or risky</text>
+<text class="s m" x="410" y="130">E.g., too large or risky</text>
 <path class="a" d="M520 70H560V112H598" marker-end="url(#ar)"/>
 <path class="a" d="M520 180H560V138H598" marker-end="url(#ar)"/>
 <g class="box"><rect x="600" y="95" width="80" height="60" rx="6"/><text class="h c" x="640" y="130">Merged</text></g>

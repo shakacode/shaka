@@ -67,7 +67,7 @@ module Shaka
     end
 
     def summarizable
-      @entries.humans.reject(&:unverified).select { |entry| longer?(entry) }.map(&:url)
+      @entries.written.reject(&:unverified).select { |entry| longer?(entry) }.map(&:url)
     end
 
     def longer?(entry) = CommentExcerpt.prose?(entry.body) && CommentExcerpt.whole(entry.body).nil?

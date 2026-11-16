@@ -24,13 +24,13 @@ module Shaka
       @github = github
     end
 
-    def call(state:, refuse_merge: false)
+    def call(state:, refuse_merge: false, expected: nil)
       raise Error, "State must be one of: #{STATES.join(', ')}." unless STATES.include?(state)
 
       wanted = LABELS[state]
-      raise Error, 'Pull request is not open.' if wanted && @github.snapshot['state'] != 'OPEN'
+      verify_open!(nil) if wanted && !expected
 
-      keep_only(wanted, refuse_merge:)
+      keep_only(wanted, refuse_merge:, expected:)
       { 'state' => state, 'labels' => [wanted].compact }
     end
 
@@ -56,6 +56,16 @@ module Shaka
 
     private
 
+    def verify_open!(expected)
+      pull = @github.snapshot
+      raise Error, 'Pull request is not open.' unless pull['state'] == 'OPEN'
+      return unless expected
+
+      head, base = pull.values_at('headRefOid', 'baseRefName')
+      raise Error, 'PR head changed while preparing the merge wait; retry.' if head != expected['headRefOid']
+      raise Error, 'PR base changed while preparing the merge wait; retry.' if base != expected['baseRefName']
+    end
+
     def path(label = nil) = ["repos/#{@github.repository}/issues/#{@github.number}/labels", label].compact.join('/')
 
     def refuse_merge_label(current)
@@ -65,11 +75,12 @@ module Shaka
     end
 
     # Deletes every other attention label, then adds the wanted one when it is missing.
-    def keep_only(wanted, refuse_merge: false)
+    def keep_only(wanted, refuse_merge: false, expected: nil)
       current = current_labels
       refuse_merge_label(current) if refuse_merge
       missing = wanted && current.none? { |name| name.casecmp?(wanted) }
       ensure_repository_label(wanted) if missing
+      verify_open!(expected) if expected
       remove_other_attention_labels(current, wanted)
       @github.api(path, method: 'POST', fields: { labels: [wanted] }, expected: Array) if missing
     end
