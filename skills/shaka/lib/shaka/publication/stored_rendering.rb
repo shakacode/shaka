@@ -20,7 +20,7 @@ module Shaka
       html.gsub(' dir="auto"', '').gsub(LINK) do
         match = Regexp.last_match
         sha = match[0][%r{/commit/(\h{40})}, 1]
-        next match[1].gsub(/<[^>]+>/, '') unless sha
+        next match[1].split(/<[^>]+>/).join unless sha # the link's text, read for checks, never rendered
 
         written, cursor = written_sha(sha, CGI.unescapeHTML(match.pre_match[/[^>]{0,24}\z/]), text, cursor)
         written

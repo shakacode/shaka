@@ -22,7 +22,8 @@ module Shaka
     # Without GitHub's renderer, the escape check reads the source: Markdown keeps a backslash
     # before a letter, so an escape outside code renders as written, including one spelled as an entity.
     def source_escapes!(body)
-      text = PublicationText.prose(body).gsub(/<!--.*?-->/m, '').gsub(%r{<(pre|code)\b.*?</\1>}m, '')
+      # Text to search, never rendered: dropping comments and code can only join pieces into a false refusal.
+      text = PublicationText.prose(body).split(/<!--.*?-->/m).join.split(%r{<(?:pre|code)\b.*?</(?:pre|code)>}m).join
       text = CGI.unescapeHTML(text.gsub(/&(?:bsol|Backslash);/, '\\'))
       raise Error, ESCAPED if text.match?(ESCAPE)
     end
