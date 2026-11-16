@@ -57,6 +57,11 @@ class ChangedTestsTest < Minitest::Test
     assert_includes selected, 'test/cli_merge_risk_test.rb'
   end
 
+  # RunTestsTest reaches the worker split only through the runner, so a change to it runs everything.
+  def test_this_repository_runs_the_whole_suite_for_a_worker_split_change
+    assert_nil ChangedTests.new(File.expand_path('..', __dir__)).tests_for([%w[M test/support/worker_plan.rb]])
+  end
+
   def test_a_changed_test_file_selects_itself_and_the_tests_that_require_it
     File.write(File.join(@root, 'test/gamma_test.rb'), "require_relative 'alpha_test'\n")
 
@@ -64,7 +69,7 @@ class ChangedTestsTest < Minitest::Test
   end
 
   def test_changes_it_cannot_map_run_the_whole_suite
-    [[%w[M test/test_helper.rb]], [%w[M Gemfile.lock]], [%w[M bin/run-tests]], [%w[M test/support/worker_plan.rb]],
+    [[%w[M test/test_helper.rb]], [%w[M Gemfile.lock]], [%w[M bin/run-tests]],
      [%w[M skills/shaka/lib/shaka/unused.rb]], [%w[D skills/shaka/lib/shaka/beta.rb]],
      [%w[M docs/settings.md]], [%w[M test/alpha_test.rb], %w[M test/test_helper.rb]], []].each do |changes|
       assert_nil @selector.tests_for(changes), changes.inspect
