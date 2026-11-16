@@ -51,10 +51,41 @@ module Shaka
       end
     end
 
+    # Reads a project skill's files and links at the trusted commit, never from the checkout.
+    module TrustedProjectFacts
+      private
+
+      # A trusted SKILL.md the reader refuses, such as an empty or oversized one, counts as explicit-only.
+      def trusted_front(resolved)
+        explicit_front(TrustedConfigSource.new(root: @root).read_prompt(resolved, @sha, 'project skill'))
+      rescue Error => e
+        @warnings << e.message
+        true
+      end
+
+      # The path of a regular file at the trusted commit, following its links, or nil. A link the
+      # resolver refuses, such as one leaving the repository, is warned about and treated as missing.
+      def trusted_file(file)
+        resolved, found = TrustedPathResolver.new(root: @root, sha: @sha).resolve(file)
+        resolved if found&.last == 'blob' && found.first != TrustedPathResolver::SYMLINK.first
+      rescue Error => e
+        @warnings << e.message
+        nil
+      end
+
+      # Declined as candidate-only only when the trusted commit has nothing at that path at all.
+      def candidate_only?(file)
+        File.file?(File.join(@root, file)) && TrustedPathResolver.new(root: @root, sha: @sha).entry(file).nil?
+      end
+
+      def trusted_directory(path) = TrustedPathResolver.new(root: @root, sha: @sha).resolve(path).first
+    end
+
     # Reads pack files from their three homes and turns each skill into resolver entries with
     # its installed copy. Repository packs and project skills come only from the trusted commit.
     class Inventory
       include SkillFacts
+      include TrustedProjectFacts
 
       PACKAGED = File.expand_path('../../../config/packs', __dir__)
       PACKS = Configuration::Paths::PACKS
@@ -99,14 +130,20 @@ module Shaka
         output, _error, status = Open3.capture3('git', '-C', @root, 'ls-tree', '-z', "#{@sha}:#{PACKS}")
         return [] unless status.success?
 
-        source = TrustedConfigSource.new(root: @root)
-        output.split("\0").filter_map do |row|
-          metadata, name = row.split("\t", 2)
-          next unless metadata.split[0] == '100644' && name.end_with?('.yml')
+        output.split("\0").filter_map { |row| trusted_pack(*row.split("\t", 2)) }
+      end
 
-          path = "#{PACKS}/#{name}"
-          known(parse(source.read_prompt(path, @sha, path), 'repository', "#{path} at #{@sha}"))
+      def trusted_pack(metadata, name)
+        return unless name.end_with?('.yml')
+
+        path = "#{PACKS}/#{name}"
+        unless metadata.start_with?('100644 ')
+          @warnings << "#{path} at #{@sha} skipped: not a regular file"
+          return
         end
+
+        text = TrustedConfigSource.new(root: @root).read_prompt(path, @sha, path)
+        known(parse(text, 'repository', "#{path} at #{@sha}"))
       end
 
       def parse(text, layer, label) = Pack.parse(text, layer:, label:)
@@ -145,27 +182,11 @@ module Shaka
         unless resolved
           return build(pack, skill, identity: "repository:#{skill.path}", installed: false, location: nil,
                                     revision: nil, explicit_front: nil)
-                 .with(candidate_only: File.file?(File.join(@root, file)))
+                 .with(candidate_only: candidate_only?(file))
         end
 
         build(pack, skill, identity: File.join(real(@root), trusted_directory(skill.path)), installed: true,
                            location: "#{@sha}:#{skill.path}", revision: @sha, explicit_front: trusted_front(resolved))
-      end
-
-      def trusted_directory(path) = TrustedPathResolver.new(root: @root, sha: @sha).resolve(path).first
-
-      # A trusted SKILL.md the reader refuses, such as an empty or oversized one, counts as explicit-only.
-      def trusted_front(resolved)
-        explicit_front(TrustedConfigSource.new(root: @root).read_prompt(resolved, @sha, 'project skill'))
-      rescue Error => e
-        @warnings << e.message
-        true
-      end
-
-      # The path of a regular file at the trusted commit, following its links, or nil.
-      def trusted_file(file)
-        resolved, found = TrustedPathResolver.new(root: @root, sha: @sha).resolve(file)
-        resolved if found&.last == 'blob' && found.first != TrustedPathResolver::SYMLINK.first
       end
 
       # One entry per installed copy, since each host loads its own copy and each copy has its own limits.

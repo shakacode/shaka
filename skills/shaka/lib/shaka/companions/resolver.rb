@@ -84,10 +84,11 @@ module Shaka
 
       def explicit?(group) = flag(group, 'explicit_only') || group.any? { |entry| entry.explicit_front != false }
 
-      # Only the repository's own entry can clear a flag another layer sets.
+      # Only the repository's own entries can clear a flag another layer sets; when several state
+      # it, any one that sets it wins, so file order never decides.
       def flag(group, name)
-        own = group.find { |entry| entry.layer == 'repository' && entry.skill.flags.key?(name) }
-        return own.skill.flags[name] if own
+        own = group.select { |entry| entry.layer == 'repository' && entry.skill.flags.key?(name) }
+        return own.any? { |entry| entry.skill.flags[name] } unless own.empty?
 
         group.any? { |entry| entry.skill.flags[name] }
       end

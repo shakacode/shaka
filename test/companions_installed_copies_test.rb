@@ -96,6 +96,17 @@ class CompanionsInstalledCopiesTest < Minitest::Test
     end
   end
 
+  def test_a_trusted_link_leaving_the_repository_is_a_warning_not_a_failure
+    files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
+              "#{TEAM_CHECK}/SKILL.md" => [:link, '../../../../outside.md'] }
+    with_trusted_repository(extra: files) do |root, sha|
+      result = run_command(root:, ref: sha)
+
+      assert_equal([['suggest', 'it is not installed']], result['skills'].map { |row| row.values_at('mode', 'basis') })
+      refute_empty result['warnings']
+    end
+  end
+
   private
 
   # Links the home folder to a checkout skill and declines that copy in a personal pack.
