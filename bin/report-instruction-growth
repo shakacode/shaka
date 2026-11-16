@@ -44,7 +44,7 @@ class InstructionGrowth
       'other_changed_files' => changed_files(previous, current) }
   end
 
-  # What an agent loads at task start; the provider's message wrapper adds a few tokens to each count.
+  # What every Shaka task loads at start; the provider's message wrapper adds a few tokens to each count.
   def startup_tokens(previous, current)
     before = startup_text(previous) if @baseline
     { 'text' => "#{ENTRY} plus the rendered workflow, counted with each provider's endpoint",

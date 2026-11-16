@@ -79,8 +79,7 @@ is the reusable default.
   rendered workflow, entry point, project guidance, and other changed Markdown
   instruction files. Assess their actual loading conditions separately. Words and
   bytes are cost evidence, not quality gates. When the change touches the entry point
-  or workflow, add the `--tokens` startup token deltas; report a provider shown as
-  UNKNOWN with its reason.
+  or workflow, add the `--tokens` startup token deltas.
   If that evidence is missing, state the gap and its effect on the conclusion.
 - In review, a demonstrated material violation of these criteria is a `defect`; a
   plausible unproven consequence is a `risk`. Name the location, concrete cost,
