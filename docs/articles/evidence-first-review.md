@@ -35,7 +35,7 @@ below point into the video.
 
 ## Why this ran
 
-- Tan's post linking the talk had about 451,000 views on the day it went up.
+- Tan's post linking the talk had about 451,000 views when the agent read it on 2026-11-14.
 - pstack, her skill pack, already works alongside Shaka
   ([Use pstack with Shaka](../pstack.md)).
 - An earlier Shaka study tested her claim that adversarial review mostly wastes tokens
@@ -109,11 +109,13 @@ below point into the video.
   ([visual evidence](../reference/pr-record.md#visual-evidence)). The agent is also asked
   to compare speed for a speed claim
   ([performance](../reference/pr-record.md#performance-and-blocked-work)). The checkpoint
-  grades verification as adequate, inadequate, or cannot judge
+  grades verification as adequate, adequate with accepted gaps, inadequate, or cannot
+  judge
   ([checkpoint](../reference/pr-record.md#checkpoint)). Under `auto`, an inadequate or
   cannot-judge grade stops the merge until the maintainer approves that commit.
 - **Result:** Shaka's commands record which commit the validation and review results
-  cover. The merge command checks that a review covers the commit being merged. Nothing
+  cover. When the agent merges and review is required, the merge command checks that a review
+  covers the commit being merged. Nothing
   checks that a screenshot shows that commit. The talk does not say how its team checks
   that either. Shaka also keeps two AI code reviewers on every commit of this
   repository.
@@ -127,8 +129,8 @@ below point into the video.
 - **In Shaka:** the review-signal study checked 70 fixed review findings across Shaka
   and React on Rails.
 - **Result:** all 70 were real problems. On Shaka, the fix's own test failed on the
-  reviewed commit for 18 sampled fixes and passed after the fix. On React on Rails, 23
-  of 30 behaved the same way. The tests had not covered those inputs until a reviewer
+  reviewed commit for 18 sampled fixes and passed after the fix. On React on Rails, a test
+  failed on the reviewed commit and passed at the fix for 23 of 30. The tests had not covered those inputs until a reviewer
   named them.
 - **Limit:** the study sampled only findings a reviewer named. It cannot show what
   run-based verification alone would have found, or at what cost. Shaka has not
