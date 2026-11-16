@@ -19,9 +19,10 @@ below point into the video.
    review then has less to look for. Only then does review shrink to screenshots,
    videos, diagrams, and formal checks (9:10 to 10:00). Skipping the first step would
    speed up approval of the same code.
-2. **Shaka already leads with evidence.** A Shaka PR puts its summary, risk, and
-   verification results above the code links. Shaka's commands record which commit the validation and review results
-   cover. The agent is asked to add screenshots and speed comparisons when they apply.
+2. **Shaka already leads with the decision and its evidence.** A Shaka PR's first line
+   gives the checkpoint's recommendation and risk. Code Review and the Code Walkthrough
+   are links for closer reading. Shaka's commands record which commit the validation
+   and review results cover. The agent is asked to add screenshots and speed comparisons when they apply.
    A checkpoint grades whether the evidence is adequate.
 3. **Shaka's data does not support dropping AI code review yet.** In an earlier Shaka
    study, AI review often found inputs the tests had missed. Review was producing
@@ -100,8 +101,10 @@ below point into the video.
 ### 2. Review the evidence instead of the code
 
 - **Idea:** once the code is constrained, reviewers look at verification artifacts.
-- **In Shaka:** the PR description puts Summary, Risk, and Verification first. Code
-  Review and the Code Walkthrough are links for closer reading. The agent is asked to
+- **In Shaka:** the PR description's first line gives the checkpoint's recommendation
+  and risk, with links to Code Review and the Code Walkthrough for closer reading.
+  Summary, Intent, Risk and review, and Verification follow
+  ([Review the PR](../pr-verification.md#find-what-needs-your-attention)). The agent is asked to
   capture before-and-after screenshots for visible changes
   ([visual evidence](../reference/pr-record.md#visual-evidence)). The agent is also asked
   to compare speed for a speed claim
