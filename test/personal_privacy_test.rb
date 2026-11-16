@@ -140,6 +140,15 @@ class PersonalPrivacyFileTest < Minitest::Test
     end
   end
 
+  def test_a_link_to_a_missing_file_hides_both
+    with_home(nil) do |path|
+      File.symlink(File.join(File.dirname(path), 'unmounted/config.yml'), path)
+      privacy = Shaka::Configuration::PersonalPrivacy.load
+      refute privacy.checkout_path? || privacy.chat_link?
+      assert_includes privacy.warning, path
+    end
+  end
+
   def test_a_file_shaka_cannot_read_hides_both_and_says_why
     ["not: [valid\n", "wip: {}\n", { 'wip' => { 'include_chat_link' => 'no' } },
      { 'wip' => ['include_checkout_path'] }].each do |file|

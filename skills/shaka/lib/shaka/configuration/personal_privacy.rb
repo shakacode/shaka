@@ -28,12 +28,13 @@ module Shaka
                                                        'on publications until the file is fixed.')
       end
 
-      # Only a missing file or folder is absent: a folder Shaka cannot open hides the file, not the choice.
+      # Only a missing file or folder is absent. A folder Shaka cannot open, or a link to a missing
+      # target such as an unmounted dotfiles volume, hides the file, not the choice.
       def self.absent?(path)
         File.stat(path)
         false
       rescue Errno::ENOENT, Errno::ENOTDIR
-        true
+        [path, File.dirname(path), File.dirname(path, 2)].none? { File.symlink?(it) && !File.exist?(it) }
       end
 
       def self.choices(path)
