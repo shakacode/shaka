@@ -77,6 +77,7 @@ runtime:
   private_setup_include_checkout_path: false
   review_timeout_seconds: # shaka review run --timeout-seconds, by reviewer.
     default: 300
+    anthropic/claude: 600 # Large diffs took 264-289 s in reviews that passed.
     deepseek/openrouter: 600
   pr_watch: # shaka pr watch --interval, --timeout, and --settle.
     interval_seconds: 60
