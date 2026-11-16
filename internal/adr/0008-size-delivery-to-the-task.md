@@ -162,6 +162,10 @@ without a checkpoint rating. For other skips, `merge --auto` refuses any head wi
 skip record. This rule ships with decision 4, because before then the agent can skip
 only bookkeeping, which needs no person to see it.
 
+Code enforces Ask only where a skip leaves a trace: a missing or opted-out checkpoint,
+or a skip record. Skipping the opening check leaves neither, so recording that skip, and
+so taking the merge to Ask, is the agent's rule alone.
+
 ### 4. Code accepts a recorded skip, only under Ask
 
 The agent records each skip in a PR comment for the exact head, published by the
@@ -178,9 +182,10 @@ With that record:
   head, the way `--limits-confirmed-head` works today. Without that refusal, `--opt-out`
   would bypass the limit. Code checks only the trusted path lists there:
   `high_risk_areas`, `medium_risk_areas`, and agent-instruction paths. The agent alone
-  enforces the other areas and a person's request for a full review. Outside those
-  areas, this widens today's opt-out authority, which allows only trusted instructions
-  or a direct user instruction.
+  enforces the other areas and a person's request for a full review, because code cannot
+  tell an authentication or release change from its paths. Ask keeps a person on those
+  merges. Outside those areas, this widens today's opt-out authority, which allows only
+  trusted instructions or a direct user instruction.
 - `description` skips the opening check.
 
 The agent already decides some skips: the workflow tells it to pass `--review-waiver` for
