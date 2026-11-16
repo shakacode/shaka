@@ -159,12 +159,12 @@ the ownership rule companion-skills.md already follows, so there is no code to r
      cannot change what it says or runs. Hosts may still load checkout skills by
      description, outside this mechanism. A project skill that exists only on the candidate
      branch has no trusted copy, so it comes back declined.
-   - `~/.agents/shaka/companions.yml` on a machine would be a new home-directory file, in the
-     place [ADR 0005](0005-per-machine-reviewers.md) proposes for its reviewer list, which is
-     not shipped either. It can turn packs on and decline skills for its owner. Shaka today
-     never combines individual settings with team settings ([settings](../../docs/settings.md)),
-     so this file is a narrow exception: it has no `use` key, and it cannot lift a repository's
-     decline. Personal packs go in `~/.agents/shaka/packs/`, and their `use` entries act as
+   - `~/.agents/shaka/companions.yml` on a machine would sit beside the machine reviewer list
+     from [ADR 0005](0005-per-machine-reviewers.md), which already fills reviewer model and
+     effort that a repository leaves out. It can turn packs on and decline skills for its
+     owner. Shaka otherwise keeps individual settings apart from team settings
+     ([settings](../../docs/settings.md)), so this file is another narrow machine exception:
+     it has no `use` key, and it cannot lift a repository's decline. Personal packs go in `~/.agents/shaka/packs/`, and their `use` entries act as
      `suggest` for the same reason.
    - Ruby applies declines last and matches skills by their installed path, not their label,
      so re-declaring a packaged skill under another pack name inherits every limit on it.
