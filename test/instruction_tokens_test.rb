@@ -46,7 +46,7 @@ class InstructionTokensTest < Minitest::Test
     rows = InstructionTokens.compare(before: 'a', after: 'b', env: KEYS.except('OPENAI_API_KEY'),
                                      transport: counting_transport(requests))
 
-    assert_equal 1, rows.first['delta'] + 1
+    assert_equal 0, rows.first['delta']
     assert_equal({ 'provider' => 'openai', 'model' => 'gpt-6.1-sol', 'tokens' => 'UNKNOWN',
                    'reason' => 'OPENAI_API_KEY is not set' }, rows.last)
     assert(requests.none? { |host, *| host == 'api.openai.com' })
@@ -56,12 +56,13 @@ class InstructionTokensTest < Minitest::Test
     offline = ->(*) { raise SocketError, 'getaddrinfo failed' }
     rows = InstructionTokens.compare(before: 'a', after: 'b', env: KEYS, transport: offline)
 
-    assert_equal(['network error: SocketError'] * 2, rows.map { |row| row['reason'] })
+    assert_equal(['request failed: SocketError'] * 2, rows.map { |row| row['reason'] })
     assert(rows.all? { |row| row['tokens'] == 'UNKNOWN' && !row.key?('delta') })
   end
 
   def test_rejected_or_malformed_answers_are_unknown
-    answers = { '401' => '{}', '200' => 'not json' }
+    answers = { '401' => '{}', '200' => 'not json',
+                '404' => '{"error":{"type":"invalid_request_error","code":"model_not_found","message":"key sk-x"}}' }
     reasons = answers.map do |status, body|
       InstructionTokens.compare(before: nil, after: 'a', env: KEYS, transport: ->(*) { [status, body] })
                        .first['reason']
@@ -69,6 +70,14 @@ class InstructionTokensTest < Minitest::Test
     reasons << InstructionTokens.compare(before: nil, after: 'a', env: KEYS,
                                          transport: ->(*) { ['200', '{"input_tokens":"7"}'] }).first['reason']
 
-    assert_equal ['HTTP 401', 'response is not JSON', 'response has no input_tokens count'], reasons
+    assert_equal ['HTTP 401', 'response is not JSON', 'HTTP 404: invalid_request_error, model_not_found',
+                  'response has no input_tokens count'], reasons
+  end
+
+  def test_any_unexpected_failure_is_unknown_rather_than_raised
+    corrupt = ->(*) { raise Zlib::DataError, 'incorrect header check' }
+    rows = InstructionTokens.compare(before: nil, after: 'a', env: KEYS, transport: corrupt)
+
+    assert_equal(['request failed: Zlib::DataError'] * 2, rows.map { |row| row['reason'] })
   end
 end

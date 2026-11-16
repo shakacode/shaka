@@ -11,8 +11,6 @@ require_relative '../skills/shaka/lib/shaka/defaults'
 module InstructionTokens
   MODELS = Shaka::Defaults.fetch('runtime', 'instruction_tokens')
   TIMEOUT_SECONDS = 30
-  NETWORK_ERRORS = [SystemCallError, IOError, SocketError, Timeout::Error, OpenSSL::SSL::SSLError,
-                    Net::ProtocolError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError].freeze
 
   Provider = Data.define(:uri, :key_variable, :headers, :body)
 
@@ -53,9 +51,18 @@ module InstructionTokens
 
     status, body = transport.call(provider.uri, provider.headers.call(key),
                                   JSON.generate(provider.body.call(model, text)))
-    status.to_s == '200' ? parse(body) : { reason: "HTTP #{status}" }
-  rescue *NETWORK_ERRORS => e
-    { reason: "network error: #{e.class}" }
+    status.to_s == '200' ? parse(body) : { reason: rejection(status, body) }
+  rescue StandardError => e # Any failure to count leaves the report running; the class never carries the key.
+    { reason: "request failed: #{e.class}" }
+  end
+
+  # The provider's error type and code tell a wrong model from a bad key. Its message can echo the key, so it stays out.
+  def self.rejection(status, body)
+    error = JSON.parse(body.to_s)['error']
+    labels = error.values_at('type', 'code').grep(/\A[a-z_]{1,64}\z/).uniq if error.is_a?(Hash)
+    labels&.any? ? "HTTP #{status}: #{labels.join(', ')}" : "HTTP #{status}"
+  rescue JSON::ParserError
+    "HTTP #{status}"
   end
 
   def self.parse(body)
@@ -77,5 +84,5 @@ module InstructionTokens
     end
     [response.code, response.body]
   end
-  private_class_method :row, :count, :parse, :post
+  private_class_method :row, :count, :rejection, :parse, :post
 end

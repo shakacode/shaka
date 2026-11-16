@@ -4,7 +4,6 @@
 require 'json'
 require 'open3'
 require_relative '../skills/shaka/lib/shaka/workflow'
-require_relative '../lib/instruction_tokens'
 
 # Reports instruction size, not quality. Never executes baseline code. Model tokens only with --tokens.
 class InstructionGrowth
@@ -117,7 +116,10 @@ end
 if $PROGRAM_NAME == __FILE__
   begin
     root = File.expand_path('..', __dir__)
-    tokens = InstructionTokens.method(:compare) if ARGV.delete('--tokens')
+    if ARGV.delete('--tokens')
+      require_relative '../lib/instruction_tokens'
+      tokens = InstructionTokens.method(:compare)
+    end
     base = ARGV.fetch(0, ENV.fetch('SHAKA_BASE_REF', 'origin/main'))
     puts JSON.pretty_generate(InstructionGrowth.new(root:, base:, tokens:).report)
   rescue Shaka::Error, SystemCallError => e

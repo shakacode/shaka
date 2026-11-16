@@ -51,8 +51,8 @@ every task, ask for token counts as well:
 Run bin/report-instruction-growth --tokens in my Shaka checkout and summarize the token changes
 ```
 
-The `--tokens` option sends `SKILL.md` plus the rendered workflow, for both your
-branch and its merge base, to Anthropic's free token-counting endpoint and
+The `--tokens` option sends `SKILL.md` plus the rendered workflow, from your
+working copy and from its merge base, to Anthropic's free token-counting endpoint and
 OpenAI's input-token endpoint. It reads `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`
 and counts with the models under `runtime.instruction_tokens` in Shaka's
 `defaults.yml`. Each count includes a few tokens of message wrapping, which cancel
