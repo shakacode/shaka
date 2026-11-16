@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require_relative 'support/run_tests_fixture'
 require 'fileutils'
 require 'json'
-require 'rbconfig'
 
 class RunTestsTest < Minitest::Test
-  RUNNER = File.expand_path('../bin/run-tests', __dir__)
+  include RunTestsFixture
 
   def setup
     @directory = Dir.mktmpdir('run-tests').tap { FileUtils.mkdir_p(File.join(it, 'test')) }
@@ -18,18 +18,14 @@ class RunTestsTest < Minitest::Test
     FileUtils.remove_entry(@directory)
   end
 
-  # The first run has no record and splits by name; it records class times, which balance the second.
-  def test_every_test_runs_exactly_once_across_workers_with_and_without_recorded_times
-    files = %w[alpha beta gamma].map { |name| fixture(name, %w[one two]) }
-    expected = %w[alpha beta gamma].product(%w[one two]).map { |pair| pair.join('#') }
-    ['split by class name', 'balanced by recorded class times'].each do |split|
-      FileUtils.rm_f(@marker)
-      output, status = run_tests(files, workers: 2)
+  def test_without_a_record_workers_split_classes_by_name_and_run_each_test_once
+    assert_each_test_runs_once(%w[alpha gamma], %w[beta], split: 'split by class name')
+  end
 
-      assert_predicate status, :success?, output
-      assert_equal expected, File.readlines(@marker, chomp: true).sort
-      assert_match(/^Total: 6 runs, .* across 2 workers, #{split}$/, output)
-    end
+  def test_a_recorded_slow_class_gets_a_worker_of_its_own_and_each_test_still_runs_once
+    File.write(@durations, '{"AlphaFixtureTest":10.0,"BetaFixtureTest":1.0,"GammaFixtureTest":1.0}')
+
+    assert_each_test_runs_once(%w[alpha], %w[beta gamma], split: 'balanced by recorded class times')
   end
 
   def test_a_partial_run_updates_the_record_and_a_whole_suite_run_replaces_it
@@ -81,57 +77,14 @@ class RunTestsTest < Minitest::Test
 
   private
 
-  def latin1_fixture
-    File.join(@directory, 'latin1_test.rb').tap do |path|
-      File.write(path, <<~'RUBY')
-        require 'minitest/autorun'
+  def assert_each_test_runs_once(*workers, split:)
+    files = %w[alpha beta gamma].map { |name| fixture(name, %w[one two]) }
+    output, status = run_tests(files, workers: 2)
 
-        class Latin1FixtureTest < Minitest::Test
-          def test_latin1
-            $stdout.binmode.write("caf\xE9\n".b)
-            assert true
-          end
-        end
-      RUBY
-    end
-  end
-
-  def locale_fixture
-    File.join(@directory, 'locale_test.rb').tap do |path|
-      File.write(path, <<~RUBY)
-        require 'minitest/autorun'
-
-        class LocaleFixtureTest < Minitest::Test
-          def test_utf8
-            puts 'café'
-            assert_equal Encoding::UTF_8, Encoding.default_external
-          end
-        end
-      RUBY
-    end
-  end
-
-  def fixture(name, tests, failing: false)
-    File.join(@directory, 'test', "#{name}_test.rb").tap do |path|
-      File.write(path, "require 'minitest/autorun'\n\nclass #{name.capitalize}FixtureTest < Minitest::Test\n" \
-                       "#{tests.map { |test| fixture_method(name, test, failing) }.join}end\n")
-    end
-  end
-
-  def fixture_method(name, test, failing)
-    <<~RUBY
-      def test_#{test}
-        File.write(ENV.fetch('MARKER'), "#{name}##{test}\\n", mode: 'a')
-        flunk '#{name} #{test} failed' if #{failing}
-      end
-    RUBY
-  end
-
-  # bin/validate starts the runner under bundle exec, so its workers load the bundle's Minitest.
-  # With no files, the runner takes the whole suite: every fixture under the temporary test directory.
-  def run_tests(files, workers:, env: {})
-    env = { 'MARKER' => @marker, 'SHAKA_TEST_WORKERS' => workers.to_s, 'SHAKA_TEST_DURATIONS' => @durations,
-            'BUNDLE_GEMFILE' => File.expand_path('../Gemfile', __dir__) }.merge(env)
-    Open3.capture2e(env, 'bundle', 'exec', RbConfig.ruby, RUNNER, *files, chdir: @directory)
+    assert_predicate status, :success?, output
+    assert_equal workers, workers_ran
+    assert_equal %w[alpha beta gamma].product(%w[one two]).map { it.join('#') },
+                 File.readlines(@marker).map { it.split.last }.sort
+    assert_match(/^Total: 6 runs, .* across 2 workers, #{split}$/, output)
   end
 end

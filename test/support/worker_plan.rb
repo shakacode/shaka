@@ -40,6 +40,8 @@ module WorkerPlan
     common, status = Open3.capture2('git', '-C', root, 'rev-parse', '--path-format=absolute', '--git-common-dir',
                                     err: File::NULL)
     File.join(common.strip, 'shaka-test-durations.json') if status.success?
+  rescue SystemCallError # No git: run without a record.
+    nil
   end
 
   def read(path)
