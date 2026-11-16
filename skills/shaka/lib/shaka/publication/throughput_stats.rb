@@ -14,7 +14,7 @@ module Shaka
     extend ThroughputLine
     extend ThroughputGate
 
-    KEYS = %w[head spend t0 t1 t2 t3].freeze
+    KEYS = (%w[head spend t0 t1 t2 t3] + [ThroughputLine::READY_UNVERIFIED]).freeze
     TIMES = %w[t0 t1 t2 t3].freeze
     BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\n\*\*This head:\*\* [^\r\n]+(?=\r?\n|\z)/
     HEADER = /^(🤖 [^\r\n]*?) - AI spend: [^\r\n]*/
@@ -82,7 +82,7 @@ module Shaka
         return carried if TimelineSteps.same_repository?(pull)
 
         # A fork's body can supply a display fallback. Its timestamp never overrides GitHub's.
-        ready.is_a?(Time) || !parse_time(carried['t2']) ? {} : carried.slice('head', 't2')
+        fork_readiness(ready, carried['t2']).merge('head' => carried['head'])
       rescue Error
         {}
       end
@@ -97,12 +97,11 @@ module Shaka
 
       def carried_state(base, carried)
         base.merge('t1' => earlier(base, carried, 't1'), 't2' => earlier(base, carried, 't2'),
+                   ThroughputLine::READY_UNVERIFIED => carried[ThroughputLine::READY_UNVERIFIED],
                    't3' => (base['t3'] unless base['t3'] == 'UNKNOWN') || carried['t3'] || base['t3'])
       end
 
-      def earlier(base, carried, key)
-        base[key] ? keep_earlier(base[key], carried, key, carried['head']) : carried[key]
-      end
+      def earlier(base, prior, key) = base[key] ? keep_earlier(base[key], prior, key, prior['head']) : prior[key]
 
       def spend(content)
         usage = content['usage']

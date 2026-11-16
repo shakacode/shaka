@@ -60,7 +60,7 @@ class CliDescriptionElapsedTest < Minitest::Test
   def test_a_fork_refresh_keeps_its_previous_ready_time_without_verifying_it
     earlier_body = published('PR_CHECKS' => JSON.generate(CHECKS))
     fork_body = published('PR_HEAD_REPO' => 'fork/repo', 'EXISTING_BODY' => earlier_body)
-    assert_includes fork_body, '· ready in 1h 30m'
+    assert_includes fork_body, '· ready in 1h 30m (unverified)'
     assert_equal 'unavailable: GitHub readiness time unavailable.', @timing.values_at('status', 'reason').join(': ')
   end
 

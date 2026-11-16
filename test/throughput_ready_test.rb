@@ -72,7 +72,7 @@ class ThroughputReadyTest < Minitest::Test
     body = Shaka::ThroughputStats.update(filled_block, 't3' => MERGED.iso8601)
     fork = refresh_pull(body:)
     fork['head']['repo'] = { 'full_name' => 'fork/repo' }
-    assert_equal({ 'head' => HEAD, 'spend' => 'UNKNOWN', 't2' => READY.iso8601 },
+    assert_equal({ 'head' => HEAD, 'spend' => 'UNKNOWN', 't2' => READY.iso8601, 't2_unverified' => 'true' },
                  Shaka::ThroughputStats.state({}, { 'ready_at' => :unknown }, fork))
     assert_equal LATER.iso8601, Shaka::ThroughputStats.state({}, { 'ready_at' => LATER }, fork)['t2']
   end
@@ -83,7 +83,7 @@ class ThroughputReadyTest < Minitest::Test
     timeline = push_times.merge('opened' => START, 'merged' => MERGED, 'fork' => true)
     rendered = describe('$4.12', timeline:, pull: fork)
     body = "<!-- shaka:begin -->\n#{rendered}\n<!-- shaka:end -->"
-    assert_includes body, 'Ready to merged 2h 5m'
+    assert_includes body, 'Ready to merged 2h 5m · Ready time unverified'
     verdict = Shaka::PublishedTiming.check(body, head: HEAD, timeline:)
     assert_equal ['unavailable', 'GitHub readiness time unavailable.'], verdict.values_at('status', 'reason')
   end
@@ -91,10 +91,11 @@ class ThroughputReadyTest < Minitest::Test
   def test_a_watch_replaces_carried_fork_readiness_with_the_github_time
     observed = (READY + 3600.75).iso8601(9)
     pull = { 'headRefOid' => HEAD, 'isCrossRepository' => true }
-    github = ThroughputFakeGitHub.new(filled_block, pull, [check('validate', observed)])
+    retained = Shaka::ThroughputStats.update(filled_block, 't2_unverified' => 'true')
+    github = ThroughputFakeGitHub.new(retained, pull, [check('validate', observed)])
     publisher = Shaka::PrWatch::ThroughputPublisher.new(github, head: HEAD, review_jobs: [], wait: 'none')
     publisher.call(required: ['validate'])
-    assert_equal observed, Shaka::ThroughputStats.read(github.patches.fetch(0))['t2']
+    assert_equal [observed, nil], Shaka::ThroughputStats.read(github.patches.fetch(0)).values_at('t2', 't2_unverified')
   end
 
   def test_verification_flags_an_endpoint_missing_from_the_published_body

@@ -13,6 +13,7 @@ module Shaka
     SPEND = ' - AI spend: '
     # Set only while updating a body that has no Missing values note; never written to the stats block.
     UNEXPLAINED = 'unexplained'
+    READY_UNVERIFIED = 't2_unverified'
     INTERVALS = '**This head:** '
 
     def line(state) = "#{marker(state)}\n#{INTERVALS}#{intervals(state)}"
@@ -28,7 +29,8 @@ module Shaka
       return ' · ready pending' unless ended
       return (state[UNEXPLAINED] ? " · #{label} in UNKNOWN" : '') unless task_started?(state)
 
-      " · #{label} in #{ended == 'UNKNOWN' ? 'UNKNOWN' : interval(state['t0'], ended)}"
+      span = ended == 'UNKNOWN' ? 'UNKNOWN' : interval(state['t0'], ended)
+      " · #{label} in #{span}#{readiness_notice(state, label)}"
     end
 
     # No later update records a task start, so a Missing values note about it never goes stale.
@@ -64,7 +66,14 @@ module Shaka
     def ordered(state) = ThroughputStats::KEYS.filter_map { |key| [key, state[key]] if state.key?(key) }.to_h
 
     def intervals(state)
-      "Prompt to CI #{prompt(state)} · CI to ready #{ci(state)} · Ready to merged #{merged(state)}"
+      "Prompt to CI #{prompt(state)} · CI to ready #{ci(state)} · Ready to merged #{merged(state)}" \
+        "#{' · Ready time unverified' if unverified_readiness?(state)}"
+    end
+
+    def unverified_readiness?(state) = state[READY_UNVERIFIED] == 'true'
+
+    def readiness_notice(state, label)
+      ' (unverified)' if label == 'ready' && unverified_readiness?(state)
     end
 
     def shown_spend(state) = spend_text?(state['spend']) ? state['spend'] : 'UNKNOWN'

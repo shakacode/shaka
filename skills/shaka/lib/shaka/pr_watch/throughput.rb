@@ -79,13 +79,19 @@ module Shaka
 
       def fields(pull, required, carried, times)
         ready = ThroughputStats.ready_at(times, required:, review_jobs: @review_jobs, wait: @wait)
-        { 'head' => @head, 't1' => prompt_time(pull.dig('commits', 'nodes', 0, 'commit'), carried),
-          't2' => ready_time(ready, carried, fork: pull['isCrossRepository']) }
+        start = prompt_time(pull.dig('commits', 'nodes', 0, 'commit'), carried)
+        { 'head' => @head, 't1' => start }.merge(readiness_fields(ready, carried, pull))
       end
 
       # Times recorded for another head must not be relabelled as this head's.
-      def ready_time(ready, carried, fork:)
-        return ThroughputStats.iso_timestamp(ready) if fork && ready.is_a?(Time)
+      def readiness_fields(ready, carried, pull)
+        return { 't2' => ready_time(ready, carried) } unless pull['isCrossRepository']
+
+        previous = carried['t2'] if carried['head'] == @head
+        ThroughputStats.fork_readiness(ready, previous)
+      end
+
+      def ready_time(ready, carried)
         return ready_stamp(ready, carried) if ready
 
         carried['t2'] if carried['head'] == @head
