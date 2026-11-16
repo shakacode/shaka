@@ -1,6 +1,6 @@
 # Which review findings repeat, and which could a check catch?
 
-*An AI agent wrote this article: Claude Code running Claude Opus 5.5, on 2026-11-16.
+*An AI agent wrote this article: Claude Code running Claude Opus 5.5, on 2026-11-15 and 2026-11-16.
 The agent sorted 1,716 fixed or dismissed review findings from one month of Shaka pull
 requests (PRs) into kinds. It read the title of every finding it counted and drafted
 the text. No
@@ -15,7 +15,7 @@ lists the method, every kind, and the
    1,716 fit 18 recurring kinds. The other 1,304 were not classified, and a hand check
    found more members among them, so 24% is a lower bound.
 2. **The kinds that repeat most compare prose with code.** Docs that promise behavior
-   the code lacks appear on 53 PRs. A test that checks names would catch about 1 in 10
+   the code lacks were raised on 53 PRs and fixed on 47. A test that checks names would catch about 1 in 10
    of them. The rest need someone, or something, to read both.
 3. **The best candidate check covers only part of its kind.** Git calls that inherit the
    caller's Git setup produced 7 defects on 5 PRs. A test that every call uses one
@@ -46,21 +46,22 @@ enforced by nothing but the agent.
 
 ## Main results
 
-| Kind | PRs | Findings | Share a named check would catch | Verdict |
+| Kind | PRs raised / with a fix | Findings | Share a named check would catch | Verdict |
 | --- | ---: | ---: | --- | --- |
-| Docs or instructions describe behavior the code lacks | 53 | 71 | About 1 in 10 | Evaluate first |
-| A changed path has no test, or the test passes without the fix | 39 | 51 | Up to half name an untested path | Evaluate first |
-| Unexpected input escapes as a raw Ruby error | 38 | 45 | Up to 32, with a reader for every input | Evaluate first |
-| Prose says code enforces a rule only the agent follows | 19 | 25 | Flags candidates only | Defer |
-| An older installed helper meets newer settings | 15 | 19 | Most fixed ones | Evaluate first |
-| A study's claim does not match its data | 14 | 43 | About 8 arithmetic errors | Defer |
-| Symlinks, case-insensitive disks, or Windows | 14 | 18 | Most fixed ones, on more CI platforms | Evaluate first |
-| An unnamed caller might break | 13 | 14 | None; all 14 were dismissed | Evaluate a review prompt change |
-| A default or packaged prompt kept as a Ruby literal | 10 | 10 | The 3 prompt-text cases | Evaluate first |
-| Git subprocess inherits the caller's Git environment | 5 | 13 | 4 to 6 | Evaluate first |
-| Changelog rule broken; the rule changed mid-month | 4 | 4 | 1 of 4 | Defer |
+| Docs or instructions describe behavior the code lacks | 53 / 47 | 71 | About 1 in 10 | Evaluate first |
+| A changed path has no test, or the test passes without the fix | 39 / 25 | 51 | Up to half name an untested path | Evaluate first |
+| Unexpected input escapes as a raw Ruby error | 38 / 23 | 45 | Up to 32, with a reader for every input | Evaluate first |
+| Prose says code enforces a rule only the agent follows | 19 / 14 | 25 | Flags candidates only | Defer |
+| An older installed helper meets newer settings | 15 / 9 | 19 | Most fixed ones | Evaluate first |
+| A study's claim does not match its data | 14 / 11 | 43 | About 8 arithmetic errors | Defer |
+| Symlinks, case-insensitive disks, or Windows | 14 / 13 | 18 | Most fixed ones, on more CI platforms | Evaluate first |
+| An unnamed caller might break | 13 / 0 | 14 | None; all 14 were dismissed | Evaluate a review prompt change |
+| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | The 3 prompt-text cases | Evaluate first |
+| Git subprocess inherits the caller's Git environment | 5 / 5 | 13 | 4 to 6 | Evaluate first |
+| Changelog rule broken; the rule changed mid-month | 4 / 4 | 4 | 1 of 4 | Defer |
 
-The report lists 7 more kinds with their checks and costs.
+"With a fix" counts PRs where the agent fixed at least one finding of the kind. The
+report lists 7 more kinds with their checks and costs.
 
 - 1,716 defects and risks were fixed or dismissed on 323 PRs. The recurring kinds touch
   183 of those PRs.
@@ -78,7 +79,7 @@ The report lists 7 more kinds with their checks and costs.
   where the agent marks each one fixed or dismissed with a reason. A *kind* here is a
   group of findings one check could catch.
 - **Result:** repeats exist, but most fall where code cannot judge. The two largest
-  prose kinds cover 53 and 19 PRs. Checking them needs a comparison of what a sentence
+  prose kinds were fixed on 47 and 14 PRs. Checking them needs a comparison of what a sentence
   means with what the code does.
 - **Exceptions:**
   - Git subprocess isolation produced 7 defects on 5 PRs, including filters that could
@@ -110,8 +111,8 @@ The report lists 7 more kinds with their checks and costs.
 - **Result:** reviewers rarely see those rules. They read the diff and the PR
   description, so none of the 412 classified findings reports an agent breaking a
   delivery rule mid-task. What reviewers do catch is prose describing enforcement wrongly:
-  - 19 PRs called an agent-only rule enforced.
-  - 8 PRs let `enforcement.yml` drift from the workflow.
+  - 14 PRs fixed prose that called an agent-only rule enforced.
+  - 3 PRs fixed `enforcement.yml` drift from the workflow.
 - **Limit:** this data cannot say how often agents break the 89 rules.
 
 ### 4. A check is cheap to keep
@@ -134,7 +135,7 @@ from prose to checks.
 | Test refusing long English string literals in `skills/shaka/lib` | Prompt text in Ruby came up on 3 PRs; numeric literals were dismissed as constants | Evaluate: run it on `main` and count hits |
 | CI step refusing `CHANGELOG.md` edits on non-release PRs | The rule changed mid-month; 1 finding broke its current form | Defer |
 | Report-only changed-line coverage | Up to 26 of 51 test findings name an untested path; coverage misses paths unit tests already run | Evaluate on the next 10 PRs |
-| Tell reviewers which checks passed, and to name a caller before warning about one | 20 risks dismissed by citing a check or finding no caller; dismissals were not rechecked | Evaluate: compare dismissals over a week |
+| Tell reviewers which checks passed, and to name a caller before warning about one | 20 risks dismissed by citing a check or showing callers unaffected; dismissals were not rechecked | Evaluate: compare dismissals over a week |
 | Check every docs claim about enforcement | High upkeep, cannot judge truth | Defer |
 
 ## Data and limits

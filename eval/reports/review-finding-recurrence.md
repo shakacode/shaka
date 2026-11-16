@@ -34,7 +34,7 @@ model runs. No person has rechecked the classification.*
 - **Mostly one-off in the sample:** 104 of the 150 checked findings fit no kind. They
   concern one change, such as one function's wrong default or one guide's missing step.
 - **Biggest kinds compare prose with code.** The largest kind, docs or instructions
-  that describe behavior the code lacks, covers 53 PRs. A name-checking test would catch
+  that describe behavior the code lacks, was raised on 53 PRs and fixed on 47. A name-checking test would catch
   about 1 in 10 of them. The rest need someone to read both.
 - **A few kinds have a mechanical check worth trying:**
   - Git subprocess environment: 5 PRs, 13 findings, 7 defects. A test that every Git
@@ -114,29 +114,30 @@ title, and the dismissal reason where there is one.
 
 ## Recurring kinds
 
-Kinds appear in order of PRs. "Catch" is the agent's estimate of members the named
+Kinds appear in order of PRs raised on. "With a fix" counts PRs where the agent fixed
+at least one finding of the kind; 17 of the 18 kinds have a fix on 3 or more PRs. "Catch" is the agent's estimate of members the named
 check would flag mechanically. Cost covers writing the check and keeping it correct.
 
-| Kind | PRs | Findings | Fixed / dismissed | Defects | Candidate check, and where | Catch | Cost | Verdict |
+| Kind | PRs raised / with a fix | Findings | Fixed / dismissed | Defects | Candidate check, and where | Catch | Cost | Verdict |
 | --- | ---: | ---: | --- | ---: | --- | --- | --- | --- |
-| Docs or instructions describe behavior the code lacks | 53 | 71 | 64 / 7 | 50 | Test in `bin/validate`: every setting key, `shaka` subcommand and `--flag` named in `docs/` and `skills/shaka/` exists in `defaults.yml` or the CLI parser | About 7 | Medium: code-span parsing over the docs, an allowlist for examples | Evaluate first |
-| A changed path has no test, or the test passes without the fix | 39 | 51 | 31 / 20 | 2 | Report-only changed-line coverage with Ruby's `Coverage` in `bin/run-tests`; mutation testing for the rest | Up to 26 name an untested path, 12 a test that passes without the fix, 8 the host, 5 other; coverage misses paths unit tests already run | Medium for coverage across 8 workers; high for mutation | Evaluate first |
-| Unexpected input escapes as a raw Ruby error | 38 | 45 | 26 / 19 | 9 | Boundary test: `JSON.parse`, YAML loads and external reads in `skills/shaka/lib` go through readers that raise `Shaka::Error` | Up to 32 malformed-input cases; not the 13 ordering cases | High: many readers, each needs a malformed sample | Evaluate first |
-| Prose says code enforces a rule only the agent follows | 19 | 25 | 18 / 7 | 5 | Extend the enforcement audit to `docs/`: a sentence saying Ruby verifies or refuses must cite an `enforcement.yml` entry | Flags candidates; cannot judge them | High: `enforcement.yml` is 897 lines with 26 commits since 2026-10-15 | Defer |
-| An older installed helper meets newer settings or formats | 15 | 19 | 10 / 9 | 4 | Test that runs the last release's helper against the branch's settings and published formats | Most of the 10 fixed | Medium to high: a pinned old release in CI | Evaluate first |
-| A study's claim does not match its data | 14 | 43 | 34 / 9 | 17 | Figures computed by a committed script and compared with the text | About 8 arithmetic or denominator errors | Per study | Defer |
-| Symlinks, case-insensitive disks, odd path characters, or Windows | 14 | 18 | 15 / 3 | 8 | Run tests on Windows and a case-insensitive disk on every PR; shared symlink fixtures | Most of the 15 fixed | CI minutes; the Windows suite already fails on known gaps, so it cannot flag a new one (#829) | Evaluate first |
-| An unnamed caller or reader might break | 13 | 14 | 0 / 14 | 0 | None. Reviewer instruction: name the caller from a search, or drop the risk | n/a | Low | Evaluate: trial the prompt change, because no dismissal was rechecked |
-| Content from the PR branch or a fork treated as trusted | 11 | 16 | 10 / 6 | 4 | Extend `test/configuration_boundary_test.rb` to refuse checkout-path reads in review, prompt and checkpoint code | About 4 file reads | Medium: that test already changed in 22 commits since 2026-10-15 | Evaluate first |
-| A rule restated in a second instruction file | 11 | 14 | 13 / 1 | 5 | Near-duplicate sentence report in `bin/report-instruction-growth` | Close copies only | Low, report-only | Evaluate first |
-| A default or packaged prompt kept as a Ruby literal | 10 | 10 | 5 / 5 | 10 | Test refusing English string literals over about 25 words in `skills/shaka/lib` | 3 prompt-text cases on 3 PRs, 1 of them dismissed; the 4 numeric ones were dismissed as constants | Low | Evaluate first: run it on `main` and count hits |
-| `enforcement.yml` out of step with the workflow | 8 | 10 | 5 / 5 | 3 | Loader already checks quotes; add that entry names cited in docs exist | 1 | Low | Defer |
-| Seam upgrade reference scanner misses or misfires | 7 | 38 | 33 / 5 | 23 | None: the scanner was itself the check, removed in #997 | n/a | Was 1,832 lines | Evidence of check upkeep |
-| Docs link to a missing anchor | 6 | 7 | 3 / 4 | 1 | Exists: `bin/check-docs-navigation` since #616 | The 3 fixed were outside its reach | Already paid | No new check |
-| Git subprocess picks up the caller's Git environment or config | 5 | 13 | 9 / 4 | 7 | Boundary test: every Git spawn in `skills/shaka/lib` uses one runner that clears `GIT_*`, global config, filters and hooks | 4 to 6 of 13, where isolation was missing; #710 dismissed 2 under the trust model, since filters came from the maintainer's own config | Medium: about 35 library files name `git` and 14 set `GIT_*` themselves | Evaluate first: map each finding to the test |
-| GitHub list read stops at the first page | 4 | 4 | 3 / 1 | 3 | Lint list calls to `gh api` for `--paginate` or a limit check | Most | Low to medium; single-page reads need an allowlist | Defer |
-| Changelog rule broken | 4 | 4 | 4 / 0 | 4 | CI step: a non-release PR that changes `CHANGELOG.md` fails | 1 of 4. The rule changed during the window: #1060 and #1062 were asked to add an entry, #1089 and #1102 applied the later release-only rule | Low | Defer: one finding under the current rule |
-| Output shows credentials or local paths | 3 | 4 | 4 / 0 | 0 | Test that printed URLs and paths pass through the redactor | Most | Low to medium | Defer |
+| Docs or instructions describe behavior the code lacks | 53 / 47 | 71 | 64 / 7 | 50 | Test in `bin/validate`: every setting key, `shaka` subcommand and `--flag` named in `docs/` and `skills/shaka/` exists in `defaults.yml` or the CLI parser | About 7 | Medium: code-span parsing over the docs, an allowlist for examples | Evaluate first |
+| A changed path has no test, or the test passes without the fix | 39 / 25 | 51 | 31 / 20 | 2 | Report-only changed-line coverage with Ruby's `Coverage` in `bin/run-tests`; mutation testing for the rest | Up to 26 name an untested path, 12 a test that passes without the fix, 8 the host, 5 other; coverage misses paths unit tests already run | Medium for coverage across 8 workers; high for mutation | Evaluate first |
+| Unexpected input escapes as a raw Ruby error | 38 / 23 | 45 | 26 / 19 | 9 | Boundary test: `JSON.parse`, YAML loads and external reads in `skills/shaka/lib` go through readers that raise `Shaka::Error` | Up to 32 malformed-input cases; not the 13 ordering cases | High: many readers, each needs a malformed sample | Evaluate first |
+| Prose says code enforces a rule only the agent follows | 19 / 14 | 25 | 18 / 7 | 5 | Extend the enforcement audit to `docs/`: a sentence saying Ruby verifies or refuses must cite an `enforcement.yml` entry | Flags candidates; cannot judge them | High: `enforcement.yml` is 897 lines with 26 commits since 2026-10-15 | Defer |
+| An older installed helper meets newer settings or formats | 15 / 9 | 19 | 10 / 9 | 4 | Test that runs the last release's helper against the branch's settings and published formats | Most of the 10 fixed | Medium to high: a pinned old release in CI | Evaluate first |
+| A study's claim does not match its data | 14 / 11 | 43 | 34 / 9 | 17 | Figures computed by a committed script and compared with the text | About 8 arithmetic or denominator errors | Per study | Defer |
+| Symlinks, case-insensitive disks, odd path characters, or Windows | 14 / 13 | 18 | 15 / 3 | 8 | Run tests on Windows and a case-insensitive disk on every PR; shared symlink fixtures | Most of the 15 fixed | CI minutes; the Windows suite already fails on known gaps, so it cannot flag a new one (#829) | Evaluate first |
+| An unnamed caller or reader might break | 13 / 0 | 14 | 0 / 14 | 0 | None. Reviewer instruction: name the caller from a search, or drop the risk | n/a | Low | Evaluate: trial the prompt change, because no dismissal was rechecked |
+| Content from the PR branch or a fork treated as trusted | 11 / 7 | 16 | 10 / 6 | 4 | Extend `test/configuration_boundary_test.rb` to refuse checkout-path reads in review, prompt and checkpoint code | About 4 file reads | Medium: that test already changed in 22 commits since 2026-10-15 | Evaluate first |
+| A rule restated in a second instruction file | 11 / 10 | 14 | 13 / 1 | 5 | Near-duplicate sentence report in `bin/report-instruction-growth` | Close copies only | Low, report-only | Evaluate first |
+| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | 5 / 5 | 10 | Test refusing English string literals over about 25 words in `skills/shaka/lib` | 3 prompt-text cases on 3 PRs, 1 of them dismissed; the 4 numeric ones were dismissed as constants | Low | Evaluate first: run it on `main` and count hits |
+| `enforcement.yml` out of step with the workflow | 8 / 3 | 10 | 5 / 5 | 3 | Loader already checks quotes; add that entry names cited in docs exist | 1 | Low | Defer |
+| Seam upgrade reference scanner misses or misfires | 7 / 7 | 38 | 33 / 5 | 23 | None: the scanner was itself the check, removed in #997 | n/a | Was 1,832 lines | Evidence of check upkeep |
+| Docs link to a missing anchor | 6 / 3 | 7 | 3 / 4 | 1 | Exists: `bin/check-docs-navigation` since #616 | The 3 fixed were outside its reach | Already paid | No new check |
+| Git subprocess picks up the caller's Git environment or config | 5 / 5 | 13 | 9 / 4 | 7 | Boundary test: every Git spawn in `skills/shaka/lib` uses one runner that clears `GIT_*`, global config, filters and hooks | 4 to 6 of 13, where isolation was missing; #710 dismissed 2 under the trust model, since filters came from the maintainer's own config | Medium: about 35 library files name `git` and 14 set `GIT_*` themselves | Evaluate first: map each finding to the test |
+| GitHub list read stops at the first page | 4 / 3 | 4 | 3 / 1 | 3 | Lint list calls to `gh api` for `--paginate` or a limit check | Most | Low to medium; single-page reads need an allowlist | Defer |
+| Changelog rule broken | 4 / 4 | 4 | 4 / 0 | 4 | CI step: a non-release PR that changes `CHANGELOG.md` fails | 1 of 4. The rule changed during the window: #1060 and #1062 were asked to add an entry, #1089 and #1102 applied the later release-only rule | Low | Defer: one finding under the current rule |
+| Output shows credentials or local paths | 3 / 3 | 4 | 4 / 0 | 0 | Test that printed URLs and paths pass through the redactor | Most | Low to medium | Defer |
 
 A shell command classifier in [#1135](https://github.com/shakacode/shaka/pull/1135) and
 [#1196](https://github.com/shakacode/shaka/pull/1196) drew 6 more defects. Two PRs fall
@@ -202,7 +203,8 @@ below the threshold.
   its task, such as merging without consent. This data cannot say how often the 89
   rules are broken.
 - Two kinds concern how the docs describe enforcement: prose calling an agent-only rule
-  enforced (19 PRs), and `enforcement.yml` drift (8 PRs).
+  enforced (fixed on 14 PRs, raised on 19), and `enforcement.yml` drift (fixed on 3 PRs,
+  raised on 8).
 
 ## Limits
 
