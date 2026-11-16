@@ -28,8 +28,8 @@ Shaka PR already publishes a structured record on GitHub, the
   stayed unverified.
 - **Skills used:** each applied skill with source, revision, phase, and contribution.
 
-GitHub itself keeps the rest: Actions runs on each head and the merge time. Shaka does not
-publish those.
+GitHub itself keeps the rest. Shaka never publishes Actions runs, and the merge time reaches
+the description only when the agent updates it after the merge.
 
 [#1135](https://github.com/shakacode/shaka/pull/1135) added `shaka timings report`, which
 totals timing categories across merged PRs, ranks them, and groups them by week, and taught
@@ -80,9 +80,15 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
 
    Like `timings report`, the collector skips PRs from forks, whose authors can edit the
    numbers. It reads usage from the description first and follows archive comments by their
-   checksum. It ignores every comment from an account without write access, including review
-   and checkpoint comments, the same rule the usage table already applies. A forged block from
-   anyone else changes no number.
+   checksum. The usage table already ignores comments from accounts without write access; the
+   collector would extend that rule to review and checkpoint comments. A forged block from
+   anyone else then changes no number. Verification results and not-verified items stay out
+   of the record; a finding links them as evidence when it needs them.
+
+   Each PR needs a few API calls: its timeline, runs per head, and comments. The collector
+   pages within GitHub's rate limit. When a call fails, it marks that field `unavailable` with
+   the error, which differs from `UNKNOWN` for data the PR never carried, and it still writes
+   the other records.
 
 2. **The PR timings retrospective grows into a PR retrospective.** `/shaka retrospective last
    20 PRs` (or a date range or PR list) runs the new report and analyzes across PRs. A date
@@ -107,8 +113,9 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
 
    Findings use the existing table (observed behavior, evidence, proposed improvement,
    expected benefit, maintenance cost), with PR links as evidence. Each claim cites the
-   medians and PR counts the report computed, and calls a pattern from fewer than five PRs
-   insufficient evidence. Then it stops, and selected findings become ordinary Shaka tasks,
+   medians and PR counts the report computed, and calls a pattern
+   insufficient evidence when any group it rests on has fewer than five PRs, so two
+   unusual PRs cannot set a group's median alone. Then it stops, and selected findings become ordinary Shaka tasks,
    exactly as the session mode does today.
 
 3. **Session mode stays as it is.** It still covers what PR records cannot: navigation
@@ -133,8 +140,10 @@ Its `post-merge-audit` runs after a merge, but it audits correctness and risk, n
 
 ## Consequences
 
-- New `shaka pr-record report` command, sharing PR search with `timings report`, with fixtures from real Shaka PR bodies and comments, and
-  tests for each section parser and for `UNKNOWN` handling.
+- New `shaka pr-record report` command, with fixtures from real Shaka PR bodies and comments,
+  and tests for each section parser and for `UNKNOWN` and `unavailable` handling.
+- `timings report`'s fetch and row code moves out from behind its `--since`-only entry point
+  so both commands share it, with a test that `timings report` output stays the same.
 - The parsers depend on the description and comment formats the helper renders. A format change
   needs a collector change in the same PR; a test that renders through the helper and parses
   the result keeps them in step.
