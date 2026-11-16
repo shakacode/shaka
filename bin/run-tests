@@ -11,7 +11,7 @@ require 'etc'
 require 'json'
 require 'tempfile'
 
-workers = Integer(ENV.fetch('SHAKA_TEST_WORKERS', [Etc.nprocessors, 4].min))
+workers = Integer(ENV.fetch('SHAKA_TEST_WORKERS', [Etc.nprocessors, 8].min))
 abort 'SHAKA_TEST_WORKERS must be at least 1' if workers < 1
 # --changed [BASE] runs only the tests a change since BASE's merge base can reach, for quick
 # reruns while fixing review findings. Repository validation still runs the whole suite.
