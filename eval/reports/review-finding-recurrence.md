@@ -4,7 +4,7 @@ A reader-facing summary is the [article](../../docs/articles/review-finding-recu
 
 *An AI agent wrote this report: Claude Code running Claude Opus 5.5, on 2026-11-15 and
 2026-11-16 (UTC). The agent downloaded published review comments, sorted findings into
-kinds, read every finding it counted, and drafted the text. The study started no paid
+kinds, read the title of every finding it counted, and drafted the text. The study started no paid
 model runs. No person has rechecked the classification.*
 
 ## Why this ran
@@ -26,10 +26,13 @@ model runs. No person has rechecked the classification.*
 - **Data:** 1,716 defects and risks that the agent fixed or dismissed, on 323 PRs, from
   672 local review ledgers published between 2026-10-15 and 2026-11-16.
 - **Recurring share:** 406 findings (24%) fall into 18 kinds that each appear on 3 or
-  more PRs. They touch 183 of the 323 PRs. A hand check of 150 unmatched findings
-  suggests the search missed about one in five, so the true share is closer to 40%.
-- **Not recurring:** the rest are specific to their change, such as one function's
-  wrong default or one guide's missing step.
+  more PRs. They touch 183 of the 323 PRs.
+- **Unclassified:** the other 1,304 findings have no kind. A hand check of 150 of them
+  found 30 (20%) that fit a kind defined before the check. If that rate held for all
+  1,304, the recurring share would be about 40%. The same classifier judged both, so
+  40% is an extrapolation, not a count.
+- **Mostly one-off in the sample:** 104 of the 150 checked findings fit no kind. They
+  concern one change, such as one function's wrong default or one guide's missing step.
 - **Biggest kinds compare prose with code.** The largest kind, docs or instructions
   that describe behavior the code lacks, covers 53 PRs. A name-checking test would catch
   about 1 in 10 of them. The rest need someone to read both.
@@ -37,19 +40,19 @@ model runs. No person has rechecked the classification.*
   - Git subprocess environment: 5 PRs, 13 findings, 7 defects. The fix is one runner
     that all Git calls must use.
   - Packaged prompt text kept in Ruby: AGENTS.md states this rule and says no test
-    enforces it.
-  - `CHANGELOG.md` edits outside a release PR: the same.
+    enforces it. Only 3 findings on 3 PRs were prompt text, so the check needs a trial.
   - Untested changed lines: a coverage report would flag about half of the 51
     test findings.
-- **Existing checks did not stop the review noise.** After the anchor check and the
-  `enforcement.yml` loader existed, reviewers still raised 8 risks that a change might
-  break an anchor or quote. The agent dismissed all 8, citing the check or a grep. 14
-  more dismissed risks warned that an unnamed caller might break.
+- **Reviewers still raised risks a check already answered.** With the anchor check and
+  the `enforcement.yml` loader in place, reviewers raised 7 risks that an edit might
+  break an anchor or quote. The agent dismissed all 7, citing the check or a grep. 14
+  more dismissed risks warned that an unnamed caller might break. The window has no
+  period before either check, so it cannot show whether the checks cut defects.
 - **Checks cost upkeep too.** The seam upgrade reference scanner was a deterministic
   check of 1,832 lines. Its edge cases drew 38 findings over 7 PRs before
   [#997](https://github.com/shakacode/shaka/pull/997) removed it with the old layout.
-- **Recommendation: evaluate first.** Build the Git runner boundary test and the prompt
-  literal test. Trial a report-only coverage check. Keep the prose kinds with review.
+- **Recommendation: evaluate first.** Build the Git runner boundary test. Trial the
+  prompt literal test and a report-only coverage check. Keep the prose kinds with review.
 
 ## What ran
 
@@ -104,7 +107,7 @@ The method was written to the task's notes folder before counting.
 
 [`review-finding-recurrence.json`](review-finding-recurrence.json) lists all 412
 classified findings with kind, PR, ledger comment ID, finding ID, class, disposition,
-and title.
+title, and the dismissal reason where there is one.
 
 ## Recurring kinds
 
@@ -123,13 +126,13 @@ check would flag mechanically. Cost covers writing the check and keeping it corr
 | An unnamed caller or reader might break | 13 | 14 | 0 / 14 | 0 | None. Reviewer instruction: name the caller from a search, or drop the risk | n/a | Low | Change the review prompt |
 | Content from the PR branch or a fork treated as trusted | 11 | 16 | 10 / 6 | 4 | Extend `test/configuration_boundary_test.rb` to refuse checkout-path reads in review, prompt and checkpoint code | About 4 file reads | Medium: that test already changed in 22 commits since 2026-10-15 | Evaluate first |
 | A rule restated in a second instruction file | 11 | 14 | 13 / 1 | 5 | Near-duplicate sentence report in `bin/report-instruction-growth` | Close copies only | Low, report-only | Evaluate first |
-| A default or packaged prompt kept as a Ruby literal | 10 | 10 | 5 / 5 | 10 | Test refusing English string literals over about 25 words in `skills/shaka/lib` | 3 prompt-text cases; the 4 numeric ones were dismissed as constants | Low | Proceed, prompt text only |
+| A default or packaged prompt kept as a Ruby literal | 10 | 10 | 5 / 5 | 10 | Test refusing English string literals over about 25 words in `skills/shaka/lib` | 3 prompt-text cases on 3 PRs, 1 of them dismissed; the 4 numeric ones were dismissed as constants | Low | Evaluate first: run it on `main` and count hits |
 | `enforcement.yml` out of step with the workflow | 8 | 10 | 5 / 5 | 3 | Loader already checks quotes; add that entry names cited in docs exist | 1 | Low | Defer |
 | Seam upgrade reference scanner misses or misfires | 7 | 38 | 33 / 5 | 23 | None: the scanner was itself the check, removed in #997 | n/a | Was 1,832 lines | Evidence of check upkeep |
 | Docs link to a missing anchor | 6 | 7 | 3 / 4 | 1 | Exists: `bin/check-docs-navigation` since #616 | The 3 fixed were outside its reach | Already paid | No new check |
 | Git subprocess picks up the caller's Git environment or config | 5 | 13 | 9 / 4 | 7 | Boundary test: every Git spawn in `skills/shaka/lib` uses one runner that clears `GIT_*`, global config, filters and hooks | Most of the 13 | Medium once to route callers, then low | Proceed |
 | GitHub list read stops at the first page | 4 | 4 | 3 / 1 | 3 | Lint list calls to `gh api` for `--paginate` or a limit check | Most | Low to medium; single-page reads need an allowlist | Defer |
-| Changelog entry missing or in the wrong place | 4 | 4 | 4 / 0 | 4 | CI step: a non-release PR that changes `CHANGELOG.md` fails | 1 of 4 | Low | Proceed |
+| Changelog rule broken | 4 | 4 | 4 / 0 | 4 | CI step: a non-release PR that changes `CHANGELOG.md` fails | 1 of 4. The rule changed during the window: #1060 and #1062 were asked to add an entry, #1089 and #1102 applied the later release-only rule | Low | Defer: one finding under the current rule |
 | Output shows credentials or local paths | 3 | 4 | 4 / 0 | 0 | Test that printed URLs and paths pass through the redactor | Most | Low to medium | Defer |
 
 A shell command classifier in [#1135](https://github.com/shakacode/shaka/pull/1135) and
@@ -169,18 +172,22 @@ below the threshold.
   that outside pages link to (#1036), a link that broke only against a newer `main`
   (#1102), and a heading anchor a setting needed (#1089).
 - **Enforcement quotes.** The `enforcement.yml` loader fails when a quote leaves the
-  workflow. Reviewers raised 4 risks that an edit might break a quote
-  ([#801](https://github.com/shakacode/shaka/pull/801),
+  workflow. It landed in [#145](https://github.com/shakacode/shaka/pull/145) on
+  2026-09-20, before the window. Reviewers raised 3 risks that an edit might break a
+  quote ([#801](https://github.com/shakacode/shaka/pull/801),
   [#888](https://github.com/shakacode/shaka/pull/888),
-  [#939](https://github.com/shakacode/shaka/pull/939),
-  [#1089](https://github.com/shakacode/shaka/pull/1089)). The agent dismissed all 4,
-  citing the loader and a passing validation. The 5 fixed findings concern what an
-  entry's note says, which the loader does not read.
+  [#939](https://github.com/shakacode/shaka/pull/939)). The agent dismissed all 3,
+  citing the loader or a passing validation. Two more dismissed risks, on
+  [#958](https://github.com/shakacode/shaka/pull/958) and
+  [#1089](https://github.com/shakacode/shaka/pull/1089), asked for entries the loader
+  does not require. The 5 fixed findings concern what entry notes and lists say, which
+  the loader does not read.
 - **Unnamed callers.** 14 risks on 13 PRs said a change might break a caller or reader
   without naming one. All 14 were dismissed, mostly after a search found none.
-- **Reading:** a check moves the defects out of review, but reviewers still spend a run
-  and the agent spends a triage turn on the matching risks. The review packet does not
-  name the checks that passed. Naming them is untested.
+- **Reading:** reviewers still raise risks that a check already answers, and the agent
+  spends a triage turn on each. The window has no period before either check, so this
+  data cannot show whether the checks reduced defects. The review packet does not name
+  the checks that passed. Naming them is untested.
 
 ## The 89 agent-only rules
 
@@ -191,15 +198,17 @@ below the threshold.
   its task, such as merging without consent. This data cannot say how often the 89
   rules are broken.
 - Two kinds concern how the docs describe enforcement: prose calling an agent-only rule
-  enforced (19 PRs), and `enforcement.yml` drift (8 PRs). Both grew as more rules were
-  documented.
+  enforced (19 PRs), and `enforcement.yml` drift (8 PRs).
 
 ## Limits
 
 - **One classifier.** Claude Opus 5.5 assigned every kind. No second reader checked it.
   Titles were the main input; dismissal reasons were read for some kinds.
-- **Recall.** The 150-finding check suggests about 20% of unclassified findings belong to
-  a counted kind. Counts are lower bounds.
+- **Recall.** The 150-finding check found 20% of unclassified findings in a counted
+  kind. Counts are lower bounds, and the 40% figure assumes that rate holds.
+- **Dismissals are the agent's own judgment.** No dismissed finding was rerun or
+  rechecked, unlike the [review signal study](review-signal.md). The prompt change for
+  unnamed callers could hide a real risk; trial it before adopting it.
 - **Catch estimates are judgments from titles.** No candidate check was built or replayed.
 - **Hosted review adds little.** Hosted claude-review reported findings on 22 reports,
   21 of them before 2026-10-19. CodeRabbit's 408 inline comments and other bots were
@@ -217,7 +226,8 @@ below the threshold.
 - Parse each line of the form ``- `F<n>` <class>: <title> — <disposition> · Reported
   by: …``. Merge the same PR, ID, class, and title, keeping the newest comment.
 - Keep defects and risks with disposition fixed or dismissed.
-- Sort with the kinds and rules above, then read each candidate. The JSON file gives the
-  verdict for every counted finding.
-- The snapshot is not published, and ledger comments can change after it was taken. A
-  fresh download may give different counts.
+- The JSON file is the record of this study. It gives the kind of every counted finding
+  and, for dismissed ones, the agent's reason cut to 400 characters.
+- The per-kind title patterns, the scripts, and the comment snapshot are not published.
+  A rerun sorts findings by hand into the kinds above and should expect different counts.
+- Ledger comments can change after the snapshot was taken.
