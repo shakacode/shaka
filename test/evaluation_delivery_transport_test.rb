@@ -28,7 +28,8 @@ class EvaluationDeliveryTransportTest < Minitest::Test
   end
 
   def test_deadline_terminates_and_reaps_the_native_child
-    File.write(@response, 'hang')
+    # A shell records its pid within milliseconds; the Ruby fixture could miss the deadline on a loaded machine.
+    File.write(@gh, "#!/bin/sh\necho $$ > \"${0%/*}/pid\"\nexec sleep 60\n")
     assert_raises(IOError) { reader(seconds: 2).read(node_id: NODE, review_id: 5_566_107_686, actor: 'fixture-agent') }
     pid = Integer(File.read(File.join(@directory, 'pid')), 10)
     assert_raises(Errno::ESRCH) { Process.kill(0, pid) }

@@ -23,6 +23,16 @@ module EvaluationCaptureFixture
                  directory: @directory, seconds:, clock_id: 'test-controller', &)
   end
 
+  # A shell starts in milliseconds, where Ruby can take longer than a short deadline on a loaded
+  # machine, so a deadline test's child reaches the state it sets up before the deadline passes.
+  def run_shell(script, seconds:)
+    @capture.run(command: ['/bin/sh', '-c', script], cwd: @root, directory: @directory, seconds:,
+                 clock_id: 'test-controller')
+  end
+
+  # The pid the capture spawned, known even when the deadline passed before the child ran a line.
+  def spawned_pid = @capture.instance_variable_get(:@pid)
+
   def native_stream
     [
       { type: 'thread.started', thread_id: 'native-thread' },
