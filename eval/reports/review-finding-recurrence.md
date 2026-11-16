@@ -49,8 +49,8 @@ model runs. No person has rechecked the classification.*
   break an anchor or quote the checks read. The agent dismissed all 4; 3 dismissals cite
   the check and 1 a heading slug. 14 more dismissed risks warned that an unnamed caller might break. The window has no
   period before either check, so it cannot show whether the checks cut defects.
-- **Checks cost upkeep too.** The seam upgrade reference scanner was a deterministic
-  check of 1,832 lines. Its edge cases drew 38 findings over 7 PRs before
+- **Checks cost review too.** The seam upgrade reference scanner was a deterministic
+  check of 1,832 lines. The 7 PRs that built and extended it drew 38 findings before
   [#997](https://github.com/shakacode/shaka/pull/997) removed it with the old layout.
 - **Recommendation: evaluate first.** Count Git spawn sites and map which findings a
   runner test would have failed, then decide. Trial the prompt literal test and a
@@ -98,7 +98,7 @@ The method was written to the task's notes folder before counting.
    belongs to one kind.
 3. **Miss estimate.** After the first pass, 150 unmatched findings were drawn by the
    SHA-1 of `other:PR:ID` and read by hand. 30 of them belonged to a counted kind.
-   16 belonged to kinds this check added: seam upgrade scanner gaps, older-helper skew,
+   16 more belonged to kinds this check added: seam upgrade scanner gaps, older-helper skew,
    unnamed callers, and a shell command classifier. Those kinds got their own recall
    pass. All 46 sampled hits were added.
 4. **PRs are the main count.** One problem can appear in two ledgers of one PR, and
@@ -135,7 +135,7 @@ check would flag mechanically. Cost covers writing the check and keeping it corr
 | Docs link to a missing anchor | 6 / 3 | 7 | 3 / 4 | 1 | Exists: `bin/check-docs-navigation` since #616 | The 3 fixed were outside its reach | Already paid | No new check |
 | Git subprocess picks up the caller's Git environment or config | 5 / 5 | 13 | 9 / 4 | 7 | Boundary test: every Git spawn in `skills/shaka/lib` uses one runner that clears `GIT_*`, global config, filters and hooks | 4 to 6 of 13, where isolation was missing; #710 dismissed 2 under the trust model, since filters came from the maintainer's own config | Medium: about 35 library files name `git` and 14 set `GIT_*` themselves | Evaluate first: map each finding to the test |
 | GitHub list read stops at the first page | 4 / 3 | 4 | 3 / 1 | 3 | Lint list calls to `gh api` for `--paginate` or a limit check | Most | Low to medium; single-page reads need an allowlist | Defer |
-| Changelog rule broken | 4 / 4 | 4 | 4 / 0 | 4 | CI step: a non-release PR that changes `CHANGELOG.md` fails | 1 of 4. The rule changed during the window: #1060 and #1062 were asked to add an entry, #1089 and #1102 applied the later release-only rule | Low | Defer: one finding under the current rule |
+| Changelog rule broken | 4 / 4 | 4 | 4 / 0 | 4 | CI step: a non-release PR that changes `CHANGELOG.md` fails | 1 of 4. The rule changed during the window: #1060 and #1062 were asked to add an entry; #1102 edited `CHANGELOG.md` against the later release-only rule; #1089 concerned entry length in the template | Low | Defer: one finding under the current rule |
 | Output shows credentials or local paths | 3 / 3 | 4 | 4 / 0 | 0 | Test that printed URLs and paths pass through the redactor | Most | Low to medium | Defer |
 
 A shell command classifier in [#1135](https://github.com/shakacode/shaka/pull/1135) and

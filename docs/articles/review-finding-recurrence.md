@@ -23,8 +23,8 @@ lists the method, every kind, and the
 4. **Reviewers still raise risks a check already answers.** Where an anchor check and a
    quote loader existed, reviewers raised 4 risks those checks cover. The agent
    dismissed all 4, 3 of them by citing the check.
-5. **Checks cost upkeep too.** One deterministic scanner in this window drew 38 review
-   findings over 7 PRs before it was removed.
+5. **Checks cost review too.** One deterministic scanner drew 38 review findings over the
+   7 PRs that built and extended it, before it was removed.
 6. **Recommendation: evaluate first.** Map the Git findings to a runner test before
    building it. Trial a prompt literal test and a report-only coverage check. Keep the
    prose kinds with review.
@@ -119,10 +119,12 @@ report lists 7 more kinds with their checks and costs.
 
 - **Idea:** deterministic checks cost less than repeated review.
 - **Result:** not always. The seam upgrade reference scanner was 1,832 lines of Ruby that
-  parsed Markdown and shell. It drew 38 findings over 7 PRs, each fix exposing the next
-  edge case, until [#997](https://github.com/shakacode/shaka/pull/997) removed it.
+  parsed Markdown and shell. The 7 PRs that built and extended it drew 38 review
+  findings, 33 of them fixed, until [#997](https://github.com/shakacode/shaka/pull/997)
+  removed it.
   `enforcement.yml` has 897 lines and changed in 26 commits this month.
-- **Limit:** one scanner is one example. Most proposed checks here are much smaller.
+- **Limit:** one scanner is one example, and these are findings on new code rather than
+  upkeep after it landed. Most proposed checks here are much smaller.
 
 ## Recommendation
 
