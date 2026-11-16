@@ -159,7 +159,9 @@ both. Both authors have since written about review and verification:
   ([post](https://x.com/poteto/status/2119521036660314339)). Shaka's local review is
   adversarial, and this repository asks two reviewers to read each commit. A task that
   uses pstack's verification still gets that review; whether the verification should
-  count for more is gap 3's question.
+  count for more is gap 3's question. [What AI code review is worth](review-signal-study.md)
+  tests Tan's claim against Shaka's data, and
+  [Review the evidence, not the code?](evidence-first-review.md) weighs Tan's later talk.
 - **Osmani, writing as a member of the Claude Code team, described how it reviews code**
   ([post](https://x.com/addyosmani/status/2114604912520921136)) and how to keep thinking
   critically when agents do the work
