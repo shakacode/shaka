@@ -28,10 +28,13 @@ module Shaka
         true
       end
 
-      # Front matter that cannot be read counts as explicit-only, so a broken file never raises a mode.
+      # A file without front matter allows model invocation. Front matter that is unterminated or
+      # cannot be parsed counts as explicit-only, so a broken header never raises a mode.
       def explicit_front(text)
-        match = text.match(/\A---\r?\n(.*?)\r?\n---\s*$/m)
-        return false unless match
+        return false unless text.match?(/\A---\r?\n/)
+
+        match = text.match(/\A---\r?\n(.*?)\r?\n---[ \t]*\r?$/m)
+        return true unless match
 
         data = YAML.safe_load(match[1], aliases: false)
         data.is_a?(Hash) ? data['disable-model-invocation'] == true : true
@@ -58,11 +61,12 @@ module Shaka
       attr_reader :warnings
 
       # `sha` is the verified trusted commit, or nil to read no repository layer at all.
-      def initialize(home:, root:, sha:, points:)
+      def initialize(home:, root:, sha:, points:, packaged: PACKAGED)
         @home = home
         @root = root
         @sha = sha
         @points = points
+        @packaged = packaged
         @warnings = []
         @scan = InstalledSkills.new(home:) if home
       end
@@ -70,14 +74,14 @@ module Shaka
       def entries
         installed = @scan ? @scan.all : []
         @warnings.concat(@scan.unread) if @scan
-        packs.flat_map { |pack| pack.skills.map { |skill| entry(pack, skill, installed) } }
+        packs.flat_map { |pack| pack.skills.flat_map { |skill| entry(pack, skill, installed) } }
       end
 
       def packs = packaged + personal + repository
 
       private
 
-      def packaged = local_files(PACKAGED).map { |path| known!(parse(File.read(path), 'packaged', path)) }
+      def packaged = local_files(@packaged).map { |path| known!(parse(File.read(path), 'packaged', path)) }
 
       def personal
         return [] unless @home
@@ -131,18 +135,19 @@ module Shaka
         Resolver::Entry.new(layer: pack.layer, pack: pack.name, skill:, candidate_only: false, **facts)
       end
 
+      # The identity is the skill's directory after links resolve, so an alias shares its limits.
       def project_entry(pack, skill)
-        identity = "repository:#{skill.path}"
         file = "#{skill.path}/SKILL.md"
         resolved = trusted_file(file)
         unless resolved
-          return build(pack, skill, identity:, installed: false, location: nil, revision: nil, explicit_front: nil)
+          return build(pack, skill, identity: "repository:#{skill.path}", installed: false, location: nil,
+                                    revision: nil, explicit_front: nil)
                  .with(candidate_only: File.file?(File.join(@root, file)))
         end
 
         text = TrustedConfigSource.new(root: @root).read_prompt(resolved, @sha, file)
-        build(pack, skill, identity:, installed: true, location: "#{@sha}:#{skill.path}", revision: @sha,
-                           explicit_front: explicit_front(text))
+        build(pack, skill, identity: "repository:#{File.dirname(resolved)}", installed: true,
+                           location: "#{@sha}:#{skill.path}", revision: @sha, explicit_front: explicit_front(text))
       end
 
       # The path of a regular file at the trusted commit, following its links, or nil.
@@ -151,13 +156,18 @@ module Shaka
         resolved if found&.last == 'blob' && found.first != TrustedPathResolver::SYMLINK.first
       end
 
+      # One entry per installed copy, since each host loads its own copy and each copy has its own limits.
       def installed_entry(pack, skill, installed)
-        copy = installed.find { |candidate| candidate.name == skill.name && ours?(pack, candidate) }
-        unless copy
+        copies = installed.select { |candidate| candidate.name == skill.name && ours?(pack, candidate) }
+        if copies.empty?
           return build(pack, skill, identity: "#{pack.source}##{skill.name}", installed: false, location: nil,
                                     revision: nil, explicit_front: nil)
         end
 
+        copies.map { |copy| copy_entry(pack, skill, copy) }
+      end
+
+      def copy_entry(pack, skill, copy)
         path = real(copy.path)
         build(pack, skill, identity: path, installed: true, location: @scan.shown(copy.path),
                            revision: copy.revision || revision(path), explicit_front: front_of(path))

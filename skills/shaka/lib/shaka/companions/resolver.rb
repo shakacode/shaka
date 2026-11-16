@@ -60,7 +60,7 @@ module Shaka
       def cap(entry, mode, group)
         return [mode, "#{entry.layer} entry"] if mode != 'use'
 
-        limit = use_limit(entry) || flag_limit(group)
+        limit = use_limit(entry) || install_limit(group) || flag_limit(group)
         limit ? ['suggest', limit] : ['use', "#{entry.layer} entry"]
       end
 
@@ -70,6 +70,8 @@ module Shaka
         when 'packaged' then "the #{entry.pack} pack is not turned on" unless @enabled.include?(entry.pack)
         end
       end
+
+      def install_limit(group) = ('it is not installed' unless group.all?(&:installed))
 
       # Fans-out never reaches use. Explicit-only needs both the repository's cleared flag and
       # installed front matter that allows model invocation. Setup is a default the repository may clear.

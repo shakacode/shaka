@@ -71,6 +71,14 @@ class CompanionsResolverTest < Minitest::Test
     assert_equal ['decline'], rows.map(&:mode)
   end
 
+  def test_a_use_entry_for_a_missing_skill_says_it_is_not_installed
+    missing = entry('repository', 'use').with(installed: false, explicit_front: nil)
+
+    row = Shaka::Companions::Resolver.new([missing]).call(POINT).first
+
+    assert_equal ['suggest', 'it is not installed'], [row.mode, row.basis]
+  end
+
   def test_a_skill_without_this_point_is_not_listed
     assert_empty Shaka::Companions::Resolver.new([entry('packaged', 'suggest')]).call('delivery#other')
   end
