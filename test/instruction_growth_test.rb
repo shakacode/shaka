@@ -158,10 +158,14 @@ class InstructionGrowthTokensTest < Minitest::Test
     with_repository { |root| refute report(root).key?('startup_tokens') }
   end
 
-  # A PATH holding only git hides both CLIs, so the real command reports them missing instead of running them.
+  # A PATH holding only a link to git hides both CLIs, even where they share git's directory, so the real
+  # command reports them missing instead of running them and spending plan quota.
   def test_command_line_flag_adds_unknown_counts_when_the_clis_are_missing
     command = File.expand_path('../bin/report-instruction-growth', __dir__)
-    output, status = Open3.capture2({ 'PATH' => File.dirname(TEST_GIT) }, RbConfig.ruby, command, '--tokens', 'HEAD')
+    output, status = Dir.mktmpdir do |bindir|
+      File.symlink(TEST_GIT, File.join(bindir, File.basename(TEST_GIT)))
+      Open3.capture2({ 'PATH' => bindir }, RbConfig.ruby, command, '--tokens', 'HEAD')
+    end
 
     assert_predicate status, :success?
     reasons = JSON.parse(output).dig('startup_tokens', 'clis').map { |row| row['reason'] }
