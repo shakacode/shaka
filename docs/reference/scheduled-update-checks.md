@@ -23,7 +23,9 @@ In Claude Code, a startup reminder is a lighter option than a scheduled job. It
 runs no check of its own. When a new chat starts, it reads the last saved check
 result and adds its guidance when that check found an update or another change
 to act on. If no check has run in the last day, it reminds you to run one. A
-daily check keeps that result fresh. Ask your agent:
+daily check keeps that result fresh. A scheduled `install --update` saves no
+check result, so with only an update job, the reminder asks for a check each
+day. Ask your agent:
 
 ```text
 Turn on Shaka's update reminder for new Claude Code chats
