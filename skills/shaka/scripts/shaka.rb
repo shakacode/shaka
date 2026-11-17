@@ -447,7 +447,7 @@ begin
                attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
                described = resolved_description(attributed, github, options)
                usage_records = carried = kept = nil
-               published = github.description(prose:) do |pull|
+               published = github.description(prose:, deferred: true) do |pull|
                  rendered, carried, usage_records, kept = rendered_description(described, github, pull,
                                                                                workflow_version, options.merge(root:))
                  rendered
