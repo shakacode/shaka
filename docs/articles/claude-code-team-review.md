@@ -6,7 +6,9 @@ Justin Gordon started it after a refresh of the
 Addy Osmani's post and gave it one paragraph. The agent read Osmani's two posts on X and
 Shaka's code, settings, and studies at
 [`e13cc94`](https://github.com/shakacode/shaka/tree/e13cc94b4cdf). No experiment was run.
-Codex and a fresh Claude session reviewed it before publication.*
+Codex and a fresh Claude session reviewed it before publication. Updated on 2026-11-17 (UTC)
+against [`5ffb304`](https://github.com/shakacode/shaka/tree/5ffb3041a382), after main raised
+the review round limit and made walkthroughs optional.*
 
 Addy Osmani writes as a member of Anthropic's Claude Code team. His
 [post](https://x.com/addyosmani/status/2114604912520921136) of 2026-10-25 describes how that
@@ -22,7 +24,8 @@ staged rollouts, and fast rollback, come after the merge and fall outside Shaka.
 
 Three earlier pieces cover nearby ground:
 
-- [#1102](https://github.com/shakacode/shaka/pull/1102) compares Shaka with Osmani's post on
+- [Shaka and "Your coding agents made you a manager"](agents-made-you-a-manager.md)
+  ([#1102](https://github.com/shakacode/shaka/pull/1102)) compares Shaka with Osmani's post on
   agents making engineers into managers.
 - [#985](https://github.com/shakacode/shaka/pull/985) compares Shaka with pstack and
   Osmani's agent-skills.
@@ -40,7 +43,7 @@ Three earlier pieces cover nearby ground:
 - The post's reviewers vote on findings. Shaka's reviewers instead label each one a defect, a
   risk, or a nit. The agent never fixes a nit inside the review loop, though each nit still
   reaches the agent to read.
-- A Shaka review loop stops after five reviewed commits by default. The post asks for a
+- A Shaka review loop stops after eight reviewed commits by default. The post asks for a
   rethink after three. Each Shaka round still re-reviews the whole diff.
 - Every finding gets a recorded outcome, much like the post's noise measure. The
   implementing agent records those outcomes. They measure the agent's judgment, where the
@@ -79,8 +82,9 @@ Three earlier pieces cover nearby ground:
   proposes reading them in a retrospective.
 - **Evidence:** `merge` refuses without a posted review that covers the merged commit. The
   [`review.required`](../settings.md#reviewrequired) setting lists the exceptions, such as a
-  maintainer's waiver or later commits that change only ordinary Markdown. #1102's section on
-  checks covers the rest of this layer.
+  maintainer's waiver or later commits that change only ordinary Markdown. The manager
+  article's [section on checks](agents-made-you-a-manager.md#checks-the-agent-can-run) covers
+  the rest of this layer.
 
 ### 2. AI review on every PR, voted and filtered
 
@@ -148,7 +152,8 @@ Three earlier pieces cover nearby ground:
   [trusted people](../workflow.md#trust-model) affect only whose input the agent reads.
 - **Evidence:** `merge` refuses a head rated above the limit or changing a high-risk file. The
   [risk rubric](../../skills/shaka/config/post-implementation-risk.md) tells the checkpoint
-  reviewer how to rate. #1102 covers who decides what ships.
+  reviewer how to rate. The manager article covers
+  [who decides what ships](agents-made-you-a-manager.md#who-decides-what-ships).
 
 ### 5. Approvals agents can't give, one commit each
 
@@ -158,8 +163,8 @@ Three earlier pieces cover nearby ground:
   again.
 - **Shaka has:** Ask, the default merge policy, which leaves every merge to a person. You
   click merge on GitHub or approve in chat. Someone you named as a merge approver can also
-  approve on GitHub. The agent posts its walkthrough as a comment review, which GitHub
-  doesn't count as an approval. Your approval covers one commit, and a later commit ends it.
+  approve on GitHub. When the agent posts a walkthrough, it posts a comment review, which
+  GitHub doesn't count as an approval. Your approval covers one commit, and a later commit ends it.
   Under the workflow, a rebase that keeps the reviewed behavior carries your approval
   forward. An approval on GitHub still follows the repository's own dismissal
   rule.
@@ -182,7 +187,7 @@ Three earlier pieces cover nearby ground:
   reported.
 - **Shaka has:** a hard stop.
   [`review.local_max_rounds`](../settings.md#reviewlocal_max_rounds) ends a review loop after
-  five reviewed commits by default. When the stop leaves a defect, the agent asks you before
+  eight reviewed commits by default. When the stop leaves a defect, the agent asks you before
   pushing. The workflow also tells the agent to reconsider the approach after two repair rounds
   that don't converge, though nothing checks it does. Each later round's prompt lists every
   earlier finding with its outcome and asks the reviewer to confirm each fix. When the agent
@@ -211,8 +216,11 @@ Three earlier pieces cover nearby ground:
   [#446](https://github.com/shakacode/shaka/pull/446) and a prompt change in
   [#640](https://github.com/shakacode/shaka/pull/640) shipped without a score against past
   misses. Hosted findings dropped, and [#1016](https://github.com/shakacode/shaka/pull/1016)
-  counted the misses afterward. Shaka also keeps no list of reverted or incident-causing PRs.
-  #975 proposes replaying past PRs for the risk rating, not for code review.
+  counted the misses afterward. Shaka's own Claude reviewer ran on the Claude CLI's default,
+  Haiku 5.5, until [#1194](https://github.com/shakacode/shaka/pull/1194) pinned Sonnet 5.5.
+  No fixed set of past findings exists to compare the two. Shaka also keeps no list of
+  reverted or incident-causing PRs. #975 proposes replaying past PRs for the risk rating, not
+  for code review.
 - **Evidence:** #640's tests cover only when the hosted review runs a short pass. No eval in
   the index reruns on its own.
 
@@ -229,7 +237,8 @@ Three earlier pieces cover nearby ground:
   wrote about 97% of PR discussion in the
   [October review study](review-process-study.md). Shaka has no run on known-clean PRs, and no
   ongoing measure; the counts come from studies someone asks for. Shaka doesn't count
-  reverts either, a gap #1102 also names.
+  reverts either, a gap the manager article
+  [also names](agents-made-you-a-manager.md#2-a-quality-counterweight-to-throughput).
 - **Evidence:** `review record` refuses a fixed finding without its fix commit, and an accepted
   one without the maintainer's recorded decision.
 
@@ -239,12 +248,13 @@ Three earlier pieces cover nearby ground:
   to revert it. Claude may draft the answers. The author is responsible for them.
 - **Shaka has:** all three answers in its own PR record. The description's Verification
   section lists the checks that ran and names what went unverified. Its Risk and review
-  section shows the checkpoint's rating and reasons. The walkthrough states what a revert would
-  not undo, such as sent emails or changed data. The
+  section shows the checkpoint's rating and reasons. The description's details, or the
+  walkthrough when the PR has one, state what a revert would not undo, such as sent emails or
+  changed data. The
   [PR record reference](../reference/pr-record.md) explains each field.
 - **Shaka lacks:** the questions in the template itself. Shaka's own PR template asks only for
   settings changes and a changelog note. A PR written without Shaka gets no prompt. The
-  revert note is an instruction the agent follows, and nothing checks the walkthrough for it.
+  revert note is an instruction the agent follows, and nothing checks that it is there.
 - **Evidence:** `description` refuses a Verification check that cites neither a link nor a
   code span. The command cannot tell whether the check ran.
 
@@ -259,7 +269,9 @@ result. Shaka's review signal study found every sampled fix real.
 On repeated review, the post says its repeated cycles rarely found new bugs. In Shaka's
 data, most fixed defects came from the first cycle. The two differ on what later cycles find,
 as practice 6 describes. The review signal study weighs both sides, and the #1072 test would
-settle the question for Shaka.
+settle the question for Shaka. A later article,
+[Review the evidence, not the code?](evidence-first-review.md), tests Tan's related talk
+against Shaka.
 
 ## From the companion post
 
@@ -282,17 +294,21 @@ on you reading it.
 
 None of these ideas has shipped:
 
-1. **Score reviewers against past misses before changing them.** Keep the 21 bugs from the
-   hosted prompt comparison as a fixed set, and add each later miss. Rerun the set when a
-   review prompt or model changes. #975 covers only the risk rating; no issue covers code
-   review.
+1. **Score reviewers against past findings before changing them.** Keep a fixed set with
+   known answers, such as the review signal study's 40 verified fixes and the hosted prompt
+   comparison's 21 missed bugs. Add each later miss, and rerun the set when a reviewer's
+   prompt, model, or CLI default changes. #975 covers only the risk rating; no issue covers
+   code review.
 2. **Run the diff-only re-review test.** The #1072 preregistration is priced and waits for
    approval.
 3. **Suggest the GitHub rules the post relies on.** Setup could offer required thread
    resolution and dismissal of stale approvals. A merge clicked on GitHub would then honor
    them too. No issue tracks this.
-4. **Read finding outcomes across merged PRs.** #1077 proposes this for retrospectives. The
-   same read would show which findings recur and belong in review instructions.
+4. **Read finding outcomes across merged PRs.** #1077 proposes this for retrospectives, and
+   [ADR 0010](https://github.com/shakacode/shaka/blob/main/internal/adr/0010-retrospective-over-merged-prs.md)
+   ([#1204](https://github.com/shakacode/shaka/pull/1204)) proposes a report that collects each
+   merged PR's findings and dispositions. The same read would show which findings recur and
+   belong in review instructions.
 
 ## Sources
 
@@ -304,7 +320,8 @@ None of these ideas has shipped:
   X, 2026-11-02.
 - Lauren Tan, [post on adversarial review](https://x.com/poteto/status/2117437607940681849), X,
   2026-11-02.
-- Shaka at [`e13cc94`](https://github.com/shakacode/shaka/tree/e13cc94b4cdf): the
+- Shaka at [`e13cc94`](https://github.com/shakacode/shaka/tree/e13cc94b4cdf), rechecked at
+  [`5ffb304`](https://github.com/shakacode/shaka/tree/5ffb3041a382): the
   [settings reference](../settings.md), the
   [enforcement map](../../skills/shaka/config/enforcement.yml), the review prompt and hosted
   review workflow linked above, and the studies linked above.
