@@ -114,6 +114,9 @@ in reported input tokens is the text's cost.
   `--words-only` to see sizes without spending quota.
 - Compare each CLI's own prompt (`cli_prompt`) with the log. A jump means the CLI changed
   what it loads, and counts from different CLI versions may not compare.
+- Codex counts run without its shell tools, so a library's text cannot make it read local
+  files. That dropped Codex's own prompt from about 15,190 to 14,551 tokens on 2026-11-17;
+  the same startup text still counted 20,171 GPT tokens either way.
 - Claude counts of the same text vary by about 20 tokens between runs; Codex by about 2.
 
 ## Does the size matter?

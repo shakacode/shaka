@@ -2,24 +2,24 @@
 # frozen_string_literal: true
 
 # Counts what each skill library adds to an agent session, in Claude Code and Codex tokens, through the
-# accounts those CLIs are signed in to. Reads each checkout as text and never runs its code.
+# accounts those CLIs are signed in to. Reads each checkout as text and never runs its skills or hooks.
 # Usage: eval/bin/skill-library-tokens [--words-only] NAME=CHECKOUT...
 # NAME is a key of SkillLibraryTexts::LIBRARIES, such as shaka=. or obra/superpowers=/tmp/superpowers.
 
 require 'json'
 require 'open3'
 require 'time'
+require_relative '../lib/shaka/evaluation/skill_library_report'
 require_relative '../lib/shaka/evaluation/skill_library_texts'
 require_relative '../../skills/shaka/lib/shaka/workflow'
 
-KINDS = %w[every_session median_skill largest_skill].freeze
+TEXTS = Shaka::Evaluation::SkillLibraryTexts
+REPORT = Shaka::Evaluation::SkillLibraryReport
 
 def rendered_workflow(root)
-  source = File.read(File.join(root, 'skills/shaka/config/workflow.yml'), encoding: 'UTF-8')
+  source = TEXTS.checkout_text(root, 'skills/shaka/config/workflow.yml')
   Shaka::Workflow.new([]).render(Shaka::WorkflowConfig.load(source:)).gsub(Shaka::Workflow::PACKAGE_ROOT, '<package>')
 end
-
-def text(library, kind) = kind == 'every_session' ? library[kind] : library[kind]['text']
 
 words_only = ARGV.delete('--words-only')
 sources = ARGV.map { |argument| argument.split('=', 2) }
@@ -31,26 +31,15 @@ libraries = sources.map do |name, root|
   commit, _error, status = Open3.capture3('git', '-C', root, 'rev-parse', 'HEAD')
   workflow = rendered_workflow(root) if name == 'shaka'
   { 'library' => name, 'commit' => status.success? ? commit.strip : 'UNKNOWN',
-    **Shaka::Evaluation::SkillLibraryTexts.library(name, root, shaka_workflow: workflow) }
+    **TEXTS.library(name, root, shaka_workflow: workflow) }
 end
 
-# Identical texts, such as Shaka's one skill as both median and largest, are counted once.
-keys = {}
-libraries.each { |library| KINDS.each { |kind| keys[text(library, kind)] ||= "#{library['library']} #{kind}" } }
+keys = REPORT.keys(libraries)
 unless words_only
   require_relative '../../lib/instruction_tokens'
   counts = InstructionTokens.count_each(keys.invert)
 end
 
-report = libraries.map do |library|
-  measured = KINDS.to_h do |kind|
-    row = { 'words' => text(library, kind).split.size }
-    row['name'] = library[kind]['name'] unless kind == 'every_session'
-    counts&.each { |cli| row[cli['cli']] = cli['texts'] ? cli['texts'][keys[text(library, kind)]] : 'UNKNOWN' }
-    [kind, row]
-  end
-  library.slice('library', 'commit', 'skills', 'commands').merge(measured)
-end
-
 clis = counts&.map { |cli| cli.slice('cli', 'model', 'cli_prompt', 'tokens', 'reason') }
-puts JSON.pretty_generate('measured_at' => Time.now.utc.iso8601, 'clis' => clis, 'libraries' => report)
+puts JSON.pretty_generate('measured_at' => Time.now.utc.iso8601, 'clis' => clis,
+                          'libraries' => REPORT.rows(libraries, keys, counts))

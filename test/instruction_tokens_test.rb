@@ -58,6 +58,13 @@ class InstructionTokensTest < Minitest::Test
     assert_includes codex, ['--ignore-rules', '--ignore-user-config']
   end
 
+  def test_codex_runs_without_its_shell_tools
+    arguments = InstructionTokens::CLIS.fetch('codex').arguments.call('model', 'low').each_cons(2).to_a
+
+    assert_includes arguments, ['--disable', 'shell_tool']
+    assert_includes arguments, ['--disable', 'unified_exec']
+  end
+
   def test_the_text_goes_on_stdin_never_on_the_command_line
     calls = []
     InstructionTokens.compare(before: nil, after: 'startup text', runner: counting_runner(calls))
@@ -118,6 +125,19 @@ class InstructionTokensTest < Minitest::Test
 
     assert_equal(["claude used a tool, so its count is not the text's alone",
                   "codex used a tool, so its count is not the text's alone"], rows.map { |row| row['reason'] })
+  end
+
+  # Without its shell tools Codex can still answer twice, and each answer is another model request.
+  def test_a_codex_run_with_two_answers_counts_nothing
+    answer = { 'type' => 'item.completed', 'item' => { 'type' => 'agent_message' } }
+    runner = lambda do |arguments, input|
+      next counting_runner.call(arguments, input) if arguments.first == 'claude'
+
+      [[codex_output(99), JSON.generate(answer), JSON.generate(answer)].join("\n"), OK]
+    end
+    rows = InstructionTokens.compare(before: nil, after: 'Read a file.', runner:)
+
+    assert_equal "codex used a tool, so its count is not the text's alone", rows.last['reason']
   end
 
   def test_a_failed_baseline_run_keeps_the_head_count
