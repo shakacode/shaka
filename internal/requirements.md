@@ -62,7 +62,9 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   Visible changes need inspected, safe, accessible screenshots tied to the tested
   commit; add video for timing or interaction. See [verification](../docs/pr-verification.md).
 - **R17 — Review before push.** Review meaningful implementation in a fresh context
-  and fix findings before publishing. Batch repairs before optional staged hosted CI.
+  and fix findings before publishing. A task the user opts into interactive mode may
+  publish a draft PR first; that review runs before the PR leaves draft.
+  Batch repairs before optional staged hosted CI.
   Always-on required, security, and trust checks remain immediate; changed heads
   need fresh affected evidence.
 - **R18 — Support reviewer fallback.** Prefer a provider that did not implement the

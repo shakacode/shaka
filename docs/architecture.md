@@ -44,6 +44,26 @@ check the instruction size yourself, ask your agent:
 Run bin/report-instruction-growth in my Shaka checkout and summarize the word counts
 ```
 
+To count tokens as well, ask:
+
+```text
+Run bin/report-instruction-growth --tokens in my Shaka checkout and summarize the token changes
+```
+
+The `--tokens` option uses Claude Code and Codex with the accounts they are
+already signed in to, so it needs no API keys. Each tool answers a one-line
+prompt with and without `SKILL.md` plus the rendered workflow, from your working
+copy and from its merge base. The difference is what that text costs. Like any
+session in those tools, this sends the text to Anthropic and OpenAI.
+
+A count uses part of your plan's quota, so run it now and then, such as before
+a release, rather than on every change. Claude's counts vary by about 20 tokens
+from run to run, so a change of a few words may not show. The models are under
+`runtime.instruction_tokens` in Shaka's `defaults.yml`. A tool that is missing
+or signed out, or that tries to act on the text instead of answering, shows
+`UNKNOWN` and the reason, and the report still succeeds. Without `--tokens`, the
+report runs neither tool.
+
 <a id="keep-facts-where-people-look-for-them"></a>
 
 ## Where Shaka keeps facts
