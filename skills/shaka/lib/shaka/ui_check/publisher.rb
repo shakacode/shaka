@@ -14,6 +14,7 @@ module Shaka
     class Publisher
       MARKER = /^<!-- shaka:ui-check-(\h{40})-(\h{8}) -->$/
       LIMIT = 65_536
+      UPLOAD_ROOM = 100
 
       def initialize(github, nonce: SecureRandom.hex(4))
         @github = github
@@ -26,6 +27,7 @@ module Shaka
         Captures.paths(captures)
         earlier = open_checks(PublicationText.list(content['earlier'], 'earlier'))
         body = body(head, content, earlier, PublicationText.list(content['retire'], 'retire'))
+        check_length(body, captures)
         @github.verify_rendering(body)
         @github.post_comment(body, attachments: captures)
         published = confirm_uploads(find_published(head), body, captures)
@@ -47,11 +49,9 @@ module Shaka
         raise Error, 'UI check body must not contain Shaka history markers; earlier evidence is carried for you.' if
           History.reserved?(note)
 
-        body = "#{PublicationText.publisher_identity(content)}\n\n<!-- shaka:ui-check-#{head}-#{@nonce} -->\n" \
-               "# Verification for [`#{head[0, 7]}`](#{commit_url(head)})\n\n#{note}\n" \
-               "#{history(earlier, note, retired, head)}"
-        check_length(body)
-        body
+        "#{PublicationText.publisher_identity(content)}\n\n<!-- shaka:ui-check-#{head}-#{@nonce} -->\n" \
+          "# Verification for [`#{head[0, 7]}`](#{commit_url(head)})\n\n#{note}\n" \
+          "#{history(earlier, note, retired, head)}"
       end
 
       def commit_url(sha) = "https://github.com/#{@github.repository}/pull/#{@github.number}/commits/#{sha}"
@@ -67,11 +67,13 @@ module Shaka
         History.render(blocks, head:, commit_url: method(:commit_url))
       end
 
-      def check_length(body)
-        return if body.length <= LIMIT
+      # gh rewrites or appends each capture as an image link to its upload, so leave room for it.
+      def check_length(body, captures)
+        length = body.length + captures.sum { |capture| capture.length + UPLOAD_ROOM }
+        return if length <= LIMIT
 
-        raise Error, "The UI check is #{body.length} characters, over GitHub's limit of #{LIMIT}. Retire " \
-                     'replaced captures so less earlier evidence is carried.'
+        raise Error, "The UI check would be about #{length} characters, over GitHub's limit of #{LIMIT}. Shorten " \
+                     'the note, or retire every remaining capture of a carried check so it is no longer carried.'
       end
 
       # Folded checks already point at a newer one, so only open checks can still hold evidence.

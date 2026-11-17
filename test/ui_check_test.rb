@@ -229,9 +229,27 @@ class UiCheckHistoryTest < Minitest::Test
     assert_raises(Shaka::Error) { publish(github, body: "Note\n<!-- shaka:ui-history -->") }
     error = assert_raises(Shaka::Error) { publish(github, body: 'x' * 65_500) }
 
-    assert_includes error.message, 'Retire replaced captures'
+    assert_includes error.message, 'retire every remaining capture'
     assert_empty github.posts
     refute_includes github.comments.first['body'], Shaka::EvidenceHistory::MARKER
+  end
+
+  def test_the_length_check_leaves_room_for_each_capture_gh_will_add
+    github = GitHub.new([])
+    with_capture do |path|
+      assert_raises(Shaka::Error) { publish(github, body: 'x' * 65_200, captures: ["#{path}#After"] * 3) }
+    end
+    assert_empty github.posts
+  end
+
+  def test_replaced_marks_survive_when_an_earlier_fold_failed
+    first = earlier_check(1, 'home', 'examples', 'people')
+    github = GitHub.new([first.dup])
+    publish(github, body: 'Examples redone.', retire: [asset('examples')], nonce: '11111111')
+    github.comments.first['body'] = first['body']
+    publish(github, body: 'People redone.', retire: [asset('people')], nonce: '22222222')
+
+    %w[examples people].each { |name| assert_includes carried(github), "Replaced at `aaaaaaa`: #{asset(name)}" }
   end
 
   def test_an_unreferenced_capture_lands_after_the_collapsed_history

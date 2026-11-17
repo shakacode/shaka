@@ -36,8 +36,8 @@ For a newer head, `body` covers only what you checked at that head. The command 
 each earlier capture `body` leaves out into a collapsed history labeled with the revision
 that captured it; history is not evidence for the new head. Name each view the newer
 commits leave unchanged and refresh captures for every affected view. List an earlier
-capture's URL in `retire` when a new capture replaces it, which marks it replaced in the
-history. Repeat a note recording why a capture could not be published; only captures are
+capture's URL in `retire` when a new capture replaces it. The history then marks it
+replaced, or drops its check once none of that check's captures remain pending. Repeat a note recording why a capture could not be published; only captures are
 carried. When the result lists `unavailable` folds, fold those with `review collapse`.
 Once you resolve a preview for the description, whether through `deployment: auto` or a
 URL you supply, repeat the manual pass against it, or record on the PR why not.

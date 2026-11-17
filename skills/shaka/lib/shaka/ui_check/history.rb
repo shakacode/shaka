@@ -35,8 +35,12 @@ module Shaka
               .map { |block| mark_replaced(block, block.pending & retired, head) }
       end
 
-      # Two open checks can carry the same older block; keep one copy.
-      def gather(earlier) = earlier.flat_map { |check| blocks(check) }.uniq { |block| [block.revision, block.source] }
+      # Two open checks carry the same older block when a fold failed. Each newer copy only adds
+      # replaced marks, so the copy with the most of them is the current one.
+      def gather(earlier)
+        earlier.flat_map { |check| blocks(check) }.group_by { |block| [block.revision, block.source] }
+               .map { |_key, copies| copies.max_by { |block| block.replaced.length } }
+      end
 
       def mark_replaced(block, replaced, head)
         return block if replaced.empty?
