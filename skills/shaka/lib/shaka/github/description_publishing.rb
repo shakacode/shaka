@@ -85,7 +85,7 @@ module Shaka
       return false unless region
 
       outside = text.sub("#{Publishing::OPEN_MARK}#{region}#{Publishing::CLOSE_MARK}", '')
-      outside.gsub(/<!--.*?-->/m, '').strip.empty?
+      outside.match?(/\A(?:\s|<!--.*?-->)*\z/m)
     end
 
     def restore_description(current, merged, error)

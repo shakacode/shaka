@@ -99,6 +99,14 @@ class DescriptionDeferredRenderingTest < Minitest::Test
     assert_includes github.body, 'A person wrote this.'
   end
 
+  # Comments render as nothing, so they leave the body all Shaka text; an unclosed one does not.
+  def test_only_whole_comments_outside_the_region_keep_prose_limits_checked
+    { "<!-- note -->\n#{REGION}" => Shaka::DescriptionPublishing::CHECKED_AFTER,
+      "<!-- open\n#{REGION}" => Shaka::DescriptionPublishing::PROSE_UNCHECKED }.each do |body, rendering|
+      assert_equal rendering, publish(RefusedRendererGitHub.new(body))['rendering']
+    end
+  end
+
   def test_a_body_edited_after_the_write_is_left_for_a_person
     github = RefusedRendererGitHub.new(REGION)
     github.html = '<p>Line\\n</p>'
