@@ -50,7 +50,8 @@ model runs. No person has rechecked the classification.*
 - **Reviewers still raised risks a check already answered.** With the anchor check and
   the `enforcement.yml` loader in place, reviewers raised 4 risks that an edit might
   break an anchor or quote the checks read. The agent dismissed all 4; 3 dismissals cite
-  the check and 1 a heading slug. 14 more dismissed risks warned that an unnamed caller might break. The window holds
+  the check and 1 a heading slug. Counted here are only risks inside what the checks read;
+  #844 F6 also cites the check, but its risk reaches pages outside `docs/` and `skills/`. 14 more dismissed risks warned that an unnamed caller might break. The window holds
   only two days before the anchor check and none before the loader, so it cannot show whether the checks cut defects.
 - **Checks cost review too.** The seam upgrade reference scanner was a deterministic
   check of 1,832 lines. The 7 PRs that built and extended it drew 38 findings before
@@ -215,6 +216,9 @@ below the threshold.
 
 - **One classifier.** Claude Opus 5.5 assigned every kind. No second reader checked it.
   Titles were the main input; dismissal reasons were read for some kinds.
+- **Raised-on counts are looser than fixed-on counts.** Some dismissed members fit their
+  kind loosely, such as #802 F1 and F5 in the prose-enforcement kind. The conclusions use
+  fixed-on counts where they say an error occurred.
 - **Kinds were chosen after reading.** The agent defined the kinds from a 250-title
   sample, then added kinds the recall check suggested. The 24% measures these chosen
   kinds, not a list fixed in advance, and one kind is a single feature's cluster.

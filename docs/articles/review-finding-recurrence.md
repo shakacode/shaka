@@ -66,7 +66,7 @@ report lists 7 more kinds with their checks and costs.
 
 - 1,716 defects and risks were fixed or dismissed on 323 PRs. The recurring kinds touch
   183 of those PRs.
-- 30% of the in-scope findings were dismissed. Unnamed-caller risks were never fixed.
+- 30% of the in-scope findings were dismissed. No risk in the unnamed-caller kind was fixed, partly by definition: fixed "may break" findings that named a cause went to other kinds.
 - Hosted claude-review added little: 22 reports listed findings, 21 of them before
   2026-10-19.
 
