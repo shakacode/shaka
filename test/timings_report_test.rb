@@ -124,16 +124,9 @@ class TimingsReportTest < Minitest::Test
 
   def pull(number, merged, steps, cross: false)
     timing = '<!-- task-timing {"task_started_at":"2026-11-03T10:00:00Z"} -->'
-    body = <<~BODY
-      <!-- shaka:begin -->
-      <!-- shaka:estimated-cost -->
-      <summary>Timings · historical</summary>
-
-      #{Shaka::TimelineSteps.hidden(steps)}
-      #{timing if number == 1}
-      </details>
-      <!-- shaka:end -->
-    BODY
+    body = "<!-- shaka:begin -->\n<!-- shaka:estimated-cost -->\n<details>\n" \
+           "<summary>Timings · historical</summary>\n\n#{Shaka::TimelineSteps.hidden(steps)}\n" \
+           "#{timing if number == 1}\n</details>\n<!-- shaka:end -->"
     { 'number' => number, 'url' => "https://github.com/shakacode/shaka/pull/#{number}", 'mergedAt' => merged,
       'createdAt' => '2026-11-03T11:00:00Z', 'isCrossRepository' => cross, 'body' => body }
   end
