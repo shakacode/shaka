@@ -1,20 +1,23 @@
 # Keep Shaka up to date
 
 Shaka has no automatic updates: it never updates itself, on a schedule or
-otherwise. Every Shaka chat runs from the same installed checkout, so updating
-it can change files that open chats are still reading.
-If you want to update daily, schedule a check that tells you when an update is
-available, then update between chats.
+otherwise.
+If you want to update daily, schedule `install --update` for a time when no
+Shaka task is running, or schedule a daily check and update between chats.
+Every Shaka chat runs from the same installed checkout, so an update during a
+task can mix old and new instructions in that chat. When the update changes
+Shaka's validation or review code, the task also reruns those checks.
 
-When you invoke Shaka, its skill also asks your agent to run this check. The
+When you invoke Shaka, its skill also asks your agent to run the check. The
 check asks GitHub at most once a day. Later chats that day repeat its saved
 answer until you update Shaka. If an update is available, the agent tells you
 how to install it.
 
-A schedule helps most when you leave Shaka chats running overnight. The check
-compares an installation from a GitHub branch, such as the default `main`, with
-that branch. For a pinned release, it reports only the pinned version; ask your
-agent about [installing a newer release](../manual-installation.md#keep-a-tested-release)
+A scheduled check helps most when you leave Shaka chats running overnight. The
+check compares an installation from a GitHub branch, such as the default `main`,
+with that branch. For a pinned release, the check reports only the pinned
+version and `install --update` keeps it; ask your agent about
+[installing a newer release](../manual-installation.md#keep-a-tested-release)
 instead.
 
 ## Get a reminder when a Claude Code chat starts
@@ -23,7 +26,11 @@ Installing Shaka for Claude Code turns on a startup reminder, a lighter option
 than a scheduled job. It runs no check of its own. When a new chat starts, it
 reads the last saved check result and adds its guidance when that check found
 an update or another change to act on. If no check has run in the last day, it
-reminds you to run one. A daily check keeps that result fresh.
+reminds you to run one.
+
+A daily check keeps that result fresh. A scheduled `install --update` saves no
+check result, so with only an update job, the reminder asks for a check each
+day.
 
 The installer adds the reminder as a `SessionStart` hook in
 `~/.claude/settings.json` and prints that change. Updating Shaka leaves the hook
@@ -38,21 +45,36 @@ The agent reruns the installer for Claude Code, which adds the hook. To turn
 the reminder off or run the command yourself, see
 [verify and update](../manual-installation.md#verify-and-update).
 
-## Schedule a daily update check
+## Schedule a daily update or check
 
 ```text
-Check whether my Shaka installation supports daily update checks. If it does, set one up using https://shaka.shakacode.com/docs/reference/scheduled-update-checks
+Schedule a daily Shaka update using https://shaka.shakacode.com/docs/reference/scheduled-update-checks
 ```
 
-Ask your agent to identify the installed helper and follow the steps for your
-system, then run one check and read its log. You can also follow the steps yourself.
+To get only a notice, ask for a daily update check instead. Ask your agent to
+identify the installed helper and follow the steps for your system, then run the
+job once and read its log. You can also follow the steps yourself.
 
-When a check of the same installation ran in the last 23 hours, the job repeats
-that answer and adds its `checked_at` time. The limit is an hour short of a day,
-so a job that runs at the same time each day still asks GitHub.
+The steps below schedule a check. To schedule the update itself, change only
+the command. On macOS, replace `<string>update-check</string>` with
+`<string>install</string>` and `<string>--update</string>`. On Linux and in the
+WSL command, replace `update-check` with `install --update`. Keep the example
+job names so the stop steps below still apply.
 
-Read the job's log for `status` and `guidance`. If the guidance recommends an
-update, finish your active Shaka chats first. Then ask your agent to
+Choose a time when no Shaka task is running, including for the first run, which
+applies the update at once. A successful run exits 0 and logs
+`Verified Shaka installation` with the new commit. When the checkout has local
+changes or its history no longer matches the recorded branch, the update stops
+with an error, leaves the checkout unchanged, and logs the next step. A
+scheduled update installs whatever the branch holds, without the comparison you
+can review when you update by hand.
+
+When a check of the same installation ran in the last 23 hours, a scheduled check
+repeats that answer and adds its `checked_at` time. The limit is an hour short of
+a day, so a check that runs at the same time each day still asks GitHub.
+
+For a check, read the job's log for `status` and `guidance`. If the guidance
+recommends an update, finish your active Shaka chats first. Then ask your agent to
 [update and verify Shaka](../manual-installation.md#verify-and-update). An `unknown`
 result or an error without a status means the check could not determine whether
 an update is available.
