@@ -38,9 +38,12 @@ class EvaluationDeliverySnapshotFailuresTest < Minitest::Test
   end
 
   def test_snapshot_deadline_reaps_the_active_native_child
-    pids = spawned_by_open3 { assert_raises(IOError) { capture([pull, 'hang'], seconds: 2) } }
-    refute_empty pids
-    pids.each { |pid| assert_raises(Errno::ESRCH) { Process.kill(0, pid) } }
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    pids = spawned_by_open3 { assert_raises(IOError) { capture(['hang'], seconds: 2) } }
+    # The fixture sleeps 60 s, so a read that returns well before then killed the child rather than waited for it.
+    assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 30
+    assert_equal 1, pids.size
+    assert_raises(Errno::ESRCH) { Process.kill(0, pids.first) }
   end
 
   def test_invalid_declared_apps_are_refused_before_native_access
@@ -52,7 +55,6 @@ class EvaluationDeliverySnapshotFailuresTest < Minitest::Test
   private
 
   # The pids Open3 spawns, so the test needs no report from a child the deadline may stop before it runs.
-  # The reads share one deadline, so on a loaded machine it can stop the first child instead of the hanging one.
   def spawned_by_open3
     pids = []
     Open3.define_singleton_method(:spawn) { |*arguments| Process.spawn(*arguments).tap { pids << it } }
