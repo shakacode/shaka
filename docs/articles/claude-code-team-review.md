@@ -219,8 +219,9 @@ Three earlier pieces cover nearby ground:
   counted the misses afterward. Shaka's own Claude reviewer ran on the Claude CLI's default,
   Haiku 5.5, until [#1194](https://github.com/shakacode/shaka/pull/1194) pinned Sonnet 5.5.
   No fixed set of past findings exists to compare the two. Shaka also keeps no list of
-  reverted or incident-causing PRs. #975 proposes replaying past PRs for the risk rating, not
-  for code review.
+  reverted or incident-causing PRs. #975 proposes replaying past PRs for the risk rating, and
+  [#1231](https://github.com/shakacode/shaka/issues/1231) proposes a fixed set for code
+  review.
 - **Evidence:** #640's tests cover only when the hosted review runs a short pass. No eval in
   the index reruns on its own.
 
@@ -297,8 +298,8 @@ None of these ideas has shipped:
 1. **Score reviewers against past findings before changing them.** Keep a fixed set with
    known answers, such as the review signal study's 40 verified fixes and the hosted prompt
    comparison's 21 missed bugs. Add each later miss, and rerun the set when a reviewer's
-   prompt, model, or CLI default changes. #975 covers only the risk rating; no issue covers
-   code review.
+   prompt, model, or CLI default changes. #1231 tracks this for code review; #975 covers the
+   risk rating.
 2. **Run the diff-only re-review test.** The #1072 preregistration is priced and waits for
    approval.
 3. **Suggest the GitHub rules the post relies on.** Setup could offer required thread
