@@ -1,7 +1,5 @@
 # Git subprocess isolation check
 
-A reader-facing summary is the [article](../../docs/articles/git-isolation-check.md).
-
 [#1212](https://github.com/shakacode/shaka/pull/1212) found 13 review findings in kind
 `git_subprocess_environment`: 7 defects on 5 PRs. It named one candidate check and asked
 for this evaluation first. The candidate is a boundary test that requires every Git call in
