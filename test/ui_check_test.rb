@@ -177,7 +177,7 @@ class UiCheckHistoryTest < Minitest::Test
     carried = carried(github)
 
     assert_includes carried, "![View](#{asset('people')})"
-    assert_includes carried, "Replaced at `aaaaaaa`: #{asset('examples')}"
+    assert_includes carried, "\nReplaced at `aaaaaaa`: #{asset('examples')} <!-- shaka:ui-replaced -->\n"
   end
 
   def test_retiring_a_capture_no_open_check_shows_refuses
@@ -269,7 +269,7 @@ class UiCheckHistoryRecoveryTest < Minitest::Test
   end
 
   def test_sibling_copies_with_different_replaced_marks_keep_every_mark
-    marks = %w[examples people].map { |name| "<!-- shaka:ui-replaced --> Replaced at `ccccccc`: #{asset(name)}" }
+    marks = %w[examples people].map { |name| "Replaced at `ccccccc`: #{asset(name)} <!-- shaka:ui-replaced -->" }
     checks = marks.each_with_index.map { |mark, index| check_with(block("#{views}\n\n#{mark}"), index + 2) }
     text = Shaka::UiCheck::History.carry(checks, shown: [], retired: [], head: HEAD).first.text
 

@@ -18,9 +18,12 @@ module Shaka
       UNKNOWN = 'unknown'
 
       Block = Data.define(:revision, :source, :text) do
-        def marks = text.lines.select { |line| line.start_with?(REPLACED) }.map(&:strip)
-        def unmarked = text.lines.reject { |line| line.start_with?(REPLACED) }.join.rstrip
+        def marks = text.lines.select { |line| mark?(line) }.map(&:strip)
+        def unmarked = text.lines.reject { |line| mark?(line) }.join.rstrip
         def replaced = marks.flat_map { |line| Captures.urls(line) }
+
+        # The marker ends the line: a line that opened with it would render as raw HTML.
+        def mark?(line) = line.rstrip.end_with?(REPLACED)
         def pending = Captures.urls(text) - replaced
       end
 
@@ -58,7 +61,7 @@ module Shaka
       def mark_replaced(block, replaced, head)
         return block if replaced.empty?
 
-        block.with(text: "#{block.text}\n\n#{REPLACED} Replaced at `#{head[0, 7]}`: #{replaced.join(', ')}")
+        block.with(text: "#{block.text}\n\nReplaced at `#{head[0, 7]}`: #{replaced.join(', ')} #{REPLACED}")
       end
 
       # History that does not parse must stop the publish, or its evidence would be folded away:
