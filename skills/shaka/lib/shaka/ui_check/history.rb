@@ -18,7 +18,9 @@ module Shaka
       UNKNOWN = 'unknown'
 
       Block = Data.define(:revision, :source, :text) do
-        def replaced = text.lines.select { |line| line.start_with?(REPLACED) }.flat_map { |line| Captures.urls(line) }
+        def marks = text.lines.select { |line| line.start_with?(REPLACED) }.map(&:strip)
+        def unmarked = text.lines.reject { |line| line.start_with?(REPLACED) }.join.rstrip
+        def replaced = marks.flat_map { |line| Captures.urls(line) }
         def pending = Captures.urls(text) - replaced
       end
 
@@ -33,11 +35,15 @@ module Shaka
               .map { |block| mark_replaced(block, block.pending & retired, head) }
       end
 
-      # Two open checks carry the same older block when a fold failed. Each newer copy only adds
-      # replaced marks, so the copy with the most of them is the current one.
+      # Two open checks carry the same older block when a fold failed. Copies differ only in the
+      # replaced marks later checks added, so one copy keeps every mark any of them holds.
       def gather(earlier)
         earlier.flat_map { |check| blocks(check) }.group_by { |block| [block.revision, block.source] }
-               .map { |_key, copies| copies.max_by { |block| block.replaced.length } }
+               .map { |_key, copies| merge_marks(copies) }
+      end
+
+      def merge_marks(copies)
+        copies.first.with(text: [copies.first.unmarked, *copies.flat_map(&:marks).uniq].join("\n\n"))
       end
 
       # A capture already marked replaced may be retired again, as when a publish is retried.
@@ -53,7 +59,8 @@ module Shaka
       end
 
       # History that does not parse must stop the publish, or its evidence would be folded away:
-      # outside the parsed blocks, no history marker and no capture in the section may remain.
+      # outside the parsed blocks no history marker or capture may remain, and a parsed block may
+      # hold no history marker, which would mean it swallowed a neighbour.
       def blocks(check)
         body = check.fetch(:body)
         section = body[SECTION].to_s
@@ -65,7 +72,8 @@ module Shaka
 
       def check_parsed(own, section, source)
         rest = section.gsub(BLOCK, '').sub(OPEN, '').sub(CLOSE, '')
-        return unless reserved?(own) || reserved?(rest) || Captures.urls(rest).any?
+        swallowed = section.scan(BLOCK).any? { |_revision, _source, text| text.include?('shaka:ui-history') }
+        return unless swallowed || reserved?(own) || reserved?(rest) || Captures.urls(rest).any?
 
         raise Error, "Earlier evidence in #{source} no longer parses; restore it or retire its captures by hand."
       end

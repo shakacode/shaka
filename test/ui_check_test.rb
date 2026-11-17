@@ -257,6 +257,35 @@ end
 class UiCheckHistoryRecoveryTest < Minitest::Test
   include UiCheckFixture
 
+  def block(text)
+    Shaka::UiCheck::History::Block.new(OLD, 'https://github.com/example/test/pull/1#issuecomment-1', text)
+  end
+
+  def views = %w[home examples people].map { |name| "![View](#{asset(name)})" }.join("\n")
+
+  def check_with(block, id)
+    body = Shaka::UiCheck::History.render([block], head: HEAD, commit_url: ->(sha) { sha })
+    { revision: HEAD, source: "https://github.com/example/test/pull/1#issuecomment-#{id}", body: "Note.\n#{body}" }
+  end
+
+  def test_sibling_copies_with_different_replaced_marks_keep_every_mark
+    marks = %w[examples people].map { |name| "<!-- shaka:ui-replaced --> Replaced at `ccccccc`: #{asset(name)}" }
+    checks = marks.each_with_index.map { |mark, index| check_with(block("#{views}\n\n#{mark}"), index + 2) }
+    text = Shaka::UiCheck::History.carry(checks, shown: [], retired: [], head: HEAD).first.text
+
+    marks.each { |mark| assert_includes text, mark }
+  end
+
+  def test_a_block_that_swallowed_its_neighbour_refuses_before_posting
+    github = GitHub.new([earlier_check(1, 'home')])
+    second_check(github, 'Second head.', 'examples')
+    publish(github, body: 'Third head.', nonce: '22222222')
+    github.comments.last['body'] = github.comments.last['body'].sub('<!-- /shaka:ui-history-from -->', '')
+
+    assert_raises(Shaka::Error) { publish(github, body: 'Fourth head.', nonce: '33333333') }
+    assert_equal 2, github.posts.length
+  end
+
   def test_retrying_with_the_same_retire_list_after_a_failed_fold_keeps_one_mark
     first = earlier_check(1, 'home', 'examples')
     github = GitHub.new([first.dup])
