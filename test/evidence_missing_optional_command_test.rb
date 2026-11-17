@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
-require_relative 'evidence_fixture'
+require_relative 'trusted_command_fixture'
 require 'shaka/configuration/feature_guard'
 
 # A branch that has the command directory but predates an optional script the default branch added
 # runs its other commands; the missing script is skipped, never run from the trusted commit.
 class EvidenceMissingOptionalCommandTest < Minitest::Test
-  include EvidenceFixture
+  include TrustedCommandFixture
 
   VALIDATE_LOCAL = '.agents/shaka/bin/validate-local'
   TRIGGER = '.agents/shaka/bin/trigger-hosted-ci'
 
   def test_validate_runs_and_counts_when_the_candidate_lacks_validate_local
-    with_older_branch do |root, trusted, head|
+    with_branch_missing_script do |root, trusted, head|
       result = run_check(root, trusted, command: 'validate')
 
       assert_equal 'completed', result.fetch('status')
@@ -26,20 +26,20 @@ class EvidenceMissingOptionalCommandTest < Minitest::Test
   end
 
   def test_validate_local_is_refused_when_the_candidate_lacks_it
-    with_older_branch do |root, trusted, _head|
+    with_branch_missing_script do |root, trusted, _head|
       _output, error = capture_io do
         assert_equal 1, Shaka::Evidence::Command.run(
           ['run', '--root', root, '--ref', trusted, '--repository', 'shakacode/shaka', '--command', 'validate_local']
         )
       end
 
-      assert_includes error, 'validate_local is not configured for this repository'
+      assert_includes error, "validate_local is not configured for this repository; #{VALIDATE_LOCAL} is not in this"
       refute_path_exists File.join(root, VALIDATE_LOCAL)
     end
   end
 
   def test_settings_omit_the_missing_script
-    with_older_branch do |root, trusted, _head|
+    with_branch_missing_script do |root, trusted, _head|
       commands = Shaka::Configuration.trusted(root:, ref: trusted).commands
 
       refute commands.key?('validate_local')
@@ -48,7 +48,7 @@ class EvidenceMissingOptionalCommandTest < Minitest::Test
   end
 
   def test_trigger_without_validate_local_is_still_refused
-    with_older_branch(extra: ['trigger_hosted_ci']) do |root, trusted, _head|
+    with_branch_missing_script(extra: ['trigger_hosted_ci']) do |root, trusted, _head|
       File.write(File.join(root, TRIGGER), "#!/bin/sh\nexit 0\n")
       File.chmod(0o755, File.join(root, TRIGGER))
 
@@ -57,8 +57,20 @@ class EvidenceMissingOptionalCommandTest < Minitest::Test
     end
   end
 
+  def test_invalid_trusted_optional_commands_are_refused_when_the_candidate_lacks_both
+    with_checkout do |root, _initial|
+      create_command(root, 'trigger_hosted_ci')
+      trusted = commit_all(root)
+      git(root, 'rm', '--quiet', TRIGGER)
+      commit_all(root)
+
+      error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: trusted) }
+      assert_includes error.message, "#{TRIGGER} requires #{VALIDATE_LOCAL}"
+    end
+  end
+
   def test_a_missing_required_script_is_still_refused
-    with_older_branch do |root, trusted, _head|
+    with_branch_missing_script do |root, trusted, _head|
       File.delete(File.join(root, '.agents/shaka/bin/test'))
 
       error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: trusted) }
@@ -95,7 +107,7 @@ class EvidenceMissingOptionalCommandTest < Minitest::Test
 
   # The trusted commit adds optional scripts; the candidate commit after it removes them, like an
   # older branch that already had the command directory.
-  def with_older_branch(extra: [])
+  def with_branch_missing_script(extra: [])
     with_checkout do |root, _initial|
       names = ['validate_local', *extra]
       names.each { create_command(root, it) }
@@ -104,12 +116,6 @@ class EvidenceMissingOptionalCommandTest < Minitest::Test
       File.write(File.join(root, 'candidate.txt'), "older branch\n")
       yield root, trusted, commit_all(root)
     end
-  end
-
-  def commit_all(root)
-    git(root, 'add', '-A')
-    commit(root)
-    git(root, 'rev-parse', 'HEAD')
   end
 
   def verified_validation(root, trusted, head, result)

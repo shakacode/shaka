@@ -71,7 +71,9 @@ module Shaka
         return trusted unless @candidate_commands && !predates_commands?
 
         # A branch cut before the trusted commit added an optional script runs without it. The script
-        # is not configured for that run, so it can neither run nor count as evidence.
+        # is not configured for that run, so it can neither run nor count as evidence. The trusted
+        # set must still be valid on its own, whatever the candidate lacks.
+        validate_dependencies(trusted)
         trusted & candidate_optional_commands
       end
 
