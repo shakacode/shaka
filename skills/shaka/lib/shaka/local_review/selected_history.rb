@@ -28,9 +28,9 @@ module Shaka
     def collapse_selection(superseded)
       report = collapse
       reported = reported(report)
-      return report if report['skipped'] || reported.include?(@current)
+      return report if reported.include?(@current)
 
-      missed = superseded - report['collapsed'] - reported - linked(superseded)
+      missed = superseded - report['collapsed'] - reported - linked(superseded, report)
       report.merge('unavailable' => report['unavailable'] + missed.map { |id| "Comment #{id} #{NOT_FOLDED}" })
     end
 
@@ -47,11 +47,17 @@ module Shaka
     # Unlike automatic cleanup, an archived report of the current commit stays where it points.
     def earlier?(comment, latest) = attestation(comment['body'])[1] != attestation(latest['body'])[1]
 
-    def linked(ids)
+    # A refused renderer folded nothing, so no selection counts as already linked.
+    def linked(ids, report)
+      return [] if report['skipped']
+
       pointer = "#{MARKER} #{url_prefix}#{@current}\n"
       @github.issue_comments.filter_map do |comment|
         comment['id'] if ids.include?(comment['id']) && owned?(comment) && comment['body'].include?(pointer)
       end
+    rescue Error => e
+      report['unavailable'] << "Folded comments could not be listed again: #{e.message}"
+      []
     end
   end
 end
