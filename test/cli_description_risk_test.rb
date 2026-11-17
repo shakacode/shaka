@@ -50,7 +50,8 @@ class CliDescriptionRiskTest < Minitest::Test
           File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
           puts JSON.generate(request)
         else
-          puts JSON.generate('body' => '', 'head' => { 'sha' => '#{HEAD}' }, 'base' => { 'sha' => '#{'b' * 40}' },
+          puts JSON.generate('body' => '', 'draft' => #{@draft == true}, 'head' => { 'sha' => '#{HEAD}' },
+                             'base' => { 'sha' => '#{'b' * 40}' },
                              'changed_files' => 1, 'additions' => 5, 'deletions' => 0)
         end
       when %r{pulls/1/files} then puts JSON.generate([{ 'filename' => '#{CHANGED}', 'status' => 'modified' }])
@@ -96,6 +97,19 @@ class CliDescriptionRiskTest < Minitest::Test
 
       assert_predicate status, :success?, error
       assert_includes File.read(File.join(dir, 'published.md')), '**Risk: not rated yet**'
+    end
+  end
+
+  # The real command reads the draft flag from the pull it fetches, so a Merge checkpoint names the step first.
+  def test_a_draft_does_not_lead_with_a_merge_recommendation
+    @draft = true
+    Dir.mktmpdir do |dir|
+      _output, error, status = run_description(dir, ref: true)
+
+      assert_predicate status, :success?, error
+      body = File.read(File.join(dir, 'published.md'))
+      assert_includes body, '**Draft: mark it ready for review before merging** · '
+      refute_includes body, 'Recommendation: Merge'
     end
   end
 
