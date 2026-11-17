@@ -45,8 +45,8 @@ class ReviewerCommandTest < Minitest::Test
     with_repository do |root|
       write_command(root, 'validate-local')
       commit_repository(root)
-      FileUtils.rm(File.join(root, '.agents/shaka/bin/validate-local'))
-      assert_reviewer_rejects(root, '.agents/shaka/bin/validate-local does not exist')
+      File.chmod(0o644, File.join(root, '.agents/shaka/bin/validate-local'))
+      assert_reviewer_rejects(root, '.agents/shaka/bin/validate-local is not executable')
     end
   end
 

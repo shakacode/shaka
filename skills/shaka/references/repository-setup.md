@@ -314,7 +314,7 @@ shaka seam check --root . --ref FULL_DEFAULT_BRANCH_SHA
 
 A PR's proposed policy cannot grant that PR new authority. `--ref` reads policy
 and optional script availability from the trusted commit, then validates the
-scripts in the candidate checkout. Inspect changes to those scripts before
+scripts in the candidate checkout and omits from `commands` any optional script it lacks. Inspect changes to those scripts before
 executing them. `--local` grants no policy or merge authority; omitting both
 flags performs the same candidate check with a warning. Combining them is an error.
 
