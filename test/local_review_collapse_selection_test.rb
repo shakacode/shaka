@@ -17,6 +17,41 @@ class LocalReviewCollapseSelectionTest < LocalReviewPublishCleanupSupport
     refute_includes comment(github, 2), Shaka::LocalReviewHistory::MARKER
   end
 
+  def test_selecting_an_already_folded_comment_again_succeeds_without_an_edit
+    github = two_ledgers
+    assert_equal 0, select(github, current: 2, superseded: [1]).first
+    github.edits.clear
+
+    status, result = select(github, current: 2, superseded: [1])
+
+    assert_equal [0, [], []], [status, result.fetch('collapsed'), result.fetch('unavailable')]
+    assert_empty github.edits
+  end
+
+  # Report 1 of the earlier commit was folded behind 2; the PR returned to that commit and report 3.
+  def test_an_archived_report_of_the_current_commit_keeps_its_pointer
+    github = returned_to_earlier_commit
+
+    status, result = select(github, current: 3, superseded: [1])
+
+    assert_equal [1, []], [status, result.fetch('collapsed')]
+    assert_includes result.fetch('unavailable').join, 'Comment 1 was not folded'
+    assert_empty github.edits
+  end
+
+  def test_a_failed_edit_and_an_unfoldable_selection_are_both_listed
+    github = two_ledgers
+    github.add_evidence(70)
+    github.cleanup_failure = true
+
+    status, result = select(github, current: 2, superseded: [1, 70])
+
+    assert_equal 1, status
+    unavailable = result.fetch('unavailable').join("\n")
+    assert_includes unavailable, 'Comment 1: Cleanup denied'
+    assert_includes unavailable, 'Comment 70 was not folded'
+  end
+
   def test_the_bare_command_folds_an_earlier_ledgers_comment_too
     github = two_ledgers
 
@@ -73,6 +108,15 @@ class LocalReviewCollapseSelectionTest < LocalReviewPublishCleanupSupport
                         'issue_url' => 'https://api.github.com/repos/o/r/issues/7',
                         'body' => "🤖 AGENT · OpenAI · gpt · high\n\nScreenshot." }
     end
+    github
+  end
+
+  def returned_to_earlier_commit
+    github = two_ledgers
+    assert_equal 0, collapse(github).first
+    github.head = EARLIER
+    assert_equal 0, publish(github, { 'id' => 'cccccccccccc', 'rounds' => [earlier_defect] }).first
+    github.edits.clear
     github
   end
 
