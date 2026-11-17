@@ -64,10 +64,10 @@ complete setup built on one template section.
 Without a Shaka heading, your sections come after all of Shaka's, just above the
 closing credit line. To choose the spot, add one of these headings to the template:
 
-| Heading | Shaka's other sections appear |
+| Heading | Shaka's other sections appear at that spot |
 | --- | --- |
-| `## Shaka` | In one collapsed block labeled Shaka, which readers expand |
-| `## Shaka Inline` | Expanded, at that spot |
+| `## Shaka` | With Intent and Risk and review folded into one block labeled Shaka |
+| `## Shaka Inline` | All expanded |
 
 For example, with this template:
 
@@ -87,26 +87,26 @@ the description reads in this order:
 
 1. The line naming the agent, then the recommendation and review links
 2. **Summary**
-3. **Verification**, with its evidence
-4. A collapsed **Shaka** block holding Intent, Risk and review, Shaka metrics, and the rest
+3. A collapsed **Shaka** block holding Intent and Risk and review
+4. **Verification** with its evidence, **Shaka metrics**, and Shaka's other sections
 5. **Rollout**
 6. The Shaka credit line
 
-With `## Shaka Inline` in place of `## Shaka`, item 4 shows the same sections expanded.
+With `## Shaka Inline` in place of `## Shaka`, Intent and Risk and review show expanded.
 
 The order follows these rules:
 
 - Each `##` heading in the template puts its section at that spot. The section can be
-  yours or Shaka's. For example, `## Verification` moves verification, with its evidence, to that spot.
+  yours or Shaka's. For example, `## Verification` moves verification, with its evidence,
+  to that spot.
 - When the agent writes a section your template does not name, it joins Shaka's sections.
 - Shaka reads only `##` headings. It skips those inside code blocks and inside HTML
   comments that start a line.
 - The opening lines never move. The first line names the agent that wrote the
   description. The recommendation, any decisions waiting on you, and the review links
   follow, so the decision comes first. The credit line stays last.
-- The fold never hides what you act on. **Summary**, **Verification** and its evidence,
-  **Before and after merge**, **Human comments**, and an unfinished PR's **WIP Details**
-  stay in view just above it.
+- The fold holds only Intent and Risk and review. Everything else stays in view,
+  including verification gaps, steps before or after merging, comments, and costs.
 - Text inside the fold does not count toward [prose limits](settings.md#prose_limits),
   like the body of any collapsed block.
 

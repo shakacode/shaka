@@ -33,11 +33,11 @@ class PublicationTemplateLayoutTest < Minitest::Test
     assert_fixed_ends(rendered)
   end
 
-  def test_collapsed_heading_folds_the_sections_the_template_does_not_name
+  def test_collapsed_heading_folds_intent_where_it_would_appear
     rendered = render(%w[Deployment Shaka Summary])
-    assert_equal ['Deployment', 'Verification', '<details> Evidence and limitations', '<details> Shaka', 'Intent',
+    assert_equal ['Deployment', '<details> Shaka', 'Intent', 'Verification', '<details> Evidence and limitations',
                   'Shaka metrics', 'Summary'], outline(rendered)
-    fold = rendered[%r{<details>\n<summary>Shaka</summary>\n\n.*?\n\n</details>\n\n## Summary}m]
+    fold = rendered[%r{<details>\n<summary>Shaka</summary>\n\n.*?\n\n</details>\n\n## Verification}m]
     assert fold, rendered
     assert_includes fold, "## Intent\n\n"
     assert_fixed_ends(rendered)
@@ -49,13 +49,22 @@ class PublicationTemplateLayoutTest < Minitest::Test
                   'Shaka metrics'], outline(rendered)
   end
 
-  def test_fold_leaves_what_a_reader_acts_on_in_view
+  # Everything a reader acts on stays in view, including sections the fold rule does not name.
+  def test_fold_holds_only_intent_and_risk
     steps = [{ 'when' => 'after merge', 'step' => 'Update Shaka', 'who' => 'Everyone', 'where' => 'Each machine',
                'verify' => 'doctor reports HEALTHY' }]
-    rendered = render(%w[Shaka], 'steps_besides_merging' => steps, 'wip' => WIP)
-    assert_equal ['Summary', 'Before and after merge', 'Verification', '<details> Evidence and limitations',
-                  '<details> WIP Details', '<details> Shaka', 'Intent', 'Shaka metrics', 'Deployment'],
+    risk = { 'summary' => 'Risk classes', 'body' => 'Low: rendering only.' }
+    rendered = render(%w[Shaka], 'steps_besides_merging' => steps, 'wip' => WIP, 'risk_record' => risk)
+    assert_equal ['Summary', 'Before and after merge', '<details> Shaka', 'Intent', 'Risk and review', 'Verification',
+                  '<details> Evidence and limitations', 'Shaka metrics', '<details> WIP Details', 'Deployment'],
                  outline(rendered)
+  end
+
+  def test_evidence_stays_with_shakas_own_verification
+    sections = [{ 'heading' => 'Verification', 'body' => 'Supplied.' }]
+    rendered = render(%w[Shaka], 'sections' => sections)
+    assert_equal ['Summary', '<details> Shaka', 'Intent', 'Verification', '<details> Evidence and limitations',
+                  'Shaka metrics', 'Verification'], outline(rendered)
   end
 
   def test_sections_the_template_does_not_name_stay_with_shaka
@@ -75,8 +84,10 @@ class PublicationTemplateLayoutTest < Minitest::Test
     sections = [{ 'heading' => 'shaka', 'body' => 'Everything else.' }]
     error = assert_raises(Shaka::Error) { render(%w[Summary Shaka], 'sections' => sections) }
     assert_includes error.message, 'Leave it out of sections'
-    hashed = [{ 'heading' => 'Shaka Inline ##', 'body' => 'Everything else.' }]
-    assert_raises(Shaka::Error) { render(%w[Summary Shaka], 'sections' => hashed) }
+    ['Shaka Inline ##', 'Shaka <!-- note -->'].each do |heading|
+      supplied = [{ 'heading' => heading, 'body' => 'Everything else.' }]
+      assert_raises(Shaka::Error) { render(%w[Summary Shaka], 'sections' => supplied) }
+    end
     assert_includes render(%w[Summary], 'sections' => sections), "## shaka\n\nEverything else."
   end
 
