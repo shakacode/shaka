@@ -6,7 +6,7 @@ Code running Claude Opus 5.5 took the first measurements on 2026-11-16 and 2026-
 at the maintainer's request. The maintainer chose to keep the record internal instead of
 publishing an article. The figures need context that a docs reader would not have.
 
-## Where it stands, 2026-11-17
+## Where it stands at `f88fd8e`, 2026-11-17
 
 - Invoking Shaka loads `SKILL.md` and the workflow that `shaka workflow` prints, 12,538
   words. Claude Code with Claude Opus 5.5 counts about 30,000 tokens; Codex with
@@ -121,8 +121,10 @@ a lower cost.
 
 ## Log
 
-Startup text is `SKILL.md` plus the rendered workflow. Token counts exclude each CLI's
-own prompt, shown separately. Words and counts come from the renderer of the commit that
+Startup text is `SKILL.md` plus the rendered workflow. Each row names the `main` commit
+whose startup text it counted; at a release, that is the commit the version PR starts
+from. Token counts exclude each CLI's own prompt, shown separately. Words and counts come
+from the renderer of the commit that
 ran the report, so a renderer change moves them too: on 2026-11-17 the current renderer
 gave `f2441b6` 12,251 words and 30,051 Claude tokens.
 

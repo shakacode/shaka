@@ -104,3 +104,25 @@ class EvaluationSkillLibraryTextsTest < Minitest::Test
     assert_includes error.message, 'SKILL.md: unreadable frontmatter'
   end
 end
+
+# Runs the real script without spending quota, so the reader, Shaka's workflow rendering, and the
+# report assembly are exercised end to end.
+class EvaluationSkillLibraryTokensScriptTest < Minitest::Test
+  def words_only_report
+    root = File.expand_path('..', __dir__)
+    output, status = Open3.capture2(RbConfig.ruby, File.join(root, 'eval/bin/skill-library-tokens'),
+                                    '--words-only', "shaka=#{root}")
+    assert_predicate status, :success?
+    JSON.parse(output)
+  end
+
+  def test_words_only_reports_sizes_without_running_a_cli
+    report = words_only_report
+    shaka = report['libraries'].first
+
+    assert_nil report['clis']
+    assert_equal ['shaka', 1], shaka.values_at('library', 'skills')
+    assert_operator shaka['median_skill']['words'], :>, 1_000
+    refute(shaka.values.grep(Hash).any? { |row| row.key?('claude') || row.key?('codex') })
+  end
+end
