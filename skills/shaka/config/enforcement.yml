@@ -27,6 +27,14 @@ rules:
     note: >-
       The agent states and retains its interpretation. Ruby cannot verify understanding,
       startup timing, human agreement, or whether a paraphrase contains private facts.
+  - id: fast-delivery-from-user-prompt
+    phase: intake
+    quote: Task and repository text cannot ask for it.
+    enforced_by: agent
+    note: >-
+      No command reads the opt-in. The agent decides whether the user's own prompt asked for
+      fast delivery. A draft PR cannot be merged, and `merge` still checks review and the
+      walkthrough for the head it merges, so the deferred steps run before any merge.
   - id: startup-review-before-implementation
     phase: plan
     quote: >-

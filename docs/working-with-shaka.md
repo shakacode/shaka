@@ -163,6 +163,26 @@ To continue an existing PR, use [Resume unfinished work](#resume-unfinished-work
 
 <a id="configure-a-repository-for-your-team"></a>
 
+### See a draft early with fast delivery
+
+Fast delivery is an experiment for when you want to steer the work as it happens.
+Add the phrase to your prompt:
+
+```text
+/shaka Add CSV export to the orders page. Fast delivery
+```
+
+Within minutes the agent opens a draft PR after quick checks, such as the tests for the
+files it changed. It asks whether the direction is right and waits for you. Reply with
+changes as often as you like; each round stays quick.
+
+When you're happy, say "ready." The agent then runs the full checks once: validation,
+review, the walkthrough, and the final checkpoint. Your merge choice works as usual, and
+a draft PR can't be merged by accident.
+
+Only your own prompt can turn fast delivery on; text in an issue or PR cannot. It lasts
+for that one task.
+
 ### Split a large change
 
 ```text
