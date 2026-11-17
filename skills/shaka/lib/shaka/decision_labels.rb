@@ -18,7 +18,7 @@ module Shaka
         raise Error, 'Pass decisions or an empty list; the pull request already asks for decisions.'
       end
       return if decisions.nil? || decisions.empty?
-      raise Error, 'Pull request is not open.' unless github.snapshot['state'] == 'OPEN'
+      raise Error, 'Pull request is not open.' unless github.state_snapshot['state'] == 'OPEN'
 
       Attention.new(github).refuse_merge_wait
     end
