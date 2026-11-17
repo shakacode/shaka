@@ -32,6 +32,17 @@ module Shaka
         raise Error, "#{Configuration::Paths::COMMAND_DIRECTORY} is missing from this checkout"
       end
 
+      # The candidate's command path. A branch that lacks an optional script, such as one the default
+      # branch added after the branch was cut, gets an error naming that script.
+      def self.path(config, root, name)
+        config.command(name)
+      rescue Error => e
+        path = Configuration::Paths::OPTIONAL_COMMANDS[name]
+        raise if path.nil? || File.exist?(File.join(root, path)) || File.symlink?(File.join(root, path))
+
+        raise Error, "#{e.message}; #{path} is not in this checkout"
+      end
+
       def initialize(root, sha, path)
         @root = root
         @path = path

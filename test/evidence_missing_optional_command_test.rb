@@ -1,0 +1,128 @@
+# frozen_string_literal: true
+
+require_relative 'trusted_command_fixture'
+require 'shaka/configuration/feature_guard'
+
+# A branch that has the command directory but predates an optional script the default branch added
+# runs its other commands; the missing script is skipped, never run from the trusted commit.
+class EvidenceMissingOptionalCommandTest < Minitest::Test
+  include TrustedCommandFixture
+
+  VALIDATE_LOCAL = '.agents/shaka/bin/validate-local'
+  TRIGGER = '.agents/shaka/bin/trigger-hosted-ci'
+
+  def test_validate_runs_and_counts_when_the_candidate_lacks_validate_local
+    with_branch_missing_script do |root, trusted, head|
+      result = run_check(root, trusted, command: 'validate')
+
+      assert_equal 'completed', result.fetch('status')
+      refute result.key?('command_source')
+      fingerprinted = result.dig('settings', 'components', 'files').keys
+      assert_includes fingerprinted, '.agents/shaka/bin/validate'
+      refute_includes fingerprinted, VALIDATE_LOCAL
+      assert_equal 'bound', bind(root, trusted, head, result).fetch('status')
+      assert_equal 'bound', verified_validation(root, trusted, head, result).fetch('status')
+    end
+  end
+
+  def test_validate_local_is_refused_when_the_candidate_lacks_it
+    with_branch_missing_script do |root, trusted, _head|
+      _output, error = capture_io do
+        assert_equal 1, Shaka::Evidence::Command.run(
+          ['run', '--root', root, '--ref', trusted, '--repository', 'shakacode/shaka', '--command', 'validate_local']
+        )
+      end
+
+      assert_includes error, "validate_local is not configured for this repository; #{VALIDATE_LOCAL} is not in this"
+      refute_path_exists File.join(root, VALIDATE_LOCAL)
+    end
+  end
+
+  def test_settings_omit_the_missing_script
+    with_branch_missing_script do |root, trusted, _head|
+      commands = Shaka::Configuration.trusted(root:, ref: trusted).commands
+
+      refute commands.key?('validate_local')
+      assert_equal '.agents/shaka/bin/validate', commands.fetch('validate')
+    end
+  end
+
+  def test_trigger_without_validate_local_is_still_refused
+    with_branch_missing_script(extra: ['trigger_hosted_ci']) do |root, trusted, _head|
+      File.write(File.join(root, TRIGGER), "#!/bin/sh\nexit 0\n")
+      File.chmod(0o755, File.join(root, TRIGGER))
+
+      error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: trusted) }
+      assert_includes error.message, "#{TRIGGER} requires #{VALIDATE_LOCAL}"
+    end
+  end
+
+  def test_invalid_trusted_optional_commands_are_refused_when_the_candidate_lacks_both
+    with_checkout do |root, _initial|
+      create_command(root, 'trigger_hosted_ci')
+      trusted = commit_all(root)
+      git(root, 'rm', '--quiet', TRIGGER)
+      commit_all(root)
+
+      error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: trusted) }
+      assert_includes error.message, "#{TRIGGER} requires #{VALIDATE_LOCAL}"
+    end
+  end
+
+  def test_a_missing_required_script_is_still_refused
+    with_branch_missing_script do |root, trusted, _head|
+      File.delete(File.join(root, '.agents/shaka/bin/test'))
+
+      error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: trusted) }
+      assert_includes error.message, '.agents/shaka/bin/test does not exist'
+    end
+  end
+
+  # The older branch's merge base predates the script; a PR that deletes it shows the deletion.
+  def test_a_feature_pr_that_deletes_the_script_is_refused
+    with_checkout do |root, _initial|
+      create_command(root, 'validate_local')
+      trusted = commit_all(root)
+      git(root, 'rm', '--quiet', VALIDATE_LOCAL)
+      head = commit_all(root)
+
+      error = assert_raises(Shaka::Error) { Shaka::Configuration::FeatureGuard.check(root:, base: trusted, head:) }
+      assert_includes error.message, 'Feature PR contains Shaka configuration changes'
+    end
+  end
+
+  def test_a_branch_cut_before_the_script_passes_the_feature_guard
+    with_checkout do |root, initial|
+      create_command(root, 'validate_local')
+      trusted = commit_all(root)
+      git(root, 'checkout', '--quiet', '-b', 'older', initial)
+      File.write(File.join(root, 'candidate.txt'), "older branch\n")
+      head = commit_all(root)
+
+      assert_equal 'clear', Shaka::Configuration::FeatureGuard.check(root:, base: trusted, head:).fetch('status')
+    end
+  end
+
+  private
+
+  # The trusted commit adds optional scripts; the candidate commit after it removes them, like an
+  # older branch that already had the command directory.
+  def with_branch_missing_script(extra: [])
+    with_checkout do |root, _initial|
+      names = ['validate_local', *extra]
+      names.each { create_command(root, it) }
+      trusted = commit_all(root)
+      git(root, 'rm', '--quiet', *names.map { optional_commands.fetch(it) })
+      File.write(File.join(root, 'candidate.txt'), "older branch\n")
+      yield root, trusted, commit_all(root)
+    end
+  end
+
+  def verified_validation(root, trusted, head, result)
+    Tempfile.create(['shaka-validation-', '.json']) do |file|
+      file.write(JSON.generate(result))
+      file.flush
+      verify(root, head, ref: trusted, validation: file.path).dig('checks', 'validation', 0)
+    end
+  end
+end
