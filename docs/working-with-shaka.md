@@ -270,6 +270,9 @@ The mode decides what the agent does at that step:
 A skill that starts other agents, or whose own file says only a person may start it,
 always waits for your yes. Shaka reads pack files and project skills only from the
 default branch, so a pack added in a pull request takes effect after it merges.
+Repository packs need
+[team settings](settings-guide.md#use-individual-or-team-settings); with individual
+settings, Shaka reads none.
 For your own machine, put pack files in `~/.agents/shaka/packs/`. Personal packs
 can suggest or decline skills, but never use one without asking. Shaka ships no
 packs of its own yet.
@@ -280,8 +283,9 @@ To check what applies, ask your agent:
 Which companion skills does Shaka offer in this repository?
 ```
 
-The agent runs `shaka companions --all`, which lists each skill with its mode and
-reason, why that mode applies, and whether the skill is installed.
+The agent runs `shaka companions --all` with the default branch's latest commit. The
+output lists each skill with its mode and reason, why that mode applies, and whether
+the skill is installed.
 
 <a id="hand-over-a-spec-and-tickets"></a>
 <a id="what-each-kind-of-skill-can-do"></a>
