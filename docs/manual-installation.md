@@ -154,9 +154,9 @@ left by an interrupted update. It stops when it needs a decision.
 
 To remove Claude Code's startup reminder, run
 `"$shaka_source/bin/install" --directory "$shaka_source" --agent claude --no-session-hook`.
-Run it again without `--no-session-hook` to add the reminder back. The same
-command without the flag adds the reminder to an installation made before it
-was on by default.
+To add the reminder back, run it with `--session-hook` in place of
+`--no-session-hook`. That flag also adds the reminder with an installer from
+before the reminder was on by default.
 
 </details>
 
