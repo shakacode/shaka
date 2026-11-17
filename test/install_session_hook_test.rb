@@ -27,12 +27,13 @@ class InstallSessionHookTest < Minitest::Test
     assert_equal UNRELATED, settings
   end
 
-  def test_unreadable_settings_stop_the_install_before_it_links_unless_it_opts_out
+  # The reminder is optional, so a default install finishes without it; an explicit --session-hook refuses first.
+  def test_unreadable_settings_skip_the_default_hook_and_stop_the_explicit_flag
     write_settings('{ not json')
-    output = refused('--repository', @remote, '--agent', 'claude')
-    assert_includes output, 'rerun bin/install with --no-session-hook'
+    output = refused('--repository', @remote, '--agent', 'claude', '--session-hook')
+    assert_includes output, 'rerun bin/install without --session-hook'
     refute_path_exists File.join(@home, '.claude/skills/shaka')
-    installed('--repository', @remote, '--agent', 'claude', '--no-session-hook')
+    assert_includes installed('--repository', @remote, '--agent', 'claude'), 'Skipped the Claude Code update-check hook'
     assert_equal '{ not json', File.read(settings_path)
   end
 
@@ -66,8 +67,8 @@ class InstallSessionHookTest < Minitest::Test
     hook = Shaka::Install::SessionHook.new('/opt/skills/shaka/scripts/shaka', home: @home)
     error = assert_raises(ArgumentError) { hook.apply(true) }
     assert_includes error.message, 'Claude Code settings are not valid JSON'
-    assert_includes error.message, "Found: #{settings_path}"
-    assert_includes error.message, 'rerun bin/install with --no-session-hook'
+    assert_includes error.message, 'rerun bin/install without --session-hook'
+    assert_match(/\ASkipped /, hook.apply(true, strict: false))
     assert_nil hook.apply(false)
     assert_equal '{ not json', File.read(settings_path)
   end

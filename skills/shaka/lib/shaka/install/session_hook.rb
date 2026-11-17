@@ -18,9 +18,9 @@ module Shaka
       # Each Claude Code installation chooses again, so installing it with --no-session-hook removes an earlier hook.
       # The hook runs the helper through the Claude Code skill link, so it follows the link when
       # another checkout takes the installation over.
-      def self.choose(enabled, home: Dir.home)
+      def self.choose(enabled, strict: enabled, home: Dir.home)
         helper = File.join(home, Official::HOSTS.fetch('claude'), 'shaka/scripts/shaka') if enabled
-        change = new(helper, home:).apply(enabled)
+        change = new(helper, home:).apply(enabled, strict:)
         puts change if change
       end
 
@@ -34,21 +34,22 @@ module Shaka
         false
       end
 
-      # --session-hook, the opt-in from before the hook was the default, still works and asks for that default.
+      # --session-hook, the opt-in from before the hook was the default, still works: it asks for the hook and
+      # refuses settings Shaka cannot read.
       def self.validate(options)
         return if options[:session_hook].nil? || options[:agents].include?('claude')
 
         raise ArgumentError, "--#{'no-' unless options[:session_hook]}session-hook requires --agent claude"
       end
 
-      # Refuses unreadable settings before the installation changes anything, then sets or removes
-      # the hook once a Claude Code installation succeeds. Maintenance leaves the hook as it is.
+      # Sets or removes the hook once a Claude Code installation succeeds; maintenance leaves it as it is.
+      # The reminder is optional, so by default settings Shaka cannot read skip it and the installation
+      # finishes. Only an explicit --session-hook refuses them, before the installation changes anything.
       def self.around(options, maintenance)
         claude = !maintenance && options[:agents].include?('claude')
-        enabled = options[:session_hook] != false
-        new(nil).send(:read, strict: true) if claude && enabled
+        new(nil).send(:read, strict: true) if claude && options[:session_hook]
         yield
-        choose(enabled) if claude
+        choose(options[:session_hook] != false, strict: options[:session_hook] == true) if claude
       end
 
       def initialize(helper, home: Dir.home)
@@ -57,9 +58,10 @@ module Shaka
       end
 
       # Returns the change made, or nil when the settings already match.
-      def apply(enabled)
-        settings = read(strict: enabled)
-        return if settings.nil? || owned_commands(settings) == (enabled ? [@command] : [])
+      def apply(enabled, strict: enabled)
+        settings = read(strict:)
+        return ("Skipped the Claude Code update-check hook: Shaka cannot read #{@path}" if enabled) unless settings
+        return if owned_commands(settings) == (enabled ? [@command] : [])
 
         remove_owned(settings)
         add(settings) if enabled
@@ -69,7 +71,8 @@ module Shaka
 
       private
 
-      # With --no-session-hook, settings Shaka cannot read hold no hook it could remove, so they stay untouched.
+      # Settings Shaka cannot read stay untouched: they hold no hook it could remove, and only an explicit
+      # --session-hook refuses them.
       def read(strict:)
         return {} unless File.exist?(@path)
 
@@ -87,7 +90,7 @@ module Shaka
 
       def refuse(problem)
         raise ArgumentError, Refusal.message("Claude Code settings #{problem}", @path,
-                                             'fix that file, or rerun bin/install with --no-session-hook')
+                                             'fix that file, or rerun bin/install without --session-hook')
       end
 
       def owned_commands(settings)

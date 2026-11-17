@@ -33,8 +33,9 @@ check result, so with only an update job, the reminder asks for a check each
 day.
 
 The installer adds the reminder as a `SessionStart` hook in
-`~/.claude/settings.json` and prints that change. Updating Shaka leaves the hook
-as it is. If you installed Shaka before the reminder was on by default, ask
+`~/.claude/settings.json` and prints that change. If it cannot read that file,
+it leaves the file alone, finishes without the reminder, and says so. Updating
+Shaka leaves the hook as it is. If you installed Shaka before the reminder was on by default, ask
 your agent:
 
 ```text
