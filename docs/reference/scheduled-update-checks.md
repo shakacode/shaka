@@ -5,7 +5,8 @@ otherwise.
 If you want to update daily, schedule `install --update` for a time when no
 Shaka task is running, or schedule a daily check and update between chats.
 Every Shaka chat runs from the same installed checkout, so an update during a
-task makes that task's validation and review results stale, and it reruns them.
+task can mix old and new instructions in that chat. When the update changes
+Shaka's validation or review code, the task also reruns those checks.
 
 When you invoke Shaka, its skill also asks your agent to run the check once per
 chat. If an update is available, the agent tells you how to install it. A
@@ -45,9 +46,15 @@ job once and read its log. You can also follow the steps yourself.
 The steps below schedule a check. To schedule the update itself, put
 `install --update` where the steps use `update-check`: two `ProgramArguments`
 strings on macOS, and the same two words in the Linux `ExecStart` and the WSL
-command. Choose a time when no Shaka task is running. When the checkout has
-local changes or its history no longer matches the recorded branch, the update
-stops, leaves the checkout unchanged, and logs the next step.
+command. Keep the example job names so the stop steps below still apply.
+
+Choose a time when no Shaka task is running, including for the first run, which
+applies the update at once. A successful run exits 0 and logs
+`Verified Shaka installation` with the new commit. When the checkout has local
+changes or its history no longer matches the recorded branch, the update stops
+with an error, leaves the checkout unchanged, and logs the next step. A
+scheduled update installs whatever the branch holds, without the comparison you
+can review when you update by hand.
 
 For a check, read the job's log for `status` and `guidance`. If the guidance
 recommends an update, finish your active Shaka chats first. Then ask your agent to
