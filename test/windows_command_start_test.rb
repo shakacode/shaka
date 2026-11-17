@@ -50,6 +50,20 @@ class WindowsCommandStartTest < Minitest::Test
     end
   end
 
+  # Off Windows neither a job nor taskkill exists, as when both fail there, so only the direct
+  # termination can end the leader.
+  def test_windows_stop_ends_a_leader_that_outlasts_the_job_and_taskkill
+    Dir.mktmpdir('shaka-windows-stop') do |root|
+      watch = Shaka::Evidence::TreeWatch.new([], root:, tree: nil, windows: true)
+      Open3.popen3(RbConfig.ruby, '-e', 'sleep 120') do |input, _output, _error, waiter|
+        input.close
+        watch.send(:end_tree, waiter)
+
+        refute_predicate waiter, :alive?
+      end
+    end
+  end
+
   def test_windows_install_accepts_an_executable_record_without_an_execute_bit
     with_helper_without_execute_bit do |source, path|
       tracked = { 'skills/shaka/scripts/shaka' => %w[100755 blob] }

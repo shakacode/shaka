@@ -9,6 +9,7 @@ require_relative 'session'
 class WindowsProduct < WindowsSession
   EVIDENCE_RUN = %w[evidence run --repository shakacode/shaka --command test].freeze
   TEST = %w[-- test/executable_file_test.rb].freeze
+  CANDIDATE = 'shaka-windows-candidate'
   UNIX_TOOLS = %r{msys64|[\\/]Git[\\/](?:usr[\\/]bin|bin|mingw64[\\/]bin)[\\/]?\z}i
 
   def call
@@ -33,18 +34,25 @@ class WindowsProduct < WindowsSession
 
   # The result JSON follows the command output on standard output.
   def completed?(output)
-    result = JSON.parse(output[output.index('{')..])
+    result = JSON.parse(output[(output.index('{') || 0)..])
     puts "  status #{result['status']} exit_code #{result['exit_code']}"
     result['status'] == 'completed' && result['exit_code'].to_i.zero?
   end
 
+  # Installs this checkout's head, not upstream main, from a local branch the installer clones.
   def install
-    Dir.mktmpdir('shaka-windows-install') do |home|
-      environment = native_path.merge('HOME' => home, 'USERPROFILE' => home)
-      output, status = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), '--agent', 'codex')
-      puts "  exit #{status.exitstatus}: #{excerpt(output)}"
-      raise 'bin/install failed' unless status.success?
-    end
+    head = git_output('rev-parse', '--short', 'HEAD')
+    git_output('branch', '--force', CANDIDATE, 'HEAD')
+    output, status = Dir.mktmpdir('shaka-windows-install') { |home| run_install(home) }
+    puts "  exit #{status.exitstatus}: #{excerpt(output)}"
+    raise "bin/install did not verify candidate #{head}" unless status.success? && output.include?("(#{head})")
+  ensure
+    git_output('branch', '--delete', '--force', CANDIDATE)
+  end
+
+  def run_install(home)
+    Open3.capture2e(native_path.merge('HOME' => home, 'USERPROFILE' => home), RbConfig.ruby,
+                    File.join(root, 'bin/install'), '--agent', 'codex', '--repository', root, '--branch', CANDIDATE)
   end
 
   # A native shell finds git through Git\cmd and nothing from Git's Unix tree.

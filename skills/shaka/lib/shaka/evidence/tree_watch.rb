@@ -106,12 +106,15 @@ module Shaka
         Doctor::WindowsJob.adopt(pid)
       end
 
-      # taskkill covers a check the job could not hold. A check that outlives both is left to
-      # finish rather than hang the helper.
+      # taskkill /T covers descendants the job could not hold while the leader lives. A leader that
+      # outlasts both is terminated directly, so the wait for its status always ends.
       def end_tree(waiter)
         @job&.terminate
         system('taskkill.exe', '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
-        waiter.join(STOP_SECONDS)
+        Process.kill('KILL', waiter.pid) unless waiter.join(STOP_SECONDS)
+        waiter.join
+      rescue Errno::ESRCH
+        waiter.join
       end
     end
   end
