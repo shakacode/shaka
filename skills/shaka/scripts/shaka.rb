@@ -130,8 +130,7 @@ def merge_policy(options)
   seam, source, kind = Shaka::Configuration.resolve_source(root:, ref:)
   return if kind == 'private/local'
 
-  if options[:auto] && kind == 'preview/local' &&
-     !Shaka::Configuration::Layout.commit(root:, sha: source.fetch(:trusted_ref), allow_missing: true)
+  if options[:auto] && source[:first_setup]
     raise Shaka::Error, 'The first setup settings preview uses Ask. Merge requires a task-scoped decision.'
   end
 

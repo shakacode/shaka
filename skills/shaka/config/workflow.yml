@@ -118,7 +118,8 @@ phases:
     body: |-
       - For an explicitly selected settings PR or an existing preview, follow
         [settings preview](<{{package_root}}/skills/shaka/references/settings-preview.md>)
-        to identify the pinned source before resolving the task base.
+        to identify the pinned source before resolving the task base. On resume,
+        use WIP Details to find the preview worktree.
       - If the seam is missing and the user explicitly requested a private trial, follow
         [private setup](<{{package_root}}/skills/shaka/references/repository-setup.md#try-shaka-privately-in-one-clone>)
         before generating settings, including intake inspection and

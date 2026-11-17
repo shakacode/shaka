@@ -120,8 +120,8 @@ To switch an existing task:
 ```
 
 The selected PR supplies the task's configuration, including reviewer choices.
-When you preview your first team setup PR, the task uses Ask even if you request
-Auto. With shared setup in place, the preview supplies the merge preference
+When you preview your first team setup PR, the task uses Ask even after the
+setup PR merges. With shared setup already in place, the preview supplies the merge preference
 and explicit task choices take precedence. GitHub's required checks and approvals
 still apply.
 
@@ -129,6 +129,7 @@ The agent records the selected PR and pinned commit on the task's PR. The select
 survives a fresh chat and stays with that task's branch and worktree. Updates require
 explicit selection of a newer commit, followed by fresh affected checks and reviews.
 Ask the agent to stop the preview to return to ordinary settings.
+If an update needs different validation wrappers, start a separate task in a fresh worktree.
 
 A local branch can prepare an experiment; the PR makes its choices visible before
 team adoption. Ask to keep that settings PR open if you want to continue experimenting.

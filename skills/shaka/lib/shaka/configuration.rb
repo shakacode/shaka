@@ -33,18 +33,20 @@ module Shaka
     # settings apply only when the repository has no shared setup.
     def resolve_source(root:, ref:, candidate_commands: true)
       sha = resolve_commit(root:, ref:, label: 'settings ref')
-      preview = SettingsPreview.ref(root:)
-      return preview_source(root:, ref: sha, preview:, candidate_commands:) if preview
+      preview = SettingsPreview.new(root:).status
+      return preview_source(root:, ref: sha, preview:, candidate_commands:) if preview['settings_ref']
 
       standard_source(root:, ref: sha, candidate_commands:)
     end
 
     def preview_source(root:, ref:, preview:, candidate_commands:)
-      first_setup = !Layout.commit(root:, sha: ref, allow_missing: true)
-      trusted(root:, ref:, candidate_commands: false) unless first_setup
-      config = trusted(root:, ref: preview, candidate_commands:)
+      team_setup = Layout.commit(root:, sha: ref, allow_missing: true)
+      trusted(root:, ref:, candidate_commands: false) if team_setup
+      first_setup = preview['first_setup'] || !team_setup
+      preview_ref = preview.fetch('settings_ref')
+      config = trusted(root:, ref: preview_ref, candidate_commands:)
       config.merge['preference'] = Defaults.fetch('merge', 'preference') if first_setup
-      [config, { trusted_ref: ref, preview_ref: preview }, 'preview/local']
+      [config, { trusted_ref: ref, preview_ref:, first_setup: }, 'preview/local']
     end
     private_class_method :preview_source
 

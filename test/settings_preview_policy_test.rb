@@ -66,6 +66,34 @@ class FirstSetupPreviewMergeTest < Minitest::Test
       refute_path_exists mutation
     end
   end
+
+  def test_first_setup_preview_retains_ask_after_adoption
+    with_preview_repository do |root, adopted, preview|
+      absent = remove_trusted_setup(root)
+      start_with_default(root, preview, absent)
+      report = JSON.parse(run_command('seam', 'check', '--root', root, '--ref', adopted, root:).first)
+      assert_equal [preview, 'ask'], [report.dig('validation', 'sha'), report.dig('merge', 'preference')]
+      assert_auto_refused(root, adopted)
+    end
+  end
+
+  private
+
+  def start_with_default(root, preview, absent)
+    output, error, status = run_command('seam', 'preview', 'start', '--root', root,
+                                        '--settings-ref', preview, '--ref', absent, root:)
+    assert_predicate status, :success?, error
+    assert JSON.parse(output)['first_setup']
+  end
+
+  def assert_auto_refused(root, adopted)
+    install_fake_github(root)
+    mutation = File.join(root, 'mutation.json')
+    _, error, status = run_merge(root, adopted, mutation, '--auto')
+    refute_predicate status, :success?
+    assert_match(/first setup settings preview uses Ask/, error)
+    refute_path_exists mutation
+  end
 end
 
 class SettingsPreviewNamingTest < Minitest::Test

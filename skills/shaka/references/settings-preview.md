@@ -1,16 +1,16 @@
 # Preview repository settings
 
 Use this procedure when the user explicitly chooses an unmerged settings PR for
-a task. When the default branch has no Shaka configuration, use Ask even if the
-preview specifies Auto or the prompt requests it. Record Ask as the task choice
-and retain it when resuming, including after team adoption. For an
-established team, explicit task choices keep precedence. Use the
+a task. Selecting settings does not approve merging a PR. A trial started
+before team setup uses Ask, including after adoption. For an established team,
+explicit task choices keep precedence. Use the
 [first-setup handoff](repository-setup.md#review-and-merge-the-first-setup-pr)
 for the setup PR itself.
 
-On resume, read `seam preview status` and restore the recorded task choices and
-pinned commit. Continue with that selection even if the PR has merged. Start at
-step 1 for a new selection or an explicitly requested switch to a newer commit.
+On resume, use the feature PR's WIP Details to find its branch and worktree.
+Read `seam preview status` there before resolving settings and restore the
+recorded task choices. Continue using the pinned commit even if the setup PR
+has merged. Use step 1 for a new selection or a requested update.
 
 1. Fetch metadata for the named open settings PR from the verified task repository.
    Verify its head repository matches the task repository and fetch its current head
@@ -26,9 +26,9 @@ step 1 for a new selection or an explicitly requested switch to a newer commit.
    local wrappers for the project's existing commands. Reuse complete individual
    setup when it already exists. For a fresh setup that needs the optional
    `validate-local` and `trigger-hosted-ci` pair, pass both command flags.
-   Otherwise add any missing optional wrappers locally for the preview and record
-   their paths and hashes. If the task base lacks a command the preview requires,
-   explain the mismatch before activation.
+   If an update needs different wrappers, leave the current trial in place and
+   start a separate task in a fresh worktree. Prepare any additional wrappers
+   there using the task base's own commands.
    Inspect local wrappers before execution.
    Selection copies no scripts or workflows from the settings PR. If the preview
    expects a CI job introduced by the setup PR, report whether it ran and apply
@@ -36,14 +36,15 @@ step 1 for a new selection or an explicitly requested switch to a newer commit.
 3. Activate the selected commit and read back its settings:
 
    ```text
-   shaka seam preview start --root TASK_ROOT --settings-ref SETTINGS_SHA
+   shaka seam preview start --root TASK_ROOT --settings-ref SETTINGS_SHA --ref DEFAULT_BRANCH_SHA
    shaka seam preview status --root TASK_ROOT
    shaka seam check --root TASK_ROOT --ref DEFAULT_BRANCH_SHA
    ```
 
 4. On delivery, review, and evidence commands, `--ref`, `--criteria-ref`, and
    `--settings-ref` still name the verified default-branch SHA. Only `preview start`
-   takes the selected commit as `--settings-ref`. Workflow seam references mean
+   takes the selected commit as `--settings-ref`. Its `--ref` pins Ask when
+   the default branch lacks team settings. Workflow seam references mean
    this selected configuration. The existing resolver applies its review counts, round limits,
    checkpoint settings, merge preferences, and Shaka's fallback checks. The check
    report identifies the selected commit. Public-comment trust and repository
@@ -56,12 +57,9 @@ step 1 for a new selection or an explicitly requested switch to a newer commit.
 6. The selection belongs to this worktree and branch. An updated settings PR
    leaves the pinned commit in place. Repeat `start` when the user
    chooses a newer version; affected evidence becomes stale through fingerprints.
-7. Before stopping or switching, retire preview-only wrappers no longer needed.
-   Remove a wrapper if its recorded hash still matches. If it changed, move it
-   outside the settings tree to preserve the edits. Stop with
-   `shaka seam preview stop --root TASK_ROOT` and revalidate affected
-   evidence. Ordinary shared settings then apply. Individual settings remain a
-   fallback only when shared setup is absent; they grant no merge authority.
+7. To stop a preview in place, run `shaka seam preview stop --root TASK_ROOT`
+   and revalidate. If the worktree has preview-only wrappers, keep that worktree
+   with the trial and continue ordinary work in a fresh worktree.
 
 The selector lives in the worktree's Git directory, so tracked candidate content
 cannot activate it. Malformed default-branch configuration remains a setup error.
