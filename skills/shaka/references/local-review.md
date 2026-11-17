@@ -117,7 +117,7 @@ Report `duration_ms` as elapsed runner setup, reviewer invocation and report val
 terminal timing from the returned `attempt_log`; failed attempts remain separate from completed
 rounds. Report `timing_retention: not_retained` as a measurement gap. Keep missing durations UNKNOWN.
 
-DeepSeek/OpenRouter reviews have a 600-second deadline by default; CLI reviewers have 300 seconds.
+Claude and DeepSeek/OpenRouter reviews have a 600-second deadline by default; other CLI reviewers have 300 seconds.
 `--timeout-seconds 1..3600`
 sets a task-specific bound. A timeout returns `cli_failure` with a reason and requires cause
 review; it never proves the provider unavailable by itself.

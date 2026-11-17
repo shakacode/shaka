@@ -34,8 +34,8 @@ shaka post-implementation publish OWNER/REPO NUMBER --content-file checkpoint.js
 
 For a ready result, supply `message.json` with the same `title` and plain-text `body`
 used by `merge --squash-message`, as defined in the workflow's publication commands.
-Publication refuses a ready checkpoint without this message, or before this account's
-walkthrough for the head is published. It places copyable title
+Publication refuses a ready checkpoint without this message, or, when a walkthrough is
+due, before this account's walkthrough for the head is published. It places copyable title
 and body blocks in the checkpoint and preserves branch co-author trailers.
 Blocked, failed, and opted-out results need no message and display no merge text.
 For an authorized opt-out, keep the standalone `squash-message` command for the Ask handoff.
@@ -47,7 +47,7 @@ Repeat publication after any head change; a recommendation supplies no merge con
 After publication, set description `post_implementation` to the returned PR comment URL
 and supply the description summary using the workflow's publication contract.
 The renderer places its status and recommended next action near the top,
-with the Checkpoint link beside Code Walkthrough, followed by any deployment link. Until publication, it shows
+with the Checkpoint link beside any Code Walkthrough link, followed by any deployment link. Until publication, it shows
 a named placeholder. This link locates the report; it does not establish readiness.
 
 Publishing a blocked or incomplete checkpoint converts the PR to draft and adds a
@@ -101,7 +101,7 @@ Codex: `low`, `medium`, `high`, `xhigh`, `max`; Claude: `low`, `medium`, `high`,
 Grok: `low`, `medium`, `high`. Model availability and effort support also depend on
 the installed CLI and selected model; CLI rejection is an explicit failure.
 
-`--timeout-seconds` defaults to 300, with a range of 1–3600. The existing neutral,
+`--timeout-seconds` defaults to the selected reviewer's [local review deadline](local-review.md#cli-reviewers), with a range of 1–3600. The existing neutral,
 restricted provider runners execute the selected settings. Missing executables,
 credentials, timeouts, invalid settings, missing prompts, malformed reports, and
 reports for another head return `not_completed` and a nonzero exit. Inspect the JSON

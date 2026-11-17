@@ -19,7 +19,9 @@ The workflow treats every task the same way:
 - `shaka enforcement` audits 100 workflow rules: 8 refused by a command, 2 reported by
   one, 1 refused by GitHub, and 89 that only the agent enforces. The rigidity comes
   mostly from the wording, not from code.
-- Some code does require steps on every PR. `merge` needs a walkthrough review ID.
+- Some code does require steps on every PR. Until
+  [#1186](https://github.com/shakacode/shaka/pull/1186) shipped ADR 0007, `merge` needed a
+  walkthrough review ID.
   `handoff` treats a missing or stale WIP Details note (the recovery note in an
   unfinished PR's description) as unfinished work, and once a merge is requested it
   also expects the final checkpoint and a merge message. `attention --state merge`
@@ -56,8 +58,9 @@ Other repositories will have different validation times.
 
 Earlier work in this direction:
 
-- [ADR 0007](0007-walkthroughs-on-request.md), proposed at the same time, publishes
-  walkthroughs only on request by default. This record leaves the walkthrough to it.
+- [ADR 0007](0007-walkthroughs-on-request.md), accepted and shipped in
+  [#1186](https://github.com/shakacode/shaka/pull/1186), publishes walkthroughs only on
+  request by default. This record leaves the walkthrough to it.
 - Issue [#468](https://github.com/shakacode/shaka/issues/468), delivered by
   [#519](https://github.com/shakacode/shaka/pull/519), limited repeated work after a
   correction to an existing PR. It did not cover a new small task.
@@ -101,10 +104,9 @@ would catch something on this change, and records a one-line reason when it skip
 - The local adversarial review. It stays on for every change that alters behavior, as
   today, because it costs a median 8 minutes and catches defects the author misses.
   Skipping it stays limited to trivial prose and no-op changes.
-- The walkthrough. [ADR 0007](0007-walkthroughs-on-request.md) proposes publishing it
-  only on request by default, so `merge`, `handoff`, and the checkpoint stop requiring
-  it. This design leaves the walkthrough to ADR 0007 while that record is proposed. If
-  ADR 0007 is rejected, the walkthrough joins the evidence steps decision 4 covers.
+- The walkthrough. Since ADR 0007 shipped, it is published only on request by default,
+  and `merge`, `handoff`, and the checkpoint require it only where a repository sets
+  `always`. This design adds no walkthrough skip of its own.
 - The final checkpoint ("did we build the right thing?"). Code already accepts a
   skip: `post-implementation run --opt-out REASON` publishes an `opted_out` result, and
   `merge` and `squash-message` accept it for the head. Only prose limits who may opt
@@ -218,15 +220,16 @@ saved.
 | Steps besides merging | Runs | Runs, and matters most here: restart or deploy order |
 | Startup probe, plan recommendation | Run before implementation | Skipped |
 | Chat rename, return point | Run at task start | Only when used |
-| Walkthrough | Required; notes optional below three files | On request, if ADR 0007 ships |
+| Walkthrough | On request by default since ADR 0007 | Unchanged |
 | Opening check | Runs | Runs until decision 4 ships; then skipped, with a reason |
 | Workflow text loaded | All of it | Gates and the steps that run |
 | Merge | A person merges (high risk) | A person merges |
 
 The first, prose-only PR saves the bookkeeping, the probe, and some of the text the agent
-reads. The opening check waits for decision 4, and the walkthrough for ADR 0007. Until
-the reported session is read, nobody knows whether that matches where its time went. Its time may instead have gone to the
-review or validation, which this design keeps.
+reads. The opening check waits for decision 4; ADR 0007 already made the walkthrough on
+request. Until the reported session is read, nobody knows whether that matches where its
+time went. Its time may instead have gone to the review or validation, which this design
+keeps.
 
 ## Alternatives considered
 
@@ -261,9 +264,9 @@ review or validation, which this design keeps.
 The maintainer accepted every recommendation on 2026-11-15:
 
 1. In a high-risk or medium-risk area, the agent may skip the walkthrough when the
-   description explains every changed line. ADR 0007, proposed after this decision,
-   would replace this answer: walkthroughs on request by default, and required where a
-   repository sets `always`. This answer applies again if ADR 0007 is rejected.
+   description explains every changed line. ADR 0007, accepted after this decision and
+   shipped in #1186, replaces this answer: walkthroughs are on request by default and
+   required where a repository sets `always`.
 2. Skipping local review stays limited to trivial prose and no-op changes.
 3. No setting forbids skips yet. A new setting changes every repository's
    `.agents/shaka/config.yml` through the settings migration flow, so add one only if a

@@ -3,6 +3,7 @@
 require 'rbconfig'
 require 'tmpdir'
 require 'fileutils'
+require_relative 'ready_clock'
 
 module EvaluationCaptureFixture
   def setup
@@ -22,6 +23,16 @@ module EvaluationCaptureFixture
     @capture.run(command: [RbConfig.ruby, '-rjson', '-e', body], cwd: @root,
                  directory: @directory, seconds:, clock_id: 'test-controller', &)
   end
+
+  # Runs a shell script whose deadline starts once the script creates `ready` in the working directory.
+  def run_shell(script, seconds:)
+    ReadyClock.hold(@capture, File.join(@root, 'ready'))
+    @capture.run(command: ['/bin/sh', '-c', script], cwd: @root, directory: @directory, seconds:,
+                 clock_id: 'test-controller')
+  end
+
+  # The pid the capture spawned, which the child need not report.
+  def spawned_pid = @capture.instance_variable_get(:@pid)
 
   def native_stream
     [
