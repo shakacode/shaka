@@ -107,7 +107,7 @@ module Shaka
       spec = @content.fetch('verification')
       body = [VerificationGates.line(@settings.verdict, @content['review']),
               IntentVerification.evidence(spec, @content['wip'].nil? ? (1..3) : (0..3)), *table, *details]
-      [details_block('summary' => 'Evidence and limitations', 'body' => body.join("\n\n"))]
+      [details_block('summary' => IntentVerification::EVIDENCE_SUMMARY, 'body' => body.join("\n\n"))]
     end
 
     # Verification carries the proof, so a table only adds facts that fit no check.

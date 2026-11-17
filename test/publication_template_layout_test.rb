@@ -35,7 +35,7 @@ class PublicationTemplateLayoutTest < Minitest::Test
 
   def test_collapsed_heading_folds_the_sections_the_template_does_not_name
     rendered = render(%w[Deployment Shaka Summary])
-    assert_equal ['Deployment', '<details> Shaka', 'Intent', 'Verification', '<details> Evidence and limitations',
+    assert_equal ['Deployment', 'Verification', '<details> Evidence and limitations', '<details> Shaka', 'Intent',
                   'Shaka metrics', 'Summary'], outline(rendered)
     fold = rendered[%r{<details>\n<summary>Shaka</summary>\n\n.*?\n\n</details>\n\n## Summary}m]
     assert fold, rendered
@@ -45,7 +45,7 @@ class PublicationTemplateLayoutTest < Minitest::Test
 
   def test_template_can_place_any_shaka_section
     rendered = render(['Verification', 'Shaka Inline', 'Shaka metrics'])
-    assert_equal ['Verification', 'Summary', 'Intent', '<details> Evidence and limitations', 'Deployment',
+    assert_equal ['Verification', '<details> Evidence and limitations', 'Summary', 'Intent', 'Deployment',
                   'Shaka metrics'], outline(rendered)
   end
 
@@ -53,8 +53,8 @@ class PublicationTemplateLayoutTest < Minitest::Test
     steps = [{ 'when' => 'after merge', 'step' => 'Update Shaka', 'who' => 'Everyone', 'where' => 'Each machine',
                'verify' => 'doctor reports HEALTHY' }]
     rendered = render(%w[Shaka], 'steps_besides_merging' => steps, 'wip' => WIP)
-    assert_equal ['Summary', 'Before and after merge', '<details> WIP Details', '<details> Shaka', 'Intent',
-                  'Verification', '<details> Evidence and limitations', 'Shaka metrics', 'Deployment'],
+    assert_equal ['Summary', 'Before and after merge', 'Verification', '<details> Evidence and limitations',
+                  '<details> WIP Details', '<details> Shaka', 'Intent', 'Shaka metrics', 'Deployment'],
                  outline(rendered)
   end
 
@@ -75,6 +75,8 @@ class PublicationTemplateLayoutTest < Minitest::Test
     sections = [{ 'heading' => 'shaka', 'body' => 'Everything else.' }]
     error = assert_raises(Shaka::Error) { render(%w[Summary Shaka], 'sections' => sections) }
     assert_includes error.message, 'Leave it out of sections'
+    hashed = [{ 'heading' => 'Shaka Inline ##', 'body' => 'Everything else.' }]
+    assert_raises(Shaka::Error) { render(%w[Summary Shaka], 'sections' => hashed) }
     assert_includes render(%w[Summary], 'sections' => sections), "## shaka\n\nEverything else."
   end
 
@@ -124,14 +126,14 @@ class PublicationTemplateLayoutCommandTest < Minitest::Test
   end
 
   def test_a_guide_naming_the_template_orders_the_description
-    template = "## Summary\n\n```html\n<!--\n```\n\n## Shaka Inline\n\n## Deployment\n"
+    template = "## Deployment\n\n```html\n<!--\n```\n\n## Shaka Inline\n"
     with_guidance('pr_evidence' => '.github/pull_request_template.md') do |root|
       write_template(root, template)
       commit(root)
       body = published(root)
       refute_includes body, '<summary>Shaka</summary>'
-      assert_operator body.index('## Shaka metrics'), :<, body.index('## Deployment')
-      assert_operator body.index('## Deployment'), :<, body.index('_PR prepared with')
+      assert_operator body.index('## Deployment'), :<, body.index('## Summary')
+      assert_operator body.index('## Shaka metrics'), :<, body.index('_PR prepared with')
     end
   end
 

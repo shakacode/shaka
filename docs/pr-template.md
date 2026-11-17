@@ -26,8 +26,8 @@ project_guidance:
 When you already have a separate evidence guide, keep it. Shaka then shows the agent
 your template after the guide. It looks for `pull_request_template.md` or
 `PULL_REQUEST_TEMPLATE.md` in `.github/`, the repository root, then `docs/`, and
-uses the first one it can read. When the template cannot be read, the agent sees
-the guide and a note saying why.
+uses the first one it finds. When that template cannot be read, the agent sees the
+guide and a note saying why, and descriptions keep the usual order.
 
 Shaka reads the template from your default branch. A PR that edits the template is
 still described with the merged version. Changing the template makes earlier
@@ -87,24 +87,26 @@ the description reads in this order:
 
 1. The line naming the agent, then the recommendation and review links
 2. **Summary**
-3. A collapsed **Shaka** block holding Intent, Verification, Shaka metrics, and the rest
-4. **Rollout**
-5. The Shaka credit line
+3. **Verification**, with its evidence
+4. A collapsed **Shaka** block holding Intent, Risk and review, Shaka metrics, and the rest
+5. **Rollout**
+6. The Shaka credit line
 
-With `## Shaka Inline` in place of `## Shaka`, item 3 shows the same sections expanded.
+With `## Shaka Inline` in place of `## Shaka`, item 4 shows the same sections expanded.
 
 The order follows these rules:
 
 - Each `##` heading in the template puts its section at that spot. The section can be
-  yours or Shaka's. For example, `## Verification` keeps verification outside the fold.
+  yours or Shaka's. For example, `## Verification` moves verification, with its evidence, to that spot.
 - When the agent writes a section your template does not name, it joins Shaka's sections.
 - Shaka reads only `##` headings. It skips those inside code blocks and inside HTML
   comments that start a line.
 - The opening lines never move. The first line names the agent that wrote the
   description. The recommendation, any decisions waiting on you, and the review links
   follow, so the decision comes first. The credit line stays last.
-- The fold never hides what you act on. **Summary**, **Before and after merge**,
-  **Human comments**, and an unfinished PR's **WIP Details** stay in view just above it.
+- The fold never hides what you act on. **Summary**, **Verification** and its evidence,
+  **Before and after merge**, **Human comments**, and an unfinished PR's **WIP Details**
+  stay in view just above it.
 - Text inside the fold does not count toward [prose limits](settings.md#prose_limits),
   like the body of any collapsed block.
 

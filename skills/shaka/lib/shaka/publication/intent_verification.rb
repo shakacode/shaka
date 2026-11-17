@@ -13,6 +13,8 @@ module Shaka
     # A bug fix names its cause apart from the symptom; other changes have none to name.
     ROOT_CAUSE = 'root_cause'
     CHECKS = (1..3)
+    # The fold under Verification that holds its checks and limits.
+    EVIDENCE_SUMMARY = 'Evidence and limitations'
     # A link opens the evidence and a code span names what ran; plain prose names neither.
     # GitHub also renders a link whose address sits in angle brackets.
     EVIDENCE = %r{\]\(https?://[^)\s]+\)|\]\(<https?://[^>\s]+>\)|`[^`]+`}
