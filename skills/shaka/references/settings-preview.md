@@ -10,8 +10,9 @@ for the setup PR itself.
 On resume, find the feature branch's original worktree with `git worktree list`.
 Use WIP Details if the checkout path is available. Read `seam preview status`
 there before resolving settings and restore the recorded task choices. If the
-original worktree is unavailable, locate it or recover the recorded selection
-before proceeding. Continue using the pinned commit after the setup PR merges.
+worktree or its selector is missing, pause the trial until it can be recovered.
+Starting a selector against the adopted default branch would lose the original
+first-setup status. Continue using the pinned commit after the setup PR merges.
 Use step 1 for a new selection or a requested update.
 
 1. Fetch metadata for the named open settings PR from the verified task repository.
