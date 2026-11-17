@@ -32,8 +32,10 @@ module Shaka
 
     def throughput = @throughput ||= ThroughputStats.state(@content, @timeline, @pull)
 
+    # The table and the history both show the recommendation the history kept.
     def provenance
-      execution = ExecutionProvenance.new(provenance_spec, workflow_version: @workflow_version, pull: @pull)
+      spec = ProvenanceRecommendation.resolve(@pull, provenance_spec).spec
+      execution = ExecutionProvenance.new(spec, workflow_version: @workflow_version, pull: @pull)
       detail = execution.detail
       return details_block(detail) unless @pull
 

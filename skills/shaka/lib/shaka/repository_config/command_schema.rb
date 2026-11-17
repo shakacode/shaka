@@ -65,11 +65,20 @@ module Shaka
       end
 
       def available_optional_commands
-        return @available_commands & LAYOUT.optional.keys if @available_commands
+        return candidate_optional_commands unless @available_commands
 
-        LAYOUT.optional.keys.select do |name|
-          command_entry?(LAYOUT.optional.fetch(name))
-        end
+        trusted = @available_commands & LAYOUT.optional.keys
+        return trusted unless @candidate_commands && !predates_commands?
+
+        # A branch cut before the trusted commit added an optional script runs without it. The script
+        # is not configured for that run, so it can neither run nor count as evidence. The trusted
+        # set must still be valid on its own, whatever the candidate lacks.
+        validate_dependencies(trusted)
+        trusted & candidate_optional_commands
+      end
+
+      def candidate_optional_commands
+        LAYOUT.optional.keys.select { |name| command_entry?(LAYOUT.optional.fetch(name)) }
       end
 
       def validate_candidate_optional_commands

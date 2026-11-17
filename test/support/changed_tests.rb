@@ -9,8 +9,8 @@ require 'open3'
 class ChangedTests
   LIBRARY = 'skills/shaka/lib/'
   # Changes here can affect every test, so they always run the whole suite.
-  FOUNDATIONS = %w[test/test_helper.rb test/support/changed_tests.rb bin/run-tests Gemfile Gemfile.lock
-                   .ruby-version].freeze
+  FOUNDATIONS = %w[test/test_helper.rb test/support/changed_tests.rb bin/run-tests test/support/worker_plan.rb
+                   Gemfile Gemfile.lock .ruby-version].freeze
   # These tests read library sources as text, or load renderers the preview requires at runtime.
   SOURCE_READERS = %w[test/configuration_boundary_test.rb test/install_refusal_wording_test.rb
                       test/rendering_preview_guard_test.rb test/rendering_preview_head_test.rb

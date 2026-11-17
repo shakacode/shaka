@@ -55,8 +55,8 @@ module UiCheckFixture
       'html_url' => "https://github.com/example/test/pull/1#issuecomment-#{id}" }
   end
 
-  def earlier_check(id, *assets, login: 'ada')
-    images = assets.map { |name| "![View](#{asset(name)})" }.join("\n")
+  def earlier_check(id, *assets, login: 'ada', gap: "\n")
+    images = assets.map { |name| "![View](#{asset(name)})" }.join(gap)
     marker = "<!-- shaka:ui-check-#{OLD}-0000000#{id} -->"
     UiCheckFixture.row(id, "#{BYLINE}#{marker}\n# Verification\n\n#{images}\n", login:)
   end
@@ -69,6 +69,15 @@ module UiCheckFixture
 
   def legacy_check(id, name, login: 'ada')
     UiCheckFixture.row(id, "#{BYLINE}**UI check at bbbbbbb**\n\n![View](#{asset(name)})\n", login:)
+  end
+
+  def carried(github) = github.comments.last['body'][%r{<!-- shaka:ui-history -->.*<!-- /shaka:ui-history -->}m].to_s
+
+  # Posts a check, then moves it to a second head with one more uploaded capture.
+  def second_check(github, note, name)
+    publish(github, body: note, nonce: '11111111')
+    github.comments.last['body'] = github.comments.last['body'].sub(HEAD, 'c' * 40)
+    github.comments.last['body'] += "\n![#{name.capitalize}](#{asset(name)})\n"
   end
 
   def with_capture
@@ -100,49 +109,6 @@ class UiCheckPublisherTest < Minitest::Test
     end
   end
 
-  def test_a_capture_left_out_of_the_new_check_refuses_before_posting
-    github = GitHub.new([earlier_check(1, 'home', 'examples')])
-    error = assert_raises(Shaka::Error) { publish(github, body: "![Home](#{asset('home')})") }
-
-    assert_includes error.message, asset('examples')
-    assert_empty github.posts
-  end
-
-  def test_a_retired_capture_may_be_left_out
-    github = GitHub.new([earlier_check(1, 'home', 'examples')])
-    result = publish(github, body: "![Home](#{asset('home')})", retire: [asset('examples')])
-
-    assert_equal [1], result['collapsed']
-  end
-
-  def test_retiring_a_capture_no_open_check_shows_refuses
-    github = GitHub.new([earlier_check(1, 'home')])
-    error = assert_raises(Shaka::Error) do
-      publish(github, body: "![Home](#{asset('home')})", retire: [asset('typo')])
-    end
-
-    assert_includes error.message, asset('typo')
-    assert_empty github.posts
-  end
-
-  def test_folded_checks_and_other_writers_checks_are_neither_required_nor_folded
-    other = earlier_check(2, 'people', login: 'someone-else')
-    github = GitHub.new([earlier_check(1, 'home'), other.dup])
-    publish(github, body: "![Home](#{asset('home')})")
-    result = publish(github, body: 'Every view is new.', retire: [asset('home')], nonce: '0badcafe')
-
-    assert_equal [3], result['collapsed']
-    assert_equal other, github.comments[1]
-  end
-
-  def test_a_named_check_posted_before_the_command_must_be_carried_and_is_folded
-    github = GitHub.new([legacy_check(1, 'examples')])
-    assert_raises(Shaka::Error) { publish(github, body: 'Homepage only.', earlier: [1]) }
-
-    result = publish(github, body: "Examples unchanged: ![Examples](#{asset('examples')})", earlier: [1])
-    assert_equal [1], result['collapsed']
-  end
-
   def test_naming_another_writers_comment_refuses_before_posting
     github = GitHub.new([legacy_check(1, 'examples', login: 'someone-else')])
     error = assert_raises(Shaka::Error) { publish(github, body: 'Checked.', earlier: [1]) }
@@ -171,6 +137,226 @@ class UiCheckPublisherTest < Minitest::Test
       assert_includes error.message, 'missing uploaded captures'
       refute_includes github.comments.first['body'], Shaka::EvidenceHistory::MARKER
     end
+  end
+end
+
+class UiCheckHistoryTest < Minitest::Test
+  include UiCheckFixture
+
+  def test_a_capture_left_out_is_carried_with_its_revision_source_and_text
+    github = GitHub.new([earlier_check(1, 'home', 'examples')])
+    result = publish(github, body: "Home unchanged: ![Home](#{asset('home')})")
+
+    assert_includes carried(github), "Captured at [`bbbbbbb`](https://github.com/example/test/pull/1/commits/#{OLD}) " \
+                                     '· [UI check](https://github.com/example/test/pull/1#issuecomment-1)'
+    assert_includes carried(github), "![View](#{asset('examples')})"
+    refute_includes carried(github), '# Verification'
+    assert_equal [1], result['collapsed']
+  end
+
+  def test_carried_evidence_follows_the_new_note_in_a_collapsed_labeled_section
+    github = GitHub.new([earlier_check(1, 'home', 'examples')])
+    publish(github, body: 'Home changed.')
+    posted = github.comments.last['body']
+
+    assert_includes carried(github), "<details>\n<summary>Earlier evidence, not checked at this head</summary>"
+    assert_operator posted.index('Home changed.'), :<, posted.index(carried(github))
+  end
+
+  def test_a_check_that_shows_or_retires_every_earlier_capture_carries_no_history
+    github = GitHub.new([earlier_check(1, 'home', 'examples')])
+    result = publish(github, body: "![Home](#{asset('home')})", retire: [asset('examples')])
+
+    assert_empty carried(github)
+    assert_equal [1], result['collapsed']
+  end
+
+  def test_a_retired_capture_stays_in_history_marked_replaced_at_the_new_head
+    github = GitHub.new([earlier_check(1, 'home', 'examples', 'people')])
+    publish(github, body: 'Examples redone below.', retire: [asset('examples')])
+    carried = carried(github)
+
+    assert_includes carried, "![View](#{asset('people')})"
+    assert_includes carried, "\nReplaced at `aaaaaaa`: #{asset('examples')} <!-- shaka:ui-replaced -->\n"
+  end
+
+  def test_retiring_a_capture_no_open_check_shows_refuses
+    github = GitHub.new([earlier_check(1, 'home')])
+    error = assert_raises(Shaka::Error) do
+      publish(github, body: "![Home](#{asset('home')})", retire: [asset('typo')])
+    end
+
+    assert_includes error.message, asset('typo')
+    assert_empty github.posts
+  end
+
+  def test_a_third_check_keeps_each_carried_capture_under_the_revision_that_took_it
+    github = GitHub.new([earlier_check(1, 'home')])
+    second_check(github, 'Second head changes the examples page.', 'examples')
+    publish(github, body: 'Third head changes the people page.', nonce: '22222222')
+    carried = carried(github)
+
+    assert_equal 1, carried.scan("![View](#{asset('home')})").length
+    assert_match(/Captured at \[`bbbbbbb`\][^\n]*\n\n!\[View\]\(#{Regexp.escape(asset('home'))}\)/, carried)
+    assert_match(/Captured at \[`ccccccc`\][^\n]*\n\nSecond head[^\n]*\n+!\[Examples\]/, carried)
+    assert_equal 1, carried.scan('<details>').length
+  end
+
+  def test_folded_checks_and_other_writers_checks_are_neither_carried_nor_folded
+    other = earlier_check(2, 'people', login: 'someone-else')
+    github = GitHub.new([earlier_check(1, 'home'), other.dup])
+    publish(github, body: "![Home](#{asset('home')})")
+    result = publish(github, body: 'Every view is new.', retire: [asset('home')], nonce: '0badcafe')
+
+    assert_equal [3], result['collapsed']
+    assert_equal other, github.comments[1]
+    refute_includes carried(github), asset('people')
+  end
+
+  def test_a_named_check_posted_before_the_command_is_carried_without_a_revision_and_folded
+    github = GitHub.new([legacy_check(1, 'examples')])
+    result = publish(github, body: 'Homepage only.', earlier: [1])
+    carried = carried(github)
+
+    assert_includes carried, 'From [an earlier UI check](https://github.com/example/test/pull/1#issuecomment-1), ' \
+                             'revision not recorded'
+    assert_includes carried, '**UI check at bbbbbbb**'
+    assert_equal [1], result['collapsed']
+  end
+
+  def test_a_body_with_history_markers_or_too_long_to_carry_refuses_before_posting
+    github = GitHub.new([earlier_check(1, 'home')])
+    assert_raises(Shaka::Error) { publish(github, body: "Note\n<!-- shaka:ui-history -->") }
+    error = assert_raises(Shaka::Error) { publish(github, body: 'x' * 65_500) }
+
+    assert_includes error.message, 'retire every remaining capture'
+    assert_empty github.posts
+    refute_includes github.comments.first['body'], Shaka::EvidenceHistory::MARKER
+  end
+
+  def test_the_length_check_leaves_room_for_each_capture_gh_will_add
+    github = GitHub.new([])
+    with_capture do |path|
+      assert_raises(Shaka::Error) { publish(github, body: 'x' * 65_200, captures: ["#{path}#After"] * 3) }
+    end
+    assert_empty github.posts
+  end
+
+  def test_an_unreferenced_capture_lands_after_the_collapsed_history
+    github = GitHub.new([earlier_check(1, 'home')])
+    with_capture do |path|
+      publish(github, body: 'New view only.', captures: ["#{path}#After"])
+      posted = github.comments.last['body']
+
+      assert_operator posted.index('</details>'), :<, posted.index(asset('new-0'))
+    end
+  end
+end
+
+# A failed fold or a web edit leaves earlier history in a state the next check must handle.
+class UiCheckHistoryRecoveryTest < Minitest::Test
+  include UiCheckFixture
+
+  def block(text)
+    Shaka::UiCheck::History::Block.new(OLD, 'https://github.com/example/test/pull/1#issuecomment-1', text)
+  end
+
+  def views = %w[home examples people].map { |name| "![View](#{asset(name)})" }.join("\n")
+
+  def check_with(block, id)
+    body = Shaka::UiCheck::History.render([block], head: HEAD, commit_url: ->(sha) { sha })
+    { revision: HEAD, source: "https://github.com/example/test/pull/1#issuecomment-#{id}", body: "Note.\n#{body}" }
+  end
+
+  def test_sibling_copies_with_different_replaced_marks_keep_every_mark
+    marks = %w[examples people].map { |name| "Replaced at `ccccccc`: #{asset(name)} <!-- shaka:ui-replaced -->" }
+    checks = marks.each_with_index.map { |mark, index| check_with(block("#{views}\n\n#{mark}"), index + 2) }
+    text = Shaka::UiCheck::History.carry(checks, shown: [], retired: [], head: HEAD).first.text
+
+    marks.each { |mark| assert_includes text, mark }
+  end
+
+  def test_sibling_copies_whose_text_differs_refuse
+    checks = [check_with(block(views), 2), check_with(block("#{views}\n![View](#{asset('edited')})"), 3)]
+
+    assert_raises(Shaka::Error) { Shaka::UiCheck::History.carry(checks, shown: [], retired: [], head: HEAD) }
+  end
+
+  def test_a_deleted_block_heading_refuses_instead_of_consuming_a_capture
+    github = GitHub.new([earlier_check(1, 'home', 'examples', gap: "\n\n")])
+    publish(github, body: 'Second head.', nonce: '11111111')
+    github.comments.last['body'] = github.comments.last['body'].sub(/^#### Captured at [^\n]*\n\n/, '')
+
+    assert_raises(Shaka::Error) { publish(github, body: "![Examples](#{asset('examples')})", nonce: '22222222') }
+  end
+
+  def test_prose_naming_the_history_marker_still_carries_across_generations
+    github = GitHub.new([])
+    publish(github, body: "Checked the `shaka:ui-history` label.\n![Home](#{asset('home')})", nonce: '11111111')
+    publish(github, body: 'Second head.', nonce: '22222222')
+    publish(github, body: 'Third head.', nonce: '33333333')
+
+    assert_includes carried(github), 'Checked the `shaka:ui-history` label.'
+  end
+
+  def test_a_block_that_swallowed_its_neighbour_refuses_before_posting
+    github = GitHub.new([earlier_check(1, 'home')])
+    second_check(github, 'Second head.', 'examples')
+    publish(github, body: 'Third head.', nonce: '22222222')
+    github.comments.last['body'] = github.comments.last['body'].sub('<!-- /shaka:ui-history-from -->', '')
+
+    assert_raises(Shaka::Error) { publish(github, body: 'Fourth head.', nonce: '33333333') }
+    assert_equal 2, github.posts.length
+  end
+
+  def test_retrying_with_the_same_retire_list_after_a_failed_fold_keeps_one_mark
+    first = earlier_check(1, 'home', 'examples')
+    github = GitHub.new([first.dup])
+    publish(github, body: 'Examples redone.', retire: [asset('examples')], nonce: '11111111')
+    github.comments.first['body'] = first['body']
+    publish(github, body: 'Examples redone.', retire: [asset('examples')], nonce: '22222222')
+
+    assert_equal 1, carried(github).scan("Replaced at `aaaaaaa`: #{asset('examples')}").length
+  end
+
+  def test_history_from_a_web_edited_comment_still_parses
+    github = GitHub.new([earlier_check(1, 'home')])
+    second_check(github, 'Second head.', 'examples')
+    github.comments.last['body'] = github.comments.last['body'].gsub("\n", "\r\n")
+    publish(github, body: 'Third head.', nonce: '22222222')
+
+    assert_includes carried(github), "![View](#{asset('home')})"
+  end
+
+  def test_a_history_section_that_no_longer_parses_refuses_before_posting
+    [%r{<!-- /shaka:ui-history-from -->}, /<!-- shaka:ui-history-from [^\n]*-->/,
+     %r{<!-- /shaka:ui-history -->}].each do |removed|
+      github = GitHub.new([earlier_check(1, 'home')])
+      second_check(github, 'Second head.', 'examples')
+      github.comments.last['body'] = github.comments.last['body'].sub(removed, '')
+
+      assert_raises(Shaka::Error) { publish(github, body: 'Third head.', nonce: '22222222') }
+      assert_equal 1, github.posts.length
+    end
+  end
+
+  def test_a_publisher_note_on_an_earlier_check_stays_out_of_the_carried_text
+    github = GitHub.new([])
+    publish(github, body: "![Home](#{asset('home')})", publisher_note: 'Posted for a reviewer.', nonce: '11111111')
+    publish(github, body: 'Home changed.', nonce: '22222222')
+
+    refute_includes carried(github), 'Posted for a reviewer.'
+    refute_includes carried(github), '# Verification'
+  end
+
+  def test_replaced_marks_survive_when_an_earlier_fold_failed
+    first = earlier_check(1, 'home', 'examples', 'people')
+    github = GitHub.new([first.dup])
+    publish(github, body: 'Examples redone.', retire: [asset('examples')], nonce: '11111111')
+    github.comments.first['body'] = first['body']
+    publish(github, body: 'People redone.', retire: [asset('people')], nonce: '22222222')
+
+    %w[examples people].each { |name| assert_includes carried(github), "Replaced at `aaaaaaa`: #{asset(name)}" }
   end
 end
 
