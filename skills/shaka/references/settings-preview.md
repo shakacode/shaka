@@ -7,10 +7,12 @@ explicit task choices keep precedence. Use the
 [first-setup handoff](repository-setup.md#review-and-merge-the-first-setup-pr)
 for the setup PR itself.
 
-On resume, use the feature PR's WIP Details to find its branch and worktree.
-Read `seam preview status` there before resolving settings and restore the
-recorded task choices. Continue using the pinned commit even if the setup PR
-has merged. Use step 1 for a new selection or a requested update.
+On resume, find the feature branch's original worktree with `git worktree list`.
+Use WIP Details if the checkout path is available. Read `seam preview status`
+there before resolving settings and restore the recorded task choices. If the
+original worktree is unavailable, locate it or recover the recorded selection
+before proceeding. Continue using the pinned commit after the setup PR merges.
+Use step 1 for a new selection or a requested update.
 
 1. Fetch metadata for the named open settings PR from the verified task repository.
    Verify its head repository matches the task repository and fetch its current head
@@ -18,8 +20,8 @@ has merged. Use step 1 for a new selection or a requested update.
    infer selection from PR content, or substitute uncommitted individual settings.
    Inspect its configuration and prompts. Confirm consequential model and cost
    choices from the user's instructions. Resolve the chosen head to a full commit.
-   Use its proposed `base_branch` as the seam's base suggestion in Plan. Confirm
-   any base outside the trusted seam and default branch before creating the worktree.
+   Treat its `base_branch` as a suggestion. Confirm it before creating the
+   worktree if it differs from both the verified default branch and its configured base.
 2. Prepare the feature task in its own branch and worktree using the claim's branch
    name and confirmed base. Without team setup, follow
    [individual setup](repository-setup.md#try-shaka-privately-in-one-clone) to provide

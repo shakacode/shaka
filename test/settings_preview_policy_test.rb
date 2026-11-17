@@ -55,7 +55,7 @@ class FirstSetupPreviewMergeTest < Minitest::Test
   def test_first_setup_preview_refuses_auto_before_submitting
     with_preview_repository do |root, _trusted, preview|
       absent = remove_trusted_setup(root)
-      select_preview(root, preview)
+      select_preview(root, preview, default_ref: absent)
       install_fake_github(root)
       mutation = File.join(root, 'mutation.json')
 
@@ -74,6 +74,14 @@ class FirstSetupPreviewMergeTest < Minitest::Test
       report = JSON.parse(run_command('seam', 'check', '--root', root, '--ref', adopted, root:).first)
       assert_equal [preview, 'ask'], [report.dig('validation', 'sha'), report.dig('merge', 'preference')]
       assert_auto_refused(root, adopted)
+    end
+  end
+
+  def test_start_requires_a_default_commit
+    with_preview_repository do |root, _trusted, preview|
+      _, error, status = run_command('seam', 'preview', 'start', '--root', root, '--settings-ref', preview, root:)
+      refute_predicate status, :success?
+      assert_match(/--ref DEFAULT_SHA is required for start/, error)
     end
   end
 

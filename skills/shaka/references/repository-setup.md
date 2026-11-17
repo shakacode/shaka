@@ -322,9 +322,11 @@ shaka seam check --root . --ref FULL_DEFAULT_BRANCH_SHA
 
 A PR's proposed policy cannot grant that PR new authority. `--ref` reads policy
 and optional script availability from the trusted commit, then validates the
-scripts in the candidate checkout and omits from `commands` any optional script it lacks. Inspect changes to those scripts before
-executing them. `--local` grants no policy or merge authority; omitting both
-flags performs the same candidate check with a warning. Combining them is an error.
+scripts in the candidate checkout. The report omits optional scripts missing from
+that checkout. A [settings preview](settings-preview.md) uses the pinned settings
+and their command interface. Inspect changes to scripts before executing them.
+`--local` checks candidate settings. Omitting both flags runs that same check
+with a warning. Combining the flags is an error.
 
 The JSON output includes derived `commands` and `validation` fields. They describe
 the result; do not copy them into the YAML. Even trusted output reports

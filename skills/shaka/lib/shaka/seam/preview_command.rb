@@ -28,6 +28,8 @@ module Shaka
       def run_operation(preview, operation)
         return preview.public_send(operation) unless operation == 'start'
 
+        raise OptionParser::MissingArgument, '--ref DEFAULT_SHA is required for start' unless @options[:default_ref]
+
         preview.start(@options[:settings_ref], default_ref: @options[:default_ref])
       end
 
