@@ -171,6 +171,21 @@ class LocalReviewPublishCleanupTest < LocalReviewPublishCleanupSupport
     assert_equal 3, github.issue_comments.size
   end
 
+  # Break caught: a cloud session's refused renderer failed review publish during cleanup.
+  def test_a_refused_renderer_leaves_history_visible_without_failing_publication
+    github = per_commit_timeline
+    def github.verify_rendering(body, **)
+      raise Shaka::DeferredRendering::Refused, 'refused' if body.include?(Shaka::LocalReviewHistory::MARKER)
+
+      super
+    end
+
+    status, result = publish(github, loop_content)
+    assert_equal [0, []], [status, result.fetch('cleanup').fetch('unavailable')]
+    assert_includes result.fetch('cleanup').fetch('skipped'), 'left visible'
+    refute_includes comment(github, 50), Shaka::LocalReviewHistory::MARKER
+  end
+
   def test_cleanup_failure_retains_publication_and_reports_a_retryable_gap
     github = per_commit_timeline
     github.cleanup_failure = true
