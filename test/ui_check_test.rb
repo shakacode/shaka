@@ -55,8 +55,8 @@ module UiCheckFixture
       'html_url' => "https://github.com/example/test/pull/1#issuecomment-#{id}" }
   end
 
-  def earlier_check(id, *assets, login: 'ada')
-    images = assets.map { |name| "![View](#{asset(name)})" }.join("\n")
+  def earlier_check(id, *assets, login: 'ada', gap: "\n")
+    images = assets.map { |name| "![View](#{asset(name)})" }.join(gap)
     marker = "<!-- shaka:ui-check-#{OLD}-0000000#{id} -->"
     UiCheckFixture.row(id, "#{BYLINE}#{marker}\n# Verification\n\n#{images}\n", login:)
   end
@@ -280,6 +280,23 @@ class UiCheckHistoryRecoveryTest < Minitest::Test
     checks = [check_with(block(views), 2), check_with(block("#{views}\n![View](#{asset('edited')})"), 3)]
 
     assert_raises(Shaka::Error) { Shaka::UiCheck::History.carry(checks, shown: [], retired: [], head: HEAD) }
+  end
+
+  def test_a_deleted_block_heading_refuses_instead_of_consuming_a_capture
+    github = GitHub.new([earlier_check(1, 'home', 'examples', gap: "\n\n")])
+    publish(github, body: 'Second head.', nonce: '11111111')
+    github.comments.last['body'] = github.comments.last['body'].sub(/^#### Captured at [^\n]*\n\n/, '')
+
+    assert_raises(Shaka::Error) { publish(github, body: "![Examples](#{asset('examples')})", nonce: '22222222') }
+  end
+
+  def test_prose_naming_the_history_marker_still_carries_across_generations
+    github = GitHub.new([])
+    publish(github, body: "Checked the `shaka:ui-history` label.\n![Home](#{asset('home')})", nonce: '11111111')
+    publish(github, body: 'Second head.', nonce: '22222222')
+    publish(github, body: 'Third head.', nonce: '33333333')
+
+    assert_includes carried(github), 'Checked the `shaka:ui-history` label.'
   end
 
   def test_a_block_that_swallowed_its_neighbour_refuses_before_posting

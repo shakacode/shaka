@@ -11,8 +11,10 @@ module Shaka
       OPEN = '<!-- shaka:ui-history -->'
       CLOSE = '<!-- /shaka:ui-history -->'
       SECTION = /\n*#{Regexp.escape(OPEN)}.*#{Regexp.escape(CLOSE)}\n*/m
-      BLOCK = %r{^<!-- shaka:ui-history-from (\S+) (\S+) -->\n[^\n]*\n\n(.*?)\n<!-- /shaka:ui-history-from -->$}m
+      TITLE = '#### (?:Captured at|From) [^\n]*'
+      BLOCK = %r{^<!-- shaka:ui-history-from (\S+) (\S+) -->\n#{TITLE}\n\n(.*?)\n<!-- /shaka:ui-history-from -->$}m
       REPLACED = '<!-- shaka:ui-replaced -->'
+      HISTORY_MARKER = %r{<!-- /?shaka:ui-history}
       RESERVED = %r{<!-- /?shaka:ui-(?:history|replaced)}
       HEADING = /\A# Verification\b[^\n]*\n+/
       UNKNOWN = 'unknown'
@@ -78,7 +80,7 @@ module Shaka
 
       def check_parsed(own, section, source)
         rest = section.gsub(BLOCK, '').sub(OPEN, '').sub(CLOSE, '')
-        swallowed = section.scan(BLOCK).any? { |_revision, _source, text| text.include?('shaka:ui-history') }
+        swallowed = section.scan(BLOCK).any? { |_revision, _source, text| text.match?(HISTORY_MARKER) }
         return unless swallowed || reserved?(own) || reserved?(rest) || Captures.urls(rest).any?
 
         raise Error, "Earlier evidence in #{source} no longer parses; restore it or retire its captures by hand."
