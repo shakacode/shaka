@@ -60,11 +60,16 @@ module Shaka
       # shows is carried with that check's revision, unless the agent retires it.
       def history(earlier, note, retired, head)
         checks = earlier.map do |comment|
-          body = comment['body'].sub(EvidenceHistory::KEY, '')
-          { revision: body[MARKER, 1], source: comment['html_url'], body: body.sub(/#{MARKER}\n?/o, '') }
+          { revision: comment['body'][MARKER, 1], source: comment['html_url'], body: check_text(comment['body']) }
         end
         blocks = History.carry(checks, shown: Captures.urls(note), retired:, head:)
         History.render(blocks, head:, commit_url: method(:commit_url))
+      end
+
+      # A marked check's text starts after its marker, past the writer line and any publisher note.
+      def check_text(body)
+        marker = body.match(MARKER)
+        marker ? body[marker.end(0)..].delete_prefix("\n") : body.sub(EvidenceHistory::KEY, '')
       end
 
       # gh rewrites or appends each capture as an image link to its upload, so leave room for it.

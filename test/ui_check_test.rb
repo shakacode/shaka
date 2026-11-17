@@ -277,12 +277,24 @@ class UiCheckHistoryRecoveryTest < Minitest::Test
   end
 
   def test_a_history_section_that_no_longer_parses_refuses_before_posting
-    github = GitHub.new([earlier_check(1, 'home')])
-    second_check(github, 'Second head.', 'examples')
-    github.comments.last['body'] = github.comments.last['body'].sub('<!-- /shaka:ui-history-from -->', '')
+    [%r{<!-- /shaka:ui-history-from -->}, /<!-- shaka:ui-history-from [^\n]*-->/,
+     %r{<!-- /shaka:ui-history -->}].each do |removed|
+      github = GitHub.new([earlier_check(1, 'home')])
+      second_check(github, 'Second head.', 'examples')
+      github.comments.last['body'] = github.comments.last['body'].sub(removed, '')
 
-    assert_raises(Shaka::Error) { publish(github, body: 'Third head.', nonce: '22222222') }
-    assert_equal 1, github.posts.length
+      assert_raises(Shaka::Error) { publish(github, body: 'Third head.', nonce: '22222222') }
+      assert_equal 1, github.posts.length
+    end
+  end
+
+  def test_a_publisher_note_on_an_earlier_check_stays_out_of_the_carried_text
+    github = GitHub.new([])
+    publish(github, body: "![Home](#{asset('home')})", publisher_note: 'Posted for a reviewer.', nonce: '11111111')
+    publish(github, body: 'Home changed.', nonce: '22222222')
+
+    refute_includes carried(github), 'Posted for a reviewer.'
+    refute_includes carried(github), '# Verification'
   end
 
   def test_replaced_marks_survive_when_an_earlier_fold_failed

@@ -12,7 +12,6 @@ module Shaka
       CLOSE = '<!-- /shaka:ui-history -->'
       SECTION = /\n*#{Regexp.escape(OPEN)}.*#{Regexp.escape(CLOSE)}\n*/m
       BLOCK = %r{^<!-- shaka:ui-history-from (\S+) (\S+) -->\n[^\n]*\n\n(.*?)\n<!-- /shaka:ui-history-from -->$}m
-      OPENER = '<!-- shaka:ui-history-from '
       REPLACED = '<!-- shaka:ui-replaced -->'
       RESERVED = %r{<!-- /?shaka:ui-(?:history|replaced)}
       HEADING = /\A# Verification\b[^\n]*\n+/
@@ -53,17 +52,20 @@ module Shaka
         block.with(text: "#{block.text}\n\n#{REPLACED} Replaced at `#{head[0, 7]}`: #{replaced.join(', ')}")
       end
 
+      # History that does not parse must stop the publish, or its evidence would be folded away:
+      # outside the parsed blocks, no history marker and no capture in the section may remain.
       def blocks(check)
         body = check.fetch(:body)
+        section = body[SECTION].to_s
         own = body.sub(SECTION, "\n").strip.sub(HEADING, '').strip
-        nested(body[SECTION].to_s, check.fetch(:source)) +
+        check_parsed(own, section, check.fetch(:source))
+        section.scan(BLOCK).map { |fields| Block.new(*fields) } +
           [Block.new(check.fetch(:revision) || UNKNOWN, check.fetch(:source), own)]
       end
 
-      # A section that does not parse must stop the publish, or its evidence would be folded away.
-      def nested(section, source)
-        found = section.scan(BLOCK).map { |revision, from, text| Block.new(revision, from, text) }
-        return found if found.length == section.scan(OPENER).length
+      def check_parsed(own, section, source)
+        rest = section.gsub(BLOCK, '').sub(OPEN, '').sub(CLOSE, '')
+        return unless reserved?(own) || reserved?(rest) || Captures.urls(rest).any?
 
         raise Error, "Earlier evidence in #{source} no longer parses; restore it or retire its captures by hand."
       end
