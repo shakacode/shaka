@@ -86,3 +86,9 @@ runtime:
     interval_seconds: 60
     timeout_seconds: 3600
     settle_seconds: 15
+  instruction_tokens: # bin/report-instruction-growth --tokens: each CLI counts the startup text with its model.
+    models:
+      claude: claude-opus-5-5
+      codex: gpt-6.1-sol
+    effort: low # The CLI only answers "ok"; effort does not change input tokens.
+    timeout_seconds: 300 # Per CLI run.

@@ -5,7 +5,7 @@ require 'json'
 require 'open3'
 require_relative '../skills/shaka/lib/shaka/workflow'
 
-# Reports instruction size, not quality or model tokens. Never executes baseline code.
+# Reports instruction size, not quality. Never executes baseline code. Model tokens only with --tokens.
 class InstructionGrowth
   WORKFLOW = 'skills/shaka/config/workflow.yml'
   ENTRY = 'skills/shaka/SKILL.md'
@@ -17,8 +17,10 @@ class InstructionGrowth
     { 'words' => text.split.size, 'bytes' => text.bytesize }
   end
 
-  def initialize(root:, base:)
+  # tokens: a counter such as InstructionTokens.method(:compare), or nil for the offline report.
+  def initialize(root:, base:, tokens: nil)
     @root = root
+    @tokens = tokens
     @baseline, _error, status = Open3.capture3('git', '-C', root, 'merge-base', base, 'HEAD')
     @baseline = status.success? ? @baseline.strip : nil
   end
@@ -26,6 +28,14 @@ class InstructionGrowth
   def report
     current = current_texts
     previous = baseline_texts
+    result = sizes(previous, current)
+    result['startup_tokens'] = startup_tokens(previous, current) if @tokens
+    result
+  end
+
+  private
+
+  def sizes(previous, current)
     { 'baseline' => @baseline,
       'baseline_error' => @baseline_error,
       'measurement' => 'Words and UTF-8 bytes; both workflows use the current renderer with normalized paths. ' \
@@ -34,7 +44,15 @@ class InstructionGrowth
       'other_changed_files' => changed_files(previous, current) }
   end
 
-  private
+  # What every Shaka task loads at start. Each count excludes the CLI's own prompt, measured in a separate run.
+  def startup_tokens(previous, current)
+    before = startup_text(previous) if @baseline
+    { 'text' => "#{ENTRY} plus the rendered workflow, counted by each CLI with its signed-in account",
+      'note' => 'Claude counts vary by about 20 tokens between runs; a smaller delta may be noise.',
+      'clis' => @tokens.call(before:, after: startup_text(current)) }
+  end
+
+  def startup_text(texts) = "#{texts.fetch(ENTRY, '')}\n\n#{texts.fetch(WORKFLOW, '')}"
 
   def core_paths = [ENTRY, WORKFLOW, 'AGENTS.md']
 
@@ -99,8 +117,12 @@ end
 if $PROGRAM_NAME == __FILE__
   begin
     root = File.expand_path('..', __dir__)
+    if ARGV.delete('--tokens')
+      require_relative '../lib/instruction_tokens'
+      tokens = InstructionTokens.method(:compare)
+    end
     base = ARGV.fetch(0, ENV.fetch('SHAKA_BASE_REF', 'origin/main'))
-    puts JSON.pretty_generate(InstructionGrowth.new(root:, base:).report)
+    puts JSON.pretty_generate(InstructionGrowth.new(root:, base:, tokens:).report)
   rescue Shaka::Error, SystemCallError => e
     warn "Instruction report failed: #{e.message}"
     exit 1
