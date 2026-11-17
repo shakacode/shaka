@@ -96,13 +96,14 @@ class FirstSetupPreviewMergeTest < Minitest::Test
   end
 
   def test_invalid_default_settings_keep_the_existing_pin
-    with_preview_repository do |root, trusted, preview|
-      start_with_default(root, preview, trusted)
+    with_preview_repository do |root, _trusted, preview|
       replacement = create_preview_commit(root, model: 'replacement')
+      absent = remove_trusted_setup(root)
+      start_with_default(root, preview, absent)
       File.write(File.join(root, '.agents/shaka/config.yml'), "version: [\n")
       malformed = commit(root)
 
-      assert_reselection_refused(root, replacement, malformed, /Invalid .agents\/shaka\/config.yml/)
+      assert_reselection_refused(root, replacement, malformed, %r{Invalid \.agents/shaka/config\.yml})
       assert_equal preview, Shaka::Configuration::SettingsPreview.ref(root:)
     end
   end
