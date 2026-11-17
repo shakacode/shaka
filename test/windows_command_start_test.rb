@@ -1,0 +1,61 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require 'shaka/executable_file'
+require 'shaka/evidence/tree_watch'
+require 'shaka/install/source'
+
+# Native Windows starts a repository command through Git's sh, runs a check without a process
+# group, and cannot read an execute bit from the file system. These run the Windows branches
+# here; the hosted windows job runs them for real.
+class WindowsCommandStartTest < Minitest::Test
+  def test_script_command_runs_the_script_through_its_shebang
+    Dir.mktmpdir('shaka-windows-command') do |directory|
+      script = File.join(directory, 'check')
+      File.write(script, "#!/usr/bin/env ruby\nputs ARGV.join('|')\n")
+      File.chmod(0o755, script)
+      command = Shaka::ExecutableFile.script_command(script, shell: -> { '/bin/sh' }, windows: true)
+      output, status = Open3.capture2(*command, 'one two', '$HOME')
+
+      assert_predicate status, :success?
+      assert_equal "one two|$HOME\n", output
+    end
+  end
+
+  def test_script_command_starts_the_script_itself_elsewhere
+    assert_equal ['/repo/.agents/shaka/bin/test'],
+                 Shaka::ExecutableFile.script_command('/repo/.agents/shaka/bin/test', shell: nil, windows: false)
+  end
+
+  def test_tree_watch_runs_a_check_without_a_process_group
+    Dir.mktmpdir('shaka-windows-watch') do |root|
+      watch = Shaka::Evidence::TreeWatch.new([RbConfig.ruby, '-e', 'exit 3'], root:, tree: nil, windows: true)
+
+      assert_equal({}, watch.send(:group))
+      assert_equal 3, watch.run.status.exitstatus
+    end
+  end
+
+  def test_windows_install_accepts_an_executable_record_without_an_execute_bit
+    with_helper_without_execute_bit do |source, path|
+      tracked = { 'skills/shaka/scripts/shaka' => %w[100755 blob] }
+
+      assert source.send(:matching_modes?, tracked, windows: true)
+      refute source.send(:matching_modes?, tracked, windows: false)
+      File.chmod(0o646, path)
+      refute source.send(:matching_modes?, tracked, windows: true)
+    end
+  end
+
+  private
+
+  def with_helper_without_execute_bit
+    Dir.mktmpdir('shaka-windows-source') do |root|
+      FileUtils.mkdir_p(File.join(root, 'skills/shaka/scripts'))
+      path = File.join(root, 'skills/shaka/scripts/shaka')
+      File.write(path, "#!/bin/sh\n")
+      File.chmod(0o644, path)
+      yield Shaka::Install::Source.new(root, ['shaka'], nil), path
+    end
+  end
+end

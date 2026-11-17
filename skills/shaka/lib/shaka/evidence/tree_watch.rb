@@ -2,6 +2,7 @@
 
 require 'open3'
 require_relative '../error'
+require_relative '../executable_file'
 require_relative '../local_review/process'
 require_relative 'candidate_tree'
 
@@ -29,16 +30,17 @@ module Shaka
       end
       self.interval = DEFAULT_INTERVAL
 
-      def initialize(command, root:, tree:, interval: self.class.interval)
+      def initialize(command, root:, tree:, interval: self.class.interval, windows: ExecutableFile.windows?)
         @command = command
         @root = root
         @tree = tree
         @interval = interval
+        @windows = windows
       end
 
       # Writes the check's output and then its errors to standard error once it ends.
       def run
-        Open3.popen3(*@command, chdir: @root, pgroup: true) do |input, output, error, waiter|
+        Open3.popen3(*@command, chdir: @root, **group) do |input, output, error, waiter|
           input.close
           readers = [output, error].map { |stream| Thread.new { stream.read } }
           changed = watch(waiter, readers)
@@ -76,7 +78,7 @@ module Shaka
       # leaves the result to report the stop anyway.
       def stop(waiter, tree = nil)
         warn "shaka: #{MESSAGE}; stopping the check" if tree
-        LocalReviewProcess.terminate(waiter)
+        @windows ? end_tree(waiter) : LocalReviewProcess.terminate(waiter)
         tree
       rescue Errno::EPERM
         tree
@@ -85,6 +87,14 @@ module Shaka
       # A descendant that left the group can keep a pipe open after the stop, so a stopped
       # check's output is whatever arrived shortly after it.
       def drain(readers) = readers.map { |reader| LocalReviewProcess.thread_output(reader) }
+
+      # Windows Ruby refuses `pgroup`, so there the stop ends the check's process tree instead.
+      def group = @windows ? {} : { pgroup: true }
+
+      def end_tree(waiter)
+        system('taskkill.exe', '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
+        waiter.join
+      end
     end
   end
 end

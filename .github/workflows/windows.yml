@@ -59,6 +59,10 @@ jobs:
         continue-on-error: true
         run: ruby bin/windows-exercise cursor
 
+      - name: Product command starts
+        continue-on-error: true
+        run: ruby bin/windows-exercise product
+
       # Each test file runs on its own. A file still running after 90s is
       # killed and printed as a WINDOWS suite gap. On current main, test_helper
       # raises "git executable not found" until pull request 748 looks up
