@@ -11,42 +11,37 @@ class InstallSessionHookTest < Minitest::Test
                                                   'hooks' => [{ 'type' => 'command', 'command' => 'mine' }] }],
                              'Stop' => [{ 'hooks' => [{ 'type' => 'command', 'command' => 'stop' }] }] } }.freeze
 
-  def test_installer_adds_the_hook_beside_other_settings_and_update_keeps_it
+  # --session-hook was the opt-in before the hook became the default, so scripts that pass it keep working.
+  def test_a_claude_install_adds_the_hook_beside_other_settings_and_later_runs_keep_it
     install_with_hook
-    assert_equal [helper_command], shaka_commands
     assert_equal UNRELATED, without_shaka
-    output, status = invoke('--update')
-    assert_predicate status, :success?, output
-    assert_equal [helper_command], shaka_commands
+    [['--update'], %w[--agent claude --session-hook], %w[--agent codex]].each do |arguments|
+      refute_includes installed(*arguments), 'update-check hook'
+      assert_equal [helper_command], shaka_commands, arguments.inspect
+    end
   end
 
-  def test_reinstalling_without_the_flag_removes_only_the_hook
+  def test_reinstalling_with_the_opt_out_removes_only_the_hook
     install_with_hook
-    output, status = invoke('--agent', 'claude')
-    assert_predicate status, :success?, output
-    assert_includes output, 'Removed the Claude Code update-check hook'
+    assert_includes installed('--agent', 'claude', '--no-session-hook'), 'Removed the Claude Code update-check hook'
     assert_equal UNRELATED, settings
   end
 
-  def test_installing_another_host_keeps_the_hook
-    install_with_hook
-    output, status = invoke('--agent', 'codex')
-    assert_predicate status, :success?, output
-    assert_equal [helper_command], shaka_commands
-  end
-
-  def test_unreadable_settings_stop_the_flagged_install_before_it_links
+  def test_unreadable_settings_stop_the_install_before_it_links_unless_it_opts_out
     write_settings('{ not json')
-    output, status = invoke('--repository', @remote, '--agent', 'claude', '--session-hook')
-    refute_predicate status, :success?
+    output = refused('--repository', @remote, '--agent', 'claude')
     assert_includes output, 'Claude Code settings are not valid JSON'
+    assert_includes output, 'rerun bin/install with --no-session-hook'
     refute_path_exists File.join(@home, '.claude/skills/shaka')
+    installed('--repository', @remote, '--agent', 'claude', '--no-session-hook')
+    assert_equal '{ not json', File.read(settings_path)
   end
 
-  def test_flag_needs_the_claude_host
-    output, status = invoke('--repository', @remote, '--agent', 'codex', '--session-hook')
-    refute_predicate status, :success?
-    assert_includes output, '--session-hook requires --agent claude'
+  def test_another_host_writes_no_settings_and_refuses_either_flag
+    %w[--session-hook --no-session-hook].each do |flag|
+      assert_includes refused('--repository', @remote, '--agent', 'codex', flag), "#{flag} requires --agent claude"
+    end
+    installed('--repository', @remote, '--agent', 'codex')
     refute_path_exists settings_path
   end
 
@@ -71,7 +66,7 @@ class InstallSessionHookTest < Minitest::Test
     error = assert_raises(ArgumentError) { hook.apply(true) }
     assert_includes error.message, 'Claude Code settings are not valid JSON'
     assert_includes error.message, "Found: #{settings_path}"
-    assert_includes error.message, 'rerun bin/install without --session-hook'
+    assert_includes error.message, 'rerun bin/install with --no-session-hook'
     assert_nil hook.apply(false)
     assert_equal '{ not json', File.read(settings_path)
   end
@@ -98,9 +93,19 @@ class InstallSessionHookTest < Minitest::Test
 
   def install_with_hook
     write_settings(UNRELATED)
-    output, status = invoke('--repository', @remote, '--agent', 'claude', '--session-hook')
+    assert_includes installed('--repository', @remote, '--agent', 'claude'), 'Set the Claude Code update-check hook'
+  end
+
+  def installed(*)
+    output, status = invoke(*)
     assert_predicate status, :success?, output
-    assert_includes output, 'Set the Claude Code update-check hook'
+    output
+  end
+
+  def refused(*)
+    output, status = invoke(*)
+    refute_predicate status, :success?, output
+    output
   end
 
   def helper_command

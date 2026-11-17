@@ -3,6 +3,7 @@
 require 'fileutils'
 require 'json'
 require 'time'
+require_relative '../install/locations'
 
 module Shaka
   class UpdateCheck
@@ -10,6 +11,8 @@ module Shaka
     # repeat it without a network request. One file serves the machine; it names its checkout.
     module Cache
       SECONDS = 24 * 60 * 60
+      # An hour under the notice's day, so a check scheduled at the same time each day still asks GitHub.
+      REUSE_SECONDS = SECONDS - (60 * 60)
 
       module_function
 
@@ -26,13 +29,38 @@ module Shaka
         {}
       end
 
-      # Keeps the last notice time, so a new answer does not repeat a notice shown today.
-      def record(checkout, result, home: nil, now: Time.now)
+      # Names what the answer describes, `installed`: the HEAD `commit` and the record's `revision`. Keeps
+      # the last notice time, so a new answer does not repeat a notice shown today. A failed check is not
+      # saved, so a check that keeps failing still earns the daily reminder, and neither is a repeated
+      # answer, which carries its `checked_at`, so it still expires a day after GitHub gave it.
+      def record(checkout, result, installed:, home: nil, now: Time.now)
+        return if result['status'] == 'unknown' || result.key?('checked_at')
+
         home ||= Dir.home
         noticed = read(checkout, home:).slice('noticed_at')
-        write(home, { 'checkout' => key(checkout), 'checked_at' => now.utc.iso8601, 'result' => result, **noticed })
+        write(home, { 'checkout' => key(checkout), **installed, 'checked_at' => now.utc.iso8601, 'result' => result,
+                      **noticed })
       rescue SystemCallError, ArgumentError => e
         warn "Shaka update check not cached: #{e.message}"
+      end
+
+      # The saved result with its check time, while it is under REUSE_SECONDS old and describes the same
+      # commit and revision. install --update can change either one.
+      def reuse(checkout, installed:, home:, now: Time.now)
+        entry = read(checkout, home:)
+        return unless installed['revision'] && entry['result'].is_a?(Hash) && entry.slice(*installed.keys) == installed
+
+        entry['result'].merge('checked_at' => entry['checked_at']) if fresh?(entry['checked_at'], now, REUSE_SECONDS)
+      end
+
+      # Whether the entry describes the revision the checkout's installation record names now. Read from
+      # the record file, because the startup notice runs no command.
+      def current?(entry, checkout)
+        record = JSON.parse(File.read(File.join(checkout, '.git', Install::Locations::RECORD)))
+        revision = record.dig('identity', 'source', 'revision') if record.is_a?(Hash)
+        !revision.nil? && entry['revision'] == revision
+      rescue SystemCallError, JSON::ParserError, TypeError
+        false
       end
 
       # False when the time cannot be saved: a notice that cannot be limited to once a day is not shown.
@@ -43,8 +71,8 @@ module Shaka
         false
       end
 
-      def fresh?(time, now)
-        now - Time.iso8601(time.to_s) < SECONDS
+      def fresh?(time, now, seconds = SECONDS)
+        now - Time.iso8601(time.to_s) < seconds
       rescue ArgumentError
         false
       end

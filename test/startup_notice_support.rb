@@ -11,6 +11,8 @@ module StartupNoticeSupport
   NOW = Time.utc(2026, 10, 18, 12)
   LIBRARY = File.expand_path('../skills/shaka/lib', __dir__)
   COMMAND = SHAKA_COMMAND
+  # The revision each fake checkout's installation record names.
+  REVISION = 'a' * 40
 
   def setup
     @directory = Dir.mktmpdir('startup-notice')
@@ -29,7 +31,8 @@ module StartupNoticeSupport
   def checkout(name, registered:)
     root = File.join(@directory, name)
     FileUtils.mkdir_p([File.join(root, 'skills/shaka/scripts'), File.join(root, '.git')])
-    File.write(File.join(root, '.git/shaka-install.json'), '{}') if registered
+    record = { 'identity' => { 'source' => { 'revision' => REVISION } } }
+    File.write(File.join(root, '.git/shaka-install.json'), JSON.generate(record)) if registered
     File.realpath(root)
   end
 
@@ -54,7 +57,18 @@ module StartupNoticeSupport
   def answer(status) = { 'status' => status, 'guidance' => "#{status} guidance" }
 
   def remember(status, at:)
-    Shaka::UpdateCheck::Cache.record(@root, answer(status), home: @home, now: at)
+    save(@root, answer(status), at:)
+  end
+
+  def save(root, result, at: NOW, revision: REVISION)
+    installed = { 'commit' => revision, 'revision' => revision }
+    Shaka::UpdateCheck::Cache.record(root, result, installed:, home: @home, now: at)
+  end
+
+  def session_start(now:, root: @root)
+    output = StringIO.new
+    Shaka::StartupNotice.session_start(output:, home: @home, root:, now:)
+    output.string
   end
 
   def notice(root: @root, now: NOW)
