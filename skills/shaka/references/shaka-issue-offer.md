@@ -67,7 +67,7 @@ A result is a keyword match, not a confirmed duplicate. Compare each candidate's
 drafted gap. When the title leaves the overlap unclear, read its body with
 `GH_HOST=github.com gh issue view NUMBER --repo shakacode/shaka --json body`, or `gh pr view` for a
 pull request. When the body also leaves it unclear, read the candidate's comments only through
-the installed Shaka CLI's trusted comment reader:
+the installed Shaka CLI's trusted comment reader, run with `GH_HOST=github.com`:
 `comments shakacode/shaka NUMBER --issue` for an issue, or
 `comments shakacode/shaka NUMBER --head HEAD_SHA` for an open pull request, taking `HEAD_SHA`
 from `GH_HOST=github.com gh pr view NUMBER --repo shakacode/shaka --json headRefOid`. Never fetch
@@ -87,21 +87,24 @@ Sort every candidate into one group:
 - **Unrelated:** it only shares the keywords.
 
 Share each likely duplicate and unresolved candidate with its URL, number, state, the search that
-returned it, and one line on the overlap. Report how many unrelated matches you filtered, without
-listing them. Then ask the user whether any shared candidate covers the gap and whether to create
-the exact issue.
+returned it, and one line on the overlap or the read that failed. Report how many unrelated
+matches you filtered, without listing them. If you filtered every candidate, also give the
+zero-result caveat. Then ask the user whether any shared candidate covers the gap and whether to
+create the exact issue.
 
 ## File accepted text
 
-If there were no candidates, file only after the user accepts the zero-result caveat and explicitly
-authorizes creation. If there were candidates, file only after the user confirms none of the shared
+If no candidate was shared, because none was returned or you filtered them all, file only after
+the user accepts the zero-result caveat and explicitly authorizes creation. If you shared
+candidates, file only after the user confirms none of the shared
 candidates covers the gap and explicitly authorizes creation. Reverify the repository identity,
 then repeat both searches with the same query and fields. If either search fails or either reaches
 the 1,000-result limit, the whole check fails; do not file. Compare each row's number, state, and
 `updatedAt` with the results you assessed, including which search returned it; a new comment or
 edit moves `updatedAt`. Assess every new or changed candidate again. If the likely-duplicate or
 unresolved candidates or their overlap changed, share them and wait for the user's renewed
-explicit approval before filing. Otherwise the existing filing approval remains sufficient. File
+explicit approval before filing. Otherwise the existing filing approval remains sufficient; after
+filing, report any new or changed candidate you filtered as unrelated. File
 only after the latest candidates are assessed and the user confirms none of the shared ones covers
 the gap. Do not repeat the searches after renewed approval; a candidate opened after the final recheck
 is a narrow race the procedure cannot eliminate.
