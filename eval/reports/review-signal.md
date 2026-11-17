@@ -331,8 +331,9 @@ What would change this:
 
 - The implementing agent's cost per extra cycle is unmeasured. A large cost there would
   make a diff-only re-review after cycle 1 worth a trial. The
-  [preregistered comparison](review-scope-preregistration.md) is that trial; its paid
-  pilot awaits the maintainer's approval.
+  [preregistered comparison](review-scope-preregistration.md) is that trial. Its
+  [Stage 1 pilot](review-scope-stage1-pilot.md) stopped it: re-reviewing only new commits
+  missed known problems that full re-review found.
 - The largest share of findings that change nothing is Claude's nits. The
   [review process study](../../docs/articles/review-process-study.md#1-the-local-claude-reviewer-is-noisy-but-it-carries-most-of-the-fixes)
   already proposed capping them, a change outside the three options compared here.

@@ -223,6 +223,9 @@ the first paid call unless marked.
   therefore loses less context for Claude than it would have in October.
 - **One run per reviewer, arm and cycle.** F5 shows how much one run can vary: arm B's
   reviewers had its line in their diff and did not report it.
+- **Not rerunnable from the record.** The reviewer reports, transcripts and harness stay
+  outside the repository, so the transcript check and the finding parse cannot be rerun
+  from committed files. The record keeps each run's tool-call counts and void verdict.
 - **One judge.** `gpt-6.1-sol` decided every match. It passed its controls, but no person
   checked the Stage 1 verdicts.
 
