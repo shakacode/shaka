@@ -13,7 +13,8 @@ module Shaka
     # the command directory whose absence makes a run use the trusted copy.
     # The built-in defaults count because the review runner reads its timeouts from them directly, and
     # the rate card because reviewer settings read their model names from it. The launcher picks the Ruby
-    # that runs everything, and subcommands.rb routes `evidence` and `review` to their code.
+    # that runs everything, and subcommands.rb routes `evidence` and `review` to their code. On Windows,
+    # executable_file.rb starts a check and windows_job.rb holds it for the stop.
     # The review folder counts whole, comment rendering included: listing those files apart would
     # have spared 3 of 315 commits on main.
     module RelevantCode
@@ -28,7 +29,7 @@ module Shaka
         lib/shaka/local_review/*.rb
         lib/shaka/configuration/fingerprint.rb
         lib/shaka/configuration/fingerprint/*.rb
-        lib/shaka/{call_log,defaults,error,pr_template,prompt_section,repository_identity,stopwatch}.rb
+        lib/shaka/{call_log,defaults,error,executable_file,pr_template,prompt_section,repository_identity,stopwatch}.rb
         lib/shaka/publication/phases.rb
         lib/shaka/{review_prompt,reviewer_selection,reviewer_settings,subcommands,version,workflow_version}.rb
         lib/shaka/repository_config/{post_implementation_schema,prompt_files,review_limit,review_schema}.rb
@@ -36,7 +37,7 @@ module Shaka
         lib/shaka/configuration/machine_reviewers.rb
         lib/shaka/configuration/paths.rb
         lib/shaka/configuration/sources.rb
-        lib/shaka/doctor/cli_inventory.rb
+        lib/shaka/doctor/{cli_inventory,windows_job}.rb
         lib/shaka/usage/rate_card.rb
         scripts/shaka
       ].freeze
