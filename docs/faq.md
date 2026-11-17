@@ -129,6 +129,13 @@ The agent can explain which settings apply and where they are saved, separately
 from where the skill is installed. See [where settings live](settings-guide.md).
 For an installation problem, use [manual installation and repair](manual-installation.md).
 
+## Can Shaka update itself every day?
+
+No. Shaka has no auto-update setting. Schedule a daily check that tells you when
+an update is available, then update between chats.
+[Keep Shaka up to date](reference/scheduled-update-checks.md) explains why and
+shows the steps.
+
 ## Where do I put project rules?
 
 | What you want to record | Where it belongs |

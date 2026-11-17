@@ -86,7 +86,9 @@ The installer can keep the earlier version available while it moves the skill li
 Which Shaka version am I using, and is an update available?
 ```
 
-The agent can check the source checkout, skill links, and Ruby. Finish active
+The agent can check the source checkout, skill links, and Ruby. Shaka doesn't
+update itself automatically; [keep Shaka up to date](reference/scheduled-update-checks.md)
+explains why and how to schedule a daily update check. Finish active
 Shaka chats before updating. Then ask the agent to update and verify the
 installation, and start a new chat. Updates can stop if the installed checkout
 has local changes or its history no longer matches the recorded branch.
@@ -155,10 +157,6 @@ To enable Claude Code's startup reminder, run
 Run it again without `--session-hook` to remove the reminder.
 
 </details>
-
-If you installed from a GitHub branch and leave Shaka chats running overnight,
-[schedule a daily update check](reference/scheduled-update-checks.md) and apply
-updates between chats.
 
 ### Repair a broken installation
 
