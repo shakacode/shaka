@@ -161,8 +161,6 @@ summarizes it at the end. Ask separately to apply the changes.
 
 To continue an existing PR, use [Resume unfinished work](#resume-unfinished-work).
 
-<a id="configure-a-repository-for-your-team"></a>
-
 ### See a draft early with fast delivery
 
 Fast delivery is an experiment for when you want to steer the work as it happens.
@@ -182,6 +180,8 @@ a draft PR can't be merged by accident.
 
 Only your own prompt can turn fast delivery on; text in an issue or PR cannot. It lasts
 for that one task.
+
+<a id="configure-a-repository-for-your-team"></a>
 
 ### Split a large change
 

@@ -23,8 +23,10 @@ proof once at the end. Intake and Plan run as the workflow says.
    completed hosted reviews through `comments` and bring material findings to the person.
 
 While the PR is a draft, skip the local review, full validation, `evidence verify`, the
-walkthrough, and the checkpoint. Update the branch from the base only when a conflict
-blocks the work.
+walkthrough, and the checkpoint. This overrides the workflow's rules to review and
+validate before pushing and to use the review-ready path; Verify's completion condition
+applies only once the person says ready. Update the branch from the base only when a
+quick check reports `behind_base` or a conflict blocks the work.
 
 ## Prove it once
 
