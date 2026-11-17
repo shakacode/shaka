@@ -82,7 +82,8 @@ candidate contains any.
 Sort every candidate into one group:
 
 - **Likely duplicate:** it covers the drafted gap.
-- **Unresolved:** it partly overlaps, or you could not read or judge it.
+- **Unresolved:** it partly overlaps, a read failed, or what you could read leaves the overlap
+  unclear.
 - **Unrelated:** it only shares the keywords.
 
 Share each likely duplicate and unresolved candidate with its URL, number, state, the search that
