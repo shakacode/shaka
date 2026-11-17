@@ -37,6 +37,19 @@ class PublicationTemplateLayoutTest < Minitest::Test
     assert_equal %w[Summary Shaka Indented Deployment], Shaka::PrTemplate.headings(template)
   end
 
+  def test_comment_syntax_inside_a_code_block_hides_nothing
+    assert_equal %w[Shaka Rollout], Shaka::PrTemplate.headings("```html\n<!--\n```\n## Shaka\n## Rollout\n")
+  end
+
+  def test_only_a_bare_fence_closes_a_code_block
+    assert_empty Shaka::PrTemplate.headings("```text\n```example\n## Shaka\n```\n")
+  end
+
+  def test_comments_on_a_heading_line
+    template = "<!-- note --> ## Hidden\n## Summary <!-- what changed -->\nText <!-- open\n## Inside\n-->\n## Shown\n"
+    assert_equal %w[Summary Shown], Shaka::PrTemplate.headings(template)
+  end
+
   def test_template_headings_read_windows_line_endings
     template = "## Summary\r\n```\r\n## Code\r\n```\r\n## Shaka Inline\r\n"
     assert_equal ['Summary', 'Shaka Inline'], Shaka::PrTemplate.headings(template)
@@ -143,6 +156,29 @@ class PublicationTemplateLayoutCommandTest < Minitest::Test
       body = published(root)
       assert_operator body.index('## Summary'), :<, body.index('<summary>Shaka</summary>')
       assert_operator body.index('</details>', body.index('<summary>Shaka</summary>')), :<, body.index('## Deployment')
+    end
+  end
+
+  def test_a_guide_naming_the_template_orders_the_description
+    template = "## Summary\n\n```html\n<!--\n```\n\n## Shaka Inline\n\n## Deployment\n"
+    with_guidance('pr_evidence' => '.github/pull_request_template.md') do |root|
+      write_template(root, template)
+      commit(root)
+      body = published(root)
+      refute_includes body, '<summary>Shaka</summary>'
+      assert_operator body.index('## Shaka metrics'), :<, body.index('## Deployment')
+      assert_operator body.index('## Deployment'), :<, body.index('_PR prepared with')
+    end
+  end
+
+  def test_guidance_tells_the_agent_to_leave_the_shaka_heading_out
+    with_guidance('pr_evidence' => '.agents/pr-evidence.md') do |root|
+      write_template(root, TEMPLATE)
+      assert guidance('pr_evidence', root, commit(root)).end_with?("Leave that heading out of `sections`.\n")
+    end
+    with_guidance('pr_evidence' => '.github/pull_request_template.md') do |root|
+      write_template(root, "## Shaka Inline\n")
+      assert_includes guidance('pr_evidence', root, commit(root)), 'marks where Shaka places its own sections'
     end
   end
 

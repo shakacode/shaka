@@ -4,6 +4,7 @@ require 'optparse'
 require_relative 'error'
 require_relative 'configuration'
 require_relative 'pr_template'
+require_relative 'publication/template_layout'
 
 module Shaka
   # Prints one repository guidance file from the selected settings source, never the candidate branch.
@@ -72,13 +73,22 @@ module Shaka
     # PR evidence also carries the repository's pull request template, read from the same trusted commit.
     # A guide that names a template is the template; a broken template is skipped so the guide still prints.
     def with_template(text, guide_path, sha)
-      template = PrTemplate.path(root: @root, sha:)
-      return text if template.nil? || PrTemplate::PATHS.include?(guide_path)
+      return placement(text) if PrTemplate::PATHS.include?(guide_path)
+      return text unless (template = PrTemplate.path(root: @root, sha:))
 
       body = TrustedConfigSource.new(root: @root).read_prompt(template, sha, 'pull request template')
-      "#{text.chomp}\n\n---\n\nPull request template (#{template}):\n\n#{body}"
+      placement("#{text.chomp}\n\n---\n\nPull request template (#{template}):\n\n#{body}", body)
     rescue Error => e
       "#{text.chomp}\n\n---\n\nPull request template skipped: #{e.message}\n"
+    end
+
+    # A Shaka heading marks where the description places Shaka's own sections, so no section is written for it.
+    def placement(text, template = text)
+      keys = PrTemplate.headings(template).map { TemplateLayout.key(it) }
+      return text unless keys.any? { TemplateLayout.marker?(it) }
+
+      "#{text.chomp}\n\nThe template's `## Shaka` or `## Shaka Inline` heading marks where Shaka places " \
+        "its own sections. Leave that heading out of `sections`.\n"
     end
   end
 end

@@ -10,8 +10,9 @@ module Shaka
     PATHS = %w[.github/pull_request_template.md .github/PULL_REQUEST_TEMPLATE.md
                pull_request_template.md PULL_REQUEST_TEMPLATE.md
                docs/pull_request_template.md docs/PULL_REQUEST_TEMPLATE.md].freeze
-    COMMENT = /<!--.*?(?:-->|\z)/m
+    COMMENT = /<!--.*?-->/
     FENCE = /\A {0,3}(`{3,}|~{3,})/
+    CLOSER = /\A {0,3}(`{3,}|~{3,})[ \t]*\z/
     HEADING = /\A {0,3}##[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*\z/
 
     # A location that cannot be resolved, such as a symlink loop, counts as no template there. Once
@@ -47,20 +48,46 @@ module Shaka
       TrustedConfigSource.new(root:).read_prompt(path, sha, 'pull request template') if path
     end
 
-    # The `##` headings a reader of the template sees, in order; comments and code blocks hold none.
-    def self.headings(text)
-      fence = nil
-      text.gsub(COMMENT, '').each_line(chomp: true).filter_map do |line|
-        if (marker = line[FENCE, 1])
-          fence = closes?(fence, marker) ? nil : (fence || marker)
-          next
+    # The `##` headings a reader of the template sees, in order.
+    def self.headings(text) = HeadingReader.new.call(text)
+
+    # Reads a template line by line. Text inside a code block or an HTML comment is literal, so comment
+    # syntax in a code block and a heading inside a comment both stay hidden.
+    class HeadingReader
+      def initialize
+        @fence = nil
+        @comment = false
+      end
+
+      def call(text) = text.each_line(chomp: true).filter_map { read(it) }
+
+      private
+
+      def read(line)
+        if @fence
+          @fence = nil if closes?(line)
+        elsif @comment
+          @comment = !line.include?('-->')
+        elsif (marker = line[FENCE, 1])
+          @fence = marker
+        else
+          return heading(line)
         end
-        line[HEADING, 1] unless fence
+        nil
+      end
+
+      # A comment the line opens hides the lines after it; one before the heading marks hides the heading.
+      def heading(line)
+        @comment = line.gsub(COMMENT, '').include?('<!--')
+        text = line[HEADING, 1]
+        text = text.gsub(COMMENT, '').sub(/<!--.*/, '').strip if text
+        text unless text.to_s.empty?
+      end
+
+      # Only a bare run of the opening character, at least as long, closes a code block.
+      def closes?(line)
+        (closer = line[CLOSER, 1]) && closer[0] == @fence[0] && closer.size >= @fence.size
       end
     end
-
-    def self.closes?(fence, marker) = fence && marker[0] == fence[0] && marker.size >= fence.size
-
-    private_class_method :closes?
   end
 end
