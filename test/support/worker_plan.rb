@@ -37,9 +37,9 @@ module WorkerPlan
     chosen = ENV.fetch('SHAKA_TEST_DURATIONS', '')
     return chosen unless chosen.empty?
 
-    common, status = Open3.capture2('git', '-C', root, 'rev-parse', '--path-format=absolute', '--git-common-dir',
-                                    err: File::NULL)
-    File.join(common.strip, 'shaka-test-durations.json') if status.success?
+    # Git prints the directory relative to root unless it is elsewhere; --path-format needs Git 2.31.
+    common, status = Open3.capture2('git', '-C', root, 'rev-parse', '--git-common-dir', err: File::NULL)
+    File.join(File.expand_path(common.strip, root), 'shaka-test-durations.json') if status.success?
   rescue SystemCallError # No git: run without a record.
     nil
   end
