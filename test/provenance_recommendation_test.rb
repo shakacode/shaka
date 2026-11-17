@@ -84,7 +84,7 @@ class ProvenanceRecommendationTest < Minitest::Test
     rendered = publish(HEADS[2], 'recommended_model' => 'gpt-5.6-terra', 'recommendation_change_reason' => REASON)
 
     assert_includes rendered, '| Recommended model / effort | claude-opus-5-5 / medium |'
-    assert_includes history_rows(rendered)[1], REASON
+    assert_includes rendered, %("reason":"#{REASON}")
   end
 
   def test_an_unchanged_recommendation_reports_nothing_kept
@@ -106,13 +106,6 @@ class ProvenanceRecommendationTest < Minitest::Test
     end
   end
 
-  def test_a_tampered_reason_is_refused
-    publish(HEADS[0])
-    publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => 'Replanned.')
-    assert_refused(@body.sub('"reason":"Replanned."', '"reason":"a | b"'))
-    assert_refused(@body.sub('"reason":"Replanned."', '"reason":7'))
-  end
-
   private
 
   def assert_rows(expected)
@@ -123,11 +116,39 @@ class ProvenanceRecommendationTest < Minitest::Test
       assert_includes row, text
     end
   end
+end
+
+# The replan reasons have a marker of their own, which only this helper writes.
+class ProvenanceReplansMarkerTest < Minitest::Test
+  include ProvenanceHistoryFixture
+
+  REASON = ProvenanceRecommendationTest::REASON
+
+  def test_a_tampered_reason_is_refused
+    publish(HEADS[0])
+    publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => 'Replanned.')
+    assert_refused(@body.sub('"reason":"Replanned."', '"reason":"a | b"'))
+    assert_refused(@body.sub('"reason":"Replanned."', '"reason":7'))
+    assert_refused(@body.sub('{"replans":[', '{"replans":[{},'))
+  end
+
+  # Checkpoint finding: history entries keep their old shape, so an older install still reads
+  # them; the reasons live in a marker it does not count as provenance history.
+  def test_reasons_stay_out_of_the_history_entries
+    publish(HEADS[0])
+    publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => REASON)
+    history = JSON.parse(@body[/<!-- shaka:provenance (.*?) -->/, 1])
+
+    assert(history['entries'].all? { |entry| entry.keys.sort == Shaka::ProvenanceHistory::FIELDS.sort })
+    refute Shaka::ProvenanceReplans::PREFIX.start_with?(Shaka::ProvenanceHistory::PREFIX.strip)
+  end
+
+  private
 
   def assert_refused(body)
     error = assert_raises(Shaka::Error) do
       Shaka::Publication.description(content, workflow, pull_for(HEADS[2], body))
     end
-    assert_includes error.message, 'provenance history'
+    assert_includes error.message, 'recommendation changes'
   end
 end

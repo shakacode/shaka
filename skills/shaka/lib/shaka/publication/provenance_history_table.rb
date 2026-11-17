@@ -9,15 +9,19 @@ module Shaka
 
     module_function
 
-    # The reason column appears only once some entry replaced the recommendation.
-    def render(entries, routes, reason)
-      reasons = entries.any? { |entry| entry.key?(reason) }
-      headings = HEADINGS + (reasons ? [REASON_HEADING] : [])
-      rows = entries.map do |entry|
-        cells = ["`#{entry['head'][0, 7]}`", entry['workflow'], *entry.values_at(*routes)]
-        row(reasons ? cells << entry.fetch(reason, '') : cells)
-      end
+    # reasons maps [head, recommended] to the reason a recommendation changed; its column
+    # appears only when some entry has one.
+    def render(entries, routes, reasons)
+      column = entries.any? { |entry| reason(reasons, entry) }
+      headings = column ? [*HEADINGS, REASON_HEADING] : HEADINGS
+      rows = entries.map { |entry| row(cells(entry, routes, (reason(reasons, entry).to_s if column))) }
       [row(headings), "|#{' --- |' * headings.size}", *rows].join("\n")
+    end
+
+    def reason(reasons, entry) = reasons[[entry['head'], entry['recommended']]]
+
+    def cells(entry, routes, reason)
+      ["`#{entry['head'][0, 7]}`", entry['workflow'], *entry.values_at(*routes), *reason]
     end
 
     def row(cells) = "| #{cells.join(' | ')} |"

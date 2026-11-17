@@ -39,9 +39,15 @@ module Shaka
       detail = execution.detail
       return details_block(detail) unless @pull
 
-      history = ProvenanceHistory.carry(@pull, execution.entry, reason: recommendation.reason)
-      body = [detail['body'], ProvenanceHistory.section(history), ProvenanceHistory.marker(history)].compact
+      body = [detail['body'], *history_blocks(execution.entry, recommendation.reason)]
       details_block(detail.merge('body' => body.join("\n\n")))
+    end
+
+    def history_blocks(entry, reason)
+      history = ProvenanceHistory.carry(@pull, entry)
+      replans = ProvenanceReplans.carry(@pull, entry['recommended'], reason)
+      [ProvenanceHistory.section(history, ProvenanceReplans.reasons(replans)), ProvenanceHistory.marker(history),
+       ProvenanceReplans.marker(replans)].compact
     end
 
     def skills_used = [details_block(SkillsUsed.new(@content['skills_used']).detail)]

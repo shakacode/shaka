@@ -420,9 +420,10 @@ The recommendation records the plan. On a same-repository PR, `description` rend
 recommendation its provenance history last recorded and reports `recommendation_kept`
 when the supplied one differs. To record a changed plan, add the optional
 `recommendation_change_reason`: one line of at most 200 characters without `|`, `<`, or
-`>`. The history row for that change shows the reason. A reason repeated from the last
-change counts as none. Model and effort are kept separately: a recorded `UNKNOWN` takes a
-concrete value without a reason, and a concrete value never becomes `UNKNOWN`.
+`>`. A separate hidden marker keeps the latest 20 reasons, and the history row for each
+change shows its reason. A reason repeated from the last change counts as none. Model and
+effort are kept separately: a recorded `UNKNOWN` takes a concrete value without a reason,
+and a concrete value never becomes `UNKNOWN`.
 
 The renderer also fills the workflow version with the commit the helper runs from,
 because every commit between releases shares one version number. When the helper came
@@ -445,8 +446,7 @@ The table shows the latest publication, so `description` also keeps a history in
 marker in the PR body. It adds an entry, recording the PR head, whenever the Shaka skill version
 cell or a route differs from the last entry; republishing the same values adds nothing. Once
 there are two entries, **Execution details** lists them oldest first below its table. It
-keeps the first entry, the latest recommendation change, and the most recent entries up to
-21 in all, and says how many it omitted. The helper writes
+keeps the first entry and the 20 most recent, and says how many it omitted. The helper writes
 this history; a details item titled `Provenance history` is refused, and so is a marker it cannot
 validate, which publishes nothing until the marker is restored or removed. A PR published
 before this history existed starts one at its next publication, and a fork's history is never

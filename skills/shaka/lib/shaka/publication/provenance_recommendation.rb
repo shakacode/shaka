@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'provenance_history'
+require_relative 'provenance_replans'
 
 module Shaka
   # Keeps the plan-time recommendation across a PR's publications, since each publication
@@ -13,7 +14,7 @@ module Shaka
     SETTINGS = %w[model effort].freeze
 
     # spec renders; kept names the route shown when it differs from the supplied one; reason
-    # goes on the history entry that records a change.
+    # explains a recorded change.
     Result = Data.define(:spec, :kept, :reason)
 
     module_function
@@ -25,7 +26,7 @@ module Shaka
       return Result.new(spec:, kept: nil, reason: nil) if entries.empty?
 
       recorded = entries.last.fetch('recommended').split(' / ', 2)
-      reason = fresh_reason(entries, spec)
+      reason = fresh_reason(pull, spec)
       route = recorded.zip(supplied).map { |old, new| keep?(old, new, reason) ? old : new }
       result(spec, route, supplied:, reason: (reason unless route == recorded))
     end
@@ -35,9 +36,9 @@ module Shaka
     end
 
     # A reused content file resends the last replan's reason, which explains no new change.
-    def fresh_reason(entries, spec)
+    def fresh_reason(pull, spec)
       reason = spec[REASON]
-      reason unless reason == entries.reverse_each.find { |entry| entry.key?('reason') }&.fetch('reason')
+      reason unless reason == ProvenanceReplans.recorded(pull).last&.fetch('reason')
     end
 
     def with_route(spec, route) = spec.merge(SETTINGS.zip(route).to_h { |name, value| ["recommended_#{name}", value] })

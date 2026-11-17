@@ -19,8 +19,6 @@ module Shaka
     LEAD = 'One row per publication that changed the Shaka skill version or model / effort, oldest first. ' \
            'A head repeats when it was republished with different values. The last row holds the values above.'
     FIELDS = %w[head workflow requested recommended active].freeze
-    # Only an entry that replaced the recommendation carries the reason the agent gave.
-    REASON = 'reason'
     ROUTES = %w[requested recommended active].freeze
     # The entries after the first that a long-lived PR keeps.
     RECENT = 20
@@ -33,9 +31,8 @@ module Shaka
     module_function
 
     # A fork author can edit the body, so a fork's history is never carried, as with usage.
-    def carry(pull, current, reason: nil)
+    def carry(pull, current)
       entry = current.merge('head' => head(pull))
-      entry[REASON] = reason if reason
       history = same_repository?(pull) ? previous(pull['body']) : fresh
       entries = history.fetch('entries')
       return history if entries.any? && changes(entries.last) == changes(entry)
@@ -45,12 +42,14 @@ module Shaka
 
     def marker(history) = "#{PREFIX}#{JSON.generate(history)} -->"
 
-    # A PR whose provenance never changed keeps its single table.
-    def section(history)
+    # A PR whose provenance never changed keeps its single table. reasons maps an entry's head
+    # and recommendation to why that recommendation changed.
+    def section(history, reasons = {})
       entries = history.fetch('entries')
       return if entries.size < 2
 
-      [LEAD, omission(history.fetch('omitted')), table(entries)].compact.join("\n\n")
+      table = ProvenanceHistoryTable.render(entries, ROUTES, reasons)
+      [LEAD, omission(history.fetch('omitted')), table].compact.join("\n\n")
     end
 
     # The entries a same-repository PR body records, oldest first.
@@ -102,15 +101,11 @@ module Shaka
       entries.is_a?(Array) && entries.size.between?(1, RECENT + 1) && entries.all? { |entry| valid_entry?(entry) }
     end
 
-    def valid_entry?(entry) = entry.is_a?(Hash) && valid_reason?(entry) && valid_fields?(entry.except(REASON))
-
-    def valid_fields?(entry)
-      entry.keys.sort == FIELDS.sort && entry.values.all?(String) &&
+    def valid_entry?(entry)
+      entry.is_a?(Hash) && entry.keys.sort == FIELDS.sort && entry.values.all?(String) &&
         entry['head'].match?(HEAD) && entry['workflow'].match?(WORKFLOW) &&
         ROUTES.all? { |route| valid_route?(entry[route], requested: route == 'requested') }
     end
-
-    def valid_reason?(entry) = !entry.key?(REASON) || ExecutionProvenance.reason?(entry[REASON])
 
     # A route renders as `model / effort`, each an allowlisted provenance value.
     def valid_route?(route, requested: false)
@@ -127,20 +122,13 @@ module Shaka
                 "restore or remove its #{PREFIX.strip} marker, then publish again.")
     end
 
-    def changes(entry) = entry.except('head', REASON)
+    def changes(entry) = entry.except('head')
 
     def bounded(entries, omitted)
       extra = entries.size - (RECENT + 1)
       return { 'entries' => entries, 'omitted' => omitted } unless extra.positive?
 
-      { 'entries' => [entries.first, *recent(entries.drop(1))], 'omitted' => omitted + extra }
-    end
-
-    # The latest replan stays, so a reason resent after it scrolled away is still recognized.
-    def recent(entries)
-      tail = entries.last(RECENT)
-      replan = entries.reverse_each.find { |entry| entry.key?(REASON) }
-      replan.nil? || tail.include?(replan) ? tail : [replan, *tail.drop(1)]
+      { 'entries' => [entries.first, *entries.last(RECENT)], 'omitted' => omitted + extra }
     end
 
     def omission(omitted)
@@ -149,10 +137,7 @@ module Shaka
       "#{omitted} #{omitted == 1 ? 'entry' : 'entries'} after the first #{omitted == 1 ? 'is' : 'are'} omitted."
     end
 
-    def table(entries) = ProvenanceHistoryTable.render(entries, ROUTES, REASON)
-
-    private_class_method :head, :same_repository?, :previous, :fresh, :validated, :valid_entries?, :valid_entry?,
-                         :valid_fields?, :valid_reason?, :valid_route?, :invalid, :changes, :bounded, :recent,
-                         :omission, :table
+    private_class_method :head, :previous, :fresh, :validated, :valid_entries?, :valid_entry?,
+                         :valid_route?, :invalid, :changes, :bounded, :omission
   end
 end
