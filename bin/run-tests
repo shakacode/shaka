@@ -37,8 +37,12 @@ files = (whole_suite ? Dir.glob('test/**/*_test.rb') : ARGV).map { |path| File.e
 require_relative '../test/support/worker_plan'
 plan = File.expand_path('../test/support/worker_plan.rb', __dir__)
 record = WorkerPlan.record_path(File.expand_path('..', __dir__))
-# Read once, so a record another run rewrites meanwhile cannot give workers different splits.
+# Read once, so a record another run rewrites meanwhile cannot give workers different splits. Workers
+# read this private copy from a file, because the record outgrows a Windows command line.
 recorded = JSON.generate(WorkerPlan.read(record))
+snapshot = Tempfile.new('run-tests-record')
+snapshot.write(recorded)
+snapshot.flush
 
 utf8_locale = RUBY_PLATFORM.include?('darwin') ? 'en_US.UTF-8' : 'C.UTF-8'
 locale = %w[LC_ALL LC_CTYPE LANG].any? { !ENV.fetch(it, '').empty? } ? {} : { 'LANG' => utf8_locale }
@@ -73,7 +77,7 @@ runs = Array.new(workers) do |index|
     require #{plan.inspect}
     classes = Minitest::Runnable.runnables
     named, anonymous = classes.partition(&:name)
-    share = WorkerPlan.assign(named.map(&:name), #{workers}, JSON.parse(#{recorded.inspect}))[#{index}]
+    share = WorkerPlan.assign(named.map(&:name), #{workers}, JSON.parse(File.read(#{snapshot.path.inspect})))[#{index}]
     kept = named.select { share.include?(it.name) }
     classes.replace(#{index}.zero? ? kept + anonymous : kept)
     #{RECORDER}
@@ -95,6 +99,7 @@ results = runs.map do |run|
   counts.each { |count, name| totals[name] += count.to_i } if counts.size == 5
   status.success? && counts.size == 5
 end
+snapshot.close!
 
 seconds = Hash.new(0.0)
 failed = []

@@ -55,4 +55,46 @@ class WorkerPlanTest < Minitest::Test
       assert_equal({ 'B' => 2.0 }, WorkerPlan.read(path))
     end
   end
+
+  # Git prints the common directory relative to the main checkout but absolute in a linked worktree.
+  def test_a_checkout_and_its_linked_worktree_share_one_record_in_the_common_git_directory
+    Dir.mktmpdir('worker-plan') do |directory|
+      main = File.join(directory, 'main')
+      git('init', '-q', main)
+      git('-C', main, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+          'commit', '-q', '--allow-empty', '-m', 'start')
+      git('-C', main, 'worktree', 'add', '-q', File.join(directory, 'linked'))
+      expected = File.join(File.realpath(File.join(main, '.git')), 'shaka-test-durations.json')
+
+      paths = %w[main linked].map { record_path_in(File.join(directory, it)) }
+
+      assert_equal [expected] * 2, paths
+    end
+  end
+
+  def test_outside_a_repository_or_without_git_there_is_no_record
+    Dir.mktmpdir('worker-plan') do |directory|
+      assert_nil record_path_in(directory)
+      assert_nil record_path_in(Dir.pwd, 'PATH' => directory)
+    end
+  end
+
+  private
+
+  def git(*args)
+    _, status = Open3.capture2e('git', *args)
+
+    assert_predicate status, :success?, args.inspect
+  end
+
+  def record_path_in(root, env = {})
+    saved = ENV.to_h.slice('SHAKA_TEST_DURATIONS', *env.keys)
+    ENV.delete('SHAKA_TEST_DURATIONS')
+    ENV.update(env)
+    path = WorkerPlan.record_path(root)
+    path && File.join(File.realpath(File.dirname(path)), File.basename(path))
+  ensure
+    ENV.delete('SHAKA_TEST_DURATIONS')
+    ENV.update(saved)
+  end
 end
