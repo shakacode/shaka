@@ -1168,14 +1168,6 @@ When text breaks a limit, nothing reaches GitHub. The command exits with an
 error identifying the long passage or total word count. The agent shortens the
 explanation before publishing.
 
-A Claude Code cloud session cannot preview GitHub's rendering. There, Shaka checks the
-description after GitHub stores it, so readers can see it and GitHub sends its notifications
-first. If it breaks a limit, Shaka puts the earlier description back. If Shaka sees that someone
-edited the description since, it leaves their edit and says so. GitHub cannot write a body only
-if it is unchanged, so an edit saved just before the restore can still be lost.
-GitHub's stored copy cannot show which text Shaka wrote. When people or other tools added
-text outside Shaka's part, the limits go unchecked and the result says so.
-
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and
 links to the code, then publishes again.
