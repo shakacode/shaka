@@ -18,9 +18,9 @@ lists the method, every kind, and the
    the code lacks were raised on 53 PRs and fixed on 47. A test that checks names would catch about 1 in 10
    of them. The rest need someone, or something, to read both.
 3. **A promising check covers only part of its kind.** Git calls that inherit the
-   caller's Git setup produced 7 defects on 5 PRs. A test that every call uses one
-   isolating runner would catch 4 to 6 of them, and only if it also covers the seed
-   tooling under `eval/`.
+   caller's Git setup produced 13 findings on 5 PRs, 7 of them defects. A test that
+   every call uses one isolating runner would catch 4 to 6 of the 13, and only if it
+   also covers the seed tooling under `eval/`.
 4. **Reviewers still raise risks a check already answers.** Where an anchor check and a
    quote loader existed, reviewers raised 4 risks those checks cover. The agent
    dismissed all 4, 3 of them by citing the check.
