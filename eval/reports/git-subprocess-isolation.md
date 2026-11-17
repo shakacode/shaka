@@ -23,16 +23,20 @@ global config, filters and hooks.
 - **One policy cannot serve every caller.** Clearing global config changes what Shaka
   reads from the maintainer's own checkout. Fetches from the maintainer's remotes need the maintainer's network config.
   Isolation flags do not stop every filter.
-- **Routing is large.** 49 Git entry points sit in 35 files. Above 29 files, a merge needs
-  the maintainer's confirmation. 29 entry points run with the inherited environment today.
+- **Routing is large.** 40 files in the library start Git, directly or through a shared
+  wrapper. Above 29 changed files, a merge needs the maintainer's confirmation. 22 of the
+  40 direct spawn points, and 4 of the 6 wrapper paths, use the inherited environment.
 
 ## Spawn-site inventory
 
-The inventory was taken at `fbd03c9` (main on 2026-11-16).
+The inventory was taken at `fbd03c9` (main on 2026-11-16). Main at `f2441b6`, the
+review base, has the same `skills/shaka/lib`.
 
-- **Unit:** a spawn point is a call that creates a process and can start Git. A wrapper
-  that spawns many programs counts once. Each wrapper caller that passes Git also counts,
-  because a routing test has to cover it.
+- **Unit:** a spawn point is a call that creates a process. A shared wrapper that runs
+  many programs counts once, as a wrapper path. Files that hand Git to a wrapper are
+  listed by name. Call sites behind wrappers are not counted: injected runners pass Git
+  on through further readers, such as `configuration/sources.rb` and
+  `TrustedPathResolver`.
 - **Primitives:** 59 process-creation calls in `skills/shaka/lib`:
 
   ```sh
@@ -42,23 +46,35 @@ The inventory was taken at `fbd03c9` (main on 2026-11-16).
 - **Classification:** each of the 59 was read by hand.
   - 15 never start Git. They run `gh`, `glab`, `diff`, `sysctl`, `taskkill`, `opencode`,
     `codex`, the Shaka helper, or the validation command.
-  - 40 start Git directly.
-  - 4 are generic wrappers: `LocalReviewProcess.capture`, `Doctor::BoundedCommand`,
-    `Claim`'s runner and `Canary::Run::Runner`. 9 callers pass Git through them.
-- **Total:** 49 Git entry points in 35 files. No backtick or `%x` spawns exist.
+  - 40 start Git directly, from 29 files.
+  - 4 are generic wrappers that also start Git for some callers.
+- **Files:** 29 with direct spawns, plus 11 that start Git only through a wrapper: 40.
+  No backtick or `%x` spawns exist.
 
-### Environment policy per entry point
+### Direct spawn points by environment policy
 
-| Policy | Entry points | Where |
+| Policy | Spawn points | Where |
 | --- | --- | --- |
-| Inherits the caller's environment | 29 | `branch_name.rb` (2), `claim.rb` (2), `configuration/fingerprint.rb` (2), `configuration/fingerprint/trusted_prompts.rb`, `configuration/layout.rb`, `configuration/sources.rb` (4), `git_origin.rb`, `local_review/rebased_commits.rb` (2), `prompt_show.rb`, `publication/rendering_preview.rb`, `trusted_config_source.rb` (2), `trusted_path_resolver.rb`, `usage/rate_card.rb`, `work.rb`, `trial/prepare.rb:115` (refuses inherited overrides first), `canary/run.rb` (2), `doctor/git_runtime.rb`, `doctor/settings_source.rb`, `local_review/runner.rb`, `local_review/prompt_file.rb` |
-| Clears a list of repository-local `GIT_*` variables | 11 | `WorkflowVersion::GIT_ENVIRONMENT` (15 names): `workflow_version.rb`, `configuration/feature_guard.rb`, `evidence/review.rb`, `evidence/result.rb` (2), `evidence/candidate_tree.rb`, `evidence/base_freshness.rb` (3). `PrivateGitPaths::GIT_ENVIRONMENT` (16 names): `configuration/private_git_paths.rb`. `Seam::Initializer` (5 names): `seam/initializer.rb` |
-| Clears every `GIT_*` variable | 7 | `install/checkout_git.rb` (keeps SSH, askpass and config variables for clone, fetch and ls-remote), `install/repair.rb` (`sh -c`; keeps SSH and askpass), `install/source.rb`, `install/git_ignore.rb` (2), `install/status_unsupported.rb`, `update_check/launch.rb` |
+| Inherits the caller's environment | 22 | `branch_name.rb` (2), `claim.rb`, `configuration/fingerprint.rb` (2), `configuration/fingerprint/trusted_prompts.rb`, `configuration/layout.rb`, `configuration/sources.rb` (4), `git_origin.rb`, `local_review/rebased_commits.rb` (2), `prompt_show.rb`, `publication/rendering_preview.rb`, `trusted_config_source.rb` (2), `trusted_path_resolver.rb`, `usage/rate_card.rb`, `work.rb`, `trial/prepare.rb:115` (refuses inherited overrides first) |
+| Clears a list of repository-local `GIT_*` variables | 10 | `WorkflowVersion::GIT_ENVIRONMENT` (15 names): `workflow_version.rb`, `configuration/feature_guard.rb`, `evidence/review.rb`, `evidence/result.rb` (2), `evidence/candidate_tree.rb`, `evidence/base_freshness.rb` (2). `PrivateGitPaths::GIT_ENVIRONMENT` (16 names): `configuration/private_git_paths.rb`. `Seam::Initializer` (5 names): `seam/initializer.rb` |
+| Clears every `GIT_*` variable | 6 | `install/checkout_git.rb` (keeps SSH, askpass and config variables for clone, fetch and ls-remote), `install/repair.rb` (`sh -c`; keeps SSH and askpass), `install/source.rb`, `install/git_ignore.rb` (2), `install/status_unsupported.rb` |
 | Also hides system and global config | 2 | `trial/prepare.rb:105` (the 15-name list, plus hooks and submodule recursion off), `merge_tree_proof.rb` (also `HOME` and attributes) |
 
-Seven hand-written policies exist: none, three variable lists, clear-all with two
-different keep lists, and two kinds of config isolation. Two lists name the same 15
-variables; `PrivateGitPaths` adds `GIT_CEILING_DIRECTORIES`.
+### Wrapper paths that carry Git
+
+| Wrapper path | Environment | Files that pass Git |
+| --- | --- | --- |
+| `LocalReviewProcess.capture` | Inherited; `git` resolved on a PATH that excludes the candidate | `local_review/runner.rb`, `local_review/commit_export.rb`, `local_review/criteria.rb`, `local_review/prompt_file.rb`, `local_review/settings_source.rb`, `local_review/custom_instructions.rb`, `prompt_show/views.rb` |
+| `Claim`'s runner | Inherited | `claim.rb` |
+| `Canary::Run::Runner` | Inherited | `canary/run.rb` |
+| `Doctor::RUNNER` (`BoundedCommand`) | Inherited | `doctor/git_runtime.rb`, `doctor/settings_source.rb` |
+| `BoundedCommand` from `evidence/base_freshness.rb` | `WorkflowVersion` list | `evidence/base_freshness.rb` (fetch) |
+| `UpdateCheck::Launch` (`BoundedCommand`) | Clears every `GIT_*` variable | `update_check.rb` |
+
+Nine hand-written environment variants exist: inherited, three variable lists, three
+clear-all variants (keeping nothing, network settings, or SSH and askpass), and two
+kinds of config isolation. Two lists name the same 15 variables; `PrivateGitPaths` adds
+`GIT_CEILING_DIRECTORIES`.
 
 ### Git tooling outside the library
 
@@ -133,13 +149,13 @@ scope and the broad rule.
 
 ## Cost to route callers
 
-- **Files:** 35 hold an entry point. Above 29 changed files, a merge needs the maintainer's
+- **Files:** 40 start Git. Above 29 changed files, a merge needs the maintainer's
   confirmation. Routing would take one confirmed oversized PR or at least 2 PRs.
 - **Runner modes:** at least three. Local reads keep the maintainer's config, network
   commands keep authentication, and operations on scratch or foreign repositories isolate
   fully.
-- **Behavior changes:** the 29 inheriting entry points would change what they read. Each
-  needs a test of the new behavior.
+- **Behavior changes:** the 22 inheriting spawn points and the files behind 4 inheriting
+  wrapper paths would change what they read. Each needs a test of the new behavior.
 - **Allowlist upkeep:** `test/configuration_boundary_test.rb` is the closest precedent. Its
   file-access check keeps an 89-name allowlist, and its Git-read check keeps 3 more. A
   routing test needs a similar list for the generic wrappers and the `gh` callers.

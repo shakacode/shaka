@@ -20,8 +20,8 @@ holds the inventory, the per-finding table and the probes.*
 4. **One runner changes what Shaka reads.** Hiding global Git config turned a
    maintainer's `gh:shakacode/shaka` origin into a URL Shaka cannot read. Fetches need
    that config too.
-5. **Routing is large.** Shaka starts Git from 49 places in 35 files, under seven
-   different environment rules. 29 places use the caller's environment unchanged.
+5. **Routing is large.** 40 library files start Git, under nine different environment
+   rules. More than half the spawn points use the caller's environment unchanged.
 
 ## Why this ran
 
@@ -34,7 +34,8 @@ built the test.
 ## What ran
 
 - **Inventory:** every process the library starts, found with one `grep` and read by
-  hand. 40 calls start Git directly, and 9 more pass Git through shared wrappers.
+  hand. 40 calls in 29 files start Git directly. 11 more files start Git through
+  shared wrappers.
 - **Map:** each finding's review comment and fix commit, judged on two questions. Would
   the rule see the Git call before the fix? Would the runner's policy have prevented
   the problem?
