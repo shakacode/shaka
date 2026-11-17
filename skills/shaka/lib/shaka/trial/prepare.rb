@@ -5,6 +5,7 @@ require_relative 'reference'
 require_relative '../github'
 require_relative '../installer'
 require_relative '../workflow_version'
+require_relative '../packaged_text'
 
 module Shaka
   module Trial
@@ -74,20 +75,11 @@ module Shaka
       end
 
       def prompt(skill, head)
-        <<~PROMPT
-          Use the explicitly selected Shaka trial skill at #{JSON.generate(skill)}.
-          This task opts into #{@url} at #{head}; keep this exact helper for the whole task.
-          Candidate source: #{JSON.generate(@source.fetch('full_name', 'UNKNOWN'))}.
-          Fork source: #{JSON.generate(@source.fetch('fork', 'UNKNOWN'))}; this is explicitly selected experimental code.
-          Work in #{JSON.generate(@root)}. Preserve the project's trusted settings and merge policy.
-          In the resulting PR body, record #{@url} and this exact workflow commit URL:
-          https://github.com/#{Reference::REPOSITORY}/commit/#{head}
-          At completion, report what helped, corrections needed, and a keep/revise/drop verdict.
-          For authorized feedback publication, use #{JSON.generate(report_helper)} trial report;
-          read its packaged references/pr-trials.md for the report JSON format.
-          Keep private project links and context out of public trial reports.
-          The user's task is this JSON string: #{JSON.generate(@task)}
-        PROMPT
+        PackagedText.render('trial-startup-prompt.md',
+                            skill: JSON.generate(skill), url: @url, head:, repository: Reference::REPOSITORY,
+                            source: JSON.generate(@source.fetch('full_name', 'UNKNOWN')),
+                            fork: JSON.generate(@source.fetch('fork', 'UNKNOWN')), root: JSON.generate(@root),
+                            report_helper: JSON.generate(report_helper), task: JSON.generate(@task))
       end
 
       def report_helper = File.realpath('../../../scripts/shaka', __dir__)
