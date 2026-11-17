@@ -122,9 +122,12 @@ a lower cost.
 ## Log
 
 Startup text is `SKILL.md` plus the rendered workflow. Token counts exclude each CLI's
-own prompt, shown separately.
+own prompt, shown separately. Words and counts come from the renderer of the commit that
+ran the report, so a renderer change moves them too: on 2026-11-17 the current renderer
+gave `f2441b6` 12,251 words and 30,051 Claude tokens.
 
 | Date | Startup text at main | Workflow words | Claude Opus 5.5 | GPT-6.1 Sol | Claude CLI prompt | Codex CLI prompt | Note |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | 2026-11-16 | `f2441b6` | 12,057 | 30,014 | 20,109 | 4,227 | 15,193 | First measurement, PR #1200 |
 | 2026-11-17 | `5ffb304` | 12,057 | 30,012 | 20,109 | 4,231 | 15,191 | Same text as the row above; shows run-to-run noise |
+| 2026-11-17 | `65e0066` | 12,289 | 30,151 | 20,171 | 4,229 | 15,191 | +100 Claude and +62 GPT against `f2441b6`, counted together |
