@@ -97,9 +97,14 @@ ready, the agent runs the full workflow once on that head: validation, the local
 loop, the checkpoint, and the merge handoff. [#1214](https://github.com/shakacode/shaka/pull/1214)
 implements this as an experiment; other tasks are unchanged.
 
-This keeps every gate on the head a person merges, because GitHub and `merge` refuse a
-draft. It cuts the repeated rounds the evidence above points to, rather than the
-bookkeeping this record first targeted.
+#1214 owns the details: the opt-in phrase, what counts as a quick check, and when the
+agent treats the PR as ready. Its draft pushes are an exception to the gate below that
+validates every pushed commit; the exception lives in #1214 and ends if #1214 does.
+
+Code and GitHub refuse to merge a draft (`merge` checks `isDraft`), so nothing merges on
+quick checks alone. Running the full workflow once the person says ready is the agent's
+rule; no command checks it. The experiment cuts the repeated rounds the evidence above
+points to, rather than the bookkeeping this record first targeted.
 
 ## Later options
 
@@ -117,8 +122,8 @@ proves the change works where it will run:
 - Never push to the default branch. Run `claim`, which looks for another PR or branch
   already working on the same task.
 - Read the diff for credentials before any review or push.
-- Run the repository's `validate` or `validate-local` on the exact commit being pushed,
-  except a step 1 draft, which carries quick checks until the person says ready. A maintainer who finds that slow lowers its cost with
+- Run the repository's `validate` or `validate-local` on the exact commit being pushed.
+  A maintainer who finds that slow lowers its cost with
   [`validate-local`](../../docs/settings.md#count-a-faster-check-as-validation). The agent
   does not skip it.
 - Required checks, merge preference, and every refusal `merge` makes today other than
@@ -245,7 +250,7 @@ saved.
 
 `config/database.yml` is a default high-risk path, so the review and checkpoint stay.
 
-| Step | Today | Proposed |
+| Step | Today | Later options |
 | --- | --- | --- |
 | Trusted settings, `claim`, credential check | Runs | Runs |
 | `validate` on the head | Runs | Runs |
