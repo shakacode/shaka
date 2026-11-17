@@ -267,7 +267,7 @@ The mode decides what the agent does at that step:
 - `use`: the agent applies the skill without asking.
 - `suggest`: the agent names the skill and its reason, and runs it after you say yes.
 - `decline`: the agent does not use the skill at that point. To decline it at every
-  point, use `'*'` as the point name.
+  point, give the skill only a `'*'` point; any point you name beside it overrides it.
 
 Mark a skill that starts other agents with `fans_out: true` beside its `points`;
 Shaka then always waits for your yes before running it. A skill whose own file says
