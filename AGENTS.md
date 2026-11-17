@@ -144,7 +144,8 @@ breaks it, and say which reason applies.
   points live at fixed names under `.agents/shaka/bin/`.
 - Put built-in defaults in `skills/shaka/config/defaults.yml` and packaged
   prompts in `skills/shaka/config/*.md`; do not repeat them as Ruby literals.
-  Review checks this; no test enforces it.
+  `test/packaged_prose_test.rb` refuses heredoc prose of 25 or more words under
+  `skills/shaka/lib`; review checks Ruby fallback defaults and shorter strings.
 - When adding a setting or changing a default, change `defaults.yml`, explain the
   effect in `docs/settings.md`, and update the browsable
   `.agents/shaka/config.yml` example and its comments in the same PR. Keep this
