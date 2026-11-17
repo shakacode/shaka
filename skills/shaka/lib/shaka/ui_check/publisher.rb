@@ -5,12 +5,15 @@ require_relative '../error'
 require_relative '../publication/evidence_history'
 require_relative '../publication/text'
 require_relative 'captures'
+require_relative 'history'
 
 module Shaka
   module UiCheck
-    # Publishes one UI check for the PR head, then folds this account's earlier ones under it.
+    # Publishes one UI check for the PR head, carrying earlier captures it leaves out under a
+    # collapsed history, then folds this account's earlier checks under it.
     class Publisher
       MARKER = /^<!-- shaka:ui-check-(\h{40})-(\h{8}) -->$/
+      LIMIT = 65_536
 
       def initialize(github, nonce: SecureRandom.hex(4))
         @github = github
@@ -22,8 +25,7 @@ module Shaka
         captures = PublicationText.list(content['captures'], 'captures')
         Captures.paths(captures)
         earlier = open_checks(PublicationText.list(content['earlier'], 'earlier'))
-        body = body(head, content)
-        check_carried(earlier, body, PublicationText.list(content['retire'], 'retire'))
+        body = body(head, content, earlier, PublicationText.list(content['retire'], 'retire'))
         @github.verify_rendering(body)
         @github.post_comment(body, attachments: captures)
         published = confirm_uploads(find_published(head), body, captures)
@@ -40,11 +42,36 @@ module Shaka
           pr['state'] == 'OPEN' && pr['headRefOid'] == head
       end
 
-      def body(head, content)
-        commit = "https://github.com/#{@github.repository}/pull/#{@github.number}/commits/#{head}"
-        "#{PublicationText.publisher_identity(content)}\n\n<!-- shaka:ui-check-#{head}-#{@nonce} -->\n" \
-          "# Verification for [`#{head[0, 7]}`](#{commit})\n\n" \
-          "#{PublicationText.required(content['body'], 'body').strip}\n"
+      def body(head, content, earlier, retired)
+        note = PublicationText.required(content['body'], 'body').strip
+        raise Error, 'UI check body must not contain Shaka history markers; earlier evidence is carried for you.' if
+          History.reserved?(note)
+
+        body = "#{PublicationText.publisher_identity(content)}\n\n<!-- shaka:ui-check-#{head}-#{@nonce} -->\n" \
+               "# Verification for [`#{head[0, 7]}`](#{commit_url(head)})\n\n#{note}\n" \
+               "#{history(earlier, note, retired, head)}"
+        check_length(body)
+        body
+      end
+
+      def commit_url(sha) = "https://github.com/#{@github.repository}/pull/#{@github.number}/commits/#{sha}"
+
+      # The new check's own note decides what it shows; anything else an open earlier check
+      # shows is carried with that check's revision, unless the agent retires it.
+      def history(earlier, note, retired, head)
+        checks = earlier.map do |comment|
+          body = comment['body'].sub(EvidenceHistory::KEY, '')
+          { revision: body[MARKER, 1], source: comment['html_url'], body: body.sub(/#{MARKER}\n?/o, '') }
+        end
+        blocks = History.carry(checks, shown: Captures.urls(note), retired:, head:)
+        History.render(blocks, head:, commit_url: method(:commit_url))
+      end
+
+      def check_length(body)
+        return if body.length <= LIMIT
+
+        raise Error, "The UI check is #{body.length} characters, over GitHub's limit of #{LIMIT}. Retire " \
+                     'replaced captures so less earlier evidence is carried.'
       end
 
       # Folded checks already point at a newer one, so only open checks can still hold evidence.
@@ -70,14 +97,6 @@ module Shaka
       def folded?(body) = body.sub(EvidenceHistory::KEY, '').start_with?("#{EvidenceHistory::MARKER} ")
 
       def own_check?(comment) = own?(comment) && comment['body'].to_s.match?(MARKER)
-
-      def check_carried(earlier, body, retired)
-        missing = Captures.missing(earlier.flat_map { |comment| Captures.urls(comment['body']) }.uniq, body, retired)
-        return if missing.empty?
-
-        raise Error, 'An earlier UI check shows captures this one leaves out. Embed each one for an unchanged ' \
-                     "view, or retire it as replaced: #{missing.join(', ')}"
-      end
 
       def find_published(head)
         found = @github.issue_comments.select do |comment|
