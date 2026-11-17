@@ -11,6 +11,13 @@ module Shaka
     # A note with any reply stays: Shaka posts under a person's login, so a reply from this account
     # may be that person's.
     class NoteThreads
+      # Rereads one thread, so a reply posted after the pull request's threads were listed still keeps its note.
+      ALONE = <<~GRAPHQL
+        query($id: ID!) {
+          node(id: $id) { ... on PullRequestReviewThread { comments(first: 2) { totalCount nodes { author { login } } } } }
+        }
+      GRAPHQL
+
       def initialize(github, account)
         @github = github
         @account = account
@@ -31,8 +38,10 @@ module Shaka
         roots = note_roots(review)
         return if roots.empty?
 
-        index = fresh_threads
+        index = threads
         roots.select { |id| index[id] && unanswered?(index[id]) }.each do |id|
+          next unless still_alone?(index[id]['thread_id'])
+
           @github.delete_comment(id)
           yield id
         end
@@ -48,11 +57,9 @@ module Shaka
         end
       end
 
-      # Read just before deleting, per review, so a reply that arrives during publication is seen. Deletion
-      # cannot be undone, so a reply posted in the seconds between this read and the deletion is the remaining gap.
-      def fresh_threads
-        @reader = PublicComments::Threads.new(@github)
-        @reader.call.last
+      def threads
+        @reader ||= PublicComments::Threads.new(@github)
+        @threads ||= @reader.call.last
       end
 
       def unanswered?(thread)
@@ -60,6 +67,15 @@ module Shaka
         return false if @reader.truncated.include?(id) || @reader.anonymous.include?(id)
 
         @reader.authors[id] == [@account]
+      end
+
+      # Deletion cannot be undone, so the thread is read again right before it; only the moment between
+      # this read and the deletion is left for a reply to land in.
+      def still_alone?(thread_id)
+        comments = @github.graphql(ALONE, id: thread_id).dig('node', 'comments')
+        raise Error, "Note thread #{thread_id} is unavailable." unless comments.is_a?(Hash)
+
+        comments['totalCount'] == 1 && comments['nodes']&.first&.dig('author', 'login') == @account
       end
     end
   end

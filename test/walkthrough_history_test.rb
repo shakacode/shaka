@@ -297,6 +297,13 @@ class WalkthroughHistoryNotesTest < Minitest::Test
     response({ 'data' => { 'repository' => { 'pullRequest' => { 'reviewThreads' => connection } } } })
   end
 
+  # The thread reread just before a deletion: only this account's note, or a reply after it.
+  def alone_response(*logins)
+    logins = ['ada'] if logins.empty?
+    nodes = logins.map { |login| { 'author' => { 'login' => login } } }
+    response({ 'data' => { 'node' => { 'comments' => { 'totalCount' => logins.size, 'nodes' => nodes.first(2) } } } })
+  end
+
   # GitHub answers a deleted comment with 204 and no body.
   def deleted_response = ['', '', STATUS.new(0)]
 
@@ -314,7 +321,7 @@ class WalkthroughHistoryNotesTest < Minitest::Test
 
   # The newer walkthrough posts its own notes, so an unanswered older copy would read as a duplicate.
   def test_an_earlier_walkthroughs_unanswered_note_is_deleted
-    published = publish_over_noted(thread_response('ada'), deleted_response)
+    published = publish_over_noted(thread_response('ada'), alone_response, deleted_response)
 
     assert_equal [55], published.dig('earlier_walkthroughs', 'deleted_notes')
     assert_equal [delete_call(55)], deletions
@@ -322,14 +329,14 @@ class WalkthroughHistoryNotesTest < Minitest::Test
 
   # Earlier releases resolved superseded notes, and a resolved thread still shows on the pull request.
   def test_an_already_resolved_unanswered_note_is_deleted
-    published = publish_over_noted(thread_response('ada', resolved: true), deleted_response)
+    published = publish_over_noted(thread_response('ada', resolved: true), alone_response, deleted_response)
 
     assert_equal [55], published.dig('earlier_walkthroughs', 'deleted_notes')
   end
 
   def test_a_note_past_the_first_page_is_deleted
     notes = Array.new(100) { |index| NOTE.merge('id' => 1000 + index) } << NOTE
-    published = publish_over_noted(thread_response('ada'), deleted_response, notes:)
+    published = publish_over_noted(thread_response('ada'), alone_response, deleted_response, notes:)
 
     assert_equal [55], published.dig('earlier_walkthroughs', 'deleted_notes')
   end
@@ -353,10 +360,20 @@ class WalkthroughHistoryNotesTest < Minitest::Test
 
   def test_a_failure_after_one_deletion_still_reports_that_deletion
     refused = ['', 'gh: Not Found (HTTP 404)', STATUS.new(1)]
-    published = publish_over_noted(two_threads, deleted_response, refused, notes: [NOTE, NOTE.merge('id' => 56)])
+    published = publish_over_noted(two_threads, alone_response, deleted_response, alone_response, refused,
+                                   notes: [NOTE, NOTE.merge('id' => 56)])
 
     assert_equal [55], published.dig('earlier_walkthroughs', 'deleted_notes')
     assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'notes'
+  end
+
+  # A reply can land after the threads were listed; the reread before each deletion keeps that note.
+  def test_a_reply_that_arrives_during_deletion_keeps_its_note
+    published = publish_over_noted(two_threads, alone_response, deleted_response, alone_response('ada', 'grace'),
+                                   notes: [NOTE, NOTE.merge('id' => 56)])
+
+    assert_equal [55], published.dig('earlier_walkthroughs', 'deleted_notes')
+    assert_equal [delete_call(55)], deletions
   end
 
   def two_threads
