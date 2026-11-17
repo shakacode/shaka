@@ -83,14 +83,17 @@ menu in the session's title bar, choose **Edit**, and paste this under
 ```bash
 #!/bin/bash
 set -euo pipefail
+# Shaka needs Ruby 3.4+; the image ships 3.3.
 MAKE_OPTS=-j8 RUBY_CONFIGURE_OPTS=--disable-install-doc /opt/rbenv/bin/rbenv install -s 3.4.10
 export PATH=/opt/rbenv/versions/3.4.10/bin:$PATH
+# Official install from a clone outside the project checkout, linked for Claude Code (/shaka).
 umask 022
 mkdir -p "$HOME/.local/share/shaka"
 if [ ! -d "$HOME/.local/share/shaka/source" ]; then
   git clone -q https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
 fi
 "$HOME/.local/share/shaka/source/bin/install" --agent claude
+# Bring a kept install up to date; a failed update leaves the installed revision and the session starts.
 "$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --update ||
   echo "Shaka update failed; continuing with the installed revision" >&2
 ```
