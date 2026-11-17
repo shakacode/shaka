@@ -1,6 +1,8 @@
 # 0008: Let the agent size delivery to the task
 
-Status: accepted on 2026-11-15; not yet implemented.
+Status: accepted on 2026-11-15. Revised on 2026-11-16: the first step is now the
+draft-first opt-in in [#1214](https://github.com/shakacode/shaka/pull/1214), and the
+rest are later options. Not yet shipped.
 Date: 2026-11-13.
 
 ## Context
@@ -56,6 +58,16 @@ is unknown. The remaining steps include:
 
 Other repositories will have different validation times.
 
+Two later deliveries show where the time went:
+
+- [#1214](https://github.com/shakacode/shaka/pull/1214) reports that a 78-line prose
+  change took about three hours, mostly repeated full validation and review rounds before
+  anyone saw the PR.
+- This record's own PR, [#1193](https://github.com/shakacode/shaka/pull/1193), changed
+  two Markdown files. It ran more than 20 local reviews across six review ledgers, because
+  each of four merges from `main` needed new validation, a new ledger, review, and a new
+  checkpoint. The bookkeeping steps cost little by comparison.
+
 Earlier work in this direction:
 
 - [ADR 0007](0007-walkthroughs-on-request.md), accepted and shipped in
@@ -76,6 +88,24 @@ Earlier work in this direction:
 
 ## Decisions
 
+### Step 1: show a draft early, prove it once
+
+A task opts in from the person's own prompt. The agent opens a draft PR after quick
+checks, such as `validate-local` or the changed files' tests, and asks whether the
+direction is right. Each round of feedback stays quick. When the person says the PR is
+ready, the agent runs the full workflow once on that head: validation, the local review
+loop, the checkpoint, and the merge handoff. [#1214](https://github.com/shakacode/shaka/pull/1214)
+implements this as an experiment; other tasks are unchanged.
+
+This keeps every gate on the head a person merges, because GitHub and `merge` refuse a
+draft. It cuts the repeated rounds the evidence above points to, rather than the
+bookkeeping this record first targeted.
+
+## Later options
+
+Decisions 1 to 5 stay accepted as the constraints any later work must meet. None ships
+until testers of step 1 show that repeated rounds are no longer the main cost.
+
 ### 1. Sort every step into one of three kinds
 
 **Gates run on every task.** Each one stops outside input from acting as an instruction,
@@ -87,8 +117,8 @@ proves the change works where it will run:
 - Never push to the default branch. Run `claim`, which looks for another PR or branch
   already working on the same task.
 - Read the diff for credentials before any review or push.
-- Run the repository's `validate` or `validate-local` on the exact commit being pushed.
-  A maintainer who finds that slow lowers its cost with
+- Run the repository's `validate` or `validate-local` on the exact commit being pushed,
+  except a step 1 draft, which carries quick checks until the person says ready. A maintainer who finds that slow lowers its cost with
   [`validate-local`](../../docs/settings.md#count-a-faster-check-as-validation). The agent
   does not skip it.
 - Required checks, merge preference, and every refusal `merge` makes today other than
@@ -229,14 +259,14 @@ saved.
 | Workflow text loaded | All of it | Gates and the steps that run |
 | Merge | A person merges (high risk) | A person merges |
 
-The first, prose-only PR saves the bookkeeping, the probe, and some of the text the agent
-reads. The opening check waits for decision 4; ADR 0007 already made the walkthrough on
-request. Until the reported session is read, nobody knows whether that matches where its
-time went. Its time may instead have gone to the review or validation, which this design
-keeps.
+The table shows the later options. Under step 1, the same task would open a draft after
+quick checks and run the full steps once, when the person says ready. Until the reported
+session is read, nobody knows whether its time went to bookkeeping or to repeated rounds.
 
 ## Alternatives considered
 
+- **Skip bookkeeping first.** This record's first plan. Deferred: the evidence from #1214
+  and #1193 puts the time in repeated validation and review rounds.
 - **Skip steps below a diff-size threshold.** Rejected. Small diffs are not low risk, and
   the one-shot study found size predicted feedback worse than what the PR touched.
 - **Use the existing repository-wide switches** (`checkpoint.enabled`,
@@ -254,14 +284,14 @@ keeps.
   things limit the damage: risky areas keep review and the checkpoint, skips force Ask,
   and the PR shows every skip to the person merging. Before that, the agent skips only
   bookkeeping.
-- Decisions 3 and 4 change `merge`, `squash-message`, and `description`, their tests, and the enforcement manifest entries for the changed
+- If pursued, decisions 3 and 4 change `merge`, `squash-message`, and `description`, their tests, and the enforcement manifest entries for the changed
   rules. The checkpoint part is smaller than the rest, because it reuses the existing
   opt-out. The cost is still real, and the measured savings are small: the checkpoint's
-  median is 44 seconds. So the code waits for a measurement (maintainer decision 4).
-- Success means a small config task reaches a merge-ready PR with fewer steps and fewer
-  model calls, while every gate above still runs. Before implementation, measure one
-  small config task under the current workflow so the comparison has a baseline. Read
-  the reported session, if it becomes available, to confirm which steps it spent time on.
+  median is 44 seconds. So the code waits for tester feedback on step 1 (maintainer decision 4).
+- Step 1 succeeds when opted-in tasks reach a merge-ready PR in less elapsed time, with
+  every gate run on the final head. Compare them with similar tasks through
+  `shaka timings report`. Read the reported session, if it becomes available, to confirm
+  which steps it spent time on.
 
 ## Maintainer decisions
 
@@ -275,13 +305,10 @@ The maintainer accepted every recommendation on 2026-11-15:
 3. No setting forbids skips yet. A new setting changes every repository's
    `.agents/shaka/config.yml` through the settings migration flow, so add one only if a
    maintainer asks for it.
-4. Delivery order:
-   1. a prose-only PR for the bookkeeping part of decision 1 and for decision 5. No
-      command checks those steps, so prose alone can change them;
-   2. a measured run of a small config task before and after that PR;
-   3. the evidence skips, together: decision 2's limits, decision 3's Ask rule, and
-      decision 4's code. Ship this only if that run shows the checkpoint and opening
-      check still cost enough to justify it.
+4. Delivery order: a prose-only bookkeeping PR, then a measured run, then evidence skips
+   with their code. On 2026-11-16 the maintainer replaced this order. Step 1 is the
+   draft-first opt-in in #1214, and the bookkeeping and evidence skips wait for tester
+   feedback on it.
 
-Still open, to settle before step 3: whether a speed change that finishes with a recorded
+Still open, to settle before any evidence skip ships: whether a speed change that finishes with a recorded
 unmeasured gap, which the workflow allows today, counts as a skip and so loses Auto.

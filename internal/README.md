@@ -12,7 +12,7 @@ instructions or private company plans.
 - [Configuration walkthrough decision record](adr/0003-configure-walkthrough.md) — accepted `configure` entry, settings and prompt reports from Ruby, and migration-flow settings PRs; not yet shipped.
 - [Per-machine reviewers decision record](adr/0005-per-machine-reviewers.md) — accepted quieting of reviewer setup warnings that selection never needs, and an optional per-machine reviewer list with model and effort; not yet shipped.
 - [Walkthroughs on request decision record](adr/0007-walkthroughs-on-request.md) — walkthroughs on request by default, offered at handoff, with `always` to keep one on every PR; implemented in #1186.
-- [Size delivery to the task decision record](adr/0008-size-delivery-to-the-task.md) — accepted gates, risk-scaled evidence steps, and on-demand bookkeeping; not yet shipped.
+- [Size delivery to the task decision record](adr/0008-size-delivery-to-the-task.md) — accepted draft-first opt-in as step 1, with risk-scaled evidence skips and on-demand bookkeeping as later options; not yet shipped.
 - [Companion skill points decision record](adr/0009-companion-skill-points.md) — proposed skill points in the procedures that load when a task reaches them, where ShakaPerf, pstack, and AI Hero skills are suggested by default; a packaged `use` entry, once a study supports it, applies only after the repository or machine turns the pack on.
 - [PR retrospective decision record](adr/0010-retrospective-over-merged-prs.md) — proposed PR record report beside `timings report`, and a retrospective across merged PRs that reads it.
 - [Experiment index](../eval/README.md) — retained repositories, outcomes, and the next proposed case.
