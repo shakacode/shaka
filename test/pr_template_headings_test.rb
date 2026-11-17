@@ -34,6 +34,11 @@ class PrTemplateHeadingsTest < Minitest::Test
     assert_empty Shaka::PrTemplate.headings("```text\n```example\n## Shaka\n```\n")
   end
 
+  def test_inline_code_in_triple_backticks_opens_no_code_block
+    assert_equal %w[Shaka Rollout], Shaka::PrTemplate.headings("```npm test```\n## Shaka\n## Rollout\n")
+    assert_equal %w[After], Shaka::PrTemplate.headings("~~~ `ok`\n## Hidden\n~~~\n## After\n")
+  end
+
   # A comment that starts a line hides what follows; one inside other text cannot, because a heading
   # line starts a new block.
   def test_only_a_comment_that_starts_a_line_hides_headings

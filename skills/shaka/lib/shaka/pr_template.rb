@@ -10,7 +10,8 @@ module Shaka
     PATHS = %w[.github/pull_request_template.md .github/PULL_REQUEST_TEMPLATE.md
                pull_request_template.md PULL_REQUEST_TEMPLATE.md
                docs/pull_request_template.md docs/PULL_REQUEST_TEMPLATE.md].freeze
-    FENCE = /\A {0,3}(`{3,}|~{3,})/
+    # A backtick fence's opening line holds no other backtick, so ```npm test``` is inline code, not a fence.
+    FENCE = /\A {0,3}(`{3,}(?=[^`]*\z)|~{3,})/
     CLOSER = /\A {0,3}(`{3,}|~{3,})[ \t]*\z/
     COMMENT_START = /\A {0,3}<!--/
     HEADING = /\A {0,3}##[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*\z/
