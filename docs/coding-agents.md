@@ -114,10 +114,12 @@ lines to the end of the script. They install your project's gems and put Ruby
 its name:
 
 ```bash
-# Gems for your project's commands when REPO is in the session.
-if [ -d REPO ]; then (cd REPO && bundle install --quiet); fi
+# Gems for your project's commands when REPO is in the session; a failed install still lets the session start.
+if [ -d REPO ]; then
+  (cd REPO && bundle install --quiet) || echo "bundle install failed; install gems in the session" >&2
+fi
 # Session shells start on the image's Ruby 3.3; ~/.local/bin comes first on their PATH,
-# so link Ruby 3.4's commands (ruby, bundle, rubocop) there.
+# so link every Ruby 3.4 command, such as ruby, bundle, and rubocop, there.
 mkdir -p "$HOME/.local/bin"
 for f in /opt/rbenv/versions/3.4.10/bin/*; do ln -sf "$f" "$HOME/.local/bin/"; done
 ```
