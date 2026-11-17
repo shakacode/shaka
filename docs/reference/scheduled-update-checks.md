@@ -1,17 +1,19 @@
 # Keep Shaka up to date
 
 Shaka has no automatic updates: it never updates itself, on a schedule or
-otherwise. Every Shaka chat runs from the same installed checkout, so updating
-it can change files that open chats are still reading.
-If you want to update daily, schedule a check that tells you when an update is
-available, then update between chats.
+otherwise.
+If you want to update daily, schedule `install --update` for a time when no
+Shaka task is running, or schedule a daily check and update between chats.
+Every Shaka chat runs from the same installed checkout, so an update during a
+task makes that task's validation and review results stale, and it reruns them.
 
-When you invoke Shaka, its skill also asks your agent to run this check once per
+When you invoke Shaka, its skill also asks your agent to run the check once per
 chat. If an update is available, the agent tells you how to install it. A
-schedule helps most when you leave Shaka chats running overnight. The check
-compares an installation from a GitHub branch, such as the default `main`, with
-that branch. For a pinned release, it reports only the pinned version; ask your
-agent about [installing a newer release](../manual-installation.md#keep-a-tested-release)
+scheduled check helps most when you leave Shaka chats running overnight. The
+check compares an installation from a GitHub branch, such as the default `main`,
+with that branch. For a pinned release, the check reports only the pinned
+version and `install --update` keeps it; ask your agent about
+[installing a newer release](../manual-installation.md#keep-a-tested-release)
 instead.
 
 ## Get a reminder when a Claude Code chat starts
@@ -30,17 +32,25 @@ The agent reruns the installer with `--session-hook`, which adds a `SessionStart
 hook to `~/.claude/settings.json`. To run the command yourself or remove the
 hook, see [verify and update](../manual-installation.md#verify-and-update).
 
-## Schedule a daily update check
+## Schedule a daily update or check
 
 ```text
-Check whether my Shaka installation supports daily update checks. If it does, set one up using https://shaka.shakacode.com/docs/reference/scheduled-update-checks
+Schedule a daily Shaka update using https://shaka.shakacode.com/docs/reference/scheduled-update-checks
 ```
 
-Ask your agent to identify the installed helper and follow the steps for your
-system, then run one check and read its log. You can also follow the steps yourself.
+To get only a notice, ask for a daily update check instead. Ask your agent to
+identify the installed helper and follow the steps for your system, then run the
+job once and read its log. You can also follow the steps yourself.
 
-Read the job's log for `status` and `guidance`. If the guidance recommends an
-update, finish your active Shaka chats first. Then ask your agent to
+The steps below schedule a check. To schedule the update itself, put
+`install --update` where the steps use `update-check`: two `ProgramArguments`
+strings on macOS, and the same two words in the Linux `ExecStart` and the WSL
+command. Choose a time when no Shaka task is running. When the checkout has
+local changes or its history no longer matches the recorded branch, the update
+stops, leaves the checkout unchanged, and logs the next step.
+
+For a check, read the job's log for `status` and `guidance`. If the guidance
+recommends an update, finish your active Shaka chats first. Then ask your agent to
 [update and verify Shaka](../manual-installation.md#verify-and-update). An `unknown`
 result or an error without a status means the check could not determine whether
 an update is available.

@@ -88,7 +88,7 @@ Which Shaka version am I using, and is an update available?
 
 The agent can check the source checkout, skill links, and Ruby. Shaka doesn't
 update itself automatically; [keep Shaka up to date](reference/scheduled-update-checks.md)
-explains why and how to schedule a daily update check. Finish active
+shows how to schedule a daily update or update check. Finish active
 Shaka chats before updating. Then ask the agent to update and verify the
 installation, and start a new chat. Updates can stop if the installed checkout
 has local changes or its history no longer matches the recorded branch.

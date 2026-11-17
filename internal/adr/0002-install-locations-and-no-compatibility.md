@@ -60,3 +60,16 @@ Issue #683 lists every reachable install state and the step that fixes each one.
 - The install code and its tests shrink. Status, repair, and the scenario harness
   only need to cover current formats.
 - Issue #689 validates every install state end to end before #683 closes.
+
+## Amendments
+
+The maintainer changed decision 3 on 2026-11-17, in review of
+[#1217](https://github.com/shakacode/shaka/pull/1217).
+
+- **People may schedule `install --update` themselves (decision 3).** Shaka still
+  never updates itself, and [#682](https://github.com/shakacode/shaka/issues/682)
+  still tracks built-in opt-in updates. Continuous local updates while developing
+  Shaka caused no visible failures. The observed cost is stale evidence: validation
+  and review results record the installed revision, so an update during a task makes
+  that task rerun them. The [Keep Shaka up to date](../../docs/reference/scheduled-update-checks.md)
+  guide shows how to schedule an update for a time when no Shaka task is running.
