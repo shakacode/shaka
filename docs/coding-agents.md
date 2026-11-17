@@ -91,12 +91,17 @@ if [ ! -d "$HOME/.local/share/shaka/source" ]; then
   git clone -q https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
 fi
 "$HOME/.local/share/shaka/source/bin/install" --agent claude
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --update ||
+  echo "Shaka update failed; continuing with the installed revision" >&2
 ```
 
 Building Ruby adds a few minutes to each new container. The script installs
 Shaka from its own clone, separate from your project, so the branch you are
-changing cannot change the Shaka that checks it. The script applies to new
-sessions; a session that is already running keeps what it has.
+changing cannot change the Shaka that checks it. When a container keeps an
+earlier clone, the update step brings it to the latest Shaka, so it accepts
+settings your repository added since. If the update fails, the session still
+starts on the installed version. The script applies to new sessions; a session
+that is already running keeps what it has.
 
 Shaka runs on the Ruby that installed it, but the session's own shell still
 starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, add these
