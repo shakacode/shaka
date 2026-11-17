@@ -62,8 +62,10 @@ of you, then lists:
   [PR evidence guide](../settings.md#project_guidance) asks for one.
 
 Until the checkpoint rates the current commit, the level reads **not rated yet**.
-When Shaka cannot read the repository's trusted settings, it reads **not shown**:
-Shaka's default areas could rate the change lower than the repository's own.
+When Shaka reads no repository settings, because the repository has none or the agent
+published without them, the level checks only Shaka's default high-risk areas, and the
+section says so. An area your repository adds could raise it. Merge never uses this line: it rates the
+commit again from the checkpoint and your settings.
 
 ## Checkpoint
 
