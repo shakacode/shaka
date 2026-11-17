@@ -4,6 +4,7 @@ require 'json'
 require 'optparse'
 require_relative 'claim/names'
 require_relative 'configuration'
+require_relative 'configuration/personal_privacy'
 require_relative 'defaults'
 require_relative 'error'
 require_relative 'git_origin'
@@ -66,6 +67,7 @@ module Shaka
       *%w[show_shaka_credit show_human_comments max_human_comments
           ignored_human_comments].map { |key| description(key) },
       setting('pr_description.time_zone') { |context| TimeZone.renderable(context.config.time_zone) },
+      setting('walkthrough.publish') { |context| context.config.walkthrough['publish'] },
       setting('wip.include_checkout_path') do |context|
         context.config.wip['include_checkout_path']
       end,
@@ -134,7 +136,15 @@ module Shaka
       def report(context, source, settings_ref)
         { 'source' => source, 'requested_ref' => @options[:ref], 'settings_ref' => settings_ref,
           'draft' => @options.key?(:local), 'config_path' => context.config.config_path,
-          'settings' => SETTINGS.map { |setting| ConfigureSettings.row(setting, context) } }
+          'settings' => SETTINGS.map { |setting| ConfigureSettings.row(setting, context) },
+          'your_publications' => your_publications(context.config) }
+      end
+
+      # The repository decides what its PRs may show; the user's own file can hide more.
+      def your_publications(config)
+        Configuration::PersonalPrivacy.load.report(
+          repository_shows_checkout_path: config.wip['include_checkout_path'] == true
+        )
       end
 
       # A selected settings preview replaces the settings, as it does for every other command.

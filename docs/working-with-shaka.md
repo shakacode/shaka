@@ -14,7 +14,7 @@ Examples use `/shaka`. In Codex, use `$shaka` instead. For other tools, see
 Describe the result or link an issue. Add what the agent cannot infer:
 
 ```text
-/shaka Add CSV export to the orders page. Reuse the filters shown on screen.
+/shaka Add CSV export to the orders page. Reuse the filters shown on screen
 ```
 
 The agent explains what it understands before coding. Correct any mismatch in
@@ -32,7 +32,7 @@ chat. It can proceed with a clear task and asks when it needs your decision.
 To use `auto` for a task, add:
 
 ```text
-Merge when ready.
+Merge when ready
 ```
 
 Required checks, reviews, and approvals still apply. By default, `auto` can merge
@@ -57,7 +57,7 @@ If your repository [waits for every CI review](settings.md#reviewci_review_wait)
 Say what you want changed in the same chat:
 
 ```text
-Show dates as YYYY-MM-DD in the export.
+Show dates as YYYY-MM-DD in the export
 ```
 
 You can also comment on GitHub and paste the comment link into the chat.
@@ -74,7 +74,7 @@ work. The PR description lists the available return points. To revisit one:
 
 ```text
 Return to C2. Keep CSV export, but leave out the export settings screen.
-First explain what you can restore and what would change.
+First explain what you can restore and what would change
 ```
 
 Unsaved work may not be recoverable. Returning to earlier guidance does not undo
@@ -95,6 +95,13 @@ Open your repository's **Pull requests** tab on GitHub and search:
 A label does not wake the agent. See [merge and queue details](reference/pr-record.md#merge-messages).
 
 A required check waiting for a deployment approval shows as `blocked (approval hold)`, and the PR keeps its label until you approve the run.
+
+When the agent posts with your GitHub account, an unsubmitted review from that
+account blocks its walkthrough: GitHub shows a pending review only to its author and
+allows one per person. The agent then asks you under **Decisions to make** to submit
+or discard it, which sets `awaiting-answer`. If the walkthrough already covers the
+current commit, a PR awaiting merge keeps its label, and the agent's message to you
+names the pending review.
 
 ## Resume unfinished work
 
@@ -118,7 +125,7 @@ comment may identify the machine holding the work. See
 ### Get a plan before implementing
 
 ```text
-/shaka Plan CSV export for the orders page. Planning only.
+/shaka Plan CSV export for the orders page. Planning only
 ```
 
 Read the plan and give feedback. When ready, say, "Implement the plan."
@@ -132,7 +139,7 @@ authorized document. Private planning stays out of public repositories.
 
 ```text
 /shaka https://github.com/OWNER/REPO/issues/N
-Agree on the design first. Wait for my approval before implementing.
+Agree on the design first. Wait for my approval before implementing
 ```
 
 The agent recommends an approach and records the design in the issue or a design
@@ -142,7 +149,7 @@ implementation; the finished work still follows your merge choice.
 ### Review an existing PR
 
 ```text
-/shaka Review https://github.com/OWNER/REPO/pull/N. Review only.
+/shaka Review only: https://github.com/OWNER/REPO/pull/N
 ```
 
 The agent reports findings and verification gaps without changing or merging the PR.
@@ -151,7 +158,7 @@ The agent reports findings and verification gaps without changing or merging the
 
 ```text
 /shaka Review docs with me: https://github.com/OWNER/REPO/pull/N
-Keep it simple and useful for a new reader. Go one topic at a time.
+Keep it simple and useful for a new reader. Go one topic at a time
 ```
 
 Discuss each topic, then say "next." The agent keeps the agreed wording and
@@ -166,7 +173,7 @@ To continue an existing PR, use [Resume unfinished work](#resume-unfinished-work
 ### Split a large change
 
 ```text
-/shaka Add CSV export first. Keep scheduled export emails in a separate PR.
+/shaka Add CSV export first. Keep scheduled export emails in a separate PR
 ```
 
 Each PR gets its own checks and review. When one depends on another, merge the
@@ -186,7 +193,7 @@ coding tool; a prompt cannot switch the running model. See
 Name an installed skill when it helps your task:
 
 ```text
-/shaka Improve checkout error messages. Use pstack's technical-writing skill for wording.
+/shaka Improve checkout error messages. Use pstack's technical-writing skill for wording
 ```
 
 Shaka still owns checks, review, the PR, and your merge choice. Try a new skill
@@ -195,6 +202,13 @@ conflicted with Shaka. [pstack](pstack.md),
 [Addy Osmani's skills](https://github.com/addyosmani/agent-skills), and
 [Ponytail](https://github.com/DietrichGebert/ponytail) offer techniques you can explore.
 Compatibility varies by skill and coding tool.
+
+Some skills run their own delivery: AI Hero's `implement-spec`, the full Shipping,
+Babysit, Orchestrate, and Autopilot playbooks in pstack's `poteto-mode`, and Addy
+Osmani's `/build auto` and `/ship`. They plan, review, watch PRs, or merge on their
+own. Shaka's instructions tell the agent to use only their techniques inside a Shaka
+task and decline their delivery steps. To try one, ask for a separate trial that
+names the spec, repository, and stopping point.
 
 <a id="hand-over-a-spec-and-tickets"></a>
 <a id="what-each-kind-of-skill-can-do"></a>
@@ -206,7 +220,7 @@ can turn an idea into a spec describing the intended result and tickets for
 individual pieces of work. Give Shaka the spec or a ticket:
 
 ```text
-/shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N.
+/shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N
 ```
 
 The agent checks dependencies before implementing. GitHub issues can close
@@ -222,8 +236,8 @@ tracker's completion rules.
 [pstack](pstack.md) can help the agent exercise your running app:
 
 ```text
-/shaka Fix https://github.com/OWNER/REPO/issues/N. Use pstack's
-create-verification-skill to check that searching for O'Brien finds the order.
+/shaka Fix https://github.com/OWNER/REPO/issues/N and use pstack's
+create-verification-skill to check that searching for O'Brien finds the order
 ```
 
 Shaka uses the results in the PR's evidence: what ran, which version was checked,
@@ -242,12 +256,23 @@ to choose what to change. Use completed PRs for regular retrospectives on
 quality, token use, cost, and timing. See [PR timings](reference/timings.md) for
 timing records and local logging controls.
 
+## Find what slows delivery across many PRs
+
+```text
+$shaka retrospective of PR timings since 2026-11-01: rank what to speed up
+```
+
+The agent adds up the timings that merged PRs carry in their descriptions. It ranks
+where the time went, such as validation phases, local review, and the agent's own
+model and tool time, then shows how each week compares. PRs opened from forks are
+left out, because their authors can edit those numbers.
+
 ## Suggest improvements to Shaka
 
 Tell your agent what happened and what you expected:
 
 ```text
-Shaka repeated the same setup question after I answered it. Help me report this.
+Shaka repeated the same setup question after I answered it. Help me report this
 ```
 
 The agent checks the problem and drafts an issue for your review. It asks before

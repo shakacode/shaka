@@ -99,7 +99,7 @@ class PublicationRegressionTest < Minitest::Test
     timeline = { 'opened' => Time.utc(2026, 10, 18, 8), 'merged' => Time.utc(2026, 10, 18, 9), 'labels' => [] }
     rendered = Shaka::Publication.description(description_content, nil, nil, nil, timeline)
     assert_operator rendered.index('<summary>Usage'), :<, rendered.index('<summary>Timings · 1h 0m between checkpoints')
-    intervals = '**This head:** Prompt to CI UNKNOWN · CI to ready UNKNOWN · Ready to merged UNKNOWN'
+    intervals = '**This head:** Prompt to CI not recorded · CI to ready UNKNOWN · Ready to merged UNKNOWN'
     assert_includes rendered, "#{intervals}\n\n**Totals:** 1h 0m"
     refute_includes Shaka::Publication.description(description_content), '<summary>Timings'
   end
@@ -239,9 +239,9 @@ class PublicationStructureTest < Minitest::Test
   def test_a_details_summary_cannot_close_its_own_disclosure
     rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    # Metrics, provenance, skills, settings, usage with pricing notes, and supplied details.
-    assert_equal 8, rendered.scan('</summary>').size
-    assert_equal 8, rendered.scan('</details>').size
+    # Metrics, missing values, provenance, skills, settings, usage with pricing notes, and supplied details.
+    assert_equal 9, rendered.scan('</summary>').size
+    assert_equal 9, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing
@@ -300,18 +300,18 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     )
   end
 
-  def test_a_description_without_a_walkthrough_link_reserves_the_placeholder
+  def test_a_description_without_a_walkthrough_link_leaves_no_placeholder_by_default
     rendered = render(walkthrough: nil)
 
-    assert_includes rendered, "low - AI spend: UNKNOWN\n\n_Not published yet._"
+    assert_includes rendered, "low - AI spend: UNKNOWN\n\nCheckpoint: _Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
 
-  def test_a_blank_walkthrough_link_reserves_the_placeholder
+  def test_a_blank_walkthrough_link_leaves_no_placeholder_by_default
     rendered = render(walkthrough: '  ')
 
-    assert_includes rendered, "low - AI spend: UNKNOWN\n\n_Not published yet._"
+    assert_includes rendered, "low - AI spend: UNKNOWN\n\nCheckpoint: _Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
@@ -425,8 +425,7 @@ class PublicationDeploymentLinkTest < Minitest::Test
 
   def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
     assert_includes render('walkthrough' => nil),
-                    '_Not published yet._ · Checkpoint: _Not published yet._ · ' \
-                    "[Deployment](<#{DEPLOYMENT}>)\n\n## Summary"
+                    "Checkpoint: _Not published yet._ · [Deployment](<#{DEPLOYMENT}>)\n\n## Summary"
   end
 
   # A bare `)` would end the Markdown link at `/a` instead of linking `/a)b`.
@@ -999,8 +998,7 @@ end
 
 RECOMMENDATION_LEAD = [
   PENDING_STATS,
-  '**Recommendation: Revise before merge** · ⚪ **Risk: not rated yet** · _Not published yet._ · ' \
-  'Checkpoint: _Not published yet._',
+  '**Recommendation: Revise before merge** · ⚪ **Risk: not rated yet** · Checkpoint: _Not published yet._',
   '**Next:** Justin: choose the simpler parser before another review round.',
   "## Summary\n\nReview the current result."
 ].join("\n\n").freeze
@@ -1041,8 +1039,7 @@ class PublicationCheckpointTest < Minitest::Test
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
     assert_includes body, "<!-- shaka:decisions -->\n## Decisions to make<a id=\"decisions-to-make\"></a>\n\n" \
-                          "- Keep the parser?\n\nCode Walkthrough: _After the decisions._ · " \
-                          "Checkpoint: _Not published yet._\n\n**Next:**"
+                          "- Keep the parser?\n\nCheckpoint: _Not published yet._\n\n**Next:**"
     assert_operator body.index('## Decisions to make'), :<, body.index('Review the current result.')
     refute_includes body, 'Recommendation'
   end
@@ -1084,7 +1081,7 @@ class PublicationCheckpointTest < Minitest::Test
     data = content
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
-    assert_includes body, '**No recommendation yet** · ⚪ **Risk: not rated yet** · _Not published yet._'
+    assert_includes body, '**No recommendation yet** · ⚪ **Risk: not rated yet** · Checkpoint: _Not published yet._'
     refute_includes body, 'Recommendation:'
   end
 

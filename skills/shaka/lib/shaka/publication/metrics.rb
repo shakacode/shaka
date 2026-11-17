@@ -8,7 +8,7 @@ module Shaka
     # Only helper-owned metadata belongs here; caller-supplied details remain with the change's evidence.
     def metrics
       usage_detail = UsageDetails.new(@content['usage']).detail
-      blocks = [details_block(usage_detail), *timings,
+      blocks = [*missing_values, details_block(usage_detail), *timings,
                 provenance, details_block(@settings.detail), *skills_used, *task_history]
       ['## Shaka metrics', "#{UsageEstimate.markdown(usage_detail)}#{ThroughputStats.took(throughput)}",
        details_block('summary' => 'Details', 'body' => blocks.join("\n\n"))]
@@ -20,9 +20,14 @@ module Shaka
 
     # The current head's intervals open the Timings section.
     def timings
-      TimingsDetails.for(@timeline, @settings.time_zone).map do |item|
+      @timings ||= TimingsDetails.for(@timeline, @settings.time_zone).map do |item|
         details_block(item.merge('body' => "#{ThroughputStats.line(throughput)}\n\n#{item['body']}"))
       end
+    end
+
+    def missing_values
+      detail = MissingValues.detail(throughput, timings: timings.any?)
+      detail ? [details_block(detail)] : []
     end
 
     def throughput = @throughput ||= ThroughputStats.state(@content, @timeline, @pull)

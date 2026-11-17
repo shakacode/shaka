@@ -37,7 +37,7 @@ Start near the top of the PR description:
 
 | Look for | What it tells you |
 | --- | --- |
-| **Summary** and **Intent** | What changed, why, and whether it matches your request. |
+| **Summary** and **Intent** | What changed, why, what users will notice, and whether it matches your request. |
 | **Risk** and **Risk and review** | How carefully to review, and which code to read first. |
 | **Verification** | What was checked and what remains unproven. |
 | **Decisions to make**, when present | Questions needing your judgment, with options and a recommendation. |
@@ -45,7 +45,8 @@ Start near the top of the PR description:
 
 See [what each risk level asks of you](reference/pr-record.md#risk-and-review).
 Inspect screenshots or try the changed feature when your judgment depends on the
-result. Open **Code Review** or **Code Walkthrough** for closer examination.
+result. Open **Code Review**, or **Code Walkthrough** when the PR has one, for closer examination.
+To get a walkthrough, ask the agent for one; see [`walkthrough.publish`](settings.md#walkthroughpublish).
 
 Evidence should cover the version you're reviewing. Passing checks support a
 decision; they do not settle every product choice or prove every claim.
@@ -55,7 +56,7 @@ decision; they do not settle every product choice or prove every claim.
 Ask for an interactive tour when you want to understand a PR before deciding:
 
 ```text
-/shaka Walk me through https://github.com/OWNER/REPO/pull/123 one concept at a time.
+/shaka Walk me through https://github.com/OWNER/REPO/pull/123 one concept at a time
 ```
 
 In Codex, use `$shaka` instead of `/shaka`.
@@ -66,7 +67,7 @@ or skip ahead. Larger PRs get a lightweight coverage map that connects concepts
 to changed files and tracks what has been covered.
 
 The tour follows a specific revision and refreshes when the comparison changes.
-It complements the published Code Walkthrough and selective notes on the diff.
+It complements a published Code Walkthrough and its selective notes on the diff.
 Finishing the tour does not approve or authorize merging the PR.
 
 <a id="use-the-prepared-merge-message"></a>
@@ -82,7 +83,7 @@ the comment link into that chat.
 Under **Ask**, tell the agent when you're ready:
 
 ```text
-You can merge.
+You can merge
 ```
 
 You can also [merge through GitHub](reference/pr-record.md#merge-messages).

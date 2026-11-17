@@ -19,7 +19,7 @@ review:
   ci_review_jobs: # Required unless review.required is none: the GitHub jobs that post AI reviews.
     - claude-review
   ci_review_wait: one # Default. A word, not a number: none, one, or all CI review reports.
-  local_max_rounds: 5 # Default: most commits one local review covers before the agent asks you.
+  local_max_rounds: 8 # Default: most commits one local review covers before the agent asks you.
   # Default: none, so local_review_count sets how many review. Ours: Claude and Codex
   # both review every commit, because a mistake in Shaka weakens checks on every project.
   provider_coverage: [anthropic, openai]
@@ -33,7 +33,9 @@ review:
   # Ours: reviewers from other providers first, in this order.
   local_review_agents:
     - provider: anthropic
-      model_family: claude # No model or effort: use the Claude CLI's defaults.
+      model_family: claude
+      # Ours: Sonnet 5.5, because `claude -p` otherwise runs Haiku 5.5 and weakens the required Anthropic review.
+      model: claude-sonnet-5-5 # Default: the Claude CLI's default model. No effort: the CLI's default.
       # replacement_prompt_file: .agents/shaka/review-prompt-claude.md # Default: review.replacement_prompt_file.
     - provider: openai
       model_family: codex
@@ -108,6 +110,9 @@ merge:
 
 branches:
   name: '{login}-{host}/{issue}-{description}' # Default branch-name template.
+
+walkthrough:
+  publish: on_request # Default: a full code walkthrough only when someone asks; 'always' publishes one on every PR.
 
 wip:
   include_checkout_path: true # Default: show the local checkout path in unfinished PRs.

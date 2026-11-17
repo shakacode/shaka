@@ -18,12 +18,15 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   one PR. Split at useful boundaries and retain dependencies and remaining scope
   on the existing task and PRs. No coordination service or duplicate delivery
   records. See [task splitting](../skills/shaka/references/delivery.md#when-a-task-needs-several-prs).
-- **R4 — Explain the implementation.** Publish a conceptual walkthrough with links
-  to reviewed code as a commit-bound COMMENT review. It remains readable after
-  merge and substitutes for neither approval nor required acknowledgment.
+- **R4 — Explain the implementation.** Explain intent and verification in the PR
+  description. Publish a conceptual walkthrough with links to reviewed code as a
+  commit-bound COMMENT review on request, or on every PR when the repository sets
+  `walkthrough.publish: always` ([ADR 0007](adr/0007-walkthroughs-on-request.md)).
+  A walkthrough remains readable after merge and substitutes for neither approval
+  nor required acknowledgment.
   Offer an [interactive tour](../skills/shaka/references/interactive-walkthrough.md)
-  when requested, with an agenda and a lightweight coverage map for larger PRs.
-  Keep the published walkthrough and its selective inline notes.
+  when requested, and in the final report of a PR without a walkthrough, with an agenda and a lightweight coverage map for larger PRs.
+  Keep published walkthroughs and their selective inline notes.
 - **R9 — Accept work from any tracker.** Use a task link or description, resolve its
   checkout, and ask for missing context. Requirements remain in the original
   tracker; delivery evidence belongs on GitHub. Reading grants no tracker-write
@@ -32,10 +35,9 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   reasons, blockers, and decisions in familiar terms. Follow task/repository writing
   preferences and ask consequential questions early with a recommendation. Keep
   material risks visible and supporting evidence in expandable details.
-- **R15 — Make completion clear.** End a genuinely finished prose-capable chat with
-  exactly `This chat is ready for archiving.` Omit it while work, a blocker, handoff,
-  or chat decision remains, and in machine-only formats. A remaining GitHub merge
-  click after Ask gates pass is not a pending chat decision.
+- **R15 — Make completion clear.** In a prose-capable chat, use the
+  [Finish instructions](../skills/shaka/config/workflow.yml) to distinguish work
+  that is complete from work that only awaits merge.
 
 ### Use trusted policy and verified evidence
 
@@ -94,7 +96,7 @@ must cite that evidence before claiming the pilot's real-use acceptance.
 - **R3 — Choose who merges.** Support Ask and Auto. Ask early when preference is
   unset, default to Ask without an answer, and reuse established authority. Preserve
   review-only and PR-only stopping points.
-- **R5 — Avoid repeated merge decisions.** After the walkthrough and required gates,
+- **R5 — Avoid repeated merge decisions.** After any due walkthrough and required gates,
   Ask names the ready head and directs the user to GitHub's offered merge control, or
   merges after the user's approval, rebasing first when the rebased change keeps the
   approved behavior.
@@ -233,8 +235,9 @@ decide native queue eligibility for a `CLEAN`, `BEHIND`, or queue-policy `BLOCKE
 reviewed head, and also `UNSTABLE` when effective `review.ci_review_wait` is `none` or `one`; conflicting or
 unreadable merge state still blocks. Queue admission is not Auto
 task completion: the active Auto task waits for GitHub's current-base integration checks and
-terminal result. Ask archives after the GitHub click; a later queue failure is a new task.
-Queue submission does not relax walkthrough, review, authority, or required-check gates.
+terminal result. Ask hands off at GitHub's merge control. Queue admission leaves the PR
+open until GitHub confirms the merge. A later queue failure is a new task.
+Queue submission does not relax due-walkthrough, review, authority, or required-check gates.
 With `ci_review_wait: none` or `one`, pending or failing optional checks may still leave the native state `UNSTABLE`.
 
 Final preparation requires this account’s latest published post-implementation checkpoint
@@ -255,7 +258,7 @@ Queue submission retains GitHub’s default message and reports that custom text
 - Install in an isolated skills directory; repeat installation, preserve foreign
   targets, and verify upgrades use the trusted source.
 - Exercise Ask and Auto on real PRs. Publish and read back a walkthrough tied to
-  the current head, honor native approvals, and verify protected merge behavior.
+  the current head on a PR where one is due, honor native approvals, and verify protected merge behavior.
 - Exercise one meaningful Codex implementation with a visible Claude or Grok review,
   and one consumer's staged hosted-CI path with review fixes completed before dispatch.
 - Exercise one recorded substitution: a listed reviewer unavailable on evidence, the

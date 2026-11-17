@@ -24,7 +24,7 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch branches wip pr_description repo_prefix prose_limits project_guidance
+      OPTIONAL = %w[base_branch branches walkthrough wip pr_description repo_prefix prose_limits project_guidance
                     checkpoint high_risk_areas medium_risk_areas].freeze
       OPTIONAL_REVIEW_KEYS = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, ReviewSchema::PROMPT_FILE,
                               ReviewSchema::CUSTOM_INSTRUCTIONS,

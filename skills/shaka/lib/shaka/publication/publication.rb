@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'agent_time'
 require_relative 'text'
 require_relative 'links'
 require_relative 'usage_details'
@@ -15,6 +16,7 @@ require_relative 'steps_besides_merging'
 require_relative 'human_comments'
 require_relative 'skills_used'
 require_relative 'metrics'
+require_relative 'missing_values'
 require_relative 'intent_verification'
 require_relative 'risk_review'
 require_relative 'quoted_markers'
@@ -50,7 +52,8 @@ module Shaka
       @workflow_version = workflow_version
       @pull = pull
       @settings = settings || PublicationSettings.new
-      @timeline = timeline
+      # Carried agent time joins here, so a rendering preview shows it too; the running session's comes from the helper.
+      @timeline = description ? AgentTime.attach(timeline, pull) : timeline
       @environment = environment
       @host_name = host_name
     end
@@ -80,7 +83,7 @@ module Shaka
 
     def human_comments = HumanComments.for(@content, @pull, @settings)
 
-    def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']))
+    def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']), @settings)
 
     # The steps besides merging sit right under the summary so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)

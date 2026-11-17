@@ -147,10 +147,10 @@ module HandoffHarness
 
   def description(wip = WIP, extra = {}) = HandoffFixtures.description(wip, extra)
 
-  def handoff(expected: HEAD, woken_by: nil, post_implementation: nil, **pull)
+  def handoff(expected: HEAD, woken_by: nil, post_implementation: nil, walkthrough_publish: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,
                  reviews: [walkthrough(HEAD)], checks: [check('pass')], comments: [] }
-    Shaka::Handoff.new(HandoffFakeGitHub.new(defaults.merge(pull)), post_implementation:).call(head: expected,
-                                                                                               woken_by:)
+    Shaka::Handoff.new(HandoffFakeGitHub.new(defaults.merge(pull)), post_implementation:, walkthrough_publish:)
+                  .call(head: expected, woken_by:)
   end
 end

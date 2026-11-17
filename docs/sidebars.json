@@ -37,6 +37,7 @@
         "pr-verification",
         "reference/pr-record",
         "reference/reviewer-setup",
+        "reference/scheduled-update-checks",
         "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
@@ -59,6 +60,7 @@
       "label": "Articles",
       "collapsed": true,
       "items": [
+        "articles/engineering-teams-software-factory",
         "articles/pull-requests-in-the-age-of-agents",
         "articles/review-process-study",
         "articles/claude-code-team-review",
@@ -66,7 +68,9 @@
         "articles/one-shot-pr-study",
         "articles/ci-and-hosted-review-repairs",
         "articles/hosted-review-prompt-comparison",
-        "articles/review-signal-study"
+        "articles/review-signal-study",
+        "articles/evidence-first-review",
+        "articles/agents-made-you-a-manager"
       ]
     },
     {

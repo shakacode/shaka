@@ -30,7 +30,7 @@ See [required-check settings](settings.md#mergerequired_checks) and
 Ask your agent:
 
 ```text
-/shaka Set up Shaka for my team in this repository.
+/shaka Set up Shaka for my team in this repository
 ```
 
 The agent finds your existing checks, explains reviewer choices, and prepares a
@@ -62,3 +62,36 @@ For an optional GitHub review job, see [hosted Claude review](settings.md#hosted
 
 If your CI uses a container, see [standard command scripts](settings.md#run-the-scripts-in-a-ci-container)
 for checkout ownership and script setup.
+
+### Show where validation time goes
+
+A PR's [timings](reference/timings.md) can split each validation run into its
+phases, such as tests and lint, so you can see which one to speed up. When Shaka
+runs a script, `SHAKA_PHASE_LOG` names a file. Have the script append one JSON
+line per phase:
+
+```sh
+start=$(date +%s)
+status=0
+bundle exec rspec || status=$?
+echo "{\"phase\":\"tests\",\"duration_ms\":$(( ($(date +%s) - start) * 1000 ))}" >> "${SHAKA_PHASE_LOG:-/dev/null}"
+[ "$status" -eq 0 ] || exit "$status"
+```
+
+The script records the phase even when the tests fail, then exits with their status.
+
+Shaka keeps up to eight phases per run. A name starts with a lowercase letter,
+then lowercase letters, digits, `-`, or `_`, up to 24 characters; Shaka skips a
+line it cannot use. Shaka's own [`bin/validate`](https://github.com/shakacode/shaka/blob/main/bin/validate)
+reports its four phases this way.
+
+Your test runner can also name the test classes that failed, so you can tell a
+flaky test from a real failure. Append one line such as
+`{"failed_tests":["CheckoutTest","Billing::InvoiceTest"]}`. Each name is a class
+name of up to 64 characters. A run that names more than three classes records
+none, because that many failures usually mean a broken change, not a flaky test.
+When you ask your agent for a retrospective of PR timings, its report ranks the
+classes named most often. A failed run counts there only when the PR later
+committed the tree it tested, which is what happens when a rerun passes without
+changes, the usual sign of a flaky test. Shaka's [`bin/run-tests`](https://github.com/shakacode/shaka/blob/main/bin/run-tests)
+reports its failing classes this way.

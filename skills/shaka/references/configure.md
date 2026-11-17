@@ -19,6 +19,8 @@ setting is unset. `matches_default: true` says only that the value equals the de
 Do not call such a setting removable: some settings are required, and naming a file can
 make it required. Report `source` and `settings_ref`; with a settings preview selected,
 settings come from the preview. `--local` reads an uncommitted edit as an untrusted draft.
+When explaining `wip.include_checkout_path`, also report `your_publications.checkout_path`:
+the user's personal file can hide a path the repository row shows.
 
 Group the settings by their first key, such as `merge`, `review`, or `pr_description`, and
 go through one group at a time. For each setting, give the effective value, mark it when it

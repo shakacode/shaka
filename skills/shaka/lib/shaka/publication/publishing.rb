@@ -9,6 +9,7 @@ require_relative 'feature_guard'
 require_relative 'managed_region'
 require_relative 'merge_warning_region'
 require_relative 'rendered_prose'
+require_relative 'deferred_rendering'
 require_relative '../github/description_publishing'
 
 module Shaka
@@ -16,6 +17,7 @@ module Shaka
   # and confirming the stored body afterwards.
   module Publishing
     include DescriptionPublishing
+    include DeferredRendering
 
     VERBATIM = 'Quoted text.'
     REPLY_PAGES = 20
@@ -25,15 +27,20 @@ module Shaka
     def self.as_stored(text) = text.gsub('\\u0000', '\\^@')
 
     # `verbatim` names quoted text the rendering check leaves to the caller; see verify_rendering.
+    # `stored_check` opts in to checking the stored comment when GitHub refuses its renderer; it
+    # receives the stored rendering and raises to take the write back. See DeferredRendering.
     def reply(body:, key:, comment: nil, trust_config: nil, verbatim: [], # rubocop:disable Metrics/ParameterLists
-              machine_path: PublicComments::TrustConfig::MACHINE_PATH)
+              machine_path: PublicComments::TrustConfig::MACHINE_PATH, stored_check: nil)
       mark = reply_mark(key)
       content = "#{mark}\n#{publishable(body)}"
       target = positive_integer(comment) if comment
       pull
       existing = prepared_reply(target, mark, trust_config, machine_path)
-      verify_rendering(content, verbatim:)
-      confirmed(write_reply(existing, content, target), content)
+      html = rendering_before_write(content, verbatim, stored_check)
+      written = write_reply(existing, content, target, headers: html ? [] : [FULL])
+      return confirmed(written, content) if html
+
+      checked_after_write(existing, written, target, Pending.new(content, stored_check))
     end
 
     # gh uploads each "PATH#ALT TEXT" attachment, rewriting a body reference to the file;
@@ -56,7 +63,7 @@ module Shaka
     # Each text stands in for its first occurrence only, so a copy in surrounding text stays checked.
     def verify_rendering(body, verbatim: [])
       html = markdown(body)
-      checked = verbatim.reject(&:empty?).reduce(body) { |text, quoted| text.sub(quoted) { VERBATIM } }
+      checked = quoted_out(body, verbatim)
       RenderedProse.check!(checked, checked == body ? html : markdown(checked))
       html
     end
@@ -64,9 +71,18 @@ module Shaka
     def markdown(text)
       capture(['gh', 'api', 'markdown', '--method', 'POST', '--input', '-'],
               input: JSON.generate({ mode: 'gfm', text: text }))
+    rescue Error => e
+      raise unless e.http_status == 403
+
+      raise Refused, 'GitHub refused its Markdown renderer (POST /markdown), so the rendering cannot be ' \
+                     'checked before writing.'
     end
 
     private
+
+    def quoted_out(body, verbatim)
+      verbatim.reject(&:empty?).reduce(body) { |text, quoted| text.sub(quoted) { VERBATIM } }
+    end
 
     # Only a comment this account wrote, whose body opens with the marker, is ours to replace.
     def ours?(comment, mark, account)
@@ -105,7 +121,7 @@ module Shaka
       raise Error, 'The description has an ambiguous or malformed managed region; repair it before publishing.'
     end
 
-    def write_reply(existing, content, target)
+    def write_reply(existing, content, target, headers: [])
       return existing if existing && existing['body'] == content
 
       path = if existing
@@ -115,7 +131,7 @@ module Shaka
              else
                "repos/#{@repository}/issues/#{@number}/comments"
              end
-      api(path, method: existing ? 'PATCH' : 'POST', fields: { body: content })
+      api(path, method: existing ? 'PATCH' : 'POST', fields: { body: content }, headers:)
     end
 
     # gh has no --slurp, and --paginate concatenates pages into invalid JSON,
