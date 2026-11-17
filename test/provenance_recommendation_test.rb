@@ -72,6 +72,21 @@ class ProvenanceRecommendationTest < Minitest::Test
     assert_equal 2, history_rows(rendered).size
   end
 
+  # Review finding: truncating a long history dropped the replan row, so its reason looked new.
+  def test_a_long_history_still_recognizes_the_last_reason
+    publish(HEADS[0])
+    publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => REASON)
+    efforts = %w[low high]
+    23.times do |index|
+      publish(format('%07x', index).ljust(40, 'a'), 'recommended_model' => 'claude-opus-5-5',
+                                                    'active_effort' => efforts[index % 2])
+    end
+    rendered = publish(HEADS[2], 'recommended_model' => 'gpt-5.6-terra', 'recommendation_change_reason' => REASON)
+
+    assert_includes rendered, '| Recommended model / effort | claude-opus-5-5 / medium |'
+    assert_includes history_rows(rendered)[1], REASON
+  end
+
   def test_an_unchanged_recommendation_reports_nothing_kept
     publish(HEADS[0])
     assert_nil Shaka::ProvenanceRecommendation.resolve(pull_for(HEADS[1]), PUBLIC_PROVENANCE).kept

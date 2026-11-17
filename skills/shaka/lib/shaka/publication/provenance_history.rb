@@ -133,7 +133,14 @@ module Shaka
       extra = entries.size - (RECENT + 1)
       return { 'entries' => entries, 'omitted' => omitted } unless extra.positive?
 
-      { 'entries' => [entries.first, *entries.last(RECENT)], 'omitted' => omitted + extra }
+      { 'entries' => [entries.first, *recent(entries.drop(1))], 'omitted' => omitted + extra }
+    end
+
+    # The latest replan stays, so a reason resent after it scrolled away is still recognized.
+    def recent(entries)
+      tail = entries.last(RECENT)
+      replan = entries.reverse_each.find { |entry| entry.key?(REASON) }
+      replan.nil? || tail.include?(replan) ? tail : [replan, *tail.drop(1)]
     end
 
     def omission(omitted)
@@ -145,6 +152,7 @@ module Shaka
     def table(entries) = ProvenanceHistoryTable.render(entries, ROUTES, REASON)
 
     private_class_method :head, :same_repository?, :previous, :fresh, :validated, :valid_entries?, :valid_entry?,
-                         :valid_fields?, :valid_reason?, :valid_route?, :invalid, :changes, :bounded, :omission, :table
+                         :valid_fields?, :valid_reason?, :valid_route?, :invalid, :changes, :bounded, :recent,
+                         :omission, :table
   end
 end
