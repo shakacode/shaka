@@ -203,8 +203,9 @@ below the threshold.
   breaking it leaves a trace in the PR. Examples are an empty PR description (4 hosted
   findings in October) or a missing changelog entry.
 - None of the 412 classified findings reports an agent breaking a delivery rule during
-  its task, such as merging without consent. This data cannot say how often the 89
-  rules are broken.
+  its task, such as merging without consent. The 1,304 unclassified findings and the
+  nits were not searched for such reports. This data cannot say how often the 89 rules
+  are broken.
 - Two kinds concern how the docs describe enforcement: prose calling an agent-only rule
   enforced (fixed on 14 PRs, raised on 19), and `enforcement.yml` drift (fixed on 3 PRs,
   raised on 8).

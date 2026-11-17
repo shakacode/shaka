@@ -1,7 +1,7 @@
 # Which review findings repeat, and which could a check catch?
 
 *An AI agent wrote this article: Claude Code running Claude Opus 5.5, on 2026-11-15 and 2026-11-16.
-The agent sorted 1,716 fixed or dismissed review findings from one month of Shaka pull
+The agent sorted 1,716 fixed or dismissed review defects and risks from one month of Shaka pull
 requests (PRs) into kinds. It read the title of every finding it counted and drafted
 the text. No
 person has rechecked the classification. The
@@ -109,9 +109,10 @@ report lists 7 more kinds with their checks and costs.
 
 - **Idea:** rules written as prose sit at the top of the pyramid, where they hold least.
 - **In Shaka:** 89 of 100 audited workflow rules are agent-only.
-- **Result:** reviewers rarely see those rules. They read the diff and the PR
-  description, so none of the 412 classified findings reports an agent breaking a
-  delivery rule mid-task. What reviewers do catch is prose describing enforcement wrongly:
+- **Result:** reviewers read the diff and the PR description, not the agent's session.
+  None of the 412 classified findings reports an agent breaking a delivery rule
+  mid-task; the unclassified findings were not searched for one. What the classified
+  findings do show is prose describing enforcement wrongly:
   - 14 PRs fixed prose that called an agent-only rule enforced.
   - 3 PRs fixed `enforcement.yml` drift from the workflow.
 - **Limit:** this data cannot say how often agents break the 89 rules.
