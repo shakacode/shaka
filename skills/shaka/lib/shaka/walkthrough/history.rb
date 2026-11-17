@@ -35,7 +35,7 @@ module Shaka
       return if missing.empty?
 
       raise Error, "Walkthrough body lacks #{missing.join(', ')}, so the ready checkpoint would not recognize it. " \
-                   'Publish with --content-file, which renders this shape, or see --body-file in --help.'
+                   'Publish with --content-file, which renders this shape, or see `shaka walkthrough --help`.'
     end
 
     def self.visible_lines(body) = unfenced(body).lines.map(&:strip).reject(&:empty?)

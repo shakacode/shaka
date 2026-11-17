@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'shaka/walkthrough/history'
+require 'shaka/publication/publication'
 
 # The ready checkpoint finds a walkthrough by its shape, so the command refuses any other body before GitHub.
 class CliWalkthroughBodyTest < Minitest::Test
@@ -16,6 +17,16 @@ class CliWalkthroughBodyTest < Minitest::Test
     body = example.gsub(/^ {4}/, '').gsub('HEAD_SHA', HEAD)
     assert_nil Shaka::WalkthroughText.verify_recognizable!(body, HEAD)
     refute_includes Open3.capture3(*COMMAND, 'merge', '--help').first, 'Walkthrough input:'
+  end
+
+  # --content-file goes through the same gate, so what the renderer writes has to pass it.
+  def test_rendered_content_is_a_recognized_body
+    summary = "Read [the check](https://github.com/o/r/blob/#{HEAD}/a.rb).\n\n```\n# Code Walkthrough\n```"
+    content = { 'identity' => { 'agent' => 'Codex', 'provider' => 'OpenAI', 'model' => 'm', 'effort' => 'e' },
+                'summary' => summary, 'head' => HEAD,
+                'sections' => [{ 'heading' => 'Risk', 'body' => 'Low.' }],
+                'details' => [{ 'summary' => 'Validation', 'body' => 'validate passed.' }] }
+    assert_nil Shaka::WalkthroughText.verify_recognizable!(Shaka::Publication.walkthrough(content, 'o/r'), HEAD)
   end
 
   def test_plain_markdown_walkthrough_file_is_refused_before_github
