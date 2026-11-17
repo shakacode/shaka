@@ -67,7 +67,10 @@ module Shaka
         return false unless ref
 
         validate_ref!(ref)
-        !Layout.commit(root: @root, sha: ref, allow_missing: true)
+        return true unless Layout.commit(root: @root, sha: ref, allow_missing: true)
+
+        TrustedConfigSource.load(root: @root, ref:, candidate_commands: false)
+        false
       end
 
       def read_record

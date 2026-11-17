@@ -90,16 +90,31 @@ class FirstSetupPreviewMergeTest < Minitest::Test
       absent = remove_trusted_setup(root)
       start_with_default(root, preview, absent)
 
-      _, error, status = run_command('seam', 'preview', 'start', '--root', root,
-                                     '--settings-ref', preview, '--ref', 'invalid', root:)
+      assert_reselection_refused(root, preview, 'invalid', /Select a full settings commit SHA/)
+      assert_equal preview, Shaka::Configuration::SettingsPreview.ref(root:)
+    end
+  end
 
-      refute_predicate status, :success?
-      assert_match(/Select a full settings commit SHA/, error)
+  def test_invalid_default_settings_keep_the_existing_pin
+    with_preview_repository do |root, trusted, preview|
+      start_with_default(root, preview, trusted)
+      replacement = create_preview_commit(root, model: 'replacement')
+      File.write(File.join(root, '.agents/shaka/config.yml'), "version: [\n")
+      malformed = commit(root)
+
+      assert_reselection_refused(root, replacement, malformed, /Invalid .agents\/shaka\/config.yml/)
       assert_equal preview, Shaka::Configuration::SettingsPreview.ref(root:)
     end
   end
 
   private
+
+  def assert_reselection_refused(root, preview, ref, expected_error)
+    _, error, status = run_command('seam', 'preview', 'start', '--root', root,
+                                   '--settings-ref', preview, '--ref', ref, root:)
+    refute_predicate status, :success?
+    assert_match(expected_error, error)
+  end
 
   def start_with_default(root, preview, absent)
     output, error, status = run_command('seam', 'preview', 'start', '--root', root,
