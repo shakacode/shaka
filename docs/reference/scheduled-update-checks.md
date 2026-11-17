@@ -1,11 +1,13 @@
 # Keep Shaka up to date
 
-Shaka doesn't update itself, automatically or on a schedule. Every Shaka chat
-runs from the same installed checkout, so updating it can change files that open
-chats are still reading. Instead, run a daily check that tells you when an update
-is available, then update between chats.
+Shaka has no automatic updates: it never updates itself, on a schedule or
+otherwise. Every Shaka chat runs from the same installed checkout, so updating
+it can change files that open chats are still reading.
+If you want to update daily, schedule a check that tells you when an update is
+available, then update between chats.
 
-Shaka's skill also asks your agent to run this check once in each chat, so a
+When you invoke Shaka, its skill also asks your agent to run this check once per
+chat. If an update is available, the agent tells you how to install it. A
 schedule helps most when you leave Shaka chats running overnight. The check
 compares an installation from a GitHub branch, such as the default `main`, with
 that branch. For a pinned release, it reports only the pinned version; ask your
