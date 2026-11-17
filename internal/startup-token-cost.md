@@ -8,6 +8,8 @@ publishing an article. The figures need context that a docs reader would not hav
 
 ## Where it stands at `f88fd8e`, 2026-11-17
 
+`f88fd8e` has the same startup text as the log's first two rows.
+
 - Invoking Shaka loads `SKILL.md` and the workflow that `shaka workflow` prints, 12,538
   words. Claude Code with Claude Opus 5.5 counts about 30,000 tokens; Codex with
   GPT-6.1 Sol counts about 20,100.
@@ -22,7 +24,8 @@ publishing an article. The figures need context that a docs reader would not hav
 
 ## Where the words are
 
-The rendered workflow at `f88fd8e2` (12,251 words including headings), by phase:
+The rendered workflow at `f88fd8e` has 12,251 words, by phase. The rows leave out the
+workflow's title and its short Code quality section, 54 words between them.
 
 | Phase | Words | Share |
 | --- | ---: | ---: |
@@ -49,6 +52,8 @@ live runs before it ships.
 
 On 2026-11-17, `eval/bin/skill-library-tokens` counted Shaka and the five most-starred
 skill libraries on GitHub the same way. Counts are Claude Opus 5.5 / GPT-6.1 Sol tokens.
+The comparison counts every skill body without its frontmatter, so its Shaka figure is
+about 100 tokens below the log's, which includes `SKILL.md` frontmatter.
 
 | Library | Commit | Every session | Median skill | Largest skill |
 | --- | --- | ---: | ---: | ---: |

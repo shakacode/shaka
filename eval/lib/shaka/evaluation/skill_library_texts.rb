@@ -50,7 +50,14 @@ module Shaka
       def skill_paths(root, rule)
         return globbed(root, rule) if rule.is_a?(Array)
 
-        manifest_dirs(root, rule).map { |dir| File.join(dir.delete_prefix('./'), 'SKILL.md') }.uniq
+        manifest_dirs(root, rule).map { |dir| File.join(inside(dir).delete_prefix('./'), 'SKILL.md') }.uniq
+      end
+
+      # Manifests are the library's own data, so an entry may not reach outside its checkout.
+      def inside(dir)
+        return dir unless dir.start_with?('/') || dir.split('/').include?('..')
+
+        raise Shaka::Error, "manifest skill path leaves the checkout: #{dir}"
       end
 
       def manifest_dirs(root, rule)

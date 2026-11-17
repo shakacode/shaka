@@ -52,6 +52,17 @@ class EvaluationSkillLibraryTextsTest < Minitest::Test
     assert_equal '- listed: Listed', result['every_session']
   end
 
+  def test_refuses_a_manifest_path_outside_the_checkout
+    ['../outside', '/etc'].each do |dir|
+      error = assert_raises(Shaka::Error) do
+        library('mattpocock/skills') do |root|
+          write(root, '.claude-plugin/plugin.json', JSON.generate('skills' => [dir]))
+        end
+      end
+      assert_includes error.message, 'leaves the checkout'
+    end
+  end
+
   def test_counts_a_skill_shared_by_two_marketplace_plugins_once
     result = library('anthropics/skills') do |root|
       plugins = [{ 'skills' => ['./skills/pdf', './skills/xlsx'] }, { 'skills' => ['./skills/pdf'] }]

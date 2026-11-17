@@ -35,7 +35,8 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
    In the same PR, measure what Shaka's startup text costs. With Claude Code and Codex
    signed in, run `bin/report-instruction-growth --tokens PREVIOUS_TAG` on the `main` commit
    the PR starts from, and add a row for that commit to the log in
-   [startup token cost](../internal/startup-token-cost.md).
+   [startup token cost](../internal/startup-token-cost.md). When a CLI shows `UNKNOWN`, log
+   its reason in the row instead of a count.
 2. Start from a clean, current `main` checkout after those preparation edits land.
 3. Install dependencies and run the repository validation:
 
