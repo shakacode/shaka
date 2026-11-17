@@ -12,16 +12,6 @@ module Shaka
 
       def urls(body) = body.to_s.scan(URL).uniq
 
-      # Every capture an open earlier check shows stays visible unless the new check
-      # shows it too or the agent retires it, so folding never hides current evidence.
-      def missing(earlier, body, retired)
-        shown = urls(body)
-        unknown = retired - earlier
-        raise Error, "Retired captures are not in an open earlier UI check: #{unknown.join(', ')}" if unknown.any?
-
-        earlier - shown - retired
-      end
-
       # Each "PATH#ALT TEXT" names a local file for gh to upload.
       def paths(captures)
         captures.map do |capture|

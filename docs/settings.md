@@ -1245,8 +1245,11 @@ needs `validate-local` and `trigger-hosted-ci` together, or neither; with only
 one, Shaka cannot use your individual settings.
 
 After a team settings PR adds the script, a branch that already has
-`.agents/shaka/bin` but not the new script cannot run any validation until it
-merges the default branch.
+`.agents/shaka/bin` but not the new script still runs `validate`, and that
+result counts. Shaka leaves `validate-local` out of that branch's settings, so it
+does not run there until the branch merges the default branch. Unlike a branch with
+no `.agents/shaka/bin` at all, it does not get the default branch's copy. A PR that
+deletes the script is still refused, because it changes Shaka configuration.
 
 Put the narrowing flag in the script. A run that passes extra arguments to
 `validate` or `validate-local` does not count as evidence, because those
