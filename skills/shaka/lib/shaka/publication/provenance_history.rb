@@ -42,13 +42,13 @@ module Shaka
 
     def marker(history) = "#{PREFIX}#{JSON.generate(history)} -->"
 
-    # A PR whose provenance never changed keeps its single table. reasons maps an entry's head
-    # and recommendation to why that recommendation changed.
-    def section(history, reasons = {})
+    # A PR whose provenance never changed keeps its single table. replans explain the rows
+    # whose recommendation changed.
+    def section(history, replans = [])
       entries = history.fetch('entries')
       return if entries.size < 2
 
-      table = ProvenanceHistoryTable.render(entries, ROUTES, reasons)
+      table = ProvenanceHistoryTable.render(entries, ROUTES, replans)
       [LEAD, omission(history.fetch('omitted')), table].compact.join("\n\n")
     end
 

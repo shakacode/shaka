@@ -46,7 +46,7 @@ module Shaka
     def history_blocks(entry, reason)
       history = ProvenanceHistory.carry(@pull, entry)
       replans = ProvenanceReplans.carry(@pull, entry['recommended'], reason)
-      [ProvenanceHistory.section(history, ProvenanceReplans.reasons(replans)), ProvenanceHistory.marker(history),
+      [ProvenanceHistory.section(history, replans), ProvenanceHistory.marker(history),
        ProvenanceReplans.marker(replans)].compact
     end
 

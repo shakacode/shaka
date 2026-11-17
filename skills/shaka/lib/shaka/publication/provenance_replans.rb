@@ -35,8 +35,6 @@ module Shaka
 
     def marker(replans) = (replans.empty? ? nil : "#{PREFIX}#{JSON.generate('replans' => replans)} -->")
 
-    def reasons(replans) = replans.to_h { |replan| [[replan['head'], replan['recommended']], replan['reason']] }
-
     def previous(body)
       region = Publishing.managed_region(body).to_s
       openings = region.scan(PREFIX.strip).size

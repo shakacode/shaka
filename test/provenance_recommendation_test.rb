@@ -132,6 +132,18 @@ class ProvenanceReplansMarkerTest < Minitest::Test
     assert_refused(@body.sub('{"replans":[', '{"replans":[{},'))
   end
 
+  # Review finding: matching reasons by head and model showed the last reason on every return.
+  def test_each_change_shows_its_own_reason_on_a_repeated_head
+    publish(HEADS[0])
+    %w[claude-opus-5-5 gpt-5.6-terra claude-opus-5-5].each_with_index do |model, index|
+      publish(HEADS[0], 'recommended_model' => model, 'recommendation_change_reason' => "R#{index + 1}.")
+    end
+    rows = history_rows(@body)
+
+    reasons = rows.map { |row| row[/\| [^|]* \|\z/] }
+    assert_equal ['|  |', '| R1. |', '| R2. |', '| R3. |'], reasons
+  end
+
   # Checkpoint finding: history entries keep their old shape, so an older install still reads
   # them; the reasons live in a marker it does not count as provenance history.
   def test_reasons_stay_out_of_the_history_entries
