@@ -12,8 +12,9 @@ global config, filters and hooks.
 
 - **Recommendation: defer.** Do not build the single-runner test.
 - **The literal rule catches no defect.** A test that looks for `'git'` as a spawned
-  program fails before none of the 7 fixes. The two library defects it should find
-  started Git through `sh -c` and through a `git_executable` variable.
+  program would have caught none of the 7 defects. The 3 library defects it should find
+  sit on two code paths. One started Git through `sh -c`, the other through a
+  `git_executable` variable.
 - **A broader rule catches 3 of 7 defects.** It must also treat repair's `sh -c` steps
   and `git_executable` callers as Git spawns. Extending the scope to `eval/bin` adds 2
   defects and 1 fixed risk, for 6 of 13 findings.
@@ -132,8 +133,9 @@ scope and the broad rule.
   `origin` set to `gh:shakacode/shaka`:
   - with a global config mapping `gh:` to `https://github.com/`, Git printed
     `https://github.com/shakacode/shaka`;
-  - with `GIT_CONFIG_GLOBAL=/dev/null`, it printed `gh:shakacode/shaka`, which
-    `GitOrigin` cannot read as a GitHub repository.
+  - with `GIT_CONFIG_GLOBAL=/dev/null`, it printed `gh:shakacode/shaka`.
+    `GitOrigin.from` then returned host `gh` in place of `github.com`. The identity
+    `shakacode/shaka` and the name stayed the same.
 - **Fetches from the maintainer's remotes need the maintainer's config.**
   `CheckoutGit::AUTHENTICATION_ENV` keeps SSH, askpass and config variables for clone,
   fetch and ls-remote. The #1131 F8 fix kept network configuration for fetch.

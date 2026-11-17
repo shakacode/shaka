@@ -13,13 +13,13 @@ holds the inventory, the per-finding table and the probes.*
    caught 3 of the 7 Git environment defects in library code. Covering evaluation
    tooling too raises that to 5.
 2. **A simple version catches none.** A test that looks for `git` as the spawned program
-   misses both library defects. One ran Git inside `sh -c`. The other passed the Git
-   path in a variable.
+   misses all 3 library defects. They sit on two code paths. One ran Git inside
+   `sh -c`. The other passed the Git path in a variable.
 3. **The test would fight the trust model.** Two dismissed findings asked for isolation
    that the maintainer's own checkout does not need. The test would flag the same code.
 4. **One runner changes what Shaka reads.** Hiding global Git config turned a
-   maintainer's `gh:shakacode/shaka` origin into a URL Shaka cannot read. Fetches need
-   that config too.
+   maintainer's `gh:shakacode/shaka` origin into one whose host Shaka reads as `gh`,
+   not GitHub. Fetches need that config too.
 5. **Routing is large.** 40 library files start Git, under nine different environment
    rules. More than half the spawn points use the caller's environment unchanged.
 
