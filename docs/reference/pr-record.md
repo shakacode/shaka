@@ -205,6 +205,10 @@ and what remains unverified. Captures and tests provide different evidence:
 | Interaction, animation, or timing | A recording, with screenshots where useful. |
 | Backend or command-line behavior | Focused tests and concise before-and-after output. |
 
+After a later commit, the agent posts a new check for that head and folds the older one.
+Earlier captures it did not refresh stay in a collapsed Earlier evidence section, labeled
+with the commit that captured them, so old screenshots never pass as proof for the new head.
+
 ## Diagrams
 
 A walkthrough diagram explains how the pieces fit together. It does not prove
