@@ -100,6 +100,10 @@ The installer prints an update reminder for every host and custom skills directo
 the checkout moved; its guidance says whether `install --update` can record the move. An `unknown` result names its reason.
 `bin/install --agent claude --session-hook` reports the saved `update-check` answer when each Claude Code chat
 starts; installing with `--agent claude` and without the flag removes that hook.
+For a request to update Shaka automatically or every day, say that Shaka has no
+automatic or scheduled update, then follow [keep Shaka up to date](https://github.com/shakacode/shaka/blob/main/docs/reference/scheduled-update-checks.md):
+give its reason and offer its daily check, or this hook in Claude Code, rather
+than scheduling `install --update`.
 Use the registered helper at the installation's actual path:
 
 ```bash
