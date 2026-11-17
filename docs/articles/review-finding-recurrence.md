@@ -122,7 +122,7 @@ report lists 7 more kinds with their checks and costs.
   parsed Markdown and shell. The 7 PRs that built and extended it drew 38 review
   findings, 33 of them fixed, until [#997](https://github.com/shakacode/shaka/pull/997)
   removed it.
-  `enforcement.yml` has 897 lines and changed in 26 commits this month.
+  `enforcement.yml` has about 900 lines and changed in 26 commits over the month.
 - **Limit:** one scanner is one example, and these are findings on new code rather than
   upkeep after it landed. Most proposed checks here are much smaller.
 
@@ -133,7 +133,7 @@ from prose to checks.
 
 | Option | Evidence | Verdict |
 | --- | --- | --- |
-| Boundary test: every Git subprocess uses one runner that clears `GIT_*`, global config, filters, and hooks | 13 findings, 7 defects, 5 PRs; the test would catch the 4 to 6 where isolation was missing. About 35 library files name `git` | Evaluate: map each finding to the test, then build it in its own PR |
+| Boundary test: every Git subprocess uses one runner that clears `GIT_*`, global config, filters, and hooks | 13 findings, 7 defects, 5 PRs; the test would catch the 4 to 6 where isolation was missing. 35 library files had a quoted `git` string; spawn sites are uncounted | Evaluate: map each finding to the test, then build it in its own PR |
 | Test refusing long English string literals in `skills/shaka/lib` | Prompt text in Ruby came up on 3 PRs; numeric literals were dismissed as constants | Evaluate: run it on `main` and count hits |
 | CI step refusing `CHANGELOG.md` edits on non-release PRs | The rule changed mid-month; 1 finding broke its current form | Defer |
 | Report-only changed-line coverage | Up to 26 of 51 test findings name an untested path; coverage misses paths unit tests already run | Evaluate on the next 10 PRs |
@@ -148,7 +148,8 @@ from prose to checks.
 - **Classifier:** one agent, Claude Opus 5.5, read and sorted every counted finding,
   mostly from titles. No second reader checked it.
 - **Recall:** a hand check of 150 unmatched findings found 30 that belonged to a counted
-  kind. Counts are lower bounds.
+  kind. Counts are lower bounds. The agent chose the kinds after reading a sample, so 24%
+  measures those kinds, not a list fixed in advance.
 - **Dismissals:** the agent's own judgment. No dismissed finding was rerun or rechecked.
 - **Catch and cost:** estimates, not measurements. No candidate check was built or
   replayed against history.

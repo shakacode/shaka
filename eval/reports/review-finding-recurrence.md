@@ -122,7 +122,7 @@ check would flag mechanically. Cost covers writing the check and keeping it corr
 | Docs or instructions describe behavior the code lacks | 53 / 47 | 71 | 64 / 7 | 50 | Test in `bin/validate`: every setting key, `shaka` subcommand and `--flag` named in `docs/` and `skills/shaka/` exists in `defaults.yml` or the CLI parser | About 7 | Medium: code-span parsing over the docs, an allowlist for examples | Evaluate first |
 | A changed path has no test, or the test passes without the fix | 39 / 25 | 51 | 31 / 20 | 2 | Report-only changed-line coverage with Ruby's `Coverage` in `bin/run-tests`; mutation testing for the rest | Up to 26 name an untested path, 12 a test that passes without the fix, 8 the host, 5 other; coverage misses paths unit tests already run | Medium for coverage across 8 workers; high for mutation | Evaluate first |
 | Unexpected input escapes as a raw Ruby error | 38 / 23 | 45 | 26 / 19 | 9 | Boundary test: `JSON.parse`, YAML loads and external reads in `skills/shaka/lib` go through readers that raise `Shaka::Error` | Up to 32 malformed-input cases; not the 13 ordering cases | High: many readers, each needs a malformed sample | Evaluate first |
-| Prose says code enforces a rule only the agent follows | 19 / 14 | 25 | 18 / 7 | 5 | Extend the enforcement audit to `docs/`: a sentence saying Ruby verifies or refuses must cite an `enforcement.yml` entry | Flags candidates; cannot judge them | High: `enforcement.yml` is 897 lines with 26 commits since 2026-10-15 | Defer |
+| Prose says code enforces a rule only the agent follows | 19 / 14 | 25 | 18 / 7 | 5 | Extend the enforcement audit to `docs/`: a sentence saying Ruby verifies or refuses must cite an `enforcement.yml` entry | Flags candidates; cannot judge them | High: `enforcement.yml` is about 900 lines with 26 commits from 2026-10-15 to 2026-11-15 | Defer |
 | An older installed helper meets newer settings or formats | 15 / 9 | 19 | 10 / 9 | 4 | Test that runs the last release's helper against the branch's settings and published formats | Most of the 10 fixed | Medium to high: a pinned old release in CI | Evaluate first |
 | A study's claim does not match its data | 14 / 11 | 43 | 34 / 9 | 17 | Figures computed by a committed script and compared with the text | About 8 arithmetic or denominator errors | Per study | Defer |
 | Symlinks, case-insensitive disks, odd path characters, or Windows | 14 / 13 | 18 | 15 / 3 | 8 | Run tests on Windows and a case-insensitive disk on every PR; shared symlink fixtures | Most of the 15 fixed | CI minutes; the Windows suite already fails on known gaps, so it cannot flag a new one (#829) | Evaluate first |
@@ -133,7 +133,7 @@ check would flag mechanically. Cost covers writing the check and keeping it corr
 | `enforcement.yml` out of step with the workflow | 8 / 3 | 10 | 5 / 5 | 3 | Loader already checks quotes; add that entry names cited in docs exist | 1 | Low | Defer |
 | Seam upgrade reference scanner misses or misfires | 7 / 7 | 38 | 33 / 5 | 23 | None: the scanner was itself the check, removed in #997 | n/a | Was 1,832 lines | Evidence of the review cost of building a check |
 | Docs link to a missing anchor | 6 / 3 | 7 | 3 / 4 | 1 | Exists: `bin/check-docs-navigation` since #616 | The 3 fixed were outside its reach | Already paid | No new check |
-| Git subprocess picks up the caller's Git environment or config | 5 / 5 | 13 | 9 / 4 | 7 | Boundary test: every Git spawn in `skills/shaka/lib` uses one runner that clears `GIT_*`, global config, filters and hooks | 4 to 6 of 13, where isolation was missing; #710 dismissed 2 under the trust model, since filters came from the maintainer's own config | Medium: about 35 library files name `git` and 14 set `GIT_*` themselves | Evaluate first: map each finding to the test |
+| Git subprocess picks up the caller's Git environment or config | 5 / 5 | 13 | 9 / 4 | 7 | Boundary test: every Git spawn in `skills/shaka/lib` uses one runner that clears `GIT_*`, global config, filters and hooks | 4 to 6 of 13, where isolation was missing; #710 dismissed 2 under the trust model, since filters came from the maintainer's own config | Medium: at `6a6f876`, 35 files under `skills/shaka/lib` had a quoted `git` string and 14 mentioned a `GIT_*` name; spawn sites were not counted | Evaluate first: map each finding to the test |
 | GitHub list read stops at the first page | 4 / 3 | 4 | 3 / 1 | 3 | Lint list calls to `gh api` for `--paginate` or a limit check | Most | Low to medium; single-page reads need an allowlist | Defer |
 | Changelog rule broken | 4 / 4 | 4 | 4 / 0 | 4 | CI step: a non-release PR that changes `CHANGELOG.md` fails | 1 of 4. The rule changed during the window: #1060 and #1062 were asked to add an entry; #1102 edited `CHANGELOG.md` against the later release-only rule; #1089 concerned entry length in the template | Low | Defer: one finding under the current rule |
 | Output shows credentials or local paths | 3 / 3 | 4 | 4 / 0 | 0 | Test that printed URLs and paths pass through the redactor | Most | Low to medium | Defer |
@@ -210,6 +210,12 @@ below the threshold.
 
 - **One classifier.** Claude Opus 5.5 assigned every kind. No second reader checked it.
   Titles were the main input; dismissal reasons were read for some kinds.
+- **Kinds were chosen after reading.** The agent defined the kinds from a 250-title
+  sample, then added kinds the recall check suggested. The 24% measures these chosen
+  kinds, not a list fixed in advance, and one kind is a single feature's cluster.
+- **Some repeats.** Merging needs the same PR, ID, class, and title. A finding
+  renumbered in a later ledger of the same PR counts twice; review found at least 6
+  such repeats. PR counts are unaffected.
 - **Recall.** The 150-finding check found 20% of unclassified findings in a counted
   kind. Counts are lower bounds.
 - **Dismissals are the agent's own judgment.** No dismissed finding was rerun or
