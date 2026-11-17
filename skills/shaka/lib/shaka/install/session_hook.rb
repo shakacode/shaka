@@ -60,23 +60,39 @@ module Shaka
       # Returns the change made, or nil when the settings already match.
       def apply(enabled, strict: enabled)
         settings = read(strict:)
-        return ("Skipped the Claude Code update-check hook: Shaka cannot read #{@path}" if enabled) unless settings
+        return (skipped if enabled) unless settings
         return if owned_commands(settings) == (enabled ? [@command] : [])
 
+        change(settings, enabled, strict:)
+      end
+
+      private
+
+      def change(settings, enabled, strict:)
         remove_owned(settings)
         add(settings) if enabled
         write(settings)
         "#{enabled ? 'Set' : 'Removed'} the Claude Code update-check hook in #{@path}"
+      rescue SystemCallError
+        raise if strict || !enabled
+
+        skipped
       end
 
-      private
+      def skipped = "Skipped the Claude Code update-check hook: Shaka cannot read or write #{@path}"
 
       # Settings Shaka cannot read stay untouched: they hold no hook it could remove, and only an explicit
       # --session-hook refuses them.
       def read(strict:)
         return {} unless File.exist?(@path)
 
-        settings = JSON.parse(File.read(@path))
+        parse(File.read(@path), strict:)
+      rescue SystemCallError
+        raise if strict
+      end
+
+      def parse(text, strict:)
+        settings = JSON.parse(text)
         return settings if settings.is_a?(Hash) && hooks_shape?(settings['hooks'])
 
         refuse('do not hold a JSON object with a hooks object') if strict
