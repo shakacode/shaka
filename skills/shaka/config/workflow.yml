@@ -717,7 +717,7 @@ phases:
         `requested_model`, `requested_effort`, `recommended_model`, `recommended_effort`,
         `active_model`, and `active_effort`, plus the optional task keys that the
         [usage guide](<{{package_root}}/skills/shaka/references/usage-reporting.md#pr-execution-provenance>) defines.
-        The helper keeps the first recommendation a PR records.
+        The helper keeps the recommendation a PR recorded; only a recorded `UNKNOWN` takes a new value.
         `initial_prompt` is `EXCLUDED`; the other values use
         allowlisted text or `UNKNOWN`, except that either requested field uses JSON `null`
         when intake establishes the user did not specify that setting. Carry the request

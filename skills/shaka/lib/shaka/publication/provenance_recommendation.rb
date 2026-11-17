@@ -5,7 +5,7 @@ require_relative 'provenance_history'
 module Shaka
   # Keeps the plan-time recommendation across a PR's publications, since each publication
   # re-enters it and later ones drifted to the active model or UNKNOWN (issue #1187). Model
-  # and effort each keep their recorded value; only a recorded UNKNOWN takes a new one.
+  # and effort each keep their recorded value; only a recorded UNKNOWN, in any case, takes a new one.
   module ProvenanceRecommendation
     UNKNOWN = 'UNKNOWN'
     SETTINGS = %w[model effort].freeze
@@ -21,7 +21,7 @@ module Shaka
       return Result.new(spec:, kept: nil) unless recorded
 
       supplied = SETTINGS.map { |setting| spec["recommended_#{setting}"] }
-      route = recorded.zip(supplied).map { |old, new| old == UNKNOWN ? new : old }
+      route = recorded.zip(supplied).map { |old, new| old.casecmp?(UNKNOWN) ? new : old }
       Result.new(spec: spec.merge('recommended_model' => route.first, 'recommended_effort' => route.last),
                  kept: (route.join(' / ') unless route == supplied))
     end

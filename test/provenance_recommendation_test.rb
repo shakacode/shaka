@@ -19,8 +19,9 @@ class ProvenanceRecommendationTest < Minitest::Test
     assert_equal 'gpt-5.6-terra / medium', kept
   end
 
+  # Review finding: the checkpoint treats any case of UNKNOWN as a placeholder, so this does too.
   def test_only_a_recorded_unknown_takes_a_new_value
-    publish(HEADS[0], 'recommended_model' => 'UNKNOWN', 'recommended_effort' => 'high')
+    publish(HEADS[0], 'recommended_model' => 'unknown', 'recommended_effort' => 'high')
     rendered = publish(HEADS[1], 'recommended_effort' => 'low')
 
     assert_includes rendered, "#{RECOMMENDED} gpt-5.6-terra / high |"
