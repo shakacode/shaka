@@ -44,10 +44,14 @@ review base, has the same `skills/shaka/lib`.
   ```
 
 - **Classification:** each of the 59 was read by hand.
-  - 15 never start Git. They run `gh`, `glab`, `diff`, `sysctl`, `taskkill`, `opencode`,
-    `codex`, the Shaka helper, or the validation command.
+  - 15 never start Git. They run `gh`, `glab`, `diff`, `sysctl` (`evidence/machine_facts.rb`),
+    `taskkill` (`doctor/bounded_command.rb:168`), `opencode`, `codex`, the Shaka helper,
+    or the validation command (`evidence/tree_watch.rb`).
   - 40 start Git directly, from 29 files.
-  - 4 are generic wrappers that also start Git for some callers.
+  - 4 are generic wrappers that also start Git for some callers:
+    `local_review/process.rb:19`, `claim.rb:91`, `canary/run.rb:15` and
+    `doctor/bounded_command.rb:71`. `BoundedCommand` serves three of the six wrapper
+    paths below, each with its own environment.
 - **Files:** 29 with direct spawns, plus 11 that start Git only through a wrapper: 40.
   No backtick or `%x` spawns exist.
 
@@ -174,7 +178,9 @@ did not own, or handed the output to a restricted reviewer. Six places do this t
 - `evidence/candidate_tree.rb` clears the variable list and gives Git its own index and
   object directory.
 - `local_review/commit_export.rb` reads raw blobs, so no filter runs.
-- `install/repair.rb` and `install/checkout_git.rb` clear every `GIT_*` variable.
+- `install/repair.rb` and `install/checkout_git.rb` clear `GIT_*` variables, including
+  `GIT_CONFIG_GLOBAL` for repair steps. Git still reads `~/.gitconfig` and the system
+  config there.
 
 - **Option:** share one variable list across `WorkflowVersion`, `PrivateGitPaths` and the
   seed. The lists already differ by one variable. This is cheap and needs no new test.
