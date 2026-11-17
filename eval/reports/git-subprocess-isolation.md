@@ -21,10 +21,10 @@ global config, filters and hooks.
   dismissed under the [trust model](../../docs/workflow.md#trust-model). The rule flags
   the same code.
 - **One policy cannot serve every caller.** Clearing global config changes what Shaka
-  reads from the maintainer's own checkout. Fetches need the maintainer's network config.
+  reads from the maintainer's own checkout. Fetches from the maintainer's remotes need the maintainer's network config.
   Isolation flags do not stop every filter.
-- **Routing costs more than the PR limit.** 49 Git entry points sit in 35 files, above the
-  29-file merge limit. 29 of them run with the inherited environment today.
+- **Routing is large.** 49 Git entry points sit in 35 files. Above 29 files, a merge needs
+  the maintainer's confirmation. 29 entry points run with the inherited environment today.
 
 ## Spawn-site inventory
 
@@ -52,13 +52,13 @@ The inventory was taken at `fbd03c9` (main on 2026-11-16).
 | Policy | Entry points | Where |
 | --- | --- | --- |
 | Inherits the caller's environment | 29 | `branch_name.rb` (2), `claim.rb` (2), `configuration/fingerprint.rb` (2), `configuration/fingerprint/trusted_prompts.rb`, `configuration/layout.rb`, `configuration/sources.rb` (4), `git_origin.rb`, `local_review/rebased_commits.rb` (2), `prompt_show.rb`, `publication/rendering_preview.rb`, `trusted_config_source.rb` (2), `trusted_path_resolver.rb`, `usage/rate_card.rb`, `work.rb`, `trial/prepare.rb:115` (refuses inherited overrides first), `canary/run.rb` (2), `doctor/git_runtime.rb`, `doctor/settings_source.rb`, `local_review/runner.rb`, `local_review/prompt_file.rb` |
-| Clears a list of repository-local `GIT_*` variables | 12 | `WorkflowVersion::GIT_ENVIRONMENT` (15 names): `workflow_version.rb`, `configuration/feature_guard.rb`, `evidence/review.rb`, `evidence/result.rb` (2), `evidence/candidate_tree.rb`, `evidence/base_freshness.rb` (3), `trial/prepare.rb:105`. `PrivateGitPaths::GIT_ENVIRONMENT` (16 names): `configuration/private_git_paths.rb`. `Seam::Initializer` (5 names): `seam/initializer.rb` |
+| Clears a list of repository-local `GIT_*` variables | 11 | `WorkflowVersion::GIT_ENVIRONMENT` (15 names): `workflow_version.rb`, `configuration/feature_guard.rb`, `evidence/review.rb`, `evidence/result.rb` (2), `evidence/candidate_tree.rb`, `evidence/base_freshness.rb` (3). `PrivateGitPaths::GIT_ENVIRONMENT` (16 names): `configuration/private_git_paths.rb`. `Seam::Initializer` (5 names): `seam/initializer.rb` |
 | Clears every `GIT_*` variable | 7 | `install/checkout_git.rb` (keeps SSH, askpass and config variables for clone, fetch and ls-remote), `install/repair.rb` (`sh -c`; keeps SSH and askpass), `install/source.rb`, `install/git_ignore.rb` (2), `install/status_unsupported.rb`, `update_check/launch.rb` |
-| Also hides system and global config, `HOME` and attributes | 1 | `merge_tree_proof.rb` |
+| Also hides system and global config | 2 | `trial/prepare.rb:105` (the 15-name list, plus hooks and submodule recursion off), `merge_tree_proof.rb` (also `HOME` and attributes) |
 
-Six hand-written policies exist: none, three variable lists, clear-all with two
-different keep lists, and full isolation. Two lists name the same 15 variables;
-`PrivateGitPaths` adds `GIT_CEILING_DIRECTORIES`.
+Seven hand-written policies exist: none, three variable lists, clear-all with two
+different keep lists, and two kinds of config isolation. Two lists name the same 15
+variables; `PrivateGitPaths` adds `GIT_CEILING_DIRECTORIES`.
 
 ### Git tooling outside the library
 
@@ -114,9 +114,11 @@ scope and the broad rule.
     `https://github.com/shakacode/shaka`;
   - with `GIT_CONFIG_GLOBAL=/dev/null`, it printed `gh:shakacode/shaka`, which
     `GitOrigin` cannot read as a GitHub repository.
-- **Network commands need the maintainer's config.** `CheckoutGit::AUTHENTICATION_ENV`
-  keeps SSH, askpass and config variables for clone, fetch and ls-remote. The #1131 F8
-  fix kept network configuration for fetch.
+- **Fetches from the maintainer's remotes need the maintainer's config.**
+  `CheckoutGit::AUTHENTICATION_ENV` keeps SSH, askpass and config variables for clone,
+  fetch and ls-remote. The #1131 F8 fix kept network configuration for fetch.
+  `trial/prepare.rb` fetches with global config hidden. It reads one public `https`
+  URL, which needs no credentials.
 - **Flags stop only filters that committed attributes select.** A scratch repository on Git 2.54 had a
   smudge filter defined in `.git/config`.
   - With `.gitattributes` selecting it, `git --attr-source=<empty tree> -c
@@ -131,7 +133,8 @@ scope and the broad rule.
 
 ## Cost to route callers
 
-- **Files:** 35, against a 29-file merge limit. Routing needs at least 2 PRs.
+- **Files:** 35 hold an entry point. Above 29 changed files, a merge needs the maintainer's
+  confirmation. Routing would take one confirmed oversized PR or at least 2 PRs.
 - **Runner modes:** at least three. Local reads keep the maintainer's config, network
   commands keep authentication, and operations on scratch or foreign repositories isolate
   fully.
@@ -146,16 +149,22 @@ scope and the broad rule.
 ## Smallest useful alternative
 
 The defects that recurred share one shape. Shaka ran Git on a repository it created or
-did not own, or handed the output to a restricted reviewer. Five places do this today:
-`merge_tree_proof.rb`, `evidence/candidate_tree.rb`, `local_review/commit_export.rb`,
-`install/repair.rb` with `install/checkout_git.rb`, and `eval/bin/first-task-seed`.
-Each now has its own fixed isolation.
+did not own, or handed the output to a restricted reviewer. Six places do this today:
+`merge_tree_proof.rb`, `trial/prepare.rb`, `evidence/candidate_tree.rb`,
+`local_review/commit_export.rb`, `install/repair.rb` with `install/checkout_git.rb`, and
+`eval/bin/first-task-seed`. Each now guards against its own risk, and the guards differ.
+
+- `merge_tree_proof.rb`, `trial/prepare.rb` and the seed hide global and system config.
+- `evidence/candidate_tree.rb` clears the variable list and gives Git its own index and
+  object directory.
+- `local_review/commit_export.rb` reads raw blobs, so no filter runs.
+- `install/repair.rb` and `install/checkout_git.rb` clear every `GIT_*` variable.
 
 - **Option:** share one variable list across `WorkflowVersion`, `PrivateGitPaths` and the
   seed. The lists already differ by one variable. This is cheap and needs no new test.
   No defect has come from the difference.
 - **Revisit:** reconsider the boundary test when Git environment defects reach 2 more PRs
-  outside those five places in a later month.
+  outside those six places in a later month.
 
 ## Limits
 

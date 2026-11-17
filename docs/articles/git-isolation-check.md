@@ -10,7 +10,8 @@ holds the inventory, the per-finding table and the probes.*
 
 1. **Do not build the check yet.** The proposed test requires every Git call to go
    through one runner that hides the caller's Git setup. Over one month it would have
-   caught 3 of the 7 Git environment defects.
+   caught 3 of the 7 Git environment defects in library code. Covering evaluation
+   tooling too raises that to 5.
 2. **A simple version catches none.** A test that looks for `git` as the spawned program
    misses both library defects. One ran Git inside `sh -c`. The other passed the Git
    path in a variable.
@@ -19,7 +20,7 @@ holds the inventory, the per-finding table and the probes.*
 4. **One runner changes what Shaka reads.** Hiding global Git config turned a
    maintainer's `gh:shakacode/shaka` origin into a URL Shaka cannot read. Fetches need
    that config too.
-5. **Routing is large.** Shaka starts Git from 49 places in 35 files, under six
+5. **Routing is large.** Shaka starts Git from 49 places in 35 files, under seven
    different environment rules. 29 places use the caller's environment unchanged.
 
 ## Why this ran
@@ -55,7 +56,7 @@ built the test.
   selected. They did not stop one selected in `.git/info/attributes`. The real fix read
   raw file contents, so no filter could run.
 - **Recurring shape:** every caught defect ran Git on a repository Shaka created or did
-  not own, or fed a restricted reviewer. Five places do this, and each now isolates Git.
+  not own, or fed a restricted reviewer. Six places do this. Each now guards against its own risk.
 
 ## Limits
 
@@ -65,5 +66,5 @@ built the test.
 
 ## What would change the answer
 
-Two more PRs with Git environment defects outside those five places would justify
+Two more PRs with Git environment defects outside those six places would justify
 another look.
