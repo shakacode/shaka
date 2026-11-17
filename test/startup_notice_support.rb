@@ -61,7 +61,7 @@ module StartupNoticeSupport
   end
 
   def save(root, result, at: NOW, revision: REVISION)
-    installed = { 'commit' => revision, 'revision' => revision }
+    installed = { 'commit' => revision, 'revision' => revision, 'compared' => 'shakacode/shaka main' }
     Shaka::UpdateCheck::Cache.record(root, result, installed:, home: @home, now: at)
   end
 

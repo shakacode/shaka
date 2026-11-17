@@ -101,6 +101,7 @@ module Shaka
     def github(repository, head) = saved(head) || ask(repository, head)
 
     def ask(repository, head)
+      @compared = @target
       endpoint = "repos/#{repository}/compare/#{head}...#{@branch}"
       output, error, ok = @runner.call(['gh', 'api', '--hostname', 'github.com', endpoint, '--jq',
                                         '{status: .status, ahead_by: .ahead_by, ' \

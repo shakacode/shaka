@@ -20,6 +20,17 @@ class UpdateCheckAfterInstallTest < Minitest::Test
     refute_path_exists ran
   end
 
+  # A move the installer would refuse is worked out without GitHub. Once a fetch makes the move one
+  # install --update can record, the next check asks GitHub instead of repeating the local answer.
+  def test_a_local_answer_is_not_repeated_after_a_fetch_changes_it
+    root = full_skill_install
+    commit(root, 'pulled')
+    assert_equal 'not_a_pull', update_check(root, github: "echo '#{CURRENT}'").fetch('reason')
+    git('-C', root, 'push', '-q', @remote, 'HEAD:main')
+    git('-C', root, 'fetch', '-q', @remote, '+main:refs/remotes/origin/main')
+    assert_equal ['drift', nil], update_check(root, github: "echo '#{CURRENT}'").values_at('status', 'reason')
+  end
+
   private
 
   # A manual pull saves a drift answer, then install --update records the pull.

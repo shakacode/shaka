@@ -98,8 +98,8 @@ The installer prints an update reminder for every host and custom skills directo
 
 `update-check` compares the checkout's HEAD commit with its registered origin branch from any folder. `drift` means
 the checkout moved; its guidance says whether `install --update` can record the move. An `unknown` result names its reason.
-For 23 hours after a GitHub comparison, `update-check` repeats that answer with its `checked_at` time while HEAD and
-the recorded revision stay the same.
+For 23 hours after a GitHub comparison, `update-check` repeats that answer with its `checked_at` time while HEAD,
+the recorded revision, and the compared branch stay the same.
 `bin/install --agent claude` adds a `SessionStart` hook that reports the saved `update-check` answer when each Claude
 Code chat starts; `--no-session-hook` removes it, and `install --update` leaves it unchanged.
 For a request to update Shaka automatically or every day, say that Shaka has no

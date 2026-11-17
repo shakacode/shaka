@@ -29,10 +29,11 @@ module Shaka
         {}
       end
 
-      # Names what the answer describes, `installed`: the HEAD `commit` and the record's `revision`. Keeps
-      # the last notice time, so a new answer does not repeat a notice shown today. A failed check is not
-      # saved, so a check that keeps failing still earns the daily reminder, and neither is a repeated
-      # answer, which carries its `checked_at`, so it still expires a day after GitHub gave it.
+      # Names what the answer describes, `installed`: the HEAD `commit`, the record's `revision`, and what
+      # GitHub `compared`. Keeps the last notice time, so a new answer does not repeat a notice shown today.
+      # A failed check is not saved, so a check that keeps failing still earns the daily reminder, and
+      # neither is a repeated answer, which carries its `checked_at`, so it still expires a day after
+      # GitHub gave it.
       def record(checkout, result, installed:, home: nil, now: Time.now)
         return if result['status'] == 'unknown' || result.key?('checked_at')
 
@@ -45,10 +46,10 @@ module Shaka
       end
 
       # The saved result with its check time, while it is under REUSE_SECONDS old and describes the same
-      # commit and revision. install --update can change either one.
+      # commit, revision, and comparison. install --update can change the first two.
       def reuse(checkout, installed:, home:, now: Time.now)
         entry = read(checkout, home:)
-        return unless installed['revision'] && entry['result'].is_a?(Hash) && entry.slice(*installed.keys) == installed
+        return unless installed.values.all? && entry['result'].is_a?(Hash) && entry.slice(*installed.keys) == installed
 
         entry['result'].merge('checked_at' => entry['checked_at']) if fresh?(entry['checked_at'], now, REUSE_SECONDS)
       end

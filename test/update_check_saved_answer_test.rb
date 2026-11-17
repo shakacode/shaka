@@ -7,6 +7,7 @@ class UpdateCheckSavedAnswerTest < Minitest::Test
   include UpdateCheckSupport
 
   HOUR = 60 * 60
+  TARGET = 'shakacode/shaka main'
   CURRENT = { 'status' => 'current', 'guidance' => 'This installed revision matches shakacode/shaka main.' }.freeze
 
   def setup
@@ -38,12 +39,14 @@ class UpdateCheckSavedAnswerTest < Minitest::Test
     assert_predicate self, :github_asked?
   end
 
-  # install --update moves HEAD, records a manual pull, or both; a copy without a record saves nothing.
-  def test_another_commit_record_or_unregistered_copy_asks_github_again
-    [{ commit: PULLED }, { revision: PULLED }].each do |installed|
-      save('available', **installed)
-      assert_equal 'current', check('identical', checkout: @checkout, home: @home).fetch('status'), installed.inspect
-    end
+  # install --update moves HEAD, records a manual pull, or both, and a reinstall can track another branch.
+  # An answer worked out without GitHub names no comparison, and a copy without a record saves nothing.
+  def test_another_installation_comparison_or_unregistered_copy_asks_github_again
+    [{ commit: PULLED }, { revision: PULLED }, { compared: 'shakacode/shaka next' }, { compared: nil }]
+      .each do |installed|
+        save('available', **installed)
+        assert_equal 'current', check('identical', checkout: @checkout, home: @home).fetch('status'), installed.inspect
+      end
     save('available')
     assert_equal 'current', check('identical', checkout: nil, home: @home).fetch('status')
   end
@@ -58,7 +61,7 @@ class UpdateCheckSavedAnswerTest < Minitest::Test
   def test_a_new_answer_is_saved_with_the_commit_and_record_it_describes
     instance = checker('identical', checkout: @checkout, home: @home)
     instance.remember(instance.result)
-    assert_equal [SHA, SHA, CURRENT], saved.values_at('commit', 'revision', 'result')
+    assert_equal [SHA, SHA, TARGET, CURRENT], saved.values_at('commit', 'revision', 'compared', 'result')
   end
 
   # Answers that need no request are worked out again, so a moved or unreadable checkout is reported at once.
@@ -72,9 +75,9 @@ class UpdateCheckSavedAnswerTest < Minitest::Test
 
   private
 
-  def save(status, at: Time.now - HOUR, commit: SHA, revision: SHA)
+  def save(status, at: Time.now - HOUR, commit: SHA, revision: SHA, compared: TARGET)
     Shaka::UpdateCheck::Cache.record(@checkout, { 'status' => status, 'guidance' => "#{status} guidance" },
-                                     installed: { 'commit' => commit, 'revision' => revision },
+                                     installed: { 'commit' => commit, 'revision' => revision, 'compared' => compared },
                                      home: @home, now: at)
   end
 

@@ -8,14 +8,18 @@ module Shaka
     # installed commit and record; Cache decides which answers count.
     module Saved
       # Later helper calls repeat a registered checkout's answer from this cache instead of the network.
-      def remember(result) = (Cache.record(@checkout, result, installed: installed(@head), home:) if @checkout)
+      def remember(result)
+        Cache.record(@checkout, result, installed: installed(@head, @compared), home:) if @checkout
+      end
 
       private
 
-      def saved(head) = (Cache.reuse(@checkout, installed: installed(head), home:) if @checkout)
+      def saved(head) = (Cache.reuse(@checkout, installed: installed(head, @target), home:) if @checkout)
 
-      # What a saved answer describes: the checkout's HEAD commit and the revision its record names.
-      def installed(head) = { 'commit' => head, 'revision' => @source['revision'] }
+      # What a saved answer describes: the checkout's HEAD commit, the revision its record names, and the
+      # repository and branch GitHub compared. Only an answer from GitHub names that last part, so an
+      # answer worked out locally is never repeated in place of a GitHub comparison.
+      def installed(head, compared) = { 'commit' => head, 'revision' => @source['revision'], 'compared' => compared }
 
       def home = Dir.home
     end
