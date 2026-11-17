@@ -96,7 +96,8 @@ With `## Shaka Inline` in place of `## Shaka`, item 3 shows the same sections ex
 The order follows these rules:
 
 - Each `##` heading in the template puts its section at that spot. The section can be
-  yours or Shaka's. For example, `## Verification` keeps verification outside the fold.
+  yours or Shaka's. With `## Shaka`, Summary and Verification fold too unless the
+  template names them, so add `## Summary` or `## Verification` to keep them in view.
 - When the agent writes a section your template does not name, it joins Shaka's sections.
 - Shaka reads only `##` headings, and skips those inside HTML comments or code blocks.
 - The opening lines never move. The first line names the agent that wrote the

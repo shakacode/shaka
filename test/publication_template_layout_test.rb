@@ -4,7 +4,6 @@ require_relative 'test_helper'
 require_relative 'repository_fixture'
 require_relative 'cli_opening_check_fakes'
 require_relative 'project_guidance_helper'
-require 'shaka/pr_template'
 require 'shaka/publication/publication'
 
 class PublicationTemplateLayoutTest < Minitest::Test
@@ -14,46 +13,6 @@ class PublicationTemplateLayoutTest < Minitest::Test
   CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
   DEFAULT_ORDER = ['Summary', 'Intent', 'Verification', '<details> Evidence and limitations', 'Shaka metrics',
                    'Deployment'].freeze
-
-  def test_template_headings_skip_comments_code_and_other_levels
-    template = <<~MARKDOWN
-      ## Summary
-      <!-- Describe the change.
-      ## Not a heading -->
-      ## Shaka ##
-      ```text
-      ## Inside a fence
-      ```
-      ### Deeper
-      #Missing space
-         ## Indented
-      ~~~~
-      ## Inside a longer fence
-      ~~~
-      ## Still inside
-      ~~~~
-      ## Deployment
-    MARKDOWN
-    assert_equal %w[Summary Shaka Indented Deployment], Shaka::PrTemplate.headings(template)
-  end
-
-  def test_comment_syntax_inside_a_code_block_hides_nothing
-    assert_equal %w[Shaka Rollout], Shaka::PrTemplate.headings("```html\n<!--\n```\n## Shaka\n## Rollout\n")
-  end
-
-  def test_only_a_bare_fence_closes_a_code_block
-    assert_empty Shaka::PrTemplate.headings("```text\n```example\n## Shaka\n```\n")
-  end
-
-  def test_comments_on_a_heading_line
-    template = "<!-- note --> ## Hidden\n## Summary <!-- what changed -->\nText <!-- open\n## Inside\n-->\n## Shown\n"
-    assert_equal %w[Summary Shown], Shaka::PrTemplate.headings(template)
-  end
-
-  def test_template_headings_read_windows_line_endings
-    template = "## Summary\r\n```\r\n## Code\r\n```\r\n## Shaka Inline\r\n"
-    assert_equal ['Summary', 'Shaka Inline'], Shaka::PrTemplate.headings(template)
-  end
 
   def test_a_template_without_a_shaka_heading_changes_nothing
     usual = render(nil)

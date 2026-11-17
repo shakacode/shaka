@@ -10,10 +10,15 @@ module Shaka
     PATHS = %w[.github/pull_request_template.md .github/PULL_REQUEST_TEMPLATE.md
                pull_request_template.md PULL_REQUEST_TEMPLATE.md
                docs/pull_request_template.md docs/PULL_REQUEST_TEMPLATE.md].freeze
-    COMMENT = /<!--.*?-->/
-    FENCE = /\A {0,3}(`{3,}|~{3,})/
-    CLOSER = /\A {0,3}(`{3,}|~{3,})[ \t]*\z/
-    HEADING = /\A {0,3}##[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*\z/
+    # One left-to-right scan in reading order: whichever of a code block, code span, or comment opens
+    # first hides the others' syntax inside it, as GitHub renders them. Only headings are kept.
+    TOKENS = /
+      ^[ ]{0,3}(?<ticks>`{3,})[^\n]*(?:\n.*?(?:^[ ]{0,3}\k<ticks>`*[ \t]*$|\z)|\z)
+      | ^[ ]{0,3}(?<tildes>~{3,})[^\n]*(?:\n.*?(?:^[ ]{0,3}\k<tildes>~*[ \t]*$|\z)|\z)
+      | `[^`\n]+`
+      | <!--.*?(?:-->|\z)
+      | ^[ ]{0,3}\#\#[ \t]+(?<heading>(?:(?!<!--)[^\n])*)
+    /mx
 
     # A location that cannot be resolved, such as a symlink loop, counts as no template there. Once
     # repaired, the template becomes a new fingerprint input, so earlier evidence still goes stale.
@@ -49,44 +54,10 @@ module Shaka
     end
 
     # The `##` headings a reader of the template sees, in order.
-    def self.headings(text) = HeadingReader.new.call(text)
-
-    # Reads a template line by line. Text inside a code block or an HTML comment is literal, so comment
-    # syntax in a code block and a heading inside a comment both stay hidden.
-    class HeadingReader
-      def initialize
-        @fence = nil
-        @comment = false
-      end
-
-      def call(text) = text.each_line(chomp: true).filter_map { read(it) }
-
-      private
-
-      def read(line)
-        if @fence
-          @fence = nil if closes?(line)
-        elsif @comment
-          @comment = !line.include?('-->')
-        elsif (marker = line[FENCE, 1])
-          @fence = marker
-        else
-          return heading(line)
-        end
-        nil
-      end
-
-      # A comment the line opens hides the lines after it; one before the heading marks hides the heading.
-      def heading(line)
-        @comment = line.gsub(COMMENT, '').include?('<!--')
-        text = line[HEADING, 1]
-        text = text.gsub(COMMENT, '').sub(/<!--.*/, '').strip if text
-        text unless text.to_s.empty?
-      end
-
-      # Only a bare run of the opening character, at least as long, closes a code block.
-      def closes?(line)
-        (closer = line[CLOSER, 1]) && closer[0] == @fence[0] && closer.size >= @fence.size
+    def self.headings(text)
+      text.gsub("\r\n", "\n").to_enum(:scan, TOKENS).filter_map do
+        heading = Regexp.last_match[:heading]&.sub(/[ \t]+#+[ \t]*\z/, '')&.strip
+        heading unless heading.to_s.empty?
       end
     end
   end
