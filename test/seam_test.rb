@@ -46,15 +46,15 @@ class SeamTest < Minitest::Test
     end
   end
 
-  def test_trusted_optional_command_must_remain_available_in_the_candidate
+  def test_trusted_optional_command_missing_from_the_candidate_is_not_configured
     with_repository do |root|
       write_command(root, 'validate-local')
       commit_repository(root)
       FileUtils.rm(File.join(root, '.agents/shaka/bin/validate-local'))
 
-      _output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root, '--ref', 'HEAD')
-      refute_predicate status, :success?
-      assert_includes error, '.agents/shaka/bin/validate-local does not exist'
+      commands = check_config(root, '--ref', 'HEAD').fetch('commands')
+      refute commands.key?('validate_local')
+      assert_equal '.agents/shaka/bin/validate', commands.fetch('validate')
     end
   end
 
