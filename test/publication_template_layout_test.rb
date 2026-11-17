@@ -11,6 +11,10 @@ class PublicationTemplateLayoutTest < Minitest::Test
 
   SUMMARY = 'Reviewers can see the changed behavior.'
   CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
+  WIP = { 'owner' => 'm5 · Claude Code · k7q2', 'task' => 'SHAKA PR #1 · layout', 'thread' => 'UNKNOWN',
+          'last_observed_activity' => '2026-11-16 23:00 HST', 'revision' => "feature @ #{'a' * 40}",
+          'workspace' => 'UNKNOWN', 'unfinished_work' => 'none', 'stopped_because' => 'running',
+          'merge_authority' => 'ask', 'state' => 'validating', 'next_action' => 'publish' }.freeze
   DEFAULT_ORDER = ['Summary', 'Intent', 'Verification', '<details> Evidence and limitations', 'Shaka metrics',
                    'Deployment'].freeze
 
@@ -45,12 +49,13 @@ class PublicationTemplateLayoutTest < Minitest::Test
                   'Shaka metrics'], outline(rendered)
   end
 
-  def test_fold_leaves_steps_besides_merging_visible
+  def test_fold_leaves_what_a_reader_acts_on_in_view
     steps = [{ 'when' => 'after merge', 'step' => 'Update Shaka', 'who' => 'Everyone', 'where' => 'Each machine',
                'verify' => 'doctor reports HEALTHY' }]
-    rendered = render(%w[Shaka], 'steps_besides_merging' => steps)
-    assert_equal ['Before and after merge', '<details> Shaka', 'Summary', 'Intent', 'Verification',
-                  '<details> Evidence and limitations', 'Shaka metrics', 'Deployment'], outline(rendered)
+    rendered = render(%w[Shaka], 'steps_besides_merging' => steps, 'wip' => WIP)
+    assert_equal ['Summary', 'Before and after merge', '<details> WIP Details', '<details> Shaka', 'Intent',
+                  'Verification', '<details> Evidence and limitations', 'Shaka metrics', 'Deployment'],
+                 outline(rendered)
   end
 
   def test_sections_the_template_does_not_name_stay_with_shaka
@@ -85,7 +90,7 @@ class PublicationTemplateLayoutTest < Minitest::Test
 
   # Each `##` heading and each fold that holds sections or evidence, in reading order.
   def outline(rendered)
-    folds = ['Shaka', 'Evidence and limitations']
+    folds = ['Shaka', 'Evidence and limitations', 'WIP Details']
     rendered.scan(%r{^## (.+)$|^<summary>(.+)</summary>$}).filter_map do |section, fold|
       section || ("<details> #{fold}" if folds.include?(fold))
     end

@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'human_comments'
 require_relative 'steps_besides_merging'
+require_relative 'wip_details'
 
 module Shaka
   # Orders description sections by the pull request template once the template holds a Shaka heading.
@@ -9,6 +11,7 @@ module Shaka
   module TemplateLayout
     COLLAPSED = 'shaka'
     INLINE = 'shaka inline'
+    IN_VIEW = ['summary', StepsBesidesMerging::HEADING.downcase, HumanComments::HEADING.downcase].freeze
 
     module_function
 
@@ -24,14 +27,19 @@ module Shaka
       keys.flat_map { |name| name == mode ? group(rest, mode) : placed.fetch(name, []) }
     end
 
-    # The fold never hides a step someone must take before or after merging.
+    # The fold never hides what a reader acts on: the summary, steps besides merging, people's comments,
+    # and an unfinished PR's WIP Details stay in view above it.
     def group(blocks, mode)
       return blocks if mode == INLINE
 
-      shown, folded = blocks.partition { heading(it) == key(StepsBesidesMerging::HEADING) }
+      shown, folded = blocks.partition { in_view?(it) }
       return shown if folded.empty?
 
       [*shown, "<details>\n<summary>Shaka</summary>\n\n#{folded.join("\n\n")}\n\n</details>"]
+    end
+
+    def in_view?(block)
+      IN_VIEW.include?(heading(block)) || block.start_with?("<details>\n<summary>#{WipDetails::SUMMARY}</summary>")
     end
 
     def refuse_marker!(blocks)

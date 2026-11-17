@@ -96,15 +96,15 @@ With `## Shaka Inline` in place of `## Shaka`, item 3 shows the same sections ex
 The order follows these rules:
 
 - Each `##` heading in the template puts its section at that spot. The section can be
-  yours or Shaka's. With `## Shaka`, Summary and Verification fold too unless the
-  template names them, so add `## Summary` or `## Verification` to keep them in view.
+  yours or Shaka's. For example, `## Verification` keeps verification outside the fold.
 - When the agent writes a section your template does not name, it joins Shaka's sections.
-- Shaka reads only `##` headings, and skips those inside HTML comments or code blocks.
+- Shaka reads only `##` headings. It skips those inside code blocks and inside HTML
+  comments that start a line.
 - The opening lines never move. The first line names the agent that wrote the
   description. The recommendation, any decisions waiting on you, and the review links
   follow, so the decision comes first. The credit line stays last.
-- The fold never hides **Before and after merge**. That section lists steps someone
-  has to take, so it stays visible just above the fold.
+- The fold never hides what you act on. **Summary**, **Before and after merge**,
+  **Human comments**, and an unfinished PR's **WIP Details** stay in view just above it.
 - Text inside the fold does not count toward [prose limits](settings.md#prose_limits),
   like the body of any collapsed block.
 

@@ -34,8 +34,10 @@ class PrTemplateHeadingsTest < Minitest::Test
     assert_empty Shaka::PrTemplate.headings("```text\n```example\n## Shaka\n```\n")
   end
 
-  def test_comments_on_a_heading_line
-    template = "<!-- note --> ## Hidden\n## Summary <!-- what changed -->\nText <!-- open\n## Inside\n-->\n## Shown\n"
+  # A comment that starts a line hides what follows; one inside other text cannot, because a heading
+  # line starts a new block.
+  def test_only_a_comment_that_starts_a_line_hides_headings
+    template = "<!-- note --> ## Hidden\n## Summary <!-- what changed -->\nText <!-- open\n## Shown\n-->\n"
     assert_equal %w[Summary Shown], Shaka::PrTemplate.headings(template)
   end
 
@@ -46,6 +48,8 @@ class PrTemplateHeadingsTest < Minitest::Test
 
   def test_comment_syntax_in_inline_code_hides_nothing
     assert_equal %w[Shaka], Shaka::PrTemplate.headings("Write `<!--` before notes.\n## Shaka\n")
+    template = "Write `<!--\nexample` literally.\n\n## Shaka\n## Deployment\n"
+    assert_equal %w[Shaka Deployment], Shaka::PrTemplate.headings(template)
   end
 
   def test_template_headings_read_windows_line_endings
