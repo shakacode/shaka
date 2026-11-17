@@ -52,17 +52,6 @@ class EvaluationSkillLibraryTextsTest < Minitest::Test
     assert_equal '- listed: Listed', result['every_session']
   end
 
-  def test_refuses_a_manifest_path_outside_the_checkout
-    ['../outside', '/etc'].each do |dir|
-      error = assert_raises(Shaka::Error) do
-        library('mattpocock/skills') do |root|
-          write(root, '.claude-plugin/plugin.json', JSON.generate('skills' => [dir]))
-        end
-      end
-      assert_includes error.message, 'leaves the checkout'
-    end
-  end
-
   def test_counts_a_skill_shared_by_two_marketplace_plugins_once
     result = library('anthropics/skills') do |root|
       plugins = [{ 'skills' => ['./skills/pdf', './skills/xlsx'] }, { 'skills' => ['./skills/pdf'] }]
@@ -137,5 +126,52 @@ class EvaluationSkillLibraryTokensScriptTest < Minitest::Test
                                     '--words-only', "shaka=#{root}")
     assert_predicate status, :success?
     JSON.parse(output)
+  end
+end
+
+# A library is third-party input: nothing it lists or links may pull in text from outside its checkout.
+class EvaluationSkillLibraryConfinementTest < Minitest::Test
+  TEXTS = Shaka::Evaluation::SkillLibraryTexts
+
+  def outside_skill(dir)
+    FileUtils.mkdir_p(dir)
+    File.write(File.join(dir, 'SKILL.md'), "---\nname: outside\ndescription: Not in the library\n---\nsecret\n")
+  end
+
+  def assert_refused(name, root)
+    error = assert_raises(Shaka::Error) { TEXTS.library(name, root) }
+    assert_includes error.message, 'resolves outside the checkout'
+  end
+
+  def test_refuses_a_manifest_entry_that_leaves_the_checkout
+    Dir.mktmpdir do |parent|
+      root = File.join(parent, 'library')
+      outside_skill(File.join(parent, 'outside'))
+      FileUtils.mkdir_p(File.join(root, '.claude-plugin'))
+      File.write(File.join(root, '.claude-plugin/plugin.json'), JSON.generate('skills' => ['../outside']))
+      assert_refused('mattpocock/skills', root)
+    end
+  end
+
+  def test_refuses_a_skill_folder_symlinked_outside_the_checkout
+    Dir.mktmpdir do |outside|
+      Dir.mktmpdir do |root|
+        outside_skill(outside)
+        FileUtils.mkdir_p(File.join(root, 'skills'))
+        File.symlink(outside, File.join(root, 'skills/linked'))
+        assert_refused('obra/superpowers', root)
+      end
+    end
+  end
+
+  def test_refuses_a_skill_file_symlinked_outside_the_checkout
+    Dir.mktmpdir do |outside|
+      Dir.mktmpdir do |root|
+        outside_skill(outside)
+        FileUtils.mkdir_p(File.join(root, 'skills/linked'))
+        File.symlink(File.join(outside, 'SKILL.md'), File.join(root, 'skills/linked/SKILL.md'))
+        assert_refused('obra/superpowers', root)
+      end
+    end
   end
 end

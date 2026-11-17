@@ -50,14 +50,7 @@ module Shaka
       def skill_paths(root, rule)
         return globbed(root, rule) if rule.is_a?(Array)
 
-        manifest_dirs(root, rule).map { |dir| File.join(inside(dir).delete_prefix('./'), 'SKILL.md') }.uniq
-      end
-
-      # Manifests are the library's own data, so an entry may not reach outside its checkout.
-      def inside(dir)
-        return dir unless dir.start_with?('/') || dir.split('/').include?('..')
-
-        raise Shaka::Error, "manifest skill path leaves the checkout: #{dir}"
+        manifest_dirs(root, rule).map { |dir| File.join(dir.delete_prefix('./'), 'SKILL.md') }.uniq
       end
 
       def manifest_dirs(root, rule)
@@ -68,16 +61,25 @@ module Shaka
 
       def globbed(root, globs) = Array(globs).flat_map { |glob| Dir.glob(glob, base: root).sort }
 
-      def manifest(root, path) = JSON.parse(File.read(File.join(root, path)))
+      def manifest(root, path) = JSON.parse(checkout_text(root, path))
+
+      # Every file must resolve inside the library's checkout. A manifest entry or symlink that leads
+      # elsewhere would send unrelated local text to the CLIs, so it stops the reader.
+      def checkout_text(root, path)
+        full = File.realpath(File.join(root, path))
+        return File.read(full, encoding: 'UTF-8') if full.start_with?("#{File.realpath(root)}/")
+
+        raise Shaka::Error, "#{path} resolves outside the checkout"
+      end
 
       def skill(root, path)
-        meta, body = frontmatter(File.read(File.join(root, path), encoding: 'UTF-8'), path)
+        meta, body = frontmatter(checkout_text(root, path), path)
         Skill.new(name: (meta['name'] || File.basename(File.dirname(path))).to_s,
                   description: meta['description'].to_s.split.join(' '), body:)
       end
 
       def command(root, path)
-        meta, = frontmatter(File.read(File.join(root, path), encoding: 'UTF-8'), path)
+        meta, = frontmatter(checkout_text(root, path), path)
         Skill.new(name: File.basename(path, '.md'), description: meta['description'].to_s.split.join(' '), body: '')
       end
 
@@ -101,13 +103,13 @@ module Shaka
       # counting stale text. The script's \n escapes become newlines once its JSON output is decoded;
       # any other escape is a shape this reader does not model.
       def superpowers_session(root)
-        hook = File.join(root, 'hooks/session-start')
-        wrapper = File.exist?(hook) && File.read(hook, encoding: 'UTF-8')[SUPERPOWERS_HOOK, 1]
+        hook = 'hooks/session-start'
+        wrapper = File.exist?(File.join(root, hook)) && checkout_text(root, hook)[SUPERPOWERS_HOOK, 1]
         unless wrapper && !wrapper.match?(/\\[^n]/)
           raise Shaka::Error, 'obra/superpowers: hooks/session-start no longer sets session_context as read'
         end
 
-        content = File.read(File.join(root, SUPERPOWERS_SKILL), encoding: 'UTF-8').sub(/\n+\z/, '')
+        content = checkout_text(root, SUPERPOWERS_SKILL).sub(/\n+\z/, '')
         wrapper.gsub('\n', "\n").sub('${using_superpowers_escaped}') { content }
       end
 
