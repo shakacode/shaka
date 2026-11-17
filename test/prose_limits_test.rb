@@ -70,7 +70,7 @@ class ProseLimitsTest < Minitest::Test
     assert_match(/\AWalkthrough is hard to read: /, error.message)
     assert_includes error.message, '“Opening words of a long one Alpha word…”'
     assert_includes error.message, 'link to the code'
-    assert_includes error.message, 'reread the rendered body after trimming'
+    assert_includes error.message, 'still makes sense without its neighbors'
   end
 
   private

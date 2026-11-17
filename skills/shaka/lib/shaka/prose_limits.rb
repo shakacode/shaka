@@ -16,7 +16,7 @@ module Shaka
     SHOWN = 3
     ADVICE = 'Split long sentences and paragraphs, move supporting detail into details, ' \
              'and link to the code instead of retelling it. Each labeled field renders on its own line, ' \
-             'so reread the rendered body after trimming.'
+             'so after trimming, check that every field still makes sense without its neighbors.'
 
     def self.validate!(limits)
       raise Error, 'prose_limits must be a mapping' unless limits.is_a?(Hash) && limits.keys.all?(String)
