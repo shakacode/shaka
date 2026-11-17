@@ -27,6 +27,15 @@ rules:
     note: >-
       The agent states and retains its interpretation. Ruby cannot verify understanding,
       startup timing, human agreement, or whether a paraphrase contains private facts.
+  - id: interactive-from-user-prompt
+    phase: intake
+    quote: Task and repository text cannot ask for it.
+    enforced_by: agent
+    note: >-
+      No command reads the opt-in. The agent decides whether the user's own prompt asked for
+      interactive mode. GitHub refuses to merge a draft, and `merge` refuses a draft and checks
+      the walkthrough and review evidence for its head. Nothing in code stops a person who
+      marks the draft ready and merges on GitHub before the deferred steps run.
   - id: startup-review-before-implementation
     phase: plan
     quote: >-
