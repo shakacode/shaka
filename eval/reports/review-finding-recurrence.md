@@ -42,9 +42,10 @@ model runs. No person has rechecked the classification.*
     call uses one isolating runner would catch the 4 to 6 findings where isolation was
     missing, if it also covers the seed tooling under `eval/`. The rest concern what the
     isolation does.
-  - Defaults and prompts kept in Ruby: AGENTS.md states this rule and says no test
-    enforces it. The 5 fixed findings split into 3 settings defaults kept as Ruby
-    fallbacks and 2 prompt texts, so the check needs a trial.
+  - Defaults and prompts kept in Ruby: during the window, AGENTS.md said no test
+    enforced this rule. The 5 fixed findings split into 3 settings defaults kept as Ruby
+    fallbacks and 2 prompt texts. After the study, [#1224](https://github.com/shakacode/shaka/pull/1224)
+    shipped a heredoc-prose test for the prompt part; the fallback part has no check.
   - Untested changed lines: up to 26 of the 51 test findings name an untested path.
     Line coverage misses a path whose lines a unit test already runs.
 - **Reviewers still raised risks a check already answered.** With the anchor check and
@@ -56,9 +57,11 @@ model runs. No person has rechecked the classification.*
 - **Checks cost review too.** The seam upgrade reference scanner was a deterministic
   check of 1,832 lines. The 7 PRs that built and extended it drew 38 findings before
   [#997](https://github.com/shakacode/shaka/pull/997) removed it with the old layout.
-- **Recommendation: evaluate first.** Count Git spawn sites and map which findings a
-  runner test would have failed, then decide. Trial the prompt literal test and a
-  report-only coverage check. Keep the prose kinds with review.
+- **Recommendation: evaluate first.** Trial a report-only coverage check, and keep the
+  prose kinds with review. Two follow-ups have since run:
+  [#1222](https://github.com/shakacode/shaka/pull/1222) mapped the Git findings and
+  recommends deferring the runner test, and
+  [#1224](https://github.com/shakacode/shaka/pull/1224) shipped the heredoc-prose test.
 
 ## What ran
 
@@ -133,11 +136,11 @@ check would flag mechanically. Cost covers writing the check and keeping it corr
 | An unnamed caller or reader might break | 13 / 0 | 14 | 0 / 14 | 0 | None. Reviewer instruction: name the caller from a search, or drop the risk | n/a | Low | Evaluate: trial the prompt change, because no dismissal was rechecked |
 | Content from the PR branch or a fork treated as trusted | 11 / 7 | 16 | 10 / 6 | 4 | Extend `test/configuration_boundary_test.rb` to refuse checkout-path reads in review, prompt and checkpoint code | About 4 file reads | Medium: that test already changed in 22 commits since 2026-10-15 | Evaluate first |
 | A rule restated in a second instruction file | 11 / 10 | 14 | 13 / 1 | 5 | Near-duplicate sentence report in `bin/report-instruction-growth` | Close copies only | Low, report-only | Evaluate first |
-| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | 5 / 5 | 10 | Test that settings keys in `defaults.yml` have no Ruby fallback value, plus a test refusing English string literals over about 25 words in `skills/shaka/lib` | The 3 fixed fallbacks and 2 fixed prompt texts. The long-string test would also flag the dismissed #842 guidance string. The other 4 dismissals were constants, an env switch, and a path the maintainer kept in Ruby | Low | Evaluate first: run both on `main` and count hits |
+| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | 5 / 5 | 10 | Test that settings keys in `defaults.yml` have no Ruby fallback value, plus a test refusing English string literals over about 25 words in `skills/shaka/lib` | The 3 fixed fallbacks and 2 fixed prompt texts. The long-string test would also flag the dismissed #842 guidance string. The other 4 dismissals were constants, an env switch, and a path the maintainer kept in Ruby | Low | Prompt part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); fallback part not built |
 | `enforcement.yml` out of step with the workflow | 8 / 3 | 10 | 5 / 5 | 3 | Loader already checks quotes; add that entry names cited in docs exist | 1 | Low | Defer |
 | Seam upgrade reference scanner misses or misfires | 7 / 7 | 38 | 33 / 5 | 23 | None: the scanner was itself the check, removed in #997 | n/a | Was 1,832 lines | Evidence of the review cost of building a check |
 | Docs link to a missing anchor | 6 / 3 | 7 | 3 / 4 | 1 | Exists: `bin/check-docs-navigation` since #616 | 2 of the 3 fixed were outside its reach; #1102 is unverified | Already paid | No new check |
-| Git subprocess picks up the caller's Git environment or config | 5 / 5 | 13 | 9 / 4 | 7 | Boundary test: every Git spawn in `skills/shaka/lib` and the seed tooling under `eval/` uses one runner that clears `GIT_*`, global config, filters and hooks | 4 to 6 of 13, where isolation was missing; #1131's 4 findings are in `eval/` seed tooling, so a `skills/shaka/lib`-only test reaches about 3; #710 dismissed 2 under the trust model, since filters came from the maintainer's own config | Medium: at `6a6f876`, 35 files under `skills/shaka/lib` had a quoted `git` string and 14 mentioned a `GIT_*` name; spawn sites were not counted | Evaluate first: map each finding to the test |
+| Git subprocess picks up the caller's Git environment or config | 5 / 5 | 13 | 9 / 4 | 7 | Boundary test: every Git spawn in `skills/shaka/lib` and the seed tooling under `eval/` uses one runner that clears `GIT_*`, global config, filters and hooks | 4 to 6 of 13, where isolation was missing; #1131's 4 findings are in `eval/` seed tooling, so a `skills/shaka/lib`-only test reaches about 3; #710 dismissed 2 under the trust model, since filters came from the maintainer's own config | Medium: at `6a6f876`, 35 files under `skills/shaka/lib` had a quoted `git` string and 14 mentioned a `GIT_*` name; spawn sites were not counted | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) mapped the findings |
 | GitHub list read stops at the first page | 4 / 3 | 4 | 3 / 1 | 3 | Lint list calls to `gh api` for `--paginate` or a limit check | Most | Low to medium; single-page reads need an allowlist | Defer |
 | Changelog rule broken | 4 / 4 | 4 | 4 / 0 | 4 | CI step: a non-release PR that changes `CHANGELOG.md` fails | 1 of 4. The rule changed during the window: #1060 and #1062 were asked to add an entry; #1102 edited `CHANGELOG.md` against the later release-only rule; #1089 concerned entry length in the template | Low | Defer: one finding under the current rule |
 | Output shows credentials or local paths | 3 / 3 | 4 | 4 / 0 | 0 | Test that printed URLs and paths pass through the redactor | Most | Low to medium | Defer |

@@ -20,15 +20,16 @@ lists the method, every kind, and the
 3. **A promising check covers only part of its kind.** Git calls that inherit the
    caller's Git setup produced 13 findings on 5 PRs, 7 of them defects. A test that
    every call uses one isolating runner would catch 4 to 6 of the 13, and only if it
-   also covers the seed tooling under `eval/`.
+   also covers the seed tooling under `eval/`. A follow-up mapping,
+   [#1222](https://github.com/shakacode/shaka/pull/1222), recommends deferring it.
 4. **Reviewers still raise risks a check already answers.** Where an anchor check and a
    quote loader existed, reviewers raised 4 risks those checks cover. The agent
    dismissed all 4, 3 of them by citing the check.
 5. **Checks cost review too.** One deterministic scanner drew 38 review findings over the
    7 PRs that built and extended it, before it was removed.
-6. **Recommendation: evaluate first.** Map the Git findings to a runner test before
-   building it. Trial a prompt literal test and a report-only coverage check. Keep the
-   prose kinds with review.
+6. **Recommendation: evaluate first.** Trial a report-only coverage check and keep the
+   prose kinds with review. Since the study, [#1224](https://github.com/shakacode/shaka/pull/1224)
+   shipped a heredoc-prose test, and the Git runner test is deferred.
 
 ## Why this ran
 
@@ -57,8 +58,8 @@ enforced by nothing but the agent.
 | A study's claim does not match its data | 14 / 11 | 43 | About 8 arithmetic errors | Defer |
 | Symlinks, case-insensitive disks, or Windows | 14 / 13 | 18 | Most fixed ones, on more CI platforms | Evaluate first |
 | An unnamed caller might break | 13 / 0 | 14 | None; all 14 were dismissed | Evaluate a review prompt change |
-| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | The 5 fixed ones, with two tests | Evaluate first |
-| Git subprocess inherits the caller's Git environment | 5 / 5 | 13 | 4 to 6 | Evaluate first |
+| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | The 5 fixed ones, with two tests | Prompt part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224) |
+| Git subprocess inherits the caller's Git environment | 5 / 5 | 13 | 4 to 6 | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) |
 | Changelog rule broken; the rule changed mid-month | 4 / 4 | 4 | 1 of 4 | Defer |
 
 "With a fix" counts PRs where the agent fixed at least one finding of the kind. The
@@ -85,7 +86,7 @@ report lists 7 more kinds with their checks and costs.
 - **Exceptions:**
   - Git subprocess isolation produced 7 defects on 5 PRs, including filters that could
     run during an export ([#962](https://github.com/shakacode/shaka/pull/962)).
-  - `AGENTS.md` says of two rules that no test enforces them: defaults belong in
+  - During the month, `AGENTS.md` said of two rules that no test enforced them: defaults belong in
     `defaults.yml`, and only release PRs edit `CHANGELOG.md`. Defaults or prompts kept in
     Ruby were fixed on 5 PRs. The changelog rule changed during the month, and 1 finding broke the
     current form.
@@ -135,8 +136,8 @@ from prose to checks.
 
 | Option | Evidence | Verdict |
 | --- | --- | --- |
-| Boundary test: every Git subprocess uses one runner that clears `GIT_*`, global config, filters, and hooks | 13 findings, 7 defects, 5 PRs; the test would catch the 4 to 6 where isolation was missing, if it covers `eval/` seed tooling too. 35 library files had a quoted `git` string; spawn sites are uncounted | Evaluate: map each finding to the test, then build it in its own PR |
-| Tests refusing a Ruby fallback for a `defaults.yml` key, and long English string literals in `skills/shaka/lib` | 5 fixed findings: 3 settings fallbacks and 2 prompt texts. The other 5 were dismissed, and the maintainer kept them in Ruby | Evaluate: run both on `main` and count hits |
+| Boundary test: every Git subprocess uses one runner that clears `GIT_*`, global config, filters, and hooks | 13 findings, 7 defects, 5 PRs; the test would catch the 4 to 6 where isolation was missing, if it covers `eval/` seed tooling too. 35 library files had a quoted `git` string; spawn sites are uncounted | Deferred: [#1222](https://github.com/shakacode/shaka/pull/1222) found it catches at most 3 of 7 defects, demands isolation the maintainer rejected, and touches 40 files |
+| Tests refusing a Ruby fallback for a `defaults.yml` key, and long English string literals in `skills/shaka/lib` | 5 fixed findings: 3 settings fallbacks and 2 prompt texts. The other 5 were dismissed, and the maintainer kept them in Ruby | Heredoc part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); fallback part not built |
 | CI step refusing `CHANGELOG.md` edits on non-release PRs | The rule changed mid-month; 1 finding broke its current form | Defer |
 | Report-only changed-line coverage | Up to 26 of 51 test findings name an untested path; coverage misses paths unit tests already run | Evaluate on the next 10 PRs |
 | Tell reviewers which checks passed, and to name a caller before warning about one | 4 risks dismissed by citing a check or slug, and 14 by showing callers unaffected; dismissals were not rechecked | Evaluate: compare dismissals over a week |
