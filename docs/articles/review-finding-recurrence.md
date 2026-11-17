@@ -13,12 +13,14 @@ lists the method, every kind, and the
 
 1. **About a quarter of review findings repeat a kind seen on 3 or more PRs.** 406 of
    1,716 fit 18 recurring kinds, 6 more fit a kind seen on 2 PRs, and 1,304 were not
-   classified. A hand check found more members among those, so 24% is a lower bound.
+   classified. A hand check found more members among those and the pool was not re-scanned, so 24%
+   is a lower bound; a rough estimate puts the share nearer 38%.
 2. **The kinds that repeat most compare prose with code.** Docs that promise behavior
    the code lacks were raised on 53 PRs and fixed on 47. A test that checks names would catch about 1 in 10
    of them. The rest need someone, or something, to read both.
 3. **A promising check covers only part of its kind.** Git calls that inherit the
-   caller's Git setup produced 13 findings on 5 PRs, 7 of them defects. A test that
+   caller's Git setup produced 13 findings on 5 PRs, 7 of them defects, though 2 of those
+   defects concerned quoting and file modes rather than missing isolation. A test that
    every call uses one isolating runner would catch 4 to 6 of the 13, and only if it
    also covers the seed tooling under `eval/`. A follow-up mapping,
    [#1222](https://github.com/shakacode/shaka/pull/1222), recommends deferring it.
@@ -84,7 +86,7 @@ report lists 7 more kinds with their checks and costs.
   prose kinds were fixed on 47 and 14 PRs. Checking them needs a comparison of what a sentence
   means with what the code does.
 - **Exceptions:**
-  - Git subprocess isolation produced 7 defects on 5 PRs, including filters that could
+  - Git subprocess calls produced 7 defects on 5 PRs, 5 of them about missing isolation, including filters that could
     run during an export ([#962](https://github.com/shakacode/shaka/pull/962)).
   - During the month, `AGENTS.md` said of two rules that no test enforced them: defaults belong in
     `defaults.yml`, and only release PRs edit `CHANGELOG.md`. Defaults or prompts kept in
