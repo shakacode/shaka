@@ -49,6 +49,14 @@ class CompanionsPointsTest < Minitest::Test
     procedure(text) { |dir| assert_empty POINTS.all(dir) }
   end
 
+  # The user guide lists every skill point, so it must name exactly the declared ones.
+  def test_the_user_guide_lists_every_declared_point
+    guide = File.read(File.expand_path('../docs/working-with-shaka.md', __dir__))
+    listed = guide.scan(/^\| `([a-z-]+#[a-z0-9-]+)` \|/).flatten
+
+    assert_equal POINTS.all.keys.sort, listed.sort
+  end
+
   private
 
   def procedure(text)
