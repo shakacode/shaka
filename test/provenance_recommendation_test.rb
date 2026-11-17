@@ -144,6 +144,36 @@ class ProvenanceReplansMarkerTest < Minitest::Test
     assert_equal ['|  |', '| R1. |', '| R2. |', '| R3. |'], reasons
   end
 
+  # Review finding: after truncation, forward matching showed R1 on the row that R3 explains.
+  def test_a_truncated_history_shows_the_reason_of_each_retained_change
+    publish(HEADS[0])
+    %w[claude-opus-5-5 gpt-5.6-terra claude-opus-5-5].each_with_index do |model, index|
+      publish(HEADS[0], 'recommended_model' => model, 'recommendation_change_reason' => "R#{index + 1}.")
+    end
+    19.times { |index| publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'active_effort' => "e#{index}") }
+
+    assert_equal ['|  |', '| R3. |'], reasons.first(2)
+    refute_includes @body, '| R1. |'
+  end
+
+  # Review finding: an unreasoned change took a later replan's reason on a repeated head.
+  def test_an_unreasoned_change_shows_no_reason
+    publish(HEADS[0], 'recommended_model' => 'UNKNOWN')
+    publish(HEADS[0])
+    publish(HEADS[0], 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => 'R1.')
+    publish(HEADS[0], 'recommendation_change_reason' => 'R2.')
+
+    assert_equal ['|  |', '|  |', '| R1. |', '| R2. |'], reasons
+  end
+
+  def test_a_body_with_only_the_history_marker_still_publishes
+    publish(HEADS[0])
+    rendered = publish(HEADS[1], 'active_effort' => 'high')
+
+    refute_includes rendered, 'Why the recommendation changed'
+    refute_includes rendered, Shaka::ProvenanceReplans::PREFIX
+  end
+
   # Checkpoint finding: history entries keep their old shape, so an older install still reads
   # them; the reasons live in a marker it does not count as provenance history.
   def test_reasons_stay_out_of_the_history_entries
@@ -156,6 +186,11 @@ class ProvenanceReplansMarkerTest < Minitest::Test
   end
 
   private
+
+  # The last cell of each history row, or nil when the table has no reason column.
+  def reasons
+    history_rows(@body).map { |row| row[/\| [^|]* \|\z/] if @body.include?('Why the recommendation changed') }
+  end
 
   def assert_refused(body)
     error = assert_raises(Shaka::Error) do

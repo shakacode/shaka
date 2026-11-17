@@ -45,9 +45,9 @@ module Shaka
 
     def history_blocks(entry, reason)
       history = ProvenanceHistory.carry(@pull, entry)
-      replans = ProvenanceReplans.carry(@pull, entry['recommended'], reason)
-      [ProvenanceHistory.section(history, replans), ProvenanceHistory.marker(history),
-       ProvenanceReplans.marker(replans)].compact
+      replans = ProvenanceReplans.carry(@pull, history.fetch('omitted') + history.fetch('entries').size - 1, reason)
+      [ProvenanceHistory.section(history, ProvenanceReplans.row_reasons(history, replans)),
+       ProvenanceHistory.marker(history), ProvenanceReplans.marker(replans)].compact
     end
 
     def skills_used = [details_block(SkillsUsed.new(@content['skills_used']).detail)]

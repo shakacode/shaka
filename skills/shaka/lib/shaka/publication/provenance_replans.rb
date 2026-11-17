@@ -12,7 +12,7 @@ module Shaka
   module ProvenanceReplans
     PREFIX = '<!-- shaka:replans '
     MARK = /#{Regexp.escape(PREFIX)}(.*?) -->/
-    FIELDS = %w[head recommended reason].freeze
+    FIELDS = %w[entry reason].freeze
     # The latest replans a long-lived PR keeps; the newest one guards against a resent reason.
     RECENT = 20
 
@@ -25,12 +25,20 @@ module Shaka
       previous(pull['body'])
     end
 
-    def carry(pull, recommended, reason)
+    # entry is the history row's position counting omitted rows, which truncation leaves stable.
+    def carry(pull, entry, reason)
       replans = recorded(pull)
       return replans unless reason
 
-      (replans + [{ 'head' => pull.dig('head', 'sha'), 'recommended' => recommended, 'reason' => reason }])
-        .last(RECENT)
+      (replans + [{ 'entry' => entry, 'reason' => reason }]).last(RECENT)
+    end
+
+    # The reason for each retained history row, or nil.
+    def row_reasons(history, replans)
+      reasons = replans.to_h { |replan| replan.values_at('entry', 'reason') }
+      history.fetch('entries').each_index.map do |index|
+        reasons[index.zero? ? 0 : history.fetch('omitted') + index]
+      end
     end
 
     def marker(replans) = (replans.empty? ? nil : "#{PREFIX}#{JSON.generate('replans' => replans)} -->")
@@ -57,13 +65,8 @@ module Shaka
     end
 
     def valid?(replan)
-      replan.is_a?(Hash) && replan.keys.sort == FIELDS.sort && replan['head'].to_s.match?(ProvenanceHistory::HEAD) &&
-        ExecutionProvenance.reason?(replan['reason']) && route?(replan['recommended'])
-    end
-
-    def route?(route)
-      parts = route.to_s.split(' / ', -1)
-      parts.size == 2 && parts.all? { |part| part.match?(ExecutionProvenance::SAFE_VALUE) }
+      replan.is_a?(Hash) && replan.keys.sort == FIELDS.sort && replan['entry'].is_a?(Integer) &&
+        replan['entry'].positive? && ExecutionProvenance.reason?(replan['reason'])
     end
 
     def invalid
@@ -71,6 +74,6 @@ module Shaka
                 "restore or remove its #{PREFIX.strip} marker, then publish again.")
     end
 
-    private_class_method :previous, :validated, :valid?, :route?, :invalid
+    private_class_method :previous, :validated, :valid?, :invalid
   end
 end
