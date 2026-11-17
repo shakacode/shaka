@@ -125,11 +125,11 @@ module Shaka
 
     def fold_all(reviews, url, account, report)
       reviews.each { |review| fold_one(review, url, account, report) }
-      Walkthrough::NoteThreads.new(@github, account).resolve_all(reviews, report)
+      Walkthrough::NoteThreads.new(@github, account).delete_all(reviews, report)
       report
     end
 
-    def fresh_report = { 'collapsed' => [], 'left_intact' => [], 'resolved_notes' => [], 'unavailable' => [] }
+    def fresh_report = { 'collapsed' => [], 'left_intact' => [], 'deleted_notes' => [], 'unavailable' => [] }
 
     def earlier_walkthroughs(published)
       raise Error, 'Published walkthrough has no submission time.' unless WalkthroughText.submitted_at(published)
