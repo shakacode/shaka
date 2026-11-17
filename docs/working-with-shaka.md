@@ -267,8 +267,9 @@ The mode decides what the agent does at that step:
 - `suggest`: the agent names the skill and its reason, and runs it after you say yes.
 - `decline`: the agent never uses the skill in a task.
 
-A skill that starts other agents, or whose own file says only a person may start it,
-always waits for your yes. Shaka reads pack files and project skills only from the
+Mark a skill that starts other agents with `fans_out: true` beside its `points`;
+Shaka then always waits for your yes before running it. A skill whose own file says
+only a person may start it also waits for your yes. Shaka reads pack files and project skills only from the
 default branch, so a pack added in a pull request takes effect after it merges.
 Repository packs need
 [team settings](settings-guide.md#use-individual-or-team-settings); with individual
