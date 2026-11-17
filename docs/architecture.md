@@ -59,12 +59,14 @@ prompt with and without `SKILL.md` plus the rendered workflow, from your working
 copy and from its merge base. The difference is what that text costs. Like any
 session in those tools, this sends the text to Anthropic and OpenAI.
 
-A count uses your plan: about 90,000 Claude tokens and 50,000 Codex tokens when
-the text is unchanged, and about 150,000 and 85,000 when it changed. Run it now
-and then, such as before a release, rather than on every change. The models
-are under `runtime.instruction_tokens` in Shaka's `defaults.yml`. A tool that is
-missing or signed out shows `UNKNOWN` and the reason, and the report still
-succeeds. Without `--tokens`, the report runs neither tool.
+A count uses your plan: about 40,000 Claude tokens and 50,000 Codex tokens when
+the text is unchanged, and about 75,000 and 85,000 when it changed. Run it now
+and then, such as before a release, rather than on every change. Claude's counts
+vary by about 20 tokens from run to run, so a change of a few words may not
+show. The models are under `runtime.instruction_tokens` in Shaka's
+`defaults.yml`. A tool that is missing or signed out, or that tries to act on
+the text instead of answering, shows `UNKNOWN` and the reason, and the report
+still succeeds. Without `--tokens`, the report runs neither tool.
 
 <a id="keep-facts-where-people-look-for-them"></a>
 

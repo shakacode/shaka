@@ -44,12 +44,14 @@ class InstructionTokensTest < Minitest::Test
   def test_each_cli_runs_restricted_with_its_configured_model
     calls = []
     InstructionTokens.compare(before: nil, after: 'startup text', runner: counting_runner(calls))
-    claude, codex = %w[claude codex].map { |name| calls.find { |arguments, _| arguments.first == name }.first }
+    claude, codex = %w[claude codex].map do |name|
+      calls.find { |arguments, _| arguments.first == name }.first.each_cons(2).to_a
+    end
 
-    assert_includes claude.each_cons(2).to_a, ['--model', 'claude-opus-5-5']
-    assert_includes claude, '--restricted'
-    assert_includes codex.each_cons(2).to_a, ['-m', 'gpt-6.1-sol']
-    assert_includes codex, '--ignore-user-config'
+    assert_includes claude, ['--model', 'claude-opus-5-5']
+    assert_includes claude, ['--tools', '']
+    assert_includes codex, ['-m', 'gpt-6.1-sol']
+    assert_includes codex, ['--ignore-rules', '--ignore-user-config']
   end
 
   def test_the_text_goes_on_stdin_never_on_the_command_line
@@ -98,6 +100,20 @@ class InstructionTokensTest < Minitest::Test
 
     assert_equal ['claude timed out after 300s', 'claude did not finish successfully (exit 1)',
                   'claude reported no input token count', 'claude reported no input token count'], reasons
+  end
+
+  # The text is agent instructions; a run that acts on them reports usage for several model requests.
+  def test_a_run_that_used_a_tool_counts_nothing
+    runner = lambda do |arguments, _input|
+      next ['{"num_turns":2,"usage":{}}', OK] if arguments.first == 'claude'
+
+      tool = { 'type' => 'item.completed', 'item' => { 'type' => 'command_execution' } }
+      [[codex_output(99), JSON.generate(tool)].join("\n"), OK]
+    end
+    rows = InstructionTokens.compare(before: nil, after: 'Run pwd.', runner:)
+
+    assert_equal(["claude used a tool, so its count is not the text's alone",
+                  "codex used a tool, so its count is not the text's alone"], rows.map { |row| row['reason'] })
   end
 
   def test_a_failed_baseline_run_leaves_the_row_unknown
