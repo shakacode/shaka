@@ -29,8 +29,34 @@ class PhaseLogTest < Minitest::Test
 
   def test_a_command_that_reports_nothing_adds_no_phases
     with_checkout do |root, ref|
-      refute run_check(root, ref).key?('phases')
+      result = run_check(root, ref)
+      refute result.key?('phases')
+      refute result.key?('failed_tests')
     end
+  end
+
+  def test_evidence_run_returns_the_failing_test_classes_its_command_reported
+    with_checkout do |root, _ref|
+      write_test_command(root, <<~SH)
+        printf '{"failed_tests":["GammaTest","AlphaTest","bad name",7]}\n{"failed_tests":"NotAList"}\n' >> "$SHAKA_PHASE_LOG"
+        printf '{"failed_tests":["Shaka::BetaTest","AlphaTest"]}\n' >> "$SHAKA_PHASE_LOG"
+      SH
+      git(root, 'add', '-A')
+      commit(root)
+
+      result = run_check(root, git(root, 'rev-parse', 'HEAD'))
+
+      assert_equal %w[AlphaTest GammaTest Shaka::BetaTest], result.fetch('failed_tests')
+      refute result.key?('phases')
+    end
+  end
+
+  def test_failed_tests_keep_only_short_class_names
+    names = ['GoodTest', 'A' * 65, 'lowerTest', 'Bad-Test', 'Trailing::', "Multi\nLine", nil, 'GoodTest']
+
+    assert_equal ['GoodTest'], Shaka::FailedTests.sanitize(names)
+    assert_empty Shaka::FailedTests.sanitize('GoodTest')
+    assert_empty Shaka::FailedTests.sanitize(%w[ATest BTest CTest DTest]), 'A run naming many classes records none'
   end
 
   def test_sanitize_keeps_short_names_and_whole_milliseconds_up_to_the_cap
@@ -85,6 +111,15 @@ class PhaseLogTest < Minitest::Test
     assert_equal 8000, checked['awake_ms']
     refute checked.key?('session')
     assert_nil Shaka::TimelineSteps.checked(record.merge('awake_ms' => 10_000))['awake_ms']
+  end
+
+  def test_carried_steps_keep_failing_test_classes_only_for_validation_runs
+    record = step('a', 9000).merge('exit' => 1, 'failed_tests' => ['FlakyTest', 'bad name'])
+    review = record.merge('command' => 'review run').except('check')
+
+    assert_equal ['FlakyTest'], Shaka::TimelineSteps.checked(record)['failed_tests']
+    assert_equal ['FlakyTest'], Shaka::TimelineSteps.step(record.except('id'), nil)['failed_tests']
+    refute Shaka::TimelineSteps.checked(review).key?('failed_tests')
   end
 
   private

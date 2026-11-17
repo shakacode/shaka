@@ -3,6 +3,7 @@
 require 'fileutils'
 require 'json'
 require 'time'
+require_relative 'publication/failed_tests'
 require_relative 'publication/phases'
 require_relative 'stopwatch'
 
@@ -67,6 +68,12 @@ module Shaka
     def phases(list)
       list = Phases.sanitize(list)
       extras['phases'] = list unless list.empty?
+    end
+
+    # Adds the test classes a validation command reported as failing, returning them when any were kept.
+    def failed_tests(list)
+      list = FailedTests.sanitize(list)
+      extras['failed_tests'] = list unless list.empty?
     end
 
     def extras = (@extras ||= {})

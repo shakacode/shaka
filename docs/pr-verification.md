@@ -45,7 +45,8 @@ Start near the top of the PR description:
 
 See [what each risk level asks of you](reference/pr-record.md#risk-and-review).
 Inspect screenshots or try the changed feature when your judgment depends on the
-result. Open **Code Review** or **Code Walkthrough** for closer examination.
+result. Open **Code Review**, or **Code Walkthrough** when the PR has one, for closer examination.
+To get a walkthrough, ask the agent for one; see [`walkthrough.publish`](settings.md#walkthroughpublish).
 
 Evidence should cover the version you're reviewing. Passing checks support a
 decision; they do not settle every product choice or prove every claim.
@@ -66,7 +67,7 @@ or skip ahead. Larger PRs get a lightweight coverage map that connects concepts
 to changed files and tracks what has been covered.
 
 The tour follows a specific revision and refreshes when the comparison changes.
-It complements the published Code Walkthrough and selective notes on the diff.
+It complements a published Code Walkthrough and its selective notes on the diff.
 Finishing the tour does not approve or authorize merging the PR.
 
 <a id="use-the-prepared-merge-message"></a>

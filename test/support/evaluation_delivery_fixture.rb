@@ -32,5 +32,13 @@ module EvaluationDeliveryFixture
                                             **)
   end
 
+  # The head check shares the driver verifier's deadline. A shell answers it within milliseconds, where the
+  # Ruby fixture could use the whole deadline on a loaded machine and the verifier would never start.
+  def answer_head_check_from_shell
+    repo = { full_name: 'fixture-org/cell' }
+    pull = JSON.generate(number: 1, state: 'open', merged: false, head: { sha: HEAD, repo: }, base: { repo: })
+    File.write(@gh, "#!/bin/sh\ncat > /dev/null\nprintf '%s' '#{pull}'\n")
+  end
+
   def capture = reader.read(node_id: NODE, review_id: 5_566_107_686, actor: 'fixture-agent')
 end

@@ -39,6 +39,21 @@ module PrivateTrialPublicationHelpers
     end
   end
 
+  # Private setup now hides the path, so these trials opt in to show it before the personal file hides it.
+  def setup_showing_checkout_path(root, ref)
+    setup_private(root, ref)
+    config = YAML.safe_load_file(config_path(root))
+    File.write(config_path(root), YAML.dump(config.merge('wip' => { 'include_checkout_path' => true })))
+    @head = ref
+  end
+
+  # The repository would show the path; the user's own file hides it and leaves the chat link.
+  def assert_personally_hidden(body)
+    ['| wip.include_checkout_path | true |', '| Workspace | REDACTED (personal setting) |',
+     "| Chat link | #{SESSION} |"].each { |row| assert_includes body, row }
+    refute_includes body, CHECKOUT
+  end
+
   def assert_unfinished_private(body, root)
     assert_includes body, 'No matching check records supplied'
     assert_includes body, '| wip.include_checkout_path | false |'
@@ -72,6 +87,7 @@ module PrivateTrialPublicationHelpers
                                             'description', 'shakacode/shaka', '1', '--root', root, '--ref', ref,
                                             '--content-file', path, *flags)
     assert_predicate status, :success?, error
+    @publish_error = error
     File.read(File.join(dir, 'published.md'))
   end
 
@@ -127,6 +143,29 @@ class PrivateTrialPublicationTest < Minitest::Test
       Dir.mktmpdir do |dir|
         body = publish_trial(dir, root, ref)
         assert_unfinished_private(body, root)
+      end
+    end
+  end
+
+  def test_your_personal_file_hides_what_the_repository_would_show
+    with_setup do |root, ref|
+      setup_showing_checkout_path(root, ref)
+      Dir.mktmpdir do |dir|
+        write_personal_wip(dir, 'include_checkout_path' => false)
+        body = publish_trial(dir, root, ref)
+        assert_personally_hidden(body)
+      end
+    end
+  end
+
+  def test_a_broken_personal_file_hides_the_path_and_says_why
+    with_setup do |root, ref|
+      setup_showing_checkout_path(root, ref)
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, '.agents/shaka'))
+        File.write(File.join(dir, '.agents/shaka/config.yml'), "not: [valid\n")
+        assert_personally_hidden(publish_trial(dir, root, ref))
+        assert_includes @publish_error, 'Hiding the checkout path on publications'
       end
     end
   end
