@@ -121,6 +121,7 @@ class ThroughputSummaryTest < Minitest::Test
     assert_includes rendered, 'CI to ready 41m'
     assert_includes details, "<summary>Missing values</summary>\n\n- **Task start** was not recorded"
     assert_includes details, '`task_started_at`'
+    assert_includes details, 'and Timings shows Prompt to CI as not recorded.'
   end
 
   def test_merged_cost_line_leaves_off_timing_without_a_task_start
@@ -147,6 +148,13 @@ class ThroughputSummaryTest < Minitest::Test
     explained = Shaka::ThroughputStats.update(published, 't2' => READY.iso8601)
     assert_includes explained, "**Estimated token costs:** $7.27\n"
     assert_includes explained, 'Prompt to CI not recorded'
+  end
+
+  def test_missing_values_leave_out_timings_when_no_timeline_was_read
+    rendered = Shaka::Publication.description(content('$7.27'), nil, nil, nil, nil)
+    refute_includes rendered, '<summary>Timings'
+    assert_includes rendered, "<summary>Missing values</summary>\n\n- **Task start** was not recorded"
+    refute_includes rendered, 'Prompt to CI'
   end
 
   def test_missing_values_are_omitted_when_the_task_start_was_recorded

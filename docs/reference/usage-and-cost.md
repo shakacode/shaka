@@ -34,8 +34,11 @@ sum can count the same response twice; a minimum marker does not guarantee
 that the reports are disjoint.
 
 Long-lived PRs can accumulate more accounting data than GitHub allows in a description.
-Shaka then keeps the full records in comments on the same PR. **Usage archive** links
-and SHA256 checksums identify them; the tables and pricing notes stay in the description.
+Shaka then keeps the full records in comments on the same PR. A **Usage archive** line
+with links and a SHA256 checksum identifies each set of those comments; the tables and
+pricing notes stay in the description. Table reports archived together share one such
+line, so an update adds a few hundred characters however many of them it archives. A
+report that shows its own text keeps its own line.
 Keep those comments. A later update checks their contents before using them and stops
 if a comment is missing or changed. The checksum detects changes; it does not make a
 GitHub comment immutable.

@@ -117,7 +117,7 @@ Report `duration_ms` as elapsed runner setup, reviewer invocation and report val
 terminal timing from the returned `attempt_log`; failed attempts remain separate from completed
 rounds. Report `timing_retention: not_retained` as a measurement gap. Keep missing durations UNKNOWN.
 
-DeepSeek/OpenRouter reviews have a 600-second deadline by default; CLI reviewers have 300 seconds.
+Claude and DeepSeek/OpenRouter reviews have a 600-second deadline by default; other CLI reviewers have 300 seconds.
 `--timeout-seconds 1..3600`
 sets a task-specific bound. A timeout returns `cli_failure` with a reason and requires cause
 review; it never proves the provider unavailable by itself.
@@ -492,7 +492,9 @@ not publish a local file location.
 
 The helper checks that each report closes with the attestation for its round. Reports are
 published verbatim, so before posting it asks GitHub to render the comment and refuses when an
-unclosed code fence or a stray disclosure tag in a report would hide the attestation. The
+unclosed code fence or a stray disclosure tag in a report would hide the attestation. Where GitHub
+refuses that preview, it checks each comment once stored and restores or deletes one it changed that fails;
+an unchanged comment and a failed undo are named as still published. The
 check cannot stop two reports that together imitate a round's layout, for example a reviewer
 steered by the PR it reads. The attestation and the summary table stay authoritative, because
 the helper writes both itself. It posts one `Local Adversarial Review` comment for the whole
@@ -514,8 +516,10 @@ Republishing the same ledger edits its comment in place; a fresh ledger gets its
 and leaves reports it does not account for untouched. When reports would pass GitHub's
 65,536-character limit, the oldest commits' reports move into `earlier commits` continuation
 comments. One commit whose reports cannot fit any comment is refused: shorten its reports and
-publish again. All comments are rendered and checked before any is posted; after a partial
-GitHub write failure, retry the same content file to update posted entries and finish the rest.
+publish again. All comments are rendered and checked before any is posted, except where GitHub
+refuses that preview: then each is checked once stored, and earlier ones can stay posted when a
+later one fails. After a partial failure, retry the same content file to update posted entries and
+finish the rest.
 
 The result's `comments` lists the published entries, and `summary` gives totals across the loop
 and its outcome. Copy that summary into the PR description's review history details; native
