@@ -313,19 +313,19 @@ predates this work.
 
 ## Where Tan and Osmani agree and differ
 
-- **Agree on the constraint:** both name verification as the limit on agent work.
-- **Agree on repeated mistakes:** Tan's `correct` skill and Osmani's Agentic
-  Verification both put the fix in the repository: a check, a hook, or shared config.
-- **Agree on checking the writer:** both use a fresh reviewer, ideally another model.
-- **Agree on restating the goal:** both recommend it before coding, and
-  [#1044](https://github.com/shakacode/shaka/pull/1044) added it to Shaka on 2026-11-04.
-- **Differ on instruction length:** Tan
-  [expects skills to compress](https://x.com/poteto/status/2110496830429839869) into
-  short principles. Two pstack principle skills run 209 and 324 words. Three
-  agent-skills skills run 2,474 to 3,334 words. The #421 plan chose the short form.
-- **Also matches:** The Code Nobody Reads tells authors to say in the PR description
-  what they did not review. #553's Not verified line predates Shaka's reading of that
-  post.
+Both name verification as the limit on agent work. For a repeated mistake, Tan's
+`correct` skill and Osmani's Agentic Verification both put the fix in the repository: a
+check, a hook, or shared config. Both check the writer with a fresh reviewer, ideally
+another model, and both recommend restating the goal before coding, which
+[#1044](https://github.com/shakacode/shaka/pull/1044) added to Shaka on 2026-11-04.
+
+They differ on instruction length. Tan
+[expects skills to compress](https://x.com/poteto/status/2110496830429839869) into short
+principles: two pstack principle skills run 209 and 324 words, while three agent-skills
+skills run 2,474 to 3,334 words. The #421 plan chose the short form.
+
+The Code Nobody Reads also tells authors to say in the PR description what they did not
+review. #553's Not verified line predates Shaka's reading of that post.
 
 ## Other dead ends
 

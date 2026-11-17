@@ -14,11 +14,11 @@ Shaka's rewritten guides; and on 2026-11-13 with both authors' later posts.*
 
 Shaka runs delivery: it takes a task through validation, review, publication, and the
 merge decision. pstack and agent-skills teach engineering technique, and each can also
-run delivery itself. Installing them together raises one question: who is in charge?
+run delivery itself, so installing either beside Shaka leaves open who is in charge.
 
-Shaka has a written answer. It fits pstack well in Cursor and Claude Code. Whether it holds
-for Addy Osmani's pack, or for pstack in Codex, is untested, and the reason is how each
-pack starts a skill.
+Shaka's written answer fits pstack in Cursor and Claude Code. Whether it holds for Addy
+Osmani's pack, or for pstack in Codex, is untested, because in both cases skills can
+start without anyone naming them.
 
 ## Main results
 
@@ -33,8 +33,8 @@ pack starts a skill.
   Those skills then run beside only the short boundary that every Shaka task loads.
 - Agents reported pstack in 13 of the 297 PRs with a Skills used section, and Addy's
   pack in none. Neither had been tried on a full Shaka delivery.
-- The strongest proof gets the weakest record. A test suite run is bound to the commit.
-  A harness that drives the real app, run outside `validate`, ends up as a sentence.
+- Shaka binds a test suite run to its commit. A harness that drives the real app proves
+  what tests can't, yet run outside `validate` it is recorded only as a sentence.
 - Both packs have the agent restate the goal before it starts. Shaka added that step on
   2026-11-04 ([#1044](https://github.com/shakacode/shaka/pull/1044)).
 - Shaka loads its whole 11,780-word workflow on every task. That is more than the five Addy
@@ -72,7 +72,7 @@ rest are instructions the agent follows. No test or enforcement entry covers the
 
 ## The gaps
 
-### 1. The full rules load only when someone asks
+### 1. The full rules load only when a task calls for them
 
 - **Today:** the workflow reads the companion rules when a task hands over a spec with
   tickets or another skill's output, or asks for another skill.
@@ -98,7 +98,7 @@ rest are instructions the agent follows. No test or enforcement entry covers the
 - **Smallest fix:** one real task with the pack installed and none of its skills named. It
   would test gap 1 directly.
 
-### 3. The strongest proof gets the weakest record
+### 3. A harness run outside `validate` is recorded only as a sentence
 
 - **Today:** `evidence run` records repository commands such as `validate`, bound to the
   commit. Tan's `create-verification-skill` builds a harness that drives the app as a user
@@ -152,8 +152,8 @@ pstack's last merged change was on 2026-10-27, and native Codex support
 10,905. The figures above stay at the pinned revisions, and gap 5's comparison holds at
 both. Both authors have since written about review and verification:
 
-- **Tan now doubts adversarial review.** Tan called it "mostly a waste of tokens," wrote
-  that pstack now leans less on `interrogate`
+- Tan called adversarial review "mostly a waste of tokens," wrote that pstack now leans
+  less on `interrogate`
   ([post](https://x.com/poteto/status/2117437607940681849)), and pointed people to its
   formal-verification and `statechart` skills
   ([post](https://x.com/poteto/status/2119521036660314339)). Shaka's local review is
@@ -162,11 +162,11 @@ both. Both authors have since written about review and verification:
   count for more is gap 3's question. [What AI code review is worth](review-signal-study.md)
   tests Tan's claim against Shaka's data, and
   [Review the evidence, not the code?](evidence-first-review.md) weighs Tan's later talk.
-- **Osmani, writing as a member of the Claude Code team, described how it reviews code**
-  ([post](https://x.com/addyosmani/status/2114604912520921136)) and how to keep thinking
-  critically when agents do the work
-  ([post](https://x.com/addyosmani/status/2117512471930167377)). Several choices match
-  Shaka's: risk set by the change rather than its author
+- Osmani, writing as a member of the Claude Code team, described how the team reviews
+  code ([post](https://x.com/addyosmani/status/2114604912520921136)) and how to keep
+  thinking critically when agents do the work
+  ([post](https://x.com/addyosmani/status/2117512471930167377)). Several of the team's
+  choices match Shaka's: risk set by the change rather than its author
   ([#1081](https://github.com/shakacode/shaka/pull/1081)), a cap on review rounds
   ([`review.local_max_rounds`](../settings.md#reviewlocal_max_rounds)), and asking what a
   passing check didn't prove, which Shaka's Not verified line records. Shaka has also
