@@ -20,26 +20,35 @@ module Shaka
 
     def resolve(pull, spec)
       supplied = SETTINGS.map { |setting| spec["recommended_#{setting}"] }
-      recorded = recorded(pull)
+      entries = ProvenanceHistory.entries(pull)
       # The Task line validated the supplied provenance before this runs.
-      return Result.new(spec:, kept: nil, reason: nil) unless recorded
+      return Result.new(spec:, kept: nil, reason: nil) if entries.empty?
 
-      route = recorded.zip(supplied).map { |old, new| keep?(old, new, spec) ? old : new }
-      Result.new(spec: with_route(spec, route), kept: (route.join(' / ') unless route == supplied),
-                 reason: (spec[REASON] unless route == recorded))
+      recorded = entries.last.fetch('recommended').split(' / ', 2)
+      reason = fresh_reason(entries, spec)
+      route = recorded.zip(supplied).map { |old, new| keep?(old, new, reason) ? old : new }
+      result(spec, route, supplied:, reason: (reason unless route == recorded))
     end
 
-    def recorded(pull) = ProvenanceHistory.last_entry(pull)&.fetch('recommended')&.split(' / ', 2)
+    def result(spec, route, supplied:, reason:)
+      Result.new(spec: with_route(spec, route), kept: (route.join(' / ') unless route == supplied), reason:)
+    end
+
+    # A reused content file resends the last replan's reason, which explains no new change.
+    def fresh_reason(entries, spec)
+      reason = spec[REASON]
+      reason unless reason == entries.reverse_each.find { |entry| entry.key?('reason') }&.fetch('reason')
+    end
 
     def with_route(spec, route) = spec.merge(SETTINGS.zip(route).to_h { |name, value| ["recommended_#{name}", value] })
 
     def note(route)
-      "Kept the recorded recommendation, showing #{route}. To record a new plan, supply provenance " \
-        "#{REASON} and publish again."
+      "Kept the recorded recommendation, showing #{route}. To record a new plan, supply a new " \
+        "provenance #{REASON} and publish again."
     end
 
-    def keep?(old, new, spec) = new == UNKNOWN || (old != UNKNOWN && !spec.key?(REASON))
+    def keep?(old, new, reason) = new == UNKNOWN || (old != UNKNOWN && reason.nil?)
 
-    private_class_method :recorded, :with_route, :keep?
+    private_class_method :result, :fresh_reason, :with_route, :keep?
   end
 end

@@ -420,8 +420,9 @@ The recommendation records the plan. On a same-repository PR, `description` rend
 recommendation its provenance history last recorded and reports `recommendation_kept`
 when the supplied one differs. To record a changed plan, add the optional
 `recommendation_change_reason`: one line of at most 200 characters without `|`, `<`, or
-`>`. The history row for that change shows the reason. A recorded `UNKNOWN` takes a
-concrete value without a reason; a concrete value never becomes `UNKNOWN`.
+`>`. The history row for that change shows the reason. A reason repeated from the last
+change counts as none. Model and effort are kept separately: a recorded `UNKNOWN` takes a
+concrete value without a reason, and a concrete value never becomes `UNKNOWN`.
 
 The renderer also fills the workflow version with the commit the helper runs from,
 because every commit between releases shares one version number. When the helper came

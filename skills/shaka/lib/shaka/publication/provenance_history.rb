@@ -53,11 +53,11 @@ module Shaka
       [LEAD, omission(history.fetch('omitted')), table(entries)].compact.join("\n\n")
     end
 
-    # The newest entry a same-repository PR body records, if any.
-    def last_entry(pull)
-      return unless pull && same_repository?(pull)
+    # The entries a same-repository PR body records, oldest first.
+    def entries(pull)
+      return [] unless pull && same_repository?(pull)
 
-      previous(pull['body']).fetch('entries').last
+      previous(pull['body']).fetch('entries')
     end
 
     def head(pull)

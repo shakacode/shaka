@@ -62,6 +62,16 @@ class ProvenanceRecommendationTest < Minitest::Test
     end
   end
 
+  # Review finding: a reused content file resent the last replan's reason with a drifted route.
+  def test_a_repeated_reason_does_not_replan_again
+    publish(HEADS[0])
+    publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => REASON)
+    rendered = publish(HEADS[2], 'recommended_model' => 'gpt-5.6-terra', 'recommendation_change_reason' => REASON)
+
+    assert_includes rendered, '| Recommended model / effort | claude-opus-5-5 / medium |'
+    assert_equal 2, history_rows(rendered).size
+  end
+
   def test_an_unchanged_recommendation_reports_nothing_kept
     publish(HEADS[0])
     assert_nil Shaka::ProvenanceRecommendation.resolve(pull_for(HEADS[1]), PUBLIC_PROVENANCE).kept
