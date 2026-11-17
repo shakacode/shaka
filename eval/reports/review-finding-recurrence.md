@@ -176,9 +176,10 @@ below the threshold.
   Two on [#844](https://github.com/shakacode/shaka/pull/844) concerned removed anchors
   that pages outside `docs/` and `skills/` might link to; the agent dismissed them with
   a wider grep. One on [#667](https://github.com/shakacode/shaka/pull/667) concerned a
-  file the check does not read. The 3 fixed anchor findings fall outside the check: anchors
-  that outside pages link to (#1036), a link that broke only against a newer `main`
-  (#1102), and a heading anchor a setting needed (#1089).
+  file the check does not read. Two of the 3 fixed anchor findings fall outside the check:
+  anchors that outside pages link to (#1036), and a heading anchor a setting needed
+  (#1089). The third, a missing anchor in an article on #1102, is the case the check
+  reports; whether it broke only against a newer `main` was not verified.
 - **Enforcement quotes.** The `enforcement.yml` loader fails when a quote leaves the
   workflow. It landed in [#145](https://github.com/shakacode/shaka/pull/145) on
   2026-09-20, before the window. Reviewers raised 3 risks that an edit might break a

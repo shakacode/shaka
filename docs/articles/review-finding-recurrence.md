@@ -99,8 +99,8 @@ report lists 7 more kinds with their checks and costs.
   [#616](https://github.com/shakacode/shaka/pull/616). The `enforcement.yml` loader fails
   when a quoted rule leaves the workflow.
 - **Result:** reviewers still raised 4 risks that an edit might break an anchor or a
-  quote the checks read. The agent dismissed each one, 3 by citing the check. The 3 anchor
-  findings that were fixed fell outside the check's reach.
+  quote the checks read. The agent dismissed each one, 3 by citing the check. Two of the 3
+  anchor findings that were fixed fell outside the check's reach.
 - **Limit:** the month holds two days before the anchor check and none before the loader,
   so it cannot show whether the checks reduced defects. The reviewer packet does not list the checks that passed.
   Whether listing them would cut these risks is untested.
