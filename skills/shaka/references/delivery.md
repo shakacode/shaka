@@ -49,8 +49,7 @@ shape the implementation.
 ## Choose a small execution context
 
 Assess scope and risk, recommend a model the host offers and an effort, and explain
-the choice. When planning and implementation suit different models, put the
-implementation model in `model` and the planning model in `reason`. Honor explicit user settings. Consider total planning, implementation,
+the choice. Honor explicit user settings. Consider total planning, implementation,
 retries, and review; waiting or a tool error alone does not justify more effort.
 
 Use the workflow's `recommendation` and `checkpoint` commands. When the user says

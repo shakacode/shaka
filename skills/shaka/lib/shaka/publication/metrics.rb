@@ -34,20 +34,14 @@ module Shaka
 
     # The table and the history both show the recommendation the history kept.
     def provenance
-      recommendation = ProvenanceRecommendation.resolve(@pull, provenance_spec)
-      execution = ExecutionProvenance.new(recommendation.spec, workflow_version: @workflow_version, pull: @pull)
+      spec = ProvenanceRecommendation.resolve(@pull, provenance_spec).spec
+      execution = ExecutionProvenance.new(spec, workflow_version: @workflow_version, pull: @pull)
       detail = execution.detail
       return details_block(detail) unless @pull
 
-      body = [detail['body'], *history_blocks(execution.entry, recommendation.reason)]
+      history = ProvenanceHistory.carry(@pull, execution.entry)
+      body = [detail['body'], ProvenanceHistory.section(history), ProvenanceHistory.marker(history)].compact
       details_block(detail.merge('body' => body.join("\n\n")))
-    end
-
-    def history_blocks(entry, reason)
-      history = ProvenanceHistory.carry(@pull, entry)
-      replans = ProvenanceReplans.carry(@pull, history.fetch('omitted') + history.fetch('entries').size - 1, reason)
-      [ProvenanceHistory.section(history, ProvenanceReplans.row_reasons(history, replans)),
-       ProvenanceHistory.marker(history), ProvenanceReplans.marker(replans)].compact
     end
 
     def skills_used = [details_block(SkillsUsed.new(@content['skills_used']).detail)]

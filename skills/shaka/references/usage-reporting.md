@@ -416,14 +416,10 @@ known. The initial prompt is excluded. Provenance
 carries no machine alias; put the public alias from `SHAKA_MACHINE_ALIAS`, or `UNKNOWN`,
 in the [WIP Details Owner field](delivery.md#recover-an-unfinished-pr), never a hostname.
 
-The recommendation records the plan. On a same-repository PR, `description` renders the
-recommendation its provenance history last recorded and reports `recommendation_kept`
-when the supplied one differs. To record a changed plan, add the optional
-`recommendation_change_reason`: one line of at most 200 characters without `|`, `<`, or
-`>`. A separate hidden marker keeps the latest 20 reasons, and the history row for each
-change shows its reason. A reason repeated from the last change counts as none. Model and
-effort are kept separately: a recorded `UNKNOWN` takes a concrete value without a reason,
-and a concrete value never becomes `UNKNOWN`.
+The recommendation records the plan. On a same-repository PR, `description` keeps the
+recommended model and effort its provenance history recorded and reports
+`recommendation_kept` when the supplied ones differ. Only a recorded `UNKNOWN` takes a new
+value. Describe a changed plan in `task_history`.
 
 The renderer also fills the workflow version with the commit the helper runs from,
 because every commit between releases shares one version number. When the helper came

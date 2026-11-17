@@ -4,7 +4,6 @@ require 'json'
 require_relative '../error'
 require_relative 'managed_region'
 require_relative 'provenance'
-require_relative 'provenance_history_table'
 
 module Shaka
   # Keeps one entry per change of workflow commit or route across a PR's publications, since
@@ -42,14 +41,12 @@ module Shaka
 
     def marker(history) = "#{PREFIX}#{JSON.generate(history)} -->"
 
-    # A PR whose provenance never changed keeps its single table. reasons holds one entry per
-    # row: why its recommendation changed, or nil.
-    def section(history, reasons = [])
+    # A PR whose provenance never changed keeps its single table.
+    def section(history)
       entries = history.fetch('entries')
       return if entries.size < 2
 
-      table = ProvenanceHistoryTable.render(entries, ROUTES, reasons)
-      [LEAD, omission(history.fetch('omitted')), table].compact.join("\n\n")
+      [LEAD, omission(history.fetch('omitted')), table(entries)].compact.join("\n\n")
     end
 
     # The entries a same-repository PR body records, oldest first.
@@ -137,7 +134,16 @@ module Shaka
       "#{omitted} #{omitted == 1 ? 'entry' : 'entries'} after the first #{omitted == 1 ? 'is' : 'are'} omitted."
     end
 
-    private_class_method :head, :previous, :fresh, :validated, :valid_entries?, :valid_entry?,
-                         :valid_route?, :invalid, :changes, :bounded, :omission
+    def table(entries)
+      rows = entries.map do |entry|
+        "| `#{entry['head'][0, 7]}` | #{entry['workflow']} | #{ROUTES.map { |route| entry[route] }.join(' | ')} |"
+      end
+      ['| Head | Shaka skill version | User-requested model / effort | ' \
+       'Recommended model / effort | Active model / effort |',
+       '| --- | --- | --- | --- | --- |', *rows].join("\n")
+    end
+
+    private_class_method :head, :same_repository?, :previous, :fresh, :validated, :valid_entries?, :valid_entry?,
+                         :valid_route?, :invalid, :changes, :bounded, :omission, :table
   end
 end

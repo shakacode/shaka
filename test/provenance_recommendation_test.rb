@@ -2,89 +2,29 @@
 
 require_relative 'provenance_history_test'
 
-# Issue #1187: the PR record keeps the plan-time recommendation until a stated replan.
+# Issue #1187: later publications re-entered the recommendation, rewriting the plan-time choice.
 class ProvenanceRecommendationTest < Minitest::Test
   include ProvenanceHistoryFixture
 
-  REASON = 'The design grew past the first plan.'
+  RECOMMENDED = '| Recommended model / effort |'
 
-  # Issue #1187: later publications re-entered the recommendation, rewriting the plan-time choice.
-  def test_a_recommendation_changed_without_a_reason_keeps_the_recorded_one
+  def test_a_later_recommendation_keeps_the_recorded_one
     publish(HEADS[0])
-    pull = pull_for(HEADS[1])
-    changed = PUBLIC_PROVENANCE.merge('recommended_model' => 'claude-opus-5-5')
-    rendered = publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5')
+    changed = PUBLIC_PROVENANCE.merge('recommended_model' => 'claude-opus-5-5', 'recommended_effort' => 'UNKNOWN')
+    kept = Shaka::ProvenanceRecommendation.resolve(pull_for(HEADS[1]), changed).kept
+    rendered = publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'recommended_effort' => 'UNKNOWN')
 
-    assert_includes rendered, '| Recommended model / effort | gpt-5.6-terra / medium |'
+    assert_includes rendered, "#{RECOMMENDED} gpt-5.6-terra / medium |"
     assert_empty history_rows(rendered)
-    assert_equal 'gpt-5.6-terra / medium', Shaka::ProvenanceRecommendation.resolve(pull, changed).kept
+    assert_equal 'gpt-5.6-terra / medium', kept
   end
 
-  def test_a_stated_reason_records_the_new_recommendation_once
-    publish(HEADS[0])
-    replan = { 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => REASON }
-    publish(HEADS[1], **replan)
-    rendered = publish(HEADS[2], **replan)
-
-    assert_includes rendered, '| Recommended model / effort | claude-opus-5-5 / medium |'
-    assert_includes rendered, '| Why the recommendation changed |'
-    assert_rows([[HEADS[0], '| gpt-5.6-terra / medium | gpt-5.6-terra / medium |  |'],
-                 [HEADS[1], "| claude-opus-5-5 / medium | gpt-5.6-terra / medium | #{REASON} |"]])
-  end
-
-  def test_a_recorded_unknown_yields_but_a_concrete_value_never_becomes_unknown
-    publish(HEADS[0], 'recommended_model' => 'UNKNOWN')
-    publish(HEADS[1])
-    rendered = publish(HEADS[2], 'recommended_effort' => 'UNKNOWN',
-                                 'recommendation_change_reason' => 'Lost the plan.')
-
-    assert_includes rendered, '| Recommended model / effort | gpt-5.6-terra / medium |'
-    assert_rows([[HEADS[0], '| UNKNOWN / medium |'], [HEADS[1], '| gpt-5.6-terra / medium | gpt-5.6-terra / medium |']])
-  end
-
-  # Review finding: replacing a recorded UNKNOWN model also dropped the recorded concrete effort.
-  def test_each_setting_keeps_its_own_recorded_value
+  def test_only_a_recorded_unknown_takes_a_new_value
     publish(HEADS[0], 'recommended_model' => 'UNKNOWN', 'recommended_effort' => 'high')
     rendered = publish(HEADS[1], 'recommended_effort' => 'low')
 
-    assert_includes rendered, '| Recommended model / effort | gpt-5.6-terra / high |'
-    pull = pull_for(HEADS[2])
-    kept = Shaka::ProvenanceRecommendation.resolve(pull, PUBLIC_PROVENANCE.merge('recommended_effort' => 'low')).kept
-    assert_equal 'gpt-5.6-terra / high', kept
-  end
-
-  # Review finding: the recorded value used to replace invalid input before validation saw it.
-  def test_invalid_recommended_input_is_still_refused
-    publish(HEADS[0])
-    [nil, 7, 'bad value'].each do |value|
-      error = assert_raises(Shaka::Error) { publish(HEADS[1], 'recommended_model' => value) }
-      assert_includes error.message, 'recommended_model is invalid'
-    end
-  end
-
-  # Review finding: a reused content file resent the last replan's reason with a drifted route.
-  def test_a_repeated_reason_does_not_replan_again
-    publish(HEADS[0])
-    publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => REASON)
-    rendered = publish(HEADS[2], 'recommended_model' => 'gpt-5.6-terra', 'recommendation_change_reason' => REASON)
-
-    assert_includes rendered, '| Recommended model / effort | claude-opus-5-5 / medium |'
+    assert_includes rendered, "#{RECOMMENDED} gpt-5.6-terra / high |"
     assert_equal 2, history_rows(rendered).size
-  end
-
-  # Review finding: truncating a long history dropped the replan row, so its reason looked new.
-  def test_a_long_history_still_recognizes_the_last_reason
-    publish(HEADS[0])
-    publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => REASON)
-    efforts = %w[low high]
-    23.times do |index|
-      publish(format('%07x', index).ljust(40, 'a'), 'recommended_model' => 'claude-opus-5-5',
-                                                    'active_effort' => efforts[index % 2])
-    end
-    rendered = publish(HEADS[2], 'recommended_model' => 'gpt-5.6-terra', 'recommendation_change_reason' => REASON)
-
-    assert_includes rendered, '| Recommended model / effort | claude-opus-5-5 / medium |'
-    assert_includes rendered, %("reason":"#{REASON}")
   end
 
   def test_an_unchanged_recommendation_reports_nothing_kept
@@ -96,106 +36,15 @@ class ProvenanceRecommendationTest < Minitest::Test
     publish(HEADS[0])
     rendered = publish(HEADS[1], fork: true, 'recommended_model' => 'claude-opus-5-5')
 
-    assert_includes rendered, '| Recommended model / effort | claude-opus-5-5 / medium |'
+    assert_includes rendered, "#{RECOMMENDED} claude-opus-5-5 / medium |"
   end
 
-  def test_a_reason_that_could_break_the_table_or_marker_is_refused
-    ["two\nlines", 'a | b', 'ends -->', 'x' * 201, ' padded', ''].each do |reason|
-      error = assert_raises(Shaka::Error) { publish(HEADS[0], 'recommendation_change_reason' => reason) }
-      assert_includes error.message, 'recommendation_change_reason'
+  # The kept value replaces the supplied one, so invalid input must still be refused first.
+  def test_invalid_recommended_input_is_still_refused
+    publish(HEADS[0])
+    [nil, 7, 'bad value'].each do |value|
+      error = assert_raises(Shaka::Error) { publish(HEADS[1], 'recommended_model' => value) }
+      assert_includes error.message, 'recommended_model is invalid'
     end
-  end
-
-  private
-
-  def assert_rows(expected)
-    rows = history_rows(@body)
-    assert_equal expected.size, rows.size
-    rows.zip(expected).each do |row, (head, text)|
-      assert row.start_with?("| `#{head[0, 7]}` |"), row
-      assert_includes row, text
-    end
-  end
-end
-
-# The replan reasons have a marker of their own, which only this helper writes.
-class ProvenanceReplansMarkerTest < Minitest::Test
-  include ProvenanceHistoryFixture
-
-  REASON = ProvenanceRecommendationTest::REASON
-
-  def test_a_tampered_reason_is_refused
-    publish(HEADS[0])
-    publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => 'Replanned.')
-    assert_refused(@body.sub('"reason":"Replanned."', '"reason":"a | b"'))
-    assert_refused(@body.sub('"reason":"Replanned."', '"reason":7'))
-    assert_refused(@body.sub('{"replans":[', '{"replans":[{},'))
-  end
-
-  # Review finding: matching reasons by head and model showed the last reason on every return.
-  def test_each_change_shows_its_own_reason_on_a_repeated_head
-    publish(HEADS[0])
-    %w[claude-opus-5-5 gpt-5.6-terra claude-opus-5-5].each_with_index do |model, index|
-      publish(HEADS[0], 'recommended_model' => model, 'recommendation_change_reason' => "R#{index + 1}.")
-    end
-    rows = history_rows(@body)
-
-    reasons = rows.map { |row| row[/\| [^|]* \|\z/] }
-    assert_equal ['|  |', '| R1. |', '| R2. |', '| R3. |'], reasons
-  end
-
-  # Review finding: after truncation, forward matching showed R1 on the row that R3 explains.
-  def test_a_truncated_history_shows_the_reason_of_each_retained_change
-    publish(HEADS[0])
-    %w[claude-opus-5-5 gpt-5.6-terra claude-opus-5-5].each_with_index do |model, index|
-      publish(HEADS[0], 'recommended_model' => model, 'recommendation_change_reason' => "R#{index + 1}.")
-    end
-    19.times { |index| publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'active_effort' => "e#{index}") }
-
-    assert_equal ['|  |', '| R3. |'], reasons.first(2)
-    refute_includes @body, '| R1. |'
-  end
-
-  # Review finding: an unreasoned change took a later replan's reason on a repeated head.
-  def test_an_unreasoned_change_shows_no_reason
-    publish(HEADS[0], 'recommended_model' => 'UNKNOWN')
-    publish(HEADS[0])
-    publish(HEADS[0], 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => 'R1.')
-    publish(HEADS[0], 'recommendation_change_reason' => 'R2.')
-
-    assert_equal ['|  |', '|  |', '| R1. |', '| R2. |'], reasons
-  end
-
-  def test_a_body_with_only_the_history_marker_still_publishes
-    publish(HEADS[0])
-    rendered = publish(HEADS[1], 'active_effort' => 'high')
-
-    refute_includes rendered, 'Why the recommendation changed'
-    refute_includes rendered, Shaka::ProvenanceReplans::PREFIX
-  end
-
-  # Checkpoint finding: history entries keep their old shape, so an older install still reads
-  # them; the reasons live in a marker it does not count as provenance history.
-  def test_reasons_stay_out_of_the_history_entries
-    publish(HEADS[0])
-    publish(HEADS[1], 'recommended_model' => 'claude-opus-5-5', 'recommendation_change_reason' => REASON)
-    history = JSON.parse(@body[/<!-- shaka:provenance (.*?) -->/, 1])
-
-    assert(history['entries'].all? { |entry| entry.keys.sort == Shaka::ProvenanceHistory::FIELDS.sort })
-    refute Shaka::ProvenanceReplans::PREFIX.start_with?(Shaka::ProvenanceHistory::PREFIX.strip)
-  end
-
-  private
-
-  # The last cell of each history row, or nil when the table has no reason column.
-  def reasons
-    history_rows(@body).map { |row| row[/\| [^|]* \|\z/] if @body.include?('Why the recommendation changed') }
-  end
-
-  def assert_refused(body)
-    error = assert_raises(Shaka::Error) do
-      Shaka::Publication.description(content, workflow, pull_for(HEADS[2], body))
-    end
-    assert_includes error.message, 'recommendation changes'
   end
 end
