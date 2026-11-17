@@ -9,7 +9,6 @@ module Shaka
   module TemplateLayout
     COLLAPSED = 'shaka'
     INLINE = 'shaka inline'
-    MARKER_LINE = /\A<!--.*-->\z/
 
     module_function
 
@@ -42,13 +41,15 @@ module Shaka
                    'where Shaka places its own sections. Leave it out of sections.'
     end
 
-    # The heading that opens a block, after any marker comments; nil for a block without one.
+    # The heading that opens a block, after the one-line marker comments Shaka puts above some sections;
+    # nil for a block without one.
     def heading(block)
-      line = block.each_line(chomp: true).find { !it.match?(MARKER_LINE) }
+      line = block.each_line(chomp: true).find { !(it.start_with?('<!--') && it.end_with?('-->')) }
       key(line.delete_prefix('## ')) if line&.start_with?('## ')
     end
 
-    def key(text) = text.gsub(/<[^>]*>/, '').gsub(/[[:space:]]+/, ' ').strip.downcase
+    # Headings match by their words, ignoring case and spacing.
+    def key(text) = text.gsub(/[[:space:]]+/, ' ').strip.downcase
 
     def marker?(name) = [COLLAPSED, INLINE].include?(name)
   end
