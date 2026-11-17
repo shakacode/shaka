@@ -119,11 +119,13 @@ class PublicationRiskReviewTest < Minitest::Test
     refute_includes rendered, '## Risk and review'
   end
 
-  def test_withheld_settings_show_no_level
-    rendered = render(risk: { 'withheld' => 'trusted settings unread' })
+  def test_a_level_from_the_default_areas_leads_and_says_which_areas_it_checked
+    rendered = render(risk: HIGH.merge('default_areas' => true))
 
-    assert_includes rendered, '**Recommendation: Merge** · ⚪ **Risk: not shown** · '
-    assert_includes section(rendered), "**Not shown.** Shaka could not read this repository's trusted settings"
+    assert_includes rendered, '**Recommendation: Merge** · 🔴 **Risk: High** · '
+    assert_includes section(rendered), 'does the evidence prove the change works, before the code?' \
+                                       "\n\n#{Shaka::RiskReview::DEFAULT_AREAS}\n\n**Flagged by the implementer:**"
+    refute_includes render(risk: HIGH), Shaka::RiskReview::DEFAULT_AREAS
   end
 
   def test_open_decisions_keep_the_lead_to_the_links
@@ -216,7 +218,6 @@ class PublicationRiskMarkTest < Minitest::Test
 
   def test_unrated_states_share_the_blank_mark
     assert_includes render(risk: nil), '· ⚪ **Risk: not rated yet** ·'
-    assert_includes render(risk: { 'withheld' => 'trusted settings unread' }), '· ⚪ **Risk: not shown** ·'
     assert_includes render(checkpoint: false), "## Risk and review\n\n⚪ **Not rated.**"
   end
 end

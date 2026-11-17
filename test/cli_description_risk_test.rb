@@ -7,6 +7,7 @@ require_relative 'test_helper'
 require_relative 'cli_opening_check_fakes'
 require 'json'
 require 'shaka/post_implementation/evidence'
+require 'shaka/publication/risk_review'
 
 class CliDescriptionRiskTest < Minitest::Test
   include CliOpeningCheckFakes
@@ -99,15 +100,16 @@ class CliDescriptionRiskTest < Minitest::Test
     end
   end
 
-  # The packaged areas would rate this low, so without the repository's settings the level is withheld.
-  def test_without_trusted_settings_the_level_is_not_shown
+  # The packaged areas lack the repository's merge_and_trust area, so without its settings the level is the
+  # packaged one, and the section says which areas it checked.
+  def test_without_trusted_settings_the_level_uses_the_default_areas
     Dir.mktmpdir do |dir|
       _output, error, status = run_description(dir)
 
       assert_predicate status, :success?, error
       body = File.read(File.join(dir, 'published.md'))
-      assert_includes body, '**Recommendation: Merge** · ⚪ **Risk: not shown** · '
-      refute_includes body, 'Risk: Low'
+      assert_includes body, '**Recommendation: Merge** · 🟢 **Risk: Low** · '
+      assert_includes body, Shaka::RiskReview::DEFAULT_AREAS
     end
   end
 end
