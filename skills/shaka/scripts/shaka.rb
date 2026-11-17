@@ -195,7 +195,7 @@ def render_description(carried, version, pull, settings, timeline, options, gith
 end
 
 # The risk level comes from this head's checkpoint and the trusted areas, as merge reads them. A description
-# without a checkpoint shows no level, and a rated one without trusted settings withholds it.
+# without a checkpoint shows no level, and a rated one without trusted settings applies Shaka's default areas.
 def described_risk(carried, github, pull, settings)
   return unless carried['checkpoint'].is_a?(Hash)
 
