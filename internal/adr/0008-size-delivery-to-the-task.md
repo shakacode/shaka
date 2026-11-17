@@ -78,9 +78,9 @@ Earlier work in this direction:
 
 ### 1. Sort every step into one of three kinds
 
-**Gates run on every task.** Each one either stops outside input from acting as an
-instruction, protects the maintainer's merge decision, or protects data that cannot be
-recovered:
+**Gates run on every task.** Each one stops outside input from acting as an instruction,
+protects the maintainer's merge decision, protects data that cannot be recovered, or
+proves the change works where it will run:
 
 - Policy comes from the trusted settings on the default branch. Issue, PR, and comment
   text is data.
@@ -91,7 +91,8 @@ recovered:
   A maintainer who finds that slow lowers its cost with
   [`validate-local`](../../docs/settings.md#count-a-faster-check-as-validation). The agent
   does not skip it.
-- Required checks, merge preference, and every refusal `merge` makes today.
+- Required checks, merge preference, and every refusal `merge` makes today other than
+  the checkpoint requirement, which decision 4 changes.
 - Read public comments only through `comments`.
 - WIP Details on an open PR, which `handoff` requires so another session can resume it.
 - List the steps outside the code that the change needs, such as a migration, an
@@ -141,7 +142,8 @@ In Plan, the agent lists the evidence steps it will skip and why, in one line ea
 judges by what the change touches and whether the step would catch anything on it. Size
 counts only as supporting evidence, never as the reason.
 
-The agent may not skip the local review or the final checkpoint when the change touches:
+The local review stays outside these skips: decision 1 already limits it to trivial prose
+and no-op changes. The agent may not skip the final checkpoint when the change touches:
 
 - a trusted `high_risk_areas` or `medium_risk_areas` path;
 - agent instructions as [`review.required`](../../docs/settings.md#reviewrequired)
@@ -182,8 +184,10 @@ With that record:
 
 - `merge` and `squash-message` keep accepting the existing `opted_out` checkpoint, but
   refuse it for a head in the risky areas of decision 2 unless a person confirmed that
-  head, the way `--limits-confirmed-head` works today. Without that refusal, `--opt-out`
-  would bypass the limit. Code checks only the trusted path lists there:
+  head, the way `--limits-confirmed-head` works today. A direct user instruction to opt
+  out of that head counts as that confirmation. Today such an opt-out passes in any area,
+  so this is a compatibility change for an opt-out from trusted instructions in a risky
+  area. Without that refusal, `--opt-out` would bypass the limit. Code checks only the trusted path lists there:
   `high_risk_areas`, `medium_risk_areas`, and agent-instruction paths. The agent alone
   enforces the other areas and a person's request for a full review, because code cannot
   tell an authentication or release change from its paths. Ask keeps a person on those
