@@ -25,8 +25,7 @@ module Shaka
       merged, checked = publish_archive(plan, current, prose, deferred)
       return confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged) if checked
 
-      written = api(pull_path, method: 'PATCH', fields: { body: merged }, headers: [DeferredRendering::FULL])
-      checked_description(current, written, merged, prose)
+      checked_description(current, merged, prose)
     end
 
     private
@@ -59,7 +58,9 @@ module Shaka
       false
     end
 
-    def checked_description(current, written, merged, prose)
+    # A write whose answer is lost may still have landed, so it is read back and undone like a failed check.
+    def checked_description(current, merged, prose)
+      written = api(pull_path, method: 'PATCH', fields: { body: merged }, headers: [DeferredRendering::FULL])
       confirmed(written, merged)
       html = written['body_html']
       raise Error, 'GitHub returned no stored rendering to check.' unless html.is_a?(String)
@@ -103,19 +104,22 @@ module Shaka
       raise Error, "#{error.message} The same description was already published at #{url}." if earlier == merged
 
       begin
-        put_back(earlier, merged)
+        outcome = put_back(earlier, merged)
       rescue Error => e
         raise Error, "#{error.message} Restoring the earlier description failed (#{e.message}); inspect #{url}."
       end
-      raise Error, "#{error.message} The earlier description was restored."
+      raise Error, "#{error.message} The earlier description #{outcome}."
     end
 
     # A body edited after this write is someone else's now, so it is left for a person to inspect. GitHub offers
     # no compare-and-swap, so an edit landing between this read and the restore is still overwritten.
     def put_back(earlier, merged)
-      raise Error, 'it changed after this write' unless [merged, Publishing.as_stored(merged)].include?(pull['body'])
+      live = pull['body'].to_s
+      return 'is still in place' if live == earlier
+      raise Error, 'it changed after this write' unless [merged, Publishing.as_stored(merged)].include?(live)
 
       api(pull_path, method: 'PATCH', fields: { body: earlier })
+      'was restored'
     end
 
     def archive_pull(current, archive)

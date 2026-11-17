@@ -10,7 +10,7 @@ class DescriptionDeferredRenderingTest < Minitest::Test
 
   # One pull request whose renderer is refused; GitHub stores `html` for whatever body is written.
   class RefusedRendererGitHub < Shaka::GitHub
-    attr_accessor :html, :edit_after_write
+    attr_accessor :html, :edit_after_write, :lost_answer
     attr_reader :patches, :body
 
     def initialize(body)
@@ -22,18 +22,27 @@ class DescriptionDeferredRenderingTest < Minitest::Test
 
     def api(path, method: 'GET', fields: {}, headers: [])
       raise Shaka::Error, "Unexpected #{method} #{path}" unless path == 'repos/owner/repo/pulls/42'
-      return pull_json if method == 'GET'
 
-      @patches << [fields.fetch(:body), headers]
-      @body = fields.fetch(:body)
-      written = pull_json.merge(headers.include?(FULL) ? { 'body_html' => @html, 'body_text' => 'Fine.' } : {})
-      @body = 'A person edited this.' if edit_after_write
-      written
+      method == 'GET' ? pull_json : write(fields.fetch(:body), headers)
     end
 
     def markdown(_text) = raise(Shaka::DeferredRendering::Refused, 'GitHub refused its Markdown renderer.')
 
     private
+
+    # A lost answer fails the first write before or after GitHub applies it.
+    def write(body, headers)
+      @patches << [body, headers]
+      lost = @patches.one? && lost_answer
+      raise Shaka::Error, 'gh api failed (HTTP 502).' if lost == :before_write
+
+      @body = body
+      raise Shaka::Error, 'gh api failed (HTTP 502).' if lost == :after_write
+
+      written = pull_json.merge(headers.include?(FULL) ? { 'body_html' => @html, 'body_text' => 'Fine.' } : {})
+      @body = 'A person edited this.' if edit_after_write
+      written
+    end
 
     def pull_json
       repo = { 'full_name' => repository }
@@ -107,6 +116,18 @@ class DescriptionDeferredRenderingTest < Minitest::Test
     { "<!-- note -->\n#{REGION}" => checked, "<!-- open\n#{REGION}" => unchecked,
       "<!-- a -->\nA person wrote this.\n<!-- b -->\n#{REGION}" => unchecked }.each do |body, rendering|
       assert_equal rendering, publish(RefusedRendererGitHub.new(body))['rendering']
+    end
+  end
+
+  # A write that errors may still have landed, so it is read back before anything is undone.
+  def test_a_write_whose_answer_is_lost_is_read_back_and_undone
+    { after_write: 'was restored', before_write: 'is still in place' }.each do |lost, outcome|
+      github = RefusedRendererGitHub.new(REGION)
+      github.lost_answer = lost
+
+      error = assert_raises(Shaka::Error) { publish(github) }
+      assert_equal "gh api failed (HTTP 502). The earlier description #{outcome}.", error.message
+      assert_equal REGION, github.body
     end
   end
 
