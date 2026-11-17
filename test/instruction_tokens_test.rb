@@ -116,14 +116,15 @@ class InstructionTokensTest < Minitest::Test
                   "codex used a tool, so its count is not the text's alone"], rows.map { |row| row['reason'] })
   end
 
-  def test_a_failed_baseline_run_leaves_the_row_unknown
+  def test_a_failed_baseline_run_keeps_the_head_count
     runner = lambda do |arguments, input|
       input.start_with?('old') ? ['', Status.new(1)] : counting_runner.call(arguments, input)
     end
     rows = InstructionTokens.compare(before: 'old text', after: 'new text', runner:)
 
-    assert_equal(['claude did not finish successfully (exit 1)', 'codex did not finish successfully (exit 1)'],
-                 rows.map { |row| row['reason'] })
+    assert_equal(%w[claude codex].map do |name|
+      [nil, 2, nil, "baseline not counted: #{name} did not finish successfully (exit 1)"]
+    end, values(rows, 'before', 'after', 'delta', 'reason'))
   end
 
   def test_any_unexpected_failure_is_unknown_rather_than_raised

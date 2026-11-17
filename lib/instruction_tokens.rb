@@ -68,14 +68,21 @@ module InstructionTokens
 
   def self.failed?(counts) = counts.last.key?(:reason)
 
+  # A failed baseline keeps the head count, which already spent plan quota; only the delta is unknown.
   def self.row(name, model, overhead, after = nil, before = nil)
-    unknown = [overhead, after, before].compact.find { |result| result.key?(:reason) }
+    unknown = [overhead, after].compact.find { |result| result.key?(:reason) }
     return { 'cli' => name, 'model' => model, 'tokens' => 'UNKNOWN', 'reason' => unknown[:reason] } if unknown
 
     head = after[:tokens] - overhead[:tokens]
-    old = before && (before[:tokens] - overhead[:tokens])
+    old = before[:tokens] - overhead[:tokens] if before&.key?(:tokens)
     { 'cli' => name, 'model' => model, 'cli_prompt' => overhead[:tokens], 'before' => old, 'after' => head,
-      'delta' => old && (head - old) }
+      'delta' => old && (head - old) }.merge(baseline_failure(before))
+  end
+
+  def self.baseline_failure(before)
+    return {} unless before&.key?(:reason)
+
+    { 'reason' => "baseline not counted: #{before[:reason]}" }
   end
 
   def self.count(name, cli, model, text, runner)
@@ -119,5 +126,6 @@ module InstructionTokens
     )
     [stdout, status]
   end
-  private_class_method :events, :measure, :failed?, :row, :count, :reported, :parsed, :prompt, :exit_code, :run
+  private_class_method :events, :measure, :failed?, :row, :baseline_failure, :count, :reported, :parsed, :prompt,
+                       :exit_code, :run
 end
