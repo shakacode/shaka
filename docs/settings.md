@@ -1169,8 +1169,9 @@ error identifying the long passage or total word count. The agent shortens the
 explanation before publishing.
 
 A Claude Code cloud session cannot preview GitHub's rendering, so there the description
-is checked once GitHub stores it. If it breaks a limit, Shaka puts the earlier
-description back. GitHub's stored copy cannot show which text Shaka wrote, so when people
+is checked once GitHub stores it, so it is public, and GitHub sends its notifications, before
+the check. If it breaks a limit, Shaka puts the earlier description back, unless someone
+edited the description in the meantime. GitHub's stored copy cannot show which text Shaka wrote, so when people
 or other tools added text outside Shaka's part, the limits go unchecked and the result says so.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent

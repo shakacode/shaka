@@ -101,7 +101,8 @@ module Shaka
       raise Error, "#{error.message} The earlier description was restored."
     end
 
-    # A body edited after this write is someone else's now, so it is left for a person to inspect.
+    # A body edited after this write is someone else's now, so it is left for a person to inspect. GitHub offers
+    # no compare-and-swap, so an edit landing between this read and the restore is still overwritten.
     def put_back(earlier, merged)
       raise Error, 'it changed after this write' unless [merged, Publishing.as_stored(merged)].include?(pull['body'])
 
