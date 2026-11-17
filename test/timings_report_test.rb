@@ -63,6 +63,25 @@ class TimingsReportTest < Minitest::Test
     assert_includes output, '1 of 1 merged pull requests carried timings'
   end
 
+  # The class that failed in two runs ranks first; a passing run's names and a bad name are not counted.
+  def test_ranks_test_classes_by_failed_runs
+    pulls = [pull(1, '2026-11-03T12:00:00Z', [step(1000, exit: 1, failed: %w[FlakyTest OtherTest]),
+                                              step(2000, failed: %w[PassingTest])]),
+             pull(2, '2026-11-11T12:00:00Z', [step(3000, exit: 1, failed: ['FlakyTest', 'bad name'])])]
+
+    report = JSON.parse(run_report(pulls, '--format', 'json'))
+
+    assert_equal([['FlakyTest', 2, 2], ['OtherTest', 1, 1]],
+                 report['failing_tests'].map { |test| test.values_at('name', 'failed_runs', 'pull_requests') })
+    assert_includes run_report(pulls), "| `FlakyTest` | 2 | 2 |\n| `OtherTest` | 1 | 1 |"
+  end
+
+  def test_no_failing_test_table_without_named_failures
+    output = run_report([pull(1, '2026-11-03T12:00:00Z', [step(1000, exit: 1)])])
+
+    refute_includes output, 'Test class'
+  end
+
   def test_a_missing_gh_reports_an_error_instead_of_a_trace
     arguments = %w[report --repository shakacode/shaka --since 2026-11-01]
     _output, error = capture_io do
@@ -110,9 +129,10 @@ class TimingsReportTest < Minitest::Test
       'createdAt' => '2026-11-03T11:00:00Z', 'isCrossRepository' => cross, 'body' => body }
   end
 
-  def step(duration, phases: nil, exit: 0)
+  def step(duration, phases: nil, exit: 0, failed: nil)
     { 'id' => format('%016x', duration), 'command' => 'evidence run', 'check' => 'validate',
-      'at' => '2026-11-03T10:30:00Z', 'duration_ms' => duration, 'exit' => exit, 'phases' => phases }.compact
+      'at' => '2026-11-03T10:30:00Z', 'duration_ms' => duration, 'exit' => exit, 'phases' => phases,
+      'failed_tests' => failed }.compact
   end
 
   def review(duration)

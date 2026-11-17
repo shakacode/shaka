@@ -66,6 +66,7 @@ require_relative '../lib/shaka/usage/publisher_attribution'
 require_relative '../lib/shaka/usage/cursor_usage_refresh'
 require_relative '../lib/shaka/walkthrough/code_links'
 require_relative '../lib/shaka/walkthrough/notes'
+require_relative '../lib/shaka/walkthrough/due'
 require_relative '../lib/shaka/trial/command'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
@@ -177,6 +178,7 @@ end
 
 # Evidence is prepared first; a preview can only replace the rendering that follows it.
 def render_description(carried, version, pull, settings, timeline, options, github) # rubocop:disable Metrics/ParameterLists
+  warned(settings.privacy)
   pull = pull.merge('shaka_changed_files' => Shaka::FeaturePublication.files(github, pull))
   pull = pull.merge('shaka_review_focus' => Shaka::ReviewFocus.resolve(carried, github, pull))
   pull = pull.merge('shaka_risk' => described_risk(carried, github, pull, settings))
@@ -219,12 +221,18 @@ def opening_result(options, summary, prose: nil)
                                 effort: options[:opening_effort]).call(summary, prose:)
 end
 
+# The user's privacy choice, after saying why a file Shaka could not read hides the path.
+def warned(privacy)
+  warn "shaka: #{privacy.warning}" if privacy.warning
+  privacy
+end
+
 # The issue is as public as the repository, so the checkout path follows the same setting as WIP Details.
-def start_redaction(options, repository)
+def start_redaction(options, repository, privacy)
   root = options[:root] || Dir.pwd
   current, = Shaka::PublicationSettings.current_settings(root:, ref: options[:ref], repository:, required: true)
-  Shaka::PublicationSettings.new(current:, location_diagnostic: Shaka::PublicationSettings::UNAVAILABLE_SETTINGS)
-                            .path_redaction
+  Shaka::PublicationSettings.new(current:, location_diagnostic: Shaka::PublicationSettings::UNAVAILABLE_SETTINGS,
+                                 privacy:).path_redaction
 end
 
 def usage_banner
@@ -410,6 +418,8 @@ begin
 
   checkpoint = { enabled: !seam&.sha || seam.review.dig('post_implementation', 'enabled') != false }
   merge_wait = { required: (seam.review['required'] if seam&.sha), root: options[:root] || Dir.pwd }
+  # Private trial settings carry no trusted commit, so they cannot relax a walkthrough gate either.
+  walkthrough_publish = Shaka::RepositoryConfig::WalkthroughSchema.gate((seam if seam&.sha))
   if %w[merge squash-message].include?(command)
     head = options.fetch(:head)
     Shaka::PostImplementationEvidence.new(github, **checkpoint).call(head)
@@ -463,7 +473,8 @@ begin
                           key: key, comment: options[:comment])
            when 'start'
              started = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
-             body = Shaka::TaskStart.compose(started, path_redaction: start_redaction(options, repository))
+             privacy = warned(Shaka::Configuration::PersonalPrivacy.load)
+             body = Shaka::TaskStart.compose(started, path_redaction: start_redaction(options, repository, privacy))
              github.start_comment(body:, key: Shaka::TaskStart.key(started))
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
@@ -487,9 +498,10 @@ begin
              merge.auto = options[:auto]
              merge.base_failures = options[:base_failures] &&
                                    Shaka::MergeBaseFailures.new(github, options[:base_failures])
+             merge.walkthrough_due = Shaka::WalkthroughDue.new(github, publish: walkthrough_publish)
              merge.risk_gate = auto_merge_gate(seam, review.fetch(:checkpoint), options[:confirmed_head])
              merge.hold = Shaka::MergeHold.from(seam)
-             merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
+             merge.call(head:, base: options.fetch(:base), walkthrough: options[:walkthrough],
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention'
              state = options.fetch(:state)
@@ -505,7 +517,8 @@ begin
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))
              github.squash_comment(head: options.fetch(:head), message:)
            when 'handoff'
-             Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint, review: merge_wait)
+             Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint, review: merge_wait,
+                                        walkthrough_publish:)
                            .tap { |handoff| handoff.hold = Shaka::MergeHold.from(seam) }
                            .call(head: options[:head], woken_by: options[:woken_by])
            end

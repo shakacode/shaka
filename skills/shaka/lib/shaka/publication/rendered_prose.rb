@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require 'cgi'
 require_relative 'text'
 
 module Shaka
@@ -8,14 +9,26 @@ module Shaka
   module RenderedProse
     ESCAPE = /\\[nrt]/
     SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
+    ESCAPED = 'Rendered output contains a literal escape sequence; supply real line breaks.'
 
     module_function
 
     def check!(body, html)
-      if bare(html).match?(ESCAPE)
-        raise Error, 'Rendered output contains a literal escape sequence; supply real line breaks.'
-      end
+      raise Error, ESCAPED if bare(html).match?(ESCAPE)
 
+      tables!(body, html)
+    end
+
+    # Without GitHub's renderer, the escape check reads the source: Markdown keeps a backslash
+    # before a letter, so an escape outside code renders as written, including one spelled as an entity.
+    def source_escapes!(body)
+      # Text to search, never rendered: dropping comments and code can only join pieces into a false refusal.
+      text = PublicationText.prose(body).split(/<!--.*?-->/m).join.split(%r{<(?:pre|code)\b.*?</(?:pre|code)>}m).join
+      text = CGI.unescapeHTML(text.gsub(/&(?:bsol|Backslash);/, '\\'))
+      raise Error, ESCAPED if text.match?(ESCAPE)
+    end
+
+    def tables!(body, html)
       expected = PublicationText.prose(body).lines.count { |line| line.match?(SEPARATOR) }
       rendered = html.scan('<table').size
       return if rendered >= expected

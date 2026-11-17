@@ -139,6 +139,7 @@ also stays in force.
 | `Not logged in · Please run /login` | The `claude` CLI is not signed in | Run `claude`, then `/login`, and retry the task. This is not a consent problem |
 | Shaka asks for consent again | Your statement from step 3 does not name this provider, repository, and content, or Codex does not read the file that holds it | Fix the statement or move it to the file Codex reads, or answer the question for this task |
 | Codex Auto-review denies `shaka review run` | Codex blocked the command before it started, so nothing reached Claude | Follow [When Codex denies the review](#when-codex-denies-the-review). Do not answer the consent question again or switch reviewers |
+| A Claude review fails with `timed out after 600s` | Claude reviews stop after 600 seconds by default; Codex and Grok reviews stop after 300 | Ask your agent to find the cause first. If the diff is large and the reviewer was still working, ask it to retry with a longer deadline, up to 3600 seconds |
 | A missing `ANTHROPIC_API_KEY` | Another tool, such as a repository script, needs an Anthropic API key. The Claude reviewer does not | Set the key for that tool. Without it, the agent reports that check as failed rather than skipping it |
 
 Shaka cannot get around your organization's managed Codex policy. A denied
@@ -150,7 +151,12 @@ Local review requires a reviewer the cloud environment can run. If none is
 available, resume the PR in a local session. Cloud machines may lack the
 local reviewer CLI, its sign-in, or Ruby 3.4. If GitHub GraphQL is blocked, Doctor and PR status can fall back to REST.
 A review decision, merge queue state, or issue link in GitHub's Development
-sidebar may be unknown. Other PR actions still need GraphQL.
+sidebar may be unknown. Where GitHub's Markdown preview is blocked too, publishing a local
+review checks each comment after GitHub stores it and takes back one that renders wrong,
+including a reviewer report that shows `\n` outside code; publish that review locally.
+The comment is public, and GitHub sends its notifications, until it is taken back. If the
+comment was already published unchanged, or taking it back fails, the error names the live comment.
+Other PR actions still need GraphQL.
 
 The opt-in [DeepSeek reviewer](../settings.md#reviewlocal_review_agents) runs through
 Shaka's Ruby OpenRouter API adapter. It does not require native DeepSeek support in

@@ -300,18 +300,18 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     )
   end
 
-  def test_a_description_without_a_walkthrough_link_reserves_the_placeholder
+  def test_a_description_without_a_walkthrough_link_leaves_no_placeholder_by_default
     rendered = render(walkthrough: nil)
 
-    assert_includes rendered, "low - AI spend: UNKNOWN\n\n_Not published yet._"
+    assert_includes rendered, "low - AI spend: UNKNOWN\n\nCheckpoint: _Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
 
-  def test_a_blank_walkthrough_link_reserves_the_placeholder
+  def test_a_blank_walkthrough_link_leaves_no_placeholder_by_default
     rendered = render(walkthrough: '  ')
 
-    assert_includes rendered, "low - AI spend: UNKNOWN\n\n_Not published yet._"
+    assert_includes rendered, "low - AI spend: UNKNOWN\n\nCheckpoint: _Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
@@ -425,8 +425,7 @@ class PublicationDeploymentLinkTest < Minitest::Test
 
   def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
     assert_includes render('walkthrough' => nil),
-                    '_Not published yet._ · Checkpoint: _Not published yet._ · ' \
-                    "[Deployment](<#{DEPLOYMENT}>)\n\n## Summary"
+                    "Checkpoint: _Not published yet._ · [Deployment](<#{DEPLOYMENT}>)\n\n## Summary"
   end
 
   # A bare `)` would end the Markdown link at `/a` instead of linking `/a)b`.
@@ -999,8 +998,7 @@ end
 
 RECOMMENDATION_LEAD = [
   PENDING_STATS,
-  '**Recommendation: Revise before merge** · ⚪ **Risk: not rated yet** · _Not published yet._ · ' \
-  'Checkpoint: _Not published yet._',
+  '**Recommendation: Revise before merge** · ⚪ **Risk: not rated yet** · Checkpoint: _Not published yet._',
   '**Next:** Justin: choose the simpler parser before another review round.',
   "## Summary\n\nReview the current result."
 ].join("\n\n").freeze
@@ -1041,8 +1039,7 @@ class PublicationCheckpointTest < Minitest::Test
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
     assert_includes body, "<!-- shaka:decisions -->\n## Decisions to make<a id=\"decisions-to-make\"></a>\n\n" \
-                          "- Keep the parser?\n\nCode Walkthrough: _After the decisions._ · " \
-                          "Checkpoint: _Not published yet._\n\n**Next:**"
+                          "- Keep the parser?\n\nCheckpoint: _Not published yet._\n\n**Next:**"
     assert_operator body.index('## Decisions to make'), :<, body.index('Review the current result.')
     refute_includes body, 'Recommendation'
   end
@@ -1084,7 +1081,7 @@ class PublicationCheckpointTest < Minitest::Test
     data = content
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
-    assert_includes body, '**No recommendation yet** · ⚪ **Risk: not rated yet** · _Not published yet._'
+    assert_includes body, '**No recommendation yet** · ⚪ **Risk: not rated yet** · Checkpoint: _Not published yet._'
     refute_includes body, 'Recommendation:'
   end
 

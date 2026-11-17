@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../walkthrough/history'
+require_relative 'deferred_rendering'
 
 module Shaka
   # Preserves this account's older generated comments in expandable history.
@@ -19,12 +20,13 @@ module Shaka
 
     def collapse(published = nil)
       report = { 'collapsed' => [], 'unavailable' => [] }
-      comments = history_comments(published)
-      latest = latest_comment(comments)
+      latest = latest_comment(comments = history_comments(published))
       return report.merge('skipped' => 'No current report found; history was left intact.') unless latest
 
       comments.each { |comment| fold_one(comment, latest, report) if earlier?(comment, latest) }
       report
+    rescue DeferredRendering::Refused
+      report.merge('skipped' => 'GitHub refused its Markdown renderer, so earlier comments were left visible.')
     rescue Error => e
       report['unavailable'] << e.message
       report
@@ -60,14 +62,15 @@ module Shaka
 
     def fold_one(comment, latest, report)
       path = "repos/#{@github.repository}/issues/comments/#{comment.fetch('id')}"
-      source = fresh_body(path, latest)
-      return unless source
+      return unless (source = fresh_body(path, latest))
 
       body = revised_body(source, latest['id'])
       return unless body && body != source
 
       replace(path, source, body)
       report['collapsed'] << comment['id']
+    rescue DeferredRendering::Refused
+      raise
     rescue Error => e
       report['unavailable'] << "Comment #{comment['id']}: #{e.message}"
     end
