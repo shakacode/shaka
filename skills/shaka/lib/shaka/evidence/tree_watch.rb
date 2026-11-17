@@ -99,11 +99,14 @@ module Shaka
       # starts, and still names them after the leader exits, which taskkill /T cannot.
       def group = @windows ? {} : { pgroup: true }
 
+      # Without fiddle, which a later Ruby may not load under --disable-gems, taskkill alone stops it.
       def adopt(pid)
         return unless @windows && ExecutableFile.windows?
 
         require_relative '../doctor/windows_job'
         Doctor::WindowsJob.adopt(pid)
+      rescue LoadError
+        nil
       end
 
       # taskkill /T covers descendants the job could not hold while the leader lives. A leader that

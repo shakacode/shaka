@@ -38,12 +38,13 @@ module Shaka
 
       # Git for Windows keeps git-core under GIT/<mingw dir>/libexec and its sh under GIT/bin, whose sh
       # puts Git's Unix tools on PATH. git.exe comes by full path from a PATH entry outside the
-      # candidate CHECKOUT, so neither a git.exe in the current directory nor one the checkout put on PATH answers.
+      # candidate CHECKOUT, so a git.exe in the current directory or one the checkout put on PATH
+      # cannot answer, and an inherited GIT_EXEC_PATH cannot move the root.
       def git_shell(checkout)
         git = LocalReviewPathGuard.safe_executable(ENV.fetch('PATH', ''), 'git.exe', checkout)
         raise Error, 'Cannot find git.exe outside the checkout on PATH' unless git
 
-        output, status = Open3.capture2(git, '--exec-path')
+        output, status = Open3.capture2({ 'GIT_EXEC_PATH' => nil }, git, '--exec-path')
         raise Error, 'Cannot find Git for Windows: git --exec-path failed' unless status.success?
 
         git_root = File.expand_path('../../..', output.strip)
