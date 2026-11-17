@@ -151,6 +151,7 @@ class InstructionGrowthTokensTest < Minitest::Test
     counter = ->(**given) { texts.update(given) && [{ 'cli' => 'stub' }] }
     result = InstructionGrowth.new(root:, base: 'HEAD', tokens: counter).report
     assert_equal [{ 'cli' => 'stub' }], result['startup_tokens']['clis']
+    assert_includes result['startup_tokens']['note'], 'may be noise'
     texts
   end
 

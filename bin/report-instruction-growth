@@ -48,6 +48,7 @@ class InstructionGrowth
   def startup_tokens(previous, current)
     before = startup_text(previous) if @baseline
     { 'text' => "#{ENTRY} plus the rendered workflow, counted by each CLI with its signed-in account",
+      'note' => 'Claude counts vary by about 20 tokens between runs; a smaller delta may be noise.',
       'clis' => @tokens.call(before:, after: startup_text(current)) }
   end
 
