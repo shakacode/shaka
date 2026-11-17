@@ -21,4 +21,5 @@ instructions or private company plans.
 - [Documentation structure](documentation.md) — help users start with the skill and consult guides as needed.
 - [Rendering preview](rendering-preview.md) — how an agent shows a rendering change on its own PR.
 - [Conditional workflow loading](conditional-workflow-loading.md) — bounded extraction and Ponytail structure comparison.
+- [Startup token cost](startup-token-cost.md) — what Shaka's startup text costs in Claude and Codex tokens, a release-time log, and one comparison with popular skill libraries.
 - [Predecessor retirement](retirement.md) — temporary migration record; remove after its acceptance conditions are met.
