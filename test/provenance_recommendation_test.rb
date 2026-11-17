@@ -42,6 +42,31 @@ class ProvenanceRecommendationTest < Minitest::Test
     assert_rows([[HEADS[0], '| UNKNOWN / medium |'], [HEADS[1], '| gpt-5.6-terra / medium | gpt-5.6-terra / medium |']])
   end
 
+  # Review finding: replacing a recorded UNKNOWN model also dropped the recorded concrete effort.
+  def test_each_setting_keeps_its_own_recorded_value
+    publish(HEADS[0], 'recommended_model' => 'UNKNOWN', 'recommended_effort' => 'high')
+    rendered = publish(HEADS[1], 'recommended_effort' => 'low')
+
+    assert_includes rendered, '| Recommended model / effort | gpt-5.6-terra / high |'
+    pull = pull_for(HEADS[2])
+    kept = Shaka::ProvenanceRecommendation.resolve(pull, PUBLIC_PROVENANCE.merge('recommended_effort' => 'low')).kept
+    assert_equal 'gpt-5.6-terra / high', kept
+  end
+
+  # Review finding: the recorded value used to replace invalid input before validation saw it.
+  def test_invalid_recommended_input_is_still_refused
+    publish(HEADS[0])
+    [nil, 7, 'bad value'].each do |value|
+      error = assert_raises(Shaka::Error) { publish(HEADS[1], 'recommended_model' => value) }
+      assert_includes error.message, 'recommended_model is invalid'
+    end
+  end
+
+  def test_an_unchanged_recommendation_reports_nothing_kept
+    publish(HEADS[0])
+    assert_nil Shaka::ProvenanceRecommendation.resolve(pull_for(HEADS[1]), PUBLIC_PROVENANCE).kept
+  end
+
   def test_a_fork_keeps_no_recorded_recommendation
     publish(HEADS[0])
     rendered = publish(HEADS[1], fork: true, 'recommended_model' => 'claude-opus-5-5')
