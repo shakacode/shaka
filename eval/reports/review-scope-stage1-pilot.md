@@ -69,8 +69,9 @@ nor Stage 2 runs.
   The 17 controls ran first, before any reviewer was paid.
 - **Record:** [stage1-pilot-records.jsonl](review-scope/stage1-pilot-records.jsonl) holds
   one line per known problem, warm-up, reviewer run and judge call, with ids, verdicts,
-  tokens and both cost figures. The reviewer reports and transcripts are kept outside the
-  repository.
+  tokens and both cost figures. Each judge line holds the finding text the judge received,
+  so every judge prompt can be rebuilt byte for byte with the pinned prompt. The reviewer
+  reports and transcripts are kept outside the repository.
 
 ## Bars
 
@@ -141,7 +142,7 @@ cycle where history first reported it, has a finding the judge matched to it.
 | Part | Calls | Billed | Cache-neutral | Estimate, billed |
 | --- | ---: | ---: | ---: | ---: |
 | Reviewer runs | 36 | $10.85 | $36.51 | $9.28 |
-| Warm-ups | 7 | $0.43 | $0.58 | $2.58 with the judge |
+| Warm-ups | 7 | $0.44 | $0.58 | $2.58 with the judge |
 | Judge | 75 | $0.56 | $2.27 | |
 | **Total** | 118 | **$11.85** | **$39.36** | **$11.86** |
 
@@ -223,9 +224,10 @@ the first paid call unless marked.
   therefore loses less context for Claude than it would have in October.
 - **One run per reviewer, arm and cycle.** F5 shows how much one run can vary: arm B's
   reviewers had its line in their diff and did not report it.
-- **Not rerunnable from the record.** The reviewer reports, transcripts and harness stay
-  outside the repository, so the transcript check and the finding parse cannot be rerun
-  from committed files. The record keeps each run's tool-call counts and void verdict.
+- **Partly rerunnable from the record.** Anyone can re-judge every finding from the record.
+  The reviewer reports, transcripts and harness stay outside the repository, so the
+  transcript check and the finding parse cannot be rerun from committed files. The record
+  keeps each run's tool-call counts and void verdict.
 - **One judge.** `gpt-6.1-sol` decided every match. It passed its controls, but no person
   checked the Stage 1 verdicts.
 
