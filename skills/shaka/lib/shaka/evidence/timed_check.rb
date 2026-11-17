@@ -4,6 +4,7 @@ require 'open3'
 require_relative '../call_log'
 require_relative '../error'
 require_relative '../executable_file'
+require_relative '../local_review/path_guard'
 require_relative 'machine_facts'
 require_relative 'phase_log'
 require_relative 'tree_watch'
@@ -30,18 +31,23 @@ module Shaka
       end
 
       def command(context, environment, arguments)
-        script = File.join(*context.values_at(:root, :path))
-        [environment, *ExecutableFile.script_command(script, shell: method(:git_shell)), *arguments]
+        root = context.fetch(:root)
+        script = File.join(root, context.fetch(:path))
+        [environment, *ExecutableFile.script_command(script, shell: -> { git_shell(root) }), *arguments]
       end
 
-      # Git for Windows keeps git-core under ROOT/<mingw dir>/libexec and sh.exe under ROOT/usr/bin. The
-      # git comes from PATH, which evidence run has already guarded against the candidate checkout.
-      def git_shell
-        output, status = Open3.capture2('git', '--exec-path')
+      # Git for Windows keeps git-core under GIT/<mingw dir>/libexec and its sh under GIT/bin, whose sh
+      # puts Git's Unix tools on PATH. git.exe comes by full path from a PATH entry outside the
+      # candidate CHECKOUT, so neither a git.exe in the current directory nor one the checkout put on PATH answers.
+      def git_shell(checkout)
+        git = LocalReviewPathGuard.safe_executable(ENV.fetch('PATH', ''), 'git.exe', checkout)
+        raise Error, 'Cannot find git.exe outside the checkout on PATH' unless git
+
+        output, status = Open3.capture2(git, '--exec-path')
         raise Error, 'Cannot find Git for Windows: git --exec-path failed' unless status.success?
 
         git_root = File.expand_path('../../..', output.strip)
-        shell = %w[usr/bin/sh.exe bin/sh.exe].map { File.join(git_root, it) }.find { File.file?(it) }
+        shell = %w[bin/sh.exe usr/bin/sh.exe].map { File.join(git_root, it) }.find { File.file?(it) }
         shell || raise(Error, "Cannot find sh.exe from Git for Windows under #{git_root}")
       end
     end

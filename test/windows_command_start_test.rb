@@ -37,6 +37,19 @@ class WindowsCommandStartTest < Minitest::Test
     end
   end
 
+  # The leader exits at once and leaves a descendant holding the output, as a test runner's
+  # worker can. Only the job still names that descendant.
+  def test_windows_stop_ends_a_descendant_after_its_leader_exits
+    skip 'needs Windows job objects' unless Shaka::ExecutableFile.windows?
+
+    Dir.mktmpdir('shaka-windows-stop') do |root|
+      pid_file = File.join(root, 'pid')
+      stop_after_leader_exits(Shaka::Evidence::TreeWatch.new([], root:, tree: nil, windows: true), pid_file)
+
+      refute running?(Integer(File.read(pid_file))), 'the descendant outlived the stop'
+    end
+  end
+
   def test_windows_install_accepts_an_executable_record_without_an_execute_bit
     with_helper_without_execute_bit do |source, path|
       tracked = { 'skills/shaka/scripts/shaka' => %w[100755 blob] }
@@ -48,10 +61,37 @@ class WindowsCommandStartTest < Minitest::Test
     end
   end
 
+  LEADER = <<~RUBY
+    sleep 1
+    pid = spawn(RbConfig.ruby, '-e', 'sleep 120')
+    File.write(ARGV.fetch(0), pid.to_s)
+  RUBY
+
   private
 
+  def stop_after_leader_exits(watch, pid_file)
+    Open3.popen3(RbConfig.ruby, '-e', LEADER, pid_file) do |input, _output, _error, waiter|
+      input.close
+      watch.instance_variable_set(:@job, watch.send(:adopt, waiter.pid))
+      waiter.join(30)
+      watch.send(:end_tree, waiter)
+    end
+  end
+
+  def running?(pid)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 5
+    loop do
+      Process.kill(0, pid)
+      return true if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+
+      sleep 0.2
+    end
+  rescue Errno::ESRCH
+    false
+  end
+
   # The real Git for Windows sh on Windows, where no /bin/sh exists.
-  def shell = Shaka::ExecutableFile.windows? ? Shaka::Evidence::TimedCheck.git_shell : '/bin/sh'
+  def shell = Shaka::ExecutableFile.windows? ? Shaka::Evidence::TimedCheck.git_shell(Dir.tmpdir) : '/bin/sh'
 
   def with_helper_without_execute_bit
     Dir.mktmpdir('shaka-windows-source') do |root|

@@ -5,10 +5,11 @@ require 'tmpdir'
 require_relative 'session'
 
 # Product paths that start other programs, run the way a PowerShell or cmd user starts Shaka:
-# Ruby itself, with no Git Bash in between.
+# Ruby itself, with no Git Bash in between and none of Git's or MSYS2's Unix tools on PATH.
 class WindowsProduct < WindowsSession
   EVIDENCE_RUN = %w[evidence run --repository shakacode/shaka --command test].freeze
   TEST = %w[-- test/executable_file_test.rb].freeze
+  UNIX_TOOLS = %r{msys64|[\\/]Git[\\/](?:usr[\\/]bin|bin|mingw64[\\/]bin)[\\/]?\z}i
 
   def call
     record('helper and command start tests') do
@@ -23,7 +24,7 @@ class WindowsProduct < WindowsSession
 
   def evidence_run
     head = git_output('rev-parse', 'HEAD')
-    output, error, success = capture([*helper, *EVIDENCE_RUN, '--root', root, '--ref', head, *TEST], 600)
+    output, error, success = capture([native_path, *helper, *EVIDENCE_RUN, '--root', root, '--ref', head, *TEST], 600)
     puts "  helper #{success ? 'succeeded' : 'failed'}: #{excerpt(error)}"
     return if completed?(output)
 
@@ -39,11 +40,18 @@ class WindowsProduct < WindowsSession
 
   def install
     Dir.mktmpdir('shaka-windows-install') do |home|
-      environment = { 'HOME' => home, 'USERPROFILE' => home }
+      environment = native_path.merge('HOME' => home, 'USERPROFILE' => home)
       output, status = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), '--agent', 'codex')
       puts "  exit #{status.exitstatus}: #{excerpt(output)}"
       raise 'bin/install failed' unless status.success?
     end
+  end
+
+  # A native shell finds git through Git\cmd and nothing from Git's Unix tree.
+  def native_path
+    entries = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).grep_v(UNIX_TOOLS)
+    puts "  PATH keeps #{entries.size} entries without Unix tools"
+    { 'PATH' => entries.join(File::PATH_SEPARATOR) }
   end
 
   def helper

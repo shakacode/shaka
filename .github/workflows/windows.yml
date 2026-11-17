@@ -59,8 +59,10 @@ jobs:
         continue-on-error: true
         run: ruby bin/windows-exercise cursor
 
+      # PowerShell, as a native Windows user starts Shaka; the exercise also drops Git's Unix tools from PATH.
       - name: Product command starts
         continue-on-error: true
+        shell: pwsh
         run: ruby bin/windows-exercise product
 
       # Each test file runs on its own. A file still running after 90s is
