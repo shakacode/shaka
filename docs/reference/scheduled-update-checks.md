@@ -43,10 +43,11 @@ To get only a notice, ask for a daily update check instead. Ask your agent to
 identify the installed helper and follow the steps for your system, then run the
 job once and read its log. You can also follow the steps yourself.
 
-The steps below schedule a check. To schedule the update itself, put
-`install --update` where the steps use `update-check`: two `ProgramArguments`
-strings on macOS, and the same two words in the Linux `ExecStart` and the WSL
-command. Keep the example job names so the stop steps below still apply.
+The steps below schedule a check. To schedule the update itself, change only
+the command. On macOS, replace `<string>update-check</string>` with
+`<string>install</string>` and `<string>--update</string>`. On Linux and in the
+WSL command, replace `update-check` with `install --update`. Keep the example
+job names so the stop steps below still apply.
 
 Choose a time when no Shaka task is running, including for the first run, which
 applies the update at once. A successful run exits 0 and logs
