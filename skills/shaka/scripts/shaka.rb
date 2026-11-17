@@ -168,6 +168,13 @@ def rendered_description(described, github, pull, workflow_version, options)
   [rendered, carried, usage_records, settings.verdict&.key?('kept_line')]
 end
 
+# What a publication kept from earlier ones instead of what it was given.
+def kept_notes(notes, evidence, recommendation)
+  notes['evidence_kept'] = Shaka::VerificationGates::KEPT if evidence
+  notes['recommendation_kept'] = Shaka::ProvenanceRecommendation.note(recommendation) if recommendation
+  notes
+end
+
 def description_timeline(carried, github, pull, settings)
   timeline = Shaka::PullTimeline.with_decisions(Shaka::PullTimeline.new(github).call, carried)
   timeline = Shaka::TimelineSteps.attach(timeline, github, pull)
@@ -188,7 +195,7 @@ def render_description(carried, version, pull, settings, timeline, options, gith
 end
 
 # The risk level comes from this head's checkpoint and the trusted areas, as merge reads them. A description
-# without a checkpoint shows no level, and a rated one without trusted settings withholds it.
+# without a checkpoint shows no level, and a rated one without trusted settings applies Shaka's default areas.
 def described_risk(carried, github, pull, settings)
   return unless carried['checkpoint'].is_a?(Hash)
 
@@ -446,18 +453,19 @@ begin
                end)
                attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
                described = resolved_description(attributed, github, options)
-               usage_records = carried = kept = nil
+               usage_records = carried = kept = recommendation = nil
                published = github.description(prose:) do |pull|
                  rendered, carried, usage_records, kept = rendered_description(described, github, pull,
                                                                                workflow_version, options.merge(root:))
+                 recommendation = Shaka::ProvenanceRecommendation.resolve(pull, described['provenance']).kept
                  rendered
                end
                attention = Shaka::DecisionLabels.sync(github, carried)
                opening = opening_result(options.merge(root:), described['summary'],
                                         prose: Shaka::OpeningProse.call(described))
                refresh = Shaka::CursorUsageRefresh.bind(repository, number, carried['usage']) if carried.is_a?(Hash)
-               notes = prose_note.merge(guide).merge(Shaka::ClosingIssues.note(described, github))
-               notes['evidence_kept'] = Shaka::VerificationGates::KEPT if kept
+               notes = kept_notes(prose_note.merge(guide).merge(Shaka::ClosingIssues.note(described, github)),
+                                  kept, recommendation)
                published.merge('opening' => opening, 'usage_records' => usage_records).merge(notes).tap do |result|
                  result['attention'] = attention if attention
                  result['stale_checkpoint'] = Shaka::PostImplementationStale.new(github).call

@@ -31,6 +31,17 @@ class CliDescriptionKeptResultsTest < Minitest::Test
     refute result.key?('evidence_kept')
   end
 
+  # Issue #1187: a later publication cannot quietly replace the plan-time recommendation.
+  def test_a_changed_recommendation_keeps_the_recorded_one_and_says_so
+    entry = { 'head' => 'b' * 40, 'workflow' => '`1.0.0` (commit unknown)', 'requested' => 'Not specified',
+              'recommended' => 'claude-opus-5-5 / high', 'active' => 'gpt-5.6-terra / medium' }
+    marker = "<!-- shaka:provenance #{JSON.generate('entries' => [entry], 'omitted' => 0)} -->"
+    published, result = republish("<!-- shaka:begin -->\n#{marker}\n<!-- shaka:end -->")
+
+    assert_includes published, '| Recommended model / effort | claude-opus-5-5 / high |'
+    assert_includes result.fetch('recommendation_kept'), 'claude-opus-5-5 / high'
+  end
+
   private
 
   def republish(existing)

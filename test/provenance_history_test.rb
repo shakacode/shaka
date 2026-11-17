@@ -52,7 +52,7 @@ class ProvenanceHistoryTest < Minitest::Test
 
   CHANGED = 'b' * 40
   HIGH = { 'requested_effort' => 'high' }.freeze
-  OPUS = HIGH.merge('recommended_model' => 'claude-opus-5-5').freeze
+  OPUS = HIGH.merge('active_model' => 'claude-opus-5-5').freeze
   # Each step changes one compared value from the step before it: [routes, commit, modified, expected].
   STEPS = [
     [{}, 'a' * 40, false, 'gpt-5.6-terra / medium | gpt-5.6-terra / medium | gpt-5.6-terra / medium |'],
@@ -60,7 +60,7 @@ class ProvenanceHistoryTest < Minitest::Test
     [{}, CHANGED, true, '(modified)'],
     [HIGH, CHANGED, true, '| gpt-5.6-terra / high |'],
     [OPUS, CHANGED, true, '| claude-opus-5-5 / medium |'],
-    [OPUS.merge('active_effort' => 'low'), CHANGED, true, '| gpt-5.6-terra / low |']
+    [OPUS.merge('active_effort' => 'low'), CHANGED, true, '| claude-opus-5-5 / low |']
   ].freeze
 
   def test_a_republish_with_unchanged_provenance_adds_no_entry

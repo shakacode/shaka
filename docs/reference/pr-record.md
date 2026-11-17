@@ -62,8 +62,10 @@ of you, then lists:
   [PR evidence guide](../settings.md#project_guidance) asks for one.
 
 Until the checkpoint rates the current commit, the level reads **not rated yet**.
-When Shaka cannot read the repository's trusted settings, it reads **not shown**:
-Shaka's default areas could rate the change lower than the repository's own.
+When Shaka reads no repository settings, because the repository has none or the agent
+published without them, the level checks only Shaka's default high-risk areas, and the
+section says so. An area your repository adds could raise it. Merge never uses this line: it rates the
+commit again from the checkpoint and your settings.
 
 ## Checkpoint
 
@@ -211,6 +213,10 @@ and what remains unverified. Captures and tests provide different evidence:
 | Layout, styling, or visible output | Annotated before-and-after desktop and mobile screenshots. |
 | Interaction, animation, or timing | A recording, with screenshots where useful. |
 | Backend or command-line behavior | Focused tests and concise before-and-after output. |
+
+After a later commit, the agent posts a new check for that head and folds the older one.
+Earlier captures it did not refresh stay in a collapsed Earlier evidence section, labeled
+with the commit that captured them, so old screenshots never pass as proof for the new head.
 
 ## Diagrams
 
