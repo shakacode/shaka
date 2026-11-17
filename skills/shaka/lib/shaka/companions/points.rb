@@ -10,7 +10,7 @@ module Shaka
       REFERENCES = File.expand_path('../../../references', __dir__)
       LINE = /\ASkill point\b.*?`companions ([^\s`]+)/
       HEADING = /\A\#{1,6} +(.+?) *#*\z/
-      FENCE = /\A(```|~~~)/
+      FENCE = /\A {0,3}(`{3,}|~{3,})/
 
       Declaration = Data.define(:id, :file, :line, :heading_anchor) do
         def place = "#{File.basename(file, '.md')}##{heading_anchor}"
@@ -47,13 +47,19 @@ module Shaka
         end
       end
 
+      # A fence closes only on a bare run of its own character at least as long as the one that opened it.
       def outside_fences(lines)
-        fenced = false
+        open = nil
         lines.each_with_index.reject do |text, _index|
-          fenced = !fenced if text.match?(FENCE)
-          fenced || text.match?(FENCE)
+          run = text[FENCE, 1]
+          next(open = run) unless open
+
+          open = nil if closes?(open, run, text)
+          true
         end
       end
+
+      def closes?(open, run, text) = run && run[0] == open[0] && run.length >= open.length && text.strip == run
 
       def paragraph(lines, start) = lines.drop(start).take_while { |text| !text.strip.empty? }.join(' ')
 

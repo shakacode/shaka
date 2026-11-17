@@ -6,6 +6,8 @@ require 'shaka/companions/pack'
 # The pack file schema refuses entries the resolver could not apply safely.
 class CompanionsPackTest < Minitest::Test
   POINT = 'ui-verification#ui-changes'
+  NON_STRING_KEY = "version: 1\npack: perf\nsource: s\nmatch: { plugins: [perf] }\n" \
+                   "skills: { coverage: { points: { a#b: { mode: use, reason: r, 0: x } } } }\n"
 
   def test_a_valid_pack_records_only_stated_flags
     skill = parse(skills: { 'coverage' => { 'setup' => true,
@@ -48,6 +50,7 @@ class CompanionsPackTest < Minitest::Test
     assert_refused('must set mode and reason',
                    skills: { 'coverage' => { 'points' => { POINT => { 'mode' => 'use' } } } })
     assert_refused('not valid YAML', text: "skills: [\n")
+    assert_refused('must set mode and reason', text: NON_STRING_KEY)
   end
 
   private

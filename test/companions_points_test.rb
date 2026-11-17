@@ -44,6 +44,11 @@ class CompanionsPointsTest < Minitest::Test
     end
   end
 
+  def test_a_shorter_fence_inside_a_longer_one_does_not_close_it
+    text = "# Guide\n\n````markdown\n```\nSkill point: run `companions guide#x`.\n```\n````\n"
+    procedure(text) { |dir| assert_empty POINTS.all(dir) }
+  end
+
   private
 
   def procedure(text)

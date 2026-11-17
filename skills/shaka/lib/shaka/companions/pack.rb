@@ -52,6 +52,7 @@ module Shaka
       MATCH_KEYS = %w[plugins paths].freeze
       UNSAFE_PARTS = ['', '.', '..'].freeze
       BOOLEANS = [true, false].freeze
+      POINT_KEYS = %w[mode reason].freeze
 
       Skill = Data.define(:name, :flags, :study, :path, :points)
 
@@ -149,7 +150,8 @@ module Shaka
       end
 
       def point!(point, setting, where)
-        check!(setting.is_a?(Hash) && setting.keys.sort == %w[mode reason], "#{where} must set mode and reason")
+        check!(setting.is_a?(Hash) && setting.keys.length == 2 && (setting.keys - POINT_KEYS).empty?,
+               "#{where} must set mode and reason")
         mode, reason = setting.values_at('mode', 'reason')
         check!(MODES.include?(mode), "#{where}.mode must be one of #{MODES.join(', ')}")
         check!(point != ANY || mode == 'decline', "#{where} may only decline")
