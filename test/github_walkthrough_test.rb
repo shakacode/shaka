@@ -54,6 +54,23 @@ class GitHubWalkthroughTest < Minitest::Test
     assert_empty @calls
   end
 
+  # The ready checkpoint recognizes only this shape, so a body it would miss is refused before any write.
+  def unrecognized_bodies
+    footer = "_Walkthrough for commit `#{HEAD}`. This is a COMMENT, not an approval._"
+    { 'identity' => "# Code Walkthrough\n\nSee #{PINNED_LINK}.\n\n#{footer}",
+      'heading' => "🤖 Claude\n\nSee #{PINNED_LINK}.\n\n#{footer}",
+      'footer' => "🤖 Claude\n\n# Code Walkthrough\n\nSee #{PINNED_LINK}.",
+      'revision' => rendered("See #{PINNED_LINK}.", head: 'b' * 40) }
+  end
+
+  def test_a_body_the_checkpoint_would_not_recognize_never_contacts_github
+    unrecognized_bodies.each do |part, body|
+      error = assert_raises(Shaka::Error) { client.walkthrough(head: HEAD, body:) }
+      assert_includes error.message, part, part
+      assert_empty @calls, part
+    end
+  end
+
   def test_unauthorized_publication_does_not_attempt_readback
     github = client(snapshot_response, files_response, *gate_responses, html_response, response({}, status: 1),
                     response([]), viewer_response)

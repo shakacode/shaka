@@ -26,6 +26,18 @@ module Shaka
       opening_identity?(lines) && heading?(lines) && closing_footer?(lines)
     end
 
+    # Publishing a body the ready checkpoint cannot find for this head would only fail later, after the write.
+    def self.verify_recognizable!(body, head)
+      lines = visible_lines(body)
+      missing = { 'identity line first' => opening_identity?(lines), '`# Code Walkthrough` heading' => heading?(lines),
+                  'commit footer last' => closing_footer?(lines) }.reject { |_, present| present }.keys
+      missing << "footer revision #{head}" if missing.empty? && revision(body) != head
+      return if missing.empty?
+
+      raise Error, "Walkthrough body lacks #{missing.join(', ')}, so the ready checkpoint would not recognize it. " \
+                   'Publish with --content-file, which renders this shape, or see --body-file in --help.'
+    end
+
     def self.visible_lines(body) = unfenced(body).lines.map(&:strip).reject(&:empty?)
 
     def self.opening_identity?(lines) = lines.first&.match?(IDENTITY)

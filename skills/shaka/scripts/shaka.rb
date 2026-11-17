@@ -242,6 +242,16 @@ def start_redaction(options, repository, privacy)
                                  privacy:).path_redaction
 end
 
+# Only walkthrough adds its input contract; every other command shows just the shared options.
+def help_flag(flags, command)
+  flags.on('-h', '--help', 'Show usage') do
+    puts flags
+    puts File.read(File.expand_path('../config/walkthrough-help.md', __dir__), encoding: 'UTF-8') if
+      command == 'walkthrough'
+    exit
+  end
+end
+
 def usage_banner
   lines = ["shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]", 'shaka pr watch OWNER/REPO NUMBER [options]']
   lines += Shaka::Subcommands.usage_lines
@@ -318,11 +328,12 @@ def rendering_preview_flag(flags, options)
 end
 
 options = {}
+invoked = ARGV.dup
 parser = OptionParser.new do |flags|
   flags.banner = usage_banner
   flags.on('--head SHA', 'Expected current PR head') { |value| options[:head] = value }
   flags.on('--content-file PATH', 'Publication content as JSON') { |value| options[:content_file] = value }
-  flags.on('--body-file PATH', 'Walkthrough Markdown file') { |value| options[:body_file] = value }
+  flags.on('--body-file PATH', 'Rendered walkthrough Markdown; see walkthrough --help') { |v| options[:body_file] = v }
   flags.on('--key NAME', 'Stable reply key; reused instead of duplicating') { |value| options[:key] = value }
   flags.on('--comment ID', Integer, 'Root review comment for an inline-thread reply') do |value|
     options[:comment] = value
@@ -340,10 +351,7 @@ parser = OptionParser.new do |flags|
   flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, resume, none') do |value|
     options[:state] = value
   end
-  flags.on('-h', '--help', 'Show usage') do
-    puts flags
-    exit
-  end
+  help_flag(flags, invoked.first)
 end
 
 begin
