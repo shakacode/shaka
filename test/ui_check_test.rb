@@ -276,6 +276,12 @@ class UiCheckHistoryRecoveryTest < Minitest::Test
     marks.each { |mark| assert_includes text, mark }
   end
 
+  def test_sibling_copies_whose_text_differs_refuse
+    checks = [check_with(block(views), 2), check_with(block("#{views}\n![View](#{asset('edited')})"), 3)]
+
+    assert_raises(Shaka::Error) { Shaka::UiCheck::History.carry(checks, shown: [], retired: [], head: HEAD) }
+  end
+
   def test_a_block_that_swallowed_its_neighbour_refuses_before_posting
     github = GitHub.new([earlier_check(1, 'home')])
     second_check(github, 'Second head.', 'examples')

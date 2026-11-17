@@ -43,6 +43,9 @@ module Shaka
       end
 
       def merge_marks(copies)
+        raise Error, "Copies of earlier evidence from #{copies.first.source} differ; fold the stale one by hand." if
+          copies.map(&:unmarked).uniq.length > 1
+
         copies.first.with(text: [copies.first.unmarked, *copies.flat_map(&:marks).uniq].join("\n\n"))
       end
 
