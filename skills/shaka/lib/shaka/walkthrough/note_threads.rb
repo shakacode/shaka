@@ -31,7 +31,7 @@ module Shaka
         roots = note_roots(review)
         return if roots.empty?
 
-        index = threads
+        index = fresh_threads
         roots.select { |id| index[id] && unanswered?(index[id]) }.each do |id|
           @github.delete_comment(id)
           yield id
@@ -48,9 +48,11 @@ module Shaka
         end
       end
 
-      def threads
-        @reader ||= PublicComments::Threads.new(@github)
-        @threads ||= @reader.call.last
+      # Read just before deleting, per review, so a reply that arrives during publication is seen. Deletion
+      # cannot be undone, so a reply posted in the seconds between this read and the deletion is the remaining gap.
+      def fresh_threads
+        @reader = PublicComments::Threads.new(@github)
+        @reader.call.last
       end
 
       def unanswered?(thread)
