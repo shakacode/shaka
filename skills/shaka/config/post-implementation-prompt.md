@@ -15,11 +15,11 @@ outcome, and project constraints. Evaluate the finished change as a whole.
 - Will future work have to understand and build around unjustified complexity?
 - Knowing the result and cost, would we choose this approach again?
 
-The change must show that its benefit outweighs its upkeep; the cheaper option
-needs no evidence. Benefit counts when the packet cites evidence such as an
-observed failure, a review finding, a maintainer request, or a measurement. A
-new check or guard adds little when existing review or checks already catch
-what it prevents. Upkeep includes dependencies, parsing, abstractions, loaders,
+The change must show that its benefit outweighs its upkeep. A cheaper option
+need not prove a benefit, but it still names the guarantees it loses. Benefit
+counts when the packet cites evidence such as an observed failure, a review
+finding, a maintainer request, or a measurement. A new check or guard adds
+little when existing review or checks already catch what it prevents. Upkeep includes dependencies, parsing, abstractions, loaders,
 configuration, coupling, tests, and failure paths. When a change adds more than
 trivial upkeep and its benefit is unknown, small, or only asserted, conclude
 **Simplify/reframe** or **Do not merge**, name the cheaper alternative, and list
