@@ -513,7 +513,9 @@ A commit GitHub does not have, such as one a rebase replaced before it was pushe
 request commit with the same subject, author date, and change; without one, it is named without a link or subject.
 
 Republishing the same ledger edits its comment in place; a fresh ledger gets its own comment
-and leaves reports it does not account for untouched. When reports would pass GitHub's
+and leaves reports it does not account for untouched. After a rebase or base change starts a
+fresh ledger, carry the earlier ledger's still-applicable findings into the new one, publish
+it, then fold the earlier ledger's comment with `shaka review collapse OWNER/REPO NUMBER --current NEW_ID --superseded OLD_ID`. When reports would pass GitHub's
 65,536-character limit, the oldest commits' reports move into `earlier commits` continuation
 comments. One commit whose reports cannot fit any comment is refused: shorten its reports and
 publish again. All comments are rendered and checked before any is posted, except where GitHub
@@ -593,6 +595,11 @@ pull request, was written by the authenticated account, starts with the `🤖` w
 identifier, and that each selected one is older than the current one. It also checks
 GitHub's rendering and the stored body. It does not judge whether the evidence is
 obsolete. Failures are listed and return nonzero.
+
+When `--current` is a Shaka local review comment, each selected comment must be one too. The
+current one must be visible and review the pull request head. Each selected one is folded as
+publication folds it, with its closing attestation left below for `merge`, and must review a
+different commit. A selected comment that is not folded is listed and returns nonzero.
 
 Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the
