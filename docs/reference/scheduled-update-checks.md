@@ -6,9 +6,12 @@ it can change files that open chats are still reading.
 If you want to update daily, schedule a check that tells you when an update is
 available, then update between chats.
 
-When you invoke Shaka, its skill also asks your agent to run this check once per
-chat. If an update is available, the agent tells you how to install it. A
-schedule helps most when you leave Shaka chats running overnight. The check
+When you invoke Shaka, its skill also asks your agent to run this check. The
+check asks GitHub at most once a day. Later chats that day repeat its saved
+answer until you update Shaka. If an update is available, the agent tells you
+how to install it.
+
+A schedule helps most when you leave Shaka chats running overnight. The check
 compares an installation from a GitHub branch, such as the default `main`, with
 that branch. For a pinned release, it reports only the pinned version; ask your
 agent about [installing a newer release](../manual-installation.md#keep-a-tested-release)
@@ -16,19 +19,24 @@ instead.
 
 ## Get a reminder when a Claude Code chat starts
 
-In Claude Code, a startup reminder is a lighter option than a scheduled job. It
-runs no check of its own. When a new chat starts, it reads the last saved check
-result and adds its guidance when that check found an update or another change
-to act on. If no check has run in the last day, it reminds you to run one. A
-daily check keeps that result fresh. Ask your agent:
+Installing Shaka for Claude Code turns on a startup reminder, a lighter option
+than a scheduled job. It runs no check of its own. When a new chat starts, it
+reads the last saved check result and adds its guidance when that check found
+an update or another change to act on. If no check has run in the last day, it
+reminds you to run one. A daily check keeps that result fresh.
+
+The installer adds the reminder as a `SessionStart` hook in
+`~/.claude/settings.json` and prints that change. Updating Shaka leaves the hook
+as it is. If you installed Shaka before the reminder was on by default, ask
+your agent:
 
 ```text
 Turn on Shaka's update reminder for new Claude Code chats
 ```
 
-The agent reruns the installer with `--session-hook`, which adds a `SessionStart`
-hook to `~/.claude/settings.json`. To run the command yourself or remove the
-hook, see [verify and update](../manual-installation.md#verify-and-update).
+The agent reruns the installer for Claude Code, which adds the hook. To turn
+the reminder off or run the command yourself, see
+[verify and update](../manual-installation.md#verify-and-update).
 
 ## Schedule a daily update check
 
@@ -38,6 +46,10 @@ Check whether my Shaka installation supports daily update checks. If it does, se
 
 Ask your agent to identify the installed helper and follow the steps for your
 system, then run one check and read its log. You can also follow the steps yourself.
+
+When a check of the same installation ran in the last 23 hours, the job repeats
+that answer and adds its `checked_at` time. The limit is an hour short of a day,
+so a job that runs at the same time each day still asks GitHub.
 
 Read the job's log for `status` and `guidance`. If the guidance recommends an
 update, finish your active Shaka chats first. Then ask your agent to
