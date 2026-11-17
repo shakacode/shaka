@@ -234,7 +234,8 @@ names the spec, repository, and stopping point.
 
 Your team may have its own skills, such as a release checklist. Shaka can offer them
 at the step where they help, so nobody has to remember to name them. List each skill
-in a pack file under `.agents/shaka/packs/` and merge it to the default branch:
+in a pack file such as `.agents/shaka/packs/team.yml` and merge it to the default
+branch. Shaka reads only files ending in `.yml`:
 
 ```yaml
 version: 1
@@ -265,7 +266,8 @@ The mode decides what the agent does at that step:
 
 - `use`: the agent applies the skill without asking.
 - `suggest`: the agent names the skill and its reason, and runs it after you say yes.
-- `decline`: the agent never uses the skill in a task.
+- `decline`: the agent does not use the skill at that point. To decline it at every
+  point, use `'*'` as the point name.
 
 Mark a skill that starts other agents with `fans_out: true` beside its `points`;
 Shaka then always waits for your yes before running it. A skill whose own file says
@@ -274,7 +276,7 @@ default branch, so a pack added in a pull request takes effect after it merges.
 Repository packs need
 [team settings](settings-guide.md#use-individual-or-team-settings); with individual
 settings, Shaka reads none.
-For your own machine, put pack files in `~/.agents/shaka/packs/`. Personal packs
+For your own machine, put `.yml` pack files in `~/.agents/shaka/packs/`. Personal packs
 can suggest or decline skills, but never use one without asking. Shaka ships no
 packs of its own yet.
 

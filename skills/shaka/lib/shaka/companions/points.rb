@@ -61,7 +61,10 @@ module Shaka
 
       def closes?(open, run, text) = run && run[0] == open[0] && run.length >= open.length && text.strip == run
 
-      def paragraph(lines, start) = lines.drop(start).take_while { |text| !text.strip.empty? }.join(' ')
+      # A paragraph ends at a blank line or a code fence, so an example below it is never part of it.
+      def paragraph(lines, start)
+        lines.drop(start).take_while { |text| !text.strip.empty? && !text.match?(FENCE) }.join(' ')
+      end
 
       # GitHub's heading anchor: lowercase, punctuation dropped, spaces as hyphens.
       def anchor(heading) = heading.downcase.gsub(/[^\p{Word}\- ]/, '').tr(' ', '-')
