@@ -49,6 +49,13 @@ module Shaka
       [LEAD, omission(history.fetch('omitted')), table(entries)].compact.join("\n\n")
     end
 
+    # The entries a same-repository PR body records, oldest first.
+    def entries(pull)
+      return [] unless pull && same_repository?(pull)
+
+      previous(pull['body']).fetch('entries')
+    end
+
     def head(pull)
       sha = pull.dig('head', 'sha')
       raise Error, 'Pull request head commit is unavailable for provenance history.' unless sha.to_s.match?(HEAD)
