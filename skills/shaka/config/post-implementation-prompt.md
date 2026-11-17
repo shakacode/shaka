@@ -19,11 +19,12 @@ The change must show that its benefit outweighs its upkeep. A cheaper option
 need not prove a benefit, but it still names the guarantees it loses. Benefit
 counts when the packet cites evidence such as an observed failure, a review
 finding, a maintainer request, or a measurement. A new check or guard adds
-little when existing review or checks already catch what it prevents. Upkeep includes dependencies, parsing, abstractions, loaders,
-configuration, coupling, tests, and failure paths. When a change adds more than
-trivial upkeep and its benefit is unknown, small, or only asserted, conclude
-**Simplify/reframe** or **Do not merge**, name the cheaper alternative, and list
-that unearned cost in concerns.
+little when existing review or checks already catch what it prevents. Upkeep
+includes dependencies, parsing, abstractions, loaders, configuration, coupling,
+tests, and failure paths. When a change adds more than trivial upkeep and its
+benefit is unknown, small, or only asserted, conclude **Simplify/reframe** or
+**Do not merge**, name the cheaper alternative, and list that unearned cost in
+concerns.
 
 Focus on product fit, architecture, scope, and value. Another minor code nit is
 not a reason to run this review. Conclude **Proceed**, **Simplify/reframe**, or
