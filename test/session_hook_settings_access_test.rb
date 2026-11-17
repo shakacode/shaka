@@ -7,6 +7,11 @@ require 'shaka/install/session_hook'
 class SessionHookSettingsAccessTest < Minitest::Test
   include OfficialInstallSupport
 
+  def teardown
+    File.chmod(0o700, settings_folder) if File.directory?(settings_folder)
+    super
+  end
+
   def test_settings_that_cannot_be_read_skip_the_default_hook_and_stop_the_explicit_flag
     FileUtils.mkdir_p(settings_path)
     output, status = invoke('--repository', @remote, '--agent', 'claude', '--session-hook')
@@ -18,18 +23,17 @@ class SessionHookSettingsAccessTest < Minitest::Test
   end
 
   def test_settings_that_cannot_be_written_skip_the_default_hook
-    folder = File.dirname(settings_path)
-    FileUtils.mkdir_p(folder)
+    skip 'Requires a user subject to directory permissions' if Process.euid.zero?
+    FileUtils.mkdir_p(settings_folder)
     File.write(settings_path, '{}')
-    File.chmod(0o500, folder)
+    File.chmod(0o500, settings_folder)
     hook = Shaka::Install::SessionHook.new('/opt/skills/shaka/scripts/shaka', home: @home)
     assert_match(/\ASkipped /, hook.apply(true, strict: false))
     assert_raises(SystemCallError) { hook.apply(true) }
-  ensure
-    File.chmod(0o700, folder) if folder
   end
 
   private
 
-  def settings_path = File.join(@home, '.claude/settings.json')
+  def settings_folder = File.join(@home, '.claude')
+  def settings_path = File.join(settings_folder, 'settings.json')
 end
