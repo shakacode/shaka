@@ -78,14 +78,15 @@ module Shaka
       CHECKED_AFTER
     end
 
-    # Comments and whitespace outside the region render as nothing.
+    # Comments and whitespace outside the region render as nothing. A comment body cannot cross `-->`,
+    # so text between two comments is never matched as part of one.
     def only_region?(body)
       text = Publishing.without_archive_guard(body)
       region = Publishing.managed_region(text)
       return false unless region
 
       outside = text.sub("#{Publishing::OPEN_MARK}#{region}#{Publishing::CLOSE_MARK}", '')
-      outside.match?(/\A(?:\s|<!--.*?-->)*\z/m)
+      outside.match?(/\A(?:\s|<!--(?:(?!-->).)*-->)*\z/m)
     end
 
     def restore_description(current, merged, error)
