@@ -7,7 +7,7 @@ module PostImplementationPublicationFixture
   class GitHub < Shaka::GitHub
     attr_reader :bodies
     attr_accessor :description_body
-    attr_writer :comments, :walkthrough
+    attr_writer :comments, :walkthrough, :draft
 
     def initialize(head)
       super('example/test', '1')
@@ -30,8 +30,6 @@ module PostImplementationPublicationFixture
       { 'state' => 'open', 'draft' => @draft, 'head' => { 'sha' => @head }, 'base' => { 'sha' => 'b' * 40 },
         'body' => @description_body }
     end
-
-    attr_writer :draft
 
     def graphql(query, **)
       ready = query.include?('markPullRequestReadyForReview')

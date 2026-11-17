@@ -75,16 +75,6 @@ class HandoffTest < Minitest::Test
     end
   end
 
-  def test_merge_approval_on_a_draft_is_owed
-    result = handoff(labels: ['awaiting-merge-approval'], draft: true)
-
-    assert(result['owed'].any? { |item| item.include?('draft') }, result['owed'].inspect)
-  end
-
-  def test_a_draft_waiting_on_something_else_owes_nothing_for_being_a_draft
-    assert_empty handoff(draft: true).fetch('owed')
-  end
-
   def test_a_moved_head_is_owed
     result = handoff(expected: OLD)
 
@@ -227,5 +217,20 @@ class HandoffWalkthroughDueTest < Minitest::Test
 
   def on_request(**changes)
     handoff(labels: ['awaiting-merge-approval'], reviews: [], walkthrough_publish: 'on_request', **changes)
+  end
+end
+
+# A person sent to merge a draft finds that GitHub cannot merge it.
+class HandoffDraftTest < Minitest::Test
+  include HandoffHarness
+
+  def test_merge_approval_on_a_draft_is_owed
+    result = handoff(labels: ['awaiting-merge-approval'], draft: true)
+
+    assert(result['owed'].any? { |item| item.include?('draft') }, result['owed'].inspect)
+  end
+
+  def test_a_draft_waiting_on_something_else_owes_nothing_for_being_a_draft
+    assert_empty handoff(draft: true).fetch('owed')
   end
 end

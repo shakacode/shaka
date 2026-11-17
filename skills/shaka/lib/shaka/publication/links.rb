@@ -33,8 +33,7 @@ module Shaka
       return [*decisions, links] unless content.key?('checkpoint')
 
       checkpoint = current_checkpoint(content['checkpoint'], pull)
-      label = [recommendation_label(checkpoint['recommendation'], draft: pull['draft'] == true),
-               RiskReview.lead(content, pull)].join(' · ')
+      label = [recommendation_label(checkpoint['recommendation'], pull), RiskReview.lead(content, pull)].join(' · ')
       [*decisions, decisions.any? ? links : "#{label} · #{links}", *adequacy(checkpoint['verification_adequacy']),
        *next_action(checkpoint['next_action'])]
     end
@@ -62,12 +61,12 @@ module Shaka
 
     # Without a recommendation for this head, such as while the checkpoint is pending or failed, the label says so.
     # GitHub cannot merge a draft, so a Merge recommendation on one names the step that comes first.
-    def recommendation_label(recommendation, draft: false)
+    def recommendation_label(recommendation, pull = nil)
       recommendations = PostImplementationReport::RECOMMENDATIONS
       unless recommendation.nil? || recommendations.include?(recommendation)
         raise Error, "Description checkpoint recommendation must be one of: #{recommendations.join(', ')}."
       end
-      return DRAFT_MERGE if draft && recommendation == 'Merge'
+      return DRAFT_MERGE if recommendation == 'Merge' && pull&.dig('draft') == true
 
       recommendation ? "**Recommendation: #{recommendation}**" : '**No recommendation yet**'
     end
