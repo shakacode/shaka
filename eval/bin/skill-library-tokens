@@ -3,6 +3,7 @@
 
 # Counts what each skill library adds to an agent session, in Claude Code and Codex tokens, through the
 # accounts those CLIs are signed in to. Reads each checkout as text and never runs its skills or hooks.
+# Codex counts only Shaka's text; see SkillLibraryReport::SENT.
 # Usage: eval/bin/skill-library-tokens [--words-only] NAME=CHECKOUT...
 # NAME is a key of SkillLibraryTexts::LIBRARIES, such as shaka=. or obra/superpowers=/tmp/superpowers.
 
@@ -35,10 +36,7 @@ libraries = sources.map do |name, root|
 end
 
 keys = REPORT.keys(libraries)
-unless words_only
-  require_relative '../../lib/instruction_tokens'
-  counts = InstructionTokens.count_each(keys.invert)
-end
+counts = REPORT.count(keys) unless words_only
 
 clis = counts&.map { |cli| cli.slice('cli', 'model', 'cli_prompt', 'tokens', 'reason') }
 puts JSON.pretty_generate('measured_at' => Time.now.utc.iso8601, 'clis' => clis,

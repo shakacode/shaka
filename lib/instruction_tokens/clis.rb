@@ -7,11 +7,11 @@ module InstructionTokens
   Cli = Data.define(:arguments, :input_tokens, :used_tool)
   CODEX_ANSWERS = %w[agent_message reasoning].freeze # Any other Codex item is a tool call.
 
-  # The counted text can be agent instructions, or another library's, so a CLI might act on it. Claude
-  # runs with no tools. Codex runs without its shell tools, so the text cannot make it read local files.
-  # Acting on the text adds model requests to the reported usage, so a Codex run with a tool item or more
-  # than one answer counts nothing. As for Shaka's local reviewers, no rules, skills, hooks, or MCP
-  # servers load.
+  # The counted text is agent instructions, so a CLI might act on it. Claude runs with no tools. Codex has
+  # no switch that removes them all: without its shell tools it still has others, such as web search,
+  # image viewing, and the account's connected apps, so send it only text you trust. Acting on the text
+  # adds model requests to the reported usage, so a Codex run with a tool item or more than one answer
+  # counts nothing. As for Shaka's local reviewers, no rules, skills, hooks, or MCP servers load.
   CLIS = {
     'claude' => Cli.new(
       arguments: lambda do |model, effort|
@@ -42,6 +42,9 @@ module InstructionTokens
     )
   }.freeze
 
-  def self.events(stdout) = stdout.lines.filter_map { |line| JSON.parse(line) if line.start_with?('{') }
+  # Codex repeats the id key in some tool items, such as web searches.
+  def self.events(stdout)
+    stdout.lines.filter_map { |line| JSON.parse(line, allow_duplicate_key: true) if line.start_with?('{') }
+  end
   private_class_method :events
 end

@@ -31,6 +31,15 @@ module InstructionTokensFakes
   end
 
   def values(rows, *keys) = rows.map { |row| row.values_at(*keys) }
+
+  # Claude counts as usual; Codex reports its count followed by these output lines.
+  def codex_adding(*lines)
+    lambda do |arguments, input|
+      next counting_runner.call(arguments, input) if arguments.first == 'claude'
+
+      [[codex_output(99), *lines].join("\n"), OK]
+    end
+  end
 end
 
 class InstructionTokensTest < Minitest::Test
@@ -129,13 +138,16 @@ class InstructionTokensTest < Minitest::Test
 
   # Without its shell tools Codex can still answer twice, and each answer is another model request.
   def test_a_codex_run_with_two_answers_counts_nothing
-    answer = { 'type' => 'item.completed', 'item' => { 'type' => 'agent_message' } }
-    runner = lambda do |arguments, input|
-      next counting_runner.call(arguments, input) if arguments.first == 'claude'
+    answer = JSON.generate('type' => 'item.completed', 'item' => { 'type' => 'agent_message' })
+    rows = InstructionTokens.compare(before: nil, after: 'Read a file.', runner: codex_adding(answer, answer))
 
-      [[codex_output(99), JSON.generate(answer), JSON.generate(answer)].join("\n"), OK]
-    end
-    rows = InstructionTokens.compare(before: nil, after: 'Read a file.', runner:)
+    assert_equal "codex used a tool, so its count is not the text's alone", rows.last['reason']
+  end
+
+  # Codex repeats the id key in a web search item; the run still counts as using a tool.
+  def test_a_codex_web_search_counts_nothing
+    search = '{"type":"item.completed","item":{"id":"item_1","type":"web_search","id":"exec-1"}}'
+    rows = InstructionTokens.compare(before: nil, after: 'Search the web.', runner: codex_adding(search))
 
     assert_equal "codex used a tool, so its count is not the text's alone", rows.last['reason']
   end
@@ -178,6 +190,25 @@ class InstructionTokensCountEachTest < Minitest::Test
     assert_equal 2, rows.first['texts']['good']
     assert_equal({ 'tokens' => 'UNKNOWN', 'reason' => 'claude did not finish successfully (exit 2)' },
                  rows.first['texts']['bad'])
+  end
+
+  def test_count_each_sends_each_cli_only_the_texts_it_is_given
+    calls = []
+    sent = ->(cli, key) { cli == 'claude' || key == 'own' }
+    texts = { 'own' => 'one', 'other' => 'two three' }
+    rows = InstructionTokens.count_each(texts, runner: counting_runner(calls), sent:)
+
+    assert_equal([{ 'own' => 1, 'other' => 2 }, { 'own' => 1 }], rows.map { |row| row['texts'] })
+    assert(calls.none? { |arguments, input| arguments.first == 'codex' && input.include?('two three') })
+  end
+
+  def test_a_cli_with_nothing_to_count_does_not_run
+    calls = []
+    sent = ->(cli, _key) { cli == 'claude' }
+    rows = InstructionTokens.count_each({ 'a' => 'one' }, runner: counting_runner(calls), sent:)
+
+    assert_equal({ 'cli' => 'codex', 'model' => 'gpt-6.1-sol', 'texts' => {} }, rows.last)
+    assert(calls.none? { |arguments, _| arguments.first == 'codex' })
   end
 
   def test_count_each_is_unknown_when_the_cli_prompt_cannot_be_measured

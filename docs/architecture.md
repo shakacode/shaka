@@ -57,7 +57,7 @@ copy and from its merge base. The difference is what that text costs. Like any
 session in those tools, this sends the text to Anthropic and OpenAI.
 
 A count uses part of your plan's quota, so run it now and then, such as before
-a release, rather than on every change. Claude's counts vary by about 20 tokens
+a release, rather than on every change. Claude's counts vary by about 50 tokens
 from run to run, so a change of a few words may not show. The models are under
 `runtime.instruction_tokens` in Shaka's `defaults.yml`. A tool that is missing
 or signed out, or that tries to act on the text instead of answering, shows

@@ -21,18 +21,26 @@ module InstructionTokens
   end
 
   # One row per CLI with a count for each named text, measuring the CLI's own prompt once for all of them.
-  def self.count_each(texts, runner: nil)
+  # `sent`, given a CLI name and a text's name, says whether that CLI gets the text; a CLI with no text
+  # to count does not run.
+  def self.count_each(texts, runner: nil, sent: ->(_cli, _name) { true })
     each_cli(runner) do |name, cli, run|
-      model = SETTINGS.fetch('models').fetch(name)
-      overhead = count(name, cli, model, '', run)
-      next row(name, model, overhead) if overhead.key?(:reason)
-
-      counts = texts.transform_values do |text|
-        result = count(name, cli, model, text, run)
-        result.key?(:reason) ? { 'tokens' => 'UNKNOWN', 'reason' => result[:reason] } : net(result, overhead)
-      end
-      { 'cli' => name, 'model' => model, 'cli_prompt' => overhead[:tokens], 'texts' => counts }
+      count_texts(name, cli, texts.select { |key, _| sent.call(name, key) }, run)
     end
+  end
+
+  def self.count_texts(name, cli, texts, runner)
+    model = SETTINGS.fetch('models').fetch(name)
+    return { 'cli' => name, 'model' => model, 'texts' => {} } if texts.empty?
+
+    overhead = count(name, cli, model, '', runner)
+    return row(name, model, overhead) if overhead.key?(:reason)
+
+    counts = texts.transform_values do |text|
+      result = count(name, cli, model, text, runner)
+      result.key?(:reason) ? { 'tokens' => 'UNKNOWN', 'reason' => result[:reason] } : net(result, overhead)
+    end
+    { 'cli' => name, 'model' => model, 'cli_prompt' => overhead[:tokens], 'texts' => counts }
   end
 
   def self.each_cli(runner)
@@ -113,6 +121,6 @@ module InstructionTokens
     )
     [stdout, status]
   end
-  private_class_method :each_cli, :measure, :failed?, :row, :net, :baseline_failure, :count, :reported, :parsed,
-                       :prompt, :exit_code, :run
+  private_class_method :count_texts, :each_cli, :measure, :failed?, :row, :net, :baseline_failure, :count,
+                       :reported, :parsed, :prompt, :exit_code, :run
 end

@@ -55,6 +55,11 @@ skill libraries on GitHub the same way. Counts are Claude Opus 5.5 / GPT-6.1 Sol
 The comparison counts every skill body without its frontmatter, so its Shaka figure is
 about 100 tokens below the log's, which includes `SKILL.md` frontmatter.
 
+The GPT-6.1 Sol counts for other libraries come from this run only. The script now sends
+other libraries' text only to Claude Code, for the reason under
+[How to measure](#how-to-measure). Codex's logs for this run show one answer per text
+and no tool calls.
+
 | Library | Commit | Every session | Median skill | Largest skill |
 | --- | --- | ---: | ---: | ---: |
 | Shaka | `f88fd8e` | 60 / 36 | 29,949 / 20,068 | 29,949 / 20,068 |
@@ -111,13 +116,17 @@ in reported input tokens is the text's cost.
   Codex tokens when the text changed.
 - To repeat the library comparison, clone each library into its own empty directory and
   run `eval/bin/skill-library-tokens shaka=. mattpocock/skills=PATH ...`. Add
-  `--words-only` to see sizes without spending quota.
+  `--words-only` to see sizes without spending quota. Only Claude counts other libraries.
 - Compare each CLI's own prompt (`cli_prompt`) with the log. A jump means the CLI changed
   what it loads, and counts from different CLI versions may not compare.
-- Codex counts run without its shell tools, so a library's text cannot make it read local
-  files. That dropped Codex's own prompt from about 15,190 to 14,551 tokens on 2026-11-17;
-  the same startup text still counted 20,171 GPT tokens either way.
-- Claude counts of the same text vary by about 20 tokens between runs; Codex by about 2.
+- Claude Code runs with no tools. Codex has no switch that removes all of its tools. On
+  2026-11-17, with its shell tools off, Codex could still search the web, view a local
+  image, and call the apps connected to its account. So only Shaka's own text goes to
+  Codex, and a run that uses a tool counts as `UNKNOWN`.
+- Turning Codex's shell tools off dropped its own prompt from about 15,190 to 14,551
+  tokens on 2026-11-17; the same startup text still counted 20,171 GPT tokens.
+- Claude counts of the same text vary by about 50 tokens between runs: `65e0066`'s text
+  counted 30,151 and later 30,104. Codex counts varied by at most 2.
 
 ## Does the size matter?
 
