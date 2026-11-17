@@ -6,8 +6,6 @@ outcome, and project constraints. Evaluate the finished change as a whole.
 - Did building it reveal an unnecessary, misguided, or poorly framed request?
 - Has scope drifted? Compare actual files, commits, review rounds, and repairs
   with what the plan expected. Mark missing impact or frequency evidence unknown.
-- Is the benefit proportional to dependencies, configuration, abstractions,
-  coupling, failure paths, tests, and future maintenance?
 - Is the reported verification proportionate to what a failure would reach and
   to whether a revert undoes it? Weigh the evidence as given rather than
   re-reviewing code, and name paths that were not exercised.
@@ -17,9 +15,19 @@ outcome, and project constraints. Evaluate the finished change as a whole.
 - Will future work have to understand and build around unjustified complexity?
 - Knowing the result and cost, would we choose this approach again?
 
+The change must show that its benefit outweighs its upkeep; the cheaper option
+needs no evidence. Benefit counts when the packet cites an observed failure, a
+maintainer request, or a measurement, not when it is only asserted. If the
+change adds dependencies, parsing, abstractions, loaders, configuration,
+coupling, tests, or failure paths and its benefit is unknown, small, or only
+asserted, conclude **Simplify/reframe** or **Do not merge**, name the cheaper
+alternative, and list the unearned cost in concerns. Unknown benefit alone is not a concern; unknown
+benefit paying for new machinery is.
+
 Focus on product fit, architecture, scope, and value. Another minor code nit is
-not a reason to run this review. Conclude **Proceed**, **Simplify/reframe**, or
-**Do not merge**, with concrete reasons and the smallest useful next action.
+not a reason to run this review. Conclude **Proceed** only when the benefit is
+demonstrated or the added cost is trivial. Give concrete reasons and the smallest
+useful next action.
 
 Assess every question, but report only evidence that affects the decision. Do not
 write a paragraph for each criterion, repeat the conclusion in the summary,
