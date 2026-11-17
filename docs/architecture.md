@@ -37,11 +37,8 @@ Your agent reads little of that text, and only when it needs it:
 | Enforcement records, defaults, and model rates (YAML) | Ruby only | About 8,500 |
 | These guides under `docs/` | People; they are not part of the installed skill | About 49,000 |
 
-Words and bytes show size, not tokens, and each model counts tokens differently.
-On 16 November 2026, the text loaded at the start of every task came to about
-30,000 tokens in Claude Code with Claude Opus 5.5 and 20,100 in Codex with GPT-6.1 Sol.
-That is about 2.4 and 1.6 tokens per word, so word counts understate the Claude cost.
-To check the instruction size yourself, ask your agent:
+Words and bytes show size, not tokens; each model counts tokens differently. To
+check the instruction size yourself, ask your agent:
 
 ```text
 Run bin/report-instruction-growth in my Shaka checkout and summarize the word counts
@@ -59,14 +56,13 @@ prompt with and without `SKILL.md` plus the rendered workflow, from your working
 copy and from its merge base. The difference is what that text costs. Like any
 session in those tools, this sends the text to Anthropic and OpenAI.
 
-A count uses your plan: about 40,000 Claude tokens and 50,000 Codex tokens when
-the text is unchanged, and about 75,000 and 85,000 when it changed. Run it now
-and then, such as before a release, rather than on every change. Claude's counts
-vary by about 20 tokens from run to run, so a change of a few words may not
-show. The models are under `runtime.instruction_tokens` in Shaka's
-`defaults.yml`. A tool that is missing or signed out, or that tries to act on
-the text instead of answering, shows `UNKNOWN` and the reason, and the report
-still succeeds. Without `--tokens`, the report runs neither tool.
+A count uses part of your plan's quota, so run it now and then, such as before
+a release, rather than on every change. Claude's counts vary by about 20 tokens
+from run to run, so a change of a few words may not show. The models are under
+`runtime.instruction_tokens` in Shaka's `defaults.yml`. A tool that is missing
+or signed out, or that tries to act on the text instead of answering, shows
+`UNKNOWN` and the reason, and the report still succeeds. Without `--tokens`, the
+report runs neither tool.
 
 <a id="keep-facts-where-people-look-for-them"></a>
 
