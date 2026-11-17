@@ -85,6 +85,20 @@ class FirstSetupPreviewMergeTest < Minitest::Test
     end
   end
 
+  def test_invalid_default_commit_keeps_the_existing_first_setup_pin
+    with_preview_repository do |root, _trusted, preview|
+      absent = remove_trusted_setup(root)
+      start_with_default(root, preview, absent)
+
+      _, error, status = run_command('seam', 'preview', 'start', '--root', root,
+                                     '--settings-ref', preview, '--ref', 'invalid', root:)
+
+      refute_predicate status, :success?
+      assert_match(/Select a full settings commit SHA/, error)
+      assert_equal preview, Shaka::Configuration::SettingsPreview.ref(root:)
+    end
+  end
+
   private
 
   def start_with_default(root, preview, absent)

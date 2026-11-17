@@ -27,7 +27,7 @@ module Shaka
         # Validate with the existing schema and the task's executable entry points.
         require_relative '../trusted_config_source'
         TrustedConfigSource.load(root: @root, ref:)
-        first_setup = status['first_setup'] || missing_team_settings?(default_ref)
+        first_setup = missing_team_settings?(default_ref) || status['first_setup']
         record = { 'version' => 1, 'branch' => branch, 'ref' => ref }
         record['first_setup'] = true if first_setup
         save(record)
