@@ -15,6 +15,11 @@ Starting a selector against the adopted default branch would lose the original
 first-setup status. Continue using the pinned commit after the setup PR merges.
 Use step 1 for a new selection or a requested update.
 
+For a selector created before `preview start` required `--ref`, retain the
+recorded merge choice. If a first-setup trial lacks its Ask marker, select
+the same pin again with the verified default-branch SHA from its original
+intake. If that SHA cannot be recovered, keep the trial in Ask.
+
 1. Fetch metadata for the named open settings PR from the verified task repository.
    Verify its head repository matches the task repository and fetch its current head
    for this new task. Do not select a fork,
