@@ -77,14 +77,22 @@ module Shaka
         true
       end
 
+      # A heading's name ends where a trailing note such as `<!-- what changed -->` begins.
       def heading(line)
-        text = line[HEADING, 1]&.gsub(/<!--.*?-->/, '')&.strip
-        text unless text.to_s.empty?
+        return unless (text = line[HEADING, 1])
+
+        text = text.split('<!--', 2).first.to_s.strip
+        text unless text.empty?
       end
 
       # Whether a comment is still open after the line, reading each opener and closer in order.
       def open_after?(line, open)
-        line.scan(/<!--|-->/).reduce(open) { |state, mark| mark == '<!--' || (state && mark != '-->') }
+        position = 0
+        while (found = line.index(open ? '-->' : '<!--', position))
+          position = found + (open ? 3 : 4)
+          open = !open
+        end
+        open
       end
 
       # Only a bare run of the opening character, at least as long, closes a code block.
