@@ -78,8 +78,7 @@ is the reusable default.
   packet and the checkpoint's `checkpoint.evidence`. Use it to assess the
   rendered workflow, entry point, project guidance, and other changed Markdown
   instruction files. Assess their actual loading conditions separately. Words and
-  bytes are cost evidence, not quality gates. When the change touches the entry point
-  or workflow, add the `--tokens` startup token deltas.
+  bytes are cost evidence, not token counts or quality gates.
   If that evidence is missing, state the gap and its effect on the conclusion.
 - In review, a demonstrated material violation of these criteria is a `defect`; a
   plausible unproven consequence is a `risk`. Name the location, concrete cost,

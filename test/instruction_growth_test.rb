@@ -148,23 +148,23 @@ class InstructionGrowthTokensTest < Minitest::Test
 
   def counted_texts(root)
     texts = {}
-    counter = ->(**given) { texts.update(given) && [{ 'provider' => 'stub' }] }
+    counter = ->(**given) { texts.update(given) && [{ 'cli' => 'stub' }] }
     result = InstructionGrowth.new(root:, base: 'HEAD', tokens: counter).report
-    assert_equal [{ 'provider' => 'stub' }], result['startup_tokens']['providers']
+    assert_equal [{ 'cli' => 'stub' }], result['startup_tokens']['clis']
     texts
   end
 
-  def test_default_report_stays_offline_without_token_counts
+  def test_default_report_runs_no_cli_without_the_flag
     with_repository { |root| refute report(root).key?('startup_tokens') }
   end
 
-  def test_command_line_flag_adds_unknown_counts_without_keys
+  # A PATH holding only git hides both CLIs, so the real command reports them missing instead of running them.
+  def test_command_line_flag_adds_unknown_counts_when_the_clis_are_missing
     command = File.expand_path('../bin/report-instruction-growth', __dir__)
-    env = { 'ANTHROPIC_API_KEY' => nil, 'OPENAI_API_KEY' => nil }
-    output, status = Open3.capture2(env, RbConfig.ruby, command, '--tokens', 'HEAD')
+    output, status = Open3.capture2({ 'PATH' => File.dirname(TEST_GIT) }, RbConfig.ruby, command, '--tokens', 'HEAD')
 
     assert_predicate status, :success?
-    reasons = JSON.parse(output).dig('startup_tokens', 'providers').map { |row| row['reason'] }
-    assert_equal ['ANTHROPIC_API_KEY is not set', 'OPENAI_API_KEY is not set'], reasons
+    reasons = JSON.parse(output).dig('startup_tokens', 'clis').map { |row| row['reason'] }
+    assert_equal ['claude is not installed', 'codex is not installed'], reasons
   end
 end

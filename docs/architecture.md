@@ -37,28 +37,34 @@ Your agent reads little of that text, and only when it needs it:
 | Enforcement records, defaults, and model rates (YAML) | Ruby only | About 8,500 |
 | These guides under `docs/` | People; they are not part of the installed skill | About 49,000 |
 
-Words and bytes show size, not tokens; each model counts tokens differently. To
-check the instruction size yourself, ask your agent:
+Words and bytes show size, not tokens, and each model counts tokens differently.
+On 16 November 2026, the text loaded at the start of every task came to about
+30,000 tokens in Claude Code with Claude Opus 5.5 and 20,100 in Codex with GPT-6.1 Sol.
+That is about 2.4 and 1.6 tokens per word, so word counts understate the Claude cost.
+To check the instruction size yourself, ask your agent:
 
 ```text
 Run bin/report-instruction-growth in my Shaka checkout and summarize the word counts
 ```
 
-To see how many tokens each provider counts for the text loaded at the start of
-every task, ask for token counts as well:
+To count tokens as well, ask:
 
 ```text
 Run bin/report-instruction-growth --tokens in my Shaka checkout and summarize the token changes
 ```
 
-The `--tokens` option sends `SKILL.md` plus the rendered workflow, from your
-working copy and from its merge base, to Anthropic's free token-counting endpoint and
-OpenAI's input-token endpoint. It reads `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`
-and counts with the models under `runtime.instruction_tokens` in Shaka's
-`defaults.yml`. Each count includes a few tokens of message wrapping, which cancel
-out in the change. A provider without a key or network access shows `UNKNOWN` and
-the reason; the report itself still succeeds. Without `--tokens` the report makes
-no network requests.
+The `--tokens` option uses Claude Code and Codex with the accounts they are
+already signed in to, so it needs no API keys. Each tool answers a one-line
+prompt with and without `SKILL.md` plus the rendered workflow, from your working
+copy and from its merge base. The difference is what that text costs. Like any
+session in those tools, this sends the text to Anthropic and OpenAI.
+
+A count uses your plan: about 90,000 Claude tokens and 50,000 Codex tokens when
+the text is unchanged, and about 150,000 and 85,000 when it changed. Run it now
+and then, such as before a release, rather than on every change. The models
+are under `runtime.instruction_tokens` in Shaka's `defaults.yml`. A tool that is
+missing or signed out shows `UNKNOWN` and the reason, and the report still
+succeeds. Without `--tokens`, the report runs neither tool.
 
 <a id="keep-facts-where-people-look-for-them"></a>
 

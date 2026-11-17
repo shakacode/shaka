@@ -25,7 +25,7 @@ class DefaultsTest < Minitest::Test
     %w[runtime pr_watch interval_seconds] => Shaka::PrWatch::DEFAULT_INTERVAL,
     %w[runtime pr_watch timeout_seconds] => Shaka::PrWatch::DEFAULT_TIMEOUT,
     %w[runtime pr_watch settle_seconds] => Shaka::PrWatch::DEFAULT_SETTLE,
-    %w[runtime instruction_tokens] => InstructionTokens::MODELS
+    %w[runtime instruction_tokens] => InstructionTokens::SETTINGS
   }.freeze
 
   def test_code_defaults_come_from_the_packaged_file

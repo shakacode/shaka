@@ -44,11 +44,11 @@ class InstructionGrowth
       'other_changed_files' => changed_files(previous, current) }
   end
 
-  # What every Shaka task loads at start; the provider's message wrapper adds a few tokens to each count.
+  # What every Shaka task loads at start. Each count excludes the CLI's own prompt, measured in a separate run.
   def startup_tokens(previous, current)
     before = startup_text(previous) if @baseline
-    { 'text' => "#{ENTRY} plus the rendered workflow, counted with each provider's endpoint",
-      'providers' => @tokens.call(before:, after: startup_text(current)) }
+    { 'text' => "#{ENTRY} plus the rendered workflow, counted by each CLI with its signed-in account",
+      'clis' => @tokens.call(before:, after: startup_text(current)) }
   end
 
   def startup_text(texts) = "#{texts.fetch(ENTRY, '')}\n\n#{texts.fetch(WORKFLOW, '')}"
