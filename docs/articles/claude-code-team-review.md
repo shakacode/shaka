@@ -195,9 +195,9 @@ Three earlier pieces cover nearby ground:
   after its fix.
 - **Shaka lacks:** diff-only re-review. Every round reads the whole PR diff. A
   [preregistered comparison](https://github.com/shakacode/shaka/blob/main/eval/reports/review-scope-preregistration.md)
-  ([#1072](https://github.com/shakacode/shaka/pull/1072)) designs that test. Its dry run found
-  that Shaka's review loop currently refuses a round limited to new commits. The paid pilot
-  awaits the maintainer's approval.
+  ([#1072](https://github.com/shakacode/shaka/pull/1072)) designs that test. Its
+  [first pilot](review-scope-pilot.md) found that re-reviewing only new commits missed known
+  problems that whole-diff re-review found, so Shaka keeps whole-diff re-review.
 - **Evidence:** `review run` refuses the round past the limit. The review signal study
   compared Shaka's later cycles with the post's 59% figure. Most of Shaka's sampled later
   findings sat in code written during the loop, much of it by earlier fixes.
@@ -300,8 +300,9 @@ None of these ideas has shipped:
    comparison's 21 missed bugs. Add each later miss, and rerun the set when a reviewer's
    prompt, model, or CLI default changes. #1231 tracks this for code review; #975 covers the
    risk rating.
-2. **Run the diff-only re-review test.** The #1072 preregistration is priced and waits for
-   approval.
+2. **Re-review only the new diff.** The #1072 pilot tested this on three PRs and stopped:
+   new-commits re-review missed known problems that whole-diff re-review found
+   ([result](review-scope-pilot.md)).
 3. **Suggest the GitHub rules the post relies on.** Setup could offer required thread
    resolution and dismissal of stale approvals. A merge clicked on GitHub would then honor
    them too. No issue tracks this.

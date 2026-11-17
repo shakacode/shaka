@@ -4,8 +4,9 @@
 (UTC). It made no paid model calls. Every number below comes from published review data, Git,
 or stub reviewers that cost nothing. Nothing here is a result about review quality.*
 
-**Status:** preregistered, not run. The judge and verifier prompts are pinned. The
-maintainer approves the priced pilot before any paid call.
+**Status:** the Stage 1 pilot ran on 2026-11-17 and missed its harm bar, P3. As this plan
+requires, the eval stops there: no full Stage 1 run and no Stage 2. The
+[pilot report](review-scope-stage1-pilot.md) has the results.
 
 ## The question
 
