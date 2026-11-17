@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'evidence_fixture'
+require 'shaka/configuration/feature_guard'
 
 # A branch that has the command directory but predates an optional script the default branch added
 # runs its other commands; the missing script is skipped, never run from the trusted commit.
@@ -62,6 +63,31 @@ class EvidenceMissingOptionalCommandTest < Minitest::Test
 
       error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: trusted) }
       assert_includes error.message, '.agents/shaka/bin/test does not exist'
+    end
+  end
+
+  # The older branch's merge base predates the script; a PR that deletes it shows the deletion.
+  def test_a_feature_pr_that_deletes_the_script_is_refused
+    with_checkout do |root, _initial|
+      create_command(root, 'validate_local')
+      trusted = commit_all(root)
+      git(root, 'rm', '--quiet', VALIDATE_LOCAL)
+      head = commit_all(root)
+
+      error = assert_raises(Shaka::Error) { Shaka::Configuration::FeatureGuard.check(root:, base: trusted, head:) }
+      assert_includes error.message, 'Feature PR contains Shaka configuration changes'
+    end
+  end
+
+  def test_a_branch_cut_before_the_script_passes_the_feature_guard
+    with_checkout do |root, initial|
+      create_command(root, 'validate_local')
+      trusted = commit_all(root)
+      git(root, 'checkout', '--quiet', '-b', 'older', initial)
+      File.write(File.join(root, 'candidate.txt'), "older branch\n")
+      head = commit_all(root)
+
+      assert_equal 'clear', Shaka::Configuration::FeatureGuard.check(root:, base: trusted, head:).fetch('status')
     end
   end
 
