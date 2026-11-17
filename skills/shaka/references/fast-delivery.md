@@ -32,7 +32,9 @@ quick check reports `behind_base` or a conflict blocks the work.
 
 When the person says the PR is ready, update the branch from the base and run the
 workflow from Verify onward on that head: full validation, the local review loop,
-`evidence verify`, `gh pr ready`, the walkthrough, the checkpoint, and the merge handoff.
+`evidence verify`, the walkthrough, the checkpoint, and the merge handoff. Run `gh pr ready`
+before pushing the reviewed head, not after: hosted reviewers that skip drafts can let the
+draft push's run cancel the ready one.
 Fast delivery never shortens those steps or changes merge preference or authority.
 
 In the description's `task_history`, say the task used fast delivery and how many
