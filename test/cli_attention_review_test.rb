@@ -10,7 +10,8 @@ module CliAttentionFixture
     #!/usr/bin/env ruby
     require 'json'
     path = ARGV[1].to_s
-    pull = { 'number' => 1, 'headRefOid' => 'a' * 40, 'baseRefName' => 'main', 'state' => 'OPEN' }
+    pull = { 'number' => 1, 'headRefOid' => 'a' * 40, 'baseRefName' => 'main', 'state' => 'OPEN',
+             'isDraft' => ENV['PR_DRAFT'] == 'true' }
     if ARGV[0, 2] == %w[api graphql]
       request = JSON.parse($stdin.read)
       if request.fetch('query').include?('headRefOid') && (change = ENV['PR_CHANGE'])
@@ -184,6 +185,10 @@ class CliAttentionGateTest < Minitest::Test
   def test_merge_handoff_reads_required_ci_after_local_review
     env = check_env('SUCCESS', 'pass').merge('PR_CHANGE' => 'rerun')
     assert_refused_handoff(env, 'Required check is not passing')
+  end
+
+  def test_merge_handoff_refuses_a_draft_and_names_the_next_step
+    assert_refused_handoff({ 'PR_DRAFT' => 'true' }, 'Mark it ready for review')
   end
 
   def test_merge_handoff_refuses_a_moved_head_before_labeling

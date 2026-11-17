@@ -31,9 +31,13 @@ module PostImplementationPublicationFixture
         'body' => @description_body }
     end
 
-    def graphql(_query, **)
-      @draft = true
-      { 'convertPullRequestToDraft' => { 'pullRequest' => snapshot.slice('id', 'isDraft', 'headRefOid') } }
+    attr_writer :draft
+
+    def graphql(query, **)
+      ready = query.include?('markPullRequestReadyForReview')
+      @draft = !ready
+      key = ready ? 'markPullRequestReadyForReview' : 'convertPullRequestToDraft'
+      { key => { 'pullRequest' => snapshot.slice('id', 'isDraft', 'headRefOid') } }
     end
 
     def verify_rendering(body, **) = body

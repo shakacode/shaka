@@ -3,9 +3,16 @@
 require_relative '../merge_wait_review'
 
 module Shaka
-  # Reports the published evidence a PR labeled as waiting for merge approval still lacks.
+  # Reports what a PR labeled as waiting for merge approval still lacks.
   module HandoffMergeWait
     private
+
+    # GitHub cannot merge a draft, so a person sent to merge one finds no button.
+    def draft_fact(snapshot)
+      return if snapshot['isDraft'] == false || !merge_requested?
+
+      owe('draft', 'awaiting-merge-approval is set on a draft; mark the PR ready for review, or remove the label.')
+    end
 
     # Agent work with findings open is not a merge wait. No review may be a stated skip, which GitHub
     # cannot show, so that is reported rather than owed; `attention --state merge` asked for the reason.

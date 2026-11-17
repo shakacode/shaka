@@ -70,6 +70,7 @@ class PostImplementationMergeWarningTest < Minitest::Test
 
       assert_equal 0, publish(result, path, github:)[1]
       refute_includes github.description_body, 'Not ready to merge'
+      refute github.snapshot['isDraft']
     end
   end
 
@@ -95,6 +96,7 @@ class PostImplementationMergeWarningTest < Minitest::Test
 
       assert_republished(result, path, github, 'Merge')
       refute_includes github.description_body, 'Not ready to merge'
+      refute github.snapshot['isDraft']
     end
   end
 
@@ -244,15 +246,70 @@ class PostImplementationMergeWarningClearanceTest < Minitest::Test
     result.merge('head' => head)
   end
 
-  def test_ready_checkpoint_for_a_new_head_clears_the_warning_and_reports_the_draft
+  def test_ready_checkpoint_for_a_new_head_clears_the_warning_and_marks_the_pr_ready
     with_result do |result, path|
       github, = publish(block(result.dup), path)
       outcome = publish(advance(github, result, 'c' * 40), path, github:)
 
       assert_equal 0, outcome[1]
-      assert_equal({ 'state' => 'cleared', 'head' => 'c' * 40, 'draft' => true },
+      assert_equal({ 'state' => 'cleared', 'head' => 'c' * 40, 'draft' => false, 'marked_ready' => true },
                    JSON.parse(outcome[2]).fetch('merge_safeguard'))
+      refute github.snapshot['isDraft']
       assert_equal "<!-- shaka:begin -->\nFeature summary\n<!-- shaka:end -->\n\nHuman notes", github.description_body
+    end
+  end
+
+  # A draft someone opened, or one an agent opened, carries no warning, and a Merge checkpoint still readies it.
+  def test_ready_checkpoint_marks_a_draft_without_a_warning_ready
+    with_result do |result, path|
+      github = GitHub.new('a' * 40)
+      github.draft = true
+      outcome = publish(result, path, github:)
+
+      assert_equal 0, outcome[1]
+      assert_equal({ 'state' => 'unchanged', 'head' => 'a' * 40, 'draft' => false, 'marked_ready' => true },
+                   JSON.parse(outcome[2]).fetch('merge_safeguard'))
+      refute github.snapshot['isDraft']
+    end
+  end
+
+  def test_ready_checkpoint_leaves_a_ready_pr_alone
+    with_result do |result, path|
+      github = GitHub.new('a' * 40)
+      github.define_singleton_method(:graphql) { |*, **| raise 'A ready PR needs no mutation.' }
+      outcome = publish(result, path, github:)
+
+      assert_equal 0, outcome[1]
+      assert_equal({ 'state' => 'unchanged', 'head' => 'a' * 40, 'draft' => false },
+                   JSON.parse(outcome[2]).fetch('merge_safeguard'))
+    end
+  end
+
+  def test_a_failed_ready_mark_is_a_failed_safeguard_after_the_warning_clears
+    with_result do |result, path|
+      github, = publish(block(result.dup), path)
+      github.define_singleton_method(:graphql) { |*, **| raise Shaka::Error, 'Ready mark denied' }
+      outcome = publish(advance(github, result, 'c' * 40), path, github:)
+
+      assert_equal 1, outcome[1]
+      assert_equal({ 'state' => 'failed', 'reason' => 'Ready mark denied', 'head' => 'c' * 40 },
+                   JSON.parse(outcome[2]).fetch('merge_safeguard'))
+      assert github.snapshot['isDraft']
+      refute_includes github.description_body, Shaka::PostImplementationMergeWarning::OPEN
+    end
+  end
+
+  def test_an_unconfirmed_ready_mark_is_a_failed_safeguard
+    with_result do |result, path|
+      github = GitHub.new('a' * 40)
+      github.draft = true
+      github.define_singleton_method(:graphql) do |*, **|
+        { 'markPullRequestReadyForReview' => { 'pullRequest' => snapshot.slice('id', 'isDraft', 'headRefOid') } }
+      end
+      outcome = publish(result, path, github:)
+
+      assert_equal 1, outcome[1]
+      assert_includes JSON.parse(outcome[2]).dig('merge_safeguard', 'reason'), 'not confirmed'
     end
   end
 
@@ -287,8 +344,11 @@ class PostImplementationMergeWarningClearanceTest < Minitest::Test
       body = "#{Shaka::PostImplementationMergeWarning::OPEN}\n#{hold}\n#{CLOSE}\n\n#{github.description_body}"
       github.instance_variable_set(:@description_body, body)
 
+      github.draft = true
+
       assert_equal 0, publish(result, path, github:)[1]
       assert_equal body, github.description_body
+      assert github.snapshot['isDraft']
     end
   end
 end
@@ -321,7 +381,7 @@ class PostImplementationMergeWarningPreservationTest < Minitest::Test
       github = GitHub.new('a' * 40)
       github.define_singleton_method(:graphql) do |*, **|
         @head = 'b' * 40
-        super(Shaka::PostImplementationMergeWarning::DRAFT)
+        super(Shaka::PostImplementationDraftState::DRAFT)
       end
       outcome = publish(failed(result), path, github:)
       assert_equal 1, outcome[1]

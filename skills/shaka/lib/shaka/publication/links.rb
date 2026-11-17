@@ -18,6 +18,7 @@ module Shaka
     AFTER_DECISIONS = 'Code Walkthrough: _After the decisions._'
     REQUESTED = 'Code Walkthrough: _Requested._'
     CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
+    DRAFT_MERGE = '**Draft: mark it ready for review before merging**'
 
     module_function
 
@@ -32,7 +33,8 @@ module Shaka
       return [*decisions, links] unless content.key?('checkpoint')
 
       checkpoint = current_checkpoint(content['checkpoint'], pull)
-      label = [recommendation_label(checkpoint['recommendation']), RiskReview.lead(content, pull)].join(' · ')
+      label = [recommendation_label(checkpoint['recommendation'], draft: pull['draft'] == true),
+               RiskReview.lead(content, pull)].join(' · ')
       [*decisions, decisions.any? ? links : "#{label} · #{links}", *adequacy(checkpoint['verification_adequacy']),
        *next_action(checkpoint['next_action'])]
     end
@@ -59,11 +61,13 @@ module Shaka
     end
 
     # Without a recommendation for this head, such as while the checkpoint is pending or failed, the label says so.
-    def recommendation_label(recommendation)
+    # GitHub cannot merge a draft, so a Merge recommendation on one names the step that comes first.
+    def recommendation_label(recommendation, draft: false)
       recommendations = PostImplementationReport::RECOMMENDATIONS
       unless recommendation.nil? || recommendations.include?(recommendation)
         raise Error, "Description checkpoint recommendation must be one of: #{recommendations.join(', ')}."
       end
+      return DRAFT_MERGE if draft && recommendation == 'Merge'
 
       recommendation ? "**Recommendation: #{recommendation}**" : '**No recommendation yet**'
     end
