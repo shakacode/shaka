@@ -83,8 +83,17 @@ module Shaka
         return [nil, 'not read: no --ref'] unless @ref
 
         sha = Configuration.resolve_commit(root: @root, ref: @ref, label: 'companions ref')
+        kind = settings_kind(sha)
+        kind == 'trusted/team' ? [sha, "read at #{sha}"] : [nil, "not read: #{kind}"]
+      end
+
+      # Settings that cannot load at the trusted commit grant no repository layer; the personal
+      # and packaged layers still apply.
+      def settings_kind(sha)
         kind = Configuration.resolve_source(root: @root, ref: sha, candidate_commands: false).last
-        kind == 'trusted/team' ? [sha, "read at #{sha}"] : [nil, "not read: settings source is #{kind}"]
+        kind == 'trusted/team' ? kind : "settings source is #{kind}"
+      rescue Error => e
+        "no usable team settings at #{sha} (#{e.message.lines.first.strip})"
       end
     end
   end
