@@ -16,18 +16,17 @@ outcome, and project constraints. Evaluate the finished change as a whole.
 - Knowing the result and cost, would we choose this approach again?
 
 The change must show that its benefit outweighs its upkeep; the cheaper option
-needs no evidence. Benefit counts when the packet cites an observed failure, a
-maintainer request, or a measurement, not when it is only asserted. If the
-change adds dependencies, parsing, abstractions, loaders, configuration,
-coupling, tests, or failure paths and its benefit is unknown, small, or only
-asserted, conclude **Simplify/reframe** or **Do not merge**, name the cheaper
-alternative, and list the unearned cost in concerns. Unknown benefit alone is not a concern; unknown
-benefit paying for new machinery is.
+needs no evidence. Benefit counts when the packet cites evidence such as an
+observed failure, a review finding, a maintainer request, or a measurement, and
+is small when existing review or checks already catch the problem. If the change
+adds more than trivial upkeep, such as dependencies, parsing, abstractions,
+loaders, configuration, coupling, tests, or failure paths, and its benefit is
+unknown, small, or only asserted, conclude **Simplify/reframe** or **Do not
+merge**, name the cheaper alternative, and list that unearned cost in concerns.
 
 Focus on product fit, architecture, scope, and value. Another minor code nit is
-not a reason to run this review. Conclude **Proceed** only when the benefit is
-demonstrated or the added cost is trivial. Give concrete reasons and the smallest
-useful next action.
+not a reason to run this review. Conclude **Proceed**, **Simplify/reframe**, or
+**Do not merge**, with concrete reasons and the smallest useful next action.
 
 Assess every question, but report only evidence that affects the decision. Do not
 write a paragraph for each criterion, repeat the conclusion in the summary,
