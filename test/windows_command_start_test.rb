@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'shaka/executable_file'
+require 'shaka/evidence/timed_check'
 require 'shaka/evidence/tree_watch'
 require 'shaka/install/source'
 
@@ -14,7 +15,7 @@ class WindowsCommandStartTest < Minitest::Test
       script = File.join(directory, 'check')
       File.write(script, "#!/usr/bin/env ruby\nputs ARGV.join('|')\n")
       File.chmod(0o755, script)
-      command = Shaka::ExecutableFile.script_command(script, shell: -> { '/bin/sh' }, windows: true)
+      command = Shaka::ExecutableFile.script_command(script, shell: method(:shell), windows: true)
       output, status = Open3.capture2(*command, 'one two', '$HOME')
 
       assert_predicate status, :success?
@@ -41,13 +42,16 @@ class WindowsCommandStartTest < Minitest::Test
       tracked = { 'skills/shaka/scripts/shaka' => %w[100755 blob] }
 
       assert source.send(:matching_modes?, tracked, windows: true)
-      refute source.send(:matching_modes?, tracked, windows: false)
+      refute source.send(:matching_modes?, tracked, windows: false) unless Shaka::ExecutableFile.windows?
       File.chmod(0o646, path)
-      refute source.send(:matching_modes?, tracked, windows: true)
+      refute source.send(:matching_modes?, tracked, windows: true) unless Shaka::ExecutableFile.windows?
     end
   end
 
   private
+
+  # The real Git for Windows sh on Windows, where no /bin/sh exists.
+  def shell = Shaka::ExecutableFile.windows? ? Shaka::Evidence::TimedCheck.git_shell : '/bin/sh'
 
   def with_helper_without_execute_bit
     Dir.mktmpdir('shaka-windows-source') do |root|
