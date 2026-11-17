@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require_relative '../eval/lib/shaka/evaluation/delivery_snapshot'
 require_relative 'support/evaluation_snapshot_fixture'
+require_relative 'support/open3_spawns'
 
 class EvaluationDeliverySnapshotFailuresTest < Minitest::Test
   include EvaluationSnapshotFixture
@@ -39,7 +40,7 @@ class EvaluationDeliverySnapshotFailuresTest < Minitest::Test
 
   def test_snapshot_deadline_reaps_the_active_native_child
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    pids = spawned_by_open3 { assert_raises(IOError) { capture(['hang'], seconds: 2) } }
+    pids = Open3Spawns.record { assert_raises(IOError) { capture(['hang'], seconds: 2) } }
     # The fixture sleeps 60 s, so a read that returns well before then killed the child rather than waited for it.
     assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 30
     assert_equal 1, pids.size
@@ -50,17 +51,5 @@ class EvaluationDeliverySnapshotFailuresTest < Minitest::Test
     bad = plan.merge('check_apps' => { 'validate' => '15368' })
     assert_raises(ArgumentError) { Shaka::Evaluation::DeliverySnapshot.new(bad, github: @gh) }
     refute_path_exists File.join(@directory, 'requests')
-  end
-
-  private
-
-  # The pids Open3 spawns, so the test needs no report from a child the deadline may stop before it runs.
-  def spawned_by_open3
-    pids = []
-    Open3.define_singleton_method(:spawn) { |*arguments| Process.spawn(*arguments).tap { pids << it } }
-    yield
-    pids
-  ensure
-    Open3.singleton_class.remove_method(:spawn)
   end
 end
