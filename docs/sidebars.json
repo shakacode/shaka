@@ -41,6 +41,7 @@
         "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
+        "reference/pr-description-ideas",
         {
           "type": "doc",
           "id": "expected-experience",
@@ -69,7 +70,8 @@
         "articles/hosted-review-prompt-comparison",
         "articles/review-signal-study",
         "articles/evidence-first-review",
-        "articles/agents-made-you-a-manager"
+        "articles/agents-made-you-a-manager",
+        "articles/shaka-with-pstack-and-agent-skills"
       ]
     },
     {
