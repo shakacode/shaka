@@ -242,16 +242,6 @@ class UiCheckHistoryTest < Minitest::Test
     assert_empty github.posts
   end
 
-  def test_replaced_marks_survive_when_an_earlier_fold_failed
-    first = earlier_check(1, 'home', 'examples', 'people')
-    github = GitHub.new([first.dup])
-    publish(github, body: 'Examples redone.', retire: [asset('examples')], nonce: '11111111')
-    github.comments.first['body'] = first['body']
-    publish(github, body: 'People redone.', retire: [asset('people')], nonce: '22222222')
-
-    %w[examples people].each { |name| assert_includes carried(github), "Replaced at `aaaaaaa`: #{asset(name)}" }
-  end
-
   def test_an_unreferenced_capture_lands_after_the_collapsed_history
     github = GitHub.new([earlier_check(1, 'home')])
     with_capture do |path|
@@ -260,6 +250,49 @@ class UiCheckHistoryTest < Minitest::Test
 
       assert_operator posted.index('</details>'), :<, posted.index(asset('new-0'))
     end
+  end
+end
+
+# A failed fold or a web edit leaves earlier history in a state the next check must handle.
+class UiCheckHistoryRecoveryTest < Minitest::Test
+  include UiCheckFixture
+
+  def test_retrying_with_the_same_retire_list_after_a_failed_fold_keeps_one_mark
+    first = earlier_check(1, 'home', 'examples')
+    github = GitHub.new([first.dup])
+    publish(github, body: 'Examples redone.', retire: [asset('examples')], nonce: '11111111')
+    github.comments.first['body'] = first['body']
+    publish(github, body: 'Examples redone.', retire: [asset('examples')], nonce: '22222222')
+
+    assert_equal 1, carried(github).scan("Replaced at `aaaaaaa`: #{asset('examples')}").length
+  end
+
+  def test_history_from_a_web_edited_comment_still_parses
+    github = GitHub.new([earlier_check(1, 'home')])
+    second_check(github, 'Second head.', 'examples')
+    github.comments.last['body'] = github.comments.last['body'].gsub("\n", "\r\n")
+    publish(github, body: 'Third head.', nonce: '22222222')
+
+    assert_includes carried(github), "![View](#{asset('home')})"
+  end
+
+  def test_a_history_section_that_no_longer_parses_refuses_before_posting
+    github = GitHub.new([earlier_check(1, 'home')])
+    second_check(github, 'Second head.', 'examples')
+    github.comments.last['body'] = github.comments.last['body'].sub('<!-- /shaka:ui-history-from -->', '')
+
+    assert_raises(Shaka::Error) { publish(github, body: 'Third head.', nonce: '22222222') }
+    assert_equal 1, github.posts.length
+  end
+
+  def test_replaced_marks_survive_when_an_earlier_fold_failed
+    first = earlier_check(1, 'home', 'examples', 'people')
+    github = GitHub.new([first.dup])
+    publish(github, body: 'Examples redone.', retire: [asset('examples')], nonce: '11111111')
+    github.comments.first['body'] = first['body']
+    publish(github, body: 'People redone.', retire: [asset('people')], nonce: '22222222')
+
+    %w[examples people].each { |name| assert_includes carried(github), "Replaced at `aaaaaaa`: #{asset(name)}" }
   end
 end
 

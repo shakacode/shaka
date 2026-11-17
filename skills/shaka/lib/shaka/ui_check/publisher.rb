@@ -82,9 +82,14 @@ module Shaka
         @account = @github.viewer_login
         raise Error, 'Authenticated GitHub login is unavailable.' unless @account.is_a?(String) && !@account.empty?
 
-        comments = @github.issue_comments
+        comments = unix_comments
         named = selected.map { |id| named_check(comments, id) }
         (comments.select { |comment| own_check?(comment) } | named).reject { |comment| folded?(comment['body']) }
+      end
+
+      # A comment edited on the web can come back with CRLF line endings.
+      def unix_comments
+        @github.issue_comments.each { |comment| comment['body'] = comment['body'].to_s.gsub("\r\n", "\n") }
       end
 
       def named_check(comments, id)

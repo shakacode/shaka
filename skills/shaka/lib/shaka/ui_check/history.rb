@@ -12,6 +12,7 @@ module Shaka
       CLOSE = '<!-- /shaka:ui-history -->'
       SECTION = /\n*#{Regexp.escape(OPEN)}.*#{Regexp.escape(CLOSE)}\n*/m
       BLOCK = %r{^<!-- shaka:ui-history-from (\S+) (\S+) -->\n[^\n]*\n\n(.*?)\n<!-- /shaka:ui-history-from -->$}m
+      OPENER = '<!-- shaka:ui-history-from '
       REPLACED = '<!-- shaka:ui-replaced -->'
       RESERVED = %r{<!-- /?shaka:ui-(?:history|replaced)}
       HEADING = /\A# Verification\b[^\n]*\n+/
@@ -28,9 +29,7 @@ module Shaka
       # Blocks whose captures the new check shows again or retires are left in the folded comment.
       def carry(earlier, shown:, retired:, head:)
         blocks = gather(earlier)
-        unknown = retired - blocks.flat_map(&:pending)
-        raise Error, "Retired captures are not in an open earlier UI check: #{unknown.join(', ')}" if unknown.any?
-
+        check_retired(blocks, retired)
         blocks.reject { |block| (block.pending - shown - retired).empty? }
               .map { |block| mark_replaced(block, block.pending & retired, head) }
       end
@@ -42,6 +41,12 @@ module Shaka
                .map { |_key, copies| copies.max_by { |block| block.replaced.length } }
       end
 
+      # A capture already marked replaced may be retired again, as when a publish is retried.
+      def check_retired(blocks, retired)
+        unknown = retired - blocks.flat_map { |block| block.pending + block.replaced }
+        raise Error, "Retired captures are not in an open earlier UI check: #{unknown.join(', ')}" if unknown.any?
+      end
+
       def mark_replaced(block, replaced, head)
         return block if replaced.empty?
 
@@ -50,9 +55,17 @@ module Shaka
 
       def blocks(check)
         body = check.fetch(:body)
-        nested = body[SECTION].to_s.scan(BLOCK).map { |revision, source, text| Block.new(revision, source, text) }
         own = body.sub(SECTION, "\n").strip.sub(HEADING, '').strip
-        nested + [Block.new(check.fetch(:revision) || UNKNOWN, check.fetch(:source), own)]
+        nested(body[SECTION].to_s, check.fetch(:source)) +
+          [Block.new(check.fetch(:revision) || UNKNOWN, check.fetch(:source), own)]
+      end
+
+      # A section that does not parse must stop the publish, or its evidence would be folded away.
+      def nested(section, source)
+        found = section.scan(BLOCK).map { |revision, from, text| Block.new(revision, from, text) }
+        return found if found.length == section.scan(OPENER).length
+
+        raise Error, "Earlier evidence in #{source} no longer parses; restore it or retire its captures by hand."
       end
 
       def reserved?(text) = text.match?(RESERVED)
