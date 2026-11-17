@@ -50,8 +50,8 @@ model runs. No person has rechecked the classification.*
 - **Reviewers still raised risks a check already answered.** With the anchor check and
   the `enforcement.yml` loader in place, reviewers raised 4 risks that an edit might
   break an anchor or quote the checks read. The agent dismissed all 4; 3 dismissals cite
-  the check and 1 a heading slug. 14 more dismissed risks warned that an unnamed caller might break. The window has no
-  period before either check, so it cannot show whether the checks cut defects.
+  the check and 1 a heading slug. 14 more dismissed risks warned that an unnamed caller might break. The window holds
+  only two days before the anchor check and none before the loader, so it cannot show whether the checks cut defects.
 - **Checks cost review too.** The seam upgrade reference scanner was a deterministic
   check of 1,832 lines. The 7 PRs that built and extended it drew 38 findings before
   [#997](https://github.com/shakacode/shaka/pull/997) removed it with the old layout.
@@ -193,8 +193,8 @@ below the threshold.
 - **Unnamed callers.** 14 risks on 13 PRs said a change might break a caller or reader
   without naming one. All 14 were dismissed, mostly after a search found none.
 - **Reading:** reviewers still raise risks that a check already answers, and the agent
-  spends a triage turn on each. The window has no period before either check, so this
-  data cannot show whether the checks reduced defects. The review packet does not name
+  spends a triage turn on each. The window holds only two days before the anchor check and
+  none before the loader, so this data cannot show whether the checks reduced defects. The review packet does not name
   the checks that passed. Naming them is untested.
 
 ## The 89 agent-only rules

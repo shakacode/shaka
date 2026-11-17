@@ -101,8 +101,8 @@ report lists 7 more kinds with their checks and costs.
 - **Result:** reviewers still raised 4 risks that an edit might break an anchor or a
   quote the checks read. The agent dismissed each one, 3 by citing the check. The 3 anchor
   findings that were fixed fell outside the check's reach.
-- **Limit:** the month has no period before either check, so it cannot show whether the
-  checks reduced defects. The reviewer packet does not list the checks that passed.
+- **Limit:** the month holds two days before the anchor check and none before the loader,
+  so it cannot show whether the checks reduced defects. The reviewer packet does not list the checks that passed.
   Whether listing them would cut these risks is untested.
 
 ### 3. Prose is the weakest layer
@@ -138,7 +138,7 @@ from prose to checks.
 | Tests refusing a Ruby fallback for a `defaults.yml` key, and long English string literals in `skills/shaka/lib` | 5 fixed findings: 3 settings fallbacks and 2 prompt texts. The other 5 were dismissed, and the maintainer kept them in Ruby | Evaluate: run both on `main` and count hits |
 | CI step refusing `CHANGELOG.md` edits on non-release PRs | The rule changed mid-month; 1 finding broke its current form | Defer |
 | Report-only changed-line coverage | Up to 26 of 51 test findings name an untested path; coverage misses paths unit tests already run | Evaluate on the next 10 PRs |
-| Tell reviewers which checks passed, and to name a caller before warning about one | 18 risks dismissed by citing a check or showing callers unaffected; dismissals were not rechecked | Evaluate: compare dismissals over a week |
+| Tell reviewers which checks passed, and to name a caller before warning about one | 4 risks dismissed by citing a check or slug, and 14 by showing callers unaffected; dismissals were not rechecked | Evaluate: compare dismissals over a week |
 | Check every docs claim about enforcement | High upkeep, cannot judge truth | Defer |
 
 ## Data and limits
