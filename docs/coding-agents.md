@@ -98,6 +98,22 @@ Shaka from its own clone, separate from your project, so the branch you are
 changing cannot change the Shaka that checks it. The script applies to new
 sessions; a session that is already running keeps what it has.
 
+Shaka runs on the Ruby that installed it, but the session's own shell still
+starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, add these
+lines to the end of the script. They install your project's gems and put Ruby
+3.4's commands, such as `ruby`, `bundle`, and `rubocop`, first on the session's
+`PATH`. Replace `REPO` with the folder your repository is cloned into, usually
+its name:
+
+```bash
+if [ -d REPO ]; then (cd REPO && bundle install --quiet); fi
+mkdir -p "$HOME/.local/bin"
+for f in /opt/rbenv/versions/3.4.10/bin/*; do ln -sf "$f" "$HOME/.local/bin/"; done
+```
+
+Skip them for a project pinned to another Ruby: the links make Ruby 3.4.10 the
+session's `ruby` whatever version the project selects.
+
 A cloud session cannot yet open or finish a Shaka PR. Claude Code blocks GitHub's
 GraphQL API there, and Shaka uses it to create the PR, publish its
 description and walkthrough, and merge. Shaka's doctor reports a
