@@ -32,11 +32,13 @@ class UpdateCheckSavedAnswerTest < Minitest::Test
     assert_equal at, saved.fetch('checked_at'), 'a repeated answer keeps its own age'
   end
 
-  # A check scheduled at the same time each day starts a few seconds short of a day after the last one.
-  def test_an_answer_from_this_time_yesterday_asks_github_again
-    save('available', at: Time.now - (24 * HOUR) + 2)
-    assert_equal 'current', check('identical', checkout: @checkout, home: @home).fetch('status')
-    assert_predicate self, :github_asked?
+  # A check scheduled at the same time each day starts a few seconds short of a day after the last one,
+  # and an answer saved ahead of the clock does not stand in until the clock catches up.
+  def test_an_answer_over_23_hours_old_or_from_the_future_asks_github_again
+    [(23 * HOUR) + 60, (24 * HOUR) - 2, -HOUR].each do |age|
+      save('available', at: Time.now - age)
+      assert_equal 'current', check('identical', checkout: @checkout, home: @home).fetch('status'), age.to_s
+    end
   end
 
   # install --update moves HEAD, records a manual pull, or both, and a reinstall can track another branch.

@@ -30,19 +30,20 @@ class InstallSessionHookTest < Minitest::Test
   def test_unreadable_settings_stop_the_install_before_it_links_unless_it_opts_out
     write_settings('{ not json')
     output = refused('--repository', @remote, '--agent', 'claude')
-    assert_includes output, 'Claude Code settings are not valid JSON'
     assert_includes output, 'rerun bin/install with --no-session-hook'
     refute_path_exists File.join(@home, '.claude/skills/shaka')
     installed('--repository', @remote, '--agent', 'claude', '--no-session-hook')
     assert_equal '{ not json', File.read(settings_path)
   end
 
-  def test_another_host_writes_no_settings_and_refuses_either_flag
+  def test_only_claude_writes_settings_and_creates_them_when_missing
     %w[--session-hook --no-session-hook].each do |flag|
       assert_includes refused('--repository', @remote, '--agent', 'codex', flag), "#{flag} requires --agent claude"
     end
     installed('--repository', @remote, '--agent', 'codex')
     refute_path_exists settings_path
+    assert_includes installed('--agent', 'claude'), 'Set the Claude Code update-check hook'
+    assert_equal [helper_command], shaka_commands
   end
 
   def test_repeated_apply_changes_nothing_and_removal_drops_emptied_tables

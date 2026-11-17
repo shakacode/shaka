@@ -72,8 +72,9 @@ module Shaka
         false
       end
 
+      # A time ahead of the clock, as after a clock change, is stale rather than fresh until the clock catches up.
       def fresh?(time, now, seconds = SECONDS)
-        now - Time.iso8601(time.to_s) < seconds
+        (0...seconds).cover?(now - Time.iso8601(time.to_s))
       rescue ArgumentError
         false
       end
