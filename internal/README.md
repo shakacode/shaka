@@ -11,7 +11,7 @@ instructions or private company plans.
 - [Install locations and no-compatibility decision record](adr/0002-install-locations-and-no-compatibility.md) — accepted install defaults, worktree refusal, opt-in updates, and no backward compatibility before 1.0; not yet shipped.
 - [Configuration walkthrough decision record](adr/0003-configure-walkthrough.md) — accepted `configure` entry, settings and prompt reports from Ruby, and migration-flow settings PRs; not yet shipped.
 - [Per-machine reviewers decision record](adr/0005-per-machine-reviewers.md) — accepted quieting of reviewer setup warnings that selection never needs, and an optional per-machine reviewer list with model and effort; not yet shipped.
-- [Walkthroughs on request decision record](adr/0007-walkthroughs-on-request.md) — proposed default of reviewer notes, with full walkthroughs on request or when a repository sets `always`; not yet shipped.
+- [Walkthroughs on request decision record](adr/0007-walkthroughs-on-request.md) — walkthroughs on request by default, offered at handoff, with `always` to keep one on every PR; implemented in #1186.
 - [Companion skill points decision record](adr/0009-companion-skill-points.md) — proposed skill points in the procedures that load when a task reaches them, where ShakaPerf, pstack, and AI Hero skills are suggested by default; a packaged `use` entry, once a study supports it, applies only after the repository or machine turns the pack on.
 - [PR retrospective decision record](adr/0010-retrospective-over-merged-prs.md) — proposed PR record report beside `timings report`, and a retrospective across merged PRs that reads it.
 - [Experiment index](../eval/README.md) — retained repositories, outcomes, and the next proposed case.
