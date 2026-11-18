@@ -20,6 +20,13 @@ module Shaka
       # The reader Status and RequiredChecks expect, answered over REST.
       def over_rest = RestView.new(self)
 
+      # The snapshot for a caller that reads only state, head, and base, which REST reports too.
+      def state_snapshot
+        snapshot
+      rescue GraphqlRefused
+        rest_snapshot
+      end
+
       def rest_snapshot
         pull = api("repos/#{@repository}/pulls/#{@number}")
         head = pull.dig('head', 'sha')

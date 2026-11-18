@@ -8,7 +8,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   # Catches a walkthrough that names no blob URL at the head for a changed path.
   def test_walkthrough_without_a_commit_pinned_changed_file_link_is_refused
     github = client(snapshot_response, files_response)
-    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: 'A walkthrough.') }
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: rendered('A walkthrough.')) }
     assert_includes error.message, 'commit-pinned'
     assert_equal 2, @calls.size
   end
@@ -16,7 +16,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   # Catches a blob link that points at the head but not at a path in the diff.
   def test_walkthrough_pin_to_an_unchanged_path_is_refused
     github = client(snapshot_response, files_response)
-    body = "See https://github.com/owner/repo/blob/#{HEAD}/README.md."
+    body = rendered("See https://github.com/owner/repo/blob/#{HEAD}/README.md.")
     error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: body) }
     assert_includes error.message, 'commit-pinned'
     assert_equal 2, @calls.size
@@ -25,7 +25,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   # Catches README.md as a prefix of an unrelated README.md.old blob URL.
   def test_walkthrough_pin_that_only_prefixes_a_changed_path_is_refused
     github = client(snapshot_response, files_response(['README.md']))
-    body = "See https://github.com/owner/repo/blob/#{HEAD}/README.md.old."
+    body = rendered("See https://github.com/owner/repo/blob/#{HEAD}/README.md.old.")
     error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: body) }
     assert_includes error.message, 'commit-pinned'
     assert_equal 2, @calls.size
@@ -43,7 +43,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   def test_walkthrough_omitting_a_completed_review_gate_is_refused
     github = client(snapshot_response, files_response, *gate_responses)
     error = assert_raises(Shaka::Error) do
-      github.walkthrough(head: HEAD, body: "See #{PINNED_LINK}. Gates: validate.")
+      github.walkthrough(head: HEAD, body: rendered("See #{PINNED_LINK}. Gates: validate."))
     end
     assert_includes error.message, 'claude-review'
     refute_includes error.message, 'validate'
@@ -54,14 +54,14 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   def test_walkthrough_omitting_a_completed_required_check_is_refused
     github = client(snapshot_response, files_response, *gate_responses)
     error = assert_raises(Shaka::Error) do
-      github.walkthrough(head: HEAD, body: "See #{PINNED_LINK}. Gates: claude-review.")
+      github.walkthrough(head: HEAD, body: rendered("See #{PINNED_LINK}. Gates: claude-review."))
     end
     assert_includes error.message, 'validate'
     assert_equal 6, @calls.size
   end
 
   def test_pending_review_checks_are_not_required_in_the_walkthrough
-    body = "See #{PINNED_LINK}. Gates: validate."
+    body = rendered("See #{PINNED_LINK}. Gates: validate.")
     github = client(snapshot_response, files_response, *pending_review_gate_responses, html_response,
                     review_response(body: body), review_response(body: body), snapshot_response, response([]))
     assert_equal 'COMMENTED', github.walkthrough(head: HEAD, body: body)['state']
@@ -80,7 +80,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
     skipped = [{ 'name' => 'validate', 'state' => 'SKIPPED', 'bucket' => 'skipping' }]
     github = client(snapshot_response, files_response, response(skipped), *no_configured_requirements,
                     response(skipped))
-    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: "See #{PINNED_LINK}.") }
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: rendered("See #{PINNED_LINK}.")) }
     assert_includes error.message, 'validate'
   end
 
@@ -94,7 +94,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
 
   # Catches a valid blob URL that ends a sentence with a period and no line anchor.
   def test_walkthrough_pin_followed_by_sentence_punctuation_is_accepted
-    body = "See https://github.com/owner/repo/blob/#{HEAD}/#{CHANGED_FILE}. Gates: validate, claude-review."
+    body = rendered("See https://github.com/owner/repo/blob/#{HEAD}/#{CHANGED_FILE}. Gates: validate, claude-review.")
     github = client(snapshot_response, files_response, *gate_responses, html_response,
                     review_response(body: body), review_response(body: body), snapshot_response, response([]))
     published = github.walkthrough(head: HEAD, body: body)
@@ -102,7 +102,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   end
 
   def test_walkthrough_pin_inside_angle_brackets_is_accepted
-    body = "See <https://github.com/owner/repo/blob/#{HEAD}/#{CHANGED_FILE}>. Gates: validate, claude-review."
+    body = rendered("See <https://github.com/owner/repo/blob/#{HEAD}/#{CHANGED_FILE}>. Gates: validate, claude-review.")
     github = client(snapshot_response, files_response, *gate_responses, html_response,
                     review_response(body: body), review_response(body: body), snapshot_response, response([]))
     published = github.walkthrough(head: HEAD, body: body)
@@ -111,7 +111,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
 
   def test_walkthrough_pin_to_a_path_with_a_plus_sign_is_accepted
     name = 'lib/a+b.rb'
-    body = "See https://github.com/owner/repo/blob/#{HEAD}/#{name}. Gates: validate, claude-review."
+    body = rendered("See https://github.com/owner/repo/blob/#{HEAD}/#{name}. Gates: validate, claude-review.")
     github = client(snapshot_response, files_response([name]), *gate_responses, html_response,
                     review_response(body: body), review_response(body: body), snapshot_response, response([]))
     published = github.walkthrough(head: HEAD, body: body)
@@ -122,7 +122,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
     cancelled = [{ 'name' => 'validate', 'state' => 'CANCELLED', 'bucket' => 'cancel' }]
     github = client(snapshot_response, files_response, response(cancelled), *no_configured_requirements,
                     response(cancelled))
-    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: "See #{PINNED_LINK}.") }
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: rendered("See #{PINNED_LINK}.")) }
     assert_includes error.message, 'validate'
   end
 end
@@ -132,7 +132,7 @@ class GitHubUnprotectedWalkthroughTest < Minitest::Test
 
   def test_walkthrough_on_an_unprotected_branch_cites_completed_optional_gates
     unprotected = ['', "no required checks reported on the 'main' branch\n", STATUS.new(1)]
-    body = "See #{PINNED_LINK}. Gates: claude-review."
+    body = rendered("See #{PINNED_LINK}. Gates: claude-review.")
     github = client(snapshot_response, files_response, unprotected, *no_configured_requirements,
                     response(COMPLETED_GATES), html_response, review_response(body: body),
                     review_response(body: body), snapshot_response, response([]))
@@ -151,7 +151,7 @@ class GitHubSeamWalkthroughEvidenceTest < Minitest::Test
     github = client(snapshot_response, files_response, empty, *no_configured_requirements, response(head),
                     response(head))
     error = assert_raises(Shaka::Error) do
-      github.walkthrough(head: HEAD, body: "See #{PINNED_LINK}.", seam_required_checks: ['checks'])
+      github.walkthrough(head: HEAD, body: rendered("See #{PINNED_LINK}."), seam_required_checks: ['checks'])
     end
     assert_includes error.message, 'omits completed gates: checks'
   end

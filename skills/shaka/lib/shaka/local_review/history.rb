@@ -36,7 +36,7 @@ module Shaka
 
     def self.collapse_selected(github, options)
       if options[:superseded].any?
-        EvidenceHistory.new(github).collapse(options[:superseded], current: options[:current])
+        SelectedLocalReviewHistory.collapse(github, options[:superseded].uniq, options[:current])
       elsif options[:ids].any?
         BotReviewHistory.new(github).collapse(options[:ids], head: options[:head])
       else
@@ -97,10 +97,12 @@ module Shaka
 
     private
 
-    def latest_comment(comments)
+    def latest_comment(comments) = head_reports(comments).max_by { [per_commit?(it) ? 0 : 1, *order(it)] }
+
+    # Only a visible report of the pull request head can be current.
+    def head_reports(comments)
       head = @github.api("repos/#{@github.repository}/pulls/#{@github.number}").dig('head', 'sha')
       comments.select { |comment| attestation(comment['body'])[1] == head && active?(comment) }
-              .max_by { |comment| [per_commit?(comment) ? 0 : 1, *order(comment)] }
     end
 
     # A restored head needs its previously archived report republished before it can be current.
@@ -141,3 +143,5 @@ module Shaka
     end
   end
 end
+
+require_relative 'selected_history'
