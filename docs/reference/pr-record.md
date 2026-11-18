@@ -51,8 +51,9 @@ one of the repository's [`high_risk_areas`](../settings.md#high_risk_areas) alwa
 counts as high. Under `auto`, [`merge.auto_merge_max_risk`](../settings.md#mergeauto_merge_max_risk)
 sets the highest rating the agent merges without you; the default is low.
 
-The **Risk and review** section follows Intent and precedes Verification. It says what the level asks
-of you, then lists:
+The **Risk and review** section follows Intent and precedes Verification, unless your
+[pull request template](../pr-template.md#choose-where-shakas-sections-go) places it. It says what
+the level asks of you, then lists:
 
 - **Flagged by the implementer**: code needing particular attention, each with its reason.
 - The checkpoint reviewer's reasons, quoted. When a high-risk area raised the level, the

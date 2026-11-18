@@ -84,11 +84,10 @@ module Shaka
 
     # A Shaka heading marks where the description places Shaka's own sections, so no section is written for it.
     def placement(text, template = text)
-      keys = PrTemplate.headings(template).map { TemplateLayout.key(it) }
-      return text unless keys.any? { TemplateLayout.marker?(it) }
+      return text unless PrTemplate.headings(template).any? { TemplateLayout.key(it) == TemplateLayout::MARKER }
 
-      "#{text.chomp}\n\nThe template's `## Shaka` or `## Shaka Inline` heading marks where Shaka places " \
-        "its own sections. Leave that heading out of `sections`.\n"
+      "#{text.chomp}\n\nThe template's `## Shaka` heading marks where Shaka places its own sections. " \
+        "Leave that heading out of `sections`.\n"
     end
   end
 end

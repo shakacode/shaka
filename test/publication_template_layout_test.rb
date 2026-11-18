@@ -11,10 +11,6 @@ class PublicationTemplateLayoutTest < Minitest::Test
 
   SUMMARY = 'Reviewers can see the changed behavior.'
   CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
-  WIP = { 'owner' => 'm5 · Claude Code · k7q2', 'task' => 'SHAKA PR #1 · layout', 'thread' => 'UNKNOWN',
-          'last_observed_activity' => '2026-11-16 23:00 HST', 'revision' => "feature @ #{'a' * 40}",
-          'workspace' => 'UNKNOWN', 'unfinished_work' => 'none', 'stopped_because' => 'running',
-          'merge_authority' => 'ask', 'state' => 'validating', 'next_action' => 'publish' }.freeze
   DEFAULT_ORDER = ['Summary', 'Intent', 'Verification', '<details> Evidence and limitations', 'Shaka metrics',
                    'Deployment'].freeze
 
@@ -26,65 +22,42 @@ class PublicationTemplateLayoutTest < Minitest::Test
     end
   end
 
-  def test_inline_heading_places_shaka_sections_between_template_sections
-    rendered = render(['Summary', 'Shaka Inline', 'Deployment'])
+  def test_shaka_heading_places_shaka_sections_between_template_sections
+    rendered = render(%w[Summary Shaka Deployment])
     assert_equal ['Summary', 'Intent', 'Verification', '<details> Evidence and limitations', 'Shaka metrics',
                   'Deployment'], outline(rendered)
     assert_fixed_ends(rendered)
-  end
-
-  def test_collapsed_heading_folds_intent_where_it_would_appear
     rendered = render(%w[Deployment Shaka Summary])
-    assert_equal ['Deployment', '<details> Shaka', 'Intent', 'Verification', '<details> Evidence and limitations',
-                  'Shaka metrics', 'Summary'], outline(rendered)
-    fold = rendered[%r{<details>\n<summary>Shaka</summary>\n\n.*?\n\n</details>\n\n## Verification}m]
-    assert fold, rendered
-    assert_includes fold, "## Intent\n\n"
+    assert_equal ['Deployment', 'Intent', 'Verification', '<details> Evidence and limitations', 'Shaka metrics',
+                  'Summary'], outline(rendered)
     assert_fixed_ends(rendered)
   end
-
+  
   def test_template_can_place_any_shaka_section
-    rendered = render(['Verification', 'Shaka Inline', 'Shaka metrics'])
+    rendered = render(['Verification', 'Shaka', 'Shaka metrics'])
     assert_equal ['Verification', '<details> Evidence and limitations', 'Summary', 'Intent', 'Deployment',
                   'Shaka metrics'], outline(rendered)
   end
-
-  # Everything a reader acts on stays in view, including sections the fold rule does not name.
-  def test_fold_holds_only_intent_and_risk
-    steps = [{ 'when' => 'after merge', 'step' => 'Update Shaka', 'who' => 'Everyone', 'where' => 'Each machine',
-               'verify' => 'doctor reports HEALTHY' }]
-    risk = { 'summary' => 'Risk classes', 'body' => 'Low: rendering only.' }
-    rendered = render(%w[Shaka], 'steps_besides_merging' => steps, 'wip' => WIP, 'risk_record' => risk)
-    assert_equal ['Summary', 'Before and after merge', '<details> Shaka', 'Intent', 'Risk and review', 'Verification',
-                  '<details> Evidence and limitations', 'Shaka metrics', '<details> WIP Details', 'Deployment'],
-                 outline(rendered)
-  end
-
+  
   def test_evidence_stays_with_shakas_own_verification
     sections = [{ 'heading' => 'Verification', 'body' => 'Supplied.' }]
     rendered = render(%w[Shaka], 'sections' => sections)
-    assert_equal ['Summary', '<details> Shaka', 'Intent', 'Verification', '<details> Evidence and limitations',
-                  'Shaka metrics', 'Verification'], outline(rendered)
+    assert_equal ['Summary', 'Intent', 'Verification', '<details> Evidence and limitations', 'Shaka metrics',
+                  'Verification'], outline(rendered)
   end
-
+  
   def test_sections_the_template_does_not_name_stay_with_shaka
     sections = [{ 'heading' => 'Notes', 'body' => 'Extra.' }, { 'heading' => 'Deployment', 'body' => 'None.' }]
-    rendered = render(['Deployment', 'Shaka Inline', 'Rollout'], 'sections' => sections)
+    rendered = render(%w[Deployment Shaka Rollout], 'sections' => sections)
     assert_equal ['Deployment', 'Summary', 'Intent', 'Verification', '<details> Evidence and limitations',
                   'Shaka metrics', 'Notes'], outline(rendered)
   end
-
-  def test_first_shaka_heading_chooses_the_layout
-    rendered = render(['Shaka Inline', 'Shaka', 'Deployment'])
-    refute_includes rendered, '<summary>Shaka</summary>'
-    assert_equal 'Deployment', outline(rendered).last
-  end
-
+  
   def test_supplied_shaka_section_is_refused_when_the_template_marks_one
     sections = [{ 'heading' => 'shaka', 'body' => 'Everything else.' }]
     error = assert_raises(Shaka::Error) { render(%w[Summary Shaka], 'sections' => sections) }
     assert_includes error.message, 'Leave it out of sections'
-    ['Shaka Inline ##', 'Shaka <!-- note -->'].each do |heading|
+    ['Shaka ##', 'Shaka <!-- note -->'].each do |heading|
       supplied = [{ 'heading' => heading, 'body' => 'Everything else.' }]
       assert_raises(Shaka::Error) { render(%w[Summary Shaka], 'sections' => supplied) }
     end
@@ -101,9 +74,9 @@ class PublicationTemplateLayoutTest < Minitest::Test
     Shaka::Publication.description(content.merge(extra), nil, nil, settings)
   end
 
-  # Each `##` heading and each fold that holds sections or evidence, in reading order.
+  # Each `##` heading and the evidence fold, in reading order.
   def outline(rendered)
-    folds = ['Shaka', 'Evidence and limitations', 'WIP Details']
+    folds = ['Evidence and limitations']
     rendered.scan(%r{^## (.+)$|^<summary>(.+)</summary>$}).filter_map do |section, fold|
       section || ("<details> #{fold}" if folds.include?(fold))
     end
@@ -123,26 +96,24 @@ class PublicationTemplateLayoutCommandTest < Minitest::Test
 
   COMMAND = SHAKA_COMMAND
   SUMMARY = PublicationTemplateLayoutTest::SUMMARY
-  TEMPLATE = "## Summary\n\n<!-- What changed. -->\n\n## Shaka\n\n## Deployment\n\n<!-- How to deploy. -->\n"
+  TEMPLATE = "## Deployment\n\n<!-- How to deploy. -->\n\n## Shaka\n"
 
   def test_trusted_template_orders_the_published_description
     with_guidance('pr_evidence' => '.agents/pr-evidence.md') do |root|
       write_template(root, TEMPLATE)
       commit(root)
-      write_template(root, "## Shaka Inline\n\n## Summary\n")
+      write_template(root, "## Shaka\n\n## Deployment\n")
       body = published(root)
-      assert_operator body.index('## Summary'), :<, body.index('<summary>Shaka</summary>')
-      assert_operator body.index('</details>', body.index('<summary>Shaka</summary>')), :<, body.index('## Deployment')
+      assert_operator body.index('## Deployment'), :<, body.index('## Summary')
     end
   end
 
   def test_a_guide_naming_the_template_orders_the_description
-    template = "## Deployment\n\n```html\n<!--\n```\n\n## Shaka Inline\n"
+    template = "## Deployment\n\n```html\n<!--\n```\n\n## Shaka\n"
     with_guidance('pr_evidence' => '.github/pull_request_template.md') do |root|
       write_template(root, template)
       commit(root)
       body = published(root)
-      refute_includes body, '<summary>Shaka</summary>'
       assert_operator body.index('## Deployment'), :<, body.index('## Summary')
       assert_operator body.index('## Shaka metrics'), :<, body.index('_PR prepared with')
     end
@@ -154,7 +125,7 @@ class PublicationTemplateLayoutCommandTest < Minitest::Test
       assert guidance('pr_evidence', root, commit(root)).end_with?("Leave that heading out of `sections`.\n")
     end
     with_guidance('pr_evidence' => '.github/pull_request_template.md') do |root|
-      write_template(root, "## Shaka Inline\n")
+      write_template(root, "## Shaka\n")
       assert_includes guidance('pr_evidence', root, commit(root)), 'marks where Shaka places its own sections'
     end
   end
@@ -164,8 +135,7 @@ class PublicationTemplateLayoutCommandTest < Minitest::Test
       write_template(root, TEMPLATE)
       commit(root)
       body = published(root)
-      refute_includes body, '<summary>Shaka</summary>'
-      assert_operator body.index('## Intent'), :<, body.index('## Deployment')
+      assert_operator body.index('## Summary'), :<, body.index('## Deployment')
     end
   end
 

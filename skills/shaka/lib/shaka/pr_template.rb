@@ -86,11 +86,12 @@ module Shaka
         text unless text.empty?
       end
 
-      # Whether a comment is still open after the line, reading each opener and closer in order.
+      # Whether a comment is still open after the line, reading each opener and closer in order. A closer
+      # may share the opener's dashes, as GitHub reads `<!-->` as a whole, empty comment.
       def open_after?(line, open)
         position = 0
         while (found = line.index(open ? '-->' : '<!--', position))
-          position = found + (open ? 3 : 4)
+          position = found + (open ? 3 : 2)
           open = !open
         end
         open

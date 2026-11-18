@@ -61,15 +61,9 @@ complete setup built on one template section.
 
 ## Choose where Shaka's sections go
 
-Without a Shaka heading, your sections come after all of Shaka's, just above the
-closing credit line. To choose the spot, add one of these headings to the template:
-
-| Heading | Shaka's other sections appear at that spot |
-| --- | --- |
-| `## Shaka` | With Intent and Risk and review folded into one block labeled Shaka |
-| `## Shaka Inline` | All expanded |
-
-For example, with this template:
+Without a `## Shaka` heading, your sections come after all of Shaka's, just above the
+closing credit line. Add `## Shaka` to the template to choose the spot instead. For
+example, with this template:
 
 ```markdown
 ## Summary
@@ -87,12 +81,9 @@ the description reads in this order:
 
 1. The line naming the agent, then the recommendation and review links
 2. **Summary**
-3. A collapsed **Shaka** block holding Intent and Risk and review
-4. **Verification** with its evidence, **Shaka metrics**, and Shaka's other sections
-5. **Rollout**
-6. The Shaka credit line
-
-With `## Shaka Inline` in place of `## Shaka`, Intent and Risk and review show expanded.
+3. Shaka's other sections, such as Intent, Verification, and Shaka metrics
+4. **Rollout**
+5. The Shaka credit line
 
 The order follows these rules:
 
@@ -105,10 +96,6 @@ The order follows these rules:
 - The opening lines never move. The first line names the agent that wrote the
   description. The recommendation, any decisions waiting on you, and the review links
   follow, so the decision comes first. The credit line stays last.
-- The fold holds only Intent and Risk and review. Everything else stays in view,
-  including verification gaps, steps before or after merging, comments, and costs.
-- Text inside the fold does not count toward [prose limits](settings.md#prose_limits),
-  like the body of any collapsed block.
 
 The heading only marks a spot; the description has no section called Shaka. People who
 open a PR on GitHub without Shaka see the heading in the template. A comment under it,

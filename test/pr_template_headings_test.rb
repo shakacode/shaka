@@ -46,9 +46,11 @@ class PrTemplateHeadingsTest < Minitest::Test
     assert_equal %w[Summary Shown], Shaka::PrTemplate.headings(template)
   end
 
+  # GitHub renders no heading after `--> <!-- b`, and treats `<!-->` as a whole, empty comment.
   def test_a_comment_opened_after_another_closes_still_hides_headings
     template = "<!-- first comment\n--> <!-- second comment\n## Shaka\n-->\n## Summary\n"
     assert_equal %w[Summary], Shaka::PrTemplate.headings(template)
+    assert_equal %w[Shaka], Shaka::PrTemplate.headings("<!-->\n## Shaka\n")
   end
 
   def test_comment_syntax_in_inline_code_hides_nothing
