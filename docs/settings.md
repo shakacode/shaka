@@ -149,7 +149,9 @@ subject to the repository's restrictions. Some changes still need your decision.
 Shaka uses your account's existing GitHub
 permissions; an account that can bypass protection needs no extra Shaka setting.
 
-Set a task's preference with `Use merge policy auto`. This is a task instruction;
+Set a task's preference with `Use merge policy auto`.
+[First-setup previews](#preview-settings-before-adopting-them) use Ask.
+This is a task instruction;
 editing the PR's settings does not change its own merge authority. Required human
 approvals still apply. `Go` starts work; it is not merge consent. Ruby checks
 readiness; the agent establishes your task-scoped authority. See
