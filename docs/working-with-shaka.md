@@ -279,14 +279,14 @@ added in a pull request takes effect after it merges. Pack files need
 [team settings](settings-guide.md#use-individual-or-team-settings); with individual
 settings, Shaka reads none. Shaka ships no packs of its own yet.
 
-To check what applies, ask your agent:
+To check what applies, ask your agent to run Shaka's `companions` command with the
+default branch's latest commit:
 
 ```text
-Which companion skills does Shaka offer in this repository?
+Run shaka companions --all for this repository with --ref set to the default branch's latest commit
 ```
 
-The agent runs `shaka companions --all` with the default branch's latest commit. The
-output lists each skill with its mode and reason, why that mode applies, and whether
+The output lists each skill with its mode and reason, why that mode applies, and whether
 the default branch has the skill.
 
 <a id="hand-over-a-spec-and-tickets"></a>
