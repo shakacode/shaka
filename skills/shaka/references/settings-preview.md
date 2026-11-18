@@ -26,12 +26,13 @@ intake. If that SHA cannot be recovered, keep the trial in Ask.
    infer selection from PR content, or substitute uncommitted individual settings.
    Inspect its configuration and prompts. Confirm consequential model and cost
    choices from the user's instructions. Resolve the chosen head to a full commit.
-   Treat its `base_branch` as a suggestion. Confirm it before creating the
-   worktree if it differs from both the verified default branch and its configured base.
+   Treat its `base_branch` as a suggestion. Apply Plan's base precedence and
+   confirmation rule using the verified default branch and its trusted settings.
 2. Confirm the task can run with checkout-local wrappers before creating its
    worktree. With team setup, use a base that already contains the required
-   wrappers. Then create the task worktree using the claim's branch name and
-   confirmed base. Without team setup, follow
+   wrappers. For a new task, create its worktree using the claim's branch name
+   and confirmed base. For a switch with compatible wrappers, use the existing
+   task's branch and worktree. Without team setup, follow
    [individual setup](repository-setup.md#try-shaka-privately-in-one-clone) to provide
    local wrappers for the project's existing commands. Reuse complete individual
    setup when it already exists. For a fresh setup that needs the optional
