@@ -20,17 +20,22 @@ module Shaka
 
     # The current head's intervals open the Timings section.
     def timings
-      TimingsDetails.for(@timeline, @settings.time_zone).map do |item|
+      @timings ||= TimingsDetails.for(@timeline, @settings.time_zone).map do |item|
         details_block(item.merge('body' => "#{ThroughputStats.line(throughput)}\n\n#{item['body']}"))
       end
     end
 
-    def missing_values = (detail = MissingValues.detail(throughput)) ? [details_block(detail)] : []
+    def missing_values
+      detail = MissingValues.detail(throughput, timings: timings.any?)
+      detail ? [details_block(detail)] : []
+    end
 
     def throughput = @throughput ||= ThroughputStats.state(@content, @timeline, @pull)
 
+    # The table and the history both show the recommendation the history kept.
     def provenance
-      execution = ExecutionProvenance.new(provenance_spec, workflow_version: @workflow_version, pull: @pull)
+      spec = ProvenanceRecommendation.resolve(@pull, provenance_spec).spec
+      execution = ExecutionProvenance.new(spec, workflow_version: @workflow_version, pull: @pull)
       detail = execution.detail
       return details_block(detail) unless @pull
 

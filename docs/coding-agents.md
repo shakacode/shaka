@@ -7,7 +7,7 @@ each coding agent you use. Each project keeps its own settings.
 | Coding agent | Start a task | Where to use it |
 | --- | --- | --- |
 | Codex | `$shaka` | Desktop app or CLI |
-| Claude Code | `/shaka` | Desktop app or CLI |
+| Claude Code | `/shaka` | Desktop app or CLI; on the web, see [Claude Code on the web](#claude-code-on-the-web) |
 | Cursor | `/shaka` | Start a new Agent chat after installation |
 | GitHub Copilot | `/shaka` | Copilot CLI or VS Code Agent chat; see [Copilot setup](#github-copilot) |
 | OpenCode | `/shaka` | Use the installed skill in a session; an optional launcher is available |
@@ -64,6 +64,52 @@ If a PR exists, [resume it locally](working-with-shaka.md#resume-unfinished-work
 Before the first push, return to the original chat and checkout to continue.
 That checkout may still be on the cloud machine.
 See [cloud review options](reference/reviewer-setup.md#cloud-reviewers) for details.
+
+### Claude Code on the web
+
+Claude Code sessions on claude.ai/code start in a fresh container each time, so
+Shaka is not there unless the cloud environment installs it. The container also
+ships Ruby 3.3, and Shaka needs Ruby 3.4. Give the environment a setup script so
+`/shaka` is ready in every new session. Ask Claude in a cloud session:
+
+```text
+Add a setup script to this cloud environment that installs Ruby 3.4 and Shaka for Claude Code
+```
+
+You approve the change on a card. To add it yourself, open the cloud environment
+menu in the session's title bar, choose **Edit**, and paste this under
+**Setup script**:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+MAKE_OPTS=-j8 RUBY_CONFIGURE_OPTS=--disable-install-doc /opt/rbenv/bin/rbenv install -s 3.4.10
+export PATH=/opt/rbenv/versions/3.4.10/bin:$PATH
+umask 022
+mkdir -p "$HOME/.local/share/shaka"
+if [ ! -d "$HOME/.local/share/shaka/source" ]; then
+  git clone -q https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
+fi
+"$HOME/.local/share/shaka/source/bin/install" --agent claude
+```
+
+Building Ruby adds a few minutes to each new container. The script installs
+Shaka from its own clone, separate from your project, so the branch you are
+changing cannot change the Shaka that checks it. The script applies to new
+sessions; a session that is already running keeps what it has.
+
+A cloud session cannot yet open or finish a Shaka PR. Claude Code blocks GitHub's
+GraphQL API there, and Shaka uses it to create the PR, publish its
+description and walkthrough, and merge. Shaka's doctor reports a
+failed **GitHub GraphQL** check. See [cloud reviewers](reference/reviewer-setup.md#cloud-reviewers)
+for what still works. Make and validate the change in the cloud session, ask it
+to push the branch, then continue in a local session. Validation and review
+results stay in the cloud container, so the local session runs them again on the
+pushed branch before it opens the PR:
+
+```text
+/shaka Continue the pushed branch BRANCH and open its PR
+```
 
 ## Give consent once
 

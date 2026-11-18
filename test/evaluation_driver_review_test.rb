@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require_relative '../eval/lib/shaka/evaluation/driver_review'
 require_relative '../eval/lib/shaka/evaluation/delivery_ask'
 require_relative 'support/evaluation_delivery_fixture'
+require_relative 'support/ready_clock'
 
 class EvaluationDriverReviewTest < Minitest::Test
   include EvaluationDeliveryFixture
@@ -68,10 +69,14 @@ class EvaluationDriverReviewTest < Minitest::Test
   end
 
   def test_verifier_timeout_leaves_no_post_and_reaps_the_child
-    assert_raises(IOError) do
-      run_driver(body: "File.write('pid', Process.pid); sleep 30", writer: driver(seconds: 0.5))
-    end
-    pid = Integer(File.read(File.join(@directory, 'pid')))
+    answer_head_check_from_shell
+    writer = driver(seconds: 2)
+    verifier = writer.instance_variable_get(:@verifier)
+    ReadyClock.hold(verifier, File.join(@directory, 'ready'))
+    assert_raises(IOError) { run_driver(command: ['/bin/sh', '-c', ': > ready; exec sleep 30'], writer:) }
+    pid = verifier.instance_variable_get(:@pid)
+    refute_nil pid, 'The verifier never started its child'
+    assert_path_exists File.join(@directory, 'ready')
     assert_raises(Errno::ESRCH) { Process.kill(0, pid) }
     refute_path_exists File.join(@directory, 'posted.json')
   end
@@ -105,8 +110,8 @@ class EvaluationDriverReviewTest < Minitest::Test
   end
 
   def run_driver(body: "File.write('verified-head', ENV.fetch('SHAKA_EVAL_HEAD'))", writer: driver,
-                 attempt: 1, executions: 1)
-    writer.run(command: [RbConfig.ruby, '-e', body], cwd: @directory,
+                 attempt: 1, executions: 1, command: [RbConfig.ruby, '-e', body])
+    writer.run(command:, cwd: @directory,
                directory: File.join(@directory, 'verification'), attempt:, executions:)
   end
 

@@ -28,8 +28,9 @@ shows only your [machine alias](../coding-agents.md#name-your-machines), CPU mod
 core count, total and free memory, and load at start and end, never the host name
 or paths. The alias is the one name you choose. Shaka checks that it isn't this
 machine's host name, not that it leaves out your user name, so pick one that
-doesn't identify you, such as `m5`. WIP Details is separate: it shows your
-checkout path unless you [hide it](../settings.md#wipinclude_checkout_path).
+doesn't identify you, such as `m5`. WIP Details is separate: team setup shows your
+checkout path, and new individual setups hide it. You can
+[change either](../settings.md#wipinclude_checkout_path).
 
 The **Code Review** link opens the review record. Check coverage, unresolved
 findings, and the number of rounds; repeated rounds can signal work worth
@@ -61,14 +62,17 @@ of you, then lists:
   [PR evidence guide](../settings.md#project_guidance) asks for one.
 
 Until the checkpoint rates the current commit, the level reads **not rated yet**.
-When Shaka cannot read the repository's trusted settings, it reads **not shown**:
-Shaka's default areas could rate the change lower than the repository's own.
+When Shaka reads no repository settings, because the repository has none or the agent
+published without them, the level checks only Shaka's default high-risk areas, and the
+section says so. An area your repository adds could raise it. Merge never uses this line: it rates the
+commit again from the checkpoint and your settings.
 
 ## Checkpoint
 
 Open **Checkpoint**, linked near the top of the PR description, for the assessment
 of whether the result solves the problem, earns its maintenance cost, and has
-supporting evidence. The written **Code Walkthrough** explains the implementation.
+supporting evidence. When the PR has a **Code Walkthrough**, it explains the implementation;
+ask the agent for one if you want it.
 
 | Label | Meaning |
 | --- | --- |
@@ -203,6 +207,10 @@ and what remains unverified. Captures and tests provide different evidence:
 | Interaction, animation, or timing | A recording, with screenshots where useful. |
 | Backend or command-line behavior | Focused tests and concise before-and-after output. |
 
+After a later commit, the agent posts a new check for that head and folds the older one.
+Earlier captures it did not refresh stay in a collapsed Earlier evidence section, labeled
+with the commit that captured them, so old screenshots never pass as proof for the new head.
+
 ## Diagrams
 
 A walkthrough diagram explains how the pieces fit together. It does not prove
@@ -235,7 +243,8 @@ the thread.
 ## Recovery
 
 Reverting code may not undo sent emails, issued refunds, or changed data. Look for
-recovery consequences in the walkthrough before merging. The agent writes this
+recovery consequences in the description's details, or in the walkthrough when the PR
+has one, before merging. The agent writes this
 assessment; missing recovery details do not establish that a revert is enough.
 
 A **return point**, labeled C1, C2, and so on in the PR description, connects earlier

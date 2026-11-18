@@ -10,8 +10,9 @@ module Shaka
   module Configuration
     # Preferences from ~/.agents/shaka/config.yml that pre-fill a new clone's private setup. It may
     # set only the preference leaves below, so commands, CI review jobs, merge policy, and
-    # prompt-file paths stay repository facts. Only setup reads the file, except for the time zone:
-    # publication reads that for a repository that sets none, so setup leaves it out of the clone.
+    # prompt-file paths stay repository facts. Only setup reads the file, except for two leaves that
+    # publication also reads: the time zone, for a repository that sets none, so setup leaves it out
+    # of the clone; and wip.include_checkout_path, which PersonalPrivacy reads to hide the path.
     class PersonalSettings
       ALLOWED = %w[
         review.local_review_agents review.provider_coverage review.local_review_count

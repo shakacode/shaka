@@ -9,6 +9,7 @@ require_relative 'throughput_stats'
 require_relative 'timings_details'
 require_relative 'provenance'
 require_relative 'provenance_history'
+require_relative 'provenance_recommendation'
 require_relative 'wip_details'
 require_relative '../handoff/wip_note'
 require_relative 'settings'
@@ -52,8 +53,8 @@ module Shaka
       @workflow_version = workflow_version
       @pull = pull
       @settings = settings || PublicationSettings.new
-      # The running session's agent time joins here, so a rendering preview shows it too.
-      @timeline = description ? AgentTime.attach(timeline, pull, env: environment || ENV) : timeline
+      # Carried agent time joins here, so a rendering preview shows it too; the running session's comes from the helper.
+      @timeline = description ? AgentTime.attach(timeline, pull) : timeline
       @environment = environment
       @host_name = host_name
     end
@@ -83,7 +84,7 @@ module Shaka
 
     def human_comments = HumanComments.for(@content, @pull, @settings)
 
-    def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']))
+    def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']), @settings)
 
     # The steps besides merging sit right under the summary so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)

@@ -134,7 +134,7 @@ public links. Keep its recovery location in the private return point; publishing
 summary grants no permission to disclose the snapshot. Verify published links remain
 accessible, and report missing history explicitly rather than claiming it is linked.
 Keep surviving material findings visible outside that entry until settled.
-Update the current description and publish a walkthrough for the replacement head.
+Update the current description and, when one is due, publish a walkthrough for the replacement head.
 The existing walkthrough helper collapses its own older walkthroughs; independent
 review reports and human-authored comments remain intact.
 

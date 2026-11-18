@@ -392,7 +392,7 @@ Prompt tasks and numbered GitHub tasks take neither field.
 With a number or key, the optional `task_relation` says how this PR relates to the
 task: `fixes`, `part_of`, `follow_up`, or `refs`. Only a GitHub issue number takes `fixes`.
 
-The helper renders the Task line after Why in Intent:
+The Task line in Intent shows where the work came from:
 
 | Provenance | Task line |
 | --- | --- |
@@ -415,6 +415,11 @@ never `null`. Ruby validates the shapes; the agent establishes whether an absenc
 known. The initial prompt is excluded. Provenance
 carries no machine alias; put the public alias from `SHAKA_MACHINE_ALIAS`, or `UNKNOWN`,
 in the [WIP Details Owner field](delivery.md#recover-an-unfinished-pr), never a hostname.
+
+The recommendation records the plan. On a same-repository PR, `description` keeps the
+recommended model and effort its provenance history recorded and reports
+`recommendation_kept` when the supplied ones differ. Only a recorded `UNKNOWN` takes a new
+value. Describe a changed plan in `task_history`.
 
 The renderer also fills the workflow version with the commit the helper runs from,
 because every commit between releases shares one version number. When the helper came

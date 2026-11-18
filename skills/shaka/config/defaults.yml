@@ -5,7 +5,7 @@
 review:
   startup_check: true # Probe selected local reviewers before implementation; may consume quota.
   ci_review_wait: one # Wait for one configured hosted review report before merge.
-  local_max_rounds: 5 # Committed heads one local review ledger may review.
+  local_max_rounds: 8 # Committed heads one local review ledger may review.
   local_review_count: 1 # Local reviewers run on each committed head; unused when provider_coverage lists providers.
   provider_coverage: [] # One local reviewer per listed provider, in place of local_review_count.
   # Added after the code review prompt when it exists. Naming it in config.yml makes the file required.
@@ -50,6 +50,9 @@ merge:
 branches:
   name: '{login}-{host}/{issue}-{description}' # Feature branch-name template.
 
+walkthrough:
+  publish: on_request # Publish a full code walkthrough only when someone asks; always publishes one on every PR.
+
 wip:
   include_checkout_path: true # Publish the checkout path in WIP Details.
 
@@ -72,12 +75,20 @@ prose_limits: # Visible PR description and walkthrough prose.
 
 project_guidance: {} # None: no repository guides for PR evidence, merge readiness, or walkthroughs.
 
-# Command-line defaults; config.yml does not set these, but the flags override them per run.
+# Defaults for command execution and generated configuration.
 runtime:
+  private_setup_include_checkout_path: false
   review_timeout_seconds: # shaka review run --timeout-seconds, by reviewer.
     default: 300
+    anthropic/claude: 600 # Large diffs took 264-289 s in reviews that passed.
     deepseek/openrouter: 600
   pr_watch: # shaka pr watch --interval, --timeout, and --settle.
     interval_seconds: 60
     timeout_seconds: 3600
     settle_seconds: 15
+  instruction_tokens: # bin/report-instruction-growth --tokens: each CLI counts the startup text with its model.
+    models:
+      claude: claude-opus-5-5
+      codex: gpt-6.1-sol
+    effort: low # The CLI only answers "ok"; effort does not change input tokens.
+    timeout_seconds: 300 # Per CLI run.

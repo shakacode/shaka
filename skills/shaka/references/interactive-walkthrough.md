@@ -1,12 +1,13 @@
 # Interactive code walkthrough
 
-Read this when the user requests a live code walkthrough, one concept at a time.
+Read this when the user requests a live code walkthrough, one concept at a time, including
+by accepting the walkthrough offer at handoff.
 A request to publish a complete walkthrough follows the normal delivery workflow.
 
 Keep the tour in the current owning task. This request authorizes reading and explanation;
 edits, GitHub publication, and merging retain their existing authorization rules.
-An interactive tour does not replace the published COMMENT walkthrough required
-by a delivery task. Keep its selective inline notes unchanged.
+An interactive tour does not replace a published COMMENT walkthrough that a
+delivery task owes. Keep its selective inline notes unchanged.
 
 ## Prepare the tour
 

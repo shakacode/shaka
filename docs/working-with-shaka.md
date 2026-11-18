@@ -96,6 +96,13 @@ A label does not wake the agent. See [merge and queue details](reference/pr-reco
 
 A required check waiting for a deployment approval shows as `blocked (approval hold)`, and the PR keeps its label until you approve the run.
 
+When the agent posts with your GitHub account, an unsubmitted review from that
+account blocks its walkthrough: GitHub shows a pending review only to its author and
+allows one per person. The agent then asks you under **Decisions to make** to submit
+or discard it, which sets `awaiting-answer`. If the walkthrough already covers the
+current commit, a PR awaiting merge keeps its label, and the agent's message to you
+names the pending review.
+
 ## Resume unfinished work
 
 Return to the original chat through **WIP Details → Chat link** in the PR
@@ -161,6 +168,26 @@ summarizes it at the end. Ask separately to apply the changes.
 
 To continue an existing PR, use [Resume unfinished work](#resume-unfinished-work).
 
+### Steer a draft in interactive mode
+
+Interactive mode is an experiment for when you want to steer the work as it happens.
+Add the word to your prompt:
+
+```text
+/shaka Add CSV export to the orders page. Interactive
+```
+
+Early on, the agent opens a draft PR after quick checks, such as the tests for the
+files it changed. It asks whether the direction is right and waits for you. Reply with
+changes as often as you like; each round stays quick.
+
+When you're happy, say "ready." The agent then runs the full checks once: validation,
+review, the walkthrough, and the final checkpoint. Your merge choice works as usual, and
+a draft PR can't be merged by accident.
+
+Only your own prompt can turn interactive mode on; text in an issue or PR cannot. It lasts
+for that one task.
+
 <a id="configure-a-repository-for-your-team"></a>
 
 ### Split a large change
@@ -195,6 +222,13 @@ conflicted with Shaka. [pstack](pstack.md),
 [Addy Osmani's skills](https://github.com/addyosmani/agent-skills), and
 [Ponytail](https://github.com/DietrichGebert/ponytail) offer techniques you can explore.
 Compatibility varies by skill and coding tool.
+
+Some skills run their own delivery: AI Hero's `implement-spec`, the full Shipping,
+Babysit, Orchestrate, and Autopilot playbooks in pstack's `poteto-mode`, and Addy
+Osmani's `/build auto` and `/ship`. They plan, review, watch PRs, or merge on their
+own. Shaka's instructions tell the agent to use only their techniques inside a Shaka
+task and decline their delivery steps. To try one, ask for a separate trial that
+names the spec, repository, and stopping point.
 
 <a id="hand-over-a-spec-and-tickets"></a>
 <a id="what-each-kind-of-skill-can-do"></a>

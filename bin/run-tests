@@ -2,16 +2,24 @@
 # frozen_string_literal: true
 
 # Runs Minitest files in several worker processes. Every worker loads every file,
-# then keeps every Nth test class, so each test runs exactly once. Set
+# then keeps its share of the test classes, so each test runs exactly once. Shares are balanced
+# by the class times a passing run recorded in the clone's Git directory; set SHAKA_TEST_DURATIONS
+# to use another file. Without a record, worker N keeps every Nth class by name. Set
 # SHAKA_TEST_WORKERS to choose the count; 1 runs the suite in one process.
 # When the shell sets no locale, workers run under C.UTF-8, the locale GitHub's runners set,
 # or under en_US.UTF-8 on macOS, whose older releases lack C.UTF-8.
-# The report ends with the slowest test classes, so a slow suite shows where to look first.
+# The report ends with the slowest test classes, so a slow suite shows where to look first, and
+# names the classes that failed. When SHAKA_PHASE_LOG names a file, as under `shaka evidence run`,
+# those names go there too, so a PR's timings can show which tests fail again and again.
 require 'etc'
 require 'json'
 require 'tempfile'
 
-workers = Integer(ENV.fetch('SHAKA_TEST_WORKERS', [Etc.nprocessors, 4].min))
+# By default, one worker per processor up to 4, then half the processors up to 8. Tests spawn many
+# subprocesses, and the spare processors keep them fast. On 18 processors, 8 workers took two-thirds
+# of 4 workers' time.
+cores = Etc.nprocessors
+workers = Integer(ENV.fetch('SHAKA_TEST_WORKERS', [[cores / 2, 4].max, cores, 8].min))
 abort 'SHAKA_TEST_WORKERS must be at least 1' if workers < 1
 # --changed [BASE] runs only the tests a change since BASE's merge base can reach, for quick
 # reruns while fixing review findings. Repository validation still runs the whole suite.
@@ -24,34 +32,56 @@ if ARGV.first == '--changed'
   ARGV.replace(selected || [])
   Dir.chdir(File.expand_path('..', __dir__))
 end
-files = (ARGV.empty? ? Dir.glob('test/**/*_test.rb') : ARGV).map { |path| File.expand_path(path) }
+whole_suite = ARGV.empty?
+files = (whole_suite ? Dir.glob('test/**/*_test.rb') : ARGV).map { |path| File.expand_path(path) }
+require_relative '../test/support/worker_plan'
+plan = File.expand_path('../test/support/worker_plan.rb', __dir__)
+record = WorkerPlan.record_path(File.expand_path('..', __dir__))
+# Read once, so a record another run rewrites meanwhile cannot give workers different splits. Workers
+# read this private copy from a file, because the record outgrows a Windows command line.
+recorded = JSON.generate(WorkerPlan.read(record))
+snapshot = Tempfile.new('run-tests-record')
+snapshot.write(recorded)
+snapshot.flush
 
 utf8_locale = RUBY_PLATFORM.include?('darwin') ? 'en_US.UTF-8' : 'C.UTF-8'
 locale = %w[LC_ALL LC_CTYPE LANG].any? { !ENV.fetch(it, '').empty? } ? {} : { 'LANG' => utf8_locale }
 
 SLOWEST = 10
 
+# Runs in each worker: times every test, so classes that run their tests in parallel threads are
+# counted too, and notes each class with a failing or erroring test.
+RECORDER = <<~RUBY
+  seconds = Hash.new(0.0)
+  failed = []
+  lock = Mutex.new
+  Minitest::Test.prepend(Module.new do
+    define_method(:run) do
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      result = super()
+    ensure
+      took = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+      name = self.class.name.to_s
+      lock.synchronize do
+        seconds[name] += took
+        failed << name if result && !result.passed? && !result.skipped?
+      end
+    end
+  end)
+RUBY
+
 runs = Array.new(workers) do |index|
   times = Tempfile.new("run-tests-times-#{index}")
   code = <<~RUBY
     #{files.inspect}.each { |path| require path }
+    require #{plan.inspect}
     classes = Minitest::Runnable.runnables
     named, anonymous = classes.partition(&:name)
-    kept = named.sort_by(&:name).select.with_index { |_, i| i % #{workers} == #{index} }
+    share = WorkerPlan.assign(named.map(&:name), #{workers}, JSON.parse(File.read(#{snapshot.path.inspect})))[#{index}]
+    kept = named.select { share.include?(it.name) }
     classes.replace(#{index}.zero? ? kept + anonymous : kept)
-    seconds = Hash.new(0.0)
-    lock = Mutex.new
-    # Each test is timed, so classes that run their tests in parallel threads are counted too.
-    Minitest::Test.prepend(Module.new do
-      define_method(:run) do
-        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        super()
-      ensure
-        took = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
-        lock.synchronize { seconds[self.class.name.to_s] += took }
-      end
-    end)
-    Minitest.after_run { File.write(#{times.path.inspect}, JSON.generate(seconds)) }
+    #{RECORDER}
+    Minitest.after_run { File.write(#{times.path.inspect}, JSON.generate('seconds' => seconds, 'failed' => failed)) }
   RUBY
   log = Tempfile.new("run-tests-#{index}")
   pid = Process.spawn(locale, RbConfig.ruby, '-Itest', '-rjson', '-e', code, out: log.path, err: %i[child out])
@@ -69,9 +99,14 @@ results = runs.map do |run|
   counts.each { |count, name| totals[name] += count.to_i } if counts.size == 5
   status.success? && counts.size == 5
 end
+snapshot.close!
 
-seconds = runs.each_with_object(Hash.new(0.0)) do |run, sums|
-  JSON.parse(File.read(run[:times].path)).each { |name, value| sums[name] += value }
+seconds = Hash.new(0.0)
+failed = []
+runs.each do |run|
+  report = JSON.parse(File.read(run[:times].path))
+  report['seconds'].each { |name, value| seconds[name] += value }
+  failed.concat(report['failed'])
 rescue JSON::ParserError
   nil
 ensure
@@ -81,7 +116,19 @@ slowest = seconds.reject { |name, _| name.empty? }.max_by(SLOWEST) { |_, value| 
 lines = slowest.map { |name, value| format('  %<seconds>6.1fs %<name>s', seconds: value, name:) }
 puts 'Slowest test classes:', lines if lines.any?
 
+WorkerPlan.write(record, seconds, whole: whole_suite) if results.all?
+
+failed = failed.reject(&:empty?).uniq.sort
+puts "Failing test classes: #{failed.join(', ')}" if failed.any?
+phase_log = ENV.fetch('SHAKA_PHASE_LOG', '')
+begin
+  File.write(phase_log, "#{JSON.generate('failed_tests' => failed)}\n", mode: 'a') if failed.any? && !phase_log.empty?
+rescue SystemCallError => e
+  warn "Could not record failing test classes: #{e.message}"
+end
+
 counted = %w[runs assertions failures errors skips].to_h { |name| [name.to_sym, totals[name]] }
+split = recorded == '{}' ? 'split by class name' : 'balanced by recorded class times'
 puts format('Total: %<runs>d runs, %<assertions>d assertions, %<failures>d failures, %<errors>d errors, ' \
-            '%<skips>d skips across %<workers>d workers', **counted, workers:)
+            '%<skips>d skips across %<workers>d workers, %<split>s', **counted, workers:, split:)
 exit(results.all?)

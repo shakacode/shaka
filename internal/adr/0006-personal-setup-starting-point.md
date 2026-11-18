@@ -1,6 +1,8 @@
 # 0006: Start new individual setups from personal preferences
 
-Status: accepted on 2026-10-28, with the per-run `--no-personal-file` option.
+Status: accepted on 2026-10-28, with the per-run `--no-personal-file` option. Later
+changes made publication read two parts of the file on every update: the time zone and
+`wip.include_checkout_path`, which can only hide the checkout path. Decision 1 holds for everything else.
 Date: 2026-10-28. Tracks [issue #936](https://github.com/shakacode/shaka/issues/936).
 
 ## Context
@@ -12,7 +14,7 @@ and copies the same choices from one clone to the next. Nothing records them onc
 `shaka seam private setup` (`Seam::PrivateSetup`, a subclass of `Seam::Initializer`)
 writes only part of a configuration: the command wrappers, `review.required`,
 `review.ci_review_jobs`, `review.local_review_agents`, `merge.preference: ask`, the default
-`branches.name`, and `wip.include_checkout_path: true`. Everything else a developer wants,
+`branches.name`, and `wip.include_checkout_path: false`. Everything else a developer wants,
 such as `prose_limits`, `pr_description.opening_check`, `checkpoint`, or
 `review.provider_coverage`, is a manual edit to `.agents/shaka/config.yml` after setup.
 `--from ID` copies another worktree of the same clone, not another repository.

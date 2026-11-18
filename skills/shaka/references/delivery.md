@@ -48,8 +48,8 @@ shape the implementation.
 
 ## Choose a small execution context
 
-Assess scope and risk, recommend an available model and effort, and explain the
-choice. Honor explicit user settings. Consider total planning, implementation,
+Assess scope and risk, recommend a model the host offers and an effort, and explain
+the choice. Honor explicit user settings. Consider total planning, implementation,
 retries, and review; waiting or a tool error alone does not justify more effort.
 
 Use the workflow's `recommendation` and `checkpoint` commands. When the user says
@@ -59,14 +59,15 @@ not add a confirmation turn. If the host reports either setting, briefly note
 its value and whether it matches the recommendation. Mark unreported values
 UNKNOWN; a prompt cannot change the runner.
 
-When the user names either setting, proceed only when immediate start is clear,
-the recommended settings are active and usable, and the supplied settings match
+When the host already runs the recommended settings, proceed without asking,
+even without a start word. When the user names either setting, proceed only when
+the recommended settings are active and usable and the supplied settings match
 the recommendation. Otherwise pause with one next action. Check host settings
 on resume when available. Planning-only work returns its plan and usage without
 an implementation checkpoint.
 
-If the checkpoint reports `recommendation_missing`, supply the omitted model or
-effort recommendation and rerun it. This is an agent input to complete before
+If the checkpoint reports `recommendation_missing`, supply the omitted or `UNKNOWN`
+model or effort recommendation and rerun it. This is an agent input to complete before
 bringing a decision to the user.
 
 Work solo unless delegation is authorized and useful. Obtain a fresh-context
@@ -179,10 +180,11 @@ exists. A link's availability depends on the owner's machine being reachable.
 Never create or publish a link that shares conversation content, such as a
 share or export URL, to fill this field.
 
-**Privacy:** both team setup and private trials default `wip.include_checkout_path`
-to `true`. Supply the selected default-branch `--ref` to `description`.
-The renderer uses `REDACTED` for Workspace only when the setting is explicitly
-false. Unread or unavailable settings
+**Privacy:** team setup defaults `wip.include_checkout_path` to `true`. New
+individual setups use `false`. Supply the selected default-branch `--ref` to `description`.
+The renderer uses `REDACTED` for Workspace when the setting is explicitly false, and
+`REDACTED (personal setting)` when the user's `~/.agents/shaka/config.yml` sets
+`wip.include_checkout_path: false`. Unread or unavailable settings
 withhold Workspace and explain the recovery action:
 rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
 republishing when loading failed. No setting hides Chat link; supply `UNKNOWN`
@@ -346,8 +348,9 @@ as the Explain step defines them. Provenance, usage, and the WIP Details note ar
 audit material the helper keeps collapsed.
 Keep optional review history and routine rollback detail collapsed.
 
-Supply the current COMMENT review URL in the `walkthrough` field. The helper
-renders its link above the summary, or a placeholder until it exists.
+When a walkthrough exists, supply its current COMMENT review URL in the `walkthrough`
+field, or `requested` while a requested one is pending. The helper renders it above
+the summary. Leave the field out when no walkthrough is due.
 Set the required `deployment` field to `auto`, an https URL, or `none`. `auto` reads
 the GitHub Deployments API for the PR head and links the newest successful
 deployment's `environment_url`, the same link GitHub shows as "View deployment";
@@ -378,7 +381,9 @@ Use these questions to place detail:
 - Would a later reader need it from the merged PR alone? Keep it in the description.
 
 A rollback may need an operational summary in the description and code-level
-reasoning in the walkthrough. File paths alone do not decide placement.
+reasoning in the walkthrough. File paths alone do not decide placement. When no
+walkthrough is due, the description's `review_focus` names the spots that need a
+closer read and why, and its `details` holds the rollback.
 
 ### How a walkthrough is ordered
 

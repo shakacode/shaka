@@ -22,6 +22,7 @@ module Shaka
         return if steps.empty? && sessions.empty?
 
         { **pull.slice('number', 'url'), **span(body, pull), 'failed_validations' => failures(steps),
+                                                             'failed_tests' => failed_tests(steps),
                                                              'dropped_steps' => dropped,
                                                              'buckets' => buckets(steps, sessions) }
       end
@@ -33,7 +34,14 @@ module Shaka
         { 'merged_at' => merged.iso8601, 'task_to_merge_ms' => ((merged - started) * 1000).round }
       end
 
-      def failures(steps) = steps.count { |step| step['command'] == 'evidence run' && !step['exit'].zero? }
+      def failures(steps) = steps.count { |step| failed?(step) }
+
+      def failed?(step) = step['command'] == 'evidence run' && !step['exit'].zero?
+
+      # How many failed validation runs named each test class.
+      def failed_tests(steps)
+        steps.select { |step| failed?(step) }.flat_map { |step| step['failed_tests'] || [] }.tally
+      end
 
       # Milliseconds per named bucket: each kind of step, each validation phase, and each kind of agent time.
       def buckets(steps, sessions)

@@ -1,37 +1,64 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require_relative 'support/run_tests_fixture'
 require 'fileutils'
-require 'rbconfig'
+require 'json'
 
 class RunTestsTest < Minitest::Test
-  RUNNER = File.expand_path('../bin/run-tests', __dir__)
+  include RunTestsFixture
 
   def setup
-    @directory = Dir.mktmpdir('run-tests')
+    @directory = Dir.mktmpdir('run-tests').tap { FileUtils.mkdir_p(File.join(it, 'test')) }
     @marker = File.join(@directory, 'ran.txt')
+    @durations = File.join(@directory, 'durations.json')
   end
 
   def teardown
     FileUtils.remove_entry(@directory)
   end
 
-  def test_every_test_runs_exactly_once_across_workers
-    files = %w[alpha beta gamma].map { |name| fixture(name, %w[one two]) }
-    output, status = run_tests(files, workers: 2)
-
-    assert_predicate status, :success?, output
-    expected = %w[alpha beta gamma].product(%w[one two]).map { |pair| pair.join('#') }
-    assert_equal expected, File.readlines(@marker, chomp: true).sort
-    assert_includes output, 'Total: 6 runs'
+  def test_without_a_record_workers_split_classes_by_name_and_run_each_test_once
+    assert_each_test_runs_once(%w[alpha gamma], %w[beta], split: 'split by class name')
   end
 
-  def test_a_failure_in_any_worker_fails_the_run
+  def test_a_recorded_slow_class_gets_a_worker_of_its_own_and_each_test_still_runs_once
+    File.write(@durations, '{"AlphaFixtureTest":10.0,"BetaFixtureTest":1.0,"GammaFixtureTest":1.0}')
+
+    assert_each_test_runs_once(%w[alpha], %w[beta gamma], split: 'balanced by recorded class times')
+  end
+
+  def test_a_partial_run_updates_the_record_and_a_whole_suite_run_replaces_it
+    file = fixture('alpha', %w[one])
+    File.write(@durations, '{"RemovedTest":1.0}')
+    [[[file], %w[AlphaFixtureTest RemovedTest]], [[], %w[AlphaFixtureTest]]].each do |files, recorded|
+      output, status = run_tests(files, workers: 1)
+
+      assert_predicate status, :success?, output
+      assert_equal recorded, JSON.parse(File.read(@durations)).keys
+    end
+  end
+
+  def test_a_failure_in_any_worker_fails_the_run_and_keeps_the_record
     files = [fixture('alpha', %w[one]), fixture('beta', %w[one], failing: true)]
+    File.write(@durations, '{"AlphaFixtureTest":2.0}')
     output, status = run_tests(files, workers: 2)
 
     refute_predicate status, :success?
     assert_includes output, 'beta one failed'
+    assert_equal({ 'AlphaFixtureTest' => 2.0 }, JSON.parse(File.read(@durations)))
+  end
+
+  def test_failing_classes_are_named_and_written_to_the_phase_log
+    skipped = File.join(@directory, 'skipped_test.rb')
+    File.write(skipped, "require 'minitest/autorun'\nclass SkippedFixtureTest < Minitest::Test\n  " \
+                        "def test_later = skip('later')\nend\n")
+    files = [fixture('alpha', %w[one]), fixture('beta', %w[one two], failing: true), skipped]
+    log = File.join(@directory, 'phases.jsonl')
+    output, = run_tests(files, workers: 2, env: { 'SHAKA_PHASE_LOG' => log })
+
+    assert_includes output, 'Failing test classes: BetaFixtureTest'
+    assert_equal([{ 'failed_tests' => ['BetaFixtureTest'] }], File.readlines(log).map { JSON.parse(it) })
   end
 
   def test_a_worker_that_cannot_load_its_files_fails_the_run
@@ -62,57 +89,15 @@ class RunTestsTest < Minitest::Test
 
   private
 
-  def latin1_fixture
-    File.join(@directory, 'latin1_test.rb').tap do |path|
-      File.write(path, <<~'RUBY')
-        require 'minitest/autorun'
+  def assert_each_test_runs_once(*workers, split:)
+    files = %w[alpha beta gamma].map { |name| fixture(name, %w[one two]) }
+    log = File.join(@directory, 'phases.jsonl')
+    output, status = run_tests(files, workers: 2, env: { 'SHAKA_PHASE_LOG' => log })
 
-        class Latin1FixtureTest < Minitest::Test
-          def test_latin1
-            $stdout.binmode.write("caf\xE9\n".b)
-            assert true
-          end
-        end
-      RUBY
-    end
-  end
-
-  def locale_fixture
-    File.join(@directory, 'locale_test.rb').tap do |path|
-      File.write(path, <<~RUBY)
-        require 'minitest/autorun'
-
-        class LocaleFixtureTest < Minitest::Test
-          def test_utf8
-            puts 'café'
-            assert_equal Encoding::UTF_8, Encoding.default_external
-          end
-        end
-      RUBY
-    end
-  end
-
-  def fixture(name, tests, failing: false)
-    path = File.join(@directory, "#{name}_test.rb")
-    methods = tests.map { |test| fixture_method(name, test, failing) }
-    File.write(path, "require 'minitest/autorun'\n\nclass #{name.capitalize}FixtureTest < Minitest::Test\n" \
-                     "#{methods.join}end\n")
-    path
-  end
-
-  def fixture_method(name, test, failing)
-    <<~RUBY
-      def test_#{test}
-        File.write(ENV.fetch('MARKER'), "#{name}##{test}\\n", mode: 'a')
-        flunk '#{name} #{test} failed' if #{failing}
-      end
-    RUBY
-  end
-
-  # bin/validate starts the runner under bundle exec, so its workers load the bundle's Minitest.
-  def run_tests(files, workers:, env: {})
-    env = { 'MARKER' => @marker, 'SHAKA_TEST_WORKERS' => workers.to_s,
-            'BUNDLE_GEMFILE' => File.expand_path('../Gemfile', __dir__) }.merge(env)
-    Open3.capture2e(env, 'bundle', 'exec', RbConfig.ruby, RUNNER, *files)
+    assert_predicate status, :success?, output
+    refute_path_exists log, 'A passing run names no failing classes'
+    assert_equal workers, workers_ran
+    assert_equal %w[alpha beta gamma].product(%w[one two]).map { it.join('#') }, tests_ran
+    assert_match(/^Total: 6 runs, .* across 2 workers, #{split}$/, output)
   end
 end
