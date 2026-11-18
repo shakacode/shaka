@@ -35,6 +35,8 @@ class CompanionsProjectSkillsTest < Minitest::Test
       assert_equal([['alias', 'suggest', 'it fans out workers']], rows.map do |row|
         row.values_at('skill', 'mode', 'basis')
       end)
+      assert_equal ["#{sha}:#{TEAM_CHECK}", "#{sha}:#{TEAM_CHECK}/SKILL.md", true],
+                   rows.first.values_at('location', 'skill_file', 'fans_out')
     end
   end
 
@@ -49,6 +51,7 @@ class CompanionsProjectSkillsTest < Minitest::Test
       rows = run_command(root:, ref: sha).fetch('skills')
 
       assert_equal([%w[team-check suggest], %w[other use]], rows.map { |row| row.values_at('skill', 'mode') })
+      assert_equal "#{sha}:shared/common.md", rows.last['skill_file']
     end
   end
 

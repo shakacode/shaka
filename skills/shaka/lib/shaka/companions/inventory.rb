@@ -108,16 +108,18 @@ module Shaka
 
       # The identity is the skill directory resolved in the trusted tree, so two entries that reach
       # the same directory through a link share their limits, and a link the candidate adds changes nothing.
+      # `location` and `skill_file` name that directory and its SKILL.md blob with links already followed.
       def entry(pack, skill)
         file = "#{skill.path}/SKILL.md"
         resolved = trusted_file(file)
         unless resolved
           return build(pack, skill, identity: "repository:#{skill.path}", installed: false, location: nil,
-                                    explicit_front: nil).with(candidate_only: candidate_only?(file))
+                                    skill_file: nil, explicit_front: nil).with(candidate_only: candidate_only?(file))
         end
 
-        build(pack, skill, identity: "repository:#{trusted_directory(skill.path)}", installed: true,
-                           location: "#{@sha}:#{skill.path}", explicit_front: trusted_front(resolved))
+        directory = trusted_directory(skill.path)
+        build(pack, skill, identity: "repository:#{directory}", installed: true, location: "#{@sha}:#{directory}",
+                           skill_file: "#{@sha}:#{resolved}", explicit_front: trusted_front(resolved))
       end
 
       def build(pack, skill, **facts)
