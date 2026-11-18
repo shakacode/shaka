@@ -47,11 +47,12 @@ module Shaka
         Open3.popen3(*@command, chdir: @root, **group) do |input, output, error, waiter|
           input.close
           @job = adopt(waiter.pid)
-          outcome(waiter, [output, error].map { |stream| Thread.new { stream.read } })
+          outcome(waiter, [output, error].map { |stream| Thread.new { stream.read } }).tap { @finished = true }
         ensure
-          # An interrupted helper would otherwise leave the check running in its separate group.
+          # An interrupted helper would otherwise leave the check running in its separate group, or on
+          # Windows leave a descendant running in its job after the leader exits.
           stop(waiter) if waiter&.alive?
-          @job&.close
+          @finished ? @job&.close : @job&.terminate
         end
       end
 
