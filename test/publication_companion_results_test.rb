@@ -128,6 +128,7 @@ class PublicationCompanionResultsTest < Minitest::Test
   def test_refuses_local_paths_in_prose_commands_and_artifact_parameters
     assert_refused(run_record('command' => 'cat /Users/example/output.log'), 'local absolute path')
     assert_refused(run_record('command' => 'cc -I/Users/example/sdk -c demo.c'), 'local absolute path')
+    assert_refused(run_record('command' => 'cc -I//Users/example/sdk -c demo.c'), 'local absolute path')
     assert_refused(run_record('checked' => 'Read `/home/example/test`'), 'local absolute path')
     assert_refused(run_record('result' => 'Saved to /tmp/output.log'), 'local absolute path')
     link = 'https://example.org/capture?path=%2FUsers%2Fexample%2Fpicture.png'
@@ -136,7 +137,7 @@ class PublicationCompanionResultsTest < Minitest::Test
   end
 
   def test_accepts_web_routes_and_relative_paths
-    url = 'https://example.org/home/(slow)/capture.png?name=%FF'
+    url = "https://example.org/teams/o'/home/(slow)/capture.png?name=%FF"
     entry = run_record('artifacts' => [url], 'checked' => 'Rendered `/slow` and `/users/1`; read spec/tmp/output.log')
     description = render(results: [entry])
     assert_includes description, 'Rendered `/slow`'

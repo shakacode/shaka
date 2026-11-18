@@ -10,11 +10,11 @@ module Shaka
     REQUIRED = %w[skill command checked result not_covered commit artifacts].freeze
     DISCRIMINATORS = %w[source revision].freeze
     SHA = /\A\h{40}\z/
-    HTTP_LINK = %r{https?://[^\s<>`"']+}i
+    HTTP_LINK = %r{https?://[^\s<>`"]+}i
     # Recognize workstation roots and paths attached to flags such as -I or -L.
     LOCAL_PATH = %r{
       (?<![\w./-])(?:--?[a-zA-Z][\w-]*)?(?:file:(?://(?:localhost)?)?)?(?:
-        /(?:Users|home|private|tmp|var|Volumes|mnt|opt|root|workspaces?|etc|usr|run|srv|s?bin)/
+        /+(?:Users|home|private|tmp|var|Volumes|mnt|opt|root|workspaces?|etc|usr|run|srv|s?bin)/
         |[a-zA-Z]:[\\/]
       )
     }x
@@ -100,29 +100,35 @@ module Shaka
     end
 
     def artifact_line(value)
-      unless value.is_a?(Array) && value.all? { |link| http_url?(link) }
-        raise Error, 'Publication companion_results artifacts must be a list of HTTP or HTTPS URLs.'
-      end
+      raise Error, 'Publication companion_results artifacts must be a list.' unless value.is_a?(Array)
       return if value.empty?
 
-      value.each { |link| refuse_path(link, 'artifacts') }
-      "**Artifacts:** #{value.map { |link| "<#{link}>" }.join(' · ')}"
+      "**Artifacts:** #{value.map { |link| artifact_link(link) }.join(' · ')}"
     end
 
-    def http_url?(value)
-      return false unless value.is_a?(String) && !value.match?(/[[:space:]<>]/)
+    def artifact_link(value)
+      uri = URI.parse(value) if value.is_a?(String) && !value.match?(/[[:space:]<>]/)
+      unless uri.is_a?(URI::HTTP) && uri.host && !uri.host.empty?
+        raise Error, 'Publication companion_results artifacts must be HTTP or HTTPS URLs.'
+      end
 
-      uri = URI.parse(value)
-      uri.is_a?(URI::HTTP) && uri.host && !uri.host.empty?
+      refuse_local_path(decode_url_tail("?#{uri.query}##{uri.fragment}"), 'artifacts')
+      "<#{value}>"
     rescue URI::InvalidURIError
-      false
+      raise Error, 'Publication companion_results artifacts must be HTTP or HTTPS URLs.'
     end
 
     def refuse_path(value, field)
       return unless value.is_a?(String)
 
       # An HTTP path names a remote resource. Its parameters can still embed local paths.
-      text = value.gsub(HTTP_LINK) { |link| URI::DEFAULT_PARSER.unescape(link[/[?#].*/].to_s).scrub }
+      text = value.gsub(HTTP_LINK) { |link| decode_url_tail(link[/[?#].*/].to_s) }
+      refuse_local_path(text, field)
+    end
+
+    def decode_url_tail(text) = URI::DEFAULT_PARSER.unescape(text).scrub
+
+    def refuse_local_path(text, field)
       return unless LOCAL_PATH.match?(text)
 
       raise Error, "Publication companion_results #{field} contains a local absolute path."
