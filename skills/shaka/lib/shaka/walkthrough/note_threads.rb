@@ -24,30 +24,34 @@ module Shaka
       end
 
       # Adds each deleted note's comment ID to the collapse report as it goes, and each failure to
-      # its unavailable list.
+      # its unavailable list. A failed note does not stop the others.
       def delete_all(reviews, report)
         reviews.select { |review| review.dig('user', 'login') == @account }.each do |review|
-          delete(review) { |id| report['deleted_notes'] << id }
+          candidates(review).each { |id, thread_id| delete(id, thread_id, report) }
         rescue Error => e
           report['unavailable'] << "Review #{review['id']} notes: #{e.message}"
         end
       end
 
-      # Yields the ID of each note it deletes.
-      def delete(review)
+      private
+
+      # This account's unanswered notes on the review, each with its thread.
+      def candidates(review)
         roots = note_roots(review)
-        return if roots.empty?
+        return [] if roots.empty?
 
         index = threads
-        roots.select { |id| index[id] && unanswered?(index[id]) }.each do |id|
-          next unless still_alone?(index[id]['thread_id'])
-
-          @github.delete_comment(id)
-          yield id
-        end
+        roots.select { |id| index[id] && unanswered?(index[id]) }.map { |id| [id, index[id]['thread_id']] }
       end
 
-      private
+      def delete(id, thread_id, report)
+        return unless still_alone?(thread_id)
+
+        @github.delete_comment(id)
+        report['deleted_notes'] << id
+      rescue Error => e
+        report['unavailable'] << "Note #{id}: #{e.message}"
+      end
 
       def note_roots(review)
         path = "repos/#{@github.repository}/pulls/#{@github.number}/reviews/#{review['id']}"

@@ -358,26 +358,40 @@ class WalkthroughHistoryNotesTest < Minitest::Test
     assert_empty deletions
   end
 
-  def test_a_failure_after_one_deletion_still_reports_that_deletion
+  # One failed note leaves the others to be deleted.
+  def test_a_failed_note_does_not_stop_the_rest
     refused = ['', 'gh: Not Found (HTTP 404)', STATUS.new(1)]
-    published = publish_over_noted(two_threads, alone_response, deleted_response, alone_response, refused,
-                                   notes: [NOTE, NOTE.merge('id' => 56)])
+    notes = [NOTE, NOTE.merge('id' => 56), NOTE.merge('id' => 57)]
+    published = publish_over_noted(note_threads(3), alone_response, deleted_response, alone_response, refused,
+                                   alone_response, deleted_response, notes:)
 
-    assert_equal [55], published.dig('earlier_walkthroughs', 'deleted_notes')
-    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'notes'
+    assert_equal [55, 57], published.dig('earlier_walkthroughs', 'deleted_notes')
+    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'Note 56'
+  end
+
+  # A review edited into something else after the listing is no longer a walkthrough, so its notes stay.
+  def test_a_review_that_stops_being_a_walkthrough_keeps_its_notes
+    prior = review_record(7, collapsed(PRIOR))
+    github = client(*publish_responses(snapshot_response), response([prior]), response({ 'login' => 'ada' }),
+                    review_response(body: "A standalone report.\n"))
+    published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
+
+    assert_empty published.dig('earlier_walkthroughs', 'deleted_notes')
+    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'changed before collapse'
+    assert_empty deletions
   end
 
   # A reply can land after the threads were listed; the reread before each deletion keeps that note.
   def test_a_reply_that_arrives_during_deletion_keeps_its_note
-    published = publish_over_noted(two_threads, alone_response, deleted_response, alone_response('ada', 'grace'),
+    published = publish_over_noted(note_threads(2), alone_response, deleted_response, alone_response('ada', 'grace'),
                                    notes: [NOTE, NOTE.merge('id' => 56)])
 
     assert_equal [55], published.dig('earlier_walkthroughs', 'deleted_notes')
     assert_equal [delete_call(55)], deletions
   end
 
-  def two_threads
-    threads = %w[PRRT_1 PRRT_2].each_with_index.map do |id, index|
+  def note_threads(count)
+    threads = Array.new(count) { |index| "PRRT_#{index + 1}" }.each_with_index.map do |id, index|
       author = { 'fullDatabaseId' => (55 + index).to_s, 'author' => { '__typename' => 'User', 'login' => 'ada' } }
       { 'id' => id, 'isResolved' => false,
         'comments' => { 'nodes' => [author], 'pageInfo' => { 'hasNextPage' => false } } }

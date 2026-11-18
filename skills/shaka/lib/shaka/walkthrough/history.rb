@@ -123,9 +123,12 @@ module Shaka
 
     private
 
+    # Notes are deleted only for reviews just reread as this account's walkthrough; one edited into
+    # something else meanwhile keeps its notes.
     def fold_all(reviews, url, account, report)
+      @confirmed = []
       reviews.each { |review| fold_one(review, url, account, report) }
-      Walkthrough::NoteThreads.new(@github, account).delete_all(reviews, report)
+      Walkthrough::NoteThreads.new(@github, account).delete_all(@confirmed, report)
       report
     end
 
@@ -155,7 +158,7 @@ module Shaka
 
     def fresh_walkthrough(review, report)
       source = @github.review(review['id'])['body'].to_s
-      return source if WalkthroughText.walkthrough?(source, MARKER)
+      return source if WalkthroughText.walkthrough?(source, MARKER) && @confirmed.push(review)
 
       report['unavailable'] << "Review #{review['id']} changed before collapse."
       nil
