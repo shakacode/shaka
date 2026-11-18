@@ -10,9 +10,8 @@ Shaka's validation or review code, the task also reruns those checks.
 
 On a branch installation, invoking Shaka has your agent check for updates. The
 check reuses an answer saved in the last 23 hours, so it usually asks GitHub
-once a day. After you update Shaka, the next check asks GitHub again. A check
-that cannot reach GitHub saves nothing, so the next chat tries again. If an
-update is available, the agent tells you how to install it.
+once a day. A check that cannot reach GitHub saves nothing, so the next chat
+tries again. If an update is available, the agent tells you how to install it.
 
 A scheduled check helps most when you leave Shaka chats running overnight. The
 check compares an installation from a GitHub branch, such as the default `main`,
