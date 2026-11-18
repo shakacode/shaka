@@ -57,7 +57,7 @@ module Shaka
     private
 
     def verify_open!(expected)
-      pull = @github.snapshot
+      pull = @github.state_snapshot
       raise Error, 'Pull request is not open.' unless pull['state'] == 'OPEN'
       return unless expected
 
