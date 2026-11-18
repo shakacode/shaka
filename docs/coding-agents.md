@@ -95,7 +95,7 @@ fi
 "$HOME/.local/share/shaka/source/bin/install" --agent claude --no-session-hook
 # Bring a kept install up to date; if the update fails, the session still starts.
 "$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --update ||
-  echo "Shaka update failed; run shaka install --status in the session" >&2
+  echo "Shaka update failed; check $HOME/.local/share/shaka/source/skills/shaka/scripts/shaka install --status" >&2
 ```
 
 Building Ruby adds a few minutes to each new container. The script installs
@@ -103,8 +103,7 @@ Shaka from its own clone, separate from your project, so the branch you are
 changing cannot change the Shaka that checks it. When a container keeps an
 earlier clone, the update step brings it to the latest Shaka, so it accepts
 settings your repository added since. If the update fails, the session still
-starts; Shaka refuses an update it cannot verify before changing the install.
-Because the script keeps Shaka current, it
+starts. Because the script keeps Shaka current, it
 turns off the update reminder for new chats. The script applies to new
 sessions; a session that is already running keeps what it has.
 
