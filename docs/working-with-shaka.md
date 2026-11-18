@@ -249,7 +249,8 @@ skills:
         reason: Lists the release steps each PR in a split needs
 ```
 
-`path` names a skill directory in your repository. Each entry under `points` names a
+`path` names a skill directory in your repository; Shaka declines a skill whose
+directory or `SKILL.md` is a link. Each entry under `points` names a
 skill point, a step where the agent asks Shaka which skills fit:
 
 | Skill point | When the agent reaches it |

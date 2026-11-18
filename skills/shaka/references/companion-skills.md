@@ -59,8 +59,8 @@ Apply a `use` skill inside the current phase. Name a `suggest` skill with its re
 run it only after the user says yes. When a row's `fans_out` is true, name the workers
 the skill would start before asking; only then does a yes authorize delegation, for that run.
 Leave a `decline` skill unused. Read a project skill from its commit with `git show`: its
-`skill_file`, then any file it names under `location`, never the checkout copy. An empty
-list needs nothing.
+`skill_file`, then any file it names under `location`, never the checkout copy. Read only
+regular files; skip a linked file and say so. An empty list needs nothing.
 When the command fails, report its error and continue without companion skills.
 
 ## Use a technique inside the phases

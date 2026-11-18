@@ -50,7 +50,7 @@ module CompanionsCommandSupport
     write(root, '.agents/skills/new-check/SKILL.md', SKILL)
   end
 
-  # `alias` links to `team-check`, which fans out at another point; the alias alone claims `use` here.
+  # `alias` is a link to the `team-check` directory.
   def aliased_team
     fans_out = project(TEAM_CHECK).merge('fans_out' => true,
                                          'points' => { 'delivery#agree-on-the-design-first' => mode('suggest') })

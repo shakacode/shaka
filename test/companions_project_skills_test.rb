@@ -6,57 +6,29 @@ require_relative 'companions_command_support'
 class CompanionsProjectSkillsTest < Minitest::Test
   include CompanionsCommandSupport
 
-  def test_an_unterminated_front_matter_header_counts_as_explicit_only
-    broken = "---\nname: team-check\ndisable-model-invocation: true\n"
-    files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
-              "#{TEAM_CHECK}/SKILL.md" => broken }
-    with_trusted_repository(extra: files) do |root, sha|
-      row = run_command(root:, ref: sha).fetch('skills').first
-
-      assert_equal ['suggest', 'it is explicit-only'], row.values_at('mode', 'basis')
-    end
-  end
-
-  def test_an_unreadable_skill_file_counts_as_explicit_only
-    files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
-              "#{TEAM_CHECK}/SKILL.md" => '' }
-    with_trusted_repository(extra: files) do |root, sha|
+  def test_a_skill_directory_reached_through_a_link_is_declined
+    with_trusted_repository(extra: aliased_team) do |root, sha|
       result = run_command(root:, ref: sha)
 
-      assert_equal([['suggest', 'it is explicit-only']], result['skills'].map { |row| row.values_at('mode', 'basis') })
-      refute_empty result['warnings']
-    end
-  end
-
-  def test_a_linked_alias_shares_the_limits_of_the_skill_it_points_to
-    with_trusted_repository(extra: aliased_team) do |root, sha|
-      rows = run_command(root:, ref: sha).fetch('skills')
-
-      assert_equal([['alias', 'suggest', 'it fans out workers']], rows.map do |row|
-        row.values_at('skill', 'mode', 'basis')
+      assert_equal([['alias', 'decline', nil]], result['skills'].map do |row|
+        row.values_at('skill', 'mode', 'location')
       end)
-      assert_equal ["#{sha}:#{TEAM_CHECK}", "#{sha}:#{TEAM_CHECK}/SKILL.md", true],
-                   rows.first.values_at('location', 'skill_file', 'fans_out')
+      assert(result['warnings'].any? { |warning| warning.include?('linked skill paths are not supported') })
     end
   end
 
-  # Two skills whose SKILL.md files link to one shared file are still two skills.
-  def test_a_linked_skill_file_keeps_the_skill_directory_as_identity
-    shared = [:link, '../../../shared/common.md']
-    fans_out = project(TEAM_CHECK).merge('fans_out' => true)
-    team = pack('team', { 'team-check' => fans_out, 'other' => project('.agents/skills/other') })
-    files = { '.agents/shaka/packs/team.yml' => team, 'shared/common.md' => SKILL,
-              "#{TEAM_CHECK}/SKILL.md" => shared, '.agents/skills/other/SKILL.md' => shared }
+  def test_a_linked_skill_file_is_declined
+    files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
+              'shared/common.md' => SKILL, "#{TEAM_CHECK}/SKILL.md" => [:link, '../../../shared/common.md'] }
     with_trusted_repository(extra: files) do |root, sha|
       rows = run_command(root:, ref: sha).fetch('skills')
 
-      assert_equal([%w[team-check suggest], %w[other use]], rows.map { |row| row.values_at('skill', 'mode') })
-      assert_equal "#{sha}:shared/common.md", rows.last['skill_file']
+      assert_equal([['decline', 'it is not at the trusted commit']], rows.map { |row| row.values_at('mode', 'basis') })
     end
   end
 
-  # The candidate turns `team-check` into a link to `other`, which fans out; the trusted tree keeps them apart.
-  def test_a_link_added_on_the_candidate_branch_does_not_change_identity
+  # The candidate turns `team-check` into a link to `other`, which fans out; only trusted files count.
+  def test_a_link_added_on_the_candidate_branch_changes_nothing
     fans_out = project('.agents/skills/other').merge('fans_out' => true)
     team = pack('team', { 'team-check' => project(TEAM_CHECK), 'other' => fans_out })
     files = { '.agents/shaka/packs/team.yml' => team, "#{TEAM_CHECK}/SKILL.md" => SKILL,
@@ -80,27 +52,6 @@ class CompanionsProjectSkillsTest < Minitest::Test
         row.values_at('mode', 'basis')
       end)
       refute_empty result['warnings']
-    end
-  end
-
-  def test_a_repeated_invocation_key_counts_as_explicit_only
-    repeated = "---\ndisable-model-invocation: true\ndisable-model-invocation: false\n---\n"
-    files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
-              "#{TEAM_CHECK}/SKILL.md" => repeated }
-    with_trusted_repository(extra: files) do |root, sha|
-      row = run_command(root:, ref: sha).fetch('skills').first
-
-      assert_equal ['suggest', 'it is explicit-only'], row.values_at('mode', 'basis')
-    end
-  end
-
-  def test_a_bare_header_marker_counts_as_explicit_only
-    files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
-              "#{TEAM_CHECK}/SKILL.md" => '---' }
-    with_trusted_repository(extra: files) do |root, sha|
-      row = run_command(root:, ref: sha).fetch('skills').first
-
-      assert_equal ['suggest', 'it is explicit-only'], row.values_at('mode', 'basis')
     end
   end
 
