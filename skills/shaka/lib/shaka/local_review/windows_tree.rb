@@ -26,13 +26,13 @@ module Shaka
            'which misses descendants whose leader has exited'
     end
 
-    # The job ends the tree, even descendants whose leader already exited. Without a job, taskkill
-    # /T ends the leader's live descendants, running beside the wait so a stalled taskkill cannot
-    # hold it. A leader that outlasts both is terminated directly, so the wait for its status always
-    # ends. Only a live leader still owns its pid: once reaped, the pid may name an unrelated
-    # process, so nothing is sent to it.
+    # The job ends the tree, even descendants whose leader already exited. Without a job, or when
+    # the job fails to end it, taskkill /T ends the leader's live descendants, running beside the
+    # wait so a stalled taskkill cannot hold it. A leader that outlasts both is terminated
+    # directly, so the wait for its status always ends. Only a live leader still owns its pid:
+    # once reaped, the pid may name an unrelated process, so nothing is sent to it.
     def self.end_tree(waiter, job, seconds: stop_seconds)
-      job ? job.terminate : (start_taskkill(waiter.pid) if waiter.alive?)
+      start_taskkill(waiter.pid) if !job&.terminate && waiter.alive?
       Process.kill('KILL', waiter.pid) unless waiter.join(seconds)
       waiter.join
     rescue Errno::ESRCH

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require 'benchmark'
 require 'shaka/local_review/windows_tree'
 
 # The Windows stop shared by local review and evidence run, with the job and taskkill missing or
@@ -16,15 +17,18 @@ class WindowsReviewStopTest < Minitest::Test
     end
   end
 
+  # The stalled stand-in is a shell script, which Windows cannot start directly.
   def test_a_stalled_taskkill_does_not_hold_the_bounded_wait
-    with_stalled_taskkill do
+    skip 'the stalled stand-in needs a shell' if Shaka::ExecutableFile.windows?
+
+    with_stalled_taskkill do |marker|
       Open3.popen3(RbConfig.ruby, '-e', 'sleep 120') do |input, _output, _error, waiter|
         input.close
-        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        Shaka::LocalReviewWindowsTree.end_tree(waiter, nil, seconds: 0.5)
+        seconds = Benchmark.realtime { Shaka::LocalReviewWindowsTree.end_tree(waiter, nil, seconds: 2) }
 
+        assert_path_exists marker, 'the stalled taskkill never started'
         refute_predicate waiter, :alive?
-        assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 10
+        assert_operator seconds, :<, 10
       end
     end
   end
@@ -42,13 +46,13 @@ class WindowsReviewStopTest < Minitest::Test
   def with_stalled_taskkill
     Dir.mktmpdir('shaka-windows-taskkill') do |directory|
       stalled = File.join(directory, 'taskkill')
-      File.write(stalled, "#!/bin/sh\nsleep 30\n", perm: 0o755)
+      File.write(stalled, "#!/bin/sh\ntouch '#{directory}/started'\nexec sleep 30\n", perm: 0o755)
       tree = Shaka::LocalReviewWindowsTree.singleton_class
-      tree.alias_method(:system_taskkill, :taskkill)
+      original = tree.instance_method(:taskkill)
       tree.define_method(:taskkill) { stalled }
-      yield
+      yield File.join(directory, 'started')
     ensure
-      tree&.alias_method(:taskkill, :system_taskkill)
+      tree&.define_method(:taskkill, original)
     end
   end
 end

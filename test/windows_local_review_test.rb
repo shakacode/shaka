@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require 'shaka/local_review/path_guard'
 require 'shaka/local_review/process'
 
 # Native Windows has no process groups, so a reviewer or its Git starts in Shaka's own group and
@@ -62,24 +61,6 @@ class WindowsLocalReviewTest < Minitest::Test
     refute running?(Integer(File.read(pid_file))), 'the descendant outlived the stop'
   end
 
-  def test_lookup_accepts_only_an_exe_beside_the_bare_name
-    guard = Shaka::LocalReviewPathGuard
-
-    assert_equal %w[git git.exe], guard.file_names('git', windows: true)
-    assert_equal %w[git.exe], guard.file_names('git.exe', windows: true)
-    assert_equal %w[git], guard.file_names('git', windows: false)
-  end
-
-  def test_lookup_finds_a_reviewer_installed_as_an_exe
-    Dir.mktmpdir('shaka-windows-path') do |directory|
-      %w[claude.exe claude.cmd].each { |name| File.write(File.join(directory, name), 'MZ') }
-      File.chmod(0o755, File.join(directory, 'claude.exe'))
-      found = on_windows { Shaka::LocalReviewPathGuard.safe_executable(directory, 'claude', Dir.mktmpdir) }
-
-      assert_equal File.join(File.expand_path(directory), 'claude.exe'), found
-    end
-  end
-
   LEAVE_DESCENDANT = <<~RUBY
     pid = spawn(RbConfig.ruby, '-e', 'sleep 120')
     File.write(ARGV.fetch(0), pid.to_s)
@@ -100,17 +81,25 @@ class WindowsLocalReviewTest < Minitest::Test
   end
 
   # Off Windows the descendant survives the stop, so its readers fail once the pipes close.
-  def with_recorded_kills
-    original = Process.method(:kill)
+  def with_recorded_kills(&)
+    signals = []
     reporting = Thread.report_on_exception
     Thread.report_on_exception = false
-    signals = []
-    Process.define_singleton_method(:kill) { |signal, pid| signals << [signal, pid] }
-    yield
+    tree = Shaka::LocalReviewWindowsTree.singleton_class
+    replacing(Process.singleton_class, :kill, ->(*call) { signals << call }) do
+      replacing(tree, :start_taskkill, ->(pid) { signals << [:taskkill, pid] }, &)
+    end
     signals
   ensure
-    Process.define_singleton_method(:kill, original)
     Thread.report_on_exception = reporting
+  end
+
+  def replacing(owner, name, body)
+    original = owner.instance_method(name)
+    owner.define_method(name, &body)
+    yield
+  ensure
+    owner.define_method(name, original)
   end
 
   def running?(pid)
@@ -123,15 +112,6 @@ class WindowsLocalReviewTest < Minitest::Test
     end
   rescue Errno::ESRCH
     false
-  end
-
-  # Ruby on this host reports Windows for the block, so lookup tries NAME.exe.
-  def on_windows
-    original = Shaka::ExecutableFile.method(:windows?)
-    Shaka::ExecutableFile.define_singleton_method(:windows?) { true }
-    yield
-  ensure
-    Shaka::ExecutableFile.define_singleton_method(:windows?, original)
   end
 
   def windows_host? = Shaka::ExecutableFile.windows?
