@@ -118,22 +118,26 @@ class PublicationCompanionResultsTest < Minitest::Test
     ['printf `uname`', 'echo </details>'].each { |command| assert_refused(run_record('command' => command), 'command') }
   end
 
-  def test_only_accepts_http_artifact_urls_and_refuses_local_paths
+  def test_only_accepts_http_artifact_urls
     [nil, 'https://github.com', ['mailto:person@example.org'], ['https:///missing-host'],
      ['https://example.org/with space'], ['https://example.org/<bad>'], [nil]].each do |artifacts|
       assert_refused(run_record('artifacts' => artifacts), 'artifacts')
     end
+  end
 
+  def test_refuses_local_paths_in_prose_commands_and_artifact_parameters
     assert_refused(run_record('command' => 'cat /Users/example/output.log'), 'local absolute path')
+    assert_refused(run_record('command' => 'cc -I/Users/example/sdk -c demo.c'), 'local absolute path')
     assert_refused(run_record('checked' => 'Read `/home/example/test`'), 'local absolute path')
     assert_refused(run_record('result' => 'Saved to /tmp/output.log'), 'local absolute path')
-    assert_refused(run_record('artifacts' => ['https://example.org/Users/example/picture.png']), 'local absolute path')
+    link = 'https://example.org/capture?path=%2FUsers%2Fexample%2Fpicture.png'
+    assert_refused(run_record('artifacts' => [link]), 'local absolute path')
     assert_refused(run_record, 'local absolute path', skills: [skill('revision' => '/opt/example/skill')])
   end
 
   def test_accepts_web_routes_and_relative_paths
-    url = 'https://example.org/results/(slow)/capture.png'
-    entry = run_record('artifacts' => [url], 'checked' => 'Rendered `/slow` and read spec/tmp/output.log')
+    url = 'https://example.org/home/(slow)/capture.png?name=%FF'
+    entry = run_record('artifacts' => [url], 'checked' => 'Rendered `/slow` and `/users/1`; read spec/tmp/output.log')
     description = render(results: [entry])
     assert_includes description, 'Rendered `/slow`'
     assert_includes description, "<#{url}>"

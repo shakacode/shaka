@@ -10,14 +10,14 @@ module Shaka
     REQUIRED = %w[skill command checked result not_covered commit artifacts].freeze
     DISCRIMINATORS = %w[source revision].freeze
     SHA = /\A\h{40}\z/
-    # Recognize workstation paths without treating an app route such as /slow as a local file.
+    HTTP_LINK = %r{https?://[^\s<>`"']+}i
+    # Recognize workstation roots and paths attached to flags such as -I or -L.
     LOCAL_PATH = %r{
-      (?<![\w./-])(?:
-        (?:(?:https?|file)://[^\s/?#]*)?/
-        (?:Users|home|private|tmp|var|Volumes|mnt|opt|root|workspaces?|etc|usr|run|srv|s?bin)/
-        |[a-z]:[\\/]
+      (?<![\w./-])(?:--?[a-zA-Z][\w-]*)?(?:file:(?://(?:localhost)?)?)?(?:
+        /(?:Users|home|private|tmp|var|Volumes|mnt|opt|root|workspaces?|etc|usr|run|srv|s?bin)/
+        |[a-zA-Z]:[\\/]
       )
-    }ix
+    }x
 
     def self.for(content, pull)
       detail = new(content['companion_results'], content['skills_used'], head: pull&.dig('head', 'sha')).detail
@@ -119,7 +119,11 @@ module Shaka
     end
 
     def refuse_path(value, field)
-      return unless value.is_a?(String) && LOCAL_PATH.match?(value)
+      return unless value.is_a?(String)
+
+      # An HTTP path names a remote resource. Its parameters can still embed local paths.
+      text = value.gsub(HTTP_LINK) { |link| URI::DEFAULT_PARSER.unescape(link[/[?#].*/].to_s).scrub }
+      return unless LOCAL_PATH.match?(text)
 
       raise Error, "Publication companion_results #{field} contains a local absolute path."
     end
