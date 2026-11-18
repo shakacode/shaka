@@ -19,6 +19,9 @@ module Shaka
     # cannot tell the colors apart and for plain-text views. Every unrated state shares the blank mark.
     MARK = { 'low' => '🟢', 'medium' => '🟡', 'high' => '🔴' }.freeze
     UNRATED = '⚪'
+    # Without the repository's settings the level checks only the packaged areas, which the line under it says.
+    DEFAULT_AREAS = 'Shaka read no repository settings, so it checked only its default high-risk areas; an area ' \
+                    'the repository adds could raise this level.'
 
     module_function
 
@@ -29,7 +32,7 @@ module Shaka
       level = assessment(pull)&.fetch('level')
       return "#{MARK.fetch(level)} **Risk: #{level.capitalize}**" if level
 
-      "#{UNRATED} #{withheld?(pull) ? '**Risk: not shown**' : '**Risk: not rated yet**'}"
+      "#{UNRATED} **Risk: not rated yet**"
     end
 
     # Intent's own renderer refuses a missing intent, after this section.
@@ -40,21 +43,19 @@ module Shaka
       rated = assessment(pull)
       return [] unless rated || focus.any? || record.any?
 
-      opening = rated ? "#{MARK.fetch(rated['level'])} #{level_line(rated)}" : "#{UNRATED} #{unrated(content, pull)}"
-      ["#{HEADING}\n\n#{[opening, *focus, *(rated ? notes(rated) : []), *record].join("\n\n")}"]
+      opening = rated ? level_lines(rated) : ["#{UNRATED} #{unrated(content)}"]
+      ["#{HEADING}\n\n#{[*opening, *focus, *(rated ? notes(rated) : []), *record].join("\n\n")}"]
     end
 
-    def unrated(content, pull)
-      if withheld?(pull)
-        return "**Not shown.** Shaka could not read this repository's trusted settings, so it cannot check " \
-               'the high-risk areas merge checks. The checkpoint states its own rating.'
-      end
+    def level_lines(rated)
+      ["#{MARK.fetch(rated['level'])} #{level_line(rated)}", *(rated['default_areas'] ? [DEFAULT_AREAS] : [])]
+    end
+
+    def unrated(content)
       return '**Not rated yet.** No published checkpoint rates this commit.' if content['checkpoint'].is_a?(Hash)
 
       '**Not rated.** No checkpoint rated this commit.'
     end
-
-    def withheld?(pull) = pull&.dig('shaka_risk', 'withheld').is_a?(String)
 
     def assessment(pull)
       risk = pull&.dig('shaka_risk')
@@ -118,7 +119,7 @@ module Shaka
       ["<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"]
     end
 
-    private_class_method :assessment, :unrated, :withheld?, :level_line, :notes, :reasons, :reasons_label,
+    private_class_method :assessment, :unrated, :level_lines, :level_line, :notes, :reasons, :reasons_label,
                          :checkpoint, :record
   end
 end

@@ -41,6 +41,7 @@
         "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
+        "reference/pr-description-ideas",
         {
           "type": "doc",
           "id": "expected-experience",
@@ -63,13 +64,15 @@
         "articles/engineering-teams-software-factory",
         "articles/pull-requests-in-the-age-of-agents",
         "articles/review-process-study",
+        "articles/claude-code-team-review",
         "articles/checkpoint-sentence-eval",
         "articles/one-shot-pr-study",
         "articles/ci-and-hosted-review-repairs",
         "articles/hosted-review-prompt-comparison",
         "articles/review-signal-study",
         "articles/evidence-first-review",
-        "articles/agents-made-you-a-manager"
+        "articles/agents-made-you-a-manager",
+        "articles/shaka-with-pstack-and-agent-skills"
       ]
     },
     {

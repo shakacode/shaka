@@ -4,7 +4,8 @@ require_relative 'test_helper'
 require 'yaml'
 load File.expand_path('../bin/report-instruction-growth', __dir__)
 
-class InstructionGrowthTest < Minitest::Test
+# Builds a throwaway repository holding a committed baseline of Shaka's instruction files.
+module InstructionGrowthRepository
   def with_repository
     Dir.mktmpdir do |root|
       system(TEST_GIT, '-C', root, 'init', '-q') or raise 'git init failed'
@@ -47,6 +48,10 @@ class InstructionGrowthTest < Minitest::Test
     data['phases'].first['body'] += ' Added instruction.'
     write(root, 'skills/shaka/config/workflow.yml', YAML.dump(data))
   end
+end
+
+class InstructionGrowthTest < Minitest::Test
+  include InstructionGrowthRepository
 
   def test_reports_rendered_growth_even_when_entrypoint_is_unchanged
     with_repository do |root|
@@ -125,5 +130,46 @@ class InstructionGrowthMeasurementTest < Minitest::Test
     assert_equal({ 'words' => 2, 'bytes' => 8 }, InstructionGrowth.measure('café hi'))
     invalid = "\xFF".b.force_encoding(Encoding::UTF_8)
     assert_raises(Shaka::Error) { InstructionGrowth.measure(invalid) }
+  end
+end
+
+class InstructionGrowthTokensTest < Minitest::Test
+  include InstructionGrowthRepository
+
+  def test_counts_entry_and_rendered_workflow_for_both_revisions
+    with_repository do |root|
+      grow_workflow(root)
+      texts = counted_texts(root)
+
+      assert(texts.values.all? { |text| text.start_with?("Run the workflow.\n\n# Shaka") })
+      assert_equal(%i[after], texts.select { |_, text| text.include?('Added instruction.') }.keys)
+    end
+  end
+
+  def counted_texts(root)
+    texts = {}
+    counter = ->(**given) { texts.update(given) && [{ 'cli' => 'stub' }] }
+    result = InstructionGrowth.new(root:, base: 'HEAD', tokens: counter).report
+    assert_equal [{ 'cli' => 'stub' }], result['startup_tokens']['clis']
+    assert_includes result['startup_tokens']['note'], 'may be noise'
+    texts
+  end
+
+  def test_default_report_runs_no_cli_without_the_flag
+    with_repository { |root| refute report(root).key?('startup_tokens') }
+  end
+
+  # A PATH holding only a link to git hides both CLIs, even where they share git's directory, so the real
+  # command reports them missing instead of running them and spending plan quota.
+  def test_command_line_flag_adds_unknown_counts_when_the_clis_are_missing
+    command = File.expand_path('../bin/report-instruction-growth', __dir__)
+    output, status = Dir.mktmpdir do |bindir|
+      File.symlink(TEST_GIT, File.join(bindir, File.basename(TEST_GIT)))
+      Open3.capture2({ 'PATH' => bindir }, RbConfig.ruby, command, '--tokens', 'HEAD')
+    end
+
+    assert_predicate status, :success?
+    reasons = JSON.parse(output).dig('startup_tokens', 'clis').map { |row| row['reason'] }
+    assert_equal ['claude is not installed', 'codex is not installed'], reasons
   end
 end

@@ -6,6 +6,7 @@ require_relative 'reference'
 require_relative 'summary_links'
 require_relative '../github'
 require_relative '../publication/text'
+require_relative '../packaged_text'
 
 module Shaka
   module Trial
@@ -96,18 +97,9 @@ module Shaka
 
       def body
         result = @result ? "[Result PR](#{@result})" : 'Private result; link withheld'
-        <<~MARKDOWN
-          ## Field trial — #{@id}
-
-          Reported by the tester; this feedback is not an adoption or merge approval.
-
-          - Shaka candidate: #{@url}
-          - Tested revision: [`#{@head[0, 7]}`](https://github.com/#{Reference::REPOSITORY}/commit/#{@head})
-          - Result: #{result}
-          - Verdict: **#{@verdict}**
-
-          #{@summary}
-        MARKDOWN
+        PackagedText.render('trial-report.md', id: @id, url: @url, repository: Reference::REPOSITORY,
+                                               short_head: @head[0, 7], head: @head, result:,
+                                               verdict: @verdict, summary: @summary)
       end
     end
   end
