@@ -27,7 +27,7 @@ module Shaka
       # cannot be parsed counts as explicit-only, so a broken header never raises a mode.
       def explicit_front(text)
         return true unless text.valid_encoding?
-        return false unless text.match?(/\A---\r?\n/)
+        return false unless text.match?(/\A---[ \t]*(\r?\n|\z)/)
 
         match = text.match(/\A---\r?\n(.*?)\r?\n---[ \t]*\r?$/m)
         return true unless match
@@ -48,10 +48,8 @@ module Shaka
         nil
       end
 
-      # Declined as candidate-only only when the trusted commit has nothing at that path at all.
-      def candidate_only?(file)
-        File.file?(File.join(@root, file)) && TrustedPathResolver.new(root: @root, sha: @sha).entry(file).nil?
-      end
+      # With no usable trusted copy, a copy in the checkout can come only from the candidate branch.
+      def candidate_only?(file) = File.file?(File.join(@root, file))
 
       def trusted_directory(path) = TrustedPathResolver.new(root: @root, sha: @sha).resolve(path).first
     end
@@ -62,6 +60,7 @@ module Shaka
       include TrustedProjectFacts
 
       PACKS = Configuration::Paths::PACKS
+      REGULAR_MODES = %w[100644 100755].freeze
 
       attr_reader :warnings
 
@@ -91,7 +90,7 @@ module Shaka
         return unless name.end_with?('.yml')
 
         path = "#{PACKS}/#{name}"
-        unless metadata.start_with?('100644 ')
+        unless REGULAR_MODES.include?(metadata.split.first)
           @warnings << "#{path} at #{@sha} skipped: not a regular file"
           return
         end

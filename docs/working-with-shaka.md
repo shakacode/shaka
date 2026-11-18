@@ -258,18 +258,19 @@ skill point, a step where the agent asks Shaka which skills fit:
 | `delivery#when-a-task-needs-several-prs` | A larger task needs splitting |
 | `ui-verification#ui-changes` | The change is something a person sees on screen |
 | `performance-verification#verify-a-speed-affecting-change` | The change affects speed |
-| `post-implementation-validation#recommend-the-next-action` | The final checkpoint rates the change high risk |
+| `post-implementation-validation#recommend-the-next-action` | A checkpoint rates the change high risk |
 
 The mode decides what the agent does at that step:
 
-- `use`: the agent applies the skill without asking.
+- `use`: the agent applies the skill without asking, unless a limit below applies.
 - `suggest`: the agent names the skill and its reason, and runs it after you say yes.
 - `decline`: the agent does not use the skill at that point. To decline it at every
   point, give the skill only a `'*'` point; any point you name beside it overrides it.
 
 Mark a skill that starts other agents with `fans_out: true` beside its `points`;
-Shaka then always waits for your yes before running it. A skill whose own file says
-only a person may start it also waits for your yes.
+Shaka then always names the agents it would start and waits for your yes. A skill
+whose own file says only a person may start it also waits for your yes, and so does
+a skill the default branch lacks. The listing below shows which limit applies.
 
 Shaka reads pack files and skills only from the default branch, so a pack or skill
 added in a pull request takes effect after it merges. Pack files need

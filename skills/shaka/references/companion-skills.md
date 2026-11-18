@@ -56,7 +56,9 @@ Without one, omit `--ref`; never pass a candidate commit.
 The command prints JSON with one row per skill configured for that step. Each row has a
 `mode`, the `reason` the skill fits, the `basis` for that mode, and whether it is installed.
 Apply a `use` skill inside the current phase. Name a `suggest` skill with its reason and
-run it only after the user says yes. Leave a `decline` skill unused. Load a project skill
+run it only after the user says yes. When its `basis` says it fans out workers, also name
+the workers it would start; only then does a yes authorize delegation, for that run.
+Leave a `decline` skill unused. Load a project skill
 from the commit its `location` names, not from the checkout. An empty list needs nothing.
 When the command fails, report its error and continue without companion skills.
 

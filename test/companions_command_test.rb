@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'companions_command_support'
+require 'shaka/subcommands'
 
 # `shaka companions` reads repository packs and project skills only at the trusted commit.
 class CompanionsCommandTest < Minitest::Test
@@ -82,5 +83,6 @@ class CompanionsCommandTest < Minitest::Test
     git(root, *arguments.fetch(step))
   end
 
-  def run_cli(*arguments) = Shaka::Companions::Command.run(arguments)
+  # Through the helper's dispatch table, as `shaka companions` runs.
+  def run_cli(*arguments) = Shaka::Subcommands::TABLE.fetch('companions').run.call(arguments)
 end

@@ -50,9 +50,10 @@ module CompanionsCommandSupport
     write(root, '.agents/skills/new-check/SKILL.md', SKILL)
   end
 
-  # `alias` links to `team-check`, which fans out; the alias entry alone claims `use`.
+  # `alias` links to `team-check`, which fans out at another point; the alias alone claims `use` here.
   def aliased_team
-    fans_out = project(TEAM_CHECK).merge('fans_out' => true, 'points' => { POINT => mode('suggest') })
+    fans_out = project(TEAM_CHECK).merge('fans_out' => true,
+                                         'points' => { 'delivery#agree-on-the-design-first' => mode('suggest') })
     team = pack('team', { 'team-check' => fans_out, 'alias' => project('.agents/skills/alias') })
     { '.agents/shaka/packs/team.yml' => team, "#{TEAM_CHECK}/SKILL.md" => SKILL,
       '.agents/skills/alias' => [:link, 'team-check'] }

@@ -20,7 +20,7 @@ module Shaka
       RANK = Pack::MODES.each_with_index.to_h.freeze
       # Which layer's entry governs a skill, first to last. Step 1 loads only repository packs.
       PRECEDENCE = %w[repository packaged personal].freeze
-      CANDIDATE_ONLY = ['decline', 'it exists only on the candidate branch', 'no trusted copy to load'].freeze
+      CANDIDATE_ONLY = ['decline', 'only the candidate branch has a usable copy', 'no trusted copy to load'].freeze
 
       # `enabled_packs` lists packs whose packaged `use` entries apply. `trusted` is false when no
       # trusted ref was given; repository entries then never apply.
