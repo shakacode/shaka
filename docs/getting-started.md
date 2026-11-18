@@ -33,7 +33,8 @@ before starting your task.
 
 If Shaka doesn't appear, restart your coding tool and try again.
 
-Shaka doesn't update itself. To keep it current, ask your agent to set up a
+Shaka checks for updates but never installs them on its own. To keep it current,
+ask your agent to set up a
 [daily update or update check](reference/scheduled-update-checks.md).
 
 <a id="2-choose-private-trial-or-team-setup"></a>
