@@ -67,9 +67,11 @@ A selected companion technique applies within the Shaka phase it concerns.
 
 ## Consume verification evidence
 
-Carry companion verification evidence into the existing verification record: the
-command, the commit it ran on, the observed result, its artifacts, and what it did not
-cover. Shaka's current-head requirements override a companion's verdict-reuse policy.
+Record runs in `companion_results`: `skill`, `command`, `checked`, `result`,
+`not_covered` (`Nothing.` if none), full `commit` SHA, and `artifacts` (HTTP(S) links
+or `[]`). Disambiguate Skills used with `source` or `revision`. Link public-safe
+attachment comments. Summarize merge-relevant results in Verification. Earlier
+commits show as stale. Rerun when a later commit touches what the run checked.
 Record applied skills through [skill attribution](skill-attribution.md).
 
 ## Use PR-body advice inside the managed description
@@ -79,9 +81,9 @@ A companion that prescribes PR text, such as AI Hero's `pr` template or pstack's
 
 - Publish through `description`. Never write the companion template as the PR body or
   over the managed region, and keep every required field.
-- Put a useful diagram or sketch in a `sections` item. Put before and after evidence
-  in a `details` item, and reversibility and blast radius in the `details` item
-  that holds risk and rollback.
+- Put a diagram in `sections` or a before-and-after comparison in `details`. Name
+  that heading or summary in the result for the run that produced the evidence.
+  Put reversibility and blast radius in the risk and rollback `details` item.
 - Apply prose advice to the content you supply before the helper renders it. Keep
   the helper's headings and identity line.
 - Text outside the managed region stays the human's; do not add a second summary there.
