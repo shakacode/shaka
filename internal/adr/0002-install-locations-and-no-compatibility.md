@@ -67,8 +67,9 @@ The maintainer changed decision 3 on 2026-11-17, in review of
 [#1217](https://github.com/shakacode/shaka/pull/1217).
 
 - **People may schedule `install --update` themselves (decision 3).** Shaka still
-  checks for updates but never installs one on its own, and [#682](https://github.com/shakacode/shaka/issues/682)
-  still tracks built-in opt-in updates. The original risk remains: an update during a
+  never installs an update on its own, and
+  [#682](https://github.com/shakacode/shaka/issues/682) still tracks built-in opt-in
+  updates. The original risk remains: an update during a
   task can mix old and new instructions in an open chat. The maintainer accepts it,
   because continuous local updates while developing Shaka caused no visible failures.
   Since [#956](https://github.com/shakacode/shaka/issues/956), an update supersedes a

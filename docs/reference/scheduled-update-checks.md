@@ -1,17 +1,18 @@
 # Keep Shaka up to date
 
-Shaka has no automatic updates: it checks for updates at most once a day while
-you use it, but it never installs one on its own.
+Shaka has no automatic updates: it checks for them when you use it, but never
+installs one on its own.
 If you want to update daily, schedule `install --update` for a time when no
 Shaka task is running, or schedule a daily check and update between chats.
 Every Shaka chat runs from the same installed checkout, so an update during a
 task can mix old and new instructions in that chat. When the update changes
 Shaka's validation or review code, the task also reruns those checks.
 
-When you invoke Shaka, its skill asks your agent to run that check. The check
-asks GitHub at most once a day. Later chats that day repeat its saved
-answer until you update Shaka. If an update is available, the agent tells you
-how to install it.
+When you invoke Shaka, its skill asks your agent to check for updates. The
+check reuses an answer saved in the last 23 hours, so it usually asks GitHub
+once a day; updating Shaka starts a fresh check. A check that cannot reach
+GitHub saves nothing, so the next chat tries again. If an update is available,
+the agent tells you how to install it.
 
 A scheduled check helps most when you leave Shaka chats running overnight. The
 check compares an installation from a GitHub branch, such as the default `main`,
