@@ -18,14 +18,13 @@ class CompanionsCommandTest < Minitest::Test
     end
   end
 
-  def test_a_repository_without_team_settings_still_applies_personal_packs
-    decline_coverage_at_home
+  def test_a_repository_without_team_settings_reports_why_instead_of_failing
     Dir.mktmpdir('no-settings') do |root|
       write(root, 'README.md', "Plain repository\n")
       %w[init add commit].each { |step| git_step(root, step) }
       result = run_command(root:, ref: 'HEAD')
 
-      assert_equal(['decline'], result['skills'].map { |row| row['mode'] })
+      assert_empty result['skills']
       assert_includes result['repository_packs'], 'no usable team settings'
     end
   end
@@ -77,19 +76,11 @@ class CompanionsCommandTest < Minitest::Test
 
   private
 
-  # An installed `coverage` skill that a personal pack declines.
-  def decline_coverage_at_home
-    write(@home, '.agents/skills/coverage/SKILL.md', SKILL)
-    write(@home, '.agents/shaka/packs/mine.yml',
-          pack('mine', { 'coverage' => { 'points' => { POINT => mode('decline') } } },
-               source: 'https://github.com/example/perf', match: { 'paths' => ['*/coverage'] }))
-  end
-
   def git_step(root, step)
     arguments = { 'init' => %w[init --quiet], 'add' => %w[add .],
                   'commit' => %w[-c user.name=T -c user.email=t@example.com commit --quiet -m Plain] }
     git(root, *arguments.fetch(step))
   end
 
-  def run_cli(*arguments) = Shaka::Companions::Command.run(arguments, home: @home)
+  def run_cli(*arguments) = Shaka::Companions::Command.run(arguments)
 end

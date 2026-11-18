@@ -3,7 +3,6 @@
 require 'open3'
 require 'yaml'
 require_relative '../error'
-require_relative '../installed_skills'
 require_relative '../trusted_config_source'
 require_relative '../trusted_path_resolver'
 require_relative '../configuration/paths'
@@ -12,19 +11,15 @@ require_relative 'resolver'
 
 module Shaka
   module Companions
-    # Facts read from an installed skill: its real path, front matter, and checkout revision.
-    module SkillFacts
+    # Reads a project skill's files and links at the trusted commit, never from the checkout.
+    module TrustedProjectFacts
       private
 
-      def real(path)
-        File.realpath(path)
-      rescue SystemCallError
-        path
-      end
-
-      def front_of(path)
-        explicit_front(File.read(File.join(path, 'SKILL.md')))
-      rescue SystemCallError
+      # A trusted SKILL.md the reader refuses, such as an empty or oversized one, counts as explicit-only.
+      def trusted_front(resolved)
+        explicit_front(TrustedConfigSource.new(root: @root).read_prompt(resolved, @sha, 'project skill'))
+      rescue Error => e
+        @warnings << e.message
         true
       end
 
@@ -40,26 +35,6 @@ module Shaka
         data = YAML.safe_load(match[1], aliases: false)
         data.is_a?(Hash) ? data['disable-model-invocation'] == true : true
       rescue Psych::Exception
-        true
-      end
-
-      # The checkout holding a folder skill; never the home directory's own repository.
-      def revision(path)
-        output, _error, status = Open3.capture3('git', '-C', path, 'rev-parse', '--show-toplevel', 'HEAD')
-        top, sha = output.lines.map(&:strip)
-        sha if status.success? && top != real(@home.to_s)
-      end
-    end
-
-    # Reads a project skill's files and links at the trusted commit, never from the checkout.
-    module TrustedProjectFacts
-      private
-
-      # A trusted SKILL.md the reader refuses, such as an empty or oversized one, counts as explicit-only.
-      def trusted_front(resolved)
-        explicit_front(TrustedConfigSource.new(root: @root).read_prompt(resolved, @sha, 'project skill'))
-      rescue Error => e
-        @warnings << e.message
         true
       end
 
@@ -81,50 +56,29 @@ module Shaka
       def trusted_directory(path) = TrustedPathResolver.new(root: @root, sha: @sha).resolve(path).first
     end
 
-    # Reads pack files from their three homes and turns each skill into resolver entries with
-    # its installed copy. Repository packs and project skills come only from the trusted commit.
+    # Reads the repository's pack files and turns each skill into a resolver entry. Pack files and
+    # project skills come only from the trusted commit; a candidate branch's copies are never read.
     class Inventory
-      include SkillFacts
       include TrustedProjectFacts
 
-      PACKAGED = File.expand_path('../../../config/packs', __dir__)
       PACKS = Configuration::Paths::PACKS
 
       attr_reader :warnings
 
-      # `sha` is the verified trusted commit, or nil to read no repository layer at all.
-      def initialize(home:, root:, sha:, points:, packaged: PACKAGED)
-        @home = home
+      # `sha` is the verified trusted commit, or nil to read no packs at all.
+      def initialize(root:, sha:, points:)
         @root = root
         @sha = sha
         @points = points
-        @packaged = packaged
         @warnings = []
-        @scan = InstalledSkills.new(home:) if home
       end
 
-      def entries
-        installed = @scan ? @scan.all : []
-        @warnings.concat(@scan.unread) if @scan
-        packs.flat_map { |pack| pack.skills.flat_map { |skill| entry(pack, skill, installed) } }
-      end
-
-      def packs = packaged + personal + repository
+      def entries = packs.flat_map { |pack| pack.skills.map { |skill| entry(pack, skill) } }
 
       private
 
-      def packaged = local_files(@packaged).map { |path| known!(parse(File.read(path), 'packaged', path)) }
-
-      def personal
-        return [] unless @home
-
-        local_files(File.join(@home, PACKS)).map { |path| known(parse(File.read(path), 'personal', path)) }
-      end
-
-      def local_files(directory) = Dir.glob(File.join(directory, '*.yml'))
-
-      # Only regular files at the trusted commit; a candidate branch's packs are never read.
-      def repository
+      # Only regular files at the trusted commit.
+      def packs
         return [] unless @sha
 
         output, _error, status = Open3.capture3('git', '-C', @root, 'ls-tree', '-z', "#{@sha}:#{PACKS}")
@@ -143,73 +97,33 @@ module Shaka
         end
 
         text = TrustedConfigSource.new(root: @root).read_prompt(path, @sha, path)
-        known(parse(text, 'repository', "#{path} at #{@sha}"))
+        known(Pack.parse(text, label: "#{path} at #{@sha}"))
       end
 
-      def parse(text, layer, label) = Pack.parse(text, layer:, label:)
-
-      # A packaged pack must name only declared points; other packs drop unknown ones with a warning.
-      def known!(pack)
-        unknown = unknown_points(pack)
-        raise Error, "#{pack.label}: unknown skill point #{unknown.first}" unless unknown.empty?
-
-        pack
-      end
-
+      # A pack naming a point no procedure declares keeps its other points and warns.
       def known(pack)
-        unknown_points(pack).each { |point| @warnings << "#{pack.label}: unknown skill point #{point} ignored" }
+        unknown = pack.skills.flat_map { |skill| skill.points.keys }.uniq - @points - [Pack::ANY]
+        unknown.each { |point| @warnings << "#{pack.label}: unknown skill point #{point} ignored" }
         pack
       end
 
-      def unknown_points(pack)
-        pack.skills.flat_map { |skill| skill.points.keys }.uniq - @points - [Pack::ANY]
-      end
-
-      def entry(pack, skill, installed)
-        skill.path ? project_entry(pack, skill) : installed_entry(pack, skill, installed)
-      end
-
-      def build(pack, skill, **facts)
-        Resolver::Entry.new(layer: pack.layer, pack: pack.name, skill:, candidate_only: false, **facts)
-      end
-
-      # The identity is the skill directory resolved in the trusted tree and placed under the checkout
-      # root, which is where a home-folder link to it resolves. An alias shares its limits, and neither
-      # a linked SKILL.md nor a link the candidate branch adds changes the identity.
-      def project_entry(pack, skill)
+      # The identity is the skill directory resolved in the trusted tree, so two entries that reach
+      # the same directory through a link share their limits, and a link the candidate adds changes nothing.
+      def entry(pack, skill)
         file = "#{skill.path}/SKILL.md"
         resolved = trusted_file(file)
         unless resolved
           return build(pack, skill, identity: "repository:#{skill.path}", installed: false, location: nil,
-                                    revision: nil, explicit_front: nil)
-                 .with(candidate_only: candidate_only?(file))
+                                    explicit_front: nil).with(candidate_only: candidate_only?(file))
         end
 
-        build(pack, skill, identity: File.join(real(@root), trusted_directory(skill.path)), installed: true,
-                           location: "#{@sha}:#{skill.path}", revision: @sha, explicit_front: trusted_front(resolved))
+        build(pack, skill, identity: "repository:#{trusted_directory(skill.path)}", installed: true,
+                           location: "#{@sha}:#{skill.path}", explicit_front: trusted_front(resolved))
       end
 
-      # One entry per installed copy, since each host loads its own copy and each copy has its own limits.
-      def installed_entry(pack, skill, installed)
-        copies = installed.select { |candidate| candidate.name == skill.name && ours?(pack, candidate) }
-        if copies.empty?
-          return build(pack, skill, identity: "#{pack.source}##{skill.name}", installed: false, location: nil,
-                                    revision: nil, explicit_front: nil)
-        end
-
-        copies.map { |copy| copy_entry(pack, skill, copy) }
-      end
-
-      def copy_entry(pack, skill, copy)
-        path = real(copy.path)
-        build(pack, skill, identity: path, installed: true, location: @scan.shown(copy.path),
-                           revision: copy.revision || revision(path), explicit_front: front_of(path))
-      end
-
-      # A same-named skill from somewhere else is not this pack's copy.
-      def ours?(pack, copy)
-        pack.match['plugins'].any? { |name| copy.origin == "#{name} plugin" } ||
-          pack.match['paths'].any? { |glob| File.fnmatch?(glob, real(copy.path), File::FNM_EXTGLOB) }
+      def build(pack, skill, **facts)
+        Resolver::Entry.new(layer: 'repository', pack: pack.name, skill:, candidate_only: false,
+                            revision: facts[:installed] ? @sha : nil, **facts)
       end
     end
   end

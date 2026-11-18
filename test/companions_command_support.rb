@@ -5,7 +5,7 @@ require_relative 'test_helper'
 require_relative 'repository_fixture'
 require 'shaka/companions/command'
 
-# A temporary home and trusted repository for `shaka companions` tests.
+# A trusted repository for `shaka companions` tests.
 module CompanionsCommandSupport
   include RepositoryConfigTestHelpers
 
@@ -13,16 +13,10 @@ module CompanionsCommandSupport
   TEAM_CHECK = '.agents/skills/team-check'
   SKILL = "---\nname: a-skill\n---\n"
 
-  def setup
-    @home = Dir.mktmpdir('companions-home')
-  end
-
-  def teardown = FileUtils.remove_entry(@home)
-
   private
 
   def run_command(root:, ref:, point: POINT)
-    Shaka::Companions::Command.new(point:, root:, ref:, home: @home).call
+    Shaka::Companions::Command.new(point:, root:, ref:).call
   end
 
   # A repository whose trusted commit holds one pack with one project skill.
@@ -70,20 +64,11 @@ module CompanionsCommandSupport
     { '.agents/shaka/packs/team.yml' => team, "#{TEAM_CHECK}/SKILL.md" => SKILL }
   end
 
-  # A repository pack that also wants to `use` the home folders' `coverage` skill, found by path.
-  def team_with_coverage(skills = {})
-    coverage = { 'coverage' => { 'points' => { POINT => mode('use') } } }
-    pack('team', skills.merge(coverage), source: 'https://github.com/example/perf',
-                                         match: { 'paths' => ['*/coverage'] })
-  end
-
   def mode(value) = { 'mode' => value, 'reason' => 'Fits this step' }
 
   def project(path, point = POINT) = { 'path' => path, 'points' => { point => mode('use') } }
 
-  def pack(name, skills, **top)
-    YAML.dump({ 'version' => 1, 'pack' => name, **top.transform_keys(&:to_s), 'skills' => skills })
-  end
+  def pack(name, skills) = YAML.dump({ 'version' => 1, 'pack' => name, 'skills' => skills })
 
   # A [:link, TARGET] value makes a symbolic link instead of a file.
   def add_file(root, path, text)

@@ -249,9 +249,7 @@ skills:
         reason: Lists the release steps each PR in a split needs
 ```
 
-`path` names a skill directory in your repository. For a skill installed from another
-pack, leave out `path` and give the file a `source` URL and a `match` rule, such as
-`match: { paths: ['*/pstack/*'] }`, that finds its installed copy. Each entry under `points` names a
+`path` names a skill directory in your repository. Each entry under `points` names a
 skill point, a step where the agent asks Shaka which skills fit:
 
 | Skill point | When the agent reaches it |
@@ -271,14 +269,12 @@ The mode decides what the agent does at that step:
 
 Mark a skill that starts other agents with `fans_out: true` beside its `points`;
 Shaka then always waits for your yes before running it. A skill whose own file says
-only a person may start it also waits for your yes. Shaka reads pack files and project skills only from the
-default branch, so a pack added in a pull request takes effect after it merges.
-Repository packs need
+only a person may start it also waits for your yes.
+
+Shaka reads pack files and skills only from the default branch, so a pack or skill
+added in a pull request takes effect after it merges. Pack files need
 [team settings](settings-guide.md#use-individual-or-team-settings); with individual
-settings, Shaka reads none.
-For your own machine, put `.yml` pack files in `~/.agents/shaka/packs/`. Personal packs
-can suggest or decline skills, but never use one without asking. Shaka ships no
-packs of its own yet.
+settings, Shaka reads none. Shaka ships no packs of its own yet.
 
 To check what applies, ask your agent:
 
@@ -288,7 +284,7 @@ Which companion skills does Shaka offer in this repository?
 
 The agent runs `shaka companions --all` with the default branch's latest commit. The
 output lists each skill with its mode and reason, why that mode applies, and whether
-the skill is installed.
+the default branch has the skill.
 
 <a id="hand-over-a-spec-and-tickets"></a>
 <a id="what-each-kind-of-skill-can-do"></a>

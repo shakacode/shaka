@@ -18,6 +18,8 @@ module Shaka
       Row = Data.define(:point, :pack, :skill, :layer, :mode, :reason, :basis, :installed, :location, :revision)
 
       RANK = Pack::MODES.each_with_index.to_h.freeze
+      # Which layer's entry governs a skill, first to last. Step 1 loads only repository packs.
+      PRECEDENCE = %w[repository packaged personal].freeze
       CANDIDATE_ONLY = ['decline', 'it exists only on the candidate branch', 'no trusted copy to load'].freeze
 
       # `enabled_packs` lists packs whose packaged `use` entries apply. `trusted` is false when no
@@ -53,7 +55,7 @@ module Shaka
       # The repository's own entry governs; otherwise packaged, then personal. Within one layer
       # the strictest mode wins.
       def governing(settings)
-        layer = Pack::LAYERS.values_at(1, 0, 2).find { |name| settings.any? { |entry, _, _| entry.layer == name } }
+        layer = PRECEDENCE.find { |name| settings.any? { |entry, _, _| entry.layer == name } }
         settings.select { |entry, _, _| entry.layer == layer }.min_by { |_, mode, _| RANK.fetch(mode) }
       end
 

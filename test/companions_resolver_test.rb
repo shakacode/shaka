@@ -13,7 +13,7 @@ class CompanionsResolverTest < Minitest::Test
     ['packaged use acts as suggest until its pack is on', [%w[packaged use]], {}, 'suggest', 'not turned on'],
     ['packaged use applies once its pack is on', [%w[packaged use]], { enabled: ['perf'] }, 'use', 'packaged entry'],
     ['personal use acts as suggest', [%w[personal use]], { enabled: ['perf'] }, 'suggest', 'personal'],
-    ['repository use needs no pack switch or study', [%w[repository use]], {}, 'use', 'repository entry'],
+    ['repository use needs no pack switch', [%w[repository use]], {}, 'use', 'repository entry'],
     ['fans-out stays suggest under a repository use',
      [['packaged', 'suggest', { 'fans_out' => true }], ['repository', 'use', { 'fans_out' => false }]],
      {}, 'suggest', 'fans out'],
@@ -102,7 +102,7 @@ class CompanionsResolverTest < Minitest::Test
     candidate = where.fetch(:candidate, false)
     pack = where.fetch(:pack, 'perf')
     point = where.fetch(:point, POINT)
-    skill = Shaka::Companions::Pack::Skill.new(name: 'coverage', flags:, study: nil, path: nil,
+    skill = Shaka::Companions::Pack::Skill.new(name: 'coverage', flags:, path: nil,
                                                points: { point => [mode, "#{layer} reason"] })
     Shaka::Companions::Resolver::Entry.new(layer:, pack:, skill:, identity: PATH, installed: true, location: PATH,
                                            revision: 'abc', explicit_front: front, candidate_only: candidate)

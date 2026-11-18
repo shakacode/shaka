@@ -12,15 +12,15 @@ module Shaka
   module Companions
     # `shaka companions POINT|--all`: each companion skill's mode at a skill point, why that mode
     # applies, whether it is installed, and its revision. Repository packs are read only at the
-    # trusted --ref; without one, only packaged and personal packs apply.
+    # trusted --ref; without one, no packs are read.
     class Command
       USAGE = 'Usage: shaka companions POINT|--all [--root DIR] [--ref SHA]'
 
-      def self.run(arguments, home: Dir.home)
+      def self.run(arguments)
         options = parse(arguments)
         return 0 unless options
 
-        puts JSON.pretty_generate(new(**options, home:).call)
+        puts JSON.pretty_generate(new(**options).call)
         0
       rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
         warn "shaka: #{e.message}"
@@ -51,17 +51,16 @@ module Shaka
 
       private_class_method :parse, :option_parser
 
-      def initialize(point:, root:, ref:, home:)
+      def initialize(point:, root:, ref:)
         @point = point
         @root = root
         @ref = ref
-        @home = home
       end
 
       def call
         declared = known_points
         sha, note = trusted_commit
-        inventory = Inventory.new(home: @home, root: @root, sha:, points: declared)
+        inventory = Inventory.new(root: @root, sha:, points: declared)
         resolver = Resolver.new(inventory.entries, trusted: !sha.nil?)
         rows = (@point ? [@point] : declared).flat_map { |point| resolver.call(point) }
         { 'settings_ref' => sha, 'repository_packs' => note,
@@ -87,8 +86,8 @@ module Shaka
         kind == 'trusted/team' ? [sha, "read at #{sha}"] : [nil, "not read: #{kind}"]
       end
 
-      # Settings that cannot load at the trusted commit grant no repository layer; the personal
-      # and packaged layers still apply.
+      # Settings that cannot load at the trusted commit grant no repository packs; the command
+      # reports why instead of failing.
       def settings_kind(sha)
         kind = Configuration.resolve_source(root: @root, ref: sha, candidate_commands: false).last
         kind == 'trusted/team' ? kind : "settings source is #{kind}"
