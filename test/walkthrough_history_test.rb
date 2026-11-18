@@ -390,6 +390,16 @@ class WalkthroughHistoryNotesTest < Minitest::Test
     assert_equal [delete_call(55)], deletions
   end
 
+  # An edit that lands after the first reread stops the archive update, and the notes wait for a later walkthrough.
+  def test_a_review_edited_before_its_archive_update_keeps_its_notes
+    published = publish_over(review_record(7, PRIOR), review_response(body: PRIOR),
+                             html_response('<details><p>Archived.</p></details>'), review_response(body: 'changed'))
+
+    assert_empty published.dig('earlier_walkthroughs', 'deleted_notes')
+    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'changed before collapse'
+    assert_empty deletions
+  end
+
   def note_threads(count)
     threads = Array.new(count) { |index| "PRRT_#{index + 1}" }.each_with_index.map do |id, index|
       author = { 'fullDatabaseId' => (55 + index).to_s, 'author' => { '__typename' => 'User', 'login' => 'ada' } }

@@ -123,8 +123,8 @@ module Shaka
 
     private
 
-    # Notes are deleted only for reviews just reread as this account's walkthrough; one edited into
-    # something else meanwhile keeps its notes.
+    # Notes are deleted only for reviews now archived behind the current walkthrough. A review edited
+    # meanwhile, or one whose archive update failed, keeps its notes for a later walkthrough to retry.
     def fold_all(reviews, url, account, report)
       @confirmed = []
       reviews.each { |review| fold_one(review, url, account, report) }
@@ -152,13 +152,14 @@ module Shaka
       return unless source
 
       apply_revision(review, revised_body(source, url), source, report)
+      @confirmed << review
     rescue Error => e
       report['unavailable'] << "Review #{review['id']}: #{e.message}"
     end
 
     def fresh_walkthrough(review, report)
       source = @github.review(review['id'])['body'].to_s
-      return source if WalkthroughText.walkthrough?(source, MARKER) && @confirmed.push(review)
+      return source if WalkthroughText.walkthrough?(source, MARKER)
 
       report['unavailable'] << "Review #{review['id']} changed before collapse."
       nil

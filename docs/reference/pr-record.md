@@ -236,8 +236,8 @@ guidance, not findings to fix. For the duplicate-refund fix:
 > **Start here:** this check is the whole behavior change; the controller and
 > retry job only call it.
 
-A newer walkthrough deletes the older notes nobody replied to, so each note appears
-once, on the current walkthrough. A note with a reply stays. Reply to a note
+When a newer walkthrough replaces an older one, it deletes the older notes nobody
+replied to, so they do not repeat as duplicates. Notes with a reply stay. Reply to a note
 like any review comment, then ask your agent to answer it; it replies and resolves
 the thread.
 
