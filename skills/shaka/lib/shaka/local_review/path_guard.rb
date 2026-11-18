@@ -3,6 +3,7 @@
 # Keeps candidate-owned executables and script interpreters out of command PATHs.
 
 require_relative '../error'
+require_relative '../executable_file'
 require_relative 'executable'
 require_relative 'shebang'
 
@@ -67,15 +68,24 @@ module Shaka
     end
 
     def self.first_executable(entries, name, candidate_root, drop_candidate)
-      entries.each do |entry|
+      candidates = entries.flat_map do |entry|
         directory = File.expand_path(entry.empty? ? '.' : entry)
-        executable = File.join(directory, name)
-        next unless File.file?(executable) && File.executable?(executable)
-        next if drop_candidate && candidate_executable?(directory, executable, candidate_root)
-
-        return executable
+        file_names(name).map { |file_name| [directory, File.join(directory, file_name)] }
       end
-      nil
+      candidates.find { |directory, executable| usable?(directory, executable, candidate_root, drop_candidate) }&.last
+    end
+
+    def self.usable?(directory, executable, candidate_root, drop_candidate)
+      return false unless File.file?(executable) && File.executable?(executable)
+
+      !(drop_candidate && candidate_executable?(directory, executable, candidate_root))
+    end
+
+    # Windows installs git and reviewer CLIs as NAME.exe, and Ruby never reports an extensionless
+    # file executable there. Only .exe is accepted: a .cmd or .bat shim runs through cmd.exe, which
+    # reparses its arguments.
+    def self.file_names(name, windows: ExecutableFile.windows?)
+      windows && File.extname(name).empty? ? [name, "#{name}.exe"] : [name]
     end
 
     def self.candidate_executable?(directory, executable, candidate_root)

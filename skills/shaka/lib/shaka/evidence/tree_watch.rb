@@ -18,8 +18,6 @@ module Shaka
       # Seconds between captures. One capture took about 2 seconds on this repository under heavy
       # load, so an edit stops the check well within a minute.
       DEFAULT_INTERVAL = 15
-      # Seconds a stopped Windows check gets to exit.
-      STOP_SECONDS = 10
       Outcome = Data.define(:status, :changed_tree) do
         def stopped? = !changed_tree.nil?
 
@@ -99,26 +97,9 @@ module Shaka
       # starts, and still names them after the leader exits, which taskkill /T cannot.
       def group = @windows ? {} : { pgroup: true }
 
-      # Without fiddle, which a later Ruby may not load under --disable-gems, taskkill alone stops it.
-      def adopt(pid)
-        return unless @windows && ExecutableFile.windows?
+      def adopt(pid) = (LocalReviewProcess.adopt(pid) if @windows)
 
-        require_relative '../doctor/windows_job'
-        Doctor::WindowsJob.adopt(pid)
-      rescue LoadError
-        nil
-      end
-
-      # taskkill /T covers descendants the job could not hold while the leader lives. A leader that
-      # outlasts both is terminated directly, so the wait for its status always ends.
-      def end_tree(waiter)
-        @job&.terminate
-        system('taskkill.exe', '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
-        Process.kill('KILL', waiter.pid) unless waiter.join(STOP_SECONDS)
-        waiter.join
-      rescue Errno::ESRCH
-        waiter.join
-      end
+      def end_tree(waiter) = LocalReviewProcess.end_tree(waiter, @job)
     end
   end
 end

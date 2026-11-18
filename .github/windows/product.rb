@@ -14,9 +14,11 @@ class WindowsProduct < WindowsSession
 
   def call
     record('helper and command start tests') do
-      ruby_tests('test/windows_helper_start_test.rb', 'test/windows_command_start_test.rb')
+      ruby_tests('test/windows_helper_start_test.rb', 'test/windows_command_start_test.rb',
+                 'test/windows_local_review_test.rb')
     end
     record('evidence run starts a repository command') { evidence_run }
+    record('review run reads the change and looks for the reviewer') { review_run }
     record('bin/install installs and verifies the helper') { install }
     self
   end
@@ -30,6 +32,18 @@ class WindowsProduct < WindowsSession
     return if completed?(output)
 
     raise "evidence run did not complete the test command: #{excerpt(output)}"
+  end
+
+  # No reviewer CLI is installed here, so a run that read the change through Git ends at the lookup.
+  def review_run
+    head = git_output('rev-parse', 'HEAD')
+    output, error, = capture([native_path, *helper, 'review', 'run', '--root', root, '--head', head, '--base', head,
+                              '--reviewer', 'anthropic/claude', '--timeout-seconds', '60'], 300)
+    result = JSON.parse(output[(output.index('{') || 0)..])
+    puts "  #{result['failure_stage']}: #{result['reason']}"
+    return if result['failure_stage'] == 'executable_missing'
+
+    raise "review run stopped before the reviewer lookup: #{excerpt(error)}"
   end
 
   # The result JSON follows the command output on standard output.

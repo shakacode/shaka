@@ -2,9 +2,11 @@
 
 require 'open3'
 require_relative '../error'
+require_relative '../executable_file'
 
 module Shaka
-  # Captures a reviewer process with a deadline and terminates its process group on timeout.
+  # Captures a reviewer process with a deadline and ends its process tree on timeout: its process
+  # group, or on Windows, which has no process groups, the job object that holds it.
   module LocalReviewProcess
     # Keeps denied cleanup visible after a timed-out parent has exited.
     class CleanupError < Error
@@ -15,35 +17,49 @@ module Shaka
       def success? = false
     end
 
+    singleton_class.attr_accessor :stop_seconds, :windows
+    # Seconds a stopped Windows process tree gets to exit before its leader is terminated directly.
+    # Tests shorten it and set windows to run the Windows branch on any host.
+    self.stop_seconds = 10
+    self.windows = ExecutableFile.windows?
+
+    # Windows Ruby refuses `pgroup` (see Doctor::BoundedCommand.process_groups?), so there the
+    # child starts in this group and a job object holds it and the descendants it starts.
     def self.capture(arguments, stdin_data:, chdir:, timeout:, env: {})
-      Open3.popen3(env, *arguments, chdir: chdir, pgroup: true) do |stdin, stdout, stderr, waiter|
-        capture_streams([stdin, stdout, stderr], waiter, stdin_data, timeout)
+      job = nil
+      windows = self.windows
+      Open3.popen3(env, *arguments, chdir:, **(windows ? {} : { pgroup: true })) do |stdin, stdout, stderr, waiter|
+        job = adopt(waiter.pid) if windows
+        stop = windows ? -> { end_tree(waiter, job) } : -> { terminate(waiter) }
+        capture_streams([stdin, stdout, stderr], waiter, stdin_data, timeout, stop)
       end
+    ensure
+      job&.close
     end
 
-    def self.capture_streams(streams, waiter, input, timeout)
+    def self.capture_streams(streams, waiter, input, timeout, stop = -> { terminate(waiter) })
       stdin, stdout, stderr = streams
       # Reviewer CLIs emit UTF-8 whatever the host locale; a US-ASCII default breaks parsing.
       [stdout, stderr].each { |stream| stream.set_encoding(Encoding::UTF_8) }
       writer = Thread.new { write_input(stdin, input) }
       out_reader = Thread.new { stdout.read }
       err_reader = Thread.new { stderr.read }
-      status = wait_or_terminate(waiter, [writer, out_reader, err_reader], timeout)
+      status = wait_or_terminate(waiter, [writer, out_reader, err_reader], timeout, stop)
       [thread_output(out_reader), thread_output(err_reader), status]
     end
 
-    def self.wait_or_terminate(waiter, threads, timeout)
+    def self.wait_or_terminate(waiter, threads, timeout, stop = -> { terminate(waiter) })
       # Give pipes a separate bounded drain period after the process exits.
       # Reusing the process deadline would reject already-finished readers at its edge.
       exited = waiter.join(timeout)
       unless exited
-        terminate(waiter)
+        stop.call
         return nil
       end
 
       return waiter.value if join_before_deadline(threads, Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2)
 
-      terminate(waiter)
+      stop.call
       DrainTimeout.new(waiter.value)
     rescue Errno::EPERM => e
       cleanup_error(waiter, exited, timeout, e)
@@ -92,6 +108,31 @@ module Shaka
         sleep 0.01
         retry
       end
+    end
+
+    # Without fiddle, which a later Ruby may not load under --disable-gems, taskkill alone stops it.
+    def self.adopt(pid)
+      return unless ExecutableFile.windows?
+
+      require_relative '../doctor/windows_job'
+      Doctor::WindowsJob.adopt(pid)
+    rescue LoadError
+      nil
+    end
+
+    # The job ends the tree, even descendants whose leader already exited. taskkill /T covers
+    # descendants the job could not hold, and a leader that outlasts both is terminated directly,
+    # so the wait for its status always ends. Only a live leader still owns its pid: once reaped,
+    # the pid may name an unrelated process, so neither taskkill nor kill is sent to it.
+    def self.end_tree(waiter, job, seconds: stop_seconds)
+      job&.terminate
+      if waiter.alive?
+        system('taskkill.exe', '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
+        Process.kill('KILL', waiter.pid) unless waiter.join(seconds)
+      end
+      waiter.join
+    rescue Errno::ESRCH
+      waiter.join
     end
 
     def self.thread_output(thread)
