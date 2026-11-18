@@ -110,9 +110,12 @@ module Shaka
       end
 
       # taskkill /T covers descendants the job could not hold while the leader lives. A leader that
-      # outlasts both is terminated directly, so the wait for its status always ends.
+      # outlasts both is terminated directly, so the wait for its status always ends. Once the leader
+      # has exited, Windows may give its process ID to an unrelated process, so only the job acts.
       def end_tree(waiter)
         @job&.terminate
+        return waiter.join unless waiter.alive?
+
         system('taskkill.exe', '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
         Process.kill('KILL', waiter.pid) unless waiter.join(STOP_SECONDS)
         waiter.join
