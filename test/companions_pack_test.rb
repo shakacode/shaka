@@ -29,6 +29,8 @@ class CompanionsPackTest < Minitest::Test
     assert_refused('must name a relative directory', skills: { 'check' => { 'points' => {} } })
     assert_refused('must name a relative directory', skills: { 'check' => entry('path' => '../x') })
     assert_refused('must name a relative directory', skills: { 'check' => entry('path' => '/abs') })
+    assert_refused('must name a relative directory', skills: { 'check' => entry('path' => "a\u0000b") })
+    assert_equal 'a/b', parse(skills: { 'check' => entry('path' => 'a/b/') }).skills.first.path
   end
 
   def test_unknown_keys_and_bad_values_are_refused

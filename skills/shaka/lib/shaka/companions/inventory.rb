@@ -28,6 +28,8 @@ module Shaka
       # unparsable, or repeats a key counts as explicit-only, so a broken header never raises a mode.
       def explicit_front(text)
         return true unless text.valid_encoding?
+
+        text = text.delete_prefix("\uFEFF")
         return false unless text.match?(/\A---[ \t]*(\r?\n|\z)/)
 
         match = text.match(/\A---[ \t]*\r?\n(.*?)^---[ \t]*\r?$/m)

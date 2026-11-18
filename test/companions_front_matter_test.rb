@@ -59,4 +59,14 @@ class CompanionsFrontMatterTest < Minitest::Test
       assert_equal ['suggest', 'it is explicit-only'], row.values_at('mode', 'basis')
     end
   end
+
+  def test_a_byte_order_mark_does_not_hide_the_header
+    files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
+              "#{TEAM_CHECK}/SKILL.md" => "\uFEFF---\ndisable-model-invocation: true\n---\n" }
+    with_trusted_repository(extra: files) do |root, sha|
+      row = run_command(root:, ref: sha).fetch('skills').first
+
+      assert_equal ['suggest', 'it is explicit-only'], row.values_at('mode', 'basis')
+    end
+  end
 end

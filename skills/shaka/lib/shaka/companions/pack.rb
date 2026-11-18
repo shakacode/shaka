@@ -87,11 +87,12 @@ module Shaka
         end
       end
 
+      # A trailing slash is dropped, so every spelling of one directory names the same skill.
       def path!(path, label)
-        parts = path.is_a?(String) ? path.split('/') : []
+        parts = path.is_a?(String) && !path.match?(/[[:cntrl:]]/) ? path.split('/') : []
         valid = !parts.empty? && !path.start_with?('/') && !parts.intersect?(UNSAFE_PARTS)
         check!(valid, "#{label}.path must name a relative directory inside the repository")
-        path
+        parts.join('/')
       end
 
       def points!(value, label)

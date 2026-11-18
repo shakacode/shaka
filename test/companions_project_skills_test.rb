@@ -72,6 +72,7 @@ class CompanionsProjectSkillsTest < Minitest::Test
       File.chmod(0o755, File.join(root, '.agents/shaka/packs/team.yml'))
       git(root, 'add', '.')
       git(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'Mode')
+      assert git(root, 'ls-files', '-s', '.agents/shaka/packs/team.yml').start_with?('100755')
 
       assert_equal(['team-check'], run_command(root:, ref: 'HEAD')['skills'].map { |row| row['skill'] })
     end
