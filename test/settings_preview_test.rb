@@ -84,6 +84,18 @@ end
 class SettingsPreviewBoundaryTest < Minitest::Test
   include SettingsPreviewFixture
 
+  def test_preview_requires_task_worktree_wrappers
+    with_preview_repository do |root, trusted, preview|
+      FileUtils.rm_r(File.join(root, '.agents/shaka/bin'))
+      selector = Shaka::Configuration::SettingsPreview.new(root:)
+
+      error = assert_raises(Shaka::Error) { selector.start(preview, default_ref: trusted) }
+
+      assert_match(/Prepare the task worktree/, error.message)
+      assert_equal 'inactive', selector.status['status']
+    end
+  end
+
   def test_a_candidate_selection_file_cannot_activate_preview
     with_preview_repository do |root, trusted, preview|
       File.write(File.join(root, 'shaka-settings-preview.json'),
@@ -106,11 +118,11 @@ class SettingsPreviewBoundaryTest < Minitest::Test
   def test_first_setup_can_be_explicitly_selected_without_a_default_branch_seam
     with_preview_repository do |root, _trusted, preview|
       absent = remove_trusted_setup(root)
-      select_preview(root, preview)
+      select_preview(root, preview, default_ref: absent)
       assert_equal 'preview/local', Shaka::Evidence::Inputs.resolve_source(root, absent).last
       refute_empty capture(root, absent)['digest']
       policy = Shaka::TrustedConfigSource.from_ref(root:, ref: absent, private_trial: true)
-      assert_equal 'auto', policy.merge['preference']
+      assert_equal 'ask', policy.merge['preference']
       assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: absent) }
     end
   end
