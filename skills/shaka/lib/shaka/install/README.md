@@ -34,7 +34,7 @@ The code in this directory handles four parts of that installation:
 - `Source` records the copied files' Git revision when the source is the
   repository root, selected files and directories match the tracked tree,
   selected paths have clean Git status, raw file bytes and executable modes
-  match `HEAD`, and no selected file is world-writable. Otherwise, it records a
+  match `HEAD` (bytes only on Windows), and no selected file is world-writable. Otherwise, it records a
   development installation with a content hash and, when available, a base revision.
 - `Status` answers `install --status` without writing or fetching. `StatusInventory`
   finds links, records, and trials; `StatusCheckout`, `StatusLinks`, and

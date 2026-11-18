@@ -20,6 +20,8 @@ module Shaka
       DEFAULT_INTERVAL = 15
       # Seconds a stopped Windows check gets to exit.
       STOP_SECONDS = 10
+      # By full path, so a taskkill.exe in the candidate checkout cannot answer.
+      TASKKILL = File.join(ENV.fetch('SystemRoot', 'C:/Windows'), 'System32', 'taskkill.exe')
       Outcome = Data.define(:status, :changed_tree) do
         def stopped? = !changed_tree.nil?
 
@@ -109,14 +111,15 @@ module Shaka
         nil
       end
 
-      # taskkill /T covers descendants the job could not hold while the leader lives. A leader that
-      # outlasts both is terminated directly, so the wait for its status always ends. Once the leader
-      # has exited, Windows may give its process ID to an unrelated process, so only the job acts.
+      # A job that holds the check ends it alone. Without one, taskkill /T ends the tree while the
+      # leader lives, since once it exits Windows may give its ID to an unrelated process. A leader
+      # that outlasts both is terminated directly, so the wait for its status always ends.
       def end_tree(waiter)
-        @job&.terminate
-        return waiter.join unless waiter.alive?
-
-        system('taskkill.exe', '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
+        if @job
+          @job.terminate
+        elsif waiter.alive?
+          system(TASKKILL, '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
+        end
         Process.kill('KILL', waiter.pid) unless waiter.join(STOP_SECONDS)
         waiter.join
       rescue Errno::ESRCH
