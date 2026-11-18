@@ -125,15 +125,22 @@ class PublicationCompanionResultsTest < Minitest::Test
     end
   end
 
-  def test_refuses_local_paths_in_prose_commands_and_artifact_parameters
+  def test_refuses_local_paths_in_prose_and_commands
     assert_refused(run_record('command' => 'cat /Users/example/output.log'), 'local absolute path')
     assert_refused(run_record('command' => 'cc -I/Users/example/sdk -c demo.c'), 'local absolute path')
     assert_refused(run_record('command' => 'cc -I//Users/example/sdk -c demo.c'), 'local absolute path')
+    assert_refused(run_record('command' => 'curl https://example.org/health;/Users/example/bin/check'),
+                   'local absolute path')
     assert_refused(run_record('checked' => 'Read `/home/example/test`'), 'local absolute path')
     assert_refused(run_record('result' => 'Saved to /tmp/output.log'), 'local absolute path')
-    link = 'https://example.org/capture?path=%2FUsers%2Fexample%2Fpicture.png'
-    assert_refused(run_record('artifacts' => [link]), 'local absolute path')
     assert_refused(run_record, 'local absolute path', skills: [skill('revision' => '/opt/example/skill')])
+  end
+
+  def test_refuses_local_paths_in_artifact_parameters
+    %w[?path= #].each do |prefix|
+      link = "https://example.org/capture#{prefix}%2FUsers%2Fexample%2Fpicture.png"
+      assert_refused(run_record('artifacts' => [link]), 'local absolute path')
+    end
   end
 
   def test_accepts_web_routes_and_relative_paths
