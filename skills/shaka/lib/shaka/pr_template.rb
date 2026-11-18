@@ -78,11 +78,9 @@ module Shaka
         true
       end
 
-      # A heading's name ends where a trailing note such as `<!-- what changed -->` begins.
+      # A heading counts by its exact words; a note belongs on its own line below it.
       def heading(line)
-        return unless (text = line[HEADING, 1])
-
-        text = text.split('<!--', 2).first.to_s.strip
+        text = line[HEADING, 1].to_s.strip
         text unless text.empty?
       end
 

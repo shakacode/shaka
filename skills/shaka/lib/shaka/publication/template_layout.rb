@@ -48,13 +48,11 @@ module Shaka
                    'where Shaka places its own sections. Leave it out of sections.'
     end
 
-    # The heading that opens a block, after the one-line marker comments Shaka puts above some sections, read
-    # as GitHub shows it: without a trailing comment or closing hashes. Nil for a block without one.
+    # The heading that opens a block, after the one-line marker comments Shaka puts above some sections, without
+    # Markdown's optional closing hashes. Nil for a block without one.
     def heading(block)
       line = block.each_line(chomp: true).find { !(it.start_with?('<!--') && it.end_with?('-->')) }
-      return unless line&.start_with?('## ')
-
-      key(line.delete_prefix('## ').split('<!--', 2).first.to_s.sub(/[ \t]+#+[ \t]*\z/, ''))
+      key(line.delete_prefix('## ').sub(/[ \t]+#+[ \t]*\z/, '')) if line&.start_with?('## ')
     end
 
     # Headings match by their words, ignoring case and spacing.

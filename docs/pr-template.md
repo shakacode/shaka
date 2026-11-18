@@ -91,8 +91,9 @@ The order follows these rules:
   yours or Shaka's. For example, `## Verification` moves verification, with its evidence,
   to that spot.
 - When the agent writes a section your template does not name, it joins Shaka's sections.
-- Shaka reads only `##` headings. It skips those inside code blocks and inside HTML
-  comments that start a line.
+- Shaka reads only `##` headings and matches them by their exact words, so keep notes
+  on their own line. It skips headings inside code blocks and inside HTML comments
+  that start a line.
 - The opening lines never move. The first line names the agent that wrote the
   description. The recommendation, any decisions waiting on you, and the review links
   follow, so the decision comes first. The credit line stays last.

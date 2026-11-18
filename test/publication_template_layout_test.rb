@@ -32,32 +32,32 @@ class PublicationTemplateLayoutTest < Minitest::Test
                   'Summary'], outline(rendered)
     assert_fixed_ends(rendered)
   end
-  
+
   def test_template_can_place_any_shaka_section
     rendered = render(['Verification', 'Shaka', 'Shaka metrics'])
     assert_equal ['Verification', '<details> Evidence and limitations', 'Summary', 'Intent', 'Deployment',
                   'Shaka metrics'], outline(rendered)
   end
-  
+
   def test_evidence_stays_with_shakas_own_verification
     sections = [{ 'heading' => 'Verification', 'body' => 'Supplied.' }]
     rendered = render(%w[Shaka], 'sections' => sections)
     assert_equal ['Summary', 'Intent', 'Verification', '<details> Evidence and limitations', 'Shaka metrics',
                   'Verification'], outline(rendered)
   end
-  
+
   def test_sections_the_template_does_not_name_stay_with_shaka
     sections = [{ 'heading' => 'Notes', 'body' => 'Extra.' }, { 'heading' => 'Deployment', 'body' => 'None.' }]
     rendered = render(%w[Deployment Shaka Rollout], 'sections' => sections)
     assert_equal ['Deployment', 'Summary', 'Intent', 'Verification', '<details> Evidence and limitations',
                   'Shaka metrics', 'Notes'], outline(rendered)
   end
-  
+
   def test_supplied_shaka_section_is_refused_when_the_template_marks_one
     sections = [{ 'heading' => 'shaka', 'body' => 'Everything else.' }]
     error = assert_raises(Shaka::Error) { render(%w[Summary Shaka], 'sections' => sections) }
     assert_includes error.message, 'Leave it out of sections'
-    ['Shaka ##', 'Shaka <!-- note -->'].each do |heading|
+    ['Shaka ##', 'SHAKA'].each do |heading|
       supplied = [{ 'heading' => heading, 'body' => 'Everything else.' }]
       assert_raises(Shaka::Error) { render(%w[Summary Shaka], 'sections' => supplied) }
     end

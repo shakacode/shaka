@@ -42,8 +42,9 @@ class PrTemplateHeadingsTest < Minitest::Test
   # A comment that starts a line hides what follows; one inside other text cannot, because a heading
   # line starts a new block.
   def test_only_a_comment_that_starts_a_line_hides_headings
-    template = "<!-- note --> ## Hidden\n## Summary <!-- what changed -->\nText <!-- open\n## Shown\n-->\n"
+    template = "<!-- note --> ## Hidden\n## Summary\nText <!-- open\n## Shown\n-->\n"
     assert_equal %w[Summary Shown], Shaka::PrTemplate.headings(template)
+    assert_equal ['Shaka <!-- note --> Extra'], Shaka::PrTemplate.headings("## Shaka <!-- note --> Extra\n")
   end
 
   # GitHub renders no heading after `--> <!-- b`, and treats `<!-->` as a whole, empty comment.

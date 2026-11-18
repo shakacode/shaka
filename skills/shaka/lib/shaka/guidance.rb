@@ -4,7 +4,6 @@ require 'optparse'
 require_relative 'error'
 require_relative 'configuration'
 require_relative 'pr_template'
-require_relative 'publication/template_layout'
 
 module Shaka
   # Prints one repository guidance file from the selected settings source, never the candidate branch.
@@ -84,7 +83,7 @@ module Shaka
 
     # A Shaka heading marks where the description places Shaka's own sections, so no section is written for it.
     def placement(text, template = text)
-      return text unless PrTemplate.headings(template).any? { TemplateLayout.key(it) == TemplateLayout::MARKER }
+      return text unless PrTemplate.headings(template).any? { it.casecmp?('Shaka') }
 
       "#{text.chomp}\n\nThe template's `## Shaka` heading marks where Shaka places its own sections. " \
         "Leave that heading out of `sections`.\n"
