@@ -3,6 +3,7 @@
 require 'json'
 require 'tempfile'
 require_relative 'git_memo'
+require_relative 'layout'
 require_relative 'private_git_paths'
 
 module Shaka
@@ -12,21 +13,33 @@ module Shaka
     class SettingsPreview
       def self.ref(root:) = new(root:).status['settings_ref']
 
+      def self.load_config(root:, ref:, candidate_commands: true)
+        directory = Paths.at(root, Paths::COMMAND_DIRECTORY)
+        if candidate_commands && !File.directory?(directory)
+          raise Error, 'Prepare the task worktree’s Shaka command wrappers before using a settings preview.'
+        end
+
+        require_relative '../trusted_config_source'
+        TrustedConfigSource.load(root:, ref:, candidate_commands:)
+      end
+
       def initialize(root:)
         @root = File.realpath(root)
         @directory = GitMemo.fetch([:git_dir, @root]) { git('rev-parse', '--absolute-git-dir').strip }
         @path = File.join(@directory, 'shaka-settings-preview.json')
       end
 
-      def start(ref)
+      def start(ref, default_ref: nil)
         validate_ref!(ref)
         branch = current_branch
         raise Error, 'Create a task branch before starting a settings preview.' if branch.empty?
 
         # Validate with the existing schema and the task's executable entry points.
-        require_relative '../trusted_config_source'
-        TrustedConfigSource.load(root: @root, ref:)
-        save('version' => 1, 'branch' => branch, 'ref' => ref)
+        self.class.load_config(root: @root, ref:)
+        first_setup = missing_team_settings?(default_ref) || status['first_setup']
+        record = { 'version' => 1, 'branch' => branch, 'ref' => ref }
+        record['first_setup'] = true if first_setup
+        save(record)
         status
       end
 
@@ -52,10 +65,22 @@ module Shaka
 
         validate_ref!(record['ref'])
         { 'status' => 'active', 'settings_ref' => record['ref'], 'grants_policy' => true,
-          'grants_merge_authority' => false }
+          'grants_merge_authority' => false }.tap do |result|
+          result['first_setup'] = true if record['first_setup'] == true
+        end
       end
 
       private
+
+      def missing_team_settings?(ref)
+        return false unless ref
+
+        validate_ref!(ref)
+        return true unless Layout.commit(root: @root, sha: ref, allow_missing: true)
+
+        TrustedConfigSource.load(root: @root, ref:, candidate_commands: false)
+        false
+      end
 
       def read_record
         return unless File.exist?(@path) || File.symlink?(@path)

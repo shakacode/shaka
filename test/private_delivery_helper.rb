@@ -135,7 +135,8 @@ module PrivateDeliveryFixture
     write_executable(@state, 'gh', File.read(File.join(__dir__, 'support/private_delivery_gh.rb')))
     File.write(File.join(@state, 'pull.json'), JSON.generate(
                                                  'snapshot' => { 'headRefOid' => @ref, 'state' => 'OPEN',
-                                                                 'baseRefName' => 'main' }, 'checks' => []
+                                                                 'isDraft' => false, 'baseRefName' => 'main' },
+                                                 'checks' => []
                                                ))
   end
 

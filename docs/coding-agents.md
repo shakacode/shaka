@@ -92,7 +92,7 @@ mkdir -p "$HOME/.local/share/shaka"
 if [ ! -d "$HOME/.local/share/shaka/source" ]; then
   git clone -q https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
 fi
-"$HOME/.local/share/shaka/source/bin/install" --agent claude
+"$HOME/.local/share/shaka/source/bin/install" --agent claude --no-session-hook
 # Bring a kept install up to date; a failed update leaves the installed revision and the session starts.
 "$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --update ||
   echo "Shaka update failed; continuing with the installed revision" >&2
@@ -103,8 +103,9 @@ Shaka from its own clone, separate from your project, so the branch you are
 changing cannot change the Shaka that checks it. When a container keeps an
 earlier clone, the update step brings it to the latest Shaka, so it accepts
 settings your repository added since. If the update fails, the session still
-starts on the installed version. The script applies to new sessions; a session
-that is already running keeps what it has.
+starts on the installed version. Because the script keeps Shaka current, it
+turns off the update reminder for new chats. The script applies to new
+sessions; a session that is already running keeps what it has.
 
 Shaka runs on the Ruby that installed it, but the session's own shell still
 starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, add these
@@ -129,7 +130,7 @@ session's `ruby` whatever version the project selects.
 
 A cloud session cannot yet open or finish a Shaka PR. Claude Code blocks GitHub's
 GraphQL API there, and Shaka uses it to create the PR, publish its
-description and walkthrough, and merge. Shaka's doctor reports a
+walkthrough, and merge. Shaka's doctor reports a
 failed **GitHub GraphQL** check. See [cloud reviewers](reference/reviewer-setup.md#cloud-reviewers)
 for what still works. Make and validate the change in the cloud session, ask it
 to push the branch, then continue in a local session. Validation and review

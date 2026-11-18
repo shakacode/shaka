@@ -122,6 +122,20 @@ def require_merge_ref!(options)
   raise Shaka::Error, 'merge requires --ref so policy comes from a trusted commit'
 end
 
+def merge_policy(options)
+  root = options[:root] || Dir.pwd
+  ref = options[:ref]
+  # Individual settings grant no policy. A first-setup preview keeps Ask after adoption.
+  seam, source, kind = Shaka::Configuration.resolve_source(root:, ref:)
+  return if kind == 'private/local'
+
+  if options[:auto] && source[:first_setup]
+    raise Shaka::Error, 'The first setup settings preview uses Ask. Use the Ask handoff to obtain a merge decision.'
+  end
+
+  seam
+end
+
 # Reads effective limits through the opening check's guarded Git; unavailable settings are reported.
 def description_prose_limits(root, ref)
   return [Shaka::ProseLimits.new, {}] unless ref
@@ -242,6 +256,16 @@ def start_redaction(options, repository, privacy)
                                  privacy:).path_redaction
 end
 
+# Only walkthrough adds its input contract; every other command shows just the shared options.
+def help_flag(flags, command)
+  flags.on('-h', '--help', 'Show usage') do
+    puts flags
+    puts File.read(File.expand_path('../config/walkthrough-help.md', __dir__), encoding: 'UTF-8') if
+      command == 'walkthrough'
+    exit
+  end
+end
+
 def usage_banner
   lines = ["shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]", 'shaka pr watch OWNER/REPO NUMBER [options]']
   lines += Shaka::Subcommands.usage_lines
@@ -318,11 +342,12 @@ def rendering_preview_flag(flags, options)
 end
 
 options = {}
+invoked = ARGV.dup
 parser = OptionParser.new do |flags|
   flags.banner = usage_banner
   flags.on('--head SHA', 'Expected current PR head') { |value| options[:head] = value }
   flags.on('--content-file PATH', 'Publication content as JSON') { |value| options[:content_file] = value }
-  flags.on('--body-file PATH', 'Walkthrough Markdown file') { |value| options[:body_file] = value }
+  flags.on('--body-file PATH', 'Rendered walkthrough Markdown; see walkthrough --help') { |v| options[:body_file] = v }
   flags.on('--key NAME', 'Stable reply key; reused instead of duplicating') { |value| options[:key] = value }
   flags.on('--comment ID', Integer, 'Root review comment for an inline-thread reply') do |value|
     options[:comment] = value
@@ -340,10 +365,7 @@ parser = OptionParser.new do |flags|
   flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, resume, none') do |value|
     options[:state] = value
   end
-  flags.on('-h', '--help', 'Show usage') do
-    puts flags
-    exit
-  end
+  help_flag(flags, invoked.first)
 end
 
 begin
@@ -414,9 +436,7 @@ begin
   if %w[pr walkthrough handoff squash-message attention].include?(command) && options[:ref]
     seam = Shaka::Configuration.resolve_source(root: options[:root] || Dir.pwd, ref: options[:ref]).first
   elsif command == 'merge'
-    # Private trial settings grant no policy, so merge applies defaults and GitHub's gates under them.
-    seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref],
-                                               private_trial: true)
+    seam = merge_policy(options)
   end
   seam_required_checks = seam.merge['required_checks'] if seam&.sha
   if command == 'merge' && !options[:squash_message]
@@ -454,7 +474,7 @@ begin
                attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
                described = resolved_description(attributed, github, options)
                usage_records = carried = kept = recommendation = nil
-               published = github.description(prose:) do |pull|
+               published = github.description(prose:, deferred: true) do |pull|
                  rendered, carried, usage_records, kept = rendered_description(described, github, pull,
                                                                                workflow_version, options.merge(root:))
                  recommendation = Shaka::ProvenanceRecommendation.resolve(pull, described['provenance']).kept
