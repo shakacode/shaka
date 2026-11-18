@@ -59,18 +59,20 @@ disposition `next_action` or a fixed next step. Not ready to merge shows only it
 step, which asks for an answer and says the answer does not approve merging. Do not merge always leaves the
 close-or-replace choice to a maintainer. A report link and the head follow. Its separate marked region survives
 normal description updates. When a ready checkpoint is the latest one and the warning
-names an earlier head, publication removes the warning and reports `cleared` with the
-PR's `draft` status. After all required gates pass, the task owner marks a draft PR
-ready. A ready checkpoint leaves a warning for its own head, or one naming no head, for
-the maintainer to remove in GitHub. Ready publications cannot erase a newer blocker.
+names an earlier head, publication removes the warning and reports `cleared`. Once no
+warning remains, a ready checkpoint marks a draft PR ready for review, whoever made it a
+draft, and reports `marked_ready`. That starts any review that skips drafts, such as
+`claude-review`, so wait for the configured CI review jobs before the merge handoff.
+A ready checkpoint leaves a warning for its own head, or one naming no head, for
+the maintainer to remove in GitHub, and the PR stays a draft. Ready publications cannot erase a newer blocker.
 Other description writes use best-effort stale-body checks; GitHub offers
 no atomic compare-and-swap for PR descriptions. An opt-out leaves an existing warning
 in place because it does not settle substantive concerns.
 
 Inspect `merge_safeguard` in the publication result. A failed safeguard returns a
 nonzero exit with the reason and published comment URL; inspect live state and retry
-the same execution after fixing the failure. Draft conversion and description
-publication are separate GitHub operations, so one can succeed while the other fails.
+the same execution after fixing the failure. Draft conversion, marking ready, and description
+publication are separate GitHub operations, so one can succeed while another fails.
 For a maintainer decision, retain the existing `decisions` and `awaiting-answer` path.
 Name the decision owner and resolution conditions there, and correct older checklists
 that imply readiness while a substantive concern remains.

@@ -135,3 +135,18 @@ class GitHubRestReadsTest < Minitest::Test
     response([{ 'type' => 'required_status_checks', 'parameters' => { 'required_status_checks' => checks } }])
   end
 end
+
+# A caller that reads only state, head, and base gets them over REST when GitHub refuses GraphQL.
+class GitHubStateSnapshotTest < Minitest::Test
+  include GitHubHelper
+
+  PULL = { 'number' => 42, 'state' => 'open', 'head' => { 'sha' => HEAD }, 'base' => { 'ref' => 'main' } }.freeze
+
+  def test_only_the_refusal_reads_over_rest
+    snapshot = client(response({}, status: 1, http_status: 403), response(PULL)).state_snapshot
+    assert_equal ['OPEN', HEAD, 'rest'], snapshot.values_at('state', 'headRefOid', 'readOver')
+
+    assert_raises(Shaka::Error) { client(response({}, status: 1, http_status: 502)).state_snapshot }
+    assert_equal 1, @calls.size
+  end
+end

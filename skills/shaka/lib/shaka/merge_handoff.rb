@@ -32,8 +32,14 @@ module Shaka
       raise Error, 'PR base changed while preparing the merge wait; retry.' if base != snapshot['baseRefName']
     end
 
+    # A draft cannot be merged, so asking a person to merge it contradicts what GitHub shows them.
     def open!(snapshot)
       raise Error, 'Pull request is not open.' unless snapshot['state'] == 'OPEN'
+      return if snapshot['isDraft'] == false
+
+      raise Error, "PR ##{@github.number} is a draft, which GitHub cannot merge. Mark it ready for review " \
+                   "(`gh pr ready #{@github.number} --repo #{@github.repository}`), wait for the checks and " \
+                   'reviews that starts, then retry.'
     end
   end
 end

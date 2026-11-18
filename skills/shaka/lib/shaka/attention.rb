@@ -57,13 +57,15 @@ module Shaka
     private
 
     def verify_open!(expected)
-      pull = @github.snapshot
+      pull = @github.state_snapshot
       raise Error, 'Pull request is not open.' unless pull['state'] == 'OPEN'
       return unless expected
 
       head, base = pull.values_at('headRefOid', 'baseRefName')
       raise Error, 'PR head changed while preparing the merge wait; retry.' if head != expected['headRefOid']
       raise Error, 'PR base changed while preparing the merge wait; retry.' if base != expected['baseRefName']
+      raise Error, 'PR became a draft while preparing the merge wait; mark it ready for review, then retry.' unless
+        pull['isDraft'] == false
     end
 
     def path(label = nil) = ["repos/#{@github.repository}/issues/#{@github.number}/labels", label].compact.join('/')
