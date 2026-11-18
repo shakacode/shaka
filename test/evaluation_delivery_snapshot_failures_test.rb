@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require_relative '../eval/lib/shaka/evaluation/delivery_snapshot'
 require_relative 'support/evaluation_snapshot_fixture'
+require_relative 'support/open3_spawns'
 
 class EvaluationDeliverySnapshotFailuresTest < Minitest::Test
   include EvaluationSnapshotFixture
@@ -38,9 +39,12 @@ class EvaluationDeliverySnapshotFailuresTest < Minitest::Test
   end
 
   def test_snapshot_deadline_reaps_the_active_native_child
-    assert_raises(IOError) { capture([pull, 'hang'], seconds: 2) }
-    pid = Integer(File.read(File.join(@directory, 'pid')), 10)
-    assert_raises(Errno::ESRCH) { Process.kill(0, pid) }
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    pids = Open3Spawns.record { assert_raises(IOError) { capture(['hang'], seconds: 2) } }
+    # The fixture sleeps 60 s, so a read that returns well before then killed the child rather than waited for it.
+    assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 30
+    assert_equal 1, pids.size
+    assert_raises(Errno::ESRCH) { Process.kill(0, pids.first) }
   end
 
   def test_invalid_declared_apps_are_refused_before_native_access
