@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'securerandom'
 require 'tmpdir'
 require_relative 'session'
 
@@ -9,7 +10,6 @@ require_relative 'session'
 class WindowsProduct < WindowsSession
   EVIDENCE_RUN = %w[evidence run --repository shakacode/shaka --command test].freeze
   TEST = %w[-- test/executable_file_test.rb].freeze
-  CANDIDATE = 'shaka-windows-candidate'
   UNIX_TOOLS = %r{msys64|[\\/]Git[\\/](?:usr[\\/]bin|bin|mingw64[\\/]bin)[\\/]?\z}i
 
   def call
@@ -40,19 +40,27 @@ class WindowsProduct < WindowsSession
   end
 
   # Installs this checkout's head, not upstream main, from a local branch the installer clones.
+  # The branch name is new for each run, and only a branch this run created is deleted.
   def install
-    head = git_output('rev-parse', '--short', 'HEAD')
-    git_output('branch', '--force', CANDIDATE, 'HEAD')
-    output, status = Dir.mktmpdir('shaka-windows-install') { |home| run_install(home) }
+    head = git_output('rev-parse', 'HEAD')
+    branch = "shaka-windows-candidate-#{SecureRandom.hex(6)}"
+    git_output('branch', branch, 'HEAD')
+    created = branch
+    output, status = Dir.mktmpdir('shaka-windows-install') { |home| run_install(home, branch) }
     puts "  exit #{status.exitstatus}: #{excerpt(output)}"
-    raise "bin/install did not verify candidate #{head}" unless status.success? && output.include?("(#{head})")
+    raise "bin/install did not verify candidate #{head}" unless status.success? && verified?(output, head)
   ensure
-    git_output('branch', '--delete', '--force', CANDIDATE)
+    git_output('branch', '--delete', '--force', created) if created
   end
 
-  def run_install(home)
+  # The installer prints the revision it verified, abbreviated to however many digits Git chooses.
+  def verified?(output, head)
+    output[/^Verified Shaka installation: .* \((\h{7,40})\)\r?$/, 1].then { |shown| shown && head.start_with?(shown) }
+  end
+
+  def run_install(home, branch)
     Open3.capture2e(native_path.merge('HOME' => home, 'USERPROFILE' => home), RbConfig.ruby,
-                    File.join(root, 'bin/install'), '--agent', 'codex', '--repository', root, '--branch', CANDIDATE)
+                    File.join(root, 'bin/install'), '--agent', 'codex', '--repository', root, '--branch', branch)
   end
 
   # A native shell finds git through Git\cmd and nothing from Git's Unix tree.
