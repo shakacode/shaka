@@ -23,6 +23,13 @@ class WindowsReviewLookupTest < Minitest::Test
     end
   end
 
+  # The lookup stops at the first match, so a later PATH entry that cannot expand never matters.
+  def test_lookup_stops_before_a_later_entry_that_cannot_expand
+    skip 'needs /bin/sh' unless File.executable?('/bin/sh')
+
+    assert_equal '/bin/sh', Shaka::LocalReviewPathGuard.safe_executable('/bin:~nosuchuser', 'sh', Dir.tmpdir)
+  end
+
   private
 
   # Ruby on this host reports Windows for the block, so lookup tries NAME.exe.

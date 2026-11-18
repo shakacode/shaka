@@ -68,11 +68,13 @@ module Shaka
     end
 
     def self.first_executable(entries, name, candidate_root, drop_candidate)
-      candidates = entries.flat_map do |entry|
+      entries.each do |entry|
         directory = File.expand_path(entry.empty? ? '.' : entry)
-        file_names(name).map { |file_name| [directory, File.join(directory, file_name)] }
+        found = file_names(name).map { |file_name| File.join(directory, file_name) }
+                                .find { |path| usable?(directory, path, candidate_root, drop_candidate) }
+        return found if found
       end
-      candidates.find { |directory, executable| usable?(directory, executable, candidate_root, drop_candidate) }&.last
+      nil
     end
 
     def self.usable?(directory, executable, candidate_root, drop_candidate)
