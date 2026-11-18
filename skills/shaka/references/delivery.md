@@ -309,13 +309,13 @@ Default to one PR. Split for useful separate outcomes, different risks, or a dif
 that is difficult to review. Around 500 changed lines is a reason to reconsider
 scope, not a quota. Keep tests with the behavior they verify.
 
+Skill point, when the task needs several PRs and before recommending the split: run the
+saved helper's `companions delivery#when-a-task-needs-several-prs --root DIR --ref SHA`
+and follow it as [skill points](companion-skills.md#skill-points) describe.
+
 Recommend a short ordered list of outcomes, dependencies, and verification. Make
 routine splits within the authorized task; ask about changed product scope or
 risky partial releases. Each slice must be safe with its prerequisites.
-
-Skill point, when the task needs several PRs: run the saved helper's
-`companions delivery#when-a-task-needs-several-prs --root DIR --ref SHA` and follow it as
-[skill points](companion-skills.md#skill-points) describe.
 
 Keep one task owner and use the [current task plan](#keep-the-task-plan-recoverable)
 for dependencies and remaining scope. Link each PR to it when sharing is

@@ -269,7 +269,8 @@ The mode decides what the agent does at that step:
 
 Mark a skill that starts other agents with `fans_out: true` beside its `points`;
 Shaka then always names the agents it would start and waits for your yes. A skill
-whose own file says only a person may start it also waits for your yes. Shaka declines
+whose own file says only a person may start it also waits for your yes, and so does
+one marked `explicit_only: true` or, for one-time setup, `setup: true`. Shaka declines
 a skill the default branch lacks. The listing below shows which limit applies.
 
 Shaka reads pack files and skills only from the default branch, so a pack or skill

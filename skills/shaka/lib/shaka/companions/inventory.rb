@@ -6,6 +6,7 @@ require_relative '../error'
 require_relative '../trusted_config_source'
 require_relative '../trusted_path_resolver'
 require_relative '../configuration/paths'
+require_relative '../repository_config/duplicate_keys'
 require_relative 'pack'
 require_relative 'resolver'
 
@@ -24,7 +25,7 @@ module Shaka
       end
 
       # A file with no `---` header allows model invocation. Front matter that is unterminated or
-      # cannot be parsed counts as explicit-only, so a broken header never raises a mode.
+      # cannot be parsed, or repeats a key, counts as explicit-only, so a broken header never raises a mode.
       def explicit_front(text)
         return true unless text.valid_encoding?
         return false unless text.match?(/\A---[ \t]*(\r?\n|\z)/)
@@ -32,9 +33,10 @@ module Shaka
         match = text.match(/\A---\r?\n(.*?)\r?\n---[ \t]*\r?$/m)
         return true unless match
 
+        RepositoryConfig::DuplicateKeys.check(match[1], filename: 'front matter')
         data = YAML.safe_load(match[1], aliases: false)
         data.is_a?(Hash) ? data['disable-model-invocation'] == true : true
-      rescue Psych::Exception
+      rescue Psych::Exception, Error
         true
       end
 

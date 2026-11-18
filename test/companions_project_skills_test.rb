@@ -83,6 +83,17 @@ class CompanionsProjectSkillsTest < Minitest::Test
     end
   end
 
+  def test_a_repeated_invocation_key_counts_as_explicit_only
+    repeated = "---\ndisable-model-invocation: true\ndisable-model-invocation: false\n---\n"
+    files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
+              "#{TEAM_CHECK}/SKILL.md" => repeated }
+    with_trusted_repository(extra: files) do |root, sha|
+      row = run_command(root:, ref: sha).fetch('skills').first
+
+      assert_equal ['suggest', 'it is explicit-only'], row.values_at('mode', 'basis')
+    end
+  end
+
   def test_a_bare_header_marker_counts_as_explicit_only
     files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
               "#{TEAM_CHECK}/SKILL.md" => '---' }

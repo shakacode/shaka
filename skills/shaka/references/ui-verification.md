@@ -6,6 +6,10 @@ those gates require.
 
 ## UI changes
 
+Skill point, before using the change by hand: run the saved helper's
+`companions ui-verification#ui-changes --root DIR --ref SHA` and follow it as
+[skill points](companion-skills.md#skill-points) describe.
+
 For UI changes, meaning anything a person sees on screen other than command-line output,
 use the change by hand on the head you will push, and capture before and after screenshots
 on desktop and mobile, adding a short video when interaction or timing matters. Inspect each capture
@@ -19,10 +23,6 @@ the affected captures and annotations, including any diagnostic differences.
 Read the current public
 [verification guide](https://github.com/shakacode/shaka/blob/main/docs/reference/pr-record.md#visual-evidence) for examples when deciding what evidence a
 change needs. Follow this installed workflow if the current public guide differs.
-
-Skill point: run the saved helper's
-`companions ui-verification#ui-changes --root DIR --ref SHA` and follow it as
-[skill points](companion-skills.md#skill-points) describe.
 
 ## Publish UI evidence
 
