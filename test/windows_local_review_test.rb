@@ -9,14 +9,14 @@ require 'shaka/local_review/process'
 class WindowsLocalReviewTest < Minitest::Test
   def setup
     @windows = Shaka::LocalReviewProcess.windows
-    @stop_seconds = Shaka::LocalReviewProcess.stop_seconds
+    @stop_seconds = Shaka::LocalReviewWindowsTree.stop_seconds
     Shaka::LocalReviewProcess.windows = true
-    Shaka::LocalReviewProcess.stop_seconds = 0.5
+    Shaka::LocalReviewWindowsTree.stop_seconds = 0.5
   end
 
   def teardown
     Shaka::LocalReviewProcess.windows = @windows
-    Shaka::LocalReviewProcess.stop_seconds = @stop_seconds
+    Shaka::LocalReviewWindowsTree.stop_seconds = @stop_seconds
   end
 
   def test_capture_starts_without_a_process_group

@@ -97,9 +97,9 @@ module Shaka
       # starts, and still names them after the leader exits, which taskkill /T cannot.
       def group = @windows ? {} : { pgroup: true }
 
-      def adopt(pid) = (LocalReviewProcess.adopt(pid) if @windows)
+      def adopt(pid) = (LocalReviewWindowsTree.adopt(pid) if @windows)
 
-      def end_tree(waiter) = LocalReviewProcess.end_tree(waiter, @job)
+      def end_tree(waiter) = LocalReviewWindowsTree.end_tree(waiter, @job)
     end
   end
 end

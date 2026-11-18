@@ -3,10 +3,11 @@
 require 'open3'
 require_relative '../error'
 require_relative '../executable_file'
+require_relative 'windows_tree'
 
 module Shaka
   # Captures a reviewer process with a deadline and ends its process tree on timeout: its process
-  # group, or on Windows, which has no process groups, the job object that holds it.
+  # group, or on Windows, which has no process groups, its LocalReviewWindowsTree.
   module LocalReviewProcess
     # Keeps denied cleanup visible after a timed-out parent has exited.
     class CleanupError < Error
@@ -17,10 +18,8 @@ module Shaka
       def success? = false
     end
 
-    singleton_class.attr_accessor :stop_seconds, :windows
-    # Seconds a stopped Windows process tree gets to exit before its leader is terminated directly.
-    # Tests shorten it and set windows to run the Windows branch on any host.
-    self.stop_seconds = 10
+    singleton_class.attr_accessor :windows
+    # Tests set it to run the Windows branch on any host.
     self.windows = ExecutableFile.windows?
 
     # Windows Ruby refuses `pgroup` (see Doctor::BoundedCommand.process_groups?), so there the
@@ -29,8 +28,8 @@ module Shaka
       job = nil
       windows = self.windows
       Open3.popen3(env, *arguments, chdir:, **(windows ? {} : { pgroup: true })) do |stdin, stdout, stderr, waiter|
-        job = adopt(waiter.pid) if windows
-        stop = windows ? -> { end_tree(waiter, job) } : -> { terminate(waiter) }
+        job = LocalReviewWindowsTree.adopt(waiter.pid) if windows
+        stop = windows ? -> { LocalReviewWindowsTree.end_tree(waiter, job) } : -> { terminate(waiter) }
         capture_streams([stdin, stdout, stderr], waiter, stdin_data, timeout, stop)
       end
     ensure
@@ -109,35 +108,6 @@ module Shaka
         retry
       end
     end
-
-    # Without fiddle, which a later Ruby may not load under --disable-gems, taskkill alone stops it.
-    def self.adopt(pid)
-      return unless ExecutableFile.windows?
-
-      require_relative '../doctor/windows_job'
-      Doctor::WindowsJob.adopt(pid)
-    rescue LoadError
-      nil
-    end
-
-    # The job ends the tree, even descendants whose leader already exited. taskkill /T covers
-    # descendants the job could not hold, and a leader that outlasts both is terminated directly,
-    # so the wait for its status always ends. Only a live leader still owns its pid: once reaped,
-    # the pid may name an unrelated process, so neither taskkill nor kill is sent to it.
-    def self.end_tree(waiter, job, seconds: stop_seconds)
-      job&.terminate
-      if waiter.alive?
-        system(taskkill, '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
-        Process.kill('KILL', waiter.pid) unless waiter.join(seconds)
-      end
-      waiter.join
-    rescue Errno::ESRCH
-      waiter.join
-    end
-
-    # By full path: a bare name would let Windows find a taskkill.exe in the current directory,
-    # which can be the candidate checkout.
-    def self.taskkill = File.join(ENV.fetch('SystemRoot', 'C:/Windows'), 'System32', 'taskkill.exe')
 
     def self.thread_output(thread)
       thread.join(2)
