@@ -22,6 +22,7 @@ module Shaka
       RANK = Pack::MODES.each_with_index.to_h.freeze
       # Which layer's entry governs a skill, first to last. Step 1 loads only repository packs.
       PRECEDENCE = %w[repository packaged personal].freeze
+      MISSING = ['decline', 'it is not at the trusted commit', 'no trusted copy to load'].freeze
       CANDIDATE_ONLY = ['decline', 'only the candidate branch has a usable copy', 'no trusted copy to load'].freeze
 
       # `enabled_packs` lists packs whose packaged `use` entries apply. `trusted` is false when no
@@ -64,7 +65,7 @@ module Shaka
       def cap(entry, mode, group)
         return [mode, "#{entry.layer} entry"] if mode != 'use'
 
-        limit = use_limit(entry) || install_limit(group) || flag_limit(group)
+        limit = use_limit(entry) || flag_limit(group)
         limit ? ['suggest', limit] : ['use', "#{entry.layer} entry"]
       end
 
@@ -74,8 +75,6 @@ module Shaka
         when 'packaged' then "the #{entry.pack} pack is not turned on" unless @enabled.include?(entry.pack)
         end
       end
-
-      def install_limit(group) = ('it is not installed' unless group.all?(&:installed))
 
       # Fans-out never reaches use. Explicit-only needs both the repository's cleared flag and
       # installed front matter that allows model invocation. Setup is a default the repository may clear.
@@ -98,9 +97,11 @@ module Shaka
       end
 
       # Declines apply last: a personal decline, and a packaged one the repository did not
-      # override, beat every other mode. A candidate-only project skill has no trusted copy.
+      # override, beat every other mode. A skill with no trusted copy, whether missing or only on the
+      # candidate branch, is declined.
       def declined(settings, group, result)
         return CANDIDATE_ONLY if group.any?(&:candidate_only)
+        return MISSING unless group.all?(&:installed)
         return result if result.first == 'decline'
 
         decline = overriding_decline(settings)

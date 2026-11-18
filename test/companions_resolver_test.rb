@@ -77,12 +77,12 @@ class CompanionsResolverTest < Minitest::Test
     assert_equal ['decline'], rows.map(&:mode)
   end
 
-  def test_a_use_entry_for_a_missing_skill_says_it_is_not_installed
-    missing = entry('repository', 'use').with(installed: false, explicit_front: nil)
+  def test_a_skill_missing_at_the_trusted_commit_is_declined
+    missing = entry('repository', 'suggest').with(installed: false, explicit_front: nil)
 
     row = Shaka::Companions::Resolver.new([missing]).call(POINT).first
 
-    assert_equal ['suggest', 'it is not installed'], [row.mode, row.basis]
+    assert_equal ['decline', 'it is not at the trusted commit'], [row.mode, row.basis]
   end
 
   def test_a_suggested_skill_that_fans_out_says_so

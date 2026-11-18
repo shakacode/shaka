@@ -76,7 +76,9 @@ class CompanionsProjectSkillsTest < Minitest::Test
     with_trusted_repository(extra: files) do |root, sha|
       result = run_command(root:, ref: sha)
 
-      assert_equal([['suggest', 'it is not installed']], result['skills'].map { |row| row.values_at('mode', 'basis') })
+      assert_equal([['decline', 'it is not at the trusted commit']], result['skills'].map do |row|
+        row.values_at('mode', 'basis')
+      end)
       refute_empty result['warnings']
     end
   end

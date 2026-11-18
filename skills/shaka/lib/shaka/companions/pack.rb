@@ -2,6 +2,7 @@
 
 require 'yaml'
 require_relative '../error'
+require_relative '../repository_config/duplicate_keys'
 
 module Shaka
   module Companions
@@ -32,7 +33,9 @@ module Shaka
       attr_reader :name, :skills, :label
 
       # Parses one pack file's text; `label` names the file in errors.
+      # Duplicate keys are refused, since YAML would silently keep the last, such as `fans_out: false`.
       def self.parse(text, label:)
+        RepositoryConfig::DuplicateKeys.check(text, filename: label)
         new(YAML.safe_load(text, aliases: false), label:)
       rescue Psych::Exception => e
         raise Error, "#{label} is not valid YAML: #{e.message.lines.first.strip}"

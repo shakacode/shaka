@@ -9,6 +9,8 @@ class CompanionsPackTest < Minitest::Test
   NON_STRING_KEY = "version: 1\npack: team\n" \
                    "skills: { check: { path: a, points: { a#b: { mode: use, reason: r, 0: x } } } }\n"
 
+  DUPLICATE_FLAG = "version: 1\npack: team\nskills:\n  check:\n    path: a\n    fans_out: true\n    fans_out: false\n"
+
   def test_a_valid_pack_records_only_stated_flags
     skill = parse(skills: { 'check' => entry('setup' => true,
                                              'points' => { POINT => setting('suggest') }) }).skills.first
@@ -37,6 +39,7 @@ class CompanionsPackTest < Minitest::Test
                    skills: { 'check' => entry('points' => { POINT => { 'mode' => 'use' } }) })
     assert_refused('must set mode and reason', text: NON_STRING_KEY)
     assert_refused('not valid YAML', text: "skills: [\n")
+    assert_refused('duplicate key: fans_out', text: DUPLICATE_FLAG)
   end
 
   private
