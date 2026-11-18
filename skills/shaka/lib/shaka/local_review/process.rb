@@ -38,6 +38,9 @@ module Shaka
 
     def self.capture_streams(streams, waiter, input, timeout, stop = -> { terminate(waiter) })
       stdin, stdout, stderr = streams
+      # Windows opens pipes in text mode, which rewrites line endings and breaks byte counts such
+      # as Git's blob sizes; binary mode passes bytes through on every platform.
+      streams.each(&:binmode)
       # Reviewer CLIs emit UTF-8 whatever the host locale; a US-ASCII default breaks parsing.
       [stdout, stderr].each { |stream| stream.set_encoding(Encoding::UTF_8) }
       writer = Thread.new { write_input(stdin, input) }

@@ -28,6 +28,16 @@ class WindowsLocalReviewTest < Minitest::Test
     assert_equal Process.getpgid(0), Integer(group) unless windows_host?
   end
 
+  # Git's blob sizes count bytes, so a Windows text-mode pipe that rewrote line endings broke the
+  # commit export on the hosted job.
+  def test_capture_passes_line_endings_through_both_ways
+    script = '$stdin.binmode; $stdout.binmode; print $stdin.read.bytesize, "|a\\r\\nb\\n"'
+    output, _error, status = capture([script], stdin_data: "x\ny\n", timeout: 30)
+
+    assert_predicate status, :success?
+    assert_equal "4|a\r\nb\n", output
+  end
+
   # Off Windows neither a job nor taskkill exists, as when both fail there, so only the direct
   # termination can end the leader.
   def test_timeout_ends_a_leader_that_outlasts_the_job_and_taskkill
