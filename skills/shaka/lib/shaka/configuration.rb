@@ -44,7 +44,7 @@ module Shaka
       trusted(root:, ref:, candidate_commands: false) if team_setup
       first_setup = preview['first_setup'] || !team_setup
       preview_ref = preview.fetch('settings_ref')
-      config = trusted(root:, ref: preview_ref, candidate_commands:)
+      config = SettingsPreview.load_config(root:, ref: preview_ref, candidate_commands:)
       config.merge['preference'] = Defaults.fetch('merge', 'preference') if first_setup
       [config, { trusted_ref: ref, preview_ref:, first_setup: }, 'preview/local']
     end

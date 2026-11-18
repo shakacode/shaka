@@ -84,6 +84,18 @@ end
 class SettingsPreviewBoundaryTest < Minitest::Test
   include SettingsPreviewFixture
 
+  def test_preview_requires_task_worktree_wrappers
+    with_preview_repository do |root, trusted, preview|
+      FileUtils.rm_r(File.join(root, '.agents/shaka/bin'))
+      selector = Shaka::Configuration::SettingsPreview.new(root:)
+
+      error = assert_raises(Shaka::Error) { selector.start(preview, default_ref: trusted) }
+
+      assert_match(/Prepare the task worktree/, error.message)
+      assert_equal 'inactive', selector.status['status']
+    end
+  end
+
   def test_a_candidate_selection_file_cannot_activate_preview
     with_preview_repository do |root, trusted, preview|
       File.write(File.join(root, 'shaka-settings-preview.json'),

@@ -125,13 +125,12 @@ end
 def merge_policy(options)
   root = options[:root] || Dir.pwd
   ref = options[:ref]
-  # Individual settings grant no policy. An explicit preview can supply policy, but
-  # the first setup cannot enable Auto while the default branch has no configuration.
+  # Individual settings grant no policy. A first-setup preview keeps Ask after adoption.
   seam, source, kind = Shaka::Configuration.resolve_source(root:, ref:)
   return if kind == 'private/local'
 
   if options[:auto] && source[:first_setup]
-    raise Shaka::Error, 'The first setup settings preview uses Ask. Merge requires a task-scoped decision.'
+    raise Shaka::Error, 'The first setup settings preview uses Ask. Use the Ask handoff to obtain a merge decision.'
   end
 
   seam

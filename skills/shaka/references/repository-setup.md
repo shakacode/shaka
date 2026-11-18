@@ -322,9 +322,11 @@ shaka seam check --root . --ref FULL_DEFAULT_BRANCH_SHA
 
 A PR's proposed policy cannot grant that PR new authority. `--ref` reads policy
 and optional script availability from the trusted commit, then validates the
-scripts in the candidate checkout. The report omits optional scripts missing from
-that checkout. A [settings preview](settings-preview.md) uses the pinned settings
-and their command interface. Inspect changes to scripts before executing them.
+scripts in the candidate checkout. If that checkout predates the entire command
+directory, ordinary tasks use trusted copies. Otherwise the report omits optional
+scripts missing from the checkout. A [settings preview](settings-preview.md) uses
+the pinned settings and requires wrappers in the task worktree. Inspect changes
+to scripts before executing them.
 `--local` checks candidate settings. Omitting both flags runs that same check
 with a warning. Combining the flags is an error.
 

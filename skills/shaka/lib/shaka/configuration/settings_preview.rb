@@ -13,6 +13,16 @@ module Shaka
     class SettingsPreview
       def self.ref(root:) = new(root:).status['settings_ref']
 
+      def self.load_config(root:, ref:, candidate_commands: true)
+        directory = Paths.at(root, Paths::COMMAND_DIRECTORY)
+        if candidate_commands && !File.directory?(directory)
+          raise Error, 'Prepare the task worktree’s Shaka command wrappers before using a settings preview.'
+        end
+
+        require_relative '../trusted_config_source'
+        TrustedConfigSource.load(root:, ref:, candidate_commands:)
+      end
+
       def initialize(root:)
         @root = File.realpath(root)
         @directory = GitMemo.fetch([:git_dir, @root]) { git('rev-parse', '--absolute-git-dir').strip }
@@ -25,8 +35,7 @@ module Shaka
         raise Error, 'Create a task branch before starting a settings preview.' if branch.empty?
 
         # Validate with the existing schema and the task's executable entry points.
-        require_relative '../trusted_config_source'
-        TrustedConfigSource.load(root: @root, ref:)
+        self.class.load_config(root: @root, ref:)
         first_setup = missing_team_settings?(default_ref) || status['first_setup']
         record = { 'version' => 1, 'branch' => branch, 'ref' => ref }
         record['first_setup'] = true if first_setup
