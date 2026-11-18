@@ -20,7 +20,7 @@ class HandoffFakeGitHub
   end
 
   def snapshot
-    { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42,
+    { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42, 'isDraft' => @pull.fetch(:draft, false),
       'author' => { 'login' => @pull.fetch(:author, 'shaka-agent') }, 'isMergeQueueEnabled' => @pull[:queue] }
   end
 
