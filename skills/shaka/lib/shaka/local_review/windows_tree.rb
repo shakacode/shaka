@@ -16,22 +16,24 @@ module Shaka
       return unless ExecutableFile.windows?
 
       require_relative '../doctor/windows_job'
-      Doctor::WindowsJob.adopt(pid)
-    rescue LoadError, StandardError
-      nil
+      Doctor::WindowsJob.adopt(pid) || warn_without_job('the job refused the process')
+    rescue LoadError, StandardError => e
+      warn_without_job(e.class.name)
     end
 
-    # The job ends the tree, even descendants whose leader already exited. taskkill /T covers
-    # descendants the job could not hold, and a leader that outlasts both is terminated directly,
-    # so the wait for its status always ends; taskkill runs beside that wait, so a stalled taskkill
-    # cannot hold it. Only a live leader still owns its pid: once reaped, the pid may name an
-    # unrelated process, so neither taskkill nor kill is sent to it.
+    def self.warn_without_job(reason)
+      warn "shaka: no Windows job holds the process (#{reason}); taskkill will stop it, " \
+           'which misses descendants whose leader has exited'
+    end
+
+    # The job ends the tree, even descendants whose leader already exited. Without a job, taskkill
+    # /T ends the leader's live descendants, running beside the wait so a stalled taskkill cannot
+    # hold it. A leader that outlasts both is terminated directly, so the wait for its status always
+    # ends. Only a live leader still owns its pid: once reaped, the pid may name an unrelated
+    # process, so nothing is sent to it.
     def self.end_tree(waiter, job, seconds: stop_seconds)
-      job&.terminate
-      if waiter.alive?
-        start_taskkill(waiter.pid)
-        Process.kill('KILL', waiter.pid) unless waiter.join(seconds)
-      end
+      job ? job.terminate : (start_taskkill(waiter.pid) if waiter.alive?)
+      Process.kill('KILL', waiter.pid) unless waiter.join(seconds)
       waiter.join
     rescue Errno::ESRCH
       waiter.join

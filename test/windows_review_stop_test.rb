@@ -7,13 +7,13 @@ require 'shaka/local_review/windows_tree'
 # stalled as they can be on Windows. The hosted windows job runs it with both present.
 class WindowsReviewStopTest < Minitest::Test
   # Off Windows kernel32 cannot load, as when job support fails there, so the stop falls back.
+  # On Windows the job would load and hold this test runner.
   def test_failed_job_support_leaves_the_stop_to_taskkill
-    original = Shaka::ExecutableFile.method(:windows?)
-    Shaka::ExecutableFile.define_singleton_method(:windows?) { true }
+    skip 'kernel32 loads on Windows' if Shaka::ExecutableFile.windows?
 
-    assert_nil Shaka::LocalReviewWindowsTree.adopt(Process.pid)
-  ensure
-    Shaka::ExecutableFile.define_singleton_method(:windows?, original)
+    assert_output(nil, /no Windows job holds the process/) do
+      assert_nil(as_windows { Shaka::LocalReviewWindowsTree.adopt(Process.pid) })
+    end
   end
 
   def test_a_stalled_taskkill_does_not_hold_the_bounded_wait
@@ -30,6 +30,14 @@ class WindowsReviewStopTest < Minitest::Test
   end
 
   private
+
+  def as_windows
+    original = Shaka::ExecutableFile.method(:windows?)
+    Shaka::ExecutableFile.define_singleton_method(:windows?) { true }
+    yield
+  ensure
+    Shaka::ExecutableFile.define_singleton_method(:windows?, original)
+  end
 
   def with_stalled_taskkill
     Dir.mktmpdir('shaka-windows-taskkill') do |directory|
