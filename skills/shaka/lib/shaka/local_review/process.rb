@@ -127,13 +127,17 @@ module Shaka
     def self.end_tree(waiter, job, seconds: stop_seconds)
       job&.terminate
       if waiter.alive?
-        system('taskkill.exe', '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
+        system(taskkill, '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
         Process.kill('KILL', waiter.pid) unless waiter.join(seconds)
       end
       waiter.join
     rescue Errno::ESRCH
       waiter.join
     end
+
+    # By full path: a bare name would let Windows find a taskkill.exe in the current directory,
+    # which can be the candidate checkout.
+    def self.taskkill = File.join(ENV.fetch('SystemRoot', 'C:/Windows'), 'System32', 'taskkill.exe')
 
     def self.thread_output(thread)
       thread.join(2)
