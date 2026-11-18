@@ -10,7 +10,8 @@ module CliAttentionFixture
     #!/usr/bin/env ruby
     require 'json'
     path = ARGV[1].to_s
-    pull = { 'number' => 1, 'headRefOid' => 'a' * 40, 'baseRefName' => 'main', 'state' => 'OPEN' }
+    pull = { 'number' => 1, 'headRefOid' => 'a' * 40, 'baseRefName' => 'main', 'state' => 'OPEN',
+             'isDraft' => ENV['PR_DRAFT'] == 'true' }
     if ARGV[0, 2] == %w[api graphql]
       request = JSON.parse($stdin.read)
       if request.fetch('query').include?('headRefOid') && (change = ENV['PR_CHANGE'])
@@ -22,6 +23,7 @@ module CliAttentionFixture
       retargeted ||= File.exist?("#{ENV.fetch('LABEL_FILE')}.retargeted")
       pull['baseRefName'] = 'release' if retargeted
       pull['headRefOid'] = 'b' * 40 if File.exist?("#{ENV.fetch('LABEL_FILE')}.moved")
+      pull['isDraft'] = true if File.exist?("#{ENV.fetch('LABEL_FILE')}.drafted")
       end
       puts JSON.generate('data' => { 'repository' => { 'pullRequest' => pull } })
     elsif ARGV[0, 2] == %w[pr checks]
@@ -43,8 +45,9 @@ module CliAttentionFixture
       puts '[]'
     elsif path.include?('/issues/1/labels')
       File.write("#{ENV.fetch('LABEL_FILE')}.deleted", '') if ARGV.include?('DELETE')
-      if ENV['PR_CHANGE'] == 'retarget_labels'
-        File.write("#{ENV.fetch('LABEL_FILE')}.retargeted", '')
+      if %w[retarget_labels draft_labels].include?(ENV['PR_CHANGE'])
+        marker = ENV['PR_CHANGE'] == 'draft_labels' ? 'drafted' : 'retargeted'
+        File.write("#{ENV.fetch('LABEL_FILE')}.#{marker}", '')
         puts JSON.generate([{ 'name' => 'awaiting-resume' }])
       else
         File.write("#{ENV.fetch('LABEL_FILE')}.moved", '') if ENV['PR_CHANGE'] == 'head_labels'
@@ -184,6 +187,15 @@ class CliAttentionGateTest < Minitest::Test
   def test_merge_handoff_reads_required_ci_after_local_review
     env = check_env('SUCCESS', 'pass').merge('PR_CHANGE' => 'rerun')
     assert_refused_handoff(env, 'Required check is not passing')
+  end
+
+  def test_merge_handoff_refuses_a_draft_and_names_the_next_step
+    assert_refused_handoff({ 'PR_DRAFT' => 'true' }, 'Mark it ready for review')
+  end
+
+  def test_merge_handoff_refuses_a_pr_made_a_draft_before_labeling
+    assert_refused_handoff({ 'PR_CHANGE' => 'draft_labels' }, 'PR became a draft')
+    refute_path_exists "#{@label_file}.deleted"
   end
 
   def test_merge_handoff_refuses_a_moved_head_before_labeling

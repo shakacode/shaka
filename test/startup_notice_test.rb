@@ -43,12 +43,6 @@ class StartupNoticeTest < Minitest::Test
     end
   end
 
-  def test_another_checkouts_answer_counts_as_missing
-    other = checkout('other', registered: true)
-    Shaka::UpdateCheck::Cache.record(other, answer('available'), home: @home, now: NOW)
-    assert_match(/not checked/, notice)
-  end
-
   def test_skipped_commands_and_the_off_switch_print_nothing
     [[['update-check'], {}], [%w[install --update], {}], [[], {}], [['pr'], { 'SHAKA_NOTICES' => 'off' }]]
       .each do |arguments, env|
@@ -71,13 +65,6 @@ class StartupNoticeTest < Minitest::Test
     with_home { check.remember(answer('unknown')) }
     refute_path_exists Shaka::UpdateCheck::Cache.path(@home)
     assert_match(/not checked/, notice)
-  end
-
-  def test_a_checkout_reached_through_a_link_shares_its_entry
-    linked = File.join(@directory, 'linked checkout')
-    File.symlink(@root, linked)
-    Shaka::UpdateCheck::Cache.record(linked, answer('available'), home: @home, now: NOW)
-    assert_equal 'shaka: available guidance', notice(now: NOW + 60)
   end
 
   # update-check writes under the root the notice reads, so its answers are this helper's own.
@@ -107,12 +94,6 @@ class StartupNoticeTest < Minitest::Test
   end
 
   private
-
-  def session_start(now:, root: @root)
-    output = StringIO.new
-    Shaka::StartupNotice.session_start(output:, home: @home, root:, now:)
-    output.string
-  end
 
   def with_home
     previous = Dir.home

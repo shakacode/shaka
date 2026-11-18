@@ -15,12 +15,12 @@ module Shaka
       # Any Shaka checkout's helper matches, so a reinstall from a moved checkout replaces the old entry.
       HELPER = %r{\A/.*/skills/shaka/scripts/shaka\z}
 
-      # Each Claude Code installation chooses again, so installing it without --session-hook removes an earlier hook.
+      # Each Claude Code installation chooses again, so installing it with --no-session-hook removes an earlier hook.
       # The hook runs the helper through the Claude Code skill link, so it follows the link when
       # another checkout takes the installation over.
-      def self.choose(enabled, home: Dir.home)
+      def self.choose(enabled, strict: enabled, home: Dir.home)
         helper = File.join(home, Official::HOSTS.fetch('claude'), 'shaka/scripts/shaka') if enabled
-        change = new(helper, home:).apply(enabled)
+        change = new(helper, home:).apply(enabled, strict:)
         puts change if change
       end
 
@@ -34,18 +34,22 @@ module Shaka
         false
       end
 
+      # --session-hook, the opt-in from before the hook was the default, still works: it asks for the hook and
+      # refuses settings Shaka cannot read.
       def self.validate(options)
-        return if !options[:session_hook] || options[:agents].include?('claude')
+        return if options[:session_hook].nil? || options[:agents].include?('claude')
 
-        raise ArgumentError, '--session-hook requires --agent claude'
+        raise ArgumentError, "--#{'no-' unless options[:session_hook]}session-hook requires --agent claude"
       end
 
-      # Refuses unreadable settings before the installation changes anything, then sets or removes
-      # the hook once a Claude Code installation succeeds. Maintenance leaves the hook as it is.
+      # Sets or removes the hook once a Claude Code installation succeeds; maintenance leaves it as it is.
+      # The reminder is optional, so by default settings Shaka cannot read skip it and the installation
+      # finishes. Only an explicit --session-hook refuses them, before the installation changes anything.
       def self.around(options, maintenance)
-        new(nil).send(:read, strict: true) if options[:session_hook]
+        claude = !maintenance && options[:agents].include?('claude')
+        new(nil).send(:read, strict: true) if claude && options[:session_hook]
         yield
-        choose(options[:session_hook]) if !maintenance && options[:agents].include?('claude')
+        choose(options[:session_hook] != false, strict: options[:session_hook] == true) if claude
       end
 
       def initialize(helper, home: Dir.home)
@@ -54,23 +58,41 @@ module Shaka
       end
 
       # Returns the change made, or nil when the settings already match.
-      def apply(enabled)
-        settings = read(strict: enabled)
-        return if settings.nil? || owned_commands(settings) == (enabled ? [@command] : [])
+      def apply(enabled, strict: enabled)
+        settings = read(strict:)
+        return (skipped if enabled) unless settings
+        return if owned_commands(settings) == (enabled ? [@command] : [])
 
-        remove_owned(settings)
-        add(settings) if enabled
-        write(settings)
-        "#{enabled ? 'Set' : 'Removed'} the Claude Code update-check hook in #{@path}"
+        change(settings, enabled, strict:)
       end
 
       private
 
-      # Without the flag, settings Shaka cannot read hold no hook it could remove, so they stay untouched.
+      def change(settings, enabled, strict:)
+        remove_owned(settings)
+        add(settings) if enabled
+        write(settings)
+        "#{enabled ? 'Set' : 'Removed'} the Claude Code update-check hook in #{@path}"
+      rescue SystemCallError
+        raise if strict || !enabled
+
+        skipped
+      end
+
+      def skipped = "Skipped the Claude Code update-check hook: Shaka cannot read or write #{@path}"
+
+      # Settings Shaka cannot read stay untouched: they hold no hook it could remove, and only an explicit
+      # --session-hook refuses them.
       def read(strict:)
         return {} unless File.exist?(@path)
 
-        settings = JSON.parse(File.read(@path))
+        parse(File.read(@path), strict:)
+      rescue SystemCallError
+        raise if strict
+      end
+
+      def parse(text, strict:)
+        settings = JSON.parse(text)
         return settings if settings.is_a?(Hash) && hooks_shape?(settings['hooks'])
 
         refuse('do not hold a JSON object with a hooks object') if strict
