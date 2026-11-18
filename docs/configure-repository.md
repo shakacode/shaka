@@ -54,6 +54,9 @@ For later changes, use [Choose your settings](settings-guide.md). See the
 Review the setup PR to see which files were added or updated. See the
 [settings reference](settings.md) for optional files and exact settings.
 
+You can use a [pinned Shaka gem](https://github.com/shakacode/shaka/blob/main/README.gem.md#validate-team-configuration)
+to validate your team's settings and required scripts locally or in CI.
+
 <a id="add-hosted-claude-review"></a>
 
 For an optional GitHub review job, see [hosted Claude review](settings.md#hosted-claude-review).
