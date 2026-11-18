@@ -10,6 +10,7 @@ class CliRenderingPreviewTest < Minitest::Test
 
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'The reviewed rendering appears on its own PR.'
+  REMOTE_COMMAND = %q(curl "https://example.org/teams/o'/home/report.png")
 
   def test_description_publishes_current_head_preview_through_the_cli
     with_repository do |root|
@@ -42,11 +43,12 @@ class CliRenderingPreviewTest < Minitest::Test
     assert Shaka::RenderingPreview.current?(body, head)
     assert_includes body, '## Shaka metrics'
     assert_includes body, '<summary>Companion skill results</summary>'
+    assert_includes body, "**Command:** `#{REMOTE_COMMAND}`"
     assert_includes body, "**Commit:** `#{head}`\n"
     assert_includes body, "**Commit:** `#{'b' * 40}` · stale"
   end
 
-  def publish_preview(directory, root, command: 'verify-flagship drive slow')
+  def publish_preview(directory, root, command: REMOTE_COMMAND)
     write_fake_commands(directory)
     path = File.join(directory, 'content.json')
     File.write(path, JSON.generate(preview_content(command)))
