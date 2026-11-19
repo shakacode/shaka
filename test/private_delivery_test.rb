@@ -53,6 +53,14 @@ class PrivateDeliveryTest < Minitest::Test
     end
   end
 
+  # The CLI must hand description its own environment, or a real Codex session's metadata goes unread.
+  def test_description_reads_the_calling_session_environment
+    with_trial do
+      session = { 'CODEX_THREAD_ID' => 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' }
+      publish_description(*evidence_files, env: session, exit_code: 1, error: 'collected coding host (Codex)')
+    end
+  end
+
   private
 
   def traced_description_git_commands

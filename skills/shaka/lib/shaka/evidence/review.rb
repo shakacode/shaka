@@ -3,6 +3,8 @@
 require 'open3'
 require_relative '../workflow_version'
 require_relative '../local_review/path_guard'
+require_relative '../configuration/machine_reviewers'
+require_relative '../reviewer_selection'
 require_relative 'candidate_tree'
 require_relative 'inputs'
 require_relative 'result'
@@ -58,6 +60,24 @@ module Shaka
                             'model' => options[:model], 'effort' => options[:effort] }.compact
       end
 
+      # The model and effort this machine fills in for the reviewer, by the rule the run applies.
+      # Evidence checks replay these recorded values instead of reading another machine's list.
+      def machine_values(review)
+        # The runner reads the identity through the same parser, so padding cannot split the two.
+        reviewer = @task_overrides['reviewer'] && ReviewerSelection.parse(@task_overrides['reviewer']).values.join('/')
+        machine = reviewer && Configuration::MachineReviewers.load(home: Dir.home)
+        return {} unless machine
+
+        applied = machine.fill(reviewer_entry(review, reviewer), reviewer).reject { |key, _| @task_overrides.key?(key) }
+        applied.transform_keys { |key| "machine_#{key}" }
+      end
+
+      def reviewer_entry(review, reviewer)
+        Array(review&.fetch('local_review_agents', nil)).grep(Hash).find do |entry|
+          entry.values_at(*ReviewerSelection::IDENTITY).join('/').downcase == reviewer
+        end
+      end
+
       # The ledger's identity of the settings that make earlier review evidence superseded: the
       # components `evidence verify` compares, without this reviewer's own choices, so every
       # reviewer of a commit under the same settings shares it.
@@ -66,9 +86,10 @@ module Shaka
       def capture_before
         @candidate_before = CandidateTree.capture(root: @root)
         @dirty_before = dirty?
+        config, shared = Inputs.capture(root: @root, ref: @ref, repository: @repository)
+        @task_overrides.merge!(machine_values(config.to_h['review']))
         _config, @settings_before, @source_kind, @public_settings =
           Inputs.capture(root: @root, ref: @ref, repository: @repository, task_overrides: @task_overrides)
-        _config, shared = Inputs.capture(root: @root, ref: @ref, repository: @repository)
         @ledger_settings = Configuration::FingerprintCanonical.digest('ledger-settings',
                                                                       shared['components'].except('source'))
       end

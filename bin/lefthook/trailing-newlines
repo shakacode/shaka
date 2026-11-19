@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Adds a final newline to each named text file that lacks one. A file counts as text
+# only when it is valid UTF-8 without control characters other than tab, line feed,
+# form feed, and carriage return. Symlinks, binary files, empty files, and missing
+# paths are left alone.
+ARGV.each do |path|
+  next if File.symlink?(path) || !File.file?(path)
+
+  content = File.binread(path)
+  next if content.empty? || content.end_with?("\n")
+
+  text = content.dup.force_encoding(Encoding::UTF_8)
+  next unless text.valid_encoding? && !text.match?(/[\x00-\x08\x0B\x0E-\x1F\x7F]/)
+
+  File.binwrite(path, "#{content}\n")
+  puts "Added a final newline to #{path}"
+end

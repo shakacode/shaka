@@ -1,0 +1,3 @@
+{"period":"before_446","reports":152,"report_chars":298898,"threads":119}
+{"period":"446_to_640","reports":192,"report_chars":130432,"threads":5,"with_count_line":127,"findings":32,"nonzero":20}
+{"period":"after_640","reports":448,"report_chars":118914,"with_count_line":448,"findings":0}

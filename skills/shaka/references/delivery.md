@@ -15,6 +15,22 @@ Ask before an answer becomes expensive to change. Use existing context and earli
 answers, recommend a path, and continue independent work while a question is pending.
 Silence is not approval.
 
+Write every question for a person this way: a chat question, a description `decisions`
+item, and the checkpoint `reason` for Merge after maintainer decision, which the PR's
+warning shows.
+
+- Open with the question itself. Name who decides when you know.
+- Say what happened in the reader's terms. Say whether the code has a problem or
+  evidence is missing, and what evidence exists.
+- Give your recommendation with its reason, then the alternative and its consequence.
+- Say what an answer authorizes and what happens next. Accepting an exception or a risk
+  does not approve merging.
+- Leave out workflow terms such as checkpoint, task owner, and gates. Link supporting
+  evidence; a link back to the question adds no context.
+- Say how to answer, such as replying in the owning chat or commenting on the PR.
+
+Keep each question understandable without opening another document.
+
 | Situation | Action |
 | --- | --- |
 | Task or checkout is missing | Ask for the description or repository path. |
@@ -32,8 +48,8 @@ shape the implementation.
 
 ## Choose a small execution context
 
-Assess scope and risk, recommend an available model and effort, and explain the
-choice. Honor explicit user settings. Consider total planning, implementation,
+Assess scope and risk, recommend a model the host offers and an effort, and explain
+the choice. Honor explicit user settings. Consider total planning, implementation,
 retries, and review; waiting or a tool error alone does not justify more effort.
 
 Use the workflow's `recommendation` and `checkpoint` commands. When the user says
@@ -43,14 +59,15 @@ not add a confirmation turn. If the host reports either setting, briefly note
 its value and whether it matches the recommendation. Mark unreported values
 UNKNOWN; a prompt cannot change the runner.
 
-When the user names either setting, proceed only when immediate start is clear,
-the recommended settings are active and usable, and the supplied settings match
+When the host already runs the recommended settings, proceed without asking,
+even without a start word. When the user names either setting, proceed only when
+the recommended settings are active and usable and the supplied settings match
 the recommendation. Otherwise pause with one next action. Check host settings
 on resume when available. Planning-only work returns its plan and usage without
 an implementation checkpoint.
 
-If the checkpoint reports `recommendation_missing`, supply the omitted model or
-effort recommendation and rerun it. This is an agent input to complete before
+If the checkpoint reports `recommendation_missing`, supply the omitted or `UNKNOWN`
+model or effort recommendation and rerun it. This is an agent input to complete before
 bringing a decision to the user.
 
 Work solo unless delegation is authorized and useful. Obtain a fresh-context
@@ -101,11 +118,23 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Next action | One step that continues the task; while `awaiting-resume`, the prompt that resumes it, such as `$shaka PR_URL` |
 
 The renderer and `handoff` check that Owner is `UNKNOWN` or contains three nonempty
-components separated by `·`. `handoff` reads the live GitHub description, so an edit
-after publication is checked too. These checks verify the supplied format; the agent
-verifies the machine alias, host, and tag against available metadata. Other WIP fields
-retain their existing checks; a successful handoff does not establish compliance with
-every instruction in this guide.
+components separated by `·`. `description` also reads the calling session before it
+renders the note. It compares the machine alias, the coding host, and a Codex thread
+id with the supplied Owner and Chat link. `UNKNOWN` is refused when that value was
+available and the content did not mark it withheld. While the owner tag matches the
+previous note's, a field that note published cannot become `UNKNOWN` unless withheld;
+a new tag starts a takeover without that carry-over. Unavailable,
+withheld, and invalid are different outcomes. Diagnostics omit withheld, invalid, and
+machine-name values. The note carries the outcome for each field. `handoff` reads
+that record from the live GitHub description, including after an edit, and does not
+consult a runner's or a reviewer's environment. Other WIP fields retain their existing
+checks; a successful handoff does not establish compliance with every instruction in
+this guide.
+
+Pass `wip_disclosure` only for a field the user asked to keep off the PR. It is an
+object whose keys are `alias`, `host`, `tag`, and `thread`, and each value is
+`withheld`. Omit it otherwise. A machine-name alias is withheld even without that
+object, because publication would put the machine's own name in the PR.
 
 **Chat title:** before each WIP publication, read the current title through the
 host's session metadata when available. Review it for private content before
@@ -133,23 +162,33 @@ its publication time does not prove subsequent activity. Keep private operationa
 details, tracker links, prompts, credentials, and customer information out of it.
 
 **Session locators:** publish a raw URL, without Markdown or code formatting.
+`codex://threads/<thread-id>` identifies a local Codex chat. It is not a copy of
+the conversation, and it opens only in the owner's own app. A share or export link
+publishes conversation content. Do not create one to fill Chat link. If the host
+denies approval to share, leave that denial in place and do not retry it. Publish
+the local locator, or `UNKNOWN` with `wip_disclosure.thread` set to `withheld` when
+the user wants the locator off the PR.
+
 For Codex, require a UUID in `CODEX_THREAD_ID` and use `codex://threads/<thread-id>`.
-For Claude Code, require `CLAUDE_CODE_HOST_SESSION_ID`, ask the host for that
-session's metadata, and copy its `link` verbatim. The host session ID differs from
-`CLAUDE_CODE_SESSION_ID`, which identifies the usage transcript. Terminal sessions,
-disabled app links, and other hosts use `UNKNOWN` until a supported locator exists.
-A link's availability depends on the owner's machine being reachable.
+`description` reads that id in the calling session. A missing id is unavailable. A
+value that is not a UUID is invalid, so Chat link stays `UNKNOWN` and the diagnostic
+omits the raw id. For Claude Code, require `CLAUDE_CODE_HOST_SESSION_ID`, ask the
+host for that session's metadata, and copy its `link` verbatim. The host session ID
+differs from `CLAUDE_CODE_SESSION_ID`, which identifies the usage transcript. Terminal
+sessions, disabled app links, and other hosts use `UNKNOWN` until a supported locator
+exists. A link's availability depends on the owner's machine being reachable.
 Never create or publish a link that shares conversation content, such as a
 share or export URL, to fill this field.
 
-**Privacy:** both team setup and private trials default `wip.include_checkout_path`
-to `true`. Supply the selected default-branch `--ref` to `description`.
-The renderer uses `REDACTED` for Workspace only when the setting is explicitly
-false. Unread or unavailable settings
+**Privacy:** team setup defaults `wip.include_checkout_path` to `true`. New
+individual setups use `false`. Supply the selected default-branch `--ref` to `description`.
+The renderer uses `REDACTED` for Workspace when the setting is explicitly false, and
+`REDACTED (personal setting)` when the user's `~/.agents/shaka/config.yml` sets
+`wip.include_checkout_path: false`. Unread or unavailable settings
 withhold Workspace and explain the recovery action:
 rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
 republishing when loading failed. No setting hides Chat link; supply `UNKNOWN`
-when the user asks to keep it off the PR. Unfinished publication remains possible without
+with `wip_disclosure.thread` set to `withheld` when the user asks to keep it off the PR. Unfinished publication remains possible without
 validation/review evidence; the diagnostic establishes no readiness. Retain the
 fields and public owner alias. Inspect all other supplied prose before publication.
 A repository where even the owner alias is sensitive should not publish these notes.
@@ -164,16 +203,31 @@ or outdated note after a crash is a reason to inspect live state, not to abandon
 **Take over in a new task:** require maintainer confirmation that the previous
 owner stopped or is handing over. An idle task, old timestamp, or missing note
 is insufficient. Then read the live head and publish a complete note with a new
-owner tag before other work. Recheck checks, review, and merge authority. Inspect
+owner tag before other work. Immediately after it, post a takeover comment with
+`reply --key takeover-OWNER_TAG` that names the new Owner and Revision and points
+to WIP Details for the rest; leave Chat link out. It grants no authority. A resume
+by the same owner posts none. Recheck checks, review, and merge authority. Inspect
 and preserve staged, unstaged, untracked, stashed, and unpushed work when the old
 checkout is reachable; record it as `UNKNOWN` when it is not.
+
+### Announce the start on the issue
+
+Run `start OWNER/REPO ISSUE --content-file PATH --root DIR --ref TRUSTED_SHA` with
+`identity`, a one-line `summary` of the outcome this task will deliver, and a `wip`
+object holding every field above as work begins: Revision is the new local branch at
+its base SHA, Unfinished work `branch not pushed yet`, Stopped because `running`, State
+the current step, and Next action the resume prompt, such as `$shaka ISSUE_URL`. Until
+the first push, the branch exists only on the machine Owner names. The helper renders the
+fields as WIP Details, applies `wip.include_checkout_path`, refuses a PR number, and
+keys the comment by owner tag, so a rerun replaces it and a new owner posts its own.
+Post it once; after the PR exists, its WIP Details is the record.
 
 The note records state. It is not a lock or authorization, and the read/write gap
 still allows a race. Maintainer confirmation prevents competing owners.
 
 ## Reject an approach and restart
 
-Use [human attention checkpoints](return-points.md) to identify earlier human guidance,
+Use [return points](return-points.md) to identify earlier human guidance,
 preserve the abandoned code and context, and resume with new steering. Requesting
 attention alone records no human guidance. Keep the existing Ask/Auto decision path
 and WIP note; summarize superseded attempts in the description's details while
@@ -223,7 +277,7 @@ to write the work item, ask for it or offer the design PR.
 Then stop and wait for the user to approve the design in chat, or, for a design PR,
 for an approving review as `comments` reports it from a GitHub login the user named
 in this task as a design approver. A design PR is not ready to merge until then;
-after approval, merging it follows the task's merge preference. Record the approval as a human attention checkpoint. If the user
+after approval, merging it follows the task's merge preference. Record the approval as a return point. If the user
 asks for changes, revise the design and wait again. Summarize and link the approved
 design in the implementation PR's description, and pass the description to every
 local review round with `--description-file`, so the reviewer compares the code with
@@ -294,8 +348,9 @@ as the Explain step defines them. Provenance, usage, and the WIP Details note ar
 audit material the helper keeps collapsed.
 Keep optional review history and routine rollback detail collapsed.
 
-Supply the current COMMENT review URL in the `walkthrough` field. The helper
-renders its link above the summary, or a placeholder until it exists.
+When a walkthrough exists, supply its current COMMENT review URL in the `walkthrough`
+field, or `requested` while a requested one is pending. The helper renders it above
+the summary. Leave the field out when no walkthrough is due.
 Set the required `deployment` field to `auto`, an https URL, or `none`. `auto` reads
 the GitHub Deployments API for the PR head and links the newest successful
 deployment's `environment_url`, the same link GitHub shows as "View deployment";
@@ -326,7 +381,9 @@ Use these questions to place detail:
 - Would a later reader need it from the merged PR alone? Keep it in the description.
 
 A rollback may need an operational summary in the description and code-level
-reasoning in the walkthrough. File paths alone do not decide placement.
+reasoning in the walkthrough. File paths alone do not decide placement. When no
+walkthrough is due, the description's `review_focus` names the spots that need a
+closer read and why, and its `details` holds the rollback.
 
 ### How a walkthrough is ordered
 
@@ -344,6 +401,14 @@ output from behavior changes. Cover purpose, choices, validation, risks, and
 rollback consequences where they fit; avoid a heading for every checklist item.
 State each risk and rollback as the [review evidence rules](publication.md#review-evidence) describe.
 Cover the change completely, then stop.
+
+For larger PRs, those exceeding a trusted `merge.limits` size limit or spanning
+several distinct behaviors, keep a compact working coverage map. Map each concept
+to its changed paths and mark it pending or covered. Group supporting tests and
+docs with their behavior; label mechanical or generated changes together. Check
+the map against the whole diff, including meaningful changes within each path,
+before claiming coverage. Keep it in the existing task record, without a separate
+ledger or publication requirement.
 
 ### Connect a technical fix to its evidence
 
@@ -383,7 +448,7 @@ or accept it; technical confidence does not grant merge consent. Scale detail to
   nodes, label each edge or line with the action, and let the prose carry the
   explanation. A visual explains; the validation results remain the evidence.
   The public guide shows
-  [a call tree and a change that needs none](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md#when-a-diagram-helps).
+  [a call tree and a change that needs none](https://github.com/shakacode/shaka/blob/main/docs/reference/pr-record.md#diagrams).
 - Report validation as what it proves at this head: the behavior covered, the
   command, and its result. State each count once, and leave results from
   earlier heads to the description's review history.

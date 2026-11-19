@@ -13,7 +13,7 @@ module LocalEvaluationFixtureAssertions
     [name, path] if File.directory?(path)
   end.to_h.freeze
   COMMON_FILES = %w[
-    .agents/agent-workflow.yml .agents/bin/setup .agents/bin/test .agents/bin/validate
+    .agents/shaka/config.yml .agents/shaka/bin/setup .agents/shaka/bin/test .agents/shaka/bin/validate
     .github/workflows/validate.yml .ruby-version AGENTS.md Gemfile Gemfile.lock fixture.yml
   ].freeze
   APP_FILES = {
@@ -22,14 +22,14 @@ module LocalEvaluationFixtureAssertions
   }.freeze
   MERGE_PREFERENCES = { 'probe' => 'auto', 'feasibility' => 'ask' }.freeze
   FIXTURE_RUNNER = Shaka::Doctor::BoundedCommand.new(timeout: 30)
-  COMMANDS = { 'setup' => '.agents/bin/setup', 'validate' => '.agents/bin/validate',
-               'test' => '.agents/bin/test' }.freeze
+  COMMANDS = { 'setup' => '.agents/shaka/bin/setup', 'validate' => '.agents/shaka/bin/validate',
+               'test' => '.agents/shaka/bin/test' }.freeze
   EXPECTED_STEPS = [
     { 'uses' => 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
       'with' => { 'persist-credentials' => false } },
     { 'uses' => 'ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b',
       'with' => { 'ruby-version' => '.ruby-version', 'bundler-cache' => true } },
-    { 'run' => '.agents/bin/validate' }
+    { 'run' => '.agents/shaka/bin/validate' }
   ].freeze
   FORBIDDEN_CONTENT = /(?:AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|
                          -----BEGIN[ ][A-Z ]*PRIVATE[ ]KEY-----|(?:password|token|api[_-]?key|client[_-]?secret)\s*[:=]|
@@ -101,20 +101,20 @@ module LocalEvaluationFixtureAssertions
       copy = File.join(directory, File.basename(root))
       lock = File.join(copy, 'Gemfile.lock')
       before = [File.read(lock), files(copy)]
-      stdout, stderr, success = FIXTURE_RUNNER.call([File.join(copy, '.agents/bin/setup'), '--local'], Dir.tmpdir)
+      stdout, stderr, success = FIXTURE_RUNNER.call([File.join(copy, '.agents/shaka/bin/setup'), '--local'], Dir.tmpdir)
       assert success, "#{stdout}\n#{stderr}"
       assert_equal before, [File.read(lock), files(copy)]
     end
   end
 
   def capture_fixture_validation(root)
-    command = File.join(root, '.agents/bin/validate')
+    command = File.join(root, '.agents/shaka/bin/validate')
     stdout, stderr, success = FIXTURE_RUNNER.call([command], Dir.tmpdir)
     ["#{stdout}\n#{stderr}", success]
   end
 
   def capture_fixture_test(root, path)
-    command = File.join(root, '.agents/bin/test')
+    command = File.join(root, '.agents/shaka/bin/test')
     stdout, stderr, success = FIXTURE_RUNNER.call([command, path], Dir.tmpdir)
     ["#{stdout}\n#{stderr}", success]
   end

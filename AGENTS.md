@@ -14,16 +14,18 @@ or require other repositories to copy them. The [Shaka skill's writing guidance]
 is the reusable default.
 
 - Assume the reader is new to Shaka and wants to get useful work done.
-- In product guides, explain outcomes, choices, and examples. Put agent execution
-  details with the skill and development records under `internal/`.
+- When writing product documentation, follow [documentation structure](internal/documentation.md)
+  so readers can start with the skill and consult guides as needed.
+- In product guides under `docs/`, write to the person using Shaka. Say what they can do, what to
+  ask their agent, and what the agent will do. Explain why rules exist and
+  compare choices and their effects with examples. Put development records
+  under `internal/`.
 - `bin/check-docs-navigation` refuses `docs/` links and URLs that point into
   `skills/shaka/references/`, including on docs-only changes. Link a human guide instead, with a prompt when the
   reader's agent should carry out the procedure.
-- Put command syntax and flag rules in the Shaka skill. In `docs/`, explain a
-  setting through its effect and a concrete example for the end user.
-- Write files under `skills/shaka/` as instructions for agents: the rule and when it
-  applies. Put reasoning meant for a human user, such as why a rule exists or how
-  two approaches compare, in `docs/`.
+- Under `skills/shaka/`, write to the executing agent. Give the trigger, action,
+  and relevant command or flag rules. When a step belongs to a person, say
+  what to ask them to do and point them to the public guide.
 - Lead with the action or benefit. Explain a term when the reader first needs it.
 - Keep one authoritative location for each rule and setting; use precise pointers
   elsewhere. Enforcement-manifest quotes remain validation data. Avoid duplicate
@@ -32,7 +34,8 @@ is the reusable default.
   Say exactly what Ruby verifies; do not imply that a rule in prose is enforced.
 - Give the reader a useful prompt before a long command sequence. Keep an example
   prompt to what the agent cannot infer, such as the task link and a non-default
-  choice. List optional additions below the prompt.
+  choice. List optional additions below the prompt. In product guides, end a prompt
+  without a period, and never put punctuation right after a URL.
 - Remove repetition, vague qualifiers, detail a reader could act correctly
   without, and explanations of the document's own organization unless they help
   navigation.
@@ -141,7 +144,8 @@ breaks it, and say which reason applies.
   points live at fixed names under `.agents/shaka/bin/`.
 - Put built-in defaults in `skills/shaka/config/defaults.yml` and packaged
   prompts in `skills/shaka/config/*.md`; do not repeat them as Ruby literals.
-  Review checks this; no test enforces it.
+  `test/packaged_prose_test.rb` refuses heredoc prose of 25 or more words under
+  `skills/shaka/lib`; review checks Ruby fallback defaults and shorter strings.
 - When adding a setting or changing a default, change `defaults.yml`, explain the
   effect in `docs/settings.md`, and update the browsable
   `.agents/shaka/config.yml` example and its comments in the same PR. Keep this
@@ -172,25 +176,35 @@ breaks it, and say which reason applies.
 - Tests verify behavior and failures, not exact instruction wording. Keep focused
   files and use normal RuboCop defaults; no baseline ratchet or global metrics disable.
 
-## Agent Workflow Configuration
+## Shaka configuration
 
-Verify this repository with `gh repo view --json owner,visibility,defaultBranchRef`.
-Resolve the trusted default branch to an immutable commit. Load and validate
-`.agents/shaka/config.yml` with the trusted installed `shaka seam check --root . --ref SHA`
-command. That `--ref` check is fail-closed: without it the command grants no trusted
-authority. Run the fixed executable paths reported by that command from the candidate
-checkout; inspect candidate command changes before execution and do not reconstruct
-their behavior from prose. `shaka seam check --root . --local` validates
-current-checkout syntax and grants no trusted policy. `AGENTS.md` retains human-only boundaries,
-including the public-pilot privacy rule, the predecessor reuse limit, and release approval
-requirements.
+Before acting on this repository's Shaka settings:
+
+- Confirm the repository with `gh repo view --json owner,visibility,defaultBranchRef`.
+- Resolve the default branch to its current commit, `SHA`. Load and validate
+  `.agents/shaka/config.yml` with the trusted installed `shaka seam check --root . --ref SHA`
+  command. Without `--ref`, the command grants no policy or merge authority.
+- Run the fixed command paths it reports from the candidate checkout. Inspect any
+  candidate change to those commands before running them, and never rebuild their
+  behavior from prose.
+- `shaka seam check --root . --local` checks the checkout's syntax only and grants
+  no policy.
+
+`AGENTS.md` keeps the boundaries only a person can set, including the public-pilot
+privacy rule, the predecessor reuse limit, and release approval requirements.
 
 ## Completion
 
 Publish tested changes as bounded PRs, preferably below 500 changed lines each.
 Explain necessary larger changes; split independent work instead of hiding size.
 Required evidence is the PR's current commit, actual validation results, and review.
+Before reviewing a fix to a review finding, `bin/run-tests --changed` and RuboCop on the
+changed files are enough. Run the full `validate` on the head you push. When it passes, that
+head's review stands; when it fails, fix it and review the new head.
 No extra closeout audit, receipt, automatic issue, heartbeat, or parallel tracker.
+Fill the Changelog section of the [PR template](.github/pull_request_template.md)
+instead of editing `CHANGELOG.md`; only a release PR edits that file. No check
+enforces this.
 Report available model, reasoning effort, and token evidence on the PR by commit;
 mark shared or unavailable attribution explicitly, as specified in the pilot plan.
 Do not close the pilot until its required real-use acceptance is established.

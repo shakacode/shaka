@@ -13,8 +13,9 @@ class PublicationIntentVerificationTest < Minitest::Test
   def test_intent_and_verification_render_each_field_on_its_own_line
     rendered = render
 
-    intent = "## Intent\n\n**Why:** #{INTENT['why']}\n\n**Safe because:** #{INTENT['safe_because']}\n\n" \
-             "**Review effort:** 2 of 5, easy: skim the diff.\n\n**Leaves out:** #{INTENT['leaves_out']}\n\n" \
+    intent = "## Intent\n\n**Why:** #{INTENT['why']}\n\n**Task:** Codex prompt\n\n" \
+             "**Safe because:** #{INTENT['safe_because']}\n\n" \
+             "**Leaves out:** #{INTENT['leaves_out']}\n\n" \
              "**Scope:** #{INTENT['scope']}"
     verification = "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n" \
                    "<details>\n<summary>Evidence and limitations</summary>"
@@ -23,11 +24,16 @@ class PublicationIntentVerificationTest < Minitest::Test
   end
 
   # https://github.com/shakacode/shaka/issues/777: a line saying no claim went unproven told the reader nothing.
-  def test_not_verified_appears_only_for_a_claim_that_went_unproven
+  # https://github.com/shakacode/shaka/issues/999: a folded line made the reader open the fold to find a gap.
+  def test_not_verified_appears_visibly_only_for_a_claim_that_went_unproven
     refute_includes render, '**Not verified:**'
+    refute_includes render('verification' => VERIFICATION.merge('merge_limitations' => 'Nothing.')), 'Merge limitations'
 
     gap = 'The live rate limit was not triggered; the test replays its stderr.'
-    assert_includes render('verification' => VERIFICATION.merge('not_verified' => gap)), "**Not verified:** #{gap}"
+    limits = VERIFICATION.merge('not_verified' => gap, 'merge_limitations' => 'No live merge.')
+    visible, folded = render('verification' => limits).split('<summary>Evidence and limitations</summary>')
+    assert_operator visible.index("**Not verified:** #{gap}"), :<, visible.index('**Merge limitations:**')
+    assert_includes folded, VERIFICATION['checks'].first
   end
 
   def test_intent_and_verification_follow_the_links_and_precede_every_section
@@ -73,7 +79,8 @@ class PublicationIntentVerificationTest < Minitest::Test
     cause = 'The booking link covered the underlined price.'
     rendered = render('intent' => INTENT.merge('root_cause' => cause))
 
-    assert_includes rendered, "**Why:** #{INTENT['why']}\n\n**Root cause:** #{cause}\n\n**Safe because:**"
+    assert_includes rendered, "**Why:** #{INTENT['why']}\n\n**Task:** Codex prompt\n\n" \
+                              "**Root cause:** #{cause}\n\n**Safe because:**"
   end
 
   def test_root_cause_is_optional_but_not_blank
@@ -82,19 +89,12 @@ class PublicationIntentVerificationTest < Minitest::Test
     assert_includes error.message, 'intent root_cause'
   end
 
-  # The reviewer sees from the blast radius how hard to look, like a heart-rate zone.
-  def test_review_effort_names_its_zone
-    rendered = render('intent' => INTENT.merge('review_effort' => 5))
-
-    assert_includes rendered, '**Review effort:** 5 of 5, all out: review every line, reproduce it, and ' \
-                              'ask a second reviewer.'
-  end
-
-  def test_review_effort_must_be_a_whole_number_from_one_to_five
-    [0, 6, '3', 2.5].each do |effort|
-      error = assert_raises(Shaka::Error) { render('intent' => INTENT.merge('review_effort' => effort)) }
-      assert_includes error.message, 'review_effort'
+  # The 1-5 rating is retired; an agent that still sends one publishes as if it had not.
+  def test_a_retired_review_effort_is_ignored
+    [5, 0, '3', nil].each do |effort|
+      assert_equal render, render('intent' => INTENT.merge('review_effort' => effort))
     end
+    refute_includes render('intent' => INTENT.merge('review_effort' => 5)), 'Human review'
   end
 
   # A draft published before validation has nothing to cite yet, so it says why instead.
@@ -103,8 +103,6 @@ class PublicationIntentVerificationTest < Minitest::Test
                       'verification' => { 'checks' => [], 'not_verified' => 'Validation has not run yet.' })
 
     assert_includes rendered, '**Not verified:** Validation has not run yet.'
-    assert_operator rendered.index('<summary>Evidence and limitations</summary>'), :<,
-                    rendered.index('**Not verified:**')
   end
 
   def test_one_to_three_checks_are_allowed

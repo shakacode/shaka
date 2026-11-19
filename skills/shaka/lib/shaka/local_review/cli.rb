@@ -5,6 +5,7 @@ require 'open3'
 require 'tempfile'
 require_relative '../repository_config/review_schema'
 require_relative '../usage/codex_usage'
+require_relative 'codex_commands'
 require_relative '../usage/claude_usage'
 require_relative 'path_guard'
 require_relative 'process'
@@ -58,10 +59,10 @@ module Shaka
       status.signaled? ? "killed by signal #{status.termsig}" : "exited #{status.exitstatus}"
     end
 
-    def reviewer_process(args, input = nil)
+    def reviewer_process(args, input = nil, env: {})
       LocalReviewProcess.capture(args, stdin_data: input, chdir: @root,
                                        timeout: @options.fetch(:timeout_seconds),
-                                       env: @path ? { 'PATH' => @path } : {})
+                                       env: (@path ? { 'PATH' => @path } : {}).merge(env))
     rescue LocalReviewProcess::CleanupError => e
       ['', e.message, e]
     end
@@ -164,6 +165,7 @@ module Shaka
       return process_failure('codex exec', status, stderr, stdout) unless status&.success?
 
       @options[:usage] = CodexUsage.announced_session(stdout) if @options.fetch(:capture_usage, true)
+      @options[:commands] = LocalReviewCodexCommands.summary(stdout)
       invalid('codex exec returned no review', stdout) unless File.size?(@report)
     end
 
@@ -191,10 +193,14 @@ module Shaka
     def claude_process(executable, prompt)
       args = [executable, '-p', '--permission-mode', 'plan', '--permission-prompts', 'none', '--restricted',
               '--safe-mode', '--strict-mcp-config']
+      # --safe-mode keeps CLAUDE.md, skills, commands, settings, hooks, and MCP files in the export from loading.
+      args.push('--add-dir', @options[:commit_export]) if @options[:commit_export]
       args.push('--model', @options[:model]) if @options[:model]
       args.push('--effort', effort) if effort
       args.push('--output-format', 'json', '-')
-      reviewer_process(args, prompt)
+      # In a Claude Code cloud session, a child claude adopts this ID and saves its transcript under the
+      # parent's session, so the parent's usage source is no longer one file.
+      reviewer_process(args, prompt, env: { 'CLAUDE_CODE_REMOTE_SESSION_ID' => nil })
     end
 
     def claude_result(output)

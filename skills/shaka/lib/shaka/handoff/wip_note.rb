@@ -17,18 +17,35 @@ module Shaka
         value(body, 'revision')
       end
 
-      def value(body, field)
+      def extract(body)
         # A body saved from GitHub's web editor comes back with CRLF line endings.
         region = Publishing.managed_region(body.to_s.gsub("\r\n", "\n")).to_s
-        note = region[NOTE, 1] or return
-        cell = cells(note)&.fetch(WipDetails::FIELDS.keys.index(field))
+        region[NOTE, 1]
+      end
+
+      def problem(body)
+        owner = value(body, 'owner')
+        WipDetails.owner_error(owner) ||
+          WipMetadata.handoff_problem(extract(body), owner:, thread: value(body, 'thread'))
+      end
+
+      def value(body, field)
+        cell = cells(extract(body))&.fetch(WipDetails::FIELDS.keys.index(field))
         PublicationText.table_cell_text(cell) unless cell.to_s.strip.empty?
       end
 
       # The Value column in field order, or nil for a partial or reordered table WipDetails did not render.
+      # A collection record may follow the table; it is not another field row.
       def cells(note)
-        rows = note.lines.drop(2).map { |line| line.chomp.match(ROW)&.captures || [] }
-        rows.map(&:last) if rows.map(&:first) == WipDetails::FIELDS.values
+        rows = field_rows(note)
+        rows.map(&:last) if rows&.map(&:first) == WipDetails::FIELDS.values
+      end
+
+      def field_rows(note)
+        lines = note.to_s.lines.map(&:chomp)
+        return unless lines.first(2) == ['| Field | Value |', '| --- | --- |']
+
+        lines.drop(2).first(WipDetails::FIELDS.size).map { |line| line.match(ROW)&.captures || [] }
       end
 
       # Revision reads `BRANCH @ SHA`; only the part after the last ` @ ` is the head, whatever the branch is named.

@@ -2,17 +2,15 @@
 
 require_relative '../configuration/paths'
 require_relative '../repository_config/review_schema'
+require_relative '../repository_config/schema'
 require_relative '../repository_config/post_implementation_schema'
-require_relative '../review_coverage'
 
 module Shaka
   class Seam
     # Review-key half of seam classification, including renamed keys and collisions.
     module ReviewFields
       REVIEW_KEYS = (%w[required] + RepositoryConfig::ReviewSchema::RENAMED.values +
-                     [RepositoryConfig::ReviewSchema::PROMPT_FILE, RepositoryConfig::ReviewSchema::CUSTOM_INSTRUCTIONS,
-                      RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT,
-                      ReviewCoverage::KEY]).uniq.freeze
+                     RepositoryConfig::Schema::OPTIONAL_REVIEW_KEYS).uniq.freeze
       PREVIOUS_CI_KEY = 'ci_review_agents'
 
       private
@@ -47,8 +45,8 @@ module Shaka
 
       def collision(source, key)
         names = [source, @review_sources.fetch(key)]
-        legacy = names.find { |name| name != key } || source
-        "review.#{legacy} (collides with review.#{key})"
+        previous = names.find { |name| name != key } || source
+        "review.#{previous} (collides with review.#{key})"
       end
 
       # The none-policy cleanup removes the bare field name. A bad value needs a message that stays.
@@ -73,8 +71,8 @@ module Shaka
       def review_value(source, nested)
         return nested == 'thorough' ? 'all' : 'one' if source == 'pace'
 
-        legacy = RepositoryConfig::ReviewSchema::RENAMED[source]
-        return [nested] if legacy == RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS && nested.is_a?(String)
+        renamed = RepositoryConfig::ReviewSchema::RENAMED[source]
+        return [nested] if renamed == RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS && nested.is_a?(String)
 
         nested
       end
@@ -86,9 +84,52 @@ module Shaka
       end
     end
 
+    # Moves the earlier location settings onto wip.include_checkout_path.
+    module LocationFields
+      private
+
+      def location_migration?(key, value)
+        key == 'recovery' || (key == 'wip' && value.is_a?(Hash) && value.key?('include_locations'))
+      end
+
+      def migrate_location(key, value)
+        key == 'recovery' ? migrate_recovery(value) : migrate_include_locations(value)
+      end
+
+      def migrate_recovery(value)
+        return @blocking << 'recovery' unless value.is_a?(Hash)
+        return @blocking << 'recovery (collides with wip)' if @data.key?('wip')
+        return retain('wip', {}) if value.empty?
+
+        unless valid_location_setting?(value)
+          @blocking << 'recovery must contain one boolean location setting'
+          return
+        end
+        establish_checkout_path(value.values.first)
+      end
+
+      def migrate_include_locations(value)
+        return @blocking << 'wip.include_locations must be the only boolean wip setting' unless
+          value.size == 1 && [true, false].include?(value.values.first)
+
+        establish_checkout_path(value.values.first)
+      end
+
+      def establish_checkout_path(value)
+        @established['wip'] = { 'include_checkout_path' => value }
+        @retained << 'wip.include_checkout_path'
+      end
+
+      def valid_location_setting?(value)
+        value.size == 1 && (value.keys - %w[workspace_path publish_locations]).empty? &&
+          [true, false].include?(value.values.first)
+      end
+    end
+
     # Maps predecessor seam keys onto typed destinations without guessing policy.
     class FieldClassifier
       include ReviewFields
+      include LocationFields
 
       MOVED_TO_AGENTS = %w[
         plan review_gate approval_exempt changelog benchmark_labels merge_ledger follow_up_prefix
@@ -100,8 +141,8 @@ module Shaka
         trusted_actions hosted_ci_trigger ci_change_detector ci_parity_environment
       ].freeze
       RETIRED = %w[protection commands coordination_backend].freeze
-      RETAINED = %w[base_branch repo_prefix version branches wip recovery].freeze
-      MERGE_RETAINED = %w[preference required_checks].freeze
+      RETAINED = (%w[version recovery] + RepositoryConfig::Schema::OPTIONAL).freeze
+      MERGE_RETAINED = (%w[preference] + RepositoryConfig::MergeSchema::OPTIONAL).freeze
       MERGE_RETIRED = %w[method release].freeze
 
       Result = Struct.new(:retained, :moved_to_agents, :moved_to_operational_config, :retired, :blocking,
@@ -142,26 +183,8 @@ module Shaka
         RETIRED.include?(key) ? record(@retired, key) : @blocking << key
       end
 
-      def migrate_recovery(value)
-        return @blocking << 'recovery' unless value.is_a?(Hash)
-        return @blocking << 'recovery (collides with wip)' if @data.key?('wip')
-        return retain('wip', {}) if value.empty?
-
-        unless valid_legacy_location?(value)
-          @blocking << 'recovery must contain one boolean location setting'
-          return
-        end
-        @established['wip'] = { 'include_checkout_path' => value.values.first }
-        @retained << 'wip.include_checkout_path'
-      end
-
-      def valid_legacy_location?(value)
-        value.size == 1 && (value.keys - %w[workspace_path publish_locations]).empty? &&
-          [true, false].include?(value.values.first)
-      end
-
       def retain(key, value)
-        return migrate_recovery(value) if key == 'recovery'
+        return migrate_location(key, value) if location_migration?(key, value)
 
         if %w[branches wip].include?(key) && !value.is_a?(Hash)
           @blocking << key

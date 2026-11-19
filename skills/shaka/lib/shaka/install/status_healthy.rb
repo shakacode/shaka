@@ -48,6 +48,15 @@ module Shaka
         @variants ||= [*primary_variants, *('A8' if @inventory.trials.any?)]
       end
 
+      # The registered checkout the host links use, so a status from anywhere names the same one.
+      def primary
+        @primary ||= begin
+          owners = @inventory.links.filter_map { |link| @inventory.owner(link) }
+          @inventory.checkouts.values.find { |checkout| owners.include?(checkout.root) } ||
+            @inventory.checkouts.values.first
+        end
+      end
+
       private
 
       def primary_variants
@@ -72,15 +81,6 @@ module Shaka
       def custom_skills?
         hosts = @inventory.host_directories.flat_map { |path| [path, @inventory.real(path)].compact }
         (targets.map { |target| target['directory'] } - hosts).any?
-      end
-
-      # The registered checkout the host links use, so a status from anywhere names the same one.
-      def primary
-        @primary ||= begin
-          owners = @inventory.links.filter_map { |link| @inventory.owner(link) }
-          @inventory.checkouts.values.find { |checkout| owners.include?(checkout.root) } ||
-            @inventory.checkouts.values.first
-        end
       end
 
       def state(id, location, detail = nil, **) = StatusStates.finding(id, location, detail, **)

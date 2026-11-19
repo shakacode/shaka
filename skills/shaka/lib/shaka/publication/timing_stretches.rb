@@ -6,6 +6,7 @@ module Shaka
   # Divides a pull request's life into the time between checkpoints and each wait on a person.
   class TimingStretches
     BETWEEN = 'Between checkpoints'
+    BEFORE = 'Before the pull request'
     WAITS = Attention::LABELS.to_h { |state, label| [label, state == 'merge' ? 'merge approval' : state] }.freeze
 
     def initialize(timeline, now)
@@ -33,7 +34,7 @@ module Shaka
     # A rebase can date the first commit after the pull request opened; then there is no earlier stretch.
     def before_opening
       first = (@timeline['task_started_at'] || @timeline['first_commit'])&.utc
-      first && first < @opened ? [stretch('Before the pull request', first, @opened, 'opened')] : []
+      first && first < @opened ? [stretch(BEFORE, first, @opened, 'opened')] : []
     end
 
     def last_stretch(cursor)

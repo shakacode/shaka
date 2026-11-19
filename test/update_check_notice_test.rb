@@ -20,7 +20,7 @@ class UpdateCheckNoticeTest < Minitest::Test
     result = check(2, hours_ago(3))
     assert_equal 'recent', result.fetch('status')
     assert_equal 2, result.fetch('commits_behind')
-    assert_includes result.fetch('guidance'), '2 commits behind official main'
+    assert_includes result.fetch('guidance'), '2 commits behind shakacode/shaka main'
     refute_includes result.fetch('guidance'), 'install --update'
   end
 

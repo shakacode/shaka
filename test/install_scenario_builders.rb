@@ -28,7 +28,7 @@ module HealthyInstallScenarios
 
   def build_a8
     trial = File.join(@home, '.local/share/shaka/pr-trials')
-    FileUtils.mkdir_p(File.join(trial, '123-example'))
+    FileUtils.mkdir_p(File.join(trial, 'installs', "0.1.0-#{'a' * 64}-#{'b' * 64}"))
     { from: @root, location: trial, next: nil }
   end
 
@@ -113,11 +113,11 @@ module BrokenInstallScenarios
     { from: @root, location: orphan, next: 'mv ' }
   end
 
-  # Development in the source checkout: it hosts a worktree for a feature branch.
+  # Development in the source checkout: it hosts a worktree for a feature branch, which status clears.
   def build_c3
     root = default_install
     git('-C', root, 'worktree', 'add', '-q', File.join(@directory, 'feature'))
-    problem(root, nil)
+    problem(root, 'worktree remove')
   end
 
   # The old default location, which is also where every project keeps its Shaka settings.

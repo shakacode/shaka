@@ -1,19 +1,25 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'agent_time'
 require_relative 'text'
 require_relative 'links'
 require_relative 'usage_details'
+require_relative 'throughput_stats'
 require_relative 'timings_details'
 require_relative 'provenance'
 require_relative 'provenance_history'
+require_relative 'provenance_recommendation'
 require_relative 'wip_details'
+require_relative '../handoff/wip_note'
 require_relative 'settings'
 require_relative 'steps_besides_merging'
 require_relative 'human_comments'
 require_relative 'skills_used'
 require_relative 'metrics'
+require_relative 'missing_values'
 require_relative 'intent_verification'
+require_relative 'risk_review'
 require_relative 'quoted_markers'
 require_relative '../publication_sections'
 
@@ -24,9 +30,10 @@ module Shaka
 
     # With the pull request being replaced, the provenance history carries forward from its body.
     # Callers pass content as a bare hash, so a keyword here would swallow it; every argument is positional.
-    def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil) # rubocop:disable Metrics/ParameterLists
-      new(content, description: true, workflow_version:, pull:, settings:, timeline:)
-        .render(%i[steps intent_verification sections evidence metrics wip credit],
+    def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil, # rubocop:disable Metrics/ParameterLists
+                         environment: nil, host_name: nil)
+      new(content, description: true, workflow_version:, pull:, settings:, timeline:, environment:, host_name:)
+        .render(%i[steps intent_verification human_comments evidence metrics wip sections credit],
                 lead: %i[lead]).tap { QuotedMarkers.refuse!(content) }
     end
 
@@ -37,7 +44,8 @@ module Shaka
         "#{PublicationLinks.walkthrough_footer(content['head'], repository)}\n"
     end
 
-    def initialize(content, description: false, workflow_version: nil, pull: nil, settings: nil, timeline: nil) # rubocop:disable Metrics/ParameterLists
+    def initialize(content, description: false, workflow_version: nil, pull: nil, settings: nil, timeline: nil, # rubocop:disable Metrics/ParameterLists
+                   environment: nil, host_name: nil)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
 
       @content = content
@@ -45,13 +53,16 @@ module Shaka
       @workflow_version = workflow_version
       @pull = pull
       @settings = settings || PublicationSettings.new
-      @timeline = timeline
+      # Carried agent time joins here, so a rendering preview shows it too; the running session's comes from the helper.
+      @timeline = description ? AgentTime.attach(timeline, pull) : timeline
+      @environment = environment
+      @host_name = host_name
     end
 
     # A description leads with the maintainer's decision, so lead parts come before the summary.
     # Only a description names its summary, because there the decision line stands above it.
     def render(parts, title: false, lead: [])
-      blocks = [PublicationText.publisher_identity(@content)]
+      blocks = opening
       blocks << '# Code Walkthrough' if title
       lead.each { |part| blocks.concat(send(part)) }
       summary = PublicationText.required(@content['summary'], 'summary')
@@ -62,19 +73,32 @@ module Shaka
 
     private
 
-    # Only a description is rendered with its pull request, so only a description lists what people wrote.
-    def sections = PublicationSections.render(@content, HumanComments.for(@content, @pull, @settings))
+    # The spend follows the model line, before an optional publisher note; the intervals sit in Timings.
+    def opening
+      identity = PublicationText.publisher_identity(@content)
+      [@description ? identity.sub(/\A.*/) { "#{it}#{ThroughputStats.header(throughput)}" } : identity]
+    end
 
-    def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']))
+    # Only a description is rendered with its pull request, so only a description lists what people wrote.
+    def sections = PublicationSections.render(@content)
+
+    def human_comments = HumanComments.for(@content, @pull, @settings)
+
+    def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']), @settings)
 
     # The steps besides merging sit right under the summary so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)
 
+    # The Task line names the prompt after the agent that wrote the description.
+    def task_line = ExecutionProvenance.new(provenance_spec, pull: @pull).line(@content.dig('identity', 'agent'))
+
     def credit = PublicationLinks.credit(@settings)
 
-    # Intent and verification answer whether to trust the merge, so they come before any section.
+    # Keep review guidance between the purpose and its proof.
     def intent_verification
-      IntentVerification.render(@content, @settings.verdict, @settings.review_effort_floor, @pull)
+      intent, verification = IntentVerification.render(@content, @settings.verdict, @pull,
+                                                       task: task_line, shortfall: @settings.reviewer_shortfall)
+      [intent, *RiskReview.render(@content, @pull), verification]
     end
 
     def evidence
@@ -86,8 +110,7 @@ module Shaka
 
     # Verification carries the proof, so a table only adds facts that fit no check.
     def table
-      spec = @content['table']
-      return [] if spec.nil?
+      return [] if (spec = @content['table']).nil?
 
       columns = table_columns(spec)
       [[table_line(columns), table_line(['---'] * columns.size), *table_data_rows(spec, columns.size)].join("\n")]
@@ -123,22 +146,16 @@ module Shaka
     end
 
     def validate_details(items)
-      UsageDetails.refuse_free_form!(items)
-      refuse_free_form_wip(items)
+      [UsageDetails, PublicationSettings, SkillsUsed, TimingsDetails, WipDetails].each { it.refuse_free_form!(items) }
       refuse_supplied_history(items)
-      [PublicationSettings, SkillsUsed, TimingsDetails].each { |validator| validator.refuse_free_form!(items) }
     end
 
     # The note is optional because it disappears once GitHub confirms the outcome.
     def wip
-      spec = @content['wip']
-      spec.nil? ? [] : [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction).detail)]
-    end
+      return [] unless (spec = @content['wip'])
 
-    def refuse_free_form_wip(items)
-      return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(WipDetails::SUMMARY) }
-
-      raise Error, 'Publication WIP Details must be supplied as the wip object, not a details item.'
+      info = { environment: @environment, disclosure: @content['wip_disclosure'], pull: @pull, host_name: @host_name }
+      [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction, session: info).detail)]
     end
 
     # Only the helper writes the history, from the previous body.

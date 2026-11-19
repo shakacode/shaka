@@ -8,7 +8,9 @@ class PublicationMetricsTest < Minitest::Test
     rendered = render(usd: '$1.25 (partial)')
     visible, metrics = rendered.split("<details>\n<summary>Details</summary>", 2)
     assert_includes visible, '**Estimated token costs:** $1.25+'
-    assert_includes metrics, '<summary>Usage and cost · $1.25+ estimated</summary>'
+    assert_includes visible, 'AI spend: $1.25+'
+    assert_includes metrics, '<summary>Usage and cost</summary>'
+    refute_includes metrics, 'Usage and cost ·'
     assert_includes metrics, 'some usage not reported, so the amount is a minimum'
     assert_includes metrics, 'Native usage is PARTIAL.'
     assert_includes metrics, '| Active model / effort | gpt-5.6-terra / medium |'
@@ -44,7 +46,7 @@ class PublicationMetricsTest < Minitest::Test
     spec['task_history'] = 'The maintainer requested this change.'
     rendered = Shaka::Publication.description(spec)
     visible = rendered.split('<summary>Evidence and limitations</summary>').first
-    assert_includes visible, '**Not verified:** Live migration needs maintainer approval.'
+    assert_includes visible, '**Merge limitations:** Live migration needs maintainer approval.'
     refute_includes visible, VERIFICATION['checks'].first
     hierarchy = disclosure_hierarchy(rendered)
     assert_includes hierarchy, [1, 'Task history']
@@ -71,7 +73,7 @@ class PublicationMetricsTest < Minitest::Test
   def test_diff_size_comes_from_the_live_pull_request_and_closes_intent
     pull = { 'changed_files' => 2, 'additions' => 5, 'deletions' => 1,
              'shaka_changed_files' => [{ 'filename' => 'lib/a.rb' }, { 'filename' => 'test/a_test.rb' }] }
-    rendered = Shaka::IntentVerification.render({ 'intent' => INTENT, 'verification' => VERIFICATION }, nil, nil, pull)
+    rendered = Shaka::IntentVerification.render({ 'intent' => INTENT, 'verification' => VERIFICATION }, nil, pull)
 
     assert rendered.first.end_with?("**Scope:** #{INTENT['scope']} (2 files, +5 / −1 lines)\n\n" \
                                     "<details>\n<summary>Files: Code 1 · Tests 1</summary>\n\n" \

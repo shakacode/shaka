@@ -10,13 +10,17 @@ require_relative 'local_review/history'
 require_relative 'local_review/ledger'
 require_relative 'local_review/runner'
 require_relative 'local_review/report_check'
+require_relative 'local_review/run_command'
 require_relative 'evidence/review'
 
 module Shaka
   # Entry point for process-verified reviews and explicitly weaker host reports.
   class LocalReview
+    include LocalReviewRunCommand
+
     def self.run(arguments, github: nil)
       return LocalReviewHistory.run(arguments.drop(1), github:) if arguments.first == 'collapse'
+      return new(arguments.drop(1), github:).review_run if arguments.first == 'run'
 
       new(arguments, github:).run
     rescue OptionParser::ParseError, SystemCallError, JSON::ParserError, Shaka::Error => e
@@ -52,17 +56,6 @@ module Shaka
     def present(result)
       puts JSON.pretty_generate(result)
       %w[completed reported].include?(result.fetch('status')) ? 0 : 1
-    end
-
-    def run_parser
-      OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka review run --root DIR --base SHA --head SHA --reviewer ID'
-        %w[root base head reviewer effort model criteria-ref settings-ref repository description-file timeout-seconds
-           ledger max-review-executions budget-reason].each do |key|
-          flags.on("--#{key} VALUE") { |value| CallLog.tag(key => @options[key.tr('-', '_').to_sym] = value) }
-        end
-        flags.on('-h', '--help') { @options[:help] = true }
-      end
     end
 
     def dispatch(action)

@@ -100,7 +100,7 @@ class WorkflowCommandTest < Minitest::Test
     assert_predicate status, :success?, output
     assert_includes output, 'run the reported scripts'
     assert_includes output, 'resolved `validate` command'
-    refute_includes output, '.agents/bin/validate'
+    refute_includes output, '.agents/shaka/bin/validate'
     refute_includes output, '{{'
   end
 

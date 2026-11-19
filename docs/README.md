@@ -1,62 +1,78 @@
 # Documentation
 
-**Review the intent and the evidence, not every line.**
+Shaka is a skill for AI coding agents. Give your agent a task and get a pull
+request (PR) with checks and review results. By default, you decide whether it merges.
 
-Each PR shows:
+![A Shaka pull request opens with "Recommendation: Merge". Below it come what changed and why, the proof (tests passed, independent review, screenshots), the risk and what was not verified, and Merge or Revise buttons. Callouts read: starts with the answer, every claim has evidence, you decide.](img/pr-at-a-glance.webp)
 
-- **Intent:** why the change exists, what it leaves out, and why it is safe.
-- **Verification:** the checks that prove the change and any claim left unproven.
-  Each check links to its result or names the command that ran.
-- **UI evidence:** for a UI change, annotated before-and-after screenshots, plus
-  a video when timing matters.
-- **Review effort:** how carefully to read the code, from the description alone
-  to every line. When a few lines need a closer look, walkthrough notes can
-  point them out.
+Use the PR's evidence to decide what to do next and improve the process through
+regular retrospectives.
 
-See [what a PR answers](pr-verification.md#answers-for-your-next-decision).
-You choose who merges it.
+Shaka is mostly Ruby. About 84% of the installed skill's lines are tested Ruby
+code that your agent runs without reading. It starts each task with about 12,400
+words of instructions, loads other procedures only when needed, and gets the same
+checks every time.
+[See the numbers](architecture.md#most-of-shaka-is-ruby).
 
-![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](img/task-to-pr.svg)
+Ask your coding agent to install Shaka:
 
-The agent builds, verifies, and reviews, fixing what it can. Then you review one clear
-PR: what changed, how it was checked, and what is still open. At the
-[checkpoint](pr-verification.md#checkpoint), decide what happens next.
+```text
+Install Shaka from https://github.com/shakacode/shaka
+```
 
-## Start here
+Then open your project in the agent and give Shaka a small task. For example:
 
-New to branches and pull requests? [Shaka in pictures](shaka-in-pictures.md)
-explains them and walks you through a practice task.
+```text
+/shaka Fix search when the query contains an apostrophe
+```
 
-1. [Install Shaka, configure your repository, and run a first task](getting-started.md).
-2. [Work with Shaka](working-with-shaka.md): choose a merge policy, give feedback,
-   and resume unfinished work.
-3. Use the [practical tips](working-with-shaka.md#useful-tips) or [FAQ](faq.md)
-   when you want to plan first, pick settings, or understand a pause.
+Replace the example with your own task or an issue link. In Codex, use `$shaka`
+instead of `/shaka`. For Pi, load the installed skill.
+
+<a id="why-use-shaka"></a>
+<a id="start-here"></a>
+<a id="what-to-do-first"></a>
+
+[Start here](getting-started.md) covers setup and checking your installation.
+If you need a practice project, follow [Shaka in pictures](shaka-in-pictures.md).
+[Watch the demo](https://www.youtube.com/watch?v=T6Fstx2fGJI).
 
 <a id="configure-and-understand"></a>
+<a id="learn-as-you-go"></a>
+<a id="set-up-when-you-need-to"></a>
+<a id="look-deeper"></a>
 
-## Set up when you need to
+<a id="reference"></a>
 
-Ask the agent to handle configuration. These guides explain your choices:
+## Find help
 
-- [Repository setup](configure-repository.md) — reuse your checks and review the setup PR.
-- [Choose your settings](settings-guide.md) — common choices and prompts for your agent.
-- [Coding agents](coding-agents.md) — invocation and installation for your environment.
-- [Install Shaka manually](manual-installation.md) — review and run the installer yourself.
-- [Fork Shaka and make it yours](fork-and-hack.md) — install your fork and send a change back.
-- [Update Shaka](migration.md) — update your installation, or upgrade a repository's configuration layout.
+Ask your agent, or choose a guide below:
 
-## Look deeper
+```text
+Explain what I need to check before merging this PR: <PR link>
+```
 
-- [PR verification](pr-verification.md) — evaluate a change and revisit its decisions after merging.
-- [What to expect from Shaka](expected-experience.md) — setup choices, verification gaps, and recovery.
-- [Settings reference](settings.md) — exact options, defaults, and advanced behavior.
-- [Writing preferences](writing-preferences.md) — choose how the agent writes for your project.
-- [Workflow and enforcement](workflow.md) — what code checks and what relies on the agent.
-- [Architecture](architecture.md) — why Shaka keeps one owner and little state.
-- [Repository catalog](repository-catalog.md) — organize repositories across projects.
-- [Control towers](control-towers.md) — coordinate a batch across chats and decide which PRs to merge first.
-- [Try a Shaka PR](trying-pr-versions.md) — evaluate an unmerged change on real work.
-- [Canary runs](canary.md) — read the sandbox pull request opened after a merge to `main`.
+| I want to… | Guide |
+| --- | --- |
+| Plan work, review an existing PR, or give feedback | [Working with Shaka](working-with-shaka.md) |
+| Choose who merges | [Choose a merge policy](working-with-shaka.md#choose-a-merge-policy) |
+| Review the result and learn from completed PRs | [Review the PR and improve the process](pr-verification.md) |
+| Choose reviewers or change settings | [Choose your settings](settings-guide.md) |
+| Set up Shaka for my team | [Configure a repository](configure-repository.md) |
+| Fix a setup problem or resume unfinished work | [FAQ](faq.md) · [What to expect from Shaka](expected-experience.md) |
+| Understand token use, cost, or timing | [Usage and cost](reference/usage-and-cost.md) · [PR timings](reference/timings.md) |
 
-Development guidance lives in [Contributing](../CONTRIBUTING.md).
+<details>
+<summary>More guides</summary>
+
+- [Coding agents](coding-agents.md), [manual installation](manual-installation.md), [updates](migration.md), and [forks](fork-and-hack.md)
+- [Settings reference](settings.md), [workflow and safeguards](workflow.md), and [writing preferences](writing-preferences.md)
+- [Releases after merge](releases-after-merge.md)
+- [Control towers](control-towers.md) and [repository catalog](repository-catalog.md)
+- [How Shaka is built](architecture.md), [PR trials](trying-pr-versions.md), [canary runs](canary.md), and [Contributing](../CONTRIBUTING.md)
+- [Articles](articles/review-process-study.md) about measured experiments with AI review
+
+</details>
+
+<a id="start-a-task"></a>
+<a id="for-open-source-repositories"></a>

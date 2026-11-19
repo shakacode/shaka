@@ -11,7 +11,9 @@ class InstallRefusalWordingTest < Minitest::Test
 
   RETIRED = /retained copy|official main|\bupstream\b/i
   SOURCES = ['bin/install', 'skills/shaka/lib/shaka/installer.rb', 'skills/shaka/scripts/shaka',
-             *Dir.glob('skills/shaka/lib/shaka/install/*.rb', base: File.expand_path('..', __dir__))].freeze
+             'skills/shaka/lib/shaka/update_check.rb', 'skills/shaka/lib/shaka/startup_notice.rb',
+             *Dir.glob('skills/shaka/lib/shaka/{install,update_check}/*.rb', base: File.expand_path('..', __dir__))]
+            .freeze
 
   def test_installer_output_avoids_retired_words
     SOURCES.each do |relative|

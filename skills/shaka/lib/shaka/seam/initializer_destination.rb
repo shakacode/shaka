@@ -57,13 +57,24 @@ module Shaka
 
         existing = Configuration.generated_text(root: @root, path:)
         existing == content || previously_generated_readme?(path, existing) ||
-          contract_without_trailer?(path, existing, content)
+          previously_generated_contract?(path, existing, content)
       end
 
-      # A config.yml from a release before the commented defaults still matches a plain repeat of seam init.
-      def contract_without_trailer?(path, existing, content)
-        path == Configuration::Paths.at(@root, Initializer::LAYOUT.contract) &&
-          existing == content.delete_suffix(Configuration.comment_lines(config_trailer))
+      # Accept exact output from before the trailer was added or its checkpoint comment was corrected.
+      def previously_generated_contract?(path, existing, content)
+        return false unless path == Configuration::Paths.at(@root, Initializer::LAYOUT.contract)
+
+        trailer = Configuration.comment_lines(config_trailer)
+        return false unless content.end_with?(trailer)
+
+        contract = content.delete_suffix(trailer)
+        existing == contract || existing == contract + previous_checkpoint_trailer(trailer)
+      end
+
+      def previous_checkpoint_trailer(trailer)
+        current = Configuration.comment_lines(InitializerReadme::CHECKPOINT_REPLACEMENT_COMMENT)
+        previous = Configuration.comment_lines(["  # Or replace Shaka's whole checkpoint prompt with your own file:"])
+        trailer.sub(current, previous)
       end
 
       # The pointer records the generating skill version, so an upgrade changes its text while

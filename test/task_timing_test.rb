@@ -42,6 +42,40 @@ class TaskTimingTest < Minitest::Test
     assert_equal Time.iso8601(VALIDATION), attach['first_validation_at']
   end
 
+  def usage_content(*records) = { 'usage' => { 'records' => records } }
+
+  def report(from, covers: true, contribution: 'implementation')
+    { 'from' => from, 'covers_task' => covers, 'contribution' => contribution }
+  end
+
+  def test_a_report_covering_the_whole_task_supplies_a_missing_start
+    earlier = report('2026-10-18T06:30:00.250Z')
+    later = report('2026-10-18T07:30:00Z')
+    assert_equal Time.iso8601('2026-10-18T06:30:00.250Z'),
+                 attach(usage_content(later, earlier))['task_started_at']
+  end
+
+  def test_a_report_that_cannot_date_the_task_supplies_no_start
+    [report(START, covers: false), report(START, contribution: 'review'), report('UNKNOWN'),
+     report('2026-10-18T08:30:00Z'), { 'from' => START }, 'text'].each do |record|
+      assert_nil attach(usage_content(record))['task_started_at'], record.inspect
+    end
+    assert_nil attach('usage' => 'text')['task_started_at']
+  end
+
+  def test_a_supplied_or_saved_start_outranks_a_report
+    report_only = usage_content(report('2026-10-18T06:00:00Z'))
+    assert_equal Time.iso8601(START), attach(report_only.merge('task_started_at' => START))['task_started_at']
+    saved = pull(Shaka::TaskTiming.hidden(recorded))
+    assert_equal Time.iso8601(START), attach(report_only, saved)['task_started_at']
+  end
+
+  def test_a_start_from_a_report_is_saved_for_the_next_update
+    first = attach(usage_content(report('2026-10-18T06:30:00Z')))
+    later = attach({}, pull(Shaka::TaskTiming.hidden(first)))
+    assert_equal Time.iso8601('2026-10-18T06:30:00Z'), later['task_started_at']
+  end
+
   def test_start_requires_a_timestamp_with_timezone_before_opening
     [123, 'yesterday', '2026-10-18T07:00:00', '2026-10-19T07:00:00Z', '2026-10-18T08:01:00Z'].each do |value|
       assert_raises(Shaka::Error) { attach('task_started_at' => value) }

@@ -2,14 +2,31 @@
 
 require_relative 'install_scenario_support'
 require_relative 'install_scenario_builders'
+require_relative 'install_row_scenarios'
 require_relative '../skills/shaka/lib/shaka/install/status_states'
 
 # Builds every install state `install --status` names, in a temporary HOME, and checks the state,
-# where it was found, and the one next step. A state without a scenario here fails.
+# where it was found, and the one next step. A state without a scenario here fails, and so does
+# any other #683 row without one.
 class InstallScenariosTest < Minitest::Test
   include InstallScenarioSupport
   include HealthyInstallScenarios
   include BrokenInstallScenarios
+  include UnlistedRowScenarios
+
+  # Every row of the #683 install matrix. A row that is not a status state needs build_row_<id>.
+  MATRIX = %w[A1 A2 A3 A4 A5 A6 A8 A9 B1 B2 B3 B4 B5 B6 B7 B8 B9 B10 C1 C2 C3 C5
+              D1 D2 D3 D4 D5 D6 E1 E2 E3].freeze
+  AFTER_1_0 = { 'D1' => 'versioned install folders (#682)', 'D6' => 'opt-in scheduled updates (#682)' }.freeze
+
+  (MATRIX - Shaka::Install::StatusStates::STATES.keys).each do |id|
+    define_method("test_row_#{id}") do
+      skip "#{id} waits for #{AFTER_1_0[id]} after 1.0" if AFTER_1_0.key?(id)
+      builder = "build_row_#{id.downcase}"
+      flunk "No scenario for #683 row #{id}; add #{builder}" unless respond_to?(builder, true)
+      send(builder)
+    end
+  end
 
   Shaka::Install::StatusStates::STATES.each_key do |id|
     define_method("test_state_#{id}") do

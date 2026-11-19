@@ -32,7 +32,7 @@ class EvidenceBindingTest < Minitest::Test
   def test_changed_command_input_supersedes_bound_result
     with_checkout do |root, ref|
       result = run_check(root, ref)
-      File.write(File.join(root, '.agents/bin/test'), "#!/bin/sh\nexit 1\n")
+      File.write(File.join(root, '.agents/shaka/bin/test'), "#!/bin/sh\nexit 1\n")
       binding = bind(root, ref, ref, result)
 
       assert_equal 'superseded', binding.fetch('status')
@@ -54,7 +54,7 @@ class EvidenceBindingTest < Minitest::Test
 
   def test_changed_inputs_during_execution_invalidate_result
     with_checkout do |root, ref|
-      File.write(File.join(root, '.agents/bin/test'), "#!/bin/sh\necho changed > changed\n")
+      File.write(File.join(root, '.agents/shaka/bin/test'), "#!/bin/sh\necho changed > changed\n")
       result = run_check(root, ref, expected_exit: 1)
       assert_raises(Shaka::Error) { Shaka::Evidence::Result.commit_tree(root, result.fetch('tested_tree')) }
       assert_equal 'not_completed', result.fetch('status')

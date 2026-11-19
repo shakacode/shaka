@@ -8,7 +8,9 @@ module Shaka
     # Checks a canary pull-request body for the rendering failures issue 900 names.
     module BodyCheck
       REQUIRED = ['## Summary', '## Intent', '## Verification', '## Shaka metrics'].freeze
-      STATS = /AI spend\s+\S+.*·\s*Prompt to CI\s+\S+.*·\s*CI to ready\s+.+·\s*Ready to merged\s+\S+/
+      # Issue 899: the spend after the model line, and the current head's intervals in Timings.
+      STATS = [/^🤖 .* - AI spend:\s+\S+/,
+               /\*\*This head:\*\*\s+Prompt to CI\s+\S+.*·\s*CI to ready\s+.+·\s*Ready to merged\s+\S+/].freeze
       TOKEN = /\{\{[^{}\n]+\}\}/
       LINK = /\[(?:[^\]]*)\]\(([^)\n]*)\)/
       SEPARATOR = /\A:?-+:?\z/
@@ -44,7 +46,7 @@ module Shaka
         REQUIRED.reject { |heading| lines.include?(heading) }.map { |heading| "missing section #{heading}" }
       end
 
-      def stats(text) = text.match?(STATS) ? [] : ['missing stats line (issue 899)']
+      def stats(text) = STATS.all? { |pattern| text.match?(pattern) } ? [] : ['missing stats line (issue 899)']
 
       def tables(text) = blocks(text).flat_map { |block| table(block) }
 
@@ -95,8 +97,13 @@ module Shaka
         Dir.mktmpdir do |dir|
           before = write(dir, 'previous.md', previous)
           after = write(dir, 'current.md', current)
-          out, status = Open3.capture2('diff', '-u', '--label', 'previous', '--label', 'current', before, after)
-          status.success? ? 'Canary PR body matches the previous run.' : out
+          out, err, status = Open3.capture3('diff', '-u', '--label', 'previous', '--label', 'current', before, after)
+          # diff exits 1 when the files differ and 2 when it fails.
+          case status.exitstatus
+          when 0 then 'Canary PR body matches the previous run.'
+          when 1 then out
+          else "Cannot diff the canary PR body: #{err.lines.first.to_s.strip}"
+          end
         end
       end
 

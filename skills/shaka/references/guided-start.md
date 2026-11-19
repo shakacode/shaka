@@ -22,7 +22,4 @@ next. For `doctor`, finish with the next steps and stop. Neither path begins
 task planning or PR delivery. Continue through `workflow` only once the user
 gives a task.
 
-For repository setup, `seam init` writes under `.agents/shaka/`. Version-one
-configuration directly under `.agents/` keeps working; use the
-[configuration layout upgrade](migration.md#upgrade-the-configuration-layout)
-when the user wants to move it.
+For repository setup, `seam init` writes under `.agents/shaka/`.

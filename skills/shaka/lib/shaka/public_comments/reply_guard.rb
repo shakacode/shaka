@@ -2,7 +2,7 @@
 
 require_relative '../error'
 require_relative 'authors'
-require_relative 'trust_config'
+require_relative '../configuration/trust_config'
 
 module Shaka
   module PublicComments

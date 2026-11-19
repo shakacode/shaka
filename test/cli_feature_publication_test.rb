@@ -3,9 +3,29 @@
 require_relative 'evidence_fixture'
 require_relative 'cli_opening_check_fakes'
 
+module FeaturePublicationFixture
+  COMMAND = SHAKA_COMMAND
+
+  def publish(dir, root, *flags, content: description_content)
+    write_fake_commands(dir)
+    path = File.join(dir, 'content.json')
+    File.write(path, JSON.generate(content))
+    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, *COMMAND,
+                   'description', 'shakacode/shaka', '1', '--root', root, '--content-file', path, *flags)
+  end
+
+  def fake_gh
+    source = super.gsub('owner/repo', 'shakacode/shaka').gsub("'c' * 40", @head.dump)
+    count = @files.map { |file| file.fetch('filename') }.uniq.size
+    source = source.sub("'changed_files' => 0", "'changed_files' => #{count}")
+    source.sub("then puts '[]'", "then puts #{JSON.generate(@files).dump}")
+  end
+end
+
 class CliFeaturePublicationTest < Minitest::Test
   include CliOpeningCheckFakes
   include EvidenceFixture
+  include FeaturePublicationFixture
 
   COMMAND = SHAKA_COMMAND
   SUMMARY = 'Feature descriptions report the settings used.'
@@ -31,14 +51,13 @@ class CliFeaturePublicationTest < Minitest::Test
     end
   end
 
-  # Repository configuration sets merge authority, so its review effort floor is 5.
+  # A configuration change once forced a 5-of-5 review rating; that rating is retired, so none renders.
   def assert_migration_body(dir, root)
-    content = description_content.merge('intent' => INTENT.merge('review_effort' => 5))
-    _output, error, status = publish(dir, root, '--publication-flow', 'migration', content:)
+    _output, error, status = publish(dir, root, '--publication-flow', 'migration', content: description_content)
     assert_predicate status, :success?, error
     body = File.read(File.join(dir, 'published.md'))
     assert_includes body, 'No matching check records supplied'
-    assert_includes body, "Floor 5: changes Shaka's repository configuration (`.agents/shaka/config.yml`)."
+    refute_includes body, 'Human review'
   end
 
   def test_result_flags_bind_actual_results_and_refuse_missing_review
@@ -86,7 +105,7 @@ class CliFeaturePublicationTest < Minitest::Test
     assert_predicate status, :success?, error
     linked = %r{\[`\h{7}`\]\(https://github\.com/[^)]+/commit/\h{40}\)}
     body = File.read(File.join(dir, 'published.md'))
-    assert_match(/\| Validation \| Repository settings at #{linked} \| validate: \d+s[^|]* \|/, body)
+    assert_match(/\| Validation \| Repository settings from commit #{linked} \| validate: \d+s[^|]* \|/, body)
     assert_includes body, '**Validation and review:** `validate` passed (exit 0); ' \
                           "local review by openai/codex (host-reported) at `#{@head[0, 7]}`."
   end
@@ -103,18 +122,31 @@ class CliFeaturePublicationTest < Minitest::Test
     File.write(paths.last, JSON.generate(review_check(root, ref)))
     ['--ref', ref, '--validation-result', paths.first, '--review-result', paths.last]
   end
+end
 
-  def publish(dir, root, *flags, content: description_content)
-    write_fake_commands(dir)
-    path = File.join(dir, 'content.json')
-    File.write(path, JSON.generate(content))
-    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, *COMMAND,
-                   'description', 'shakacode/shaka', '1', '--root', root, '--content-file', path, *flags)
+class CliTypeChangePublicationTest < Minitest::Test
+  include CliOpeningCheckFakes
+  include EvidenceFixture
+  include FeaturePublicationFixture
+
+  SUMMARY = 'Maintainers can publish a file-type change.'
+
+  def test_description_publishes_a_type_change_as_one_changed_path
+    with_checkout do |root, ref|
+      @head = ref
+      @files = [{ 'filename' => 'policy.md', 'status' => 'removed' },
+                { 'filename' => 'policy.md', 'status' => 'added' }]
+      Dir.mktmpdir { |dir| assert_type_change_published(dir, root) }
+    end
   end
 
-  def fake_gh
-    source = super.gsub('owner/repo', 'shakacode/shaka').gsub("'c' * 40", @head.dump)
-    source = source.sub("'changed_files' => 0", "'changed_files' => #{@files.size}")
-    source.sub("then puts '[]'", "then puts #{JSON.generate(@files).dump}")
+  private
+
+  def assert_type_change_published(dir, root)
+    _output, error, status = publish(dir, root)
+    assert_predicate status, :success?, error
+    body = File.read(File.join(dir, 'published.md'))
+    assert_includes body, 'Files: Docs/instructions 1'
+    assert_equal 1, body.scan('- `policy.md`').size
   end
 end

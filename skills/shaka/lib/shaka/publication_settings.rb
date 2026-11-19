@@ -3,9 +3,13 @@
 require_relative 'evidence/verification'
 require_relative 'evidence/public_settings'
 require_relative 'repository_config'
+require_relative 'published_results'
 require_relative 'publication/feature_guard'
 require_relative 'opening_publication'
-require_relative 'publication/review_effort_floor'
+require_relative 'review_coverage'
+require_relative 'ready_time'
+require_relative 'local_review/ledger'
+require_relative 'configuration/personal_privacy'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
@@ -23,38 +27,93 @@ module Shaka
     end
 
     def self.prepare(root:, ref:, pull:, options:, github:)
-      changed_paths = FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
+      FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current, floors = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
+      required = verdict&.key?('checks')
+      current, review, config = (current_settings(root:, ref:, repository:, required:) if ref)
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
-          review_effort_floor: ReviewEffortFloor.for(changed_paths, floors))
+          reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone,
+          ignored_human_comments: config&.pr_description&.fetch('ignored_human_comments', nil),
+          ready_gate: ReadyTime.gate(config, override: options[:ci_review_wait]), config:,
+          privacy: Configuration::PersonalPrivacy.load)
     end
 
+    # Current results win. Failing those, a commit whose description already shows verified results
+    # keeps them, because nothing a reader relied on has changed; only settings drift falls back.
     def self.verify(root:, ref:, repository:, pull:, options:)
+      kept = kept_results(pull, repository, options)
       paths = { validation: options[:validation], review: options[:review] }
-      return unless paths.values.any?
+      return kept unless paths.values.any?
       raise Error, 'Settings publication requires --ref and --root' unless ref && options[:root]
 
       verdict = Evidence::Verification.new(root:, ref:, repository:, head: pull.dig('head', 'sha'), paths:).run
-      return verdict if verdict['status'] == 'ready'
+      return kept if kept && PublishedResults.settings_drift?(verdict)
+      raise Error, 'Settings evidence is missing or stale; rerun affected validation/review' unless
+        verdict['status'] == 'ready'
 
-      raise Error, 'Settings evidence is missing or stale; rerun affected validation/review'
+      omitted_reviewers!(verdict)
+      verdict
     end
 
-    # Returns the public settings snapshot and the trusted review-effort floors.
+    # A rendering preview loads the head's renderers, and one older than this code cannot render a kept line.
+    def self.kept_results(pull, repository, options)
+      PublishedResults.read(pull, repository) unless options[:rendering_preview_root]
+    end
+
+    # A review run's result names its ledger round. Every reviewer of that round's batch read the same
+    # commit under the same settings, so leaving one's result out would publish it as not reviewing.
+    def self.omitted_reviewers!(verdict)
+      results = Array(verdict.dig('checks', 'review')).map { |entry| entry['original'] }
+      omitted = results.flat_map { |result| batch_reviewers(result) }.uniq -
+                results.map { |result| result['reviewer'].to_s.downcase }
+      return if omitted.empty?
+
+      raise Error, "#{omitted.join(', ')} also reviewed this commit in the review ledger; pass each " \
+                   "reviewer's saved result with its own --review-result. For a lost result, run " \
+                   '`review check` with that reviewer and its report from the ledger.'
+    end
+
+    # Reviewer ids fold case, as the ledger compares them.
+    def self.batch_reviewers(result)
+      ledger = result['ledger']
+      return [] unless ledger.is_a?(String) && File.file?(ledger)
+
+      LocalReviewLedger.new(ledger).batch_reviewers(result['round'], head: result['head'],
+                                                                     reviewer: result['reviewer']).map(&:downcase)
+    end
+
+    # Returns the public settings snapshot, the trusted review settings, and the loaded settings. A bad personal
+    # time zone must not lose the first two.
     def self.current_settings(root:, ref:, repository:, required: false)
       OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
         config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
-        [current, config.pr_description['human_review_floors']]
+        [current, config.review, config]
       end
     rescue Error, SystemCallError
       raise if required
     end
 
-    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil,
-                   review_effort_floor: nil)
-      @review_effort_floor = review_effort_floor
+    # Only a completed or host-reported review reaches a ready verdict, so each bound one counts.
+    # A repository that requires no review falls short only when a review was run anyway.
+    def self.reviewer_shortfall(verdict, review)
+      return unless verdict&.key?('checks') && review
+
+      reviewers = Array(verdict.dig('checks', 'review')).filter_map { |entry| entry.dig('original', 'reviewer') }
+      return if reviewers.empty? && verdict['review_required'] == false
+
+      ReviewCoverage.shortfall(review, reviewers)
+    end
+
+    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil, # rubocop:disable Metrics/ParameterLists
+                   reviewer_shortfall: nil, time_zone: nil, ready_gate: nil, config: nil, ignored_human_comments: nil,
+                   privacy: Configuration::PersonalPrivacy.new({}))
+      @privacy = privacy
+      @config = config
+      @ready_gate = ready_gate
+      @ignored_human_comments = ignored_human_comments
+      @reviewer_shortfall = reviewer_shortfall
+      @time_zone = time_zone
       @repository = repository
       @verdict = verdict
       @current = current
@@ -64,15 +123,23 @@ module Shaka
     # An unknown policy cannot authorize publishing the checkout path, even on unfinished PRs.
     def include_checkout_path? = @current&.fetch('wip.include_checkout_path', false) == true
 
+    # The repository's choice first, then the user's, which can only hide the path. Unread settings keep the
+    # diagnostic, because it names the recovery step.
     def path_redaction
-      return if include_checkout_path?
       return 'REDACTED' if @current&.fetch('wip.include_checkout_path', nil) == false
+      return @location_diagnostic unless include_checkout_path?
 
-      @location_diagnostic
+      Configuration::PersonalPrivacy::REDACTION unless @privacy.checkout_path?
     end
+
+    # The user's own choices, read for this publication; nothing hidden when none were read.
+    attr_reader :privacy
 
     # Only resolved settings can establish whether the repository opted out.
     def attribution? = @current&.fetch('pr_description.show_shaka_credit', false) == true
+
+    # When the repository publishes a code walkthrough, which decides whether the links line holds its slot.
+    def walkthrough_publish = RepositoryConfig::WalkthroughSchema.publish(@config)
 
     # An unread setting leaves the list on: the agent passed a comment read for it, and leaving
     # the list out would hide what people wrote.
@@ -83,7 +150,13 @@ module Shaka
       rows.is_a?(Integer) && rows.positive? ? rows : RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('max_human_comments')
     end
 
-    # The bound results Verification reports and the floor the changed paths set; nil when not read.
-    attr_reader :verdict, :review_effort_floor
+    # Unread settings hide nothing, so every comment a person wrote stays listed.
+    def ignored_human_comments = @ignored_human_comments.is_a?(Array) ? @ignored_human_comments.grep(String) : []
+
+    # The bound results Verification reports and what gates readiness; nil when not read.
+    attr_reader :verdict, :ready_gate
+
+    # The trusted settings read at --ref, so the description rates risk with the areas merge uses; nil without them.
+    attr_reader :config
   end
 end

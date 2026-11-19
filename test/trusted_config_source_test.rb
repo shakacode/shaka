@@ -47,33 +47,33 @@ class TrustedConfigSourceSymlinkTest < Minitest::Test
 
   def test_accepts_a_trusted_optional_symlink
     with_repository do |root|
-      File.symlink('validate', File.join(root, '.agents/bin/validate-local'))
+      File.symlink('validate', File.join(root, '.agents/shaka/bin/validate-local'))
       commit_repository(root)
 
       config = Shaka::TrustedConfigSource.new(root:).load('HEAD')
-      assert_equal '.agents/bin/validate-local', config.command('validate_local')
+      assert_equal '.agents/shaka/bin/validate-local', config.command('validate_local')
     end
   end
 
   def test_accepts_a_trusted_optional_symlink_chain
     with_repository do |root|
-      File.symlink('validate', File.join(root, '.agents/bin/validate-hop'))
-      File.symlink('validate-hop', File.join(root, '.agents/bin/validate-local'))
+      File.symlink('validate', File.join(root, '.agents/shaka/bin/validate-hop'))
+      File.symlink('validate-hop', File.join(root, '.agents/shaka/bin/validate-local'))
       commit_repository(root)
 
       config = Shaka::TrustedConfigSource.new(root:).load('HEAD')
-      assert_equal '.agents/bin/validate-local', config.command('validate_local')
+      assert_equal '.agents/shaka/bin/validate-local', config.command('validate_local')
     end
   end
 
   def test_accepts_a_trusted_optional_target_through_a_directory_symlink
     with_repository do |root|
-      File.symlink('bin', File.join(root, '.agents/current'))
-      File.symlink('../current/validate', File.join(root, '.agents/bin/validate-local'))
+      File.symlink('bin', File.join(root, '.agents/shaka/current'))
+      File.symlink('../current/validate', File.join(root, '.agents/shaka/bin/validate-local'))
       commit_repository(root)
 
       config = Shaka::TrustedConfigSource.new(root:).load('HEAD')
-      assert_equal '.agents/bin/validate-local', config.command('validate_local')
+      assert_equal '.agents/shaka/bin/validate-local', config.command('validate_local')
     end
   end
 
@@ -83,11 +83,11 @@ class TrustedConfigSourceSymlinkTest < Minitest::Test
       FileUtils.mkdir_p(File.join(root, 'tools/bin'))
       File.write(File.join(root, 'tools/bin/.keep'), '')
       File.symlink('tools/bin', File.join(root, 'alias'))
-      File.symlink('../../alias/../validate', File.join(root, '.agents/bin/validate-local'))
+      File.symlink('../../../alias/../validate', File.join(root, '.agents/shaka/bin/validate-local'))
       commit_repository(root)
 
       config = Shaka::TrustedConfigSource.new(root:).load('HEAD')
-      assert_equal '.agents/bin/validate-local', config.command('validate_local')
+      assert_equal '.agents/shaka/bin/validate-local', config.command('validate_local')
     end
   end
 
@@ -95,44 +95,44 @@ class TrustedConfigSourceSymlinkTest < Minitest::Test
     with_repository do |root|
       write_executable(root, 'tools/validate')
       File.symlink('tools', File.join(root, 'alias'))
-      File.symlink('../../alias/../alias/validate', File.join(root, '.agents/bin/validate-local'))
+      File.symlink('../../../alias/../alias/validate', File.join(root, '.agents/shaka/bin/validate-local'))
       commit_repository(root)
 
       config = Shaka::TrustedConfigSource.new(root:).load('HEAD')
-      assert_equal '.agents/bin/validate-local', config.command('validate_local')
+      assert_equal '.agents/shaka/bin/validate-local', config.command('validate_local')
     end
   end
 
   def test_rejects_a_trusted_symlink_that_traverses_a_regular_file
     with_repository do |root|
-      path = File.join(root, '.agents/bin/validate-local')
+      path = File.join(root, '.agents/shaka/bin/validate-local')
       File.symlink('validate/../validate', path)
       commit_repository(root)
       FileUtils.rm(path)
       File.symlink('validate', path)
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
-      assert_includes message, 'must target a tracked executable file: .agents/bin/validate'
+      assert_includes message, 'must target a tracked executable file: .agents/shaka/bin/validate'
     end
   end
 
   def test_rejects_a_trusted_symlink_with_a_trailing_slash_on_a_file
     with_repository do |root|
-      path = File.join(root, '.agents/bin/validate-local')
+      path = File.join(root, '.agents/shaka/bin/validate-local')
       File.symlink('validate/', path)
       commit_repository(root)
       FileUtils.rm(path)
       File.symlink('validate', path)
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
-      assert_includes message, 'must target a tracked executable file: .agents/bin/validate'
+      assert_includes message, 'must target a tracked executable file: .agents/shaka/bin/validate'
     end
   end
 
   def test_rejects_a_trusted_optional_symlink_cycle
     with_repository do |root|
-      File.symlink('validate-hop', File.join(root, '.agents/bin/validate-local'))
-      File.symlink('validate-local', File.join(root, '.agents/bin/validate-hop'))
+      File.symlink('validate-hop', File.join(root, '.agents/shaka/bin/validate-local'))
+      File.symlink('validate-local', File.join(root, '.agents/shaka/bin/validate-hop'))
       commit_repository(root)
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
@@ -142,7 +142,7 @@ class TrustedConfigSourceSymlinkTest < Minitest::Test
 
   def test_rejects_an_absolute_trusted_optional_symlink_target
     with_repository do |root|
-      File.symlink('/tmp/validate', File.join(root, '.agents/bin/validate-local'))
+      File.symlink('/tmp/validate', File.join(root, '.agents/shaka/bin/validate-local'))
       commit_repository(root)
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
@@ -152,7 +152,7 @@ class TrustedConfigSourceSymlinkTest < Minitest::Test
 
   def test_rejects_a_trusted_optional_symlink_target_above_the_repository
     with_repository do |root|
-      File.symlink('../../../validate', File.join(root, '.agents/bin/validate-local'))
+      File.symlink('../../../../validate', File.join(root, '.agents/shaka/bin/validate-local'))
       commit_repository(root)
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
@@ -167,56 +167,29 @@ class TrustedConfigSourceCommandEntryTest < Minitest::Test
 
   def test_rejects_a_trusted_ref_that_omits_a_required_command
     with_repository do |root|
-      FileUtils.rm(File.join(root, '.agents/bin/setup'))
+      FileUtils.rm(File.join(root, '.agents/shaka/bin/setup'))
       commit_repository(root)
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
-      assert_includes message, '.agents/bin/setup is missing at trusted ref'
+      assert_includes message, '.agents/shaka/bin/setup is missing at trusted ref'
     end
   end
 
   def test_rejects_a_non_executable_trusted_optional_entry
     with_repository do |root|
-      path = File.join(root, '.agents/bin/validate-local')
+      path = File.join(root, '.agents/shaka/bin/validate-local')
       File.write(path, "#!/bin/sh\nexit 0\n")
       commit_repository(root)
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
-      assert_includes message, '.agents/bin/validate-local at'
+      assert_includes message, '.agents/shaka/bin/validate-local at'
       assert_includes message, 'must be an executable file or symlink'
-    end
-  end
-
-  def test_rejects_a_legacy_optional_path_missing_its_standard_entry_point_on_the_trusted_ref
-    with_repository do |root|
-      legacy = File.join(root, '.agents/bin/validate_local')
-      write_executable(root, '.agents/bin/validate_local')
-      commit_repository(root)
-      FileUtils.rm(legacy)
-
-      message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
-      assert_includes message,
-                      '.agents/bin/validate_local requires the standard entry point .agents/bin/validate-local'
-      assert_includes message, 'at trusted ref'
-    end
-  end
-
-  def test_rejects_a_legacy_hosted_ci_path_missing_its_standard_entry_point_on_the_trusted_ref
-    with_repository do |root|
-      legacy = File.join(root, '.agents/bin/trigger_hosted_ci')
-      write_executable(root, '.agents/bin/trigger_hosted_ci')
-      commit_repository(root)
-      FileUtils.rm(legacy)
-
-      message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
-      assert_includes message, '.agents/bin/trigger_hosted_ci requires the standard entry point'
-      assert_includes message, '.agents/bin/trigger-hosted-ci at trusted ref'
     end
   end
 
   def test_rejects_a_directory_at_a_trusted_optional_path
     with_repository do |root|
-      path = File.join(root, '.agents/bin/validate-local')
+      path = File.join(root, '.agents/shaka/bin/validate-local')
       FileUtils.mkdir_p(path)
       File.write(File.join(path, '.keep'), '')
       commit_repository(root)
@@ -228,40 +201,40 @@ class TrustedConfigSourceCommandEntryTest < Minitest::Test
 
   def test_rejects_a_symlinked_trusted_command_directory
     with_repository do |root|
-      agents = File.join(root, '.agents')
+      agents = File.join(root, '.agents/shaka')
       FileUtils.mv(File.join(agents, 'bin'), File.join(root, 'scripts'))
-      File.symlink('../scripts', File.join(agents, 'bin'))
+      File.symlink('../../scripts', File.join(agents, 'bin'))
       commit_repository(root)
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
-      assert_includes message, '.agents/bin at'
+      assert_includes message, '.agents/shaka/bin at'
       assert_includes message, 'must be a real directory, not a symlink'
     end
   end
 
   def test_reports_a_missing_trusted_command_directory_accurately
     with_repository do |root|
-      FileUtils.rm_rf(File.join(root, '.agents/bin'))
+      FileUtils.rm_rf(File.join(root, '.agents/shaka/bin'))
       commit_repository(root)
-      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
       %w[setup validate test].each { |name| create_command(root, name) }
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
-      assert_includes message, 'Cannot inspect .agents/bin at'
+      assert_includes message, 'Cannot inspect .agents/shaka/bin at'
       refute_includes message, 'not a symlink'
     end
   end
 
   def test_rejects_a_trusted_optional_symlink_with_a_candidate_only_target
     with_repository do |root|
-      path = File.join(root, '.agents/bin/validate-local')
+      path = File.join(root, '.agents/shaka/bin/validate-local')
       File.symlink('future', path)
       commit_repository(root)
       create_command(root, 'future')
 
       message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
-      assert_includes message, '.agents/bin/validate-local at'
-      assert_includes message, 'must target a tracked executable file: .agents/bin/future'
+      assert_includes message, '.agents/shaka/bin/validate-local at'
+      assert_includes message, 'must target a tracked executable file: .agents/shaka/bin/future'
     end
   end
 end

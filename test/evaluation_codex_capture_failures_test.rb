@@ -8,29 +8,39 @@ class EvaluationCodexCaptureFailuresTest < Minitest::Test
   include EvaluationCaptureFixture
 
   def test_deadline_reaps_a_process_that_closed_its_output
-    # Leave startup headroom so the child reaches the hang before cleanup is asserted.
-    result = run_child("File.write('pid', Process.pid); STDOUT.close; STDERR.close; sleep 30", seconds: 2.0)
+    result = run_shell('exec >&- 2>&-; : > ready; exec sleep 30', seconds: 0.3)
     assert_equal 'timed_out', result.fetch('transport_status')
     assert_nil result.fetch('terminal')
-    refute_process(Integer(File.read(File.join(@root, 'pid'))))
+    assert_path_exists File.join(@root, 'ready')
+    refute_process(spawned_pid)
   end
 
   def test_deadline_kills_and_reaps_a_child_that_ignores_term
-    body = "Signal.trap('TERM', 'IGNORE'); File.write('pid', Process.pid); sleep 30"
-    result = run_child(body, seconds: 2.0)
+    result = run_shell("trap '' TERM; : > ready; exec sleep 30", seconds: 0.3)
     assert_equal 'timed_out', result.fetch('transport_status')
     assert_nil result.fetch('terminal')
-    refute_process(Integer(File.read(File.join(@root, 'pid'))))
+    assert_path_exists File.join(@root, 'ready')
+    refute_process(spawned_pid)
   end
 
   def test_parent_exit_cleans_up_descendants_before_waiting_for_pipe_eof
-    body = "fork { sleep 1; File.write('descendant-survived', 'bad') }; #{write_stream}"
+    descendant = "3000.times { break if File.exist?('release-descendant'); sleep 0.01 }"
+    body = "fork { #{descendant}; File.write('descendant-survived', 'bad') }; #{write_stream}"
     result = run_child(body)
     assert_equal 'completed', result.fetch('transport_status')
     assert_equal 'completed', result.fetch('native_status')
     refute result.fetch('command_capture_complete')
-    sleep 1
+    File.write(File.join(@root, 'release-descendant'), 'go')
+    sleep 0.3
     refute_path_exists File.join(@root, 'descendant-survived')
+  end
+
+  def test_termination_tolerates_a_group_left_with_only_zombies
+    with_zombie_only_group do |leader|
+      @capture.instance_variable_set(:@pid, leader)
+      @capture.send(:terminate)
+      assert_raises(Errno::ECHILD) { Process.waitpid(leader, Process::WNOHANG) }
+    end
   end
 
   def test_descendants_are_cleaned_up_after_success_even_with_closed_pipes

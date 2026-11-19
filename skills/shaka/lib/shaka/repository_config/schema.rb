@@ -12,6 +12,7 @@ require_relative 'merge_schema'
 require_relative 'opening_schema'
 require_relative 'pr_description_schema'
 require_relative 'project_guidance_schema'
+require_relative 'high_risk_areas_schema'
 require_relative 'wip_schema'
 require_relative 'review_schema'
 require_relative 'validation'
@@ -23,27 +24,22 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch branches wip pr_description repo_prefix prose_limits project_guidance
-                    checkpoint].freeze
+      OPTIONAL = %w[base_branch branches walkthrough wip pr_description repo_prefix prose_limits project_guidance
+                    checkpoint high_risk_areas medium_risk_areas].freeze
       OPTIONAL_REVIEW_KEYS = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, ReviewSchema::PROMPT_FILE,
                               ReviewSchema::CUSTOM_INSTRUCTIONS,
                               ReviewSchema::LOCAL_REVIEW_COUNT, ReviewCoverage::KEY, ReviewLimit::KEY,
-                              'ci_review_wait'].freeze
+                              'ci_review_wait', 'startup_check'].freeze
 
       attr_reader :commands
 
-      def initialize(root:, data:, available_commands: nil, candidate_commands: true,
-                     selection: Configuration::Layout::Selection.new(policy: Configuration::Layout::LEGACY,
-                                                                     candidate: Configuration::Layout::LEGACY),
-                     &prompt_validator)
+      def initialize(root:, data:, available_commands: nil, candidate_commands: true, &prompt_validator)
         @root = root
         @data = data
         @available_commands = available_commands
         @candidate_commands = candidate_commands
         @prompt_validator = prompt_validator
-        @layout = selection.policy
-        @candidate_layout = selection.candidate
-        @config_path = @layout.contract
+        @config_path = Configuration::Paths::CONTRACT
       end
 
       def validate
@@ -81,6 +77,13 @@ module Shaka
         WipSchema.new(@data['wip']).validate if @data.key?('wip')
         validate_description
         RepoPrefix.validate!(@data['repo_prefix']) if @data.key?('repo_prefix')
+        validate_risk_areas
+      end
+
+      def validate_risk_areas
+        [HighRiskAreasSchema, MediumRiskAreasSchema].each do |schema|
+          schema.new(@data[schema::KEY]).validate if @data.key?(schema::KEY)
+        end
       end
 
       def validate_description
@@ -91,8 +94,7 @@ module Shaka
 
       def validate_commands
         @commands = CommandSchema.new(root: @root, available_commands: @available_commands,
-                                      candidate_commands: @candidate_commands, layout: @layout,
-                                      candidate_layout: @candidate_layout).validate
+                                      candidate_commands: @candidate_commands).validate
       end
 
       def validate_review
@@ -102,10 +104,17 @@ module Shaka
         ReviewSchema.renamed!(review)
         keys!(review, ['required'], OPTIONAL_REVIEW_KEYS, 'review')
         ReviewSchema.new(review).validate
+        validate_review_options(review)
+        local_prompt_files!(PostImplementationSchema.fold(@data)) unless @available_commands
+      end
+
+      def validate_review_options(review)
+        if review.key?('startup_check')
+          enum!(review['startup_check'], [true, false], 'review.startup_check must be true or false')
+        end
         ReviewCoverage.validate!(review)
         count = ReviewSchema::LOCAL_REVIEW_COUNT
         positive_integer!(review[count], "review.#{count}") if review.key?(count)
-        local_prompt_files!(PostImplementationSchema.fold(@data)) unless @available_commands
       end
 
       def validate_checkpoint

@@ -26,6 +26,9 @@ module ReviewReplyFixture
     (@reports ||= []) << file.path
     file.path
   end
+
+  # The marked paragraph under the identity line, where a reply names the reviews it answers.
+  def review_lines(body) = body.split("\n\n", 3)[1].delete_prefix("#{Shaka::AgentPost::REVIEWS_MARK}\n")
 end
 
 # A review reply's opening line comes from the published comment, not from text the author types.
@@ -45,8 +48,7 @@ class ReviewReplyTest < Minitest::Test
     body = compose({ 'reviews' => [URL] }, comments: [comment(URL, review_comment)])
 
     opening = "Addressed the [Local Adversarial Review](#{URL}) by anthropic/claude-opus-5-5 (high) on `aaaaaaa`."
-    assert body.start_with?(opening)
-    assert_includes body, '🤖 Codex · OpenAI · gpt-5.5 · medium'
+    assert_equal opening, review_lines(body)
     refute_includes body, 'anthropic/claude (high)'
   end
 
@@ -63,7 +65,7 @@ class ReviewReplyTest < Minitest::Test
     body = compose({ 'reviews' => [URL, HOSTED] },
                    comments: [comment(URL, review_comment), comment(HOSTED, hosted)])
 
-    lines = body.lines.map(&:rstrip)
+    lines = review_lines(body).lines.map(&:rstrip)
     assert_equal "Addressed the [Local Adversarial Review](#{URL}) by anthropic/claude-opus-5-5 (high) on `aaaaaaa`.",
                  lines[0]
     assert_equal "Responded to the [Claude review](#{HOSTED}).", lines[1]
@@ -160,6 +162,44 @@ class ReviewReplyTest < Minitest::Test
   end
 end
 
+# On #1097 a reply opened with the review it answered, so on the maintainer's own thread the
+# agent's answer read as the maintainer's until the identity line under it.
+class ReviewReplyOrderTest < Minitest::Test
+  include ReviewReplyFixture
+
+  URL = ReviewReplyTest::URL
+  IDENTITY_LINE = '🤖 Codex · OpenAI · gpt-5.5 · medium'
+  REVIEWS = "#{Shaka::AgentPost::REVIEWS_MARK}\nAddressed the [Local Adversarial Review]".freeze
+
+  def teardown
+    Array(@reports).each { |path| FileUtils.rm_f(path) }
+  end
+
+  def test_the_identity_line_opens_a_reply_that_names_its_review
+    identity, reviews, answer = compose.split("\n\n", 3)
+
+    assert_equal IDENTITY_LINE, identity
+    assert reviews.start_with?(REVIEWS)
+    assert_equal "Fixed the race.\n", answer
+  end
+
+  def test_a_publisher_note_stays_with_the_identity_line_above_the_review
+    identity, note, reviews = compose(publisher_note: 'Native publisher settings unavailable.').split("\n\n", 4)
+
+    assert_equal IDENTITY_LINE, identity
+    assert_equal '_Native publisher settings unavailable._', note
+    assert reviews.start_with?(REVIEWS)
+  end
+
+  private
+
+  def compose(publisher_note: nil)
+    content = { 'identity' => ReviewReplyTest::IDENTITY, 'summary' => 'Fixed the race.', 'reviews' => [URL] }
+    published = { 'id' => URL[/\d+\z/], 'html_url' => URL, 'body' => review_comment }
+    Shaka::ReviewReply.compose(content, FakeReviews.new([published]), publisher_note:)
+  end
+end
+
 # The reviewer cell carries the model; the reply reads it from the comment's execution table.
 class ReviewReplyExecutionTableTest < Minitest::Test
   include ReviewReplyFixture
@@ -202,15 +242,16 @@ end
 
 # Hosted and human comments have an API author, but no local execution attestation.
 class HostedReviewReplyTest < Minitest::Test
+  include ReviewReplyFixture
+
   HOSTED = ReviewReplyTest::HOSTED
-  HEAD = ReviewReplyFixture::HEAD
 
   def test_hosted_review_uses_github_author_without_guessing_model_or_revision
     hosted = "## Review summary\n\n**Head SHA:** `#{HEAD}`\n\n**Findings: no findings**\n"
     source = comment(hosted, 'claude[bot]')
     body = compose({ 'reviews' => [HOSTED] }, comments: [source])
 
-    assert body.start_with?("Responded to the [Review summary](#{HOSTED}) by `claude[bot]`.")
+    assert_equal "Responded to the [Review summary](#{HOSTED}) by `claude[bot]`.", review_lines(body)
     refute_includes body, 'UNKNOWN'
     refute_includes body, HEAD[0, 7]
   end
@@ -219,7 +260,7 @@ class HostedReviewReplyTest < Minitest::Test
     source = comment('# Review', 'justin808')
     body = compose({ 'reviews' => [HOSTED] }, comments: [source])
 
-    assert body.start_with?("Responded to the [Review](#{HOSTED}) by `justin808`.")
+    assert_equal "Responded to the [Review](#{HOSTED}) by `justin808`.", review_lines(body)
   end
 
   def test_invalid_author_metadata_is_not_copied_into_the_reply
@@ -227,7 +268,7 @@ class HostedReviewReplyTest < Minitest::Test
       source = comment('# Review', login)
       body = compose({ 'reviews' => [HOSTED] }, comments: [source])
 
-      assert body.start_with?("Responded to the [Review](#{HOSTED}).\n")
+      assert_equal "Responded to the [Review](#{HOSTED}).", review_lines(body)
     end
   end
 

@@ -351,17 +351,6 @@ class PrivateSetupRefusalTest < Minitest::Test
     end
   end
 
-  def test_untracked_legacy_contract_refuses_before_private_writes
-    with_setup do |root, ref|
-      FileUtils.mkdir_p(File.join(root, '.agents'))
-      File.write(File.join(root, '.agents/agent-workflow.yml'), "version: 1\n")
-      assert_raises(Shaka::Error) { setup_private(root, ref) }
-      refute_path_exists File.join(root, '.agents/shaka')
-      refute_path_exists File.join(root, '.git/shaka-private-id')
-      refute_includes File.read(File.join(root, '.git/info/exclude')), '/.agents/shaka/'
-    end
-  end
-
   def test_later_exclusion_negation_blocks_setup_without_duplicate_rule
     with_setup do |root, ref|
       exclude = File.join(root, '.git/info/exclude')
@@ -846,8 +835,8 @@ class PrivateAdoptionTest < Minitest::Test
   end
 
   def replace_agents_with_external_link(root)
-    File.write(File.join(root, '.agents/agent-workflow.yml'), "version: 1\n")
-    git(root, 'add', '.agents/agent-workflow.yml')
+    File.write(File.join(root, '.agents/shaka/config.yml'), "version: 1\n")
+    git(root, 'add', '-f', '.agents/shaka/config.yml')
     FileUtils.rm_rf(File.join(root, '.agents'))
     external = "#{root}-external-agents"
     FileUtils.mkdir_p(File.join(external, 'shaka'))

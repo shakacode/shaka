@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../configuration'
+require_relative '../configuration/machine_reviewers'
 require_relative '../review_prompt'
 require_relative '../reviewer_settings'
 require_relative 'settings_source'
@@ -25,11 +26,16 @@ module Shaka
       "replacement #{path}#{where} (#{setting})"
     end
 
-    # Effective model and effort apply where the task named none.
+    # Effective model and effort apply where the task named none; this machine's list fills what
+    # the repository entry leaves unset.
     def apply_trusted_settings!
       agent = reviewer_settings(effective_review || {})
-      return unless agent
+      apply_repository_settings!(agent) if agent
+      machine = Configuration::MachineReviewers.load(home: Dir.home)
+      machine&.fill(agent, reviewer)&.each { |key, value| @options[key.to_sym] ||= value }
+    end
 
+    def apply_repository_settings!(agent)
       schema = RepositoryConfig::ReviewSchema
       { model: [schema::MODEL, :model_name!], effort: [schema::EFFORT, :effort_level!] }
         .each do |option, (key, check)|

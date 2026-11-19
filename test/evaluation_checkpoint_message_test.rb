@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'post_implementation_disposition_test'
+require 'shaka/trusted_config_source'
 
 class EvaluationCheckpointMessageTest < Minitest::Test
   include PostImplementationDispositionFixture
@@ -31,15 +32,57 @@ class EvaluationCheckpointMessageTest < Minitest::Test
     end
   end
 
-  def test_ready_checkpoint_waits_for_the_walkthrough_of_its_head
+  # Under trusted on_request settings, a walkthrough is due once this account published one or recorded a request.
+  def test_ready_checkpoint_waits_for_the_walkthrough_this_account_already_started
+    assert_refused_ready { |github| github.walkthrough = 'b' * 40 }
+  end
+
+  def test_ready_checkpoint_waits_for_a_requested_walkthrough
+    assert_refused_ready do |github|
+      github.walkthrough = nil
+      github.comments = [{ 'user' => { 'login' => github.viewer_login },
+                           'body' => "#{Shaka::WalkthroughDue::REQUEST_MARKER}\nAsked." }]
+    end
+  end
+
+  def assert_refused_ready
     with_result do |result, path|
       result['disposition'] = disposition('Merge')
-      [nil, 'b' * 40].each do |walkthrough|
-        github = PostImplementationPublicationFixture::GitHub.new('a' * 40)
-        github.walkthrough = walkthrough
-        assert_equal 1, publish(result, path, github:)[1]
-        assert_empty github.bodies
+      github = PostImplementationPublicationFixture::GitHub.new('a' * 40)
+      yield github
+      with_trusted_settings { assert_equal 1, publish(result, path, github:, flags: ['--ref', 'c' * 40])[1] }
+      assert_empty github.bodies
+    end
+  end
+
+  # This repository's trusted settings use the on_request default.
+  def test_ready_checkpoint_needs_no_walkthrough_nobody_asked_for
+    with_result do |result, path|
+      result['disposition'] = disposition('Merge')
+      github = PostImplementationPublicationFixture::GitHub.new('a' * 40)
+      github.walkthrough = nil
+      with_trusted_settings do
+        assert_equal 0, publish(result, path, github:, flags: ['--ref', 'c' * 40])[1]
       end
+    end
+  end
+
+  def with_trusted_settings
+    trusted = Shaka::RepositoryConfig.load(root: File.expand_path('..', __dir__))
+    original = Shaka::TrustedConfigSource.method(:from_ref)
+    Shaka::TrustedConfigSource.define_singleton_method(:from_ref) { |**| trusted }
+    yield
+  ensure
+    Shaka::TrustedConfigSource.define_singleton_method(:from_ref, original)
+  end
+
+  # Without readable trusted settings the gate keeps the earlier rule.
+  def test_without_trusted_settings_a_ready_checkpoint_waits_for_a_walkthrough
+    with_result do |result, path|
+      result['disposition'] = disposition('Merge')
+      github = PostImplementationPublicationFixture::GitHub.new('a' * 40)
+      github.walkthrough = nil
+      assert_equal 1, publish(result, path, github:)[1]
     end
   end
 

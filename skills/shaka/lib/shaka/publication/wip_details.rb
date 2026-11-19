@@ -2,6 +2,7 @@
 
 require_relative '../error'
 require_relative 'text'
+require_relative 'wip_metadata'
 
 module Shaka
   # Renders the WIP Details note as one table, so every host publishes the same fields in the same shape.
@@ -31,13 +32,20 @@ module Shaka
       'WIP Owner must be machine alias · host · owner tag; use UNKNOWN for unavailable information.'
     end
 
-    def initialize(spec, path_redaction: nil)
+    def self.refuse_free_form!(items)
+      return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(SUMMARY) }
+
+      raise Error, 'Publication WIP Details must be supplied as the wip object, not a details item.'
+    end
+
+    def initialize(spec, path_redaction: nil, session: {})
       @spec = spec
       @path_redaction = path_redaction
+      @session = session
     end
 
     def detail
-      { 'summary' => SUMMARY, 'body' => table }
+      { 'summary' => SUMMARY, 'body' => "#{table}\n\n#{@collection}" }
     end
 
     private
@@ -59,11 +67,24 @@ module Shaka
       problem = self.class.owner_error(cells.fetch('owner'))
       raise Error, problem if problem
 
+      @collection = WipMetadata.record(cells.fetch('owner'), cells.fetch('thread'), **session_arguments)
       cells
     end
 
     def refuse_keys(keys, problem, advice = '')
       raise Error, "Publication wip #{problem}: #{keys.join(', ')}#{advice}." unless keys.empty?
+    end
+
+    def session_arguments
+      { environment: @session[:environment], disclosure: @session[:disclosure], host_name: @session[:host_name],
+        previous: @session[:previous] || previous_note }
+    end
+
+    def previous_note
+      body = @session[:pull].is_a?(Hash) ? @session[:pull]['body'] : nil
+      return {} unless body
+
+      { 'owner' => Handoff::WipNote.value(body, 'owner'), 'thread' => Handoff::WipNote.value(body, 'thread') }
     end
 
     def cell(key)

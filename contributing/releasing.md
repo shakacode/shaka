@@ -12,10 +12,25 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
 
 1. Change `Shaka::VERSION` in `skills/shaka/lib/shaka/version.rb` through a reviewed pull
    request and merge it. The gemspec reads that constant, and `shaka seam init` stamps it
-   into the `.agents/shaka.md` it generates. Before selecting the release commit,
-   finalize the changelog heading with the publication date and compare the previous
-   tag to the intended release tag. Set `Unreleased` to compare the intended tag to
-   `HEAD`. Merge these source edits through a reviewed preparation PR.
+   into the `.agents/shaka.md` it generates. In the same PR, write the version's
+   `CHANGELOG.md` entry. Feature PRs leave that file alone and put their note in the
+   description's Changelog section. List the PRs merged since the previous tag:
+
+   ```bash
+   git log --first-parent --format=%s PREVIOUS_TAG..origin/main
+   ```
+
+   Each subject ends with `(#N)`. Read each PR's Changelog section with
+   `gh pr view N --repo shakacode/shaka --json body`. Check the note against what the
+   PR merged, and skip notes that say `None`. When a PR has no Changelog section or
+   left it blank, check `## [Unreleased]` before writing a note: PRs merged before
+   this process recorded their notes there. Merge the notes with any entries already
+   under `## [Unreleased]`, grouped as the file's header format asks. Rename that heading
+   to `## [VERSION] - YYYY-MM-DD` with the planned publication date,
+   and add an empty `## [Unreleased]` above it. At the bottom, add a `[VERSION]` link
+   comparing the previous tag to the intended tag, and change `[Unreleased]` to compare
+   the intended tag to `HEAD`. If publication slips past that date, correct the heading before
+   selecting the release commit.
 2. Start from a clean, current `main` checkout after those preparation edits land.
 3. Install dependencies and run the repository validation:
 
@@ -33,8 +48,8 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
    gem specification /outside/checkout/shaka-VERSION.gem
    ```
 
-5. Confirm the version's `CHANGELOG.md` entry merged with the version change: a short
-   summary, then breaking changes with upgrade steps. Save that entry's body as
+5. Confirm the version's `CHANGELOG.md` entry merged with the version change and
+   follows the format the file's header names. Save that entry's body as
    `RELEASE_NOTES.md`. Before requesting publication approval, complete the
    [release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md) for the intended host/model/effort
    profiles and retain its results. Then run the maintainer preflight from the

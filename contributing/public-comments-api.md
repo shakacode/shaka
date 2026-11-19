@@ -60,7 +60,7 @@ You supply:
 | Expected head | `expected_head:`, the full 40-character PR head commit. Required for pull requests and rejected for issues. The read fails if the PR is closed or its head changes before the read finishes. |
 | GitHub authentication | Inside your adapter. Shaka never reads tokens. |
 | Machine configuration | `machine_path:`, a local file. It defaults to `~/.agents/trusted-github-actors.yml`; an absent file is an empty scope. |
-| Repository configuration | Nothing. The reader fetches the configured layout's trust file at the repository's current default-branch commit: `.agents/shaka/trusted-github-actors.yml` or the older `.agents/trusted-github-actors.yml`. A pull request cannot trust its own author. |
+| Repository configuration | Nothing. The reader fetches `.agents/shaka/trusted-github-actors.yml` at the repository's current default-branch commit. A pull request cannot trust its own author. |
 
 Both files use the keys in
 [working with your agent](../skills/shaka/references/public-comments-safety.md#configure-trusted-actors). A read that

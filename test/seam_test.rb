@@ -28,7 +28,7 @@ class SeamTest < Minitest::Test
   def test_check_can_read_policy_from_a_trusted_git_ref
     with_repository do |root|
       commit_repository(root)
-      path = File.join(root, '.agents/agent-workflow.yml')
+      path = File.join(root, '.agents/shaka/config.yml')
       File.write(path, File.read(path).sub('preference: auto', 'preference: ask'))
       assert_equal 'auto', check_config(root, '--ref', 'HEAD').dig('merge', 'preference')
     end
@@ -46,15 +46,15 @@ class SeamTest < Minitest::Test
     end
   end
 
-  def test_trusted_optional_command_must_remain_available_in_the_candidate
+  def test_trusted_optional_command_missing_from_the_candidate_is_not_configured
     with_repository do |root|
       write_command(root, 'validate-local')
       commit_repository(root)
-      FileUtils.rm(File.join(root, '.agents/bin/validate-local'))
+      FileUtils.rm(File.join(root, '.agents/shaka/bin/validate-local'))
 
-      _output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root, '--ref', 'HEAD')
-      refute_predicate status, :success?
-      assert_includes error, '.agents/bin/validate-local does not exist'
+      commands = check_config(root, '--ref', 'HEAD').fetch('commands')
+      refute commands.key?('validate_local')
+      assert_equal '.agents/shaka/bin/validate', commands.fetch('validate')
     end
   end
 
@@ -65,8 +65,8 @@ class SeamTest < Minitest::Test
       commit_repository(root)
 
       commands = check_config(root, '--ref', 'HEAD').fetch('commands')
-      assert_equal '.agents/bin/validate-local', commands.fetch('validate_local')
-      assert_equal '.agents/bin/trigger-hosted-ci', commands.fetch('trigger_hosted_ci')
+      assert_equal '.agents/shaka/bin/validate-local', commands.fetch('validate_local')
+      assert_equal '.agents/shaka/bin/trigger-hosted-ci', commands.fetch('trigger_hosted_ci')
     end
   end
 
@@ -77,7 +77,7 @@ class SeamTest < Minitest::Test
 
       _output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--root', root, '--ref', 'HEAD')
       refute_predicate status, :success?
-      assert_includes error, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
+      assert_includes error, '.agents/shaka/bin/trigger-hosted-ci requires .agents/shaka/bin/validate-local'
     end
   end
 end
@@ -109,12 +109,29 @@ class SeamPointerTest < Minitest::Test
     assert_includes error, 'pointer'
   end
 
+  def test_init_refuses_the_pointer_readme_option
+    Dir.mktmpdir do |root|
+      _output, error, status = Open3.capture3(*COMMAND, 'seam', 'init', '--root', root, '--readme')
+
+      refute_predicate status, :success?
+      assert_includes error, '--readme applies only to pointer'
+      assert_empty Dir.children(root)
+    end
+  end
+
+  def test_check_refuses_the_pointer_readme_option
+    _output, error, status = Open3.capture3(*COMMAND, 'seam', 'check', '--readme')
+
+    refute_predicate status, :success?
+    assert_includes error, '--readme applies only to pointer'
+  end
+
   private
 
   def assert_trust_safe_pointer(output)
     commands = output.scan(/`([^`]+)`/).flatten
 
-    assert_includes output, '## Agent Workflow Configuration'
+    assert_includes output, '## Shaka configuration'
     assert_includes commands, 'gh repo view --json owner,visibility,defaultBranchRef'
     refute_includes commands, 'gh repo view OWNER/REPO --json owner,visibility,defaultBranchRef'
     assert_includes commands, 'shaka seam check --root . --ref SHA'

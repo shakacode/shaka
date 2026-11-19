@@ -63,6 +63,25 @@ class PullTimelineTest < Minitest::Test
                   ['awaiting-resume', false], ['awaiting-resume', true]], names
   end
 
+  def test_records_the_earliest_check_start_on_the_head
+    commit = { 'oid' => 'a' * 40, 'checkSuites' => { 'nodes' => [
+      { 'createdAt' => '2026-10-18T08:05:00Z',
+        'checkRuns' => { 'nodes' => [{ 'startedAt' => '2026-10-18T08:06:00Z' }] } },
+      { 'createdAt' => '0001-01-01T00:00:00Z', 'checkRuns' => { 'nodes' => [] } }
+    ] } }
+    pull = page([]).merge('headCommit' => { 'nodes' => [{ 'commit' => commit }] })
+    timeline = read([pull])
+    assert_equal Time.utc(2026, 10, 18, 8, 5), timeline['ci_started_at']
+  end
+
+  # The watcher counts commit statuses too, so a republish must not move Prompt to CI later.
+  def test_an_earlier_commit_status_starts_ci_on_the_head
+    commit = { 'oid' => 'a' * 40, 'status' => { 'contexts' => [{ 'createdAt' => '2026-10-18T08:00:00Z' }] },
+               'checkSuites' => { 'nodes' => [{ 'createdAt' => '2026-10-18T08:05:00Z' }] } }
+    pull = page([]).merge('headCommit' => { 'nodes' => [{ 'commit' => commit }] })
+    assert_equal Time.utc(2026, 10, 18, 8), read([pull])['ci_started_at']
+  end
+
   def test_reports_the_first_commit_and_the_merge
     timeline = read([page([])])
     assert_equal [Time.utc(2026, 10, 18, 7, 30), Time.utc(2026, 10, 18, 9)],

@@ -17,6 +17,8 @@ module Shaka
     PUBLISHER_NOTE = /_(?:#{CODEX_NOTE}|Native publisher settings unavailable|#{UNREAD})[^\n]*_/
     # The agent's identity line, with the publisher note the helper may print under it.
     IDENTITY_LINE = /^🤖 [^\n]*$(?:\n\n#{PUBLISHER_NOTE}$)?/
+    # The marked lines under the identity line name the reviews a reply answers; the answer follows.
+    REVIEW_LINES = /\A\s*#{Regexp.escape(AgentPost::REVIEWS_MARK)}\n(?:[^\n]+\n)*/
     # The content key that maps a longer comment's URL to the agent's one-line summary of it.
     SUMMARIES = 'human_comment_summaries'
 
@@ -65,7 +67,7 @@ module Shaka
     end
 
     def summarizable
-      @entries.humans.reject(&:unverified).select { |entry| longer?(entry) }.map(&:url)
+      @entries.written.reject(&:unverified).select { |entry| longer?(entry) }.map(&:url)
     end
 
     def longer?(entry) = CommentExcerpt.prose?(entry.body) && CommentExcerpt.whole(entry.body).nil?
@@ -114,7 +116,8 @@ module Shaka
       answer = @entries.answer(entry)
       return '—' unless answer
 
-      link(CommentExcerpt.opening(answer.body.to_s.split(IDENTITY_LINE, 2).last) || 'Reply', answer.url)
+      text = answer.body.to_s.split(IDENTITY_LINE, 2).last.to_s.sub(REVIEW_LINES, '')
+      link(CommentExcerpt.opening(text) || 'Reply', answer.url)
     end
 
     def link(label, url)

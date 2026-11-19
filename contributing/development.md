@@ -6,6 +6,7 @@ Install Node.js 22.19 or newer for the Pi extension tests. No npm installation i
 
 ```bash
 .agents/shaka/bin/setup
+bundle exec lefthook install
 .agents/shaka/bin/test test/repository_config_test.rb
 .agents/shaka/bin/validate
 ```
@@ -13,6 +14,13 @@ Install Node.js 22.19 or newer for the Pi extension tests. No npm installation i
 `setup` installs dependencies for working on Shaka. `bin/install` instead links
 Shaka skills into a coding agent's skills directory. `test` accepts test paths;
 `validate` chooses appropriate checks. `bin/validate` runs all tests and lint.
+
+`lefthook install` adds Git hooks, once per clone, that check only the files you
+change. A commit with a Ruby syntax error, or a RuboCop offence RuboCop cannot
+fix, is rejected in seconds, and a push lints the Ruby files its commits
+changed. The commit hook also fixes what RuboCop can, adds missing final
+newlines, and runs the docs link check when documentation or skills change.
+`validate` warns while the hooks are missing. `--no-verify` skips them once.
 
 ## Where changes belong
 

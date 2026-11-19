@@ -137,7 +137,9 @@ CANARY_BODY = <<~BODY
 
   ## Shaka metrics
 
-  AI spend $1.00 · Prompt to CI 5m · CI to ready 9m (1 round) · Ready to merged pending
+  🤖 Codex · OpenAI · gpt-test · low - AI spend: $1.00
+
+  **This head:** Prompt to CI 5m · CI to ready 9m · Ready to merged pending
 
   | Check | Result |
   | --- | --- |
@@ -313,6 +315,30 @@ class CanaryCollectTest < Minitest::Test
 
   def command_prefix(runner, name)
     runner.commands.find { |argv| argv[2] == name }.first(4)
+  end
+end
+
+class CanaryPublishTest < Minitest::Test
+  include CanaryCollectionFixtures
+
+  def test_a_failed_comment_still_closes_the_older_pull_requests
+    assert_equal [%w[gh pr comment 2], %w[gh pr close 1]], published({ 'number' => 2, 'close' => [1] }, 'comment')
+  end
+
+  def test_a_failed_close_still_tries_the_remaining_pull_requests
+    assert_equal [%w[gh pr close 1], %w[gh pr close 3]], published({ 'number' => nil, 'close' => [1, 3] }, '1')
+  end
+
+  # Publishes the result with every command containing failure failing; the run must exit 1.
+  def published(result, failure)
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'canary-result.json'), JSON.generate(result))
+      File.write(File.join(dir, 'canary-summary.md'), "summary\n")
+      runner = FakeCanary.new('[]', failure: failure)
+
+      assert_equal 1, Shaka::Canary::Publish.call(environment(dir), runner: runner)
+      runner.commands.map { |argv| argv.first(4) }
+    end
   end
 end
 

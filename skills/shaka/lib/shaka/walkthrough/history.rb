@@ -26,6 +26,18 @@ module Shaka
       opening_identity?(lines) && heading?(lines) && closing_footer?(lines)
     end
 
+    # Publishing a body the ready checkpoint cannot find for this head would only fail later, after the write.
+    def self.verify_recognizable!(body, head)
+      lines = visible_lines(body)
+      missing = { 'identity line first' => opening_identity?(lines), '`# Code Walkthrough` heading' => heading?(lines),
+                  'commit footer last' => closing_footer?(lines) }.reject { |_, present| present }.keys
+      missing << "footer revision #{head}" if missing.empty? && revision(body) != head
+      return if missing.empty?
+
+      raise Error, "Walkthrough body lacks #{missing.join(', ')}, so the ready checkpoint would not recognize it. " \
+                   'Publish with --content-file, which renders this shape, or see `shaka walkthrough --help`.'
+    end
+
     def self.visible_lines(body) = unfenced(body).lines.map(&:strip).reject(&:empty?)
 
     def self.opening_identity?(lines) = lines.first&.match?(IDENTITY)
@@ -123,13 +135,16 @@ module Shaka
 
     private
 
+    # Notes are deleted only for reviews now archived behind the current walkthrough. A review edited
+    # meanwhile, or one whose archive update failed, keeps its notes for a later walkthrough to retry.
     def fold_all(reviews, url, account, report)
+      @confirmed = []
       reviews.each { |review| fold_one(review, url, account, report) }
-      Walkthrough::NoteThreads.new(@github, account).resolve_all(reviews, report)
+      Walkthrough::NoteThreads.new(@github, account).delete_all(@confirmed, report)
       report
     end
 
-    def fresh_report = { 'collapsed' => [], 'left_intact' => [], 'resolved_notes' => [], 'unavailable' => [] }
+    def fresh_report = { 'collapsed' => [], 'left_intact' => [], 'deleted_notes' => [], 'unavailable' => [] }
 
     def earlier_walkthroughs(published)
       raise Error, 'Published walkthrough has no submission time.' unless WalkthroughText.submitted_at(published)
@@ -149,6 +164,7 @@ module Shaka
       return unless source
 
       apply_revision(review, revised_body(source, url), source, report)
+      @confirmed << review
     rescue Error => e
       report['unavailable'] << "Review #{review['id']}: #{e.message}"
     end

@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+# Counts hosted Claude reports and inline threads per period. Input: one JSON PR per line, with
+# `comments` and `reviewThreads` nodes (author login, createdAt, body), for PRs created in the window.
+require 'json'
+require 'time'
+P446 = Time.parse('2026-10-11T19:53:19Z')
+P640 = Time.parse('2026-10-18T05:13:24Z')
+def period(stamp)
+  t = Time.parse(stamp)
+  return 'before_446' if t < P446
+
+  t < P640 ? '446_to_640' : 'after_640'
+end
+rows = Hash.new { |h, k| h[k] = Hash.new(0) }
+File.foreach(ARGV[0], encoding: 'utf-8') do |line|
+  pr = JSON.parse(line)
+  pr['comments']['nodes'].each do |c|
+    next unless c.dig('author', 'login') == 'claude'
+
+    d = rows[period(c['createdAt'])]
+    d['reports'] += 1
+    d['report_chars'] += c['body'].size
+    next unless (n = c['body'][/FINDINGS (\d+)\s*\z/, 1])
+
+    d['with_count_line'] += 1
+    d['nonzero'] += 1 if n.to_i.positive?
+    d['findings'] += n.to_i
+  end
+  pr['reviewThreads']['nodes'].each do |t|
+    c = t['comments']['nodes'].first
+    rows[period(c['createdAt'])]['threads'] += 1 if c.dig('author', 'login') == 'claude'
+  end
+end
+%w[before_446 446_to_640 after_640].each { |k| puts({ period: k, **rows[k].transform_keys(&:to_sym) }.to_json) }

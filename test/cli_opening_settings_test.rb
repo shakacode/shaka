@@ -40,7 +40,7 @@ class CliOpeningSettingsTest < Minitest::Test
 
   def test_candidate_changes_cannot_choose_another_opening_model
     with_settings('reviewer' => 'anthropic/claude', 'model' => 'trusted-model') do |root, dir|
-      File.write(File.join(root, '.agents/agent-workflow.yml'),
+      File.write(File.join(root, '.agents/shaka/config.yml'),
                  YAML.dump(seam('pr_description' => { 'opening_check' => { 'reviewer' => 'openai/codex',
                                                                            'model' => 'candidate-model' } })))
       assert_opening(dir, root, 'flagged')
@@ -76,7 +76,7 @@ class CliOpeningSettingsTest < Minitest::Test
       require 'json'
       STDIN.read
       File.write(File.join(ENV.fetch('HOME'), 'codex-args.json'), JSON.generate(ARGV))
-      File.write(ARGV[ARGV.index('-o') + 1], #{JSON.generate('sentences' => [sentence]).inspect})
+      File.write(ARGV[ARGV.index('-o') + 1], #{JSON.generate('sentences' => [sentence], 'unclear_terms' => []).inspect})
     RUBY
   end
 end

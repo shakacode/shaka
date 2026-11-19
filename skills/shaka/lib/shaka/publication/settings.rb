@@ -15,25 +15,39 @@ module Shaka
                       'uninstalled' => 'no installation record', 'UNKNOWN' => 'installation source unavailable' }.freeze
     OPERATIONS = { 'validation' => 'Validation', 'review' => 'Review' }.freeze
     CURRENT = 'Current settings'
+    # Execution details shows the skill version: its commit when known, otherwise the release.
+    VERSION_POINTER = 'Shaka skill version under Execution details'
     # Settings from these sources are not readable in the repository, so the block keeps every value.
     UNCOMMITTED = %w[private/local preview/local].freeze
 
     def detail
-      status = if @verdict
-                 'Recorded checks match this PR’s current commit.'
+      status = if @verdict&.key?('kept_line')
+                 'Recorded checks kept from this commit’s earlier description; not rechecked.'
+               elsif @verdict
+                 ['Recorded checks match this PR’s current commit.', *review_not_required].join(' ')
                else
                  'No matching check records supplied. Rerun missing validation or review to record them.'
                end
       { 'summary' => SUMMARY, 'body' => [status, NOTE, current_line, *operations_table, *values].join("\n\n") }
     end
 
+    # What prepare found when the bound reviews number fewer than the trusted settings configure,
+    # and the zone PR times are shown in.
+    # Read here, beside the renderers a preview loads from the PR head, so an installed helper
+    # that never sets it previews with no shortfall instead of failing.
+    attr_reader :reviewer_shortfall, :time_zone
+
     private
+
+    def review_not_required
+      ['This repository’s settings do not require review.'] if @verdict['review_required'] == false
+    end
 
     def current_line
       settings = Evidence::PublicSettings.sanitize(@current)
       version, installation = settings.values_at('installation.version', 'installation.source')
-      shaka = "#{version} (#{INSTALLATIONS.fetch(installation, 'REDACTED')})"
-      "#{CURRENT}: #{SettingsTable.source(settings, @repository)}; Shaka #{shaka}"
+      "#{CURRENT}: #{SettingsTable.source(settings, @repository)}; Shaka installation: version #{version}, " \
+        "#{INSTALLATIONS.fetch(installation, 'REDACTED')} (#{VERSION_POINTER})"
     end
 
     # One row per recorded result. Binding refuses a result whose settings differ from the

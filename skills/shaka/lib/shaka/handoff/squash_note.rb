@@ -6,7 +6,7 @@ require_relative '../public_comments/bounded_list'
 
 module Shaka
   class Handoff
-    # Finds this account's newest checkpoint or legacy standalone merge message.
+    # Finds this account's newest checkpoint or standalone merge message.
     class SquashNote
       MESSAGE_HEAD = /\n#{Regexp.escape(SquashComment::SQUASH_MARK)}\n<!-- head (\h{40}) -->\n/
 

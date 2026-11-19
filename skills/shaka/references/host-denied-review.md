@@ -16,13 +16,14 @@ classifications and diagnostic requirements.
 Use this recovery checklist:
 
 1. Explain the proposed provider request: the selected provider/model and effort,
-   review instructions, committed `git diff BASE...HEAD`, checkout path and head (access remains adapter- and host-limited),
+   review instructions, committed `git diff BASE...HEAD`, checkout path and head commit
+   with its files (access remains adapter- and host-limited),
    trusted criteria and configured prompt from
    `--criteria-ref`, optional public-safe description, and earlier ledger findings
    when present. The runner sends this context to the selected provider through its
    CLI using local credentials; it excludes the implementation conversation.
-   Restricted Claude reviews the embedded diff without Git access;
-   a supplied path does not guarantee file access. Other adapters may inspect
+   Restricted Claude reads the embedded diff and an export of the reviewed commit's files,
+   without Git access; a supplied path does not guarantee file access. Other adapters may inspect
    unchanged source only where restricted tools and host permission allow it.
    Report denied access and missing context rather than working around restrictions.
 2. Reconcile the host reason with existing task authorization. An authorized review
@@ -48,6 +49,9 @@ Use this recovery checklist:
    required independent review remain in force; a completed review later needs its
    own current-head evidence.
 
+When the denial is about sending code to the review provider, also follow
+[review consent](review-consent.md).
+
 ## Replay the blocked path without launching a provider
 
 Use a synthetic prelaunch denial to rehearse the checklist on a clean, committed
@@ -72,3 +76,12 @@ it grants no host permission and does not mean review succeeded. Keep this repla
 result separate from actual review evidence and the review ledger. Confirm no
 `--unavailable` substitution, fabricated attempt, or successful-review claim entered
 its handoff. This rehearses blocked evidence handling, not a real host's approval UI.
+
+The `review check` replay above covers blocked evidence only. To rehearse consent
+handling, give a fresh agent the [consent procedure](review-consent.md) and a
+synthetic data-transfer denial, and replay the scenario twice. With no consent in the task, expect a question
+that names the provider and model, repository, and payload, warns that the reviewer
+can read other checkout files, and no launch. With a synthetic scoped consent
+statement in the task, expect its exact quote with its source and a retry only through
+a host approval the user gives. Neither case may change the reviewer, payload, or
+flags, or report a completed review.

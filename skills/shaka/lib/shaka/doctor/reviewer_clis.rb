@@ -30,14 +30,38 @@ module Shaka
       private
 
       def report(review)
-        entries = @inventory.call(review)
-        warnings = readiness(entries, review)
-        summary = entries.map { |entry| entry.fetch(:summary) } + warnings
-        summary << 'No local reviewers configured; fresh host review remains available.' if
-          review && entries.none? { |entry| entry[:configured] }
-        summary << launch_summary
+        machine, machine_error = machine_list
+        entries = @inventory.call(review, machine:)
+        warnings = readiness(entries, review) + machine_error
+        summary = summary_lines(entries, review, machine_lines(machine, entries) + warnings)
         check('Reviewer CLIs', warnings.empty? ? 'healthy' : 'degraded', summary.join("\n    "),
               guidance: guidance(entries, warnings))
+      end
+
+      def summary_lines(entries, review, notes)
+        lines = entries.map { |entry| entry.fetch(:summary) } + notes
+        lines << 'No local reviewers configured; fresh host review remains available.' if
+          review && entries.none? { |entry| entry[:configured] }
+        lines << launch_summary
+      end
+
+      # A malformed list is a warning here; review runs refuse to start until it is fixed.
+      def machine_list
+        [@inventory.machine, []]
+      rescue Shaka::Error => e
+        [nil, ["#{e.message}; local reviews refuse to start until it is fixed."]]
+      end
+
+      # One list serves every repository, so an entry this one does not configure is informational.
+      def machine_lines(machine, entries)
+        return [] unless machine
+
+        configured = entries.select { |entry| entry[:configured] }.map { |entry| entry.fetch(:identity) }
+        listed = machine.identities.empty? ? 'none listed' : machine.identities.join(', ')
+        lines = ["Machine reviewers: #{listed} expected on this machine (#{machine.path})."]
+        lines + (machine.identities - configured).map do |identity|
+          "#{identity} in the machine reviewer list is not configured by this repository."
+        end
       end
 
       def launch_summary

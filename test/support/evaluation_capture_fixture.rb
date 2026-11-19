@@ -3,6 +3,7 @@
 require 'rbconfig'
 require 'tmpdir'
 require 'fileutils'
+require_relative 'ready_clock'
 
 module EvaluationCaptureFixture
   def setup
@@ -23,6 +24,16 @@ module EvaluationCaptureFixture
                  directory: @directory, seconds:, clock_id: 'test-controller', &)
   end
 
+  # Runs a shell script whose deadline starts once the script creates `ready` in the working directory.
+  def run_shell(script, seconds:)
+    ReadyClock.hold(@capture, File.join(@root, 'ready'))
+    @capture.run(command: ['/bin/sh', '-c', script], cwd: @root, directory: @directory, seconds:,
+                 clock_id: 'test-controller')
+  end
+
+  # The pid the capture spawned, which the child need not report.
+  def spawned_pid = @capture.instance_variable_get(:@pid)
+
   def native_stream
     [
       { type: 'thread.started', thread_id: 'native-thread' },
@@ -40,5 +51,32 @@ module EvaluationCaptureFixture
 
   def refute_process(pid)
     assert_raises(Errno::ESRCH) { Process.kill(0, pid) }
+  end
+
+  # Yields a dead, unreaped group leader whose group keeps one zombie that this process owns.
+  def with_zombie_only_group
+    leader = Process.spawn('/bin/sleep', '30', pgroup: true)
+    member = Process.spawn('/usr/bin/true', pgroup: leader)
+    wait_for_zombie(member)
+    Process.kill('KILL', leader)
+    wait_for_zombie(leader)
+    yield leader
+  ensure
+    [leader, member].compact.each { reap(it) }
+  end
+
+  def reap(pid)
+    Process.waitpid(pid)
+  rescue Errno::ECHILD
+    nil
+  end
+
+  def wait_for_zombie(pid)
+    3000.times do
+      return if IO.popen(['ps', '-o', 'stat=', '-p', pid.to_s], &:read).start_with?('Z')
+
+      sleep 0.01
+    end
+    flunk "Process #{pid} did not become a zombie"
   end
 end

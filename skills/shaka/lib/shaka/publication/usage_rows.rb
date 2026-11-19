@@ -96,7 +96,7 @@ module Shaka
     end
 
     # Rows follow the contribution order, implementation first, then the label.
-    # A legacy local review estimate has no label.
+    # An older local review estimate has no label.
     def ordered(rows)
       rows.sort_by { |label, _amounts, order| [order, label.to_s] }.map { |label, amounts| [label, amounts] }
     end

@@ -6,17 +6,24 @@ require_relative 'merge_submission'
 require_relative 'ci_review_wait'
 require_relative 'required_checks'
 require_relative 'merge_review_evidence'
+require_relative 'merge_wait_review'
 require_relative 'merge_required_checks'
 require_relative 'merge_limits'
+require_relative 'auto_merged_label'
+require_relative 'merge_walkthrough'
 
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
   class Merge
     include MergeRequiredChecks
 
-    # The head a user told the agent to merge although no required check gates it, and the
-    # MergeReviewFloor that sends PRs changing higher-floor paths back to the user.
-    attr_writer :empty_checks_confirmed_head, :review_floor
+    # The head a user told the agent to merge although no required check gates it, the
+    # MergeRiskGate that sends PRs above merge.auto_merge_max_risk back to the user, the MergeHold
+    # that stops a merge, whether the agent merges under Auto, where every head check must pass
+    # and the merge is labeled, and the MergeBaseFailures Auto may merge past.
+    attr_writer :empty_checks_confirmed_head, :risk_gate, :hold, :auto, :base_failures
+    # The WalkthroughDue that says whether this PR owes a walkthrough when none is named.
+    attr_writer :walkthrough_due
 
     # `review` takes MergeReviewEvidence's technical settings and final product checkpoint.
     def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
@@ -28,39 +35,38 @@ module Shaka
     end
 
     # `squash_message` is a SquashMessage, or nil for the repository's squash default.
-    def call(head:, base:, walkthrough:, limits: MergeLimits.new, squash_message: nil)
-      @target = MergeTarget.required!(head, base, limits, @review_floor)
+    def call(head:, base:, walkthrough: nil, limits: MergeLimits.new, squash_message: nil)
+      @target = MergeTarget.required!(head, base, limits, @risk_gate, @hold)
       @submission.message = squash_message
       @head = head
       initial = @github.snapshot
       verify_snapshot(initial, head, @target)
       gate = verify_gate
       evidence = verify_reviews(head, base, walkthrough, gate).merge(excused_checks(gate, head))
-      current = @github.snapshot
-      return reconcile_queued_replay(initial, current, head).merge(evidence) if initial['isInMergeQueue']
-
-      submit(initial, current, head).merge(evidence)
+      merged = submit(initial, @github.snapshot, head)
+      AutoMergedLabel.new(@github, enabled: @auto).mark(merged).merge(evidence, base_failure_evidence)
     end
 
     private
 
     def submit(initial, current, head)
+      return reconcile_queued_replay(initial, current, head) if initial['isInMergeQueue']
+
       verify_snapshot(current, head)
       @target.unchanged!(initial, current, @github)
       @review_evidence.final_check(head)
+      # Under Auto no person looked at the findings, so open ones stop it however late they were published.
+      MergeWaitReview.new(@github).refuse_open_findings! if @auto
+      # Base failures let Auto accept UNSTABLE, which no longer shows a check that failed since the
+      # first read, so every check is read again last.
+      verify_gate if @auto && @base_failures
       @submission.call(current, head)
-    end
-
-    def verify_gate
-      gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
-      verify_checks(gate.fetch('checks'), head: @head, confirmed_head: @empty_checks_confirmed_head)
-      gate
     end
 
     # The walkthrough explains the change; the attestation records that a separate review ran.
     # GitHub cannot catch a seam check that fails while these are read, so it is read again.
     def verify_reviews(head, base, walkthrough, gate)
-      verify_walkthrough(@github.review(walkthrough), head, walkthrough)
+      MergeWalkthrough.new(@github, @walkthrough_due).verify!(walkthrough, head)
       evidence = { 'review_evidence' => @review_evidence.call(head, base:) }
       verify_gate if gate['source'] == 'seam'
       evidence
@@ -84,7 +90,8 @@ module Shaka
 
     def verify_identity(pull, head)
       raise Error, 'PR head changed; refresh verification and walkthrough' unless pull['headRefOid'] == head
-      raise Error, 'PR must be open and not a draft' unless pull['state'] == 'OPEN' && pull['isDraft'] == false
+      raise Error, 'PR must be open and not a draft; mark a draft ready for review with `gh pr ready` first' unless
+        pull['state'] == 'OPEN' && pull['isDraft'] == false
 
       verify_pull_fields(pull)
     end
@@ -120,7 +127,7 @@ module Shaka
 
     def verify_native_state(pull)
       unless pull['isInMergeQueue']
-        verify_merge_state(pull, CiReviewWait.allowed_merge_states(@ci_review_wait, pull['isMergeQueueEnabled']))
+        verify_merge_state(pull, CiReviewWait.allowed_merge_states(merge_state_wait, pull['isMergeQueueEnabled']))
       end
 
       verify_review_state(pull)
@@ -136,15 +143,6 @@ module Shaka
       return if pull.key?('reviewDecision') && [nil, 'APPROVED'].include?(pull['reviewDecision'])
 
       raise Error, 'Required reviews are not satisfied or their state is unknown'
-    end
-
-    def verify_walkthrough(review, head, id)
-      unless review.is_a?(Hash) && review['id'].to_s == id.to_s && review['commit_id'] == head
-        raise Error, 'Walkthrough must identify a review on this PR at the expected head'
-      end
-      return if review['state'] == 'COMMENTED' && review['body'].is_a?(String) && !review['body'].strip.empty?
-
-      raise Error, 'Walkthrough must be a submitted COMMENT review with a nonempty body'
     end
   end
 end

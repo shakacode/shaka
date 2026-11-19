@@ -3,16 +3,18 @@
 require 'time'
 require_relative '../error'
 require_relative '../attention'
+require_relative '../publication/throughput_stats'
 
 module Shaka
   # Reads when the pull request opened, waited on a person, and closed, and its commits, for the description's timings.
   class PullTimeline
-    QUERY = <<~GRAPHQL
+    QUERY = <<~GRAPHQL.freeze
       query($owner: String!, $name: String!, $number: Int!, $cursor: String) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $number) {
             state createdAt mergedAt closedAt
             firstCommit: commits(first: 1) { nodes { commit { committedDate } } }
+            headCommit: commits(last: 1) { nodes { commit { #{ThroughputLine::HEAD_CHECKS} } } }
             commits(last: 100) { nodes { commit { oid tree { oid } } } }
             timelineItems(first: 100, after: $cursor, itemTypes: [LABELED_EVENT, UNLABELED_EVENT]) {
               pageInfo { hasNextPage endCursor }
@@ -91,6 +93,7 @@ module Shaka
       {
         'opened' => Time.iso8601(pull.fetch('createdAt')),
         'first_commit' => first && Time.iso8601(first),
+        'ci_started_at' => ci_started_at(pull),
         'merged' => pull['mergedAt'] && Time.iso8601(pull['mergedAt']),
         # A reopened pull request keeps its old closedAt.
         'closed' => pull['state'] == 'CLOSED' ? Time.iso8601(pull['closedAt']) : nil,
@@ -103,5 +106,9 @@ module Shaka
     end
 
     def commits(pull) = Array(pull.dig('commits', 'nodes')).filter_map { |node| node['commit'] if node.is_a?(Hash) }
+
+    def ci_started_at(pull)
+      ThroughputStats.earliest_start(pull.dig('headCommit', 'nodes', 0, 'commit'))
+    end
   end
 end

@@ -30,9 +30,9 @@ module LocalReviewSettingsRereviewFixture
 
   def create_repository
     git('init', '-q', '-b', 'main')
-    FileUtils.mkdir_p(File.join(@root, '.agents/bin'))
-    %w[setup validate test].each { |name| executable(File.join(@root, '.agents/bin', name), "#!/bin/sh\n") }
-    File.write(File.join(@root, '.agents/agent-workflow.yml'),
+    FileUtils.mkdir_p(File.join(@root, '.agents/shaka/bin'))
+    %w[setup validate test].each { |name| executable(File.join(@root, '.agents/shaka/bin', name), "#!/bin/sh\n") }
+    File.write(File.join(@root, '.agents/shaka/config.yml'),
                YAML.dump('version' => 1, 'merge' => { 'preference' => 'ask' }, 'review' => { 'required' => 'none' }))
     @base = commit('trusted')
     File.write(File.join(@root, 'example.txt'), "change\n")

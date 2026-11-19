@@ -27,7 +27,7 @@ class PackageConsumerSeamTest < Minitest::Test
 
   def test_installed_gem_rejects_duplicate_consumer_keys
     assert_local_failure('duplicate key') do |root|
-      File.write(File.join(root, '.agents/agent-workflow.yml'), <<~YAML)
+      File.write(File.join(root, '.agents/shaka/config.yml'), <<~YAML)
         version: 1
         version: 2
         review:
@@ -42,7 +42,7 @@ class PackageConsumerSeamTest < Minitest::Test
     skip 'this platform does not store an executable bit' if Shaka::ExecutableFile.windows?
 
     assert_local_failure('not executable') do |root|
-      File.chmod(0o644, File.join(root, '.agents/bin/validate'))
+      File.chmod(0o644, File.join(root, '.agents/shaka/bin/validate'))
     end
   end
 

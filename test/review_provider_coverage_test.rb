@@ -122,7 +122,7 @@ class ReviewProviderCoverageTest < Minitest::Test
   def validate(review) = Shaka::ReviewCoverage.validate!(review)
 
   def set_review(root, values)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     settings = YAML.safe_load_file(path)
     settings['review'].merge!(values)
     File.write(path, YAML.dump(settings))

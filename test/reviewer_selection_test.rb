@@ -10,12 +10,22 @@ class ReviewerSelectionTest < Minitest::Test
             { 'provider' => 'openai', 'model_family' => 'codex' },
             { 'provider' => 'xai', 'model_family' => 'grok' }].freeze
 
-  def select(implementers, unavailable: [], reviewers: ROSTER)
+  def select(implementers, unavailable: [], reviewers: ROSTER, count: 1)
     Shaka::ReviewerSelection.new(
       reviewers:,
       implementers: implementers.map { |text| Shaka::ReviewerSelection.parse(text) },
-      unavailable: unavailable.map { |text| Shaka::ReviewerSelection.parse(text) }
+      unavailable: unavailable.map { |text| Shaka::ReviewerSelection.parse(text) },
+      count:
     ).call
+  end
+
+  # https://github.com/shakacode/shaka/pull/954 ran only the reviewer the note named.
+  def test_the_note_names_every_reviewer_the_round_runs
+    note = select(['anthropic/claude'], count: 2).fetch('note')
+
+    assert_includes note, 'Run openai/codex'
+    assert_includes note, 'Also run anthropic/claude'
+    refute_includes select(['anthropic/claude']).fetch('note'), 'Also run'
   end
 
   def test_prefers_a_provider_that_did_not_implement_the_change

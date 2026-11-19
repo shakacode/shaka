@@ -7,8 +7,8 @@ reading on the lines it is about. It is neither a finding nor a to-do, and the
 walkthrough body still carries order, purpose, validation, risk, and rollback.
 Add a note where a pointer on the line saves the reviewer a search, such as
 where to start, a risky spot to read closely, a mechanical move to skim, or the
-alternative the code invites and you rejected. A change to three or more files
-gets a **Start here** note on the line where the behavior changes.
+alternative the code invites and you rejected. A walkthrough for a change to three
+or more files gets a **Start here** note on the line where the behavior changes.
 
 Place text elsewhere when it fits better: a code comment or clearer code for what
 a future maintainer needs, the description for what affects the merge decision,
@@ -19,8 +19,10 @@ PR diff shows; GitHub refuses the whole review otherwise, and the command names
 each note's location in its error. Notes count toward the walkthrough's prose limits.
 
 The command refuses notes when the base branch requires conversation resolution,
-because the current notes stay open until a newer walkthrough replaces them;
+because the current notes stay open until a newer walkthrough deletes them;
 publish that walkthrough without notes. Do the same when no changed line in the
-diff can hold a note, such as a change of only binary or deleted files. A newer walkthrough resolves the older
-notes that have no reply. Answer a note with a reply like any review thread, then
+diff can hold a note, such as a change of only binary or deleted files.
+
+A newer walkthrough deletes the older notes that have no reply, so post every note
+the new head needs again. Answer a note with a reply like any review thread, then
 resolve it.

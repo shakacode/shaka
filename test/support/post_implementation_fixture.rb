@@ -22,7 +22,7 @@ module PostImplementationFixture
   end
 
   def commit_candidate_instructions(root)
-    File.write(File.join(root, '.agents/agent-workflow.yml'),
+    File.write(File.join(root, '.agents/shaka/config.yml'),
                YAML.dump(seam('checkpoint' => { 'enabled' => false, 'model' => 'candidate-model' })))
     directory = File.join(root, 'skills/shaka/references')
     FileUtils.mkdir_p(directory)
@@ -47,7 +47,7 @@ module PostImplementationFixture
   def fake_checkpoint(bin, head, conclusion: 'Proceed', concerns: [], report_head: head)
     report = { head: report_head, conclusion:, reasons: ['A useful existing check is restored.'],
                concerns:, alternative: 'A guide sentence leaves the failure intact.',
-               verification_adequacy: ADEQUACY }
+               verification_adequacy: ADEQUACY, risk: RISK }
     write_executable(bin, 'codex', <<~RUBY)
       #!/usr/bin/env ruby
       require 'json'
@@ -58,7 +58,7 @@ module PostImplementationFixture
 
   def fake_claude(bin, head)
     report = { head:, conclusion: 'Proceed', reasons: ['Useful change'], concerns: [], alternative: 'No change',
-               verification_adequacy: ADEQUACY }
+               verification_adequacy: ADEQUACY, risk: RISK }
     write_executable(bin, 'claude', <<~RUBY)
       #!/usr/bin/env ruby
       require 'json'

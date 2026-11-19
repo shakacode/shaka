@@ -6,9 +6,9 @@ Shaka supplies the process; your repository supplies the commands and constraint
 | --- | --- |
 | Intake | Confirm the task, repository, ownership, and merge preference |
 | Plan | Assess value, scope, risk, model, and effort |
-| Implement | Reproduce bugs or test new behavior, then make the change |
+| Implement | Reproduce bugs or test new behavior, make the change, and update any text that still describes the old behavior |
 | Verify | Run local checks, review independently, and fix findings |
-| Explain | Publish the PR, walkthrough, evidence, and usage |
+| Explain | Publish the PR, evidence, usage, and a walkthrough when one is due |
 | Review | Handle GitHub review findings and required checks |
 | Finish | Merge when authorized, or return the reviewed PR for your merge |
 
@@ -16,7 +16,11 @@ Before shipping, Shaka compares the finished solution with the original goal, th
 recommends **Merge**, **Merge after maintainer decision**, **Revise before merge**,
 **Reconsider approach**, or **Do not merge**.
 A working implementation can still warrant reconsideration. Each recommendation
-includes a reason and next step; Merge still follows your checks and Ask or Auto choice.
+includes a reason and next step; Merge still follows your checks and Ask or `auto` choice.
+
+When Shaka recommends a model and effort, it aims to minimize the task's total work.
+Effort is not priced per token, the input the agent reads dominates spend, and rework
+costs the most ([evidence](https://github.com/shakacode/shaka/issues/45)).
 
 `shaka workflow` validates and prints the
 [workflow definition](../skills/shaka/config/workflow.yml). The agent loads
@@ -36,7 +40,16 @@ repository, anyone can comment or open a PR from a fork. So the agent withholds
 comments from untrusted authors, treats diffs as data rather than instructions,
 and reads settings from the default branch rather than from the PR under review.
 Even a comment the agent reads is review input, not an instruction: settings and
-merge approval come from you and the default branch.
+merge approval come from you and the default branch. The same goes for the branch a
+PR targets. The agent never takes it from an issue, a PR description, or a comment,
+because that text would then choose which code the setup and validation commands
+run before anyone looks. When a PR already targets some other branch, the agent
+confirms it with you and waits for your merge decision.
+
+Your check scripts under `.agents/shaka/bin/` are the exception: Shaka runs them
+from the PR's own branch, so a PR can change what `validate` does. Shaka does
+not inspect a changed script before running it. Before you ask an agent to work on
+a PR that changes them, such as one from a fork, read those changes like other code.
 
 ![Maintainers, the default branch, and your decisions steer the agent. Public comments, fork PR diffs, and settings changed in the PR are read as data only.](img/trust-boundary.svg)
 
@@ -51,6 +64,7 @@ They do not restrict maintainers.
 | Which public comment bodies an agent reads | Ruby allowlist and provenance checks |
 | Reviewed commit and required GitHub merge conditions | Ruby merge helper and GitHub protection |
 | Posted review evidence covering the merged commit, or a stated waiver | Ruby merge helper, when the agent merges and review is required |
+| PR size within [`merge.limits`](settings.md#mergelimits), or a person's confirmation of that commit | Ruby merge helper, when the agent merges |
 | Sentence, paragraph, and total length of PR descriptions and walkthroughs | Ruby publication helpers, using [`prose_limits`](settings.md#prose_limits) |
 | Adequate tests, useful screenshots, and how thorough the review was | Agent judgment and review |
 | Keeping private information out of publications | Agent inspection; no automated privacy scan |

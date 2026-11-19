@@ -10,17 +10,16 @@ module Shaka
     class CommandSchema
       include Validation
 
-      def initialize(root:, available_commands: nil, candidate_commands: true,
-                     layout: Configuration::Layout::LEGACY, candidate_layout: layout)
+      LAYOUT = Configuration::Layout::CURRENT
+
+      def initialize(root:, available_commands: nil, candidate_commands: true)
         @root = root
         @available_commands = available_commands
         @candidate_commands = candidate_commands
-        @layout = layout
-        @candidate_layout = candidate_layout
       end
 
       def validate
-        commands = validate_names(@layout.required.keys + available_optional_commands)
+        commands = validate_names(LAYOUT.required.keys + available_optional_commands)
         validate_candidate_optional_commands
         commands
       end
@@ -35,10 +34,11 @@ module Shaka
         return trusted_names(names) unless @candidate_commands
 
         validate_interface_directory
-        validate_legacy_optional_paths
+        return trusted_names(names) if predates_commands?
+
         validate_dependencies(names)
         names.to_h do |name|
-          path = @candidate_layout.commands.fetch(name)
+          path = LAYOUT.commands.fetch(name)
           executable!(path, path)
           [name, path]
         end.freeze
@@ -50,32 +50,44 @@ module Shaka
       end
 
       def trusted_commands(names)
-        names.to_h { |name| [name, @layout.commands.fetch(name)] }.freeze
+        names.to_h { |name| [name, LAYOUT.commands.fetch(name)] }.freeze
       end
 
+      # A branch cut before the repository added its command directory runs the trusted commands instead.
+      def predates_commands? = @available_commands && !command_entry?(LAYOUT.command_directory)
+
       def validate_interface_directory
-        [Configuration::Paths::DIRECTORY, File.dirname(@candidate_layout.contract),
-         @candidate_layout.command_directory].uniq.each do |relative|
+        [Configuration::Paths::DIRECTORY, File.dirname(LAYOUT.contract),
+         LAYOUT.command_directory].uniq.each do |relative|
           path = File.join(@root, relative)
           raise Error, "#{relative} must be a real directory, not a symlink" if File.symlink?(path)
         end
       end
 
       def available_optional_commands
-        return @available_commands & @layout.optional.keys if @available_commands
+        return candidate_optional_commands unless @available_commands
 
-        @layout.optional.keys.select do |name|
-          command_entry?(@candidate_layout.optional.fetch(name))
-        end
+        trusted = @available_commands & LAYOUT.optional.keys
+        return trusted unless @candidate_commands && !predates_commands?
+
+        # A branch cut before the trusted commit added an optional script runs without it. The script
+        # is not configured for that run, so it can neither run nor count as evidence. The trusted
+        # set must still be valid on its own, whatever the candidate lacks.
+        validate_dependencies(trusted)
+        trusted & candidate_optional_commands
+      end
+
+      def candidate_optional_commands
+        LAYOUT.optional.keys.select { |name| command_entry?(LAYOUT.optional.fetch(name)) }
       end
 
       def validate_candidate_optional_commands
         return unless @candidate_commands && @available_commands
 
-        names = @candidate_layout.optional.filter_map { |name, path| name if command_entry?(path) }
+        names = LAYOUT.optional.filter_map { |name, path| name if command_entry?(path) }
         validate_dependencies(names)
         names.each do |name|
-          path = @candidate_layout.optional.fetch(name)
+          path = LAYOUT.optional.fetch(name)
           executable!(path, path)
         end
       end
@@ -88,18 +100,9 @@ module Shaka
       def validate_dependencies(names)
         return unless names.include?('trigger_hosted_ci') && !names.include?('validate_local')
 
-        trigger = @candidate_layout.optional.fetch('trigger_hosted_ci')
-        local = @candidate_layout.optional.fetch('validate_local')
+        trigger = LAYOUT.optional.fetch('trigger_hosted_ci')
+        local = LAYOUT.optional.fetch('validate_local')
         raise Error, "#{trigger} requires #{local}"
-      end
-
-      def validate_legacy_optional_paths
-        @candidate_layout.legacy_optional.each do |name, legacy_path|
-          fixed_path = @candidate_layout.optional.fetch(name)
-          next unless command_entry?(legacy_path) && !command_entry?(fixed_path)
-
-          raise Error, "#{legacy_path} requires the standard entry point #{fixed_path}"
-        end
       end
     end
   end

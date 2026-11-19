@@ -60,6 +60,26 @@ class UsageRebasedCarryTest < Minitest::Test
     assert_equal({ 'retained' => 2, 'replaced' => 1, 'dropped' => 0 }, stats)
   end
 
+  # Break: Claude Code reports are always partial, so PR 837 kept one per rebased head until its
+  # description no longer fit (#878).
+  def test_a_partial_report_from_a_rebased_head_replaces_the_partial_reports_it_covers
+    body, = publish('', [implementation('a', %w[c1], complete: false)])
+    body, = publish(body, [implementation('b', %w[c1 c2], complete: false)])
+    body, stats = publish(body, [implementation('c', %w[c1 c2 c3], complete: false)])
+
+    work = identities(body).map { |fields| fields.values_at('responses', 'commits') }
+    assert_equal [[%w[c1 c2 c3], %w[c b a].map { |commit| commit * 40 }]], work
+    assert_equal({ 'retained' => 0, 'replaced' => 1, 'dropped' => 0 }, stats)
+  end
+
+  # Break: a partial report would have taken the place of a complete one and lost measured usage.
+  def test_a_partial_report_does_not_replace_a_complete_one_it_covers
+    body, = publish('', [implementation('a', %w[c1])])
+    body, = publish(body, [implementation('b', %w[c1 c2], complete: false)])
+
+    assert_equal([['a' * 40], ['b' * 40]], identities(body).map { |fields| fields['commits'] })
+  end
+
   # Break: republishing the same report found its carried copy naming more commits and kept both.
   def test_republishing_the_same_report_keeps_one_copy
     body, = publish('', [implementation('a', %w[c1])])

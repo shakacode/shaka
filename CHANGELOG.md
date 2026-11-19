@@ -1,36 +1,74 @@
 # Changelog
 
-Notable changes to Shaka, newest first. Each release lists breaking changes with
-upgrade steps, then what changed for users. The GitHub release for each version
-lists every merged PR.
+All notable changes to this project will be documented in this file.
 
-Versions follow [Semantic Versioning](https://semver.org/). From 1.0.0, a change
-that stops an existing `.agents/shaka/config.yml` or a documented `shaka` command
-from working is a major version.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+From 1.0.0, a change that stops an existing `.agents/shaka/config.yml` or a
+documented `shaka` command from working is a major version.
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-10-26
+## [1.0.0] - Unpublished
 
-Deliver a task through a tested pull request with a code walkthrough, independent
-review, and an explicit Ask or Auto merge choice.
+Shaka 1.0 is the first stable release of the Shaka skill for AI coding agents.
+Give your agent a task and get a pull request with the checks it ran, an
+independent review for substantial changes, and any gaps you still need to assess.
+Use [Ask or Auto](docs/working-with-shaka.md#choose-a-merge-policy) to choose how
+Shaka handles merging. Repository checks and approvals still apply.
 
-### Upgrade from the name reservation
+### Added
 
-The published `0.1.0.pre.1` gem only reserved the name. Existing source installations
-retain their registered revision choice; installing this gem does not upgrade them.
-After publication, new gem installations select the matching release tag. Follow
-[getting started](docs/getting-started.md) to inspect and update an existing installation.
+- Install the `shaka` gem on Ruby 3.4 or later. Run `shaka-install --agent codex`
+  to link the skill to the matching GitHub release. Install from source when you
+  need a branch. Both paths are in [Start here](docs/getting-started.md).
+- Try Shaka on a small task with individual settings kept in your local clone.
+  Teams can review shared settings in a PR and try that PR's pinned settings
+  before adopting them. You can also try an unmerged Shaka revision without
+  changing your normal installation.
+- Resume unfinished PRs from the recorded revision, checks, and next action.
+  Use `install --status` and `install --repair` for installation recovery. You
+  can retain the old checkout when you switch releases and restore its skill
+  links if needed.
+- See evidence on the PR for what changed, what passed, and what the reviewer
+  found. Ask for a code walkthrough, use interactive mode to steer a draft PR,
+  and use timing and token estimates to review your delivery process.
 
-### Release safety
+### Changed
 
-- Pin release installations to an immutable tag commit and preserve rollback choices.
-- Check the exact source, tested gem and release notes before publication approval.
-- Check native simulated merge and release decisions without granting publication authority.
-- Preserve maintainer-controlled repository settings and native GitHub checks.
+- Existing 1.x `.agents/shaka/config.yml` files and documented commands keep
+  working across 1.x updates. See [Update Shaka](docs/migration.md) for the
+  compatibility policy and how to check a project before switching versions.
+- Risk ratings use low, medium, and high. Auto defaults to low-risk changes.
+  Higher risk or a missing rating requires explicit attention under the merge
+  policy. Required checks and approvals take precedence.
+- New individual setups hide the checkout path in unfinished PRs. Your personal
+  settings can also hide your checkout path when shared settings would show it.
+- Branch installs check GitHub for updates at most once a day. Claude Code
+  installations include a chat-start reminder unless you select `--no-session-hook`.
+  Published releases stay pinned to the release commit you chose.
 
-Real-use acceptance and host qualification remain evidence requirements; the
-version number does not establish them.
+### Removed
+
+- Migrate the pilot layout `.agents/agent-workflow.yml` and `.agents/bin/` to
+  `.agents/shaka/` before switching to 1.0. Use the converter at
+  [`a01a3a7`](https://github.com/shakacode/shaka/tree/a01a3a7e9705be165b7bf339b0cc6d2b727ce4d7).
+  Run `skills/shaka/scripts/shaka seam upgrade --root DIR` to preview, then
+  add `--apply --digest PREVIEW_DIGEST`. Review and merge the settings change first.
+- Replace `wip.include_locations` with `wip.include_checkout_path`.
+- Move paths covered by `merge.auto_max_review_floor` or
+  `pr_description.human_review_floors` to `high_risk_areas` or `medium_risk_areas`.
+  Then remove those retired keys. Use `merge.auto_merge_max_risk` to set the
+  highest risk eligible for Auto. Shaka 1.0 rejects the retired keys.
+
+### Fixed
+
+- Installer diagnostics give a recovery command or explain which decision you
+  need to make. Interrupted branch updates can clean up their temporary worktree.
+- Validation keeps evidence tied to the tested tree and settings. Fixes to a base
+  branch are tracked separately when that branch already fails a check.
+- Claude Code cloud sessions can read PR status and publish PR descriptions when
+  GitHub's GraphQL transport is unavailable. Some other commands still require it.
 
 ## [0.1.0.pre.1] - 2026-09-16
 

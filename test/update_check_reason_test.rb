@@ -55,7 +55,7 @@ class UpdateCheckReasonTest < Minitest::Test
     %w[behind diverged].each do |status|
       result = check(status, head: PULLED)
       assert_equal %w[unknown branch_moved], [result.fetch('status'), result.fetch('reason')]
-      assert_includes result.fetch('guidance'), 'official main no longer contains checkout commit bbbbbbb.'
+      assert_includes result.fetch('guidance'), 'shakacode/shaka main no longer contains checkout commit bbbbbbb.'
     end
   end
 
@@ -81,6 +81,17 @@ class UpdateCheckReasonTest < Minitest::Test
     result = Shaka::UpdateCheck.new(source: SOURCE, branch: 'main', helper: '/installed/shaka', runner:).result
     assert_equal %w[unknown gh_missing], [result.fetch('status'), result.fetch('reason')]
     assert_includes result.fetch('guidance'), '`gh` was not found on PATH.'
+  end
+
+  def test_an_uninstalled_copy_names_the_registered_helper_when_one_exists
+    uninstalled = { 'kind' => 'uninstalled' }
+    copy = check('ahead', source: uninstalled, registered: '/registered/scripts/shaka')
+    assert_equal %w[uninstalled unregistered_copy], copy.values_at('status', 'reason')
+    assert_includes copy.fetch('guidance'), 'Run /registered/scripts/shaka update-check'
+    alone = check('ahead', source: uninstalled)
+    assert_nil alone['reason']
+    assert_includes alone.fetch('guidance'), 'not a registered installation; install Shaka through'
+    assert_empty @calls
   end
 
   private

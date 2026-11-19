@@ -33,16 +33,20 @@ module Shaka
     # settings apply only when the repository has no shared setup.
     def resolve_source(root:, ref:, candidate_commands: true)
       sha = resolve_commit(root:, ref:, label: 'settings ref')
-      preview = SettingsPreview.ref(root:)
-      return preview_source(root:, ref: sha, preview:, candidate_commands:) if preview
+      preview = SettingsPreview.new(root:).status
+      return preview_source(root:, ref: sha, preview:, candidate_commands:) if preview['settings_ref']
 
       standard_source(root:, ref: sha, candidate_commands:)
     end
 
     def preview_source(root:, ref:, preview:, candidate_commands:)
-      trusted(root:, ref:, candidate_commands: false) if Layout.commit(root:, sha: ref, allow_missing: true)
-      config = trusted(root:, ref: preview, candidate_commands:)
-      [config, { trusted_ref: ref, preview_ref: preview }, 'preview/local']
+      team_setup = Layout.commit(root:, sha: ref, allow_missing: true)
+      trusted(root:, ref:, candidate_commands: false) if team_setup
+      first_setup = preview['first_setup'] || !team_setup
+      preview_ref = preview.fetch('settings_ref')
+      config = SettingsPreview.load_config(root:, ref: preview_ref, candidate_commands:)
+      config.merge['preference'] = Defaults.fetch('merge', 'preference') if first_setup
+      [config, { trusted_ref: ref, preview_ref:, first_setup: }, 'preview/local']
     end
     private_class_method :preview_source
 
@@ -105,6 +109,14 @@ module Shaka
 
     def command_file?(root, name)
       File.file?(command_path(root, name))
+    end
+
+    # The bytes of a fixed command at the trusted commit, following a tracked symlink to its executable file.
+    def trusted_command(root:, sha:, path:)
+      resolved, entry = TrustedPathResolver.new(root:, sha:).resolve(path)
+      raise Error, "#{path} at #{sha} must be a tracked executable file" unless entry == %w[100755 blob]
+
+      read_at_commit(root:, sha:, path: resolved)
     end
 
     def contract_entry?(root)

@@ -1,12 +1,10 @@
 # Start here
 
-Give your coding agent a task. Shaka guides it through implementation, checks,
-and independent review. Its pull request states the change's intent and the
-evidence that it works. You decide whether to merge.
-Start with a small fix in a project you know.
+Install Shaka, give your coding agent a small task, and review the pull request
+(PR) it produces.
 
-Examples use `$shaka` in Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode;
-in Pi, load the installed Shaka skill. See [coding agents](coding-agents.md).
+Use a project you already work on. If you want a practice project, follow
+[Shaka in pictures](shaka-in-pictures.md).
 
 <a id="getting-started"></a>
 
@@ -15,137 +13,74 @@ in Pi, load the installed Shaka skill. See [coding agents](coding-agents.md).
 Ask your coding agent:
 
 ```text
-Install Shaka from https://github.com/shakacode/shaka.
+Install Shaka from https://github.com/shakacode/shaka
 ```
 
-Prefer to run the commands yourself? Follow [manual installation](manual-installation.md).
+Prefer to install it manually? Follow [manual installation](manual-installation.md).
 
-The agent checks for Ruby 3.4 or later, Git 2.41 or later, and an authenticated GitHub CLI.
-It installs one dedicated checkout outside your projects and links the skill
-directly into it. The default location is `~/.local/share/shaka/source`; you can
-choose another directory, such as `~/agent-tools/shaka`, outside `~/.agents/`,
-which holds settings.
-
-The installer adds a `shaka` link and an empty lock file to your coding agent's
-skills folder, such as `~/.claude/skills` for Claude Code. Your agent finds Shaka
-through that link, so allow it if your rules protect that folder. See
-[what the installer changes](manual-installation.md#what-the-installer-changes)
-for everything it touches.
-
-Keep the installation outside your project repositories. Use separate checkouts
-for development so the installation stays ready for updates.
-
-The skill prompts you when an update is available. Ask your agent to
-[update Shaka](migration.md).
-
-Start a new chat if the skill does not appear. Use a source installation: the published gem is a
-name-reservation prerelease without the current workflow.
-
-Try `$shaka` without a task for a guided welcome and setup check. Or ask:
+After installation, start a new chat and check the setup:
 
 ```text
-$shaka doctor
+/shaka doctor
 ```
 
-Doctor reports what is ready, which supported reviewer CLIs are on PATH, and
-where to install missing ones. It gives setup advice even before this repository
-is configured. Finding a CLI does not verify sign-in, quota, or a working review.
-An extra provider can supply independent review; installing every CLI is optional.
-The diagnostic changes no settings. It exits with status 1 when any check reports
-FAILED; read the full report, since piping it through another command can hide
-that status.
+In Codex, use `$shaka` instead of `/shaka`. For Pi, load the installed skill and
+ask it to run doctor. See [coding agents](coding-agents.md).
 
-Give the agent a task when you are ready.
+The agent explains what is ready and what needs fixing. Missing project settings
+are expected before project setup. Ask the agent to help resolve other problems
+before starting your task.
+
+If Shaka doesn't appear, restart your coding tool and try again.
+
+Shaka doesn't update itself. To keep it current, ask your agent to set up a
+[daily update or update check](reference/scheduled-update-checks.md).
 
 <a id="2-choose-private-trial-or-team-setup"></a>
 <a id="2-choose-individual-trial-or-team-setup"></a>
 
-## 2. Choose individual or team setup
+<a id="2-choose-individual-or-team-setup"></a>
 
-Open a chat in your project and give Shaka a task:
+## 2. Set up your project
 
-```text
-$shaka <task or issue link>
-```
+Open your project in your coding agent. If the project already has Shaka settings,
+the agent uses them. Otherwise, choose:
 
-If Shaka is not configured, the agent asks which setup you want. **Individual
-setup** keeps settings out of commits in a project without team settings.
-To choose it upfront:
+- **Just for me:** keep Shaka settings local, without adding them to the shared repository.
+- **For my team:** open a PR with shared settings for teammates to review.
 
-```text
-$shaka <task or issue link>
-Set up Shaka just for me. Go.
-```
-
-The agent finds your test and lint commands, explains AI review choices, and
-defaults to Ask. Individual setup continues into the task without a team setup PR.
-Host permissions may require approval for protected Git writes. See
-[individual support and acceptance gaps](expected-experience.md#individual-setup).
-
-For shared team settings, ask:
+If you're trying Shaka for the first time, start with **Just for me**. You can adopt
+shared settings later. Ask your agent:
 
 ```text
-$shaka Set up Shaka for this repository.
+/shaka Set up Shaka just for me in this project
 ```
 
-The agent prepares shared settings and scripts in a **setup PR**. They connect
-Shaka to your project's commands and record its review and merge choices.
-**Review the choices and merge this first setup PR yourself on GitHub.**
-To try its settings before adoption, [select the settings PR for a task](settings.md#preview-settings-before-adopting-them).
-If the repository is already configured, skip this step.
-You can ask the agent to change settings later; you do not need to maintain them by hand.
-See [repository setup](configure-repository.md) for details.
+<a id="3-start-a-task"></a>
 
-After merging shared reviewer settings, check whether your signed-in AI CLI
-accounts can run the selected reviewer models and effort levels. This catches
-account or model-access problems before the agent reaches code review. Ask:
+## 3. Give Shaka a task
+
+Choose a small change you can check yourself. For example:
 
 ```text
-$shaka Probe this project's configured reviewers.
+/shaka Fix search when the query contains an apostrophe
 ```
 
-This live probe may consume quota or cost money. It keeps your chosen settings.
-The agent sends each supported configured reviewer one short prompt and reports
-which attempts succeeded. If an attempt fails, it explains the problem and asks
-you how to proceed.
+Replace the example with your own task or an issue link. The agent makes the change,
+runs checks, and arranges review. It asks when it needs your input.
 
-## 3. Start a task
+Open the resulting PR. Read what changed, what was checked, and what remains
+unverified. Try the changed feature when relevant.
+
+Ask for revisions in the same chat. Before approving a merge, confirm that the PR
+is the version you reviewed. When you're satisfied, merge through GitHub or tell
+the agent:
 
 ```text
-$shaka Fix search when the query contains an apostrophe. Go.
+You can merge
 ```
 
-Replace the example with a small outcome or an issue link. `Go` lets the agent
-start with its current model and effort settings. It handles routine work and
-asks when a missing choice, access problem, or consequential decision needs you.
-
-For a different outcome, choose an example:
-
-- [Plan before implementing](working-with-shaka.md#get-a-plan-before-implementing).
-- [Review an existing PR](working-with-shaka.md#review-an-existing-pr).
-- [Resume a PR](working-with-shaka.md#resume-a-pr-you-already-started) or
-  [recover unfinished work](working-with-shaka.md#resume-unfinished-work).
-- [Set up a repository for your team](working-with-shaka.md#configure-a-repository-for-your-team).
-
-Look for a PR explaining what changed, what was tested and reviewed, and any
-remaining gaps. With **Ask**, you decide whether to merge; **Auto** lets the agent
-merge after the required checks, review, and approvals.
-Independent opening-check choices shipped in [#425](https://github.com/shakacode/shaka/pull/425)
-after #420. [Merged #426](https://github.com/shakacode/shaka/pull/426) added
-[settings previews](settings.md#preview-settings-before-adopting-them).
-[Working with Shaka](working-with-shaka.md) covers these choices, useful prompts,
-feedback, and resuming a task.
-
-### Use a personal fork
-
-To change Shaka itself and install that version:
-
-```text
-Fork https://github.com/shakacode/shaka and install my fork.
-```
-
-[Fork Shaka and make it yours](fork-and-hack.md) covers installing the fork,
-changing it, and sending a change back. For later maintenance, ask the agent to
-[upgrade your installation](migration.md). To evaluate one unmerged change
-without replacing your installation,
-[try a Shaka PR on real work](trying-pr-versions.md).
+Required checks and approvals still apply. See
+[Review the PR and improve the process](pr-verification.md) for help assessing the
+result. [Working with Shaka](working-with-shaka.md) covers planning, feedback, and
+resuming unfinished work.

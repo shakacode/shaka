@@ -1,0 +1,148 @@
+# frozen_string_literal: true
+
+require 'json'
+require_relative '../error'
+require_relative 'usage_details'
+require_relative 'throughput_line'
+require_relative 'throughput_gate'
+require_relative 'timeline_steps'
+require_relative 'missing_values'
+
+module Shaka
+  # The spend after the model line and the intervals in Timings. Later updates replace only those two.
+  class ThroughputStats
+    extend ThroughputLine
+    extend ThroughputGate
+
+    KEYS = (%w[head spend t0 t1 t2 t3] + [ThroughputLine::READY_UNVERIFIED]).freeze
+    TIMES = %w[t0 t1 t2 t3].freeze
+    BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\n\*\*This head:\*\* [^\r\n]+(?=\r?\n|\z)/
+    HEADER = /^(🤖 [^\r\n]*?) - AI spend: [^\r\n]*/
+    COST = /^(\*\*Estimated\ (?:token\ costs|cost):\*\*\ [^\r\n·]+?)
+            (?:\ ·\ (?:(?:ready|merged)\ in\ [^\r\n]*|ready\ pending))?(?=\r?\n|\z)/x
+
+    def self.state(content, timeline = nil, pull = nil) = publish_state(content, timeline || {}, pull)
+
+    def self.update(body, changes)
+      original = body.to_s
+      state = read(original)
+      return original unless state
+
+      state = apply(state, changes).merge(ThroughputLine::UNEXPLAINED => !original.include?(MissingValues::HEADING))
+      replacement = line(state)
+      original.sub(BLOCK) { |found| found.include?("\r\n") ? replacement.gsub("\n", "\r\n") : replacement }
+              .sub(HEADER) { "#{Regexp.last_match(1)}#{header(state)}" }
+              .sub(COST) { "#{Regexp.last_match(1)}#{took(state)}" }
+    end
+
+    # A usage refresh must not fail on a damaged block; the next publish rewrites it. The model-line spend
+    # follows the refreshed cost even then.
+    def self.refresh_spend(body, spend)
+      updated = begin
+        update(body, 'spend' => spend)
+      rescue Error
+        body.to_s
+      end
+      updated.sub(HEADER) { "#{Regexp.last_match(1)}#{header('spend' => spend)}" }
+    end
+
+    def self.read(body)
+      hits = body.to_s.to_enum(:scan, BLOCK).map { Regexp.last_match(1) }
+      return if hits.empty?
+      raise Error, 'Description has more than one shaka:stats block.' if hits.size > 1
+
+      parse_block(hits.first)
+    end
+
+    class << self
+      private
+
+      def parse_block(json)
+        data = JSON.parse(json)
+        return unless data.is_a?(Hash)
+        raise Error, 'Description has an unreadable shaka:stats block.' unless sound?(data)
+
+        data
+      rescue JSON::ParserError
+        raise Error, 'Description has an unreadable shaka:stats block.'
+      end
+
+      def publish_state(content, timeline, pull)
+        carried = carried_body(pull, timeline['ready_at'])
+        head = head_sha(pull)
+        base = fresh_state(content, timeline, carried).merge('head' => head)
+        (head && carried['head'] == head ? carried_state(base, carried) : base).compact
+      end
+
+      # Republishing writes a fresh block, so a damaged one must not stop it.
+      def carried_body(pull, ready)
+        return {} unless pull.is_a?(Hash)
+
+        carried = read(Publishing.managed_region(pull['body'])) || {}
+        return carried if TimelineSteps.same_repository?(pull)
+
+        # A fork's body can supply a display fallback. Its timestamp never overrides GitHub's.
+        fork_readiness(ready, carried['t2']).merge('head' => carried['head'])
+      rescue Error
+        {}
+      end
+
+      def fresh_state(content, timeline, carried)
+        { 'spend' => spend(content), 't0' => stamp(timeline['task_started_at']) || carried_start(timeline, carried),
+          't1' => stamp(timeline['ci_started_at']), 't2' => ready_stamp(timeline['ready_at']),
+          't3' => stamp(timeline['merged']) || ('UNKNOWN' if timeline['merged_pr']) }
+      end
+
+      def ready_stamp(ready) = ready == :unknown ? 'UNKNOWN' : stamp(ready)
+
+      def carried_state(base, carried)
+        base.merge('t1' => earlier(base, carried, 't1'), 't2' => earlier(base, carried, 't2'),
+                   ThroughputLine::READY_UNVERIFIED => carried[ThroughputLine::READY_UNVERIFIED],
+                   't3' => (base['t3'] unless base['t3'] == 'UNKNOWN') || carried['t3'] || base['t3'])
+      end
+
+      def earlier(base, prior, key) = base[key] ? keep_earlier(base[key], prior, key, prior['head']) : prior[key]
+
+      def spend(content)
+        usage = content['usage']
+        usage.is_a?(Hash) ? UsageDetails.new(usage).detail.fetch('estimate') : 'UNKNOWN'
+      end
+
+      def head_sha(pull)
+        return unless pull.is_a?(Hash)
+
+        sha = pull['headRefOid'] || (pull['head']['sha'] if pull['head'].is_a?(Hash))
+        sha if sha.is_a?(String) && sha.match?(/\A[0-9a-f]{40}\z/)
+      end
+
+      # The body is editable by the pull request author, so a carried value must not close the marker.
+      def sound?(data) = data.slice(*KEYS).values.all? { |value| safe_value?(value) } && times?(data)
+      def safe_value?(value) = value.nil? || (value.is_a?(String) && one_line?(value))
+      def times?(data) = data.slice(*TIMES).values.all? { |value| time_value?(value) }
+      def time_value?(value) = [nil, 'UNKNOWN'].include?(value) || plausible_time(value)
+
+      def apply(state, changes)
+        merged = state.dup
+        changes.each { |key, value| assign(merged, key, value) }
+        merged.slice(*KEYS)
+      end
+
+      def assign(state, key, value)
+        return unless KEYS.include?(key)
+
+        value.nil? ? state.delete(key) : state[key] = checked(key, value)
+      end
+
+      def checked(key, value)
+        text = value.to_s
+        raise Error, "Throughput #{key} must be one line." unless one_line?(text)
+
+        text
+      end
+
+      # HTML comments can end with --> or --!>, so either string would close the stats marker early.
+      def one_line?(text) = !text.empty? && !text.match?(/[\r\n]/) && comment_safe?(text)
+      def comment_safe?(text) = !text.include?('<!--') && !text.include?('-->') && !text.include?('--!>')
+    end
+  end
+end

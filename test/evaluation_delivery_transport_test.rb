@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require_relative '../eval/lib/shaka/evaluation/delivery_readback'
 require_relative 'support/evaluation_delivery_fixture'
+require_relative 'support/open3_spawns'
 
 class EvaluationDeliveryTransportTest < Minitest::Test
   include EvaluationDeliveryFixture
@@ -28,9 +29,12 @@ class EvaluationDeliveryTransportTest < Minitest::Test
   end
 
   def test_deadline_terminates_and_reaps_the_native_child
-    File.write(@response, 'hang')
-    assert_raises(IOError) { reader(seconds: 2).read(node_id: NODE, review_id: 5_566_107_686, actor: 'fixture-agent') }
-    pid = Integer(File.read(File.join(@directory, 'pid')), 10)
-    assert_raises(Errno::ESRCH) { Process.kill(0, pid) }
+    File.write(@gh, "#!/bin/sh\nexec sleep 60\n")
+    pids = Open3Spawns.record do
+      transport = reader(seconds: 2)
+      assert_raises(IOError) { transport.read(node_id: NODE, review_id: 5_566_107_686, actor: 'fixture-agent') }
+    end
+    assert_equal 1, pids.size
+    assert_raises(Errno::ESRCH) { Process.kill(0, pids.first) }
   end
 end

@@ -74,7 +74,8 @@ Shipped in the product runtime, and reusable by an eval:
   OpenCode, and Pi records into provider, configured model, routed model, effort,
   and token counts by category, priced from a versioned rate card at
   `skills/shaka/config/model-rates.yml`; a configuration fingerprint digests the
-  effective settings, the trusted config, the installation identity, and command bytes.
+  effective settings, the trusted config, the installed code that runs or checks
+  evidence with its version and install kind, and command bytes.
 
 For comparisons outside the core benchmark, this record proposes a blind human
 verdict with a reason, followed by revealed settings and metrics. This is a general

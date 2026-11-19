@@ -2,6 +2,7 @@
 
 require_relative 'checkpoint'
 require_relative 'claim'
+require_relative 'configure_settings'
 require_relative 'doctor'
 require_relative 'enforcement'
 require_relative 'evidence/command'
@@ -16,10 +17,12 @@ require_relative 'repos'
 require_relative 'review_prompt'
 require_relative 'reviewer'
 require_relative 'seam'
+require_relative 'timings_report'
 require_relative 'trial/command'
 require_relative 'ui_check'
 require_relative 'update_check'
 require_relative 'usage/usage'
+require_relative 'usage/journal_command'
 require_relative 'work'
 require_relative 'workflow'
 
@@ -34,6 +37,7 @@ module Shaka
     TABLE = {
       'checkpoint' => entry { |arguments| Checkpoint.run(arguments) },
       'claim' => entry { |arguments| Claim.run(arguments) },
+      'configure' => entry(ConfigureSettings::OPERATIONS) { |arguments| ConfigureSettings.run(arguments) },
       'doctor' => entry { |arguments| Doctor.run(arguments) },
       'enforcement' => entry { |arguments| Enforcement.run(arguments) },
       'evidence' => entry(Evidence::Command::ACTIONS.keys) { |arguments| Evidence::Command.run(arguments) },
@@ -52,10 +56,11 @@ module Shaka
       'review-prompt' => entry { |arguments| ReviewPrompt.run(arguments) },
       'reviewer' => entry { |arguments| Reviewer.run(arguments) },
       'seam' => entry(Seam::OPERATIONS) { |arguments| Seam.run(arguments) },
+      'timings' => entry(TimingsReport::OPERATIONS) { |arguments| TimingsReport.run(arguments) },
       'trial' => entry(Trial::Command::ACTIONS) { |arguments| Trial::Command.run(arguments) },
       'ui-check' => entry { |arguments| UiCheck.run(arguments) },
       'update-check' => entry { |arguments| UpdateCheck.run(arguments) },
-      'usage' => entry { |arguments| Usage.run(arguments) },
+      'usage' => entry(%w[publish collect]) { |arguments| UsageJournalCommand.dispatch(arguments) },
       'work' => entry { |arguments| Work.run(arguments) },
       'workflow' => entry { |arguments| Workflow.run(arguments) }
     }.freeze

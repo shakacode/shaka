@@ -47,7 +47,6 @@ module Shaka
       def add_review_flags(flags)
         add_review_policy_flag(flags)
         add_ci_review_job_flag(flags)
-        reject_retired_review_flags(flags)
       end
 
       def add_review_policy_flag(flags)

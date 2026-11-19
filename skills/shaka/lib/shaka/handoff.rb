@@ -6,7 +6,10 @@ require_relative 'error'
 require_relative 'merge_queue_commit'
 require_relative 'merge_required_checks'
 require_relative 'status'
+require_relative 'handoff/approval_hold'
 require_relative 'handoff/conversation'
+require_relative 'handoff/hold'
+require_relative 'handoff/merge_wait'
 require_relative 'handoff/review_threads'
 require_relative 'handoff/squash_note'
 require_relative 'handoff/walkthrough'
@@ -20,6 +23,9 @@ module Shaka
   class Handoff
     include MergeRequiredChecks
     include HandoffRendering
+    include HandoffHold
+    include HandoffApprovalHold
+    include HandoffMergeWait
 
     OWED_EXIT = 2
     SHORT = 7
@@ -27,14 +33,18 @@ module Shaka
     # A Stop hook or script can refuse to end the turn on this status without parsing the report.
     def self.exit_status(result) = result.fetch('owed').empty? ? 0 : OWED_EXIT
 
-    def initialize(github, seam_required_checks: nil, post_implementation: nil)
+    # walkthrough_publish is the repository's walkthrough.publish, which decides whether a missing walkthrough is owed.
+    def initialize(github, seam_required_checks: nil, post_implementation: nil, review: nil, walkthrough_publish: nil)
       @github = github
+      @walkthrough_publish = walkthrough_publish || RepositoryConfig::WalkthroughSchema.gate(nil)
       @status = Status.new(github, seam_required_checks:)
       @checkpoint = PostImplementationEvidence.new(github, **post_implementation) if post_implementation
+      @review = MergeWaitReview.new(github, **review) if review
     end
 
     # woken_by names what will wake this session, such as a host PR monitor or a background watcher;
-    # the PR then needs no attention label, because the agent, not a person, acts next.
+    # the PR then needs no attention label, because the agent, not a person, acts next, unless a required
+    # check is held for approval.
     def call(head: nil, woken_by: nil)
       @woken_by = wake_source(woken_by)
       pr = @status.call
@@ -61,15 +71,16 @@ module Shaka
     def open_facts(snapshot, live)
       @pull = nil
       checks = snapshot['requiredChecks']
-      [attention_fact(checks, live), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
-       comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live), squash_fact(snapshot, live),
-       closing_fact, wip_fact(live), rendering_fact(live)].compact
+      [attention_fact(checks, live), draft_fact(snapshot), hold_fact,
+       checks_fact(checks, snapshot['requiredChecksUnavailable']),
+       threads_fact, comment_fact(snapshot), walkthrough_fact(live), review_fact(snapshot), checkpoint_fact(live),
+       squash_fact(snapshot, live), closing_fact, wip_fact(live), rendering_fact(live)].compact
     end
 
     # An unsubmitted review by this account outranks every other wait, because only its author can see it.
     # GitHub refuses only a new review beside it, so a merge wait with a current walkthrough just names it.
     def attention_fact(checks, live)
-      @labels = Attention.new(@github).current
+      read_labels
       return label_fact(checks) unless walkthrough_reader.pending?
       return note(label_fact(checks), PendingReview::MESSAGE) if merge_requested? && walkthrough_reader.revision == live
 
@@ -78,7 +89,7 @@ module Shaka
 
     # One label names the one decision the PR waits on, so a missing label hides the PR from its searches.
     def label_fact(checks)
-      return woken_fact if @woken_by
+      return woken_fact if @woken_by && !held?(checks)
       return owe('no awaiting label', 'Set the attention label for what the PR waits on.') if @labels.empty?
       return owe(@labels.join('+'), "Keep exactly one attention label; found #{list}.") if @labels.length > 1
 
@@ -100,7 +111,7 @@ module Shaka
       return 'no required checks' if checks.empty?
 
       counts = checks.map { |check| check['bucket'] }.tally.map { |bucket, count| "#{count} #{bucket}" }
-      "required checks #{counts.join(', ')}"
+      ["required checks #{counts.join(', ')}", held_fact(checks)].compact.join(' · ')
     end
 
     # Judges each check with the merge gate's own test. An empty set passes, as Ask allows.
@@ -125,15 +136,6 @@ module Shaka
     # The person clicking merge sees which issues it closes before they click.
     def closing_fact = (ClosingIssues.fact(@github, pull['body']) if merge_requested?)
 
-    def checkpoint_fact(live)
-      return unless @checkpoint && merge_requested?
-
-      @checkpoint.call(live)
-      "checkpoint #{live[0, SHORT]}"
-    rescue Error => e
-      owe('checkpoint owed', e.message)
-    end
-
     def pull = @pull ||= @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
 
     def wip_fact(live)
@@ -141,8 +143,8 @@ module Shaka
       revision = WipNote.revision(pull['body'])
       return owe('no WIP', 'WIP Details is missing; publish it before stopping.') unless revision
 
-      problem = WipDetails.owner_error(WipNote.value(pull['body'], 'owner'))
-      return owe('WIP owner incomplete', problem) if problem
+      problem = WipNote.problem(pull['body'])
+      return owe('WIP incomplete', problem) if problem
       return "WIP #{live[0, SHORT]}" if WipNote.head(revision) == live
 
       owe('WIP stale', "WIP Details names #{revision}, not #{live}; refresh it.")

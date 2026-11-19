@@ -5,8 +5,9 @@ require 'shaka/post_implementation'
 
 module PostImplementationPublicationFixture
   class GitHub < Shaka::GitHub
-    attr_reader :bodies, :description_body
-    attr_writer :walkthrough
+    attr_reader :bodies
+    attr_accessor :description_body
+    attr_writer :comments, :walkthrough, :draft
 
     def initialize(head)
       super('example/test', '1')
@@ -30,9 +31,11 @@ module PostImplementationPublicationFixture
         'body' => @description_body }
     end
 
-    def graphql(_query, **)
-      @draft = true
-      { 'convertPullRequestToDraft' => { 'pullRequest' => snapshot.slice('id', 'isDraft', 'headRefOid') } }
+    def graphql(query, **)
+      ready = query.include?('markPullRequestReadyForReview')
+      @draft = !ready
+      key = ready ? 'markPullRequestReadyForReview' : 'convertPullRequestToDraft'
+      { key => { 'pullRequest' => snapshot.slice('id', 'isDraft', 'headRefOid') } }
     end
 
     def verify_rendering(body, **) = body
@@ -53,7 +56,7 @@ module PostImplementationPublicationFixture
 
     def viewer_login = 'test-author'
 
-    def issue_comments = [@published]
+    def issue_comments = [@published] + Array(@comments)
 
     def reply(body:, key:)
       @bodies << [body, key]
@@ -90,7 +93,7 @@ module PostImplementationPublicationFixture
       report = File.join(root, 'report.json')
       File.write(report, JSON.generate(head: 'a' * 40, conclusion: 'Proceed', reasons: ['Useful change'],
                                        concerns: [], alternative: 'No change leaves the bug',
-                                       verification_adequacy: ADEQUACY))
+                                       verification_adequacy: ADEQUACY, risk: RISK))
       result = { 'purpose' => 'post_implementation', 'status' => 'completed', 'head' => 'a' * 40,
                  'report' => report, 'reviewer' => 'openai/codex', 'effort' => 'medium',
                  'prompt_source' => 'Shaka default', 'execution_id' => 'abc12345' }
@@ -105,13 +108,13 @@ module PostImplementationPublicationFixture
     message
   end
 
-  def publish(result, path, github: GitHub.new('a' * 40))
+  def publish(result, path, github: GitHub.new('a' * 40), flags: [])
     message = message_file(path)
     File.write(path, JSON.generate(result))
     status = nil
     output = capture_io do
       status = Shaka::PostImplementation.run(
-        ['publish', 'example/test', '1', '--content-file', path, '--squash-message', message], github:
+        ['publish', 'example/test', '1', '--content-file', path, '--squash-message', message, *flags], github:
       )
     end.first
     [github, status, output]

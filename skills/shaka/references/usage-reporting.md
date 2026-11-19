@@ -17,7 +17,8 @@ same host, label, provider, configured and routed model, and effort, such as eig
 review runs of one model, share a row marked `×8`; rows that share only a label also
 show their host, model, and effort. With more than one row, a total row adds the USD
 and credit estimates; it leaves token counts blank, because hosts count input
-differently. The collapsed summary shows the USD total. Columns are USD, Codex
+differently. The model line at the top of the description shows the USD total, so the
+collapsed summary does not repeat it. Columns are USD, Codex
 credits, Input, Cached input, Output, Reasoning, and Cache writes; a column no report
 measured is left out. The table links to the reader-facing [usage and cost guide](https://shaka.shakacode.com/docs/reference/usage-and-cost)
 for column definitions and accounting rules. Report names keep their hyphens from breaking the line. Dollar amounts are
@@ -32,6 +33,13 @@ then shows `+`. Each record is also kept as a hidden block holding its reported
 columns and note. A later publish that carries the block puts its row back in
 the table.
 
+Keep usage archive comments, including superseded sets as history. If an archive
+cannot be verified, restore its original bytes; do not remove references or substitute
+zero. Update Shaka before refreshing an archived PR, and keep a compatible helper
+when reverting.
+If original records are unavailable, stop and report the missing accounting for a
+maintainer decision; never claim complete history after removing its references.
+
 Each report is priced once, when `shaka usage` runs, with the rate card installed then.
 A carried report keeps that price; nothing reprices it. A collapsed **How each report
 was measured and priced** list under the table shows each report's rate card,
@@ -45,6 +53,26 @@ Put that `usage` object in the PR, or the JSON report in the final response when
 there is no PR. **Native** figures come from the host's records. **Estimated** figures apply a
 rate card to those records. `UNKNOWN` means the records do not establish a value;
 it never means zero.
+
+## Save usage on the PR
+
+Append native response records to the PR when work may change hands. A later owner
+recovers them from GitHub without the earlier machine's transcripts.
+
+```text
+shaka usage publish OWNER/REPO NUMBER --commit SHA --contribution implementation --event commit --all-turns
+shaka usage collect OWNER/REPO NUMBER
+```
+
+`publish` takes the source options of `usage`; keep the task's `--since-time` or `--turn`
+selection on every publication. After a failure, rerun it. Collection ignores comments from
+accounts without write access, so `publish` fails for one. A comment `collect` names as unreadable
+stops every read until its owner repairs or deletes it.
+
+Only the task owner puts `collect` output in the description `usage` object. Other contributors
+publish and leave the description alone. On a conflict `collect` names the response: inspect
+the comments holding it rather than choosing a total. Keep a legacy report until its source
+is published.
 
 ## Select the work being reported
 
@@ -77,8 +105,8 @@ Use explicit host selection for a child agent launched inside Pi, which inherits
 Pi's process marker. Selecting Pi never falls back to unrelated Codex records.
 
 Report local review from the **reviewer's** source with `--contribution review`.
-Include available retry and contributor records. Hosted reviewers and tool-model
-calls remain `UNKNOWN` when their records are absent.
+Include available retry and contributor records. Reports say hosted reviewer and
+tool-model usage is not counted; it is absent, not zero.
 
 An interval associated with several commits is **SHARED**. Never divide its tokens
 into invented per-commit amounts. Preserve the original mapping after squash and
@@ -111,7 +139,7 @@ per configuration. Configured and routed models remain distinct.
 | Codex | Input includes cache reads; cached input must not be added again. Cache writes have their own field. | Reasoning is part of output. Routed model is unknown. |
 | Claude Code | Input excludes cache reads and writes; all three are separate amounts. | Reasoning is part of output. Configured model and native total are unknown. |
 | Cursor | Input includes cache reads and writes; rows show the subsets. | Reasoning, native total, and parent-chat subagent usage are unknown or absent. |
-| OpenCode | Input excludes cache reads and writes. | Native total sums input, output, reasoning, cache reads, and cache writes. |
+| OpenCode | Input excludes cache reads and writes. | Native total sums input, output, reasoning, cache reads, and cache writes; OpenCode 2 omits it, so it is unknown. |
 | Pi | Input excludes cache reads and writes. | Native total is copied. Reasoning, when recorded, is part of output. |
 
 Reports are **PARTIAL** while sources omit active work, reviewers, subagents, or
@@ -198,17 +226,22 @@ description unchanged.
 ## What the OpenCode reader includes
 
 Name a session with `--host opencode --session ses_ID`; find it with
-`opencode session list`. The reader also accepts `OPENCODE_SESSION_ID` from a
-wrapper or plugin, or saved exports through repeated `--file` options.
+`opencode session list`. The reader also accepts `OPENCODE_SESSION_ID`, which
+OpenCode 2 sets in the tool environment, or saved exports through repeated `--file` options.
 
-The reader runs `opencode export` and keeps per-message metadata, never message
-parts containing transcript text. OpenCode 1.18.31 truncates piped JSON, so export
-is redirected to a temporary file before parsing.
+The reader runs `opencode export`, or `opencode api get /api/experimental/session/ID/export`
+when `opencode --version` reports 2 or later, because OpenCode 2 removed `export`. It keeps
+per-message metadata, never message parts or content containing transcript text.
+Both commands truncate piped JSON, so output is redirected to a temporary file before parsing.
 
-A turn is a user message. Assistant messages join it through `parentID`. The
+A turn is a user message. Assistant messages join it through `parentID`; an
+OpenCode 2 export has none, so each joins the nearest earlier user message. An
+OpenCode 2 compaction that reports tokens counts as a response; a response that
+ended in error without tokens does not. The
 default selects the latest user turn; `--all-turns` includes responses with
 identified turns. Rows use the export's provider, session model as configured
-model, response model as routed model, and response variant as effort.
+model, response model as routed model, and response variant as effort. OpenCode 2
+exports report no version, so the source version is unknown.
 
 A 49-response session from 1.18.31 matched an independent aggregate for response
 count, all five token categories, total, interval, and version. Missing configured
@@ -218,7 +251,7 @@ models and unreadable records stay unknown.
 
 `PI_SESSION_FILE` must point to a v3 session whose nonempty header ID matches
 `PI_SESSION_ID`. Missing, ephemeral, older, malformed, or mismatched evidence
-produces `UNKNOWN`. Saved evidence can use `--host pi --file PATH`; legacy sessions
+produces `UNKNOWN`. Saved evidence can use `--host pi --file PATH`; earlier sessions
 need reopening or export with current Pi.
 
 The reader validates entry IDs and parent links, then walks from the active leaf
@@ -274,7 +307,7 @@ report.
 | Standard Codex credits | Configured supported OpenAI model. A response with cache writes is unpriced because their credit rate is unpublished. |
 | Standard API-equivalent USD | Ordinary input excludes cache reads and writes, which use their own published rates. |
 | Cursor on-demand USD | Configured supported Grok model and recorded Fast/standard mode. Cache writes remain ordinary input because no separate rate is published. |
-| Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published Opus fast mode are priced. |
+| Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published fast-mode rates are priced. |
 | Pi native nominal USD | Copy the host's recorded cost instead of applying a rate card. |
 
 Rate notes and source links apply only to supported provider/model pairs. A
@@ -284,10 +317,10 @@ of its unknown estimate. The table's model is the one actually priced.
 ### Anthropic details
 
 Input, cache reads, and writes are separate. Use the recorded 5-minute/1-hour
-`cache_creation` split; an unsplit write total stays unknown. Fast mode is priced
-at twice standard token rates for Opus 5.5, Opus 5, and Opus 4.8; cache multipliers
-stack on top. Fast mode for other models and unrecorded speed stay unknown. Standard
-and fast responses remain separate columns.
+`cache_creation` split; an unsplit write total stays unknown. For models with
+`fast: true` in the rate card, fast mode doubles all token rates, including cache
+rates. Unsupported fast mode and unrecorded speed stay unknown. Standard and
+fast responses remain separate columns.
 
 Add the recorded web-search charge. An absent server-tool group or search counter
 means no searches; a present malformed group or invalid count is unknown. Fetch
@@ -319,8 +352,8 @@ Keep the coverage note visible; do not replace unknown reviewer usage with zero.
 
 Check task coverage before publishing. Sources can contain unrelated work even
 when a launcher began with a single task. Select relevant turns rather than using
-`--all-turns` in that case. The reader prints aggregate metadata only and does not
-modify sessions. It does not publish to GitHub. The Cursor stop hook can update a
+`--all-turns` in that case. The report prints aggregate metadata only and does not
+modify sessions; only `usage publish` writes to GitHub. The Cursor stop hook can update a
 description this conversation already published, as the Cursor section describes.
 
 Never publish raw sessions, prompts, tool output, source paths, or turn/response
@@ -340,7 +373,40 @@ evidence keeps the row too. All eight keys remain required.
 
 Add the optional integer `task_number` when `task_source` is `issue` or `pull_request`
 and that issue or PR is in the PR's own repository; the helper links it in the Task
-source row. Omit it for a task in another repository or tracker, which may be private.
+source row. Omit it for a task in another GitHub repository, which may be private.
+
+For a Jira or Linear ticket whose key may appear in this PR, set `task_source` to
+`issue`, `task_tracker` to `jira` or `linear`, and `task_key` to its key, such as
+`MKT-1234`; withhold the tracker keys when they cannot be shared.
+
+For an issue or PR without `task_number`, Ruby requires exactly one of:
+
+- `task_url`: a shareable https URL, validated and rendered as a link.
+- `task_url_omission_reason`: nonempty, single-line text explaining why the URL is
+  unavailable or cannot be shared. The Task line displays this public-safe reason.
+
+Retrieve the canonical URL through the tracker connection when intake gives only a key.
+Ruby validates supplied metadata; the agent establishes availability and shareability.
+Prompt tasks and numbered GitHub tasks take neither field.
+
+With a number or key, the optional `task_relation` says how this PR relates to the
+task: `fixes`, `part_of`, `follow_up`, or `refs`. Only a GitHub issue number takes `fixes`.
+
+The Task line in Intent shows where the work came from:
+
+| Provenance | Task line |
+| --- | --- |
+| `description` | `Claude prompt` or `Codex prompt`, from the writer's identity |
+| issue `1234`, `part_of` | `GitHub #1234 · part of` |
+| issue `1234`, `fixes` | `GitHub · fixes #1234`, which closes the issue when the PR merges into the default branch |
+| `linear`, `MKT-1234`, `task_url` | `Linear MKT-1234`, linked to the supplied URL |
+| issue with a Shortcut story `task_url` | `Shortcut 1234`, with the story number taken from the URL |
+| issue or PR with an omission reason | `issue · URL omitted: Private task.` or `pull request · URL omitted: Tracker unavailable.` |
+
+The optional `intent.task_understanding` is an object with one-line `goal` and
+`done_when` strings, rendered as **Goal** and **Done when** under the Task line.
+Plain text from older callers renders there as **As understood**. Callers can omit
+it; this prose belongs to Intent, not the provenance metadata allowlist.
 
 Carry those values from intake; recommendations and host settings do not establish
 a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not
@@ -349,6 +415,11 @@ never `null`. Ruby validates the shapes; the agent establishes whether an absenc
 known. The initial prompt is excluded. Provenance
 carries no machine alias; put the public alias from `SHAKA_MACHINE_ALIAS`, or `UNKNOWN`,
 in the [WIP Details Owner field](delivery.md#recover-an-unfinished-pr), never a hostname.
+
+The recommendation records the plan. On a same-repository PR, `description` keeps the
+recommended model and effort its provenance history recorded and reports
+`recommendation_kept` when the supplied ones differ. Only a recorded `UNKNOWN` takes a new
+value. Describe a changed plan in `task_history`.
 
 The renderer also fills the workflow version with the commit the helper runs from,
 because every commit between releases shares one version number. When the helper came
@@ -370,9 +441,9 @@ no commit can be found, the row shows the release version instead, such as
 The table shows the latest publication, so `description` also keeps a history in a hidden
 marker in the PR body. It adds an entry, recording the PR head, whenever the Shaka skill version
 cell or a route differs from the last entry; republishing the same values adds nothing. Once
-there are two entries, a collapsed **Provenance history** block lists them oldest first. It
+there are two entries, **Execution details** lists them oldest first below its table. It
 keeps the first entry and the 20 most recent, and says how many it omitted. The helper writes
-this history; a details item with that summary is refused, and so is a marker it cannot
+this history; a details item titled `Provenance history` is refused, and so is a marker it cannot
 validate, which publishes nothing until the marker is restored or removed. A PR published
 before this history existed starts one at its next publication, and a fork's history is never
 carried, because the fork author can edit it.
@@ -390,14 +461,14 @@ chat through `CODEX_THREAD_ID` and reads its latest native turn context. Missing
 `active_model` and `active_effort` use the same result. Concrete contradictions
 stop publication. Reviewer reports and usage rows remain separate.
 
-The header labels the model `(configured)`; the note says the served model is
-unavailable in saved Codex logs. Turn context records configuration, while saved
-response items and token records do not supply a served-model identity.
+The header labels the model `(configured)`. Turn context records configuration;
+saved response items and token records do not supply a served-model identity.
 Missing, ambiguous, or unreadable session metadata leaves unavailable fields
-`UNKNOWN` with a reason. A new turn without context clears earlier settings.
+`UNKNOWN` with a warning and reason. A new turn without context clears earlier settings.
 
-Claude Code publications resolve the chat through `CLAUDE_CODE_SESSION_ID` the same
-way. Ruby reads the served model and effort from the current turn's latest response
+For Claude Code publications, Ruby selects the newest valid transcript matching
+`CLAUDE_CODE_SESSION_ID`. Usage discovery still rejects duplicate transcripts.
+Ruby reads the served model and effort from the current turn's latest response
 and ignores subagent responses. The model is the served one, so the header carries
 no `(configured)` label. The provider stays as supplied. A note appears only when
 the model or effort is `UNKNOWN`. A subagent shares its parent's session ID, so a

@@ -3,23 +3,24 @@
 require 'json'
 require 'time'
 require 'tmpdir'
+require_relative 'opencode_v2'
 require_relative 'response_count'
 
 module Shaka
-  # Reads OpenCode session exports (tested with 1.18.31), keeping only usage metadata.
+  # Reads OpenCode session exports (tested with 1.18.31 and 2.0.32), keeping only usage metadata.
   class OpencodeUsage
     include ResponseCount
 
     HOST = 'OpenCode'
-    NOTE = 'Input excludes cache reads and writes; native total sums input, output, reasoning, and cache.'
+    NOTE = 'Input excludes cache reads and writes; native total, if reported, sums input, output, reasoning, and cache.'
     LATEST_SCOPE = 'latest user turn of the session, including its assistant responses; earlier turns excluded'
     SESSION = /\Ases_[A-Za-z0-9]+\z/
     INCLUSIVE_INPUT = false
 
     attr_reader :responses, :versions, :gaps
 
-    # OpenCode 1.18.31 exports no session identifier into the tool environment, so this
-    # finds a session only when a wrapper or plugin sets one; otherwise pass --session ID.
+    # OpenCode 2 sets this in the tool environment; 1.18.31 does not, so there a session is
+    # found only when a wrapper or plugin sets one; otherwise pass --session ID.
     def self.discover
       identity = ENV.fetch('OPENCODE_SESSION_ID', nil)
       identity.is_a?(String) && identity.match?(SESSION) ? ["session:#{identity}"] : []
@@ -37,15 +38,12 @@ module Shaka
 
     private
 
-    # `opencode export` truncates its JSON when stdout is a pipe, so redirect to a
-    # file first. capture3 cannot take an `out:` redirect, hence system with an
-    # argument vector instead of shell interpolation.
     def export(session)
       unless session.is_a?(String) && session.match?(SESSION)
         return [unreadable('Pass an OpenCode session with --session ID.'), nil]
       end
 
-      document = run_export(session)
+      document = run_export(*OpencodeV2.export_command(session))
       return [unreadable('OpenCode export failed for the selected session.'), nil] if document.nil?
 
       extract(document)
@@ -53,10 +51,13 @@ module Shaka
       [unreadable('OpenCode export is unavailable.'), nil]
     end
 
-    def run_export(session)
+    # Both commands truncate their JSON when stdout is a pipe, so redirect to a file
+    # first. capture3 cannot take an `out:` redirect, hence system with an argument
+    # vector instead of shell interpolation.
+    def run_export(*)
       Dir.mktmpdir('shaka-opencode-export') do |directory|
         target = File.join(directory, 'export.json')
-        return nil unless system('opencode', 'export', session, out: target, err: File::NULL)
+        return nil unless system('opencode', *, out: target, err: File::NULL)
 
         parse(File.read(target, encoding: 'UTF-8'))
       end
@@ -132,7 +133,7 @@ module Shaka
 
     def parse(raw)
       record = JSON.parse(raw.to_s)
-      record.is_a?(Hash) ? record : unreadable
+      record.is_a?(Hash) ? OpencodeV2.normalize(record) : unreadable
     rescue JSON::ParserError, EncodingError
       unreadable
     end

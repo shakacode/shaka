@@ -48,8 +48,10 @@ module Shaka
       raise OptionParser::InvalidArgument, arguments.join(' ') unless arguments.empty?
 
       validate_probe_options!(options)
-      subject = new(root: File.realpath(options.fetch(:root, Dir.pwd)), host: options[:host],
-                    probe: probe_options(options))
+      root = File.realpath(options.fetch(:root, '.'))
+      return ReviewerProbe.run(root:, **probe_options(options)) if options[:startup_review]
+
+      subject = new(root:, host: options[:host], probe: probe_options(options))
       puts subject.report
       StartupNotice::Marks.doctor_ran
       subject.blocked? ? 1 : 0

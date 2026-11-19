@@ -76,13 +76,14 @@ module Shaka
 
     def verdict(selected, reasons)
       outcome = outcome_for(selected, reasons)
+      order = run_order(selected, reasons)
       {
         'outcome' => outcome,
         'reviewer' => reviewer_for(outcome, selected),
-        'reviewers' => run_order(selected, reasons),
+        'reviewers' => order,
         'implementation_providers' => providers,
         'considered' => reasons.map { |entry, why| { 'reviewer' => identity(entry), 'reason' => why } },
-        'note' => note(outcome, selected)
+        'note' => note(outcome, order)
       }
     end
 
@@ -112,11 +113,14 @@ module Shaka
     # Prefer an implementer with a working CLI; any implementer can still review in a fresh host context.
     def available_implementer = @implementers.find { |entry| !unavailable?(entry) }
 
-    def note(outcome, selected)
+    # A note naming only the first reviewer reads as the whole round, so it names the rest too.
+    def note(outcome, order)
       template = NOTES.fetch(outcome)
-      return template unless template.include?('%s')
+      text = template.include?('%s') ? format(template, order.first) : template
+      rest = order.drop(1)
+      return text if rest.empty?
 
-      format(template, selected ? identity(selected) : implementer)
+      "#{text} Also run #{rest.join(', ')} on the same commit: this round needs #{order.size} reviews."
     end
 
     def unavailable?(entry) = listed?(@unavailable, entry)

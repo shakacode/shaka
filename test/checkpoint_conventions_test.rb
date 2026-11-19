@@ -78,6 +78,15 @@ class CheckpointConventionsTest < Minitest::Test
     end
   end
 
+  # The risk rubric travels with the fixed rules, so a replacement prompt cannot drop it.
+  def test_a_replacement_prompt_keeps_the_risk_rubric
+    with_repository(REPLACEMENT) do |root, base, head, bin|
+      fake_checkpoint(bin, head)
+      run_checkpoint(root, base, head, bin)
+      assert_includes checkpoint_trace(root).fetch('prompt'), 'Rate `risk` by what a mistake in this change would reach'
+    end
+  end
+
   def test_empty_or_missing_rules_keep_the_built_in_prompt
     [nil, " \n"].each do |rules|
       @rules = rules

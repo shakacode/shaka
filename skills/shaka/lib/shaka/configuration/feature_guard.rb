@@ -10,7 +10,6 @@ module Shaka
     # Read-only boundary: no reset, unstaging, or edits to the user's index.
     class FeatureGuard
       FLOWS = %w[feature setup migration].freeze
-      LEGACY = [Paths::CONTRACT, Paths::POINTER, Paths::LEGACY_README, Paths::REPOSITORY_ALLOWLIST].freeze
 
       def self.check(root:, base:, head:, flow: 'feature')
         new(root:, base:, head:, flow:).check
@@ -36,8 +35,7 @@ module Shaka
       end
 
       def self.configuration?(path)
-        LEGACY.include?(path) || [Paths::COMMAND_DIRECTORY,
-                                  '.agents/shaka'].include?(path) || path.start_with?('.agents/shaka/', '.agents/bin/')
+        [Paths::POINTER, '.agents/shaka'].include?(path) || path.start_with?('.agents/shaka/')
       end
 
       private

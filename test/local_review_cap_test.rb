@@ -6,10 +6,10 @@ require_relative 'seam_check_helpers'
 class LocalReviewCapSettingTest < Minitest::Test
   include SeamCheckHelpers
 
-  def test_seam_defaults_to_five_rounds
+  def test_seam_defaults_to_eight_rounds
     with_repository do |root|
       commit_repository(root)
-      assert_equal 5, check_config(root, '--ref', 'HEAD').dig('review', 'local_max_rounds')
+      assert_equal 8, check_config(root, '--ref', 'HEAD').dig('review', 'local_max_rounds')
     end
   end
 
@@ -25,7 +25,7 @@ class LocalReviewCapSettingTest < Minitest::Test
   def test_seam_refuses_non_positive_or_non_integer_caps
     [0, -1, 1.5, '5', true, nil].each do |cap|
       with_repository do |root|
-        path = File.join(root, '.agents/agent-workflow.yml')
+        path = File.join(root, '.agents/shaka/config.yml')
         File.write(path, YAML.dump(config.merge('review' => config['review'].merge('local_max_rounds' => cap))))
         commit_repository(root)
         _output, error, status = capture_check(root, '--ref', 'HEAD')
@@ -38,7 +38,7 @@ class LocalReviewCapSettingTest < Minitest::Test
   private
 
   def write_cap(root, cap)
-    path = File.join(root, '.agents/agent-workflow.yml')
+    path = File.join(root, '.agents/shaka/config.yml')
     File.write(path, YAML.dump(config.merge('review' => config['review'].merge('local_max_rounds' => cap))))
   end
 end

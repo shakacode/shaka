@@ -135,9 +135,9 @@ class CheckpointExtraPromptFingerprintTest < Minitest::Test
 
   def setup
     @root = Dir.mktmpdir('fingerprint-extra-prompt')
-    FileUtils.mkdir_p(File.join(@root, '.agents/bin'))
-    File.write(File.join(@root, '.agents/bin/test'), 'test')
-    File.write(File.join(@root, '.agents/agent-workflow.yml'), 'config')
+    FileUtils.mkdir_p(File.join(@root, '.agents/shaka/bin'))
+    File.write(File.join(@root, '.agents/shaka/bin/test'), 'test')
+    File.write(File.join(@root, '.agents/shaka/config.yml'), 'config')
     system('git', '-C', @root, 'init', '--quiet', exception: true)
   end
 
@@ -164,8 +164,8 @@ class CheckpointExtraPromptFingerprintTest < Minitest::Test
   end
 
   def files(ref)
-    settings = { 'commands' => { 'test' => '.agents/bin/test' }, 'review' => {}, 'opening_check' => {},
-                 'paths' => { 'policy_configuration' => '.agents/agent-workflow.yml' } }
+    settings = { 'commands' => { 'test' => '.agents/shaka/bin/test' }, 'review' => {}, 'opening_check' => {},
+                 'paths' => { 'policy_configuration' => '.agents/shaka/config.yml' } }
     installation = { 'schema_version' => 1, 'version' => '1', 'source' => { 'kind' => 'uninstalled' } }
     Shaka::Configuration::Fingerprint.build(root: @root, effective_settings: settings, repository: 'shakacode/shaka',
                                             installation:, trusted_ref: ref).components.fetch('files')

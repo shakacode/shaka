@@ -4,6 +4,7 @@ require_relative '../configuration'
 require_relative '../configuration/fingerprint'
 require_relative '../doctor/installation_identity'
 require_relative 'public_settings'
+require_relative 'relevant_code'
 
 module Shaka
   module Evidence
@@ -14,7 +15,7 @@ module Shaka
         installation = Doctor::InstallationIdentity.read
         fingerprint = Configuration::Fingerprint.build(
           root:, effective_settings: config.to_h.merge('task_overrides' => task_overrides), repository:,
-          installation:, **selected
+          installation: RelevantCode.identity(installation), **selected
         )
         snapshot = PublicSettings.capture(config:, kind:, ref:, task_overrides:, installation:)
         [config, fingerprint.to_h, kind, snapshot]

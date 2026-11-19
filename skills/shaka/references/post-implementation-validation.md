@@ -34,8 +34,8 @@ shaka post-implementation publish OWNER/REPO NUMBER --content-file checkpoint.js
 
 For a ready result, supply `message.json` with the same `title` and plain-text `body`
 used by `merge --squash-message`, as defined in the workflow's publication commands.
-Publication refuses a ready checkpoint without this message, or before this account's
-walkthrough for the head is published. It places copyable title
+Publication refuses a ready checkpoint without this message, or, when a walkthrough is
+due, before this account's walkthrough for the head is published. It places copyable title
 and body blocks in the checkpoint and preserves branch co-author trailers.
 Blocked, failed, and opted-out results need no message and display no merge text.
 For an authorized opt-out, keep the standalone `squash-message` command for the Ask handoff.
@@ -47,26 +47,32 @@ Repeat publication after any head change; a recommendation supplies no merge con
 After publication, set description `post_implementation` to the returned PR comment URL
 and supply the description summary using the workflow's publication contract.
 The renderer places its status and recommended next action near the top,
-with the Checkpoint link beside Code Walkthrough, followed by any deployment link. Until publication, it shows
+with the Checkpoint link beside any Code Walkthrough link, followed by any deployment link. Until publication, it shows
 a named placeholder. This link locates the report; it does not establish readiness.
 
 Publishing a blocked or incomplete checkpoint converts the PR to draft and adds a
-**Do not merge** warning above its feature summary, or a **Not ready to merge** warning
-for Merge after maintainer decision. The warning names the reason,
-head, report link, and task owner's next step. Its separate marked region survives
+**Do not merge yet** warning above its feature summary. A Do not merge verdict or
+disposition gets a **Do not merge** warning that leaves closing or replacing the PR to a
+maintainer, and Merge after maintainer decision gets **Not ready to merge**. The warning
+shows the disposition `reason`, or the reviewer summary without one, then the
+disposition `next_action` or a fixed next step. Not ready to merge shows only its fixed
+step, which asks for an answer and says the answer does not approve merging. Do not merge always leaves the
+close-or-replace choice to a maintainer. A report link and the head follow. Its separate marked region survives
 normal description updates. When a ready checkpoint is the latest one and the warning
-names an earlier head, publication removes the warning and reports `cleared` with the
-PR's `draft` status. After all required gates pass, the task owner marks a draft PR
-ready. A ready checkpoint leaves a warning for its own head, or one naming no head, for
-the maintainer to remove in GitHub. Ready publications cannot erase a newer blocker.
+names an earlier head, publication removes the warning and reports `cleared`. Once no
+warning remains, a ready checkpoint marks a draft PR ready for review, whoever made it a
+draft, and reports `marked_ready`. That starts any review that skips drafts, such as
+`claude-review`, so wait for the configured CI review jobs before the merge handoff.
+A ready checkpoint leaves a warning for its own head, or one naming no head, for
+the maintainer to remove in GitHub, and the PR stays a draft. Ready publications cannot erase a newer blocker.
 Other description writes use best-effort stale-body checks; GitHub offers
 no atomic compare-and-swap for PR descriptions. An opt-out leaves an existing warning
 in place because it does not settle substantive concerns.
 
 Inspect `merge_safeguard` in the publication result. A failed safeguard returns a
 nonzero exit with the reason and published comment URL; inspect live state and retry
-the same execution after fixing the failure. Draft conversion and description
-publication are separate GitHub operations, so one can succeed while the other fails.
+the same execution after fixing the failure. Draft conversion, marking ready, and description
+publication are separate GitHub operations, so one can succeed while another fails.
 For a maintainer decision, retain the existing `decisions` and `awaiting-answer` path.
 Name the decision owner and resolution conditions there, and correct older checklists
 that imply readiness while a substantive concern remains.
@@ -97,7 +103,7 @@ Codex: `low`, `medium`, `high`, `xhigh`, `max`; Claude: `low`, `medium`, `high`,
 Grok: `low`, `medium`, `high`. Model availability and effort support also depend on
 the installed CLI and selected model; CLI rejection is an explicit failure.
 
-`--timeout-seconds` defaults to 300, with a range of 1–3600. The existing neutral,
+`--timeout-seconds` defaults to the selected reviewer's [local review deadline](local-review.md#cli-reviewers), with a range of 1–3600. The existing neutral,
 restricted provider runners execute the selected settings. Missing executables,
 credentials, timeouts, invalid settings, missing prompts, malformed reports, and
 reports for another head return `not_completed` and a nonzero exit. Inspect the JSON
@@ -110,7 +116,8 @@ alternative, a short `summary`, the task owner's `next_action`, and a required
 `inadequate`, or `cannot judge`, the `weakest_claim`, and the `next_check`, judged by the
 packaged [verdict definitions](../config/post-implementation-adequacy.md) whatever prompt
 is configured. The checkpoint
-comment shows all three, and the description lead shows the verdict for the current head.
+comment shows all three, and the description lead shows an `inadequate` or `cannot judge`
+verdict for the current head.
 The verdict leaves `ready` unchanged; `inadequate` or `cannot judge` only makes `merge`
 refuse the head until the user approves it with `--adequacy-confirmed-head SHA`. A report without `summary` or `next_action`
 remains publishable using the first reason and a conclusion-based next action; one
@@ -169,7 +176,7 @@ Choose one fixed value; Ruby parses these values, so they are not configurable:
 | Recommendation | Meaning and next step |
 | --- | --- |
 | Merge | The result is appropriate to ship. Complete required checks, reviews, and the task's Ask or Auto path. |
-| Merge after maintainer decision | You would merge, but unaccepted concerns or a Simplify/reframe verdict wait on the maintainer. Ask in description `decisions`. After the answer, record each accepted concern, or run the checkpoint again with the decision in its evidence packet. A recommendation inside a decision agrees with this disposition. |
+| Merge after maintainer decision | You would merge, but unaccepted concerns, a Simplify/reframe verdict, or another question waits on the maintainer. Ask in description `decisions`. After the answer, record each accepted concern, or run the checkpoint again with the decision in its evidence packet. A recommendation inside a decision agrees with this disposition. |
 | Revise before merge | The direction is sound. Name the specific changes, make them, then repeat affected verification and review. |
 | Reconsider approach | Working code revealed a wrong or disproportionate solution. Explain why and propose an alternative through the existing maintainer decision path. |
 | Do not merge | Recommend abandoning or replacing this PR, with the reason and next step. The maintainer decides whether to close it. |
@@ -177,9 +184,13 @@ Choose one fixed value; Ruby parses these values, so they are not configurable:
 Give each owner field one job:
 
 - `reason`: the main reason for the recommendation. A recommendation is not merge permission.
+  For Merge after maintainer decision, write the question by the
+  [question rules](delivery.md#when-the-agent-asks-questions).
 - `next_action`: the action, starting with its verb. Name who does it only when that
   person is not the developer. Do not restate the recommendation. Keep it to one short,
-  plain sentence; leave out the commit, merge preference, and check results. For Merge,
+  plain sentence; leave out the commit, merge preference, and check results. The PR's
+  warning can show `reason` and `next_action`, so leave workflow terms such as checkpoint
+  out of both. For Merge,
   omit it unless merging waits on something the recommendation does not say, such as
   another PR; then name only that dependency.
 
@@ -208,9 +219,12 @@ concern and the change behind it is unchanged; ask again when the concern differ
 Ruby checks the disposition's head, vocabulary, reason, and next-action field, which only Merge may omit.
 It rejects **Merge** when verification has a blocking conclusion, or lists a concern
 without a matching `accepted_concerns` entry, and never verifies who made a decision.
-It accepts **Merge after maintainer decision** only while Merge is refused and the verdict
-is not Do not merge, and `description` refuses an empty `decisions` list while the PR's waiting warning names the
-current head. A later Merge checkpoint for that head removes the waiting warning.
+It accepts **Merge after maintainer decision** unless the verdict is Do not merge. `description`
+refuses an empty `decisions` list while the PR's waiting warning names the current head, unless
+GitHub reports that head merged; that merge answers the decision and removes the warning. It refuses a
+non-empty list while this head's latest checkpoint recommends Merge. Publishing Merge is refused
+while the description lists decisions, unless that waiting warning names the current head; it then
+removes the warning.
 The other three values publish the existing `blocked` attestation, including when
 verification says **Proceed**. A disposition for an older head cannot publish. A failed
 or opted-out execution has no completed verification to attach a disposition to;

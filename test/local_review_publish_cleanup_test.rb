@@ -150,6 +150,18 @@ class LocalReviewPublishCleanupTest < LocalReviewPublishCleanupSupport
     assert_preserved_history(github)
   end
 
+  # GitHub stored the earlier comment's backslash-u-0000 as backslash-caret-at.
+  def test_a_per_commit_report_github_rewrote_is_still_collapsed
+    quoted = "1. [P2] A path like `/bad\\u0000path` fails.\n"
+    content = { 'rounds' => [round(EARLIER, findings: [], report: report(EARLIER, body: quoted, findings: 0)),
+                             round(HEAD, findings: [], report: report(HEAD, findings: 0))] }
+    github = Timeline.new
+    github.add_per_commit_report(EARLIER, 50, Shaka::Publishing.as_stored(File.read(content['rounds'][0]['report'])))
+
+    _, result = publish(github, content)
+    assert_equal [50], result.fetch('cleanup').fetch('collapsed')
+  end
+
   def test_republishing_keeps_one_archive_disclosure_and_one_loop_comment
     github = per_commit_timeline
     content = loop_content
@@ -157,6 +169,21 @@ class LocalReviewPublishCleanupTest < LocalReviewPublishCleanupSupport
     assert_equal 0, publish(github, content).first
     assert_equal 1, comment(github, 50).scan('<summary>Earlier local review</summary>').size
     assert_equal 3, github.issue_comments.size
+  end
+
+  # Break caught: a cloud session's refused renderer failed review publish during cleanup.
+  def test_a_refused_renderer_leaves_history_visible_without_failing_publication
+    github = per_commit_timeline
+    def github.verify_rendering(body, **)
+      raise Shaka::DeferredRendering::Refused, 'refused' if body.include?(Shaka::LocalReviewHistory::MARKER)
+
+      super
+    end
+
+    status, result = publish(github, loop_content)
+    assert_equal [0, []], [status, result.fetch('cleanup').fetch('unavailable')]
+    assert_includes result.fetch('cleanup').fetch('skipped'), 'left visible'
+    refute_includes comment(github, 50), Shaka::LocalReviewHistory::MARKER
   end
 
   def test_cleanup_failure_retains_publication_and_reports_a_retryable_gap

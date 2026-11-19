@@ -35,6 +35,23 @@ module Shaka
         review.merge(KEY => data[SECTION])
       end
 
+      # The settings a checkpoint runs with: packaged defaults, then the repository's, then this task's. The
+      # default model belongs to the default reviewer, so another reviewer chosen without a model drops it.
+      def self.effective(settings, overrides = {})
+        choices = DEFAULTS.merge(settings).merge(overrides)
+        choices['reviewer'] = reviewer(choices.fetch('reviewer'))
+        choices.delete('model') if discard_model?(settings, choices, overrides)
+        choices
+      end
+
+      def self.discard_model?(settings, choices, overrides)
+        return false if overrides.key?('model')
+        return true if choices['reviewer'] != reviewer(settings.fetch('reviewer', DEFAULTS.fetch('reviewer')))
+
+        choices['reviewer'] != DEFAULTS.fetch('reviewer') && !settings.key?('model')
+      end
+      private_class_method :discard_model?
+
       # The custom instructions' path, and whether settings named it; a named file must exist, the default need not.
       def self.custom_instructions(settings) = [settings.fetch(CUSTOM, DEFAULTS.fetch(CUSTOM)), settings.key?(CUSTOM)]
 

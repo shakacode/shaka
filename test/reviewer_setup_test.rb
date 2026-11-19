@@ -45,6 +45,18 @@ class ReviewerSetupTest < Minitest::Test
     end
   end
 
+  # The agent relays setup_notices on every task, so one for a reviewer coverage never selects is noise.
+  def test_coverage_leaves_uncovered_reviewers_out_of_setup_notices
+    with_repository do |root|
+      Dir.mktmpdir do |tools|
+        rewrite_reviewers(root, missing_setup_agents, coverage: %w[anthropic])
+        write_reviewer_tool(tools, File.join(root, 'launched'))
+        result = selection_with_path(root, "#{tools}:/usr/bin:/bin")
+        assert_equal [['anthropic/claude'], []], result.values_at('reviewers', 'setup_notices')
+      end
+    end
+  end
+
   # A lookup that could not be checked is left to the review run to report.
   def test_keeps_a_reviewer_whose_lookup_could_not_be_checked
     entries = [{ identity: 'openai/codex', configured: true, installed: false, unchecked: true },

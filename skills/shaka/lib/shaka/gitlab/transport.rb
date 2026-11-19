@@ -12,14 +12,20 @@ module Shaka
         validate_path(path)
         raise Error, 'Invalid GitLab HTTP method.' unless %w[GET POST PUT PATCH DELETE].include?(method)
 
+        validate_query_fields(fields) if method == 'GET'
+        if method == 'GET' && !fields.empty?
+          path = "#{path}?#{URI.encode_www_form(fields)}"
+          fields = {}
+        end
         request(path, method:, fields:, expected:).value
       end
 
-      def api_list(path)
+      def api_list(path, fields: {})
         validate_path(path)
+        validate_filters(fields)
         results = []
         (1..MAX_PAGES).each do |page|
-          response = request("#{path}?per_page=#{PAGE_SIZE}&page=#{page}", expected: Array)
+          response = request(page_path(path, fields, page), expected: Array)
           validate_records(response.value)
           results.concat(response.value)
           return results if last_page?(response, page)
@@ -28,6 +34,27 @@ module Shaka
       end
 
       private
+
+      def page_path(path, fields, page)
+        "#{path}?#{URI.encode_www_form(fields.merge('per_page' => PAGE_SIZE, 'page' => page))}"
+      end
+
+      def validate_filters(fields)
+        validate_query_fields(fields)
+        return unless fields.keys.map(&:to_s).intersect?(%w[page per_page])
+
+        raise Error, 'GitLab list filters must be a mapping without pagination overrides.'
+      end
+
+      def validate_query_fields(fields)
+        valid = fields.is_a?(Hash) && fields.all? { |key, value| query_key?(key) && query_value?(value) }
+        valid &&= fields.keys.map(&:to_s).uniq.length == fields.length
+        raise Error, 'GitLab query fields require distinct keys and scalar values.' unless valid
+      end
+
+      def query_key?(key) = key.is_a?(String) || key.is_a?(Symbol)
+
+      def query_value?(value) = value.is_a?(String) || value.is_a?(Integer) || [true, false].include?(value)
 
       def validate_records(records)
         return if records.length <= PAGE_SIZE && records.all?(Hash)

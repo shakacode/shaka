@@ -213,9 +213,14 @@ class PostImplementationAcceptedConcernTest < Minitest::Test
       .each { |conclusion, concerns| assert_awaiting(conclusion, concerns) }
   end
 
-  def assert_awaiting(conclusion, concerns)
+  def test_owner_can_wait_on_a_question_the_reviewer_did_not_raise
+    assert_awaiting('Proceed', [])
+    assert_awaiting('Proceed', ['Frequency is unknown.'], accepted('Frequency is unknown.'))
+  end
+
+  def assert_awaiting(conclusion, concerns, acceptance = [])
     with_result do |result, path|
-      awaiting_with(result, conclusion, concerns)
+      awaiting_with(result, conclusion, concerns, acceptance)
       github, status = publish(result, path)
       evidence = Shaka::PostImplementationEvidence.new(github)
 
@@ -226,17 +231,13 @@ class PostImplementationAcceptedConcernTest < Minitest::Test
     end
   end
 
-  def test_merge_after_maintainer_decision_needs_something_the_maintainer_can_settle
-    concern = 'Frequency is unknown.'
-    [['Proceed', [], []], ['Proceed', [concern], accepted(concern)], ['Do not merge', [concern], []]]
-      .each do |conclusion, concerns, acceptance|
-        with_result do |result, path|
-          awaiting_with(result, conclusion, concerns, acceptance)
-          github, status = publish(result, path)
-          assert_equal 1, status, conclusion
-          assert_empty github.bodies
-        end
-      end
+  def test_merge_after_maintainer_decision_cannot_override_do_not_merge
+    with_result do |result, path|
+      awaiting_with(result, 'Do not merge', ['Frequency is unknown.'])
+      github, status = publish(result, path)
+      assert_equal 1, status
+      assert_empty github.bodies
+    end
   end
 
   def test_other_recommendations_stay_blocked_and_show_the_remaining_concern

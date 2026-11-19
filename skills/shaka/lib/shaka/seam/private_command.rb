@@ -65,7 +65,8 @@ module Shaka
       def setup(root)
         raise Error, '--ref is required for private setup' unless @options[:ref]
 
-        PrivateSetup.new(root:, ref: @options[:ref], options: @options).setup
+        setup = PrivateSetup.new(root:, ref: @options[:ref], options: @options.except(:plan))
+        @options[:plan] ? setup.plan : setup.setup
       end
 
       def option_parser(operation)
@@ -87,6 +88,10 @@ module Shaka
       def add_setup_options(flags)
         flags.on('--ref SHA') { |value| @options[:ref] = value }
         flags.on('--from ID') { |value| @options[:from] = value }
+        flags.on('--plan', 'Print the configuration setup would write; write nothing') { @options[:plan] = true }
+        flags.on('--no-personal-file', 'Skip the personal settings file for this run') do
+          @options[:no_personal_file] = true
+        end
         add_command_options(flags)
         add_review_options(flags)
         flags.on('--base-branch BRANCH') { |value| @options[:base_branch] = value }

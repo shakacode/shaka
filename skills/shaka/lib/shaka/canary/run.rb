@@ -270,7 +270,7 @@ module Shaka
 
       def call
         result = JSON.parse(File.read(result_path))
-        comment(result) && close(result) ? 0 : 1
+        [comment(result), *close(result)].all? ? 0 : 1
       end
 
       private
@@ -283,7 +283,7 @@ module Shaka
       end
 
       def close(result)
-        Array(result['close']).all? do |number|
+        Array(result['close']).map do |number|
           @runner.capture(['gh', 'pr', 'close', number.to_s, '--repo', repo, '--comment', NOTE])['ok']
         end
       end

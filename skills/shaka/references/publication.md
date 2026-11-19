@@ -7,6 +7,21 @@
   separate rewriting skill for Shaka's publication step.
 - No style schema or prose score is needed beyond the limits below.
 
+## Write the description summary
+
+- Write `summary` as one outcome sentence, a blank line, then at most four bullets, each
+  one fact a maintainer needs to decide on merging. Omit the bullets when that sentence
+  covers the change.
+- Put a safety argument in `intent.safe_because` and issue history in `task_history`.
+- Instead of: “It stays under Human comments, and reviewer-shortfall and sandbox gaps
+  still appear under Setup gaps. `shaka resolve` still refuses to treat one as the
+  agent’s answer, so it gains no authority.”
+- Write: “Your own comments on your PR no longer appear as a setup problem in its
+  description.” Then:
+  - “Your comments stay under Human comments.”
+  - “Setup gaps still lists reviewer shortfalls and sandbox problems.”
+  - “`shaka resolve` still won’t accept a raw `gh` reply as the agent’s answer.”
+
 ## Post-implementation comments
 
 - The renderer supplies the order, labels, and the reviewer's evaluation and concerns.
@@ -24,20 +39,23 @@
 
 ## Review evidence
 
-- Supply description `task_started_at` from the original task's initiating
-  instruction timestamp in UTC. Omit it when unavailable or later than PR opening.
-  The helper retains it across updates; a resumed chat's start is not a new task start.
+- Pass the Intake timing input to `description` on every refresh. Use
+  `codex_task_start` with the original Codex `thread_id` and `turn_id`, or
+  `task_started_at` with a verified ISO 8601 timestamp no later than PR opening.
+  In Codex desktop, `read_thread` lists turn IDs beside the original requests.
+  With neither input, omit it. Report gaps returned in `timing`.
+  Pass a recorded `--ci-review-wait` task override to `description` too.
 
 - Verification opens with bound validation/review status and an optional linked `summary`.
-  Put material merge-affecting gaps in `merge_limitations`; accepted gaps stay in `not_verified`.
+  `not_verified` and `merge_limitations` render visibly; put a gap that limits merging in `merge_limitations`.
   Checks, tables, and PR-specific `details` share one Evidence and limitations disclosure.
   Put the initiating request and useful decision history in optional `task_history`.
 - Intent ends with `scope`, GitHub's file/line totals, and path-based file buckets.
   Count each current filename once: Tests, then Docs/instructions, Code, or Other.
   Inspect the expandable paths for ambiguous classifications; buckets describe paths, not effort.
   Supply `leaves_out` only for a deliberately deferred part readers would reasonably expect.
-- Shaka metrics keeps estimated token costs visible, then folds usage, timings, execution,
-  settings, skills, provenance history, and task history under Details, in that order.
+- Shaka metrics keeps estimated token costs visible, then folds missing values, usage, timings,
+  execution, settings, skills, provenance history, and task history under Details, in that order.
 
 - Put the current-head recommendation, main reason, and next action before analysis.
 - Name model settings with their provenance; a configured model is not proof of a served model.

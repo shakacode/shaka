@@ -14,6 +14,14 @@ class HandoffTest < Minitest::Test
                  "walkthrough #{HEAD[0, 7]} · WIP #{HEAD[0, 7]}", result['status']
   end
 
+  def test_a_hold_label_is_reported_without_owing_anything
+    result = handoff(labels: %w[awaiting-resume hold])
+
+    assert_includes result.fetch('status'), 'held by hold'
+    assert_empty result.fetch('owed')
+    assert(result.fetch('notes').any? { |note| note.include?('`merge` refuses it until a person removes the label') })
+  end
+
   def test_an_open_pr_without_an_attention_label_owes_one
     result = handoff(labels: ['bug'])
 
@@ -38,12 +46,6 @@ class HandoffTest < Minitest::Test
     result = handoff(labels: ['awaiting-resume'], woken_by: 'background watcher')
 
     assert(result['owed'].any? { |item| item.include?('Remove awaiting-resume') })
-  end
-
-  def test_merge_approval_without_a_walkthrough_is_owed
-    result = handoff(labels: ['awaiting-merge-approval'], reviews: [])
-
-    assert(result['owed'].any? { |item| item.include?('Publish a walkthrough') })
   end
 
   def test_a_check_whose_state_and_bucket_disagree_is_not_passing
@@ -175,5 +177,60 @@ class HandoffCliTest < Minitest::Test
 
     refute_predicate status, :success?
     assert_includes error, '--woken-by is only for handoff'
+  end
+end
+
+# Whether a missing walkthrough is owed depends on walkthrough.publish and a recorded request.
+class HandoffWalkthroughDueTest < Minitest::Test
+  include HandoffHarness
+
+  # Without trusted settings the gate keeps the earlier rule, as walkthrough.publish: always does.
+  def test_merge_approval_without_a_walkthrough_is_owed_where_every_pr_gets_one
+    result = handoff(labels: ['awaiting-merge-approval'], reviews: [])
+
+    assert(result['owed'].any? { |item| item.include?('Publish a walkthrough') })
+  end
+
+  # Under the on_request default a PR without a walkthrough owes none, until this account records a request.
+  REQUEST = { 'user' => { 'login' => 'shaka-agent' },
+              'body' => "#{Shaka::WalkthroughDue::REQUEST_MARKER}\nAsked." }.freeze
+
+  def test_a_walkthrough_is_owed_only_once_requested
+    quiet = on_request
+    refute(quiet['owed'].any? { |item| item.include?('walkthrough') })
+    refute_includes quiet['status'], 'walkthrough'
+
+    assert(on_request(comments: [REQUEST])['owed'].any? { |item| item.include?('Publish a walkthrough') })
+  end
+
+  # A PR body or another account's comment can be edited by people the gate must not trust.
+  def test_only_this_accounts_request_counts
+    contributor = REQUEST.merge('user' => { 'login' => 'contributor' })
+    refute(on_request(comments: [contributor])['owed'].any? { |item| item.include?('walkthrough') })
+  end
+
+  # An earlier walkthrough keeps every later head owing one, even when its footer no longer binds it.
+  def test_an_earlier_walkthrough_keeps_one_due
+    owed = on_request(reviews: [walkthrough(HEAD, commit: OLD)])['owed']
+    assert(owed.any? { |item| item.include?('Publish a walkthrough') })
+  end
+
+  def on_request(**changes)
+    handoff(labels: ['awaiting-merge-approval'], reviews: [], walkthrough_publish: 'on_request', **changes)
+  end
+end
+
+# A person sent to merge a draft finds that GitHub cannot merge it.
+class HandoffDraftTest < Minitest::Test
+  include HandoffHarness
+
+  def test_merge_approval_on_a_draft_is_owed
+    result = handoff(labels: ['awaiting-merge-approval'], draft: true)
+
+    assert(result['owed'].any? { |item| item.include?('draft') }, result['owed'].inspect)
+  end
+
+  def test_a_draft_waiting_on_something_else_owes_nothing_for_being_a_draft
+    assert_empty handoff(draft: true).fetch('owed')
   end
 end

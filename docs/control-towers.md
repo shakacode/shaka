@@ -17,7 +17,7 @@ library fix needed before an application upgrade.
 For Codex, ask your agent:
 
 ```text
-Install Shaka's control towers for Codex.
+Install Shaka's control towers for Codex
 ```
 
 1. If you already have a master chat, continue there. Otherwise, choose one
@@ -55,13 +55,13 @@ What should we tackle next?
 The RCT recommends one task and explains why it matters. When it looks right:
 
 ```text
-Start that task with Shaka and Ask.
+Start that task with Shaka and Ask
 ```
 
 To work on several tasks at once, ask:
 
 ```text
-Suggest a batch of up to three.
+Suggest a batch of up to three
 ```
 
 Expect a short proposal showing which tasks can proceed together and which need
@@ -70,7 +70,7 @@ to wait. You can narrow it with a request such as “Focus on checkout reliabili
 When the selection looks right:
 
 ```text
-Start that batch with Shaka and Ask. Coordinate the chats.
+Start that batch with Shaka and Ask. Coordinate the chats
 ```
 
 **Ask** brings each PR back to you for a merge decision. The RCT reuses existing
@@ -81,15 +81,15 @@ In Claude Code, the tower offers each task as a session you start with a click, 
 you can watch, steer, and archive it. Ask for unattended work, such as “Don't wait
 for me to click,” and it starts background agents instead. Those agents don't
 appear in your session list and stop when the tower chat ends. Each one opens its
-own PR and stops for your merge decision, even under Auto.
+own PR and stops for your merge decision, even under `auto`.
 
-See [merge policies](working-with-shaka.md#choose-a-merge-policy) for Ask and Auto.
+See [merge policies](working-with-shaka.md#choose-a-merge-policy) for Ask and `auto`.
 Setting up towers or starting a batch does not authorize a deployment.
 
 ## Follow the work
 
 ```text
-How is the work going? Show what needs my attention, with PR and chat links.
+How is the work going? Show what needs my attention, with PR and chat links
 ```
 
 A useful update combines the latest chat reports with the current PRs on
@@ -107,14 +107,14 @@ A chat can handle some blockers, such as waiting for CI, without your input.
 The update should distinguish those from decisions that need your attention.
 
 Before merging, check [how the PR’s latest changes were verified and what remains
-unverified](pr-verification.md#check-the-latest-changes).
+unverified](reference/pr-record.md#verification-results).
 
 ## Unblock dependent work
 
 When a prerequisite PR merges, tell the RCT:
 
 ```text
-PR #123 merged. Have the waiting chats update their PRs and recheck them.
+PR #123 merged. Have the waiting chats update their PRs and recheck them
 ```
 
 Those chats need to incorporate the merged fix, rerun their checks, and refresh
@@ -128,7 +128,7 @@ Some projects have a database or test server that only one chat can use at a
 time. You can ask:
 
 ```text
-Let the checkout fix use the shared test environment next.
+Let the checkout fix use the shared test environment next
 ```
 
 Let the current test run finish. The next chat must reserve the environment
@@ -138,7 +138,7 @@ work that doesn’t need it. Shaka does not include an environment scheduler.
 ## Decide what to merge first
 
 ```text
-Which PRs should I merge first? Include PR and chat links.
+Which PRs should I merge first? Include PR and chat links
 ```
 
 Expect ready PRs in recommended order, with a brief reason for each. List blocked

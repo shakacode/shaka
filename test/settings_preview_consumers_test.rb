@@ -33,17 +33,6 @@ class SettingsPreviewConsumersTest < Minitest::Test
     end
   end
 
-  def test_evidence_uses_the_selected_layout_when_the_preview_migrates_it
-    with_preview_repository do |root, trusted, _preview|
-      use_new_layout(root)
-      select_preview(root, commit(root))
-      config, fingerprint, kind = Shaka::Evidence::Inputs.capture(root:, ref: trusted, repository: 'owner/repo')
-      assert_equal '.agents/shaka/config.yml', config.config_path
-      assert_equal 'preview/local', kind
-      refute_empty fingerprint['digest']
-    end
-  end
-
   private
 
   def set_trusted_count(root, data)

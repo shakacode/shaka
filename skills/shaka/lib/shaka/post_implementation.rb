@@ -10,7 +10,9 @@ require_relative 'post_implementation/auto_merge_preview'
 require_relative 'trusted_config_source'
 require_relative 'github'
 require_relative 'handoff/walkthrough'
+require_relative 'walkthrough/due'
 require_relative 'merge_queue_commit'
+require_relative 'publication/checkpoint_recommendation'
 require_relative 'publication/squash_message'
 
 module Shaka
@@ -80,21 +82,23 @@ module Shaka
     def publish_body(github, result, head, pull)
       renderer = result.key?('disposition') ? PostImplementationDispositionPublication : PostImplementationPublication
       message = -> { ready_message(github, head, pull) }
-      auto_merge = ->(verdict) { AutoMergePreview.line(trusted_seam, github, pull, head, verdict) }
-      publication = renderer.new(result, head:, repository: @arguments.first, message:, auto_merge:)
+      previews = PostImplementationRisk.previews(method(:trusted_seam), github, pull, head)
+      publication = renderer.new(result, head:, repository: @arguments.first, message:, previews:)
       published = github.reply(body: publication.render, key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
       safeguard = merge_safeguard(github, head, publication, published)
       published.merge('merge_safeguard' => safeguard)
     end
 
-    # Settings come from the trusted default branch, never the PR; without --ref there is no preview.
+    # Settings come from the trusted default branch, never the PR. Without --ref there is no Auto merge
+    # preview, and the risk rating uses the packaged high-risk areas.
     # The preview is advisory, so unreadable settings leave it out instead of blocking the checkpoint.
     def trusted_seam
-      return unless @options[:criteria_ref]
+      return @trusted_seam if defined?(@trusted_seam)
+      return @trusted_seam = nil unless @options[:criteria_ref]
 
-      TrustedConfigSource.from_ref(root: @options[:root] || Dir.pwd, ref: @options[:criteria_ref])
+      @trusted_seam = TrustedConfigSource.from_ref(root: @options[:root] || Dir.pwd, ref: @options[:criteria_ref])
     rescue Error, SystemCallError
-      nil
+      @trusted_seam = nil
     end
 
     def merge_safeguard(github, head, publication, published)
@@ -103,23 +107,22 @@ module Shaka
       { 'state' => 'failed', 'reason' => e.message, 'head' => head }
     end
 
-    # A ready checkpoint closes the PR's reports, so the walkthrough it follows has to be there already.
+    # A ready checkpoint closes the PR's reports, so a due walkthrough it follows has to be there already,
+    # and no question can still be open beside it.
     # A merge queue takes no message, so its checkpoint says what the queue writes instead.
     def ready_message(github, head, pull)
-      unless Handoff::Walkthrough.new(github).revision == head
+      if WalkthroughDue.new(github, publish: RepositoryConfig::WalkthroughSchema.gate(trusted_seam)).missing_for?(head)
         raise Error, "Ready checkpoint follows this account's walkthrough for #{head}; publish the walkthrough first."
       end
 
+      CheckpointRecommendation.refuse_merge_over_decisions!(github, head)
       @queue = MergeQueueCommit.for(github, pull)
       @queue || squash_message(github)
     end
 
     def squash_message(github)
       path = @options[:squash_message]
-      unless path
-        raise Error,
-              'Ready checkpoint requires --squash-message with the commit title and body.'
-      end
+      raise Error, 'Ready checkpoint requires --squash-message with the commit title and body.' unless path
 
       SquashMessage.for(github, JSON.parse(File.read(path, encoding: 'UTF-8')))
     end

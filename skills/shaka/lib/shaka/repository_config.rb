@@ -4,13 +4,15 @@ require 'yaml'
 require_relative 'defaults'
 require_relative 'error'
 require_relative 'ci_review_wait'
+require_relative 'merge_hold'
 require_relative 'merge_limits'
-require_relative 'merge_review_floor'
 require_relative 'prose_limits'
 require_relative 'configuration/paths'
 require_relative 'configuration/layout'
+require_relative 'configuration/personal_settings'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
+require_relative 'repository_config/walkthrough_schema'
 require_relative 'repository_config/prompt_files'
 
 module Shaka
@@ -20,7 +22,7 @@ module Shaka
     DEFAULT_PR_DESCRIPTION = Defaults.fetch('pr_description').except('opening_check').freeze
 
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
-    attr_reader :base_branch, :commands, :review, :merge, :wip, :pr_description,
+    attr_reader :base_branch, :commands, :review, :merge, :wip, :walkthrough, :pr_description,
                 :opening_check, :prose_limits, :project_guidance, :sha, :config_path
 
     def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil, candidate_commands: true,
@@ -46,13 +48,11 @@ module Shaka
     end
 
     def select_paths
-      @layout = sha ? Configuration::Layout.commit(root: @root, sha:) : Configuration::Layout.worktree(root: @root)
+      layout = sha ? Configuration::Layout.commit(root: @root, sha:) : Configuration::Layout.worktree(root: @root)
       @candidate_detected = if @candidate_commands
-                              sha ? Configuration::Layout.worktree(root: @root, allow_missing: true) : @layout
+                              sha ? Configuration::Layout.worktree(root: @root, allow_missing: true) : layout
                             end
-      @candidate_layout = @candidate_detected || @layout
-      @selection = Configuration::Layout::Selection.new(policy: @layout, candidate: @candidate_layout)
-      @config_path = @layout.contract
+      @config_path = layout.contract
     end
 
     private :select_paths
@@ -74,12 +74,33 @@ module Shaka
     # Callers read this as the effective contract, so defaults belong in it.
     def to_h
       @data.merge('commands' => commands, 'review' => review, 'merge' => merge, 'wip' => wip,
+                  'walkthrough' => walkthrough,
                   'paths' => { 'policy_configuration' => config_path,
                                'candidate_configuration' => @candidate_detected&.contract,
-                               'trusted_command_directory' => @layout.command_directory,
-                               'candidate_command_directory' => @candidate_layout.command_directory },
+                               'trusted_command_directory' => Configuration::Paths::COMMAND_DIRECTORY,
+                               'candidate_command_directory' => candidate_command_directory },
                   'opening_check' => opening_check, 'prose_limits' => prose_limits, 'pr_description' => pr_description)
     end
+
+    # Nil when the checkout predates the command directory, so a report names no scripts it lacks.
+    def candidate_command_directory
+      directory = Configuration::Paths::COMMAND_DIRECTORY
+      path = File.join(@root, directory)
+      directory if File.exist?(path) || File.symlink?(path)
+    end
+
+    # The repository's choice wins, then the user's, then the shipped default.
+    def time_zone(home: Dir.home)
+      explicit_settings.dig('pr_description', 'time_zone') || Configuration::PersonalSettings.time_zone(home:) ||
+        pr_description['time_zone']
+    end
+
+    # The settings exactly as config.yml states them, before any default applies.
+    def explicit_settings = @data
+
+    # The trusted high-risk areas with packaged defaults for any area the repository leaves out.
+    def high_risk_areas = HighRiskAreasSchema.effective(@data[HighRiskAreasSchema::KEY])
+    def medium_risk_areas = MediumRiskAreasSchema.effective(@data[MediumRiskAreasSchema::KEY])
 
     def prompt_files = self.class.prompt_files(review:, opening: opening_check, guidance: project_guidance)
 
@@ -89,7 +110,7 @@ module Shaka
 
     def apply_schema
       schema = Schema.new(root: @root, data: @data, available_commands: @available_commands,
-                          candidate_commands: @candidate_commands, selection: @selection,
+                          candidate_commands: @candidate_commands,
                           &@prompt_validator)
       schema.validate
       @commands = schema.commands
@@ -101,20 +122,24 @@ module Shaka
       @base_branch = @data['base_branch']
       @review = with_default_review_wait(PostImplementationSchema.fold(@data))
       merge = @data.fetch('merge')
-      @merge = { 'auto_max_review_floor' => MergeReviewFloor::DEFAULT }
+      @merge = { 'auto_merge_max_risk' => Defaults.fetch('merge', 'auto_merge_max_risk'),
+                 'hold_labels' => MergeHold::DEFAULT }
                .merge(merge, 'limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = WipSchema.resolve(@data.fetch('wip', {}))
+      @walkthrough = WalkthroughSchema.resolve(@data.fetch('walkthrough', {}))
       assign_presentation
     end
 
     def assign_presentation
-      @pr_description = DEFAULT_PR_DESCRIPTION.merge(@data.fetch('pr_description', {}).except('opening_check'))
+      @pr_description = DEFAULT_PR_DESCRIPTION.merge(@data.fetch('pr_description', {})
+                                                       .except('opening_check'))
       @prose_limits = ProseLimits.new(@data.fetch('prose_limits', {})).to_h
       @project_guidance = ProjectGuidanceSchema.resolve(@data)
     end
 
     def with_default_review_wait(review)
-      { 'ci_review_wait' => CiReviewWait::DEFAULT, 'local_max_rounds' => ReviewLimit::DEFAULT }.merge(review)
+      { 'ci_review_wait' => CiReviewWait::DEFAULT, 'local_max_rounds' => ReviewLimit::DEFAULT,
+        'startup_check' => Defaults.fetch('review', 'startup_check') }.merge(review)
     end
   end
 end

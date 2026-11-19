@@ -7,8 +7,5 @@ index = File.exist?(index_path) ? File.read(index_path).to_i : 0
 File.write(index_path, index + 1)
 rows = JSON.parse(File.read(File.join(directory, 'responses')))
 row = rows.fetch(index)
-if row == 'hang'
-  File.write(File.join(directory, 'pid'), Process.pid)
-  sleep 60
-end
+sleep 60 if row == 'hang'
 print JSON.generate(row)

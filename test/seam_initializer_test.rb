@@ -4,12 +4,14 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'json'
 require 'yaml'
+require 'shaka/merge_hold'
 require 'shaka/merge_limits'
-require 'shaka/merge_review_floor'
+require 'shaka/defaults'
 require 'shaka/version'
 
 GENERATED_MERGE = { 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS,
-                    'auto_max_review_floor' => Shaka::MergeReviewFloor::DEFAULT }.freeze
+                    'auto_merge_max_risk' => Shaka::Defaults.fetch('merge', 'auto_merge_max_risk'),
+                    'hold_labels' => Shaka::MergeHold::DEFAULT }.freeze
 
 module SeamInitializerTestHelpers
   COMMAND = SHAKA_COMMAND
@@ -60,7 +62,7 @@ module SeamInitializerTestHelpers
     config = JSON.parse(output)
     assert_equal %w[main ask], [config.fetch('base_branch'), config.dig('merge', 'preference')]
     assert_equal %w[base_branch branches commands merge opening_check paths pr_description
-                    prose_limits review version wip], config.keys.sort
+                    prose_limits review version walkthrough wip], config.keys.sort
     assert_equal(GENERATED_MERGE, config.fetch('merge'))
     assert_includes File.read(File.join(root, CONTRACT)), GENERATED_MARKER
     wrapper_files(root).each { |path| assert_generated_wrapper(path) }
@@ -130,6 +132,13 @@ module SeamInitializerTestHelpers
 end
 
 module SeamInitializerAssertions
+  def assert_checkpoint_comment(root)
+    config = File.read(File.join(root, SeamInitializerTestHelpers::CONTRACT))
+    assert_includes config, '# Or replace the built-in checkpoint prompt with your own file.'
+    assert_includes config, "# Shaka's rules, report format, and rubrics for verification and risk still apply:"
+    refute_includes config, 'whole checkpoint prompt'
+  end
+
   def assert_refuses_changed_mode(root, relative, mode)
     path = File.join(root, relative)
     File.chmod(mode, path)
@@ -151,6 +160,7 @@ class SeamInitializerTest < Minitest::Test
       assert_predicate status, :success?, error
       assert_complete_seam(root, output)
       assert_equal '{login}-{host}/{issue}-{description}', JSON.parse(output).dig('branches', 'name')
+      assert_checkpoint_comment(root)
     end
   end
 
@@ -314,7 +324,8 @@ class SeamInitializerValidationTest < Minitest::Test
       output, error, status = Open3.capture3(*arguments)
 
       assert_predicate status, :success?, error
-      assert_equal({ 'required' => 'none', 'ci_review_wait' => 'one', 'local_max_rounds' => 5 },
+      assert_equal({ 'required' => 'none', 'ci_review_wait' => 'one', 'local_max_rounds' => 8,
+                     'startup_check' => true },
                    JSON.parse(output).fetch('review'))
     end
   end
@@ -380,20 +391,6 @@ class SeamInitializerValidationTest < Minitest::Test
 
       refute_predicate status, :success?
       assert_includes error, 'must be a simple argv command'
-      refute_path_exists File.join(root, '.agents')
-    end
-  end
-end
-
-class SeamInitializerRetiredFlagTest < Minitest::Test
-  include SeamInitializerTestHelpers
-
-  def test_old_ci_review_agent_flag_names_replacement
-    with_repository do |root|
-      _output, error, status = Open3.capture3(*init_arguments(root), '--ci-review-agent', 'old-job')
-
-      refute_predicate status, :success?
-      assert_includes error, '--ci-review-agent moved to --ci-review-job'
       refute_path_exists File.join(root, '.agents')
     end
   end
@@ -530,20 +527,7 @@ module SeamInitializerPointerAssertions
     File.chmod(0o644, path)
   end
 
-  def plant_legacy_readme(root)
-    path = File.join(root, '.agents/README.md')
-    original = "#{readme_marker_line}\nlegacy pointer from Shaka 0.0.1.pre.0\n"
-    File.write(path, original)
-    [path, original]
-  end
-
   def readme_marker_line = "<!-- #{SeamInitializerTestHelpers::GENERATED_MARKER} -->"
-
-  def assert_legacy_readme_report(error)
-    assert_includes error, '.agents/README.md'
-    assert_includes error, '.agents/shaka.md'
-    assert_includes error, 'will not delete it'
-  end
 
   def assert_pointer_file(path)
     pointer = File.read(path)
@@ -587,6 +571,19 @@ class SeamInitializerPointerTest < Minitest::Test
       assert_predicate status, :success?, error
       refute_path_exists File.join(root, '.agents/README.md')
       assert_pointer_file(File.join(root, '.agents/shaka.md'))
+    end
+  end
+
+  # Break: a refresh command whose text drifts from init would rewrite existing
+  # pointers with content a fresh setup never produces.
+  def test_pointer_readme_prints_exactly_what_init_writes
+    with_repository do |root|
+      assert_predicate init(root).last, :success?
+
+      output, error, status = Open3.capture3(*COMMAND, 'seam', 'pointer', '--readme')
+
+      assert_predicate status, :success?, error
+      assert_equal File.read(File.join(root, '.agents/shaka.md')), output
     end
   end
 
@@ -642,44 +639,12 @@ class SeamInitializerReadmeCoexistenceTest < Minitest::Test
 
       assert_predicate status, :success?, error
       assert_equal "owner: repository\n", File.read(path)
-      refute_includes error, 'legacy'
       assert_path_exists File.join(root, '.agents/shaka.md')
       assert_complete_seam(root, output)
     end
   end
 
-  # Break: a leftover Shaka README would be deleted or overwritten, or would
-  # block init, instead of remaining as a recognized legacy artifact.
-  def test_reports_a_legacy_generated_readme_without_deleting_it
-    with_repository do |root|
-      assert_predicate init(root).last, :success?
-      path, original = plant_legacy_readme(root)
-
-      _output, error, status = init(root)
-
-      assert_predicate status, :success?, error
-      assert_equal original, File.read(path)
-      assert_legacy_readme_report(error)
-    end
-  end
-
-  def test_first_init_keeps_a_legacy_generated_readme
-    with_repository do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents'))
-      path, original = plant_legacy_readme(root)
-
-      output, error, status = init(root)
-
-      assert_predicate status, :success?, error
-      assert_equal original, File.read(path)
-      assert_legacy_readme_report(error)
-      assert_path_exists File.join(root, '.agents/shaka.md')
-      assert_complete_seam(root, output)
-    end
-  end
-
-  # Break: an unreadable leftover README raises during the post-write advisory
-  # and leaves a complete seam behind a failed init.
+  # Break: reading an unrelated README would turn it into a failure of init.
   def test_init_succeeds_when_an_existing_readme_is_unreadable
     with_repository do |root|
       with_unreadable(write_foreign_readme(root)) do

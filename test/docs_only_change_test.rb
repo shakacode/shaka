@@ -88,6 +88,26 @@ class DocsOnlyChangeTest < DocsOnlyChangeTestSupport
     assert_includes output, 'Documentation-only change'
   end
 
+  def test_accepts_internal_markdown_at_any_depth
+    write('internal/plan.md', "Plan\n")
+    write('internal/adr/0001-choice.md', "Decision\n")
+    output, status = classify
+    assert_predicate status, :success?, output
+  end
+
+  # test/skill_test.rb reads the maintenance guide, so editing it must run the tests.
+  def test_rejects_the_maintenance_guide_the_tests_read
+    write('internal/improving-shaka.md', "Guide\n")
+    _output, status = classify
+    refute_predicate status, :success?
+  end
+
+  def test_rejects_non_markdown_under_internal
+    write('internal/adr/diagram.svg', "<svg/>\n")
+    _output, status = classify
+    refute_predicate status, :success?
+  end
+
   def test_accepts_an_untracked_doc
     write('docs/new.md', "New\n")
     _output, status = classify
@@ -131,6 +151,20 @@ class DocsOnlyChangeTest < DocsOnlyChangeTestSupport
 
   def test_rejects_non_markdown_files_under_docs
     write('docs/tool.rb', "puts :tool\n")
+    _output, status = classify
+    refute_predicate status, :success?
+  end
+
+  def test_accepts_figures
+    write('docs/img/figure.svg', "<svg/>\n")
+    File.binwrite(File.join(@root, 'docs/img/photo.webp'), "RIFF\x00\x00\x00\x00WEBP".b)
+    output, status = classify
+    assert_predicate status, :success?, output
+  end
+
+  def test_rejects_an_executable_figure
+    write('docs/img/figure.svg', "<svg/>\n")
+    FileUtils.chmod(0o755, File.join(@root, 'docs/img/figure.svg'))
     _output, status = classify
     refute_predicate status, :success?
   end

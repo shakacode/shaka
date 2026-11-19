@@ -20,7 +20,7 @@ class HandoffFakeGitHub
   end
 
   def snapshot
-    { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42,
+    { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42, 'isDraft' => @pull.fetch(:draft, false),
       'author' => { 'login' => @pull.fetch(:author, 'shaka-agent') }, 'isMergeQueueEnabled' => @pull[:queue] }
   end
 
@@ -74,6 +74,7 @@ module HandoffFixtures
   IDENTITY = { 'agent' => 'Claude Code', 'provider' => 'Anthropic', 'model' => 'claude-opus-5-5',
                'effort' => 'medium' }.freeze
   PROVENANCE = { 'task_source' => 'issue', 'initial_prompt' => 'EXCLUDED',
+                 'task_url_omission_reason' => 'Task URL not recorded in fixture.',
                  'requested_model' => 'UNKNOWN', 'requested_effort' => 'UNKNOWN',
                  'recommended_model' => 'UNKNOWN', 'recommended_effort' => 'UNKNOWN',
                  'active_model' => 'UNKNOWN', 'active_effort' => 'UNKNOWN' }.freeze
@@ -146,10 +147,10 @@ module HandoffHarness
 
   def description(wip = WIP, extra = {}) = HandoffFixtures.description(wip, extra)
 
-  def handoff(expected: HEAD, woken_by: nil, post_implementation: nil, **pull)
+  def handoff(expected: HEAD, woken_by: nil, post_implementation: nil, walkthrough_publish: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,
                  reviews: [walkthrough(HEAD)], checks: [check('pass')], comments: [] }
-    Shaka::Handoff.new(HandoffFakeGitHub.new(defaults.merge(pull)), post_implementation:).call(head: expected,
-                                                                                               woken_by:)
+    Shaka::Handoff.new(HandoffFakeGitHub.new(defaults.merge(pull)), post_implementation:, walkthrough_publish:)
+                  .call(head: expected, woken_by:)
   end
 end

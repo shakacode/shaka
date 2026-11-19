@@ -121,9 +121,10 @@ module Shaka
         raise IOError, 'Owned Codex process could not be reaped'
       end
 
+      # macOS refuses with EPERM when every process left in the group is an unreaped zombie.
       def signal(name)
         Process.kill(name, -@pid)
-      rescue Errno::ESRCH
+      rescue Errno::ESRCH, Errno::EPERM
         nil
       end
 

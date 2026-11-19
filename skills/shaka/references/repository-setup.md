@@ -7,6 +7,12 @@ has no Shaka seam, run `seam private inspect --root DIR` at intake and after
 outside Git updates. Infer commands from project instructions, scripts, and CI.
 Show each proposed command with its source; ask only for consequential unknowns.
 Use the saved absolute installed helper path throughout, with no PATH edit.
+When `~/.agents/shaka/config.yml` exists, run the setup command below with `--plan`
+first and show its `config` and `prefilled_keys` with the commands; it writes nothing.
+If `prefilled_keys` lists `review.local_review_agents`, show that list in place of
+[offering local reviewers](#offer-local-reviewers), and pass `--local-review-agent`
+only when the user asks to change it. Add `--no-personal-file` to both runs when the
+user asks to skip that file. Setup refuses a personal key it cannot use and names it.
 Generate local settings:
 
 ```bash
@@ -20,8 +26,9 @@ Supply `--ci-review-job NAME` with a matching review policy when a real CI revie
 job exists. [Offer local reviewers](#offer-local-reviewers) before running setup. If the repository defers hosted CI, supply
 `--validate-local-command COMMAND` and `--trigger-hosted-ci-command COMMAND`
 together. The private generator reuses the normal new-layout wrappers and records
-Ask and `wip.include_checkout_path: true`, matching team setup. WIP Details include the
-checkout path and session link by default. Local files remain local while the PR
+Ask and defaults `wip.include_checkout_path` to `false`. A personal setting can override
+that default. Check the effective value with `--plan`. With the default, WIP Details show
+`REDACTED` for the checkout path and keep any supported session link. Local files remain local while the PR
 records permitted settings, with sensitive configuration fields marked `REDACTED`.
 A local `merge.preference` cannot establish merge authority. An explicit
 task instruction may authorize Auto separately. Private setup cannot set fallback
@@ -83,9 +90,9 @@ interruption, rerun the same command; if it refuses a partly written file, follo
 If setup is denied or interrupted, report the failed path the error names and
 use normal host approval when needed to fix access. Inspect the
 copy and retry setup with the same options after fixing access; a matching partial
-installation resumes. Changed options leave a differing prepared copy, so setup
-refuses to replace it. Compare that copy and move it to a safe location before
-starting fresh with corrected options.
+installation resumes. Changed options, or a Shaka update that changed the generated
+defaults, leave a differing prepared copy, so setup refuses to replace it. Compare
+that copy and move it to a safe location before starting fresh with corrected options.
 After `git clean -fdx`, setup refuses to replace a recovery copy that differs
 from the generated defaults. Run `private inspect` after editing private files
 and before cleaning: edits made since the last inspection cannot be recovered
@@ -101,8 +108,7 @@ is active, and remove the exact
 settings. Keep any other exclusion lines.
 The common Git directory is the recovery boundary: deleting it loses the copies.
 Direct edits overwritten by an outside Git update before `inspect` sees them may
-also be lost. An ignored private destination blocks the existing `seam upgrade`
-layout migration; compare it with the recovery copy before adopting team settings.
+also be lost.
 If a required wrapper is missing, or an optional pair is incomplete during setup,
 `private inspect` reports `partial` and leaves the last complete recovery copy
 untouched. Compare and save any new edits separately before `git clean -fdx`;
@@ -157,17 +163,17 @@ and standard script; keep those definitions there.
    completes before merging. Offer the same template to replace an existing Claude review
    workflow that lacks its `depth` step.
 4. Prepare the files with the trusted installed helper. `seam init` creates
-   version-one configuration in `.agents/shaka/`. When the repository already has
-   `.agents/agent-workflow.yml`, `seam init` refuses and names the
-   [layout upgrade procedure](migration.md#upgrade-the-configuration-layout); that
-   configuration keeps working without the upgrade.
+   version-one configuration in `.agents/shaka/`.
    For an older contract shape, use the [migration procedure](migration.md#migrate-an-older-contract).
 5. Inspect the generated diff, run its checks, and commit it. When the default
    branch has no seam yet, follow [the first setup PR](#review-and-merge-the-first-setup-pr)
    path to review it before publishing and hand it to the maintainer. A migration
-   keeps the normal workflow gates. Merge before relying on the new policy.
-6. After the setup PR merges, offer to choose the repository's
-   [human review floors](human-review-floors.md); until then the shipped floors apply.
+   keeps the normal workflow gates. Ordinary tasks use the new policy after it
+   merges. Separate tasks can select an explicit preview.
+6. After the setup PR merges, offer to choose the repository's `high_risk_areas` and
+   `merge.auto_merge_max_risk` from the shared
+   [settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md); until then the
+   packaged defaults apply.
 
 For a repository whose commands and review job match this example, the initializer
 is:
@@ -201,11 +207,9 @@ is installed or the user declines.
 
 ## Review and merge the first setup PR
 
-When the default branch has no Shaka configuration, every `--ref` command stops
-with `Cannot find .agents/agent-workflow.yml or .agents/shaka/config.yml`. That includes
-`seam check`, `reviewer`, and `merge`. The refusal is correct: the setup PR must not
-grant itself review or merge policy. Do not work around it with the candidate's
-own YAML. Handle that one PR this way:
+When the default branch has no Shaka configuration, review the setup PR under
+the repository's existing policy. Its proposed settings cannot govern its own
+review or merge. Reserve [settings previews](settings-preview.md) for separate tasks.
 
 1. Validate with `shaka seam check --root . --local` and the new wrapper scripts.
    The local check proves syntax only.
@@ -228,8 +232,17 @@ own YAML. Handle that one PR this way:
    executable wrappers and merge policy, so ask them to review those files before
    they merge it on GitHub under the repository's existing protection.
 
-After that merge, each later task resolves the current default-branch commit at
-intake and passes it as `--ref`.
+At handoff, offer this copyable prompt for a separate chat. Substitute the actual
+setup PR URL and use the host's Shaka invocation:
+
+```text
+$shaka <task or issue link>
+Use settings from <setup PR URL>. Keep merge preference Ask.
+```
+
+Explain that the setup PR can stay open while the team tries its settings. Each
+new task started with the prompt pins the PR's current commit. After the setup
+PR merges, ordinary new tasks use the default-branch settings.
 
 
 ## What `seam init` writes
@@ -246,9 +259,7 @@ The initializer writes `.agents/shaka/config.yml`, the three required wrappers i
 `review`, `merge`, the default `branches.name`, and `wip.include_checkout_path: true`.
 Each wrapper finds the repository root with Git, so it runs the same from any
 directory and from a linked worktree; `--root` must therefore be the Git worktree
-root. The initializer refuses Shaka command names left in `.agents/bin/` without
-their configuration, leaves other `.agents/bin/` tools alone, and checks write
-access before writing anything. It defaults to Ask. Add `--merge-preference auto`
+root. The initializer checks write access before writing anything. It defaults to Ask. Add `--merge-preference auto`
 only with established authority, `--base-branch` for another base, and
 `--required-check` for seam-declared checks, and `--local-review-agent` for each
 accepted reviewer. Add reviewer models, efforts, prompt files, and `repo_prefix`
@@ -260,6 +271,39 @@ there; Shaka does not require that file.
 Command arguments are parsed as argument lists. Put pipelines and other compound
 shell behavior in repository scripts rather than in command flags.
 
+## Refresh the pointer file
+
+Init and migrate never rewrite an existing `.agents/shaka.md`. To refresh it for the
+installed Shaka version, write the output of `shaka seam pointer --readme` to that file
+and publish it as its own configuration PR, passing `--flow migration` to
+`evidence guard`; the diff shows any repository edits it replaces.
+
+## Required validation inputs
+
+When `evidence verify` reports `repository validation used command arguments`,
+keep that run as diagnostic evidence. It does not satisfy repository validation.
+
+Add durable file-to-spec rules to the existing repository selector invoked by the
+fixed validation wrapper. For example, extend its existing case statement:
+
+```bash
+app/new.rb)
+  printf '%s\n' spec/new_spec.rb
+  ;;
+```
+
+Keep unknown changed files fail-closed and preserve every required lint, security,
+and other check. Review each coverage rule against the changed files. Do not
+persist task-specific exclusions such as `--no-spec-for` defaults. If coverage cannot be expressed safely, keep validation blocked.
+Do not use `eval`, shell command strings, executable overrides, or external
+untracked mapping inputs.
+
+Review the selector changes, then run `evidence run --command validate` with the
+task's existing root, trusted ref, and repository flags, without trailing arguments.
+Continue the workflow's Verify phase for current-head binding and review.
+
+If the repair requires changing the fixed validation wrapper, use a separate
+setup/migration PR.
 
 ## Validate the configuration
 
@@ -278,9 +322,13 @@ shaka seam check --root . --ref FULL_DEFAULT_BRANCH_SHA
 
 A PR's proposed policy cannot grant that PR new authority. `--ref` reads policy
 and optional script availability from the trusted commit, then validates the
-scripts in the candidate checkout. Inspect changes to those scripts before
-executing them. `--local` grants no policy or merge authority; omitting both
-flags performs the same candidate check with a warning. Combining them is an error.
+scripts in the candidate checkout. If that checkout predates the entire command
+directory, ordinary tasks use trusted copies. Otherwise the report omits optional
+scripts missing from the checkout. A [settings preview](settings-preview.md) uses
+the pinned settings and requires wrappers in the task worktree. Inspect changes
+to scripts before executing them.
+`--local` checks candidate settings. Omitting both flags runs that same check
+with a warning. Combining the flags is an error.
 
 The JSON output includes derived `commands` and `validation` fields. They describe
 the result; do not copy them into the YAML. Even trusted output reports

@@ -11,7 +11,8 @@ module Shaka
       private
 
       def repair_options(options)
-        options.on('--repair', 'Run the steps install --status names that repair may run; deletes nothing') do
+        options.on('--repair', 'Run the steps install --status names that repair may run; deletes only ' \
+                               'the temporary checkout an interrupted update left') do
           @actions << :repair
         end
       end
@@ -27,7 +28,9 @@ module Shaka
 
     # Runs the next command install --status names, one problem at a time, for the states repair may
     # change. It stops at a healthy install, a decision, or a state outside that list. A second run
-    # finds nothing to do. No step deletes a checkout, package, or file: a retired record is renamed.
+    # finds nothing to do. No step deletes a checkout, package, or file: a retired record is renamed. The
+    # one exception is B7's update, which removes the temporary checkout an interrupted update recorded.
+    # That update then fetches and moves to origin's latest revision, as the interrupted one would have.
     class Repair
       # Record a pull, finish an update, record Ruby, relink, retire an orphan record, keep local
       # commits on a branch, and unify a split install.

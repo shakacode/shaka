@@ -5,6 +5,7 @@ require 'tmpdir'
 require 'open3'
 require 'fileutils'
 require 'rbconfig'
+require 'yaml'
 require_relative '../skills/shaka/lib/shaka/executable_file'
 
 # The helpers and fakes the tests spawn need only Ruby's standard library. Under bundle exec
@@ -16,6 +17,8 @@ if defined?(Bundler)
 end
 # Helper calls the tests spawn stay out of the developer's own call log.
 ENV['SHAKA_CALL_LOG'] = 'off'
+# A runner a test spawns must not report its fixtures' failures into the validation run's own phase log.
+ENV.delete('SHAKA_PHASE_LOG')
 # This checkout is not the developer's linked installation, so every spawned call would say so.
 ENV['SHAKA_NOTICES'] = 'off'
 # Background maintenance outlives a fixture repository and races Dir.mktmpdir's cleanup.
@@ -57,6 +60,12 @@ def shaka_command(launcher = File.expand_path('../skills/shaka/scripts/shaka', _
 end
 SHAKA_COMMAND = shaka_command
 
+# `description` reads the calling session. A canned Owner must not be judged against whichever
+# chat happens to run the suite, so these spawns clear that session. Nil deletes the variable.
+SESSION_ENV_CLEARED = %w[CODEX_THREAD_ID CLAUDE_CODE_SESSION_ID CLAUDE_CODE_HOST_SESSION_ID
+                         CURSOR_CONVERSATION_ID OPENCODE_SESSION_ID PI_CODING_AGENT
+                         SHAKA_MACHINE_ALIAS].to_h { |key| [key, nil] }.freeze
+
 git_names = WINDOWS ? %w[git.exe git] : %w[git]
 candidates = ENV.fetch('PATH').split(File::PATH_SEPARATOR).product(git_names)
 candidates.map! { |dir, name| File.join(dir, name) }
@@ -75,12 +84,13 @@ USAGE_RECORD = { 'host' => 'claude-code', 'sources' => ['s1'], 'responses' => ['
 INTENT = { 'why' => 'Review comments showed rebased commits as plain text.',
            'scope' => 'Commit links in local review comments.',
            'leaves_out' => 'The closing attestation line.',
-           'safe_because' => 'A copy must make the identical change.', 'review_effort' => 2 }.freeze
+           'safe_because' => 'A copy must make the identical change.' }.freeze
 VERIFICATION = { 'checks' => ['Ran `bin/validate`: all tests passed.'],
                  'not_verified' => 'Nothing.' }.freeze
 # The checkpoint reviewer's judgment of whether that proof covers the intent.
 ADEQUACY = { 'verdict' => 'adequate', 'weakest_claim' => 'Rebased commits link to the right revision.',
              'next_check' => 'Publish one review comment on a rebased branch.' }.freeze
+RISK = { 'rating' => 'low', 'reasons' => ['Only the checkpoint wording changes.'] }.freeze
 # The description content a checkpoint runs on, with the two facts only the checkpoint reads.
 CHECKPOINT_CONTENT = { 'summary' => 'Restore the missing-check error before submission.', 'intent' => INTENT,
                        'verification' => VERIFICATION,
@@ -126,4 +136,12 @@ module Minitest
     include UsageIdentityText
     include BooleanAssert
   end
+end
+
+# Writes ~/.agents/shaka/config.yml under HOME with these wip choices and returns its path.
+def write_personal_wip(home, wip)
+  path = File.join(home, '.agents/shaka/config.yml')
+  FileUtils.mkdir_p(File.dirname(path))
+  File.write(path, YAML.dump('version' => 1, 'wip' => wip))
+  path
 end

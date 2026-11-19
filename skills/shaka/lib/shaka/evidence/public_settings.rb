@@ -10,14 +10,15 @@ module Shaka
     module PublicSettings
       ENUMS = {
         'source' => %w[private/local preview/local trusted/team],
-        'source.layout' => %w[legacy new],
         'installation.source' => %w[revision development uninstalled],
         'merge.preference' => %w[ask auto],
+        'merge.auto_merge_max_risk' => %w[low medium],
         'merge.private_trial_default' => %w[ask],
         'review.required' => %w[always meaningful_changes none],
         'review.ci_review_wait' => %w[none one all],
         'overrides.command' => %w[setup test validate validate_local trigger_hosted_ci],
         'overrides.effort' => %w[none minimal low medium high xhigh max ultra],
+        'overrides.machine_effort' => %w[none minimal low medium high xhigh max ultra],
         'overrides.reviewer' => %w[anthropic/claude openai/codex xai/grok deepseek/openrouter],
         'opening_check.reviewer' => %w[anthropic/claude openai/codex xai/grok deepseek/openrouter],
         'opening_check.effort' => %w[none minimal low medium high xhigh max ultra]
@@ -25,11 +26,11 @@ module Shaka
       BOOLEANS = %w[wip.include_checkout_path opening_check.enabled
                     pr_description.show_shaka_credit pr_description.show_human_comments].freeze
       NUMBERS = %w[merge.limits.max_changed_files merge.limits.max_changed_lines merge.limits.max_commits
-                   merge.auto_max_review_floor
                    prose_limits.max_sentence_words prose_limits.max_paragraph_words prose_limits.max_description_words
                    prose_limits.words_per_changed_line pr_description.max_human_comments].freeze
       REDACTED = %w[commands paths review.prompts review.ci_review_jobs merge.required_checks branches base_branch
-                    overrides.arguments overrides.model opening_check.model local_changes defaults_changed].freeze
+                    overrides.arguments overrides.model overrides.machine_model opening_check.model local_changes
+                    defaults_changed].freeze
       FIELDS = (ENUMS.keys + BOOLEANS + NUMBERS + REDACTED +
                 %w[source.revision source.configuration installation.version installation.revision]).freeze
 
@@ -37,7 +38,7 @@ module Shaka
 
       def capture(config:, kind:, ref:, task_overrides:, installation: Doctor::InstallationIdentity.read)
         snapshot = setting_values(config.to_h)
-        snapshot.merge!(source_values(kind, ref, config.config_path), installation_values(installation))
+        snapshot.merge!(source_values(kind, ref), installation_values(installation))
         task_overrides.each { |key, value| snapshot["overrides.#{key}"] = value }
         snapshot['merge.private_trial_default'] = 'ask' if kind == 'private/local'
         REDACTED.each { |field| snapshot[field] = 'REDACTED' }
@@ -49,9 +50,8 @@ module Shaka
         (ENUMS.keys + BOOLEANS + NUMBERS).to_h { |field| [field, values.dig(*field.split('.'))] }
       end
 
-      def source_values(kind, ref, path)
+      def source_values(kind, ref)
         { 'source' => kind, 'source.revision' => ref,
-          'source.layout' => path == Configuration::Paths::NEW_CONTRACT ? 'new' : 'legacy',
           'source.configuration' => kind }
       end
 
@@ -63,10 +63,12 @@ module Shaka
           'installation.version' => installation['version'], 'installation.revision' => revision }
       end
 
+      # The installed revision moves with every update; the fingerprint decides whether that update matters.
       def binding_reasons(snapshot, current, source_ref)
         return [] unless snapshot
 
-        unchanged = snapshot.is_a?(Hash) && snapshot.except('source.revision') == current.except('source.revision') &&
+        moving = %w[source.revision installation.revision]
+        unchanged = snapshot.is_a?(Hash) && snapshot.except(*moving) == current.except(*moving) &&
                     snapshot['source.revision'] == source_ref
         unchanged ? [] : ['public settings snapshot differs from settings checked']
       end

@@ -3,6 +3,9 @@
 require_relative 'test_helper'
 require 'shaka/publication/publication'
 
+PENDING_STATS = 'low - AI spend: UNKNOWN'
+MODEL_AND_STATS = "#{PENDING_STATS}\n\n[Code Walkthrough]".freeze
+
 PUBLIC_PROVENANCE = { 'task_source' => 'description', 'initial_prompt' => 'EXCLUDED',
                       'requested_model' => 'gpt-5.6-terra', 'requested_effort' => 'medium',
                       'recommended_model' => 'gpt-5.6-terra', 'recommended_effort' => 'medium',
@@ -28,6 +31,15 @@ class PublicationRegressionTest < Minitest::Test
       'intent' => INTENT, 'verification' => VERIFICATION, 'deployment' => 'none',
       'steps_besides_merging' => 'none', 'provenance' => PUBLIC_PROVENANCE, 'usage' => USAGE_OBJECT,
       'details' => [] }.merge(changes)
+  end
+
+  # The task follows Why in Intent, so a summary need not link the task itself.
+  def test_the_task_line_follows_why_in_intent
+    provenance = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_number' => 818, 'task_relation' => 'part_of')
+    rendered = Shaka::Publication.description(description_content('provenance' => provenance))
+
+    assert_includes rendered, "## Summary\n\nA summary.\n\n## Intent\n\n**Why:** #{INTENT['why']}\n\n" \
+                              "**Task:** GitHub #818 · part of\n\n**Safe because:**"
   end
 
   # https://github.com/shakacode/shaka/pull/37 published its whole description as one
@@ -86,8 +98,9 @@ class PublicationRegressionTest < Minitest::Test
   def test_timings_follow_the_usage_details_when_the_timeline_was_read
     timeline = { 'opened' => Time.utc(2026, 10, 18, 8), 'merged' => Time.utc(2026, 10, 18, 9), 'labels' => [] }
     rendered = Shaka::Publication.description(description_content, nil, nil, nil, timeline)
-    assert_operator rendered.index('<summary>Usage'), :<,
-                    rendered.index("<summary>Timings · 1h 0m between checkpoints</summary>\n\n**Totals:** 1h 0m")
+    assert_operator rendered.index('<summary>Usage'), :<, rendered.index('<summary>Timings · 1h 0m between checkpoints')
+    intervals = '**This head:** Prompt to CI not recorded · CI to ready UNKNOWN · Ready to merged UNKNOWN'
+    assert_includes rendered, "#{intervals}\n\n**Totals:** 1h 0m"
     refute_includes Shaka::Publication.description(description_content), '<summary>Timings'
   end
 
@@ -132,7 +145,7 @@ class PublicationStructureTest < Minitest::Test
   end
 
   def test_identity_line_leads_the_description
-    assert_match(/\A🤖 Codex · OpenAI · gpt-5\.6-terra · low\n\n\[Code Walkthrough\]/, render)
+    assert_includes render, MODEL_AND_STATS
   end
 
   def test_sections_become_second_level_headings_separated_by_one_blank_line
@@ -226,9 +239,9 @@ class PublicationStructureTest < Minitest::Test
   def test_a_details_summary_cannot_close_its_own_disclosure
     rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    # Metrics, provenance, skills, settings, usage with pricing notes, and supplied details.
-    assert_equal 8, rendered.scan('</summary>').size
-    assert_equal 8, rendered.scan('</details>').size
+    # Metrics, missing values, provenance, skills, settings, usage with pricing notes, and supplied details.
+    assert_equal 9, rendered.scan('</summary>').size
+    assert_equal 9, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing
@@ -287,18 +300,18 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     )
   end
 
-  def test_a_description_without_a_walkthrough_link_reserves_the_placeholder
+  def test_a_description_without_a_walkthrough_link_leaves_no_placeholder_by_default
     rendered = render(walkthrough: nil)
 
-    assert_includes rendered, "low\n\n_Not published yet._"
+    assert_includes rendered, "low - AI spend: UNKNOWN\n\nCheckpoint: _Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
 
-  def test_a_blank_walkthrough_link_reserves_the_placeholder
+  def test_a_blank_walkthrough_link_leaves_no_placeholder_by_default
     rendered = render(walkthrough: '  ')
 
-    assert_includes rendered, "low\n\n_Not published yet._"
+    assert_includes rendered, "low - AI spend: UNKNOWN\n\nCheckpoint: _Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
@@ -346,6 +359,17 @@ class PublicationPostImplementationLinkTest < Minitest::Test
 end
 
 class PublicationProvenanceRequirementTest < Minitest::Test
+  def test_description_requires_a_link_decision_for_tracker_tasks
+    provenance = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_tracker' => 'linear',
+                                         'task_key' => 'MKT-1234')
+    content = PublicationRegressionTest.new('render').description_content('provenance' => provenance)
+    assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
+
+    provenance['task_url_omission_reason'] = 'Private task URL cannot be shared.'
+    rendered = Shaka::Publication.description(content)
+    assert_includes rendered, '**Task:** Linear MKT-1234 · URL omitted: Private task URL cannot be shared.'
+  end
+
   # Catches a renderer that accepts the structured metadata but silently drops it,
   # leaving a PR without the route evidence needed for later comparison.
   def test_description_renders_public_safe_execution_provenance
@@ -401,8 +425,7 @@ class PublicationDeploymentLinkTest < Minitest::Test
 
   def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
     assert_includes render('walkthrough' => nil),
-                    '_Not published yet._ · Checkpoint: _Not published yet._ · ' \
-                    "[Deployment](<#{DEPLOYMENT}>)\n\n## Summary"
+                    "Checkpoint: _Not published yet._ · [Deployment](<#{DEPLOYMENT}>)\n\n## Summary"
   end
 
   # A bare `)` would end the Markdown link at `/a` instead of linking `/a)b`.
@@ -469,15 +492,19 @@ class PublicationWipDetailsTest < Minitest::Test
   end
 
   def test_wip_renders_every_field_as_one_table_in_workflow_order
-    rendered = render(WIP)
-    note = rendered[%r{<details>\n<summary>WIP Details</summary>\n\n(.*?)\n\n</details>}m, 1]
+    note = render(WIP)[%r{<details>\n<summary>WIP Details</summary>\n\n(.*?)\n\n</details>}m, 1]
     lines = note.lines.map(&:chomp)
     assert_equal ['| Field | Value |', '| --- | --- |'], lines.first(2)
-    labels = lines.drop(2).map { |line| line.split(' | ').first.delete_prefix('| ') }
-    assert_equal Shaka::WipDetails::FIELDS.values, labels
+    assert_equal Shaka::WipDetails::FIELDS.values, wip_labels(lines)
+    assert_includes note, 'Collection: alias available; host available; tag available; thread unavailable.'
     assert_includes lines, '| Chat link | UNKNOWN |'
     assert_includes lines, '| Workspace | Withheld: settings not read; rerun description with --ref |'
     assert_includes lines, '| Stopped because | paused |'
+  end
+
+  def wip_labels(lines)
+    width = Shaka::WipDetails::FIELDS.size
+    lines.drop(2).first(width).map { |line| line.split(' | ').first.delete_prefix('| ') }
   end
 
   def test_unknown_policy_withholds_the_checkout_path_without_claiming_redaction
@@ -581,7 +608,9 @@ class PublicationUsageTableTest < Minitest::Test
   def test_renders_one_row_per_report_with_a_total
     rendered = render
     assert_includes rendered, RENDERED
-    assert_includes rendered, '<summary>Usage and cost · $3.58 estimated</summary>'
+    assert_includes rendered, 'AI spend: $3.58'
+    assert_includes rendered, '<summary>Usage and cost</summary>'
+    refute_includes rendered, 'Usage and cost ·'
     assert_includes rendered, '_— not reported._'
     assert_operator rendered.index('| Report |'), :<, rendered.index('Native usage is PARTIAL.')
   end
@@ -606,7 +635,8 @@ class PublicationUsageTableTest < Minitest::Test
     partial = COLUMN.merge('usd' => '$1234.5 (partial)')
     rendered = render(usage: usage_of(partial))
     assert_includes rendered, '| $1,234.50+ |'
-    assert_includes rendered, '<summary>Usage and cost · $1,234.50+ estimated</summary>'
+    assert_includes rendered, 'AI spend: $1,234.50+'
+    refute_includes rendered, 'Usage and cost ·'
   end
 
   def test_no_estimate_leaves_the_summary_plain
@@ -824,7 +854,11 @@ class PublicationUsagePricingTest < Minitest::Test
   def test_only_the_known_anthropic_explanation_is_shortened
     explanation = 'Uncached input, cache reads and cache writes are separate charges, and a 1-hour cache write ' \
                   'costs more than a 5-minute one. Standard-speed responses are priced; fast mode is priced ' \
-                  'for Opus models with a published rate.'
+                  'for %<family>smodels with a published rate.'
+    ['', 'Opus '].each { |family| assert_shortened_anthropic_explanation(format(explanation, family: family)) }
+  end
+
+  def assert_shortened_anthropic_explanation(explanation)
     note = "#{ANTHROPIC} #{explanation}"
     rendered = render(usage: { 'note' => 'n', 'records' => [record(COLUMN, note:)] })
     visible = rendered.gsub(/<!--.*?-->/m, '')
@@ -876,7 +910,8 @@ class PublicationUsageSafetyTest < Minitest::Test
     record = USAGE_RECORD.merge('columns' => [COLUMN])
     repriced = record.merge('note' => 'Rate card: a later one.')
     rendered = render(usage: { 'note' => 'n', 'records' => [record, repriced] })
-    assert_includes rendered, '<summary>Usage and cost · $3.27 estimated</summary>'
+    assert_includes rendered, 'AI spend: $3.27'
+    assert_includes rendered, '<summary>Usage and cost</summary>'
     refute_includes rendered, '×2'
   end
 
@@ -920,7 +955,8 @@ class PublicationUsageRecordTableTest < Minitest::Test
              "| USD estimate | $1.000000 |\n#{Shaka::UsageRecords::END_MARK}"
     rendered = render(usage: usage_of(COLUMN, REVIEW).merge('carried' => legacy))
     assert_operator rendered.index('| Report |'), :<, rendered.index('| USD estimate | $1.000000 |')
-    assert_includes rendered, '<summary>Usage and cost · $3.58+ estimated</summary>'
+    assert_includes rendered, 'AI spend: $3.58+'
+    assert_includes rendered, '<summary>Usage and cost</summary>'
     assert_includes rendered, '| **Total** | $3.58+ |  |'
     assert_includes rendered, 'reports from before this table are listed below and not counted'
   end
@@ -960,6 +996,13 @@ class PublicationWalkthroughFooterTest < Minitest::Test
   end
 end
 
+RECOMMENDATION_LEAD = [
+  PENDING_STATS,
+  '**Recommendation: Revise before merge** · ⚪ **Risk: not rated yet** · Checkpoint: _Not published yet._',
+  '**Next:** Justin: choose the simpler parser before another review round.',
+  "## Summary\n\nReview the current result."
+].join("\n\n").freeze
+
 class PublicationCheckpointTest < Minitest::Test
   HEAD = 'a' * 40
 
@@ -976,10 +1019,7 @@ class PublicationCheckpointTest < Minitest::Test
 
   def test_recommendation_leads_the_links_without_naming_the_commit
     body = Shaka::Publication.description(content, nil, PULL)
-    assert_includes body, "low\n\n**Recommendation: Revise before merge** · _Not published yet._ · " \
-                          "Checkpoint: _Not published yet._\n\n" \
-                          "**Next:** Justin: choose the simpler parser before another review round.\n\n" \
-                          "## Summary\n\nReview the current result.\n"
+    assert_includes body, RECOMMENDATION_LEAD
     refute_includes body, '## Recommendation'
     refute_includes body, "/commit/#{HEAD}"
   end
@@ -999,8 +1039,7 @@ class PublicationCheckpointTest < Minitest::Test
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
     assert_includes body, "<!-- shaka:decisions -->\n## Decisions to make<a id=\"decisions-to-make\"></a>\n\n" \
-                          "- Keep the parser?\n\nCode Walkthrough: _After the decisions._ · " \
-                          "Checkpoint: [Decisions to make](#user-content-decisions-to-make)\n\n**Next:**"
+                          "- Keep the parser?\n\nCheckpoint: _Not published yet._\n\n**Next:**"
     assert_operator body.index('## Decisions to make'), :<, body.index('Review the current result.')
     refute_includes body, 'Recommendation'
   end
@@ -1013,14 +1052,15 @@ class PublicationCheckpointTest < Minitest::Test
     refute_includes body, 'Recommendation'
   end
 
-  def test_the_verification_verdict_follows_the_recommendation
-    data = content
-    data['checkpoint']['verification_adequacy'] = 'adequate with accepted gaps'
-    body = Shaka::Publication.description(data, nil, PULL)
-    assert_includes body, "Checkpoint: _Not published yet._\n\n" \
-                          "**Checkpoint on verification:** Adequate with accepted gaps.\n\n**Next:**"
-    data['checkpoint']['verification_adequacy'] = 'fine'
-    assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
+  def test_only_a_verdict_that_stops_merge_follows_the_recommendation
+    lead = lambda do |verdict|
+      data = content.tap { |fields| fields['checkpoint']['verification_adequacy'] = verdict }
+      Shaka::Publication.description(data, nil, PULL)
+    end
+    assert_includes lead.call('cannot judge'), "Checkpoint: _Not published yet._\n\n" \
+                                               "**Checkpoint on verification:** Cannot judge.\n\n**Next:**"
+    assert_empty(['adequate', 'adequate with accepted gaps'].map(&lead).grep(/Checkpoint on verification/))
+    assert_raises(Shaka::Error) { lead.call('fine') }
   end
 
   def test_facts_only_the_checkpoint_reads_stay_out_of_the_description
@@ -1041,7 +1081,7 @@ class PublicationCheckpointTest < Minitest::Test
     data = content
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
-    assert_includes body, '**No recommendation yet** · _Not published yet._'
+    assert_includes body, '**No recommendation yet** · ⚪ **Risk: not rated yet** · Checkpoint: _Not published yet._'
     refute_includes body, 'Recommendation:'
   end
 

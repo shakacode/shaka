@@ -38,8 +38,8 @@ class SettingsPreviewTest < Minitest::Test
     end
   end
 
-  def test_new_layout_selects_and_pins_the_settings_commit
-    with_preview_repository(layout: :new) do |root, trusted, preview|
+  def test_selects_and_pins_the_settings_commit
+    with_preview_repository do |root, trusted, preview|
       select_preview(root, preview)
       before = capture(root, trusted)
       changed = create_preview_commit(root, model: 'updated-preview-model')
@@ -63,24 +63,11 @@ class SettingsPreviewTest < Minitest::Test
 
   def test_ordinary_team_fingerprint_keeps_the_existing_source_identity
     with_preview_repository do |root, trusted, _preview|
-      identity = { 'repository' => 'owner/repo', 'layout' => '.agents/agent-workflow.yml',
+      identity = { 'repository' => 'owner/repo', 'layout' => '.agents/shaka/config.yml',
                    'trusted_default_commit' => trusted, 'kind' => 'trusted/team',
-                   'configuration_blob' => git(root, 'rev-parse', "#{trusted}:.agents/agent-workflow.yml").strip }
+                   'configuration_blob' => git(root, 'rev-parse', "#{trusted}:.agents/shaka/config.yml").strip }
       expected = Shaka::Configuration::FingerprintCanonical.digest('source', identity)
       assert_equal expected, capture(root, trusted).dig('components', 'source')
-    end
-  end
-
-  def test_new_layout_preview_uses_the_task_checkout_legacy_commands
-    with_preview_repository do |root, trusted, _preview|
-      git(root, 'checkout', '-q', 'settings')
-      use_new_layout(root)
-      preview = commit(root)
-      git(root, 'checkout', '-q', 'feature')
-      select_preview(root, preview)
-      config = Shaka::Evidence::Inputs.resolve_source(root, trusted).first
-      assert_equal '.agents/shaka/config.yml', config.config_path
-      assert_equal '.agents/bin/test', config.to_h.fetch('commands').fetch('test')
     end
   end
 
@@ -96,6 +83,18 @@ end
 
 class SettingsPreviewBoundaryTest < Minitest::Test
   include SettingsPreviewFixture
+
+  def test_preview_requires_task_worktree_wrappers
+    with_preview_repository do |root, trusted, preview|
+      FileUtils.rm_r(File.join(root, '.agents/shaka/bin'))
+      selector = Shaka::Configuration::SettingsPreview.new(root:)
+
+      error = assert_raises(Shaka::Error) { selector.start(preview, default_ref: trusted) }
+
+      assert_match(/Prepare the task worktree/, error.message)
+      assert_equal 'inactive', selector.status['status']
+    end
+  end
 
   def test_a_candidate_selection_file_cannot_activate_preview
     with_preview_repository do |root, trusted, preview|
@@ -119,18 +118,18 @@ class SettingsPreviewBoundaryTest < Minitest::Test
   def test_first_setup_can_be_explicitly_selected_without_a_default_branch_seam
     with_preview_repository do |root, _trusted, preview|
       absent = remove_trusted_setup(root)
-      select_preview(root, preview)
+      select_preview(root, preview, default_ref: absent)
       assert_equal 'preview/local', Shaka::Evidence::Inputs.resolve_source(root, absent).last
       refute_empty capture(root, absent)['digest']
       policy = Shaka::TrustedConfigSource.from_ref(root:, ref: absent, private_trial: true)
-      assert_equal 'auto', policy.merge['preference']
+      assert_equal 'ask', policy.merge['preference']
       assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: absent) }
     end
   end
 
   def test_preview_does_not_hide_invalid_trusted_settings
     with_preview_repository do |root, _trusted, preview|
-      File.write(File.join(root, '.agents/agent-workflow.yml'), "version: invalid\n")
+      File.write(File.join(root, '.agents/shaka/config.yml'), "version: invalid\n")
       invalid = commit(root)
       git(root, 'checkout', '-q', 'feature~1')
       git(root, 'checkout', '-qb', 'repair')

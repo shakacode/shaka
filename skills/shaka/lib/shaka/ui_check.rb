@@ -8,7 +8,8 @@ require_relative 'github'
 require_relative 'ui_check/publisher'
 
 module Shaka
-  # Publishes a UI check comment and folds this account's earlier UI checks beneath it.
+  # Publishes a UI check comment, carrying earlier captures it leaves out, and folds this
+  # account's earlier UI checks beneath it.
   module UiCheck
     USAGE = 'Usage: shaka ui-check OWNER/REPO NUMBER --head SHA --content-file PATH'
 
@@ -44,7 +45,9 @@ module Shaka
         flags.banner = USAGE
         flags.on('-h', '--help') { options[:help] = true }
         flags.on('--head SHA', /\A\h{40}\z/, 'PR head the captures show') { |sha| options[:head] = sha }
-        flags.on('--content-file PATH', 'JSON: identity, body, captures, retire') { |path| options[:content] = path }
+        flags.on('--content-file PATH', 'JSON: identity, body, captures, retire, earlier') do |path|
+          options[:content] = path
+        end
       end
     end
 

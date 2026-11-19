@@ -3,7 +3,7 @@
 require_relative 'assessment'
 
 module Shaka
-  # Unknown legacy metadata stays in the private ledger, never promoted to a public comment.
+  # Unknown older metadata stays in the private ledger, never promoted to a public comment.
   module LocalReviewPublicTriage
     FIELDS = %w[id summary class disposition commit note reported_as decision by recorded_at].freeze
 

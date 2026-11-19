@@ -3,9 +3,9 @@
 version: 1
 base_branch: main
 commands:
-  setup: .agents/bin/setup
-  validate: .agents/bin/validate
-  test: .agents/bin/test
+  setup: .agents/shaka/bin/setup
+  validate: .agents/shaka/bin/validate
+  test: .agents/shaka/bin/test
 review:
   required: none
   reviewers:

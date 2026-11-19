@@ -10,11 +10,13 @@ require_relative 'update_check/cache'
 require_relative 'update_check/launch'
 require_relative 'update_check/messages'
 require_relative 'update_check/notice'
+require_relative 'update_check/saved'
 
 module Shaka
   # Advisory comparison with the registered origin branch; never changes an installation.
   class UpdateCheck
     include Messages
+    include Saved
 
     ROOT = File.expand_path('../../../..', __dir__)
     GUIDE = 'https://github.com/shakacode/shaka/blob/main/skills/shaka/references/official-installation.md'
@@ -65,13 +67,8 @@ module Shaka
       @release = branch.delete_prefix('refs/tags/v') if branch.start_with?('refs/tags/v')
     end
 
-    # Later helper calls repeat a registered checkout's answer from this cache instead of the network.
-    # A failed check is not saved, so a check that keeps failing still earns the daily reminder.
-    def remember(result) = (Cache.record(@checkout, result) if @checkout && result['status'] != 'unknown')
-
     def result
-      return answer('uninstalled', 'Use the official installer to receive update guidance.') if
-        @source['kind'] == 'uninstalled'
+      return uninstalled if @source['kind'] == 'uninstalled'
       return development unless @source['kind'] == 'revision'
 
       @release ? pinned_release : compare(@source['repository'].to_s[GITHUB, 1])
@@ -96,13 +93,15 @@ module Shaka
     def compare(repository)
       return unsupported_source unless supported?(repository)
 
-      official = repository.casecmp?('shakacode/shaka') && @branch == 'main'
-      @target = official ? 'official main' : "#{repository} #{@branch}"
+      @target = "#{repository} #{@branch}"
       head = checkout_head
       head == recorded || pulled?(head) ? github(repository, head) : not_a_pull(head)
     end
 
-    def github(repository, head)
+    def github(repository, head) = saved(head) || ask(repository, head)
+
+    def ask(repository, head)
+      @compared = @target
       endpoint = "repos/#{repository}/compare/#{head}...#{@branch}"
       output, error, ok = @runner.call(['gh', 'api', '--hostname', 'github.com', endpoint, '--jq',
                                         '{status: .status, ahead_by: .ahead_by, ' \
@@ -120,7 +119,7 @@ module Shaka
 
       output, error, ok = git('rev-parse', '--verify', 'HEAD')
       head = output.strip
-      return head if ok && head.match?(COMMIT)
+      return @head = head if ok && head.match?(COMMIT)
 
       raise Launch::Unavailable.new('checkout_unreadable', "Could not read #{@checkout}: #{first_line(error)}")
     end
@@ -138,7 +137,7 @@ module Shaka
 
     def git(*arguments) = @runner.call(['git', '-C', @checkout, *arguments], @checkout)
 
-    # Only an upstream lag waits for the notice threshold; a moved checkout needs action now.
+    # Only a lag behind the registered branch waits for the notice threshold; a moved checkout needs action now.
     def comparison(response, head)
       ahead_by = response['ahead_by']
       case response['status']

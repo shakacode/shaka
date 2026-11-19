@@ -226,9 +226,7 @@ trusted_metadata_bots: []
 trusted_teams: []
 ```
 
-Use the trust-file path selected by the pinned Shaka version: legacy fixtures
-use `.agents/trusted-github-actors.yml`; migrated fixtures use
-`.agents/shaka/trusted-github-actors.yml`. If the test requires a team, name a
+Put the trust file at `.agents/shaka/trusted-github-actors.yml`. If the test requires a team, name a
 real team in the destination organization and verify membership access. Do not
 copy a contributor's machine allowlist or grant a production team eval access.
 

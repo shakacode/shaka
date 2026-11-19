@@ -35,7 +35,8 @@ module ProvenanceHistoryFixture
   end
 
   def history_rows(rendered)
-    history = rendered[%r{<summary>Provenance history</summary>\n\n(.*?)\n\n</details>}m, 1]
+    execution = rendered[%r{<summary>Execution details</summary>\n\n(.*?)\n\n</details>}m, 1].to_s
+    _table, history = execution.split(Shaka::ProvenanceHistory::LEAD, 2)
     history ? history.lines.map(&:chomp).grep(/\A\| `\h{7}`/) : []
   end
 
@@ -51,7 +52,7 @@ class ProvenanceHistoryTest < Minitest::Test
 
   CHANGED = 'b' * 40
   HIGH = { 'requested_effort' => 'high' }.freeze
-  OPUS = HIGH.merge('recommended_model' => 'claude-opus-5-5').freeze
+  OPUS = HIGH.merge('active_model' => 'claude-opus-5-5').freeze
   # Each step changes one compared value from the step before it: [routes, commit, modified, expected].
   STEPS = [
     [{}, 'a' * 40, false, 'gpt-5.6-terra / medium | gpt-5.6-terra / medium | gpt-5.6-terra / medium |'],
@@ -59,7 +60,7 @@ class ProvenanceHistoryTest < Minitest::Test
     [{}, CHANGED, true, '(modified)'],
     [HIGH, CHANGED, true, '| gpt-5.6-terra / high |'],
     [OPUS, CHANGED, true, '| claude-opus-5-5 / medium |'],
-    [OPUS.merge('active_effort' => 'low'), CHANGED, true, '| gpt-5.6-terra / low |']
+    [OPUS.merge('active_effort' => 'low'), CHANGED, true, '| claude-opus-5-5 / low |']
   ].freeze
 
   def test_a_republish_with_unchanged_provenance_adds_no_entry
@@ -67,7 +68,7 @@ class ProvenanceHistoryTest < Minitest::Test
     rendered = publish(HEADS[1])
 
     assert_empty history_rows(rendered)
-    refute_includes rendered, 'Provenance history'
+    refute_includes rendered, Shaka::ProvenanceHistory::LEAD
   end
 
   def test_a_description_links_its_task_without_adding_a_history_entry
@@ -84,6 +85,7 @@ class ProvenanceHistoryTest < Minitest::Test
     end
 
     assert_rows(STEPS.zip(HEADS).map { |step, head| [head, step.last] })
+    refute_includes @body, '<summary>Provenance history</summary>'
   end
 
   def test_history_survives_a_publication_that_carries_usage
@@ -170,7 +172,7 @@ class ProvenanceHistoryRefusalTest < Minitest::Test
     publish(HEADS[0])
     rendered = publish(HEADS[1], fork: true, 'active_effort' => 'high')
 
-    refute_includes rendered, 'Provenance history'
+    refute_includes rendered, Shaka::ProvenanceHistory::LEAD
     assert_includes rendered, %("head":"#{HEADS[1]}")
     refute_includes rendered, HEADS[0]
   end

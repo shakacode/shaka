@@ -60,17 +60,20 @@ module Shaka
       end
 
       # The commits stay on a new branch; reset --keep refuses rather than overwrite an edited file.
+      # A kept branch left by an earlier attempt already holds these commits, so the step can run again; one
+      # moved to another commit makes git branch refuse the name, so a person decides.
       def local_commits(head)
-        finding('B2', "checkout #{head[0, 7]} has commits that #{tracking_name} lacks (recorded #{recorded[0, 7]}); " \
-                      'the step keeps them on a branch and returns the checkout to its record',
-                command: "#{keep_commits(head)}#{git_command} reset --keep #{command(recorded)}")
-      end
-
-      # A kept branch left by an earlier attempt already holds these commits, so the step can run again.
-      def keep_commits(head)
+        detail = "checkout #{head[0, 7]} has commits that #{tracking_name} lacks (recorded #{recorded[0, 7]}); " \
+                 'the step keeps them on a branch and returns the checkout to its record'
         name = "kept-#{value('rev-parse', '--short', 'HEAD')}"
         kept = value('rev-parse', '--verify', '--quiet', "refs/heads/#{name}")
-        "#{git_command} branch #{command(name)} && " unless kept == head
+        if kept && kept != head
+          return finding('B2', detail, decision: "Branch #{name} already points at another commit; decide where " \
+                                                 'to keep these commits, then rerun status.')
+        end
+
+        keep = "#{git_command} branch #{command(name)} && " unless kept
+        finding('B2', detail, command: "#{keep}#{git_command} reset --keep #{command(recorded)}")
       end
 
       def behind(head)

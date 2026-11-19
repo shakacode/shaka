@@ -40,8 +40,7 @@ module Shaka
         indexed = Configuration::PrivateGitPaths.parse(git('ls-files', '--cached', '-z'))
         committed = Configuration::PrivateGitPaths.committed(root: @root, git: method(:git)).to_a
         (indexed | committed).select do |path|
-          path == Configuration::Paths::CONTRACT ||
-            Configuration::PrivateInventory.private_path?(root: @root, path:)
+          Configuration::PrivateInventory.private_path?(root: @root, path:)
         end.sort
       end
 

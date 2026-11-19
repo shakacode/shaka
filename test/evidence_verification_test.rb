@@ -30,11 +30,23 @@ class EvidenceVerificationTest < Minitest::Test
     with_checkout do |root, ref|
       validation = run_check(root, ref, command: 'validate')
       review = review_check(root, ref)
-      File.write(File.join(root, '.agents/bin/validate'), "#!/bin/sh\nexit 1\n")
+      File.write(File.join(root, '.agents/shaka/bin/validate'), "#!/bin/sh\nexit 1\n")
       with_results(validation:, review:) do |paths|
         verdict = verify(root, ref, **paths)
         assert_equal 'not_ready', verdict.fetch('status')
         assert_equal 'superseded', verdict.fetch('checks').fetch('validation').first.fetch('status')
+      end
+    end
+  end
+
+  def test_bind_output_checks_the_result_it_wraps
+    with_checkout do |root, ref|
+      validation = bind(root, ref, ref, run_check(root, ref, command: 'validate'))
+      review = bind(root, ref, ref, review_check(root, ref))
+      with_results(validation:, review:) do |paths|
+        assert_equal 'ready', verify(root, ref, **paths).fetch('status')
+        File.write(File.join(root, '.agents/shaka/bin/validate'), "#!/bin/sh\nexit 1\n")
+        assert_superseded_by_settings validation_entry(verify(root, ref, **paths))
       end
     end
   end
@@ -51,22 +63,11 @@ class EvidenceVerificationTest < Minitest::Test
 
   private
 
-  def verify(root, head, **paths)
-    args = ['verify', '--root', root, '--ref', head, '--repository', 'shakacode/shaka', '--head', head]
-    paths.each { |kind, path| args.push("--#{kind}", path) }
-    output, = capture_io { Shaka::Evidence::Command.run(args) }
-    JSON.parse(output)
-  end
+  def validation_entry(verdict) = verdict.fetch('checks').fetch('validation').first
 
-  def with_results(validation:, review:)
-    Tempfile.create(['shaka-validation-', '.json']) do |validation_file|
-      Tempfile.create(['shaka-review-', '.json']) do |review_file|
-        validation_file.write(JSON.generate(validation))
-        review_file.write(JSON.generate(review))
-        validation_file.flush
-        review_file.flush
-        yield validation: validation_file.path, review: review_file.path
-      end
-    end
+  def assert_superseded_by_settings(entry)
+    assert_equal 'superseded', entry.fetch('status')
+    assert(entry.fetch('reasons').any? { |reason| reason.start_with?('settings components differ') })
+    refute_includes entry.fetch('reasons'), 'repository differs or is missing'
   end
 end

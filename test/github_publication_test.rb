@@ -108,7 +108,7 @@ class GitHubDescriptionTest < Minitest::Test
     github = client(pull_response(quoted), RENDERED)
     error = assert_raises(Shaka::Error) { github.description(body: BODY) }
     assert_includes error.message, 'ambiguous'
-    assert_equal 2, @calls.size
+    assert_equal 1, @calls.size
   end
 
   def test_an_edit_that_lands_while_the_update_is_prepared_is_not_erased
@@ -122,6 +122,13 @@ class GitHubDescriptionTest < Minitest::Test
     github = client(pull_response(''), RENDERED, html_response('<p>ok</p>'), pull_response(''),
                     pull_response('something else'))
     assert_raises(Shaka::Error) { github.description(body: BODY) }
+  end
+
+  def test_a_description_quoting_a_nul_escape_confirms_after_github_rewrites_it
+    body = "#{BODY}A path like `/bad\\u0000path` fails.\n"
+    stored = "<!-- shaka:begin -->\n#{BODY}A path like `/bad\\^@path` fails.\n<!-- shaka:end -->"
+    github = client(pull_response(''), RENDERED, html_response('<p>ok</p>'), pull_response(''), pull_response(stored))
+    assert_equal stored, github.description(body:)['body']
   end
 
   def test_a_table_that_github_does_not_render_is_reported
@@ -191,6 +198,24 @@ class GitHubReplyTest < Minitest::Test
                     response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1')
     assert_equal 'POST', sent_method(4)
+  end
+
+  # GitHub stores the six characters backslash-u-0000 as backslash-caret-at (seen on PR #1115).
+  def test_a_quoted_nul_escape_that_github_rewrites_still_confirms
+    body = "#{BODY}A path like `/bad\\u0000path` fails.\n"
+    stored = "<!-- shaka:reply:fix-1 -->\n#{BODY}A path like `/bad\\^@path` fails.\n"
+    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
+                    response({ 'id' => 9, 'body' => stored }))
+    assert_equal stored, github.reply(body:, key: 'fix-1')['body']
+  end
+
+  def test_a_stored_difference_beyond_the_nul_rewrite_is_still_reported
+    body = "#{BODY}A path like `/bad\\u0000path` fails.\n"
+    stored = "<!-- shaka:reply:fix-1 -->\n#{BODY}A path like `/bad\\^@path` failed.\n"
+    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
+                    response({ 'id' => 9, 'body' => stored }))
+    error = assert_raises(Shaka::Error) { github.reply(body:, key: 'fix-1') }
+    assert_includes error.message, 'does not match what was submitted'
   end
 
   def test_an_invalid_reply_key_never_contacts_github

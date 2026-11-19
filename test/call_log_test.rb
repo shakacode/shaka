@@ -2,9 +2,11 @@
 
 require_relative 'evidence_fixture'
 require 'time'
+require 'shaka/configure_settings'
 require 'shaka/post_implementation'
 require 'shaka/prompt_show'
 require 'shaka/repos'
+require 'shaka/subcommands'
 require 'shaka/seam'
 require 'shaka/trial/command'
 
@@ -63,19 +65,6 @@ class CallLogTest < Minitest::Test
     end
   end
 
-  def test_recorded_check_names_are_the_fixed_evidence_commands
-    assert_equal Shaka::Evidence::Command::NAMES, Shaka::CallLog::CHECKS
-  end
-
-  def test_recorded_operations_are_the_dispatched_subcommands
-    # scripts/shaka.rb dispatches `pr watch` itself, before the other pr commands.
-    assert_equal({ 'evidence' => Shaka::Evidence::Command::ACTIONS.keys, 'pr' => %w[watch],
-                   'post-implementation' => Shaka::PostImplementation::ACTIONS, 'prompt' => Shaka::PromptShow::OPERATIONS,
-                   'repos' => Shaka::Repos::OPERATIONS,
-                   'review' => Shaka::LocalReview::ACTIONS, 'seam' => Shaka::Seam::OPERATIONS,
-                   'trial' => Shaka::Trial::Command::ACTIONS }, Shaka::CallLog::OPERATIONS)
-  end
-
   def test_assess_migrate_report_and_refresh_operations_are_recorded
     calls = ['review assess', 'seam migrate', 'trial report', 'repos refresh']
     with_log do |log|
@@ -128,6 +117,49 @@ class CallLogTest < Minitest::Test
 
   def with_log
     Dir.mktmpdir { |directory| yield File.join(directory, 'nested', 'calls.jsonl') }
+  end
+
+  def records(log) = File.readlines(log).map { |line| JSON.parse(line) }
+end
+
+# The names the log may record match what the helper dispatches.
+class CallLogNamesTest < Minitest::Test
+  def test_recorded_check_names_are_the_fixed_evidence_commands
+    assert_equal Shaka::Evidence::Command::NAMES, Shaka::CallLog::CHECKS
+  end
+
+  def test_recorded_operations_are_the_dispatched_subcommands
+    # scripts/shaka.rb dispatches `pr watch` itself, before the other pr commands.
+    assert_equal({ 'configure' => Shaka::ConfigureSettings::OPERATIONS,
+                   'evidence' => Shaka::Evidence::Command::ACTIONS.keys, 'pr' => %w[watch],
+                   'post-implementation' => Shaka::PostImplementation::ACTIONS, 'prompt' => Shaka::PromptShow::OPERATIONS,
+                   'repos' => Shaka::Repos::OPERATIONS, 'review' => Shaka::LocalReview::ACTIONS,
+                   'seam' => Shaka::Seam::OPERATIONS, 'timings' => Shaka::TimingsReport::OPERATIONS,
+                   'trial' => Shaka::Trial::Command::ACTIONS,
+                   'usage' => Shaka::Subcommands::TABLE['usage'].operations }, Shaka::CallLog::OPERATIONS)
+  end
+end
+
+# A record names its chat's session, so a retrospective can match lines to that chat.
+class CallLogSessionTest < Minitest::Test
+  def test_record_names_the_host_session_and_time_awake
+    with_log do |log|
+      session = '01234567-89ab-cdef-0123-456789abcdef'
+      env = { 'SHAKA_CALL_LOG' => log, 'CLAUDE_CODE_SESSION_ID' => session, 'CODEX_THREAD_ID' => nil }
+      [env, env.merge('CLAUDE_CODE_SESSION_ID' => 'not a session id')].each do |variables|
+        Open3.capture3(variables, *CallLogTest::COMMAND, 'workflow', '--help')
+      end
+
+      first, second = records(log)
+      assert_equal [session, nil], [first['session'], second['session']]
+      assert_operator first.fetch('awake_ms'), :<=, first.fetch('duration_ms') if Shaka::Stopwatch::AWAKE_CLOCK
+    end
+  end
+
+  private
+
+  def with_log
+    Dir.mktmpdir { |directory| yield File.join(directory, 'calls.jsonl') }
   end
 
   def records(log) = File.readlines(log).map { |line| JSON.parse(line) }

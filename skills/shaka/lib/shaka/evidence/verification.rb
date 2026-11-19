@@ -3,11 +3,16 @@
 require 'json'
 require_relative 'inputs'
 require_relative 'result'
+require_relative '../configuration/paths'
 
 module Shaka
   module Evidence
     # Checks supplied results at the proposed head; absence is explicit, never inferred.
+    # A trusted review.required of none drops review from the required kinds, matching merge;
+    # a review result supplied anyway must still bind.
     class Verification
+      VALIDATE_LOCAL = Configuration::Paths::OPTIONAL_COMMANDS.fetch('validate_local')
+
       def initialize(root:, ref:, repository:, head:, paths:)
         @root = root
         @ref = ref
@@ -20,13 +25,17 @@ module Shaka
         config, = Inputs.capture(root: @root, ref: @ref, repository: @repository)
         @accepted = config.commands.key?('validate_local') ? %w[validate_local validate] : ['validate']
         checks = %w[validation review].to_h { |kind| [kind, entries(kind)] }
-        missing = checks.select { |_kind, values| values.empty? }.keys
-        ready = missing.empty? && checks.values.flatten.all? { |entry| entry['status'] == 'bound' }
-        { 'status' => ready ? 'ready' : 'not_ready', 'head' => @head,
-          'missing' => missing, 'checks' => checks }
+        required = required_kinds(config)
+        missing = required.select { |kind| checks[kind].empty? }
+        { 'status' => ready?(checks, missing) ? 'ready' : 'not_ready', 'head' => @head,
+          'missing' => missing, 'checks' => checks, 'review_required' => required.include?('review') }
       end
 
       private
+
+      def ready?(checks, missing) = missing.empty? && checks.values.flatten.all? { |entry| entry['status'] == 'bound' }
+
+      def required_kinds(config) = config.review['required'] == 'none' ? ['validation'] : %w[validation review]
 
       def entries(kind)
         Array(@paths[kind.to_sym]).map { |path| check(path, kind) }
@@ -35,17 +44,28 @@ module Shaka
       def check(path, kind)
         return { 'status' => 'missing', 'path' => path, 'reasons' => ['result file missing'] } unless File.file?(path)
 
-        original = JSON.parse(File.read(Result.local_file!(@root, path), encoding: 'UTF-8'))
+        original = Result.original(JSON.parse(File.read(Result.local_file!(@root, path), encoding: 'UTF-8')))
         binding = Result.bind(original, root: @root, head: @head, ref: @ref, repository: @repository)
         check_kind(kind, original, binding)
+      end
+
+      def check_arguments(original, binding)
+        return if original.dig('task_overrides', 'arguments') == []
+
+        binding['reasons'] << 'repository validation used command arguments'
+        binding['guidance'] = 'Run repository validation without arguments. For a narrower run that should ' \
+                              "count, such as changed files only, put it in #{VALIDATE_LOCAL}; a passing " \
+                              'validate_local run without arguments counts when the settings that apply to this ' \
+                              'task have that script. When validation needs inputs such as spec mappings, ' \
+                              'see references/repository-setup.md#required-validation-inputs in the ' \
+                              'installed Shaka skill.'
       end
 
       def check_kind(kind, original, binding)
         binding['reasons'] << "expected #{kind} result" unless original['kind'] == kind
         if kind == 'validation'
           binding['reasons'] << 'expected repository validation command' unless @accepted.include?(original['command'])
-          binding['reasons'] << 'repository validation used command arguments' unless
-            original.dig('task_overrides', 'arguments') == []
+          check_arguments(original, binding)
         end
         binding['status'] = 'superseded' unless binding['reasons'].empty?
         binding

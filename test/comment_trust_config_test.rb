@@ -22,12 +22,10 @@ module CommentTrustConfigFixture
     end
   end
 
-  def blob(contents, new_contents: nil)
+  def blob(contents)
     object = contents && { '__typename' => 'Blob', 'text' => contents, 'byteSize' => contents.bytesize,
                            'isBinary' => false, 'isTruncated' => false }
-    new_object = new_contents && { '__typename' => 'Blob', 'text' => new_contents,
-                                   'byteSize' => new_contents.bytesize, 'isBinary' => false, 'isTruncated' => false }
-    response({ 'data' => { 'repository' => { 'object' => object, 'newObject' => new_object } } })
+    response({ 'data' => { 'repository' => { 'object' => object } } })
   end
 
   def assert_combined_actors(result)
@@ -39,14 +37,12 @@ module CommentTrustConfigFixture
 
   def assert_config_provenance(result)
     assert_equal(%w[machine repository], result[:sources].map { |source| source['scope'] })
-    assert_equal "#{HEAD}:.agents/trusted-github-actors.yml",
-                 JSON.parse(@calls.first.last).dig('variables', 'expression')
     assert_equal "#{HEAD}:.agents/shaka/trusted-github-actors.yml",
-                 JSON.parse(@calls.first.last).dig('variables', 'newExpression')
+                 JSON.parse(@calls.first.last).dig('variables', 'expression')
   end
 end
 
-class CommentTrustConfigLegacyTest < Minitest::Test
+class CommentTrustConfigSourcesTest < Minitest::Test
   include CommentTrustConfigFixture
 
   def test_machine_and_trusted_base_repository_configs_combine
@@ -55,7 +51,7 @@ class CommentTrustConfigLegacyTest < Minitest::Test
       result = Shaka::PublicComments::TrustConfig.new(github, machine_path: path).load(base_oid: HEAD)
       assert_combined_actors(result)
       assert_config_provenance(result)
-      assert_equal '.agents/trusted-github-actors.yml', result[:sources].last.fetch('path')
+      assert_equal '.agents/shaka/trusted-github-actors.yml', result[:sources].last.fetch('path')
     end
   end
 end
@@ -63,29 +59,9 @@ end
 class CommentTrustConfigLayoutTest < Minitest::Test
   include CommentTrustConfigFixture
 
-  def test_new_repository_allowlist_combines_with_machine_without_configuration
-    with_machine(MACHINE) do |path|
-      result = Shaka::PublicComments::TrustConfig.new(client(blob(nil, new_contents: LOCAL)), machine_path: path)
-                                                 .load(base_oid: HEAD)
-      assert_combined_actors(result)
-      assert_equal '.agents/shaka/trusted-github-actors.yml', result[:sources].last.fetch('path')
-    end
-  end
-
-  def test_both_repository_allowlists_fail_even_when_identical
+  def test_invalid_repository_allowlist_stops_the_read
     with_machine(nil) do |path|
-      error = assert_raises(Shaka::Error) do
-        Shaka::PublicComments::TrustConfig.new(client(blob(LOCAL, new_contents: LOCAL)), machine_path: path)
-                                          .load(base_oid: HEAD)
-      end
-      assert_includes error.message, '.agents/trusted-github-actors.yml'
-      assert_includes error.message, '.agents/shaka/trusted-github-actors.yml'
-    end
-  end
-
-  def test_invalid_new_repository_allowlist_does_not_fall_back
-    with_machine(nil) do |path|
-      loader = Shaka::PublicComments::TrustConfig.new(client(blob(nil, new_contents: 'trusted_users: [invalid')),
+      loader = Shaka::PublicComments::TrustConfig.new(client(blob('trusted_users: [invalid')),
                                                       machine_path: path)
       error = assert_raises(Shaka::Error) do
         loader.load(base_oid: HEAD)

@@ -55,6 +55,7 @@ module CliOpeningCheckFakes
                     recommended_model recommended_effort active_model active_effort].to_h { |key| [key, 'UNKNOWN'] }
     provenance['task_source'] = 'issue'
     provenance['initial_prompt'] = 'EXCLUDED'
+    provenance['task_url_omission_reason'] = 'Unavailable.'
     { 'identity' => { 'agent' => 'Codex' }, 'summary' => self.class::SUMMARY, 'deployment' => 'none',
       'steps_besides_merging' => 'none',
       'intent' => INTENT, 'verification' => VERIFICATION,
@@ -102,7 +103,10 @@ module CliOpeningCheckFakes
       sentence = { 'character' => 'shaka merge', 'reader_facing' => false, 'character_can_act' => true,
                    'action' => 'checks',
                    'object' => 'head', 'hidden_actions' => [], 'internal_terms' => [] }
-      puts JSON.generate('is_error' => false, 'result' => JSON.generate('sentences' => [sentence]))
+      terms = File.join(ENV.fetch('HOME'), 'unclear-terms.json')
+      unclear_terms = File.file?(terms) ? JSON.parse(File.read(terms)) : []
+      puts JSON.generate('is_error' => false,
+                         'result' => JSON.generate('sentences' => [sentence], 'unclear_terms' => unclear_terms))
     RUBY
   end
 end

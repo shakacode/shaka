@@ -28,9 +28,10 @@ module Shaka
     }.freeze
     ANTHROPIC_EXPLANATION = 'Uncached input, cache reads and cache writes are separate charges, and a 1-hour ' \
                             'cache write costs more than a 5-minute one. Standard-speed responses are priced; ' \
-                            'fast mode is priced for Opus models with a published rate.'
+                            'fast mode is priced for models with a published rate.'
+    LEGACY_ANTHROPIC_EXPLANATION = ANTHROPIC_EXPLANATION.sub('for models', 'for Opus models')
     ANTHROPIC_PARAGRAPH = Regexp.new('\\A(Anthropic API list prices, verified \\d{4}-\\d{2}-\\d{2}\\.) ' \
-                                     "#{Regexp.escape(ANTHROPIC_EXPLANATION)}\\z")
+                                     "#{Regexp.union(ANTHROPIC_EXPLANATION, LEGACY_ANTHROPIC_EXPLANATION)}\\z")
 
     module_function
 

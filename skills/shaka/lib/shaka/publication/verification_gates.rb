@@ -6,25 +6,42 @@ module Shaka
   module VerificationGates
     LABEL = '**Validation and review:**'
     UNKNOWN = "#{LABEL} UNKNOWN: no validation or review results were supplied for this revision.".freeze
+    GAPS = '**Setup gaps:**'
+    # Verification reaches ready without a review only when the trusted review.required is none.
+    NOT_REQUIRED = 'review not required by this repository’s settings'
+    KEPT = 'Kept from this commit’s earlier description; not rechecked under the current Shaka or settings.'
+    CONTAINER_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#run-codex-reviews-in-a-container'
 
     module_function
 
-    # A reader needs to see a failure or a missing result; a routine run folds behind its summary.
-    # A completed review may still have reported findings, so the summary claims only that it ran.
-    def render(verdict, review_url = nil)
-      text = line(verdict, review_url)
-      return text unless routine?(verdict)
+    # A reader needs to see a failure, a missing result, fewer reviewers than configured, or a
+    # reviewer that read only the diff; a routine run folds behind its summary. A completed review
+    # may still have reported findings, so the summary claims only that it ran.
+    def render(verdict, review_url = nil, shortfall = nil)
+      return kept(verdict) if verdict&.key?('kept_line')
 
-      summary = "Validation passed; local review completed at #{short_head(verdict)}"
-      review_url ? "#{summary} ([evidence](#{review_url}))." : "#{summary}."
+      blind = blind_reviewers(verdict)
+      folded = shortfall.nil? && blind.empty? && routine?(verdict)
+      text = folded ? summary(verdict, review_url) : line(verdict, review_url)
+      gaps = setup_gaps(shortfall, blind, review_url)
+      gaps ? "#{text}\n\n#{gaps}" : text
+    end
+
+    def kept(verdict) = [line(verdict), *verdict['kept_gaps']].join("\n\n")
+
+    def summary(verdict, url)
+      text = "Validation passed; local review completed at #{short_head(verdict)}"
+      url ? "#{text} ([evidence](#{url}))." : "#{text}."
     end
 
     # Binding accepts a completed run whatever its exit, so the exit code decides the wording here.
     def line(verdict, review_url = nil)
       return UNKNOWN unless verdict
+      return "#{verdict['kept_line']} #{KEPT}" if verdict.key?('kept_line')
 
       validation, reviews = results(verdict)
-      "#{LABEL} #{[*validations(validation), review(reviews, review_url)].join('; ')} at `#{short_head(verdict)}`."
+      reviewed = reviews.empty? && verdict['review_required'] == false ? NOT_REQUIRED : review(reviews, review_url)
+      "#{LABEL} #{[*validations(validation), reviewed].join('; ')} at `#{short_head(verdict)}`."
     end
 
     # Only a ready verdict reaches publication. A host-reported review rests on its attestation
@@ -52,6 +69,41 @@ module Shaka
       end
     end
 
+    def setup_gaps(shortfall, blind, url)
+      gaps = [(reviewer_gap(shortfall, url) if shortfall), (blind_gap(blind) if blind.any?)].compact
+      "#{GAPS} #{gaps.join(' ')}" unless gaps.empty?
+    end
+
+    # A Codex reviewer whose sandbox refused every command, as in a container without user
+    # namespaces, answered from the diff in its prompt alone. Only a run of that reviewer whose
+    # sandbox ran a command clears it; a run that issued none shows nothing about the sandbox.
+    def blind_reviewers(verdict)
+      return [] unless verdict
+
+      reviews = results(verdict).last.group_by { |result| result['reviewer'] }
+      reviews.filter_map { |reviewer, runs| reviewer if blind?(runs.map { |result| result['commands'] }) }
+    end
+
+    # Runs that recorded commands decide, and each of them must have had every command refused.
+    def blind?(summaries)
+      counted = summaries.select { |commands| commands.is_a?(Hash) && commands['ran'].to_i.positive? }
+      counted.any? && counted.all? { |commands| commands['sandbox_failed'].to_i == commands['ran'].to_i }
+    end
+
+    def blind_gap(reviewers)
+      names = reviewers.map { |name| "`#{name}`" }.join(', ')
+      who, own = reviewers.one? ? %w[it its] : %w[they their]
+      "#{names} could not start #{own} sandbox, so #{who} reviewed only the diff ([why](#{CONTAINER_GUIDE}))."
+    end
+
+    # The review comment holds each reviewer's rounds and any gap or fallback notice.
+    def reviewer_gap(shortfall, url)
+      text = "#{shortfall['completed']} of #{shortfall['configured']} configured reviewers completed"
+      missing = shortfall['missing'].map { |provider| "`#{provider}`" }
+      text += "; #{missing.join(', ')} did not" unless missing.empty?
+      url ? "#{text} ([review comment](#{url}))." : "#{text}."
+    end
+
     # A host review is only reported by its attestation; a CLI review was launched by the helper.
     def review(results, url)
       reviewers = results.map do |result|
@@ -61,6 +113,7 @@ module Shaka
       url ? "#{text} ([attestation](#{url}))" : text
     end
 
-    private_class_method :routine?, :short_head, :results, :validations, :review
+    private_class_method :routine?, :kept, :summary, :short_head, :results, :validations,
+                         :setup_gaps, :blind_reviewers, :blind?, :blind_gap, :reviewer_gap, :review
   end
 end

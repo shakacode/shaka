@@ -8,7 +8,6 @@ module Shaka
     DECISIONS_HEADING = 'Decisions to make'
     # GitHub gives comment headings no anchor, so the heading carries one; GitHub prefixes its id.
     DECISIONS_ANCHOR = 'decisions-to-make'
-    DECISIONS_LINK = "[#{DECISIONS_HEADING}](#user-content-#{DECISIONS_ANCHOR})".freeze
     HEADINGS = [DECISIONS_HEADING, 'Decisions for the maintainer'].freeze
     MARKER = '<!-- shaka:decisions -->'
 

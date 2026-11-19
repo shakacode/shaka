@@ -5,26 +5,25 @@ require_relative 'merge_test'
 require 'shaka/seam'
 require 'shaka/prefix'
 require_relative 'claim_helpers'
+require_relative 'cli_merge_fixture'
 
 class SettingsPreviewPolicyTest < Minitest::Test
   include SettingsPreviewFixture
 
-  def test_selected_configuration_reaches_policy_readers_in_both_layouts
-    %i[legacy new].each do |layout|
-      with_preview_repository(layout:) do |root, trusted, preview|
-        select_preview(root, preview)
-        policy = Shaka::TrustedConfigSource.from_ref(root:, ref: trusted)
-        report = check_report(root, trusted)
-        assert_equal policy.to_h, report.except('validation')
-        assert_equal({ 'mode' => 'preview/local', 'ref' => trusted, 'sha' => preview,
-                       'grants_policy' => true, 'grants_merge_authority' => false }, report['validation'])
-      end
+  def test_selected_configuration_reaches_policy_readers
+    with_preview_repository do |root, trusted, preview|
+      select_preview(root, preview)
+      policy = Shaka::TrustedConfigSource.from_ref(root:, ref: trusted)
+      report = check_report(root, trusted)
+      assert_equal policy.to_h, report.except('validation')
+      assert_equal({ 'mode' => 'preview/local', 'ref' => trusted, 'sha' => preview,
+                     'grants_policy' => true, 'grants_merge_authority' => false }, report['validation'])
     end
   end
 
   def test_unselected_candidate_cannot_change_policy
     with_preview_repository do |root, trusted, preview|
-      git(root, 'checkout', preview, '--', '.agents/agent-workflow.yml')
+      git(root, 'checkout', preview, '--', '.agents/shaka/config.yml')
       assert_equal 'ask', Shaka::TrustedConfigSource.from_ref(root:, ref: trusted).merge['preference']
       assert_equal 'trusted/team', Shaka::Evidence::Inputs.resolve_source(root, trusted).last
     end
@@ -49,6 +48,92 @@ class SettingsPreviewPolicyTest < Minitest::Test
   end
 end
 
+class FirstSetupPreviewMergeTest < Minitest::Test
+  include SettingsPreviewFixture
+  include CliMergeFixture
+
+  def test_first_setup_preview_refuses_auto_before_submitting
+    with_preview_repository do |root, _trusted, preview|
+      absent = remove_trusted_setup(root)
+      select_preview(root, preview, default_ref: absent)
+      install_fake_github(root)
+      mutation = File.join(root, 'mutation.json')
+
+      _, error, status = run_merge(root, absent, mutation, '--auto')
+
+      refute_predicate status, :success?
+      assert_match(/first setup settings preview uses Ask/, error)
+      refute_path_exists mutation
+    end
+  end
+
+  def test_first_setup_preview_retains_ask_after_adoption
+    with_preview_repository do |root, adopted, preview|
+      absent = remove_trusted_setup(root)
+      start_with_default(root, preview, absent)
+      report = JSON.parse(run_command('seam', 'check', '--root', root, '--ref', adopted, root:).first)
+      assert_equal [preview, 'ask'], [report.dig('validation', 'sha'), report.dig('merge', 'preference')]
+      assert_auto_refused(root, adopted)
+    end
+  end
+
+  def test_start_requires_a_default_commit
+    with_preview_repository do |root, _trusted, preview|
+      _, error, status = run_command('seam', 'preview', 'start', '--root', root, '--settings-ref', preview, root:)
+      refute_predicate status, :success?
+      assert_match(/--ref DEFAULT_SHA is required for start/, error)
+    end
+  end
+
+  def test_invalid_default_commit_keeps_the_existing_first_setup_pin
+    with_preview_repository do |root, _trusted, preview|
+      absent = remove_trusted_setup(root)
+      start_with_default(root, preview, absent)
+
+      assert_reselection_refused(root, preview, 'invalid', /Select a full settings commit SHA/)
+      assert_equal preview, Shaka::Configuration::SettingsPreview.ref(root:)
+    end
+  end
+
+  def test_invalid_default_settings_keep_the_existing_pin
+    with_preview_repository do |root, _trusted, preview|
+      replacement = create_preview_commit(root, model: 'replacement')
+      absent = remove_trusted_setup(root)
+      start_with_default(root, preview, absent)
+      File.write(File.join(root, '.agents/shaka/config.yml'), "version: [\n")
+      malformed = commit(root)
+
+      assert_reselection_refused(root, replacement, malformed, %r{Invalid \.agents/shaka/config\.yml})
+      assert_equal preview, Shaka::Configuration::SettingsPreview.ref(root:)
+    end
+  end
+
+  private
+
+  def assert_reselection_refused(root, preview, ref, expected_error)
+    _, error, status = run_command('seam', 'preview', 'start', '--root', root,
+                                   '--settings-ref', preview, '--ref', ref, root:)
+    refute_predicate status, :success?
+    assert_match(expected_error, error)
+  end
+
+  def start_with_default(root, preview, absent)
+    output, error, status = run_command('seam', 'preview', 'start', '--root', root,
+                                        '--settings-ref', preview, '--ref', absent, root:)
+    assert_predicate status, :success?, error
+    assert JSON.parse(output)['first_setup']
+  end
+
+  def assert_auto_refused(root, adopted)
+    install_fake_github(root)
+    mutation = File.join(root, 'mutation.json')
+    _, error, status = run_merge(root, adopted, mutation, '--auto')
+    refute_predicate status, :success?
+    assert_match(/first setup settings preview uses Ask/, error)
+    refute_path_exists mutation
+  end
+end
+
 class SettingsPreviewNamingTest < Minitest::Test
   include SettingsPreviewFixture
   include ClaimHelpers
@@ -56,7 +141,7 @@ class SettingsPreviewNamingTest < Minitest::Test
   def test_selected_prefix_does_not_override_another_tasks_branch_template
     with_preview_repository do |root, trusted, _preview|
       select_naming(root, trusted)
-      FileUtils.rm(File.join(root, '.agents/bin/test'))
+      FileUtils.rm(File.join(root, '.agents/shaka/bin/test'))
       assert_equal 'TRY', Shaka::Prefix.new(root:, ref: trusted).call['prefix']
       output, status = capture_cli(['1', '--root', root], prs: [], branches: '')
       assert_equal 0, status
@@ -69,7 +154,7 @@ class SettingsPreviewNamingTest < Minitest::Test
       select_naming(root, trusted)
       absent = remove_trusted_setup(root)
       git(root, 'update-ref', 'refs/remotes/origin/main', absent)
-      File.write(File.join(root, '.agents/agent-workflow.yml'),
+      File.write(File.join(root, '.agents/shaka/config.yml'),
                  YAML.dump(seam('branches' => { 'name' => 'individual/{issue}' })))
       output, status = capture_cli(['2', '--root', root], prs: [], branches: '')
       assert_equal 0, status

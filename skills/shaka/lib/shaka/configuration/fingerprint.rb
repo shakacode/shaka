@@ -2,6 +2,7 @@
 
 require 'open3'
 require_relative '../error'
+require_relative '../repository_identity'
 require_relative '../trusted_path_resolver'
 require_relative 'fingerprint/canonical'
 require_relative 'fingerprint/files'
@@ -18,7 +19,7 @@ module Shaka
       end
 
       def self.build(root:, effective_settings:, repository:, installation:, **source)
-        unknown = source.keys - %i[private_source trusted_ref preview_ref]
+        unknown = source.keys - %i[private_source trusted_ref preview_ref first_setup]
         raise Error, "Unknown fingerprint source: #{unknown.join(', ')}" if unknown.any?
 
         new(root:, effective_settings:, repository:, installation:, source:).build
@@ -71,9 +72,9 @@ module Shaka
       end
 
       def validate_repository!
-        return if @repository.is_a?(String) && @repository.match?(%r{\A[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\z})
+        return if RepositoryIdentity.valid?(@repository)
 
-        raise Error, 'Repository identity must be owner/name'
+        raise Error, 'Repository identity must be owner/name or gitlab:HOST/FULL_NAMESPACE'
       end
 
       def validate_installation!

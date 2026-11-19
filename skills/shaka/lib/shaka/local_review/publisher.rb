@@ -3,6 +3,7 @@
 require_relative 'loop_comment'
 require_relative 'history'
 require_relative 'rebased_commits'
+require_relative '../publication/deferred_rendering'
 
 module Shaka
   # Preflights every comment, then upserts the main comment and any continuations. A retry resumes
@@ -18,12 +19,25 @@ module Shaka
     def publish
       summary = LocalReviewComment.new(@content).loop_summary
       parts = loop_comment.parts
-      parts.each { |part| part.check_rendering!(@github.verify_rendering(part.body, verbatim: part.reports)) }
-      results = parts.map { |part| @github.reply(body: part.body, key: part.key, verbatim: part.reports) }
-      { 'comments' => results, 'summary' => summary, 'cleanup' => cleanup(results, parts.size) }
+      check = preflight(parts)
+      results = parts.map do |part|
+        @github.reply(body: part.body, key: part.key, verbatim: part.reports,
+                      stored_check: part.method(:check_rendering!))
+      end
+      { 'comments' => results, 'summary' => summary, 'rendering_check' => check,
+        'cleanup' => cleanup(results, parts.size) }
     end
 
     private
+
+    # Every part is checked before any is written. Where GitHub refuses its renderer, each part is
+    # checked once stored and taken back if it fails, so earlier parts may already be live.
+    def preflight(parts)
+      parts.each { |part| part.check_rendering!(@github.verify_rendering(part.body, verbatim: part.reports)) }
+      'before_write'
+    rescue DeferredRendering::Refused
+      'after_write'
+    end
 
     def loop_comment
       @loop_comment ||= LocalReviewLoopComment.new(@content, repository: @repository,
@@ -58,7 +72,9 @@ module Shaka
       head = body[/\A<!-- shaka:reply:local-review-(\h{40}) -->\n/, 1]
       return false unless head
 
-      held = loop_comment.reports(head).count { |report| body.include?(report) }
+      held = loop_comment.reports(head).count do |report|
+        body.include?(report) || body.include?(Publishing.as_stored(report))
+      end
       held.positive? && held == body.scan(/<summary>Round \d+ · #{head[0, 7]} · /).size
     end
 

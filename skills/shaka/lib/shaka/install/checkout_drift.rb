@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'shellwords'
+require_relative 'refusal'
 
 module Shaka
   module Install
@@ -37,7 +38,43 @@ module Shaka
 
         return "#{detail} Run #{Shellwords.escape(helper)} install --update to record it." if pulled?
 
-        "#{detail} It must match #{@repository} #{@branch}; keep local commits in a separate development checkout."
+        "#{detail} It must match #{Refusal.url(@repository)} #{@branch}. Next: #{drift_step}"
+      end
+
+      # The same steps install --status gives: catch up a checkout that is behind, or keep local commits on
+      # a branch, which an earlier attempt may already have made, and return to the record. reset --keep
+      # refuses rather than overwrite an edited file.
+      def drift_step
+        recorded = @record['revision']
+        return rewritten_step unless ancestor?(recorded, "refs/remotes/origin/#{@branch}")
+        return Refusal.command('git', '-C', @root, 'merge', '--ff-only', recorded) if ancestor?(revision, recorded)
+
+        name = "kept-#{git('rev-parse', '--short', 'HEAD')}"
+        existing = kept(name)
+        return occupied_step(name) if existing && existing != revision
+
+        keep = "#{Refusal.command('git', '-C', @root, 'branch', name)} && " unless existing
+        "#{keep}#{Refusal.command('git', '-C', @root, 'reset', '--keep', recorded)}"
+      end
+
+      # git branch refuses a name already in use, so a kept branch moved elsewhere leaves the choice to a person.
+      def occupied_step(name)
+        Refusal.decide("where to keep these commits, because branch #{name} already points at another commit",
+                       'to compare them', Refusal.command('git', '-C', @root, 'log', '--oneline', '--left-right',
+                                                          "#{name}...HEAD"))
+      end
+
+      def kept(name)
+        git('rev-parse', '--verify', '--quiet', "refs/heads/#{name}")
+      rescue ArgumentError
+        nil
+      end
+
+      # Origin no longer has the recorded revision, so which history to trust is a person's choice.
+      def rewritten_step
+        Refusal.decide("which revision #{@branch} should use, because origin/#{@branch} no longer has the recorded one",
+                       'to compare them', Refusal.command('git', '-C', @root, 'log', '--oneline', '--left-right',
+                                                          "HEAD...origin/#{@branch}"))
       end
 
       def helper = File.join(@root, 'skills/shaka/scripts/shaka')

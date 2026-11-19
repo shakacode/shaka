@@ -1,11 +1,25 @@
 # frozen_string_literal: true
 
 require 'fileutils'
+require 'shellwords'
 
 module Shaka
   module Install
     # Protects an installation path from replacement through a writable ancestor.
     module DirectorySafety
+      WRITABLE = 'is group or world writable'
+
+      # A refusal one command clears; status reports its detail and that command separately.
+      class Unsafe < ArgumentError
+        attr_reader :detail, :step
+
+        def initialize(detail, step)
+          @detail = detail
+          @step = step
+          super("#{detail}. Next: #{step}")
+        end
+      end
+
       private
 
       def ensure_safe_directory(path, label)
@@ -40,20 +54,32 @@ module Shaka
       def checked_directory(path, child, label)
         entry = File.lstat(path)
         reason = unsafe_reason(entry, child)
-        raise ArgumentError, "#{label} #{child ? 'has an unsafe parent' : 'is unsafe'}: #{path} #{reason}" if reason
+        if reason
+          refuse_unsafe("#{label} #{child ? 'has an unsafe parent' : 'is unsafe'}: #{path} #{reason}", reason, path,
+                        entry)
+        end
 
         entry
       rescue Errno::ENOENT, Errno::ELOOP
         raise ArgumentError, "#{label} is unsafe: #{path} cannot be resolved"
       end
 
+      # Removing group and world write clears a writable directory you own; a directory root owns, and the
+      # other reasons, need a person.
+      def refuse_unsafe(message, reason, path, entry)
+        raise Unsafe.new(message, "chmod go-w #{Shellwords.escape(path)}") if
+          reason.start_with?(WRITABLE) && entry.uid == Process.euid
+
+        raise ArgumentError, message
+      end
+
       def unsafe_reason(entry, child)
         return 'is not a directory' unless entry.directory?
         return owner_reason(entry.uid, hidden: hidden_owner?(entry.uid)) unless trusted_owner?(entry)
         return unless entry.mode.anybits?(0o022)
-        return 'is group or world writable' unless child
+        return WRITABLE unless child
 
-        'is group or world writable without a sticky bit protecting your directory' if unsafe_parent?(entry, child)
+        "#{WRITABLE} without a sticky bit protecting your directory" if unsafe_parent?(entry, child)
       end
 
       def owner_reason(uid, hidden:)

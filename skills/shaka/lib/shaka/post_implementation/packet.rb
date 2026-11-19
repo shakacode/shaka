@@ -3,6 +3,7 @@
 require_relative '../error'
 require_relative '../post_implementation_report'
 require_relative '../publication/intent_verification'
+require_relative '../publication/risk_review'
 
 module Shaka
   # The checkpoint reads the description content, so it judges exactly what the maintainer reads.
@@ -18,6 +19,8 @@ module Shaka
 
       written_twice!(content)
       IntentVerification.render(content.except('wip'))
+      # Flagged code and a risk record render under Risk and review, which applies their shape checks.
+      RiskReview.render(content, nil)
       raise Error, 'Checkpoint content needs a non-empty summary' unless text?(content['summary'])
 
       own = own(content['checkpoint'])

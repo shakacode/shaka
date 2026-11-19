@@ -6,10 +6,12 @@ require_relative '../error'
 require_relative '../ruby_requirement'
 require_relative '../configuration'
 require_relative 'check'
+require_relative 'companion_skills'
 require_relative 'configured_reviewers'
 require_relative 'git_runtime'
 require_relative 'machine_alias'
 require_relative 'merge_queue_defaults'
+require_relative 'repository_access'
 require_relative 'usage_source'
 require_relative 'reviewer_clis'
 require_relative 'installation_state'
@@ -21,7 +23,6 @@ module Shaka
     class Checks
       include Check
 
-      WRITER = %w[ADMIN MAINTAIN WRITE].freeze
       RUBY = RubyRequirement::MINIMUM
 
       def initialize(root:, host:, environment:, system:, probe_reviewers: false)
@@ -36,13 +37,15 @@ module Shaka
         seam, *basics = brief
         [*basics, seam, reviewer_settings(seam), @reviewer_clis.call(seam),
          MachineAlias.new(@environment, host_name: @system.host_name).call,
-         UsageSourceCheck.new(host: @host, system: @system).call, InstallationState.new(system: @system).call]
+         UsageSourceCheck.new(host: @host, system: @system).call, InstallationState.new(system: @system).call,
+         CompanionSkills.new(home: @system.home).call]
       end
 
       # What a task start needs: whose settings the checkout holds, and whether the helper's own
       # prerequisites and the repository work. Reviewer and usage setup stay in the full report.
       def brief
-        [repository_seam, ruby_runtime, GitRuntime.new(method(:run)).call, github_cli, repository_access,
+        [repository_seam, ruby_runtime, GitRuntime.new(method(:run)).call, github_cli,
+         *RepositoryAccess.new(root: @root, run: method(:run)).call,
          MergeQueueDefaults.new(->(argv) { run(argv, chdir: @root) }).call]
       end
 
@@ -64,42 +67,6 @@ module Shaka
 
         check('GitHub CLI', 'failed', "gh does not run: #{first_line(error)}",
               guidance: 'Install https://cli.github.com/, then run `gh auth login` to publish PRs.')
-      end
-
-      # This answers authentication and permission together, for the one repository that
-      # matters, so a stale credential on an unrelated host cannot block a usable setup.
-      # Any unresolved repository is a failure: doctor must never pass write access it did
-      # not establish.
-      def repository_access
-        out, error, ok = run(['gh', 'repo', 'view', '--json', 'nameWithOwner,viewerPermission'], chdir: @root)
-        return unreachable_repository(first_line(error)) unless ok
-
-        permission(JSON.parse(out))
-      rescue JSON::ParserError
-        unreachable_repository('gh returned a response that is not repository JSON')
-      end
-
-      def unreachable_repository(reason)
-        check('Repository access', 'failed', "no writable GitHub repository resolved here: #{reason}",
-              guidance: 'Run doctor inside the checkout you publish from, and sign in with `gh auth login`.')
-      end
-
-      # Healthy has to name the repository and the permission it actually saw; a response
-      # missing either one establishes nothing, however well-formed its JSON is.
-      def permission(parsed)
-        repository = stated(parsed, 'nameWithOwner')
-        level = stated(parsed, 'viewerPermission')
-        return unreachable_repository('gh did not report a repository and a permission') unless repository && level
-        return check('Repository access', 'healthy', "#{repository} is writable as #{level}") if WRITER.include?(level)
-
-        check('Repository access', 'failed', "#{repository} is not writable (#{level})",
-              guidance: 'Use an account with write access, or re-authenticate with `gh auth login`.')
-      end
-
-      # Present, a string, and not blank: anything less states nothing.
-      def stated(parsed, field)
-        value = parsed[field] if parsed.is_a?(Hash)
-        value if value.is_a?(String) && !value.empty?
       end
 
       def reviewer_settings(seam)
@@ -148,8 +115,7 @@ module Shaka
 
       # A missing contract is distinct from a present but unusable file.
       def missing_seam
-        paths = [Configuration::Paths::CONTRACT, Configuration::Paths::NEW_CONTRACT].join(' or ')
-        check('Repository seam', 'failed', "this root has no #{paths} regular file",
+        check('Repository seam', 'failed', "this root has no #{Configuration::Paths::CONTRACT} regular file",
               guidance: 'Choose a setup before the task. For a private trial in this clone, ask your coding ' \
                         'agent: Set up Shaka just for me. For team settings in a setup PR, ask: Configure this ' \
                         'repository for Shaka using its existing checks and merge policy ask. Or point `--root` ' \

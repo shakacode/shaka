@@ -39,10 +39,26 @@ module PrivateTrialPublicationHelpers
     end
   end
 
+  # Private setup now hides the path, so these trials opt in to show it before the personal file hides it.
+  def setup_showing_checkout_path(root, ref)
+    setup_private(root, ref)
+    config = YAML.safe_load_file(config_path(root))
+    File.write(config_path(root), YAML.dump(config.merge('wip' => { 'include_checkout_path' => true })))
+    @head = ref
+  end
+
+  # The repository would show the path; the user's own file hides it and leaves the chat link.
+  def assert_personally_hidden(body)
+    ['| wip.include_checkout_path | true |', '| Workspace | REDACTED (personal setting) |',
+     "| Chat link | #{SESSION} |"].each { |row| assert_includes body, row }
+    refute_includes body, CHECKOUT
+  end
+
   def assert_unfinished_private(body, root)
     assert_includes body, 'No matching check records supplied'
-    assert_includes body, '| wip.include_checkout_path | true |'
-    assert_includes body, "| Workspace | #{CHECKOUT} |"
+    assert_includes body, '| wip.include_checkout_path | false |'
+    assert_includes body, '| Workspace | REDACTED |'
+    refute_includes body, CHECKOUT
     assert_includes body, "| Chat link | #{SESSION} |"
     refute_includes body, PRIVATE_LINK
     refute_includes body, root
@@ -65,10 +81,13 @@ module PrivateTrialPublicationHelpers
     write_fake_commands(dir)
     path = trial_content(dir)
     flags = result_flags(dir, validation, review)
-    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, *COMMAND,
+    # description reads the calling session. A fixture owner is not this developer's chat.
+    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir,
+                                              **SESSION_ENV_CLEARED }, *COMMAND,
                                             'description', 'shakacode/shaka', '1', '--root', root, '--ref', ref,
                                             '--content-file', path, *flags)
     assert_predicate status, :success?, error
+    @publish_error = error
     File.read(File.join(dir, 'published.md'))
   end
 
@@ -128,6 +147,29 @@ class PrivateTrialPublicationTest < Minitest::Test
     end
   end
 
+  def test_your_personal_file_hides_what_the_repository_would_show
+    with_setup do |root, ref|
+      setup_showing_checkout_path(root, ref)
+      Dir.mktmpdir do |dir|
+        write_personal_wip(dir, 'include_checkout_path' => false)
+        body = publish_trial(dir, root, ref)
+        assert_personally_hidden(body)
+      end
+    end
+  end
+
+  def test_a_broken_personal_file_hides_the_path_and_says_why
+    with_setup do |root, ref|
+      setup_showing_checkout_path(root, ref)
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, '.agents/shaka'))
+        File.write(File.join(dir, '.agents/shaka/config.yml'), "not: [valid\n")
+        assert_personally_hidden(publish_trial(dir, root, ref))
+        assert_includes @publish_error, 'Hiding the checkout path on publications'
+      end
+    end
+  end
+
   def test_private_publication_uses_native_gates_without_granting_policy
     with_setup do |root, ref|
       setup_private(root, ref)
@@ -155,8 +197,9 @@ class PrivateTrialPublicationTest < Minitest::Test
     assert_includes body, '| source.configuration | private/local | private/local | private/local |'
     assert_includes body, '| review.required | none | none | none |'
     assert_includes body, "| source.revision | #{([ref] * 3).join(' | ')} |"
-    assert_includes body, '| wip.include_checkout_path | true | true | true |'
-    assert_includes body, "| Workspace | #{CHECKOUT} |"
+    assert_includes body, '| wip.include_checkout_path | false | false | false |'
+    assert_includes body, '| Workspace | REDACTED |'
+    refute_includes body, CHECKOUT
     assert_includes body, "| Chat link | #{SESSION} |"
     assert_includes body, 'Local files remain local'
   end

@@ -24,7 +24,9 @@ class CanaryBodyTest < Minitest::Test
 
     ## Shaka metrics
 
-    AI spend $1.00 · Prompt to CI 5m · CI to ready 9m (1 round) · Ready to merged pending
+    🤖 Codex · OpenAI · gpt-test · low - AI spend: $1.00
+
+    **This head:** Prompt to CI 5m · CI to ready 9m · Ready to merged pending
 
     | Check | Result |
     | --- | --- |
@@ -71,6 +73,25 @@ class CanaryBodyTest < Minitest::Test
     assert_equal 'No previous canary PR body.', Shaka::Canary::BodyDiff.report(nil, BODY)
     assert_equal 'Canary PR body matches the previous run.', Shaka::Canary::BodyDiff.report(BODY, BODY)
     assert_includes Shaka::Canary::BodyDiff.report("#{BODY}\nextra\n", BODY), '--- previous'
+  end
+
+  def test_a_diff_error_is_reported_instead_of_an_empty_diff
+    skip 'the fake diff is a shell script' if WINDOWS
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'diff'), "#!/bin/sh\necho 'diff: cannot read' >&2\nexit 2\n")
+      File.chmod(0o755, File.join(dir, 'diff'))
+      report = with_path(dir) { Shaka::Canary::BodyDiff.report("#{BODY}\nextra\n", BODY) }
+
+      assert_equal 'Cannot diff the canary PR body: diff: cannot read', report
+    end
+  end
+
+  def with_path(dir)
+    original = ENV.fetch('PATH')
+    ENV['PATH'] = "#{dir}:#{original}"
+    yield
+  ensure
+    ENV['PATH'] = original
   end
 
   def test_summary_fences_diffs_even_when_the_body_contains_long_code_fences

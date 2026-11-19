@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../evidence/machine_facts'
+require_relative 'phases'
 
 module Shaka
   # Says how long a recorded check took and on what kind of machine, such as
@@ -13,10 +14,18 @@ module Shaka
       milliseconds = result['duration_ms'] if result.is_a?(Hash)
       return unless milliseconds.is_a?(Integer) && !milliseconds.negative?
 
-      facts = known(result['machine'])
+      [duration(milliseconds), *where(known(result['machine'])), phases(result['phases'])].compact.join(' ')
+    end
+
+    def where(facts)
       details = machine(facts)
-      [duration(milliseconds), ("on #{facts['alias']}" if facts['alias']),
-       ("(#{details.join(', ')})" unless details.empty?)].compact.join(' ')
+      [("on #{facts['alias']}" if facts['alias']), ("(#{details.join(', ')})" unless details.empty?)]
+    end
+
+    # The phases the validation command reported, such as "· tests 4m 10s · rubocop 1m 2s".
+    def phases(phases)
+      summary = Phases.summary(Phases.sanitize(phases), method(:duration))
+      "· #{summary}" unless summary.empty?
     end
 
     def known(machine) = Evidence::MachineFacts.sanitize(machine).reject { |_field, value| value == 'UNKNOWN' }
@@ -33,6 +42,19 @@ module Shaka
 
       hours, minutes = rounded.divmod(60)
       "#{hours}h #{minutes}m"
+    end
+
+    # A whole pull request's time, which can run for days, in the form its Timings section uses.
+    def elapsed(seconds)
+      minutes = (seconds / 60).floor
+      return '<1m' if minutes < 1
+      return "#{minutes}m" if minutes < 60
+
+      hours, minutes = minutes.divmod(60)
+      return "#{hours}h #{minutes}m" if hours < 24
+
+      days, hours = hours.divmod(24)
+      "#{days}d #{hours}h"
     end
 
     def machine(facts)

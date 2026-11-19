@@ -12,8 +12,8 @@ class PublicationSettingsTest < Minitest::Test
       review = review_check(root, ref)
       with_results(validation, review) do |options|
         body = prepare(root, ref, options).detail.fetch('body')
-        assert_includes body, "| Validation | Repository settings at [`#{ref[0, 7]}`]("
-        assert_includes body, "| Review | Repository settings at [`#{ref[0, 7]}`]("
+        assert_includes body, "| Validation | Repository settings from commit [`#{ref[0, 7]}`]("
+        assert_includes body, "| Review | Repository settings from commit [`#{ref[0, 7]}`]("
         refute_includes body, validation.dig('settings', 'digest')
       end
     end
@@ -37,7 +37,7 @@ class PublicationSettingsTest < Minitest::Test
       validation = run_check(root, ref, command: 'validate')
       with_results(validation, review_check(root, ref)) do |options|
         assert_raises(Shaka::Error) { prepare(root, ref, options.except(:validation)) }
-        File.write(File.join(root, '.agents/bin/validate'), "#!/bin/sh\nexit 0\n# changed\n")
+        File.write(File.join(root, '.agents/shaka/bin/validate'), "#!/bin/sh\nexit 0\n# changed\n")
         assert_raises(Shaka::Error) { prepare(root, ref, options) }
       end
     end
@@ -50,7 +50,7 @@ class PublicationSettingsTest < Minitest::Test
       with_results(validation, review) do |options|
         body = prepare(root, ref, options).detail.fetch('body')
         assert_match(/\| Validation \| UNKNOWN \| UNKNOWN: \d+s \|/, body)
-        assert_includes body, "Current settings: Repository settings at [`#{ref[0, 7]}`]("
+        assert_includes body, "Current settings: Repository settings from commit [`#{ref[0, 7]}`]("
       end
     end
   end
@@ -76,7 +76,7 @@ class PublicationSettingsTest < Minitest::Test
       settings = prepare(root, ref, {})
       assert_predicate settings, :include_checkout_path?
       assert_includes settings.detail.fetch('body'),
-                      "Current settings: Repository settings at [`#{ref[0, 7]}`]("
+                      "Current settings: Repository settings from commit [`#{ref[0, 7]}`]("
     end
   end
 
@@ -112,6 +112,25 @@ class PublicationSettingsTest < Minitest::Test
         second.flush
         yield validation: [first.path], review: [second.path]
       end
+    end
+  end
+end
+
+# The Human comments list reads its ignored patterns from the trusted settings, not the public snapshot.
+class PublicationIgnoredCommentsSettingTest < Minitest::Test
+  include EvidenceFixture
+
+  def test_the_repository_s_ignored_comment_patterns_reach_the_description
+    with_checkout('pr_description' => { 'ignored_human_comments' => ['+deploy'] }) do |root, ref|
+      pull = { 'changed_files' => 0, 'head' => { 'sha' => ref }, 'base' => { 'sha' => ref } }
+      github = Object.new.tap do |client|
+        def client.repository = 'shakacode/shaka'
+        def client.number = 1
+        def client.api_list(_path) = []
+      end
+      settings = Shaka::PublicationSettings.prepare(root:, ref:, pull:, options: { root: }, github:)
+
+      assert_equal ['+deploy'], settings.ignored_human_comments
     end
   end
 end

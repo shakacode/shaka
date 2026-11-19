@@ -60,7 +60,7 @@ class ProjectGuidanceTest < Minitest::Test
   def test_refuses_guidance_only_the_candidate_branch_configures
     with_repository do |root|
       sha = commit(root)
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam('project_guidance' => GUIDANCE)))
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(seam('project_guidance' => GUIDANCE)))
       write_guidance(root, GUIDANCE)
       error = assert_raises(Shaka::Error) { guidance('pr_evidence', root, sha) }
       assert_equal 'project_guidance.pr_evidence is not configured', error.message

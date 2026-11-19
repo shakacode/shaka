@@ -15,12 +15,11 @@ the workflow reaches that decision:
 | Try an unmerged Shaka version on real work | [PR trials](pr-trials.md) |
 | Install, update, or verify Shaka | [Official installation](official-installation.md) |
 | Install prerequisites, forks, removal, or host details | [Installation details](installation.md) |
-| Configure or inspect a repository | [Setup](repository-setup.md) and shared [settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md) |
+| Configure or inspect a repository, or refresh `.agents/shaka.md` | [Setup](repository-setup.md) and shared [settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md) |
 | Migrate existing settings | [Migration](migration.md) |
-| Choose how much human review changed files need | [Human review floors](human-review-floors.md) |
 | Plan, split PRs, write updates, or recover work | [Delivery and communication](delivery.md) |
 | Take over a spec or use another installed skill | [Companion skills](companion-skills.md) |
-| Revise earlier human steering and restart | [Human attention checkpoints](return-points.md) |
+| Revise earlier human steering and restart | [Return points](return-points.md) |
 | Select reviewers and handle findings | [Review](review.md) |
 | Reconsider the finished result before merge | [Checkpoint](post-implementation-validation.md) |
 | Launch a reviewer CLI | [Local review](local-review.md) |
@@ -29,7 +28,8 @@ the workflow reaches that decision:
 | Publish PR descriptions, walkthroughs, replies, and review reports | [Publication](publication.md) |
 | Assess documentation changes | [Documentation verification](documentation-verification.md) |
 | Review documentation with the user, one topic at a time | [Guided documentation review](guided-documentation-review.md) |
-| Choose tests and evidence | [Verification](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md) |
+| Explain code with the user, one concept at a time | [Interactive walkthrough](interactive-walkthrough.md) |
+| Choose tests and evidence | [Workflow implementation and verification](../config/workflow.yml) |
 | Verify a UI or speed-affecting change | [UI evidence](ui-verification.md) or [performance comparison](performance-verification.md) |
 | Leave reviewer notes on a walkthrough diff | [Walkthrough notes](walkthrough-notes.md) |
 | Explain visible changes on the new capture | [Annotated screenshots and optional pixel diagnostics](visual-diff.md) |

@@ -2,6 +2,7 @@
 
 # Validates the optional opening-check settings in the repository contract.
 
+require_relative 'review_schema'
 require_relative 'validation'
 require_relative '../defaults'
 require_relative '../local_review/openrouter'
@@ -13,6 +14,7 @@ module Shaka
       include Validation
 
       DEFAULTS = Defaults.fetch('pr_description', 'opening_check')
+      KEYS = ['enabled', 'reviewer', 'model', 'effort', ReviewSchema::PROMPT_FILE].freeze
 
       def self.effective(settings)
         DEFAULTS.merge(settings)
@@ -26,7 +28,7 @@ module Shaka
       def validate
         mapping!(@opening, @label)
         renamed_prompt_file!(@opening, @label)
-        keys!(@opening, [], ['enabled', 'reviewer', 'model', 'effort', ReviewSchema::PROMPT_FILE], @label)
+        keys!(@opening, [], KEYS, @label)
         validate_enabled
         validate_reviewer
         validate_model

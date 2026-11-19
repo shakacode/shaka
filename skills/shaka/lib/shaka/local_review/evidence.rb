@@ -7,6 +7,19 @@ module Shaka
     # The effort and finding count an attestation closes with.
     CLOSING = /EFFORT (\S+) FINDINGS (\d+)\s*\z/
 
+    # A main review comment's header down to its Outcome line. Anchored at the start so no report,
+    # and no continuation comment of earlier reports, can write or restate that line.
+    OUTCOME = Regexp.new('\A(?:<!-- shaka:reply:[^\n]* -->\n)?# Local Adversarial Review\n\n' \
+                         '<!-- shaka:local-reviewers [^\n]* -->\n\n' \
+                         '\*\*Reviewed revision:\*\* [^\n]*\n\n\*\*Outcome:\*\* ([^\n]*)$').freeze
+
+    # How many findings a published review says need attention, or nil when body is not a main review comment.
+    def self.pending_count(body)
+      # GitHub's web editor stores CRLF, and the attestation that goes with this line tolerates it.
+      outcome = body.gsub("\r\n", "\n")[OUTCOME, 1]
+      outcome && outcome[/\A(\d+) findings? needs? attention/, 1].to_i
+    end
+
     def self.valid?(text, head:, reviewer:, effort: nil)
       return false unless text.valid_encoding?
 

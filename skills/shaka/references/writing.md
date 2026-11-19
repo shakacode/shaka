@@ -10,6 +10,8 @@
 - Prefer lists for instructions, findings, and explanations with multiple points.
   Use numbered lists when order matters or readers need to refer to individual points.
 - Lead with the outcome its reader notices.
+- Make each sentence readable alone. Name its subject with a short noun, and start no
+  sentence with it, this, that, or such. Move a long qualifier into its own sentence.
 - Give each sentence one main idea and a clear subject and verb.
 - Make the subject a person who acts, or a thing doing what things do. Do not give
   a repository, setting, or file a person's verb such as "see" or "know".
@@ -24,6 +26,8 @@
 - When the order already shows the relation, drop "therefore", "thus", "so",
   "however", and "but", and split the joined clauses into separate sentences.
 - Use familiar words; explain unfamiliar project terms through the behavior they name.
+- Write a question for a person by the
+  [question rules](delivery.md#when-the-agent-asks-questions).
 - Explain a PR’s problem and benefit for a maintainer who has not read the issue or design.
   For preparatory work, connect this part to the later user outcome.
 - Keep exact commands, identifiers, risks, and evidence intact.
@@ -32,7 +36,7 @@
 - Describe observable behavior rather than implementation jargon. For example:
   - Instead of: “Tier 3 needs a bounded reader for native events.”
   - Write: “We need to test whether agents follow the PR workflow, including waiting
-    for merge permission. This change reads Codex’s reported activity for those tests.
+    for merge permission. The PR reads Codex’s reported activity for those tests.
     Running and grading the full workflow remains future work.”
 - Keep explanations proportional to the change. Keep the average sentence under
   about 15 words; no sentence should need more than 25. Keep paragraphs to about

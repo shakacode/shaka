@@ -9,26 +9,28 @@ class PublicationVerificationGatesTest < Minitest::Test
   VALIDATE = { 'kind' => 'validation', 'command' => 'validate', 'status' => 'completed', 'exit_code' => 0 }.freeze
   CLAUDE = { 'kind' => 'review', 'reviewer' => 'anthropic/claude', 'status' => 'completed', 'head' => HEAD }.freeze
   CODEX = { 'kind' => 'review', 'reviewer' => 'openai/codex', 'status' => 'reported', 'head' => HEAD }.freeze
+  SHORTFALL = { 'configured' => 2, 'completed' => 1, 'missing' => ['openai'] }.freeze
+  URL = 'https://github.com/shakacode/shaka/pull/9#issuecomment-1'
 
   def render(settings, **changes)
     Shaka::Publication.description(PublicationRegressionTest.new(name).description_content(**changes),
                                    nil, nil, settings)
   end
 
-  def bound(validation: [VALIDATE], review: [CLAUDE])
+  def bound(validation: [VALIDATE], review: [CLAUDE], shortfall: nil)
     checks = { 'validation' => validation, 'review' => review }.transform_values do |results|
       results.map { |result| { 'status' => 'bound', 'original' => result } }
     end
-    Shaka::PublicationSettings.new(verdict: { 'status' => 'ready', 'head' => HEAD, 'checks' => checks })
+    Shaka::PublicationSettings.new(verdict: { 'status' => 'ready', 'head' => HEAD, 'checks' => checks },
+                                   reviewer_shortfall: shortfall)
   end
 
   # Eleven of twelve PRs after #553 spent two of three checks restating validate and local review.
   def test_bound_results_render_one_validation_and_review_line_before_the_checks
-    url = 'https://github.com/shakacode/shaka/pull/9#issuecomment-1'
-    rendered = render(bound(review: [CLAUDE, CODEX]), 'review' => url)
+    rendered = render(bound(review: [CLAUDE, CODEX]), 'review' => URL)
 
     line = '**Validation and review:** `validate` passed (exit 0); local review by anthropic/claude, ' \
-           "openai/codex (host-reported) ([attestation](#{url})) at `abcdef1`."
+           "openai/codex (host-reported) ([attestation](#{URL})) at `abcdef1`."
     assert_includes rendered, line
   end
 
@@ -37,6 +39,7 @@ class PublicationVerificationGatesTest < Minitest::Test
   def test_a_passing_validation_and_completed_review_have_a_compact_visible_summary
     rendered = render(bound)
     assert_includes rendered, "## Verification\n\nValidation passed; local review completed at abcdef1."
+    refute_includes rendered, '**Setup gaps:**'
     assert_operator rendered.index('<summary>Evidence and limitations</summary>'), :<,
                     rendered.index('**Validation and review:**')
   end
@@ -62,6 +65,27 @@ class PublicationVerificationGatesTest < Minitest::Test
   end
 
   def test_without_results_the_line_says_none_were_supplied
-    assert_includes render(nil), "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n"
+    rendered = render(nil)
+    assert_includes rendered, "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n"
+    refute_includes rendered, '**Setup gaps:**'
+  end
+
+  # https://github.com/shakacode/shaka/issues/887: a completed review folded even when fewer
+  # reviewers ran than the repository configured. The folded evidence keeps only the line.
+  def test_a_reviewer_shortfall_keeps_the_line_visible_and_names_the_missing_provider
+    rendered = render(bound(shortfall: SHORTFALL), 'review' => URL)
+
+    line = '**Validation and review:** `validate` passed (exit 0); local review by anthropic/claude ' \
+           "([attestation](#{URL})) at `abcdef1`."
+    gaps = "**Setup gaps:** 1 of 2 configured reviewers completed; `openai` did not ([review comment](#{URL}))."
+    assert_includes rendered, "## Verification\n\n#{line}\n\n#{gaps}\n\n"
+    assert_equal 1, rendered.scan('**Setup gaps:**').size
+  end
+
+  # local_review_count says how many, not which, and the review comment comes after the first description.
+  def test_a_count_shortfall_names_no_provider_and_links_nothing_before_review_publication
+    rendered = render(bound(shortfall: SHORTFALL.merge('missing' => [])))
+
+    assert_includes rendered, "at `abcdef1`.\n\n**Setup gaps:** 1 of 2 configured reviewers completed.\n\n"
   end
 end

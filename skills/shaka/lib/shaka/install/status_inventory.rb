@@ -23,7 +23,13 @@ module Shaka
       def default_directory = SettingsLocation.default_directory(@home)
       def old_directory = File.join(@home, Locations::SETTINGS, 'shaka')
       def trial_directory = File.join(@home, '.local/share/shaka/pr-trials')
-      def trials = entries(trial_directory).select { |path| File.directory?(path) }
+
+      # Each prepared trial is a package under installs; links and plans beside it are not trials.
+      def trials
+        entries(File.join(trial_directory, 'installs')).select do |path|
+          File.directory?(path) && File.basename(path).match?(Package::ID_PATTERN)
+        end
+      end
 
       # Link owners that are linked worktrees, which go away when their branch is cleaned up. A submodule
       # or a --separate-git-dir clone also has a .git file, but its gitdir is not under worktrees/.

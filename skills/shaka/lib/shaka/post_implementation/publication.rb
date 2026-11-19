@@ -12,14 +12,22 @@ require_relative '../github/squash_comment'
 require_relative '../merge_queue_commit'
 
 module Shaka
+  # What a blocked checkpoint's merge warning reads: the owner's recommendation and next step, each nil without an
+  # owner disposition, and the reviewer's verdict, nil when the review did not complete.
+  module PostImplementationWarningFields
+    def disposition = @owner&.fetch('recommendation')
+    def next_action = @owner&.fetch('next_action', nil)
+    def conclusion = @report&.fetch('conclusion')
+  end
+
   # Presents the checkpoint's action without confusing configuration with observations.
   class PostImplementationPublication
     include PostImplementationPublisherIdentity
     include PostImplementationExecutionText
     include PostImplementationAdequacy
+    include PostImplementationWarningFields
 
-    # disposition is the owner's recommendation, or nil when the result supplies none.
-    attr_reader :state, :disposition
+    attr_reader :state
 
     def summary = @summary || PublicationText.required(@result.fetch('reason'), 'checkpoint failure reason')
 
@@ -29,16 +37,19 @@ module Shaka
       'Do not merge' => ['Do not merge; decide whether to close or replace',
                          'Bring the close-or-replace decision to the maintainer.']
     }.freeze
+    CONCERNS = ['Resolve concerns before merging', 'Resolve substantive concerns, then repeat affected review.'].freeze
     SCOPE = 'Ruby checked this report\'s format and commit; the reviewer judged value, not correctness. ' \
             'Required checks, reviews, and merge authority still apply.'
 
-    # message and auto_merge are called only for a ready checkpoint; auto_merge takes the verification
-    # verdict and returns a line or nil.
-    def initialize(result, head:, repository:, message: nil, auto_merge: nil)
+    # message and previews[:auto_merge] are called only for a ready checkpoint; auto_merge takes the
+    # verification verdict and risk assessment as verdict: and assessment:, and returns a line or nil.
+    # previews[:risk] takes the reviewer's rating and returns PostImplementationRisk's assessment;
+    # without it, changed files count as unread.
+    def initialize(result, head:, repository:, message: nil, previews: {})
       @result = result
+      @previews = previews
       @head = head
       @message = message
-      @auto_merge = auto_merge
       @repository = repository
       @revision = "[`#{head[0, 7]}`](https://github.com/#{repository}/commit/#{head})"
       @usage = native_usage
@@ -48,7 +59,7 @@ module Shaka
     def render
       @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
-      body += "\n\n#{[*@auto_merge&.call(@adequacy&.fetch('verdict')), merge_text].join("\n\n")}" if @state == 'ready'
+      body += "\n\n#{[*auto_merge_line, merge_text].join("\n\n")}" if @state == 'ready'
       "#{identity}\n\n# Checkpoint for #{@revision}\n\n#{body}\n\n#{footer}"
     end
 
@@ -77,12 +88,12 @@ module Shaka
     def known(value) = (value.strip if value.is_a?(String) && !value.strip.empty? && !value.strip.casecmp?('UNKNOWN'))
 
     def completed_body
-      report = PostImplementationReport.read(@result.fetch('report'), head: @head)
+      report = @report = PostImplementationReport.read(@result.fetch('report'), head: @head)
       @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
       action, next_action = recommendation(report)
       summary = @summary = report.fetch('summary', report.fetch('reasons').first)
       ["## Reviewer recommendation: #{action}", "**Next:** #{owner_action(report, next_action)}",
-       verdict(report, summary), adequacy(report), supporting_analysis(report, summary)].join("\n\n")
+       verdict(report, summary), checks(report), supporting_analysis(report, summary)].join("\n\n")
     end
 
     # One paragraph states the verdict and its evidence; the concern list follows only when there is one.
@@ -110,9 +121,7 @@ module Shaka
     end
 
     def recommendation(report)
-      if report['conclusion'] == 'Proceed' && !report['concerns'].empty?
-        return ['Resolve concerns before merging', 'Resolve substantive concerns, then repeat affected review.']
-      end
+      return CONCERNS if report['conclusion'] == 'Proceed' && !report['concerns'].empty?
 
       ACTIONS.fetch(report.fetch('conclusion'))
     end

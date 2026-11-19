@@ -8,7 +8,7 @@ module RepositoryConfigTestHelpers
     Dir.mktmpdir('outside-command') do |outside_root|
       outside = File.join(outside_root, 'validate')
       File.write(outside, "#!/bin/sh\n")
-      path = File.join(root, '.agents/bin/validate')
+      path = File.join(root, '.agents/shaka/bin/validate')
       FileUtils.rm(path)
       File.symlink(outside, path)
       yield
@@ -21,9 +21,9 @@ module RepositoryConfigTestHelpers
 
   def with_repository(overrides = {})
     Dir.mktmpdir('shaka-repository-config') do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
       create_commands(root)
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(overrides)))
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(seam(overrides)))
       yield root
     end
   end
@@ -46,8 +46,8 @@ module RepositoryConfigTestHelpers
   end
 
   def create_command(root, name)
-    filename = optional_commands.fetch(name, name).delete_prefix('.agents/bin/')
-    path = File.join(root, '.agents/bin', filename)
+    filename = optional_commands.fetch(name, name).delete_prefix('.agents/shaka/bin/')
+    path = File.join(root, '.agents/shaka/bin', filename)
     File.write(path, "#!/bin/sh\nexit 0\n")
     File.chmod(0o755, path)
   end
@@ -63,7 +63,7 @@ module RepositoryConfigTestHelpers
   end
 
   def optional_commands
-    { 'validate_local' => '.agents/bin/validate-local',
-      'trigger_hosted_ci' => '.agents/bin/trigger-hosted-ci' }
+    { 'validate_local' => '.agents/shaka/bin/validate-local',
+      'trigger_hosted_ci' => '.agents/shaka/bin/trigger-hosted-ci' }
   end
 end

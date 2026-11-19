@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require_relative 'repository_fixture'
 require_relative 'cli_opening_check_fakes'
 require 'json'
+require 'shaka/publication/merge_warning_region'
 
 module CliDescriptionDecisionsRun
   def run_description(dir, root:, env: {}, decisions: true)
@@ -14,6 +15,14 @@ module CliDescriptionDecisionsRun
     options = ['--root', root, '--content-file', content, '--ref', fixture_ref(root)]
     Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }.merge(env),
                    *self.class::COMMAND, 'description', 'owner/repo', '1', *options)
+  end
+
+  def assert_decisions_cleared(dir, root, env)
+    output, error, status = run_description(dir, root:, decisions: [], env:)
+    assert_predicate status, :success?, error
+    refute_includes File.read(File.join(dir, 'published.md')), 'shaka:decisions'
+    assert_equal 'deleted', File.read(File.join(dir, 'released')).strip
+    assert_equal 'released', JSON.parse(output).dig('attention', 'state')
   end
 
   def description_content
@@ -127,12 +136,87 @@ class CliDescriptionDecisionsTest < Minitest::Test
 
   private
 
-  def assert_decisions_cleared(dir, root, env)
-    output, error, status = run_description(dir, root:, decisions: [], env:)
-    assert_predicate status, :success?, error
-    refute_includes File.read(File.join(dir, 'published.md')), 'shaka:decisions'
-    assert_equal 'deleted', File.read(File.join(dir, 'released')).strip
-    assert_equal 'released', JSON.parse(output).dig('attention', 'state')
+  def fake_gh = DESCRIPTION_GH
+end
+
+class CliDescriptionDecisionsUnderMergeTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+  include CliOpeningCheckFakes
+  include CliDescriptionDecisionsRun
+
+  COMMAND = SHAKA_COMMAND
+  ROOT = File.expand_path('..', __dir__)
+  SUMMARY = 'Decisions stay with the label.'
+
+  def test_description_refuses_decisions_while_this_heads_checkpoint_recommends_merge
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, env: { 'PR_COMMENTS' => merge_checkpoint })
+
+        refute_predicate status, :success?
+        assert_includes error, 'Merge after maintainer decision'
+        refute_path_exists File.join(dir, 'published.md')
+        refute_path_exists File.join(dir, 'labeled')
+      end
+    end
+  end
+
+  private
+
+  def merge_checkpoint
+    body = "<!-- shaka:reply:post-implementation-ccccccc-abc12345 -->\nReport\n\n" \
+           "<!-- shaka:post-implementation-disposition Merge -->\n" \
+           "<!-- shaka:post-implementation #{'c' * 40} ready -->"
+    JSON.generate([{ 'id' => 1, 'created_at' => '2026-10-29T18:33:08Z', 'user' => { 'login' => 'agent' },
+                     'body' => body }])
+  end
+
+  def fake_gh = DESCRIPTION_GH
+end
+
+class CliDescriptionMergedDecisionsTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+  include CliOpeningCheckFakes
+  include CliDescriptionDecisionsRun
+
+  COMMAND = SHAKA_COMMAND
+  ROOT = File.expand_path('..', __dir__)
+  SUMMARY = 'Decisions stay with the label.'
+
+  def test_a_merge_answers_the_waiting_decision_and_clears_its_banner
+    env = { 'EXISTING_BODY' => waiting_body, 'PR_LABEL' => 'awaiting-answer', 'PR_MERGED' => 'true' }
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        assert_decisions_cleared(dir, root, env)
+        refute_includes File.read(File.join(dir, 'published.md')), Shaka::MergeWarningRegion::OPEN
+      end
+    end
+  end
+
+  def test_an_unmerged_pull_request_still_needs_the_waiting_decision
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, decisions: [], env: { 'EXISTING_BODY' => waiting_body })
+
+        refute_predicate status, :success?
+        assert_includes error, 'waits for a maintainer decision'
+        refute_path_exists File.join(dir, 'published.md')
+      end
+    end
+  end
+
+  private
+
+  def waiting_body
+    region = Shaka::MergeWarningRegion
+    head = 'c' * 40
+    "#{region::OPEN}\n#{region::AWAITING_MARKER}\n> **#{region::AWAITING.first}**\n>\n> Reason.\n>\n" \
+      '> [Final review report](https://github.com/owner/repo/pull/1#issuecomment-1) · ' \
+      "Head [`#{head[0, 7]}`](https://github.com/owner/repo/commit/#{head}). Passing checks.\n" \
+      "#{region::CLOSE}\n\n<!-- shaka:begin -->\n<!-- shaka:decisions -->\n<!-- shaka:end -->\n"
   end
 
   def fake_gh = DESCRIPTION_GH
@@ -148,27 +232,38 @@ DESCRIPTION_GH = <<~'RUBY'
   when 'repos/owner/repo/pulls/1'
     if ARGV.include?('PATCH')
       File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
-      puts JSON.generate(request)
+      stored = ENV['CLOUD'] ? { 'body_html' => '<table></table>' * 10 } : {}
+      puts JSON.generate(request.merge(stored))
     else
-      puts JSON.generate('body' => ENV.fetch('EXISTING_BODY', ''),
-                         'head' => { 'sha' => 'c' * 40, 'repo' => { 'full_name' => 'owner/repo' } },
-                         'base' => { 'repo' => { 'full_name' => 'owner/repo' } }, 'changed_files' => 0)
+      puts JSON.generate('number' => 1, 'state' => ENV.fetch('PR_STATE', 'OPEN').downcase,
+                         'body' => ENV.fetch('EXISTING_BODY', ''),
+                         'created_at' => ENV.fetch('PR_CREATED_AT', '2026-10-18T08:00:00Z'),
+                         'head' => { 'sha' => 'c' * 40, 'repo' => { 'full_name' => ENV.fetch('PR_HEAD_REPO', 'owner/repo') } },
+                         'base' => { 'ref' => 'main', 'repo' => { 'full_name' => 'owner/repo' } }, 'changed_files' => 0,
+                         'merged' => ENV['PR_MERGED'] == 'true')
     end
   when %r{pulls/1/files\?} then puts '[]'
-  when 'markdown' then puts JSON.generate('<table></table>' * 10)
+  when %r{issues/1/comments\?} then puts ENV.fetch('PR_COMMENTS', '[]')
+  when 'user' then puts JSON.generate('login' => 'agent')
+  when 'checks' then puts ENV.fetch('PR_CHECKS') { abort 'no checks' }
+  when %r{rules/branches/} then puts '[]'
+  when 'markdown'
+    abort 'gh: This GitHub API path is not available (HTTP 403)' if ENV['CLOUD']
+    puts JSON.generate('<table></table>' * 10)
   when 'graphql'
+    abort 'gh: GitHub GraphQL is not available from Claude Code sessions (HTTP 403)' if ENV['CLOUD']
     if request['query'].to_s.include?('timelineItems')
       waited = { '__typename' => 'LabeledEvent', 'createdAt' => '2026-10-18T08:10:00Z',
                  'label' => { 'name' => 'awaiting-answer' } }
       items = { 'pageInfo' => { 'hasNextPage' => false }, 'nodes' => [waited] }
       commits = JSON.parse(ENV.fetch('PR_COMMITS', '[]'))
       first = commits.first(1).map { |node| { 'commit' => node['commit'].slice('committedDate') } }
-      pull = { 'createdAt' => '2026-10-18T08:00:00Z', 'firstCommit' => { 'nodes' => first },
+      pull = { 'createdAt' => ENV.fetch('PR_TIMELINE_OPENED', '2026-10-18T08:00:00Z'), 'firstCommit' => { 'nodes' => first },
                'commits' => { 'nodes' => commits }, 'timelineItems' => items }
       puts JSON.generate('data' => { 'repository' => { 'pullRequest' => pull } })
     else
       state = ENV.fetch('PR_STATE', 'OPEN')
-      puts JSON.generate('data' => { 'repository' => { 'pullRequest' => { 'state' => state } } })
+      puts JSON.generate('data' => { 'repository' => { 'pullRequest' => { 'state' => state, 'baseRefName' => 'main' } } })
     end
   when %r{issues/1/labels\?}
     name = ENV['PR_LABEL'].to_s
@@ -187,3 +282,44 @@ DESCRIPTION_GH = <<~'RUBY'
     abort "unexpected gh request: #{ARGV.inspect} #{raw}"
   end
 RUBY
+
+# Where GitHub refuses GraphQL and its renderer, as in Claude Code cloud sessions, decisions still label the PR.
+class CliDescriptionDecisionsCloudTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+  include CliOpeningCheckFakes
+  include CliDescriptionDecisionsRun
+
+  COMMAND = SHAKA_COMMAND
+  ROOT = File.expand_path('..', __dir__)
+  SUMMARY = 'Decisions stay with the label.'
+  CLOUD = { 'CLOUD' => '1' }.freeze
+
+  def test_decisions_label_the_pull_request_read_over_rest
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, env: CLOUD)
+
+        assert_predicate status, :success?, error
+        assert_equal 'awaiting-answer', File.read(File.join(dir, 'labeled')).strip
+      end
+    end
+  end
+
+  def test_a_closed_pull_request_still_refuses_decisions_before_writing
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, env: CLOUD.merge('PR_STATE' => 'CLOSED'))
+
+        assert_includes error, 'not open'
+        refute_predicate status, :success?
+        refute_path_exists File.join(dir, 'published.md')
+      end
+    end
+  end
+
+  private
+
+  def fake_gh = DESCRIPTION_GH
+end

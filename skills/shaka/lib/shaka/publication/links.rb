@@ -5,6 +5,8 @@ require_relative '../error'
 require_relative '../post_implementation_report'
 require_relative 'text'
 require_relative '../publication_sections'
+require_relative 'risk_review'
+require_relative 'walkthrough_link'
 
 module Shaka
   # Renders the links a reader needs before any description section.
@@ -14,31 +16,36 @@ module Shaka
     REVIEW_URL = POST_IMPLEMENTATION_URL
     UNPUBLISHED = '_Not published yet._'
     AFTER_DECISIONS = 'Code Walkthrough: _After the decisions._'
+    REQUESTED = 'Code Walkthrough: _Requested._'
     CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
+    DRAFT_MERGE = '**Draft: mark it ready for review before merging**'
 
     module_function
 
     # The first line is the decision a maintainer acts on, beside the evidence links that support it.
     # Open decisions come first while they last, even over a Merge checkpoint, and take the label's place.
     # The head check keeps a stale recommendation off the page, so the text need not name the commit.
-    def lead(content, pull, decisions)
-      links = links(content, pull, deciding: decisions.any?)
+    # settings is the PublicationSettings whose walkthrough.publish decides whether the walkthrough has a slot.
+    # A rendering preview loads these renderers beside an installed settings object that may predate it.
+    def lead(content, pull, decisions, settings = nil)
+      publish = settings.walkthrough_publish if settings.respond_to?(:walkthrough_publish)
+      links = links(content, pull, deciding: decisions.any?, publish:)
       return [*decisions, links] unless content.key?('checkpoint')
 
       checkpoint = current_checkpoint(content['checkpoint'], pull)
-      label = recommendation_label(checkpoint['recommendation'])
+      label = [recommendation_label(checkpoint['recommendation'], pull), RiskReview.lead(content, pull)].join(' · ')
       [*decisions, decisions.any? ? links : "#{label} · #{links}", *adequacy(checkpoint['verification_adequacy']),
        *next_action(checkpoint['next_action'])]
     end
 
-    # The checkpoint's verdict on whether the verification below proves the intent; the report says why.
+    # Only a verdict that stops an agent merge earns the lead; the checkpoint comment shows every verdict and why.
     def adequacy(verdict)
       return [] if verdict.nil?
 
       verdicts = PostImplementationReport::ADEQUACY
-      unless verdicts.include?(verdict)
-        raise Error, "Description checkpoint verification_adequacy must be one of: #{verdicts.join(', ')}."
-      end
+      raise Error, "Description checkpoint verification_adequacy must be one of: #{verdicts.join(', ')}." unless
+        verdicts.include?(verdict)
+      return [] unless PostImplementationReport::STOPS_AGENT_MERGE.include?(verdict)
 
       ["**Checkpoint on verification:** #{verdict.capitalize}."]
     end
@@ -53,11 +60,13 @@ module Shaka
     end
 
     # Without a recommendation for this head, such as while the checkpoint is pending or failed, the label says so.
-    def recommendation_label(recommendation)
+    # GitHub cannot merge a draft, so a Merge recommendation on one names the step that comes first.
+    def recommendation_label(recommendation, pull = nil)
       recommendations = PostImplementationReport::RECOMMENDATIONS
       unless recommendation.nil? || recommendations.include?(recommendation)
         raise Error, "Description checkpoint recommendation must be one of: #{recommendations.join(', ')}."
       end
+      return DRAFT_MERGE if recommendation == 'Merge' && pull&.dig('draft') == true
 
       recommendation ? "**Recommendation: #{recommendation}**" : '**No recommendation yet**'
     end
@@ -70,10 +79,11 @@ module Shaka
     end
 
     # Keep both review surfaces together before an optional deployment preview.
-    # While decisions are open, the walkthrough waits for them and they are the checkpoint, so placeholders say so.
-    def links(content, pull, deciding: false)
-      reviews = [walkthrough(content['walkthrough'], deciding:), review(content['review']),
-                 post_implementation(content['post_implementation'], deciding:)].compact.join(' · ')
+    # Open decisions explain why unpublished evidence is pending, without linking back to the same question.
+    # Without a publish setting the walkthrough is on request, the packaged default.
+    def links(content, pull, deciding: false, publish: nil)
+      reviews = [WalkthroughLink.call(content['walkthrough'], deciding:, publish:), review(content['review']),
+                 post_implementation(content['post_implementation'])].compact.join(' · ')
       preview = deployment(content['deployment']) ||
                 deployment_not_found(content['deployment_not_found_for'], pull&.dig('head', 'sha'))
       preview ? "#{reviews} · #{preview}" : reviews
@@ -82,10 +92,8 @@ module Shaka
     # The credit closes the description so it never sits between the decision and its evidence.
     def credit(settings) = settings.attribution? ? [CREDIT] : []
 
-    def post_implementation(url, deciding:)
-      if url.nil? || (url.is_a?(String) && url.strip.empty?)
-        return "Checkpoint: #{deciding ? PublicationSections::DECISIONS_LINK : UNPUBLISHED}"
-      end
+    def post_implementation(url)
+      return "Checkpoint: #{UNPUBLISHED}" if url.nil? || (url.is_a?(String) && url.strip.empty?)
 
       url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'post_implementation')
       unless url.match?(POST_IMPLEMENTATION_URL)
@@ -141,19 +149,6 @@ module Shaka
 
       commit = repository ? PublicationText.commit(head, repository) : "`#{head}`"
       "_Walkthrough for commit #{commit}. This is a COMMENT, not an approval._"
-    end
-
-    def walkthrough(url, deciding:)
-      if url.nil? || (url.is_a?(String) && url.strip.empty?)
-        return deciding ? AFTER_DECISIONS : UNPUBLISHED
-      end
-
-      url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'walkthrough')
-      unless url.match?(WALKTHROUGH_URL)
-        raise Error, 'Publication walkthrough must be a GitHub pull request review URL.'
-      end
-
-      "[Code Walkthrough](#{url})"
     end
   end
 end
