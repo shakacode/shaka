@@ -24,14 +24,14 @@ module Shaka
 
     # Windows Ruby refuses `pgroup` (see Doctor::BoundedCommand.process_groups?), so there the
     # child starts in this group and a job object holds it and the descendants it starts.
-    # An interrupt on Windows ends the tree first: Open3 would otherwise wait on a live reviewer,
+    # An interrupt or other signal on Windows ends the tree first: Open3 would otherwise wait on a live reviewer,
     # and closing the job ends none of its processes.
     def self.capture(arguments, stdin_data:, chdir:, timeout:, env: {})
       Open3.popen3(env, *arguments, chdir:, **(windows ? {} : { pgroup: true })) do |*streams, waiter|
         job = LocalReviewWindowsTree.adopt(waiter.pid) if windows
         stop = windows ? -> { LocalReviewWindowsTree.end_tree(waiter, job) } : -> { terminate(waiter) }
         capture_streams(streams, waiter, stdin_data, timeout, stop)
-      rescue Interrupt
+      rescue SignalException
         LocalReviewWindowsTree.end_tree(waiter, job) if windows
         raise
       ensure

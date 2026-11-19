@@ -3,9 +3,45 @@
 require_relative 'test_helper'
 require 'shaka/local_review/process'
 
+# Starts and watches the reviewer stand-ins these tests stop.
+module WindowsReviewProcesses
+  private
+
+  # A reviewer that records its pid and waits; returns once the pid is on disk.
+  def start_reviewer(file)
+    reviewer = Thread.new do
+      capture(['File.write(ARGV[0], Process.pid.to_s); sleep 120', file], stdin_data: nil, timeout: 120)
+    end
+    deadline = clock + 30
+    sleep 0.1 until File.size?(file) || !reviewer.alive? || clock > deadline
+    reviewer
+  end
+
+  def pid_file = @pid_file ||= File.join(Dir.mktmpdir('shaka-windows-review'), 'pid')
+
+  def end_descendant
+    Process.kill('KILL', Integer(File.read(pid_file))) if File.file?(pid_file)
+  rescue Errno::ESRCH
+    nil
+  end
+
+  # Whether PID is still alive after a few seconds' grace for an exit already under way.
+  def running?(pid)
+    deadline = clock + 5
+    sleep 0.2 while Process.kill(0, pid) && clock <= deadline
+    true
+  rescue Errno::ESRCH
+    false
+  end
+
+  def clock = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+end
+
 # Native Windows has no process groups, so a reviewer or its Git starts in Shaka's own group and
 # a job object ends it. These run the Windows branch here; the hosted windows job runs it for real.
 class WindowsLocalReviewTest < Minitest::Test
+  include WindowsReviewProcesses
+
   def setup
     @windows = Shaka::LocalReviewProcess.windows
     @stop_seconds = Shaka::LocalReviewWindowsTree.stop_seconds
@@ -29,10 +65,7 @@ class WindowsLocalReviewTest < Minitest::Test
   end
 
   def test_an_interrupted_capture_ends_the_reviewer
-    reviewer = Thread.new do
-      capture(['File.write(ARGV[0], Process.pid.to_s); sleep 120', pid_file], stdin_data: nil, timeout: 120)
-    end
-    sleep 0.1 until File.size?(pid_file)
+    reviewer = start_reviewer(pid_file)
     reviewer.raise(Interrupt)
 
     assert_raises(Interrupt) { reviewer.join(15) }
@@ -97,14 +130,6 @@ class WindowsLocalReviewTest < Minitest::Test
     Shaka::LocalReviewProcess.capture([RbConfig.ruby, '-e', *script], stdin_data:, chdir: Dir.tmpdir, timeout:)
   end
 
-  def pid_file = @pid_file ||= File.join(Dir.mktmpdir('shaka-windows-review'), 'pid')
-
-  def end_descendant
-    Process.kill('KILL', Integer(File.read(pid_file))) if File.file?(pid_file)
-  rescue Errno::ESRCH
-    nil
-  end
-
   # Off Windows the descendant survives the stop, so its readers fail once the pipes close.
   def with_recorded_kills(&)
     signals = []
@@ -127,16 +152,5 @@ class WindowsLocalReviewTest < Minitest::Test
     owner.define_method(name, original)
   end
 
-  # Whether PID is still alive after a few seconds' grace for an exit already under way.
-  def running?(pid)
-    deadline = clock + 5
-    sleep 0.2 while Process.kill(0, pid) && clock <= deadline
-    true
-  rescue Errno::ESRCH
-    false
-  end
-
   def windows_host? = Shaka::ExecutableFile.windows?
-
-  def clock = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 end
