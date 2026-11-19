@@ -840,6 +840,34 @@ class DocsLinkedInventoryTest < Minitest::Test
     assert_includes errors, 'Unsupported sidebar item:'
   end
 
+  def test_alternate_docs_casing_cannot_credit_ignored_targets
+    %i[regular alias].each do |mode|
+      files = { '.gitignore' => "/docs/local.md\n", 'internal/target.md' => '# Setup' }
+      output, _, status = check({ 'docsSidebar' => ['expected-experience'] },
+                                '[Setup](../DOCS/local.md#setup)', files) do |root|
+        skip 'requires a case-insensitive filesystem' unless File.directory?(File.join(root, 'DOCS'))
+        install_linked_file(root, mode)
+      end
+      refute_predicate status, :success?
+      assert_includes output, '../DOCS/local.md#setup (missing file)'
+    end
+  end
+
+  def test_publication_overrides_are_refused_in_front_matter
+    { 'draft' => 'true', 'unlisted' => 'true', 'id' => 'renamed', '<<' => '{id: renamed}' }.each do |key, value|
+      page = "---\n#{key}: #{value}\n---\n# Guide\n"
+      output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+      refute_predicate status, :success?
+      assert_includes output, "expected-experience.md (#{key})"
+    end
+  end
+
+  def test_ordinary_front_matter_remains_available
+    page = "---\ntitle: Guide\nsidebar_position: 1\n---\n# Guide\n"
+    output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
   private
 
   def linked_fixture(mode)
