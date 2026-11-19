@@ -415,15 +415,18 @@ class DocsAudienceExamplesTest < Minitest::Test
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide',
                               'docs/.draft/install.md' => '# Install')
     refute_predicate status, :success?
-    assert_includes output, 'Missing from docs/sidebars.json: .draft/install'
+    assert_includes output, 'Site-excluded Markdown: .draft/install.md; move product guides to visible docs/ paths'
+    refute_includes output, 'Missing from docs/sidebars.json: .draft/install'
   end
 
-  def test_enrolled_hidden_guide_still_gets_link_validation
-    sidebar = { 'docsSidebar' => %w[expected-experience .draft/install] }
-    files = { 'docs/.draft/install.md' => '[Help](missing.md)' }
-    output, _, status = check(sidebar, '# Guide', files)
-    refute_predicate status, :success?
-    assert_includes output, 'docs/.draft/install.md -> missing.md (missing file)'
+  def test_enrollment_cannot_make_site_excluded_guides_publishable
+    %w[.draft/install _draft/install planning/install guides/planning/install .draft _partial].each do |id|
+      sidebar = { 'docsSidebar' => ['expected-experience', id] }
+      output, _, status = check(sidebar, '# Guide', "docs/#{id}.md" => '# Install')
+      refute_predicate status, :success?, id
+      assert_includes output, "Site-excluded Markdown: #{id}.md"
+      assert_includes output, "Navigation targets missing pages: #{id}"
+    end
   end
 
   def test_live_links_after_code_examples_are_checked

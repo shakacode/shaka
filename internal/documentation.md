@@ -12,6 +12,9 @@ in `docs/sidebars.json`. New Markdown outside the established documentation
 locations fails validation until its destination is reviewed. The root
 `README.gem.md` serves RubyGems, `contributing/` serves contributors, and
 `internal/` and `eval/` hold development records.
+The site excludes dot paths, underscore paths and `planning/` folders. Move
+product guides to visible `docs/` paths before enrolling them; move non-site
+documents to their established destination instead.
 
 Run the check in a Git checkout to exclude ignored dependencies. A source export
 without Git metadata checks every Markdown file, including vendored dependencies.

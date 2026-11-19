@@ -122,7 +122,11 @@ begin
 
   ids = document_ids(navigation.fetch('docsSidebar'))
   files = Dir.glob('**/*.{md,mdx}', File::FNM_DOTMATCH, base: root)
-  pages = files.map { |file| file.sub(/\.(md|mdx)\z/, '') }
+  # Docusaurus ignores dot paths, its default underscore paths, and this site's planning folders.
+  excluded, published = files.partition do |file|
+    file.split('/').any? { |part| part.start_with?('.', '_') } || file.split('/')[0...-1].include?('planning')
+  end
+  pages = published.map { |file| file.sub(/\.(md|mdx)\z/, '') }
   missing = pages - ids
   stale = ids - pages
   root = File.expand_path(root)
@@ -136,6 +140,10 @@ begin
   agent_links.concat(files.select { |file| ShakaDocs::Audiences.agent_entry?(file) })
   unclassified = ShakaDocs::Audiences.unclassified_documents(repository)
   puts "Markdown outside established documentation locations: #{unclassified.join(', ')}" unless unclassified.empty?
+  unless excluded.empty?
+    puts "Site-excluded Markdown: #{excluded.join(', ')}; move product guides to visible docs/ paths, " \
+         'or move non-site documents to their established destination.'
+  end
   puts "Missing from docs/sidebars.json: #{missing.join(', ')}" unless missing.empty?
   puts "Navigation targets missing pages: #{stale.join(', ')}" unless stale.empty?
   puts "Link a human guide, not agent instructions: #{agent_links.join(', ')}" unless agent_links.empty?
@@ -143,7 +151,7 @@ begin
   puts "Unresolved links in docs/ and skills/:\n#{broken.join("\n")}" unless broken.empty?
   malformed = malformed_figures(root)
   puts "Figures that do not parse as SVG: #{malformed.join(', ')}" unless malformed.empty?
-  exit 1 unless [missing, stale, unclassified, agent_links, broken, malformed].all?(&:empty?)
+  exit 1 unless [missing, stale, excluded, unclassified, agent_links, broken, malformed].all?(&:empty?)
 
   puts "All #{pages.size} published pages are in docs/sidebars.json and link no agent instructions; " \
        'Markdown links and heading anchors in docs/ and skills/ resolve; figures parse.'
