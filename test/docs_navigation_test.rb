@@ -102,8 +102,9 @@ end
 class DocsEmittedLinksTest < Minitest::Test
   include DocsNavigationFixture
 
-  def emitted_page_check(extension, heading, page: "setup.#{extension}", target: "#{page}#install")
-    files = { 'skills/shaka/guide.rb' => "PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/#{target}'" }
+  def emitted_page_check(extension, heading, page: "setup.#{extension}", target: "#{page}#install",
+                         authority: 'github.com')
+    files = { 'skills/shaka/guide.rb' => "PAGE = 'https://#{authority}/shakacode/shaka/blob/main/docs/#{target}'" }
     files["docs/#{page}"] = heading if heading
     sidebar = ['expected-experience'] + (heading ? [page.sub(/\.mdx?\z/, '')] : [])
     check({ 'docsSidebar' => sidebar }, '# What to expect', files)
@@ -161,6 +162,23 @@ class DocsEmittedLinksTest < Minitest::Test
     assert_includes output, "docs/#{page}#install (missing anchor)"
     output, errors, status = emitted_page_check('md', '# Install', page: page)
     assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
+  def test_emitted_default_port_preserves_anchor_validation
+    %w[github.com github.com:443].each do |authority|
+      output, _, status = emitted_page_check('md', '# Other heading', authority: authority)
+      refute_predicate status, :success?, output
+      assert_includes output, 'docs/setup.md#install (missing anchor)'
+      output, errors, status = emitted_page_check('md', '# Install', authority: authority)
+      assert_predicate status, :success?, "#{output}\n#{errors}"
+    end
+  end
+
+  def test_literal_document_urls_in_code_examples_still_resolve
+    page = "```ruby\nPAGE = 'https://github.com/shakacode/shaka/blob/main/docs/gone.md'\n```"
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?, output
+    assert_includes output, 'docs/gone.md (missing file)'
   end
 end
 

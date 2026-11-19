@@ -71,9 +71,11 @@ HTTP(S) links need a parsed authority. Prefer canonical `://host` spelling;
 short forms such as `http:/example.com` fail instead of relying on browser recovery.
 File and heading-anchor validation applies to Markdown links and images. Static
 HTML hyperlinks in anchors, image maps and SVG are checked for agent destinations.
-Code examples and
-unused reference definitions are not links. Form submissions, MDX-specific syntax and
-custom components require manual review. Each guide's author and reviewer still determine its audience.
+The hyperlink check ignores code examples and unused reference definitions.
+Separately, literal HTTP(S) GitHub documentation URLs in `docs/` and `skills/`, including
+code examples, are checked for files and anchors. Dynamic URL templates require review.
+Form submissions, MDX-specific syntax and custom components require manual review.
+Each guide's author and reviewer still determine its audience.
 
 ## Give new users a way to start
 
