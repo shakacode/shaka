@@ -266,6 +266,11 @@ alone for a compact plan.
 
 ### Agree on the design first
 
+Skill point, once the user chose to agree on the design first and before writing the
+design down: run the saved helper's
+`companions delivery#agree-on-the-design-first --root DIR --ref SHA`
+and follow it as [skill points](companion-skills.md#skill-points) describe.
+
 When the user chooses to agree on the design first in Plan, write down the open
 choices, the chosen design with its alternatives and consequences, and how the
 components fit together. Put it in the work item as the current plan. Use a design
@@ -303,6 +308,10 @@ and resolve consequential uncertainty before affected implementation.
 Default to one PR. Split for useful separate outcomes, different risks, or a diff
 that is difficult to review. Around 500 changed lines is a reason to reconsider
 scope, not a quota. Keep tests with the behavior they verify.
+
+Skill point, when the task needs several PRs and before recommending the split: run the
+saved helper's `companions delivery#when-a-task-needs-several-prs --root DIR --ref SHA`
+and follow it as [skill points](companion-skills.md#skill-points) describe.
 
 Recommend a short ordered list of outcomes, dependencies, and verification. Make
 routine splits within the authorized task; ask about changed product scope or
