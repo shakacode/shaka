@@ -7,12 +7,15 @@ module Shaka
     # A separate object database exposes historical source and selected review settings only.
     class ReviewReplayFixture
       SHA = /\A[0-9a-f]{40}\z/
-      GIT_CONFIG = %w[-c core.hooksPath=/dev/null -c core.fsmonitor=false].freeze
+      GIT_CONFIG = %w[-c core.hooksPath=/dev/null -c core.fsmonitor=false -c core.attributesFile=/dev/null].freeze
       GIT_ENVIRONMENT = %w[GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
                            GIT_OBJECT_DIRECTORY GIT_DIR GIT_WORK_TREE GIT_IMPLICIT_WORK_TREE GIT_GRAFT_FILE
                            GIT_INDEX_FILE GIT_REPLACE_REF_BASE GIT_PREFIX GIT_SHALLOW_FILE
                            GIT_COMMON_DIR GIT_CEILING_DIRECTORIES].to_h { |name| [name, nil] }
-                                                                  .merge('GIT_NO_REPLACE_OBJECTS' => '1').freeze
+                                                                  .merge('GIT_NO_REPLACE_OBJECTS' => '1',
+                                                                         'GIT_CONFIG_NOSYSTEM' => '1',
+                                                                         'GIT_CONFIG_GLOBAL' => File::NULL,
+                                                                         'GIT_ATTR_NOSYSTEM' => '1').freeze
 
       def initialize(source:, root:, row:)
         @source = source
