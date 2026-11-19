@@ -141,10 +141,11 @@ class DocsEmittedLinksTest < Minitest::Test
     assert_includes output, 'docs/setup.mdx#%E6%97%A5%E6%9C%AC%E8%AA%9E (missing anchor)'
   end
 
-  def test_emitted_path_suffixes_are_not_credited_as_mdx
-    output, _, status = emitted_page_check('mdx', '# Install', target: 'setup.mdx-backup#install')
-    refute_predicate status, :success?, output
-    assert_includes output, 'docs/setup.mdx-backup#install (missing file)'
+  def test_emitted_non_markdown_assets_do_not_use_the_current_checkout
+    %w[setup.mdx-backup#install img/historical.svg].each do |target|
+      output, errors, status = emitted_page_check('mdx', '# Other heading', target: target)
+      assert_predicate status, :success?, "#{output}\n#{errors}"
+    end
   end
 
   def test_emitted_sentence_punctuation_does_not_hide_missing_pages
