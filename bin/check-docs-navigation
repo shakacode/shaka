@@ -77,15 +77,13 @@ def source_references(text)
 end
 
 def markdown_source_references(text)
-  targets = ShakaDocs::Audiences.links(text).filter_map { |target| emitted_document_target(target) }
-  Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } }).walk do |node|
-    targets.concat(source_references(node.literal)) if %i[code code_block].include?(node.type)
-  end
-  targets
+  ShakaDocs::Audiences.links(text).filter_map { |target| emitted_document_target(target) }
 end
 
 def emitted_document_targets(text, path)
-  (path.match?(/\.mdx?\z/i) ? markdown_source_references(text) : source_references(text)).uniq
+  targets = source_references(text)
+  targets.concat(markdown_source_references(text)) if path.match?(/\.mdx?\z/i)
+  targets.uniq
 end
 
 def github_web_url?(uri)

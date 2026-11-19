@@ -74,11 +74,11 @@ File and heading-anchor validation applies to Markdown links and images. Static
 HTML hyperlinks in anchors, image maps and SVG are checked for agent destinations.
 The hyperlink check ignores code examples and unused reference definitions.
 Rendered Markdown links to GitHub documentation are checked for files and anchors.
-Commonmarker determines their punctuation and ignores unused definitions.
+Commonmarker determines their punctuation; unused definitions are not navigation links.
 The existing literal-source guard is separate: it recognizes ASCII references shaped
-like `shakacode/shaka/blob/REF/docs/PATH.md#HEADING` in code and code samples, with `.mdx`
-also supported. It checks source references rather than interpreting their surrounding
-language or URL scheme. Dynamic, escaped, non-ASCII and other source forms require review.
+like `shakacode/shaka/blob/REF/docs/PATH.md#HEADING` throughout source text, including
+unused declarations. It also supports `.mdx` and checks references rather than interpreting their surrounding
+language, host or URL scheme. Dynamic, escaped, non-ASCII and other source forms require review.
 Form submissions, MDX-specific syntax and custom components require manual review.
 Each guide's author and reviewer still determine its audience.
 
