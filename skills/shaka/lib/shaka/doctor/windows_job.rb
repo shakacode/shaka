@@ -44,9 +44,11 @@ module Shaka
         nil
       end
 
+      # Whether the job ended its processes. Closing the handle alone ends none of them.
       def terminate
-        API.TerminateJobObject(@handle, 1) if @handle
+        ended = !@handle.nil? && API.TerminateJobObject(@handle, 1) != 0
         close
+        ended
       end
 
       def close

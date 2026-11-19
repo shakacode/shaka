@@ -2,14 +2,16 @@
 
 require 'open3'
 require_relative '../error'
+require_relative '../executable_file'
 require_relative '../local_review/process'
 require_relative 'candidate_tree'
 
 module Shaka
   module Evidence
-    # Runs a check in its own process group and recaptures the candidate tree while it runs.
-    # An edit to the checkout voids the result anyway, so the check stops within one interval
-    # plus a capture instead of finishing first. Only the check's own group is signaled.
+    # Runs a check in its own process group, or on Windows in a job object, and recaptures the
+    # candidate tree while it runs. An edit to the checkout voids the result anyway, so the check
+    # stops within one interval plus a capture instead of finishing first. Only the check's own
+    # group is signaled; Windows stops it through LocalReviewWindowsTree.
     # An edit undone before the next capture is not seen, as the comparison after the check
     # never saw one either.
     class TreeWatch
@@ -29,28 +31,35 @@ module Shaka
       end
       self.interval = DEFAULT_INTERVAL
 
-      def initialize(command, root:, tree:, interval: self.class.interval)
+      def initialize(command, root:, tree:, interval: self.class.interval, windows: ExecutableFile.windows?)
         @command = command
         @root = root
         @tree = tree
         @interval = interval
+        @windows = windows
       end
 
       # Writes the check's output and then its errors to standard error once it ends.
       def run
-        Open3.popen3(*@command, chdir: @root, pgroup: true) do |input, output, error, waiter|
+        Open3.popen3(*@command, chdir: @root, **group) do |input, output, error, waiter|
           input.close
-          readers = [output, error].map { |stream| Thread.new { stream.read } }
-          changed = watch(waiter, readers)
-          $stderr.write(*(changed ? drain(readers) : readers.map(&:value)))
-          Outcome.new(status: waiter.value, changed_tree: changed)
+          @job = adopt(waiter.pid)
+          outcome(waiter, [output, error].map { |stream| Thread.new { stream.read } }).tap { @finished = true }
         ensure
-          # An interrupted helper would otherwise leave the check running in its separate group.
+          # An interrupted helper would otherwise leave the check running in its separate group, or on
+          # Windows leave a descendant running in its job after the leader exits.
           stop(waiter) if waiter&.alive?
+          @finished ? @job&.close : @job&.terminate
         end
       end
 
       private
+
+      def outcome(waiter, readers)
+        changed = watch(waiter, readers)
+        $stderr.write(*(changed ? drain(readers) : readers.map(&:value)))
+        Outcome.new(status: waiter.value, changed_tree: changed)
+      end
 
       # A descendant can hold the output open after the leader exits, so the watch lasts until
       # the output closes too.
@@ -72,11 +81,12 @@ module Shaka
 
       def clock = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-      # TERM, then KILL for members that outlive their leader. A lasting macOS denial of the KILL
+      # TERM, then KILL for members that outlive their leader; on Windows, LocalReviewWindowsTree's
+      # stop. A lasting macOS denial of the KILL
       # leaves the result to report the stop anyway.
       def stop(waiter, tree = nil)
         warn "shaka: #{MESSAGE}; stopping the check" if tree
-        LocalReviewProcess.terminate(waiter)
+        @windows ? end_tree(waiter) : LocalReviewProcess.terminate(waiter)
         tree
       rescue Errno::EPERM
         tree
@@ -85,6 +95,14 @@ module Shaka
       # A descendant that left the group can keep a pipe open after the stop, so a stopped
       # check's output is whatever arrived shortly after it.
       def drain(readers) = readers.map { |reader| LocalReviewProcess.thread_output(reader) }
+
+      # Windows Ruby refuses `pgroup`. There a job object holds the check and the descendants it
+      # starts, and still names them after the leader exits, which taskkill /T cannot.
+      def group = @windows ? {} : { pgroup: true }
+
+      def adopt(pid) = (LocalReviewWindowsTree.adopt(pid) if @windows)
+
+      def end_tree(waiter) = LocalReviewWindowsTree.end_tree(waiter, @job)
     end
   end
 end

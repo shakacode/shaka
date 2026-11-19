@@ -103,7 +103,7 @@ module Shaka
         return clone_release if release?
 
         @branch ||= 'main'
-        git('clone', '--quiet', '--branch', @branch, '--', @repository, @root)
+        git('clone', *CLONE_CONFIG, '--quiet', '--branch', @branch, '--', @repository, @root)
       end
     end
   end

@@ -2,9 +2,12 @@
 
 require 'open3'
 require_relative '../error'
+require_relative '../executable_file'
+require_relative 'windows_tree'
 
 module Shaka
-  # Captures a reviewer process with a deadline and terminates its process group on timeout.
+  # Captures a reviewer process with a deadline and ends its process tree on timeout: its process
+  # group, or on Windows, which has no process groups, its LocalReviewWindowsTree.
   module LocalReviewProcess
     # Keeps denied cleanup visible after a timed-out parent has exited.
     class CleanupError < Error
@@ -15,35 +18,53 @@ module Shaka
       def success? = false
     end
 
+    singleton_class.attr_accessor :windows
+    # Tests set it to run the Windows branch on any host.
+    self.windows = ExecutableFile.windows?
+
+    # Windows Ruby refuses `pgroup` (see Doctor::BoundedCommand.process_groups?), so there the
+    # child starts in this group and a job object holds it and the descendants it starts.
+    # An error or signal on Windows ends the tree first: Open3 would otherwise wait on a live
+    # reviewer, and closing the job ends none of its processes.
     def self.capture(arguments, stdin_data:, chdir:, timeout:, env: {})
-      Open3.popen3(env, *arguments, chdir: chdir, pgroup: true) do |stdin, stdout, stderr, waiter|
-        capture_streams([stdin, stdout, stderr], waiter, stdin_data, timeout)
+      Open3.popen3(env, *arguments, chdir:, **(windows ? {} : { pgroup: true })) do |*streams, waiter|
+        job = LocalReviewWindowsTree.adopt(waiter.pid) if windows
+        stop = windows ? -> { LocalReviewWindowsTree.end_tree(waiter, job) } : -> { terminate(waiter) }
+        capture_streams(streams, waiter, stdin_data, timeout, stop)
+      rescue StandardError, SignalException
+        LocalReviewWindowsTree.end_tree(waiter, job) if windows
+        raise
+      ensure
+        job&.close
       end
     end
 
-    def self.capture_streams(streams, waiter, input, timeout)
+    def self.capture_streams(streams, waiter, input, timeout, stop = -> { terminate(waiter) })
       stdin, stdout, stderr = streams
+      # Windows opens pipes in text mode, which rewrites line endings and breaks byte counts such
+      # as Git's blob sizes; binary mode passes bytes through on every platform.
+      streams.each(&:binmode)
       # Reviewer CLIs emit UTF-8 whatever the host locale; a US-ASCII default breaks parsing.
       [stdout, stderr].each { |stream| stream.set_encoding(Encoding::UTF_8) }
       writer = Thread.new { write_input(stdin, input) }
       out_reader = Thread.new { stdout.read }
       err_reader = Thread.new { stderr.read }
-      status = wait_or_terminate(waiter, [writer, out_reader, err_reader], timeout)
+      status = wait_or_terminate(waiter, [writer, out_reader, err_reader], timeout, stop)
       [thread_output(out_reader), thread_output(err_reader), status]
     end
 
-    def self.wait_or_terminate(waiter, threads, timeout)
+    def self.wait_or_terminate(waiter, threads, timeout, stop = -> { terminate(waiter) })
       # Give pipes a separate bounded drain period after the process exits.
       # Reusing the process deadline would reject already-finished readers at its edge.
       exited = waiter.join(timeout)
       unless exited
-        terminate(waiter)
+        stop.call
         return nil
       end
 
       return waiter.value if join_before_deadline(threads, Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2)
 
-      terminate(waiter)
+      stop.call
       DrainTimeout.new(waiter.value)
     rescue Errno::EPERM => e
       cleanup_error(waiter, exited, timeout, e)
