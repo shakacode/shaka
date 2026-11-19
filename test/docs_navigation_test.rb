@@ -122,7 +122,7 @@ class DocsEmittedLinksTest < Minitest::Test
   end
 
   def test_non_web_schemes_are_not_reinterpreted_as_github_documentation
-    %w[file ftp git ssh].each do |scheme|
+    %w[file ftp git ssh git+https git+http].each do |scheme|
       guide = "PAGE = '#{scheme}://github.com/shakacode/shaka/blob/main/docs/settings.md#absent'"
       output, errors, status = check_links('# Guide', 'skills/shaka/guide.rb' => guide)
       assert_predicate status, :success?, "#{scheme}: #{output}\n#{errors}"
@@ -312,5 +312,24 @@ class DocsSidebarInventoryTest < Minitest::Test
   def commit_fixture(root)
     args = %w[-c user.name=TestUser -c user.email=test@example.com -c commit.gpgsign=false]
     system('git', '-C', root, *args, 'commit', '--no-verify', '-qm', 'Manifest fixture', exception: true)
+  end
+end
+
+class DocsEmittedDelimiterTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_pipe_delimiters_do_not_hide_missing_emitted_destinations
+    %w[gone.md settings.md#absent settings.md#examples].product(%i[ruby table]).each do |target, kind|
+      output, errors, status = check_links('# Guide', pipe_emitted_source(target, kind))
+      expected = target == 'settings.md#examples'
+      assert_equal expected, status.success?, "#{kind}/#{target}: #{output}\n#{errors}"
+      assert_includes output, "-> docs/#{target} (missing" unless expected
+    end
+  end
+
+  def pipe_emitted_source(target, kind)
+    url = "https://github.com/shakacode/shaka/blob/main/docs/#{target}"
+    text = kind == :ruby ? "PAGE = %q|#{url}|" : "|Guide|\n|---|\n|#{url}|\n"
+    { "skills/shaka/guide.#{kind == :ruby ? 'rb' : 'md'}" => text }
   end
 end

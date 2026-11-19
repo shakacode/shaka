@@ -11,7 +11,7 @@ require_relative '../lib/shaka_docs/navigation'
 
 # Code prints these into user output, so a heading rename in a docs-only PR would break them silently.
 # Find literal source URLs even inside code examples; the parsers determine their destinations.
-EMITTED_DOCS = %r{(?:[a-z][\w+.-]*:)?//[^\s<>"'`\\]+}i
+EMITTED_DOCS = %r{(?:[a-z][\w+.-]*:)?//[^\s<>"'`\\|]+}i
 
 def heading_ids(text)
   html = Commonmarker.to_html(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } })
@@ -72,11 +72,18 @@ def broken_relative_links(repository, path, checked)
   end
 end
 
+def emitted_url_links(token)
+  scheme = Addressable::URI.parse(token).scheme
+  return [] if scheme && !%w[http https].include?(scheme.downcase)
+
+  token = "https:#{token}" unless scheme
+  ShakaDocs::Audiences.links(token, include_html: false)
+rescue Addressable::URI::InvalidURIError
+  []
+end
+
 def emitted_document_targets(text)
-  targets = text.scan(EMITTED_DOCS).flat_map do |token|
-    token = "https:#{token}" if token.start_with?('//')
-    ShakaDocs::Audiences.links(token, include_html: false)
-  end
+  targets = text.scan(EMITTED_DOCS).flat_map { |token| emitted_url_links(token) }
   targets.filter_map { |target| emitted_document_target(target) }.uniq
 end
 
