@@ -75,9 +75,14 @@ module ShakaDocs
     end
 
     def agent_path?(path)
-      directory = AGENT_DIRECTORIES.any? { |prefix| path == prefix || path.start_with?("#{prefix}/") }
-      instructions = directory && (path.match?(/\.(?:mdx?|mdc)\z/i) || File.extname(path).empty?)
+      return true if path == 'skills/shaka/references' || path.start_with?('skills/shaka/references/')
+
+      instructions = agent_directory?(path) && (path.match?(/\.(?:mdx?|mdc)\z/i) || File.extname(path).empty?)
       instructions || path == AGENT_WORKFLOW || agent_entry?(path)
+    end
+
+    def agent_directory?(path)
+      AGENT_DIRECTORIES.any? { |prefix| path == prefix || path.start_with?("#{prefix}/") }
     end
 
     def agent_entry?(path)

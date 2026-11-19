@@ -397,6 +397,14 @@ end
 class DocsAudienceExamplesTest < Minitest::Test
   def check(*) = DocsNavigationTest.new('fixture').check(*)
 
+  def test_agent_reference_directory_remains_protected_for_other_extensions
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] },
+                              '[Procedure](../skills/shaka/references/procedure.txt)',
+                              'skills/shaka/references/procedure.txt' => 'Agent procedure')
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
+  end
+
   def test_html_entities_cannot_hide_an_agent_destination
     page = '<a href="https://github.com/shakacode/shaka/blob/main/&#115;kills/shaka/references/review.md">Review</a>'
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
