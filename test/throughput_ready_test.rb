@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'throughput_helper'
+require 'shaka/published_timing'
 
 # The ready time is when the current head's required checks and configured reviews last turned green.
 class ThroughputReadyTest < Minitest::Test
@@ -40,7 +41,7 @@ class ThroughputReadyTest < Minitest::Test
 
   def test_republishing_the_same_head_keeps_the_earlier_check_start
     later = { 'task_started_at' => START, 'ci_started_at' => PUSH + 300 }
-    rendered = describe('$4.12', timeline: later, pull: { 'head' => { 'sha' => HEAD }, 'body' => filled_block })
+    rendered = describe('$4.12', timeline: later, pull: refresh_pull)
     assert_includes rendered, 'Prompt to CI 38m'
   end
 
@@ -52,18 +53,64 @@ class ThroughputReadyTest < Minitest::Test
 
   def test_republishing_the_same_head_keeps_the_earlier_ready_time
     later = push_times.merge('ready_at' => LATER)
-    rendered = describe('$4.12', timeline: later, pull: head_pull.merge('body' => filled_block))
+    rendered = describe('$4.12', timeline: later, pull: refresh_pull)
     assert_includes rendered, '· ready in 1h 19m'
   end
 
   def test_a_ready_time_replaces_one_no_timestamps_could_establish
     body = Shaka::ThroughputStats.update(filled_block, 't2' => 'UNKNOWN')
-    rendered = describe('$4.12', timeline: push_times.merge('ready_at' => READY), pull: head_pull.merge('body' => body))
+    rendered = describe('$4.12', timeline: push_times.merge('ready_at' => READY), pull: refresh_pull(body:))
     assert_includes rendered, '· ready in 1h 19m'
   end
 
+  def test_a_green_gate_with_no_timestamp_renders_unknown
+    rendered = describe('$4.12', timeline: push_times.merge('ready_at' => :unknown), pull: head_pull)
+    assert_includes rendered, '· ready in UNKNOWN'
+  end
+
+  def test_a_fork_carries_only_same_head_readiness_until_github_supplies_a_time
+    body = Shaka::ThroughputStats.update(filled_block, 't3' => MERGED.iso8601)
+    fork = refresh_pull(body:)
+    fork['head']['repo'] = { 'full_name' => 'fork/repo' }
+    assert_equal({ 'head' => HEAD, 'spend' => 'UNKNOWN', 't2' => READY.iso8601, 't2_unverified' => 'true' },
+                 Shaka::ThroughputStats.state({}, { 'ready_at' => :unknown }, fork))
+    assert_equal LATER.iso8601, Shaka::ThroughputStats.state({}, { 'ready_at' => LATER }, fork)['t2']
+  end
+
+  def test_a_merged_fork_reports_its_carried_readiness_as_unavailable
+    fork = refresh_pull
+    fork['head']['repo'] = { 'full_name' => 'fork/repo' }
+    timeline = push_times.merge('opened' => START, 'merged' => MERGED, 'fork' => true)
+    rendered = describe('$4.12', timeline:, pull: fork)
+    body = "<!-- shaka:begin -->\n#{rendered}\n<!-- shaka:end -->"
+    assert_includes body, 'Ready to merged 2h 5m · Ready time unverified'
+    verdict = Shaka::PublishedTiming.check(body, head: HEAD, timeline:)
+    assert_equal ['unavailable', 'GitHub readiness time unavailable.'], verdict.values_at('status', 'reason')
+  end
+
+  def test_a_watch_replaces_carried_fork_readiness_with_the_github_time
+    observed = (READY + 3600.75).iso8601(9)
+    pull = { 'headRefOid' => HEAD, 'isCrossRepository' => true }
+    retained = Shaka::ThroughputStats.update(filled_block, 't2_unverified' => 'true')
+    github = ThroughputFakeGitHub.new(retained, pull, [check('validate', observed)])
+    publisher = Shaka::PrWatch::ThroughputPublisher.new(github, head: HEAD, review_jobs: [], wait: 'none')
+    publisher.call(required: ['validate'])
+    assert_equal [observed, nil], Shaka::ThroughputStats.read(github.patches.fetch(0)).values_at('t2', 't2_unverified')
+  end
+
+  def test_verification_flags_an_endpoint_missing_from_the_published_body
+    rendered = describe('$4.12', timeline: push_times, pull: head_pull)
+    body = "<!-- shaka:begin -->\n#{rendered}\n<!-- shaka:end -->"
+    %w[ready_at merged].each do |endpoint|
+      timeline = push_times.merge('opened' => START, endpoint => READY)
+      verdict = Shaka::PublishedTiming.check(body, head: HEAD, timeline:)
+      assert_equal 'unavailable', verdict['status']
+      assert_includes verdict['reason'], 'elapsed endpoint'
+    end
+  end
+
   def test_a_new_head_does_not_keep_the_old_heads_ready_time
-    pull = { 'head' => { 'sha' => NEXT }, 'body' => filled_block }
+    pull = refresh_pull(sha: NEXT)
     assert_includes describe('$4.12', timeline: push_times, pull:), 'CI to ready pending'
     assert_includes describe('$4.12', timeline: push_times.merge('ready_at' => LATER), pull:), '· ready in 2h 0m'
   end
