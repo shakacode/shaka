@@ -81,7 +81,8 @@ the user's approval for the wider change before running take-over.
 
 ### Install a published release
 
-For a first installation, use `bin/install --release VERSION --directory NEW --agent HOST`.
+Clone and inspect the official release tag in a dedicated checkout. For a first
+installation, run its `bin/install --release VERSION --directory DIR --agent HOST`.
 Use the requested host or pass `--skills-dir DIR` for a custom skills directory.
 The installer selects `refs/tags/vVERSION`, checks the declared version, and records
 its commit in a detached checkout. `--branch` and `--release` are mutually exclusive.
@@ -92,8 +93,8 @@ run its registered helper or pass `--directory DIR`; installation there keeps it
 selection. An explicit repository or branch overrides the gem default.
 
 Follow [Before take-over](#before-take-over) when changing releases.
-Clone and inspect the official release tag in a separate checkout. To switch,
-run that checkout's `bin/install` with `--repository https://github.com/shakacode/shaka.git`,
+To switch, run the inspected release checkout's `bin/install` with
+`--repository https://github.com/shakacode/shaka.git`,
 `--release VERSION`, `--directory` naming the inspected checkout, and `--take-over`.
 Pass `--skills-dir DIR` for an active custom skills directory. The previous checkout
 stays available for [rollback](installation.md#restore-the-saved-installation).
