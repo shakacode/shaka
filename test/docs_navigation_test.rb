@@ -556,3 +556,51 @@ class DocsIgnoredInventoryTest < Minitest::Test
     assert_includes output, 'docs/.cache/README.md -> missing.md (missing file)'
   end
 end
+
+class DocsSidebarAudienceTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_sidebar_metadata_is_not_navigation
+    [42, '../skills/shaka/references/review.md'].each do |value|
+      item = { 'type' => 'doc', 'id' => 'expected-experience', 'customProps' => { 'href' => value } }
+      output, _, status = check('docsSidebar' => [item])
+      assert_predicate status, :success?, output
+    end
+  end
+
+  def test_nested_sidebar_links_are_checked_while_metadata_is_ignored
+    link = { 'type' => 'link', 'label' => 'Review', 'href' => '../skills/shaka/references/review.md' }
+    category = { 'type' => 'category', 'label' => 'Guides', 'customProps' => { 'href' => 42 }, 'items' => [link] }
+    output, _, status = check('docsSidebar' => ['expected-experience', category])
+    refute_predicate status, :success?
+    assert_includes output, 'sidebars.json -> ../skills/shaka/references/review.md'
+  end
+end
+
+class DocsHtmlDestinationsTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_image_maps_and_svg_links_keep_the_agent_destination_guard
+    pages = ['<map name="guide"><area href="../skills/shaka/references/review.md"></map>',
+             '<svg xmlns:xlink="http://www.w3.org/1999/xlink">' \
+             '<a xlink:href="../skills/shaka/references/review.md">Review</a></svg>']
+    pages.each do |page|
+      output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+      refute_predicate status, :success?
+      assert_includes output, 'Link a human guide, not agent instructions:'
+    end
+  end
+
+  def test_human_image_map_destination_is_allowed
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] },
+                              '<map name="guide"><area href="expected-experience.md"></map>')
+    assert_predicate status, :success?, output
+  end
+
+  def test_cdn_repository_names_are_case_insensitive
+    page = '[Review](https://cdn.jsdelivr.net/gh/ShakaCode/Shaka@main/skills/shaka/references/review.md)'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
+  end
+end

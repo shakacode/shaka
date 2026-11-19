@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
-require 'uri'
 require 'open3'
-require 'addressable/uri'
 require 'commonmarker'
 require 'nokogiri'
+require_relative 'source_paths'
 
 module ShakaDocs
   # Public guides may cite other projects' skills, but never route readers into Shaka's agent procedures.
@@ -20,10 +19,7 @@ module ShakaDocs
 
     module_function
 
-    def url(target)
-      uri = Addressable::URI.parse(target.strip)
-      uri.host ? uri.normalize : uri
-    end
+    def url(target) = SourcePaths.url(target)
 
     def links(text, include_html: true)
       targets = []
@@ -38,47 +34,25 @@ module ShakaDocs
     def html_links(node)
       return [] unless %i[html_inline html_block].include?(node.type)
 
-      Nokogiri::HTML.fragment(node.literal).css('a[href]').map { |link| link['href'] }
-    end
-
-    def repository_path(uri)
-      host = uri.host.to_s.delete_prefix('www.')
-      return cdn_repository_path(uri) unless %w[github.com raw.githubusercontent.com].include?(host)
-
-      source = URI::DEFAULT_PARSER.unescape(uri.path)[%r{\A/shakacode/shaka/(.*)\z}i, 1]
-      return unless source
-
-      # Source citations use a commit, tag, or single-segment branch. Do not infer
-      # a repository root from a directory name inside the document path.
-      if host == 'github.com'
-        source = source.sub!(%r{\A(?:blob|tree|raw|edit|blame)/}, '')
-        return unless source
-      end
-      source.sub(%r{\Arefs/(?:heads|tags)/}, '').split('/', 2)[1]
-    end
-
-    def cdn_repository_path(uri)
-      return unless uri.host == 'cdn.jsdelivr.net'
-
-      URI::DEFAULT_PARSER.unescape(uri.path.to_s)[
-        %r{\A/gh/shakacode/shaka(?:@[^/]+)?/(.*)\z}, 1
-      ]
-    end
-
-    def local_path(repository, source, target)
-      uri = url(target)
-      return repository_path(uri) if uri.scheme || uri.host
-
-      target = URI::DEFAULT_PARSER.unescape(uri.path)
-      return "docs#{target}" if target.start_with?('/')
-
-      File.expand_path(target, File.dirname(source)).delete_prefix("#{repository}/")
+      Nokogiri::HTML.fragment(node.literal).css('a, area').filter_map { |link| link['href'] || link['xlink:href'] }
     end
 
     def navigation_links(item)
       case item
       when Array then item.flat_map { |child| navigation_links(child) }
-      when Hash then [item['href'], *item.values.flat_map { |child| navigation_links(child) }].compact
+      when Hash then sidebar_links(item)
+      else []
+      end
+    end
+
+    def sidebar_links(item)
+      case item['type']
+      when 'category' then navigation_links(item.fetch('items'))
+      when 'link'
+        target = item.fetch('href')
+        raise ArgumentError, 'Expected a string sidebar link href' unless target.is_a?(String)
+
+        [target]
       else []
       end
     end
@@ -105,7 +79,7 @@ module ShakaDocs
 
     def agent_targets(repository, source, targets)
       targets.select do |target|
-        path = local_path(repository, source, target)
+        path = SourcePaths.local_path(repository, source, target)
         path && agent_path?(path)
       end
     end

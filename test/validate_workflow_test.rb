@@ -299,7 +299,7 @@ class ValidateWorkflowTest < Minitest::Test
 
   def install_validation_scripts(root)
     %w[Gemfile Gemfile.lock bin/docs-only-change bin/check-docs-navigation lib/shaka_docs/audiences.rb
-       .agents/shaka/bin/validate].each do |path|
+       lib/shaka_docs/source_paths.rb .agents/shaka/bin/validate].each do |path|
       FileUtils.mkdir_p(File.dirname(File.join(root, path)))
       FileUtils.cp(File.expand_path("../#{path}", __dir__), File.join(root, path))
     end

@@ -40,7 +40,7 @@ Leading-slash links address public site routes.
 Commonmarker parses Markdown including footnotes, Nokogiri extracts HTML links,
 and Addressable normalizes URLs.
 File and heading-anchor validation applies to Markdown links and images. Static
-HTML anchors are checked for agent destinations.
+HTML navigation links, including image-map and SVG links, are checked for agent destinations.
 Code examples and
 unused reference definitions are not links. MDX-specific syntax and custom
 components require manual review. Each guide's author and reviewer still determine its audience.

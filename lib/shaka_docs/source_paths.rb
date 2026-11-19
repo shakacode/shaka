@@ -1,0 +1,50 @@
+# frozen_string_literal: true
+
+require 'uri'
+require 'addressable/uri'
+
+module ShakaDocs
+  # Resolve supported source citations without mistaking a file path for repository ownership.
+  module SourcePaths
+    module_function
+
+    def url(target)
+      uri = Addressable::URI.parse(target.strip)
+      uri.host ? uri.normalize : uri
+    end
+
+    def repository_path(uri)
+      host = uri.host.to_s.delete_prefix('www.')
+      return cdn_repository_path(uri) unless %w[github.com raw.githubusercontent.com].include?(host)
+
+      source = URI::DEFAULT_PARSER.unescape(uri.path)[%r{\A/shakacode/shaka/(.*)\z}i, 1]
+      return unless source
+
+      # Source citations use a commit, tag, or single-segment branch. Do not infer
+      # a repository root from a directory name inside the document path.
+      if host == 'github.com'
+        source = source.sub!(%r{\A(?:blob|tree|raw|edit|blame)/}, '')
+        return unless source
+      end
+      source.sub(%r{\Arefs/(?:heads|tags)/}, '').split('/', 2)[1]
+    end
+
+    def cdn_repository_path(uri)
+      return unless uri.host == 'cdn.jsdelivr.net'
+
+      URI::DEFAULT_PARSER.unescape(uri.path.to_s)[
+        %r{\A/gh/(?i:shakacode/shaka)(?:@[^/]+)?/(.*)\z}, 1
+      ]
+    end
+
+    def local_path(repository, source, target)
+      uri = url(target)
+      return repository_path(uri) if uri.scheme || uri.host
+
+      target = URI::DEFAULT_PARSER.unescape(uri.path)
+      return "docs#{target}" if target.start_with?('/')
+
+      File.expand_path(target, File.dirname(source)).delete_prefix("#{repository}/")
+    end
+  end
+end
