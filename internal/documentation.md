@@ -17,8 +17,13 @@ Run the check in a Git checkout to exclude ignored dependencies. A source export
 without Git metadata checks every Markdown file, including vendored dependencies.
 
 Public guides and sidebar links must lead to human guidance. The check rejects
-links into Shaka's skill Markdown, its YAML workflow instructions, project agent instructions, and `AGENTS.md`
-or `CLAUDE.md`. Configuration data and installable workflow templates, including
+links into Shaka's skill Markdown, its YAML workflow instructions and project agent instructions.
+Canonical `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` and `SKILL.md` names, including dot-suffixed
+variants such as `AGENTS.override.md`, are reserved for agents regardless of case.
+Agent Markdown and rules in host configuration directories, such as `.claude/`
+and `.github/instructions/`, are agent destinations too. The canonical paths and
+legacy control filenames are listed in `lib/shaka_docs/audiences.rb`.
+Configuration data and installable workflow templates, including
 `claude-code-review.yml`, remain linkable for setup. Citations of other projects'
 skills remain available. Extensionless source paths under `skills/` or `.agents/`
 are treated as agent targets, including directories and scripts.
@@ -26,6 +31,8 @@ Source citations use a commit, tag, or branch without
 slashes so the check can distinguish the ref from the repository path. Slash-containing
 refs require author and reviewer judgment. Leading-slash links address public site routes.
 Commonmarker parses Markdown, Nokogiri extracts HTML links, and Addressable normalizes URLs.
+File and heading-anchor validation applies to Markdown links and images. Static
+HTML anchors are checked for agent destinations.
 Code examples and
 unused reference definitions are not links. MDX-specific syntax and custom
 components require manual review. Each guide's author and reviewer still determine its audience.

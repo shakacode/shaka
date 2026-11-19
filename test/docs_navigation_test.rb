@@ -139,6 +139,21 @@ class DocsParserRegressionTest < Minitest::Test
     assert_predicate status, :success?, output
   end
 
+  def test_html_links_can_target_non_heading_ids
+    page = '<div id="setup">Setup</div><a href="#setup">Setup</a>'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, output
+  end
+
+  def test_agent_override_files_cannot_be_enrolled_or_linked
+    sidebar = { 'docsSidebar' => %w[expected-experience AGENTS.override] }
+    page = '[Instructions](AGENTS.override.md)'
+    output, _, status = check(sidebar, page, 'docs/AGENTS.override.md' => '# Agent instructions')
+    refute_predicate status, :success?, output
+    assert_includes output, 'Link a human guide, not agent instructions:'
+    assert_includes output, 'expected-experience.md -> AGENTS.override.md'
+  end
+
   def test_missing_markdown_images_still_fail
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '![Missing](gone.png)')
     refute_predicate status, :success?, output
@@ -156,20 +171,20 @@ class DocsParserRegressionTest < Minitest::Test
   end
 
   def test_browser_top_links_pass_while_missing_heading_links_fail
-    page = '<a href="#top">Top</a> <a href="#TOP">Top</a> <a href="#">Top</a>'
+    page = '[Top](#top) [Top](#TOP) [Top](#)'
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
     assert_predicate status, :success?, output
 
-    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '<a href="#absent">Missing</a>')
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '[Missing](#absent)')
     refute_predicate status, :success?, output
     assert_includes output, '#absent (missing anchor)'
   end
 
-  def test_html_query_links_keep_file_and_fragment_validation
+  def test_query_links_keep_file_and_fragment_validation
     cases = { 'settings.md?from=guide' => nil, 'settings.md?from=guide#add-a-second-reviewer' => nil,
               'settings.md?from=guide#absent' => 'missing anchor', 'gone.md?from=guide' => 'missing file' }
     cases.each do |target, problem|
-      output, _, status = DocsNavigationTest.new('fixture').check_links("<a href=\"#{target}\">Setup</a>")
+      output, _, status = DocsNavigationTest.new('fixture').check_links("[Setup](#{target})")
       assert_equal problem.nil?, status.success?, output
       assert_includes output, problem if problem
     end
@@ -252,20 +267,20 @@ class DocsAudienceTest < Minitest::Test
     assert_predicate status, :success?, output
   end
 
-  def test_gem_and_contributor_documentation_have_separate_destinations
-    files = { 'README.gem.md' => '# Gem', 'CONTRIBUTING.md' => '# Contribute',
-              'contributing/development.md' => '# Development', 'internal/notes.md' => '# Record' }
-    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files)
-    assert_predicate status, :success?, output
-  end
-
   AGENT_DESTINATIONS = %w[../skills/mct/SKILL.md ../skills/shaka/config/review-prompt.md
                           ../skills/shaka/config/workflow.yml
-                          ../.agents/shaka/instructions/review.md ../AGENTS.md
+                          ../.agents/shaka/instructions/review.md ../AGENTS.md ../agents.override.md
+                          ../CLAUDE.local.md ../GEMINI.md
+                          https://github.com/shakacode/shaka/blob/main/AGENTS.日本.md
+                          ../.github/copilot-instructions.md ../.github/instructions/ruby.instructions.md
+                          ../.claude/agents/reviewer.md ../.cursor/rules/review.mdc
+                          ../.github/agents/reviewer.agent.md ../.codex/skills/team/references/setup.md
+                          ../.gemini/context.md ../.cursorrules
                           ../skills/shaka/references/../SKILL.md
                           https://github.com/shakacode/shaka/blame/main/skills/shaka/references/review.md
                           https://raw.githubusercontent.com/shakacode/shaka/main/skills/shaka/SKILL.md
                           https://raw.githubusercontent.com/shakacode/shaka/refs/heads/main/skills/shaka/references/review.md
+                          https://github.com/shakacode/shaka/blob/main/skills/shaka/references/REVIEW.MD
                           https://github.com/shakacode/shaka/blob/main/skills/shaka/%53KILL.md].freeze
 
   def test_all_shaka_agent_markdown_links_fail
@@ -286,9 +301,9 @@ class DocsAudienceTest < Minitest::Test
   end
 
   def test_human_pages_can_discuss_agents_and_skills
-    files = { 'docs/claude.md' => '# Claude', 'docs/skills/overview.md' => '# Skills' }
-    sidebar = { 'docsSidebar' => %w[expected-experience claude skills/overview] }
-    page = '[Claude](claude.md) and [skills](skills/overview.md)'
+    files = { 'docs/claude-guide.md' => '# Claude', 'docs/skills/overview.md' => '# Skills' }
+    sidebar = { 'docsSidebar' => %w[expected-experience claude-guide skills/overview] }
+    page = '[Claude](claude-guide.md) and [skills](skills/overview.md)'
     output, _, status = check(sidebar, page, files)
     assert_predicate status, :success?, output
   end
@@ -332,6 +347,14 @@ end
 
 class DocsAudienceRoutesTest < Minitest::Test
   def check(*) = DocsNavigationTest.new('fixture').check(*)
+
+  def test_gem_and_contributor_documentation_have_separate_destinations
+    files = { 'README.gem.md' => '# Gem', 'CONTRIBUTING.md' => '# Contribute',
+              'contributing/development.md' => '# Development', 'internal/notes.md' => '# Record',
+              'AGENTS.override.md' => '# Local agent instructions' }
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files)
+    assert_predicate status, :success?, output
+  end
 
   def test_human_skill_guides_allow_source_urls_and_site_routes
     source = 'https://github.com/shakacode/shaka/blob/main/docs/skills/overview.md'

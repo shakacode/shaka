@@ -73,7 +73,7 @@ def unresolved(path, target)
 end
 
 def broken_relative_links(repository, path)
-  ShakaDocs::Audiences.links(File.read(path, encoding: 'UTF-8')).filter_map do |target|
+  ShakaDocs::Audiences.links(File.read(path, encoding: 'UTF-8'), include_html: false).filter_map do |target|
     next if target.match?(%r{\A(?:[a-z][\w+.-]*:|/)}i) || target.include?('{{')
 
     problem = unresolved(path, target)
@@ -133,7 +133,7 @@ begin
   sidebar_targets = ShakaDocs::Audiences.navigation_links(navigation)
   sidebar_agents = ShakaDocs::Audiences.agent_targets(repository, File.join(root, 'sidebars.json'), sidebar_targets)
   agent_links.concat(sidebar_agents.map { |link| "sidebars.json -> #{link}" })
-  agent_links.concat(files.select { |file| ShakaDocs::Audiences::AGENT_ENTRY_FILES.include?(File.basename(file)) })
+  agent_links.concat(files.select { |file| ShakaDocs::Audiences.agent_entry?(file) })
   unclassified = ShakaDocs::Audiences.unclassified_documents(repository)
   puts "Markdown outside established documentation locations: #{unclassified.join(', ')}" unless unclassified.empty?
   puts "Missing from docs/sidebars.json: #{missing.join(', ')}" unless missing.empty?
@@ -146,7 +146,7 @@ begin
   exit 1 unless [missing, stale, unclassified, agent_links, broken, malformed].all?(&:empty?)
 
   puts "All #{pages.size} published pages are in docs/sidebars.json and link no agent instructions; " \
-       'links and anchors in docs/ and skills/ resolve; figures parse.'
+       'Markdown links and heading anchors in docs/ and skills/ resolve; figures parse.'
 rescue JSON::ParserError, KeyError, ArgumentError, Errno::ENOENT, Addressable::URI::InvalidURIError => e
   warn "Docs navigation check failed: #{e.message}"
   exit 1

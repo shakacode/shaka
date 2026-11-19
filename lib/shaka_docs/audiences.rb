@@ -12,7 +12,10 @@ module ShakaDocs
     DOCUMENT_DIRECTORIES = %w[.agents .github contributing docs eval internal skills templates test].freeze
     # Root documents have distinct audiences: project entry, RubyGems, contributors, releases, and agents.
     ROOT_DOCUMENTS = %w[README.md README.gem.md CONTRIBUTING.md CHANGELOG.md AGENTS.md CLAUDE.md].freeze
-    AGENT_ENTRY_FILES = %w[AGENTS.md CLAUDE.md SKILL.md].freeze
+    AGENT_ENTRY_FILE = /\A(?:(?:AGENTS|CLAUDE|GEMINI|SKILL)(?:\.[^.]+)*|copilot-instructions)\.mdx?\z/i
+    AGENT_DIRECTORIES = %w[skills .agents .claude .codex .cursor .gemini .opencode .pi
+                           .github/agents .github/instructions .github/skills].freeze
+    AGENT_CONTROL_FILES = %w[.cursorrules .windsurfrules .clinerules].freeze
     AGENT_WORKFLOW = 'skills/shaka/config/workflow.yml'
 
     module_function
@@ -22,15 +25,19 @@ module ShakaDocs
       uri.host ? uri.normalize : uri
     end
 
-    def links(text)
+    def links(text, include_html: true)
       targets = []
       Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---' } }).walk do |node|
         targets << node.url if %i[link image].include?(node.type)
-        next unless %i[html_inline html_block].include?(node.type)
-
-        targets.concat(Nokogiri::HTML.fragment(node.literal).css('a[href]').map { |link| link['href'] })
+        targets.concat(html_links(node)) if include_html
       end
       targets.map(&:strip).uniq
+    end
+
+    def html_links(node)
+      return [] unless %i[html_inline html_block].include?(node.type)
+
+      Nokogiri::HTML.fragment(node.literal).css('a[href]').map { |link| link['href'] }
     end
 
     def repository_path(uri)
@@ -68,9 +75,14 @@ module ShakaDocs
     end
 
     def agent_path?(path)
-      instructions = path.match?(%r{\A(?:skills|\.agents)(?:/|\z)}) &&
-                     (path.match?(/\.mdx?\z/) || File.extname(path).empty?)
-      instructions || path == AGENT_WORKFLOW || AGENT_ENTRY_FILES.include?(File.basename(path))
+      directory = AGENT_DIRECTORIES.any? { |prefix| path == prefix || path.start_with?("#{prefix}/") }
+      instructions = directory && (path.match?(/\.(?:mdx?|mdc)\z/i) || File.extname(path).empty?)
+      instructions || path == AGENT_WORKFLOW || agent_entry?(path)
+    end
+
+    def agent_entry?(path)
+      name = File.basename(path)
+      AGENT_ENTRY_FILE.match?(name) || AGENT_CONTROL_FILES.include?(name.downcase)
     end
 
     def agent_links(repository, source, text)
@@ -97,7 +109,7 @@ module ShakaDocs
 
     def unclassified_documents(repository)
       document_files(repository).reject do |path|
-        DOCUMENT_DIRECTORIES.include?(path.split('/').first) || ROOT_DOCUMENTS.include?(path)
+        DOCUMENT_DIRECTORIES.include?(path.split('/').first) || ROOT_DOCUMENTS.include?(path) || agent_path?(path)
       end
     end
   end
