@@ -89,7 +89,8 @@ end
 def private_directory?(directory)
   File.directory?(directory) && File.stat(directory).mode.nobits?(0o077) &&
     !File.exist?(File.join(directory, '.git')) &&
-    !system('git', '-C', directory, 'rev-parse', '--git-dir', out: File::NULL, err: File::NULL)
+    !system(Shaka::Evaluation::ReviewReplayFixture::GIT_ENVIRONMENT, 'git', '-C', directory,
+            'rev-parse', '--git-dir', out: File::NULL, err: File::NULL)
 end
 
 def rows(case_id)

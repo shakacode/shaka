@@ -36,9 +36,9 @@ module Shaka
 
       def validate_settings_change
         baseline, candidate = @options.values_at(:baseline, :candidate).map { |arm| arm.fetch(:criteria) }
-        return if baseline == candidate
+        snapshots = [baseline, candidate].uniq.map { |ref| review_settings(ref) }
+        return if snapshots.one?
 
-        snapshots = [baseline, candidate].map { |ref| review_settings(ref) }
         criteria, settings = snapshots.transpose
         raise ArgumentError, 'Keep AGENTS.md criteria unchanged between prompt arms' unless criteria.uniq.one?
         raise ArgumentError, 'Both commits supply the same repository settings files' if settings.uniq.one?

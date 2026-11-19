@@ -35,11 +35,19 @@ module Shaka
                                                stdin_data: '', binmode: true)
         raise IOError, "Cannot read criteria commit: #{error.strip}" unless status.success?
 
-        output.split("\0")
+        output.split("\0").select { |entry| regular_settings?(entry) }
       end
 
       def self.agents_path?(path)
         path == 'AGENTS.md' || path.end_with?('/AGENTS.md')
+      end
+
+      def self.regular_settings?(entry)
+        meta, path = entry.split("\t", 2)
+        return false unless agents_path?(path) || path.start_with?('.agents/shaka/')
+        return true if meta.start_with?('100644 blob ', '100755 blob ')
+
+        raise IOError, 'Use regular files for the projected reviewer settings and criteria'
       end
 
       private
@@ -54,17 +62,11 @@ module Shaka
 
       def copy_entry(entry)
         meta, path = entry.split("\t", 2)
-        mode, type, oid = meta.split
-        return unless type == 'blob' && criteria_path?(path)
-        raise IOError, 'Use regular files for the projected reviewer settings and criteria' if mode == '120000'
+        mode, _type, oid = meta.split
 
         data = git(@source, 'cat-file', 'blob', oid)
         blob = git(@root, 'hash-object', '-w', '--stdin', input: data).strip
         "#{mode} #{blob}\t#{path}\0"
-      end
-
-      def criteria_path?(path)
-        self.class.agents_path?(path) || path.start_with?('.agents/shaka/')
       end
 
       def git(root, *args, input: '')
