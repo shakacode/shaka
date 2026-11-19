@@ -488,3 +488,19 @@ class DocsCaseInventoryTest < Minitest::Test
     end
   end
 end
+
+class DocsIgnoredInventoryTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_ignored_docs_are_skipped_until_tracked
+    files = { '.gitignore' => "/docs/.cache/\n", 'docs/.cache/README.md' => '[Generated](missing.md)' }
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files)
+    assert_predicate status, :success?, output
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files) do |root|
+      system('git', '-C', root, 'add', '-f', 'docs/.cache/README.md', exception: true)
+    end
+    refute_predicate status, :success?
+    assert_includes output, 'Site-excluded Markdown: .cache/README.md'
+    assert_includes output, 'docs/.cache/README.md -> missing.md (missing file)'
+  end
+end

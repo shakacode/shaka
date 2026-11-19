@@ -90,14 +90,18 @@ def broken_emitted_links(repository, docs, path)
 end
 
 def markdown_files(docs, repository)
-  Dir.glob(File.join(docs, '**/*.{md,mdx}'), File::FNM_DOTMATCH) + Dir.glob(File.join(repository, 'skills/**/*.md'))
+  ShakaDocs::Audiences.document_files(repository).filter_map do |file|
+    File.join(repository, file) if file.start_with?("#{File.basename(docs)}/", 'skills/')
+  end
 end
 
 def broken_links(docs)
   docs = File.expand_path(docs)
   repository = File.dirname(docs)
   markdown = markdown_files(docs, repository)
-  sources = markdown | Dir.glob(File.join(repository, 'skills/**/*')).select { |path| File.file?(path) }
+  sources = markdown | ShakaDocs::Audiences.repository_files(repository).grep(%r{\Askills/}).map do |file|
+    File.join(repository, file)
+  end
   markdown.flat_map { |path| broken_relative_links(repository, path) } +
     sources.flat_map { |path| broken_emitted_links(repository, docs, path) }
 end
@@ -116,12 +120,16 @@ def malformed_figures(docs)
 end
 
 begin
-  root = ARGV.fetch(0, File.expand_path('../docs', __dir__))
+  root = File.expand_path(ARGV.fetch(0, File.expand_path('../docs', __dir__)))
+  repository = File.dirname(root)
   navigation = JSON.parse(File.read(File.join(root, 'sidebars.json')))
   raise ArgumentError, 'Expected a sidebar object' unless navigation.is_a?(Hash)
 
   ids = document_ids(navigation.fetch('docsSidebar'))
-  files = Dir.glob('**/*.{[mM][dD],[mM][dD][xX]}', File::FNM_DOTMATCH, base: root)
+  prefix = "#{File.basename(root)}/"
+  files = ShakaDocs::Audiences.document_files(repository).filter_map do |file|
+    file.delete_prefix(prefix) if file.start_with?(prefix)
+  end
   # Site discovery needs lowercase extensions and ignores dot, underscore and planning paths.
   excluded, published = files.partition do |file|
     !file.match?(/\.mdx?\z/) || file.split('/').any? { |part| part.start_with?('.', '_') } ||
@@ -130,8 +138,6 @@ begin
   pages = published.map { |file| file.sub(/\.(md|mdx)\z/, '') }
   missing = pages - ids
   stale = ids - pages
-  root = File.expand_path(root)
-  repository = File.dirname(root)
   agent_links = files.flat_map do |file|
     ShakaDocs::Audiences.agent_links(repository, File.join(root, file), File.read(File.join(root, file), encoding: 'UTF-8')).map { |link| "#{file} -> #{link}" }
   end
