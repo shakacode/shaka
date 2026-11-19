@@ -52,13 +52,17 @@ merged default-branch configuration with the target release before switching.
 
 ## Switch to a published release
 
+Ask for a compatibility check before switching.
+
 ```text
-Check this project's settings against Shaka 1.0.0 before switching. If they pass, switch to 1.0.0 and keep my previous installation available for rollback
+Check this project's settings against Shaka 1.0.0 and report whether they are ready for an upgrade
 ```
 
 The switch affects every project that uses the moved skill links. Name any other
-projects you want checked before switching. Your agent checks the selected
-projects with the target release before moving the links.
+projects you want checked. The check keeps your current installation active.
+
+Once the selected projects are ready, ask your agent to switch to the checked
+release and keep the previous installation available for rollback.
 
 If you need to go back, ask the agent to restore the previous links. Roll back
 any settings changes through the project's usual review process.

@@ -81,7 +81,8 @@ the user's approval for the wider change before running take-over.
 
 ### Install a published release
 
-For an approved published version, use `bin/install --release VERSION --directory NEW`.
+For a first installation, use `bin/install --release VERSION --directory NEW --agent HOST`.
+Use the requested host or pass `--skills-dir DIR` for a custom skills directory.
 The installer selects `refs/tags/vVERSION`, checks the declared version, and records
 its commit in a detached checkout. `--branch` and `--release` are mutually exclusive.
 Tags missing the release-installation module are refused before host links change.
@@ -91,26 +92,27 @@ run its registered helper or pass `--directory DIR`; installation there keeps it
 selection. An explicit repository or branch overrides the gem default.
 
 Follow [Before take-over](#before-take-over) when changing releases.
-To check project settings before switching, clone the official release tag in a
-separate checkout without running the installer. Use the helper from that checkout.
-Check the projects in the request and clarify the scope if they are unclear.
-Report which projects you checked. All projects using the moved links switch.
+Clone and inspect the official release tag in a separate checkout. To switch,
+run that checkout's `bin/install` with `--repository https://github.com/shakacode/shaka.git`,
+`--release VERSION`, `--directory` naming the inspected checkout, and `--take-over`.
+Pass `--skills-dir DIR` for an active custom skills directory. The previous checkout
+stays available for [rollback](installation.md#restore-the-saved-installation).
+Release `install --update` verifies that the remote tag still resolves to the
+recorded commit. `update-check` reports the local pin.
+
+### Preview project settings against a release
+
+Clone the official release tag without running the installer. Use that checkout's
+helper to check the requested projects. Clarify which projects to check if unclear.
 
 - For team settings, run `seam check --root PROJECT --ref DEFAULT_SHA` in a clean
   project checkout at the default-branch commit. Require `trusted/ref` for that SHA.
 - For individual settings, run `seam private check --root PROJECT --ref DEFAULT_SHA`
   in the copy with those settings. Require a successful result.
 
-Resolve any required [migration](migration.md) before moving the active skill links.
-Run `bin/install` from the active registered checkout with
-`--repository https://github.com/shakacode/shaka.git --release VERSION --directory PREPARED --take-over`.
-Use the same checkout and commit you checked as `PREPARED`. Pass `--skills-dir DIR`
-for an active custom skills directory. The repository flag selects the official tag.
-To roll back, [restore the saved installation](installation.md#restore-the-saved-installation).
-Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
-that the remote tag still resolves to the recorded commit; it never advances to `main`
-or another release. A missing or moved tag fails. `update-check` reports the local pin,
-without checking for newer releases.
+Report the checked commit, projects, and any required [migrations](migration.md).
+Leave active links in place for preview requests. If the user asks to switch, use
+the checked checkout and commit after required migrations have landed.
 
 ### Maintain a branch installation
 
