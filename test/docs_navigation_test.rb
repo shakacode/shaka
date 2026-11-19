@@ -133,6 +133,16 @@ class DocsEmittedLinksTest < Minitest::Test
     end
   end
 
+  def test_fenced_target_headings_are_not_anchors
+    %w[md mdx].each do |extension|
+      output, _, status = emitted_page_check(extension, "# Setup\n~~~text\n## Install\n~~~\n")
+      refute_predicate status, :success?, output
+      assert_includes output, "docs/setup.#{extension}#install (missing anchor)"
+      output, errors, status = emitted_page_check(extension, "# Setup\n~~~text\n## Example\n~~~\n## Install\n")
+      assert_predicate status, :success?, "#{output}\n#{errors}"
+    end
+  end
+
   def test_emitted_unicode_fragments_are_not_truncated
     output, errors, status = emitted_page_check('mdx', '# 日本語', target: 'setup.mdx#日本語')
     assert_predicate status, :success?, "#{output}\n#{errors}"

@@ -13,30 +13,27 @@ require_relative '../lib/shaka_docs/navigation'
 # Find literal source URLs even inside code examples; the parsers determine their destinations.
 EMITTED_DOCS = %r{https?://[^\s<>"'`\\]+}i
 
-def prose(path)
-  File.read(path, encoding: 'UTF-8').gsub(/^ {0,3}```.*?^ {0,3}```/m, '')
-end
-
-# GitHub's heading slugs for the heading forms these docs use; emphasis and {#id} are not modeled.
-def slug(heading)
-  text = heading.gsub(/<[^>]*>/, '').gsub(/\[([^\]]*)\]\([^)]*\)/, '\\1')
-  text.downcase.strip.gsub(/[^\p{Word}\- ]/, '').tr(' ', '-')
-end
-
 def heading_ids(text)
-  seen = Hash.new(0)
-  text.scan(/^ {0,3}\#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/).flatten.map do |heading|
-    id = slug(heading)
-    count = (seen[id] += 1) - 1
-    count.zero? ? id : "#{id}-#{count}"
+  html = Commonmarker.to_html(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } })
+  Nokogiri::HTML5.fragment(html).css('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').map { |node| node['id'] }
+end
+
+def explicit_anchors(text)
+  ids = []
+  Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } }).walk do |node|
+    next unless %i[html_inline html_block].include?(node.type)
+
+    fragment = Nokogiri::HTML5.fragment(node.literal)
+    ids.concat(fragment.css('a[id], a[name]').flat_map { |anchor| [anchor['id'], anchor['name']].compact })
   end
+  ids
 end
 
 def anchors(path)
   @anchors ||= {}
   @anchors[path] ||= begin
-    text = prose(path)
-    heading_ids(text) + text.scan(/<a\s+(?:id|name)\s*=\s*["']([^"']+)["']/).flatten
+    text = File.read(path, encoding: 'UTF-8')
+    heading_ids(text) + explicit_anchors(text)
   end
 end
 
