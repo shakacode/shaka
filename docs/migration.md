@@ -13,8 +13,9 @@ default change that breaks an existing 1.x configuration or documented command
 requires a major release. A breaking change to a setting's meaning or default
 also requires a new YAML format version. The upgrade guide for a breaking release
 will name the affected settings and show how to check the proposed changes before
-switching. This is the release policy. `shaka seam check` validates your configuration
-and command wrappers against the installed version.
+switching. This is the release policy. Before switching, your agent can validate
+your configuration and command wrappers with the target release, using the check
+for your team or individual settings.
 
 ## Update a branch installation
 

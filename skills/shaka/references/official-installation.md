@@ -100,7 +100,9 @@ separate checkout without running the installer. Use the helper from that checko
   in the copy with those settings. Require a successful result.
 
 Resolve any required [migration](migration.md) before moving the active skill links.
-To install a new release, use a separate directory with `--release VERSION --take-over`.
+To switch to an official release, run `bin/install --repository https://github.com/shakacode/shaka.git
+--release VERSION --directory NEW --take-over`. Use the same checkout and commit
+you checked. The repository flag prevents an existing fork from supplying the tag.
 To roll back, [restore the saved installation](installation.md#restore-the-saved-installation).
 Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
 that the remote tag still resolves to the recorded commit; it never advances to `main`
