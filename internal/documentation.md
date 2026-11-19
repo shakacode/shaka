@@ -17,8 +17,8 @@ Public guides and sidebar links must lead to human guidance. The check rejects
 links into Shaka's skill Markdown, its YAML workflow instructions, project agent instructions, and `AGENTS.md`
 or `CLAUDE.md`. Links to configuration data and citations of other projects'
 skills remain available. First-party source URLs are checked conservatively for
-agent-tree segments, regardless of their branch name. Use fenced blocks for
-literal link examples. Each new guide's author and reviewer still determine its audience.
+agent-tree segments, regardless of their branch name. The scan includes link
+syntax inside examples. Each new guide's author and reviewer still determine its audience.
 
 ## Give new users a way to start
 

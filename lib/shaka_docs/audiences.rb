@@ -15,11 +15,10 @@ module ShakaDocs
     module_function
 
     def links(text)
-      text = text.gsub(/^ {0,3}(`{3,}|~{3,}).*?^ {0,3}\1[ \t]*$/m, '')
       inline = text.scan(/\]\(\s*<?([^)\s>]+)/).flatten
       defined = text.scan(/^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?(\S+?)>?(?:\s|$)/).flatten
       html = text.scan(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>\x60=]+))/).flatten.compact
-      urls = text.scan(%r{https?://[^\s<>()"'\]]+})
+      urls = text.scan(%r{https?://[^\s<>()"'\]]+}i)
       (inline + defined + html + urls).uniq
     end
 

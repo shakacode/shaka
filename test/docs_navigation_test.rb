@@ -233,6 +233,7 @@ class DocsAudienceTest < Minitest::Test
 
   def test_alternate_reference_urls_are_still_rejected
     targets = %w[https://GITHUB.COM/shakacode/shaka/blob/main/skills/shaka/references/review.md
+                 HTTPS://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md
                  https://github.com/shakacode/shaka/blob/feature/topic/skills/shaka/config/review-prompt.md
                  https://www.github.com/ShakaCode/Shaka/edit/main/skills/shaka/SKILL.md]
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, targets.join("\n"))
@@ -274,14 +275,14 @@ class DocsAudienceExamplesTest < Minitest::Test
     assert_includes output, 'Link a human guide, not agent instructions:'
   end
 
-  def test_literal_agent_link_examples_are_allowed
+  def test_literal_agent_link_examples_follow_the_same_destination_rule
     page = <<~MARKDOWN
       ```markdown
       [Agent](../skills/shaka/config/review-prompt.md)
       ```
     MARKDOWN
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
-    assert_predicate status, :success?, output
+    refute_predicate status, :success?, output
   end
 
   def test_escaped_backticks_do_not_hide_a_clickable_agent_link
@@ -293,6 +294,13 @@ class DocsAudienceExamplesTest < Minitest::Test
 
   def test_code_spans_cannot_hide_a_clickable_link_between_them
     page = '`` ` `` [review](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md) `note`'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
+  end
+
+  def test_longer_closing_fence_cannot_hide_a_live_link
+    page = "~~~text\n~~~~\n[Agent](../skills/shaka/references/review.md)\n~~~text\n~~~\n"
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
     refute_predicate status, :success?
     assert_includes output, 'Link a human guide, not agent instructions:'
