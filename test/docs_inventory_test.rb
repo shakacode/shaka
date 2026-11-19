@@ -379,13 +379,15 @@ class DocsSkillSourceAliasTest < Minitest::Test
   def regular_source(extension, hidden: false)
     name = hidden ? '.local' : 'guide'
     check({ 'docsSidebar' => ['expected-experience'] }, '# Guide',
-          "skills/example/#{name}.#{extension}" => MARKER)
+          "skills/example/#{name}.#{extension}" => source_text(extension))
   end
+
+  def source_text(extension) = extension == 'rb' ? "PAGE = '#{MARKER}'" : MARKER
 
   def hidden_source_alias(extension)
     Dir.mktmpdir('outside-skill-file') do |outside|
       path = File.join(outside, "source.#{extension}")
-      File.write(path, MARKER)
+      File.write(path, source_text(extension))
       check('docsSidebar' => ['expected-experience']) do |root|
         FileUtils.mkdir_p(File.join(root, 'skills/example'))
         create_symlink(path, File.join(root, "skills/example/.local.#{extension}"))
@@ -396,7 +398,7 @@ class DocsSkillSourceAliasTest < Minitest::Test
 
   def aliased_source(extension)
     Dir.mktmpdir('outside-skill') do |outside|
-      File.write(File.join(outside, "guide.#{extension}"), MARKER)
+      File.write(File.join(outside, "guide.#{extension}"), source_text(extension))
       files = { "skills/example/guide.#{extension}" => '# Regular source' }
       check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files) do |root|
         system('git', '-C', root, 'add', 'skills/example', exception: true)

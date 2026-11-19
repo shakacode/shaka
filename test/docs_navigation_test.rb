@@ -179,7 +179,8 @@ class DocsEmittedLinksTest < Minitest::Test
 
   def test_emitted_sentence_punctuation_does_not_hide_missing_pages
     %w[md mdx].each do |extension|
-      output, _, status = emitted_page_check(extension, nil, target: "setup.#{extension}. More text")
+      page = "See https://github.com/shakacode/shaka/blob/main/docs/setup.#{extension}. More text"
+      output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
       refute_predicate status, :success?, output
       assert_includes output, "docs/setup.#{extension} (missing file)"
     end
@@ -331,5 +332,83 @@ class DocsEmittedDelimiterTest < Minitest::Test
     url = "https://github.com/shakacode/shaka/blob/main/docs/#{target}"
     text = kind == :ruby ? "PAGE = %q|#{url}|" : "|Guide|\n|---|\n|#{url}|\n"
     { "skills/shaka/guide.#{kind == :ruby ? 'rb' : 'md'}" => text }
+  end
+end
+
+class DocsEmittedContextTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_ruby_parser_removes_literal_delimiters
+    ["'URL'", '"URL"', '%q{URL}', '%q[URL]', '%q|URL|'].product([true, false]).each do |literal, present|
+      url = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#examples'
+      source = "PAGE = #{literal.sub('URL', url)}"
+      files = { 'skills/shaka/guide.rb' => source }
+      files['docs/settings.md'] = '# Other' unless present
+      output, errors, status = check_links('# Guide', files)
+      assert_equal present, status.success?, "#{literal}/#{present}: #{output}\n#{errors}"
+    end
+  end
+
+  def test_ruby_fragments_preserve_trailing_characters
+    %w[_ * ~ ? ! :].each do |suffix|
+      fragment = "setup#{suffix}"
+      files = { 'docs/settings.md' => "# Guide\n<a id=\"#{fragment}\"></a>",
+                'skills/shaka/guide.rb' => "PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md##{fragment}'" }
+      output, errors, status = check_links('# Guide', files)
+      assert_predicate status, :success?, "#{fragment}: #{output}\n#{errors}"
+    end
+  end
+
+  def test_shorter_anchor_cannot_credit_a_literal_fragment
+    source = "PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#setup_'"
+    files = { 'docs/settings.md' => '# Setup',
+              'skills/shaka/guide.rb' => source }
+    output, _, status = check_links('# Guide', files)
+    refute_predicate status, :success?, output
+    assert_includes output, '#setup_ (missing anchor)'
+  end
+
+  def test_markdown_context_distinguishes_bare_links_from_literal_code
+    url = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#setup_'
+    { url => false, "[Setup](#{url})" => true, "<#{url}>" => true,
+      "`#{url}`" => true, "```ruby\nPAGE = %q{#{url}}\n```" => true }.each do |page, expected|
+      output, errors, status = check_links(page, 'docs/settings.md' => '# Setup_')
+      assert_equal expected, status.success?, "#{page}: #{output}\n#{errors}"
+    end
+  end
+
+  def test_unused_markdown_definitions_are_not_emitted_urls
+    page = "# Guide\n\n[unused]: https://github.com/shakacode/shaka/blob/main/docs/gone.md\n"
+    output, errors, status = check_links(page)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+end
+
+class DocsEmittedValuesTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_yaml_values_preserve_literal_urls_and_markdown_prose
+    url = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#setup_'
+    ["url: '#{url}'\n", "guide: '[Setup](#{url})'\n", "guide: |\n  [Setup](#{url})\n"].each do |yaml|
+      files = { 'docs/settings.md' => '# Setup_', 'skills/shaka/config/guide.yml' => yaml }
+      output, errors, status = check_links('# Guide', files)
+      assert_predicate status, :success?, "#{yaml}: #{output}\n#{errors}"
+    end
+  end
+
+  def test_yaml_literal_fragment_cannot_use_a_shorter_heading
+    files = { 'docs/settings.md' => '# Setup', 'skills/shaka/config/guide.yml' =>
+              "url: 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#setup_'\n" }
+    output, _, status = check_links('# Guide', files)
+    refute_predicate status, :success?, output
+    assert_includes output, '#setup_ (missing anchor)'
+  end
+
+  def test_ruby_prose_uses_markdown_link_boundaries
+    %w[examples absent].each do |fragment|
+      source = "GUIDE = 'Read [setup](https://github.com/shakacode/shaka/blob/main/docs/settings.md##{fragment}).'"
+      output, errors, status = check_links('# Guide', 'skills/shaka/guide.rb' => source)
+      assert_equal fragment == 'examples', status.success?, "#{output}\n#{errors}"
+    end
   end
 end

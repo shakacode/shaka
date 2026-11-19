@@ -5,13 +5,14 @@ ENV['BUNDLE_GEMFILE'] = File.expand_path('../Gemfile', __dir__)
 require 'bundler/setup'
 require 'json'
 require 'rexml/document'
+require 'ripper'
 require_relative '../lib/shaka_docs/audiences'
 require_relative '../lib/shaka_docs/metadata'
 require_relative '../lib/shaka_docs/navigation'
 
 # Code prints these into user output, so a heading rename in a docs-only PR would break them silently.
 # Find literal source URLs even inside code examples; the parsers determine their destinations.
-EMITTED_DOCS = %r{(?:[a-z][\w+.-]*:)?//[^\s<>"'`\\|]+}i
+EMITTED_DOCS = %r{(?:[a-z][\w+.-]*:)?//[^\s<>"'`\\]+}i
 
 def heading_ids(text)
   html = Commonmarker.to_html(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } })
@@ -72,18 +73,68 @@ def broken_relative_links(repository, path, checked)
   end
 end
 
-def emitted_url_links(token)
+def emitted_url(token)
   scheme = Addressable::URI.parse(token).scheme
-  return [] if scheme && !%w[http https].include?(scheme.downcase)
+  return if scheme && !%w[http https].include?(scheme.downcase)
 
-  token = "https:#{token}" unless scheme
-  ShakaDocs::Audiences.links(token, include_html: false)
+  scheme ? token : "https:#{token}"
 rescue Addressable::URI::InvalidURIError
-  []
+  nil
 end
 
-def emitted_document_targets(text)
-  targets = text.scan(EMITTED_DOCS).flat_map { |token| emitted_url_links(token) }
+def literal_urls(text) = text.scan(EMITTED_DOCS).filter_map { |token| emitted_url(token) }
+
+def source_value_urls(text)
+  return [] unless text.include?('//')
+
+  value = text.strip
+  uri = Addressable::URI.parse(value)
+  return [emitted_url(value)].compact if uri.host && !value.match?(/\s/)
+
+  markdown_urls(text)
+rescue Addressable::URI::InvalidURIError
+  markdown_urls(text)
+end
+
+def ruby_urls(text)
+  Ripper.lex(text).flat_map do |_, kind, literal, _|
+    kind == :on_tstring_content ? source_value_urls(literal) : []
+  end
+end
+
+def yaml_urls(text)
+  Psych.parse_stream(text).each.flat_map do |node|
+    node.is_a?(Psych::Nodes::Scalar) ? source_value_urls(node.value) : []
+  end
+rescue Psych::SyntaxError
+  literal_urls(text)
+end
+
+def markdown_code_urls(node)
+  return literal_urls(node.literal) if node.type == :code
+  return [] unless node.type == :code_block
+
+  node.fence_info.to_s.split.first == 'ruby' ? ruby_urls(node.literal) : literal_urls(node.literal)
+end
+
+def markdown_urls(text)
+  targets = ShakaDocs::Audiences.links(text)
+  Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } }).walk do |node|
+    targets.concat(markdown_code_urls(node))
+  end
+  targets
+end
+
+def emitted_document_targets(text, path)
+  targets = if path.match?(/\.mdx?\z/i)
+              markdown_urls(text)
+            elsif path.end_with?('.rb') || text.lines.first.to_s.match?(/\A#!.*ruby/)
+              ruby_urls(text)
+            elsif path.match?(/\.ya?ml\z/i)
+              yaml_urls(text)
+            else
+              source_value_urls(text)
+            end
   targets.filter_map { |target| emitted_document_target(target) }.uniq
 end
 
@@ -105,7 +156,7 @@ rescue Addressable::URI::InvalidURIError
 end
 
 def broken_emitted_links(repository, checked, path)
-  emitted_document_targets(File.read(path, encoding: 'UTF-8').scrub).filter_map do |page, anchor|
+  emitted_document_targets(File.read(path, encoding: 'UTF-8').scrub, path).filter_map do |page, anchor|
     target = [page, anchor].compact.join('#')
     problem = unresolved_destination(File.join(repository, page), anchor, checked)
     "#{path.delete_prefix("#{repository}/")} -> #{target} (#{problem})" if problem

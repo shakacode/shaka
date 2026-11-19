@@ -72,9 +72,15 @@ short forms such as `http:/example.com` fail instead of relying on browser recov
 File and heading-anchor validation applies to Markdown links and images. Static
 HTML hyperlinks in anchors, image maps and SVG are checked for agent destinations.
 The hyperlink check ignores code examples and unused reference definitions.
-Separately, literal HTTP(S) and protocol-relative GitHub documentation URLs in `docs/`
-and `skills/`, including code examples, are checked for files and anchors.
-Dynamic URL templates require review.
+Separately, rendered Markdown links and literal HTTP(S) or protocol-relative GitHub
+documentation URLs in code samples and `skills/` sources are checked for files and anchors.
+Commonmarker determines Markdown punctuation and ignores unused definitions. Ruby's
+standard parser reads Ruby string literals, including in `ruby` code fences, without
+treating their delimiters or trailing URI characters as Markdown punctuation.
+YAML scalar values are read without evaluating objects or aliases. A complete URL
+value retains its URI data; prose values use Markdown link boundaries.
+Other code samples use literal URL tokens. Dynamic templates, escaped string values
+and other source forms require review.
 Form submissions, MDX-specific syntax and custom components require manual review.
 Each guide's author and reviewer still determine its audience.
 

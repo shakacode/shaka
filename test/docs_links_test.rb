@@ -188,7 +188,7 @@ class DocsUrlWhitespaceTest < Minitest::Test
              "[Data](<https://github.com/shakacode/shaka/blob/main/sk\tills/shaka/references/review.md>)",
              '<a href="https://github.com/shakacode/shaka/blob/main/docs/se&#9;ttings.md">Settings</a>']
     pages.each do |page|
-      output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+      output, errors, status = check_links(page)
       assert_predicate status, :success?, "#{output}\n#{errors}"
     end
   end
