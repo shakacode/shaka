@@ -56,6 +56,10 @@ prompt with and without `SKILL.md` plus the rendered workflow, from your working
 copy and from its merge base. The difference is what that text costs. Like any
 session in those tools, this sends the text to Anthropic and OpenAI.
 
+Count only text you trust, such as your own branch or `main`. Codex keeps some
+tools during the count, so instructions in someone else's branch could make it
+act before the report marks the count `UNKNOWN`.
+
 A count uses part of your plan's quota, so run it now and then, such as before
 a release, rather than on every change. Claude's counts vary by about 50 tokens
 from run to run, so a change of a few words may not show. The models are under
