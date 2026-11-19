@@ -19,9 +19,11 @@ Shaka handles merging. Repository checks and approvals still apply.
 
 ### Added
 
-- Install the `shaka` gem on Ruby 3.4 or later. Run `shaka-install --agent codex`
-  to link the skill to the matching GitHub release. Install from source when you
-  need a branch. Both paths are in [Start here](https://shaka.shakacode.com/docs/getting-started).
+- For a fresh install on Ruby 3.4 or later, run `gem install shaka --version 1.0.0`
+  and `shaka-install --agent codex`. The installer links the skill to the matching
+  GitHub release. Existing installations keep their registered branch or release.
+  See [manual installation](https://shaka.shakacode.com/docs/manual-installation)
+  for source installs and how to switch to a published release.
 - Try Shaka on a small task with individual settings kept in your local clone.
   Teams can review shared settings in a PR and try that PR's pinned settings
   before adopting them. You can also try an unmerged Shaka revision without
@@ -37,24 +39,26 @@ Shaka handles merging. Repository checks and approvals still apply.
 ### Changed
 
 - Existing 1.x `.agents/shaka/config.yml` files and documented commands keep
-  working across 1.x updates. See [Update Shaka](https://shaka.shakacode.com/docs/migration) for the
-  compatibility policy and how to check a project before switching versions.
+  working across 1.x updates. Before switching versions, check your team's
+  committed settings or your local individual settings with the target release.
+  Follow [Update Shaka](https://shaka.shakacode.com/docs/migration) for upgrade guidance.
 - Risk ratings use low, medium, and high. Auto defaults to low-risk changes.
   Higher risk or a missing rating requires explicit attention under the merge
   policy. Required checks and approvals take precedence.
 - New individual setups hide the checkout path in unfinished PRs. Your personal
   settings can also hide your checkout path when shared settings would show it.
-- Branch installs check GitHub for updates at most once a day. Claude Code
-  installations include a chat-start reminder unless you select `--no-session-hook`.
+- Branch installs reuse recent successful update checks. Claude Code installs add
+  a chat-start reminder unless you select `--no-session-hook`.
   Published releases stay pinned to the release commit you chose.
 
 ### Removed
 
 - Migrate the pilot layout `.agents/agent-workflow.yml` and `.agents/bin/` to
-  `.agents/shaka/` before switching to 1.0. Use the converter at
+  `.agents/shaka/` before switching to 1.0. Check out Shaka at
   [`a01a3a7`](https://github.com/shakacode/shaka/tree/a01a3a7e9705be165b7bf339b0cc6d2b727ce4d7).
-  Run `skills/shaka/scripts/shaka seam upgrade --root DIR` to preview, then
-  add `--apply --digest PREVIEW_DIGEST`. Review and merge the settings change first.
+  From that checkout, run `skills/shaka/scripts/shaka seam upgrade --root DIR`
+  to preview, then add `--apply --digest PREVIEW_DIGEST`. Validate the converted
+  settings with Shaka 1.0 and run the moved commands before merging the settings PR.
 - Replace `wip.include_locations` with `wip.include_checkout_path`.
 - Move paths covered by `merge.auto_max_review_floor` or
   `pr_description.human_review_floors` to `high_risk_areas` or `medium_risk_areas`.
