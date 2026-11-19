@@ -8,7 +8,7 @@ require 'open3'
 
 module DocsNavigationFixture
   GIT_ROUTING = %w[GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY
-                   GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG_COUNT].freeze
+                   GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG_COUNT GIT_CONFIG_PARAMETERS].freeze
 
   def check(sidebar, page = '# What to expect', files = {})
     saved = GIT_ROUTING.to_h { |name| [name, ENV.delete(name)] }

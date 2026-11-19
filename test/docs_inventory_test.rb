@@ -10,6 +10,14 @@ class DocsFixtureIsolationTest < Minitest::Test
     assert_predicate status, :success?, "#{output}\n#{errors}"
   end
 
+  def test_git_parameters_cannot_change_the_outer_index
+    check('docsSidebar' => ['expected-experience']) do |outer|
+      before = prepare_outer(outer)
+      with_runtime_config(outer, parameters: true) { assert_runtime_isolated(outer, parameters: true) }
+      assert_equal before, File.binread(File.join(outer, '.git/index'))
+    end
+  end
+
   def test_runtime_git_configuration_cannot_change_the_outer_index
     check('docsSidebar' => ['expected-experience']) do |outer|
       before = prepare_outer(outer)
@@ -18,20 +26,22 @@ class DocsFixtureIsolationTest < Minitest::Test
     end
   end
 
-  def assert_runtime_isolated(outer)
+  def assert_runtime_isolated(outer, parameters: false)
     global = ENV.fetch('GIT_CONFIG_GLOBAL')
     output, errors, status = check('docsSidebar' => ['expected-experience']) do |inner|
       assert_nil ENV.fetch('GIT_CONFIG_COUNT', nil)
+      assert_nil ENV.fetch('GIT_CONFIG_PARAMETERS', nil)
       assert_equal global, ENV.fetch('GIT_CONFIG_GLOBAL')
       system('git', '-C', inner, 'add', '.', exception: true)
     end
     assert_predicate status, :success?, "#{output}\n#{errors}"
-    assert_equal '1', ENV.fetch('GIT_CONFIG_COUNT')
-    assert_equal outer, ENV.fetch('GIT_CONFIG_VALUE_0')
+    assert_equal parameters ? "'core.worktree'='#{outer}'" : '1',
+                 ENV.fetch(parameters ? 'GIT_CONFIG_PARAMETERS' : 'GIT_CONFIG_COUNT')
   end
 
-  def with_runtime_config(root)
+  def with_runtime_config(root, parameters: false)
     config = { 'GIT_CONFIG_COUNT' => '1', 'GIT_CONFIG_KEY_0' => 'core.worktree', 'GIT_CONFIG_VALUE_0' => root }
+    config = { 'GIT_CONFIG_PARAMETERS' => "'core.worktree'='#{root}'" } if parameters
     saved = config.to_h { |name, value| [name, ENV.fetch(name, nil)].tap { ENV[name] = value } }
     yield
   ensure
