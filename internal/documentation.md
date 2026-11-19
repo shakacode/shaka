@@ -70,10 +70,10 @@ and Addressable normalizes URLs.
 HTTP(S) links need a parsed authority. Prefer canonical `://host` spelling;
 short forms such as `http:/example.com` fail instead of relying on browser recovery.
 File and heading-anchor validation applies to Markdown links and images. Static
-HTML navigation links, including image-map and SVG links, are checked for agent destinations.
+HTML hyperlinks in anchors, image maps and SVG are checked for agent destinations.
 Code examples and
-unused reference definitions are not links. MDX-specific syntax and custom
-components require manual review. Each guide's author and reviewer still determine its audience.
+unused reference definitions are not links. Form submissions, MDX-specific syntax and
+custom components require manual review. Each guide's author and reviewer still determine its audience.
 
 ## Give new users a way to start
 

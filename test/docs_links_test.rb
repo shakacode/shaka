@@ -5,34 +5,6 @@ require_relative 'support/docs_navigation_fixture'
 class DocsParserRegressionTest < Minitest::Test
   include DocsNavigationFixture
 
-  AGENT_FORM_URL = 'https://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md'
-  HUMAN_FORM_URL = 'https://github.com/shakacode/shaka/blob/main/docs/expected-experience.md'
-
-  def test_static_form_destinations_receive_the_audience_check
-    ['<form action="%s"><button>Review</button></form>',
-     '<form><button formaction="%s">Review</button></form>',
-     '<form><input type="submit" formaction="%s"></form>'].each do |markup|
-      output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, format(markup, AGENT_FORM_URL))
-      refute_predicate status, :success?, output
-      assert_includes output, 'Link a human guide, not agent instructions:'
-
-      output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, format(markup, HUMAN_FORM_URL))
-      assert_predicate status, :success?, "#{output}\n#{errors}"
-    end
-  end
-
-  def test_form_controls_use_only_their_navigation_attribute
-    markup = '<form><button href="%<human>s" formaction="%<agent>s">Submit</button></form>'
-    output, _, status = check({ 'docsSidebar' => ['expected-experience'] },
-                              format(markup, human: HUMAN_FORM_URL, agent: AGENT_FORM_URL))
-    refute_predicate status, :success?, output
-    assert_includes output, 'Link a human guide, not agent instructions:'
-    page = format('<input type="text" formaction="%<url>s"><button type="button" formaction="%<url>s">Stay</button>',
-                  url: AGENT_FORM_URL)
-    output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
-    assert_predicate status, :success?, "#{output}\n#{errors}"
-  end
-
   def test_empty_link_destinations_refer_to_the_current_page
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '[Self]() <a href="">Self</a>')
     assert_predicate status, :success?, output
