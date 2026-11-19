@@ -151,8 +151,8 @@ Three earlier pieces cover nearby ground:
   trusted-author list for review. Its
   [trusted people](../workflow.md#trust-model) affect only whose input the agent reads.
 - **Evidence:** `merge` refuses a head rated above the limit or changing a high-risk file. The
-  [risk guidance](../settings.md#change-how-risk-is-rated) tells the checkpoint
-  reviewer how to rate. The manager article covers
+  [risk guidance](../settings.md#change-how-risk-is-rated) explains how maintainers
+  can raise risk ratings. The manager article covers
   [who decides what ships](agents-made-you-a-manager.md#who-decides-what-ships).
 
 ### 5. Approvals agents can't give, one commit each

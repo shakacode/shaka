@@ -20,14 +20,14 @@ class DocsNavigationTest < Minitest::Test
 
   def check(sidebar, page = '# What to expect', files = {})
     Dir.mktmpdir do |repository|
-      docs = File.join(repository, 'docs')
       tree = { 'docs/expected-experience.md' => page, 'docs/sidebars.json' => JSON.generate(sidebar) }
       tree.merge(files).each do |path, text|
         FileUtils.mkdir_p(File.dirname(File.join(repository, path)))
         File.write(File.join(repository, path), text)
       end
       system('git', 'init', '-q', repository, exception: true)
-      Open3.capture3('ruby', File.expand_path('../bin/check-docs-navigation', __dir__), docs)
+      yield repository if block_given?
+      Open3.capture3('ruby', File.expand_path('../bin/check-docs-navigation', __dir__), File.join(repository, 'docs'))
     end
   end
 
@@ -156,7 +156,7 @@ class DocsFigureCheckTest < Minitest::Test
 end
 
 class DocsAudienceTest < Minitest::Test
-  def check(*) = DocsNavigationTest.new('fixture').check(*)
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
 
   def test_new_human_guide_outside_documentation_locations_fails
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide',
@@ -181,6 +181,16 @@ class DocsAudienceTest < Minitest::Test
   def test_ignored_dependency_markdown_is_outside_the_inventory
     files = { '.gitignore' => "vendor/bundle/\n", 'vendor/bundle/example/README.md' => '# Dependency' }
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files)
+    assert_predicate status, :success?, output
+  end
+
+  def test_moving_a_tracked_guide_does_not_require_staging_first
+    files = { 'notes.md' => '# Notes' }
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files) do |repository|
+      system('git', '-C', repository, 'add', 'notes.md', exception: true)
+      FileUtils.mkdir_p(File.join(repository, 'internal'))
+      FileUtils.mv(File.join(repository, 'notes.md'), File.join(repository, 'internal/notes.md'))
+    end
     assert_predicate status, :success?, output
   end
 
@@ -233,6 +243,8 @@ class DocsAudienceTest < Minitest::Test
 
   def test_alternate_reference_urls_are_still_rejected
     targets = %w[https://GITHUB.COM/shakacode/shaka/blob/main/skills/shaka/references/review.md
+                 https://github.com/shakacode/shaka/blob/main/%73kills/shaka/references/review.md
+                 https://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md#café
                  HTTPS://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md
                  https://github.com/shakacode/shaka/blob/feature/topic/skills/shaka/config/review-prompt.md
                  https://www.github.com/ShakaCode/Shaka/edit/main/skills/shaka/SKILL.md]

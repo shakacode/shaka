@@ -28,11 +28,12 @@ module ShakaDocs
 
       # Refs may contain slashes. Check source URLs conservatively for agent-tree
       # segments instead of guessing which segments name the ref.
-      uri.path[%r{/(?:skills|\.agents)(?:/.*)?\z}] || File.basename(uri.path)
+      path = URI::DEFAULT_PARSER.unescape(uri.path)
+      path[%r{/(?:skills|\.agents)(?:/.*)?\z}] || File.basename(path)
     end
 
     def local_path(repository, source, target)
-      uri = URI.parse(target)
+      uri = URI.parse(target.sub(/[?#].*/, ''))
       return repository_path(uri)&.delete_prefix('/') if uri.host
       return if uri.scheme
       return URI::DEFAULT_PARSER.unescape(uri.path).delete_prefix('/') if uri.path.start_with?('/')
@@ -75,7 +76,7 @@ module ShakaDocs
                                              '--exclude-standard', '-z')
       raise ArgumentError, "Cannot inventory documentation: #{error}" unless status.success?
 
-      output.split("\0").grep(/\.mdx?\z/).uniq
+      output.split("\0").grep(/\.mdx?\z/).uniq.select { |path| File.file?(File.join(repository, path)) }
     end
 
     def unclassified_documents(repository)
