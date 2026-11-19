@@ -193,7 +193,20 @@ class EvidenceWindowsCheckStartTest < Minitest::Test
       assert_raises(RuntimeError) { Shaka::Evidence::WindowsCheck.new(SLEEPER, root:, job: failing) }
     end
 
-    assert_raises(Errno::ECHILD) { Process.wait(spawned) }
+    assert reaped?(spawned), 'the failed start left its leader running'
+  end
+
+  # Process.detach may reap the leader first (ECHILD), or the test may (its ID); a live leader returns nil.
+  def reaped?(pid)
+    deadline = now + 10
+    until now > deadline
+      return true if Process.wait(pid, Process::WNOHANG)
+
+      sleep 0.05
+    end
+    false
+  rescue Errno::ECHILD
+    true
   end
 
   # Its result then has no exit code, which must not count as a passing run that only drifted.
@@ -245,10 +258,16 @@ class EvidenceWindowsCheckWatchTest < Minitest::Test
   def interrupt_after_leader_exits(watch, pid_file)
     runner = Thread.new { watch.run }
     runner.report_on_exception = false
-    sleep 0.05 until File.size?(pid_file) && watch.instance_variable_get(:@check)
+    wait_for_start(watch, pid_file)
     watch.instance_variable_get(:@check).waiter.join(30)
     runner.raise(Interrupt)
     assert_raises(Interrupt) { runner.join }
+  end
+
+  def wait_for_start(watch, pid_file)
+    deadline = now + 60
+    sleep 0.05 until (File.size?(pid_file) && watch.instance_variable_get(:@check)) || now > deadline
+    flunk 'the check never started its descendant' unless File.size?(pid_file)
   end
 
   def assert_stop_report(error, descendant)

@@ -69,8 +69,12 @@ module Shaka
         outcome(@check.waiter, [@check.output, @check.error].map { |stream| Thread.new { read_until_closed(stream) } })
           .tap { @finished = true }
       ensure
-        stop_windows if @check && !@finished && !@stopped
-        @check&.close(finished: @finished)
+        begin
+          stop_windows if @check && !@finished && !@stopped
+        ensure
+          # A second interrupt delivered after the stop still closes the pipes.
+          @check&.close(finished: @finished)
+        end
       end
 
       def outcome(waiter, readers)

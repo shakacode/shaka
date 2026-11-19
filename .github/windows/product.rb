@@ -47,9 +47,9 @@ class WindowsProduct < WindowsSession
     branch = "shaka-windows-candidate-#{SecureRandom.hex(6)}"
     git_output('branch', branch, 'HEAD')
     created = branch
-    output, status = Dir.mktmpdir('shaka-windows-install') { |home| run_install(home, branch) }
-    puts "  exit #{status.exitstatus}: #{excerpt(output)}"
-    raise "bin/install did not verify candidate #{head}" unless status.success? && verified?(output, head)
+    output, success = Dir.mktmpdir('shaka-windows-install') { |home| run_install(home, branch) }
+    puts "  #{success ? 'succeeded' : 'failed'}: #{excerpt(output)}"
+    raise "bin/install did not verify candidate #{head}" unless success && verified?(output, head)
   ensure
     delete_branch(created) if created
   end
@@ -66,9 +66,12 @@ class WindowsProduct < WindowsSession
     output[/^Verified Shaka installation: .* \((\h{7,40})\)\r?$/, 1].then { |shown| shown && head.start_with?(shown) }
   end
 
+  # Bounded, so a hung install fails the record instead of holding the job.
   def run_install(home, branch)
-    Open3.capture2e(native_path.merge('HOME' => home, 'USERPROFILE' => home), RbConfig.ruby,
-                    File.join(root, 'bin/install'), '--agent', 'codex', '--repository', root, '--branch', branch)
+    environment = native_path.merge('HOME' => home, 'USERPROFILE' => home)
+    output, error, success = capture([environment, RbConfig.ruby, File.join(root, 'bin/install'), '--agent', 'codex',
+                                      '--repository', root, '--branch', branch], 600)
+    ["#{output}#{error}", success]
   end
 
   # A native shell finds git through Git\cmd and nothing from Git's Unix tree.
