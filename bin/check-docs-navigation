@@ -30,7 +30,7 @@ end
 def misplaced_reference_pages(item)
   return item.flat_map { |child| misplaced_reference_pages(child) } if item.is_a?(Array)
   unless item.is_a?(Hash) && item['type'] == 'category'
-    return document_ids(item).select { |id| id.start_with?('reference/') }
+    return document_ids(item).select { |id| id.to_s.start_with?('reference/') }
   end
 
   item['label'] == 'Reference' ? [] : misplaced_reference_pages(item.fetch('items'))

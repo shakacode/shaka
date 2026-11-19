@@ -34,6 +34,15 @@ class DocsReferenceFolderTest < Minitest::Test
     assert_includes misplaced, 'reference/timings'
   end
 
+  def test_non_string_document_id_reports_a_missing_page_without_a_backtrace
+    numeric = { 'type' => 'doc', 'id' => 42 }
+    setup = { 'type' => 'category', 'label' => 'Setup', 'items' => ['expected-experience', numeric] }
+    output, errors, status = check('docsSidebar' => [setup])
+    refute_predicate status, :success?
+    assert_includes output, 'Navigation targets missing pages: 42'
+    refute_includes errors, 'NoMethodError'
+  end
+
   def test_reference_folder_page_in_reference_category_passes
     reference = { 'type' => 'category', 'label' => 'Reference', 'items' => ['reference/updates'] }
     _, _, status = check({ 'docsSidebar' => ['expected-experience', reference] }, '# What to expect',
