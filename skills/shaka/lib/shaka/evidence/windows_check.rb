@@ -69,8 +69,13 @@ module Shaka
         @job&.terminate
         return unless @pid && !@waiter
 
-        Process.kill('KILL', @pid)
-        Process.wait(@pid)
+        quietly { Process.kill('KILL', @pid) }
+        quietly { Process.wait(@pid) }
+      end
+
+      # A leader the job already ended refuses the kill but still needs reaping.
+      def quietly
+        yield
       rescue SystemCallError
         nil
       end

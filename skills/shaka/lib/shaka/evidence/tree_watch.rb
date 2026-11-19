@@ -124,9 +124,12 @@ module Shaka
         ''
       end
 
+      # An interrupt waits for the bounded stop, so it cannot leave the leader half stopped.
       def stop_windows
-        @stopped = true
-        @limitation = @check.stop
+        Thread.handle_interrupt(Object => :never) do
+          @stopped = true
+          @limitation = @check.stop
+        end
         warn "shaka: #{@limitation}" if @limitation
       end
     end

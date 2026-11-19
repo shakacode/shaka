@@ -28,7 +28,7 @@ class WindowsProduct < WindowsSession
     head = git_output('rev-parse', 'HEAD')
     output, error, success = capture([native_path, *helper, *EVIDENCE_RUN, '--root', root, '--ref', head, *TEST], 600)
     puts "  helper #{success ? 'succeeded' : 'failed'}: #{excerpt(error)}"
-    return if completed?(output)
+    return if success && completed?(output)
 
     raise "evidence run did not complete the test command: #{excerpt(output)}"
   end
