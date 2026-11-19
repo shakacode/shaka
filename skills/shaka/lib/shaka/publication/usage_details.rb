@@ -58,9 +58,11 @@ module Shaka
   module UsageEstimate
     MARKER = '<!-- shaka:estimated-cost -->'
     BLOCK = /^#{Regexp.escape(MARKER)}\n\*\*Estimated (?:token costs|cost):\*\* [^\n]*$/
+    BOUNDARY = /^#{Regexp.escape(MARKER)}\r?\n/
 
     def self.markdown(detail) = "#{MARKER}\n**Estimated token costs:** #{detail.fetch('estimate')}"
     def self.refresh(region, detail) = region.sub(BLOCK) { markdown(detail) }
+    def self.metrics(region) = region.split(BOUNDARY, 2)[1]
   end
 
   # Renders the PR usage table so every host publishes the same rows and alignment.

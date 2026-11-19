@@ -135,13 +135,16 @@ module Shaka
 
     private
 
+    # Notes are deleted only for reviews now archived behind the current walkthrough. A review edited
+    # meanwhile, or one whose archive update failed, keeps its notes for a later walkthrough to retry.
     def fold_all(reviews, url, account, report)
+      @confirmed = []
       reviews.each { |review| fold_one(review, url, account, report) }
-      Walkthrough::NoteThreads.new(@github, account).resolve_all(reviews, report)
+      Walkthrough::NoteThreads.new(@github, account).delete_all(@confirmed, report)
       report
     end
 
-    def fresh_report = { 'collapsed' => [], 'left_intact' => [], 'resolved_notes' => [], 'unavailable' => [] }
+    def fresh_report = { 'collapsed' => [], 'left_intact' => [], 'deleted_notes' => [], 'unavailable' => [] }
 
     def earlier_walkthroughs(published)
       raise Error, 'Published walkthrough has no submission time.' unless WalkthroughText.submitted_at(published)
@@ -161,6 +164,7 @@ module Shaka
       return unless source
 
       apply_revision(review, revised_body(source, url), source, report)
+      @confirmed << review
     rescue Error => e
       report['unavailable'] << "Review #{review['id']}: #{e.message}"
     end

@@ -71,8 +71,8 @@ Skipped CI reviews can leave that measurement pending until merge.
 Without a task start, the cost line shows no time at all, and **Missing values**
 under Shaka metrics → Details says so. A description published before Shaka
 added that note keeps `ready in UNKNOWN` until the agent publishes it again. The
-agent supplies the task start as `task_started_at` from the time of your first
-request, or reads it from a usage report that covers the whole task.
+agent can select the original Codex request, supply its timestamp directly, or
+use a usage report that covers the whole task.
 
 The Timings section breaks that down for the current head. Prompt to CI runs
 from the task start to the head's earliest check. CI to ready runs from that
@@ -90,9 +90,11 @@ recorded before the merge. None of them means zero.
 | Between checkpoints | The PR opens, or a wait ends | The next wait starts, the PR merges or closes, or this update |
 | Waiting on a person | The agent asks for your answer, your merge approval, or a manual resume | The agent resumes, or the PR merges or closes |
 
-The task start comes from the agent, or otherwise from the earliest implementation
-usage report that covers the whole task, and is retained across description
-updates. Shaka uses it to include planning and implementation before the first commit. The
+Shaka can read the selected original turn’s timestamp from a local Codex
+session. It also accepts an explicit timestamp or uses a whole-task
+implementation usage report. When the PR branch is in the same repository,
+Shaka can also reuse the start saved in its description. This includes planning and
+implementation before the first commit. The
 **Before first recorded validation** interval shows the elapsed wall-clock time
 from that start to the earliest recorded validation run, including a focused test.
 It overlaps the stretches and is not added to the totals again. Missing start or
@@ -115,13 +117,17 @@ adds a label when it stops for you and removes it when work resumes.
 - Without a recorded task start, the timeline starts at the first commit and
   excludes earlier work. A rebase can move that date; when it falls after the PR
   opened, the first row is omitted.
-- Ruby checks the task start's timestamp and order, but does not verify when work
-  actually began. A start read from a usage report is the agent's first response in
-  that report, moments after the request. A task that moved to a new chat before
-  its PR opened shows only the new chat's time.
+- The agent selects which request began the task. A start inferred from usage
+  measures from the first response in the report and may omit earlier planning.
+- The `shaka description` result reports whether the stored timing matched, was
+  still pending, was unavailable from current evidence, or could not be verified
+  against the published record.
 - The ready time appears once a description update or a watch sees the gate green,
   so it can be missing until the description next updates. It stays missing when
   the configured CI review did not run, such as a review skipped for a small change.
+  When GitHub has no ready timestamp, a fork PR can keep the displayed ready
+  time for the same head and mark it unverified. The description command reports
+  that gap too.
 - Every labeled wait counts, however short. A wait of a few seconds can be a
   quick reply or the agent relabeling the PR; the label history cannot tell them apart.
 - When a PR has waited many times, the table shows the latest 30 stretches. The

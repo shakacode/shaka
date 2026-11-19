@@ -218,7 +218,8 @@ Two measurements could change the verdict:
 - The implementing agent's cost for each extra cycle, for triage, fixes, and validation,
   is unmeasured. A large cost would make a diff-only trial worthwhile. A
   [preregistered comparison](https://github.com/shakacode/shaka/blob/main/eval/reports/review-scope-preregistration.md)
-  designs that trial; its paid pilot awaits the maintainer's approval.
+  designs that trial. Its [first pilot](review-scope-pilot.md) stopped it early: re-reviewing
+  only new commits missed known problems that full re-review found.
 - Claude's nits are the largest share of findings that change nothing. The
   [October study](review-process-study.md#1-the-local-claude-reviewer-is-noisy-but-it-carries-most-of-the-fixes)
   already proposed capping them, a change outside these three options.
