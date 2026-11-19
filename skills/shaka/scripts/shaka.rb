@@ -238,11 +238,15 @@ end
 def walkthrough_parts(options, github)
   return [File.read(options.fetch(:body_file), encoding: 'UTF-8'), []] if options[:body_file]
 
+  walkthrough, rendered = walkthrough_input(options, github.repository)
+  body = Shaka::Walkthrough::CodeLinks.resolve(rendered, walkthrough, github)
+  [body, Shaka::Walkthrough::Notes.resolve(walkthrough, github), walkthrough['summary']]
+end
+
+def walkthrough_input(options, repository)
   walkthrough = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
   walkthrough = walkthrough.merge('head' => options.fetch(:head))
-  body = Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough, github.repository),
-                                               walkthrough, github)
-  [body, Shaka::Walkthrough::Notes.resolve(walkthrough, github), walkthrough['summary']]
+  [walkthrough, Shaka::Publication.walkthrough(walkthrough, repository)]
 rescue Shaka::Error => e
   raise Shaka::Error, "#{e.message} See shaka walkthrough --help for the JSON format and example."
 end

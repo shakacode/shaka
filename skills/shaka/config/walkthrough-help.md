@@ -5,7 +5,7 @@ Walkthrough input:
 
 ```json
 {
-  "identity": {"agent": "Codex", "provider": "OpenAI", "model": "UNKNOWN", "effort": "UNKNOWN"},
+  "identity": {},
   "summary": "The check refuses invalid input."
 }
 ```
@@ -16,9 +16,11 @@ Walkthrough input:
   The command supplies head from --head; a head field in the JSON does not override it.
   Optional structures:
   - sections: array of objects with heading (nonempty single-line string) and body
-    (nonempty Markdown string). The Decisions to make heading is reserved.
+    (nonempty Markdown string). Decisions to make and Decisions for the maintainer
+    are reserved headings (case-insensitive, ignoring surrounding whitespace).
   - table: object with columns (nonempty array of nonempty single-line strings) and
-    rows (nonempty array of arrays with one cell per column). Cells render as single-line text.
+    rows (nonempty array of arrays with one cell per column). Each cell must yield
+    nonempty single-line text.
   - details: array of objects with summary (nonempty single-line string) and body
     (nonempty Markdown string).
   Omit optional structures or use empty sections/details arrays. In prose, use real

@@ -3,18 +3,38 @@
 require_relative 'test_helper'
 require 'shaka/walkthrough/history'
 require 'shaka/publication/publication'
+require 'shaka/usage/publisher_attribution'
+require_relative 'publisher_attribution_test'
+require_relative 'claude_publisher_attribution_test'
 
 # The ready checkpoint finds a walkthrough by its shape, so the command refuses any other body before GitHub.
 class CliWalkthroughBodyTest < Minitest::Test
+  include PublisherAttributionFixture
+  include ClaudePublisherAttributionFixture
+
   COMMAND = SHAKA_COMMAND
   HEAD = 'c' * 40
 
   def test_structured_help_example_renders_without_source_inspection
-    output, error, status = Open3.capture3(*COMMAND, 'walkthrough', '--help')
+    example = assert_structured_example(COMMAND)
+    with_session(context) do |environment, file|
+      File.write(file, File.read(file).sub('"openai"', '"custom-provider"'))
+      assert_example_renders(example, environment)
+    end
+    with_claude_session(prompt, response) { |environment, _| assert_example_renders(example, environment) }
+  end
+
+  def assert_structured_example(command)
+    output, error, status = Open3.capture3(*command, 'walkthrough', '--help')
     assert_predicate status, :success?, error
     example = output[/```json\n(.*?)\n```/m, 1]
     refute_nil example, output
-    body = Shaka::Publication.walkthrough(JSON.parse(example).merge('head' => HEAD), 'o/r')
+    JSON.parse(example)
+  end
+
+  def assert_example_renders(content, environment)
+    attributed = Shaka::PublisherAttribution.prepare(content, environment:)
+    body = Shaka::Publication.walkthrough(attributed.merge('head' => HEAD), 'o/r')
     assert_nil Shaka::WalkthroughText.verify_recognizable!(body, HEAD)
   end
 
