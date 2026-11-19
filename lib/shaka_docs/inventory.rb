@@ -32,7 +32,13 @@ module ShakaDocs
     def source_file?(repository, file, indexed)
       path = File.join(repository, file)
       if aliased?(File.dirname(path), repository, indexed)
-        raise ArgumentError, "Source directory aliases are not supported: #{file}"
+        raise ArgumentError, "Source aliases are not supported: #{file}"
+      end
+
+      if link?(path, indexed)
+        return false if !indexed.include?(path) && !File.exist?(path)
+
+        raise ArgumentError, "Source aliases are not supported: #{file}"
       end
 
       File.file?(path)

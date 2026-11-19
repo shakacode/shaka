@@ -1002,7 +1002,7 @@ class DocsExternalAliasTest < Minitest::Test
         { 'docsSidebar' => ['expected-experience'] }, "[Setup](#{target})", files
       ) { |root| install_alias(root, kind, present) }
       refute_predicate status, :success?, "#{output}\n#{errors}"
-      assert_includes output, 'Unresolved links in docs/ and skills/:'
+      assert_match(%r{Unresolved links in docs/ and skills/:|Source aliases are not supported:}, output + errors)
     end
   end
 
@@ -1023,7 +1023,7 @@ class DocsSkillSourceAliasTest < Minitest::Test
     %w[rb md].each do |extension|
       output, errors, status = aliased_source(extension)
       refute_predicate status, :success?
-      assert_includes errors, 'Source directory aliases are not supported: skills/example/', output
+      assert_includes errors, 'Source aliases are not supported: skills/example', output
       refute_includes output + errors, 'outside-only.md'
       output, _, status = regular_source(extension)
       refute_predicate status, :success?
@@ -1031,11 +1031,36 @@ class DocsSkillSourceAliasTest < Minitest::Test
     end
   end
 
+  def test_hidden_skill_file_aliases_are_not_read
+    %w[rb md].each do |extension|
+      output, errors, status = hidden_source_alias(extension)
+      refute_predicate status, :success?
+      assert_includes errors, 'Source aliases are not supported: skills/example/.local.', output
+      refute_includes output + errors, 'outside-only.md'
+      output, _, status = regular_source(extension, hidden: true)
+      refute_predicate status, :success?
+      assert_includes output, 'outside-only.md (missing file)'
+    end
+  end
+
   private
 
-  def regular_source(extension)
+  def regular_source(extension, hidden: false)
+    name = hidden ? '.local' : 'guide'
     DocsNavigationTest.new('fixture').check({ 'docsSidebar' => ['expected-experience'] }, '# Guide',
-                                            "skills/example/guide.#{extension}" => MARKER)
+                                            "skills/example/#{name}.#{extension}" => MARKER)
+  end
+
+  def hidden_source_alias(extension)
+    Dir.mktmpdir('outside-skill-file') do |outside|
+      path = File.join(outside, "source.#{extension}")
+      File.write(path, MARKER)
+      DocsNavigationTest.new('fixture').check('docsSidebar' => ['expected-experience']) do |root|
+        FileUtils.mkdir_p(File.join(root, 'skills/example'))
+        File.symlink(path, File.join(root, "skills/example/.local.#{extension}"))
+        system('git', '-C', root, 'add', 'skills/example', exception: true)
+      end
+    end
   end
 
   def aliased_source(extension)

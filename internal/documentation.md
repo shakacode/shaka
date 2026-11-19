@@ -26,6 +26,7 @@ without Git metadata checks every Markdown file, including vendored dependencies
 Ignored local files cannot satisfy link targets under `docs/`.
 Relative links use checked repository paths; use canonical paths rather than aliases.
 Scanned source files must have real directory ancestors, including skill sources.
+Use regular source files; dangling untracked aliases are ignored.
 Use exact source-path casing. Front matter must not override publication IDs or
 visibility with `id`, `draft`, `unlisted`, or YAML merge keys; use the checked paths
 and sidebar, and keep unpublished writing outside `docs/`.
