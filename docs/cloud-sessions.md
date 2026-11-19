@@ -50,8 +50,8 @@ changing cannot change the Shaka that checks it. When a container keeps an
 earlier clone, the update step brings it to the latest Shaka, so it accepts
 settings your repository added since. Because the update step runs with the
 script, the script turns off the update reminder for new chats. If the update
-fails, the session still starts on whatever version the clone holds, and the
-setup log names the command that reports it. The script applies to new
+fails, the session still starts, and the setup log names the command that shows
+the installation's state. The script applies to new
 sessions; a session that is already running keeps what it has.
 
 Shaka runs on the Ruby that installed it, but the session's own shell still
@@ -61,16 +61,22 @@ lines to the end of the script. They put Ruby 3.4's commands, such as `ruby`,
 
 ```bash
 # Session shells start on the image's Ruby 3.3; ~/.local/bin comes first on their PATH,
-# so link every Ruby 3.4 command there. A failure still lets the session start.
+# so link each Ruby 3.4 command there, leaving any command already there alone.
+# Use the Ruby version the script installs. A failure still lets the session start.
 (mkdir -p "$HOME/.local/bin" &&
-  for f in /opt/rbenv/versions/3.4.10/bin/*; do ln -sf "$f" "$HOME/.local/bin/" || exit 1; done) ||
+  for f in /opt/rbenv/versions/3.4.10/bin/*; do
+    t="$HOME/.local/bin/${f##*/}"
+    [ -e "$t" ] || [ -L "$t" ] || ln -s "$f" "$t" || exit 1
+  done) ||
   echo "Linking Ruby 3.4 commands failed; session shells may still run Ruby 3.3" >&2
 ```
 
-Then ask Claude to run `bundle install` in the session. Installing gems in the
-session, rather than in the setup script, keeps your project's Gemfile from
-running before you have looked at the branch. Skip these lines for a project pinned to another Ruby: the links make Ruby 3.4.10 the
-session's `ruby` whatever version the project selects.
+Skip these lines for a project pinned to another Ruby: the links make Ruby
+3.4.10 the session's `ruby` whatever version the project selects.
+
+With the lines in place, ask Claude to run `bundle install` in the session.
+Installing gems there, rather than in the setup script, keeps your project's
+Gemfile from running before you have looked at the branch.
 
 A cloud session cannot yet open or finish a Shaka PR. Claude Code blocks GitHub's
 GraphQL API there, and Shaka uses it to create the PR, publish its
