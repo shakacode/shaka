@@ -90,7 +90,8 @@ module Shaka
 
     def verify_identity(pull, head)
       raise Error, 'PR head changed; refresh verification and walkthrough' unless pull['headRefOid'] == head
-      raise Error, 'PR must be open and not a draft' unless pull['state'] == 'OPEN' && pull['isDraft'] == false
+      raise Error, 'PR must be open and not a draft; mark a draft ready for review with `gh pr ready` first' unless
+        pull['state'] == 'OPEN' && pull['isDraft'] == false
 
       verify_pull_fields(pull)
     end

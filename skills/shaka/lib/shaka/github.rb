@@ -93,9 +93,13 @@ module Shaka
       ReviewThread.resolve(self, thread_id)
     end
 
+    # Deletes an inline review comment. GitHub answers with 204 and no body, so there is no JSON to read.
+    def delete_comment(id) = capture(%W[gh api repos/#{@repository}/pulls/comments/#{positive_integer(id)} -X DELETE])
+
     # notes are the review's inline comments, as Walkthrough::Notes resolves and checks them.
     def walkthrough(head:, body:, notes: [], seam_required_checks: nil, prose: ProseLimits.new)
       body = publishable(body)
+      WalkthroughText.verify_recognizable!(body, head)
       changed_lines = ProseLimits.changed_lines(verify_head(head))
       WalkthroughEvidence.new(self, seam_required_checks:).verify(head, body)
       published = record_walkthrough(head, body, notes) do |html|

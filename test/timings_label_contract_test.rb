@@ -16,7 +16,7 @@ class TimingsLabelContractTest < Minitest::Test
       @number = 7
     end
 
-    def snapshot = { 'state' => 'OPEN' }
+    def state_snapshot = { 'state' => 'OPEN' }
 
     def api_list(path) = path.end_with?('page=1') ? @labels.map { |name| { 'name' => name } } : []
 

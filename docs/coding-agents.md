@@ -90,17 +90,19 @@ mkdir -p "$HOME/.local/share/shaka"
 if [ ! -d "$HOME/.local/share/shaka/source" ]; then
   git clone -q https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
 fi
-"$HOME/.local/share/shaka/source/bin/install" --agent claude
+"$HOME/.local/share/shaka/source/bin/install" --agent claude --no-session-hook
 ```
 
 Building Ruby adds a few minutes to each new container. The script installs
 Shaka from its own clone, separate from your project, so the branch you are
-changing cannot change the Shaka that checks it. The script applies to new
-sessions; a session that is already running keeps what it has.
+changing cannot change the Shaka that checks it. Each new container clones
+the latest Shaka, so the script turns off the update reminder for new chats.
+The script applies to new sessions; a session that is already running keeps
+what it has.
 
 A cloud session cannot yet open or finish a Shaka PR. Claude Code blocks GitHub's
 GraphQL API there, and Shaka uses it to create the PR, publish its
-description and walkthrough, and merge. Shaka's doctor reports a
+walkthrough, and merge. Shaka's doctor reports a
 failed **GitHub GraphQL** check. See [cloud reviewers](reference/reviewer-setup.md#cloud-reviewers)
 for what still works. Make and validate the change in the cloud session, ask it
 to push the branch, then continue in a local session. Validation and review

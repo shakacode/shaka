@@ -71,7 +71,8 @@ module Shaka
     def open_facts(snapshot, live)
       @pull = nil
       checks = snapshot['requiredChecks']
-      [attention_fact(checks, live), hold_fact, checks_fact(checks, snapshot['requiredChecksUnavailable']),
+      [attention_fact(checks, live), draft_fact(snapshot), hold_fact,
+       checks_fact(checks, snapshot['requiredChecksUnavailable']),
        threads_fact, comment_fact(snapshot), walkthrough_fact(live), review_fact(snapshot), checkpoint_fact(live),
        squash_fact(snapshot, live), closing_fact, wip_fact(live), rendering_fact(live)].compact
     end

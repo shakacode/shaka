@@ -39,7 +39,7 @@ module Shaka
       marker = "#{AWAITING_MARKER}\n" if waiting?(publication)
       "#{OPEN}\n#{marker}> **#{heading}**\n>\n#{quote(publication.summary)}\n>\n> #{next_step(publication, step)}\n" \
         ">\n> [Review report](#{report}) · Head #{commit}. " \
-        "This PR stays a draft until a new review clears this warning and required checks pass.\n#{CLOSE}\n\n"
+        "This PR stays a draft until a new review clears this warning.\n#{CLOSE}\n\n"
     end
 
     # The owner's own next step is more specific than the fixed one. A waiting warning keeps only its request for
@@ -64,6 +64,8 @@ module Shaka
     end
 
     def remove(body) = split(body).last
+
+    def present?(body) = !split(body).first.empty?
 
     # The head on the warning's generated last line; quoted summary text precedes it.
     def head(body, repository)

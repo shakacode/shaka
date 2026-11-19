@@ -232,12 +232,14 @@ DESCRIPTION_GH = <<~'RUBY'
   when 'repos/owner/repo/pulls/1'
     if ARGV.include?('PATCH')
       File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
-      puts JSON.generate(request)
+      stored = ENV['CLOUD'] ? { 'body_html' => '<table></table>' * 10 } : {}
+      puts JSON.generate(request.merge(stored))
     else
-      puts JSON.generate('body' => ENV.fetch('EXISTING_BODY', ''),
+      puts JSON.generate('number' => 1, 'state' => ENV.fetch('PR_STATE', 'OPEN').downcase,
+                         'body' => ENV.fetch('EXISTING_BODY', ''),
                          'created_at' => ENV.fetch('PR_CREATED_AT', '2026-10-18T08:00:00Z'),
                          'head' => { 'sha' => 'c' * 40, 'repo' => { 'full_name' => ENV.fetch('PR_HEAD_REPO', 'owner/repo') } },
-                         'base' => { 'repo' => { 'full_name' => 'owner/repo' } }, 'changed_files' => 0,
+                         'base' => { 'ref' => 'main', 'repo' => { 'full_name' => 'owner/repo' } }, 'changed_files' => 0,
                          'merged' => ENV['PR_MERGED'] == 'true')
     end
   when %r{pulls/1/files\?} then puts '[]'
@@ -245,8 +247,11 @@ DESCRIPTION_GH = <<~'RUBY'
   when 'user' then puts JSON.generate('login' => 'agent')
   when 'checks' then puts ENV.fetch('PR_CHECKS') { abort 'no checks' }
   when %r{rules/branches/} then puts '[]'
-  when 'markdown' then puts JSON.generate('<table></table>' * 10)
+  when 'markdown'
+    abort 'gh: This GitHub API path is not available (HTTP 403)' if ENV['CLOUD']
+    puts JSON.generate('<table></table>' * 10)
   when 'graphql'
+    abort 'gh: GitHub GraphQL is not available from Claude Code sessions (HTTP 403)' if ENV['CLOUD']
     if request['query'].to_s.include?('timelineItems')
       waited = { '__typename' => 'LabeledEvent', 'createdAt' => '2026-10-18T08:10:00Z',
                  'label' => { 'name' => 'awaiting-answer' } }
@@ -277,3 +282,44 @@ DESCRIPTION_GH = <<~'RUBY'
     abort "unexpected gh request: #{ARGV.inspect} #{raw}"
   end
 RUBY
+
+# Where GitHub refuses GraphQL and its renderer, as in Claude Code cloud sessions, decisions still label the PR.
+class CliDescriptionDecisionsCloudTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+  include CliOpeningCheckFakes
+  include CliDescriptionDecisionsRun
+
+  COMMAND = SHAKA_COMMAND
+  ROOT = File.expand_path('..', __dir__)
+  SUMMARY = 'Decisions stay with the label.'
+  CLOUD = { 'CLOUD' => '1' }.freeze
+
+  def test_decisions_label_the_pull_request_read_over_rest
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, env: CLOUD)
+
+        assert_predicate status, :success?, error
+        assert_equal 'awaiting-answer', File.read(File.join(dir, 'labeled')).strip
+      end
+    end
+  end
+
+  def test_a_closed_pull_request_still_refuses_decisions_before_writing
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, env: CLOUD.merge('PR_STATE' => 'CLOSED'))
+
+        assert_includes error, 'not open'
+        refute_predicate status, :success?
+        refute_path_exists File.join(dir, 'published.md')
+      end
+    end
+  end
+
+  private
+
+  def fake_gh = DESCRIPTION_GH
+end

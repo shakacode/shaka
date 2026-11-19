@@ -25,6 +25,7 @@
         "linear",
         "pstack",
         "manual-installation",
+        "reference/scheduled-update-checks",
         "fork-and-hack",
         "migration"
       ]
@@ -37,7 +38,6 @@
         "pr-verification",
         "reference/pr-record",
         "reference/reviewer-setup",
-        "reference/scheduled-update-checks",
         "releases-after-merge",
         "reference/usage-and-cost",
         "reference/timings",
@@ -70,6 +70,7 @@
         "articles/ci-and-hosted-review-repairs",
         "articles/hosted-review-prompt-comparison",
         "articles/review-signal-study",
+        "articles/review-scope-pilot",
         "articles/evidence-first-review",
         "articles/agents-made-you-a-manager",
         "articles/shaka-with-pstack-and-agent-skills"

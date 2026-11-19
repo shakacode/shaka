@@ -17,7 +17,8 @@ No. Ask your agent:
 ```
 
 The agent inspects the project, reuses existing checks, and explains the choices.
-For team setup, review and merge the setup PR before using the shared settings.
+For team setup, you can try the setup PR on a separate task before merging it.
+Merging the PR makes its settings the team's defaults.
 See [repository setup](configure-repository.md).
 
 ## Can I try it without changing team configuration?
@@ -130,6 +131,13 @@ Tell me about the Shaka configuration
 The agent can explain which settings apply and where they are saved, separately
 from where the skill is installed. See [where settings live](settings-guide.md).
 For an installation problem, use [manual installation and repair](manual-installation.md).
+
+## Can Shaka update itself every day?
+
+Not by itself: Shaka has no auto-update setting. You can schedule
+`install --update` for a time when no Shaka task is running, or schedule a daily
+check and update between chats.
+[Keep Shaka up to date](reference/scheduled-update-checks.md) shows both.
 
 ## Where do I put project rules?
 
