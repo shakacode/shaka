@@ -992,6 +992,43 @@ class DocsSidebarReferencesTest < Minitest::Test
   end
 end
 
+class DocsSidebarInventoryTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_ignored_sidebar_cannot_replace_a_deleted_tracked_manifest
+    clean = nil
+    files = { '.gitignore' => "/docs/sidebars.json\n" }
+    dirty = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files) do |root|
+      delete_tracked_manifest(root)
+      File.unlink(File.join(root, 'docs/sidebars.json'))
+      clean = Open3.capture3('ruby', File.expand_path('../bin/check-docs-navigation', __dir__), File.join(root, 'docs'))
+      File.write(File.join(root, 'docs/sidebars.json'), '{"docsSidebar":["expected-experience"]}')
+    end
+    [dirty, clean].each { |result| assert_missing_manifest(result) }
+  end
+
+  private
+
+  def assert_missing_manifest(result)
+    _output, errors, status = result
+    refute_predicate status, :success?
+    assert_includes errors, 'Sidebar must be in the checked inventory: docs/sidebars.json'
+  end
+
+  def delete_tracked_manifest(root)
+    system('git', '-C', root, 'add', '.', exception: true)
+    system('git', '-C', root, 'add', '-f', 'docs/sidebars.json', exception: true)
+    commit_fixture(root)
+    system('git', '-C', root, 'rm', '--cached', '-q', 'docs/sidebars.json', exception: true)
+    commit_fixture(root)
+  end
+
+  def commit_fixture(root)
+    args = %w[-c user.name=TestUser -c user.email=test@example.com -c commit.gpgsign=false]
+    system('git', '-C', root, *args, 'commit', '--no-verify', '-qm', 'Manifest fixture', exception: true)
+  end
+end
+
 class DocsIndexSymlinkTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 
