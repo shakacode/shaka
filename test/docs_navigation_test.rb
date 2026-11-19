@@ -1273,6 +1273,15 @@ end
 class DocsGeneratedSourceTest < Minitest::Test
   include DocsNavigationFixture
 
+  def test_overview_uses_the_filename_expected_by_site_preparation
+    %w[md mdx].each do |extension|
+      files = { "docs/README.#{extension}" => '# Overview' }
+      output, _, status = check({ 'docsSidebar' => %w[expected-experience README] }, '# Guide', files)
+      assert_equal extension == 'md', status.success?, output
+      assert_includes output, 'Overview source must use README.md' if extension == 'mdx'
+    end
+  end
+
   def test_site_generated_changelog_cannot_overwrite_a_product_guide
     %w[md mdx].each do |extension|
       files = { "docs/changelog.#{extension}" => '# Unique product guide',

@@ -34,6 +34,8 @@ and sidebar, and keep unpublished writing outside `docs/`.
 Start guide and directory names with a non-digit to avoid site ID rewriting.
 The site reserves the root `changelog` ID for generated release notes; edit root
 `CHANGELOG.md` instead, and use another source name for a guide.
+Keep the root overview at `docs/README.md`; an authored `README.mdx` would collide
+with the site's generated fallback.
 
 Public guides and sidebar links must lead to human guidance. The check rejects
 links into Shaka's skill Markdown, its YAML workflow instructions and project agent instructions.
