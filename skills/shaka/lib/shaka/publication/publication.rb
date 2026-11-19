@@ -16,6 +16,7 @@ require_relative 'settings'
 require_relative 'steps_besides_merging'
 require_relative 'human_comments'
 require_relative 'skills_used'
+require_relative 'companion_results'
 require_relative 'metrics'
 require_relative 'missing_values'
 require_relative 'intent_verification'
@@ -107,10 +108,11 @@ module Shaka
     end
 
     def evidence
-      spec = @content.fetch('verification')
       body = [VerificationGates.line(@settings.verdict, @content['review']),
-              IntentVerification.evidence(spec, @content['wip'].nil? ? (1..3) : (0..3)), *table, *details]
-      [details_block('summary' => 'Evidence and limitations', 'body' => body.join("\n\n"))]
+              IntentVerification.evidence(@content.fetch('verification'), @content['wip'].nil? ? (1..3) : (0..3)),
+              *table, *details]
+      evidence = { 'summary' => 'Evidence and limitations', 'body' => body.join("\n\n") }
+      [evidence, *CompanionResults.for(@content, @pull)].map { details_block(it) }
     end
 
     # Verification carries the proof, so a table only adds facts that fit no check.
@@ -145,9 +147,8 @@ module Shaka
     def table_line(cells) = "| #{cells.map { |cell| PublicationText.table_cell(cell) }.join(' | ')} |"
 
     def details
-      items = PublicationText.list(@content['details'], 'details')
-      validate_details(items) if @description
-      items.map { |detail| details_block(detail) }
+      items = PublicationText.list(@content['details'], 'details').tap { validate_details(it) if @description }
+      items.map { details_block(it) }
     end
 
     def validate_details(items)
