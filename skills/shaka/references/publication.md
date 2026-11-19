@@ -39,10 +39,11 @@
 
 ## Review evidence
 
-- Supply description `task_started_at` from the original task's initiating
-  instruction timestamp in UTC. Omit it when unavailable or later than PR opening; the helper
-  then uses the earliest `--all-turns` or `--since-time` implementation usage report.
-  The helper retains it across updates; a resumed chat's start is not a new task start.
+- Pass the Intake timing input to `description` on every refresh. Use
+  `codex_task_start` with the original Codex `thread_id` and `turn_id`, or
+  `task_started_at` with a verified ISO 8601 timestamp no later than PR opening.
+  In Codex desktop, `read_thread` lists turn IDs beside the original requests.
+  With neither input, omit it. Report gaps returned in `timing`.
   Pass a recorded `--ci-review-wait` task override to `description` too.
 
 - Verification opens with bound validation/review status and an optional linked `summary`.

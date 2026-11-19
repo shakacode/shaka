@@ -8,8 +8,8 @@ module Shaka
     HEADING = "<summary>#{SUMMARY}</summary>".freeze
     COST_LINE = 'the cost line shows no time from task start to ready or merge'
     TIMINGS = 'Timings shows Prompt to CI as not recorded'
-    TO_FILL = 'To fill it, the agent passes the time of the first request as `task_started_at` when it publishes ' \
-              'the description.'
+    TO_FILL = 'To fill it, the agent passes the original request as `codex_task_start` or its timestamp as ' \
+              '`task_started_at`.'
 
     module_function
 
