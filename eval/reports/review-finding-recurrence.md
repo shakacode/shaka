@@ -33,9 +33,8 @@ model runs. No person has rechecked the classification.*
 - **Below the threshold:** 6 more findings form a kind seen on only 2 PRs.
 - **Unclassified:** the remaining 1,304 findings have no kind. A hand check of 150 of them
   found 30 (20%) that fit a kind defined before the check, so 24% is a lower bound.
-  The remaining pool was not re-scanned for those kinds. If the sample's 20% held for
-  the 1,200 unsampled unclassified findings, about 240 more would belong to a counted kind and
-  the share would be near 38%. That is a rough, untested estimate by the same reader.
+  The sample was drawn before later recall passes, so its rate does not give a share for
+  the final pool; the report makes no projection.
 - **Mostly one-off in the sample:** 104 of the 150 checked findings fit no kind. They
   concern one change, such as one function's wrong default or one guide's missing step.
 - **Biggest kinds compare prose with code.** The largest kind, docs or instructions

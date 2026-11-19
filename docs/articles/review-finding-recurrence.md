@@ -13,8 +13,7 @@ lists the method, every kind, and the
 
 1. **About a quarter of review findings repeat a kind seen on 3 or more PRs.** 406 of
    1,716 fit 18 recurring kinds, 6 more fit a kind seen on 2 PRs, and 1,304 were not
-   classified. A hand check found more members among those and the pool was not re-scanned, so 24%
-   is a lower bound; a rough estimate puts the share nearer 38%.
+   classified. A hand check found more members among those, so 24% is a lower bound.
 2. **The kinds that repeat most compare prose with code.** Docs that promise behavior
    the code lacks were raised on 53 PRs and fixed on 47. A test that checks names would catch about 1 in 10
    of them. The rest need someone, or something, to read both.
@@ -52,19 +51,19 @@ enforced by nothing but the agent.
 
 ## Main results
 
-| Kind | PRs raised / with a fix | Findings | Share a named check would catch | Verdict |
-| --- | ---: | ---: | --- | --- |
-| Docs or instructions describe behavior the code lacks | 53 / 47 | 71 | About 1 in 10 | Evaluate first |
-| A changed path has no test, or the test passes without the fix | 39 / 25 | 51 | Up to half name an untested path | Evaluate first |
-| Unexpected input escapes as a raw Ruby error | 38 / 23 | 45 | Up to 32, with a reader for every input | Evaluate first |
-| Prose says code enforces a rule only the agent follows | 19 / 14 | 25 | Flags candidates only | Defer |
-| An older installed helper meets newer settings | 15 / 9 | 19 | Most fixed ones | Evaluate first |
-| A study's claim does not match its data | 14 / 11 | 43 | About 8 arithmetic errors | Defer |
-| Symlinks, case-insensitive disks, or Windows | 14 / 13 | 18 | Most fixed ones, on more CI platforms | Evaluate first |
-| An unnamed caller might break | 13 / 0 | 14 | None; all 14 were dismissed | Evaluate a review prompt change |
-| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | The 5 fixed ones, with two tests | Prompt part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224) |
-| Git subprocess inherits the caller's Git environment | 5 / 5 | 13 | 4 to 6 | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) |
-| Changelog rule broken; the rule changed mid-month | 4 / 4 | 4 | 1 of 4 | Defer |
+| Kind | PRs raised / with a fix | Findings | Candidate check and cost | Share it would catch | Verdict |
+| --- | ---: | ---: | --- | --- | --- |
+| Docs or instructions describe behavior the code lacks | 53 / 47 | 71 | Test that names in docs exist; medium | About 1 in 10 | Evaluate first |
+| A changed path has no test, or the test passes without the fix | 39 / 25 | 51 | Report-only changed-line coverage; medium | Up to half name an untested path | Evaluate first |
+| Unexpected input escapes as a raw Ruby error | 38 / 23 | 45 | Readers that raise a Shaka error; high | Up to 32, with a reader for every input | Evaluate first |
+| Prose says code enforces a rule only the agent follows | 19 / 14 | 25 | Enforcement audit over docs; high | Flags candidates only | Defer |
+| An older installed helper meets newer settings | 15 / 9 | 19 | Previous release run in CI; medium to high | Most fixed ones | Evaluate first |
+| A study's claim does not match its data | 14 / 11 | 43 | Figures computed by a script; per study | About 8 arithmetic errors | Defer |
+| Symlinks, case-insensitive disks, or Windows | 14 / 13 | 18 | Windows and case-insensitive CI; CI minutes | Most fixed ones | Evaluate first |
+| An unnamed caller might break | 13 / 0 | 14 | Review prompt change, not a check; low | None; all 14 were dismissed | Evaluate a review prompt change |
+| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | Heredoc and fallback tests; low | The 5 fixed ones | Prompt part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224) |
+| Git subprocess inherits the caller's Git environment | 5 / 5 | 13 | One isolating Git runner; medium | 4 to 6 | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) |
+| Changelog rule broken; the rule changed mid-month | 4 / 4 | 4 | CI refusing `CHANGELOG.md` edits; low | 1 of 4 | Defer |
 
 "With a fix" counts PRs where the agent fixed at least one finding of the kind. The
 report lists 7 more kinds with their checks and costs.
