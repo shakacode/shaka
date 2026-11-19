@@ -35,7 +35,7 @@ class UsageCostTest < Minitest::Test
     report = run_report([setting, response])
     assert_metric report, 'Credits estimate', 'UNKNOWN'
     assert_metric report, 'USD estimate', '$0.578000'
-    assert_includes report, 'Credit cache-write rate UNKNOWN'
+    assert_includes report, 'Codex credits unpriced for reported cache writes'
   end
 
   def test_model_switches_and_large_context_are_priced_per_response
@@ -161,7 +161,8 @@ class UsageGPT6CostTest < Minitest::Test
     report = run_report(records)
     assert_metric report, 'Credits estimate', 'UNKNOWN'
     assert_metric report, 'USD estimate', rates[:cache_write]
-    assert_includes report, 'Credit cache-write rate UNKNOWN'
+    assert_includes report, 'Codex credits unpriced for reported cache writes'
+    assert_includes report, 'API-equivalent estimates use 30-minute cache-write rates'
   end
 
   def assert_long_context_rates(model, rates)

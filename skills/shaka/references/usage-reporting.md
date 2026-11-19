@@ -298,8 +298,8 @@ report.
 
 | Scenario | Treatment |
 | --- | --- |
-| Standard Codex credits | Configured supported OpenAI model. A response with cache writes is unpriced because their credit rate is unpublished. |
-| Standard API-equivalent USD | Ordinary input excludes cache reads and writes, which use their own published rates. |
+| Standard Codex credits | Configured supported OpenAI model. Codex has no separate cache-write charge. Shaka leaves responses with reported cache writes unpriced in this estimate. |
+| Standard API-equivalent USD | Ordinary input excludes cache reads and writes. Cache reads use the published cache-read rate. Cache writes use the 30-minute rate. |
 | Cursor on-demand USD | Configured supported Grok model and recorded Fast/standard mode. Cache writes remain ordinary input because no separate rate is published. |
 | Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published fast-mode rates are priced. |
 | Pi native nominal USD | Copy the host's recorded cost instead of applying a rate card. |
