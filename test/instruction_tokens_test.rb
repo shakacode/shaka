@@ -4,12 +4,12 @@ require_relative 'test_helper'
 require 'json'
 require_relative '../lib/instruction_tokens'
 
-class InstructionTokensTest < Minitest::Test
+# Fake CLIs: each spends a fixed prompt of its own, then one token per word it is sent.
+module InstructionTokensFakes
   Status = Struct.new(:exitstatus) do
     def success? = exitstatus.zero?
   end
   OK = Status.new(0)
-  # Each fake CLI spends a fixed prompt of its own, then one token per word it is sent.
   OWN_PROMPT = { 'claude' => 100, 'codex' => 40 }.freeze
 
   def counting_runner(calls = [])
@@ -31,6 +31,10 @@ class InstructionTokensTest < Minitest::Test
   end
 
   def values(rows, *keys) = rows.map { |row| row.values_at(*keys) }
+end
+
+class InstructionTokensTest < Minitest::Test
+  include InstructionTokensFakes
 
   def test_counts_both_revisions_without_each_cli_prompt
     rows = InstructionTokens.compare(before: 'one two', after: 'one two three', runner: counting_runner)
@@ -52,6 +56,13 @@ class InstructionTokensTest < Minitest::Test
     assert_includes claude, ['--tools', '']
     assert_includes codex, ['-m', 'gpt-6.1-sol']
     assert_includes codex, ['--ignore-rules', '--ignore-user-config']
+  end
+
+  def test_codex_runs_without_its_shell_apps_web_search_or_image_viewing
+    arguments = InstructionTokens::CLIS.fetch('codex').arguments.call('model', 'low').each_cons(2).to_a
+
+    %w[shell_tool unified_exec apps view_image].each { |tool| assert_includes arguments, ['--disable', tool] }
+    assert_includes arguments, ['-c', 'web_search="disabled"']
   end
 
   def test_the_text_goes_on_stdin_never_on_the_command_line
@@ -114,6 +125,18 @@ class InstructionTokensTest < Minitest::Test
 
     assert_equal(["claude used a tool, so its count is not the text's alone",
                   "codex used a tool, so its count is not the text's alone"], rows.map { |row| row['reason'] })
+  end
+
+  # A second answer is a second model request. Codex repeats the id key in a web search item.
+  def test_a_codex_run_with_a_second_answer_or_a_web_search_counts_nothing
+    answer = JSON.generate('type' => 'item.completed', 'item' => { 'type' => 'agent_message' })
+    search = '{"type":"item.completed","item":{"id":"item_1","type":"web_search","id":"exec-1"}}'
+    reasons = [[answer, answer], [search]].map do |lines|
+      runner = ->(_arguments, _input) { [[codex_output(99), *lines].join("\n"), OK] }
+      InstructionTokens.compare(before: nil, after: 'Search the web.', runner:).last['reason']
+    end
+
+    assert_equal(["codex used a tool, so its count is not the text's alone"] * 2, reasons)
   end
 
   def test_a_failed_baseline_run_keeps_the_head_count
