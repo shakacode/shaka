@@ -74,6 +74,16 @@ class WindowsLocalReviewTest < Minitest::Test
     end_descendant
   end
 
+  def test_an_error_during_capture_ends_the_reviewer
+    reviewer = start_reviewer(pid_file)
+    reviewer.raise(IOError, 'stream failed')
+
+    assert_raises(IOError) { reviewer.join(15) }
+    refute running?(Integer(File.read(pid_file))), 'the reviewer outlived the error'
+  ensure
+    end_descendant
+  end
+
   # Git's blob sizes count bytes, so a Windows text-mode pipe that rewrote line endings broke the
   # commit export on the hosted job.
   def test_capture_passes_line_endings_through_both_ways
