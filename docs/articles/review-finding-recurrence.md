@@ -143,7 +143,7 @@ from prose to checks.
 | Tests refusing a Ruby fallback for a `defaults.yml` key, and long English string literals in `skills/shaka/lib` | 5 fixed findings: 3 settings fallbacks and 2 prompt texts. The agent dismissed the other 5 and kept them in Ruby | Heredoc part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); fallback part not built |
 | CI step refusing `CHANGELOG.md` edits on non-release PRs | The rule changed mid-month; 1 finding broke its current form | Defer |
 | Report-only changed-line coverage | Up to 26 of 51 test findings name an untested path; coverage misses paths unit tests already run | Evaluate on the next 10 PRs |
-| Tell reviewers which checks passed, and to name a caller before warning about one | 4 risks in checked areas dismissed after a search or slug showed nothing depended on the edit, and 14 by showing callers unaffected; dismissals were not rechecked | Evaluate: compare dismissals over a week |
+| Tell reviewers which checks passed, and to name a caller before warning about one | 4 risks in checked areas dismissed after a search or slug showed nothing depended on the edit, and 14 by showing callers unaffected; dismissals were not rechecked | Evaluate: replay the same review packets with and without the instruction, and recheck every warning it drops |
 | Make the workflow's stale-text instruction more prominent, with one failure example from this data | The rule exists, yet docs that describe missing behavior were fixed on 47 PRs; pstack's skill prescribes this for lessons that need judgment | Evaluate: compare stale-text findings before and after |
 | Check every docs claim about enforcement | High upkeep, cannot judge truth | Defer |
 
