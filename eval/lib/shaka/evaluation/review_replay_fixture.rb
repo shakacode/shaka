@@ -8,6 +8,10 @@ module Shaka
     class ReviewReplayFixture
       SHA = /\A[0-9a-f]{40}\z/
       GIT_CONFIG = %w[-c core.hooksPath=/dev/null -c core.fsmonitor=false].freeze
+      GIT_ENVIRONMENT = %w[GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
+                           GIT_OBJECT_DIRECTORY GIT_DIR GIT_WORK_TREE GIT_IMPLICIT_WORK_TREE GIT_GRAFT_FILE
+                           GIT_INDEX_FILE GIT_NO_REPLACE_OBJECTS GIT_REPLACE_REF_BASE GIT_PREFIX
+                           GIT_SHALLOW_FILE GIT_COMMON_DIR GIT_CEILING_DIRECTORIES].to_h { |name| [name, nil] }.freeze
 
       def initialize(source:, root:, row:)
         @source = source
@@ -26,18 +30,22 @@ module Shaka
         snapshot
       end
 
-      def self.settings_entries(source, ref)
-        output, error, status = Open3.capture3('git', '-C', source, 'ls-tree', '-r', '-z', ref,
+      def self.entries(source, ref)
+        output, error, status = Open3.capture3(GIT_ENVIRONMENT, 'git', '-C', source, 'ls-tree', '-r', '-z', ref,
                                                stdin_data: '', binmode: true)
         raise IOError, "Cannot read criteria commit: #{error.strip}" unless status.success?
 
-        output.split("\0").select { |entry| entry.split("\t", 2).last.start_with?('.agents/shaka/') }
+        output.split("\0")
+      end
+
+      def self.agents_path?(path)
+        path == 'AGENTS.md' || path.end_with?('/AGENTS.md')
       end
 
       private
 
       def criteria_commit(ref)
-        entries = git(@source, 'ls-tree', '-r', '-z', ref).split("\0").filter_map { |entry| copy_entry(entry) }
+        entries = self.class.entries(@source, ref).filter_map { |entry| copy_entry(entry) }
         git(@root, 'update-index', '-z', '--index-info', input: entries.join)
         tree = git(@root, 'write-tree').strip
         git(@root, '-c', 'user.name=Shaka Eval', '-c', 'user.email=eval@example.invalid',
@@ -48,6 +56,7 @@ module Shaka
         meta, path = entry.split("\t", 2)
         mode, type, oid = meta.split
         return unless type == 'blob' && criteria_path?(path)
+        raise IOError, 'Use regular files for the projected reviewer settings and criteria' if mode == '120000'
 
         data = git(@source, 'cat-file', 'blob', oid)
         blob = git(@root, 'hash-object', '-w', '--stdin', input: data).strip
@@ -55,11 +64,12 @@ module Shaka
       end
 
       def criteria_path?(path)
-        path == 'AGENTS.md' || path.end_with?('/AGENTS.md') || path.start_with?('.agents/shaka/')
+        self.class.agents_path?(path) || path.start_with?('.agents/shaka/')
       end
 
       def git(root, *args, input: '')
-        output, error, status = Open3.capture3('git', *GIT_CONFIG, '-C', root, *args, stdin_data: input, binmode: true)
+        output, error, status = Open3.capture3(GIT_ENVIRONMENT, 'git', *GIT_CONFIG, '-C', root, *args,
+                                               stdin_data: input, binmode: true)
         raise IOError, "git #{args.first} failed: #{error.strip}" unless status.success?
 
         output

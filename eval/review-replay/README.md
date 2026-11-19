@@ -36,7 +36,8 @@ eval/bin/review-replay --helper /absolute/path/to/installed/scripts/shaka \
 For Claude Code, use `--reviewer anthropic/claude`. For a prompt-only change,
 set both model flags to the same model. Pass one `--effort` for both arms and
 pass `--candidate-criteria CANDIDATE_SETTINGS_SHA`. Keep the configured prompt
-under `.agents/shaka/`.
+under `.agents/shaka/`. Keep all `AGENTS.md` files the same in both commits.
+The runner accepts regular settings and criteria files.
 Inspect the settings diff and confirm that the changed file supplies the
 effective reviewer prompt. Packaged prompts and CLI-version comparisons need
 a separate replay procedure.

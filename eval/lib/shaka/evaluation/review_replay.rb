@@ -24,7 +24,7 @@ module Shaka
 
       def run(rows)
         validate_settings_change
-        @environment = CREDENTIALS.dup
+        @environment = ReviewReplayFixture::GIT_ENVIRONMENT.merge(CREDENTIALS)
         Dir.mktmpdir('review-', @directory) do |scratch|
           @scratch = scratch
           start_budget unless @options[:preview]
@@ -38,8 +38,16 @@ module Shaka
         baseline, candidate = @options.values_at(:baseline, :candidate).map { |arm| arm.fetch(:criteria) }
         return if baseline == candidate
 
-        settings = [baseline, candidate].map { |ref| ReviewReplayFixture.settings_entries(@source, ref) }
+        snapshots = [baseline, candidate].map { |ref| review_settings(ref) }
+        criteria, settings = snapshots.transpose
+        raise ArgumentError, 'Keep AGENTS.md criteria unchanged between prompt arms' unless criteria.uniq.one?
         raise ArgumentError, 'Both commits supply the same repository settings files' if settings.uniq.one?
+      end
+
+      def review_settings(ref)
+        files = ReviewReplayFixture.entries(@source, ref)
+        criteria, other = files.partition { |entry| ReviewReplayFixture.agents_path?(entry.split("\t", 2).last) }
+        [criteria, other.grep(%r{\t\.agents/shaka/})]
       end
 
       def start_budget

@@ -20,7 +20,7 @@ class EvaluationReviewReplayFixtureTest < Minitest::Test
 
   def test_historical_fixture_excludes_future_objects_and_copies_review_settings
     replay = Shaka::Evaluation::ReviewReplayFixture.new(source: @source, root: @fixture, row: @row)
-    settings = replay.prepare(@criteria)
+    settings = with_source_alternate { replay.prepare(@criteria) }
 
     assert_equal @row.fetch('head'), git(@fixture, 'rev-parse', 'HEAD')
     assert_empty git(@fixture, 'remote')
@@ -30,6 +30,15 @@ class EvaluationReviewReplayFixtureTest < Minitest::Test
   end
 
   private
+
+  def with_source_alternate
+    key = 'GIT_ALTERNATE_OBJECT_DIRECTORIES'
+    previous = ENV.fetch(key, nil)
+    ENV[key] = File.join(@source, '.git', 'objects')
+    yield
+  ensure
+    ENV[key] = previous
+  end
 
   def seed_history
     @row = { 'base' => commit(@source, 'subject.rb', 'before'),
