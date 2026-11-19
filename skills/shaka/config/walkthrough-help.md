@@ -1,6 +1,33 @@
 
 Walkthrough input:
   --content-file renders the walkthrough from JSON and posts its inline notes; prefer it.
+  Save this minimal JSON object as walkthrough.json and pass --content-file walkthrough.json:
+
+```json
+{
+  "identity": {"agent": "Codex", "provider": "OpenAI", "model": "UNKNOWN", "effort": "UNKNOWN"},
+  "summary": "The check refuses invalid input."
+}
+```
+
+  Required: identity is an object; summary is nonempty Markdown text (not a body field).
+  Identity fields agent, provider, model, and effort are single-line strings; missing or
+  empty fields render UNKNOWN. Native publisher settings supply the actual writer identity.
+  The command supplies head from --head; a head field in the JSON does not override it.
+  Optional structures:
+  - sections: array of objects with heading (nonempty single-line string) and body
+    (nonempty Markdown string). The Decisions to make heading is reserved.
+  - table: object with columns (nonempty array of nonempty single-line strings) and
+    rows (nonempty array of arrays with one cell per column). Cells render as single-line text.
+  - details: array of objects with summary (nonempty single-line string) and body
+    (nonempty Markdown string).
+  Omit optional structures or use empty sections/details arrays. In prose, use real
+  line breaks rather than literal backslash escape sequences. For code_links and notes,
+  run shaka workflow and read the Explain phase's field descriptions.
+
+  This example is valid renderer input, not sufficient publication evidence. Before
+  publishing, replace its summary with an account of the change and the evidence below.
+
   --body-file posts Markdown you already rendered, without notes. The ready checkpoint
   recognizes it only when its first line is the writer identity, it has a
   "# Code Walkthrough" heading, and its last line is the commit footer naming --head.

@@ -243,6 +243,8 @@ def walkthrough_parts(options, github)
   body = Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough, github.repository),
                                                walkthrough, github)
   [body, Shaka::Walkthrough::Notes.resolve(walkthrough, github), walkthrough['summary']]
+rescue Shaka::Error => e
+  raise Shaka::Error, "#{e.message} See shaka walkthrough --help for the JSON format and example."
 end
 
 # The opening check runs after GitHub has the text, so its advice never blocks publication.
