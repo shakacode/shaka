@@ -2,9 +2,14 @@
 
 ## Migrate an older contract
 
-Use `shaka seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA` to preview a
-migration of `.agents/shaka/config.yml` at that commit. A repository without that
-file at the commit first converts with the steps in the changelog's breaking-changes entry.
+For a release cutover, check out the official target tag separately while the
+previous installation stays active. Use the absolute path to that checkout's
+`skills/shaka/scripts/shaka` and set `SHAKA_RUBY` to the absolute path to Ruby
+3.4 or later for each invocation of the target helper.
+
+Run the target helper with `seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA`
+to preview the migration of `.agents/shaka/config.yml` at that commit. If that
+file is absent, follow the converter steps in the changelog's breaking-changes entry.
 Inspect every retained, moved, retired, and blocking field before
 adding `--apply`. Settings the current contract accepts carry over unchanged, but
 `--apply` rewrites the YAML, so restore any comments before committing. An existing
@@ -31,7 +36,7 @@ For the old command-path mapping, migrate in this order:
    scripts. Preserve adapters at old paths. Where old and new roles conflict,
    make both run the stricter checks until the new contract is trusted.
 2. In the fresh checkout used for the target checks below, verify the retained
-   adapters and validate with the previous installation and old trusted SHA.
+   adapters and validate using the previous installation's helper and old trusted SHA.
    Both validations must pass before the migration PR merges through normal gates.
 3. After switching to the verified target installation, remove obsolete adapters
    in a follow-up PR. The optional paths are `validate-local` and `trigger-hosted-ci`.

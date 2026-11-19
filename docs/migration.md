@@ -67,7 +67,8 @@ Preview a migration of this repository's shared pilot settings using the migrati
 ```
 
 - For `.agents/shaka/config.yml` with retired keys, your agent previews
-  `shaka seam migrate` against the project's current default-branch commit.
+  `seam migrate` with the 1.0.0 helper against the project's current
+  default-branch commit.
   Applying the migration rewrites the YAML, so restore any comments you use.
 - For `.agents/agent-workflow.yml`, use the pinned converter in the
   [pilot changelog](https://github.com/shakacode/shaka/blob/b11f2f7d0d0cf3c7dd9ca78760a7a8c1eac708cb/CHANGELOG.md#removed).
