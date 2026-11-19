@@ -72,9 +72,11 @@ lines to the end of the script. They put Ruby 3.4's commands, such as `ruby`,
 ```
 
 Skip these lines for a project pinned to another Ruby: the links make Ruby
-3.4.10 the session's `ruby` whatever version the project selects.
+3.4.10 the session's `ruby` whatever version the project selects. A command
+already in `~/.local/bin` keeps its place, so it can still run Ruby 3.3.
 
-With the lines in place, ask Claude to run `bundle install` in the session.
+With the lines in place, ask Claude to check `ruby -v` and `bundle -v` in the
+session, then run `bundle install`.
 Installing gems there, rather than in the setup script, keeps your project's
 Gemfile from running before you have looked at the branch.
 
