@@ -10,9 +10,11 @@ Walkthrough input:
 }
 ```
 
-  Required: identity is an object; summary is nonempty Markdown text (not a body field).
+  Supply identity: {} for portable input. The summary must be nonempty Markdown text
+  (not a body field).
   Identity fields agent, provider, model, and effort are single-line strings; missing or
-  empty fields render UNKNOWN. Native publisher settings supply the actual writer identity.
+  empty fields render UNKNOWN. Native attribution sets agent and supplies observed model
+  and effort. Codex also supplies observed provider; Claude keeps provider as supplied.
   The command supplies head from --head; a head field in the JSON does not override it.
   Optional structures:
   - sections: array of objects with heading (nonempty single-line string) and body
