@@ -38,7 +38,8 @@ Shaka then keeps the full records in comments on the same PR. A **Usage archive*
 with links and a SHA256 checksum identifies each set of those comments; the tables and
 pricing notes stay in the description. Table reports archived together share one such
 line, so an update adds a few hundred characters however many of them it archives. A
-report that shows its own text keeps its own line.
+report that shows its own text keeps its own line. New archive comments show the
+encoded records under a collapsed **Archived usage data** section.
 Keep those comments. A later update checks their contents before using them and stops
 if a comment is missing or changed. The checksum detects changes; it does not make a
 GitHub comment immutable.

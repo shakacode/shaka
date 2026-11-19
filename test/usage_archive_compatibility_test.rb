@@ -65,7 +65,9 @@ module VersionTwoArchive
   end
 
   def upload(github, chunk)
-    body = "🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN\n\n#{Shaka::UsageArchive::HEADER}```base64\n#{chunk}\n```\n"
+    body = "🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN\n\n" \
+           "Usage accounting archive. Keep this comment: later description updates verify its checksum.\n\n" \
+           "```base64\n#{chunk}\n```\n"
     github.api('repos/owner/repo/issues/42/comments', method: 'POST', fields: { body: })['id']
   end
 
