@@ -190,7 +190,37 @@ class EvidenceWindowsCheckWatchTest < Minitest::Test
     end
   end
 
+  # An interrupt after the leader exits still stops the check, and reports what it could not end.
+  def test_interrupt_after_the_leader_exits_still_stops_the_check
+    with_repository do |root, pid_file|
+      tree = Shaka::Evidence::CandidateTree.capture(root:)
+      command = [RbConfig.ruby, '-e', LEADER_EXITS, pid_file]
+      watch = Shaka::Evidence::TreeWatch.new(command, root:, tree:, interval: 60, windows: true)
+      _output, error = capture_io { interrupt_after_leader_exits(watch, pid_file) }
+
+      assert_stop_report(error, Integer(File.read(pid_file)))
+    end
+  end
+
   private
+
+  def interrupt_after_leader_exits(watch, pid_file)
+    runner = Thread.new { watch.run }
+    runner.report_on_exception = false
+    sleep 0.05 until File.size?(pid_file) && watch.instance_variable_get(:@check)
+    watch.instance_variable_get(:@check).waiter.join(30)
+    runner.raise(Interrupt)
+    assert_raises(Interrupt) { runner.join }
+  end
+
+  def assert_stop_report(error, descendant)
+    if Shaka::ExecutableFile.windows?
+      refute_includes error, LIMITATION
+      refute running?(descendant), 'the job left the descendant running'
+    else
+      assert_includes error, LIMITATION
+    end
+  end
 
   # On Windows the job ends the descendant; elsewhere no job exists, so the limit is reported.
   def assert_stop_coverage(outcome, descendant)

@@ -37,12 +37,13 @@ module Shaka
         [output, error].each { |writer| writer&.close }
       end
 
-      # Ends the check. Returns the limitation when descendants may outlive the stop.
+      # Ends the check. Returns the limitation when descendants may outlive the stop. The wait is
+      # bounded, so an interrupted helper still leaves when Windows refuses to end the leader.
       def stop
         ended = @job&.terminate
         @limitation = LIMITATION unless ended
-        end_leader unless @waiter.join(ended ? STOP_SECONDS : 0)
-        @waiter.join
+        end_leader unless settled?(ended ? STOP_SECONDS : 0)
+        settled?(STOP_SECONDS)
         @limitation
       end
 
@@ -54,6 +55,13 @@ module Shaka
       end
 
       private
+
+      # A waiter that stopped on a failed wait has settled too.
+      def settled?(seconds)
+        !@waiter.join(seconds).nil?
+      rescue SystemCallError
+        true
+      end
 
       def reap
         loop do
