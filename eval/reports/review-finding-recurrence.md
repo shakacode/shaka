@@ -38,7 +38,7 @@ model runs. No person has rechecked the classification.*
   the final pool; the report makes no projection.
 - **Mostly one-off in the sample:** 104 of the 150 checked findings fit no kind. They
   concern one change, such as one function's wrong default or one guide's missing step.
-- **Biggest kinds compare prose with code.** The largest kind, docs or instructions
+- **The largest kind compares prose with code.** That kind, docs or instructions
   that describe behavior the code lacks, was raised on 53 PRs and fixed on 47. A name-checking test would catch
   about 1 in 10 of them. The rest need someone to read both.
 - **A few kinds have a mechanical check worth trying:**
@@ -254,7 +254,8 @@ below the threshold.
 - Download the repository's issue comments updated in the window. Keep main comments
   whose marker starts with `shaka:reply:local-review-loop-` and that contain
   `### Finding details`.
-- Parse each line that starts ``- `F<n>` <class>: <title> — ``. Read the disposition
+- Parse each line that starts ``- `<ID>` <class>: <title> — ``, where the ID is
+  usually `F<n>` but may take other forms. Read the disposition
   from the next words: `fixed in` a commit, `Dismissed` followed by a reason, `documented`,
   `Accepted`, `Open`, or `Needs your decision`. A reason, a returned-after-fix marker, and
   `· Reported by:` with reviewers may follow. Merge the same PR, ID, class, and title, keeping the newest comment.

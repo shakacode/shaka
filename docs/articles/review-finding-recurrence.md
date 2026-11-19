@@ -15,7 +15,7 @@ lists the method, every kind, and the
    1,716 fit 18 recurring kinds, 6 more fit a kind seen on 2 PRs, and 1,304 were not
    classified. Misses push the true share up and repeats push it down, so 24% is the
    observed share.
-2. **The kinds that repeat most compare prose with code.** Docs that promise behavior
+2. **The single largest kind compares prose with code.** Docs that promise behavior
    the code lacks were raised on 53 PRs and fixed on 47. A test that checks names would catch about 1 in 10
    of them. The rest need someone, or something, to read both.
 3. **The best-looking check fell short when mapped.** Git calls that inherit the
