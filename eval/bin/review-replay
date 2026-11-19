@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require 'optparse'
+require 'pathname'
 require_relative '../lib/shaka/evaluation/review_replay'
 
 def parse_options
@@ -88,9 +89,13 @@ end
 
 def private_directory?(directory)
   File.directory?(directory) && File.stat(directory).mode.nobits?(0o077) &&
-    !File.exist?(File.join(directory, '.git')) &&
-    !system(Shaka::Evaluation::ReviewReplayFixture::GIT_ENVIRONMENT, 'git', '-C', directory,
-            'rev-parse', '--git-dir', out: File::NULL, err: File::NULL)
+    Pathname.new(directory).ascend.none? { |parent| repository_marker?(parent) }
+end
+
+def repository_marker?(directory)
+  marker = directory.join('.git')
+  marker.exist? || marker.symlink? ||
+    (directory.join('HEAD').file? && directory.join('objects').directory? && directory.join('refs').directory?)
 end
 
 def rows(case_id)
