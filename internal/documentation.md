@@ -60,7 +60,7 @@ Source citations use a commit, tag, or branch without
 slashes so the check can distinguish the ref from the repository path. Slash-containing
 refs require author and reviewer judgment. The legacy references subtree remains
 conservatively blocked inside first-party source paths, including slash-containing refs.
-Full 40-character commit refs use their parsed repository paths, so an immutable
+Bare full 40-character commit refs use their parsed repository paths, so an immutable
 human-guide citation can contain that directory segment without being reclassified.
 GitHub, raw GitHub and jsDelivr's `/gh/`
 source layouts are recognized; other external source layouts require manual review.

@@ -33,7 +33,7 @@ module ShakaDocs
         return unless source
       end
       ref, path = source.sub(%r{\Arefs/(?:heads|tags)/}, '').split('/', 2)
-      legacy_reference_path(path, ref)
+      legacy_reference_path(path, source.start_with?('refs/heads/', 'refs/tags/') ? nil : ref)
     end
 
     def cdn_repository_path(uri)
