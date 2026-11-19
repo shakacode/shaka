@@ -91,11 +91,10 @@ class PublicationTemplateLayoutCommandTest < Minitest::Test
     end
   end
 
-  def test_guidance_shows_the_order_shaka_reads
+  def test_guidance_confirms_the_marker
     with_guidance('pr_evidence' => '.agents/pr-evidence.md') do |root|
       write_template(root, TEMPLATE)
-      assert guidance('pr_evidence', root, commit(root))
-        .end_with?("Shaka will publish: `## Deployment`, Shaka's sections.\n")
+      assert_includes guidance('pr_evidence', root, commit(root)), 'Shaka places its sections at <!-- shaka -->.'
     end
   end
 

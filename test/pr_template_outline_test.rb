@@ -35,13 +35,12 @@ class PrTemplateOutlineTest < Minitest::Test
     assert_equal ['After'], outline(template)
   end
 
-  def test_check_shows_the_publish_order_only_when_the_marker_is_present
+  def test_check_confirms_the_marker_and_notes_repeats
     assert_empty Shaka::PrTemplate.check(%w[Rollout Changelog])
-    notes = Shaka::PrTemplate.check(['Verification', 'Rollout', MARKER, 'Changelog', 'rollout', MARKER])
-    assert_equal ["Shaka will publish: `## Rollout`, Shaka's sections, `## Changelog`.",
-                  "`## Verification` is a section Shaka writes, so it stays inside Shaka's sections.",
-                  'The template repeats `## Rollout`; Shaka uses the first.',
-                  'The template repeats <!-- shaka -->; Shaka uses the first.'], notes
+    notes = Shaka::PrTemplate.check(['Rollout', MARKER, 'Changelog', 'rollout', MARKER])
+    assert_includes notes.first, 'Shaka places its sections at <!-- shaka -->.'
+    assert_equal ['The template repeats `## Rollout`; Shaka uses the first.',
+                  'The template repeats <!-- shaka -->; Shaka uses the first.'], notes.drop(1)
   end
 
   private

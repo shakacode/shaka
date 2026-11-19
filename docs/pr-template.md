@@ -107,9 +107,8 @@ Shaka reads the template in a strict format, so nothing depends on guessing:
   description. The recommendation, any decisions waiting on you, and the review links
   follow, so the decision comes first. The credit line stays last.
 
-Each time the agent reads a template that holds the marker, Shaka shows it the order
-it will publish, such as `## Rollout`, Shaka's sections, `## Changelog`. It also names
-any template heading Shaka keeps in its own sections and notes a repeated heading or marker.
+Each time the agent reads a template that holds the marker, Shaka confirms it found the
+marker, restates these rules, and notes a repeated heading or marker.
 To see it yourself, ask your agent:
 
 ```text

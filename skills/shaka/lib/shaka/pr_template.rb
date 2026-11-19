@@ -53,27 +53,25 @@ module Shaka
     # blocks and HTML comments that start a line hold neither.
     def self.outline(text) = OutlineReader.new.call(text)
 
-    # What a reader of `guidance pr_evidence` needs to see: the order Shaka will publish, worked out by the same
-    # layout the description uses, the template headings Shaka keeps in its own sections, and any repeats.
+    # What a reader of `guidance pr_evidence` needs to know: that Shaka found the marker, the rule it applies,
+    # and any repeats. It predicts no order, because the sections the agent writes decide that.
     def self.check(outline)
       return [] unless outline.include?(MARKER)
 
-      require_relative 'publication/template_layout'
-      own, kept = (groups(outline).map(&:first) - [MARKER]).partition { TemplateLayout.placeable(it) }
-      notes(TemplateLayout.arrange([MARKER], own.map { [{ 'heading' => it }, it] }, outline), kept, repeats(outline))
+      ["Shaka places its sections at #{MARKER_LINE}. Sections the agent writes under the template's other `##` " \
+       "headings follow the template's order; Shaka's own headings stay inside Shaka's sections.",
+       *repeats(outline).map { "The template repeats #{name(it)}; Shaka uses the first." }]
     end
 
-    def self.notes(order, kept, repeated)
-      ["Shaka will publish: #{order.map { it == MARKER ? "Shaka's sections" : heading(it) }.join(', ')}.",
-       *kept.map { "#{heading(it)} is a section Shaka writes, so it stays inside Shaka's sections." },
-       *repeated.map { "The template repeats #{it == MARKER ? MARKER_LINE : heading(it)}; Shaka uses the first." }]
+    def self.name(entry) = entry == MARKER ? MARKER_LINE : "`## #{entry}`"
+
+    # Headings group as the description layout matches them, by words, ignoring case and spacing.
+    def self.repeats(outline)
+      outline.group_by { it == MARKER ? it : it.gsub(/[[:space:]]+/, ' ').downcase }.values
+             .select { it.size > 1 }.map(&:first)
     end
 
-    def self.groups(outline) = outline.group_by { it == MARKER ? it : TemplateLayout.key(it) }.values
-    def self.repeats(outline) = groups(outline).select { it.size > 1 }.map(&:first)
-    def self.heading(name) = "`## #{name}`"
-
-    private_class_method :notes, :groups, :repeats, :heading
+    private_class_method :repeats, :name
 
     # Reads a template line by line, keeping code-block and comment state.
     class OutlineReader
