@@ -10,7 +10,8 @@ module ShakaDocs
 
     def url(target)
       text = target.delete("\t\r\n").gsub(/\A[\x00-\x20]+|[\x00-\x20]+\z/, '')
-      uri = Addressable::URI.parse(text.tr('\\', '/'))
+      text = text.tr('\\', '/').sub(%r{\A(https?:)?/{3,}}i, '\1//')
+      uri = Addressable::URI.parse(text)
       uri.host ? uri.normalize : uri
     end
 

@@ -44,6 +44,10 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
+      - name: Documentation navigation
+        continue-on-error: true
+        run: ruby bin/check-docs-navigation
+
       - name: shaka doctor
         continue-on-error: true
         run: ruby bin/windows-exercise doctor

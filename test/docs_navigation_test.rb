@@ -748,6 +748,18 @@ end
 class DocsUrlWhitespaceTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 
+  def test_extra_authority_slashes_keep_first_party_ownership
+    %w[https://github.com https:////github.com ////github.com].each do |host|
+      page = "<a href=\"#{host}/shakacode/shaka/blob/main/skills/shaka/references/review.md\">Review</a>"
+      output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+      refute_predicate status, :success?
+      assert_includes output, 'Link a human guide, not agent instructions:'
+    end
+    page = '<a href="https:////example.com/shakacode/shaka/blob/main/skills/shaka/references/review.md">Other</a>'
+    output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
   def test_html_backslashes_follow_browser_path_separators
     page = '<a href="https://github.com/shakacode/shaka\blob/main/skills/shaka/references/review.md">Review</a>'
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
