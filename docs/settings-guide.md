@@ -142,7 +142,9 @@ Ask the agent to record what every relevant PR should show. For example:
 
 The agent can propose a settings PR. Use CI or your validation script for
 requirements tools can test. Use [project guidance](settings.md#project_guidance)
-for evidence the agent should assess and report in the PR.
+for evidence the agent should assess and report in the PR. To have the agent fill
+your pull request template, and to choose where Shaka's sections appear, see
+[Use your pull request template](pr-template.md).
 
 ## Resume unfinished work
 
