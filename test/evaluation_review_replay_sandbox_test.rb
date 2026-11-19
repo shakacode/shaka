@@ -22,4 +22,30 @@ class EvaluationReviewReplaySandboxTest < Minitest::Test
   def test_launcher_refuses_unrecognized_helper_shape
     assert_raises(ArgumentError) { Sandbox.exec_arguments(Dir.pwd, %w[exec -s workspace-write]) }
   end
+
+  def test_preflight_requires_explicit_private_file_denials
+    Dir.mktmpdir do |scratch|
+      probe = fake_probe(scratch)
+
+      Sandbox.verify(probe, { 'PROBE_RESULT' => 'deny' }, scratch)
+      assert_raises(IOError) { Sandbox.verify(probe, { 'PROBE_RESULT' => 'read' }, scratch) }
+      assert_raises(IOError) { Sandbox.verify(probe, { 'PROBE_RESULT' => 'error' }, scratch) }
+    end
+  end
+
+  private
+
+  def fake_probe(scratch)
+    path = File.join(scratch, 'codex')
+    File.write(path, <<~SH, perm: 0o700)
+      #!/bin/sh
+      for target; do :; done
+      case "$target:$PROBE_RESULT" in
+        */control:*|*:read) /bin/cat "$target" ;;
+        *:deny) printf 'cat: %s: Operation not permitted\n' "$target" >&2; exit 1 ;;
+        *) printf 'sandbox initialization failed\n' >&2; exit 1 ;;
+      esac
+    SH
+    path
+  end
 end

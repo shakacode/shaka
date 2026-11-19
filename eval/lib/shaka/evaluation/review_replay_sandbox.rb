@@ -59,8 +59,8 @@ module Shaka
       def verify_canaries(executable, environment, fixture, home)
         control = canary(fixture, 'control')
         private_files = [canary(home, 'auth.json'), canary(File.dirname(fixture), 'prior-transcript.jsonl')]
-        return if readable?(executable, environment, fixture, control) &&
-                  private_files.none? { |path| readable?(executable, environment, fixture, path) }
+        return if probe(executable, environment, fixture, control) == :readable &&
+                  private_files.all? { |path| probe(executable, environment, fixture, path) == :denied }
 
         raise IOError, 'Codex replay requires a verified fixture-only command sandbox'
       end
@@ -71,10 +71,19 @@ module Shaka
         path
       end
 
-      def readable?(executable, environment, fixture, path)
+      def probe(executable, environment, fixture, path)
         arguments = sandbox_arguments(fixture, ['/bin/cat', path])
-        output, _error, status = Open3.capture3(environment, executable, *arguments)
-        status.success? && output == "replay-canary\n"
+        output, error, status = Open3.capture3(environment, executable, *arguments)
+        return :readable if status.success? && output == "replay-canary\n"
+        return :denied if status.exitstatus == 1 && output.empty? && permission_denial?(error, path)
+
+        :inconclusive
+      end
+
+      def permission_denial?(error, path)
+        error.lines.any? do |line|
+          line.include?(path) && line.strip.end_with?('Permission denied', 'Operation not permitted')
+        end
       end
 
       def absolute_path(path)
