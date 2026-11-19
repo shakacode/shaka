@@ -70,6 +70,7 @@ commit for `DEFAULT_SHA`.
   [pilot changelog](https://github.com/shakacode/shaka/blob/b11f2f7d0d0cf3c7dd9ca78760a7a8c1eac708cb/CHANGELOG.md#removed).
   The preview identifies work you need to do before applying the conversion.
 
-Review the configuration diff, validate the new settings with the target release,
-and merge the settings PR before switching your active installation. Check the
-merged default-branch configuration with the target release before switching.
+Before merging the settings PR, review its diff and run the target helper's
+`seam check --root PROJECT --local` in the PR checkout. Run the moved command
+wrappers. After the PR merges, check the new default-branch commit with `--ref`
+as shown above before switching your active installation.
