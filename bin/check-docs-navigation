@@ -56,15 +56,20 @@ def anchors(path)
   end
 end
 
+def unresolved_anchor(path, fragment)
+  anchor = URI::DEFAULT_PARSER.unescape(fragment.to_s)
+  return if anchor.empty? || anchor.casecmp?('top')
+
+  'missing anchor' if path.match?(/\.mdx?\z/) && !anchors(path).include?(anchor)
+end
+
 def unresolved(path, target)
   uri = ShakaDocs::Audiences.url(target)
   file = URI::DEFAULT_PARSER.unescape(uri.path)
-  anchor = uri.fragment
   destination = file.empty? ? path : File.expand_path(file, File.dirname(path))
   return 'missing file' unless File.exist?(destination)
 
-  'missing anchor' if anchor && destination.match?(/\.mdx?\z/) &&
-                      !anchors(destination).include?(URI::DEFAULT_PARSER.unescape(anchor))
+  unresolved_anchor(destination, uri.fragment)
 end
 
 def broken_relative_links(repository, path)

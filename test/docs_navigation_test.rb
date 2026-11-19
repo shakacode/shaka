@@ -151,7 +151,18 @@ class DocsParserRegressionTest < Minitest::Test
     output, _, status = check(sidebar, "<a href=\"#{target}\">Agent</a>")
     refute_predicate status, :success?, output
     assert_includes output, 'Link a human guide, not agent instructions:'
+    assert_includes output, 'expected-experience.md -> '
     assert_includes output, 'sidebars.json -> '
+  end
+
+  def test_browser_top_links_pass_while_missing_heading_links_fail
+    page = '<a href="#top">Top</a> <a href="#TOP">Top</a> <a href="#">Top</a>'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, output
+
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '<a href="#absent">Missing</a>')
+    refute_predicate status, :success?, output
+    assert_includes output, '#absent (missing anchor)'
   end
 
   def test_html_query_links_keep_file_and_fragment_validation
