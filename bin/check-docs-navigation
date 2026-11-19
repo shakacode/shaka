@@ -96,7 +96,7 @@ def markdown_files(docs, repository)
 end
 
 def emitted_sources(repository)
-  ShakaDocs::Audiences.repository_files(repository).grep(%r{\Askills/}).filter_map do |file|
+  ShakaDocs::Audiences.repository_paths(repository).grep(%r{\Askills/}).filter_map do |file|
     path = File.join(repository, file)
     path if File.file?(path)
   end
@@ -150,13 +150,12 @@ begin
 
   ids = document_ids(navigation.fetch('docsSidebar'))
   prefix = "#{File.basename(root)}/"
-  inventory = ShakaDocs::Audiences.repository_files(repository)
+  inventory = ShakaDocs::Audiences.repository_paths(repository)
   doc_paths = inventory.filter_map { |file| File.join(repository, file) if file.start_with?(prefix) }
   reject_docs_symlinks(doc_paths, repository)
+  doc_paths.select! { |path| File.file?(path) }
 
-  files = inventory.grep(/\.mdx?\z/i).filter_map do |file|
-    file.delete_prefix(prefix) if file.start_with?(prefix)
-  end
+  files = doc_paths.grep(/\.mdx?\z/i).map { |path| path.delete_prefix("#{root}/") }
   # Site discovery needs lowercase extensions and ignores dot, underscore and planning paths.
   excluded, published = files.partition do |file|
     !file.match?(/\.mdx?\z/) || file.split('/').any? { |part| part.start_with?('.', '_') } ||

@@ -85,16 +85,16 @@ module ShakaDocs
     end
 
     def document_files(repository)
-      repository_files(repository).grep(/\.mdx?\z/i).select { |path| File.file?(File.join(repository, path)) }
+      repository_paths(repository).grep(/\.mdx?\z/i).select { |path| File.file?(File.join(repository, path)) }
     end
 
-    def repository_files(repository)
+    def repository_paths(repository)
       files = if File.exist?(File.join(repository, '.git'))
                 git_files(repository)
               else
                 Dir.glob('**/*', File::FNM_DOTMATCH, base: repository)
               end
-      files.uniq.select { |path| File.file?(File.join(repository, path)) || File.symlink?(File.join(repository, path)) }
+      files.uniq
     end
 
     def git_files(repository)

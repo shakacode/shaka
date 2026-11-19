@@ -690,7 +690,32 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     assert_includes errors, 'Docs sources cannot be symlinks: docs/guides'
   end
 
+  def test_ignored_alias_above_a_missing_tracked_asset_is_refused
+    files = { '.gitignore' => "/docs/img/figures\n", 'docs/img/figures/chart.svg' => '<svg/>' }
+    _, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files) do |root|
+      alias_missing_asset(root)
+    end
+    refute_predicate status, :success?
+    assert_includes errors, 'Docs sources cannot be symlinks: docs/img/figures'
+  end
+
+  def test_deleted_tracked_asset_under_a_regular_directory_is_not_a_symlink
+    files = { 'docs/img/chart.svg' => '<svg/>' }
+    output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files) do |root|
+      system('git', '-C', root, 'add', 'docs/img/chart.svg', exception: true)
+      File.unlink(File.join(root, 'docs/img/chart.svg'))
+    end
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
   private
+
+  def alias_missing_asset(root)
+    system('git', '-C', root, 'add', '-f', 'docs/img/figures/chart.svg', exception: true)
+    FileUtils.remove_entry(File.join(root, 'docs/img/figures'))
+    FileUtils.mkdir_p(File.join(root, 'internal/empty-figures'))
+    File.symlink('../../internal/empty-figures', File.join(root, 'docs/img/figures'))
+  end
 
   def alias_tracked_directory(root)
     system('git', '-C', root, 'add', '-f', 'docs/guides/install.md', exception: true)
