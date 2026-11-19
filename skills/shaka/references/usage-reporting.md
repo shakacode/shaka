@@ -279,12 +279,6 @@ helper report or attribute summary usage to a turn.
 For an OpenRouter usage source, read [recorded API charges](openrouter.md#recorded-charges)
 only when collecting that source.
 
-The September 29, 2026 OpenAI rate card includes GPT-6.1 Sol. Standard API-equivalent
-rates per million tokens are $2 input, $0.10 cached input, and $10 output;
-standard credit rates are 50, 2.5, and 250 respectively. These scenarios follow the
-[API model rates](https://developers.openai.com/api/docs/models/gpt-6.1-sol) and
-[Codex credit rates](https://learn.chatgpt.com/docs/pricing#token-rates).
-
 The helper prices supported responses individually before summing. This handles
 model switches and context thresholds without charging cached input twice.
 Effort has no price multiplier. Unsupported models, missing counters, and
@@ -304,8 +298,8 @@ report.
 
 | Scenario | Treatment |
 | --- | --- |
-| Standard Codex credits | Configured supported OpenAI model. A response with cache writes is unpriced because their credit rate is unpublished. |
-| Standard API-equivalent USD | Ordinary input excludes cache reads and writes, which use their own published rates. |
+| Standard Codex credits | Configured supported OpenAI model. Codex has no separate cache-write charge. Shaka leaves responses with reported cache writes unpriced in this estimate. |
+| Standard API-equivalent USD | Ordinary input excludes cache reads and writes. Cache reads use the published cache-read rate. Cache writes use the 30-minute rate. |
 | Cursor on-demand USD | Configured supported Grok model and recorded Fast/standard mode. Cache writes remain ordinary input because no separate rate is published. |
 | Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published fast-mode rates are priced. |
 | Pi native nominal USD | Copy the host's recorded cost instead of applying a rate card. |
