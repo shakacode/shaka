@@ -10,12 +10,12 @@ module ShakaDocs
     # Root documents have distinct audiences: project entry, RubyGems, contributors, releases, and agents.
     ROOT_DOCUMENTS = %w[README.md README.gem.md CONTRIBUTING.md CHANGELOG.md AGENTS.md CLAUDE.md].freeze
     AGENT_ENTRY_FILES = %w[AGENTS.md CLAUDE.md SKILL.md].freeze
-    AGENT_REFERENCES = %r{(?:\A|/)skills/shaka/references(?:[/#?]|\z)}
 
     module_function
 
     def links(text)
-      text = text.gsub(/^ {0,3}(`{3,}|~{3,}).*?^ {0,3}\1[^\n]*$/m, '').gsub(/`[^`\n]*`/, '')
+      text = text.gsub(/^ {0,3}(`{3,}|~{3,}).*?^ {0,3}\1[^\n]*$/m, '')
+                 .gsub(/(?<!\\)`[^`\n]*(?<!\\)`/, '')
       inline = text.scan(/\]\(\s*<?([^)\s>]+)/).flatten
       defined = text.scan(/^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?(\S+?)>?(?:\s|$)/).flatten
       html = text.scan(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>\x60=]+))/).flatten.compact
@@ -29,7 +29,12 @@ module ShakaDocs
                  %r{\A/shakacode/shaka/(?:blob|tree|blame|raw|edit|commits)/[^/]+/}i
                when 'raw.githubusercontent.com' then %r{\A/shakacode/shaka/[^/]+/}i
                end
-      uri.path.sub(prefix, '') if prefix && uri.path.match?(prefix)
+      return unless prefix && uri.path.match?(prefix)
+
+      path = uri.path.sub(prefix, '')
+      return path if path.match?(%r{\A(?:docs|skills|\.agents)(?:/|\z)})
+
+      path.sub(%r{\A.*?/(?=(?:docs|skills|\.agents)(?:/|\z))}, '')
     end
 
     def target_path(uri)
@@ -72,7 +77,7 @@ module ShakaDocs
     def agent_targets(repository, source, targets)
       targets.select do |target|
         path = local_path(repository, source, target)
-        target.match?(AGENT_REFERENCES) || (path && agent_path?(path.delete_prefix("#{repository}/")))
+        path && agent_path?(path.delete_prefix("#{repository}/"))
       end
     end
 
