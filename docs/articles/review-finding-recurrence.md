@@ -18,13 +18,11 @@ lists the method, every kind, and the
 2. **The kinds that repeat most compare prose with code.** Docs that promise behavior
    the code lacks were raised on 53 PRs and fixed on 47. A test that checks names would catch about 1 in 10
    of them. The rest need someone, or something, to read both.
-3. **A promising check covers only part of its kind.** Git calls that inherit the
+3. **The best-looking check fell short when mapped.** Git calls that inherit the
    caller's Git setup produced 13 findings on 5 PRs, 7 of them defects, though 2 of those
-   defects concerned quoting and file modes rather than missing isolation. A test that
-   every call uses one isolating runner would catch 4 to 6 of the 13, and only if it
-   also covers the seed tooling under `eval/`. A follow-up mapping that supersedes this
-   estimate,
-   [#1222](https://github.com/shakacode/shaka/pull/1222), recommends deferring it.
+   defects concerned quoting and file modes rather than missing isolation. A follow-up mapping,
+   [#1222](https://github.com/shakacode/shaka/pull/1222), found that a test requiring one
+   isolating runner catches at most 3 of the 7 defects and recommends deferring it.
 4. **Reviewers still raise risks in areas a check covers.** Where an anchor check and a
    quote loader existed, reviewers raised 4 risks about what those checks read. The
    agent dismissed all 4 after a search showed nothing depended on the edit.
@@ -63,7 +61,7 @@ enforced by nothing but the agent.
 | Symlinks, case-insensitive disks, or Windows | 14 / 13 | 18 | Windows and case-insensitive CI; CI minutes | Most fixed ones | Evaluate first |
 | An unnamed caller might break | 13 / 0 | 14 | Review prompt change, not a check; low | None; all 14 were dismissed | Evaluate a review prompt change |
 | A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | Heredoc and fallback tests; low | The 5 fixed ones | A heredoc-prose test shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); not checked against #837 and #901 |
-| Git subprocess inherits the caller's Git environment | 5 / 5 | 13 | One isolating Git runner; medium | 4 to 6 | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) |
+| Git subprocess inherits the caller's Git environment | 5 / 5 | 13 | One isolating Git runner; medium | At most 3 of 7 defects, per #1222 | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) |
 | Changelog rule broken; the rule changed mid-month | 4 / 4 | 4 | CI refusing `CHANGELOG.md` edits; low | 1 of 4 | Defer |
 
 "With a fix" counts PRs where the agent fixed at least one finding of the kind. The
@@ -80,8 +78,8 @@ report lists 7 more kinds with their checks and costs.
 ### 1. Turn each repeated correction into a check
 
 - **Idea:** a repeated correction is a missing lint rule, type, or test.
-- **In Shaka:** review findings are the corrections. A local AI reviewer reads every
-  commit. Shaka posts each PR's findings in a review record comment, called a ledger,
+- **In Shaka:** review findings are the corrections. When local review runs, an AI reviewer
+  reads each commit. Shaka posts each PR's findings in a review record comment, called a ledger,
   where the agent marks each one fixed or dismissed with a reason. A *kind* here is a
   group of findings one check could catch.
 - **Result:** repeats exist, but most fall where code cannot judge. The two largest
@@ -145,7 +143,7 @@ from prose to checks.
 | Tests refusing a Ruby fallback for a `defaults.yml` key, and long English string literals in `skills/shaka/lib` | 5 fixed findings: 3 settings fallbacks and 2 prompt texts. The agent dismissed the other 5 and kept them in Ruby | Heredoc part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); fallback part not built |
 | CI step refusing `CHANGELOG.md` edits on non-release PRs | The rule changed mid-month; 1 finding broke its current form | Defer |
 | Report-only changed-line coverage | Up to 26 of 51 test findings name an untested path; coverage misses paths unit tests already run | Evaluate on the next 10 PRs |
-| Tell reviewers which checks passed, and to name a caller before warning about one | 4 risks dismissed by citing a check or slug, and 14 by showing callers unaffected; dismissals were not rechecked | Evaluate: compare dismissals over a week |
+| Tell reviewers which checks passed, and to name a caller before warning about one | 4 risks in checked areas dismissed after a search or slug showed nothing depended on the edit, and 14 by showing callers unaffected; dismissals were not rechecked | Evaluate: compare dismissals over a week |
 | Make the workflow's stale-text instruction more prominent, with one failure example from this data | The rule exists, yet docs that describe missing behavior were fixed on 47 PRs; pstack's skill prescribes this for lessons that need judgment | Evaluate: compare stale-text findings before and after |
 | Check every docs claim about enforcement | High upkeep, cannot judge truth | Defer |
 
@@ -168,7 +166,7 @@ from prose to checks.
 ## Rerun it
 
 The [report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-finding-recurrence.md)
-gives the parsing rule and kind definitions. The JSON file records every verdict. The
+gives the parsing rule and kind definitions. The JSON file records the verdict for each of the 412 classified findings. The
 search patterns and scripts are not published, so a rerun sorts findings again and will
 give different counts. To run the study on your own repository, ask your agent:
 
