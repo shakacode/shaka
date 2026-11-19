@@ -163,8 +163,9 @@ The second row needs its own comparison: AI review against verification evidence
 on the same changes. No such trial exists yet. The
 [preregistered review-scope trial](https://github.com/shakacode/shaka/blob/main/eval/reports/review-scope-preregistration.md)
 tests a smaller change. It compares re-reviewing the whole diff with re-reviewing only
-new commits, and both arms keep the same two AI reviewers. Its paid pilot still awaits
-the maintainer's approval.
+new commits, and both arms keep the same two AI reviewers. Its
+[first pilot](review-scope-pilot.md) found that new-commits re-review missed known
+problems that full re-review found, so the trial stopped there.
 
 ## Sources and limits
 
