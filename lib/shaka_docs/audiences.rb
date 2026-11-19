@@ -42,7 +42,7 @@ module ShakaDocs
 
     def repository_path(uri)
       host = uri.host.to_s.delete_prefix('www.')
-      return unless %w[github.com raw.githubusercontent.com].include?(host)
+      return legacy_reference_path(uri) unless %w[github.com raw.githubusercontent.com].include?(host)
 
       source = URI::DEFAULT_PARSER.unescape(uri.path)[%r{\A/shakacode/shaka/(.*)\z}i, 1]
       return unless source
@@ -54,6 +54,13 @@ module ShakaDocs
         return unless source
       end
       source.sub(%r{\Arefs/(?:heads|tags)/}, '').split('/', 2)[1]
+    end
+
+    def legacy_reference_path(uri)
+      path = URI::DEFAULT_PARSER.unescape(uri.path.to_s)
+      return unless path.match?(%r{(?:\A|/)shakacode/shaka(?:@[^/]+)?/}i)
+
+      path[%r{(?:\A|/)(skills/shaka/references(?:/.*)?)\z}, 1]
     end
 
     def local_path(repository, source, target)

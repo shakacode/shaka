@@ -469,6 +469,16 @@ end
 class DocsCaseInventoryTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 
+  def test_first_party_reference_urls_are_not_limited_to_github_hosts
+    page = '[Review](https://cdn.jsdelivr.net/gh/shakacode/shaka@main/skills/shaka/references/review.md)'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
+    page = '[Guide](https://cdn.jsdelivr.net/gh/example/other@main/skills/shaka/references/review.md)'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, output
+  end
+
   def test_uppercase_markdown_requires_a_destination_in_git_and_exports
     paths = %w[new-guides/INSTALL.MD new-guides/install.MdX]
     paths.product([true, false]).each do |path, git|
