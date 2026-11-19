@@ -16,7 +16,7 @@ module Shaka
     # leader through the live handle, or leaves it alone. Either way it reports that descendants may
     # still be running.
     class WindowsCheck
-      LIMITATION = 'no Windows job ended this check, so processes it started may still be running'
+      LIMITATION = 'no Windows job ended this check, so it or processes it started may still be running'
       # Seconds a stopped check gets to exit, and between checks for the leader's exit.
       STOP_SECONDS = 10
       POLL_SECONDS = 0.05
@@ -30,9 +30,10 @@ module Shaka
         @error, error = IO.pipe
         @pid = Process.spawn(*command, chdir: root, in: File::NULL, out: output, err: error)
         @job = job.call(@pid)
-        @lock = Mutex.new
-        @reaped = false
-        @waiter = Thread.new { reap.tap { after_reap&.call } }
+        start_waiter(after_reap)
+      rescue StandardError
+        abandon_start
+        raise
       ensure
         [output, error].each { |writer| writer&.close }
       end
@@ -55,6 +56,23 @@ module Shaka
       end
 
       private
+
+      def start_waiter(after_reap)
+        @lock = Mutex.new
+        @reaped = false
+        @waiter = Thread.new { reap.tap { after_reap&.call } }
+      end
+
+      # A start that failed after spawning ends its unreaped leader through Ruby's handle.
+      def abandon_start
+        [@output, @error].each { |reader| reader&.close }
+        return unless @pid && !@waiter
+
+        Process.kill('KILL', @pid)
+        Process.wait(@pid)
+      rescue SystemCallError
+        nil
+      end
 
       # A waiter that stopped on a failed wait has settled too.
       def settled?(seconds)

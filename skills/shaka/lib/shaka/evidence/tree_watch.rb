@@ -76,8 +76,12 @@ module Shaka
       def outcome(waiter, readers)
         changed = watch(waiter, readers)
         $stderr.write(*(changed ? drain(readers) : readers.map(&:value)))
-        Outcome.new(status: waiter.value, changed_tree: changed, limitation: @limitation)
+        Outcome.new(status: status(waiter, changed), changed_tree: changed, limitation: @limitation)
       end
+
+      # A Windows leader that outlived its stop has no status yet, and waiting for it would hold the
+      # stopped run open; its limitation already reports that it may still be running.
+      def status(waiter, changed) = @windows && changed && waiter.alive? ? nil : waiter.value
 
       # A descendant can hold the output open after the leader exits, so the watch lasts until
       # the output closes too.

@@ -68,7 +68,7 @@ class EvidenceWindowsCheckStopTest < Minitest::Test
       started = check(SLEEPER, root, job: NO_JOB)
 
       assert_equal LIMITATION, started.stop
-      refute_predicate started.waiter.value, :success?
+      refute_predicate started.waiter, :alive?
     end
   end
 
@@ -174,6 +174,35 @@ class EvidenceWindowsCheckStopTest < Minitest::Test
 
     Process.kill('KILL', started.pid)
     Process.wait(started.pid)
+  end
+end
+
+# How a Windows check starts and what a stopped run reports.
+class EvidenceWindowsCheckStartTest < Minitest::Test
+  include WindowsCheckFixture
+
+  # A start that fails after spawning ends and reaps the leader itself, so nothing is left running.
+  def test_failed_start_ends_and_reaps_its_leader
+    spawned = nil
+    failing = lambda do |pid|
+      spawned = pid
+      raise 'no job'
+    end
+    Dir.mktmpdir('shaka-windows-check') do |root|
+      assert_raises(RuntimeError) { Shaka::Evidence::WindowsCheck.new(SLEEPER, root:, job: failing) }
+    end
+
+    assert_raises(Errno::ECHILD) { Process.wait(spawned) }
+  end
+
+  # A leader that outlived its stop has no status yet, so the stopped run reports none.
+  def test_stopped_windows_run_reports_no_status_for_a_surviving_leader
+    leader = Thread.new { sleep }
+    watch = Shaka::Evidence::TreeWatch.new([], root: Dir.pwd, tree: nil, windows: true)
+
+    assert_nil watch.send(:status, leader, 'changed tree')
+  ensure
+    leader&.kill
   end
 end
 
