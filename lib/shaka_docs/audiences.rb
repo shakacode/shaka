@@ -39,7 +39,9 @@ module ShakaDocs
     def html_links(node)
       return [] unless %i[html_inline html_block].include?(node.type)
 
-      Nokogiri::HTML5.fragment(node.literal).css('a, area').filter_map { |link| link['href'] || link['xlink:href'] }
+      Nokogiri::HTML5.fragment(node.literal).css('a, area, form, button, input').filter_map do |link|
+        link['href'] || link['xlink:href'] || link['action'] || link['formaction']
+      end
     end
 
     def agent_path?(path)

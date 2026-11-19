@@ -5,6 +5,21 @@ require_relative 'support/docs_navigation_fixture'
 class DocsParserRegressionTest < Minitest::Test
   include DocsNavigationFixture
 
+  def test_static_form_destinations_receive_the_audience_check
+    ['<form action="%s"><button>Review</button></form>',
+     '<form><button formaction="%s">Review</button></form>',
+     '<form><input type="submit" formaction="%s"></form>'].each do |markup|
+      agent = 'https://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md'
+      output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, format(markup, agent))
+      refute_predicate status, :success?, output
+      assert_includes output, 'Link a human guide, not agent instructions:'
+
+      human = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md'
+      output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, format(markup, human))
+      assert_predicate status, :success?, "#{output}\n#{errors}"
+    end
+  end
+
   def test_empty_link_destinations_refer_to_the_current_page
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '[Self]() <a href="">Self</a>')
     assert_predicate status, :success?, output
