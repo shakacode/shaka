@@ -54,11 +54,13 @@ module Shaka
     def self.outline(text) = OutlineReader.new.call(text)
 
     # What a reader of `guidance pr_evidence` needs to see: the order Shaka will publish, and any repeats.
+    # Headings group as the description layout matches them, by words, ignoring case and spacing.
     def self.check(outline)
       return [] unless outline.include?(MARKER)
 
-      names = outline.uniq.map { it == MARKER ? "Shaka's sections" : it }
-      repeats = outline.tally.select { |_, count| count > 1 }.keys
+      groups = outline.group_by { it == MARKER ? it : it.gsub(/[[:space:]]+/, ' ').downcase }.values
+      names = groups.map { it.first == MARKER ? "Shaka's sections" : it.first }
+      repeats = groups.select { it.size > 1 }.map(&:first)
       ["Shaka orders this template's descriptions as: #{names.join(', ')}.",
        *repeats.map { "The template repeats #{it == MARKER ? MARKER_LINE : "`## #{it}`"}; Shaka uses the first." }]
     end

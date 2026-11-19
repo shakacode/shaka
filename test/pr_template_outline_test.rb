@@ -36,6 +36,9 @@ class PrTemplateOutlineTest < Minitest::Test
 
   def test_check_shows_the_order_and_repeats_only_when_the_marker_is_present
     assert_empty Shaka::PrTemplate.check(%w[Rollout Changelog])
+    assert_equal ["Shaka orders this template's descriptions as: Rollout, Shaka's sections.",
+                  'The template repeats `## Rollout`; Shaka uses the first.'],
+                 Shaka::PrTemplate.check(['Rollout', MARKER, 'rollout'])
     notes = Shaka::PrTemplate.check(['Rollout', MARKER, 'Rollout', MARKER])
     assert_equal ["Shaka orders this template's descriptions as: Rollout, Shaka's sections.",
                   'The template repeats `## Rollout`; Shaka uses the first.',
