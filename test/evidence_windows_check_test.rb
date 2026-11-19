@@ -197,7 +197,8 @@ class EvidenceWindowsCheckStartTest < Minitest::Test
   end
 
   def drift?(code)
-    entry = { 'original' => { 'exit_code' => code }, 'status' => 'bound', 'reasons' => [] }
+    original = code == :absent ? {} : { 'exit_code' => code }
+    entry = { 'original' => original, 'status' => 'bound', 'reasons' => [] }
     Shaka::PublishedResults.settings_drift?('status' => 'not_ready', 'missing' => [],
                                             'checks' => { 'validation' => [entry] })
   end
@@ -221,6 +222,7 @@ class EvidenceWindowsCheckStartTest < Minitest::Test
       refute drift?(code), "exit code #{code.inspect} counted as a pass"
     end
     assert drift?(0)
+    assert drift?(:absent), 'a review result has no exit code'
   end
 
   # A leader that outlived its stop has no status yet, so the stopped run reports none.

@@ -29,9 +29,13 @@ module Shaka
       verdict['checks'].values.flatten.all? { |entry| passed?(entry) && drifted_only?(entry) }
     end
 
-    # Only an integer 0 passed. A run with no exit code, such as a stopped Windows check whose leader
-    # outlived the stop, or an unvalidated value, takes the stale-evidence path instead.
-    def passed?(entry) = entry.dig('original', 'exit_code').eql?(0)
+    # A review result has no exit code. A check result passed only with an integer 0: one whose code is
+    # nil, such as a stopped Windows check whose leader outlived the stop, or an unvalidated value,
+    # takes the stale-evidence path instead.
+    def passed?(entry)
+      original = entry['original'] || {}
+      !original.key?('exit_code') || original['exit_code'].eql?(0)
+    end
 
     def drifted_only?(entry)
       entry['status'] == 'bound' || entry['reasons'].all? { |reason| reason.match?(SETTINGS_DRIFT) }
