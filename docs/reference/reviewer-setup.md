@@ -147,25 +147,5 @@ review does not count as one of its rounds.
 
 ## Cloud reviewers
 
-Local review requires a reviewer the cloud environment can run. If none is
-available, resume the PR in a local session. Cloud machines may lack the
-local reviewer CLI, its sign-in, or Ruby 3.4. If GitHub GraphQL is blocked, Doctor and PR status can fall back to REST.
-A review decision, merge queue state, or issue link in GitHub's Development
-sidebar may be unknown. Where GitHub's Markdown preview is blocked too, publishing a local
-review checks each comment after GitHub stores it and takes back one that renders wrong,
-including a reviewer report that shows `\n` outside code; publish that review locally.
-The comment is public, and GitHub sends its notifications, until it is taken back. If the
-comment was already published unchanged, or taking it back fails, the error names the live comment.
-A PR description is checked the same way; an edit made just before a restore can be lost, and its prose limits go unchecked when it holds text Shaka did not write.
-Other PR actions still need GraphQL.
-
-The opt-in [DeepSeek reviewer](../settings.md#reviewlocal_review_agents) runs through
-Shaka's Ruby OpenRouter API adapter. It does not require native DeepSeek support in
-Codex, Claude Code or Cursor, and does not change the coding host's model.
-To use it, add DeepSeek to the repository's reviewer list and set
-`OPENROUTER_API_KEY` as a secret in the cloud environment running Shaka. It needs
-Ruby and outbound HTTPS.
-
-Try one review in the target environment before relying on it. A
-[recorded Claude Code web trial](https://github.com/shakacode/shaka/issues/277#issuecomment-6541487155)
-describes API, runtime and reviewer limits for that session.
+See [review in a cloud session](../cloud-agents.md#review-in-a-cloud-session) for
+which reviewers a cloud agent can run and what Shaka can publish there.
