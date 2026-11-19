@@ -8,9 +8,10 @@ require_relative 'candidate_tree'
 
 module Shaka
   module Evidence
-    # Runs a check in its own process group and recaptures the candidate tree while it runs.
-    # An edit to the checkout voids the result anyway, so the check stops within one interval
-    # plus a capture instead of finishing first. Only the check's own group is signaled.
+    # Runs a check in its own process group, or on Windows in a job object, and recaptures the
+    # candidate tree while it runs. An edit to the checkout voids the result anyway, so the check
+    # stops within one interval plus a capture instead of finishing first. Only the check's own
+    # group is signaled; Windows stops it through LocalReviewWindowsTree.
     # An edit undone before the next capture is not seen, as the comparison after the check
     # never saw one either.
     class TreeWatch
@@ -80,7 +81,8 @@ module Shaka
 
       def clock = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-      # TERM, then KILL for members that outlive their leader. A lasting macOS denial of the KILL
+      # TERM, then KILL for members that outlive their leader; on Windows, LocalReviewWindowsTree's
+      # stop. A lasting macOS denial of the KILL
       # leaves the result to report the stop anyway.
       def stop(waiter, tree = nil)
         warn "shaka: #{MESSAGE}; stopping the check" if tree

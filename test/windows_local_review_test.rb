@@ -28,6 +28,19 @@ class WindowsLocalReviewTest < Minitest::Test
     assert_equal Process.getpgid(0), Integer(group) unless windows_host?
   end
 
+  def test_an_interrupted_capture_ends_the_reviewer
+    reviewer = Thread.new do
+      capture(['File.write(ARGV[0], Process.pid.to_s); sleep 120', pid_file], stdin_data: nil, timeout: 120)
+    end
+    sleep 0.1 until File.size?(pid_file)
+    reviewer.raise(Interrupt)
+
+    assert_raises(Interrupt) { reviewer.join(15) }
+    refute running?(Integer(File.read(pid_file))), 'the reviewer outlived the interrupt'
+  ensure
+    end_descendant
+  end
+
   # Git's blob sizes count bytes, so a Windows text-mode pipe that rewrote line endings broke the
   # commit export on the hosted job.
   def test_capture_passes_line_endings_through_both_ways
@@ -71,7 +84,9 @@ class WindowsLocalReviewTest < Minitest::Test
     refute running?(Integer(File.read(pid_file))), 'the descendant outlived the stop'
   end
 
+  # The sleep lets the job hold the leader first; a descendant started earlier escapes it (F1).
   LEAVE_DESCENDANT = <<~RUBY
+    sleep 1
     pid = spawn(RbConfig.ruby, '-e', 'sleep 120')
     File.write(ARGV.fetch(0), pid.to_s)
   RUBY
@@ -112,14 +127,11 @@ class WindowsLocalReviewTest < Minitest::Test
     owner.define_method(name, original)
   end
 
+  # Whether PID is still alive after a few seconds' grace for an exit already under way.
   def running?(pid)
     deadline = clock + 5
-    loop do
-      Process.kill(0, pid)
-      return true if clock > deadline
-
-      sleep 0.2
-    end
+    sleep 0.2 while Process.kill(0, pid) && clock <= deadline
+    true
   rescue Errno::ESRCH
     false
   end
