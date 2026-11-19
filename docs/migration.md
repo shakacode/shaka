@@ -13,9 +13,8 @@ default change that breaks an existing 1.x configuration or documented command
 requires a major release. A breaking change to the configuration also requires
 a new YAML format version. The upgrade guide for a breaking release
 will name the affected settings and show how to check the proposed changes before
-switching. This is the release policy. Before switching, your agent can validate
-your configuration and command wrappers with the target release, using the check
-for your team or individual settings.
+switching. This is the release policy. Before switching, your agent can check
+your settings and wrapper paths with the target release.
 
 ## Update a branch installation
 
@@ -40,9 +39,10 @@ Use the preview steps at https://shaka.shakacode.com/docs/migration#check-your-p
 ```
 
 Name any other projects you want checked. Your agent uses the target release in a
-separate checkout and reports which projects pass. Passing projects can keep their
-settings and command wrappers. If an individual setup fails, keep the current
-installation while you review the reported settings or wrapper errors.
+separate checkout to check the settings and confirm the command wrapper files are
+executable. The preview leaves wrapper execution to your normal task checks. If
+an individual setup fails, keep the current installation while you review the
+reported errors.
 
 <details>
 <summary>Run the checks from a terminal</summary>
