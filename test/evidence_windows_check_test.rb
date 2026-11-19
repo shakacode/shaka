@@ -8,10 +8,11 @@ require 'shaka/evidence/windows_check'
 # Processes and probes for the Windows check tests.
 module WindowsCheckFixture
   # Sleeps first so the job holds the leader before it starts its descendant, then exits and leaves
-  # the descendant holding the output, as a test runner's worker can.
+  # the descendant holding the output, as a test runner's worker can. The descendant exits on its own:
+  # killing it by a saved ID could reach another process once Windows reuses that ID.
   LEADER_EXITS = <<~RUBY
     sleep 1
-    pid = spawn(RbConfig.ruby, '-e', 'sleep 120')
+    pid = spawn(RbConfig.ruby, '-e', 'sleep 30')
     File.write(ARGV.fetch(0), pid.to_s)
   RUBY
   SLEEPER = [RbConfig.ruby, '-e', 'sleep 120'].freeze
@@ -52,12 +53,6 @@ module WindowsCheckFixture
     false
   end
 
-  def end_descendant(pid_file)
-    Process.kill('KILL', Integer(File.read(pid_file))) if pid_file && File.size?(pid_file)
-  rescue Errno::ESRCH
-    nil
-  end
-
   def now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 end
 
@@ -83,6 +78,17 @@ class EvidenceWindowsCheckStopTest < Minitest::Test
       assert_empty(recording_kills { started.stop })
       assert_equal LIMITATION, started.limitation
       assert running?(descendant), 'without a job the descendant is left alone and reported'
+    end
+  end
+
+  # A job Windows failed to terminate proves nothing, so the leader is ended by its handle and reported.
+  def test_failed_job_termination_ends_the_leader_and_reports_the_limit
+    failed = Struct.new(:terminate, :close).new(false, nil)
+    Dir.mktmpdir('shaka-windows-check') do |root|
+      started = check(SLEEPER, root, job: ->(_pid) { failed })
+
+      assert_equal LIMITATION, started.stop
+      refute_predicate started.waiter, :alive?
     end
   end
 
@@ -148,8 +154,6 @@ class EvidenceWindowsCheckStopTest < Minitest::Test
       started = check([RbConfig.ruby, '-e', LEADER_EXITS, pid_file], root, **)
       started.waiter.join(30)
       yield started, Integer(File.read(pid_file))
-    ensure
-      end_descendant(pid_file)
     end
   end
 
@@ -183,8 +187,6 @@ class EvidenceWindowsCheckWatchTest < Minitest::Test
 
       assert_predicate outcome, :stopped?
       assert_stop_coverage(outcome, Integer(File.read(pid_file)))
-    ensure
-      end_descendant(pid_file)
     end
   end
 

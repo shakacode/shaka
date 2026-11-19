@@ -62,8 +62,9 @@ module Shaka
       private
 
       # An interrupted helper ends the check and its job; a finished check keeps what it left running.
+      # An interrupt waits until the check is assigned, so the ensure always sees what was started.
       def run_windows
-        @check = WindowsCheck.new(@command, root: @root)
+        Thread.handle_interrupt(Object => :never) { @check = WindowsCheck.new(@command, root: @root) }
         outcome(@check.waiter, [@check.output, @check.error].map { |stream| Thread.new { read_until_closed(stream) } })
           .tap { @finished = true }
       ensure

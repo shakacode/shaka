@@ -16,7 +16,7 @@ module Shaka
     # leader through the live handle, or leaves it alone. Either way it reports that descendants may
     # still be running.
     class WindowsCheck
-      LIMITATION = 'no Windows job held this check, so processes it started may still be running'
+      LIMITATION = 'no Windows job ended this check, so processes it started may still be running'
       # Seconds a stopped check gets to exit, and between checks for the leader's exit.
       STOP_SECONDS = 10
       POLL_SECONDS = 0.05
@@ -39,9 +39,9 @@ module Shaka
 
       # Ends the check. Returns the limitation when descendants may outlive the stop.
       def stop
-        @job&.terminate
-        @limitation = LIMITATION unless @job
-        end_leader unless @waiter.join(@job ? STOP_SECONDS : 0)
+        ended = @job&.terminate
+        @limitation = LIMITATION unless ended
+        end_leader unless @waiter.join(ended ? STOP_SECONDS : 0)
         @waiter.join
         @limitation
       end
@@ -72,10 +72,11 @@ module Shaka
         raise
       end
 
-      # While unreaped under the lock, Process.kill uses the handle Ruby still holds.
+      # While unreaped under the lock, Process.kill uses the handle Ruby still holds. A refused kill
+      # leaves the leader to finish, as on other platforms, and the limitation already says so.
       def end_leader
         @lock.synchronize { Process.kill('KILL', @pid) unless @reaped }
-      rescue Errno::ESRCH
+      rescue SystemCallError
         nil
       end
 
