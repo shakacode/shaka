@@ -89,7 +89,7 @@ class DocsNavigationTest < Minitest::Test
     ```text
     [ignored](missing.md)
     ```
-    `[ignored](missing.md)` and [skill](../skills/shaka/SKILL.md#start).
+    `[ignored](missing.md)` and [settings](settings.md).
   MARKDOWN
 
   def check_links(page, files = {})
@@ -143,9 +143,71 @@ class DocsFigureCheckTest < Minitest::Test
   end
 
   def test_figures_must_parse_as_svg
-    output, status = Dir.mktmpdir { |docs| check(docs) }
+    output, status = Dir.mktmpdir do |repository|
+      docs = File.join(repository, 'docs')
+      FileUtils.mkdir_p(docs)
+      check(docs)
+    end
     refute_predicate status, :success?
     malformed = output[/^Figures that do not parse as SVG: (.*)$/, 1].split(', ')
     assert_equal %w[img/.draft/LOUD.SVG img/bare.svg img/empty.svg img/nested/unclosed.svg img/page.svg], malformed.sort
+  end
+end
+
+class DocsAudienceTest < Minitest::Test
+  def check(*) = DocsNavigationTest.new('fixture').check(*)
+
+  def test_new_human_guide_outside_documentation_locations_fails
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide',
+                              'new-guides/install.md' => '# Install')
+    refute_predicate status, :success?
+    assert_includes output, 'Markdown outside established documentation locations: new-guides/install.md'
+  end
+
+  def test_new_root_guide_requires_an_explicit_destination
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', 'installation.md' => '# Install')
+    refute_predicate status, :success?
+    assert_includes output, 'Markdown outside established documentation locations: installation.md'
+  end
+
+  def test_agent_entry_point_cannot_become_a_published_page
+    sidebar = { 'docsSidebar' => %w[expected-experience SKILL] }
+    output, _, status = check(sidebar, '# Guide', 'docs/SKILL.md' => '# Agent instructions')
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions: SKILL.md'
+  end
+
+  def test_gem_and_contributor_documentation_have_separate_destinations
+    files = { 'README.gem.md' => '# Gem', 'CONTRIBUTING.md' => '# Contribute',
+              'contributing/development.md' => '# Development', 'internal/notes.md' => '# Record' }
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files)
+    assert_predicate status, :success?, output
+  end
+
+  def test_all_shaka_agent_markdown_links_fail
+    paths = %w[../skills/mct/SKILL.md ../skills/shaka/config/review-prompt.md
+               ../.agents/shaka/instructions/review.md ../AGENTS.md
+               ../skills/shaka/references/../SKILL.md
+               https://raw.githubusercontent.com/shakacode/shaka/main/skills/shaka/SKILL.md
+               https://github.com/shakacode/shaka/blob/main/skills/shaka/%53KILL.md]
+    page = paths.map { |path| "[agent](#{path})" }.join("\n")
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    agent_line = output.lines.grep(/\ALink a human guide/).first
+    paths.each { |path| assert_includes agent_line, path }
+  end
+
+  def test_sidebar_links_to_agent_instructions_fail
+    sidebar = { 'docsSidebar' => ['expected-experience', { 'type' => 'link', 'label' => 'Agent',
+                                                           'href' => '../skills/shaka/SKILL.md' }] }
+    output, _, status = check(sidebar)
+    refute_predicate status, :success?
+    assert_includes output, 'sidebars.json -> ../skills/shaka/SKILL.md'
+  end
+
+  def test_other_projects_skill_citations_are_allowed
+    page = '[Reference](https://github.com/cursor/plugins/blob/main/pstack/skills/reflect/SKILL.md)'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, output
   end
 end

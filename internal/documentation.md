@@ -5,6 +5,20 @@ The goal is for a new user to start a task, ask their agent for help, and judge 
 resulting PR without first studying Shaka's workflow. The writing rules in
 [AGENTS.md](../AGENTS.md#writing-in-this-repository) still apply.
 
+## Check documentation destinations
+
+`bin/check-docs-navigation` requires every product guide under `docs/` to appear
+in `docs/sidebars.json`. New Markdown outside the established documentation
+locations fails validation until its destination is reviewed. The root
+`README.gem.md` serves RubyGems, `contributing/` serves contributors, and
+`internal/` and `eval/` hold development records.
+
+Public guides and sidebar links must lead to human guidance. The check rejects
+links into Shaka's skill Markdown, project agent instructions, and `AGENTS.md`
+or `CLAUDE.md`. Links to configuration data and citations of other projects'
+skills remain available. Each new guide's author and reviewer still determine
+its audience.
+
 ## Give new users a way to start
 
 Keep `README.md`, `docs/README.md`, `docs/getting-started.md`, and
