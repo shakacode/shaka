@@ -73,7 +73,8 @@ short forms such as `http:/example.com` fail instead of relying on browser recov
 File and heading-anchor validation applies to Markdown links and images. Static
 HTML hyperlinks in anchors, image maps and SVG are checked for agent destinations.
 The hyperlink check ignores code examples and unused reference definitions.
-Rendered Markdown links to GitHub documentation are checked for files and anchors.
+Rendered Markdown links to GitHub documentation on `main` are checked against this checkout for files and anchors.
+Other refs may cite different content; their files and anchors require review. Audience checks still apply at every ref.
 Commonmarker determines their punctuation; unused definitions are not navigation links.
 The existing literal-source guard is separate: it recognizes ASCII references shaped
 like `shakacode/shaka/blob/REF/docs/PATH.md#HEADING` throughout source text, including

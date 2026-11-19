@@ -533,4 +533,20 @@ class DocsParsedReferencePrecedenceTest < Minitest::Test
     output, errors, status = check_links('# Guide', files)
     assert_predicate status, :success?, "#{output}\n#{errors}"
   end
+
+  def test_historical_destinations_do_not_use_current_checkout_headings
+    %w[1234567890abcdef1234567890abcdef12345678 v1.0].each do |ref|
+      page = "[Guide](https://github.com/shakacode/shaka/blob/#{ref}/docs/settings.md#日本語)"
+      output, errors, status = check_links(page, 'docs/settings.md' => '# Renamed')
+      assert_predicate status, :success?, "#{output}\n#{errors}"
+    end
+  end
+
+  def test_main_destinations_follow_current_checkout_headings
+    page = '[Guide](https://github.com/shakacode/shaka/blob/main/docs/settings.md#日本語)'
+    ['# 日本語', '# Renamed'].each do |heading|
+      output, errors, status = check_links(page, 'docs/settings.md' => heading)
+      assert_equal heading == '# 日本語', status.success?, "#{output}\n#{errors}"
+    end
+  end
 end
