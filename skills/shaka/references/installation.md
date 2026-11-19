@@ -123,8 +123,9 @@ source identity without checking a repository. A source records an exact revisio
 only when it is the repository root, its selected file set matches `HEAD`, its
 selected paths have clean Git status, the file bytes and executable modes match
 `HEAD`, each selected directory contains a tracked file, and no selected file is
-world-writable. A Git-clean checkout with converted line endings can therefore
-record a development installation. Development installations record a base
+world-writable. Windows reports no execute bit, so there only the bytes must match.
+A Git-clean checkout with converted line endings can therefore record a development
+installation; the installer's own clones keep stored line endings. Development installations record a base
 revision when available and a content hash.
 Doctor reports the identity recorded at install time; it does not recheck the
 installed files or compare the recorded revision with Git on each run.

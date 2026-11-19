@@ -13,7 +13,7 @@ class WindowsCommandStartTest < Minitest::Test
   def test_script_command_runs_the_script_through_its_shebang
     Dir.mktmpdir('shaka-windows-command') do |directory|
       script = File.join(directory, 'check')
-      File.write(script, "#!/usr/bin/env ruby\nputs ARGV.join('|')\n")
+      File.binwrite(script, "#!/usr/bin/env ruby\nputs ARGV.join('|')\n")
       File.chmod(0o755, script)
       command = Shaka::ExecutableFile.script_command(script, shell: method(:shell), windows: true)
       output, status = Open3.capture2(*command, 'one two', '$HOME')

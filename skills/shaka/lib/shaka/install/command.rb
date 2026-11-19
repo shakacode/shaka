@@ -52,7 +52,9 @@ module Shaka
         options.on('--with-mct') { @options[:names] << 'mct' }
         options.on('--with-rct') { @options[:names] << 'rct' }
         options.on('--with-claude-towers') { @options[:names].push('mct-claude', 'rct-claude') }
-        options.on('--session-hook', 'Show saved update checks in new Claude chats') { @options[:session_hook] = true }
+        options.on('--[no-]session-hook', 'Show saved update checks in new Claude chats (default)') do |value|
+          @options[:session_hook] = value
+        end
       end
 
       def actions(options)
