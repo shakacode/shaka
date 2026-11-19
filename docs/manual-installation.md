@@ -33,10 +33,11 @@ For a first installation, use the gem once the version appears in
 
 ```sh
 gem install shaka --version 1.0.0
-shaka-install --agent codex
+shaka-install _1.0.0_ --agent codex
 ```
 
-Replace `codex` with your coding agent's identifier from the table below. The
+`_1.0.0_` selects that gem version when several are installed. Replace `codex`
+with your coding agent's identifier from the table below. The
 installer fetches the release tag and links the skill at that commit. Start a new
 chat and run the [health check](getting-started.md#1-install-shaka).
 

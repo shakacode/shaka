@@ -100,21 +100,6 @@ that the remote tag still resolves to the recorded commit; it never advances to 
 or another release. A missing or moved tag fails. `update-check` reports the local pin,
 without checking for newer releases.
 
-### Preview project settings against a release
-
-Clone the official release tag without running the installer. Use that checkout's
-helper to check the requested projects. Clarify which projects to check if unclear.
-
-- For team settings, run `seam check --root PROJECT --ref DEFAULT_SHA` in a clean
-  project checkout at the default-branch commit. Require `trusted/ref` for that SHA.
-- For individual settings, run `seam private check --root PROJECT --ref DEFAULT_SHA`
-  in the copy with those settings. Require a successful result.
-
-Report the checked commit, projects, and errors. Leave the active installation
-in place. If shared pilot settings need conversion, point to
-[team migration](migration.md). Report individual settings errors without
-applying the team migration routine.
-
 ### Maintain a branch installation
 
 The installer prints an update reminder for every host and custom skills directory.
