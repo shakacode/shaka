@@ -50,6 +50,19 @@ class PersonalPrivacyTest < Minitest::Test
     end
   end
 
+  def test_a_dangling_home_symlink_hides_the_checkout_path
+    Dir.mktmpdir('shaka-home') do |directory|
+      home = File.join(directory, 'home')
+      File.symlink(File.join(directory, 'unavailable'), home)
+      privacy = Shaka::Configuration::PersonalPrivacy.load(home:)
+      body = wip_body(settings(true, privacy))
+
+      assert_includes body, '| Workspace | REDACTED (personal setting) |'
+      refute_includes body, PATH
+      assert_includes privacy.warning, 'Hiding the checkout path'
+    end
+  end
+
   def test_your_file_never_shows_what_the_repository_hides
     with_home('wip' => { 'include_checkout_path' => true }) do
       assert_includes wip_body(settings(false)), '| Workspace | REDACTED |'
