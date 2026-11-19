@@ -61,7 +61,8 @@ module Shaka
         towers = @names.filter_map { |name| SettingsLocation::TOWERS[name] }.uniq
         Refusal.command(File.join(source, 'bin/install'), '--directory', SettingsLocation.default_directory(Dir.home),
                         *selections(options), *@agents.flat_map { |agent| ['--agent', agent] }, *towers,
-                        *('--take-over' if options[:take_over]), *('--session-hook' if options[:session_hook]))
+                        *('--take-over' if options[:take_over]),
+                        *('--no-session-hook' if options[:session_hook] == false))
       end
 
       def selections(options)

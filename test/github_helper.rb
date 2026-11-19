@@ -9,7 +9,15 @@ module GitHubHelper
   STATUS = Struct.new(:exitstatus)
   CHANGED_FILE = 'skills/shaka/config/workflow.yml'
   PINNED_LINK = "https://github.com/owner/repo/blob/#{HEAD}/#{CHANGED_FILE}#L154-L156".freeze
-  WALKTHROUGH = "See #{PINNED_LINK}. Gates: validate, claude-review.".freeze
+  # The shape a published walkthrough must have for the checkpoint to recognize it.
+  def self.rendered(text, head: HEAD)
+    "🤖 Claude Code · Anthropic · claude-opus-5-5 · medium\n\n# Code Walkthrough\n\n#{text}\n\n" \
+      "_Walkthrough for commit `#{head}`. This is a COMMENT, not an approval._\n"
+  end
+
+  def rendered(...) = GitHubHelper.rendered(...)
+
+  WALKTHROUGH = rendered("See #{PINNED_LINK}. Gates: validate, claude-review.").freeze
   COMPLETED_GATES = [
     { 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' },
     { 'name' => 'claude-review', 'state' => 'SUCCESS', 'bucket' => 'pass' }

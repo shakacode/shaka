@@ -36,16 +36,9 @@ your application's shell or add the pilot to its Gemfile.
 
 ## Validate a consumer seam in CI
 
-Do not copy Shaka's Ruby modules or schema rules into the consumer repository.
-After publication, pin the exact `1.0.0` release and validate the candidate checkout
-only. The name-reservation gem does not provide `seam check --local`; keep the
-existing source path until a tested release is published. Never install mutable
-`main` in consumer CI.
-
-```bash
-gem install shaka --version "$SHAKA_VERSION" --no-document
-shaka seam check --root "$GITHUB_WORKSPACE" --local
-```
+Use the [pinned validation commands](../README.gem.md#validate-team-configuration)
+from the gem README. The name-reservation gem lacks this check. Keep the
+existing pinned source checkout until a tested gem is published.
 
 That command uses the same `RepositoryConfig` implementation as the installed skill.
 A passing payload includes `"mode": "local/candidate"` with `grants_policy` and

@@ -74,8 +74,8 @@ Security and trust failures cannot be waived through this blocked-draft path. Na
 required checks, seam-required merge checks, protection, and current-head review still
 block readiness when unsatisfied, even after acceptance. Auto remains blocked
 while this local failure is unresolved. Resume normal Explain, Review, and Finish only
-when the remaining gates permit readiness; then mark the PR ready for review and
-refresh its description, walkthrough, and handoff. Task-scoped acceptance of a
+when the remaining gates permit readiness; Finish's ready checkpoint then marks the PR
+ready for review. Refresh its description, walkthrough, and handoff. Task-scoped acceptance of a
 local failure never grants merge authorization.
 
 ## Hosted checks the base fails

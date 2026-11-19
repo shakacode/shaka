@@ -10,7 +10,7 @@ class OfficialSettingsLocationTest < Minitest::Test
     %w[.agents/shaka .agents/anything].each do |entry|
       directory = File.join(@home, entry)
       output, process = install(@root, '--directory', directory, '--repository', @remote, '--agent', 'claude',
-                                '--with-rct', '--session-hook')
+                                '--with-rct', '--no-session-hook')
       refute_predicate process, :success?
       assert_includes output, "where Shaka keeps settings, not source. Found: #{canonical(directory)}. " \
                               "Next: #{fresh_command}"
@@ -70,7 +70,7 @@ class OfficialSettingsLocationTest < Minitest::Test
 
   def fresh_command
     "#{Shellwords.escape(File.join(@root, 'bin/install'))} --directory #{Shellwords.escape(default_path)} " \
-      "--repository #{Shellwords.escape(@remote)} --agent claude --with-rct --session-hook"
+      "--repository #{Shellwords.escape(@remote)} --agent claude --with-rct --no-session-hook"
   end
 
   def install(root, *) = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), *)

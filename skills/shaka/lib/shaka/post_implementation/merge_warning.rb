@@ -3,6 +3,7 @@
 require_relative '../publication/feature_guard'
 require_relative '../publication/merge_warning_region'
 require_relative '../publication/text'
+require_relative 'draft_state'
 require_relative 'history'
 
 module Shaka
@@ -10,13 +11,6 @@ module Shaka
   class PostImplementationMergeWarning
     OPEN = MergeWarningRegion::OPEN
     CLOSE = MergeWarningRegion::CLOSE
-    DRAFT = <<~GRAPHQL
-      mutation($id: ID!) {
-        convertPullRequestToDraft(input: {pullRequestId: $id}) {
-          pullRequest { id isDraft headRefOid }
-        }
-      }
-    GRAPHQL
 
     def initialize(github)
       @github = github
@@ -45,12 +39,17 @@ module Shaka
 
     # The latest checkpoint is ready, so a warning for an earlier head is settled, and so is one for this head
     # that waited only on the maintainer's decision; any other one naming this head, or no head, stays for the
-    # maintainer. The task owner still marks the PR ready.
+    # maintainer, and the PR stays a draft with it. Once no warning remains, a Merge recommendation and a draft
+    # contradict each other, so the PR is marked ready whoever made it a draft.
     def clear(current, head)
       body = current['body'].to_s
       cleared = MergeWarningRegion.settled_by_ready?(body, @github.repository, head)
-      replace(current, MergeWarningRegion.remove(body)) if cleared
-      { 'state' => cleared ? 'cleared' : 'unchanged', 'head' => head, 'draft' => current['draft'] }
+      body = MergeWarningRegion.remove(body).tap { |updated| replace(current, updated) } if cleared
+      state = { 'state' => cleared ? 'cleared' : 'unchanged', 'head' => head, 'draft' => current['draft'] }
+      return state unless current['draft'] && !MergeWarningRegion.present?(body)
+
+      marked = PostImplementationDraftState.new(@github).change(head, draft: false)
+      state.merge('draft' => false, **(marked ? { 'marked_ready' => true } : {}))
     end
 
     def update(current, head, publication, published)
@@ -106,20 +105,8 @@ module Shaka
       MergeWarningRegion.render(publication, report: url, commit: PublicationText.commit(head, @github.repository))
     end
 
-    def make_draft(head)
-      pull = @github.snapshot
-      raise Error, 'PR changed before draft conversion; retry the checkpoint publication.' unless
-        pull.values_at('state', 'headRefOid') == ['OPEN', head]
-      return if pull['isDraft']
-
-      changed = @github.graphql(DRAFT, id: pull.fetch('id')).dig('convertPullRequestToDraft', 'pullRequest')
-      return if changed && changed.values_at('id', 'isDraft', 'headRefOid') == [pull['id'], true, head]
-
-      raise Error, 'Draft conversion was not confirmed at the checkpoint head; inspect the PR before retrying.'
-    end
-
     def draft_failure(head)
-      make_draft(head)
+      PostImplementationDraftState.new(@github).change(head, draft: true)
       nil
     rescue Error, KeyError, TypeError => e
       e.message

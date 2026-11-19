@@ -19,7 +19,7 @@ module Shaka
       end
 
       def self.build(root:, effective_settings:, repository:, installation:, **source)
-        unknown = source.keys - %i[private_source trusted_ref preview_ref]
+        unknown = source.keys - %i[private_source trusted_ref preview_ref first_setup]
         raise Error, "Unknown fingerprint source: #{unknown.join(', ')}" if unknown.any?
 
         new(root:, effective_settings:, repository:, installation:, source:).build

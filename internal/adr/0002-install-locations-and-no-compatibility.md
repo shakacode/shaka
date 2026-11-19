@@ -42,7 +42,7 @@ Issue #683 lists every reachable install state and the step that fixes each one.
    out of a state that breaks it.
 3. **Automatic updates are opt-in.** Updating the single source checkout can change
    files that open chats are reading. Scheduled updates stay opt-in until each revision
-   gets its own folder.
+   gets its own folder. Amended on 2026-11-17; see Amendments.
 4. **Records.** This ADR records the decisions. Issue #683 tracks the work in
    public, with one sub-issue per step.
 5. **No backward compatibility before 1.0.** Old install locations and formats are
@@ -60,3 +60,18 @@ Issue #683 lists every reachable install state and the step that fixes each one.
 - The install code and its tests shrink. Status, repair, and the scenario harness
   only need to cover current formats.
 - Issue #689 validates every install state end to end before #683 closes.
+
+## Amendments
+
+The maintainer changed decision 3 on 2026-11-17, in review of
+[#1217](https://github.com/shakacode/shaka/pull/1217).
+
+- **People may schedule `install --update` themselves (decision 3).** Shaka still
+  never updates itself, and [#682](https://github.com/shakacode/shaka/issues/682)
+  still tracks built-in opt-in updates. The original risk remains: an update during a
+  task can mix old and new instructions in an open chat. The maintainer accepts it,
+  because continuous local updates while developing Shaka caused no visible failures.
+  Since [#956](https://github.com/shakacode/shaka/issues/956), an update supersedes a
+  task's validation and review only when it changes the code those checks run. The
+  [Keep Shaka up to date](../../docs/reference/scheduled-update-checks.md) guide shows
+  how to schedule an update for a time when no Shaka task is running.

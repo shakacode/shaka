@@ -287,19 +287,25 @@ class WalkthroughHistoryNotesTest < Minitest::Test
            'body' => "#{Shaka::Walkthrough::Notes::MARKER}\n🤖 Claude\n\nStart here." }.freeze
 
   # A nil login stands for a comment whose author GitHub does not name, such as a deleted account.
-  def thread_response(*logins)
+  def thread_response(*logins, resolved: false)
     authors = logins.each_with_index.map do |login, index|
       { 'fullDatabaseId' => (55 + index).to_s, 'author' => login && { '__typename' => 'User', 'login' => login } }
     end
-    thread = { 'id' => 'PRRT_1', 'isResolved' => false,
+    thread = { 'id' => 'PRRT_1', 'isResolved' => resolved,
                'comments' => { 'nodes' => authors, 'pageInfo' => { 'hasNextPage' => false } } }
     connection = { 'nodes' => [thread], 'pageInfo' => { 'hasNextPage' => false, 'endCursor' => nil } }
     response({ 'data' => { 'repository' => { 'pullRequest' => { 'reviewThreads' => connection } } } })
   end
 
-  def resolved_response
-    response({ 'data' => { 'resolveReviewThread' => { 'thread' => { 'id' => 'PRRT_1', 'isResolved' => true } } } })
+  # The thread reread just before a deletion: only this account's note, or a reply after it.
+  def alone_response(*logins)
+    logins = ['ada'] if logins.empty?
+    nodes = logins.map { |login| { 'author' => { 'login' => login } } }
+    response({ 'data' => { 'node' => { 'comments' => { 'totalCount' => logins.size, 'nodes' => nodes.first(2) } } } })
   end
+
+  # GitHub answers a deleted comment with 204 and no body.
+  def deleted_response = ['', '', STATUS.new(0)]
 
   def publish_over_noted(*tail, notes: [NOTE])
     prior = review_record(7, collapsed(PRIOR))
@@ -309,55 +315,93 @@ class WalkthroughHistoryNotesTest < Minitest::Test
     github.walkthrough(head: HEAD, body: WALKTHROUGH)
   end
 
-  def test_an_earlier_walkthroughs_unanswered_note_is_resolved
-    published = publish_over_noted(thread_response('ada'), resolved_response)
+  def deletions = @calls.map(&:first).select { |argv| argv.include?('DELETE') }
 
-    assert_equal ['PRRT_1'], published.dig('earlier_walkthroughs', 'resolved_notes')
-    assert_equal 'PRRT_1', JSON.parse(@calls.last.last).dig('variables', 'id')
+  def delete_call(id) = ['gh', 'api', "repos/owner/repo/pulls/comments/#{id}", '-X', 'DELETE']
+
+  # The newer walkthrough posts its own notes, so an unanswered older copy would read as a duplicate.
+  def test_an_earlier_walkthroughs_unanswered_note_is_deleted
+    published = publish_over_noted(thread_response('ada'), alone_response, deleted_response)
+
+    assert_equal [55], published.dig('earlier_walkthroughs', 'deleted_notes')
+    assert_equal [delete_call(55)], deletions
   end
 
-  def test_a_note_past_the_first_page_is_resolved
+  # Earlier releases resolved superseded notes, and a resolved thread still shows on the pull request.
+  def test_an_already_resolved_unanswered_note_is_deleted
+    published = publish_over_noted(thread_response('ada', resolved: true), alone_response, deleted_response)
+
+    assert_equal [55], published.dig('earlier_walkthroughs', 'deleted_notes')
+  end
+
+  def test_a_note_past_the_first_page_is_deleted
     notes = Array.new(100) { |index| NOTE.merge('id' => 1000 + index) } << NOTE
-    published = publish_over_noted(thread_response('ada'), resolved_response, notes:)
+    published = publish_over_noted(thread_response('ada'), alone_response, deleted_response, notes:)
 
-    assert_equal ['PRRT_1'], published.dig('earlier_walkthroughs', 'resolved_notes')
+    assert_equal [55], published.dig('earlier_walkthroughs', 'deleted_notes')
   end
 
-  # A reply from the publishing account may be the person who owns it, so any reply keeps a note open.
-  def test_a_note_with_any_reply_stays_open
+  # A reply from the publishing account may be the person who owns it, so any reply keeps a note.
+  def test_a_note_with_any_reply_is_kept
     [thread_response('ada', 'grace'), thread_response('ada', 'ada')].each do |thread|
       published = publish_over_noted(thread)
 
-      assert_empty published.dig('earlier_walkthroughs', 'resolved_notes')
-      refute(@calls.any? { |_argv, stdin| stdin.include?('resolveReviewThread') })
+      assert_empty published.dig('earlier_walkthroughs', 'deleted_notes')
+      assert_empty deletions
     end
   end
 
-  def test_a_note_answered_by_an_unnamed_author_stays_open
+  def test_a_note_answered_by_an_unnamed_author_is_kept
     published = publish_over_noted(thread_response('ada', nil))
 
-    assert_empty published.dig('earlier_walkthroughs', 'resolved_notes')
-    refute(@calls.any? { |_argv, stdin| stdin.include?('resolveReviewThread') })
+    assert_empty published.dig('earlier_walkthroughs', 'deleted_notes')
+    assert_empty deletions
   end
 
-  def test_a_resolution_github_did_not_apply_is_reported
-    unresolved = response({ 'data' => { 'resolveReviewThread' => { 'thread' => { 'isResolved' => false } } } })
-    published = publish_over_noted(thread_response('ada'), unresolved)
+  # One failed note leaves the others to be deleted.
+  def test_a_failed_note_does_not_stop_the_rest
+    refused = ['', 'gh: Not Found (HTTP 404)', STATUS.new(1)]
+    notes = [NOTE, NOTE.merge('id' => 56), NOTE.merge('id' => 57)]
+    published = publish_over_noted(note_threads(3), alone_response, deleted_response, alone_response, refused,
+                                   alone_response, deleted_response, notes:)
 
-    assert_empty published.dig('earlier_walkthroughs', 'resolved_notes')
-    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'did not resolve'
+    assert_equal [55, 57], published.dig('earlier_walkthroughs', 'deleted_notes')
+    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'Note 56'
   end
 
-  def test_a_failure_after_one_resolution_still_reports_that_resolution
-    unresolved = response({ 'data' => { 'resolveReviewThread' => { 'thread' => { 'isResolved' => false } } } })
-    published = publish_over_noted(two_threads, resolved_response, unresolved, notes: [NOTE, NOTE.merge('id' => 56)])
+  # A review edited into something else after the listing is no longer a walkthrough, so its notes stay.
+  def test_a_review_that_stops_being_a_walkthrough_keeps_its_notes
+    prior = review_record(7, collapsed(PRIOR))
+    github = client(*publish_responses(snapshot_response), response([prior]), response({ 'login' => 'ada' }),
+                    review_response(body: "A standalone report.\n"))
+    published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
 
-    assert_equal ['PRRT_1'], published.dig('earlier_walkthroughs', 'resolved_notes')
-    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'PRRT_2'
+    assert_empty published.dig('earlier_walkthroughs', 'deleted_notes')
+    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'changed before collapse'
+    assert_empty deletions
   end
 
-  def two_threads
-    threads = %w[PRRT_1 PRRT_2].each_with_index.map do |id, index|
+  # A reply can land after the threads were listed; the reread before each deletion keeps that note.
+  def test_a_reply_that_arrives_during_deletion_keeps_its_note
+    published = publish_over_noted(note_threads(2), alone_response, deleted_response, alone_response('ada', 'grace'),
+                                   notes: [NOTE, NOTE.merge('id' => 56)])
+
+    assert_equal [55], published.dig('earlier_walkthroughs', 'deleted_notes')
+    assert_equal [delete_call(55)], deletions
+  end
+
+  # An edit that lands after the first reread stops the archive update, and the notes wait for a later walkthrough.
+  def test_a_review_edited_before_its_archive_update_keeps_its_notes
+    published = publish_over(review_record(7, PRIOR), review_response(body: PRIOR),
+                             html_response('<details><p>Archived.</p></details>'), review_response(body: 'changed'))
+
+    assert_empty published.dig('earlier_walkthroughs', 'deleted_notes')
+    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'changed before collapse'
+    assert_empty deletions
+  end
+
+  def note_threads(count)
+    threads = Array.new(count) { |index| "PRRT_#{index + 1}" }.each_with_index.map do |id, index|
       author = { 'fullDatabaseId' => (55 + index).to_s, 'author' => { '__typename' => 'User', 'login' => 'ada' } }
       { 'id' => id, 'isResolved' => false,
         'comments' => { 'nodes' => [author], 'pageInfo' => { 'hasNextPage' => false } } }

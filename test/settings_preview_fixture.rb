@@ -15,9 +15,9 @@ module SettingsPreviewFixture
     Shaka::Evidence::Inputs.capture(root:, ref:, repository: 'owner/repo')[1]
   end
 
-  def select_preview(root, source)
+  def select_preview(root, source, default_ref: git(root, 'rev-parse', 'main').strip)
     output, error, status = Open3.capture3(*COMMAND, 'seam', 'preview', 'start', '--root', root,
-                                           '--settings-ref', source)
+                                           '--settings-ref', source, '--ref', default_ref)
     assert_predicate status, :success?, error
     assert_equal 'active', JSON.parse(output)['status']
   end

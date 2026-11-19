@@ -34,7 +34,10 @@ module Shaka
         File.stat(path)
         false
       rescue Errno::ENOENT
-        [path, File.dirname(path), File.dirname(path, 2)].none? { File.symlink?(it) && !File.exist?(it) }
+        # Check the settings file and its parents through the home directory.
+        [path, File.dirname(path), File.dirname(path, 2), File.dirname(path, 3)].none? do |entry|
+          File.symlink?(entry) && !File.exist?(entry)
+        end
       end
 
       def self.choice(path)
