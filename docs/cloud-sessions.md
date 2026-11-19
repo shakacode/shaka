@@ -53,7 +53,7 @@ expires after about a week. A session that is already running keeps what it
 has, so start a new session to use an edited script.
 
 A cached session therefore runs the Shaka its copy was saved with. The
-installer turns on Shaka's
+installer tries to turn on Shaka's
 [update reminder](reference/scheduled-update-checks.md#get-a-reminder-when-a-claude-code-chat-starts),
 which tells you in a new chat when Shaka needs a check or an update.
 
