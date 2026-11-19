@@ -70,9 +70,9 @@ with an error, leaves the checkout unchanged, and logs the next step. A
 scheduled update installs whatever the branch holds, without the comparison you
 can review when you update by hand.
 
-When a check of the same installation ran in the last 23 hours, a scheduled check
-repeats that answer and adds its `checked_at` time. The limit is an hour short of
-a day, so a check that runs at the same time each day still asks GitHub.
+A scheduled check can repeat a GitHub answer from the last 23 hours, adding its
+`checked_at` time. The limit is an hour short of a day, so a check that runs at
+the same time each day still asks GitHub.
 
 For a check, read the job's log for `status` and `guidance`. If the guidance
 recommends an update, finish your active Shaka chats first. Then ask your agent to

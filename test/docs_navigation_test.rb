@@ -40,6 +40,13 @@ class DocsReferenceFolderTest < Minitest::Test
                          'docs/reference/updates.md' => '# Updates')
     assert_predicate status, :success?
   end
+
+  def test_reference_folder_page_in_nested_reference_category_passes
+    reference = { 'type' => 'category', 'label' => 'Reference', 'items' => ['reference/updates'] }
+    guides = { 'type' => 'category', 'label' => 'Guides', 'items' => ['expected-experience', reference] }
+    _, _, status = check({ 'docsSidebar' => [guides] }, '# What to expect', 'docs/reference/updates.md' => '# Updates')
+    assert_predicate status, :success?
+  end
 end
 
 class DocsNavigationTest < Minitest::Test
