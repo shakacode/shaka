@@ -31,6 +31,14 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
    comparing the previous tag to the intended tag, and change `[Unreleased]` to compare
    the intended tag to `HEAD`. If publication slips past that date, correct the heading before
    selecting the release commit.
+
+   In the same PR, measure what Shaka's startup text costs. With Claude Code and Codex
+   signed in, run `bin/report-instruction-growth --tokens PREVIOUS_TAG` on the `main` commit
+   the PR starts from, and add a row for that commit to the log in
+   [startup token cost](../internal/startup-token-cost.md) with each CLI's `after` and
+   `cli_prompt` counts. Compare with earlier rows, not the report's `delta`: an older tag can
+   lack files the startup text now includes, such as the workflow. When a CLI shows
+   `UNKNOWN`, log its reason in the row instead of a count.
 2. Start from a clean, current `main` checkout after those preparation edits land.
 3. Install dependencies and run the repository validation:
 

@@ -37,7 +37,8 @@ module Shaka
     end
 
     def openai_sentence
-      "Standard Codex credit and OpenAI API-equivalent rates, verified #{@rate_card.openai_verified}"
+      "Standard Codex credit and OpenAI API-equivalent rates, verified #{@rate_card.openai_verified}. " \
+        'API-equivalent estimates use 30-minute cache-write rates'
     end
 
     def cursor_sentence

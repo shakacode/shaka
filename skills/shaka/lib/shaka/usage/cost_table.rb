@@ -4,6 +4,8 @@ module Shaka
   # Metric-row cost table and source links for the models actually priced.
   module CostTable
     MODEL_SOURCES = {
+      'gpt-6.2-astra' => '[GPT-6.2 Astra](https://developers.openai.com/api/docs/models/gpt-6.2-astra)',
+      'gpt-6.2-sol' => '[GPT-6.2 Sol](https://developers.openai.com/api/docs/models/gpt-6.2-sol)',
       'gpt-6.1-sol' => '[GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol)',
       'gpt-5.6-terra' => '[Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra)',
       'gpt-5.6-sol' => '[GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol)',
