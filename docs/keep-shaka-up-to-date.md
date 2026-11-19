@@ -1,8 +1,7 @@
 # Keep Shaka up to date
 
 Shaka has no automatic updates: it never installs one on its own. An
-installation from a GitHub branch checks for updates when you use it, and your
-agent tells you when one is available.
+installation from a GitHub branch checks for updates when you use it.
 If you want to update daily, schedule `install --update`, or schedule a daily
 check and update between chats.
 
@@ -49,9 +48,7 @@ the command. On macOS, replace `<string>update-check</string>` with
 WSL command, replace `update-check` with `install --update`. Keep the example
 job names so the stop steps below still apply.
 
-A successful update logs `Verified Shaka installation` with the new commit. If
-the update cannot proceed, for example because the checkout has local changes,
-it changes nothing and logs what to do.
+The job exits 0 when the update succeeds; otherwise its log says what to do.
 
 For a check, read the job's log for `status` and `guidance`. If the guidance
 recommends an update, finish your active Shaka chats first. Then ask your agent to
