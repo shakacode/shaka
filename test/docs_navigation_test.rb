@@ -121,6 +121,14 @@ class DocsEmittedLinksTest < Minitest::Test
     end
   end
 
+  def test_non_web_schemes_are_not_reinterpreted_as_github_documentation
+    %w[file ftp git ssh].each do |scheme|
+      guide = "PAGE = '#{scheme}://github.com/shakacode/shaka/blob/main/docs/settings.md#absent'"
+      output, errors, status = check_links('# Guide', 'skills/shaka/guide.rb' => guide)
+      assert_predicate status, :success?, "#{scheme}: #{output}\n#{errors}"
+    end
+  end
+
   def test_emitted_markdown_and_mdx_pages_resolve
     %w[md mdx].each do |extension|
       output, errors, status = emitted_page_check(extension, '# Install')

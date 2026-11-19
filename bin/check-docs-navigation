@@ -11,7 +11,7 @@ require_relative '../lib/shaka_docs/navigation'
 
 # Code prints these into user output, so a heading rename in a docs-only PR would break them silently.
 # Find literal source URLs even inside code examples; the parsers determine their destinations.
-EMITTED_DOCS = %r{(?:https?:)?//[^\s<>"'`\\]+}i
+EMITTED_DOCS = %r{(?:[a-z][\w+.-]*:)?//[^\s<>"'`\\]+}i
 
 def heading_ids(text)
   html = Commonmarker.to_html(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } })
@@ -80,9 +80,13 @@ def emitted_document_targets(text)
   targets.filter_map { |target| emitted_document_target(target) }.uniq
 end
 
+def github_web_url?(uri)
+  %w[http https].include?(uri.scheme&.downcase) && uri.host.to_s.delete_prefix('www.') == 'github.com'
+end
+
 def emitted_document_target(target)
   uri = ShakaDocs::Audiences.url(target)
-  return unless uri.host.to_s.delete_prefix('www.') == 'github.com'
+  return unless github_web_url?(uri)
 
   parts = uri.path.split('/', 6)
   return unless parts.size == 6 && parts[1, 3].map(&:downcase) == %w[shakacode shaka blob]
