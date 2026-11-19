@@ -105,6 +105,10 @@ class UsageGPT6CostTest < Minitest::Test
   include UsageFixture
 
   RATES = {
+    'gpt-6.2-astra' => { credits: '52.400000', base: '$2.096000', cache_write: '$0.820000',
+                         long: '$64.536000' },
+    'gpt-6.2-sol' => { credits: '13.100000', base: '$0.524000', cache_write: '$0.205000',
+                       long: '$16.134000' },
     'gpt-6.1-sol' => { credits: '13.100000', base: '$0.524000', cache_write: '$0.205000',
                        long: '$16.134000' },
     'gpt-6-sol' => { credits: '13.200000', base: '$0.528000', cache_write: '$0.205000',
@@ -112,6 +116,14 @@ class UsageGPT6CostTest < Minitest::Test
     'gpt-6-luna' => { credits: '0.660000', base: '$0.026400', cache_write: '$0.010250',
                       long: '$0.806900' }
   }.freeze
+
+  def test_gpt_6_2_astra_published_rates
+    assert_rates('gpt-6.2-astra')
+  end
+
+  def test_gpt_6_2_sol_published_rates
+    assert_rates('gpt-6.2-sol')
+  end
 
   def test_gpt_6_1_sol_published_rates
     assert_rates('gpt-6.1-sol')
