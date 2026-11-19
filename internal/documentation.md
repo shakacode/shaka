@@ -42,6 +42,8 @@ source layouts are recognized; other external source layouts require manual revi
 Leading-slash links address public site routes.
 Commonmarker parses Markdown including footnotes, Nokogiri extracts HTML links,
 and Addressable normalizes URLs.
+HTTP(S) links must include `://host`; rewrite ambiguous spellings
+such as `http:/example.com` instead of relying on browser recovery.
 File and heading-anchor validation applies to Markdown links and images. Static
 HTML navigation links, including image-map and SVG links, are checked for agent destinations.
 Code examples and

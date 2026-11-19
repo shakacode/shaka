@@ -748,6 +748,15 @@ end
 class DocsUrlWhitespaceTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 
+  def test_http_links_require_an_unambiguous_authority
+    %w[http:/github.com http:github.com https:/github.com http:/example.com].each do |host|
+      page = "<a href=\"#{host}/shakacode/shaka/blob/main/skills/shaka/references/review.md\">Review</a>"
+      _, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+      refute_predicate status, :success?
+      assert_includes errors, 'HTTP(S) links must use ://host:'
+    end
+  end
+
   def test_extra_authority_slashes_keep_first_party_ownership
     %w[https://github.com https:////github.com ////github.com].each do |host|
       page = "<a href=\"#{host}/shakacode/shaka/blob/main/skills/shaka/references/review.md\">Review</a>"

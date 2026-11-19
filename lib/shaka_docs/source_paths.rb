@@ -12,6 +12,10 @@ module ShakaDocs
       text = target.delete("\t\r\n").gsub(/\A[\x00-\x20]+|[\x00-\x20]+\z/, '')
       text = text.tr('\\', '/').sub(%r{\A(https?:)?/{3,}}i, '\1//')
       uri = Addressable::URI.parse(text)
+      if %w[http https].include?(uri.scheme&.downcase) && uri.host.to_s.empty?
+        raise ArgumentError, "HTTP(S) links must use ://host: #{target}"
+      end
+
       uri.host ? uri.normalize : uri
     end
 
