@@ -480,3 +480,39 @@ class DocsLegacyTextReferencesTest < Minitest::Test
     end
   end
 end
+
+class DocsParsedReferencePrecedenceTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_encoded_destinations_win_in_inline_reference_and_html_links
+    url = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#install%2Dguide'
+    pages = ["日本語 [Guide](#{url}) [Again](#{url})", "[Guide][ref]\n\n[ref]: #{url}",
+             '<a href="https://github.com/shakacode/shaka/blob/main/docs/settings.md#install&#45;guide">Guide</a>']
+    pages.each do |page|
+      output, errors, status = check_links(page, 'docs/settings.md' => '# Install guide')
+      assert_predicate status, :success?, "#{page}: #{output}\n#{errors}"
+    end
+  end
+
+  def test_plain_reference_to_the_same_page_is_not_masked_by_a_valid_link
+    page = '[Guide](https://github.com/shakacode/shaka/blob/main/docs/settings.md#install%2Dguide)' \
+           "\n\nPlain: shakacode/shaka/blob/main/docs/settings.md#absent"
+    output, _, status = check_links(page, 'docs/settings.md' => '# Install guide')
+    refute_predicate status, :success?, output
+    assert_includes output, '#absent (missing anchor)'
+    refute_includes output, '#install (missing anchor)'
+  end
+
+  def test_rendered_non_markdown_assets_do_not_require_a_markdown_prefix_file
+    page = '[Asset](https://github.com/shakacode/shaka/blob/main/docs/setup.mdx-backup)'
+    output, errors, status = check_links(page)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
+  def test_literal_dot_segments_use_canonical_inventory_paths
+    files = { 'README.md' => '# Project', 'skills/shaka/guide.rb' =>
+              "PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/../README.md'" }
+    output, errors, status = check_links('# Guide', files)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+end

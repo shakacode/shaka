@@ -79,6 +79,8 @@ The existing literal-source guard is separate: it recognizes ASCII references sh
 like `shakacode/shaka/blob/REF/docs/PATH.md#HEADING` throughout source text, including
 unused declarations. It also supports `.mdx` and checks references rather than interpreting their surrounding
 language, host or URL scheme. Dynamic, escaped, non-ASCII and other source forms require review.
+Parsed Markdown destinations take precedence at their own occurrence; independent
+plain-text, metadata and code references retain the literal guard.
 Form submissions, MDX-specific syntax and custom components require manual review.
 Each guide's author and reviewer still determine its audience.
 

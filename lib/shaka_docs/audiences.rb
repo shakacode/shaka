@@ -22,14 +22,15 @@ module ShakaDocs
 
     def url(target) = SourcePaths.url(target)
 
-    def links(text, include_html: true)
+    def links(text, include_html: true, unique: true)
       targets = []
       document = Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } })
       document.walk do |node|
         targets << markdown_url(node.url) if %i[link image].include?(node.type)
         targets.concat(html_links(node)) if include_html
       end
-      targets.map(&:strip).uniq
+      targets = targets.map(&:strip)
+      unique ? targets.uniq : targets
     end
 
     def markdown_url(target)

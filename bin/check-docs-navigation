@@ -76,21 +76,33 @@ def source_references(text)
   text.scan(EMITTED_DOCS).map { |page, anchor| ["docs/#{page}", anchor] }
 end
 
+def parsed_markdown_reference?(text, match, destinations)
+  return false if destinations.empty?
+
+  # Probe this occurrence: a destination changes, while prose, comments and code do not.
+  changed = ShakaDocs::Audiences.links(text.dup.insert(match.end(0), '0'), unique: false).tally
+  destinations.any? { |target, count| changed.fetch(target, 0) < count }
+end
+
 def markdown_source_references(text)
-  ShakaDocs::Audiences.links(text).filter_map { |target| emitted_document_target(target) }
+  links = ShakaDocs::Audiences.links(text, unique: false)
+  destinations = links.tally.select { |target, _| github_document_reference(target) }
+  legacy = text.to_enum(:scan, EMITTED_DOCS).filter_map do
+    match = Regexp.last_match
+    ["docs/#{match[1]}", match[2]] unless parsed_markdown_reference?(text, match, destinations)
+  end
+  links.filter_map { |target| emitted_document_target(target) } + legacy
 end
 
 def emitted_document_targets(text, path)
-  targets = source_references(text)
-  targets.concat(markdown_source_references(text)) if path.match?(/\.mdx?\z/i)
-  targets.uniq
+  (path.match?(/\.mdx?\z/i) ? markdown_source_references(text) : source_references(text)).uniq
 end
 
 def github_web_url?(uri)
   [nil, 'http', 'https'].include?(uri.scheme&.downcase) && uri.host.to_s.delete_prefix('www.') == 'github.com'
 end
 
-def emitted_document_target(target)
+def github_document_reference(target)
   uri = ShakaDocs::Audiences.url(target)
   return unless github_web_url?(uri)
 
@@ -98,15 +110,20 @@ def emitted_document_target(target)
   return unless parts.size == 6 && parts[1, 3].map(&:downcase) == %w[shakacode shaka blob]
 
   page = URI::DEFAULT_PARSER.unescape(parts.last)
-  [page, uri.fragment] if page.match?(%r{\Adocs/.*\.mdx?\z})
+  [page, uri.fragment] if page.start_with?('docs/')
 rescue Addressable::URI::InvalidURIError
   nil
+end
+
+def emitted_document_target(target)
+  reference = github_document_reference(target)
+  reference if reference&.first&.match?(/\.mdx?\z/)
 end
 
 def broken_emitted_links(repository, checked, path)
   emitted_document_targets(File.read(path, encoding: 'UTF-8').scrub, path).filter_map do |page, anchor|
     target = [page, anchor].compact.join('#')
-    problem = unresolved_destination(File.join(repository, page), anchor, checked)
+    problem = unresolved_destination(File.absolute_path(page, repository), anchor, checked)
     "#{path.delete_prefix("#{repository}/")} -> #{target} (#{problem})" if problem
   end
 end
