@@ -9,12 +9,13 @@ class PrTemplateOutlineTest < Minitest::Test
   def test_outline_reads_left_edge_headings_and_the_marker_line
     template = "## Rollout\n<!-- How to roll out. -->\n\n<!-- shaka -->\n\n## Changelog\n"
     assert_equal ['Rollout', MARKER, 'Changelog'], outline(template)
-    assert_equal ['Summary', MARKER], outline("## Summary\r\n<!-- shaka -->  \r\n")
+    assert_equal ['Summary', MARKER], outline("## Summary\r\n<!-- shaka -->\r\n")
   end
 
   # Anything looser than the strict format is not read, so nothing is guessed.
   def test_outline_ignores_what_the_format_does_not_allow
-    template = "   ## Indented\n### Deeper\n#Missing space\n##\n<!-- Shaka -->\n  <!-- shaka -->\n## Kept\n"
+    template = "   ## Indented\n### Deeper\n#Missing space\n##\n" \
+               "<!-- Shaka -->\n  <!-- shaka -->\n<!-- shaka --> \n## Kept\n"
     assert_equal ['Kept'], outline(template)
   end
 
@@ -34,13 +35,11 @@ class PrTemplateOutlineTest < Minitest::Test
     assert_equal ['After'], outline(template)
   end
 
-  def test_check_shows_the_order_and_repeats_only_when_the_marker_is_present
+  def test_check_shows_the_publish_order_only_when_the_marker_is_present
     assert_empty Shaka::PrTemplate.check(%w[Rollout Changelog])
-    assert_equal ["Shaka read this template's layout as: `## Rollout`, <!-- shaka -->.",
-                  'The template repeats `## Rollout`; Shaka uses the first.'],
-                 Shaka::PrTemplate.check(['Rollout', MARKER, 'rollout'])
-    notes = Shaka::PrTemplate.check(['Rollout', MARKER, 'Rollout', MARKER])
-    assert_equal ["Shaka read this template's layout as: `## Rollout`, <!-- shaka -->.",
+    notes = Shaka::PrTemplate.check(['Verification', 'Rollout', MARKER, 'Changelog', 'rollout', MARKER])
+    assert_equal ["Shaka will publish: `## Rollout`, Shaka's sections, `## Changelog`.",
+                  "`## Verification` is a section Shaka writes, so it stays inside Shaka's sections.",
                   'The template repeats `## Rollout`; Shaka uses the first.',
                   'The template repeats <!-- shaka -->; Shaka uses the first.'], notes
   end

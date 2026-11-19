@@ -95,7 +95,7 @@ class PublicationTemplateLayoutCommandTest < Minitest::Test
     with_guidance('pr_evidence' => '.agents/pr-evidence.md') do |root|
       write_template(root, TEMPLATE)
       assert guidance('pr_evidence', root, commit(root))
-        .end_with?("Shaka read this template's layout as: `## Deployment`, <!-- shaka -->.\n")
+        .end_with?("Shaka will publish: `## Deployment`, Shaka's sections.\n")
     end
   end
 

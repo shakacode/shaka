@@ -30,7 +30,9 @@ uses the first one it finds. When that template cannot be read, the agent sees t
 guide and a note saying why, and descriptions keep the usual order.
 
 Shaka reads the template from your default branch. A PR that edits the template is
-still described with the merged version. Changing the template makes earlier
+still described with the merged version. When you select a
+[settings preview](settings.md#where-shaka-reads-a-prompt-file), Shaka reads the
+preview's template instead. Changing the template makes earlier
 validation and review results for open PRs out of date.
 
 ## Tell the agent what each section needs
@@ -105,8 +107,9 @@ Shaka reads the template in a strict format, so nothing depends on guessing:
   description. The recommendation, any decisions waiting on you, and the review links
   follow, so the decision comes first. The credit line stays last.
 
-Each time the agent reads a template that holds the marker, Shaka shows what it read,
-such as `## Rollout`, `<!-- shaka -->`, `## Changelog`, and notes a repeated heading or marker.
+Each time the agent reads a template that holds the marker, Shaka shows it the order
+it will publish, such as `## Rollout`, Shaka's sections, `## Changelog`. It also names
+any template heading Shaka keeps in its own sections and notes a repeated heading or marker.
 To see it yourself, ask your agent:
 
 ```text
