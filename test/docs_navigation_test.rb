@@ -908,7 +908,8 @@ class DocsLinkedInventoryTest < Minitest::Test
   end
 
   def test_publication_overrides_are_refused_in_front_matter
-    { 'draft' => 'true', 'unlisted' => 'true', 'id' => 'renamed', '<<' => '{id: renamed}' }.each do |key, value|
+    { 'draft' => 'true', 'unlisted' => 'true', 'id' => 'renamed', 'slug' => '/shared',
+      '<<' => '{id: renamed}' }.each do |key, value|
       page = "---\n#{key}: #{value}\n---\n# Guide\n"
       output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
       refute_predicate status, :success?

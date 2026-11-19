@@ -4,9 +4,9 @@ require 'commonmarker'
 require 'yaml'
 
 module ShakaDocs
-  # Keep publication IDs and visibility owned by the checked source paths and sidebar.
+  # Keep publication IDs, URLs and visibility owned by the checked source paths and sidebar.
   module Metadata
-    OVERRIDES = %w[id draft unlisted <<].freeze
+    OVERRIDES = %w[id slug draft unlisted <<].freeze
 
     module_function
 
