@@ -13,7 +13,8 @@ module Shaka
     # The one line that marks where Shaka's sections go. GitHub hides it, and it is never a section to fill.
     MARKER_LINE = '<!-- shaka -->'
     MARKER = :shaka
-    FENCE = /\A(`{3,}(?=[^`]*\z)|~{3,})/
+    # Markdown lets a code fence, opening or closing, sit up to three spaces in.
+    FENCE = /\A {0,3}(`{3,}(?=[^`]*\z)|~{3,})/
 
     # A location that cannot be resolved, such as a symlink loop, counts as no template there. Once
     # repaired, the template becomes a new fingerprint input, so earlier evidence still goes stale.
@@ -83,7 +84,7 @@ module Shaka
 
       # Advances the code-block and comment state; true when the line belongs to either or opens one.
       def hidden?(line)
-        if @fence then @fence = nil if line.rstrip.match?(/\A#{Regexp.escape(@fence[0])}{#{@fence.size},}\z/)
+        if @fence then @fence = nil if line.rstrip.match?(/\A {0,3}#{Regexp.escape(@fence[0])}{#{@fence.size},}\z/)
         elsif @comment then @comment = !line.include?('-->')
         else return opens?(line)
         end

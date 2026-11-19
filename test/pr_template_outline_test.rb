@@ -24,6 +24,11 @@ class PrTemplateOutlineTest < Minitest::Test
     assert_equal ['After'], outline(template)
   end
 
+  def test_code_fences_may_sit_up_to_three_spaces_in
+    assert_equal ['Rollout', MARKER], outline("```\n## In code\n  ```\n## Rollout\n<!-- shaka -->\n")
+    assert_equal ['After'], outline("   ~~~\n## In tildes\n    ~~~\n~~~\n## After\n")
+  end
+
   def test_comments_that_start_a_line_hold_no_headings_or_marker
     template = "<!-- A note\n## In a comment\n<!-- shaka -->\n-->\n<!-->\n## After\n"
     assert_equal ['After'], outline(template)
