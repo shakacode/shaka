@@ -268,8 +268,12 @@ class DocsExternalAliasTest < Minitest::Test
   def install_alias(root, kind, present)
     FileUtils.mkdir_p(File.join(root, 'internal'))
     File.write(File.join(root, 'docs/local.md'), '# Setup') if present
-    target, path = kind == :directory ? ['../docs', 'docs-alias'] : ['../docs/local.md', 'file-alias.md']
-    File.symlink(target, File.join(root, 'internal', path))
+    directory = kind == :directory
+    target = directory ? File.join(root, 'docs') : '../docs/local.md'
+    path = File.join(root, 'internal', directory ? 'docs-alias' : 'file-alias.md')
+    assert File.directory?(target), 'Directory-link target must be an existing directory' if directory
+    File.symlink(target, path)
+    assert File.directory?(path), 'Directory alias must be traversable' if directory
   end
 end
 
