@@ -7,25 +7,7 @@ require 'json'
 require 'rexml/document'
 require_relative '../lib/shaka_docs/audiences'
 require_relative '../lib/shaka_docs/metadata'
-
-# Check the full published tree, so an already-merged orphan is caught too.
-def document_ids(item)
-  case item
-  when String then [item]
-  when Array then item.flat_map { |child| document_ids(child) }
-  when Hash then sidebar_ids(item)
-  else raise ArgumentError, "Unsupported sidebar item: #{item.inspect}"
-  end
-end
-
-def sidebar_ids(item)
-  case item['type']
-  when 'link' then []
-  when 'doc' then [item.fetch('id')]
-  when 'category' then document_ids(item.fetch('items'))
-  else raise ArgumentError, "Unsupported sidebar item: #{item.inspect}"
-  end
-end
+require_relative '../lib/shaka_docs/navigation'
 
 # Code prints these into user output, so a heading rename in a docs-only PR would break them silently.
 EMITTED_DOCS = %r{shakacode/shaka/blob/[^/\s]+/docs/([\w./-]+\.md)(?:#([\w-]+))?}
@@ -155,7 +137,9 @@ begin
   navigation = JSON.parse(File.read(File.join(root, 'sidebars.json')))
   raise ArgumentError, 'Expected a sidebar object' unless navigation.is_a?(Hash)
 
-  ids = document_ids(navigation.fetch('docsSidebar'))
+  sidebar_items = navigation.transform_values { |sidebar| ShakaDocs::Navigation.items(sidebar) }
+  ids = sidebar_items.fetch('docsSidebar').filter_map { |kind, value| value if kind == :doc }
+  all_items = sidebar_items.values.flatten(1)
   prefix = "#{File.basename(root)}/"
   inventory = ShakaDocs::Inventory.paths(repository)
   doc_paths = inventory.filter_map { |file| File.join(repository, file) if file.start_with?(prefix) }
@@ -177,11 +161,11 @@ begin
   duplicates = publication_ids.values.select { |paths| paths.size > 1 }.flatten
   pages = publication_ids.keys
   missing = pages - ids
-  stale = ids - pages
+  stale = all_items.filter_map { |kind, value| value if kind == :doc } - pages
   agent_links = files.flat_map do |file|
     ShakaDocs::Audiences.agent_links(repository, File.join(root, file), File.read(File.join(root, file), encoding: 'UTF-8')).map { |link| "#{file} -> #{link}" }
   end
-  sidebar_targets = navigation.values.flat_map { |sidebar| ShakaDocs::Audiences.navigation_links(sidebar) }
+  sidebar_targets = all_items.filter_map { |kind, value| value if kind == :url }
   sidebar_agents = ShakaDocs::Audiences.agent_targets(repository, File.join(root, 'sidebars.json'), sidebar_targets)
   agent_links.concat(sidebar_agents.map { |link| "sidebars.json -> #{link}" })
   agent_links.concat(files.select { |file| ShakaDocs::Audiences.agent_entry?(file) })

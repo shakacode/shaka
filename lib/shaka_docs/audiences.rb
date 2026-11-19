@@ -41,28 +41,6 @@ module ShakaDocs
       Nokogiri::HTML5.fragment(node.literal).css('a, area').filter_map { |link| link['href'] || link['xlink:href'] }
     end
 
-    def navigation_links(item)
-      case item
-      when Array then item.flat_map { |child| navigation_links(child) }
-      when Hash then sidebar_links(item)
-      when String then []
-      else raise ArgumentError, "Unsupported sidebar item: #{item.inspect}"
-      end
-    end
-
-    def sidebar_links(item)
-      case item['type']
-      when 'category' then navigation_links(item.fetch('items'))
-      when 'link'
-        target = item.fetch('href')
-        raise ArgumentError, 'Expected a string sidebar link href' unless target.is_a?(String)
-
-        [target]
-      when 'doc' then []
-      else raise ArgumentError, "Unsupported sidebar item: #{item.inspect}"
-      end
-    end
-
     def agent_path?(path)
       return true if path == 'skills/shaka/references' || path.start_with?('skills/shaka/references/')
 

@@ -298,15 +298,18 @@ class ValidateWorkflowTest < Minitest::Test
   end
 
   def install_validation_scripts(root)
-    %w[Gemfile Gemfile.lock bin/docs-only-change bin/check-docs-navigation lib/shaka_docs/audiences.rb
-       lib/shaka_docs/source_paths.rb lib/shaka_docs/inventory.rb lib/shaka_docs/metadata.rb
-       .agents/shaka/bin/validate].each do |path|
-      FileUtils.mkdir_p(File.dirname(File.join(root, path)))
-      FileUtils.cp(File.expand_path("../#{path}", __dir__), File.join(root, path))
-    end
+    copy_validation_sources(root)
     File.write(File.join(root, 'docs/sidebars.json'), '{"docsSidebar":["guide"]}')
     File.write(File.join(root, 'bin/validate'), "#!/bin/sh\necho FULL_VALIDATION\n")
     FileUtils.chmod(0o755, File.join(root, 'bin/validate'))
+  end
+
+  def copy_validation_sources(root)
+    %w[Gemfile Gemfile.lock bin/docs-only-change bin/check-docs-navigation .agents/shaka/bin/validate].each do |path|
+      FileUtils.mkdir_p(File.dirname(File.join(root, path)))
+      FileUtils.cp(File.expand_path("../#{path}", __dir__), File.join(root, path))
+    end
+    FileUtils.cp_r(File.expand_path('../lib/shaka_docs', __dir__), File.join(root, 'lib/shaka_docs'))
   end
 
   def initialize_repository(root)

@@ -962,6 +962,36 @@ class DocsCommitHookTest < Minitest::Test
   end
 end
 
+class DocsSidebarReferencesTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_secondary_sidebar_document_references_must_exist
+    %w[deleted-guide expected-experience].each do |id|
+      sidebar = { 'docsSidebar' => ['expected-experience'], 'otherSidebar' => [{ 'type' => 'doc', 'id' => id }] }
+      output, errors, status = check(sidebar)
+      assert_equal id == 'expected-experience', status.success?, "#{output}\n#{errors}"
+      assert_includes output, 'Navigation targets missing pages: deleted-guide' if id == 'deleted-guide'
+    end
+  end
+
+  def test_category_landing_document_references_must_exist
+    %w[deleted-guide expected-experience].each do |id|
+      category = { 'type' => 'category', 'label' => 'Guides', 'items' => ['expected-experience'],
+                   'link' => { 'type' => 'doc', 'id' => id } }
+      output, errors, status = check('docsSidebar' => [category])
+      assert_equal id == 'expected-experience', status.success?, "#{output}\n#{errors}"
+      assert_includes output, 'Navigation targets missing pages: deleted-guide' if id == 'deleted-guide'
+    end
+  end
+
+  def test_category_landing_document_counts_as_primary_enrollment
+    category = { 'type' => 'category', 'label' => 'Guide', 'items' => [],
+                 'link' => { 'type' => 'doc', 'id' => 'expected-experience' } }
+    output, errors, status = check('docsSidebar' => [category])
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+end
+
 class DocsIndexSymlinkTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 
