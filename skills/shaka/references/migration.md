@@ -31,11 +31,16 @@ For the old command-path mapping, migrate in this order:
    scripts. Preserve adapters at old paths. Where old and new roles conflict,
    make both run the stricter checks until the new contract is trusted.
 2. Validate the candidate with the previous installation and old trusted SHA.
-   Separately validate it with the target Shaka using `--local`. Both must pass
-   before the migration PR merges through normal gates.
-3. Upgrade Shaka, load the new default-branch SHA with `--ref`, then remove obsolete
-   adapters in a follow-up PR. Optional names use hyphens: `validate-local` and
-   `trigger-hosted-ci`.
+   Also run the target checks below before the PR merges through normal gates.
+3. After switching to the verified target installation, remove obsolete adapters
+   in a follow-up PR. The optional paths are `validate-local` and `trigger-hosted-ci`.
+
+Before merging any shared settings migration, run the target helper's
+`seam check --root ROOT --local` in a fresh checkout of the exact PR commit.
+Review moved wrappers and run the affected local checks. Run a
+`trigger-hosted-ci` wrapper only as part of an authorized CI run. After merge,
+check the new trusted default-branch SHA using the target helper's `seam check
+--root ROOT --ref NEW_DEFAULT_SHA` before switching the active installation.
 
 A newly renamed key can also make an older installation reject trusted policy.
 Coordinate the contract change with the installation upgrade, including tasks
