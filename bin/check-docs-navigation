@@ -121,10 +121,11 @@ begin
   raise ArgumentError, 'Expected a sidebar object' unless navigation.is_a?(Hash)
 
   ids = document_ids(navigation.fetch('docsSidebar'))
-  files = Dir.glob('**/*.{md,mdx}', File::FNM_DOTMATCH, base: root)
-  # Docusaurus ignores dot paths, its default underscore paths, and this site's planning folders.
+  files = Dir.glob('**/*.{[mM][dD],[mM][dD][xX]}', File::FNM_DOTMATCH, base: root)
+  # Site discovery needs lowercase extensions and ignores dot, underscore and planning paths.
   excluded, published = files.partition do |file|
-    file.split('/').any? { |part| part.start_with?('.', '_') } || file.split('/')[0...-1].include?('planning')
+    !file.match?(/\.mdx?\z/) || file.split('/').any? { |part| part.start_with?('.', '_') } ||
+      file.split('/')[0...-1].include?('planning')
   end
   pages = published.map { |file| file.sub(/\.(md|mdx)\z/, '') }
   missing = pages - ids

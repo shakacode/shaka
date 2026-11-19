@@ -419,6 +419,14 @@ class DocsAudienceExamplesTest < Minitest::Test
     refute_includes output, 'Missing from docs/sidebars.json: .draft/install'
   end
 
+  def test_uppercase_site_extension_requires_relocation_instead_of_enrollment
+    sidebar = { 'docsSidebar' => %w[expected-experience INSTALL] }
+    output, _, status = check(sidebar, '# Guide', 'docs/INSTALL.MD' => '# Install')
+    refute_predicate status, :success?
+    assert_includes output, 'Site-excluded Markdown: INSTALL.MD'
+    assert_includes output, 'Navigation targets missing pages: INSTALL'
+  end
+
   def test_enrollment_cannot_make_site_excluded_guides_publishable
     %w[.draft/install _draft/install planning/install guides/planning/install .draft _partial].each do |id|
       sidebar = { 'docsSidebar' => ['expected-experience', id] }
@@ -447,5 +455,36 @@ class DocsAudienceExamplesTest < Minitest::Test
     MARKDOWN
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
     assert_predicate status, :success?, output
+  end
+end
+
+class DocsCaseInventoryTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_uppercase_markdown_requires_a_destination_in_git_and_exports
+    paths = %w[new-guides/INSTALL.MD new-guides/install.MdX]
+    paths.product([true, false]).each do |path, git|
+      output, _, status = uppercase_fixture(path, git)
+      refute_predicate status, :success?, "#{git}: #{path}"
+      assert_includes output, "Markdown outside established documentation locations: #{path}"
+    end
+  end
+
+  def test_uppercase_markdown_can_have_an_established_non_site_destination
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide',
+                              'contributing/INSTALL.MD' => '# Install')
+    assert_predicate status, :success?, output
+  end
+
+  private
+
+  def uppercase_fixture(path, git)
+    check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', path => '# Install') do |root|
+      if git
+        system('git', '-C', root, 'add', path, exception: true)
+      else
+        FileUtils.remove_entry(File.join(root, '.git'))
+      end
+    end
   end
 end

@@ -98,13 +98,15 @@ module ShakaDocs
 
     def document_files(repository)
       git_directory = File.join(repository, '.git')
-      return Dir.glob('**/*.{md,mdx}', File::FNM_DOTMATCH, base: repository) unless File.exist?(git_directory)
+      unless File.exist?(git_directory)
+        return Dir.glob('**/*.{[mM][dD],[mM][dD][xX]}', File::FNM_DOTMATCH, base: repository)
+      end
 
       output, error, status = Open3.capture3('git', '-C', repository, 'ls-files', '--cached', '--others',
                                              '--exclude-standard', '-z')
       raise ArgumentError, "Cannot inventory documentation: #{error}" unless status.success?
 
-      output.split("\0").grep(/\.mdx?\z/).uniq.select { |path| File.file?(File.join(repository, path)) }
+      output.split("\0").grep(/\.mdx?\z/i).uniq.select { |path| File.file?(File.join(repository, path)) }
     end
 
     def unclassified_documents(repository)
