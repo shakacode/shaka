@@ -13,7 +13,8 @@ lists the method, every kind, and the
 
 1. **About a quarter of review findings repeat a kind seen on 3 or more PRs.** 406 of
    1,716 fit 18 recurring kinds, 6 more fit a kind seen on 2 PRs, and 1,304 were not
-   classified. A hand check found more members among those, so 24% is a lower bound.
+   classified. Misses push the true share up and repeats push it down, so 24% is the
+   observed share.
 2. **The kinds that repeat most compare prose with code.** Docs that promise behavior
    the code lacks were raised on 53 PRs and fixed on 47. A test that checks names would catch about 1 in 10
    of them. The rest need someone, or something, to read both.
@@ -24,9 +25,9 @@ lists the method, every kind, and the
    also covers the seed tooling under `eval/`. A follow-up mapping that supersedes this
    estimate,
    [#1222](https://github.com/shakacode/shaka/pull/1222), recommends deferring it.
-4. **Reviewers still raise risks a check already answers.** Where an anchor check and a
-   quote loader existed, reviewers raised 4 risks those checks cover. The agent
-   dismissed all 4, 3 of them by citing the check.
+4. **Reviewers still raise risks in areas a check covers.** Where an anchor check and a
+   quote loader existed, reviewers raised 4 risks about what those checks read. The
+   agent dismissed all 4 after a search showed nothing depended on the edit.
 5. **Checks cost review too.** One deterministic scanner drew 38 review findings over the
    7 PRs that built and extended it, before it was removed.
 6. **Recommendation: evaluate first.** Trial a report-only coverage check. For the prose
@@ -61,7 +62,7 @@ enforced by nothing but the agent.
 | A study's claim does not match its data | 14 / 11 | 43 | Figures computed by a script; per study | About 8 arithmetic errors | Defer |
 | Symlinks, case-insensitive disks, or Windows | 14 / 13 | 18 | Windows and case-insensitive CI; CI minutes | Most fixed ones | Evaluate first |
 | An unnamed caller might break | 13 / 0 | 14 | Review prompt change, not a check; low | None; all 14 were dismissed | Evaluate a review prompt change |
-| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | Heredoc and fallback tests; low | The 5 fixed ones | Prompt part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224) |
+| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | Heredoc and fallback tests; low | The 5 fixed ones | A heredoc-prose test shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); not checked against #837 and #901 |
 | Git subprocess inherits the caller's Git environment | 5 / 5 | 13 | One isolating Git runner; medium | 4 to 6 | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) |
 | Changelog rule broken; the rule changed mid-month | 4 / 4 | 4 | CI refusing `CHANGELOG.md` edits; low | 1 of 4 | Defer |
 
@@ -103,7 +104,8 @@ report lists 7 more kinds with their checks and costs.
   [#616](https://github.com/shakacode/shaka/pull/616). The `enforcement.yml` loader fails
   when a quoted rule leaves the workflow.
 - **Result:** reviewers still raised 4 risks that an edit might break an anchor or a
-  quote the checks read. The agent dismissed each one, 3 by citing the check. Two of the 3
+  quote the checks read. The agent dismissed each one after a search or heading slug showed nothing
+  depended on the edit. Two of the 3
   anchor findings that were fixed fell outside the check's reach.
 - **Limit:** the month holds two days before the anchor check and none before the loader,
   so it cannot show whether the checks reduced defects. The reviewer packet does not list the checks that passed.
@@ -140,7 +142,7 @@ from prose to checks.
 | Option | Evidence | Verdict |
 | --- | --- | --- |
 | Boundary test: every Git subprocess uses one runner that clears `GIT_*`, global config, filters, and hooks | 13 findings, 7 defects, 5 PRs; the test would catch the 4 to 6 where isolation was missing, if it covers `eval/` seed tooling too. 35 library files had a quoted `git` string; spawn sites are uncounted | Deferred: [#1222](https://github.com/shakacode/shaka/pull/1222) found it catches at most 3 of 7 defects, demands isolation the maintainer rejected, and touches 40 files |
-| Tests refusing a Ruby fallback for a `defaults.yml` key, and long English string literals in `skills/shaka/lib` | 5 fixed findings: 3 settings fallbacks and 2 prompt texts. The other 5 were dismissed, and the maintainer kept them in Ruby | Heredoc part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); fallback part not built |
+| Tests refusing a Ruby fallback for a `defaults.yml` key, and long English string literals in `skills/shaka/lib` | 5 fixed findings: 3 settings fallbacks and 2 prompt texts. The agent dismissed the other 5 and kept them in Ruby | Heredoc part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); fallback part not built |
 | CI step refusing `CHANGELOG.md` edits on non-release PRs | The rule changed mid-month; 1 finding broke its current form | Defer |
 | Report-only changed-line coverage | Up to 26 of 51 test findings name an untested path; coverage misses paths unit tests already run | Evaluate on the next 10 PRs |
 | Tell reviewers which checks passed, and to name a caller before warning about one | 4 risks dismissed by citing a check or slug, and 14 by showing callers unaffected; dismissals were not rechecked | Evaluate: compare dismissals over a week |
@@ -155,7 +157,7 @@ from prose to checks.
 - **Classifier:** one agent, Claude Opus 5.5, read and sorted every counted finding,
   mostly from titles. No second reader checked it.
 - **Recall:** a hand check of 150 unmatched findings found 30 that belonged to a counted
-  kind. Counts are lower bounds. The agent chose the kinds after reading a sample, so 24%
+  kind. Counts can also run high from repeats of one problem across ledgers. The agent chose the kinds after reading a sample, so 24%
   measures those kinds, not a list fixed in advance.
 - **Dismissals:** the agent's own judgment. No dismissed finding was rerun or rechecked.
 - **Catch and cost:** estimates, not measurements. No candidate check was built or

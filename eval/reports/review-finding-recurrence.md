@@ -32,7 +32,8 @@ model runs. No person has rechecked the classification.*
   more PRs. They touch 183 of the 323 PRs.
 - **Below the threshold:** 6 more findings form a kind seen on only 2 PRs.
 - **Unclassified:** the remaining 1,304 findings have no kind. A hand check of 150 of them
-  found 30 (20%) that fit a kind defined before the check, so 24% is a lower bound.
+  found 30 (20%) that fit a kind defined before the check. Misses push the true share up;
+  repeats and loosely fitting members push it down, so 24% is the observed share, not a bound.
   The sample was drawn before later recall passes, so its rate does not give a share for
   the final pool; the report makes no projection.
 - **Mostly one-off in the sample:** 104 of the 150 checked findings fit no kind. They
@@ -51,10 +52,11 @@ model runs. No person has rechecked the classification.*
     shipped a heredoc-prose test for the prompt part; the fallback part has no check.
   - Untested changed lines: up to 26 of the 51 test findings name an untested path.
     Line coverage misses a path whose lines a unit test already runs.
-- **Reviewers still raised risks a check already answered.** With the anchor check and
+- **Reviewers still raised risks in areas a check covered.** With the anchor check and
   the `enforcement.yml` loader in place, reviewers raised 4 risks that an edit might
-  break an anchor or quote the checks read. The agent dismissed all 4; 3 dismissals cite
-  the check and 1 a heading slug. Counted here are only risks inside what the checks read;
+  break an anchor or quote the checks read. The agent dismissed all 4. The deciding
+  evidence was a search or heading slug showing nothing depended on the edit; 3 also cite
+  the check as context. Counted here are only risks inside what the checks read;
   #844 F6 also cites the check, but its risk reaches pages outside `docs/` and `skills/`. 14 more dismissed risks warned that an unnamed caller might break. The window holds
   only two days before the anchor check and none before the loader, so it cannot show whether the checks cut defects.
 - **Checks cost review too.** The seam upgrade reference scanner was a deterministic
@@ -142,7 +144,7 @@ check would flag mechanically. Cost covers writing the check and keeping it corr
 | An unnamed caller or reader might break | 13 / 0 | 14 | 0 / 14 | 0 | None. Reviewer instruction: name the caller from a search, or drop the risk | n/a | Low | Evaluate: trial the prompt change, because no dismissal was rechecked |
 | Content from the PR branch or a fork treated as trusted | 11 / 7 | 16 | 10 / 6 | 4 | Extend `test/configuration_boundary_test.rb` to refuse checkout-path reads in review, prompt and checkpoint code | About 4 file reads | Medium: that test already changed in 22 commits since 2026-10-15 | Evaluate first |
 | A rule restated in a second instruction file | 11 / 10 | 14 | 13 / 1 | 5 | Near-duplicate sentence report in `bin/report-instruction-growth` | Close copies only | Low, report-only | Evaluate first |
-| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | 5 / 5 | 10 | Test that settings keys in `defaults.yml` have no Ruby fallback value, plus a test refusing English string literals over about 25 words in `skills/shaka/lib` | The 3 fixed fallbacks and 2 fixed prompt texts. The long-string test would also flag the dismissed #842 guidance string. The other 4 dismissals were constants, an env switch, and a path the maintainer kept in Ruby | Low | Prompt part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); fallback part not built |
+| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | 5 / 5 | 10 | Test that settings keys in `defaults.yml` have no Ruby fallback value, plus a test refusing English string literals over about 25 words in `skills/shaka/lib` | The 3 fixed fallbacks and 2 fixed prompt texts. The long-string test would also flag the dismissed #842 guidance string. The other 4 dismissals were constants, an env switch, and a path the agent kept in Ruby | Low | A heredoc-prose test shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); whether it would have caught #837 and #901 was not checked; fallback part not built |
 | `enforcement.yml` out of step with the workflow | 8 / 3 | 10 | 5 / 5 | 3 | Loader already checks quotes; add that entry names cited in docs exist | 1 | Low | Defer |
 | Seam upgrade reference scanner misses or misfires | 7 / 7 | 38 | 33 / 5 | 23 | None: the scanner was itself the check, removed in #997 | n/a | Was 1,832 lines | Evidence of the review cost of building a check |
 | Docs link to a missing anchor | 6 / 3 | 7 | 3 / 4 | 1 | Exists: `bin/check-docs-navigation` since #616 | 2 of the 3 fixed were outside its reach; #1102 is unverified | Already paid | No new check |
@@ -203,7 +205,7 @@ below the threshold.
   the loader does not read.
 - **Unnamed callers.** 14 risks on 13 PRs said a change might break a caller or reader
   without naming one. All 14 were dismissed, mostly after a search found none.
-- **Reading:** reviewers still raise risks that a check already answers, and the agent
+- **Reading:** reviewers still raise risks in areas a check covers, and the agent
   spends a triage turn on each. The window holds only two days before the anchor check and
   none before the loader, so this data cannot show whether the checks reduced defects. The review packet does not name
   the checks that passed. Naming them is untested.
@@ -235,7 +237,7 @@ below the threshold.
   renumbered in a later ledger of the same PR counts twice; review found at least 6
   such repeats. PR counts are unaffected.
 - **Recall.** The 150-finding check found 20% of unclassified findings in a counted
-  kind. Counts are lower bounds.
+  kind. Counts can be too low from misses or too high from repeats and loose members.
 - **Dismissals are the agent's own judgment.** No dismissed finding was rerun or
   rechecked, unlike the [review signal study](review-signal.md). The prompt change for
   unnamed callers could hide a real risk; trial it before adopting it.
