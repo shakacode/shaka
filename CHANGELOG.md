@@ -14,14 +14,14 @@ documented `shaka` command from working is a major version.
 Shaka 1.0 is the first stable release of the Shaka skill for AI coding agents.
 Give your agent a task and get a pull request with the checks it ran, an
 independent review for substantial changes, and any gaps you still need to assess.
-Use [Ask or Auto](docs/working-with-shaka.md#choose-a-merge-policy) to choose how
+Use [Ask or Auto](https://shaka.shakacode.com/docs/working-with-shaka#choose-a-merge-policy) to choose how
 Shaka handles merging. Repository checks and approvals still apply.
 
 ### Added
 
 - Install the `shaka` gem on Ruby 3.4 or later. Run `shaka-install --agent codex`
   to link the skill to the matching GitHub release. Install from source when you
-  need a branch. Both paths are in [Start here](docs/getting-started.md).
+  need a branch. Both paths are in [Start here](https://shaka.shakacode.com/docs/getting-started).
 - Try Shaka on a small task with individual settings kept in your local clone.
   Teams can review shared settings in a PR and try that PR's pinned settings
   before adopting them. You can also try an unmerged Shaka revision without
@@ -37,7 +37,7 @@ Shaka handles merging. Repository checks and approvals still apply.
 ### Changed
 
 - Existing 1.x `.agents/shaka/config.yml` files and documented commands keep
-  working across 1.x updates. See [Update Shaka](docs/migration.md) for the
+  working across 1.x updates. See [Update Shaka](https://shaka.shakacode.com/docs/migration) for the
   compatibility policy and how to check a project before switching versions.
 - Risk ratings use low, medium, and high. Auto defaults to low-risk changes.
   Higher risk or a missing rating requires explicit attention under the merge
