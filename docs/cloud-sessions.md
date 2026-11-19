@@ -34,14 +34,18 @@ MAKE_OPTS=-j8 RUBY_CONFIGURE_OPTS=--disable-install-doc /opt/rbenv/bin/rbenv ins
 export PATH=/opt/rbenv/versions/3.4.10/bin:$PATH
 # Official install from a clone outside the project checkout, linked for Claude Code (/shaka).
 umask 022
-mkdir -p "$HOME/.local/share/shaka"
-if [ ! -d "$HOME/.local/share/shaka/source" ]; then
-  git clone -q https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
+src="$HOME/.local/share/shaka/source"
+if [ -d "$src" ]; then
+  # A kept clone: update it, or register it if an earlier install did not finish.
+  # Either way, a failure still lets the session start.
+  "$src/skills/shaka/scripts/shaka" install --update ||
+    "$src/bin/install" --agent claude --no-session-hook ||
+    echo "Shaka update failed; run $src/skills/shaka/scripts/shaka install --status" >&2
+else
+  mkdir -p "$HOME/.local/share/shaka"
+  git clone -q https://github.com/shakacode/shaka.git "$src"
+  "$src/bin/install" --agent claude --no-session-hook
 fi
-"$HOME/.local/share/shaka/source/bin/install" --agent claude --no-session-hook
-# Bring a kept install up to date; if the update fails, the session still starts.
-"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --update ||
-  echo "Shaka update failed; run $HOME/.local/share/shaka/source/skills/shaka/scripts/shaka install --status" >&2
 ```
 
 Building Ruby adds a few minutes to each new container. The script installs
@@ -55,15 +59,16 @@ the installation's state. The script applies to new
 sessions; a session that is already running keeps what it has.
 
 Shaka runs on the Ruby that installed it, but the session's own shell still
-starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, ask Claude in
-the session:
+starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, look at the
+branch first, because `bundle install` runs your project's Gemfile. Then ask
+Claude in the session:
 
 ```text
-Run this project's Ruby commands with /opt/rbenv/versions/3.4.10/bin first on PATH, starting with bundle install
+Run this project's Ruby commands with /opt/rbenv/versions/3.4.10/bin first on PATH. Stop if ruby -v does not report 3.4, otherwise run bundle install
 ```
 
-Claude sets `PATH` on each command, so nothing in the container changes and your
-project's Gemfile runs only after you have looked at the branch.
+Claude sets `PATH` on each command, so shells it does not start that way keep
+Ruby 3.3.
 
 A cloud session cannot yet open or finish a Shaka PR. Claude Code blocks GitHub's
 GraphQL API there, and Shaka uses it to create the PR, publish its
