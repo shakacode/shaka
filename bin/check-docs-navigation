@@ -10,7 +10,7 @@ require_relative '../lib/shaka_docs/metadata'
 require_relative '../lib/shaka_docs/navigation'
 
 # Code prints these into user output, so a heading rename in a docs-only PR would break them silently.
-EMITTED_DOCS = %r{shakacode/shaka/blob/[^/\s]+/docs/([\w./-]+\.md)(?:#([\w-]+))?}
+EMITTED_DOCS = %r{shakacode/shaka/blob/[^/\s]+/docs/([\w./-]+\.mdx?)(?![\w.])(?:#([\w-]+))?}
 
 def prose(path)
   File.read(path, encoding: 'UTF-8').gsub(/^ {0,3}```.*?^ {0,3}```/m, '')

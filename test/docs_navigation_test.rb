@@ -99,6 +99,41 @@ class DocsNavigationTest < Minitest::Test
   end
 end
 
+class DocsEmittedLinksTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def emitted_page_check(extension, heading)
+    page = "setup.#{extension}"
+    files = { 'skills/shaka/guide.rb' => "PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/#{page}#install'" }
+    files["docs/#{page}"] = heading if heading
+    sidebar = ['expected-experience'] + (heading ? ['setup'] : [])
+    check({ 'docsSidebar' => sidebar }, '# What to expect', files)
+  end
+
+  def test_emitted_markdown_and_mdx_pages_resolve
+    %w[md mdx].each do |extension|
+      output, errors, status = emitted_page_check(extension, '# Install')
+      assert_predicate status, :success?, "#{output}\n#{errors}"
+    end
+  end
+
+  def test_emitted_missing_pages_keep_the_exact_extension
+    %w[md mdx].each do |extension|
+      output, _, status = emitted_page_check(extension, nil)
+      refute_predicate status, :success?, output
+      assert_includes output, "docs/setup.#{extension}#install (missing file)"
+    end
+  end
+
+  def test_emitted_mdx_anchors_are_checked
+    %w[md mdx].each do |extension|
+      output, _, status = emitted_page_check(extension, '# Other heading')
+      refute_predicate status, :success?, output
+      assert_includes output, "docs/setup.#{extension}#install (missing anchor)"
+    end
+  end
+end
+
 class DocsSidebarAudienceTest < Minitest::Test
   include DocsNavigationFixture
 
