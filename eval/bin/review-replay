@@ -32,7 +32,14 @@ def validate_options(options)
   options[:candidate] = { criteria: options.fetch(:candidate_criteria, options[:criteria]),
                           model: options[:candidate_model] }
   validate_arms(options.values_at(:baseline, :candidate))
+  validate_effort(options)
   validate_budget(options) unless options[:preview]
+end
+
+def validate_effort(options)
+  return unless options[:candidate_criteria] && options[:effort].to_s.strip.empty?
+
+  raise ArgumentError, 'Set the same explicit --effort for both prompt arms'
 end
 
 def validate_paths(options)
