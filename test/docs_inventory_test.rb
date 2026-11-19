@@ -420,7 +420,23 @@ class DocsSparseCheckoutTest < Minitest::Test
     end
   end
 
+  def test_unparsed_sparse_paths_still_have_their_destinations_checked
+    { 'internal/note.md' => true, 'misc/new-guide.md' => false }.each do |path, expected|
+      output, errors, status = unparsed_sparse_fixture(path)
+      assert_equal expected, status.success?, "#{output}\n#{errors}"
+      assert_includes output, "Markdown outside established documentation locations: #{path}" unless expected
+    end
+  end
+
   private
+
+  def unparsed_sparse_fixture(path)
+    check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', path => '# Unparsed document') do |root|
+      commit_fixture(root)
+      system('git', '-C', root, 'update-index', '--skip-worktree', path, exception: true)
+      File.unlink(File.join(root, path))
+    end
+  end
 
   def partial_fixture(mode)
     full = nil
@@ -535,5 +551,22 @@ class DocsIndexSymlinkTest < Minitest::Test
   def probe_symlink(path)
     create_symlink('../skills/shaka/references/procedure.txt', path)
     File.unlink(path)
+  end
+end
+
+class DocsUnparsedAgentAliasTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_unparsed_agent_alias_is_allowed_but_not_linked_from_a_public_guide
+    [false, true].each do |linked|
+      page = linked ? '[Agent](../CLAUDE.md)' : '# Guide'
+      output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, page,
+                                     'AGENTS.md' => '# Agent instructions') do |root|
+        create_symlink('AGENTS.md', File.join(root, 'CLAUDE.md'))
+        system('git', '-C', root, 'add', 'CLAUDE.md', exception: true)
+      end
+      assert_equal !linked, status.success?, "#{output}\n#{errors}"
+      assert_includes output, 'Link a human guide, not agent instructions:' if linked
+    end
   end
 end

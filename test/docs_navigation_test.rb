@@ -99,13 +99,13 @@ class DocsNavigationTest < Minitest::Test
   end
 end
 
-class DocsEmittedLinksTest < Minitest::Test
+class DocsParsedDocumentLinksTest < Minitest::Test
   include DocsNavigationFixture
 
-  def emitted_page_check(extension, heading, page: "setup.#{extension}", target: "#{page}#install",
-                         authority: 'github.com')
+  def document_link_check(extension, heading, page: "setup.#{extension}", target: "#{page}#install",
+                          authority: 'github.com')
     host = authority.start_with?('//') ? authority : "https://#{authority}"
-    files = { 'skills/shaka/guide.rb' => "PAGE = '#{host}/shakacode/shaka/blob/main/docs/#{target}'" }
+    files = { 'skills/shaka/guide.md' => "[Setup](#{host}/shakacode/shaka/blob/main/docs/#{target})" }
     files["docs/#{page}"] = heading if heading
     sidebar = ['expected-experience'] + (heading ? [page.sub(/\.mdx?\z/, '')] : [])
     check({ 'docsSidebar' => sidebar }, '# What to expect', files)
@@ -113,8 +113,8 @@ class DocsEmittedLinksTest < Minitest::Test
 
   def test_protocol_relative_emitted_urls_keep_authority_and_anchor_checks
     %w[md mdx].product(%w[github.com example.com], [true, false]).each do |extension, authority, present|
-      output, errors, status = emitted_page_check(extension, present ? '# Install' : '# Other',
-                                                  authority: "//#{authority}")
+      output, errors, status = document_link_check(extension, present ? '# Install' : '# Other',
+                                                   authority: "//#{authority}")
       expected = authority != 'github.com' || present
       assert_equal expected, status.success?, "#{authority}/#{extension}/#{present}: #{output}\n#{errors}"
       assert_includes output, "docs/setup.#{extension}#install (missing anchor)" unless expected
@@ -123,22 +123,22 @@ class DocsEmittedLinksTest < Minitest::Test
 
   def test_non_web_schemes_are_not_reinterpreted_as_github_documentation
     %w[file ftp git ssh git+https git+http].each do |scheme|
-      guide = "PAGE = '#{scheme}://github.com/shakacode/shaka/blob/main/docs/settings.md#absent'"
-      output, errors, status = check_links('# Guide', 'skills/shaka/guide.rb' => guide)
+      guide = "[Source](#{scheme}://github.com/shakacode/shaka/blob/main/docs/settings.md#absent)"
+      output, errors, status = check_links(guide)
       assert_predicate status, :success?, "#{scheme}: #{output}\n#{errors}"
     end
   end
 
   def test_emitted_markdown_and_mdx_pages_resolve
     %w[md mdx].each do |extension|
-      output, errors, status = emitted_page_check(extension, '# Install')
+      output, errors, status = document_link_check(extension, '# Install')
       assert_predicate status, :success?, "#{output}\n#{errors}"
     end
   end
 
   def test_emitted_missing_pages_keep_the_exact_extension
     %w[md mdx].each do |extension|
-      output, _, status = emitted_page_check(extension, nil)
+      output, _, status = document_link_check(extension, nil)
       refute_predicate status, :success?, output
       assert_includes output, "docs/setup.#{extension}#install (missing file)"
     end
@@ -146,7 +146,7 @@ class DocsEmittedLinksTest < Minitest::Test
 
   def test_emitted_mdx_anchors_are_checked
     %w[md mdx].each do |extension|
-      output, _, status = emitted_page_check(extension, '# Other heading')
+      output, _, status = document_link_check(extension, '# Other heading')
       refute_predicate status, :success?, output
       assert_includes output, "docs/setup.#{extension}#install (missing anchor)"
     end
@@ -154,25 +154,25 @@ class DocsEmittedLinksTest < Minitest::Test
 
   def test_fenced_target_headings_are_not_anchors
     %w[md mdx].each do |extension|
-      output, _, status = emitted_page_check(extension, "# Setup\n~~~text\n## Install\n~~~\n")
+      output, _, status = document_link_check(extension, "# Setup\n~~~text\n## Install\n~~~\n")
       refute_predicate status, :success?, output
       assert_includes output, "docs/setup.#{extension}#install (missing anchor)"
-      output, errors, status = emitted_page_check(extension, "# Setup\n~~~text\n## Example\n~~~\n## Install\n")
+      output, errors, status = document_link_check(extension, "# Setup\n~~~text\n## Example\n~~~\n## Install\n")
       assert_predicate status, :success?, "#{output}\n#{errors}"
     end
   end
 
   def test_emitted_unicode_fragments_are_not_truncated
-    output, errors, status = emitted_page_check('mdx', '# 日本語', target: 'setup.mdx#日本語')
+    output, errors, status = document_link_check('mdx', '# 日本語', target: 'setup.mdx#日本語')
     assert_predicate status, :success?, "#{output}\n#{errors}"
-    output, _, status = emitted_page_check('mdx', '# Other heading', target: 'setup.mdx#日本語')
+    output, _, status = document_link_check('mdx', '# Other heading', target: 'setup.mdx#日本語')
     refute_predicate status, :success?, output
     assert_includes output, 'docs/setup.mdx#%E6%97%A5%E6%9C%AC%E8%AA%9E (missing anchor)'
   end
 
   def test_emitted_non_markdown_assets_do_not_use_the_current_checkout
     %w[setup.mdx-backup#install img/historical.svg].each do |target|
-      output, errors, status = emitted_page_check('mdx', '# Other heading', target: target)
+      output, errors, status = document_link_check('mdx', '# Other heading', target: target)
       assert_predicate status, :success?, "#{output}\n#{errors}"
     end
   end
@@ -188,19 +188,19 @@ class DocsEmittedLinksTest < Minitest::Test
 
   def test_emitted_paths_do_not_use_the_audience_heuristic
     page = 'examples/skills/shaka/references/guide.md'
-    output, _, status = emitted_page_check('md', '# Other heading', page: page)
+    output, _, status = document_link_check('md', '# Other heading', page: page)
     refute_predicate status, :success?, output
     assert_includes output, "docs/#{page}#install (missing anchor)"
-    output, errors, status = emitted_page_check('md', '# Install', page: page)
+    output, errors, status = document_link_check('md', '# Install', page: page)
     assert_predicate status, :success?, "#{output}\n#{errors}"
   end
 
   def test_emitted_default_port_preserves_anchor_validation
     %w[github.com github.com:443].each do |authority|
-      output, _, status = emitted_page_check('md', '# Other heading', authority: authority)
+      output, _, status = document_link_check('md', '# Other heading', authority: authority)
       refute_predicate status, :success?, output
       assert_includes output, 'docs/setup.md#install (missing anchor)'
-      output, errors, status = emitted_page_check('md', '# Install', authority: authority)
+      output, errors, status = document_link_check('md', '# Install', authority: authority)
       assert_predicate status, :success?, "#{output}\n#{errors}"
     end
   end
@@ -338,7 +338,7 @@ end
 class DocsEmittedContextTest < Minitest::Test
   include DocsNavigationFixture
 
-  def test_ruby_parser_removes_literal_delimiters
+  def test_legacy_source_references_ignore_literal_delimiters
     ["'URL'", '"URL"', '%q{URL}', '%q[URL]', '%q|URL|'].product([true, false]).each do |literal, present|
       url = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#examples'
       source = "PAGE = #{literal.sub('URL', url)}"
@@ -349,21 +349,19 @@ class DocsEmittedContextTest < Minitest::Test
     end
   end
 
-  def test_ruby_fragments_preserve_trailing_characters
+  def test_explicit_markdown_links_preserve_fragment_data
     %w[_ * ~ ? ! :].each do |suffix|
       fragment = "setup#{suffix}"
-      files = { 'docs/settings.md' => "# Guide\n<a id=\"#{fragment}\"></a>",
-                'skills/shaka/guide.rb' => "PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md##{fragment}'" }
-      output, errors, status = check_links('# Guide', files)
+      files = { 'docs/settings.md' => "# Guide\n<a id=\"#{fragment}\"></a>" }
+      page = "[Setup](https://github.com/shakacode/shaka/blob/main/docs/settings.md##{fragment})"
+      output, errors, status = check_links(page, files)
       assert_predicate status, :success?, "#{fragment}: #{output}\n#{errors}"
     end
   end
 
   def test_shorter_anchor_cannot_credit_a_literal_fragment
-    source = "PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#setup_'"
-    files = { 'docs/settings.md' => '# Setup',
-              'skills/shaka/guide.rb' => source }
-    output, _, status = check_links('# Guide', files)
+    page = '[Setup](https://github.com/shakacode/shaka/blob/main/docs/settings.md#setup_)'
+    output, _, status = check_links(page, 'docs/settings.md' => '# Setup')
     refute_predicate status, :success?, output
     assert_includes output, '#setup_ (missing anchor)'
   end
@@ -387,7 +385,7 @@ end
 class DocsEmittedValuesTest < Minitest::Test
   include DocsNavigationFixture
 
-  def test_yaml_values_preserve_literal_urls_and_markdown_prose
+  def test_legacy_source_references_cover_common_yaml_text
     url = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#setup_'
     ["url: '#{url}'\n", "guide: '[Setup](#{url})'\n", "guide: |\n  [Setup](#{url})\n"].each do |yaml|
       files = { 'docs/settings.md' => '# Setup_', 'skills/shaka/config/guide.yml' => yaml }
@@ -396,7 +394,7 @@ class DocsEmittedValuesTest < Minitest::Test
     end
   end
 
-  def test_yaml_literal_fragment_cannot_use_a_shorter_heading
+  def test_source_reference_cannot_use_a_shorter_heading
     files = { 'docs/settings.md' => '# Setup', 'skills/shaka/config/guide.yml' =>
               "url: 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#setup_'\n" }
     output, _, status = check_links('# Guide', files)
@@ -404,7 +402,7 @@ class DocsEmittedValuesTest < Minitest::Test
     assert_includes output, '#setup_ (missing anchor)'
   end
 
-  def test_ruby_prose_uses_markdown_link_boundaries
+  def test_source_references_keep_target_ids_in_prose
     %w[examples absent].each do |fragment|
       source = "GUIDE = 'Read [setup](https://github.com/shakacode/shaka/blob/main/docs/settings.md##{fragment}).'"
       output, errors, status = check_links('# Guide', 'skills/shaka/guide.rb' => source)
@@ -444,13 +442,13 @@ end
 class DocsEmittedLiteralGroupTest < Minitest::Test
   include DocsNavigationFixture
 
-  def test_heredoc_reference_links_share_the_whole_literal_context
+  def test_multiline_source_references_keep_the_legacy_guard
     %w[examples absent].product([true, false]).each do |fragment, used|
       use = used ? 'Read [Setup][setup].' : 'No rendered link.'
       source = "GUIDE = <<~MARKDOWN\n  #{use}\n\n  [setup]: " \
                "https://github.com/shakacode/shaka/blob/main/docs/settings.md##{fragment}\nMARKDOWN\n"
       output, errors, status = check_links('# Guide', 'skills/shaka/guide.rb' => source)
-      assert_equal !used || fragment == 'examples', status.success?, "#{fragment}/#{used}: #{output}\n#{errors}"
+      assert_equal fragment == 'examples', status.success?, "#{fragment}/#{used}: #{output}\n#{errors}"
     end
   end
 

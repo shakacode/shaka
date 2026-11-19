@@ -23,11 +23,12 @@ documents to their established destination instead.
 
 Run the check in a Git checkout to exclude ignored dependencies. A source export
 without Git metadata checks every Markdown file, including vendored dependencies.
-Use a complete Git checkout with no skip-worktree paths, including sparse omissions.
+Keep `docs/` and `skills/` complete, with no skip-worktree paths or sparse omissions.
 Ignored local files cannot satisfy link targets under `docs/`.
 Relative links use checked repository paths; use canonical paths rather than aliases.
 Scanned source files must have real directory ancestors, including skill sources.
-Use regular source files; dangling untracked aliases are ignored.
+Use regular files for parsed sources; other documentation locations are classified by path.
+Untracked dangling aliases under `skills/` are ignored.
 Use exact source-path casing. Front matter must not override publication IDs, URLs or
 visibility with `id`, `slug`, `draft`, `unlisted`, or YAML merge keys; use the checked paths
 and sidebar, and keep unpublished writing outside `docs/`.
@@ -72,15 +73,12 @@ short forms such as `http:/example.com` fail instead of relying on browser recov
 File and heading-anchor validation applies to Markdown links and images. Static
 HTML hyperlinks in anchors, image maps and SVG are checked for agent destinations.
 The hyperlink check ignores code examples and unused reference definitions.
-Separately, rendered Markdown links and literal HTTP(S) or protocol-relative GitHub
-documentation URLs in code samples and `skills/` sources are checked for files and anchors.
-Commonmarker determines Markdown punctuation and ignores unused definitions. Ruby's
-standard parser reads Ruby string literals, including in `ruby` code fences, without
-treating their delimiters or trailing URI characters as Markdown punctuation.
-YAML scalar values are read without evaluating objects or aliases. A complete URL
-value retains its URI data; prose values use Markdown link boundaries.
-Other sources and code samples use standalone literal URL tokens; their language
-delimiters require review. Dynamic templates and escaped string values also require review.
+Rendered Markdown links to GitHub documentation are checked for files and anchors.
+Commonmarker determines their punctuation and ignores unused definitions.
+The existing literal-source guard is separate: it recognizes ASCII references shaped
+like `shakacode/shaka/blob/REF/docs/PATH.md#HEADING` in code and code samples, with `.mdx`
+also supported. It checks source references rather than interpreting their surrounding
+language or URL scheme. Dynamic, escaped, non-ASCII and other source forms require review.
 Form submissions, MDX-specific syntax and custom components require manual review.
 Each guide's author and reviewer still determine its audience.
 

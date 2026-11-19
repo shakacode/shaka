@@ -18,10 +18,17 @@ module ShakaDocs
     end
 
     def require_full_checkout(repository)
-      skipped = git_output(repository, '-t').split("\0").any? { |entry| entry.start_with?('S ') }
+      skipped = skipped_paths(repository).any? { |path| path.match?(%r{\A(?:docs|skills)/}) }
       return unless skipped
 
-      raise ArgumentError, 'Documentation validation requires a full checkout; sparse/skip-worktree paths are present.'
+      raise ArgumentError, 'Documentation validation requires a full checkout of docs/ and skills/; ' \
+                           'sparse/skip-worktree source paths are present.'
+    end
+
+    def skipped_paths(repository)
+      git_output(repository, '-t').split("\0").filter_map do |entry|
+        entry.delete_prefix('S ') if entry.start_with?('S ')
+      end
     end
 
     def symlinks(repository)

@@ -5,14 +5,13 @@ ENV['BUNDLE_GEMFILE'] = File.expand_path('../Gemfile', __dir__)
 require 'bundler/setup'
 require 'json'
 require 'rexml/document'
-require 'ripper'
 require_relative '../lib/shaka_docs/audiences'
 require_relative '../lib/shaka_docs/metadata'
 require_relative '../lib/shaka_docs/navigation'
 
 # Code prints these into user output, so a heading rename in a docs-only PR would break them silently.
-# Find literal source URLs even inside code examples; the parsers determine their destinations.
-EMITTED_DOCS = %r{(?:[a-z][\w+.-]*:)?//[^\s<>"'`\\|]+}i
+# Preserve the established ASCII source-reference guard; rendered Markdown links use the parser.
+EMITTED_DOCS = %r{shakacode/shaka/blob/[^/\s]+/docs/([\w./-]+\.mdx?)(?:#([\w-]+))?}
 
 def heading_ids(text)
   html = Commonmarker.to_html(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } })
@@ -73,80 +72,20 @@ def broken_relative_links(repository, path, checked)
   end
 end
 
-def emitted_url(token)
-  scheme = Addressable::URI.parse(token).scheme
-  return if scheme && !%w[http https].include?(scheme.downcase)
-
-  scheme ? token : "https:#{token}"
-rescue Addressable::URI::InvalidURIError
-  nil
+def source_references(text)
+  text.scan(EMITTED_DOCS).map { |page, anchor| ["docs/#{page}", anchor] }
 end
 
-def literal_urls(text) = text.scan(EMITTED_DOCS).filter_map { |token| emitted_url(token) }
-
-def source_value_urls(text)
-  return [] unless text.include?('//')
-
-  value = text.strip
-  uri = Addressable::URI.parse(value)
-  return [emitted_url(value)].compact if uri.host && !value.match?(/\s/)
-
-  markdown_urls(text)
-rescue Addressable::URI::InvalidURIError
-  markdown_urls(text)
-end
-
-def static_ruby_string(content)
-  parts = content.to_a.drop(1)
-  return unless parts.all? { |part| part.first == :@tstring_content }
-
-  parts.map { |part| part[1] }.join
-end
-
-def ruby_strings(node)
-  return [] unless node.is_a?(Array)
-  return [node[1]] if node.first == :@tstring_content
-  return [static_ruby_string(node[1])].compact if node.first == :string_literal
-
-  node.flat_map { |child| ruby_strings(child) }
-end
-
-def ruby_urls(text) = ruby_strings(Ripper.sexp(text)).flat_map { |literal| source_value_urls(literal) }
-
-def yaml_urls(text)
-  Psych.parse_stream(text).each.flat_map do |node|
-    node.is_a?(Psych::Nodes::Scalar) ? source_value_urls(node.value) : []
-  end
-rescue Psych::SyntaxError
-  literal_urls(text)
-end
-
-def markdown_code_urls(node)
-  return literal_urls(node.literal) if node.type == :code
-  return [] unless node.type == :code_block
-
-  node.fence_info.to_s.split.first == 'ruby' ? ruby_urls(node.literal) : literal_urls(node.literal)
-end
-
-def markdown_urls(text)
-  targets = ShakaDocs::Audiences.links(text)
+def markdown_source_references(text)
+  targets = ShakaDocs::Audiences.links(text).filter_map { |target| emitted_document_target(target) }
   Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } }).walk do |node|
-    targets.concat(markdown_code_urls(node))
+    targets.concat(source_references(node.literal)) if %i[code code_block].include?(node.type)
   end
   targets
 end
 
 def emitted_document_targets(text, path)
-  targets = if path.match?(/\.mdx?\z/i)
-              markdown_urls(text)
-            elsif path.end_with?('.rb') || text.lines.first.to_s.match?(/\A#!.*ruby/)
-              ruby_urls(text)
-            elsif path.match?(/\.ya?ml\z/i)
-              yaml_urls(text)
-            else
-              literal_urls(text)
-            end
-  targets.filter_map { |target| emitted_document_target(target) }.uniq
+  (path.match?(/\.mdx?\z/i) ? markdown_source_references(text) : source_references(text)).uniq
 end
 
 def github_web_url?(uri)
@@ -175,8 +114,9 @@ def broken_emitted_links(repository, checked, path)
 end
 
 def markdown_files(docs, repository)
-  ShakaDocs::Audiences.document_files(repository).filter_map do |file|
-    File.join(repository, file) if file.start_with?("#{File.basename(docs)}/", 'skills/')
+  prefix = Regexp.escape(File.basename(docs))
+  ShakaDocs::Inventory.files(repository, %r{\A(?:#{prefix}|skills)/.*\.mdx?\z}i).map do |file|
+    File.join(repository, file)
   end
 end
 

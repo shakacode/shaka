@@ -72,7 +72,11 @@ module ShakaDocs
     end
 
     def document_files(repository)
-      Inventory.files(repository, /\.mdx?\z/i)
+      skipped = Inventory.git?(repository) ? Inventory.skipped_paths(repository) : []
+      Inventory.paths(repository).grep(/\.mdx?\z/i).select do |file|
+        path = File.join(repository, file)
+        skipped.include?(file) || File.symlink?(path) || File.file?(path)
+      end
     end
 
     def unclassified_documents(repository)
