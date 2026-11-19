@@ -37,7 +37,7 @@ class PrTemplateOutlineTest < Minitest::Test
 
   def test_check_confirms_the_marker_and_notes_repeats
     assert_empty Shaka::PrTemplate.check(%w[Rollout Changelog])
-    notes = Shaka::PrTemplate.check(['Rollout', MARKER, 'Changelog', 'rollout', MARKER])
+    notes = Shaka::PrTemplate.check(['Rollout', MARKER, 'Changelog', "\u00a0rollout ##", MARKER])
     assert_includes notes.first, 'Shaka places its sections at <!-- shaka -->.'
     assert_equal ['The template repeats `## Rollout`; Shaka uses the first.',
                   'The template repeats <!-- shaka -->; Shaka uses the first.'], notes.drop(1)

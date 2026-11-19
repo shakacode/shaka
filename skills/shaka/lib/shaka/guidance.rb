@@ -81,7 +81,7 @@ module Shaka
       "#{text.chomp}\n\n---\n\nPull request template skipped: #{e.message}\n"
     end
 
-    # With the marker, the agent and the maintainer see the order Shaka will publish, and any repeats.
+    # With the marker, the agent and the maintainer see the placement rule and any repeated heading or marker.
     def placement(text, template = text)
       notes = PrTemplate.check(PrTemplate.outline(template))
       notes.empty? ? text : "#{text.chomp}\n\n#{notes.join("\n")}\n"

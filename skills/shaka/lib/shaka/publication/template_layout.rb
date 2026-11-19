@@ -36,7 +36,7 @@ module Shaka
     # A supplied heading's key, or nil for one Shaka writes itself, which the template does not place.
     def placeable(heading) = (name = key(heading)) && !SHAKA_HEADINGS.include?(name) ? name : nil
 
-    # Headings match by their words, ignoring case and spacing.
-    def key(text) = text.to_s.gsub(/[[:space:]]+/, ' ').strip.downcase
+    # Headings match by their words, ignoring case, spacing, and Markdown's optional closing `#` marks.
+    def key(text) = text.to_s.gsub(/[[:space:]]+/, ' ').strip.sub(/ #+\z/, '').downcase
   end
 end

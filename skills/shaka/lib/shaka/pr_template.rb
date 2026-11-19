@@ -67,8 +67,8 @@ module Shaka
 
     # Headings group as the description layout matches them, by words, ignoring case and spacing.
     def self.repeats(outline)
-      outline.group_by { it == MARKER ? it : it.gsub(/[[:space:]]+/, ' ').downcase }.values
-             .select { it.size > 1 }.map(&:first)
+      require_relative 'publication/template_layout'
+      outline.group_by { it == MARKER ? it : TemplateLayout.key(it) }.values.select { it.size > 1 }.map(&:first)
     end
 
     private_class_method :repeats, :name

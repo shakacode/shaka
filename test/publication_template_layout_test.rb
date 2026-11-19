@@ -46,6 +46,12 @@ class PublicationTemplateLayoutTest < Minitest::Test
     assert_equal ['Rollout', *SHAKA, 'Verification', 'Changelog'], outline(rendered)
   end
 
+  def test_closing_hashes_do_not_change_a_heading
+    supplied = [{ 'heading' => 'Verification ##', 'body' => 'All good.' }, *SECTIONS]
+    rendered = render(['Verification ##', 'Rollout ##', MARKER], supplied)
+    assert_equal ['Rollout', *SHAKA, 'Verification ##', 'Changelog'], outline(rendered)
+  end
+
   def test_sections_the_template_does_not_name_follow_shakas
     rendered = render(['rollout', MARKER, 'Rollout'])
     assert_equal ['Rollout', *SHAKA, 'Changelog'], outline(rendered)

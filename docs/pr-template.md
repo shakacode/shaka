@@ -98,6 +98,8 @@ Shaka reads the template in a strict format, so nothing depends on guessing:
 - The marker is its own line, exactly `<!-- shaka -->`.
 - A section heading is a line that starts with `## ` at the left edge. Shaka skips
   lines inside code blocks and inside HTML comments that start a line.
+- Headings match by their words, ignoring case, spacing, and closing `#` marks, so keep
+  notes on their own line.
 - Shaka's sections stay together in their usual order. A heading Shaka already
   writes, such as `## Summary`, does not move it, and a section the agent writes under
   such a heading stays after Shaka's.
