@@ -82,7 +82,7 @@ report lists 7 more kinds with their checks and costs.
   reads each commit. Shaka posts each PR's findings in a review record comment, called a ledger,
   where the agent marks each one fixed or dismissed with a reason. A *kind* here is a
   group of findings one check could catch.
-- **Result:** repeats exist, but most fall where code cannot judge. The two largest
+- **Result:** repeats exist, and the two largest kinds fall where code cannot judge. The two largest
   prose kinds were fixed on 47 and 14 PRs. Checking them needs a comparison of what a sentence
   means with what the code does.
 - **Exceptions:**
@@ -166,7 +166,7 @@ from prose to checks.
 ## Rerun it
 
 The [report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-finding-recurrence.md)
-gives the parsing rule and kind definitions. The JSON file records the verdict for each of the 412 classified findings. The
+gives the parsing rule and kind definitions. The JSON file records the kind and disposition of each of the 412 classified findings. The
 search patterns and scripts are not published, so a rerun sorts findings again and will
 give different counts. To run the study on your own repository, ask your agent:
 

@@ -31,7 +31,7 @@ model runs. No person has rechecked the classification.*
 - **Recurring share:** 406 recorded findings (24%) fall into 18 kinds that each appear on 3 or
   more PRs. They touch 183 of the 323 PRs.
 - **Below the threshold:** 6 more findings form a kind seen on only 2 PRs.
-- **Unclassified:** the remaining 1,304 findings have no kind. A hand check of 150 of them
+- **Unclassified:** the remaining 1,304 findings have no kind. A hand check of 150 findings left unmatched after the first pass
   found 30 (20%) that fit a kind defined before the check. Misses push the true share up;
   repeats and loosely fitting members push it down, so 24% is the observed share, not a bound.
   The sample was drawn before later recall passes, so its rate does not give a share for
@@ -256,7 +256,7 @@ below the threshold.
   `### Finding details`.
 - Parse each line that starts ``- `F<n>` <class>: <title> — ``. Read the disposition
   from the next words: `fixed in` a commit, `Dismissed` followed by a reason, `documented`,
-  `Accepted`, or `Needs your decision`. A reason, a returned-after-fix marker, and
+  `Accepted`, `Open`, or `Needs your decision`. A reason, a returned-after-fix marker, and
   `· Reported by:` with reviewers may follow. Merge the same PR, ID, class, and title, keeping the newest comment.
 - Keep defects and risks with disposition fixed or dismissed.
 - The JSON file is the record of this study. It gives the kind of every counted finding
