@@ -79,8 +79,8 @@ standard parser reads Ruby string literals, including in `ruby` code fences, wit
 treating their delimiters or trailing URI characters as Markdown punctuation.
 YAML scalar values are read without evaluating objects or aliases. A complete URL
 value retains its URI data; prose values use Markdown link boundaries.
-Other code samples use literal URL tokens. Dynamic templates, escaped string values
-and other source forms require review.
+Other sources and code samples use standalone literal URL tokens; their language
+delimiters require review. Dynamic templates and escaped string values also require review.
 Form submissions, MDX-specific syntax and custom components require manual review.
 Each guide's author and reviewer still determine its audience.
 

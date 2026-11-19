@@ -412,3 +412,31 @@ class DocsEmittedValuesTest < Minitest::Test
     end
   end
 end
+
+class DocsEmittedFallbackTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_protocol_relative_markdown_destinations_keep_anchor_validation
+    %w[examples absent].each do |fragment|
+      page = "[Setup](//github.com/shakacode/shaka/blob/main/docs/settings.md##{fragment})"
+      output, errors, status = check_links(page)
+      assert_equal fragment == 'examples', status.success?, "#{output}\n#{errors}"
+    end
+  end
+
+  def test_shell_pipe_is_a_literal_url_separator
+    %w[settings.md#examples gone.md].each do |target|
+      page = "```bash\ncurl https://github.com/shakacode/shaka/blob/main/docs/#{target}|cat\n```"
+      output, errors, status = check_links(page)
+      assert_equal target.start_with?('settings'), status.success?, "#{output}\n#{errors}"
+    end
+  end
+
+  def test_json_literals_do_not_gain_markdown_delimiters
+    %w[examples absent].each do |fragment|
+      source = %({"url":"https://github.com/shakacode/shaka/blob/main/docs/settings.md##{fragment}"})
+      output, errors, status = check_links('# Guide', 'skills/shaka/guide.json' => source)
+      assert_equal fragment == 'examples', status.success?, "#{output}\n#{errors}"
+    end
+  end
+end
