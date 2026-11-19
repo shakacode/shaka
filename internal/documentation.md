@@ -23,6 +23,7 @@ documents to their established destination instead.
 
 Run the check in a Git checkout to exclude ignored dependencies. A source export
 without Git metadata checks every Markdown file, including vendored dependencies.
+Ignored local files cannot satisfy link targets under `docs/`.
 
 Public guides and sidebar links must lead to human guidance. The check rejects
 links into Shaka's skill Markdown, its YAML workflow instructions and project agent instructions.

@@ -821,6 +821,42 @@ class DocsUrlWhitespaceTest < Minitest::Test
   end
 end
 
+class DocsLinkedInventoryTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_linked_ignored_guides_are_not_credited_as_published_targets
+    %i[absent regular alias tracked].each do |mode|
+      output, errors, status = linked_fixture(mode)
+      assert_equal mode == :tracked, status.success?, "#{mode}: #{output}\n#{errors}"
+      assert_includes output, 'local.md#setup (missing file)' unless mode == :tracked
+    end
+  end
+
+  def test_unknown_sidebar_forms_fail_in_every_sidebar
+    link = { 'type' => 'link', 'label' => 'Agent', 'href' => '../skills/shaka/references/review.md' }
+    sidebar = { 'docsSidebar' => ['expected-experience'], 'otherSidebar' => [{ 'Hidden' => [link] }] }
+    _, errors, status = check(sidebar)
+    refute_predicate status, :success?
+    assert_includes errors, 'Unsupported sidebar item:'
+  end
+
+  private
+
+  def linked_fixture(mode)
+    sidebar = { 'docsSidebar' => ['expected-experience'] }
+    sidebar['docsSidebar'] << 'local' if mode == :tracked
+    files = { '.gitignore' => "/docs/local.md\n", 'internal/target.md' => '# Setup' }
+    check(sidebar, '[Setup](local.md#setup)', files) { |root| install_linked_file(root, mode) }
+  end
+
+  def install_linked_file(root, mode)
+    path = File.join(root, 'docs/local.md')
+    File.write(path, '# Setup') if %i[regular tracked].include?(mode)
+    File.symlink('../internal/target.md', path) if mode == :alias
+    system('git', '-C', root, 'add', '-f', 'docs/local.md', exception: true) if mode == :tracked
+  end
+end
+
 class DocsIndexSymlinkTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 

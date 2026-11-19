@@ -45,7 +45,8 @@ module ShakaDocs
       case item
       when Array then item.flat_map { |child| navigation_links(child) }
       when Hash then sidebar_links(item)
-      else []
+      when String then []
+      else raise ArgumentError, "Unsupported sidebar item: #{item.inspect}"
       end
     end
 
@@ -57,7 +58,8 @@ module ShakaDocs
         raise ArgumentError, 'Expected a string sidebar link href' unless target.is_a?(String)
 
         [target]
-      else []
+      when 'doc' then []
+      else raise ArgumentError, "Unsupported sidebar item: #{item.inspect}"
       end
     end
 

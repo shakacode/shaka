@@ -63,28 +63,31 @@ def unresolved_anchor(path, fragment)
   'missing anchor' if path.match?(/\.mdx?\z/) && !anchors(path).include?(anchor)
 end
 
-def unresolved(path, target)
+def unresolved(path, target, checked_docs)
   uri = ShakaDocs::Audiences.url(target)
   file = URI::DEFAULT_PARSER.unescape(uri.path)
   destination = file.empty? ? path : File.absolute_path(file, File.dirname(path))
+  if destination.start_with?("#{checked_docs[:root]}/") && !checked_docs[:paths].include?(destination)
+    return 'missing file'
+  end
   return 'missing file' unless File.exist?(destination)
 
   unresolved_anchor(destination, uri.fragment)
 end
 
-def broken_relative_links(repository, path)
+def broken_relative_links(repository, path, checked_docs)
   ShakaDocs::Audiences.links(File.read(path, encoding: 'UTF-8'), include_html: false).filter_map do |target|
     next if target.match?(%r{\A(?:[a-z][\w+.-]*:|/)}i) || target.include?('{{')
 
-    problem = unresolved(path, target)
+    problem = unresolved(path, target, checked_docs)
     "#{path.delete_prefix("#{repository}/")} -> #{target} (#{problem})" if problem
   end
 end
 
-def broken_emitted_links(repository, docs, path)
+def broken_emitted_links(repository, checked_docs, path)
   File.read(path, encoding: 'UTF-8').scrub.scan(EMITTED_DOCS).uniq.filter_map do |page, anchor|
     target = [page, anchor].compact.join('#')
-    problem = unresolved(File.join(docs, 'index.md'), target)
+    problem = unresolved(File.join(checked_docs[:root], 'index.md'), target, checked_docs)
     "#{path.delete_prefix("#{repository}/")} -> docs/#{target} (#{problem})" if problem
   end
 end
@@ -102,13 +105,14 @@ def emitted_sources(repository)
   end
 end
 
-def broken_links(docs)
+def broken_links(docs, checked_paths)
   docs = File.expand_path(docs)
   repository = File.dirname(docs)
   markdown = markdown_files(docs, repository)
   sources = markdown | emitted_sources(repository)
-  markdown.flat_map { |path| broken_relative_links(repository, path) } +
-    sources.flat_map { |path| broken_emitted_links(repository, docs, path) }
+  checked_docs = { root: docs, paths: checked_paths }
+  markdown.flat_map { |path| broken_relative_links(repository, path, checked_docs) } +
+    sources.flat_map { |path| broken_emitted_links(repository, checked_docs, path) }
 end
 
 SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
@@ -182,7 +186,8 @@ begin
   puts "Missing from docs/sidebars.json: #{missing.join(', ')}" unless missing.empty?
   puts "Navigation targets missing pages: #{stale.join(', ')}" unless stale.empty?
   puts "Link a human guide, not agent instructions: #{agent_links.join(', ')}" unless agent_links.empty?
-  broken = broken_links(root)
+  checked_paths = doc_paths.flat_map { |path| source_components(path, repository) }.uniq
+  broken = broken_links(root, checked_paths)
   puts "Unresolved links in docs/ and skills/:\n#{broken.join("\n")}" unless broken.empty?
   malformed = malformed_figures(root, doc_paths)
   puts "Figures that do not parse as SVG: #{malformed.join(', ')}" unless malformed.empty?
