@@ -23,6 +23,12 @@ module ThroughputHelper
   def head_pull = { 'head' => { 'sha' => HEAD } }
   def push_times = { 'task_started_at' => START, 'ci_started_at' => PUSH }
 
+  def refresh_pull(sha: HEAD, body: filled_block)
+    repo = { 'full_name' => 'owner/repo' }
+    managed = "<!-- shaka:begin -->\n#{body}\n<!-- shaka:end -->"
+    { 'head' => { 'sha' => sha, 'repo' => repo }, 'base' => { 'repo' => repo }, 'body' => managed }
+  end
+
   def describe(usd = 'UNKNOWN', timeline: nil, pull: nil)
     full = { 'opened' => START, 'labels' => [] }.merge(timeline || {})
     Shaka::Publication.description(content(usd), nil, pull, nil, full)

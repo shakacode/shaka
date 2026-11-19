@@ -13,6 +13,7 @@ module Shaka
     SPEND = ' - AI spend: '
     # Set only while updating a body that has no Missing values note; never written to the stats block.
     UNEXPLAINED = 'unexplained'
+    READY_UNVERIFIED = 't2_unverified'
     INTERVALS = '**This head:** '
 
     def line(state) = "#{marker(state)}\n#{INTERVALS}#{intervals(state)}"
@@ -28,7 +29,8 @@ module Shaka
       return ' · ready pending' unless ended
       return (state[UNEXPLAINED] ? " · #{label} in UNKNOWN" : '') unless task_started?(state)
 
-      " · #{label} in #{ended == 'UNKNOWN' ? 'UNKNOWN' : interval(state['t0'], ended)}"
+      span = ended == 'UNKNOWN' ? 'UNKNOWN' : interval(state['t0'], ended)
+      " · #{label} in #{span}#{readiness_notice(state, label)}"
     end
 
     # No later update records a task start, so a Missing values note about it never goes stale.
@@ -51,13 +53,27 @@ module Shaka
       earlier ? previous : seen
     end
 
+    def iso_timestamp(time) = time.utc.iso8601(time.nsec.zero? ? 0 : 9)
+
     private
+
+    def carried_start(timeline, carried)
+      recorded = carried['t0']
+      recorded unless timeline['opened'] && parse_time(recorded)&.>(timeline['opened'])
+    end
 
     def marker(state) = "<!-- shaka:stats #{JSON.generate(ordered(state))} -->"
     def ordered(state) = ThroughputStats::KEYS.filter_map { |key| [key, state[key]] if state.key?(key) }.to_h
 
     def intervals(state)
-      "Prompt to CI #{prompt(state)} · CI to ready #{ci(state)} · Ready to merged #{merged(state)}"
+      "Prompt to CI #{prompt(state)} · CI to ready #{ci(state)} · Ready to merged #{merged(state)}" \
+        "#{' · Ready time unverified' if unverified_readiness?(state)}"
+    end
+
+    def unverified_readiness?(state) = state[READY_UNVERIFIED] == 'true'
+
+    def readiness_notice(state, label)
+      ' (unverified)' if label == 'ready' && unverified_readiness?(state)
     end
 
     def shown_spend(state) = spend_text?(state['spend']) ? state['spend'] : 'UNKNOWN'
@@ -107,7 +123,7 @@ module Shaka
       "#{days}d #{hours}h"
     end
 
-    def stamp(value) = parse_time(value) && (value.is_a?(Time) ? value.utc.iso8601 : value)
+    def stamp(value) = parse_time(value) && (value.is_a?(Time) ? iso_timestamp(value) : value)
 
     def parse_time(value)
       return value.utc if value.is_a?(Time)
