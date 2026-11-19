@@ -44,13 +44,13 @@ fi
 The script installs Shaka from its own clone, separate from your project, so
 the branch you are changing cannot change the Shaka that checks it.
 
-Building Ruby takes a few minutes, but only when Claude Code builds the
-environment's cache. Once the script finishes, Claude Code saves the container
-and starts later sessions from that copy without running the script again. It
-reruns the script when you edit it, when you change the environment's allowed
-network hosts, and when the cache expires after about a week. A script that
-runs longer than about five minutes is not cached, so every session would wait
-for it.
+Building Ruby takes a few minutes. When the script finishes within about five
+minutes, Claude Code saves the container and starts later sessions from that
+copy without running the script again; a slower script is not saved, so every
+new session waits for it. Claude Code reruns the script when you edit it, when
+you change the environment's allowed network hosts, and when the saved copy
+expires after about a week. A session that is already running keeps what it
+has, so start a new session to use an edited script.
 
 A cached session therefore runs the Shaka its copy was saved with. The
 installer turns on Shaka's
