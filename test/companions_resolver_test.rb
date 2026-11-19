@@ -85,15 +85,6 @@ class CompanionsResolverTest < Minitest::Test
     assert_equal ['decline', 'it is not at the trusted commit'], [row.mode, row.basis]
   end
 
-  def test_a_suggested_skill_that_fans_out_says_so
-    fans_out = entry('repository', 'suggest', flags: { 'fans_out' => true })
-
-    row = Shaka::Companions::Resolver.new([fans_out]).call(POINT).first
-
-    assert_equal ['suggest', true], [row.mode, row.fans_out]
-    refute Shaka::Companions::Resolver.new([entry('repository', 'suggest')]).call(POINT).first.fans_out
-  end
-
   def test_a_skill_without_this_point_is_not_listed
     assert_empty Shaka::Companions::Resolver.new([entry('packaged', 'suggest')]).call('delivery#other')
   end

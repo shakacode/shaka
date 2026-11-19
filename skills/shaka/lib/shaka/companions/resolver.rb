@@ -15,9 +15,9 @@ module Shaka
       # when nothing is installed. `candidate_only` marks a project skill missing from the trusted commit.
       Entry = Data.define(:layer, :pack, :skill, :identity, :installed, :location, :skill_file, :revision,
                           :explicit_front, :candidate_only)
-      # `fans_out` is true whenever any entry for the skill says it starts workers, whatever the mode.
-      Row = Data.define(:point, :pack, :skill, :layer, :mode, :reason, :basis, :fans_out, :installed, :location,
-                        :skill_file, :revision)
+      # `fans_out` and `explicit_only` hold for the skill whatever its mode, so a `suggest` row carries them too.
+      Row = Data.define(:point, :pack, :skill, :layer, :mode, :reason, :basis, :fans_out, :explicit_only, :installed,
+                        :location, :skill_file, :revision)
 
       RANK = Pack::MODES.each_with_index.to_h.freeze
       # Which layer's entry governs a skill, first to last. Step 1 loads only repository packs.
@@ -45,7 +45,7 @@ module Shaka
         entry, mode, reason = governing(settings)
         mode, basis = cap(entry, mode, group)
         mode, basis, reason = declined(settings, group, [mode, basis, reason])
-        row(point, entry, [mode, reason, basis], group.any? { |each| each.skill.flags['fans_out'] })
+        row(point, entry, [mode, reason, basis], group)
       end
 
       # [entry, mode, reason] at this point; the point's own setting wins over the pack's `*`.
@@ -113,10 +113,11 @@ module Shaka
         settings.find { |entry, mode, _| mode == 'decline' && (entry.layer == 'personal' || !repository) }
       end
 
-      def row(point, entry, (mode, reason, basis), fans_out)
+      def row(point, entry, (mode, reason, basis), group)
         Row.new(point:, pack: entry.pack, skill: entry.skill.name, layer: entry.layer, mode:, reason:, basis:,
-                fans_out:, installed: entry.installed, location: entry.location, skill_file: entry.skill_file,
-                revision: entry.revision)
+                fans_out: group.any? { |each| each.skill.flags['fans_out'] } || false,
+                explicit_only: explicit?(group) || false, installed: entry.installed, location: entry.location,
+                skill_file: entry.skill_file, revision: entry.revision)
       end
     end
   end

@@ -69,4 +69,14 @@ class CompanionsFrontMatterTest < Minitest::Test
       assert_equal ['suggest', 'it is explicit-only'], row.values_at('mode', 'basis')
     end
   end
+
+  def test_a_quoted_true_counts_as_explicit_only
+    files = { '.agents/shaka/packs/team.yml' => pack('team', { 'team-check' => project(TEAM_CHECK) }),
+              "#{TEAM_CHECK}/SKILL.md" => "---\ndisable-model-invocation: \"true\"\n---\n" }
+    with_trusted_repository(extra: files) do |root, sha|
+      row = run_command(root:, ref: sha).fetch('skills').first
+
+      assert_equal ['suggest', 'it is explicit-only', true], row.values_at('mode', 'basis', 'explicit_only')
+    end
+  end
 end

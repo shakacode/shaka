@@ -25,7 +25,8 @@ module Shaka
       end
 
       # A file with no `---` header allows model invocation. Front matter that is empty, unterminated,
-      # unparsable, or repeats a key counts as explicit-only, so a broken header never raises a mode.
+      # unparsable, or repeats a key counts as explicit-only, and so does any `disable-model-invocation`
+      # value but `false`, so a broken or unusual header never raises a mode.
       def explicit_front(text)
         return true unless text.valid_encoding?
 
@@ -35,11 +36,17 @@ module Shaka
         match = text.match(/\A---[ \t]*\r?\n(.*?)^---[ \t]*\r?$/m)
         return true unless match
 
-        RepositoryConfig::DuplicateKeys.check(match[1], filename: 'front matter')
-        data = YAML.safe_load(match[1], aliases: false)
-        data.is_a?(Hash) ? data['disable-model-invocation'] == true : true
+        header_explicit?(match[1])
       rescue Psych::Exception, Error
         true
+      end
+
+      def header_explicit?(header)
+        RepositoryConfig::DuplicateKeys.check(header, filename: 'front matter')
+        data = YAML.safe_load(header, aliases: false)
+        return true unless data.is_a?(Hash)
+
+        data.key?('disable-model-invocation') && data['disable-model-invocation'] != false
       end
 
       # True when the trusted commit holds `file` as a regular file reached without links. A skill
