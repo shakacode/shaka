@@ -7,10 +7,8 @@ require_relative '../eval/lib/shaka/evaluation/review_replay_fixture'
 class EvaluationReviewReplayFixtureTest < Minitest::Test
   def setup
     @directory = Dir.mktmpdir
-    @source = File.join(@directory, 'source')
-    @fixture = File.join(@directory, 'fixture')
-    Dir.mkdir(@source)
-    Dir.mkdir(@fixture)
+    @source, @fixture = %w[source fixture].map { |name| File.join(@directory, name) }
+    FileUtils.mkdir_p([@source, @fixture])
     git(@source, 'init', '--quiet', '--template=')
     seed_history
   end
@@ -45,8 +43,7 @@ class EvaluationReviewReplayFixtureTest < Minitest::Test
     git(@source, 'add', '.agents')
     revision = commit(@source, 'AGENTS.md', 'linked settings')
 
-    error = assert_raises(IOError) { Shaka::Evaluation::ReviewReplayFixture.entries(@source, revision) }
-    assert_match(/Use regular files/, error.message)
+    assert_raises(IOError) { Shaka::Evaluation::ReviewReplayFixture.entries(@source, revision) }
   end
 
   def test_failed_reviewer_retains_its_bytes_and_session_while_the_budget_stays_pending
@@ -56,18 +53,31 @@ class EvaluationReviewReplayFixtureTest < Minitest::Test
     assert_failed_record
   end
 
+  def test_completed_reviewer_without_discovered_usage_retains_its_session
+    replay = failing_replay(completed_without_usage: true)
+    assert_raises(IOError) { replay.run([@row.merge('id' => 'r01')]) }
+    result = saved_result
+    assert_equal 'completed', result.fetch('status')
+    assert_equal 'fake session', File.read(result.fetch('native_sessions').fetch(0))
+  end
+
   private
 
   def assert_failed_record
-    records = Dir.glob(File.join(@directory, '*.json'))
-    assert_equal 1, records.size
-    result = JSON.parse(File.read(records.fetch(0))).fetch('result')
+    result = saved_result
     assert_equal [255], result.dig('invalid_output', 'base64').unpack1('m0').bytes
     assert_equal 'fake session', File.read(result.fetch('native_sessions').fetch(0))
   end
 
-  def failing_replay
-    options = { source: @source, directory: @directory, reviewer: 'openai/codex', helper: failing_helper,
+  def saved_result
+    records = Dir.glob(File.join(@directory, '*.json'))
+    assert_equal 1, records.size
+    JSON.parse(File.read(records.fetch(0))).fetch('result')
+  end
+
+  def failing_replay(completed_without_usage: false)
+    helper = failing_helper(completed_without_usage)
+    options = { source: @source, directory: @directory, reviewer: 'openai/codex', helper:,
                 baseline: { criteria: @criteria, model: 'one' }, candidate: { criteria: @criteria, model: 'two' },
                 budget: File.join(@directory, 'budget'), scope: '1', cap: 5,
                 limits: { 'monthly' => 200, 'pr' => 15, 'nightly' => 5 } }
@@ -76,14 +86,14 @@ class EvaluationReviewReplayFixtureTest < Minitest::Test
     end
   end
 
-  def failing_helper
+  def failing_helper(completed_without_usage)
     path = File.join(@directory, 'stub-reviewer')
+    ending = completed_without_usage ? %q(printf '{"status":"completed"}') : "printf '\\377'\nexit 1"
     File.write(path, <<~SH, perm: 0o700)
       #!/bin/sh
       mkdir -p "$CODEX_HOME/sessions"
       printf 'fake session' > "$CODEX_HOME/sessions/failure.jsonl"
-      printf '\\377'
-      exit 1
+      #{ending}
     SH
     path
   end

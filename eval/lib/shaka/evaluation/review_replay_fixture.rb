@@ -22,7 +22,7 @@ module Shaka
 
       def prepare(criteria)
         git(@root, 'init', '--quiet', '--template=')
-        git(@root, 'fetch', '--quiet', '--no-tags', @source, @head)
+        git(@root, 'fetch', '--quiet', '--no-tags', '--no-write-fetch-head', @source, @head)
         merge_base = git(@root, 'merge-base', @base, @head).strip
         raise ArgumentError, 'Recorded base is not an ancestor of the reviewed commit' unless merge_base == @base
 

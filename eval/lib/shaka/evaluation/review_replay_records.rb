@@ -17,7 +17,9 @@ module Shaka
           before = native_sessions
           output, error, status = Open3.capture3(env, @helper, *arguments, chdir: root, binmode: true)
           result = retain_result(parse_result(output), id)
-          retain_failed_sessions(result, id, before) unless status.success? && result['status'] == 'completed'
+          if !status.success? || result['status'] != 'completed' || !result['usage']
+            retain_failed_sessions(result, id, before)
+          end
           [{ 'result' => result, 'usage' => usage_for(result), 'stderr' => json_text(error) }, status]
         end
       end
