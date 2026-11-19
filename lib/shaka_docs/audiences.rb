@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'open3'
 require 'commonmarker'
 require 'nokogiri'
 require_relative 'source_paths'
+require_relative 'inventory'
 
 module ShakaDocs
   # Public guides may cite other projects' skills, but never route readers into Shaka's agent procedures.
@@ -25,10 +25,14 @@ module ShakaDocs
       targets = []
       document = Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } })
       document.walk do |node|
-        targets << node.url if %i[link image].include?(node.type)
+        targets << markdown_url(node.url) if %i[link image].include?(node.type)
         targets.concat(html_links(node)) if include_html
       end
       targets.map(&:strip).uniq
+    end
+
+    def markdown_url(target)
+      target.gsub(/[\x00-\x20]/) { |character| format('%%%02X', character.ord) }
     end
 
     def html_links(node)
@@ -85,24 +89,7 @@ module ShakaDocs
     end
 
     def document_files(repository)
-      repository_paths(repository).grep(/\.mdx?\z/i).select { |path| File.file?(File.join(repository, path)) }
-    end
-
-    def repository_paths(repository)
-      files = if File.exist?(File.join(repository, '.git'))
-                git_files(repository)
-              else
-                Dir.glob('**/*', File::FNM_DOTMATCH, base: repository)
-              end
-      files.uniq
-    end
-
-    def git_files(repository)
-      output, error, status = Open3.capture3('git', '-C', repository, 'ls-files', '--cached', '--others',
-                                             '--exclude-standard', '-z')
-      raise ArgumentError, "Cannot inventory documentation: #{error}" unless status.success?
-
-      output.split("\0")
+      Inventory.paths(repository).grep(/\.mdx?\z/i).select { |path| File.file?(File.join(repository, path)) }
     end
 
     def unclassified_documents(repository)

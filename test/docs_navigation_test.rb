@@ -744,3 +744,63 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     File.symlink('internal/actual-docs', File.join(root, 'docs'))
   end
 end
+
+class DocsUrlWhitespaceTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_html_url_whitespace_uses_browser_preprocessing
+    pages = ['<a href="https://github.com/shakacode/shaka/blob/main/sk&#9;ills/shaka/references/review.md">Review</a>',
+             '<a href="&#1;h&#13;ttps://github.com/shakacode/shaka/blob/main/' \
+             'skills/shaka/references/review.md">Review</a>']
+    pages.each do |page|
+      output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+      refute_predicate status, :success?
+      assert_includes output, 'Link a human guide, not agent instructions:'
+    end
+  end
+
+  def test_encoded_tabs_and_markdown_renderer_escapes_remain_path_data
+    pages = ['<a href="https://github.com/shakacode/shaka/blob/main/sk%09ills/shaka/references/review.md">Data</a>',
+             "[Data](<https://github.com/shakacode/shaka/blob/main/sk\tills/shaka/references/review.md>)",
+             '<a href="https://github.com/shakacode/shaka/blob/main/docs/se&#9;ttings.md">Settings</a>']
+    pages.each do |page|
+      output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+      assert_predicate status, :success?, "#{output}\n#{errors}"
+    end
+  end
+end
+
+class DocsIndexSymlinkTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_committed_aliases_are_refused_with_both_checkout_modes
+    [true, false].each do |symlinks|
+      files = { 'skills/shaka/references/procedure.txt' => '# Agent procedure' }
+      sidebar = { 'docsSidebar' => %w[expected-experience procedure] }
+      _, errors, status = check(sidebar, '# Guide', files) { |root| checkout_alias(root, symlinks) }
+      refute_predicate status, :success?, "core.symlinks=#{symlinks}"
+      assert_includes errors, 'Docs sources cannot be symlinks: docs/procedure.md'
+    end
+  end
+
+  private
+
+  def git(root, *) = system('git', '-C', root, *, exception: true)
+
+  def commit_fixture(root)
+    args = %w[-c user.name=TestUser -c user.email=test@example.com -c commit.gpgsign=false]
+    git(root, *args, 'commit', '--no-verify', '-qm', 'Fixture')
+  end
+
+  def checkout_alias(root, symlinks)
+    path = File.join(root, 'docs/procedure.md')
+    File.symlink('../skills/shaka/references/procedure.txt', path)
+    git(root, 'config', 'core.symlinks', 'true')
+    git(root, 'add', '.')
+    commit_fixture(root)
+    git(root, 'config', 'core.symlinks', symlinks.to_s)
+    File.unlink(path)
+    git(root, 'checkout', '--', 'docs/procedure.md')
+    assert_equal symlinks, File.symlink?(path)
+  end
+end

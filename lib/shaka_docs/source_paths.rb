@@ -9,7 +9,8 @@ module ShakaDocs
     module_function
 
     def url(target)
-      uri = Addressable::URI.parse(target.strip)
+      text = target.delete("\t\r\n").gsub(/\A[\x00-\x20]+|[\x00-\x20]+\z/, '')
+      uri = Addressable::URI.parse(text)
       uri.host ? uri.normalize : uri
     end
 
