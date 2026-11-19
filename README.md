@@ -67,7 +67,7 @@ You don't need to study the docs first. Ask your coding agent to install Shaka:
 
 ```text
 Install Shaka from https://github.com/shakacode/shaka
-Use the latest published stable release if available
+Use the latest published stable release. If none is published, install from source
 ```
 
 Then give it a small task:

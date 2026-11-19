@@ -9,6 +9,12 @@ and ignores project Ruby and Bundler settings. Never edit the dedicated checkout
 
 ## Install
 
+For a request for the latest stable release, check the official GitHub releases
+for the latest published version at or above 1.0.0, excluding drafts and
+prereleases. If one exists, follow [Install a published release](#install-a-published-release).
+If the lookup succeeds with no suitable version, use source when the user allowed
+that fallback. Report a failed lookup as unverified.
+
 Review the source and installer, then clone into a directory outside the
 project repositories the user works in:
 
@@ -85,6 +91,11 @@ run its registered helper or pass `--directory DIR`; installation there keeps it
 selection. An explicit repository or branch overrides the gem default.
 
 Follow [Before take-over](#before-take-over) when changing releases.
+To check project settings before switching, clone the official release tag in a
+separate checkout without running the installer. Use that checkout's helper with
+`seam check --root PROJECT --ref DEFAULT_SHA` for committed team settings, or
+`--local` for individual settings. Resolve any required [migration](migration.md)
+before moving the active skill links.
 To install a new release, use a separate directory with `--release VERSION --take-over`.
 To roll back, [restore the saved installation](installation.md#restore-the-saved-installation).
 Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
