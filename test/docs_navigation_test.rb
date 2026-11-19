@@ -192,6 +192,7 @@ class DocsAudienceTest < Minitest::Test
   end
 
   AGENT_DESTINATIONS = %w[../skills/mct/SKILL.md ../skills/shaka/config/review-prompt.md
+                          ../skills/shaka/config/workflow.yml
                           ../.agents/shaka/instructions/review.md ../AGENTS.md
                           ../skills/shaka/references/../SKILL.md
                           https://github.com/shakacode/shaka/blame/main/skills/shaka/references/review.md
@@ -256,6 +257,22 @@ end
 
 class DocsAudienceExamplesTest < Minitest::Test
   def check(*) = DocsNavigationTest.new('fixture').check(*)
+
+  FENCE_INFO_EXAMPLE = <<~MARKDOWN
+    ```markdown
+    ```ruby
+    ```
+    [Agent](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md)
+    ```text
+    Example
+    ```
+  MARKDOWN
+
+  def test_fence_info_string_cannot_consume_a_following_live_link
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, FENCE_INFO_EXAMPLE)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
+  end
 
   def test_literal_agent_link_examples_are_allowed
     page = <<~MARKDOWN

@@ -10,11 +10,12 @@ module ShakaDocs
     # Root documents have distinct audiences: project entry, RubyGems, contributors, releases, and agents.
     ROOT_DOCUMENTS = %w[README.md README.gem.md CONTRIBUTING.md CHANGELOG.md AGENTS.md CLAUDE.md].freeze
     AGENT_ENTRY_FILES = %w[AGENTS.md CLAUDE.md SKILL.md].freeze
+    AGENT_WORKFLOW = 'skills/shaka/config/workflow.yml'
 
     module_function
 
     def links(text)
-      text = text.gsub(/^ {0,3}(`{3,}|~{3,}).*?^ {0,3}\1[^\n]*$/m, '')
+      text = text.gsub(/^ {0,3}(`{3,}|~{3,}).*?^ {0,3}\1[ \t]*$/m, '')
       inline = text.scan(/\]\(\s*<?([^)\s>]+)/).flatten
       defined = text.scan(/^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?(\S+?)>?(?:\s|$)/).flatten
       html = text.scan(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>\x60=]+))/).flatten.compact
@@ -53,7 +54,7 @@ module ShakaDocs
     def agent_path?(path)
       instructions = path.match?(%r{\A(?:skills|\.agents)(?:/|\z)}) &&
                      (path.match?(/\.mdx?\z/) || File.extname(path).empty?)
-      instructions || AGENT_ENTRY_FILES.include?(File.basename(path))
+      instructions || path == AGENT_WORKFLOW || AGENT_ENTRY_FILES.include?(File.basename(path))
     end
 
     def agent_links(repository, source, text)

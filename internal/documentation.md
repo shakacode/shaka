@@ -14,7 +14,7 @@ locations fails validation until its destination is reviewed. The root
 `internal/` and `eval/` hold development records.
 
 Public guides and sidebar links must lead to human guidance. The check rejects
-links into Shaka's skill Markdown, project agent instructions, and `AGENTS.md`
+links into Shaka's skill Markdown, its YAML workflow instructions, project agent instructions, and `AGENTS.md`
 or `CLAUDE.md`. Links to configuration data and citations of other projects'
 skills remain available. First-party source URLs are checked conservatively for
 agent-tree segments, regardless of their branch name. Use fenced blocks for
