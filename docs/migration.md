@@ -74,3 +74,8 @@ Before merging the settings PR, review its diff and run the target helper's
 `seam check --root PROJECT --local` in the PR checkout. Run the moved command
 wrappers. After the PR merges, check the new default-branch commit with `--ref`
 as shown above before switching your active installation.
+
+If the old YAML maps command paths with `commands`, keep adapters at the old
+paths. When the old and new paths overlap, keep the stricter checks in both.
+Before merging, also validate with the previous Shaka installation and old
+trusted SHA. Remove the adapters in a follow-up PR after switching installations.
