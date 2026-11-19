@@ -25,6 +25,15 @@ def sidebar_ids(item)
   end
 end
 
+# A page filed under docs/reference/ is listed under Reference, so its folder matches where readers find it.
+def misplaced_reference_pages(items)
+  items.flat_map do |item|
+    next [] if item.is_a?(Hash) && item['type'] == 'category' && item['label'] == 'Reference'
+
+    document_ids(item).select { |id| id.start_with?('reference/') }
+  end
+end
+
 # Human guides must not send readers into agent instructions; see AGENTS.md.
 def agent_reference_links(text)
   inline = text.scan(/\]\(\s*<?([^)\s>]+)/).flatten
@@ -124,6 +133,7 @@ begin
   raise ArgumentError, 'Expected a sidebar object' unless navigation.is_a?(Hash)
 
   ids = document_ids(navigation.fetch('docsSidebar'))
+  misplaced = misplaced_reference_pages(Array(navigation.fetch('docsSidebar')))
   files = Dir.glob('**/*.{md,mdx}', base: root)
   pages = files.map { |file| file.sub(/\.(md|mdx)\z/, '') }
   missing = pages - ids
@@ -133,15 +143,18 @@ begin
   end
   puts "Missing from docs/sidebars.json: #{missing.join(', ')}" unless missing.empty?
   puts "Navigation targets missing pages: #{stale.join(', ')}" unless stale.empty?
+  unless misplaced.empty?
+    puts "Move these pages out of docs/reference/ or list them under Reference: #{misplaced.join(', ')}"
+  end
   puts "Link a human guide, not agent instructions: #{agent_links.join(', ')}" unless agent_links.empty?
   broken = broken_links(root)
   puts "Unresolved links in docs/ and skills/:\n#{broken.join("\n")}" unless broken.empty?
   malformed = malformed_figures(root)
   puts "Figures that do not parse as SVG: #{malformed.join(', ')}" unless malformed.empty?
-  exit 1 unless missing.empty? && stale.empty? && agent_links.empty? && broken.empty? && malformed.empty?
+  exit 1 unless [missing, stale, misplaced, agent_links, broken, malformed].all?(&:empty?)
 
-  puts "All #{pages.size} published pages are in docs/sidebars.json and link no agent instructions; " \
-       'links and anchors in docs/ and skills/ resolve; figures parse.'
+  puts "All #{pages.size} published pages are in docs/sidebars.json, reference pages sit under Reference, " \
+       'and no page links agent instructions; links and anchors in docs/ and skills/ resolve; figures parse.'
 rescue JSON::ParserError, KeyError, ArgumentError, Errno::ENOENT => e
   warn "Docs navigation check failed: #{e.message}"
   exit 1

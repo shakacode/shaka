@@ -6,18 +6,8 @@ require 'tmpdir'
 require 'fileutils'
 require 'open3'
 
-class DocsNavigationTest < Minitest::Test
-  AGENT_LINKS = <<~MARKDOWN
-    Read [the review guide](../skills/shaka/references/review.md#choose).
-    See [upstream](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/delivery.md).
-    [guide]: <skills/shaka/references/local-review.md>
-    <a href="https://github.com/shakacode/shaka/tree/main/skills/shaka/references">all</a>
-    Bare: https://github.com/shakacode/shaka/blob/v1/skills/shaka/references/review.md
-    Autolink: <https://github.com/shakacode/shaka/blob/main/skills/shaka/references/publication.md>
-    [section](../skills/shaka/references#review) and [query](../skills/shaka/references?page=1)
-    <a href=../skills/shaka/references/review.md>unquoted</a>
-  MARKDOWN
-
+# Runs bin/check-docs-navigation on a temporary docs tree with one starting page.
+module DocsNavigationCheck
   def check(sidebar, page = '# What to expect', files = {})
     Dir.mktmpdir do |repository|
       docs = File.join(repository, 'docs')
@@ -29,6 +19,42 @@ class DocsNavigationTest < Minitest::Test
       Open3.capture3('ruby', File.expand_path('../bin/check-docs-navigation', __dir__), docs)
     end
   end
+end
+
+class DocsReferenceFolderTest < Minitest::Test
+  include DocsNavigationCheck
+
+  def test_reference_folder_page_outside_reference_category_fails
+    setup = { 'type' => 'category', 'label' => 'Setup', 'items' => %w[expected-experience reference/updates] }
+    output, _, status = check({ 'docsSidebar' => [setup, 'reference/timings'] }, '# What to expect',
+                              'docs/reference/updates.md' => '# Updates', 'docs/reference/timings.md' => '# Timings')
+    refute_predicate status, :success?
+    misplaced = output.lines.grep(%r{docs/reference/}).first
+    assert_includes misplaced, 'reference/updates'
+    assert_includes misplaced, 'reference/timings'
+  end
+
+  def test_reference_folder_page_in_reference_category_passes
+    reference = { 'type' => 'category', 'label' => 'Reference', 'items' => ['reference/updates'] }
+    _, _, status = check({ 'docsSidebar' => ['expected-experience', reference] }, '# What to expect',
+                         'docs/reference/updates.md' => '# Updates')
+    assert_predicate status, :success?
+  end
+end
+
+class DocsNavigationTest < Minitest::Test
+  include DocsNavigationCheck
+
+  AGENT_LINKS = <<~MARKDOWN
+    Read [the review guide](../skills/shaka/references/review.md#choose).
+    See [upstream](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/delivery.md).
+    [guide]: <skills/shaka/references/local-review.md>
+    <a href="https://github.com/shakacode/shaka/tree/main/skills/shaka/references">all</a>
+    Bare: https://github.com/shakacode/shaka/blob/v1/skills/shaka/references/review.md
+    Autolink: <https://github.com/shakacode/shaka/blob/main/skills/shaka/references/publication.md>
+    [section](../skills/shaka/references#review) and [query](../skills/shaka/references?page=1)
+    <a href=../skills/shaka/references/review.md>unquoted</a>
+  MARKDOWN
 
   def test_new_page_missing_from_navigation_fails
     output, _, status = check('docsSidebar' => [])

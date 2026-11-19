@@ -137,7 +137,7 @@ For an installation problem, use [manual installation and repair](manual-install
 Not by itself: Shaka has no auto-update setting and never installs an update on
 its own. You can schedule `install --update` for a time when no Shaka task is
 running, or schedule a daily check and update between chats.
-[Keep Shaka up to date](reference/scheduled-update-checks.md) shows both, and
+[Keep Shaka up to date](keep-shaka-up-to-date.md) shows both, and
 how Shaka checks for updates.
 
 ## Where do I put project rules?

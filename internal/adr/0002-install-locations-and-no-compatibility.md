@@ -74,5 +74,5 @@ The maintainer changed decision 3 on 2026-11-17, in review of
   because continuous local updates while developing Shaka caused no visible failures.
   Since [#956](https://github.com/shakacode/shaka/issues/956), an update supersedes a
   task's validation and review only when it changes the code those checks run. The
-  [Keep Shaka up to date](../../docs/reference/scheduled-update-checks.md) guide shows
+  [Keep Shaka up to date](../../docs/keep-shaka-up-to-date.md) guide shows
   how to schedule an update for a time when no Shaka task is running.
