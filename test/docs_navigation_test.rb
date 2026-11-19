@@ -779,6 +779,17 @@ class DocsUrlWhitespaceTest < Minitest::Test
     assert_predicate status, :success?, "#{output}\n#{errors}"
   end
 
+  def test_encoded_markdown_tilde_paths_resolve_literal_files
+    page = '[Guide](%7Eshaka-no-such-user.md)'
+    files = { 'docs/~shaka-no-such-user.md' => '# Guide' }
+    sidebar = { 'docsSidebar' => ['expected-experience', '~shaka-no-such-user'] }
+    output, errors, status = check(sidebar, page, files)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, '(missing file)'
+  end
+
   def test_html_url_whitespace_uses_browser_preprocessing
     pages = ['<a href="https://github.com/shakacode/shaka/blob/main/sk&#9;ills/shaka/references/review.md">Review</a>',
              '<a href="&#1;h&#13;ttps://github.com/shakacode/shaka/blob/main/' \

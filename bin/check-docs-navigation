@@ -66,7 +66,7 @@ end
 def unresolved(path, target)
   uri = ShakaDocs::Audiences.url(target)
   file = URI::DEFAULT_PARSER.unescape(uri.path)
-  destination = file.empty? ? path : File.expand_path(file, File.dirname(path))
+  destination = file.empty? ? path : File.absolute_path(file, File.dirname(path))
   return 'missing file' unless File.exist?(destination)
 
   unresolved_anchor(destination, uri.fragment)
