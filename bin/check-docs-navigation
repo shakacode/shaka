@@ -27,14 +27,13 @@ end
 
 # A page filed under docs/reference/ is listed under a Reference category at any depth, so its folder
 # matches where readers find it.
-def misplaced_reference_pages(items)
-  items.flat_map do |item|
-    category = item.is_a?(Hash) && item['type'] == 'category'
-    next [] if category && item['label'] == 'Reference'
-    next misplaced_reference_pages(item.fetch('items')) if category
-
-    document_ids(item).select { |id| id.start_with?('reference/') }
+def misplaced_reference_pages(item)
+  return item.flat_map { |child| misplaced_reference_pages(child) } if item.is_a?(Array)
+  unless item.is_a?(Hash) && item['type'] == 'category'
+    return document_ids(item).select { |id| id.start_with?('reference/') }
   end
+
+  item['label'] == 'Reference' ? [] : misplaced_reference_pages(item.fetch('items'))
 end
 
 # Human guides must not send readers into agent instructions; see AGENTS.md.
@@ -136,7 +135,7 @@ begin
   raise ArgumentError, 'Expected a sidebar object' unless navigation.is_a?(Hash)
 
   ids = document_ids(navigation.fetch('docsSidebar'))
-  misplaced = misplaced_reference_pages(Array(navigation.fetch('docsSidebar')))
+  misplaced = misplaced_reference_pages(navigation.fetch('docsSidebar'))
   files = Dir.glob('**/*.{md,mdx}', base: root)
   pages = files.map { |file| file.sub(/\.(md|mdx)\z/, '') }
   missing = pages - ids

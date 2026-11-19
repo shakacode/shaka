@@ -48,7 +48,7 @@ the command. On macOS, replace `<string>update-check</string>` with
 WSL command, replace `update-check` with `install --update`. Keep the example
 job names so the stop steps below still apply.
 
-The job exits 0 when the update succeeds; otherwise its log says what to do.
+The job exits 0 when the update succeeds; otherwise, check its log for the error.
 
 For a check, read the job's log for `status` and `guidance`. If the guidance
 recommends an update, finish your active Shaka chats first. Then ask your agent to
