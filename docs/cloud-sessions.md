@@ -36,10 +36,8 @@ export PATH=/opt/rbenv/versions/3.4.10/bin:$PATH
 umask 022
 src="$HOME/.local/share/shaka/source"
 if [ -d "$src" ]; then
-  # A kept clone: update it, or register it if an earlier install did not finish.
-  # Either way, a failure still lets the session start.
-  "$src/skills/shaka/scripts/shaka" install --update ||
-    "$src/bin/install" --agent claude --no-session-hook ||
+  # A kept clone: update it. A failure still lets the session start.
+  "$src/bin/install" --update ||
     echo "Shaka update failed; run $src/skills/shaka/scripts/shaka install --status" >&2
 else
   mkdir -p "$HOME/.local/share/shaka"
@@ -52,11 +50,12 @@ Building Ruby adds a few minutes to each new container. The script installs
 Shaka from its own clone, separate from your project, so the branch you are
 changing cannot change the Shaka that checks it. When a container keeps an
 earlier clone, the update step brings it to the latest Shaka, so it accepts
-settings your repository added since. Because the update step runs with the
-script, the script turns off the update reminder for new chats. If the update
-fails, the session still starts, and the setup log names the command that shows
-the installation's state. The script applies to new
-sessions; a session that is already running keeps what it has.
+settings your repository added since. If the update fails, the session still
+starts, and the setup log names the command that shows the installation's
+state. A new install leaves out the update reminder in new chats, because the
+script updates Shaka itself; a kept clone keeps the reminder choice it was
+installed with. The script applies to new sessions; a session that is already
+running keeps what it has.
 
 Shaka runs on the Ruby that installed it, but the session's own shell still
 starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, look at the
