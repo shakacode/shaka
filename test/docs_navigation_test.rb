@@ -868,6 +868,18 @@ class DocsLinkedInventoryTest < Minitest::Test
     assert_predicate status, :success?, "#{output}\n#{errors}"
   end
 
+  def test_each_guide_needs_a_unique_publication_id
+    %w[md mdx].each do |extension|
+      output, errors, status = check({ 'docsSidebar' => %w[expected-experience install] }, '# Guide',
+                                     "docs/install.#{extension}" => '# Install')
+      assert_predicate status, :success?, "#{output}\n#{errors}"
+    end
+    files = { 'docs/install.md' => '# Install', 'docs/install.mdx' => '# Install' }
+    output, _, status = check({ 'docsSidebar' => %w[expected-experience install] }, '# Guide', files)
+    refute_predicate status, :success?
+    assert_includes output, 'Duplicate publication IDs: install.md, install.mdx'
+  end
+
   private
 
   def linked_fixture(mode)
