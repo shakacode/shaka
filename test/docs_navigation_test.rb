@@ -674,7 +674,25 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     assert_predicate status, :success?, "#{output}\n#{errors}"
   end
 
+  def test_ignored_svg_alias_is_skipped_until_tracked
+    output, errors, status = svg_alias(tracked: false)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+    _, errors, status = svg_alias(tracked: true)
+    refute_predicate status, :success?
+    assert_includes errors, 'Docs sources cannot be symlinks: docs/img/local.svg'
+  end
+
   private
+
+  def svg_alias(tracked:)
+    files = { '.gitignore' => "/docs/img/local.svg\n" }
+    check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files) do |root|
+      directory = File.join(root, 'docs/img')
+      FileUtils.mkdir_p(directory)
+      File.symlink('missing.svg', File.join(directory, 'local.svg'))
+      system('git', '-C', root, 'add', '-f', 'docs/img/local.svg', exception: true) if tracked
+    end
+  end
 
   def alias_docs_root(root)
     target = File.join(root, 'internal/actual-docs')
