@@ -6,8 +6,6 @@ outcome, and project constraints. Evaluate the finished change as a whole.
 - Did building it reveal an unnecessary, misguided, or poorly framed request?
 - Has scope drifted? Compare actual files, commits, review rounds, and repairs
   with what the plan expected. Mark missing impact or frequency evidence unknown.
-- Is the benefit proportional to dependencies, configuration, abstractions,
-  coupling, failure paths, tests, and future maintenance?
 - Is the reported verification proportionate to what a failure would reach and
   to whether a revert undoes it? Weigh the evidence as given rather than
   re-reviewing code, and name paths that were not exercised.
@@ -16,6 +14,17 @@ outcome, and project constraints. Evaluate the finished change as a whole.
   outcome? Name any guarantees lost and evidence that losing them is acceptable.
 - Will future work have to understand and build around unjustified complexity?
 - Knowing the result and cost, would we choose this approach again?
+
+The change must show that its benefit outweighs its upkeep. A cheaper option
+need not prove a benefit, but it still names the guarantees it loses. Benefit
+counts when the packet cites evidence such as an observed failure, a review
+finding, a maintainer request, or a measurement. A new check or guard adds
+little when existing review or checks already catch what it prevents. Upkeep
+includes dependencies, parsing, abstractions, loaders, configuration, coupling,
+tests, and failure paths. When a change adds more than trivial upkeep and its
+benefit is unknown, small, or only asserted, conclude **Simplify/reframe** or
+**Do not merge**, name the cheaper alternative, and list that unearned cost in
+concerns.
 
 Focus on product fit, architecture, scope, and value. Another minor code nit is
 not a reason to run this review. Conclude **Proceed**, **Simplify/reframe**, or

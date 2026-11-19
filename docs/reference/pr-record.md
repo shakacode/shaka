@@ -62,8 +62,10 @@ of you, then lists:
   [PR evidence guide](../settings.md#project_guidance) asks for one.
 
 Until the checkpoint rates the current commit, the level reads **not rated yet**.
-When Shaka cannot read the repository's trusted settings, it reads **not shown**:
-Shaka's default areas could rate the change lower than the repository's own.
+When Shaka reads no repository settings, because the repository has none or the agent
+published without them, the level checks only Shaka's default high-risk areas, and the
+section says so. An area your repository adds could raise it. Merge never uses this line: it rates the
+commit again from the checkpoint and your settings.
 
 ## Checkpoint
 
@@ -80,6 +82,13 @@ ask the agent for one if you want it.
 | **No recommendation yet** | The owner has not recorded a recommendation for this commit. |
 | **Not published yet** | The linked report is not available yet. |
 | **Merge after maintainer decision** | A question or concern needs your decision before merging. |
+| **Draft: mark it ready for review before merging** | The recommendation is Merge, but the PR is a draft, which GitHub cannot merge. |
+
+A draft means Shaka is not recommending a merge yet. When a checkpoint blocks the PR,
+Shaka makes it a draft. When a later checkpoint recommends Merge, Shaka marks it ready
+for review, even if someone else made it a draft. That notifies the people GitHub asks
+to review and starts any automated review that skips drafts. Shaka never asks you to
+merge a draft.
 
 The reviewer's conclusion is **Proceed**, **Simplify/reframe**, or **Do not merge**.
 Substantive unresolved concerns hold readiness and `auto` even when checks pass.

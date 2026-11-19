@@ -17,7 +17,7 @@ module Shaka
     def resolve(content, github)
       return content unless content['deployment'] == AUTO
 
-      head = github.snapshot.fetch('headRefOid')
+      head = github.state_snapshot.fetch('headRefOid')
       url = live_url(github, head)
       url ? content.merge('deployment' => url) : content.merge('deployment' => 'none', NOT_FOUND_FOR => head)
     end

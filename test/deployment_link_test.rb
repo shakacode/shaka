@@ -19,7 +19,7 @@ module DeploymentLinkFixtures
       @reads = []
     end
 
-    def snapshot = { 'headRefOid' => HEAD }
+    def state_snapshot = { 'headRefOid' => HEAD }
 
     def api(path)
       @reads << path

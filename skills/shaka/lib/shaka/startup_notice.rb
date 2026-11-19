@@ -139,7 +139,8 @@ module Shaka
         return "Shaka has not checked for updates in the last day. Run #{Shellwords.escape(helper)} update-check."
       end
 
-      result['guidance'] if ACTIONABLE.include?(result['status'])
+      # An answer saved before install or install --update describes the earlier installation.
+      result['guidance'] if ACTIONABLE.include?(result['status']) && UpdateCheck::Cache.current?(entry, @root)
     end
   end
 end

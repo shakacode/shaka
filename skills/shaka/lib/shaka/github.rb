@@ -96,6 +96,7 @@ module Shaka
     # notes are the review's inline comments, as Walkthrough::Notes resolves and checks them.
     def walkthrough(head:, body:, notes: [], seam_required_checks: nil, prose: ProseLimits.new)
       body = publishable(body)
+      WalkthroughText.verify_recognizable!(body, head)
       changed_lines = ProseLimits.changed_lines(verify_head(head))
       WalkthroughEvidence.new(self, seam_required_checks:).verify(head, body)
       published = record_walkthrough(head, body, notes) do |html|
