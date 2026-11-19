@@ -8,7 +8,9 @@ resulting PR without first studying Shaka's workflow. The writing rules in
 ## Check documentation destinations
 
 `bin/check-docs-navigation` requires every product guide under `docs/` to appear
-in `docs/sidebars.json`. New Markdown outside the established documentation
+in `docs/sidebars.json`. Sources under `docs/` must not be symlinks; the published
+files and directories must travel with the documentation tree.
+New Markdown outside the established documentation
 locations fails validation until its destination is reviewed. The root
 `README.gem.md` serves RubyGems, `contributing/` serves contributors, and
 `internal/` and `eval/` hold development records.

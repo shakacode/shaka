@@ -604,3 +604,35 @@ class DocsHtmlDestinationsTest < Minitest::Test
     assert_includes output, 'Link a human guide, not agent instructions:'
   end
 end
+
+class DocsSymlinkAudienceTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_enrolled_product_guides_cannot_alias_agent_procedures
+    files = { 'skills/shaka/references/procedure.txt' => '# Agent procedure' }
+    output, _, status = check({ 'docsSidebar' => %w[expected-experience procedure] }, '# Guide', files) do |root|
+      File.symlink('../skills/shaka/references/procedure.txt', File.join(root, 'docs/procedure.md'))
+      system('git', '-C', root, 'add', 'docs/procedure.md', exception: true)
+    end
+    refute_predicate status, :success?
+    assert_includes output, 'Docs sources cannot be symlinks: docs/procedure.md'
+  end
+
+  def test_dangling_guides_are_rejected_in_source_exports
+    output, _, status = check('docsSidebar' => ['expected-experience']) do |root|
+      FileUtils.remove_entry(File.join(root, '.git'))
+      File.symlink('missing.md', File.join(root, 'docs/broken.md'))
+    end
+    refute_predicate status, :success?
+    assert_includes output, 'Docs sources cannot be symlinks: docs/broken.md'
+  end
+
+  def test_directories_cannot_alias_agent_procedures
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide',
+                              'skills/shaka/references/procedure.txt' => '# Agent') do |root|
+      File.symlink('../skills/shaka/references', File.join(root, 'docs/procedures'))
+    end
+    refute_predicate status, :success?
+    assert_includes output, 'Docs sources cannot be symlinks: docs/procedures'
+  end
+end

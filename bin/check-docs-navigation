@@ -127,7 +127,11 @@ begin
 
   ids = document_ids(navigation.fetch('docsSidebar'))
   prefix = "#{File.basename(root)}/"
-  files = ShakaDocs::Audiences.document_files(repository).filter_map do |file|
+  inventory = ShakaDocs::Audiences.repository_files(repository)
+  symlinks = inventory.select { |file| file.start_with?(prefix) && File.symlink?(File.join(repository, file)) }
+  raise ArgumentError, "Docs sources cannot be symlinks: #{symlinks.join(', ')}" unless symlinks.empty?
+
+  files = inventory.grep(/\.mdx?\z/i).filter_map do |file|
     file.delete_prefix(prefix) if file.start_with?(prefix)
   end
   # Site discovery needs lowercase extensions and ignores dot, underscore and planning paths.

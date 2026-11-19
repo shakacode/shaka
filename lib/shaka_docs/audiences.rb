@@ -94,7 +94,7 @@ module ShakaDocs
               else
                 Dir.glob('**/*', File::FNM_DOTMATCH, base: repository)
               end
-      files.uniq.select { |path| File.file?(File.join(repository, path)) }
+      files.uniq.select { |path| File.file?(File.join(repository, path)) || File.symlink?(File.join(repository, path)) }
     end
 
     def git_files(repository)
