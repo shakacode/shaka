@@ -92,10 +92,14 @@ selection. An explicit repository or branch overrides the gem default.
 
 Follow [Before take-over](#before-take-over) when changing releases.
 To check project settings before switching, clone the official release tag in a
-separate checkout without running the installer. Use that checkout's helper with
-`seam check --root PROJECT --ref DEFAULT_SHA` for committed team settings, or
-`--local` for individual settings. Resolve any required [migration](migration.md)
-before moving the active skill links.
+separate checkout without running the installer. Use the helper from that checkout.
+
+- For team settings, run `seam check --root PROJECT --ref DEFAULT_SHA` in a clean
+  project checkout at the default-branch commit. Require `trusted/ref` for that SHA.
+- For individual settings, run `seam private check --root PROJECT --ref DEFAULT_SHA`
+  in the copy with those settings. Require a successful result.
+
+Resolve any required [migration](migration.md) before moving the active skill links.
 To install a new release, use a separate directory with `--release VERSION --take-over`.
 To roll back, [restore the saved installation](installation.md#restore-the-saved-installation).
 Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
