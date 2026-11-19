@@ -10,8 +10,9 @@ module Shaka
       GIT_CONFIG = %w[-c core.hooksPath=/dev/null -c core.fsmonitor=false].freeze
       GIT_ENVIRONMENT = %w[GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
                            GIT_OBJECT_DIRECTORY GIT_DIR GIT_WORK_TREE GIT_IMPLICIT_WORK_TREE GIT_GRAFT_FILE
-                           GIT_INDEX_FILE GIT_NO_REPLACE_OBJECTS GIT_REPLACE_REF_BASE GIT_PREFIX
-                           GIT_SHALLOW_FILE GIT_COMMON_DIR GIT_CEILING_DIRECTORIES].to_h { |name| [name, nil] }.freeze
+                           GIT_INDEX_FILE GIT_REPLACE_REF_BASE GIT_PREFIX GIT_SHALLOW_FILE
+                           GIT_COMMON_DIR GIT_CEILING_DIRECTORIES].to_h { |name| [name, nil] }
+                                                                  .merge('GIT_NO_REPLACE_OBJECTS' => '1').freeze
 
       def initialize(source:, root:, row:)
         @source = source
@@ -44,6 +45,9 @@ module Shaka
 
       def self.regular_settings?(entry)
         meta, path = entry.split("\t", 2)
+        if %w[.agents .agents/shaka].include?(path)
+          raise IOError, 'Use regular files for the projected reviewer settings and criteria'
+        end
         return false unless agents_path?(path) || path.start_with?('.agents/shaka/')
         return true if meta.start_with?('100644 blob ', '100755 blob ')
 

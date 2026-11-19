@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'base64'
 require 'digest'
 require 'json'
 require 'open3'
@@ -37,7 +36,7 @@ module Shaka
 
       def json_text(bytes)
         text = bytes.dup.force_encoding(Encoding::UTF_8)
-        text.valid_encoding? ? text : { 'base64' => Base64.strict_encode64(bytes) }
+        text.valid_encoding? ? text : { 'base64' => [bytes].pack('m0') }
       end
 
       def native_sessions
