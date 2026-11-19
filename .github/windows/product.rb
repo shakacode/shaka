@@ -14,7 +14,8 @@ class WindowsProduct < WindowsSession
 
   def call
     record('helper and command start tests') do
-      ruby_tests('test/windows_helper_start_test.rb', 'test/windows_command_start_test.rb')
+      ruby_tests('test/windows_helper_start_test.rb', 'test/windows_command_start_test.rb',
+                 'test/evidence_windows_check_test.rb')
     end
     record('evidence run starts a repository command') { evidence_run }
     record('bin/install installs and verifies the helper') { install }

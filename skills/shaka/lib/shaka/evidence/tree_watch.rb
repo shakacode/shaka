@@ -5,10 +5,12 @@ require_relative '../error'
 require_relative '../executable_file'
 require_relative '../local_review/process'
 require_relative 'candidate_tree'
+require_relative 'windows_check'
 
 module Shaka
   module Evidence
-    # Runs a check in its own process group and recaptures the candidate tree while it runs.
+    # Runs a check in its own process group, or on Windows through WindowsCheck, and recaptures the
+    # candidate tree while it runs.
     # An edit to the checkout voids the result anyway, so the check stops within one interval
     # plus a capture instead of finishing first. Only the check's own group is signaled.
     # An edit undone before the next capture is not seen, as the comparison after the check
@@ -18,15 +20,17 @@ module Shaka
       # Seconds between captures. One capture took about 2 seconds on this repository under heavy
       # load, so an edit stops the check well within a minute.
       DEFAULT_INTERVAL = 15
-      # Seconds a stopped Windows check gets to exit.
-      STOP_SECONDS = 10
-      # By full path, so a taskkill.exe in the candidate checkout cannot answer.
-      TASKKILL = File.join(ENV.fetch('SystemRoot', 'C:/Windows'), 'System32', 'taskkill.exe')
-      Outcome = Data.define(:status, :changed_tree) do
+      Outcome = Data.define(:status, :changed_tree, :limitation) do
+        def initialize(status:, changed_tree:, limitation: nil) = super
+
         def stopped? = !changed_tree.nil?
 
-        # Result fields that say why the check did not finish.
-        def stop_fields = stopped? ? { 'stop_reason' => MESSAGE } : {}
+        # Result fields that say why the check did not finish, and what the stop could not cover.
+        def stop_fields
+          return {} unless stopped?
+
+          { 'stop_reason' => MESSAGE, 'stop_limitation' => limitation }.compact
+        end
       end
 
       class << self
@@ -44,24 +48,33 @@ module Shaka
 
       # Writes the check's output and then its errors to standard error once it ends.
       def run
-        Open3.popen3(*@command, chdir: @root, **group) do |input, output, error, waiter|
+        return run_windows if @windows
+
+        Open3.popen3(*@command, chdir: @root, pgroup: true) do |input, output, error, waiter|
           input.close
-          @job = adopt(waiter.pid)
-          outcome(waiter, [output, error].map { |stream| Thread.new { stream.read } }).tap { @finished = true }
+          outcome(waiter, [output, error].map { |stream| Thread.new { stream.read } })
         ensure
-          # An interrupted helper would otherwise leave the check running in its separate group, or on
-          # Windows leave a descendant running in its job after the leader exits.
+          # An interrupted helper would otherwise leave the check running in its separate group.
           stop(waiter) if waiter&.alive?
-          @finished ? @job&.close : @job&.terminate
         end
       end
 
       private
 
+      # An interrupted helper ends the check and its job; a finished check keeps what it left running.
+      def run_windows
+        @check = WindowsCheck.new(@command, root: @root)
+        outcome(@check.waiter, [@check.output, @check.error].map { |stream| Thread.new { read_until_closed(stream) } })
+          .tap { @finished = true }
+      ensure
+        @check&.stop if @check&.waiter&.alive?
+        @check&.close(finished: @finished)
+      end
+
       def outcome(waiter, readers)
         changed = watch(waiter, readers)
         $stderr.write(*(changed ? drain(readers) : readers.map(&:value)))
-        Outcome.new(status: waiter.value, changed_tree: changed)
+        Outcome.new(status: waiter.value, changed_tree: changed, limitation: @limitation)
       end
 
       # A descendant can hold the output open after the leader exits, so the watch lasts until
@@ -88,7 +101,7 @@ module Shaka
       # leaves the result to report the stop anyway.
       def stop(waiter, tree = nil)
         warn "shaka: #{MESSAGE}; stopping the check" if tree
-        @windows ? end_tree(waiter) : LocalReviewProcess.terminate(waiter)
+        @windows ? stop_windows : LocalReviewProcess.terminate(waiter)
         tree
       rescue Errno::EPERM
         tree
@@ -98,33 +111,16 @@ module Shaka
       # check's output is whatever arrived shortly after it.
       def drain(readers) = readers.map { |reader| LocalReviewProcess.thread_output(reader) }
 
-      # Windows Ruby refuses `pgroup`. There a job object holds the check and the descendants it
-      # starts, and still names them after the leader exits, which taskkill /T cannot.
-      def group = @windows ? {} : { pgroup: true }
-
-      # Without fiddle, which a later Ruby may not load under --disable-gems, taskkill alone stops it.
-      def adopt(pid)
-        return unless @windows && ExecutableFile.windows?
-
-        require_relative '../doctor/windows_job'
-        Doctor::WindowsJob.adopt(pid)
-      rescue LoadError
-        nil
+      # A descendant the stop could not reach can hold a Windows pipe open until the check closes it.
+      def read_until_closed(stream)
+        stream.read
+      rescue IOError
+        ''
       end
 
-      # A job that holds the check ends it alone. Without one, taskkill /T ends the tree while the
-      # leader lives, since once it exits Windows may give its ID to an unrelated process. A leader
-      # that outlasts both is terminated directly, so the wait for its status always ends.
-      def end_tree(waiter)
-        if @job
-          @job.terminate
-        elsif waiter.alive?
-          system(TASKKILL, '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
-        end
-        Process.kill('KILL', waiter.pid) unless waiter.join(STOP_SECONDS)
-        waiter.join
-      rescue Errno::ESRCH
-        waiter.join
+      def stop_windows
+        @limitation = @check.stop
+        warn "shaka: #{@limitation}" if @limitation
       end
     end
   end
