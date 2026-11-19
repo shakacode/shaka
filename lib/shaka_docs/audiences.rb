@@ -2,6 +2,7 @@
 
 require 'uri'
 require 'open3'
+require 'pathname'
 require 'commonmarker'
 require 'nokogiri'
 
@@ -14,7 +15,7 @@ module ShakaDocs
     AGENT_ENTRY_FILES = %w[AGENTS.md CLAUDE.md SKILL.md].freeze
     AGENT_WORKFLOW = 'skills/shaka/config/workflow.yml'
     SOURCE_URL = %r{
-      \A(?:https?:)?//(?:www\.)?(?:github\.com|raw\.githubusercontent\.com)
+      \A(?:https?:)?//(?:www\.)?(?<host>github\.com|raw\.githubusercontent\.com)
       (?::\d+)?/shakacode/shaka/
     }ix
 
@@ -23,7 +24,7 @@ module ShakaDocs
     def links(text)
       targets = []
       Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---' } }).walk do |node|
-        targets << node.url if node.type == :link
+        targets << node.url if %i[link image].include?(node.type)
         next unless %i[html_inline html_block].include?(node.type)
 
         targets.concat(Nokogiri::HTML.fragment(node.literal).css('a[href]').map { |link| link['href'] })
@@ -32,11 +33,13 @@ module ShakaDocs
     end
 
     def repository_path(target)
-      return unless target.match?(SOURCE_URL)
+      match = SOURCE_URL.match(target)
+      return unless match
 
       # Source citations use a commit, tag, or single-segment branch. Do not infer
       # a repository root from a directory name inside the document path.
-      source = target.sub(SOURCE_URL, '').sub(%r{\A(?:blob|tree|raw|edit|blame)/}, '')
+      source = target[match.end(0)..]
+      source = source.sub(%r{\A(?:blob|tree|raw|edit|blame)/}, '') if match[:host].casecmp?('github.com')
       source.sub(%r{\Arefs/(?:heads|tags)/}, '').split('/', 2).last
     end
 
@@ -44,7 +47,7 @@ module ShakaDocs
       target = URI::DEFAULT_PARSER.unescape(target.sub(/[?#].*/, ''))
       if target.match?(%r{\A(?:[a-z][\w+.-]*:|//)}i)
         path = repository_path(target)
-        return File.expand_path(path, '/').delete_prefix('/') if path
+        return Pathname.new("/#{path}").cleanpath.to_s.delete_prefix('/') if path
 
         return
       end

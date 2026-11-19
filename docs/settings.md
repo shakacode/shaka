@@ -11,7 +11,7 @@ Settings live in `.agents/shaka/config.yml`. Ask your agent to
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
 Optional choices without fixed defaults, such as the base branch and local reviewer models, stay commented.
-Ask your agent to read `.agents/shaka/README.md` in the Shaka source checkout
+Ask your agent to read `.agents/shaka/README.md` in the `shakacode/shaka` GitHub repository
 for why Shaka's example prompts and reviewer count differ from the defaults.
 
 ## Which settings apply?
@@ -1043,8 +1043,8 @@ project_guidance:
   pr_evidence: .agents/shaka/pr-evidence.md
 ```
 
-Ask your agent to use `.agents/shaka/pr-evidence.md` from the Shaka source
-checkout as an example. It opens with its condition, so the agent skips it in one line.
+Ask your agent to use `.agents/shaka/pr-evidence.md` in the `shakacode/shaka` GitHub
+repository as an example. It opens with its condition, so the agent skips it in one line.
 It points to a longer procedure instead of repeating it, so the steps keep one home. It
 ends by saying where to report the result, or why there is none.
 

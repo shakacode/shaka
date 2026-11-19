@@ -17,7 +17,9 @@ Public guides and sidebar links must lead to human guidance. The check rejects
 links into Shaka's skill Markdown, its YAML workflow instructions, project agent instructions, and `AGENTS.md`
 or `CLAUDE.md`. Configuration data and installable workflow templates, including
 `claude-code-review.yml`, remain linkable for setup. Citations of other projects'
-skills remain available. Source citations use a commit, tag, or branch without
+skills remain available. Extensionless source paths under `skills/` or `.agents/`
+are treated as agent targets, including directories and scripts.
+Source citations use a commit, tag, or branch without
 slashes so the check can distinguish the ref from the repository path. Slash-containing
 refs require author and reviewer judgment. Leading-slash links address public site routes.
 Commonmarker parses Markdown and Nokogiri extracts HTML links. Code examples and

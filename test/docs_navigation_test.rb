@@ -131,6 +131,32 @@ class DocsNavigationTest < Minitest::Test
   end
 end
 
+class DocsParserRegressionTest < Minitest::Test
+  def check(*) = DocsNavigationTest.new('fixture').check(*)
+
+  def test_empty_link_destinations_refer_to_the_current_page
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '[Self]() <a href="">Self</a>')
+    assert_predicate status, :success?, output
+  end
+
+  def test_missing_markdown_images_still_fail
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '![Missing](gone.png)')
+    refute_predicate status, :success?, output
+    assert_includes output, 'gone.png (missing file)'
+  end
+
+  def test_raw_refs_named_like_github_views_still_reject_agent_links
+    %w[tree blob].each do |ref|
+      target = "https://raw.githubusercontent.com/shakacode/shaka/#{ref}/skills/shaka/references/review.md"
+      sidebar = { 'docsSidebar' => ['expected-experience', { 'type' => 'link', 'label' => 'Agent', 'href' => target }] }
+      output, _, status = check(sidebar, "[Agent](#{target})")
+      refute_predicate status, :success?, output
+      assert_includes output, "expected-experience.md -> #{target}"
+      assert_includes output, "sidebars.json -> #{target}"
+    end
+  end
+end
+
 class DocsFigureCheckTest < Minitest::Test
   FIGURES = { 'img/good.svg' => '<svg xmlns="http://www.w3.org/2000/svg"/>', 'img/empty.svg' => '',
               'img/nested/unclosed.svg' => '<svg><g></svg>', 'img/page.svg' => '<html/>',

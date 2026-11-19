@@ -58,6 +58,7 @@ end
 
 def unresolved(path, target)
   file, anchor = target.split('#', 2)
+  file ||= ''
   destination = file.empty? ? path : File.expand_path(file, File.dirname(path))
   return 'missing file' unless File.exist?(destination)
 

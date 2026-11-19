@@ -28,9 +28,6 @@ jobs:
     runs-on: windows-latest
     continue-on-error: true
     timeout-minutes: 45
-    env:
-      # Gems in the lockfile are pure Ruby or ship a generic platform build.
-      BUNDLE_FORCE_RUBY_PLATFORM: "true"
     defaults:
       run:
         shell: bash --noprofile --norc -eo pipefail {0}
