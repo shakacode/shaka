@@ -12,8 +12,9 @@ model runs. No person has rechecked the classification.*
 - The [evidence-first review article](../../docs/articles/evidence-first-review.md) left
   one question open. Lauren Tan's talk, and pstack's
   [encode-lessons-in-structure skill](https://github.com/cursor/plugins/blob/bf0c7cd80a/pstack/skills/principle-encode-lessons-in-structure/SKILL.md),
-  say each repeated correction should become a lint rule, test, or script. The article
-  marked that advice Evaluate first, because nobody knew how often Shaka's review
+  say each repeated correction should become a lint rule, test, or script. The skill
+  adds that a lesson needing judgment should get a more prominent instruction with an
+  example of the failure mode. The article marked that advice Evaluate first, because nobody knew how often Shaka's review
   findings repeat.
 - `shaka enforcement` reports that 89 of 100 audited workflow rules are enforced by
   nothing but the agent. More prose is the default way this repository answers a
@@ -58,8 +59,11 @@ model runs. No person has rechecked the classification.*
 - **Checks cost review too.** The seam upgrade reference scanner was a deterministic
   check of 1,832 lines. The 7 PRs that built and extended it drew 38 findings before
   [#997](https://github.com/shakacode/shaka/pull/997) removed it with the old layout.
-- **Recommendation: evaluate first.** Trial a report-only coverage check, and keep the
-  prose kinds with review. Two follow-ups have since run:
+- **Recommendation: evaluate first.** Trial a report-only coverage check. For the prose
+  kinds, try the skill's judgment branch: the workflow already tells agents to search
+  for text that still describes old behavior, yet stale or wrong docs were fixed on 47
+  PRs. Evaluate a more prominent instruction with one failure example from this data.
+  Two follow-ups have since run:
   [#1222](https://github.com/shakacode/shaka/pull/1222) mapped the Git findings and
   recommends deferring the runner test, and
   [#1224](https://github.com/shakacode/shaka/pull/1224) shipped the heredoc-prose test.

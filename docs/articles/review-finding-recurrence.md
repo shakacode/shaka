@@ -29,8 +29,8 @@ lists the method, every kind, and the
    dismissed all 4, 3 of them by citing the check.
 5. **Checks cost review too.** One deterministic scanner drew 38 review findings over the
    7 PRs that built and extended it, before it was removed.
-6. **Recommendation: evaluate first.** Trial a report-only coverage check and keep the
-   prose kinds with review. Since the study, [#1224](https://github.com/shakacode/shaka/pull/1224)
+6. **Recommendation: evaluate first.** Trial a report-only coverage check. For the prose
+   kinds, which need judgment, try a more prominent instruction with a failure example. Since the study, [#1224](https://github.com/shakacode/shaka/pull/1224)
    shipped a heredoc-prose test, and the Git runner test is deferred.
 
 ## Why this ran
@@ -41,7 +41,8 @@ rules, types, and tests at the base of a trust pyramid, and prose at the narrow 
 time an agent needs correcting, she turns the correction into a check where she can.
 pstack's
 [encode-lessons-in-structure skill](https://github.com/cursor/plugins/blob/bf0c7cd80a/pstack/skills/principle-encode-lessons-in-structure/SKILL.md)
-gives the same advice.
+gives the same advice for lessons code can check. For a lesson that needs judgment, it
+says to make the instruction more prominent and add an example of the failure mode.
 
 The [evidence-first review article](evidence-first-review.md) marked this advice
 Evaluate first for Shaka, because nobody knew how often findings repeat. Shaka leans the
@@ -143,6 +144,7 @@ from prose to checks.
 | CI step refusing `CHANGELOG.md` edits on non-release PRs | The rule changed mid-month; 1 finding broke its current form | Defer |
 | Report-only changed-line coverage | Up to 26 of 51 test findings name an untested path; coverage misses paths unit tests already run | Evaluate on the next 10 PRs |
 | Tell reviewers which checks passed, and to name a caller before warning about one | 4 risks dismissed by citing a check or slug, and 14 by showing callers unaffected; dismissals were not rechecked | Evaluate: compare dismissals over a week |
+| Make the workflow's stale-text instruction more prominent, with one failure example from this data | The rule exists, yet docs that describe missing behavior were fixed on 47 PRs; pstack's skill prescribes this for lessons that need judgment | Evaluate: compare stale-text findings before and after |
 | Check every docs claim about enforcement | High upkeep, cannot judge truth | Defer |
 
 ## Data and limits
