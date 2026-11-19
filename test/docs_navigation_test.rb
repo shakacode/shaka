@@ -440,3 +440,27 @@ class DocsEmittedFallbackTest < Minitest::Test
     end
   end
 end
+
+class DocsEmittedLiteralGroupTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_heredoc_reference_links_share_the_whole_literal_context
+    %w[examples absent].product([true, false]).each do |fragment, used|
+      use = used ? 'Read [Setup][setup].' : 'No rendered link.'
+      source = "GUIDE = <<~MARKDOWN\n  #{use}\n\n  [setup]: " \
+               "https://github.com/shakacode/shaka/blob/main/docs/settings.md##{fragment}\nMARKDOWN\n"
+      output, errors, status = check_links('# Guide', 'skills/shaka/guide.rb' => source)
+      assert_equal !used || fragment == 'examples', status.success?, "#{fragment}/#{used}: #{output}\n#{errors}"
+    end
+  end
+
+  def test_malformed_non_github_tokens_do_not_abort_other_targets
+    [false, true].each do |missing|
+      source = 'http:/// https://?x'
+      source += ' https://github.com/shakacode/shaka/blob/main/docs/gone.md' if missing
+      output, errors, status = check_links('# Guide', 'skills/shaka/guide.txt' => source)
+      assert_equal !missing, status.success?, "#{output}\n#{errors}"
+      assert_includes output, 'guide.txt -> docs/gone.md (missing file)' if missing
+    end
+  end
+end

@@ -96,11 +96,22 @@ rescue Addressable::URI::InvalidURIError
   markdown_urls(text)
 end
 
-def ruby_urls(text)
-  Ripper.lex(text).flat_map do |_, kind, literal, _|
-    kind == :on_tstring_content ? source_value_urls(literal) : []
-  end
+def static_ruby_string(content)
+  parts = content.to_a.drop(1)
+  return unless parts.all? { |part| part.first == :@tstring_content }
+
+  parts.map { |part| part[1] }.join
 end
+
+def ruby_strings(node)
+  return [] unless node.is_a?(Array)
+  return [node[1]] if node.first == :@tstring_content
+  return [static_ruby_string(node[1])].compact if node.first == :string_literal
+
+  node.flat_map { |child| ruby_strings(child) }
+end
+
+def ruby_urls(text) = ruby_strings(Ripper.sexp(text)).flat_map { |literal| source_value_urls(literal) }
 
 def yaml_urls(text)
   Psych.parse_stream(text).each.flat_map do |node|
