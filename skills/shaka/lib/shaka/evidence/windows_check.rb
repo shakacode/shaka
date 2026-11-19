@@ -63,9 +63,10 @@ module Shaka
         @waiter = Thread.new { reap.tap { after_reap&.call } }
       end
 
-      # A start that failed after spawning ends its unreaped leader through Ruby's handle.
+      # A start that failed after spawning ends its job and its unreaped leader through Ruby's handle.
       def abandon_start
         [@output, @error].each { |reader| reader&.close }
+        @job&.terminate
         return unless @pid && !@waiter
 
         Process.kill('KILL', @pid)
