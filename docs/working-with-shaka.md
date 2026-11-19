@@ -230,6 +230,66 @@ own. Shaka's instructions tell the agent to use only their techniques inside a S
 task and decline their delivery steps. To try one, ask for a separate trial that
 names the spec, repository, and stopping point.
 
+### Offer your team's skills at the right step
+
+Your team may have its own skills, such as a release checklist. Shaka can offer them
+at the step where they help, so nobody has to remember to name them. List each skill
+in a pack file such as `.agents/shaka/packs/team.yml` and merge it to the default
+branch. Shaka reads only files ending in `.yml`:
+
+```yaml
+version: 1
+pack: team
+skills:
+  release-checklist:
+    path: .agents/skills/release-checklist
+    points:
+      delivery#when-a-task-needs-several-prs:
+        mode: suggest
+        reason: Lists the release steps each PR in a split needs
+```
+
+`path` names a skill directory in your repository; Shaka declines a skill whose
+directory or `SKILL.md` is a link. Each entry under `points` names a
+skill point, a step where the agent asks Shaka which skills fit:
+
+| Skill point | When the agent reaches it |
+| --- | --- |
+| `delivery#agree-on-the-design-first` | You chose to agree on the design before implementing |
+| `delivery#when-a-task-needs-several-prs` | A larger task needs splitting |
+| `ui-verification#ui-changes` | The change is something a person sees on screen |
+| `performance-verification#verify-a-speed-affecting-change` | The change affects speed |
+| `post-implementation-validation#recommend-the-next-action` | A checkpoint rates the change high risk |
+
+The mode decides what the agent does at that step:
+
+- `use`: the agent applies the skill without asking, unless a limit below applies.
+- `suggest`: the agent names the skill and its reason, and runs it after you say yes.
+- `decline`: the agent does not use the skill at that point. To decline it at every
+  point, give the skill only a `'*'` point; any point you name beside it overrides it.
+
+Mark a skill that starts other agents with `fans_out: true` beside its `points`;
+Shaka then always names the agents it would start and waits for your yes. A skill
+marked `explicit_only: true`, or whose own file says only a person may start it, waits
+for you to start it; the agent gives you the command. A one-time setup skill marked
+`setup: true` waits for your yes. Shaka declines a skill the default branch lacks. The
+listing below shows which limit applies.
+
+Shaka reads pack files and skills only from the default branch, so a pack or skill
+added in a pull request takes effect after it merges. Pack files need
+[team settings](settings-guide.md#use-individual-or-team-settings); with individual
+settings, Shaka reads none. Shaka ships no packs of its own yet.
+
+To check what applies, ask your agent to run Shaka's `companions` command with the
+default branch's latest commit:
+
+```text
+Run shaka companions --all for this repository with --ref set to the default branch's latest commit
+```
+
+The output lists each skill with its mode and reason, why that mode applies, and whether
+the default branch has the skill.
+
 <a id="hand-over-a-spec-and-tickets"></a>
 <a id="what-each-kind-of-skill-can-do"></a>
 
