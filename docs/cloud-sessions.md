@@ -34,28 +34,28 @@ MAKE_OPTS=-j8 RUBY_CONFIGURE_OPTS=--disable-install-doc /opt/rbenv/bin/rbenv ins
 export PATH=/opt/rbenv/versions/3.4.10/bin:$PATH
 # Official install from a clone outside the project checkout, linked for Claude Code (/shaka).
 umask 022
-src="$HOME/.local/share/shaka/source"
-if [ -d "$src" ]; then
-  # A kept clone: update it. A failure still lets the session start.
-  "$src/bin/install" --update ||
-    echo "Shaka update failed; run $src/skills/shaka/scripts/shaka install --status" >&2
-else
-  mkdir -p "$HOME/.local/share/shaka"
-  git clone -q https://github.com/shakacode/shaka.git "$src"
-  "$src/bin/install" --agent claude --no-session-hook
+mkdir -p "$HOME/.local/share/shaka"
+if [ ! -d "$HOME/.local/share/shaka/source" ]; then
+  git clone -q https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
 fi
+"$HOME/.local/share/shaka/source/bin/install" --agent claude
 ```
 
-Building Ruby adds a few minutes to each new container. The script installs
-Shaka from its own clone, separate from your project, so the branch you are
-changing cannot change the Shaka that checks it. When a container keeps an
-earlier clone, the update step brings it to the latest Shaka, so it accepts
-settings your repository added since. If the update fails, the session still
-starts, and the setup log names the command that shows the installation's
-state. A new install leaves out the update reminder in new chats, because the
-script updates Shaka itself; a kept clone keeps the reminder choice it was
-installed with. The script applies to new sessions; a session that is already
-running keeps what it has.
+The script installs Shaka from its own clone, separate from your project, so
+the branch you are changing cannot change the Shaka that checks it.
+
+Building Ruby takes a few minutes, but only when Claude Code builds the
+environment's cache. Once the script finishes, Claude Code saves the container
+and starts later sessions from that copy without running the script again. It
+reruns the script when you edit it, when you change the environment's allowed
+network hosts, and when the cache expires after about a week. A script that
+runs longer than about five minutes is not cached, so every session would wait
+for it.
+
+A cached session therefore runs the Shaka its copy was saved with. The
+installer turns on Shaka's
+[update reminder](reference/scheduled-update-checks.md#get-a-reminder-when-a-claude-code-chat-starts),
+which tells you in a new chat when Shaka needs a check or an update.
 
 Shaka runs on the Ruby that installed it, but the session's own shell still
 starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, look at the
