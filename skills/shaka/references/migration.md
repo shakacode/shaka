@@ -30,17 +30,21 @@ For the old command-path mapping, migrate in this order:
 1. With the previous Shaka still installed, prepare the mapping-free YAML and fixed
    scripts. Preserve adapters at old paths. Where old and new roles conflict,
    make both run the stricter checks until the new contract is trusted.
-2. Validate the candidate with the previous installation and old trusted SHA.
-   Both this validation and the target checks below must pass before the
-   migration PR merges through normal gates.
+2. In the fresh checkout used for the target checks below, verify the retained
+   adapters and validate with the previous installation and old trusted SHA.
+   Both validations must pass before the migration PR merges through normal gates.
 3. After switching to the verified target installation, remove obsolete adapters
    in a follow-up PR. The optional paths are `validate-local` and `trigger-hosted-ci`.
 
 Before merging any shared settings migration, run the target helper's
 `seam check --root ROOT --local` in a fresh checkout of the exact PR commit.
+Check each fixed wrapper and retained adapter in that commit with
+`git ls-tree PR_SHA -- PATH`. Require mode `100755` on the file or on the
+tracked executable that a tracked symlink resolves to.
 Review moved wrappers and run the affected local checks. Run a
 `trigger-hosted-ci` wrapper only as part of an authorized CI run. Merge the PR
-after the target settings and affected local checks pass. After merge,
+after the target settings, tracked wrappers, and affected local checks pass.
+After merge,
 check the new trusted default-branch SHA using the target helper's `seam check
 --root ROOT --ref NEW_DEFAULT_SHA` before switching the active installation.
 
