@@ -10,9 +10,8 @@ module Shaka
       usage_detail = UsageDetails.new(@content['usage']).detail
       blocks = [*missing_values, details_block(usage_detail), *timings,
                 provenance, details_block(@settings.detail), *skills_used, *task_history]
-      # One block, so a template that places the heading moves the whole section.
-      ["## Shaka metrics\n\n#{UsageEstimate.markdown(usage_detail)}#{ThroughputStats.took(throughput)}\n\n" \
-       "#{details_block('summary' => 'Details', 'body' => blocks.join("\n\n"))}"]
+      ['## Shaka metrics', "#{UsageEstimate.markdown(usage_detail)}#{ThroughputStats.took(throughput)}",
+       details_block('summary' => 'Details', 'body' => blocks.join("\n\n"))]
     end
 
     def provenance_spec

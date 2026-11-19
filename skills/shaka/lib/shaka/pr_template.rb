@@ -10,11 +10,10 @@ module Shaka
     PATHS = %w[.github/pull_request_template.md .github/PULL_REQUEST_TEMPLATE.md
                pull_request_template.md PULL_REQUEST_TEMPLATE.md
                docs/pull_request_template.md docs/PULL_REQUEST_TEMPLATE.md].freeze
-    # A backtick fence's opening line holds no other backtick, so ```npm test``` is inline code, not a fence.
-    FENCE = /\A {0,3}(`{3,}(?=[^`]*\z)|~{3,})/
-    CLOSER = /\A {0,3}(`{3,}|~{3,})[ \t]*\z/
-    COMMENT_START = /\A {0,3}<!--/
-    HEADING = /\A {0,3}##[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*\z/
+    # The one line that marks where Shaka's sections go. GitHub hides it, and it is never a section to fill.
+    MARKER_LINE = '<!-- shaka -->'
+    MARKER = :shaka
+    FENCE = /\A(`{3,}(?=[^`]*\z)|~{3,})/
 
     # A location that cannot be resolved, such as a symlink loop, counts as no template there. Once
     # repaired, the template becomes a new fingerprint input, so earlier evidence still goes stale.
@@ -27,9 +26,8 @@ module Shaka
       end
     end
 
-    # The headings that lay out a description: the template orders one only where the agent reads it,
-    # beside the PR evidence guide.
-    # An unreadable template keeps the usual order; `guidance pr_evidence` tells the agent why it was skipped.
+    # The template's outline, which orders a description only where the agent reads the template, beside the
+    # PR evidence guide. An unreadable template keeps the usual order; `guidance pr_evidence` says why.
     def self.layout(root:, ref:, config:)
       return unless (guide = config&.project_guidance&.fetch('pr_evidence', nil))
 
@@ -37,7 +35,7 @@ module Shaka
       require_relative 'opening_publication'
       OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
         sha = config.sha || Configuration.resolve_commit(root: candidate_root, ref:, label: 'description ref')
-        read(root: candidate_root, sha:, guide:)&.then { headings(it) }
+        read(root: candidate_root, sha:, guide:)&.then { outline(it) }
       end
     rescue Error, SystemCallError
       nil
@@ -49,13 +47,23 @@ module Shaka
       TrustedConfigSource.new(root:).read_prompt(path, sha, 'pull request template') if path
     end
 
-    # The `##` headings a reader of the template sees, in order.
-    def self.headings(text) = HeadingReader.new.call(text)
+    # The template's section headings and marker, in order. The format is strict, so nothing is guessed: a
+    # heading is a line starting `## ` at the left edge, the marker is exactly MARKER_LINE, and fenced code
+    # blocks and HTML comments that start a line hold neither.
+    def self.outline(text) = OutlineReader.new.call(text)
 
-    # Reads block by block, as GitHub does: a code block, or an HTML comment that starts a line, hides
-    # every line until it closes. Other text cannot hide a later heading, because a heading line always
-    # starts a new block.
-    class HeadingReader
+    # What a reader of `guidance pr_evidence` needs to see: the order Shaka will publish, and any repeats.
+    def self.check(outline)
+      return [] unless outline.include?(MARKER)
+
+      names = outline.uniq.map { it == MARKER ? "Shaka's sections" : it }
+      repeats = outline.tally.select { |_, count| count > 1 }.keys
+      ["Shaka orders this template's descriptions as: #{names.join(', ')}.",
+       *repeats.map { "The template repeats #{it == MARKER ? MARKER_LINE : "`## #{it}`"}; Shaka uses the first." }]
+    end
+
+    # Reads a template line by line, keeping code-block and comment state.
+    class OutlineReader
       def initialize
         @fence = nil
         @comment = false
@@ -65,39 +73,32 @@ module Shaka
 
       private
 
-      def read(line) = hidden?(line) ? nil : heading(line)
+      def read(line)
+        return if hidden?(line)
+        return MARKER if line.strip == MARKER_LINE
 
-      # Advances the code-block and comment state; true when the line belongs to either.
+        heading = line.delete_prefix('## ').strip if line.start_with?('## ')
+        heading unless heading.to_s.empty?
+      end
+
+      # Advances the code-block and comment state; true when the line belongs to either or opens one.
       def hidden?(line)
-        if @fence then @fence = nil if closes?(line)
-        elsif @comment then @comment = open_after?(line, true)
-        elsif (marker = line[FENCE, 1]) then @fence = marker
-        elsif line.match?(COMMENT_START) then @comment = open_after?(line, false)
-        else return false
+        if @fence then @fence = nil if line.rstrip.match?(/\A#{Regexp.escape(@fence[0])}{#{@fence.size},}\z/)
+        elsif @comment then @comment = !line.include?('-->')
+        else return opens?(line)
         end
         true
       end
 
-      # A heading counts by its exact words; a note belongs on its own line below it.
-      def heading(line)
-        text = line[HEADING, 1].to_s.strip
-        text unless text.empty?
-      end
+      # Whether the line opens a code block or comment; the marker line opens neither.
+      def opens?(line)
+        return false if line.strip == MARKER_LINE
 
-      # Whether a comment is still open after the line, reading each opener and closer in order. A closer
-      # may share the opener's dashes, as GitHub reads `<!-->` as a whole, empty comment.
-      def open_after?(line, open)
-        position = 0
-        while (found = line.index(open ? '-->' : '<!--', position))
-          position = found + (open ? 3 : 2)
-          open = !open
+        if (opener = line[FENCE, 1]) then @fence = opener
+        elsif line.start_with?('<!--') then @comment = !line.index('-->', 2)
+        else return false
         end
-        open
-      end
-
-      # Only a bare run of the opening character, at least as long, closes a code block.
-      def closes?(line)
-        (closer = line[CLOSER, 1]) && closer[0] == @fence[0] && closer.size >= @fence.size
+        true
       end
     end
   end

@@ -980,7 +980,7 @@ project_guidance:
   a large table and how to roll it back. The guide adds to Shaka's own walkthrough
   rules, such as opening with the behavior that changed; it does not replace them.
 
-With `pr_evidence` set, the agent also fills your pull request template. A heading in
+With `pr_evidence` set, the agent also fills your pull request template. A marker line in
 the template can set where Shaka's own sections appear. You can point `pr_evidence` at
 the template itself. [Use your pull request template](pr-template.md) explains both.
 

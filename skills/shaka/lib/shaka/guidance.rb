@@ -81,12 +81,10 @@ module Shaka
       "#{text.chomp}\n\n---\n\nPull request template skipped: #{e.message}\n"
     end
 
-    # A Shaka heading marks where the description places Shaka's own sections, so no section is written for it.
+    # With the marker, the agent and the maintainer see the order Shaka will publish, and any repeats.
     def placement(text, template = text)
-      return text unless PrTemplate.headings(template).any? { it.casecmp?('Shaka') }
-
-      "#{text.chomp}\n\nThe template's `## Shaka` heading marks where Shaka places its own sections. " \
-        "Leave that heading out of `sections`.\n"
+      notes = PrTemplate.check(PrTemplate.outline(template))
+      notes.empty? ? text : "#{text.chomp}\n\n#{notes.join("\n")}\n"
     end
   end
 end

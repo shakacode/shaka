@@ -50,8 +50,7 @@ module Shaka
       return [] unless head && head == pull.dig('base', 'repo', 'full_name')
 
       block = Publishing.managed_region(pull['body']).to_s[BLOCK]
-      # One block, so a template that moves the list moves its note with it.
-      block ? [[block, *stale_note(block[STAMP, 1], pull.dig('head', 'sha').to_s)].join("\n\n")] : []
+      block ? [block, *stale_note(block[STAMP, 1], pull.dig('head', 'sha').to_s)] : []
     end
 
     # The note sits outside the carried block, so each publication writes it for its own head.

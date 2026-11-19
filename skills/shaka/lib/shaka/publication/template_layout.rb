@@ -1,61 +1,31 @@
 # frozen_string_literal: true
 
-require_relative '../error'
-require_relative 'intent_verification'
-
 module Shaka
-  # Orders description sections by the pull request template once the template holds a `## Shaka` heading.
-  # Each `##` heading the template names shows there, and Shaka's other sections go to the Shaka heading.
+  # Orders a description by the pull request template once the template marks a spot for Shaka.
+  # Shaka's sections stay one sequence in their usual order at that spot. The template orders the agent's own
+  # sections around them by heading, matched as data, so no rendered Markdown is read here.
   module TemplateLayout
-    MARKER = 'shaka'
-    VERIFICATION = 'verification'
+    # What PrTemplate.outline puts where the template holds the marker line.
+    MARKER = :shaka
 
     module_function
 
-    # Blocks keep their order unless the template places them, so a template without the heading changes nothing.
-    def arrange(blocks, headings)
-      keys = Array(headings).map { key(it) }.uniq
-      return blocks unless keys.include?(MARKER)
+    # `sections` pairs each supplied section with its rendered block. Without the marker, they follow Shaka's,
+    # as they always have.
+    def arrange(shaka, sections, outline)
+      entries = entries(outline)
+      return [*shaka, *sections.map(&:last)] unless entries.include?(MARKER)
 
-      refuse_marker!(blocks)
-      placed, rest = place(with_evidence(blocks), keys)
-      keys.flat_map { |name| name == MARKER ? rest : placed.fetch(name, []) }
+      named, unnamed = sections.partition { |section, _| entries.include?(key(section['heading'])) }
+      entries.flat_map { |entry| entry == MARKER ? [*shaka, *unnamed.map(&:last)] : blocks(named, entry) }
     end
 
-    # The blocks the template names, by heading, and the rest in their usual order.
-    def place(blocks, keys)
-      placed, rest = blocks.partition { keys.include?(heading(it)) }
-      [placed.group_by { heading(it) }, rest]
-    end
+    # The template's entries in order, each heading by its key, keeping the first of a repeat.
+    def entries(outline) = Array(outline).map { it == MARKER ? it : key(it) }.uniq
 
-    # The evidence fold belongs to Shaka's own Verification, the last one before it, so the two move together.
-    def with_evidence(blocks)
-      at = blocks.index { it.start_with?("<details>\n<summary>#{IntentVerification::EVIDENCE_SUMMARY}</summary>") }
-      owner = at && blocks[0...at].rindex { heading(it) == VERIFICATION }
-      return blocks unless owner
-
-      blocks.each_with_index.filter_map do |block, index|
-        next if index == at
-
-        index == owner ? "#{block}\n\n#{blocks[at]}" : block
-      end
-    end
-
-    def refuse_marker!(blocks)
-      return unless blocks.any? { heading(it) == MARKER }
-
-      raise Error, 'Publication sections cannot use a Shaka heading: in the pull request template it marks ' \
-                   'where Shaka places its own sections. Leave it out of sections.'
-    end
-
-    # The heading that opens a block, after the one-line marker comments Shaka puts above some sections, without
-    # Markdown's optional closing hashes. Nil for a block without one.
-    def heading(block)
-      line = block.each_line(chomp: true).find { !(it.start_with?('<!--') && it.end_with?('-->')) }
-      key(line.delete_prefix('## ').sub(/[ \t]+#+[ \t]*\z/, '')) if line&.start_with?('## ')
-    end
+    def blocks(named, entry) = named.select { |section, _| key(section['heading']) == entry }.map(&:last)
 
     # Headings match by their words, ignoring case and spacing.
-    def key(text) = text.gsub(/[[:space:]]+/, ' ').strip.downcase
+    def key(text) = text.to_s.gsub(/[[:space:]]+/, ' ').strip.downcase
   end
 end

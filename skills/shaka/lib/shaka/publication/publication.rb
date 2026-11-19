@@ -34,7 +34,7 @@ module Shaka
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil, # rubocop:disable Metrics/ParameterLists
                          environment: nil, host_name: nil)
       new(content, description: true, workflow_version:, pull:, settings:, timeline:, environment:, host_name:)
-        .render(%i[steps intent_verification human_comments evidence metrics wip sections],
+        .render(%i[steps intent_verification human_comments evidence metrics wip],
                 lead: %i[lead], closing: %i[credit]).tap { QuotedMarkers.refuse!(content) }
     end
 
@@ -62,7 +62,6 @@ module Shaka
 
     # A description leads with the maintainer's decision, so lead parts come before the summary.
     # Only a description names its summary, because there the decision line stands above it.
-    # The template may reorder the sections between the lead and the closing parts.
     def render(parts, title: false, lead: [], closing: [])
       blocks = [*opening, *('# Code Walkthrough' if title), *lead.flat_map { send(it) }]
       summary = PublicationText.required(@content['summary'], 'summary')
@@ -72,8 +71,12 @@ module Shaka
 
     private
 
-    # Only a description follows the pull request template; other posts pass their own settings.
-    def arranged(body) = @description ? TemplateLayout.arrange(body, @settings.template_headings) : body
+    # A description's own sections come as data with their headings, so the pull request template can order them
+    # around Shaka's without reading Markdown. Other posts keep their order.
+    def arranged(body) = @description ? TemplateLayout.arrange(body, supplied, @settings.template_headings) : body
+
+    # Each supplied section beside its rendered block; rendering validates the list first.
+    def supplied = Array(@content['sections']).zip(sections)
 
     # The spend follows the model line, before an optional publisher note; the intervals sit in Timings.
     def opening
@@ -107,7 +110,7 @@ module Shaka
       spec = @content.fetch('verification')
       body = [VerificationGates.line(@settings.verdict, @content['review']),
               IntentVerification.evidence(spec, @content['wip'].nil? ? (1..3) : (0..3)), *table, *details]
-      [details_block('summary' => IntentVerification::EVIDENCE_SUMMARY, 'body' => body.join("\n\n"))]
+      [details_block('summary' => 'Evidence and limitations', 'body' => body.join("\n\n"))]
     end
 
     # Verification carries the proof, so a table only adds facts that fit no check.

@@ -2,7 +2,7 @@
 
 Shaka's agent can fill your pull request template in every PR description it writes.
 It fills the sections you list and follows the notes you leave under each heading.
-One more heading lets you choose where Shaka's own sections appear.
+One more line lets you choose where Shaka's own sections appear.
 
 ## Turn it on
 
@@ -61,43 +61,53 @@ complete setup built on one template section.
 
 ## Choose where Shaka's sections go
 
-Without a `## Shaka` heading, your sections come after all of Shaka's, just above the
-closing credit line. Add `## Shaka` to the template to choose the spot instead. For
-example, with this template:
+Without a marker, your sections come after all of Shaka's, just above the closing
+credit line. To put some of yours first, add this line where Shaka's sections should go:
 
 ```markdown
-## Summary
+<!-- shaka -->
+```
 
-<!-- What changed and why. -->
+GitHub hides the line, so someone who opens a PR by hand never sees it. For example,
+with this template:
 
-## Shaka
-
+```markdown
 ## Rollout
 
 <!-- How to turn the change on in production. -->
+
+<!-- shaka -->
+
+## Changelog
+
+<!-- One line for users, or None. -->
 ```
 
 the description reads in this order:
 
 1. The line naming the agent, then the recommendation and review links
-2. **Summary**
-3. Shaka's other sections, such as Intent, Verification, and Shaka metrics
-4. **Rollout**
+2. **Rollout**
+3. Shaka's sections, in their usual order, starting with **Summary**
+4. **Changelog**
 5. The Shaka credit line
 
-The order follows these rules:
+Shaka reads the template in a strict format, so nothing depends on guessing:
 
-- Each `##` heading in the template puts its section at that spot. The section can be
-  yours or Shaka's. For example, `## Verification` moves verification, with its evidence,
-  to that spot.
-- When the agent writes a section your template does not name, it joins Shaka's sections.
-- Shaka reads only `##` headings and matches them by their exact words, so keep notes
-  on their own line. It skips headings inside code blocks and inside HTML comments
-  that start a line.
+- The marker is its own line, exactly `<!-- shaka -->`.
+- A section heading is a line that starts with `## ` at the left edge. Shaka skips
+  lines inside code blocks and inside HTML comments that start a line.
+- Shaka's sections stay together in their usual order. A heading Shaka already
+  writes, such as `## Summary`, does not move it.
+- When the agent writes a section your template does not name, it comes right after
+  Shaka's sections.
 - The opening lines never move. The first line names the agent that wrote the
   description. The recommendation, any decisions waiting on you, and the review links
   follow, so the decision comes first. The credit line stays last.
 
-The heading only marks a spot; the description has no section called Shaka. People who
-open a PR on GitHub without Shaka see the heading in the template. A comment under it,
-such as `<!-- Shaka fills this in. -->`, tells them to leave it.
+Each time the agent reads the template, Shaka shows it the order it will use, such as
+`Rollout, Shaka's sections, Changelog`, and notes a repeated heading or marker.
+To see it yourself, ask your agent:
+
+```text
+/shaka Show how Shaka reads our pull request template
+```
