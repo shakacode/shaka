@@ -5,6 +5,9 @@ module Shaka
     # A release stays at its first resolved commit; changing versions requires another checkout.
     module ReleaseCheckout
       VERSION = /\A[0-9]+\.[0-9]+\.[0-9]+(?:[.-][A-Za-z0-9]+)*\z/
+      # Git for Windows converts line endings on checkout by default, which leaves files that match
+      # no revision and an sh launcher with carriage returns. The checkout keeps the stored bytes.
+      CLONE_CONFIG = %w[--config core.autocrlf=false].freeze
 
       def self.reference(record)
         record['release'] ? "refs/tags/v#{record['release']}" : record.fetch('branch')
@@ -48,7 +51,7 @@ module Shaka
       end
 
       def clone_release
-        git('clone', '--quiet', '--no-checkout', '--branch', "v#{@release}", '--', @repository, @root)
+        git('clone', *CLONE_CONFIG, '--quiet', '--no-checkout', '--branch', "v#{@release}", '--', @repository, @root)
         # A branch named vVERSION must never stand in for the release tag.
         git('checkout', '--quiet', '--detach', release_ref)
       end

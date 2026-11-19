@@ -2,6 +2,7 @@
 
 require 'open3'
 require_relative '../error'
+require_relative '../executable_file'
 require_relative '../local_review/process'
 require_relative 'candidate_tree'
 
@@ -17,6 +18,10 @@ module Shaka
       # Seconds between captures. One capture took about 2 seconds on this repository under heavy
       # load, so an edit stops the check well within a minute.
       DEFAULT_INTERVAL = 15
+      # Seconds a stopped Windows check gets to exit.
+      STOP_SECONDS = 10
+      # By full path, so a taskkill.exe in the candidate checkout cannot answer.
+      TASKKILL = File.join(ENV.fetch('SystemRoot', 'C:/Windows'), 'System32', 'taskkill.exe')
       Outcome = Data.define(:status, :changed_tree) do
         def stopped? = !changed_tree.nil?
 
@@ -29,28 +34,35 @@ module Shaka
       end
       self.interval = DEFAULT_INTERVAL
 
-      def initialize(command, root:, tree:, interval: self.class.interval)
+      def initialize(command, root:, tree:, interval: self.class.interval, windows: ExecutableFile.windows?)
         @command = command
         @root = root
         @tree = tree
         @interval = interval
+        @windows = windows
       end
 
       # Writes the check's output and then its errors to standard error once it ends.
       def run
-        Open3.popen3(*@command, chdir: @root, pgroup: true) do |input, output, error, waiter|
+        Open3.popen3(*@command, chdir: @root, **group) do |input, output, error, waiter|
           input.close
-          readers = [output, error].map { |stream| Thread.new { stream.read } }
-          changed = watch(waiter, readers)
-          $stderr.write(*(changed ? drain(readers) : readers.map(&:value)))
-          Outcome.new(status: waiter.value, changed_tree: changed)
+          @job = adopt(waiter.pid)
+          outcome(waiter, [output, error].map { |stream| Thread.new { stream.read } }).tap { @finished = true }
         ensure
-          # An interrupted helper would otherwise leave the check running in its separate group.
+          # An interrupted helper would otherwise leave the check running in its separate group, or on
+          # Windows leave a descendant running in its job after the leader exits.
           stop(waiter) if waiter&.alive?
+          @finished ? @job&.close : @job&.terminate
         end
       end
 
       private
+
+      def outcome(waiter, readers)
+        changed = watch(waiter, readers)
+        $stderr.write(*(changed ? drain(readers) : readers.map(&:value)))
+        Outcome.new(status: waiter.value, changed_tree: changed)
+      end
 
       # A descendant can hold the output open after the leader exits, so the watch lasts until
       # the output closes too.
@@ -76,7 +88,7 @@ module Shaka
       # leaves the result to report the stop anyway.
       def stop(waiter, tree = nil)
         warn "shaka: #{MESSAGE}; stopping the check" if tree
-        LocalReviewProcess.terminate(waiter)
+        @windows ? end_tree(waiter) : LocalReviewProcess.terminate(waiter)
         tree
       rescue Errno::EPERM
         tree
@@ -85,6 +97,35 @@ module Shaka
       # A descendant that left the group can keep a pipe open after the stop, so a stopped
       # check's output is whatever arrived shortly after it.
       def drain(readers) = readers.map { |reader| LocalReviewProcess.thread_output(reader) }
+
+      # Windows Ruby refuses `pgroup`. There a job object holds the check and the descendants it
+      # starts, and still names them after the leader exits, which taskkill /T cannot.
+      def group = @windows ? {} : { pgroup: true }
+
+      # Without fiddle, which a later Ruby may not load under --disable-gems, taskkill alone stops it.
+      def adopt(pid)
+        return unless @windows && ExecutableFile.windows?
+
+        require_relative '../doctor/windows_job'
+        Doctor::WindowsJob.adopt(pid)
+      rescue LoadError
+        nil
+      end
+
+      # A job that holds the check ends it alone. Without one, taskkill /T ends the tree while the
+      # leader lives, since once it exits Windows may give its ID to an unrelated process. A leader
+      # that outlasts both is terminated directly, so the wait for its status always ends.
+      def end_tree(waiter)
+        if @job
+          @job.terminate
+        elsif waiter.alive?
+          system(TASKKILL, '/F', '/T', '/PID', waiter.pid.to_s, out: File::NULL, err: File::NULL)
+        end
+        Process.kill('KILL', waiter.pid) unless waiter.join(STOP_SECONDS)
+        waiter.join
+      rescue Errno::ESRCH
+        waiter.join
+      end
     end
   end
 end
