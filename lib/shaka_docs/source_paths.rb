@@ -32,20 +32,20 @@ module ShakaDocs
         source = source.sub!(%r{\A(?:blob|tree|raw|edit|blame)/}, '')
         return unless source
       end
-      source.sub(%r{\Arefs/(?:heads|tags)/}, '').split('/', 2)[1]
+      ref, path = source.sub(%r{\Arefs/(?:heads|tags)/}, '').split('/', 2)
+      legacy_reference_path(path, ref)
     end
 
     def cdn_repository_path(uri)
       return unless uri.host == 'cdn.jsdelivr.net'
 
-      URI::DEFAULT_PARSER.unescape(uri.path.to_s)[
-        %r{\A/gh/(?i:shakacode/shaka)(?:@[^/]+)?/(.*)\z}, 1
-      ]
+      match = URI::DEFAULT_PARSER.unescape(uri.path.to_s).match(%r{\A/gh/(?i:shakacode/shaka)(?:@([^/]+))?/(.*)\z})
+      legacy_reference_path(match[2], match[1]) if match
     end
 
     def local_path(repository, source, target)
       uri = url(target)
-      return legacy_reference_path(repository_path(uri)) if uri.scheme || uri.host
+      return repository_path(uri) if uri.scheme || uri.host
 
       target = URI::DEFAULT_PARSER.unescape(uri.path)
       return "docs#{target}" if target.start_with?('/')
@@ -53,7 +53,9 @@ module ShakaDocs
       File.absolute_path(target, File.dirname(source)).delete_prefix("#{repository}/")
     end
 
-    def legacy_reference_path(path)
+    def legacy_reference_path(path, ref)
+      return path if ref&.match?(/\A[0-9a-f]{40}\z/i)
+
       path&.sub(%r{\A.+/(skills/shaka/references(?:/.*)?\z)}, '\\1')
     end
   end

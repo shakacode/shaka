@@ -39,11 +39,16 @@ with the site's generated fallback.
 Category-index names (`index`, `README`, or the directory's own name) share their
 directory route. Give each source a distinct route, including against the generated
 overview and changelog; rename a conflicting guide instead of adding a slug override.
+Category landings must use `type: doc` and a checked Markdown source. Generated-index
+entries are unsupported, so sidebar metadata cannot introduce another page route.
 
 Public guides and sidebar links must lead to human guidance. The check rejects
 links into Shaka's skill Markdown, its YAML workflow instructions and project agent instructions.
 Canonical `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` and `SKILL.md` names, including dot-suffixed
 variants such as `AGENTS.override.md`, are reserved for agents regardless of case.
+Within `docs/`, bare lowercase `agents.md`, `claude.md`, `gemini.md` and `skill.md`
+may serve human tool guides. Canonical uppercase names and dot-suffixed variants
+remain agent destinations.
 Agent Markdown and rules in host configuration directories, such as `.claude/`
 and `.github/instructions/`, are agent destinations too. The canonical paths and
 legacy control filenames are listed in `lib/shaka_docs/audiences.rb`.
@@ -55,6 +60,8 @@ Source citations use a commit, tag, or branch without
 slashes so the check can distinguish the ref from the repository path. Slash-containing
 refs require author and reviewer judgment. The legacy references subtree remains
 conservatively blocked inside first-party source paths, including slash-containing refs.
+Full 40-character commit refs use their parsed repository paths, so an immutable
+human-guide citation can contain that directory segment without being reclassified.
 GitHub, raw GitHub and jsDelivr's `/gh/`
 source layouts are recognized; other external source layouts require manual review.
 Leading-slash links address public site routes.

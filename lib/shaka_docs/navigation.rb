@@ -31,7 +31,9 @@ module ShakaDocs
     def landing_items(item)
       return [] if item.nil?
       raise ArgumentError, 'Expected a category link object' unless item.is_a?(Hash)
-      return [] if item['type'] == 'generated-index'
+      if item['type'] == 'generated-index'
+        raise ArgumentError, 'Category landings must name a checked doc; use type: doc with its id.'
+      end
       raise ArgumentError, "Unsupported category link: #{item.inspect}" unless item['type'] == 'doc'
 
       [target(item, 'id', :doc)]

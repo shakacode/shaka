@@ -12,6 +12,7 @@ module ShakaDocs
     # Root documents have distinct audiences: project entry, RubyGems, contributors, releases, and agents.
     ROOT_DOCUMENTS = %w[README.md README.gem.md CONTRIBUTING.md CHANGELOG.md AGENTS.md CLAUDE.md].freeze
     AGENT_ENTRY_FILE = /\A(?:(?:AGENTS|CLAUDE|GEMINI|SKILL)(?:\.[^.]+)*|copilot-instructions)\.mdx?\z/i
+    HUMAN_TOOL_GUIDE = %r{\Adocs/(?:.*/)?(?:agents|claude|gemini|skill)\.mdx?\z}
     AGENT_DIRECTORIES = %w[skills .agents .claude .codex .cursor .gemini .opencode .pi
                            .github/agents .github/instructions .github/skills].freeze
     AGENT_CONTROL_FILES = %w[.cursorrules .windsurfrules .clinerules].freeze
@@ -53,6 +54,8 @@ module ShakaDocs
     end
 
     def agent_entry?(path)
+      return false if HUMAN_TOOL_GUIDE.match?(path)
+
       name = File.basename(path)
       AGENT_ENTRY_FILE.match?(name) || AGENT_CONTROL_FILES.include?(name.downcase)
     end

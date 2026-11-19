@@ -168,7 +168,7 @@ begin
   sidebar_targets = all_items.filter_map { |kind, value| value if kind == :url }
   sidebar_agents = ShakaDocs::Audiences.agent_targets(repository, File.join(root, 'sidebars.json'), sidebar_targets)
   agent_links.concat(sidebar_agents.map { |link| "sidebars.json -> #{link}" })
-  agent_links.concat(files.select { |file| ShakaDocs::Audiences.agent_entry?(file) })
+  agent_links.concat(files.select { |file| ShakaDocs::Audiences.agent_entry?("#{prefix}#{file}") })
   unclassified = ShakaDocs::Audiences.unclassified_documents(repository)
   puts "Markdown outside established documentation locations: #{unclassified.join(', ')}" unless unclassified.empty?
   puts "Duplicate publication IDs: #{duplicates.join(', ')}" unless duplicates.empty?

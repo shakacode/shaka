@@ -1332,6 +1332,23 @@ end
 class DocsSlashRefTest < Minitest::Test
   include DocsNavigationFixture
 
+  def test_immutable_human_paths_are_not_rewritten_as_agent_paths
+    prefixes = ["https://github.com/shakacode/shaka/blob/#{'a' * 40}",
+                "https://raw.githubusercontent.com/shakacode/shaka/#{'a' * 40}",
+                "https://cdn.jsdelivr.net/gh/shakacode/shaka@#{'a' * 40}"]
+    prefixes.each { |prefix| assert_immutable_source_links(prefix) }
+  end
+
+  def assert_immutable_source_links(prefix)
+    human = 'examples/skills/shaka/references/guide'
+    sidebar = { 'docsSidebar' => ['expected-experience', human] }
+    files = { "docs/#{human}.md" => '# Human source' }
+    output, errors, status = check(sidebar, "[Human](#{prefix}/docs/#{human}.md)", files)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+    output, _, status = check(sidebar, "[Agent](#{prefix}/skills/shaka/references/review.md)", files)
+    refute_predicate status, :success?, output
+  end
+
   def test_legacy_references_boundary_survives_slash_refs
     prefixes = %w[https://github.com/shakacode/shaka/blob/jg-codex/1-documentation-audiences
                   https://raw.githubusercontent.com/shakacode/shaka/jg-codex/1-documentation-audiences
@@ -1346,6 +1363,36 @@ class DocsSlashRefTest < Minitest::Test
     output, errors, status = check({ 'docsSidebar' => ['expected-experience'] },
                                    "[Guide](#{prefix}/docs/settings.md)")
     assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+end
+
+class DocsLandingPolicyTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_generated_category_landings_require_a_checked_source
+    [{ 'type' => 'generated-index' }, { 'type' => 'generated-index', 'slug' => '/expected-experience' }].each do |link|
+      sidebar = { 'docsSidebar' => [{ 'type' => 'category', 'label' => 'Start',
+                                      'items' => ['expected-experience'], 'link' => link }] }
+      _, errors, status = check(sidebar)
+      refute_predicate status, :success?
+      assert_includes errors, 'Category landings must name a checked doc'
+    end
+  end
+
+  def test_explicit_category_landing_keeps_its_checked_source
+    sidebar = { 'docsSidebar' => [{ 'type' => 'category', 'label' => 'Start', 'items' => ['expected-experience'],
+                                    'link' => { 'type' => 'doc', 'id' => 'expected-experience' } }] }
+    output, errors, status = check(sidebar)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
+  def test_lowercase_tool_guides_keep_human_destinations
+    %w[agents claude gemini skill].each do |name|
+      files = { "docs/#{name}.md" => '# Human tool guide' }
+      sidebar = { 'docsSidebar' => ['expected-experience', name] }
+      output, errors, status = check(sidebar, "[Human](#{name}.md)", files)
+      assert_predicate status, :success?, "#{output}\n#{errors}"
+    end
   end
 end
 
