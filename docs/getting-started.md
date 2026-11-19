@@ -14,6 +14,7 @@ Ask your coding agent:
 
 ```text
 Install Shaka from https://github.com/shakacode/shaka
+Use the latest published stable release if available
 ```
 
 Prefer to install it manually? Follow [manual installation](manual-installation.md).
@@ -49,12 +50,8 @@ the agent uses them. Otherwise, choose:
 - **Just for me:** keep Shaka settings local, without adding them to the shared repository.
 - **For my team:** open a PR with shared settings for teammates to review.
 
-If you're trying Shaka for the first time, start with **Just for me**. You can adopt
-shared settings later. Ask your agent:
-
-```text
-/shaka Set up Shaka just for me in this project
-```
+For a first trial, include **Set up Shaka just for me** in your task below. You
+can adopt shared settings later.
 
 <a id="3-start-a-task"></a>
 
@@ -64,10 +61,12 @@ Choose a small change you can check yourself. For example:
 
 ```text
 /shaka Fix search when the query contains an apostrophe
+Set up Shaka just for me if there are no shared settings. Ask me before merging. Go
 ```
 
 Replace the example with your own task or an issue link. The agent makes the change,
-runs checks, and arranges review. It asks when it needs your input.
+runs checks, and arranges review. `Go` starts with your current model and effort.
+You still decide whether to merge the PR.
 
 Open the resulting PR. Read what changed, what was checked, and what remains
 unverified. Try the changed feature when relevant.

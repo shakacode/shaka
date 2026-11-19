@@ -41,10 +41,9 @@ A newly renamed key can also make an older installation reject trusted policy.
 Coordinate the contract change with the installation upgrade, including tasks
 already running when the change merges.
 
-`version` remains `1` for pilot changes that reject old keys loudly. It becomes
-`2` when an otherwise valid key changes meaning or default, or when repositories
-outside the pilot depend on the contract. Unknown keys never silently take a
-new meaning.
+Keep `version: 1` for configurations supported by Shaka 1.x. Apply the
+[published compatibility policy](https://github.com/shakacode/shaka/blob/main/docs/migration.md#what-stays-compatible-in-1x)
+when planning a change to the contract.
 
 Finish by checking the new installation against the merged default-branch commit.
 Report the installed revision, configuration changes, and any active tasks still
