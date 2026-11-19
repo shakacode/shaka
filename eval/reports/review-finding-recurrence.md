@@ -55,8 +55,9 @@ model runs. No person has rechecked the classification.*
   the `enforcement.yml` loader in place, reviewers raised 4 risks that an edit might
   break an anchor or quote the checks read. The agent dismissed all 4. The deciding
   evidence was a search or heading slug showing nothing depended on the edit; 3 also cite
-  the check as context. Counted here are only risks inside what the checks read;
-  #844 F6 also cites the check, but its risk reaches pages outside `docs/` and `skills/`. 14 more dismissed risks warned that an unnamed caller might break. The window holds
+  the check as context. The 4 are one anchor risk (#825) and three quote risks (#801, #888,
+  #939). Both #844 anchor risks are left out because they reach pages outside `docs/`
+  and `skills/`. 14 more dismissed risks warned that an unnamed caller might break. The window holds
   only two days before the anchor check and none before the loader, so it cannot show whether the checks cut defects.
 - **Checks cost review too.** The seam upgrade reference scanner was a deterministic
   check of 1,832 lines. The 7 PRs that built and extended it drew 38 findings before

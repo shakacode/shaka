@@ -25,7 +25,8 @@ lists the method, every kind, and the
    isolating runner catches none of the 7 defects if it looks only for a literal `git` command, and 3 in library code, or 5 with `eval/bin`, if it also recognizes shell and variable calls, and recommends deferring it.
 4. **Reviewers still raise risks in areas a check covers.** Where an anchor check and a
    quote loader existed, reviewers raised 4 risks about what those checks read. The
-   agent dismissed all 4 after a search showed nothing depended on the edit.
+   agent dismissed all 4 after a search, heading slug, or loader run showed nothing
+   depended on the edit.
 5. **Checks cost review too.** One deterministic scanner drew 38 review findings over the
    7 PRs that built and extended it, before it was removed.
 6. **Recommendation: evaluate first.** Trial a report-only coverage check. For the prose
