@@ -42,10 +42,9 @@ model runs. No person has rechecked the classification.*
   that describe behavior the code lacks, was raised on 53 PRs and fixed on 47. A name-checking test would catch
   about 1 in 10 of them. The rest need someone to read both.
 - **A few kinds have a mechanical check worth trying:**
-  - Git subprocess environment: 5 PRs, 13 findings, 7 defects. A test that every Git
-    call uses one isolating runner would catch the 4 to 6 findings where isolation was
-    missing, if it also covers the seed tooling under `eval/`. The rest concern what the
-    isolation does.
+  - Git subprocess environment: 5 PRs, 13 findings, 7 defects. A follow-up mapping,
+    [#1222](https://github.com/shakacode/shaka/pull/1222), found that one isolating runner
+    would catch 3 of the 7 defects in library code, or 5 if the test also covers `eval/bin`, and recommends deferring it.
   - Defaults and prompts kept in Ruby: during the window, AGENTS.md said no test
     enforced this rule. The 5 fixed findings split into 3 settings defaults kept as Ruby
     fallbacks and 2 prompt texts. After the study, [#1224](https://github.com/shakacode/shaka/pull/1224)
@@ -148,7 +147,7 @@ check would flag mechanically. Cost covers writing the check and keeping it corr
 | `enforcement.yml` out of step with the workflow | 8 / 3 | 10 | 5 / 5 | 3 | Loader already checks quotes; add that entry names cited in docs exist | 1 | Low | Defer |
 | Seam upgrade reference scanner misses or misfires | 7 / 7 | 38 | 33 / 5 | 23 | None: the scanner was itself the check, removed in #997 | n/a | Was 1,832 lines | Evidence of the review cost of building a check |
 | Docs link to a missing anchor | 6 / 3 | 7 | 3 / 4 | 1 | Exists: `bin/check-docs-navigation` since #616 | 2 of the 3 fixed were outside its reach; #1102 is unverified | Already paid | No new check |
-| Git subprocess picks up the caller's Git environment or config | 5 / 5 | 13 | 9 / 4 | 7 | Boundary test: every Git spawn in `skills/shaka/lib` and the seed tooling under `eval/` uses one runner that clears `GIT_*`, global config, filters and hooks | 4 to 6 of 13, where isolation was missing; #1131's 4 findings are in `eval/` seed tooling, so a `skills/shaka/lib`-only test reaches about 3; #710 dismissed 2 under the trust model, since filters came from the maintainer's own config | Medium: at `6a6f876`, 35 files under `skills/shaka/lib` had a quoted `git` string and 14 mentioned a `GIT_*` name; spawn sites were not counted | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) mapped the findings |
+| Git subprocess picks up the caller's Git environment or config | 5 / 5 | 13 | 9 / 4 | 7 | Boundary test: every Git spawn in `skills/shaka/lib` and the seed tooling under `eval/` uses one runner that clears `GIT_*`, global config, filters and hooks | Per #1222: 3 of the 7 defects in library code, or 5 if the test also covers `eval/bin`; #710 dismissed 2 under the trust model, since filters came from the maintainer's own config | Medium: at `6a6f876`, 35 files under `skills/shaka/lib` had a quoted `git` string and 14 mentioned a `GIT_*` name; spawn sites were not counted | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) mapped the findings |
 | GitHub list read stops at the first page | 4 / 3 | 4 | 3 / 1 | 3 | Lint list calls to `gh api` for `--paginate` or a limit check | Most | Low to medium; single-page reads need an allowlist | Defer |
 | Changelog rule broken | 4 / 4 | 4 | 4 / 0 | 4 | CI step: a non-release PR that changes `CHANGELOG.md` fails | 1 of 4. The rule changed during the window: #1060 and #1062 were asked to add an entry; #1102 edited `CHANGELOG.md` against the later release-only rule; #1089 concerned entry length in the template | Low | Defer: one finding under the current rule |
 | Output shows credentials or local paths | 3 / 3 | 4 | 4 / 0 | 0 | Test that printed URLs and paths pass through the redactor | Most | Low to medium | Defer |
@@ -236,8 +235,8 @@ below the threshold.
 - **Some repeats.** Merging needs the same PR, ID, class, and title. A finding
   renumbered in a later ledger of the same PR counts twice; review found at least 6
   such repeats. PR counts are unaffected.
-- **Recall.** The 150-finding check found 20% of unclassified findings in a counted
-  kind. Counts can be too low from misses or too high from repeats and loose members.
+- **Recall.** 30 of 150 first-pass unmatched findings fit a kind defined before the
+  check; that rate does not describe the final unclassified pool. Counts can be too low from misses or too high from repeats and loose members.
 - **Dismissals are the agent's own judgment.** No dismissed finding was rerun or
   rechecked, unlike the [review signal study](review-signal.md). The prompt change for
   unnamed callers could hide a real risk; trial it before adopting it.
@@ -255,8 +254,10 @@ below the threshold.
 - Download the repository's issue comments updated in the window. Keep main comments
   whose marker starts with `shaka:reply:local-review-loop-` and that contain
   `### Finding details`.
-- Parse each line of the form ``- `F<n>` <class>: <title> — <disposition> · Reported
-  by: …``. Merge the same PR, ID, class, and title, keeping the newest comment.
+- Parse each line that starts ``- `F<n>` <class>: <title> — ``. Read the disposition
+  from the next words: `fixed in` a commit, `Dismissed` followed by a reason, `documented`,
+  `Accepted`, or `Needs your decision`. A reason, a returned-after-fix marker, and
+  `· Reported by:` with reviewers may follow. Merge the same PR, ID, class, and title, keeping the newest comment.
 - Keep defects and risks with disposition fixed or dismissed.
 - The JSON file is the record of this study. It gives the kind of every counted finding
   and, for dismissed ones, the agent's reason cut to 400 characters.

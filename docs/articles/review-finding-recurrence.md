@@ -22,7 +22,7 @@ lists the method, every kind, and the
    caller's Git setup produced 13 findings on 5 PRs, 7 of them defects, though 2 of those
    defects concerned quoting and file modes rather than missing isolation. A follow-up mapping,
    [#1222](https://github.com/shakacode/shaka/pull/1222), found that a test requiring one
-   isolating runner catches at most 3 of the 7 defects and recommends deferring it.
+   isolating runner catches 3 of the 7 defects in library code, or 5 if the test also covers `eval/bin`, and recommends deferring it.
 4. **Reviewers still raise risks in areas a check covers.** Where an anchor check and a
    quote loader existed, reviewers raised 4 risks about what those checks read. The
    agent dismissed all 4 after a search showed nothing depended on the edit.
@@ -61,7 +61,7 @@ enforced by nothing but the agent.
 | Symlinks, case-insensitive disks, or Windows | 14 / 13 | 18 | Windows and case-insensitive CI; CI minutes | Most fixed ones | Evaluate first |
 | An unnamed caller might break | 13 / 0 | 14 | Review prompt change, not a check; low | None; all 14 were dismissed | Evaluate a review prompt change |
 | A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | Heredoc and fallback tests; low | The 5 fixed ones | A heredoc-prose test shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); not checked against #837 and #901 |
-| Git subprocess inherits the caller's Git environment | 5 / 5 | 13 | One isolating Git runner; medium | At most 3 of 7 defects, per #1222 | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) |
+| Git subprocess inherits the caller's Git environment | 5 / 5 | 13 | One isolating Git runner; medium | 3 of 7 defects in library code, 5 with `eval/bin`, per #1222 | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) |
 | Changelog rule broken; the rule changed mid-month | 4 / 4 | 4 | CI refusing `CHANGELOG.md` edits; low | 1 of 4 | Defer |
 
 "With a fix" counts PRs where the agent fixed at least one finding of the kind. The
@@ -139,7 +139,7 @@ from prose to checks.
 
 | Option | Evidence | Verdict |
 | --- | --- | --- |
-| Boundary test: every Git subprocess uses one runner that clears `GIT_*`, global config, filters, and hooks | 13 findings, 7 defects, 5 PRs; the test would catch the 4 to 6 where isolation was missing, if it covers `eval/` seed tooling too. 35 library files had a quoted `git` string; spawn sites are uncounted | Deferred: [#1222](https://github.com/shakacode/shaka/pull/1222) found it catches at most 3 of 7 defects, demands isolation the maintainer rejected, and touches 40 files |
+| Boundary test: every Git subprocess uses one runner that clears `GIT_*`, global config, filters, and hooks | 13 findings, 7 defects, 5 PRs; #1222 found it would catch 3 of the 7 defects in library code, or 5 if the test also covers `eval/bin`. 35 library files had a quoted `git` string; spawn sites are uncounted | Deferred: [#1222](https://github.com/shakacode/shaka/pull/1222) found it catches 3 of 7 defects in library code (5 with `eval/bin`), demands isolation the maintainer rejected, and touches 40 files |
 | Tests refusing a Ruby fallback for a `defaults.yml` key, and long English string literals in `skills/shaka/lib` | 5 fixed findings: 3 settings fallbacks and 2 prompt texts. The agent dismissed the other 5 and kept them in Ruby | Heredoc part shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); fallback part not built |
 | CI step refusing `CHANGELOG.md` edits on non-release PRs | The rule changed mid-month; 1 finding broke its current form | Defer |
 | Report-only changed-line coverage | Up to 26 of 51 test findings name an untested path; coverage misses paths unit tests already run | Evaluate on the next 10 PRs |
