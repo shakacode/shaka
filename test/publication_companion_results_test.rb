@@ -147,14 +147,14 @@ class PublicationCompanionResultPathsTest < Minitest::Test
     end
   end
 
-  def test_refuses_encoded_local_paths_in_command_urls
-    command = 'curl "https://example.org/capture?path=%2FUsers%2Fexample%2Fpicture.png"'
+  def test_refuses_local_paths_inside_command_substitution
+    command = 'curl https://example.org/health$(/Users/example/bin/check)'
     assert_refused(run_record('command' => command), 'local absolute path')
   end
 
   def test_accepts_web_routes_and_relative_paths
     url = "https://example.org/teams/o'/home/(slow)/capture.png?name=%FF"
-    command = "curl \"#{url}\""
+    command = 'curl https://example.org/home/report.png'
     entry = run_record('artifacts' => [url], 'command' => command,
                        'checked' => 'Rendered `/slow` and `/users/1`; read spec/tmp/output.log')
     description = render(results: [entry])

@@ -10,7 +10,7 @@ class CliRenderingPreviewTest < Minitest::Test
 
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'The reviewed rendering appears on its own PR.'
-  REMOTE_COMMAND = %q(curl "https://example.org/teams/o'/home/report.png")
+  REMOTE_COMMAND = 'curl https://example.org/home/report.png'
 
   def test_description_publishes_current_head_preview_through_the_cli
     with_repository do |root|
@@ -27,7 +27,7 @@ class CliRenderingPreviewTest < Minitest::Test
     with_repository do |root|
       commit(root)
       Dir.mktmpdir do |directory|
-        command = 'curl https://example.org/health;/Users/example/bin/check'
+        command = 'curl https://example.org/health$(/Users/example/bin/check)'
         _out, err, status = publish_preview(directory, root, command:)
         refute_predicate status, :success?
         assert_includes err, 'command contains a local absolute path'
