@@ -1,0 +1,95 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require_relative '../lib/shaka/evaluation/review_replay'
+
+def parse_options
+  options = { source: File.realpath('../..', __dir__) }
+  parser = OptionParser.new do |flags|
+    flags.banner = 'Usage: eval/bin/review-replay --helper PATH --reviewer ID --criteria SHA --state DIR [options]'
+    register_arguments(flags, options)
+    flags.on('--preview') { options[:preview] = true }
+  end
+  parser.parse!
+  raise ArgumentError, parser.to_s unless ARGV.empty?
+
+  options
+end
+
+def register_arguments(flags, options)
+  arguments = %w[helper:PATH reviewer:ID criteria:SHA candidate-criteria:SHA baseline-model:MODEL candidate-model:MODEL
+                 effort:LEVEL state:DIR pr:NUMBER cap:USD case:ID]
+  arguments.each do |argument|
+    name, value_name = argument.split(':')
+    flags.on("--#{name} #{value_name}") { |value| options[name.tr('-', '_').to_sym] = value }
+  end
+end
+
+def validate_options(options)
+  validate_paths(options)
+  options[:baseline] = { criteria: options[:criteria], model: options[:baseline_model] }
+  options[:candidate] = { criteria: options.fetch(:candidate_criteria, options[:criteria]),
+                          model: options[:candidate_model] }
+  validate_arms(options.values_at(:baseline, :candidate))
+  validate_budget(options) unless options[:preview]
+end
+
+def validate_paths(options)
+  state, helper = options.values_at(:state, :helper)
+  raise ArgumentError, 'Supply --state, --helper, and --reviewer' unless state && helper && options[:reviewer]
+
+  directory = File.realpath(state)
+  raise ArgumentError, 'Use a private state directory outside Git checkouts' unless private_directory?(directory)
+
+  options[:directory] = directory
+  options[:helper] = File.realpath(helper)
+  raise ArgumentError, 'Use the trusted installed Shaka helper' unless installed_helper?(options)
+end
+
+def installed_helper?(options)
+  helper = options.fetch(:helper)
+  File.executable?(helper) && !helper.start_with?("#{options.fetch(:source)}/")
+end
+
+def validate_budget(options)
+  options[:scope] = options[:pr]
+  unless options[:scope]&.match?(/\A[1-9]\d*\z/) && options[:cap] &&
+         Shaka::Evaluation::BudgetLimits.amount(options[:cap]).positive?
+    raise ArgumentError, 'Supply the reviewer-change PR number and a positive --cap'
+  end
+
+  options[:limits] = { 'monthly' => 200, 'nightly' => 5, 'pr' => 15 }
+end
+
+def validate_arms(arms)
+  baseline, candidate = arms
+  axes = %i[criteria model].count { |key| baseline[key] != candidate[key] }
+  return if axes == 1 && arms.all? { |arm| Shaka::Evaluation::ReviewReplayFixture::SHA.match?(arm[:criteria]) }
+
+  raise ArgumentError, 'Supply full criteria SHAs and change one axis (model or criteria)'
+end
+
+def private_directory?(directory)
+  File.directory?(directory) && File.stat(directory).mode.nobits?(0o077) &&
+    !File.exist?(File.join(directory, '.git')) &&
+    !system('git', '-C', directory, 'rev-parse', '--git-dir', out: File::NULL, err: File::NULL)
+end
+
+def rows(case_id)
+  rows = File.foreach(File.join(__dir__, '../review-replay/v1.jsonl')).map { |line| JSON.parse(line) }
+  rows.select! { |row| row['id'] == case_id } if case_id
+  raise ArgumentError, 'Unknown replay case' if rows.empty?
+
+  rows
+end
+
+begin
+  options = parse_options
+  validate_options(options)
+  Shaka::Evaluation::ReviewReplay.new(options).run(rows(options[:case]))
+rescue ArgumentError, IOError, SystemCallError, JSON::ParserError, Shaka::Evaluation::Budget::Stopped,
+       Shaka::Evaluation::BudgetError, OptionParser::ParseError => e
+  warn "Replay incomplete: #{e.message}"
+  exit 1
+end

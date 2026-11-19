@@ -10,11 +10,11 @@ module Shaka
 
       module_function
 
-      def normalize(original, neutral, host, expected:)
+      def normalize(original, neutral, host, expected:, same_aggregate: false)
         columns = original.fetch('columns')
         models = columns.map { |column| model(column, host) }
         priced = eligible?(original, host, expected) && eligible?(neutral, host, expected) &&
-                 original.dig('record', 'responses') == neutral.dig('record', 'responses')
+                 (same_aggregate || original.dig('record', 'responses') == neutral.dig('record', 'responses'))
         billed = priced ? dollars(columns) : UNKNOWN
         cache_neutral = billed == UNKNOWN ? UNKNOWN : dollars(neutral.fetch('columns'), conservative: true)
         { 'models' => models, 'cache_neutral_dollars' => cache_neutral, 'billed_dollars' => billed }
