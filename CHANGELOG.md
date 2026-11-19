@@ -23,7 +23,9 @@ Shaka handles merging. Repository checks and approvals still apply.
   and `shaka-install --agent codex`. The installer links the skill to the matching
   GitHub release. Existing installations keep their registered branch or release.
   See [manual installation](https://shaka.shakacode.com/docs/manual-installation)
-  for source installs and how to switch to a published release.
+  for source installs and how to switch to a published release. The installer can
+  link the skill for GitHub Copilot. Copilot installation has been tested, and
+  a full Copilot delivery remains unverified.
 - Try Shaka on a small task with individual settings kept in your local clone.
   Teams can review shared settings in a PR and try that PR's pinned settings
   before adopting them. You can also try an unmerged Shaka revision without
@@ -38,9 +40,13 @@ Shaka handles merging. Repository checks and approvals still apply.
 
 ### Changed
 
+- When republishing an older PR description, supply a link or an omission reason
+  for issue or PR references that lack a GitHub issue or PR number.
 - Existing 1.x `.agents/shaka/config.yml` files and documented commands keep
-  working across 1.x updates. Before switching versions, check your team's
-  committed settings or your local individual settings with the target release.
+  working across 1.x updates. Use the target release to check settings before
+  switching. For team settings, run `shaka seam check --root DIR --ref DEFAULT_SHA`
+  and confirm it reports `trusted/ref` for that commit. For individual settings,
+  run `shaka seam private check --root DIR --ref DEFAULT_SHA`.
   Follow [Update Shaka](https://shaka.shakacode.com/docs/migration) for upgrade guidance.
 - Risk ratings use low, medium, and high. Auto defaults to low-risk changes.
   Higher risk or a missing rating requires explicit attention under the merge
