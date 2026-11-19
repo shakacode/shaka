@@ -16,8 +16,9 @@ module Shaka
       def self.start(options, action:)
         return unless options[:settings_ref]
 
-        raise Error, '--repository is required with --settings-ref' unless options[:repository]
-        raise Error, '--root is required with --settings-ref' unless options[:root]
+        usage = "See shaka review #{action} --help."
+        raise Error, "--repository is required with --settings-ref. #{usage}" unless options[:repository]
+        raise Error, "--root is required with --settings-ref. #{usage}" unless options[:root]
 
         ref = reviewed_ref(options, action)
         root = safe_root(options[:root])
