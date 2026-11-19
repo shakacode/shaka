@@ -50,15 +50,16 @@ live runs before it ships.
 
 ## Compared with other skill libraries
 
-On 2026-11-17, `eval/bin/skill-library-tokens` counted Shaka and the five most-starred
-skill libraries on GitHub the same way. Counts are Claude Opus 5.5 / GPT-6.1 Sol tokens.
-The comparison counts every skill body without its frontmatter, so its Shaka figure is
-about 100 tokens below the log's, which includes `SKILL.md` frontmatter.
+On 2026-11-17, a one-time script counted Shaka and the five most-starred skill libraries
+on GitHub the same way. Counts are Claude Opus 5.5 / GPT-6.1 Sol tokens. The comparison
+counts every skill body without its frontmatter, so its Shaka figure is about 100 tokens
+below the log's, which includes `SKILL.md` frontmatter.
 
-The GPT-6.1 Sol counts for other libraries come from this run only. The script now sends
-other libraries' text only to Claude Code, for the reason under
-[How to measure](#how-to-measure). Codex's logs for this run show one answer per text
-and no tool calls.
+This table is a dated snapshot. The script was dropped to save its upkeep; it is
+[`eval/bin/skill-library-tokens` at `e3fc600`](https://github.com/shakacode/shaka/blob/e3fc6004311361498036784e5ace0e6c0004fba7/eval/bin/skill-library-tokens).
+Codex's logs for this run show one answer per text and no tool calls. A rerun should send
+other libraries' text only to Claude Code, as that version does, for the reason under
+[How to measure](#how-to-measure).
 
 | Library | Commit | Every session | Median skill | Largest skill |
 | --- | --- | ---: | ---: | ---: |
@@ -107,26 +108,26 @@ two minutes.
 
 ## How to measure
 
-Both commands use Claude Code and Codex with the accounts they are signed in to; no API
-keys. Each CLI answers a one-line prompt with and without the text, and the difference
-in reported input tokens is the text's cost.
+`bin/report-instruction-growth --tokens` uses Claude Code and Codex with the accounts they
+are signed in to; no API keys. Each CLI answers a one-line prompt with and without the
+text, and the difference in reported input tokens is the text's cost.
 
 - At each release, the version PR runs `bin/report-instruction-growth --tokens
   PREVIOUS_TAG` and adds a row to the log below. It costs about 75,000 Claude and 85,000
   Codex tokens when the text changed.
-- To repeat the library comparison, clone each library into its own empty directory and
-  run `eval/bin/skill-library-tokens shaka=. mattpocock/skills=PATH ...`. Add
-  `--words-only` to see sizes without spending quota. Only Claude counts other libraries.
 - Compare each CLI's own prompt (`cli_prompt`) with the log. A jump means the CLI changed
   what it loads, and counts from different CLI versions may not compare.
 - Claude Code runs with no tools. Codex has no switch that removes all of its tools. On
   2026-11-17, with its shell tools off, Codex could still search the web, view a local
-  image, and call the apps connected to its account. So only Shaka's own text goes to
-  Codex, and a run that uses a tool counts as `UNKNOWN`.
-- Turning Codex's shell tools off dropped its own prompt from about 15,190 to 14,551
-  tokens on 2026-11-17; the same startup text still counted 20,171 GPT tokens.
+  image, and call the apps connected to its account. The count now also turns off
+  connected apps, web search, and image viewing. Codex 0.170.0 still lists others, such
+  as sub-agents and image generation, so send it only Shaka's own text. A run that uses
+  a tool counts as `UNKNOWN`.
+- Turning Codex's tools off changes its own prompt: about 15,190 tokens with every tool,
+  14,551 without its shell, and 10,933 with the current set. `65e0066`'s startup text
+  counted 20,171 GPT tokens under all three.
 - Claude counts of the same text vary by about 50 tokens between runs: `65e0066`'s text
-  counted 30,151 and later 30,104. Codex counts varied by at most 2.
+  counted 30,151, 30,104, and 30,115. Codex counts varied by at most 2.
 
 ## Does the size matter?
 

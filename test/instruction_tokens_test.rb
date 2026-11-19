@@ -31,15 +31,6 @@ module InstructionTokensFakes
   end
 
   def values(rows, *keys) = rows.map { |row| row.values_at(*keys) }
-
-  # Claude counts as usual; Codex reports its count followed by these output lines.
-  def codex_adding(*lines)
-    lambda do |arguments, input|
-      next counting_runner.call(arguments, input) if arguments.first == 'claude'
-
-      [[codex_output(99), *lines].join("\n"), OK]
-    end
-  end
 end
 
 class InstructionTokensTest < Minitest::Test
@@ -67,11 +58,11 @@ class InstructionTokensTest < Minitest::Test
     assert_includes codex, ['--ignore-rules', '--ignore-user-config']
   end
 
-  def test_codex_runs_without_its_shell_tools
+  def test_codex_runs_without_its_shell_apps_web_search_or_image_viewing
     arguments = InstructionTokens::CLIS.fetch('codex').arguments.call('model', 'low').each_cons(2).to_a
 
-    assert_includes arguments, ['--disable', 'shell_tool']
-    assert_includes arguments, ['--disable', 'unified_exec']
+    %w[shell_tool unified_exec apps view_image].each { |tool| assert_includes arguments, ['--disable', tool] }
+    assert_includes arguments, ['-c', 'web_search="disabled"']
   end
 
   def test_the_text_goes_on_stdin_never_on_the_command_line
@@ -136,20 +127,16 @@ class InstructionTokensTest < Minitest::Test
                   "codex used a tool, so its count is not the text's alone"], rows.map { |row| row['reason'] })
   end
 
-  # Without its shell tools Codex can still answer twice, and each answer is another model request.
-  def test_a_codex_run_with_two_answers_counts_nothing
+  # A second answer is a second model request. Codex repeats the id key in a web search item.
+  def test_a_codex_run_with_a_second_answer_or_a_web_search_counts_nothing
     answer = JSON.generate('type' => 'item.completed', 'item' => { 'type' => 'agent_message' })
-    rows = InstructionTokens.compare(before: nil, after: 'Read a file.', runner: codex_adding(answer, answer))
-
-    assert_equal "codex used a tool, so its count is not the text's alone", rows.last['reason']
-  end
-
-  # Codex repeats the id key in a web search item; the run still counts as using a tool.
-  def test_a_codex_web_search_counts_nothing
     search = '{"type":"item.completed","item":{"id":"item_1","type":"web_search","id":"exec-1"}}'
-    rows = InstructionTokens.compare(before: nil, after: 'Search the web.', runner: codex_adding(search))
+    reasons = [[answer, answer], [search]].map do |lines|
+      runner = ->(_arguments, _input) { [[codex_output(99), *lines].join("\n"), OK] }
+      InstructionTokens.compare(before: nil, after: 'Search the web.', runner:).last['reason']
+    end
 
-    assert_equal "codex used a tool, so its count is not the text's alone", rows.last['reason']
+    assert_equal(["codex used a tool, so its count is not the text's alone"] * 2, reasons)
   end
 
   def test_a_failed_baseline_run_keeps_the_head_count
@@ -167,53 +154,5 @@ class InstructionTokensTest < Minitest::Test
     rows = InstructionTokens.compare(before: nil, after: 'a', runner: ->(*) { raise IOError, 'stream closed' })
 
     assert_equal(['claude failed: IOError', 'codex failed: IOError'], rows.map { |row| row['reason'] })
-  end
-end
-
-class InstructionTokensCountEachTest < Minitest::Test
-  include InstructionTokensFakes
-
-  def test_count_each_measures_each_cli_prompt_once_for_every_text
-    calls = []
-    rows = InstructionTokens.count_each({ 'short' => 'one', 'long' => 'one two three' }, runner: counting_runner(calls))
-
-    assert_equal([{ 'short' => 1, 'long' => 3 }] * 2, rows.map { |row| row['texts'] })
-    assert_equal 6, calls.size
-  end
-
-  def test_count_each_keeps_other_counts_when_one_text_fails
-    runner = lambda do |arguments, input|
-      input.start_with?('bad') ? ['', Status.new(2)] : counting_runner.call(arguments, input)
-    end
-    rows = InstructionTokens.count_each({ 'good' => 'one two', 'bad' => 'bad text' }, runner:)
-
-    assert_equal 2, rows.first['texts']['good']
-    assert_equal({ 'tokens' => 'UNKNOWN', 'reason' => 'claude did not finish successfully (exit 2)' },
-                 rows.first['texts']['bad'])
-  end
-
-  def test_count_each_sends_each_cli_only_the_texts_it_is_given
-    calls = []
-    sent = ->(cli, key) { cli == 'claude' || key == 'own' }
-    texts = { 'own' => 'one', 'other' => 'two three' }
-    rows = InstructionTokens.count_each(texts, runner: counting_runner(calls), sent:)
-
-    assert_equal([{ 'own' => 1, 'other' => 2 }, { 'own' => 1 }], rows.map { |row| row['texts'] })
-    assert(calls.none? { |arguments, input| arguments.first == 'codex' && input.include?('two three') })
-  end
-
-  def test_a_cli_with_nothing_to_count_does_not_run
-    calls = []
-    sent = ->(cli, _key) { cli == 'claude' }
-    rows = InstructionTokens.count_each({ 'a' => 'one' }, runner: counting_runner(calls), sent:)
-
-    assert_equal({ 'cli' => 'codex', 'model' => 'gpt-6.1-sol', 'texts' => {} }, rows.last)
-    assert(calls.none? { |arguments, _| arguments.first == 'codex' })
-  end
-
-  def test_count_each_is_unknown_when_the_cli_prompt_cannot_be_measured
-    rows = InstructionTokens.count_each({ 'a' => 'one' }, runner: ->(*) { raise Errno::ENOENT })
-
-    assert_equal(['claude is not installed', 'codex is not installed'], rows.map { |row| row['reason'] })
   end
 end
