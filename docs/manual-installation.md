@@ -40,8 +40,8 @@ Replace `codex` with your coding agent's identifier from the table below. The
 installer fetches the release tag and links the skill at that commit. Start a new
 chat and run the [health check](getting-started.md#1-install-shaka).
 
-If you already have Shaka installed, follow the
-[upgrade guide](migration.md) to keep a copy you can roll back to.
+If you already have Shaka installed, [check your project settings](migration.md#check-your-projects-against-10)
+before updating.
 
 ### Install from source
 

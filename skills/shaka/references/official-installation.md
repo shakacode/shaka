@@ -93,13 +93,12 @@ run its registered helper or pass `--directory DIR`; installation there keeps it
 selection. An explicit repository or branch overrides the gem default.
 
 Follow [Before take-over](#before-take-over) when changing releases.
-To switch, run the inspected release checkout's `bin/install` with
-`--repository https://github.com/shakacode/shaka.git`,
-`--release VERSION`, `--directory` naming the inspected checkout, and `--take-over`.
-Pass `--skills-dir DIR` for an active custom skills directory. The previous checkout
-stays available for [rollback](installation.md#restore-the-saved-installation).
-Release `install --update` verifies that the remote tag still resolves to the
-recorded commit. `update-check` reports the local pin.
+To install a new release, use a separate directory with `--release VERSION --take-over`.
+To roll back, [restore the saved installation](installation.md#restore-the-saved-installation).
+Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
+that the remote tag still resolves to the recorded commit; it never advances to `main`
+or another release. A missing or moved tag fails. `update-check` reports the local pin,
+without checking for newer releases.
 
 ### Preview project settings against a release
 
@@ -111,9 +110,10 @@ helper to check the requested projects. Clarify which projects to check if uncle
 - For individual settings, run `seam private check --root PROJECT --ref DEFAULT_SHA`
   in the copy with those settings. Require a successful result.
 
-Report the checked commit, projects, and any required [migrations](migration.md).
-Leave active links in place for preview requests. If the user asks to switch, use
-the checked checkout and commit after required migrations have landed.
+Report the checked commit, projects, and errors. Leave the active installation
+in place. If shared pilot settings need conversion, point to
+[team migration](migration.md). Report individual settings errors without
+applying the team migration routine.
 
 ### Maintain a branch installation
 

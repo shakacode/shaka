@@ -32,11 +32,18 @@ An installation from your own fork updates that fork's branch. It does not
 pull upstream by itself. Bring upstream changes in by
 [syncing the fork](fork-and-hack.md#keep-your-fork-current) first.
 
-## Move pilot settings to 1.0
+## Check your projects against 1.0
 
-Before switching your active installation, ask your agent to check your project
-settings against Shaka 1.0 in a separate checkout. If the check passes, you can
-keep the file and its command wrappers as they are.
+```text
+Preview this project's settings against Shaka 1.0.0 and keep my active installation
+```
+
+Name any other projects you want checked. Your agent uses the target release in a
+separate checkout and reports which projects pass. Passing projects can keep their
+settings and command wrappers. If an individual setup fails, keep the current
+installation while you review the reported settings or wrapper errors.
+
+## Move shared pilot settings to 1.0
 
 - For `.agents/shaka/config.yml` with retired keys, ask the agent to preview
   `shaka seam migrate` from the project's current default-branch commit. Review
@@ -50,19 +57,3 @@ Review the configuration diff, validate the new settings with the target release
 and merge the settings PR before switching your active installation. Check the
 merged default-branch configuration with the target release before switching.
 
-## Switch to a published release
-
-Ask for a compatibility check before switching.
-
-```text
-Check this project's settings against Shaka 1.0.0 and report whether they are ready for an upgrade
-```
-
-The switch affects every project that uses the moved skill links. Name any other
-projects you want checked. The check keeps your current installation active.
-
-Once the selected projects are ready, ask your agent to switch to the checked
-release and keep the previous installation available for rollback.
-
-If you need to go back, ask the agent to restore the previous links. Roll back
-any settings changes through the project's usual review process.
