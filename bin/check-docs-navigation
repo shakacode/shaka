@@ -79,9 +79,22 @@ end
 def parsed_markdown_reference?(text, match, destinations)
   return false if destinations.empty?
 
-  # Probe this occurrence: a destination changes, while prose, comments and code do not.
+  # A destination gains the marker; breaking a reference label only removes a link.
   changed = ShakaDocs::Audiences.links(text.dup.insert(match.end(0), '0'), unique: false).tally
-  destinations.any? { |target, count| changed.fetch(target, 0) < count }
+  destinations.any? do |target, count|
+    next false unless changed.fetch(target, 0) < count
+
+    changed.any? do |replacement, occurrences|
+      next false unless occurrences > destinations.fetch(replacement, 0)
+
+      marked_destination?(target, replacement)
+    end
+  end
+end
+
+def marked_destination?(target, replacement)
+  insertion = target.each_char.zip(replacement.each_char).take_while { |left, right| left == right }.size
+  replacement == target.dup.insert(insertion, '0')
 end
 
 def markdown_source_references(text)

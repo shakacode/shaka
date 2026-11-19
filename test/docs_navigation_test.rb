@@ -509,6 +509,24 @@ class DocsParsedReferencePrecedenceTest < Minitest::Test
     assert_predicate status, :success?, "#{output}\n#{errors}"
   end
 
+  REFERENCE_LABEL_PAGE = <<~MARKDOWN
+    [Setup][shakacode/shaka/blob/main/docs/gone.md]
+
+    [shakacode/shaka/blob/main/docs/gone.md]: https://github.com/shakacode/shaka/blob/main/docs/settings.md
+  MARKDOWN
+
+  def test_reference_labels_keep_the_literal_source_guard
+    sidebar = %w[expected-experience settings]
+    [false, true].each do |present|
+      files = present ? { 'docs/gone.md' => '# Present' } : {}
+      navigation = { 'docsSidebar' => present ? sidebar + ['gone'] : sidebar }
+      output, errors, status = check(navigation, REFERENCE_LABEL_PAGE,
+                                     { 'docs/settings.md' => SETTINGS }.merge(files))
+      assert_equal present, status.success?, "#{output}\n#{errors}"
+      assert_includes output, 'docs/gone.md (missing file)' unless present
+    end
+  end
+
   def test_literal_dot_segments_use_canonical_inventory_paths
     files = { 'README.md' => '# Project', 'skills/shaka/guide.rb' =>
               "PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/../README.md'" }
