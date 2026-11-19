@@ -173,7 +173,7 @@ begin
       file.split('/')[0...-1].include?('planning')
   end
   publication_ids = published.group_by { |file| file.sub(/\.(md|mdx)\z/, '') }
-  numbered = published.select { |file| file.split('/').any? { |part| part.match?(/\A\d+[-_]/) } }
+  numbered = published.select { |file| file.split('/').any? { |part| part.match?(/\A\d/) } }
   duplicates = publication_ids.values.select { |paths| paths.size > 1 }.flatten
   pages = publication_ids.keys
   missing = pages - ids

@@ -889,7 +889,7 @@ class DocsLinkedInventoryTest < Minitest::Test
   end
 
   def test_numbered_source_names_are_refused_before_id_normalization
-    %w[01-install.md 01-guides/install.md].each do |file|
+    ['01-install.md', '01-guides/install.md', '01.install.md', '01 - install.md'].each do |file|
       sidebar = { 'docsSidebar' => ['expected-experience', file.delete_suffix('.md')] }
       output, _, status = check(sidebar, '# Guide', "docs/#{file}" => '# Install')
       refute_predicate status, :success?
