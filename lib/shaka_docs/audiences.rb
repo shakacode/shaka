@@ -2,6 +2,8 @@
 
 require 'uri'
 require 'open3'
+require 'commonmarker'
+require 'nokogiri'
 
 module ShakaDocs
   # Public guides may cite other projects' skills, but never route readers into Shaka's agent procedures.
@@ -11,36 +13,44 @@ module ShakaDocs
     ROOT_DOCUMENTS = %w[README.md README.gem.md CONTRIBUTING.md CHANGELOG.md AGENTS.md CLAUDE.md].freeze
     AGENT_ENTRY_FILES = %w[AGENTS.md CLAUDE.md SKILL.md].freeze
     AGENT_WORKFLOW = 'skills/shaka/config/workflow.yml'
+    SOURCE_URL = %r{
+      \A(?:https?:)?//(?:www\.)?(?:github\.com|raw\.githubusercontent\.com)
+      (?::\d+)?/shakacode/shaka/
+    }ix
 
     module_function
 
     def links(text)
-      inline = text.scan(/\]\(\s*<?([^)\s>]+)/).flatten
-      defined = text.scan(/^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?(\S+?)>?(?:\s|$)/).flatten
-      html = text.scan(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>\x60=]+))/).flatten.compact
-      urls = text.scan(%r{https?://[^\s<>()"'\]]+}i)
-      (inline + defined + html + urls).uniq
+      targets = []
+      Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---' } }).walk do |node|
+        targets << node.url if node.type == :link
+        next unless %i[html_inline html_block].include?(node.type)
+
+        targets.concat(Nokogiri::HTML.fragment(node.literal).css('a[href]').map { |link| link['href'] })
+      end
+      targets.uniq
     end
 
-    def repository_path(uri)
-      return unless %w[github.com www.github.com raw.githubusercontent.com].include?(uri.host.downcase)
-      return unless uri.path.match?(%r{\A/shakacode/shaka/}i)
+    def repository_path(target)
+      return unless target.match?(SOURCE_URL)
 
-      # Refs may contain slashes. Check source URLs conservatively for agent-tree
-      # segments instead of guessing which segments name the ref.
-      path = URI::DEFAULT_PARSER.unescape(uri.path)
-      path[%r{/(?:skills|\.agents)(?:/.*)?\z}] || File.basename(path)
+      # Source citations use a commit, tag, or single-segment branch. Do not infer
+      # a repository root from a directory name inside the document path.
+      source = target.sub(SOURCE_URL, '').sub(%r{\A(?:blob|tree|raw|edit|blame)/}, '')
+      source.sub(%r{\Arefs/(?:heads|tags)/}, '').split('/', 2).last
     end
 
     def local_path(repository, source, target)
-      uri = URI.parse(target.sub(/[?#].*/, ''))
-      return repository_path(uri)&.delete_prefix('/') if uri.host
-      return if uri.scheme
-      return URI::DEFAULT_PARSER.unescape(uri.path).delete_prefix('/') if uri.path.start_with?('/')
+      target = URI::DEFAULT_PARSER.unescape(target.sub(/[?#].*/, ''))
+      if target.match?(%r{\A(?:[a-z][\w+.-]*:|//)}i)
+        path = repository_path(target)
+        return File.expand_path(path, '/').delete_prefix('/') if path
 
-      File.expand_path(URI::DEFAULT_PARSER.unescape(uri.path), File.dirname(source)).delete_prefix("#{repository}/")
-    rescue URI::InvalidURIError
-      nil
+        return
+      end
+      return "docs#{target}" if target.start_with?('/')
+
+      File.expand_path(target, File.dirname(source)).delete_prefix("#{repository}/")
     end
 
     def navigation_links(item)
@@ -64,7 +74,7 @@ module ShakaDocs
     def agent_targets(repository, source, targets)
       targets.select do |target|
         path = local_path(repository, source, target)
-        path && agent_path?(URI::DEFAULT_PARSER.unescape(path))
+        path && agent_path?(path)
       end
     end
 

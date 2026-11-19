@@ -15,10 +15,14 @@ locations fails validation until its destination is reviewed. The root
 
 Public guides and sidebar links must lead to human guidance. The check rejects
 links into Shaka's skill Markdown, its YAML workflow instructions, project agent instructions, and `AGENTS.md`
-or `CLAUDE.md`. Links to configuration data and citations of other projects'
-skills remain available. First-party source URLs are checked conservatively for
-agent-tree segments, regardless of their branch name. The scan includes link
-syntax inside examples. Each new guide's author and reviewer still determine its audience.
+or `CLAUDE.md`. Configuration data and installable workflow templates, including
+`claude-code-review.yml`, remain linkable for setup. Citations of other projects'
+skills remain available. Source citations use a commit, tag, or branch without
+slashes so the check can distinguish the ref from the repository path. Slash-containing
+refs require author and reviewer judgment. Leading-slash links address public site routes.
+Commonmarker parses Markdown and Nokogiri extracts HTML links. Code examples and
+unused reference definitions are not links. The check does not evaluate MDX
+JavaScript expressions or custom components. Each guide's author and reviewer still determine its audience.
 
 ## Give new users a way to start
 

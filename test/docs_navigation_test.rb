@@ -12,7 +12,7 @@ class DocsNavigationTest < Minitest::Test
     See [upstream](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/delivery.md).
     [guide]: <../skills/shaka/references/local-review.md>
     <a href="https://github.com/shakacode/shaka/tree/main/skills/shaka/references">all</a>
-    Bare: https://github.com/shakacode/shaka/blob/v1/skills/shaka/references/review.md
+    Bare: https://github.com/shakacode/shaka/blob/v1/skills/shaka/references/review.md.
     Autolink: <https://github.com/shakacode/shaka/blob/main/skills/shaka/references/publication.md>
     [section](../skills/shaka/references#review) and [query](../skills/shaka/references?page=1)
     <a href=../skills/shaka/references/review.md>unquoted</a>
@@ -53,16 +53,18 @@ class DocsNavigationTest < Minitest::Test
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, AGENT_LINKS)
     refute_predicate status, :success?
     agent_line = output.lines.grep(/\ALink a human guide/).first
-    assert_equal 9, agent_line.scan('expected-experience.md -> ').size
+    assert_equal 8, agent_line.scan('expected-experience.md -> ').size
   end
 
   def test_configuration_links_and_prose_pass
     page = <<~MARKDOWN
       Copy [the defaults](../skills/shaka/config/defaults.yml) and read [settings](settings.md).
+      Install the [workflow template](../skills/shaka/config/claude-code-review.yml).
       The agent keeps its procedures in its own references folder.
     MARKDOWN
     _, _, status = check({ 'docsSidebar' => %w[expected-experience settings] }, page,
-                         'docs/settings.md' => '# Settings', 'skills/shaka/config/defaults.yml' => "{}\n")
+                         'docs/settings.md' => '# Settings', 'skills/shaka/config/defaults.yml' => "{}\n",
+                         'skills/shaka/config/claude-code-review.yml' => "{}\n")
     assert_predicate status, :success?
   end
 
@@ -113,7 +115,7 @@ class DocsNavigationTest < Minitest::Test
 
   def test_missing_files_and_anchors_fail
     page = "[gone](gone.md), [anchor](settings.md#nope), [code block](settings.md#not-a-heading)\n" \
-           "[mdx](guide.mdx#absent)\n[defined]: settings.md#also-nope\n[^1]: A footnote, not a link.\n"
+           "[mdx](guide.mdx#absent) and [defined]\n\n[defined]: settings.md#also-nope\n[^1]: A footnote, not a link.\n"
     output, _, status = check_links(page, 'skills/shaka/SKILL.md' => "[ref](references/missing.md)\n",
                                           'docs/guide.mdx' => '# Guide')
     refute_predicate status, :success?
@@ -207,6 +209,7 @@ class DocsAudienceTest < Minitest::Test
                           ../skills/shaka/references/../SKILL.md
                           https://github.com/shakacode/shaka/blame/main/skills/shaka/references/review.md
                           https://raw.githubusercontent.com/shakacode/shaka/main/skills/shaka/SKILL.md
+                          https://raw.githubusercontent.com/shakacode/shaka/refs/heads/main/skills/shaka/references/review.md
                           https://github.com/shakacode/shaka/blob/main/skills/shaka/%53KILL.md].freeze
 
   def test_all_shaka_agent_markdown_links_fail
@@ -241,13 +244,16 @@ class DocsAudienceTest < Minitest::Test
     assert_includes output, 'Link a human guide, not agent instructions:'
   end
 
+  ALTERNATE_URLS = %w[https://GITHUB.COM/shakacode/shaka/blob/main/skills/shaka/references/review.md
+                      https://github.com:443/shakacode/shaka/blob/main/skills/shaka/references/review.md
+                      https://github.com/shakacode/shaka/blob/main/%73kills/shaka/references/review.md
+                      https://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md#café
+                      https://github.com/shakacode/shaka/blob/main/skills/shaka/references/café.md
+                      HTTPS://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md
+                      https://www.github.com/ShakaCode/Shaka/edit/main/skills/shaka/SKILL.md].freeze
+
   def test_alternate_reference_urls_are_still_rejected
-    targets = %w[https://GITHUB.COM/shakacode/shaka/blob/main/skills/shaka/references/review.md
-                 https://github.com/shakacode/shaka/blob/main/%73kills/shaka/references/review.md
-                 https://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md#café
-                 HTTPS://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md
-                 https://github.com/shakacode/shaka/blob/feature/topic/skills/shaka/config/review-prompt.md
-                 https://www.github.com/ShakaCode/Shaka/edit/main/skills/shaka/SKILL.md]
+    targets = ALTERNATE_URLS
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, targets.join("\n"))
     refute_predicate status, :success?
     targets.each { |target| assert_includes output, target }
@@ -268,60 +274,96 @@ class DocsAudienceTest < Minitest::Test
   end
 end
 
+class DocsAudienceRoutesTest < Minitest::Test
+  def check(*) = DocsNavigationTest.new('fixture').check(*)
+
+  def test_human_skill_guides_allow_source_urls_and_site_routes
+    source = 'https://github.com/shakacode/shaka/blob/main/docs/skills/overview.md'
+    files = { 'docs/skills/overview.md' => '# Skills' }
+    sidebar = { 'docsSidebar' => ['expected-experience', 'skills/overview',
+                                  { 'type' => 'link', 'label' => 'Skills', 'href' => source },
+                                  { 'type' => 'link', 'label' => 'Skills route', 'href' => '/skills/overview' }] }
+    page = "[Source](#{source}) and [route](/skills/overview)"
+    output, _, status = check(sidebar, page, files)
+    assert_predicate status, :success?, output
+  end
+
+  def test_quoted_and_list_reference_definitions_cannot_hide_agent_links
+    ['> ', '> > ', '- '].each do |prefix|
+      page = "#{prefix}[Review][prompt]\n#{prefix}\n#{prefix}[prompt]: ../skills/shaka/config/review-prompt.md\n"
+      output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+      refute_predicate status, :success?, output
+      assert_includes output, 'Link a human guide, not agent instructions:'
+    end
+  end
+
+  def test_multiline_quoted_reference_is_checked
+    page = "> [Review][prompt]\n>\n> [prompt]:\n>   ../skills/shaka/config/review-prompt.md\n"
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?, output
+    assert_includes output, 'Link a human guide, not agent instructions:'
+  end
+
+  def test_source_url_dot_segments_are_normalized_in_guides_and_sidebar
+    target = 'https://github.com/shakacode/shaka/blob/main/docs/../skills/shaka/references/review.md'
+    sidebar = { 'docsSidebar' => ['expected-experience', { 'type' => 'link', 'label' => 'Review', 'href' => target }] }
+    files = { 'skills/shaka/references/review.md' => '# Review' }
+    output, _, status = check(sidebar, "[Review](#{target})", files)
+    refute_predicate status, :success?, output
+    assert_includes output, "expected-experience.md -> #{target}"
+    assert_includes output, "sidebars.json -> #{target}"
+  end
+end
+
 class DocsAudienceExamplesTest < Minitest::Test
   def check(*) = DocsNavigationTest.new('fixture').check(*)
 
-  FENCE_INFO_EXAMPLE = <<~MARKDOWN
-    ```markdown
-    ```ruby
-    ```
-    [Agent](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md)
-    ```text
-    Example
-    ```
-  MARKDOWN
-
-  def test_fence_info_string_cannot_consume_a_following_live_link
-    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, FENCE_INFO_EXAMPLE)
+  def test_html_entities_cannot_hide_an_agent_destination
+    page = '<a href="https://github.com/shakacode/shaka/blob/main/&#115;kills/shaka/references/review.md">Review</a>'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
     refute_predicate status, :success?
     assert_includes output, 'Link a human guide, not agent instructions:'
   end
 
-  def test_literal_agent_link_examples_follow_the_same_destination_rule
+  def test_html_attribute_case_does_not_hide_an_agent_destination
+    page = '<a HREF="//github.com/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md">Review</a>'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
+  end
+
+  def test_hidden_product_guide_is_not_silently_omitted
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide',
+                              'docs/.draft/install.md' => '# Install')
+    refute_predicate status, :success?
+    assert_includes output, 'Missing from docs/sidebars.json: .draft/install'
+  end
+
+  def test_enrolled_hidden_guide_still_gets_link_validation
+    sidebar = { 'docsSidebar' => %w[expected-experience .draft/install] }
+    files = { 'docs/.draft/install.md' => '[Help](missing.md)' }
+    output, _, status = check(sidebar, '# Guide', files)
+    refute_predicate status, :success?
+    assert_includes output, 'docs/.draft/install.md -> missing.md (missing file)'
+  end
+
+  def test_live_links_after_code_examples_are_checked
+    page = "~~~text\nExample\n~~~~\n[Agent](../skills/shaka/references/review.md)\n"
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
+  end
+
+  def test_code_examples_and_unused_definitions_are_not_links
     page = <<~MARKDOWN
       ```markdown
       [Agent](../skills/shaka/config/review-prompt.md)
       ```
+      `[Agent](../AGENTS.md)`
+
+      [unused]: ../skills/shaka/config/review-prompt.md
     MARKDOWN
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
-    refute_predicate status, :success?, output
-  end
-
-  def test_escaped_backticks_do_not_hide_a_clickable_agent_link
-    page = '\\` [review](../skills/shaka/references/review.md) \\`'
-    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
-    refute_predicate status, :success?
-    assert_includes output, 'Link a human guide, not agent instructions:'
-  end
-
-  def test_code_spans_cannot_hide_a_clickable_link_between_them
-    page = '`` ` `` [review](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md) `note`'
-    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
-    refute_predicate status, :success?
-    assert_includes output, 'Link a human guide, not agent instructions:'
-  end
-
-  def test_longer_closing_fence_cannot_hide_a_live_link
-    page = "~~~text\n~~~~\n[Agent](../skills/shaka/references/review.md)\n~~~text\n~~~\n"
-    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
-    refute_predicate status, :success?
-    assert_includes output, 'Link a human guide, not agent instructions:'
-  end
-
-  def test_branch_names_cannot_hide_agent_directory_segments
-    page = '[Prompt](https://github.com/shakacode/shaka/blob/feature/docs/topic/skills/shaka/config/review-prompt.md)'
-    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
-    refute_predicate status, :success?
-    assert_includes output, 'Link a human guide, not agent instructions:'
+    assert_predicate status, :success?, output
   end
 end

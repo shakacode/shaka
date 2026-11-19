@@ -8,6 +8,10 @@ and `shakacode/shaka` GitHub links to missing `docs/` pages or anchors anywhere
 under `skills/`, including code. Site-only pages and the global header/footer
 remain in the site repository.
 
+Validation also checks documentation destinations and keeps public guides and
+sidebar links out of Shaka's agent instructions. See the
+[documentation policy](internal/documentation.md#check-documentation-destinations).
+
 Start with [developing Shaka](contributing/development.md) for local setup and
 checks. Read [AGENTS.md](https://github.com/shakacode/shaka/blob/main/AGENTS.md) for repository constraints.
 

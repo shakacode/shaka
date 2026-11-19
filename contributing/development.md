@@ -1,7 +1,7 @@
 # Developing Shaka
 
 Read [AGENTS.md](https://github.com/shakacode/shaka/blob/main/AGENTS.md) before changing the project. Runtime code uses Ruby's
-standard library and `gh`; development adds Minitest and RuboCop through Bundler.
+standard library and `gh`; development adds test, lint, and documentation parsers through Bundler.
 Install Node.js 22.19 or newer for the Pi extension tests. No npm installation is needed.
 
 ```bash

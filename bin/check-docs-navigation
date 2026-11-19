@@ -1,9 +1,10 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+ENV['BUNDLE_GEMFILE'] = File.expand_path('../Gemfile', __dir__)
+require 'bundler/setup'
 require 'json'
 require 'rexml/document'
-
 require_relative '../lib/shaka_docs/audiences'
 
 # Check the full published tree, so an already-merged orphan is caught too.
@@ -64,10 +65,7 @@ def unresolved(path, target)
 end
 
 def broken_relative_links(repository, path)
-  text = prose(path).gsub(/`[^`\n]*`/, '')
-  inline = text.scan(/\]\(\s*<?([^)\s>]+)/).flatten
-  defined = text.scan(/^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?(\S+?)>?(?:\s|$)/).flatten
-  (inline + defined).uniq.filter_map do |target|
+  ShakaDocs::Audiences.links(File.read(path, encoding: 'UTF-8')).filter_map do |target|
     next if target.match?(%r{\A(?:[a-z][\w+.-]*:|/)}i) || target.include?('{{')
 
     problem = unresolved(path, target)
@@ -84,7 +82,7 @@ def broken_emitted_links(repository, docs, path)
 end
 
 def markdown_files(docs, repository)
-  Dir.glob(File.join(docs, '**/*.{md,mdx}')) + Dir.glob(File.join(repository, 'skills/**/*.md'))
+  Dir.glob(File.join(docs, '**/*.{md,mdx}'), File::FNM_DOTMATCH) + Dir.glob(File.join(repository, 'skills/**/*.md'))
 end
 
 def broken_links(docs)
@@ -115,7 +113,7 @@ begin
   raise ArgumentError, 'Expected a sidebar object' unless navigation.is_a?(Hash)
 
   ids = document_ids(navigation.fetch('docsSidebar'))
-  files = Dir.glob('**/*.{md,mdx}', base: root)
+  files = Dir.glob('**/*.{md,mdx}', File::FNM_DOTMATCH, base: root)
   pages = files.map { |file| file.sub(/\.(md|mdx)\z/, '') }
   missing = pages - ids
   stale = ids - pages
