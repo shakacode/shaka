@@ -239,24 +239,6 @@ class DocsAudienceTest < Minitest::Test
     targets.each { |target| assert_includes output, target }
   end
 
-  def test_literal_agent_link_examples_are_allowed
-    page = <<~MARKDOWN
-      ```markdown
-      [Agent](../skills/shaka/config/review-prompt.md)
-      ```
-      `[Agent](../skills/shaka/SKILL.md)`
-    MARKDOWN
-    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
-    assert_predicate status, :success?, output
-  end
-
-  def test_escaped_backticks_do_not_hide_a_clickable_agent_link
-    page = '\\` [review](../skills/shaka/references/review.md) \\`'
-    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
-    refute_predicate status, :success?
-    assert_includes output, 'Link a human guide, not agent instructions:'
-  end
-
   def test_top_level_agent_directory_sidebar_link_fails
     sidebar = { 'docsSidebar' => ['expected-experience',
                                   { 'type' => 'link', 'label' => 'Agent', 'href' => '../skills' }] }
@@ -269,5 +251,40 @@ class DocsAudienceTest < Minitest::Test
     page = '[Reference](https://github.com/example/other/blob/main/skills/shaka/references/guide.md)'
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
     assert_predicate status, :success?, output
+  end
+end
+
+class DocsAudienceExamplesTest < Minitest::Test
+  def check(*) = DocsNavigationTest.new('fixture').check(*)
+
+  def test_literal_agent_link_examples_are_allowed
+    page = <<~MARKDOWN
+      ```markdown
+      [Agent](../skills/shaka/config/review-prompt.md)
+      ```
+    MARKDOWN
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, output
+  end
+
+  def test_escaped_backticks_do_not_hide_a_clickable_agent_link
+    page = '\\` [review](../skills/shaka/references/review.md) \\`'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
+  end
+
+  def test_code_spans_cannot_hide_a_clickable_link_between_them
+    page = '`` ` `` [review](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md) `note`'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
+  end
+
+  def test_branch_names_cannot_hide_agent_directory_segments
+    page = '[Prompt](https://github.com/shakacode/shaka/blob/feature/docs/topic/skills/shaka/config/review-prompt.md)'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
   end
 end

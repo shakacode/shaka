@@ -15,7 +15,6 @@ module ShakaDocs
 
     def links(text)
       text = text.gsub(/^ {0,3}(`{3,}|~{3,}).*?^ {0,3}\1[^\n]*$/m, '')
-                 .gsub(/(?<!\\)`[^`\n]*(?<!\\)`/, '')
       inline = text.scan(/\]\(\s*<?([^)\s>]+)/).flatten
       defined = text.scan(/^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?(\S+?)>?(?:\s|$)/).flatten
       html = text.scan(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>\x60=]+))/).flatten.compact
@@ -24,34 +23,21 @@ module ShakaDocs
     end
 
     def repository_path(uri)
-      prefix = case uri.host&.downcase
-               when 'github.com', 'www.github.com'
-                 %r{\A/shakacode/shaka/(?:blob|tree|blame|raw|edit|commits)/[^/]+/}i
-               when 'raw.githubusercontent.com' then %r{\A/shakacode/shaka/[^/]+/}i
-               end
-      return unless prefix && uri.path.match?(prefix)
+      return unless %w[github.com www.github.com raw.githubusercontent.com].include?(uri.host.downcase)
+      return unless uri.path.match?(%r{\A/shakacode/shaka/}i)
 
-      path = uri.path.sub(prefix, '')
-      return path if path.match?(%r{\A(?:docs|skills|\.agents)(?:/|\z)})
-
-      path.sub(%r{\A.*?/(?=(?:docs|skills|\.agents)(?:/|\z))}, '')
-    end
-
-    def target_path(uri)
-      return repository_path(uri) if uri.host
-      return if uri.scheme
-
-      uri.path
+      # Refs may contain slashes. Check source URLs conservatively for agent-tree
+      # segments instead of guessing which segments name the ref.
+      uri.path[%r{/(?:skills|\.agents)(?:/.*)?\z}] || File.basename(uri.path)
     end
 
     def local_path(repository, source, target)
       uri = URI.parse(target)
-      path = target_path(uri)
-      return if path.nil? || path.empty?
+      return repository_path(uri)&.delete_prefix('/') if uri.host
+      return if uri.scheme
+      return URI::DEFAULT_PARSER.unescape(uri.path).delete_prefix('/') if uri.path.start_with?('/')
 
-      directory = uri.host || path.start_with?('/') ? repository : File.dirname(source)
-      destination = File.expand_path(URI::DEFAULT_PARSER.unescape(path).delete_prefix('/'), directory)
-      destination if destination.start_with?("#{repository}/")
+      File.expand_path(URI::DEFAULT_PARSER.unescape(uri.path), File.dirname(source)).delete_prefix("#{repository}/")
     rescue URI::InvalidURIError
       nil
     end
@@ -77,7 +63,7 @@ module ShakaDocs
     def agent_targets(repository, source, targets)
       targets.select do |target|
         path = local_path(repository, source, target)
-        path && agent_path?(path.delete_prefix("#{repository}/"))
+        path && agent_path?(URI::DEFAULT_PARSER.unescape(path))
       end
     end
 

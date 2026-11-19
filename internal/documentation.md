@@ -16,8 +16,9 @@ locations fails validation until its destination is reviewed. The root
 Public guides and sidebar links must lead to human guidance. The check rejects
 links into Shaka's skill Markdown, project agent instructions, and `AGENTS.md`
 or `CLAUDE.md`. Links to configuration data and citations of other projects'
-skills remain available. Each new guide's author and reviewer still determine
-its audience.
+skills remain available. First-party source URLs are checked conservatively for
+agent-tree segments, regardless of their branch name. Use fenced blocks for
+literal link examples. Each new guide's author and reviewer still determine its audience.
 
 ## Give new users a way to start
 
