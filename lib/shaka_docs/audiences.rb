@@ -69,7 +69,7 @@ module ShakaDocs
     end
 
     def document_files(repository)
-      Inventory.paths(repository).grep(/\.mdx?\z/i).select { |path| File.file?(File.join(repository, path)) }
+      Inventory.files(repository, /\.mdx?\z/i)
     end
 
     def unclassified_documents(repository)

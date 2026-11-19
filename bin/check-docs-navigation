@@ -47,9 +47,7 @@ def unresolved_anchor(path, fragment)
 end
 
 def aliased_target?(path, checked)
-  source_components(path, checked[:repository]).reverse.any? do |part|
-    checked[:aliases].include?(part) || File.symlink?(part)
-  end
+  ShakaDocs::Inventory.aliased?(path, checked[:repository], checked[:aliases])
 end
 
 def unresolved(path, target, checked)
@@ -87,10 +85,7 @@ def markdown_files(docs, repository)
 end
 
 def emitted_sources(repository)
-  ShakaDocs::Inventory.paths(repository).grep(%r{\Askills/}).filter_map do |file|
-    path = File.join(repository, file)
-    path if File.file?(path)
-  end
+  ShakaDocs::Inventory.files(repository, %r{\Askills/}).map { |file| File.join(repository, file) }
 end
 
 def broken_links(docs, checked_paths, indexed)
@@ -117,19 +112,11 @@ def malformed_figures(docs, paths)
   end
 end
 
-def source_components(path, repository)
-  components = []
-  prefix = "#{repository.delete_suffix('/')}/"
-  while path != repository && path.start_with?(prefix)
-    components << path
-    path = File.dirname(path)
-  end
-  components
-end
+def source_components(path, repository) = ShakaDocs::Inventory.components(path, repository)
 
 def reject_docs_symlinks(paths, repository, indexed)
   components = paths.flat_map { |path| source_components(path, repository) }.uniq
-  aliases = components.select { |path| File.symlink?(path) || indexed.include?(path) }
+  aliases = components.select { |path| ShakaDocs::Inventory.link?(path, indexed) }
   aliases.map! { |path| path.delete_prefix("#{repository}/") }
   raise ArgumentError, "Docs sources cannot be symlinks: #{aliases.join(', ')}" unless aliases.empty?
 end

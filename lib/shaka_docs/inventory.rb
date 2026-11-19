@@ -24,6 +24,36 @@ module ShakaDocs
       end
     end
 
+    def files(repository, pattern)
+      indexed = symlinks(repository).map { |path| File.join(repository, path) }
+      paths(repository).grep(pattern).select { |file| source_file?(repository, file, indexed) }
+    end
+
+    def source_file?(repository, file, indexed)
+      path = File.join(repository, file)
+      if aliased?(File.dirname(path), repository, indexed)
+        raise ArgumentError, "Source directory aliases are not supported: #{file}"
+      end
+
+      File.file?(path)
+    end
+
+    def components(path, repository)
+      parts = []
+      prefix = "#{repository.delete_suffix('/')}/"
+      while path != repository && path.start_with?(prefix)
+        parts << path
+        path = File.dirname(path)
+      end
+      parts
+    end
+
+    def aliased?(path, repository, indexed)
+      components(path, repository).reverse.any? { |part| link?(part, indexed) }
+    end
+
+    def link?(path, indexed) = indexed.include?(path) || File.symlink?(path)
+
     def git?(repository) = File.exist?(File.join(repository, '.git'))
 
     def git_output(repository, *options)

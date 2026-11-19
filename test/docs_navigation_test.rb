@@ -1016,6 +1016,41 @@ class DocsExternalAliasTest < Minitest::Test
   end
 end
 
+class DocsSkillSourceAliasTest < Minitest::Test
+  MARKER = 'https://github.com/shakacode/shaka/blob/main/docs/outside-only.md'
+
+  def test_tracked_skill_sources_are_not_read_through_directory_aliases
+    %w[rb md].each do |extension|
+      output, errors, status = aliased_source(extension)
+      refute_predicate status, :success?
+      assert_includes errors, 'Source directory aliases are not supported: skills/example/', output
+      refute_includes output + errors, 'outside-only.md'
+      output, _, status = regular_source(extension)
+      refute_predicate status, :success?
+      assert_includes output, 'outside-only.md (missing file)'
+    end
+  end
+
+  private
+
+  def regular_source(extension)
+    DocsNavigationTest.new('fixture').check({ 'docsSidebar' => ['expected-experience'] }, '# Guide',
+                                            "skills/example/guide.#{extension}" => MARKER)
+  end
+
+  def aliased_source(extension)
+    Dir.mktmpdir('outside-skill') do |outside|
+      File.write(File.join(outside, "guide.#{extension}"), MARKER)
+      files = { "skills/example/guide.#{extension}" => '# Regular source' }
+      DocsNavigationTest.new('fixture').check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files) do |root|
+        system('git', '-C', root, 'add', 'skills/example', exception: true)
+        FileUtils.remove_entry(File.join(root, 'skills/example'))
+        File.symlink(outside, File.join(root, 'skills/example'))
+      end
+    end
+  end
+end
+
 class DocsSidebarReferencesTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 
