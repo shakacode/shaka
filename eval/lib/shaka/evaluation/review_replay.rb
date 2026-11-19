@@ -1,17 +1,18 @@
 # frozen_string_literal: true
 
-require 'digest'
 require 'tmpdir'
 require_relative 'budget'
 require_relative 'native_usage'
 require_relative 'review_replay_fixture'
 require_relative 'review_replay_login'
+require_relative 'review_replay_records'
 
 module Shaka
   module Evaluation
     # Runs each historical full diff twice, then leaves evidence for blinded human scoring.
     class ReviewReplay
       include ReviewReplayLogin
+      include ReviewReplayRecords
 
       HOSTS = { 'anthropic/claude' => 'claude-code', 'openai/codex' => 'codex' }.freeze
 
@@ -22,6 +23,7 @@ module Shaka
       end
 
       def run(rows)
+        validate_settings_change
         @environment = CREDENTIALS.dup
         Dir.mktmpdir('review-', @directory) do |scratch|
           @scratch = scratch
@@ -32,9 +34,17 @@ module Shaka
 
       private
 
+      def validate_settings_change
+        baseline, candidate = @options.values_at(:baseline, :candidate).map { |arm| arm.fetch(:criteria) }
+        return if baseline == candidate
+
+        settings = [baseline, candidate].map { |ref| ReviewReplayFixture.settings_entries(@source, ref) }
+        raise ArgumentError, 'Both commits supply the same repository settings files' if settings.uniq.one?
+      end
+
       def start_budget
         verify_login
-        @budget = Budget.new(directory: File.join(@directory, 'account'), kind: 'pr',
+        @budget = Budget.new(directory: @options.fetch(:budget), kind: 'pr',
                              **@options.slice(:limits, :scope, :cap))
       end
 
@@ -58,22 +68,10 @@ module Shaka
       def execute(row, arm, root, snapshot)
         arguments = review_arguments(row, arm, root, snapshot)
         id = @budget.reserve
-        output, error, status = Open3.capture3(@environment, @helper, *arguments, chdir: root)
-        result = retain_result(JSON.parse(output), id)
-        record = { 'result' => result, 'usage' => usage_for(result), 'stderr' => error }
+        record, status = capture_record(arguments, root, id)
         digest = save_run(id, row.fetch('id'), arm, record)
-        complete = status.success? && completed?(result, row)
+        complete = status.success? && completed?(record.fetch('result'), row)
         finish(id, record.fetch('usage'), digest, complete)
-      end
-
-      def retain_result(result, id)
-        if result['usage']
-          path = File.join(@directory, "#{id}.usage.jsonl")
-          copy_private(result['usage'], path)
-          result['usage'] = path
-        end
-        result['report'] = File.read(result['report']) if result['report']
-        result
       end
 
       def completed?(result, row)
@@ -92,8 +90,8 @@ module Shaka
       def review_arguments(row, arm, root, snapshot)
         chosen = @options.fetch(arm)
         arguments = ['review', 'run', '--root', root, '--base', row.fetch('base'), '--head', row.fetch('head'),
-                     '--reviewer', @reviewer, '--criteria-ref', snapshot, '--timeout-seconds', '300']
-        arguments.push('--model', chosen.fetch(:model)) if chosen[:model]
+                     '--reviewer', @reviewer, '--criteria-ref', snapshot, '--timeout-seconds', '300',
+                     '--model', chosen.fetch(:model)]
         arguments.push('--effort', @options.fetch(:effort)) if @options[:effort]
         arguments
       end
@@ -104,17 +102,6 @@ module Shaka
 
         @native_usage ||= NativeUsage.new(helper: @helper, rate_root: @source)
         @native_usage.read(host: @host, files: [result.fetch('usage')], print_result: @host == 'claude-code')
-      end
-
-      def save_run(id, case_id, arm, record)
-        metadata = { 'case' => case_id, 'arm' => arm, 'selection' => @options.fetch(arm) }
-        bytes = "#{JSON.pretty_generate(record.merge(metadata))}\n"
-        File.open(File.join(@directory, "#{id}.json"), 'wx', 0o600) do |file|
-          file.write(bytes)
-          file.fsync
-        end
-        puts "#{case_id} #{arm} record #{id}"
-        "sha256:#{Digest::SHA256.hexdigest(bytes)}"
       end
     end
   end

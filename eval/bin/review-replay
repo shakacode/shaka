@@ -19,7 +19,7 @@ end
 
 def register_arguments(flags, options)
   arguments = %w[helper:PATH reviewer:ID criteria:SHA candidate-criteria:SHA baseline-model:MODEL candidate-model:MODEL
-                 effort:LEVEL state:DIR pr:NUMBER cap:USD case:ID]
+                 effort:LEVEL state:DIR budget:DIR pr:NUMBER cap:USD case:ID]
   arguments.each do |argument|
     name, value_name = argument.split(':')
     flags.on("--#{name} #{value_name}") { |value| options[name.tr('-', '_').to_sym] = value }
@@ -54,20 +54,29 @@ end
 
 def validate_budget(options)
   options[:scope] = options[:pr]
-  unless options[:scope]&.match?(/\A[1-9]\d*\z/) && options[:cap] &&
-         Shaka::Evaluation::BudgetLimits.amount(options[:cap]).positive?
-    raise ArgumentError, 'Supply the reviewer-change PR number and a positive --cap'
-  end
+  raise ArgumentError, 'Supply the reviewer-change PR number and a positive --cap' unless budget_scope?(options)
 
+  directory = File.realpath(options.fetch(:budget) { raise ArgumentError, 'Supply the shared --budget directory' })
+  raise ArgumentError, 'Use a private budget directory outside Git checkouts' unless private_directory?(directory)
+
+  options[:budget] = directory
   options[:limits] = { 'monthly' => 200, 'nightly' => 5, 'pr' => 15 }
+end
+
+def budget_scope?(options)
+  options[:pr]&.match?(/\A[1-9]\d*\z/) && options[:cap] && Shaka::Evaluation::BudgetLimits.amount(options[:cap]).positive?
 end
 
 def validate_arms(arms)
   baseline, candidate = arms
   axes = %i[criteria model].count { |key| baseline[key] != candidate[key] }
-  return if axes == 1 && arms.all? { |arm| Shaka::Evaluation::ReviewReplayFixture::SHA.match?(arm[:criteria]) }
+  return if axes == 1 && arms.all? { |arm| pinned?(arm) }
 
-  raise ArgumentError, 'Supply full criteria SHAs and change one axis (model or criteria)'
+  raise ArgumentError, 'Supply full criteria SHAs and explicit models for both arms. Change one axis.'
+end
+
+def pinned?(arm)
+  Shaka::Evaluation::ReviewReplayFixture::SHA.match?(arm[:criteria]) && !arm[:model].to_s.strip.empty?
 end
 
 def private_directory?(directory)

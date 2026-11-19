@@ -26,6 +26,14 @@ module Shaka
         snapshot
       end
 
+      def self.settings_entries(source, ref)
+        output, error, status = Open3.capture3('git', '-C', source, 'ls-tree', '-r', '-z', ref,
+                                               stdin_data: '', binmode: true)
+        raise IOError, "Cannot read criteria commit: #{error.strip}" unless status.success?
+
+        output.split("\0").select { |entry| entry.split("\t", 2).last.start_with?('.agents/shaka/') }
+      end
+
       private
 
       def criteria_commit(ref)

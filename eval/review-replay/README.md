@@ -1,12 +1,11 @@
 # Replay a reviewer change
 
-Before changing a local reviewer's prompt, model pin, or CLI default, run this
+Before changing a local reviewer's model pin or repository prompt, run this
 manual comparison from a clean Shaka checkout. Use the same installed Shaka
-helper and CLI version for both arms. To compare a pinned model with the CLI
-default, drop the pin in the candidate criteria commit while preserving the rest
-of the settings. Review a prompt change by supplying the trusted base commit
-and the inspected candidate commit with the proposed prompt. Keep model and
-effort constant for a prompt comparison.
+helper and CLI version for both arms. Supply both models explicitly. If you
+want to compare against a CLI default, identify the default model first and
+name it in the corresponding arm. A repository prompt comparison takes two
+criteria commits and the same model on both arms.
 
 ## Run the paired review
 
@@ -22,30 +21,33 @@ Fetch the public PR refs holding the frozen commits:
 git fetch --no-tags origin refs/pull/1024/head refs/pull/708/head refs/pull/710/head
 ```
 
-Create a mode-0700 state directory outside any checkout. Reuse the same state
-directory and reviewer-change PR number across all runs so the budget counts
-them together. Use the existing shared evaluation state directory if one exists
-(the existing budget ledger must be at `STATE/account/budget.jsonl`).
+Create a mode-0700 state directory outside any checkout. Pass the shared
+evaluation budget directory with `--budget`. The directory holds
+`budget.jsonl`. Use the same budget directory and reviewer-change PR number
+across runs so the budget counts them together.
 
 ```sh
 eval/bin/review-replay --helper /absolute/path/to/installed/scripts/shaka \
   --reviewer openai/codex --criteria BASE_SETTINGS_SHA \
   --baseline-model BASE_MODEL --candidate-model CANDIDATE_MODEL \
-  --state PRIVATE_STATE_DIR --pr PR_NUMBER --cap 15 --preview
+  --state PRIVATE_STATE_DIR --budget SHARED_BUDGET_DIR --pr PR_NUMBER --cap 15 --preview
 ```
 
-For Claude Code, use `--reviewer anthropic/claude`. For a settings-only change,
-replace the model flags with `--candidate-criteria CANDIDATE_SETTINGS_SHA`.
-Keep any required settings or prompt files under `.agents/shaka/`. Inspect
-the settings diff first. The runner checks which inputs differ, and the operator
-verifies the candidate commit changes only the intended review setting.
+For Claude Code, use `--reviewer anthropic/claude`. For a prompt-only change,
+set both model flags to the same model and pass `--candidate-criteria
+CANDIDATE_SETTINGS_SHA`. Keep the configured prompt under `.agents/shaka/`.
+Inspect the settings diff and confirm that the changed file supplies the
+effective reviewer prompt. Packaged prompts and CLI-version comparisons need
+a separate replay procedure.
 
 `--preview` builds every fixture without sign-in or model calls. Drop it after
 checking the fixtures and approving the run. Use `--case r04` for a small
 smoke run. Each isolated fixture holds the reviewed head and its ancestors, no
 Git remote, and a projected settings commit containing review configuration
-and applicable repository instructions. Neither arm sees the scoring key or the
-other arm's report. This follows [the Stage 1 replay](../reports/review-scope-stage1-pilot.md#rerun-it).
+and applicable repository instructions. The runner supplies neither the scoring
+key nor earlier reports to the reviewers. Codex uses Shaka's normal read-only
+sandbox. Check its transcript for access outside the fixture before scoring.
+This follows [the Stage 1 replay](../reports/review-scope-stage1-pilot.md#rerun-it).
 
 The existing eval ledger counts cache-neutral API-equivalent dollars against
 the $15 per-PR and $200 monthly limits. Native evidence also reports billed-
