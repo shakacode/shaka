@@ -256,3 +256,8 @@ Implementation review and the maintainer changed three decisions on 2026-11-14.
 
 R4 names the offer instead of reviewer notes. The work shipped as one PR of about 500
 changed lines.
+
+On 2026-11-17 the maintainer chose, for [#1148](https://github.com/shakacode/shaka/issues/1148),
+that a newer walkthrough deletes the older walkthroughs' notes nobody answered, instead of
+resolving them. Resolved threads stayed visible and read as duplicate comments when the
+same note was posted again on an unchanged line. Answered notes stay.
