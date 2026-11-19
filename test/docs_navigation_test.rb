@@ -1294,6 +1294,61 @@ class DocsGeneratedSourceTest < Minitest::Test
   end
 end
 
+class DocsRouteSourceTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_category_indexes_cannot_share_a_route
+    %w[index README setup].combination(2) do |names|
+      assert_collision(names.map { |name| "docs/setup/#{name}.md" })
+    end
+  end
+
+  def test_parent_source_and_nested_index_cannot_share_a_route
+    assert_collision(%w[docs/setup.md docs/setup/index.md])
+  end
+
+  def test_generated_sources_cannot_share_a_route_with_guides
+    %w[docs/index.md docs/changelog/index.md docs/changelog/README.md].each { |path| assert_collision([path]) }
+  end
+
+  def test_independent_sources_keep_distinct_routes
+    output, errors, status = source_result(%w[docs/setup/README.md docs/setup/guide.md docs/install.md])
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
+  def assert_collision(paths)
+    output, _, status = source_result(paths)
+    refute_predicate status, :success?, output
+    assert_includes output, 'Sources share a site route:'
+  end
+
+  def source_result(paths)
+    files = paths.to_h { |path| [path, '# Guide'] }
+    ids = paths.map { |path| path.delete_prefix('docs/').delete_suffix('.md') }
+    check({ 'docsSidebar' => ['expected-experience', *ids] }, '# Guide', files)
+  end
+end
+
+class DocsSlashRefTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_legacy_references_boundary_survives_slash_refs
+    prefixes = %w[https://github.com/shakacode/shaka/blob/jg-codex/1-documentation-audiences
+                  https://raw.githubusercontent.com/shakacode/shaka/jg-codex/1-documentation-audiences
+                  https://cdn.jsdelivr.net/gh/shakacode/shaka@jg-codex/1-documentation-audiences]
+    prefixes.each { |prefix| assert_source_links(prefix) }
+  end
+
+  def assert_source_links(prefix)
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] },
+                              "[Agent](#{prefix}/skills/shaka/references/review.md)")
+    refute_predicate status, :success?, output
+    output, errors, status = check({ 'docsSidebar' => ['expected-experience'] },
+                                   "[Guide](#{prefix}/docs/settings.md)")
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+end
+
 class DocsIndexSymlinkTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 

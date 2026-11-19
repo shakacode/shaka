@@ -10,6 +10,15 @@ module ShakaDocs
 
     module_function
 
+    def route_groups(files)
+      files.group_by do |file|
+        id = file.sub(/\.(?:md|mdx)\z/, '')
+        directory = File.dirname(id)
+        indexes = ['index', 'readme', File.basename(directory).downcase]
+        indexes.include?(File.basename(id).downcase) ? directory : id
+      end
+    end
+
     def overrides(text)
       node = Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---' } }).first_child
       return [] unless node&.type == :frontmatter

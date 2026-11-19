@@ -45,12 +45,16 @@ module ShakaDocs
 
     def local_path(repository, source, target)
       uri = url(target)
-      return repository_path(uri) if uri.scheme || uri.host
+      return legacy_reference_path(repository_path(uri)) if uri.scheme || uri.host
 
       target = URI::DEFAULT_PARSER.unescape(uri.path)
       return "docs#{target}" if target.start_with?('/')
 
       File.absolute_path(target, File.dirname(source)).delete_prefix("#{repository}/")
+    end
+
+    def legacy_reference_path(path)
+      path&.sub(%r{\A.+/(skills/shaka/references(?:/.*)?\z)}, '\\1')
     end
   end
 end

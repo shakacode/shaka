@@ -36,6 +36,9 @@ The site reserves the root `changelog` ID for generated release notes; edit root
 `CHANGELOG.md` instead, and use another source name for a guide.
 Keep the root overview at `docs/README.md`; an authored `README.mdx` would collide
 with the site's generated fallback.
+Category-index names (`index`, `README`, or the directory's own name) share their
+directory route. Give each source a distinct route, including against the generated
+overview and changelog; rename a conflicting guide instead of adding a slug override.
 
 Public guides and sidebar links must lead to human guidance. The check rejects
 links into Shaka's skill Markdown, its YAML workflow instructions and project agent instructions.
@@ -50,7 +53,9 @@ skills remain available. Extensionless source paths under `skills/` or `.agents/
 are treated as agent targets, including directories and scripts.
 Source citations use a commit, tag, or branch without
 slashes so the check can distinguish the ref from the repository path. Slash-containing
-refs require author and reviewer judgment. GitHub, raw GitHub and jsDelivr's `/gh/`
+refs require author and reviewer judgment. The legacy references subtree remains
+conservatively blocked inside first-party source paths, including slash-containing refs.
+GitHub, raw GitHub and jsDelivr's `/gh/`
 source layouts are recognized; other external source layouts require manual review.
 Leading-slash links address public site routes.
 Commonmarker parses Markdown including footnotes, Nokogiri extracts HTML links,
