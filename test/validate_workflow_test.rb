@@ -53,8 +53,12 @@ class ValidateWorkflowTest < Minitest::Test
     refute_includes @detector_script, 'if bin/docs-only-change'
   end
 
-  def test_ruby_setup_is_skipped_for_docs
-    assert_docs_condition step_using('ruby/setup-ruby@')
+  def test_docs_check_has_its_bundled_parsers_before_it_runs
+    setup = step_using('ruby/setup-ruby@')
+    refute setup.key?('if')
+    assert setup.dig('with', 'bundler-cache')
+    docs = @steps.find { |step| step['name'] == 'Report documentation-only validation' }
+    assert_operator @steps.index(setup), :<, @steps.index(docs)
   end
 
   def test_full_validation_is_skipped_for_docs
@@ -96,6 +100,17 @@ class ValidateWorkflowTest < Minitest::Test
 
     refute_predicate status, :success?
     assert_includes output, 'docs/guide.md -> #set-up (missing anchor)'
+  ensure
+    FileUtils.remove_entry(root) if root && File.exist?(root)
+  end
+
+  def test_documentation_fast_path_rejects_an_agent_prompt_link
+    root = validation_fixture
+    target = 'https://github.com:443/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md'
+    File.write(File.join(root, 'docs/guide.md'), "[Agent](#{target})\n")
+    output, status = run_local_validation(root)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
   ensure
     FileUtils.remove_entry(root) if root && File.exist?(root)
   end
@@ -283,12 +298,18 @@ class ValidateWorkflowTest < Minitest::Test
   end
 
   def install_validation_scripts(root)
-    %w[bin/docs-only-change bin/check-docs-navigation .agents/shaka/bin/validate].each do |path|
-      FileUtils.cp(File.expand_path("../#{path}", __dir__), File.join(root, path))
-    end
+    copy_validation_sources(root)
     File.write(File.join(root, 'docs/sidebars.json'), '{"docsSidebar":["guide"]}')
     File.write(File.join(root, 'bin/validate'), "#!/bin/sh\necho FULL_VALIDATION\n")
     FileUtils.chmod(0o755, File.join(root, 'bin/validate'))
+  end
+
+  def copy_validation_sources(root)
+    %w[Gemfile Gemfile.lock bin/docs-only-change bin/check-docs-navigation .agents/shaka/bin/validate].each do |path|
+      FileUtils.mkdir_p(File.dirname(File.join(root, path)))
+      FileUtils.cp(File.expand_path("../#{path}", __dir__), File.join(root, path))
+    end
+    FileUtils.cp_r(File.expand_path('../lib/shaka_docs', __dir__), File.join(root, 'lib/shaka_docs'))
   end
 
   def initialize_repository(root)

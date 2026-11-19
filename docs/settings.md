@@ -11,8 +11,8 @@ Settings live in `.agents/shaka/config.yml`. Ask your agent to
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
 Optional choices without fixed defaults, such as the base branch and local reviewer models, stay commented.
-Its [README](https://github.com/shakacode/shaka/tree/main/.agents/shaka#readme) notes
-why its prompts and reviewer count differ from the defaults.
+Ask your agent to read `.agents/shaka/README.md` in the `shakacode/shaka` GitHub repository
+for why Shaka's example prompts and reviewer count differ from the defaults.
 
 ## Which settings apply?
 
@@ -717,7 +717,7 @@ Codex reviewed locally still gets a full Claude review on GitHub.
 
 **Optional. Default: `.agents/shaka/instructions/review.md`.** Add your own rules to the
 local code review without copying Shaka's prompt. Write them in that file. Shaka's
-[review instructions](../skills/shaka/config/review-prompt.md) still apply in full; the
+built-in review instructions still apply in full; the
 reviewer reads them, then your `AGENTS.md` files, then your file. For example:
 
 ```markdown
@@ -727,8 +727,7 @@ Check that every new setting has a test.
 When your file conflicts with Shaka's instructions or your `AGENTS.md` criteria, the
 reviewer follows your file. Shaka tells the reviewer that your file cannot relax its
 safety rules, the finding classes, or the attestation line. Shaka checks the attestation;
-the reviewer is trusted with the rest. See Shaka's own
-[review instructions](https://github.com/shakacode/shaka/blob/main/.agents/shaka/instructions/review.md).
+the reviewer is trusted with the rest.
 
 To keep the file elsewhere, name it with a path relative to the repository root. A named
 file must exist; at the default path, a missing or empty file adds nothing. When the
@@ -737,10 +736,11 @@ say it is ignored. The [checkpoint](#checkpoint) works the same way.
 
 ## `review.replacement_prompt_file`
 
-**Optional. Default: Shaka's [review instructions](../skills/shaka/config/review-prompt.md).**
+**Optional. Default: Shaka's built-in review prompt.**
 A Markdown file in your repository that replaces what the local reviewer looks for
 and how it reports. Prefer [custom instructions](#reviewcustom_instructions_file); replace
-only to remove one of Shaka's rules, and copy the default to start.
+only to remove one of Shaka's rules. Ask your agent to copy
+`skills/shaka/config/review-prompt.md` from your Shaka installation to start.
 
 ```yaml
 review:
@@ -835,8 +835,8 @@ you [accepted](reference/pr-record.md#checkpoint) as resolved, or an explicit op
 ### Add your own checkpoint questions
 
 Write them in `.agents/shaka/instructions/checkpoint.md`. Shaka's
-[built-in checkpoint prompt](../skills/shaka/config/post-implementation-prompt.md)
-still applies in full. The reviewer reads it, then your `AGENTS.md` files, then your
+built-in checkpoint prompt, `skills/shaka/config/post-implementation-prompt.md`
+in your Shaka installation, still applies in full. The reviewer reads it, then your `AGENTS.md` files, then your
 file. For example:
 
 ```markdown
@@ -923,7 +923,7 @@ reviewer's.
   Rate a change to a public API response as at least medium.
   ```
 
-  Shaka's [risk rubric](../skills/shaka/config/post-implementation-risk.md) tells the
+  Shaka's risk rubric tells the
   reviewer that guidance may raise a rating but never lower one. The same holds for
   guidance in `AGENTS.md` or a replacement prompt. Shaka does not check the reviewer's
   rating against your guidance.
@@ -1022,8 +1022,8 @@ project_guidance:
   pr_evidence: .agents/shaka/pr-evidence.md
 ```
 
-[The guide](https://github.com/shakacode/shaka/blob/main/.agents/shaka/pr-evidence.md)
-has a shape worth copying. It opens with its condition, so the agent skips it in one line.
+Ask your agent to use `.agents/shaka/pr-evidence.md` in the `shakacode/shaka` GitHub
+repository as an example. It opens with its condition, so the agent skips it in one line.
 It points to a longer procedure instead of repeating it, so the steps keep one home. It
 ends by saying where to report the result, or why there is none.
 
@@ -1100,8 +1100,8 @@ reviewer; the agent still follows your ordinary writing instructions.
 
 ### Customize the opening check
 
-Copy [Shaka's default opening prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/opening-prompt.md)
-and set `replacement_prompt_file` to your copy. The path is relative to the repository root,
+Ask your agent to copy `skills/shaka/config/opening-prompt.md` from your Shaka
+installation and set `replacement_prompt_file` to your copy. The path is relative to the repository root,
 not the configuration file's directory. For example,
 `replacement_prompt_file: .agents/shaka/opening.md` selects that file beneath the repository
 root. Both the separate AI session and the coding agent use those instructions.

@@ -5,6 +5,87 @@ The goal is for a new user to start a task, ask their agent for help, and judge 
 resulting PR without first studying Shaka's workflow. The writing rules in
 [AGENTS.md](../AGENTS.md#writing-in-this-repository) still apply.
 
+## Check documentation destinations
+
+`bin/check-docs-navigation` requires every product guide under `docs/` to appear
+in `docs/sidebars.json`. Sources under `docs/` must not be symlinks; the published
+files and directories must travel with the documentation tree.
+Tracked symlink entries also fail when a checkout materializes them as plain files.
+New Markdown outside the established documentation
+locations fails validation until its destination is reviewed. The root
+`README.gem.md` serves RubyGems, `contributing/` serves contributors, and
+`internal/` and `eval/` hold development records.
+The inventory covers `.md` and `.mdx` files regardless of extension case.
+The site requires lowercase `.md`/`.mdx` extensions and excludes dot paths,
+underscore paths and `planning/` folders. Move
+product guides to visible `docs/` paths before enrolling them; move non-site
+documents to their established destination instead.
+
+Run the check in a Git checkout to exclude ignored dependencies. A source export
+without Git metadata checks every Markdown file, including vendored dependencies.
+Keep `docs/` and `skills/` complete, with no skip-worktree paths or sparse omissions.
+Ignored local files cannot satisfy link targets under `docs/`.
+Relative links use checked repository paths; use canonical paths rather than aliases.
+Scanned source files must have real directory ancestors, including skill sources.
+Use regular files for parsed sources; other documentation locations are classified by path.
+Untracked dangling aliases under `skills/` are ignored.
+Use exact source-path casing. Front matter must not override publication IDs, URLs or
+visibility with `id`, `slug`, `draft`, `unlisted`, or YAML merge keys; use the checked paths
+and sidebar, and keep unpublished writing outside `docs/`.
+Start guide and directory names with a non-digit to avoid site ID rewriting.
+The site reserves the root `changelog` ID for generated release notes; edit root
+`CHANGELOG.md` instead, and use another source name for a guide.
+Keep the root overview at `docs/README.md`; an authored `README.mdx` would collide
+with the site's generated fallback.
+Category-index names (`index`, `README`, or the directory's own name) share their
+directory route. Give each source a distinct route, including against the generated
+overview and changelog; rename a conflicting guide instead of adding a slug override.
+Category landings must use `type: doc` and a checked Markdown source. Generated-index
+entries are unsupported, so sidebar metadata cannot introduce another page route.
+
+Public guides and sidebar links must lead to human guidance. The check rejects
+links into Shaka's skill Markdown, its YAML workflow instructions and project agent instructions.
+Canonical `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` and `SKILL.md` names, including dot-suffixed
+variants such as `AGENTS.override.md`, are reserved for agents regardless of case.
+Within `docs/`, bare lowercase `agents.md`, `claude.md`, `gemini.md` and `skill.md`
+may serve human tool guides. Canonical uppercase names and dot-suffixed variants
+remain agent destinations.
+Agent Markdown and rules in host configuration directories, such as `.claude/`
+and `.github/instructions/`, are agent destinations too. The canonical paths and
+legacy control filenames are listed in `lib/shaka_docs/audiences.rb`.
+Configuration data and installable workflow templates, including
+`claude-code-review.yml`, remain linkable for setup. Citations of other projects'
+skills remain available. Extensionless source paths under `skills/` or `.agents/`
+are treated as agent targets, including directories and scripts.
+Source citations use a commit, tag, or branch without
+slashes so the check can distinguish the ref from the repository path. Slash-containing
+refs require author and reviewer judgment. The legacy references subtree remains
+conservatively blocked inside first-party source paths, including slash-containing refs.
+Bare full 40-character commit refs use their parsed repository paths, so an immutable
+human-guide citation can contain that directory segment without being reclassified.
+GitHub, raw GitHub and jsDelivr's `/gh/`
+source layouts are recognized; other external source layouts require manual review.
+Leading-slash links address public site routes.
+Commonmarker parses Markdown including footnotes, Nokogiri extracts HTML links,
+and Addressable normalizes URLs.
+HTTP(S) links need a parsed authority. Prefer canonical `://host` spelling;
+short forms such as `http:/example.com` fail instead of relying on browser recovery.
+File and heading-anchor validation applies to Markdown links and images. Static
+HTML hyperlinks in anchors, image maps and SVG are checked for agent destinations.
+The hyperlink check ignores code examples and unused reference definitions.
+Rendered Markdown links to GitHub documentation on `main` are checked against this checkout for files and anchors.
+Other refs may cite different content; their files and anchors require review. Audience checks still apply at every ref.
+Commonmarker determines their punctuation; unused definitions are not navigation links.
+The existing literal-source guard is separate: it recognizes ASCII references shaped
+like `shakacode/shaka/blob/REF/docs/PATH.md#HEADING` throughout source text, including
+unused declarations. It also supports `.mdx` and checks references rather than interpreting their surrounding
+language, host or URL scheme. Dynamic, escaped, non-ASCII and other source forms require review.
+Literal references use checkout targets regardless of ref; use a rendered Markdown link for a historical citation.
+Parsed Markdown destinations take precedence at their own occurrence; independent
+plain-text, metadata and code references retain the literal guard.
+Form submissions, MDX-specific syntax and custom components require manual review.
+Each guide's author and reviewer still determine its audience.
+
 ## Give new users a way to start
 
 Keep `README.md`, `docs/README.md`, `docs/getting-started.md`, and

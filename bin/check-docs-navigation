@@ -1,116 +1,174 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+ENV['BUNDLE_GEMFILE'] = File.expand_path('../Gemfile', __dir__)
+require 'bundler/setup'
 require 'json'
 require 'rexml/document'
-
-AGENT_REFERENCES = %r{(?:\A|/)skills/shaka/references(?:[/#?]|\z)}
-
-# Check the full published tree, so an already-merged orphan is caught too.
-def document_ids(item)
-  case item
-  when String then [item]
-  when Array then item.flat_map { |child| document_ids(child) }
-  when Hash then sidebar_ids(item)
-  else raise ArgumentError, "Unsupported sidebar item: #{item.inspect}"
-  end
-end
-
-def sidebar_ids(item)
-  case item['type']
-  when 'link' then []
-  when 'doc' then [item.fetch('id')]
-  when 'category' then document_ids(item.fetch('items'))
-  else raise ArgumentError, "Unsupported sidebar item: #{item.inspect}"
-  end
-end
-
-# Human guides must not send readers into agent instructions; see AGENTS.md.
-def agent_reference_links(text)
-  inline = text.scan(/\]\(\s*<?([^)\s>]+)/).flatten
-  defined = text.scan(/^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?(\S+?)>?(?:\s|$)/).flatten
-  html = text.scan(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>`=]+))/).flatten.compact
-  urls = text.scan(%r{https?://[^\s<>()"'\]]+})
-  (inline + defined + html + urls).grep(AGENT_REFERENCES).uniq
-end
+require_relative '../lib/shaka_docs/audiences'
+require_relative '../lib/shaka_docs/metadata'
+require_relative '../lib/shaka_docs/navigation'
 
 # Code prints these into user output, so a heading rename in a docs-only PR would break them silently.
-EMITTED_DOCS = %r{shakacode/shaka/blob/[^/\s]+/docs/([\w./-]+\.md)(?:#([\w-]+))?}
-
-def prose(path)
-  File.read(path, encoding: 'UTF-8').gsub(/^ {0,3}```.*?^ {0,3}```/m, '')
-end
-
-# GitHub's heading slugs for the heading forms these docs use; emphasis and {#id} are not modeled.
-def slug(heading)
-  text = heading.gsub(/<[^>]*>/, '').gsub(/\[([^\]]*)\]\([^)]*\)/, '\\1')
-  text.downcase.strip.gsub(/[^\p{Word}\- ]/, '').tr(' ', '-')
-end
+# Preserve the established ASCII source-reference guard; rendered Markdown links use the parser.
+EMITTED_DOCS = %r{shakacode/shaka/blob/[^/\s]+/docs/([\w./-]+\.mdx?)(?:#([\w-]+))?}
 
 def heading_ids(text)
-  seen = Hash.new(0)
-  text.scan(/^ {0,3}\#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/).flatten.map do |heading|
-    id = slug(heading)
-    count = (seen[id] += 1) - 1
-    count.zero? ? id : "#{id}-#{count}"
+  html = Commonmarker.to_html(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } })
+  Nokogiri::HTML5.fragment(html).css('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').map { |node| node['id'] }
+end
+
+def explicit_anchors(text)
+  ids = []
+  Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } }).walk do |node|
+    next unless %i[html_inline html_block].include?(node.type)
+
+    fragment = Nokogiri::HTML5.fragment(node.literal)
+    ids.concat(fragment.css('a[id], a[name]').flat_map { |anchor| [anchor['id'], anchor['name']].compact })
   end
+  ids
 end
 
 def anchors(path)
   @anchors ||= {}
   @anchors[path] ||= begin
-    text = prose(path)
-    heading_ids(text) + text.scan(/<a\s+(?:id|name)\s*=\s*["']([^"']+)["']/).flatten
+    text = File.read(path, encoding: 'UTF-8')
+    heading_ids(text) + explicit_anchors(text)
   end
 end
 
-def unresolved(path, target)
-  file, anchor = target.split('#', 2)
-  destination = file.empty? ? path : File.expand_path(file, File.dirname(path))
-  return 'missing file' unless File.exist?(destination)
+def unresolved_anchor(path, fragment)
+  anchor = URI::DEFAULT_PARSER.unescape(fragment.to_s)
+  return if anchor.empty? || anchor.casecmp?('top')
 
-  'missing anchor' if anchor && destination.match?(/\.mdx?\z/) && !anchors(destination).include?(anchor)
+  'missing anchor' if path.match?(/\.mdx?\z/) && !anchors(path).include?(anchor)
 end
 
-def broken_relative_links(repository, path)
-  text = prose(path).gsub(/`[^`\n]*`/, '')
-  inline = text.scan(/\]\(\s*<?([^)\s>]+)/).flatten
-  defined = text.scan(/^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?(\S+?)>?(?:\s|$)/).flatten
-  (inline + defined).uniq.filter_map do |target|
+def aliased_target?(path, checked)
+  ShakaDocs::Inventory.aliased?(path, checked[:repository], checked[:aliases])
+end
+
+def unresolved(path, target, checked)
+  uri = ShakaDocs::Audiences.url(target)
+  file = URI::DEFAULT_PARSER.unescape(uri.path)
+  destination = file.empty? ? path : File.absolute_path(file, File.dirname(path))
+  unresolved_destination(destination, uri.fragment, checked)
+end
+
+def unresolved_destination(destination, fragment, checked)
+  return 'missing file' unless checked[:paths].include?(destination)
+  return 'symlink target' if aliased_target?(destination, checked)
+  return 'missing file' unless File.exist?(destination)
+
+  unresolved_anchor(destination, fragment)
+end
+
+def broken_relative_links(repository, path, checked)
+  ShakaDocs::Audiences.links(File.read(path, encoding: 'UTF-8'), include_html: false).filter_map do |target|
     next if target.match?(%r{\A(?:[a-z][\w+.-]*:|/)}i) || target.include?('{{')
 
-    problem = unresolved(path, target)
+    problem = unresolved(path, target, checked)
     "#{path.delete_prefix("#{repository}/")} -> #{target} (#{problem})" if problem
   end
 end
 
-def broken_emitted_links(repository, docs, path)
-  File.read(path, encoding: 'UTF-8').scrub.scan(EMITTED_DOCS).uniq.filter_map do |page, anchor|
+def source_references(text)
+  text.scan(EMITTED_DOCS).map { |page, anchor| ["docs/#{page}", anchor] }
+end
+
+def parsed_markdown_reference?(text, match, destinations)
+  return false if destinations.empty?
+
+  # A destination gains the marker; breaking a reference label only removes a link.
+  changed = ShakaDocs::Audiences.links(text.dup.insert(match.begin(1), '0'), unique: false).tally
+  destinations.any? do |target, count|
+    next false unless changed.fetch(target, 0) < count
+
+    changed.any? do |replacement, occurrences|
+      next false unless occurrences > destinations.fetch(replacement, 0)
+
+      marked_destination?(target, replacement)
+    end
+  end
+end
+
+def marked_destination?(target, replacement)
+  insertion = target.each_char.zip(replacement.each_char).take_while { |left, right| left == right }.size
+  replacement == target.dup.insert(insertion, '0')
+end
+
+def markdown_source_references(text)
+  links = ShakaDocs::Audiences.links(text, unique: false)
+  destinations = links.tally.select { |target, _| github_document_reference(target) }
+  legacy = text.to_enum(:scan, EMITTED_DOCS).filter_map do
+    match = Regexp.last_match
+    ["docs/#{match[1]}", match[2]] unless parsed_markdown_reference?(text, match, destinations)
+  end
+  links.filter_map { |target| emitted_document_target(target) } + legacy
+end
+
+def emitted_document_targets(text, path)
+  (path.match?(/\.mdx?\z/i) ? markdown_source_references(text) : source_references(text)).uniq
+end
+
+def github_web_url?(uri)
+  [nil, 'http', 'https'].include?(uri.scheme&.downcase) && uri.host.to_s.delete_prefix('www.') == 'github.com'
+end
+
+def github_document_reference(target)
+  uri = ShakaDocs::Audiences.url(target)
+  return unless github_web_url?(uri)
+
+  parts = uri.path.split('/', 6)
+  return unless parts.size == 6 && parts[1, 3].map(&:downcase) == %w[shakacode shaka blob]
+
+  page = URI::DEFAULT_PARSER.unescape(parts.last)
+  [page, uri.fragment, URI::DEFAULT_PARSER.unescape(parts[4])] if page.start_with?('docs/')
+rescue Addressable::URI::InvalidURIError
+  nil
+end
+
+def emitted_document_target(target)
+  reference = github_document_reference(target)
+  reference.first(2) if reference&.first&.match?(/\.mdx?\z/) && reference[2] == 'main'
+end
+
+def broken_emitted_links(repository, checked, path)
+  emitted_document_targets(File.read(path, encoding: 'UTF-8').scrub, path).filter_map do |page, anchor|
     target = [page, anchor].compact.join('#')
-    problem = unresolved(File.join(docs, 'index.md'), target)
-    "#{path.delete_prefix("#{repository}/")} -> docs/#{target} (#{problem})" if problem
+    problem = unresolved_destination(File.absolute_path(page, repository), anchor, checked)
+    "#{path.delete_prefix("#{repository}/")} -> #{target} (#{problem})" if problem
   end
 end
 
 def markdown_files(docs, repository)
-  Dir.glob(File.join(docs, '**/*.{md,mdx}')) + Dir.glob(File.join(repository, 'skills/**/*.md'))
+  prefix = Regexp.escape(File.basename(docs))
+  ShakaDocs::Inventory.files(repository, %r{\A(?:#{prefix}|skills)/.*\.mdx?\z}i).map do |file|
+    File.join(repository, file)
+  end
 end
 
-def broken_links(docs)
+def emitted_sources(repository)
+  ShakaDocs::Inventory.files(repository, %r{\Askills/}).map { |file| File.join(repository, file) }
+end
+
+def broken_links(docs, checked_paths, indexed)
   docs = File.expand_path(docs)
   repository = File.dirname(docs)
   markdown = markdown_files(docs, repository)
-  sources = markdown | Dir.glob(File.join(repository, 'skills/**/*')).select { |path| File.file?(path) }
-  markdown.flat_map { |path| broken_relative_links(repository, path) } +
-    sources.flat_map { |path| broken_emitted_links(repository, docs, path) }
+  sources = markdown | emitted_sources(repository)
+  checked = { docs: docs, repository: repository, paths: checked_paths, aliases: indexed }
+  markdown.flat_map { |path| broken_relative_links(repository, path, checked) } +
+    sources.flat_map { |path| broken_emitted_links(repository, checked, path) }
 end
 
 SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 
 # A docs-only change skips the tests, so each figure must at least parse as an SVG document.
 # The classifier accepts any name under img/, so the scan includes hidden paths and .SVG.
-def malformed_figures(docs)
-  Dir.glob('img/**/*', File::FNM_DOTMATCH, base: docs).grep(/\.svg\z/i).reject do |file|
+def malformed_figures(docs, paths)
+  figures = paths.filter_map { |path| path.delete_prefix("#{docs}/") if path.start_with?("#{docs}/img/") }
+  figures.grep(/\.svg\z/i).reject do |file|
     root = REXML::Document.new(File.read(File.join(docs, file), encoding: 'UTF-8')).root
     root&.name == 'svg' && root.namespace == SVG_NAMESPACE
   rescue REXML::ParseException
@@ -118,31 +176,96 @@ def malformed_figures(docs)
   end
 end
 
+def source_components(path, repository) = ShakaDocs::Inventory.components(path, repository)
+
+def reject_docs_symlinks(paths, repository, indexed)
+  components = paths.flat_map { |path| source_components(path, repository) }.uniq
+  aliases = components.select { |path| ShakaDocs::Inventory.link?(path, indexed) }
+  aliases.map! { |path| path.delete_prefix("#{repository}/") }
+  raise ArgumentError, "Docs sources cannot be symlinks: #{aliases.join(', ')}" unless aliases.empty?
+end
+
 begin
-  root = ARGV.fetch(0, File.expand_path('../docs', __dir__))
+  root = File.expand_path(ARGV.fetch(0, File.expand_path('../docs', __dir__)))
+  repository = File.dirname(root)
+  prefix = "#{File.basename(root)}/"
+  inventory = ShakaDocs::Inventory.paths(repository)
+  indexed = ShakaDocs::Inventory.symlinks(repository).map { |path| File.join(repository, path) }
+  reject_docs_symlinks([root, File.join(root, 'sidebars.json')], repository, indexed)
+  unless inventory.include?("#{prefix}sidebars.json")
+    raise ArgumentError, "Sidebar must be in the checked inventory: #{prefix}sidebars.json"
+  end
+
   navigation = JSON.parse(File.read(File.join(root, 'sidebars.json')))
   raise ArgumentError, 'Expected a sidebar object' unless navigation.is_a?(Hash)
 
-  ids = document_ids(navigation.fetch('docsSidebar'))
-  files = Dir.glob('**/*.{md,mdx}', base: root)
-  pages = files.map { |file| file.sub(/\.(md|mdx)\z/, '') }
+  sidebar_items = navigation.transform_values { |sidebar| ShakaDocs::Navigation.items(sidebar) }
+  ids = sidebar_items.fetch('docsSidebar').filter_map { |kind, value| value if kind == :doc }
+  all_items = sidebar_items.values.flatten(1)
+  doc_paths = inventory.filter_map { |file| File.join(repository, file) if file.start_with?(prefix) }
+  reject_docs_symlinks(doc_paths, repository, indexed)
+  doc_paths.select! { |path| File.file?(path) }
+
+  files = doc_paths.grep(/\.mdx?\z/i).map { |path| path.delete_prefix("#{root}/") }
+  overrides = files.filter_map do |file|
+    keys = ShakaDocs::Metadata.overrides(File.read(File.join(root, file), encoding: 'UTF-8'))
+    "#{file} (#{keys.join(', ')})" unless keys.empty?
+  end
+  # Site discovery needs lowercase extensions and ignores dot, underscore and planning paths.
+  excluded, published = files.partition do |file|
+    !file.match?(/\.mdx?\z/) || file.split('/').any? { |part| part.start_with?('.', '_') } ||
+      file.split('/')[0...-1].include?('planning')
+  end
+  publication_ids = published.group_by { |file| file.sub(/\.(md|mdx)\z/, '') }
+  generated = publication_ids.fetch('changelog', [])
+  unsupported_home = published & ['README.mdx']
+  numbered = published.select { |file| file.split('/').any? { |part| part.match?(/\A\d/) } }
+  duplicates = publication_ids.values.select { |paths| paths.size > 1 }.flatten
+  routes = ShakaDocs::Metadata.route_groups(published | %w[README.md changelog.md])
+  collisions = routes.values.select { |paths| paths.size > 1 }.flatten
+  pages = publication_ids.keys
   missing = pages - ids
-  stale = ids - pages
+  stale = all_items.filter_map { |kind, value| value if kind == :doc } - pages
   agent_links = files.flat_map do |file|
-    agent_reference_links(File.read(File.join(root, file), encoding: 'UTF-8')).map { |link| "#{file} -> #{link}" }
+    ShakaDocs::Audiences.agent_links(repository, File.join(root, file), File.read(File.join(root, file), encoding: 'UTF-8')).map { |link| "#{file} -> #{link}" }
+  end
+  sidebar_targets = all_items.filter_map { |kind, value| value if kind == :url }
+  sidebar_agents = ShakaDocs::Audiences.agent_targets(repository, File.join(root, 'sidebars.json'), sidebar_targets)
+  agent_links.concat(sidebar_agents.map { |link| "sidebars.json -> #{link}" })
+  agent_links.concat(files.select { |file| ShakaDocs::Audiences.agent_entry?("#{prefix}#{file}") })
+  unclassified = ShakaDocs::Audiences.unclassified_documents(repository)
+  puts "Markdown outside established documentation locations: #{unclassified.join(', ')}" unless unclassified.empty?
+  puts "Duplicate publication IDs: #{duplicates.join(', ')}" unless duplicates.empty?
+  puts "Sources share a site route: #{collisions.join(', ')}" unless collisions.empty?
+  puts 'Overview source must use README.md; the site generates that file when absent.' unless unsupported_home.empty?
+  unless generated.empty?
+    puts "Site-generated path: #{generated.join(', ')}; edit CHANGELOG.md for release notes, or rename the guide."
+  end
+  unless numbered.empty?
+    puts "Numbered source paths: #{numbered.join(', ')}; rename guides and directories without numeric prefixes."
+  end
+  puts "Site publication overrides are not supported: #{overrides.join(', ')}" unless overrides.empty?
+  unless excluded.empty?
+    puts "Site-excluded Markdown: #{excluded.join(', ')}; move product guides to visible docs/ paths, " \
+         'or move non-site documents to their established destination.'
   end
   puts "Missing from docs/sidebars.json: #{missing.join(', ')}" unless missing.empty?
   puts "Navigation targets missing pages: #{stale.join(', ')}" unless stale.empty?
   puts "Link a human guide, not agent instructions: #{agent_links.join(', ')}" unless agent_links.empty?
-  broken = broken_links(root)
+  checked_paths = [repository] + inventory.flat_map do |file|
+    source_components(File.join(repository, file), repository)
+  end.uniq
+  broken = broken_links(root, checked_paths, indexed)
   puts "Unresolved links in docs/ and skills/:\n#{broken.join("\n")}" unless broken.empty?
-  malformed = malformed_figures(root)
+  malformed = malformed_figures(root, doc_paths)
   puts "Figures that do not parse as SVG: #{malformed.join(', ')}" unless malformed.empty?
-  exit 1 unless missing.empty? && stale.empty? && agent_links.empty? && broken.empty? && malformed.empty?
+  exit 1 unless [missing, stale, duplicates, collisions, generated, unsupported_home, numbered, excluded,
+                 overrides, unclassified, agent_links, broken, malformed].all?(&:empty?)
 
   puts "All #{pages.size} published pages are in docs/sidebars.json and link no agent instructions; " \
-       'links and anchors in docs/ and skills/ resolve; figures parse.'
-rescue JSON::ParserError, KeyError, ArgumentError, Errno::ENOENT => e
+       'Markdown links and heading anchors in docs/ and skills/ resolve; figures parse.'
+rescue JSON::ParserError, KeyError, ArgumentError, Errno::ENOENT, Addressable::URI::InvalidURIError,
+       Psych::Exception => e
   warn "Docs navigation check failed: #{e.message}"
   exit 1
 end
