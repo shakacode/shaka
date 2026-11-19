@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+require_relative 'human_comments'
+require_relative 'risk_review'
+require_relative 'steps_besides_merging'
+
 module Shaka
   # Orders a description by the pull request template once the template marks a spot for Shaka.
   # Shaka's sections stay one sequence in their usual order at that spot. The template orders the agent's own
@@ -7,6 +11,10 @@ module Shaka
   module TemplateLayout
     # What PrTemplate.outline puts where the template holds the marker line.
     MARKER = :shaka
+    # Headings Shaka writes itself. A supplied section using one stays after Shaka's, so the template never puts
+    # it ahead of the section it repeats.
+    SHAKA_HEADINGS = ['Summary', 'Intent', 'Verification', 'Shaka metrics', RiskReview::HEADING.delete_prefix('## '),
+                      HumanComments::HEADING, *StepsBesidesMerging::RESERVED_HEADINGS].map(&:downcase).freeze
 
     module_function
 
@@ -16,7 +24,7 @@ module Shaka
       entries = entries(outline)
       return [*shaka, *sections.map(&:last)] unless entries.include?(MARKER)
 
-      named, unnamed = sections.partition { |section, _| entries.include?(key(section['heading'])) }
+      named, unnamed = sections.partition { |section, _| entries.include?(placeable(section['heading'])) }
       entries.flat_map { |entry| entry == MARKER ? [*shaka, *unnamed.map(&:last)] : blocks(named, entry) }
     end
 
@@ -24,6 +32,9 @@ module Shaka
     def entries(outline) = Array(outline).map { it == MARKER ? it : key(it) }.uniq
 
     def blocks(named, entry) = named.select { |section, _| key(section['heading']) == entry }.map(&:last)
+
+    # A supplied heading's key, or nil for one Shaka writes itself, which the template does not place.
+    def placeable(heading) = (name = key(heading)) && !SHAKA_HEADINGS.include?(name) ? name : nil
 
     # Headings match by their words, ignoring case and spacing.
     def key(text) = text.to_s.gsub(/[[:space:]]+/, ' ').strip.downcase

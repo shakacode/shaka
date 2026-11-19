@@ -53,15 +53,15 @@ module Shaka
     # blocks and HTML comments that start a line hold neither.
     def self.outline(text) = OutlineReader.new.call(text)
 
-    # What a reader of `guidance pr_evidence` needs to see: the order Shaka will publish, and any repeats.
+    # What a reader of `guidance pr_evidence` needs to see: what Shaka read in the template, and any repeats.
     # Headings group as the description layout matches them, by words, ignoring case and spacing.
     def self.check(outline)
       return [] unless outline.include?(MARKER)
 
       groups = outline.group_by { it == MARKER ? it : it.gsub(/[[:space:]]+/, ' ').downcase }.values
-      names = groups.map { it.first == MARKER ? "Shaka's sections" : it.first }
+      names = groups.map { it.first == MARKER ? MARKER_LINE : "`## #{it.first}`" }
       repeats = groups.select { it.size > 1 }.map(&:first)
-      ["Shaka orders this template's descriptions as: #{names.join(', ')}.",
+      ["Shaka read this template's layout as: #{names.join(', ')}.",
        *repeats.map { "The template repeats #{it == MARKER ? MARKER_LINE : "`## #{it}`"}; Shaka uses the first." }]
     end
 
@@ -78,7 +78,7 @@ module Shaka
 
       def read(line)
         return if hidden?(line)
-        return MARKER if line.strip == MARKER_LINE
+        return MARKER if line.rstrip == MARKER_LINE
 
         heading = line.delete_prefix('## ').strip if line.start_with?('## ')
         heading unless heading.to_s.empty?
@@ -95,7 +95,7 @@ module Shaka
 
       # Whether the line opens a code block or comment; the marker line opens neither.
       def opens?(line)
-        return false if line.strip == MARKER_LINE
+        return false if line.rstrip == MARKER_LINE
 
         if (opener = line[FENCE, 1]) then @fence = opener
         elsif line.start_with?('<!--') then @comment = !line.index('-->', 2)

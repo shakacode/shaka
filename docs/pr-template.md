@@ -97,15 +97,16 @@ Shaka reads the template in a strict format, so nothing depends on guessing:
 - A section heading is a line that starts with `## ` at the left edge. Shaka skips
   lines inside code blocks and inside HTML comments that start a line.
 - Shaka's sections stay together in their usual order. A heading Shaka already
-  writes, such as `## Summary`, does not move it.
+  writes, such as `## Summary`, does not move it, and a section the agent writes under
+  such a heading stays after Shaka's.
 - When the agent writes a section your template does not name, it comes right after
   Shaka's sections.
 - The opening lines never move. The first line names the agent that wrote the
   description. The recommendation, any decisions waiting on you, and the review links
   follow, so the decision comes first. The credit line stays last.
 
-Each time the agent reads the template, Shaka shows it the order it will use, such as
-`Rollout, Shaka's sections, Changelog`, and notes a repeated heading or marker.
+Each time the agent reads a template that holds the marker, Shaka shows what it read,
+such as `## Rollout`, `<!-- shaka -->`, `## Changelog`, and notes a repeated heading or marker.
 To see it yourself, ask your agent:
 
 ```text

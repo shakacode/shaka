@@ -40,6 +40,12 @@ class PublicationTemplateLayoutTest < Minitest::Test
     assert_operator evidence, :<, rendered.index('## Shaka metrics')
   end
 
+  def test_a_supplied_section_under_a_shaka_heading_stays_after_shakas
+    supplied = [{ 'heading' => 'Verification', 'body' => 'All good.' }, *SECTIONS]
+    rendered = render(['Verification', 'Rollout', MARKER], supplied)
+    assert_equal ['Rollout', *SHAKA, 'Verification', 'Changelog'], outline(rendered)
+  end
+
   def test_sections_the_template_does_not_name_follow_shakas
     rendered = render(['rollout', MARKER, 'Rollout'])
     assert_equal ['Rollout', *SHAKA, 'Changelog'], outline(rendered)
@@ -47,11 +53,11 @@ class PublicationTemplateLayoutTest < Minitest::Test
 
   private
 
-  def render(template)
+  def render(template, sections = SECTIONS)
     settings = Shaka::PublicationSettings.new(current: { 'pr_description.show_shaka_credit' => true })
     # Prepare reads the outline from the trusted template; the command tests below cover that read.
     settings.instance_variable_set(:@template_headings, template)
-    Shaka::Publication.description(description_content.merge('sections' => SECTIONS), nil, nil, settings)
+    Shaka::Publication.description(description_content.merge('sections' => sections), nil, nil, settings)
   end
 
   def outline(rendered) = rendered.scan(/^## (.+)$/).flatten
@@ -89,7 +95,16 @@ class PublicationTemplateLayoutCommandTest < Minitest::Test
     with_guidance('pr_evidence' => '.agents/pr-evidence.md') do |root|
       write_template(root, TEMPLATE)
       assert guidance('pr_evidence', root, commit(root))
-        .end_with?("Shaka orders this template's descriptions as: Deployment, Shaka's sections.\n")
+        .end_with?("Shaka read this template's layout as: `## Deployment`, <!-- shaka -->.\n")
+    end
+  end
+
+  def test_an_unreadable_template_keeps_the_usual_order
+    with_guidance('pr_evidence' => '.agents/pr-evidence.md') do |root|
+      write_template(root, '')
+      commit(root)
+      body = published(root)
+      assert_operator body.index('## Summary'), :<, body.index('## Deployment')
     end
   end
 
