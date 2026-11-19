@@ -27,7 +27,8 @@ module ShakaDocs
 
     def links(text, include_html: true)
       targets = []
-      Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---' } }).walk do |node|
+      document = Commonmarker.parse(text, options: { extension: { front_matter_delimiter: '---', footnotes: true } })
+      document.walk do |node|
         targets << node.url if %i[link image].include?(node.type)
         targets.concat(html_links(node)) if include_html
       end
@@ -42,7 +43,7 @@ module ShakaDocs
 
     def repository_path(uri)
       host = uri.host.to_s.delete_prefix('www.')
-      return legacy_reference_path(uri) unless %w[github.com raw.githubusercontent.com].include?(host)
+      return cdn_repository_path(uri) unless %w[github.com raw.githubusercontent.com].include?(host)
 
       source = URI::DEFAULT_PARSER.unescape(uri.path)[%r{\A/shakacode/shaka/(.*)\z}i, 1]
       return unless source
@@ -56,11 +57,12 @@ module ShakaDocs
       source.sub(%r{\Arefs/(?:heads|tags)/}, '').split('/', 2)[1]
     end
 
-    def legacy_reference_path(uri)
-      path = URI::DEFAULT_PARSER.unescape(uri.path.to_s)
-      return unless path.match?(%r{(?:\A|/)shakacode/shaka(?:@[^/]+)?/}i)
+    def cdn_repository_path(uri)
+      return unless uri.host == 'cdn.jsdelivr.net'
 
-      path[%r{(?:\A|/)(skills/shaka/references(?:/.*)?)\z}, 1]
+      URI::DEFAULT_PARSER.unescape(uri.path.to_s)[
+        %r{\A/gh/shakacode/shaka(?:@[^/]+)?/(.*)\z}, 1
+      ]
     end
 
     def local_path(repository, source, target)

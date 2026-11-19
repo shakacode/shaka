@@ -34,8 +34,11 @@ skills remain available. Extensionless source paths under `skills/` or `.agents/
 are treated as agent targets, including directories and scripts.
 Source citations use a commit, tag, or branch without
 slashes so the check can distinguish the ref from the repository path. Slash-containing
-refs require author and reviewer judgment. Leading-slash links address public site routes.
-Commonmarker parses Markdown, Nokogiri extracts HTML links, and Addressable normalizes URLs.
+refs require author and reviewer judgment. GitHub, raw GitHub and jsDelivr's `/gh/`
+source layouts are recognized; other external source layouts require manual review.
+Leading-slash links address public site routes.
+Commonmarker parses Markdown including footnotes, Nokogiri extracts HTML links,
+and Addressable normalizes URLs.
 File and heading-anchor validation applies to Markdown links and images. Static
 HTML anchors are checked for agent destinations.
 Code examples and

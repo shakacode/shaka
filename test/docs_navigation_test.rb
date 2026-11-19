@@ -469,6 +469,23 @@ end
 class DocsCaseInventoryTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 
+  def test_third_party_cdn_file_paths_do_not_identify_the_source_repository
+    page = '[Guide](https://cdn.jsdelivr.net/gh/example/other@main/' \
+           'examples/shakacode/shaka/skills/shaka/references/guide.md)'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, output
+  end
+
+  def test_cdn_repository_paths_get_the_same_agent_classification
+    paths = %w[skills/shaka/config/review-prompt.md .agents/shaka/instructions/review.md]
+    paths.each do |path|
+      page = "[Guide](https://cdn.jsdelivr.net/gh/shakacode/shaka@main/#{path})"
+      output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+      refute_predicate status, :success?
+      assert_includes output, 'Link a human guide, not agent instructions:'
+    end
+  end
+
   def test_first_party_reference_urls_are_not_limited_to_github_hosts
     page = '[Review](https://cdn.jsdelivr.net/gh/shakacode/shaka@main/skills/shaka/references/review.md)'
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
@@ -504,6 +521,23 @@ class DocsCaseInventoryTest < Minitest::Test
         FileUtils.remove_entry(File.join(root, '.git'))
       end
     end
+  end
+end
+
+class DocsFootnotesTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_footnote_text_is_not_a_link_destination
+    page = "Text[^1]\n\n[^1]: Source.\n"
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, output
+  end
+
+  def test_rendered_links_inside_footnotes_get_the_audience_check
+    page = "Text[^1]\n\n[^1]: [Agent](../skills/shaka/config/review-prompt.md)\n"
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
   end
 end
 
