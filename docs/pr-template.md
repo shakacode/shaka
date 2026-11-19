@@ -6,8 +6,10 @@ One more line lets you choose where Shaka's own sections appear.
 
 ## Turn it on
 
-Shaka reads the template beside your PR evidence guide, the file the agent reads
-before it writes a description. Ask your agent:
+Shaka uses your template only when the
+[`project_guidance.pr_evidence`](settings.md#project_guidance) setting names a PR
+evidence guide: a file the agent reads before it writes a description, saying what
+to run and report. The template itself can be that file. Ask your agent:
 
 ```text
 /shaka Use our pull request template for PR descriptions
@@ -15,19 +17,20 @@ before it writes a description. Ask your agent:
 
 In Codex, use `$shaka` instead of `/shaka`.
 
-The agent opens a settings PR that points
-[`project_guidance.pr_evidence`](settings.md#project_guidance) at your template:
+The agent opens a settings PR that points `pr_evidence` at your template:
 
 ```yaml
 project_guidance:
   pr_evidence: .github/pull_request_template.md
 ```
 
-When you already have a separate evidence guide, keep it. Shaka then shows the agent
-your template after the guide. It looks for `pull_request_template.md` or
-`PULL_REQUEST_TEMPLATE.md` in `.github/`, the repository root, then `docs/`, and
-uses the first one it finds. When that template cannot be read, the agent sees the
-guide and a note saying why, and descriptions keep the usual order.
+If `pr_evidence` already names a guide of your own, such as
+`.agents/shaka/pr-evidence.md`, leave the setting as it is. Shaka also finds your
+template and shows it to the agent right after the guide, so the agent follows both.
+It looks for `pull_request_template.md` or `PULL_REQUEST_TEMPLATE.md` in `.github/`,
+the repository root, then `docs/`, and uses the first one it finds. When that template
+cannot be read, the agent still sees the guide, with a note saying why, and
+descriptions keep the usual order.
 
 Shaka reads the template from your default branch. A PR that edits the template is
 still described with the merged version. When you select a
@@ -49,8 +52,9 @@ nothing needs to be turned on. -->
 
 - The agent fills each section unless its comment says to leave it out for this
   change. It then drops both the heading and the body.
-- A heading Shaka already writes, such as `## Summary`, tells the agent to put that
-  content in Shaka's own section instead of adding a second one.
+- When your template has a heading Shaka already writes, such as `## Summary` or
+  `## Verification`, nothing in that section is skipped. The agent puts what it asks
+  for into Shaka's own section, so the description shows one Summary, not two.
 - Shaka's sections keep their own rules. For example, **Decisions to make** appears
   only when a decision waits on you.
 - Nothing checks that the agent followed a comment. Put anything a command can check
@@ -101,8 +105,8 @@ Shaka reads the template in a strict format, so nothing depends on guessing:
 - Headings match by their words, ignoring case, spacing, and closing `#` marks, so keep
   notes on their own line.
 - Shaka's sections stay together in their usual order. A heading Shaka already
-  writes, such as `## Summary`, does not move it, and a section the agent writes under
-  such a heading stays after Shaka's.
+  writes, such as `## Summary`, does not move them. If the agent writes its own section
+  under such a heading anyway, it stays after Shaka's.
 - When the agent writes a section your template does not name, it comes right after
   Shaka's sections.
 - The opening lines never move. The first line names the agent that wrote the
