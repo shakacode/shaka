@@ -61,9 +61,10 @@ the saved copy again. To update the saved copy, edit the setup script, which
 makes Claude Code rebuild it.
 
 Shaka runs on the Ruby that installed it, but the session's own shell still
-starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, look at the
-branch first, because `bundle install` runs your project's Gemfile. Then ask
-Claude in the session:
+starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, review the
+branch's Gemfile first. `bundle install` runs it as Ruby with the session's
+credentials and GitHub access, so do not run it on a branch you have not
+reviewed, such as one from a fork. Then ask Claude in the session:
 
 ```text
 Run this project's Ruby commands with /opt/rbenv/versions/3.4.10/bin first on PATH. Stop if ruby -v does not report 3.4, otherwise run bundle install
