@@ -102,11 +102,10 @@ end
 class DocsEmittedLinksTest < Minitest::Test
   include DocsNavigationFixture
 
-  def emitted_page_check(extension, heading, target: "setup.#{extension}#install")
-    page = "setup.#{extension}"
+  def emitted_page_check(extension, heading, page: "setup.#{extension}", target: "#{page}#install")
     files = { 'skills/shaka/guide.rb' => "PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/#{target}'" }
     files["docs/#{page}"] = heading if heading
-    sidebar = ['expected-experience'] + (heading ? ['setup'] : [])
+    sidebar = ['expected-experience'] + (heading ? [page.sub(/\.mdx?\z/, '')] : [])
     check({ 'docsSidebar' => sidebar }, '# What to expect', files)
   end
 
@@ -153,6 +152,15 @@ class DocsEmittedLinksTest < Minitest::Test
       refute_predicate status, :success?, output
       assert_includes output, "docs/setup.#{extension} (missing file)"
     end
+  end
+
+  def test_emitted_paths_do_not_use_the_audience_heuristic
+    page = 'examples/skills/shaka/references/guide.md'
+    output, _, status = emitted_page_check('md', '# Other heading', page: page)
+    refute_predicate status, :success?, output
+    assert_includes output, "docs/#{page}#install (missing anchor)"
+    output, errors, status = emitted_page_check('md', '# Install', page: page)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
   end
 end
 

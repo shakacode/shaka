@@ -79,8 +79,8 @@ def emitted_document_targets(text)
   targets = text.scan(EMITTED_DOCS).flat_map { |token| ShakaDocs::Audiences.links(token, include_html: false) }
   targets.filter_map do |target|
     uri = ShakaDocs::Audiences.url(target)
-    page = ShakaDocs::SourcePaths.repository_path(uri)
-    [page, uri.fragment] if page&.start_with?('docs/')
+    page = URI::DEFAULT_PARSER.unescape(uri.path.split('/', 6).last.to_s)
+    [page, uri.fragment] if page.start_with?('docs/')
   end.uniq
 end
 
