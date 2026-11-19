@@ -47,7 +47,7 @@ class WindowsProduct < WindowsSession
     branch = "shaka-windows-candidate-#{SecureRandom.hex(6)}"
     git_output('branch', branch, 'HEAD')
     created = branch
-    output, success = Dir.mktmpdir('shaka-windows-install') { |home| run_install(home, branch) }
+    output, success = Dir.mktmpdir('shaka-windows-install') { |home| install_and_verify(home, branch) }
     puts "  #{success ? 'succeeded' : 'failed'}: #{excerpt(output)}"
     raise "bin/install did not verify candidate #{head}" unless success && verified?(output, head)
   ensure
@@ -66,11 +66,18 @@ class WindowsProduct < WindowsSession
     output[/^Verified Shaka installation: .* \((\h{7,40})\)\r?$/, 1].then { |shown| shown && head.start_with?(shown) }
   end
 
+  # The second run reads the record the first one saved, as a later --verify or --update does.
+  def install_and_verify(home, branch)
+    installed, installed_ok = run_installer(home, '--agent', 'codex', '--repository', root, '--branch', branch)
+    checked, checked_ok = run_installer(home, '--verify')
+    puts "  --verify #{checked_ok ? 'succeeded' : 'failed'}: #{excerpt(checked)}"
+    [installed, installed_ok && checked_ok]
+  end
+
   # Bounded, so a hung install fails the record instead of holding the job.
-  def run_install(home, branch)
+  def run_installer(home, *arguments)
     environment = native_path.merge('HOME' => home, 'USERPROFILE' => home)
-    output, error, success = capture([environment, RbConfig.ruby, File.join(root, 'bin/install'), '--agent', 'codex',
-                                      '--repository', root, '--branch', branch], 600)
+    output, error, success = capture([environment, RbConfig.ruby, File.join(root, 'bin/install'), *arguments], 600)
     ["#{output}#{error}", success]
   end
 

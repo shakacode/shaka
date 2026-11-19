@@ -49,10 +49,12 @@ module Shaka
       end
 
       # A check that finished keeps whatever it left running, as on other platforms. An interrupted
-      # one is ended with its job.
+      # one is ended with its job. An interrupt waits until both pipes are closed.
       def close(finished:)
-        finished ? @job&.close : @job&.terminate
-        [@output, @error].each { |stream| stream.close unless stream.closed? }
+        Thread.handle_interrupt(Object => :never) do
+          finished ? @job&.close : @job&.terminate
+          [@output, @error].each { |stream| stream.close unless stream.closed? }
+        end
       end
 
       private
