@@ -32,7 +32,7 @@ module ShakaDocs
     end
 
     def markdown_url(target)
-      target.gsub(/[\x00-\x20]/) { |character| format('%%%02X', character.ord) }
+      target.gsub(/[\x00-\x20\\]/) { |character| format('%%%02X', character.ord) }
     end
 
     def html_links(node)

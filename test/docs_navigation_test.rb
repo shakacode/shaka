@@ -748,6 +748,25 @@ end
 class DocsUrlWhitespaceTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 
+  def test_html_backslashes_follow_browser_path_separators
+    page = '<a href="https://github.com/shakacode/shaka\blob/main/skills/shaka/references/review.md">Review</a>'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
+  end
+
+  def test_markdown_backslash_escape_remains_path_data
+    page = '[Data](<https://github.com/shakacode/shaka\blob/main/skills/shaka/references/review.md>)'
+    output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
+  def test_html_tilde_paths_do_not_lookup_local_users
+    page = '<a href="~shaka-no-such-user/release-notes.html">Release notes</a>'
+    output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
   def test_html_url_whitespace_uses_browser_preprocessing
     pages = ['<a href="https://github.com/shakacode/shaka/blob/main/sk&#9;ills/shaka/references/review.md">Review</a>',
              '<a href="&#1;h&#13;ttps://github.com/shakacode/shaka/blob/main/' \

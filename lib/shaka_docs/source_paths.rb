@@ -10,7 +10,7 @@ module ShakaDocs
 
     def url(target)
       text = target.delete("\t\r\n").gsub(/\A[\x00-\x20]+|[\x00-\x20]+\z/, '')
-      uri = Addressable::URI.parse(text)
+      uri = Addressable::URI.parse(text.tr('\\', '/'))
       uri.host ? uri.normalize : uri
     end
 
@@ -45,7 +45,7 @@ module ShakaDocs
       target = URI::DEFAULT_PARSER.unescape(uri.path)
       return "docs#{target}" if target.start_with?('/')
 
-      File.expand_path(target, File.dirname(source)).delete_prefix("#{repository}/")
+      File.absolute_path(target, File.dirname(source)).delete_prefix("#{repository}/")
     end
   end
 end
