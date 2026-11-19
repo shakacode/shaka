@@ -36,15 +36,17 @@ class DocsFixtureIsolationTest < Minitest::Test
   include DocsNavigationFixture
 
   def test_inherited_git_routing_cannot_change_the_outer_index
-    Dir.mktmpdir do |outer|
-      before = prepare_outer(outer)
-      with_routing(outer) { assert_isolated_fixture(outer) }
-      assert_equal before, File.binread(File.join(outer, '.git/index'))
-    end
+    output, errors, status = check('docsSidebar' => ['expected-experience']) { |outer| assert_outer_preserved(outer) }
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
+  def assert_outer_preserved(root)
+    before = prepare_outer(root)
+    with_routing(root) { assert_isolated_fixture(root) }
+    assert_equal before, File.binread(File.join(root, '.git/index'))
   end
 
   def prepare_outer(root)
-    system('git', 'init', '-q', root, exception: true)
     File.write(File.join(root, 'sentinel'), 'Preserve this index')
     system('git', '-C', root, 'add', 'sentinel', exception: true)
     File.binread(File.join(root, '.git/index'))
@@ -1265,6 +1267,20 @@ class DocsSparseCheckoutTest < Minitest::Test
     system('git', '-C', root, 'add', '.', exception: true)
     args = %w[-c user.name=TestUser -c user.email=test@example.com -c commit.gpgsign=false]
     system('git', '-C', root, *args, 'commit', '--no-verify', '-qm', 'Sparse fixture', exception: true)
+  end
+end
+
+class DocsGeneratedSourceTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_site_generated_changelog_cannot_overwrite_a_product_guide
+    %w[md mdx].each do |extension|
+      files = { "docs/changelog.#{extension}" => '# Unique product guide',
+                'CHANGELOG.md' => '# Different release notes' }
+      output, _, status = check({ 'docsSidebar' => %w[expected-experience changelog] }, '# Guide', files)
+      refute_predicate status, :success?, output
+      assert_includes output, "Site-generated path: changelog.#{extension}; edit CHANGELOG.md for release notes"
+    end
   end
 end
 

@@ -153,6 +153,7 @@ begin
       file.split('/')[0...-1].include?('planning')
   end
   publication_ids = published.group_by { |file| file.sub(/\.(md|mdx)\z/, '') }
+  generated = publication_ids.fetch('changelog', [])
   numbered = published.select { |file| file.split('/').any? { |part| part.match?(/\A\d/) } }
   duplicates = publication_ids.values.select { |paths| paths.size > 1 }.flatten
   pages = publication_ids.keys
@@ -168,6 +169,9 @@ begin
   unclassified = ShakaDocs::Audiences.unclassified_documents(repository)
   puts "Markdown outside established documentation locations: #{unclassified.join(', ')}" unless unclassified.empty?
   puts "Duplicate publication IDs: #{duplicates.join(', ')}" unless duplicates.empty?
+  unless generated.empty?
+    puts "Site-generated path: #{generated.join(', ')}; edit CHANGELOG.md for release notes, or rename the guide."
+  end
   unless numbered.empty?
     puts "Numbered source paths: #{numbered.join(', ')}; rename guides and directories without numeric prefixes."
   end
@@ -186,7 +190,7 @@ begin
   puts "Unresolved links in docs/ and skills/:\n#{broken.join("\n")}" unless broken.empty?
   malformed = malformed_figures(root, doc_paths)
   puts "Figures that do not parse as SVG: #{malformed.join(', ')}" unless malformed.empty?
-  exit 1 unless [missing, stale, duplicates, numbered, excluded, overrides, unclassified,
+  exit 1 unless [missing, stale, duplicates, generated, numbered, excluded, overrides, unclassified,
                  agent_links, broken, malformed].all?(&:empty?)
 
   puts "All #{pages.size} published pages are in docs/sidebars.json and link no agent instructions; " \

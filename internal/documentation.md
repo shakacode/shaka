@@ -32,6 +32,8 @@ Use exact source-path casing. Front matter must not override publication IDs or
 visibility with `id`, `draft`, `unlisted`, or YAML merge keys; use the checked paths
 and sidebar, and keep unpublished writing outside `docs/`.
 Start guide and directory names with a non-digit to avoid site ID rewriting.
+The site reserves the root `changelog` ID for generated release notes; edit root
+`CHANGELOG.md` instead, and use another source name for a guide.
 
 Public guides and sidebar links must lead to human guidance. The check rejects
 links into Shaka's skill Markdown, its YAML workflow instructions and project agent instructions.
