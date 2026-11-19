@@ -40,8 +40,22 @@ module ShakaDocs
       return [] unless %i[html_inline html_block].include?(node.type)
 
       Nokogiri::HTML5.fragment(node.literal).css('a, area, form, button, input').filter_map do |link|
-        link['href'] || link['xlink:href'] || link['action'] || link['formaction']
+        html_destination(link)
       end
+    end
+
+    def html_destination(element)
+      return element['href'] || element['xlink:href'] if %w[a area].include?(element.name)
+      return element['action'] if element.name == 'form'
+      return element['formaction'] if submit_control?(element)
+
+      nil
+    end
+
+    def submit_control?(element)
+      type = element['type'].to_s.downcase
+      (element.name == 'button' && !%w[button reset].include?(type)) ||
+        (element.name == 'input' && %w[submit image].include?(type))
     end
 
     def agent_path?(path)
