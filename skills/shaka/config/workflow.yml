@@ -547,7 +547,7 @@ phases:
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
         optional `checkpoint`, `walkthrough`, `review` and `post_implementation`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`, optional `risk_record`,
-        required `intent` and `verification`, optional `table`, required `provenance`, optional `skills_used` from the task record,
+        required `intent` and `verification`, optional `table`, required `provenance`, optional `skills_used` from the task record and `companion_results`,
         required `usage` (`note` and `records` from
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
         whose summary names usage is refused; walkthroughs also require `head`.
