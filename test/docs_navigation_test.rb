@@ -230,6 +230,34 @@ class DocsAudienceTest < Minitest::Test
     assert_includes output, 'Link a human guide, not agent instructions:'
   end
 
+  def test_alternate_reference_urls_are_still_rejected
+    targets = %w[https://GITHUB.COM/shakacode/shaka/blob/main/skills/shaka/references/review.md
+                 https://github.com/shakacode/shaka/blob/feature/topic/skills/shaka/references/review.md
+                 https://www.github.com/ShakaCode/Shaka/edit/main/skills/shaka/SKILL.md]
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, targets.join("\n"))
+    refute_predicate status, :success?
+    targets.each { |target| assert_includes output, target }
+  end
+
+  def test_literal_agent_link_examples_are_allowed
+    page = <<~MARKDOWN
+      ```markdown
+      [Agent](../skills/shaka/config/review-prompt.md)
+      ```
+      `[Agent](../skills/shaka/SKILL.md)`
+    MARKDOWN
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, output
+  end
+
+  def test_top_level_agent_directory_sidebar_link_fails
+    sidebar = { 'docsSidebar' => ['expected-experience',
+                                  { 'type' => 'link', 'label' => 'Agent', 'href' => '../skills' }] }
+    output, _, status = check(sidebar)
+    refute_predicate status, :success?
+    assert_includes output, 'sidebars.json -> ../skills'
+  end
+
   def test_other_projects_skill_citations_are_allowed
     page = '[Reference](https://github.com/cursor/plugins/blob/main/pstack/skills/reflect/SKILL.md)'
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)

@@ -11,8 +11,8 @@ Settings live in `.agents/shaka/config.yml`. Ask your agent to
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
 Optional choices without fixed defaults, such as the base branch and local reviewer models, stay commented.
-Ask your agent to explain how your repository's prompts and reviewer count differ
-from the defaults.
+Ask your agent to read `.agents/shaka/README.md` in the Shaka source checkout
+for why Shaka's example prompts and reviewer count differ from the defaults.
 
 ## Which settings apply?
 
