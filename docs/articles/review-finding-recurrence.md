@@ -22,7 +22,7 @@ lists the method, every kind, and the
    caller's Git setup produced 13 findings on 5 PRs, 7 of them defects, though 2 of those
    defects concerned quoting and file modes rather than missing isolation. A follow-up mapping,
    [#1222](https://github.com/shakacode/shaka/pull/1222), found that a test requiring one
-   isolating runner catches 3 of the 7 defects in library code, or 5 if the test also covers `eval/bin`, and recommends deferring it.
+   isolating runner catches none of the 7 defects if it looks only for a literal `git` command, and 3 in library code, or 5 with `eval/bin`, if it also recognizes shell and variable calls, and recommends deferring it.
 4. **Reviewers still raise risks in areas a check covers.** Where an anchor check and a
    quote loader existed, reviewers raised 4 risks about what those checks read. The
    agent dismissed all 4 after a search showed nothing depended on the edit.
@@ -154,8 +154,8 @@ from prose to checks.
   or dismissed.
 - **Classifier:** one agent, Claude Opus 5.5, read and sorted every counted finding,
   mostly from titles. No second reader checked it.
-- **Recall:** a hand check of 150 unmatched findings found 30 that belonged to a counted
-  kind. Counts can also run high from repeats of one problem across ledgers. The agent chose the kinds after reading a sample, so 24%
+- **Recall:** a hand check of 150 findings left unmatched after the first pass found 30
+  that belonged to a counted kind; that rate does not estimate misses in the final pool. Counts can also run high from repeats of one problem across ledgers. The agent chose the kinds after reading a sample, so 24%
   measures those kinds, not a list fixed in advance.
 - **Dismissals:** the agent's own judgment. No dismissed finding was rerun or rechecked.
 - **Catch and cost:** estimates, not measurements. No candidate check was built or
