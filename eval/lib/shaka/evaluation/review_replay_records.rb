@@ -13,7 +13,7 @@ module Shaka
 
       def capture_record(arguments, root, id)
         Dir.mktmpdir('call-', @scratch) do |temporary|
-          env = @environment.merge('TMPDIR' => temporary)
+          env = capture_environment(root, temporary)
           before = native_sessions
           output, error, status = Open3.capture3(env, @helper, *arguments, chdir: root, binmode: true)
           result = retain_result(parse_result(output), id)
@@ -22,6 +22,13 @@ module Shaka
           end
           [{ 'result' => result, 'usage' => usage_for(result), 'stderr' => json_text(error) }, status]
         end
+      end
+
+      def capture_environment(root, temporary)
+        env = @environment.merge('TMPDIR' => temporary)
+        return env unless @codex_executable
+
+        env.merge(ReviewReplaySandbox.environment(@codex_executable, root, ENV.fetch('PATH')))
       end
 
       def parse_result(output)

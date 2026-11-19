@@ -12,8 +12,13 @@ criteria commits and the same model on both arms.
 Sign in to `claude` with your Claude subscription or to `codex` with ChatGPT.
 Supply your trusted installed helper by absolute path. The runner strips
 platform key and endpoint overrides, verifies the subscription login, and
-gives Codex a temporary home containing only the login file. The same helper
-runs both arms through `shaka review run` with the full diff. Nothing is posted.
+gives Codex a temporary home containing only the login file. Codex replay
+requires a CLI with named permission profiles and starts with a dummy-file
+check. The reviewer commands can read the fixture and basic OS files. The
+profile blocks reads of the login and earlier transcripts and disables command
+network access. If the dummy-file check fails, the replay stops before
+reserving budget. The same helper runs both arms through `shaka review run`
+with the full diff. Results stay local.
 
 Fetch the public PR refs holding the frozen commits:
 
@@ -47,8 +52,8 @@ checking the fixtures and approving the run. Use `--case r04` for a small
 smoke run. Each isolated fixture holds the reviewed head and its ancestors, no
 Git remote, and a projected settings commit containing review configuration
 and applicable repository instructions. The runner supplies neither the scoring
-key nor earlier reports to the reviewers. Codex uses Shaka's normal read-only
-sandbox. Check its transcript for access outside the fixture before scoring.
+key nor earlier reports to the reviewers. Codex commands use the fixture-only
+profile. Check the transcript for reads of the scoring material before scoring.
 This follows [the Stage 1 replay](../reports/review-scope-stage1-pilot.md#rerun-it).
 
 The existing eval ledger counts cache-neutral API-equivalent dollars against

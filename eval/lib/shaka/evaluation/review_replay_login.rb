@@ -2,6 +2,7 @@
 
 require 'json'
 require 'open3'
+require_relative 'review_replay_sandbox'
 
 module Shaka
   module Evaluation
@@ -16,8 +17,10 @@ module Shaka
       def verify_login
         return verify_claude if @host == 'claude-code'
 
+        @codex_executable = ReviewReplaySandbox.codex(ENV.fetch('PATH'))
+        ReviewReplaySandbox.verify(@codex_executable, @environment, @scratch)
         @environment['CODEX_HOME'] = copy_codex_login
-        output, error, status = Open3.capture3(@environment, 'codex', 'login', 'status')
+        output, error, status = Open3.capture3(@environment, @codex_executable, 'login', 'status')
         return if status.success? && "#{output}\n#{error}".lines.any? { |line| line.strip == 'Logged in using ChatGPT' }
 
         raise IOError, 'Sign in to Codex with ChatGPT before replaying'
