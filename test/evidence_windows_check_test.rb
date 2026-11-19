@@ -196,6 +196,12 @@ class EvidenceWindowsCheckStartTest < Minitest::Test
     assert reaped?(spawned), 'the failed start left its leader running'
   end
 
+  def drift?(code)
+    entry = { 'original' => { 'exit_code' => code }, 'status' => 'bound', 'reasons' => [] }
+    Shaka::PublishedResults.settings_drift?('status' => 'not_ready', 'missing' => [],
+                                            'checks' => { 'validation' => [entry] })
+  end
+
   # Process.detach may reap the leader first (ECHILD), or the test may (its ID); a live leader returns nil.
   def reaped?(pid)
     deadline = now + 10
@@ -211,10 +217,10 @@ class EvidenceWindowsCheckStartTest < Minitest::Test
 
   # Its result then has no exit code, which must not count as a passing run that only drifted.
   def test_result_without_an_exit_code_is_not_a_passing_run
-    entry = { 'original' => { 'exit_code' => nil }, 'status' => 'bound', 'reasons' => [] }
-
-    refute Shaka::PublishedResults.settings_drift?('status' => 'not_ready', 'missing' => [],
-                                                   'checks' => { 'validation' => [entry] })
+    [nil, '0', '1'].each do |code|
+      refute drift?(code), "exit code #{code.inspect} counted as a pass"
+    end
+    assert drift?(0)
   end
 
   # A leader that outlived its stop has no status yet, so the stopped run reports none.
