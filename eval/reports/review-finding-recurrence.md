@@ -25,8 +25,10 @@ model runs. No person has rechecked the classification.*
 ## Results
 
 - **Data:** 1,716 defects and risks that the agent fixed or dismissed, on 323 PRs, from
-  672 local review ledgers published between 2026-10-15 and 2026-11-16.
-- **Recurring share:** 406 findings (24%) fall into 18 kinds that each appear on 3 or
+  672 local review ledger comments updated from 2026-10-15 to the snapshot on
+  2026-11-16 at about 08:10 UTC. A finding counts once per recorded line, not once per
+  distinct problem.
+- **Recurring share:** 406 recorded findings (24%) fall into 18 kinds that each appear on 3 or
   more PRs. They touch 183 of the 323 PRs.
 - **Below the threshold:** 6 more findings form a kind seen on only 2 PRs.
 - **Unclassified:** the remaining 1,304 findings have no kind. A hand check of 150 of them

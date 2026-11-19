@@ -22,7 +22,8 @@ lists the method, every kind, and the
    caller's Git setup produced 13 findings on 5 PRs, 7 of them defects, though 2 of those
    defects concerned quoting and file modes rather than missing isolation. A test that
    every call uses one isolating runner would catch 4 to 6 of the 13, and only if it
-   also covers the seed tooling under `eval/`. A follow-up mapping,
+   also covers the seed tooling under `eval/`. A follow-up mapping that supersedes this
+   estimate,
    [#1222](https://github.com/shakacode/shaka/pull/1222), recommends deferring it.
 4. **Reviewers still raise risks a check already answers.** Where an anchor check and a
    quote loader existed, reviewers raised 4 risks those checks cover. The agent
