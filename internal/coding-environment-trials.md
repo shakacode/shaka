@@ -80,7 +80,7 @@ do not establish the same behavior in other images, network policies, or CLI ver
 ## November 2026 setup script trial
 
 On November 15, 2026, at Shaka revision `04cd784f1eb5af10c7475c39235dfffbb57de509`,
-the setup script in the [Claude Code on the web guide](../docs/cloud-sessions.md#claude-code-on-the-web)
+an earlier version of the setup script in the [Claude Code on the web guide](../docs/cloud-sessions.md#claude-code-on-the-web)
 was saved to a personal cloud environment with unrestricted network access.
 
 | Fact | Observed |

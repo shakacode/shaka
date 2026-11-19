@@ -60,6 +60,11 @@ This installation is for local use; it does not install Shaka in Copilot's cloud
 To run Shaka in a cloud agent, such as Claude Code on the web, see
 [cloud sessions](cloud-sessions.md).
 
+### Claude Code on the web
+
+See [Claude Code on the web](cloud-sessions.md#claude-code-on-the-web) for the
+setup script.
+
 ## Give consent once
 
 Shaka may ask whether it can send your change to another provider for review.

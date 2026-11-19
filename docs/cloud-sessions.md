@@ -1,13 +1,15 @@
 # Cloud sessions
 
 Run Shaka in a cloud agent, such as Claude Code on the web, to keep work going
-while your computer is off. A cloud agent can make changes and open a PR when it has the necessary tools and
-repository access. If it cannot run a required review or check, it should report
-what remains and stop before calling the PR ready.
-If a PR exists, [resume it locally](working-with-shaka.md#resume-unfinished-work).
-Before the first push, return to the original chat and checkout to continue.
-That checkout may still be on the cloud machine.
-See [reviewers in the cloud](#reviewers-in-the-cloud) for details.
+while your computer is off. A cloud agent can make changes and open a PR when it
+has the tools and repository access Shaka needs. If it cannot run a required
+review or check, it should report what remains and stop before calling the PR
+ready.
+
+Once a PR exists, you can [resume it locally](working-with-shaka.md#resume-unfinished-work).
+Before the first push, the work lives only in the cloud chat and its checkout, so
+continue it there. [Reviewers in the cloud](#reviewers-in-the-cloud) explains
+which reviews a cloud machine can run.
 
 ## Claude Code on the web
 
@@ -39,37 +41,35 @@ fi
 "$HOME/.local/share/shaka/source/bin/install" --agent claude --no-session-hook
 # Bring a kept install up to date; if the update fails, the session still starts.
 "$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --update ||
-  echo "Shaka update failed; check $HOME/.local/share/shaka/source/skills/shaka/scripts/shaka install --status" >&2
+  echo "Shaka update failed; run $HOME/.local/share/shaka/source/skills/shaka/scripts/shaka install --status" >&2
 ```
 
 Building Ruby adds a few minutes to each new container. The script installs
 Shaka from its own clone, separate from your project, so the branch you are
 changing cannot change the Shaka that checks it. When a container keeps an
 earlier clone, the update step brings it to the latest Shaka, so it accepts
-settings your repository added since. If the update fails, the session still
-starts. Because the script keeps Shaka current, it
-turns off the update reminder for new chats. The script applies to new
+settings your repository added since. Because the update step runs with the
+script, the script turns off the update reminder for new chats. If the update
+fails, the session still starts on whatever version the clone holds, and the
+setup log names the command that reports it. The script applies to new
 sessions; a session that is already running keeps what it has.
 
 Shaka runs on the Ruby that installed it, but the session's own shell still
 starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, add these
-lines to the end of the script. They install your project's gems and put Ruby
-3.4's commands, such as `ruby`, `bundle`, and `rubocop`, first on the session's
-`PATH`. Replace `REPO` with the folder your repository is cloned into, usually
-its name:
+lines to the end of the script. They put Ruby 3.4's commands, such as `ruby`,
+`bundle`, and `rubocop`, first on the session's `PATH`:
 
 ```bash
-# Gems for your project's commands when REPO is in the session; a failed install still lets the session start.
-if [ -d REPO ]; then
-  (cd REPO && bundle install --quiet) || echo "bundle install failed; install gems in the session" >&2
-fi
 # Session shells start on the image's Ruby 3.3; ~/.local/bin comes first on their PATH,
-# so link every Ruby 3.4 command, such as ruby, bundle, and rubocop, there.
-mkdir -p "$HOME/.local/bin"
-for f in /opt/rbenv/versions/3.4.10/bin/*; do ln -sf "$f" "$HOME/.local/bin/"; done
+# so link every Ruby 3.4 command there. A failure still lets the session start.
+(mkdir -p "$HOME/.local/bin" &&
+  for f in /opt/rbenv/versions/3.4.10/bin/*; do ln -sf "$f" "$HOME/.local/bin/" || exit 1; done) ||
+  echo "Linking Ruby 3.4 commands failed; session shells may still run Ruby 3.3" >&2
 ```
 
-Skip them for a project pinned to another Ruby: the links make Ruby 3.4.10 the
+Then ask Claude to run `bundle install` in the session. Installing gems in the
+session, rather than in the setup script, keeps your project's Gemfile from
+running before you have looked at the branch. Skip these lines for a project pinned to another Ruby: the links make Ruby 3.4.10 the
 session's `ruby` whatever version the project selects.
 
 A cloud session cannot yet open or finish a Shaka PR. Claude Code blocks GitHub's
