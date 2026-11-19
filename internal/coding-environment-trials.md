@@ -62,7 +62,7 @@ action the agent's own GitHub account performed in place of a maintainer.
 
 These observations were made on October 30, 2026, in one Claude Code cloud session
 at Shaka revision `3a95ad8a7bf22cf8eb7a6cdcb7e355878f8479f3`. They back the
-[Cloud agents guide](../docs/cloud-sessions.md) and
+[Cloud sessions guide](../docs/cloud-sessions.md) and
 do not establish the same behavior in other images, network policies, or CLI versions.
 
 | Fact | Observed |
