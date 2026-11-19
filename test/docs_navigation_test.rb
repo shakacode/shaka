@@ -682,7 +682,23 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     assert_includes errors, 'Docs sources cannot be symlinks: docs/img/local.svg'
   end
 
+  def test_ignored_directory_alias_above_a_tracked_guide_is_refused
+    files = { '.gitignore' => "/docs/guides\n", 'docs/guides/install.md' => '# Install' }
+    sidebar = { 'docsSidebar' => %w[expected-experience guides/install] }
+    _, errors, status = check(sidebar, '# Guide', files) { |root| alias_tracked_directory(root) }
+    refute_predicate status, :success?
+    assert_includes errors, 'Docs sources cannot be symlinks: docs/guides'
+  end
+
   private
+
+  def alias_tracked_directory(root)
+    system('git', '-C', root, 'add', '-f', 'docs/guides/install.md', exception: true)
+    target = File.join(root, 'internal/guide-copy')
+    FileUtils.mkdir_p(File.dirname(target))
+    FileUtils.mv(File.join(root, 'docs/guides'), target)
+    File.symlink('../internal/guide-copy', File.join(root, 'docs/guides'))
+  end
 
   def svg_alias(tracked:)
     files = { '.gitignore' => "/docs/img/local.svg\n" }

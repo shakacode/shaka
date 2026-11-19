@@ -125,8 +125,19 @@ def malformed_figures(docs, paths)
   end
 end
 
+def source_components(path, repository)
+  components = []
+  prefix = "#{repository.delete_suffix('/')}/"
+  while path != repository && path.start_with?(prefix)
+    components << path
+    path = File.dirname(path)
+  end
+  components
+end
+
 def reject_docs_symlinks(paths, repository)
-  aliases = paths.select { |path| File.symlink?(path) }.map { |path| path.delete_prefix("#{repository}/") }
+  components = paths.flat_map { |path| source_components(path, repository) }.uniq
+  aliases = components.select { |path| File.symlink?(path) }.map { |path| path.delete_prefix("#{repository}/") }
   raise ArgumentError, "Docs sources cannot be symlinks: #{aliases.join(', ')}" unless aliases.empty?
 end
 
