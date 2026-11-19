@@ -82,7 +82,7 @@ report lists 7 more kinds with their checks and costs.
   reads each commit. Shaka posts each PR's findings in a review record comment, called a ledger,
   where the agent marks each one fixed or dismissed with a reason. A *kind* here is a
   group of findings one check could catch.
-- **Result:** repeats exist, and the two largest kinds fall where code cannot judge. The two largest
+- **Result:** repeats exist, and the single largest kind falls where code cannot judge. The two largest
   prose kinds were fixed on 47 and 14 PRs. Checking them needs a comparison of what a sentence
   means with what the code does.
 - **Exceptions:**
