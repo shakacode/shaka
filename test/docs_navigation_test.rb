@@ -1159,6 +1159,63 @@ class DocsSidebarInventoryTest < Minitest::Test
   end
 end
 
+class DocsSparseCheckoutTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_partial_checkouts_cannot_hide_a_tracked_guide
+    %i[sparse skip].each do |mode|
+      full, partial = partial_fixture(mode)
+      assert_full_rejection(full)
+      assert_partial_rejection(partial)
+    end
+  end
+
+  private
+
+  def partial_fixture(mode)
+    full = nil
+    files = { 'docs/hidden.md' => '# Hidden guide' }
+    partial = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files) do |root|
+      commit_fixture(root)
+      full = run_checker(root)
+      hide_guide(root, mode)
+    end
+    [full, partial]
+  end
+
+  def run_checker(root)
+    Open3.capture3('ruby', File.expand_path('../bin/check-docs-navigation', __dir__), File.join(root, 'docs'))
+  end
+
+  def assert_full_rejection(result)
+    output, _, status = result
+    refute_predicate status, :success?
+    assert_includes output, 'Missing from docs/sidebars.json: hidden'
+  end
+
+  def assert_partial_rejection(result)
+    _output, errors, status = result
+    refute_predicate status, :success?
+    assert_includes errors, 'Documentation validation requires a full checkout'
+  end
+
+  def hide_guide(root, mode)
+    if mode == :sparse
+      system('git', '-C', root, 'sparse-checkout', 'set', '--no-cone',
+             '/docs/sidebars.json', '/docs/expected-experience.md', exception: true)
+    else
+      system('git', '-C', root, 'update-index', '--skip-worktree', 'docs/hidden.md', exception: true)
+      File.unlink(File.join(root, 'docs/hidden.md'))
+    end
+  end
+
+  def commit_fixture(root)
+    system('git', '-C', root, 'add', '.', exception: true)
+    args = %w[-c user.name=TestUser -c user.email=test@example.com -c commit.gpgsign=false]
+    system('git', '-C', root, *args, 'commit', '--no-verify', '-qm', 'Sparse fixture', exception: true)
+  end
+end
+
 class DocsIndexSymlinkTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 

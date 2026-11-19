@@ -9,11 +9,19 @@ module ShakaDocs
 
     def paths(repository)
       listed = if git?(repository)
+                 require_full_checkout(repository)
                  git_output(repository, '--cached', '--others', '--exclude-standard').split("\0")
                else
                  Dir.glob('**/*', File::FNM_DOTMATCH, base: repository)
                end
       listed.uniq
+    end
+
+    def require_full_checkout(repository)
+      skipped = git_output(repository, '-t').split("\0").any? { |entry| entry.start_with?('S ') }
+      return unless skipped
+
+      raise ArgumentError, 'Documentation validation requires a full checkout; sparse/skip-worktree paths are present.'
     end
 
     def symlinks(repository)

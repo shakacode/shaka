@@ -23,6 +23,7 @@ documents to their established destination instead.
 
 Run the check in a Git checkout to exclude ignored dependencies. A source export
 without Git metadata checks every Markdown file, including vendored dependencies.
+Use a complete Git checkout with no skip-worktree paths, including sparse omissions.
 Ignored local files cannot satisfy link targets under `docs/`.
 Relative links use checked repository paths; use canonical paths rather than aliases.
 Scanned source files must have real directory ancestors, including skill sources.
