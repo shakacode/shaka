@@ -23,6 +23,14 @@ class WindowsReviewLookupTest < Minitest::Test
     end
   end
 
+  def test_windows_ownership_ignores_case_and_separators
+    owned = Shaka::LocalReviewExecutable
+
+    assert owned.candidate_owned?('C:\\Repo\\bin\\claude.exe', 'c:/repo', windows: true)
+    refute owned.candidate_owned?('C:/Repo/bin/claude.exe', 'c:/repo', windows: false)
+    refute owned.candidate_owned?('C:/Repository/claude.exe', 'c:/repo', windows: true)
+  end
+
   # The lookup stops at the first match, so a later PATH entry that cannot expand never matters.
   def test_lookup_stops_before_a_later_entry_that_cannot_expand
     skip 'needs /bin/sh' unless File.executable?('/bin/sh')
