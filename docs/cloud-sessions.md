@@ -55,30 +55,15 @@ the installation's state. The script applies to new
 sessions; a session that is already running keeps what it has.
 
 Shaka runs on the Ruby that installed it, but the session's own shell still
-starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, add these
-lines to the end of the script. They put Ruby 3.4's commands, such as `ruby`,
-`bundle`, and `rubocop`, first on the session's `PATH`:
+starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, ask Claude in
+the session:
 
-```bash
-# Session shells start on the image's Ruby 3.3; ~/.local/bin comes first on their PATH,
-# so link each Ruby 3.4 command there, leaving any command already there alone.
-# Use the Ruby version the script installs. A failure still lets the session start.
-(mkdir -p "$HOME/.local/bin" &&
-  for f in /opt/rbenv/versions/3.4.10/bin/*; do
-    t="$HOME/.local/bin/${f##*/}"
-    [ -e "$t" ] || [ -L "$t" ] || ln -s "$f" "$t" || exit 1
-  done) ||
-  echo "Linking Ruby 3.4 commands failed; session shells may still run Ruby 3.3" >&2
+```text
+Run this project's Ruby commands with /opt/rbenv/versions/3.4.10/bin first on PATH, starting with bundle install
 ```
 
-Skip these lines for a project pinned to another Ruby: the links make Ruby
-3.4.10 the session's `ruby` whatever version the project selects. A command
-already in `~/.local/bin` keeps its place, so it can still run Ruby 3.3.
-
-With the lines in place, ask Claude to check `ruby -v` and `bundle -v` in the
-session, then run `bundle install`.
-Installing gems there, rather than in the setup script, keeps your project's
-Gemfile from running before you have looked at the branch.
+Claude sets `PATH` on each command, so nothing in the container changes and your
+project's Gemfile runs only after you have looked at the branch.
 
 A cloud session cannot yet open or finish a Shaka PR. Claude Code blocks GitHub's
 GraphQL API there, and Shaka uses it to create the PR, publish its
