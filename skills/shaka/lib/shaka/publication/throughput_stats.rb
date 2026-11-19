@@ -5,6 +5,7 @@ require_relative '../error'
 require_relative 'usage_details'
 require_relative 'throughput_line'
 require_relative 'throughput_gate'
+require_relative 'timeline_steps'
 require_relative 'missing_values'
 
 module Shaka
@@ -13,7 +14,7 @@ module Shaka
     extend ThroughputLine
     extend ThroughputGate
 
-    KEYS = %w[head spend t0 t1 t2 t3].freeze
+    KEYS = (%w[head spend t0 t1 t2 t3] + [ThroughputLine::READY_UNVERIFIED]).freeze
     TIMES = %w[t0 t1 t2 t3].freeze
     BLOCK = /^<!-- shaka:stats (\{[^\r\n]*\}) -->\r?\n\*\*This head:\*\* [^\r\n]+(?=\r?\n|\z)/
     HEADER = /^(🤖 [^\r\n]*?) - AI spend: [^\r\n]*/
@@ -66,40 +67,41 @@ module Shaka
         raise Error, 'Description has an unreadable shaka:stats block.'
       end
 
-      def publish_state(content, timeline, pull) = state_for(content, timeline, carried_body(pull), head_sha(pull))
+      def publish_state(content, timeline, pull)
+        carried = carried_body(pull, timeline['ready_at'])
+        head = head_sha(pull)
+        base = fresh_state(content, timeline, carried).merge('head' => head)
+        (head && carried['head'] == head ? carried_state(base, carried) : base).compact
+      end
 
       # Republishing writes a fresh block, so a damaged one must not stop it.
-      def carried_body(pull)
-        read(pull_body(pull)) || {}
+      def carried_body(pull, ready)
+        return {} unless pull.is_a?(Hash)
+
+        carried = read(Publishing.managed_region(pull['body'])) || {}
+        return carried if TimelineSteps.same_repository?(pull)
+
+        # A fork's body can supply a display fallback. Its timestamp never overrides GitHub's.
+        fork_readiness(ready, carried['t2']).merge('head' => carried['head'])
       rescue Error
         {}
       end
 
-      def pull_body(pull) = pull.is_a?(Hash) ? pull['body'] : nil
-
-      def state_for(content, timeline, carried, head)
-        base = fresh_state(content, timeline, carried)
-        base['head'] = head if head
-        same = head && carried['head'] == head
-        (same ? carried_state(base, carried) : base).compact
-      end
-
       def fresh_state(content, timeline, carried)
-        prompt = prompted_at(timeline)
-        { 'spend' => spend(content), 't0' => stamp(timeline['task_started_at']) || carried['t0'],
-          't1' => prompt, 't2' => stamp(timeline['ready_at']), 't3' => stamp(timeline['merged']) }
+        { 'spend' => spend(content), 't0' => stamp(timeline['task_started_at']) || carried_start(timeline, carried),
+          't1' => stamp(timeline['ci_started_at']), 't2' => ready_stamp(timeline['ready_at']),
+          't3' => stamp(timeline['merged']) || ('UNKNOWN' if timeline['merged_pr']) }
       end
 
-      def prompted_at(timeline) = stamp(timeline['ci_started_at'])
+      def ready_stamp(ready) = ready == :unknown ? 'UNKNOWN' : stamp(ready)
 
       def carried_state(base, carried)
         base.merge('t1' => earlier(base, carried, 't1'), 't2' => earlier(base, carried, 't2'),
-                   't3' => base['t3'] || carried['t3'])
+                   ThroughputLine::READY_UNVERIFIED => carried[ThroughputLine::READY_UNVERIFIED],
+                   't3' => (base['t3'] unless base['t3'] == 'UNKNOWN') || carried['t3'] || base['t3'])
       end
 
-      def earlier(base, carried, key)
-        base[key] ? keep_earlier(base[key], carried, key, carried['head']) : carried[key]
-      end
+      def earlier(base, prior, key) = base[key] ? keep_earlier(base[key], prior, key, prior['head']) : prior[key]
 
       def spend(content)
         usage = content['usage']
@@ -109,8 +111,7 @@ module Shaka
       def head_sha(pull)
         return unless pull.is_a?(Hash)
 
-        nested = pull['head']
-        sha = pull['headRefOid'] || (nested['sha'] if nested.is_a?(Hash))
+        sha = pull['headRefOid'] || (pull['head']['sha'] if pull['head'].is_a?(Hash))
         sha if sha.is_a?(String) && sha.match?(/\A[0-9a-f]{40}\z/)
       end
 

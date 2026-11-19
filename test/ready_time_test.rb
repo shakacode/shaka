@@ -42,8 +42,8 @@ class ReadyTimeTest < Minitest::Test
     assert_equal TIMELINE, attach(FakeGitHub.new([row('validate')]))
   end
 
-  def test_checks_without_timestamps_add_nothing
-    assert_equal TIMELINE, attach(FakeGitHub.new([row('validate', nil), row('claude-review', nil)]))
+  def test_green_checks_without_timestamps_record_unknown
+    assert_equal :unknown, attach(FakeGitHub.new([row('validate', nil), row('claude-review', nil)]))['ready_at']
   end
 
   def test_a_failed_read_never_blocks_publication

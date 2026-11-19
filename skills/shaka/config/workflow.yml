@@ -56,6 +56,9 @@ phases:
         outcome, scope, success criteria, and consequential assumptions. Retain it in the
         existing task record and update it when the human corrects the direction.
         Apply the existing question rules; a readback is not human approval.
+      - Identify the original request, including planning, and keep its
+        [timing input](<{{package_root}}/skills/shaka/references/publication.md#review-evidence>)
+        in the existing task record across resumed chats.
       - Before planning or making any edit, verify the selected problem still exists and is not
         already fixed, duplicate, or superseded. An evidence-backed no-change
         outcome is allowed: report it, skip the rest of Intake, and stop before Plan;
@@ -544,7 +547,7 @@ phases:
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
         optional `checkpoint`, `walkthrough`, `review` and `post_implementation`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`, optional `risk_record`,
-        required `intent` and `verification`, optional `table`, required `provenance`, optional `skills_used` from the task record,
+        required `intent` and `verification`, optional `table`, required `provenance`, optional `skills_used` from the task record and `companion_results`,
         required `usage` (`note` and `records` from
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
         whose summary names usage is refused; walkthroughs also require `head`.
