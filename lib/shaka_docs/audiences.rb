@@ -34,7 +34,7 @@ module ShakaDocs
     def html_links(node)
       return [] unless %i[html_inline html_block].include?(node.type)
 
-      Nokogiri::HTML.fragment(node.literal).css('a, area').filter_map { |link| link['href'] || link['xlink:href'] }
+      Nokogiri::HTML5.fragment(node.literal).css('a, area').filter_map { |link| link['href'] || link['xlink:href'] }
     end
 
     def navigation_links(item)
@@ -85,7 +85,7 @@ module ShakaDocs
     end
 
     def document_files(repository)
-      repository_files(repository).grep(/\.mdx?\z/i)
+      repository_files(repository).grep(/\.mdx?\z/i).select { |path| File.file?(File.join(repository, path)) }
     end
 
     def repository_files(repository)

@@ -580,6 +580,13 @@ end
 class DocsHtmlDestinationsTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 
+  def test_html5_named_entities_resolve_before_destination_classification
+    page = '<a href="&period;&period;&sol;skills&sol;shaka&sol;references&sol;review.md">Review</a>'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
+  end
+
   def test_image_maps_and_svg_links_keep_the_agent_destination_guard
     pages = ['<map name="guide"><area href="../skills/shaka/references/review.md"></map>',
              '<svg xmlns:xlink="http://www.w3.org/1999/xlink">' \
@@ -634,5 +641,47 @@ class DocsSymlinkAudienceTest < Minitest::Test
     end
     refute_predicate status, :success?
     assert_includes errors, 'Docs sources cannot be symlinks: docs/procedures'
+  end
+end
+
+class DocsSymlinkBoundaryTest < Minitest::Test
+  def check(...) = DocsNavigationTest.new('fixture').check(...)
+
+  def test_docs_root_is_checked_before_reading_its_sidebar
+    _, errors, status = check('docsSidebar' => ['expected-experience']) do |root|
+      alias_docs_root(root)
+    end
+    refute_predicate status, :success?
+    assert_includes errors, 'Docs sources cannot be symlinks: docs'
+  end
+
+  def test_dangling_sidebar_is_refused_before_reading_its_target
+    _, errors, status = check('docsSidebar' => ['expected-experience']) do |root|
+      path = File.join(root, 'docs/sidebars.json')
+      File.unlink(path)
+      File.symlink('missing.json', path)
+    end
+    refute_predicate status, :success?
+    assert_includes errors, 'Docs sources cannot be symlinks: docs/sidebars.json'
+  end
+
+  def test_dangling_non_markdown_skill_alias_is_not_an_emitted_link_source
+    output, errors, status = check('docsSidebar' => ['expected-experience']) do |root|
+      directory = File.join(root, 'skills/example')
+      FileUtils.mkdir_p(directory)
+      File.symlink('missing.txt', File.join(directory, 'procedure.txt'))
+    end
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
+  private
+
+  def alias_docs_root(root)
+    target = File.join(root, 'internal/actual-docs')
+    FileUtils.mkdir_p(target)
+    File.write(File.join(target, 'sidebars.json'), '{"docsSidebar":[]}')
+    File.write(File.join(target, 'guide.md'), '# Unenrolled guide')
+    FileUtils.remove_entry(File.join(root, 'docs'))
+    File.symlink('internal/actual-docs', File.join(root, 'docs'))
   end
 end

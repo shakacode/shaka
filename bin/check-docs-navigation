@@ -95,13 +95,18 @@ def markdown_files(docs, repository)
   end
 end
 
+def emitted_sources(repository)
+  ShakaDocs::Audiences.repository_files(repository).grep(%r{\Askills/}).filter_map do |file|
+    path = File.join(repository, file)
+    path if File.file?(path)
+  end
+end
+
 def broken_links(docs)
   docs = File.expand_path(docs)
   repository = File.dirname(docs)
   markdown = markdown_files(docs, repository)
-  sources = markdown | ShakaDocs::Audiences.repository_files(repository).grep(%r{\Askills/}).map do |file|
-    File.join(repository, file)
-  end
+  sources = markdown | emitted_sources(repository)
   markdown.flat_map { |path| broken_relative_links(repository, path) } +
     sources.flat_map { |path| broken_emitted_links(repository, docs, path) }
 end
@@ -119,17 +124,23 @@ def malformed_figures(docs)
   end
 end
 
+def reject_docs_symlinks(paths, repository)
+  aliases = paths.select { |path| File.symlink?(path) }.map { |path| path.delete_prefix("#{repository}/") }
+  raise ArgumentError, "Docs sources cannot be symlinks: #{aliases.join(', ')}" unless aliases.empty?
+end
+
 begin
   root = File.expand_path(ARGV.fetch(0, File.expand_path('../docs', __dir__)))
   repository = File.dirname(root)
+  reject_docs_symlinks([root, File.join(root, 'sidebars.json')], repository)
   navigation = JSON.parse(File.read(File.join(root, 'sidebars.json')))
   raise ArgumentError, 'Expected a sidebar object' unless navigation.is_a?(Hash)
 
   ids = document_ids(navigation.fetch('docsSidebar'))
   prefix = "#{File.basename(root)}/"
   inventory = ShakaDocs::Audiences.repository_files(repository)
-  symlinks = inventory.select { |file| file.start_with?(prefix) && File.symlink?(File.join(repository, file)) }
-  raise ArgumentError, "Docs sources cannot be symlinks: #{symlinks.join(', ')}" unless symlinks.empty?
+  doc_paths = inventory.filter_map { |file| File.join(repository, file) if file.start_with?(prefix) }
+  reject_docs_symlinks(doc_paths, repository)
 
   files = inventory.grep(/\.mdx?\z/i).filter_map do |file|
     file.delete_prefix(prefix) if file.start_with?(prefix)
