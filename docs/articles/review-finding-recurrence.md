@@ -60,7 +60,7 @@ enforced by nothing but the agent.
 | A study's claim does not match its data | 14 / 11 | 43 | Figures computed by a script; per study | About 8 arithmetic errors | Defer |
 | Symlinks, case-insensitive disks, or Windows | 14 / 13 | 18 | Windows and case-insensitive CI; CI minutes | Most fixed ones | Evaluate first |
 | An unnamed caller might break | 13 / 0 | 14 | Review prompt change, not a check; low | None; all 14 were dismissed | Evaluate a review prompt change |
-| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | Heredoc and fallback tests; low | The 5 fixed ones | A heredoc-prose test shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); not checked against #837 and #901 |
+| A default or packaged prompt kept as a Ruby literal | 10 / 5 | 10 | A long-string test plus a fallback test; low | The 5 fixed ones, by that broader pair; unknown for the shipped heredoc-only test | A heredoc-prose test shipped in [#1224](https://github.com/shakacode/shaka/pull/1224); not checked against #837 and #901 |
 | Git subprocess inherits the caller's Git environment | 5 / 5 | 13 | One isolating Git runner; medium | 3 of 7 defects in library code, 5 with `eval/bin`, per #1222 | Deferred after [#1222](https://github.com/shakacode/shaka/pull/1222) |
 | Changelog rule broken; the rule changed mid-month | 4 / 4 | 4 | CI refusing `CHANGELOG.md` edits; low | 1 of 4 | Defer |
 
