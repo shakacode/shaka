@@ -10,7 +10,8 @@ require_relative '../lib/shaka_docs/metadata'
 require_relative '../lib/shaka_docs/navigation'
 
 # Code prints these into user output, so a heading rename in a docs-only PR would break them silently.
-EMITTED_DOCS = %r{shakacode/shaka/blob/[^/\s]+/docs/([\w./-]+\.mdx?)(?![\w.])(?:#([\w-]+))?}
+# Find literal source URLs even inside code examples; the parsers determine their destinations.
+EMITTED_DOCS = %r{https?://(?:www\.)?github\.com/shakacode/shaka/blob/[^\s<>"'`\\]+}i
 
 def prose(path)
   File.read(path, encoding: 'UTF-8').gsub(/^ {0,3}```.*?^ {0,3}```/m, '')
@@ -54,11 +55,15 @@ def unresolved(path, target, checked)
   uri = ShakaDocs::Audiences.url(target)
   file = URI::DEFAULT_PARSER.unescape(uri.path)
   destination = file.empty? ? path : File.absolute_path(file, File.dirname(path))
+  unresolved_destination(destination, uri.fragment, checked)
+end
+
+def unresolved_destination(destination, fragment, checked)
   return 'missing file' unless checked[:paths].include?(destination)
   return 'symlink target' if aliased_target?(destination, checked)
   return 'missing file' unless File.exist?(destination)
 
-  unresolved_anchor(destination, uri.fragment)
+  unresolved_anchor(destination, fragment)
 end
 
 def broken_relative_links(repository, path, checked)
@@ -70,11 +75,20 @@ def broken_relative_links(repository, path, checked)
   end
 end
 
+def emitted_document_targets(text)
+  targets = text.scan(EMITTED_DOCS).flat_map { |token| ShakaDocs::Audiences.links(token, include_html: false) }
+  targets.filter_map do |target|
+    uri = ShakaDocs::Audiences.url(target)
+    page = ShakaDocs::SourcePaths.repository_path(uri)
+    [page, uri.fragment] if page&.start_with?('docs/')
+  end.uniq
+end
+
 def broken_emitted_links(repository, checked, path)
-  File.read(path, encoding: 'UTF-8').scrub.scan(EMITTED_DOCS).uniq.filter_map do |page, anchor|
+  emitted_document_targets(File.read(path, encoding: 'UTF-8').scrub).filter_map do |page, anchor|
     target = [page, anchor].compact.join('#')
-    problem = unresolved(File.join(checked[:docs], 'index.md'), target, checked)
-    "#{path.delete_prefix("#{repository}/")} -> docs/#{target} (#{problem})" if problem
+    problem = unresolved_destination(File.join(repository, page), anchor, checked)
+    "#{path.delete_prefix("#{repository}/")} -> #{target} (#{problem})" if problem
   end
 end
 

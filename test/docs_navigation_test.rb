@@ -102,9 +102,9 @@ end
 class DocsEmittedLinksTest < Minitest::Test
   include DocsNavigationFixture
 
-  def emitted_page_check(extension, heading)
+  def emitted_page_check(extension, heading, target: "setup.#{extension}#install")
     page = "setup.#{extension}"
-    files = { 'skills/shaka/guide.rb' => "PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/#{page}#install'" }
+    files = { 'skills/shaka/guide.rb' => "PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/#{target}'" }
     files["docs/#{page}"] = heading if heading
     sidebar = ['expected-experience'] + (heading ? ['setup'] : [])
     check({ 'docsSidebar' => sidebar }, '# What to expect', files)
@@ -130,6 +130,28 @@ class DocsEmittedLinksTest < Minitest::Test
       output, _, status = emitted_page_check(extension, '# Other heading')
       refute_predicate status, :success?, output
       assert_includes output, "docs/setup.#{extension}#install (missing anchor)"
+    end
+  end
+
+  def test_emitted_unicode_fragments_are_not_truncated
+    output, errors, status = emitted_page_check('mdx', '# 日本語', target: 'setup.mdx#日本語')
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+    output, _, status = emitted_page_check('mdx', '# Other heading', target: 'setup.mdx#日本語')
+    refute_predicate status, :success?, output
+    assert_includes output, 'docs/setup.mdx#%E6%97%A5%E6%9C%AC%E8%AA%9E (missing anchor)'
+  end
+
+  def test_emitted_path_suffixes_are_not_credited_as_mdx
+    output, _, status = emitted_page_check('mdx', '# Install', target: 'setup.mdx-backup#install')
+    refute_predicate status, :success?, output
+    assert_includes output, 'docs/setup.mdx-backup#install (missing file)'
+  end
+
+  def test_emitted_sentence_punctuation_does_not_hide_missing_pages
+    %w[md mdx].each do |extension|
+      output, _, status = emitted_page_check(extension, nil, target: "setup.#{extension}. More text")
+      refute_predicate status, :success?, output
+      assert_includes output, "docs/setup.#{extension} (missing file)"
     end
   end
 end
