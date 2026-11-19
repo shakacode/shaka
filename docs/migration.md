@@ -56,4 +56,3 @@ installation while you review the reported settings or wrapper errors.
 Review the configuration diff, validate the new settings with the target release,
 and merge the settings PR before switching your active installation. Check the
 merged default-branch configuration with the target release before switching.
-
