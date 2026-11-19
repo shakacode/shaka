@@ -926,6 +926,15 @@ class DocsCommitHookTest < Minitest::Test
     end
   end
 
+  def test_partial_staging_checks_the_index_and_preserves_unstaged_work
+    output, errors, status = DocsNavigationTest.new('fixture').check('docsSidebar' => ['expected-experience']) do |root|
+      install_hook_fixture(root)
+      staged, working = stage_partial_guide(root)
+      assert_partial_staging(root, staged, working)
+    end
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+
   private
 
   def hook_fixture(path)
@@ -933,11 +942,33 @@ class DocsCommitHookTest < Minitest::Test
     DocsNavigationTest.new('fixture').check('docsSidebar' => ['expected-experience']) do |root|
       install_hook_fixture(root)
       stage_document(root, path)
-      result = Open3.capture3({ 'BUNDLE_GEMFILE' => File.join(root, 'Gemfile'), 'LEFTHOOK_CONFIG' => nil },
-                              'bundle', 'exec', 'lefthook', 'run', 'pre-commit',
-                              '--no-auto-install', '--no-tty', chdir: root)
+      result = run_hook(root)
     end
     result
+  end
+
+  def run_hook(root)
+    Open3.capture3({ 'BUNDLE_GEMFILE' => File.join(root, 'Gemfile'), 'LEFTHOOK_CONFIG' => nil },
+                   'bundle', 'exec', 'lefthook', 'run', 'pre-commit', '--no-auto-install', '--no-tty', chdir: root)
+  end
+
+  def stage_partial_guide(root)
+    path = File.join(root, 'docs/expected-experience.md')
+    staged = "# Guide\n[Agent](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md)\n"
+    working = "# Guide\n"
+    File.write(path, staged)
+    system('git', '-C', root, 'add', 'docs/expected-experience.md', exception: true)
+    File.write(path, working)
+    [staged, working]
+  end
+
+  def assert_partial_staging(root, staged, working)
+    output, errors, status = run_hook(root)
+    refute_predicate status, :success?, "#{output}\n#{errors}"
+    assert_includes output, 'Link a human guide, not agent instructions:'
+    assert_equal working, File.read(File.join(root, 'docs/expected-experience.md'))
+    actual, = Open3.capture2('git', '-C', root, 'show', ':docs/expected-experience.md')
+    assert_equal staged, actual
   end
 
   def install_hook_fixture(root)
@@ -959,6 +990,29 @@ class DocsCommitHookTest < Minitest::Test
     FileUtils.mkdir_p(File.dirname(File.join(root, path)))
     File.write(File.join(root, path), "# Install\n")
     system('git', '-C', root, 'add', path, exception: true)
+  end
+end
+
+class DocsExternalAliasTest < Minitest::Test
+  def test_outside_aliases_cannot_credit_ignored_docs
+    %i[directory file].product([true, false]).each do |kind, present|
+      target = kind == :directory ? '../internal/docs-alias/local.md#setup' : '../internal/file-alias.md#setup'
+      files = { '.gitignore' => "/docs/local.md\n" }
+      output, errors, status = DocsNavigationTest.new('fixture').check(
+        { 'docsSidebar' => ['expected-experience'] }, "[Setup](#{target})", files
+      ) { |root| install_alias(root, kind, present) }
+      refute_predicate status, :success?, "#{output}\n#{errors}"
+      assert_includes output, 'Unresolved links in docs/ and skills/:'
+    end
+  end
+
+  private
+
+  def install_alias(root, kind, present)
+    FileUtils.mkdir_p(File.join(root, 'internal'))
+    File.write(File.join(root, 'docs/local.md'), '# Setup') if present
+    target, path = kind == :directory ? ['../docs', 'docs-alias'] : ['../docs/local.md', 'file-alias.md']
+    File.symlink(target, File.join(root, 'internal', path))
   end
 end
 
