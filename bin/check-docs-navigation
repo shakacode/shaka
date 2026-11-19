@@ -80,7 +80,7 @@ def parsed_markdown_reference?(text, match, destinations)
   return false if destinations.empty?
 
   # A destination gains the marker; breaking a reference label only removes a link.
-  changed = ShakaDocs::Audiences.links(text.dup.insert(match.end(0), '0'), unique: false).tally
+  changed = ShakaDocs::Audiences.links(text.dup.insert(match.begin(1), '0'), unique: false).tally
   destinations.any? do |target, count|
     next false unless changed.fetch(target, 0) < count
 

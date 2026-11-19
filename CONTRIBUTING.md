@@ -4,8 +4,10 @@ For a published guide, update `docs/sidebars.json` in the same PR. The docs site
 syncs this navigation with the content; `bin/check-docs-navigation` rejects pages
 missing from the sidebar and entries pointing to deleted pages. It also rejects
 relative Markdown links, images and their heading anchors in `docs/` and `skills/` that do not resolve,
-and `shakacode/shaka` GitHub links to missing `docs/` pages or anchors anywhere
-under `skills/`, including code. Site-only pages and the global header/footer
+and rendered `shakacode/shaka` GitHub links on `main` to missing `docs/` pages or anchors.
+Historical citations require review of their target contents. The separate literal-source
+guard checks checkout targets throughout `skills/`, including code, regardless of ref.
+Site-only pages and the global header/footer
 remain in the site repository.
 
 Validation also checks documentation destinations and keeps public guides and

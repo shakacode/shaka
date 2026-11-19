@@ -549,4 +549,14 @@ class DocsParsedReferencePrecedenceTest < Minitest::Test
       assert_equal heading == '# 日本語', status.success?, "#{output}\n#{errors}"
     end
   end
+
+  def test_bare_link_punctuation_does_not_restore_the_literal_guard
+    cases = [['1234567890abcdef1234567890abcdef12345678', '# Renamed', true],
+             ['main', '# Renamed', false], ['main', '# Setup', true]]
+    cases.each do |ref, heading, expected|
+      page = "https://github.com/shakacode/shaka/blob/#{ref}/docs/settings.md#setup_."
+      output, errors, status = check_links(page, 'docs/settings.md' => heading)
+      assert_equal expected, status.success?, "#{output}\n#{errors}"
+    end
+  end
 end
