@@ -5,10 +5,15 @@ module ShakaDocs
   module Navigation
     module_function
 
-    def items(item)
+    def items(collection)
+      raise ArgumentError, 'Expected sidebar items array' unless collection.is_a?(Array)
+
+      collection.flat_map { |item| node(item) }
+    end
+
+    def node(item)
       case item
       when String then [[:doc, item]]
-      when Array then item.flat_map { |child| items(child) }
       when Hash then typed_items(item)
       else raise ArgumentError, "Unsupported sidebar item: #{item.inspect}"
       end

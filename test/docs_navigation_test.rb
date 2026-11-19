@@ -1079,6 +1079,22 @@ end
 class DocsSidebarReferencesTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 
+  def test_sidebar_collections_require_arrays
+    [false, true].each do |array|
+      collection_sidebars(array).each do |sidebar|
+        output, errors, status = check(sidebar)
+        assert_equal array, status.success?, "#{output}\n#{errors}"
+        assert_includes errors, 'Expected sidebar items array' unless array
+      end
+    end
+  end
+
+  def collection_sidebars(array)
+    collection = array ? ['expected-experience'] : 'expected-experience'
+    category = { 'type' => 'category', 'label' => 'Guides', 'items' => collection }
+    [{ 'docsSidebar' => ['expected-experience'], 'otherSidebar' => collection }, { 'docsSidebar' => [category] }]
+  end
+
   def test_secondary_sidebar_document_references_must_exist
     %w[deleted-guide expected-experience].each do |id|
       sidebar = { 'docsSidebar' => ['expected-experience'], 'otherSidebar' => [{ 'type' => 'doc', 'id' => id }] }
