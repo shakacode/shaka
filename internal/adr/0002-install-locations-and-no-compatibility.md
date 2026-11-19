@@ -75,4 +75,5 @@ The maintainer changed decision 3 on 2026-11-17, in review of
   Since [#956](https://github.com/shakacode/shaka/issues/956), an update supersedes a
   task's validation and review only when it changes the code those checks run. The
   [Keep Shaka up to date](../../docs/keep-shaka-up-to-date.md) guide shows
-  how to schedule an update for a time when no Shaka task is running.
+  how to schedule an update. It leaves this risk out, because a scheduler cannot
+  tell whether a task is running and the warning would only confuse readers.
