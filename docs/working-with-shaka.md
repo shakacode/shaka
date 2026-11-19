@@ -260,10 +260,11 @@ tracker's completion rules.
 create-verification-skill to check that searching for O'Brien finds the order
 ```
 
-Shaka uses the results in the PR's evidence: what ran, which version was checked,
-what it showed, and what remains unverified. After a change, the agent reruns
-affected checks. Shaka keeps control of delivery; pstack's separate delivery
-playbooks are not part of this flow.
+Open **Companion skill results** on the PR to see what ran, which commit it checked,
+what it showed, and where to find any artifacts. At publication, Shaka labels runs
+from earlier commits as stale. The agent reruns affected checks and republishes the
+results. Shaka keeps control of delivery; pstack's separate delivery playbooks are
+not part of this flow.
 
 ## Review a session for improvements
 
