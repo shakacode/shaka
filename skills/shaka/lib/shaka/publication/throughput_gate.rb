@@ -12,6 +12,14 @@ module Shaka
       times.any?(&:nil?) ? :unknown : times.max
     end
 
+    def fork_readiness(ready, previous)
+      marker = ThroughputLine::READY_UNVERIFIED
+      return { 't2' => iso_timestamp(ready), marker => nil } if ready.is_a?(Time)
+      return { 't2' => previous, marker => 'true' } if parse_time(previous)
+
+      { 't2' => ('UNKNOWN' if ready == :unknown), marker => nil }
+    end
+
     private
 
     def selected_rows(rows, required, review_jobs, wait)
