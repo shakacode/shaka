@@ -10,7 +10,7 @@ class DocsNavigationTest < Minitest::Test
   AGENT_LINKS = <<~MARKDOWN
     Read [the review guide](../skills/shaka/references/review.md#choose).
     See [upstream](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/delivery.md).
-    [guide]: <skills/shaka/references/local-review.md>
+    [guide]: <../skills/shaka/references/local-review.md>
     <a href="https://github.com/shakacode/shaka/tree/main/skills/shaka/references">all</a>
     Bare: https://github.com/shakacode/shaka/blob/v1/skills/shaka/references/review.md
     Autolink: <https://github.com/shakacode/shaka/blob/main/skills/shaka/references/publication.md>
@@ -26,6 +26,7 @@ class DocsNavigationTest < Minitest::Test
         FileUtils.mkdir_p(File.dirname(File.join(repository, path)))
         File.write(File.join(repository, path), text)
       end
+      system('git', 'init', '-q', repository, exception: true)
       Open3.capture3('ruby', File.expand_path('../bin/check-docs-navigation', __dir__), docs)
     end
   end
@@ -177,6 +178,12 @@ class DocsAudienceTest < Minitest::Test
     assert_includes output, 'Link a human guide, not agent instructions: SKILL.md'
   end
 
+  def test_ignored_dependency_markdown_is_outside_the_inventory
+    files = { '.gitignore' => "vendor/bundle/\n", 'vendor/bundle/example/README.md' => '# Dependency' }
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files)
+    assert_predicate status, :success?, output
+  end
+
   def test_gem_and_contributor_documentation_have_separate_destinations
     files = { 'README.gem.md' => '# Gem', 'CONTRIBUTING.md' => '# Contribute',
               'contributing/development.md' => '# Development', 'internal/notes.md' => '# Record' }
@@ -184,17 +191,20 @@ class DocsAudienceTest < Minitest::Test
     assert_predicate status, :success?, output
   end
 
+  AGENT_DESTINATIONS = %w[../skills/mct/SKILL.md ../skills/shaka/config/review-prompt.md
+                          ../.agents/shaka/instructions/review.md ../AGENTS.md
+                          ../skills/shaka/references/../SKILL.md
+                          https://github.com/shakacode/shaka/blame/main/skills/shaka/references/review.md
+                          https://raw.githubusercontent.com/shakacode/shaka/main/skills/shaka/SKILL.md
+                          https://github.com/shakacode/shaka/blob/main/skills/shaka/%53KILL.md].freeze
+
   def test_all_shaka_agent_markdown_links_fail
-    paths = %w[../skills/mct/SKILL.md ../skills/shaka/config/review-prompt.md
-               ../.agents/shaka/instructions/review.md ../AGENTS.md
-               ../skills/shaka/references/../SKILL.md
-               https://raw.githubusercontent.com/shakacode/shaka/main/skills/shaka/SKILL.md
-               https://github.com/shakacode/shaka/blob/main/skills/shaka/%53KILL.md]
+    paths = AGENT_DESTINATIONS
     page = paths.map { |path| "[agent](#{path})" }.join("\n")
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
     refute_predicate status, :success?
     agent_line = output.lines.grep(/\ALink a human guide/).first
-    paths.each { |path| assert_includes agent_line, path }
+    assert(paths.all? { |path| agent_line.include?(path) }, agent_line)
   end
 
   def test_sidebar_links_to_agent_instructions_fail
@@ -203,6 +213,21 @@ class DocsAudienceTest < Minitest::Test
     output, _, status = check(sidebar)
     refute_predicate status, :success?
     assert_includes output, 'sidebars.json -> ../skills/shaka/SKILL.md'
+  end
+
+  def test_human_pages_can_discuss_agents_and_skills
+    files = { 'docs/claude.md' => '# Claude', 'docs/skills/overview.md' => '# Skills' }
+    sidebar = { 'docsSidebar' => %w[expected-experience claude skills/overview] }
+    page = '[Claude](claude.md) and [skills](skills/overview.md)'
+    output, _, status = check(sidebar, page, files)
+    assert_predicate status, :success?, output
+  end
+
+  def test_links_to_agent_directories_fail
+    page = '[Skill](https://github.com/shakacode/shaka/tree/main/skills/shaka/)'
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    refute_predicate status, :success?
+    assert_includes output, 'Link a human guide, not agent instructions:'
   end
 
   def test_other_projects_skill_citations_are_allowed

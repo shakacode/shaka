@@ -283,7 +283,9 @@ class ValidateWorkflowTest < Minitest::Test
   end
 
   def install_validation_scripts(root)
-    %w[bin/docs-only-change bin/check-docs-navigation .agents/shaka/bin/validate].each do |path|
+    %w[bin/docs-only-change bin/check-docs-navigation lib/shaka_docs/audiences.rb
+       .agents/shaka/bin/validate].each do |path|
+      FileUtils.mkdir_p(File.dirname(File.join(root, path)))
       FileUtils.cp(File.expand_path("../#{path}", __dir__), File.join(root, path))
     end
     File.write(File.join(root, 'docs/sidebars.json'), '{"docsSidebar":["guide"]}')

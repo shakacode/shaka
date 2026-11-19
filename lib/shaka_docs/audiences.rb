@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'uri'
+require 'open3'
 
 module ShakaDocs
   # Public guides may cite other projects' skills, but never route readers into Shaka's agent procedures.
@@ -8,6 +9,7 @@ module ShakaDocs
     DOCUMENT_DIRECTORIES = %w[.agents .github contributing docs eval internal skills templates test].freeze
     # Root documents have distinct audiences: project entry, RubyGems, contributors, releases, and agents.
     ROOT_DOCUMENTS = %w[README.md README.gem.md CONTRIBUTING.md CHANGELOG.md AGENTS.md CLAUDE.md].freeze
+    AGENT_ENTRY_FILES = %w[AGENTS.md CLAUDE.md SKILL.md].freeze
 
     module_function
 
@@ -21,7 +23,7 @@ module ShakaDocs
 
     def repository_path(uri)
       prefix = case uri.host
-               when 'github.com' then %r{\A/shakacode/shaka/(?:blob|tree)/[^/]+/}
+               when 'github.com' then %r{\A/shakacode/shaka/(?:blob|tree|blame|raw)/[^/]+/}
                when 'raw.githubusercontent.com' then %r{\A/shakacode/shaka/[^/]+/}
                end
       uri.path.sub(prefix, '') if prefix && uri.path.match?(prefix)
@@ -55,19 +57,35 @@ module ShakaDocs
     end
 
     def agent_path?(path)
-      path.match?(%r{(?:\A|/)(?:skills/.*\.mdx?(?:\z|/)|skills/[^/]+/references(?:/|\z)|\.agents/.*\.mdx?\z)}) ||
-        File.basename(path).match?(/\A(?:AGENTS|CLAUDE|SKILL)\.md\z/i)
+      instructions = path.start_with?('skills/', '.agents/') &&
+                     (path.match?(/\.mdx?\z/) || File.extname(path).empty?)
+      instructions || AGENT_ENTRY_FILES.include?(File.basename(path))
     end
 
     def agent_links(repository, source, text)
-      links(text).select do |target|
+      agent_targets(repository, source, links(text))
+    end
+
+    def agent_targets(repository, source, targets)
+      targets.select do |target|
         path = local_path(repository, source, target)
         path && agent_path?(path.delete_prefix("#{repository}/"))
       end
     end
 
+    def document_files(repository)
+      git_directory = File.join(repository, '.git')
+      return Dir.glob('**/*.{md,mdx}', File::FNM_DOTMATCH, base: repository) unless File.exist?(git_directory)
+
+      output, error, status = Open3.capture3('git', '-C', repository, 'ls-files', '--cached', '--others',
+                                             '--exclude-standard', '-z')
+      raise ArgumentError, "Cannot inventory documentation: #{error}" unless status.success?
+
+      output.split("\0").grep(/\.mdx?\z/).uniq
+    end
+
     def unclassified_documents(repository)
-      Dir.glob('**/*.{md,mdx}', File::FNM_DOTMATCH, base: repository).reject do |path|
+      document_files(repository).reject do |path|
         DOCUMENT_DIRECTORIES.include?(path.split('/').first) || ROOT_DOCUMENTS.include?(path)
       end
     end
