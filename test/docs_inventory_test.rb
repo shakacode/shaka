@@ -467,6 +467,16 @@ end
 class DocsIndexSymlinkTest < Minitest::Test
   include DocsNavigationFixture
 
+  def test_inherited_config_selector_cannot_modify_an_outer_file
+    Dir.mktmpdir do |outside|
+      config = File.join(outside, 'config')
+      before = "[core]\n\tsymlinks = true\n"
+      File.write(config, before)
+      with_config_selector(config) { assert_checkout_refused(false) }
+      assert_equal before, File.binread(config)
+    end
+  end
+
   def test_committed_alias_is_refused_with_plain_file_checkout
     assert_checkout_refused(false)
   end
@@ -483,6 +493,15 @@ class DocsIndexSymlinkTest < Minitest::Test
     _, errors, status = check(sidebar, '# Guide', files) { |root| checkout_alias(root, symlinks) }
     refute_predicate status, :success?, "core.symlinks=#{symlinks}"
     assert_includes errors, 'Docs sources cannot be symlinks: docs/procedure.md'
+  end
+
+  def with_config_selector(config)
+    saved = ENV.fetch('GIT_CONFIG', nil)
+    ENV['GIT_CONFIG'] = config
+    yield
+    assert_equal config, ENV.fetch('GIT_CONFIG')
+  ensure
+    ENV['GIT_CONFIG'] = saved
   end
 
   def git(root, *) = system('git', '-C', root, *, exception: true)

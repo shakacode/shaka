@@ -7,8 +7,11 @@ require 'fileutils'
 require 'open3'
 
 module DocsNavigationFixture
-  GIT_ROUTING = %w[GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY
-                   GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG_COUNT GIT_CONFIG_PARAMETERS].freeze
+  # Repository-local variables reported by git rev-parse --local-env-vars; keep global config.
+  GIT_ROUTING = %w[GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
+                   GIT_OBJECT_DIRECTORY GIT_DIR GIT_WORK_TREE GIT_IMPLICIT_WORK_TREE GIT_GRAFT_FILE
+                   GIT_INDEX_FILE GIT_NO_REPLACE_OBJECTS GIT_REPLACE_REF_BASE GIT_PREFIX GIT_SHALLOW_FILE
+                   GIT_COMMON_DIR].freeze
 
   def check(sidebar, page = '# What to expect', files = {})
     saved = GIT_ROUTING.to_h { |name| [name, ENV.delete(name)] }
