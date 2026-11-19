@@ -93,6 +93,8 @@ selection. An explicit repository or branch overrides the gem default.
 Follow [Before take-over](#before-take-over) when changing releases.
 To check project settings before switching, clone the official release tag in a
 separate checkout without running the installer. Use the helper from that checkout.
+Check the projects in the request and clarify the scope if they are unclear.
+Report which projects you checked. All projects using the moved links switch.
 
 - For team settings, run `seam check --root PROJECT --ref DEFAULT_SHA` in a clean
   project checkout at the default-branch commit. Require `trusted/ref` for that SHA.
@@ -100,9 +102,10 @@ separate checkout without running the installer. Use the helper from that checko
   in the copy with those settings. Require a successful result.
 
 Resolve any required [migration](migration.md) before moving the active skill links.
-To switch to an official release, run `bin/install --repository https://github.com/shakacode/shaka.git
---release VERSION --directory NEW --take-over`. Use the same checkout and commit
-you checked. The repository flag prevents an existing fork from supplying the tag.
+Run `bin/install` from the active registered checkout with
+`--repository https://github.com/shakacode/shaka.git --release VERSION --directory PREPARED --take-over`.
+Use the same checkout and commit you checked as `PREPARED`. Pass `--skills-dir DIR`
+for an active custom skills directory. The repository flag selects the official tag.
 To roll back, [restore the saved installation](installation.md#restore-the-saved-installation).
 Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
 that the remote tag still resolves to the recorded commit; it never advances to `main`
