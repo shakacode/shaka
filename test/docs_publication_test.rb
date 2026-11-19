@@ -6,11 +6,17 @@ class DocsLinkedInventoryTest < Minitest::Test
   include DocsNavigationFixture
 
   def test_linked_ignored_guides_are_not_credited_as_published_targets
-    %i[absent regular alias tracked].each do |mode|
+    %i[absent regular tracked].each do |mode|
       output, errors, status = linked_fixture(mode)
       assert_equal mode == :tracked, status.success?, "#{mode}: #{output}\n#{errors}"
       assert_includes output, 'local.md#setup (missing file)' unless mode == :tracked
     end
+  end
+
+  def test_linked_ignored_aliases_are_not_credited_as_published_targets
+    output, errors, status = linked_fixture(:alias)
+    refute_predicate status, :success?, "#{output}\n#{errors}"
+    assert_includes output, 'local.md#setup (missing file)'
   end
 
   def test_unknown_sidebar_forms_fail_in_every_sidebar
@@ -91,7 +97,7 @@ class DocsLinkedInventoryTest < Minitest::Test
   def install_linked_file(root, mode)
     path = File.join(root, 'docs/local.md')
     File.write(path, '# Setup') if %i[regular tracked].include?(mode)
-    File.symlink('../internal/target.md', path) if mode == :alias
+    create_symlink('../internal/target.md', path) if mode == :alias
     system('git', '-C', root, 'add', '-f', 'docs/local.md', exception: true) if mode == :tracked
   end
 end

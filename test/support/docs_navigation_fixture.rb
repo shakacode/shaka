@@ -8,7 +8,7 @@ require 'open3'
 
 module DocsNavigationFixture
   GIT_ROUTING = %w[GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY
-                   GIT_ALTERNATE_OBJECT_DIRECTORIES].freeze
+                   GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG_COUNT].freeze
 
   def check(sidebar, page = '# What to expect', files = {})
     saved = GIT_ROUTING.to_h { |name| [name, ENV.delete(name)] }
@@ -20,6 +20,12 @@ module DocsNavigationFixture
     end
   ensure
     saved.each { |name, value| ENV[name] = value }
+  end
+
+  def create_symlink(target, path)
+    File.symlink(target, path)
+  rescue NotImplementedError, Errno::EPERM, Errno::EACCES
+    skip 'Real symlink creation is unavailable'
   end
 
   def prepare_fixture(repository, sidebar, page, files)

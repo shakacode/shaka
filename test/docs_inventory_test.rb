@@ -10,6 +10,34 @@ class DocsFixtureIsolationTest < Minitest::Test
     assert_predicate status, :success?, "#{output}\n#{errors}"
   end
 
+  def test_runtime_git_configuration_cannot_change_the_outer_index
+    check('docsSidebar' => ['expected-experience']) do |outer|
+      before = prepare_outer(outer)
+      with_runtime_config(outer) { assert_runtime_isolated(outer) }
+      assert_equal before, File.binread(File.join(outer, '.git/index'))
+    end
+  end
+
+  def assert_runtime_isolated(outer)
+    global = ENV.fetch('GIT_CONFIG_GLOBAL')
+    output, errors, status = check('docsSidebar' => ['expected-experience']) do |inner|
+      assert_nil ENV.fetch('GIT_CONFIG_COUNT', nil)
+      assert_equal global, ENV.fetch('GIT_CONFIG_GLOBAL')
+      system('git', '-C', inner, 'add', '.', exception: true)
+    end
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+    assert_equal '1', ENV.fetch('GIT_CONFIG_COUNT')
+    assert_equal outer, ENV.fetch('GIT_CONFIG_VALUE_0')
+  end
+
+  def with_runtime_config(root)
+    config = { 'GIT_CONFIG_COUNT' => '1', 'GIT_CONFIG_KEY_0' => 'core.worktree', 'GIT_CONFIG_VALUE_0' => root }
+    saved = config.to_h { |name, value| [name, ENV.fetch(name, nil)].tap { ENV[name] = value } }
+    yield
+  ensure
+    saved.each { |name, value| ENV[name] = value }
+  end
+
   def assert_outer_preserved(root)
     before = prepare_outer(root)
     with_routing(root) { assert_isolated_fixture(root) }
@@ -38,6 +66,36 @@ class DocsFixtureIsolationTest < Minitest::Test
     yield
   ensure
     saved.each { |name, value| ENV[name] = value }
+  end
+end
+
+class DocsFixtureSymlinkCapabilityTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_unavailable_symlinks_skip_and_restore_the_fixture_environment
+    before = ENV.to_h.slice(*GIT_ROUTING)
+    repository = nil
+    with_denied_symlinks do
+      assert_raises(Minitest::Skip) do
+        check('docsSidebar' => ['expected-experience']) { |root| create_unavailable_link(repository = root) }
+      end
+    end
+    refute_path_exists repository
+    assert_equal before, ENV.to_h.slice(*GIT_ROUTING)
+  end
+
+  private
+
+  def create_unavailable_link(root)
+    create_symlink('missing.md', File.join(root, 'docs/link.md'))
+  end
+
+  def with_denied_symlinks
+    original = File.method(:symlink)
+    File.define_singleton_method(:symlink) { |*| raise Errno::EPERM }
+    yield
+  ensure
+    File.define_singleton_method(:symlink, original)
   end
 end
 
@@ -121,7 +179,7 @@ class DocsSymlinkAudienceTest < Minitest::Test
   def test_enrolled_product_guides_cannot_alias_agent_procedures
     files = { 'skills/shaka/references/procedure.txt' => '# Agent procedure' }
     _, errors, status = check({ 'docsSidebar' => %w[expected-experience procedure] }, '# Guide', files) do |root|
-      File.symlink('../skills/shaka/references/procedure.txt', File.join(root, 'docs/procedure.md'))
+      create_symlink('../skills/shaka/references/procedure.txt', File.join(root, 'docs/procedure.md'))
       system('git', '-C', root, 'add', 'docs/procedure.md', exception: true)
     end
     refute_predicate status, :success?
@@ -131,7 +189,7 @@ class DocsSymlinkAudienceTest < Minitest::Test
   def test_dangling_guides_are_rejected_in_source_exports
     _, errors, status = check('docsSidebar' => ['expected-experience']) do |root|
       FileUtils.remove_entry(File.join(root, '.git'))
-      File.symlink('missing.md', File.join(root, 'docs/broken.md'))
+      create_symlink('missing.md', File.join(root, 'docs/broken.md'))
     end
     refute_predicate status, :success?
     assert_includes errors, 'Docs sources cannot be symlinks: docs/broken.md'
@@ -140,7 +198,7 @@ class DocsSymlinkAudienceTest < Minitest::Test
   def test_directories_cannot_alias_agent_procedures
     _, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide',
                               'skills/shaka/references/procedure.txt' => '# Agent') do |root|
-      File.symlink(File.join(root, 'skills/shaka/references'), File.join(root, 'docs/procedures'))
+      create_symlink(File.join(root, 'skills/shaka/references'), File.join(root, 'docs/procedures'))
     end
     refute_predicate status, :success?
     assert_includes errors, 'Docs sources cannot be symlinks: docs/procedures'
@@ -162,7 +220,7 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     _, errors, status = check('docsSidebar' => ['expected-experience']) do |root|
       path = File.join(root, 'docs/sidebars.json')
       File.unlink(path)
-      File.symlink('missing.json', path)
+      create_symlink('missing.json', path)
     end
     refute_predicate status, :success?
     assert_includes errors, 'Docs sources cannot be symlinks: docs/sidebars.json'
@@ -172,7 +230,7 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     output, errors, status = check('docsSidebar' => ['expected-experience']) do |root|
       directory = File.join(root, 'skills/example')
       FileUtils.mkdir_p(directory)
-      File.symlink('missing.txt', File.join(directory, 'procedure.txt'))
+      create_symlink('missing.txt', File.join(directory, 'procedure.txt'))
     end
     assert_predicate status, :success?, "#{output}\n#{errors}"
   end
@@ -217,7 +275,7 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     system('git', '-C', root, 'add', '-f', 'docs/img/figures/chart.svg', exception: true)
     FileUtils.remove_entry(File.join(root, 'docs/img/figures'))
     FileUtils.mkdir_p(File.join(root, 'internal/empty-figures'))
-    File.symlink(File.join(root, 'internal/empty-figures'), File.join(root, 'docs/img/figures'))
+    create_symlink(File.join(root, 'internal/empty-figures'), File.join(root, 'docs/img/figures'))
   end
 
   def alias_tracked_directory(root)
@@ -225,7 +283,7 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     target = File.join(root, 'internal/guide-copy')
     FileUtils.mkdir_p(File.dirname(target))
     FileUtils.mv(File.join(root, 'docs/guides'), target)
-    File.symlink(target, File.join(root, 'docs/guides'))
+    create_symlink(target, File.join(root, 'docs/guides'))
   end
 
   def svg_alias(tracked:)
@@ -233,7 +291,7 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files) do |root|
       directory = File.join(root, 'docs/img')
       FileUtils.mkdir_p(directory)
-      File.symlink('missing.svg', File.join(directory, 'local.svg'))
+      create_symlink('missing.svg', File.join(directory, 'local.svg'))
       system('git', '-C', root, 'add', '-f', 'docs/img/local.svg', exception: true) if tracked
     end
   end
@@ -244,7 +302,7 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     File.write(File.join(target, 'sidebars.json'), '{"docsSidebar":[]}')
     File.write(File.join(target, 'guide.md'), '# Unenrolled guide')
     FileUtils.remove_entry(File.join(root, 'docs'))
-    File.symlink(target, File.join(root, 'docs'))
+    create_symlink(target, File.join(root, 'docs'))
   end
 end
 
@@ -272,7 +330,7 @@ class DocsExternalAliasTest < Minitest::Test
     target = directory ? File.join(root, 'docs') : '../docs/local.md'
     path = File.join(root, 'internal', directory ? 'docs-alias' : 'file-alias.md')
     assert File.directory?(target), 'Directory-link target must be an existing directory' if directory
-    File.symlink(target, path)
+    create_symlink(target, path)
     assert File.directory?(path), 'Directory alias must be traversable' if directory
   end
 end
@@ -320,7 +378,7 @@ class DocsSkillSourceAliasTest < Minitest::Test
       File.write(path, MARKER)
       check('docsSidebar' => ['expected-experience']) do |root|
         FileUtils.mkdir_p(File.join(root, 'skills/example'))
-        File.symlink(path, File.join(root, "skills/example/.local.#{extension}"))
+        create_symlink(path, File.join(root, "skills/example/.local.#{extension}"))
         system('git', '-C', root, 'add', 'skills/example', exception: true)
       end
     end
@@ -333,7 +391,7 @@ class DocsSkillSourceAliasTest < Minitest::Test
       check({ 'docsSidebar' => ['expected-experience'] }, '# Guide', files) do |root|
         system('git', '-C', root, 'add', 'skills/example', exception: true)
         FileUtils.remove_entry(File.join(root, 'skills/example'))
-        File.symlink(outside, File.join(root, 'skills/example'))
+        create_symlink(outside, File.join(root, 'skills/example'))
       end
     end
   end
@@ -399,17 +457,23 @@ end
 class DocsIndexSymlinkTest < Minitest::Test
   include DocsNavigationFixture
 
-  def test_committed_aliases_are_refused_with_both_checkout_modes
-    [false, true].each do |symlinks|
-      files = { 'skills/shaka/references/procedure.txt' => '# Agent procedure' }
-      sidebar = { 'docsSidebar' => %w[expected-experience procedure] }
-      _, errors, status = check(sidebar, '# Guide', files) { |root| checkout_alias(root, symlinks) }
-      refute_predicate status, :success?, "core.symlinks=#{symlinks}"
-      assert_includes errors, 'Docs sources cannot be symlinks: docs/procedure.md'
-    end
+  def test_committed_alias_is_refused_with_plain_file_checkout
+    assert_checkout_refused(false)
+  end
+
+  def test_committed_alias_is_refused_with_real_symlink_checkout
+    assert_checkout_refused(true)
   end
 
   private
+
+  def assert_checkout_refused(symlinks)
+    files = { 'skills/shaka/references/procedure.txt' => '# Agent procedure' }
+    sidebar = { 'docsSidebar' => %w[expected-experience procedure] }
+    _, errors, status = check(sidebar, '# Guide', files) { |root| checkout_alias(root, symlinks) }
+    refute_predicate status, :success?, "core.symlinks=#{symlinks}"
+    assert_includes errors, 'Docs sources cannot be symlinks: docs/procedure.md'
+  end
 
   def git(root, *) = system('git', '-C', root, *, exception: true)
 
@@ -438,9 +502,7 @@ class DocsIndexSymlinkTest < Minitest::Test
   end
 
   def probe_symlink(path)
-    File.symlink('../skills/shaka/references/procedure.txt', path)
+    create_symlink('../skills/shaka/references/procedure.txt', path)
     File.unlink(path)
-  rescue NotImplementedError, Errno::EPERM, Errno::EACCES
-    skip 'Real symlink creation is unavailable; plain-file checkout was already checked'
   end
 end
