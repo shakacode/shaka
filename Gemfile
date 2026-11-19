@@ -4,7 +4,7 @@ source 'https://rubygems.org'
 
 # Repository documentation validation only; these are not Shaka runtime dependencies.
 gem 'addressable', '~> 2.8'
-gem 'commonmarker', '~> 2.8'
+gem 'commonmarker', '~> 2.10'
 gem 'nokogiri', '~> 1.18'
 # Contributor git hooks (.lefthook.yml); Shaka users never load it.
 gem 'lefthook', '~> 2.1', require: false

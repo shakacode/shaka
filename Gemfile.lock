@@ -83,7 +83,7 @@ PLATFORMS
 
 DEPENDENCIES
   addressable (~> 2.8)
-  commonmarker (~> 2.8)
+  commonmarker (~> 2.10)
   lefthook (~> 2.1)
   minitest (~> 6.0)
   nokogiri (~> 1.18)

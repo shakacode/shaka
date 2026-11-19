@@ -6,7 +6,72 @@ require 'tmpdir'
 require 'fileutils'
 require 'open3'
 
+module DocsNavigationFixture
+  GIT_ROUTING = %w[GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY
+                   GIT_ALTERNATE_OBJECT_DIRECTORIES].freeze
+
+  def check(sidebar, page = '# What to expect', files = {})
+    saved = GIT_ROUTING.to_h { |name| [name, ENV.delete(name)] }
+    Dir.mktmpdir do |repository|
+      prepare_fixture(repository, sidebar, page, files)
+      yield repository if block_given?
+      Open3.capture3('ruby', File.expand_path('../bin/check-docs-navigation', __dir__), File.join(repository, 'docs'))
+    end
+  ensure
+    saved.each { |name, value| ENV[name] = value }
+  end
+
+  def prepare_fixture(repository, sidebar, page, files)
+    tree = { 'docs/expected-experience.md' => page, 'docs/sidebars.json' => JSON.generate(sidebar) }
+    tree.merge(files).each do |path, text|
+      FileUtils.mkdir_p(File.dirname(File.join(repository, path)))
+      File.write(File.join(repository, path), text)
+    end
+    system('git', 'init', '-q', repository, exception: true)
+    raise 'Fixture Git directory was not created' unless File.directory?(File.join(repository, '.git'))
+  end
+end
+
+class DocsFixtureIsolationTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_inherited_git_routing_cannot_change_the_outer_index
+    Dir.mktmpdir do |outer|
+      before = prepare_outer(outer)
+      with_routing(outer) { assert_isolated_fixture(outer) }
+      assert_equal before, File.binread(File.join(outer, '.git/index'))
+    end
+  end
+
+  def prepare_outer(root)
+    system('git', 'init', '-q', root, exception: true)
+    File.write(File.join(root, 'sentinel'), 'Preserve this index')
+    system('git', '-C', root, 'add', 'sentinel', exception: true)
+    File.binread(File.join(root, '.git/index'))
+  end
+
+  def assert_isolated_fixture(outer)
+    output, errors, status = check('docsSidebar' => ['expected-experience']) do |root|
+      assert(GIT_ROUTING.all? { |name| ENV[name].nil? })
+      system('git', '-C', root, 'add', '.', exception: true)
+    end
+    assert_predicate status, :success?, "#{output}\n#{errors}"
+    assert_equal File.join(outer, '.git'), ENV.fetch('GIT_DIR')
+  end
+
+  def with_routing(root)
+    routing = { 'GIT_DIR' => '.git', 'GIT_WORK_TREE' => '.', 'GIT_INDEX_FILE' => '.git/index',
+                'GIT_COMMON_DIR' => '.git', 'GIT_OBJECT_DIRECTORY' => '.git/objects' }
+    saved = routing.to_h { |name, value| [name, ENV.fetch(name, nil)].tap { ENV[name] = File.join(root, value) } }
+    yield
+  ensure
+    saved.each { |name, value| ENV[name] = value }
+  end
+end
+
 class DocsNavigationTest < Minitest::Test
+  include DocsNavigationFixture
+
   AGENT_LINKS = <<~MARKDOWN
     Read [the review guide](../skills/shaka/references/review.md#choose).
     See [upstream](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/delivery.md).
@@ -17,19 +82,6 @@ class DocsNavigationTest < Minitest::Test
     [section](../skills/shaka/references#review) and [query](../skills/shaka/references?page=1)
     <a href=../skills/shaka/references/review.md>unquoted</a>
   MARKDOWN
-
-  def check(sidebar, page = '# What to expect', files = {})
-    Dir.mktmpdir do |repository|
-      tree = { 'docs/expected-experience.md' => page, 'docs/sidebars.json' => JSON.generate(sidebar) }
-      tree.merge(files).each do |path, text|
-        FileUtils.mkdir_p(File.dirname(File.join(repository, path)))
-        File.write(File.join(repository, path), text)
-      end
-      system('git', 'init', '-q', repository, exception: true)
-      yield repository if block_given?
-      Open3.capture3('ruby', File.expand_path('../bin/check-docs-navigation', __dir__), File.join(repository, 'docs'))
-    end
-  end
 
   def test_new_page_missing_from_navigation_fails
     output, _, status = check('docsSidebar' => [])
@@ -637,7 +689,7 @@ class DocsSymlinkAudienceTest < Minitest::Test
   def test_directories_cannot_alias_agent_procedures
     _, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, '# Guide',
                               'skills/shaka/references/procedure.txt' => '# Agent') do |root|
-      File.symlink('../skills/shaka/references', File.join(root, 'docs/procedures'))
+      File.symlink(File.join(root, 'skills/shaka/references'), File.join(root, 'docs/procedures'))
     end
     refute_predicate status, :success?
     assert_includes errors, 'Docs sources cannot be symlinks: docs/procedures'
@@ -714,7 +766,7 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     system('git', '-C', root, 'add', '-f', 'docs/img/figures/chart.svg', exception: true)
     FileUtils.remove_entry(File.join(root, 'docs/img/figures'))
     FileUtils.mkdir_p(File.join(root, 'internal/empty-figures'))
-    File.symlink('../../internal/empty-figures', File.join(root, 'docs/img/figures'))
+    File.symlink(File.join(root, 'internal/empty-figures'), File.join(root, 'docs/img/figures'))
   end
 
   def alias_tracked_directory(root)
@@ -722,7 +774,7 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     target = File.join(root, 'internal/guide-copy')
     FileUtils.mkdir_p(File.dirname(target))
     FileUtils.mv(File.join(root, 'docs/guides'), target)
-    File.symlink('../internal/guide-copy', File.join(root, 'docs/guides'))
+    File.symlink(target, File.join(root, 'docs/guides'))
   end
 
   def svg_alias(tracked:)
@@ -741,7 +793,7 @@ class DocsSymlinkBoundaryTest < Minitest::Test
     File.write(File.join(target, 'sidebars.json'), '{"docsSidebar":[]}')
     File.write(File.join(target, 'guide.md'), '# Unenrolled guide')
     FileUtils.remove_entry(File.join(root, 'docs'))
-    File.symlink('internal/actual-docs', File.join(root, 'docs'))
+    File.symlink(target, File.join(root, 'docs'))
   end
 end
 
@@ -1220,7 +1272,7 @@ class DocsIndexSymlinkTest < Minitest::Test
   def check(...) = DocsNavigationTest.new('fixture').check(...)
 
   def test_committed_aliases_are_refused_with_both_checkout_modes
-    [true, false].each do |symlinks|
+    [false, true].each do |symlinks|
       files = { 'skills/shaka/references/procedure.txt' => '# Agent procedure' }
       sidebar = { 'docsSidebar' => %w[expected-experience procedure] }
       _, errors, status = check(sidebar, '# Guide', files) { |root| checkout_alias(root, symlinks) }
@@ -1240,13 +1292,27 @@ class DocsIndexSymlinkTest < Minitest::Test
 
   def checkout_alias(root, symlinks)
     path = File.join(root, 'docs/procedure.md')
-    File.symlink('../skills/shaka/references/procedure.txt', path)
-    git(root, 'config', 'core.symlinks', 'true')
-    git(root, 'add', '.')
+    probe_symlink(path) if symlinks
+    stage_alias(root)
     commit_fixture(root)
     git(root, 'config', 'core.symlinks', symlinks.to_s)
-    File.unlink(path)
     git(root, 'checkout', '--', 'docs/procedure.md')
     assert_equal symlinks, File.symlink?(path)
+  end
+
+  def stage_alias(root)
+    git(root, 'add', '.')
+    object, status = Open3.capture2('git', '-C', root, 'hash-object', '-w', '--stdin',
+                                    stdin_data: '../skills/shaka/references/procedure.txt')
+    raise 'Could not store fixture link target' unless status.success?
+
+    git(root, 'update-index', '--add', '--cacheinfo', "120000,#{object.strip},docs/procedure.md")
+  end
+
+  def probe_symlink(path)
+    File.symlink('../skills/shaka/references/procedure.txt', path)
+    File.unlink(path)
+  rescue NotImplementedError, Errno::EPERM, Errno::EACCES
+    skip 'Real symlink creation is unavailable; plain-file checkout was already checked'
   end
 end
