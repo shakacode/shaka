@@ -15,10 +15,15 @@ module ShakaDocs
       return [] unless node&.type == :frontmatter
 
       mapping = Psych.parse(node.literal)&.root
-      return [] unless mapping
+      return [] if empty?(mapping)
       raise ArgumentError, 'Expected a front-matter mapping' unless mapping.is_a?(Psych::Nodes::Mapping)
 
       mapping.children.each_slice(2).map { |key, _value| scalar_key(key) } & OVERRIDES
+    end
+
+    def empty?(node)
+      node.nil? || (node.is_a?(Psych::Nodes::Scalar) && node.plain &&
+                   ['', '~', 'null', 'Null', 'NULL'].include?(node.value))
     end
 
     def scalar_key(node)

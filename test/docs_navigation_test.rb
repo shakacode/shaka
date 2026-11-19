@@ -868,6 +868,14 @@ class DocsLinkedInventoryTest < Minitest::Test
     assert_predicate status, :success?, "#{output}\n#{errors}"
   end
 
+  def test_empty_and_comment_only_front_matter_remain_available
+    ['', '# note', 'null', '~'].each do |metadata|
+      page = "---\n#{metadata}\n---\n# Guide\n"
+      output, errors, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+      assert_predicate status, :success?, "#{output}\n#{errors}"
+    end
+  end
+
   def test_each_guide_needs_a_unique_publication_id
     %w[md mdx].each do |extension|
       output, errors, status = check({ 'docsSidebar' => %w[expected-experience install] }, '# Guide',
@@ -878,6 +886,15 @@ class DocsLinkedInventoryTest < Minitest::Test
     output, _, status = check({ 'docsSidebar' => %w[expected-experience install] }, '# Guide', files)
     refute_predicate status, :success?
     assert_includes output, 'Duplicate publication IDs: install.md, install.mdx'
+  end
+
+  def test_numbered_source_names_are_refused_before_id_normalization
+    %w[01-install.md 01-guides/install.md].each do |file|
+      sidebar = { 'docsSidebar' => ['expected-experience', file.delete_suffix('.md')] }
+      output, _, status = check(sidebar, '# Guide', "docs/#{file}" => '# Install')
+      refute_predicate status, :success?
+      assert_includes output, "Numbered source paths: #{file}"
+    end
   end
 
   private
@@ -894,6 +911,54 @@ class DocsLinkedInventoryTest < Minitest::Test
     File.write(path, '# Setup') if %i[regular tracked].include?(mode)
     File.symlink('../internal/target.md', path) if mode == :alias
     system('git', '-C', root, 'add', '-f', 'docs/local.md', exception: true) if mode == :tracked
+  end
+end
+
+class DocsCommitHookTest < Minitest::Test
+  ROOT = File.expand_path('..', __dir__)
+
+  def test_hook_checks_all_markdown_extensions_and_preserves_contributor_destinations
+    %w[new-guides/install.mdx new-guides/install.MDX new-guide.MdX contributing/install.MDX].each do |path|
+      output, errors, status = hook_fixture(path)
+      allowed = path.start_with?('contributing/')
+      assert_equal allowed, status.success?, "#{path}: #{output}\n#{errors}"
+      assert_includes output, "Markdown outside established documentation locations: #{path}" unless allowed
+    end
+  end
+
+  private
+
+  def hook_fixture(path)
+    result = nil
+    DocsNavigationTest.new('fixture').check('docsSidebar' => ['expected-experience']) do |root|
+      install_hook_fixture(root)
+      stage_document(root, path)
+      result = Open3.capture3({ 'BUNDLE_GEMFILE' => File.join(root, 'Gemfile'), 'LEFTHOOK_CONFIG' => nil },
+                              'bundle', 'exec', 'lefthook', 'run', 'pre-commit',
+                              '--no-auto-install', '--no-tty', chdir: root)
+    end
+    result
+  end
+
+  def install_hook_fixture(root)
+    FileUtils.mkdir_p([File.join(root, 'bin'), File.join(root, 'lib')])
+    %w[Gemfile Gemfile.lock .lefthook.yml bin/check-docs-navigation].each do |source|
+      FileUtils.cp(File.join(ROOT, source), File.join(root, source))
+    end
+    %w[lib/shaka_docs bin/lefthook].each { |source| FileUtils.cp_r(File.join(ROOT, source), File.join(root, source)) }
+    system('git', '-C', root, 'add', '.', exception: true)
+    commit_fixture(root)
+  end
+
+  def commit_fixture(root)
+    args = %w[-c user.name=TestUser -c user.email=test@example.com -c commit.gpgsign=false]
+    system('git', '-C', root, *args, 'commit', '--no-verify', '-qm', 'Hook fixture', exception: true)
+  end
+
+  def stage_document(root, path)
+    FileUtils.mkdir_p(File.dirname(File.join(root, path)))
+    File.write(File.join(root, path), "# Install\n")
+    system('git', '-C', root, 'add', path, exception: true)
   end
 end
 
