@@ -145,6 +145,25 @@ class DocsParserRegressionTest < Minitest::Test
     assert_includes output, 'gone.png (missing file)'
   end
 
+  def test_padded_html_and_sidebar_urls_are_still_agent_targets
+    target = 'https://github.com/shakacode/shaka/blob/main/skills/shaka/references/review.md '
+    sidebar = { 'docsSidebar' => ['expected-experience', { 'type' => 'link', 'label' => 'Agent', 'href' => target }] }
+    output, _, status = check(sidebar, "<a href=\"#{target}\">Agent</a>")
+    refute_predicate status, :success?, output
+    assert_includes output, 'Link a human guide, not agent instructions:'
+    assert_includes output, 'sidebars.json -> '
+  end
+
+  def test_html_query_links_keep_file_and_fragment_validation
+    cases = { 'settings.md?from=guide' => nil, 'settings.md?from=guide#add-a-second-reviewer' => nil,
+              'settings.md?from=guide#absent' => 'missing anchor', 'gone.md?from=guide' => 'missing file' }
+    cases.each do |target, problem|
+      output, _, status = DocsNavigationTest.new('fixture').check_links("<a href=\"#{target}\">Setup</a>")
+      assert_equal problem.nil?, status.success?, output
+      assert_includes output, problem if problem
+    end
+  end
+
   def test_raw_refs_named_like_github_views_still_reject_agent_links
     %w[tree blob].each do |ref|
       target = "https://raw.githubusercontent.com/shakacode/shaka/#{ref}/skills/shaka/references/review.md"

@@ -2,7 +2,7 @@
 
 require 'uri'
 require 'open3'
-require 'pathname'
+require 'addressable/uri'
 require 'commonmarker'
 require 'nokogiri'
 
@@ -14,12 +14,13 @@ module ShakaDocs
     ROOT_DOCUMENTS = %w[README.md README.gem.md CONTRIBUTING.md CHANGELOG.md AGENTS.md CLAUDE.md].freeze
     AGENT_ENTRY_FILES = %w[AGENTS.md CLAUDE.md SKILL.md].freeze
     AGENT_WORKFLOW = 'skills/shaka/config/workflow.yml'
-    SOURCE_URL = %r{
-      \A(?:https?:)?//(?:www\.)?(?<host>github\.com|raw\.githubusercontent\.com)
-      (?::\d+)?/shakacode/shaka/
-    }ix
 
     module_function
+
+    def url(target)
+      uri = Addressable::URI.parse(target.strip)
+      uri.host ? uri.normalize : uri
+    end
 
     def links(text)
       targets = []
@@ -29,28 +30,30 @@ module ShakaDocs
 
         targets.concat(Nokogiri::HTML.fragment(node.literal).css('a[href]').map { |link| link['href'] })
       end
-      targets.uniq
+      targets.map(&:strip).uniq
     end
 
-    def repository_path(target)
-      match = SOURCE_URL.match(target)
-      return unless match
+    def repository_path(uri)
+      host = uri.host.to_s.delete_prefix('www.')
+      return unless %w[github.com raw.githubusercontent.com].include?(host)
+
+      source = URI::DEFAULT_PARSER.unescape(uri.path)[%r{\A/shakacode/shaka/(.*)\z}i, 1]
+      return unless source
 
       # Source citations use a commit, tag, or single-segment branch. Do not infer
       # a repository root from a directory name inside the document path.
-      source = target[match.end(0)..]
-      source = source.sub(%r{\A(?:blob|tree|raw|edit|blame)/}, '') if match[:host].casecmp?('github.com')
-      source.sub(%r{\Arefs/(?:heads|tags)/}, '').split('/', 2).last
+      if host == 'github.com'
+        source = source.sub!(%r{\A(?:blob|tree|raw|edit|blame)/}, '')
+        return unless source
+      end
+      source.sub(%r{\Arefs/(?:heads|tags)/}, '').split('/', 2)[1]
     end
 
     def local_path(repository, source, target)
-      target = URI::DEFAULT_PARSER.unescape(target.sub(/[?#].*/, ''))
-      if target.match?(%r{\A(?:[a-z][\w+.-]*:|//)}i)
-        path = repository_path(target)
-        return Pathname.new("/#{path}").cleanpath.to_s.delete_prefix('/') if path
+      uri = url(target)
+      return repository_path(uri) if uri.scheme || uri.host
 
-        return
-      end
+      target = URI::DEFAULT_PARSER.unescape(uri.path)
       return "docs#{target}" if target.start_with?('/')
 
       File.expand_path(target, File.dirname(source)).delete_prefix("#{repository}/")

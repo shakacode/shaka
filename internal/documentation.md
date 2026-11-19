@@ -13,6 +13,9 @@ locations fails validation until its destination is reviewed. The root
 `README.gem.md` serves RubyGems, `contributing/` serves contributors, and
 `internal/` and `eval/` hold development records.
 
+Run the check in a Git checkout to exclude ignored dependencies. A source export
+without Git metadata checks every Markdown file, including vendored dependencies.
+
 Public guides and sidebar links must lead to human guidance. The check rejects
 links into Shaka's skill Markdown, its YAML workflow instructions, project agent instructions, and `AGENTS.md`
 or `CLAUDE.md`. Configuration data and installable workflow templates, including
@@ -22,9 +25,10 @@ are treated as agent targets, including directories and scripts.
 Source citations use a commit, tag, or branch without
 slashes so the check can distinguish the ref from the repository path. Slash-containing
 refs require author and reviewer judgment. Leading-slash links address public site routes.
-Commonmarker parses Markdown and Nokogiri extracts HTML links. Code examples and
-unused reference definitions are not links. The check does not evaluate MDX
-JavaScript expressions or custom components. Each guide's author and reviewer still determine its audience.
+Commonmarker parses Markdown, Nokogiri extracts HTML links, and Addressable normalizes URLs.
+Code examples and
+unused reference definitions are not links. MDX-specific syntax and custom
+components require manual review. Each guide's author and reviewer still determine its audience.
 
 ## Give new users a way to start
 

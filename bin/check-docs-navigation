@@ -57,12 +57,14 @@ def anchors(path)
 end
 
 def unresolved(path, target)
-  file, anchor = target.split('#', 2)
-  file ||= ''
+  uri = ShakaDocs::Audiences.url(target)
+  file = URI::DEFAULT_PARSER.unescape(uri.path)
+  anchor = uri.fragment
   destination = file.empty? ? path : File.expand_path(file, File.dirname(path))
   return 'missing file' unless File.exist?(destination)
 
-  'missing anchor' if anchor && destination.match?(/\.mdx?\z/) && !anchors(destination).include?(anchor)
+  'missing anchor' if anchor && destination.match?(/\.mdx?\z/) &&
+                      !anchors(destination).include?(URI::DEFAULT_PARSER.unescape(anchor))
 end
 
 def broken_relative_links(repository, path)
@@ -140,7 +142,7 @@ begin
 
   puts "All #{pages.size} published pages are in docs/sidebars.json and link no agent instructions; " \
        'links and anchors in docs/ and skills/ resolve; figures parse.'
-rescue JSON::ParserError, KeyError, ArgumentError, Errno::ENOENT => e
+rescue JSON::ParserError, KeyError, ArgumentError, Errno::ENOENT, Addressable::URI::InvalidURIError => e
   warn "Docs navigation check failed: #{e.message}"
   exit 1
 end
