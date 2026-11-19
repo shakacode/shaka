@@ -124,13 +124,14 @@ module Shaka
         ''
       end
 
-      # An interrupt waits for the bounded stop, so it cannot leave the leader half stopped.
+      # An interrupt waits for the bounded stop and its report, so it cannot leave the leader half
+      # stopped or the limitation unsaid.
       def stop_windows
         Thread.handle_interrupt(Object => :never) do
           @stopped = true
           @limitation = @check.stop
+          warn "shaka: #{@limitation}" if @limitation
         end
-        warn "shaka: #{@limitation}" if @limitation
       end
     end
   end

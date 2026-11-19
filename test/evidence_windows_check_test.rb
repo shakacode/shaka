@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require 'shaka/evidence/candidate_tree'
 require 'shaka/evidence/tree_watch'
 require 'shaka/evidence/windows_check'
+require 'shaka/published_results'
 
 # Processes and probes for the Windows check tests.
 module WindowsCheckFixture
@@ -193,6 +194,14 @@ class EvidenceWindowsCheckStartTest < Minitest::Test
     end
 
     assert_raises(Errno::ECHILD) { Process.wait(spawned) }
+  end
+
+  # Its result then has no exit code, which must not count as a passing run that only drifted.
+  def test_result_without_an_exit_code_is_not_a_passing_run
+    entry = { 'original' => { 'exit_code' => nil }, 'status' => 'bound', 'reasons' => [] }
+
+    refute Shaka::PublishedResults.settings_drift?('status' => 'not_ready', 'missing' => [],
+                                                   'checks' => { 'validation' => [entry] })
   end
 
   # A leader that outlived its stop has no status yet, so the stopped run reports none.

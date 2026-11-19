@@ -51,7 +51,14 @@ class WindowsProduct < WindowsSession
     puts "  exit #{status.exitstatus}: #{excerpt(output)}"
     raise "bin/install did not verify candidate #{head}" unless status.success? && verified?(output, head)
   ensure
-    git_output('branch', '--delete', '--force', created) if created
+    delete_branch(created) if created
+  end
+
+  # Cleanup reports a failed delete instead of hiding the install's own error.
+  def delete_branch(branch)
+    git_output('branch', '--delete', '--force', branch)
+  rescue RuntimeError => e
+    puts "  cleanup: #{e.message}"
   end
 
   # The installer prints the revision it verified, abbreviated to however many digits Git chooses.

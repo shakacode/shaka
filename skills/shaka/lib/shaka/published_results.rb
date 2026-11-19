@@ -26,16 +26,20 @@ module Shaka
     def settings_drift?(verdict)
       return false if verdict['status'] == 'ready' || verdict['missing'].any?
 
-      verdict['checks'].values.flatten.all? do |entry|
-        entry.dig('original', 'exit_code').to_i.zero? &&
-          (entry['status'] == 'bound' ||
-            entry['reasons'].all? { |reason| reason.match?(SETTINGS_DRIFT) })
-      end
+      verdict['checks'].values.flatten.all? { |entry| passed?(entry) && drifted_only?(entry) }
+    end
+
+    # A run with no exit code, such as a stopped Windows check whose leader outlived the stop,
+    # did not pass.
+    def passed?(entry) = entry.dig('original', 'exit_code')&.zero?
+
+    def drifted_only?(entry)
+      entry['status'] == 'bound' || entry['reasons'].all? { |reason| reason.match?(SETTINGS_DRIFT) }
     end
 
     def verified_line(short_head)
       /^#{Regexp.escape(VerificationGates::LABEL)} (?!UNKNOWN).* at `#{Regexp.escape(short_head)}`\./
     end
-    private_class_method :verified_line
+    private_class_method :verified_line, :passed?, :drifted_only?
   end
 end

@@ -70,10 +70,11 @@ module Shaka
         return unless @pid && !@waiter
 
         quietly { Process.kill('KILL', @pid) }
-        quietly { Process.wait(@pid) }
+        Process.detach(@pid)
       end
 
-      # A leader the job already ended refuses the kill but still needs reaping.
+      # A leader the job already ended refuses the kill; detach reaps it whenever it exits, so a refused
+      # kill cannot hold the start error.
       def quietly
         yield
       rescue SystemCallError
