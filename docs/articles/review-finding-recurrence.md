@@ -1,8 +1,8 @@
 # Which review findings repeat, and which could a check catch?
 
 *An AI agent wrote this article: Claude Code running Claude Opus 5.5, on 2026-11-15 and 2026-11-16.
-The agent sorted 1,716 fixed or dismissed review defects and risks from one month of Shaka pull
-requests (PRs) into kinds. It read the title of every finding it counted and drafted
+The agent searched 1,716 fixed or dismissed review defects and risks from one month of
+Shaka pull requests (PRs) and assigned 412 of them to kinds. It read the title of every finding it counted and drafted
 the text. No
 person has rechecked the classification. The
 [report](https://github.com/shakacode/shaka/blob/main/eval/reports/review-finding-recurrence.md)

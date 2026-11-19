@@ -260,8 +260,8 @@ below the threshold.
   `Accepted`, `Open`, or `Needs your decision`. A reason, a returned-after-fix marker, and
   `· Reported by:` with reviewers may follow. Merge the same PR, ID, class, and title, keeping the newest comment.
 - Keep defects and risks with disposition fixed or dismissed.
-- The JSON file is the record of this study. It gives the kind of every counted finding
-  and, for dismissed ones, the agent's reason cut to 400 characters.
+- The JSON file is the record of this study. It gives the kind of each of the 412 classified
+  findings and, for dismissed ones, the agent's reason cut to 400 characters.
 - The per-kind title patterns, the scripts, and the comment snapshot are not published.
   A rerun sorts findings by hand into the kinds above and should expect different counts.
 - Ledger comments can change after the snapshot was taken.
