@@ -104,10 +104,21 @@ class DocsEmittedLinksTest < Minitest::Test
 
   def emitted_page_check(extension, heading, page: "setup.#{extension}", target: "#{page}#install",
                          authority: 'github.com')
-    files = { 'skills/shaka/guide.rb' => "PAGE = 'https://#{authority}/shakacode/shaka/blob/main/docs/#{target}'" }
+    host = authority.start_with?('//') ? authority : "https://#{authority}"
+    files = { 'skills/shaka/guide.rb' => "PAGE = '#{host}/shakacode/shaka/blob/main/docs/#{target}'" }
     files["docs/#{page}"] = heading if heading
     sidebar = ['expected-experience'] + (heading ? [page.sub(/\.mdx?\z/, '')] : [])
     check({ 'docsSidebar' => sidebar }, '# What to expect', files)
+  end
+
+  def test_protocol_relative_emitted_urls_keep_authority_and_anchor_checks
+    %w[md mdx].product(%w[github.com example.com], [true, false]).each do |extension, authority, present|
+      output, errors, status = emitted_page_check(extension, present ? '# Install' : '# Other',
+                                                  authority: "//#{authority}")
+      expected = authority != 'github.com' || present
+      assert_equal expected, status.success?, "#{authority}/#{extension}/#{present}: #{output}\n#{errors}"
+      assert_includes output, "docs/setup.#{extension}#install (missing anchor)" unless expected
+    end
   end
 
   def test_emitted_markdown_and_mdx_pages_resolve

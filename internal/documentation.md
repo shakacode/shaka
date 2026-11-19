@@ -72,8 +72,9 @@ short forms such as `http:/example.com` fail instead of relying on browser recov
 File and heading-anchor validation applies to Markdown links and images. Static
 HTML hyperlinks in anchors, image maps and SVG are checked for agent destinations.
 The hyperlink check ignores code examples and unused reference definitions.
-Separately, literal HTTP(S) GitHub documentation URLs in `docs/` and `skills/`, including
-code examples, are checked for files and anchors. Dynamic URL templates require review.
+Separately, literal HTTP(S) and protocol-relative GitHub documentation URLs in `docs/`
+and `skills/`, including code examples, are checked for files and anchors.
+Dynamic URL templates require review.
 Form submissions, MDX-specific syntax and custom components require manual review.
 Each guide's author and reviewer still determine its audience.
 
