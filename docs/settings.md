@@ -1147,9 +1147,11 @@ add outside it is left alone.
   changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
 - The description also stops at `max_description_words`, however large the change.
 
-When text breaks a limit, nothing reaches GitHub. The command exits with an
-error identifying the long passage or total word count. The agent shortens the
-explanation before publishing.
+`shaka description` reports identity, task source, verification check and
+skill metadata errors together before it reads the PR. Shaka reports each
+sentence, paragraph and total overage it finds in rendered prose. The overall
+limit uses the PR's diff size. If GitHub refuses to render the Markdown and
+the description includes unmanaged text, Shaka reports the prose as unchecked.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and
