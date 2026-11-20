@@ -3,6 +3,7 @@
 require 'json'
 require 'tmpdir'
 require_relative '../skills/shaka/lib/shaka/defaults'
+require_relative '../skills/shaka/lib/shaka/local_review/codex_exec'
 require_relative '../skills/shaka/lib/shaka/local_review/process'
 
 # Counts what a text costs in Claude Code's and Codex's tokens, through the logins those CLIs already use.
@@ -15,8 +16,7 @@ module InstructionTokens
 
   Cli = Data.define(:arguments, :input_tokens, :used_tool)
   CODEX_ANSWERS = %w[agent_message reasoning].freeze # Any other Codex item is a tool call.
-  CODEX_TOOLS_OFF = %w[--disable shell_tool --disable unified_exec --disable apps --disable view_image
-                       -c web_search="disabled"].freeze
+  CODEX_TOOLS_OFF = (%w[--disable shell_tool --disable unified_exec] + Shaka::CodexExec::TOOL_RESTRICTIONS).freeze
 
   # The startup text is agent instructions, so a CLI might act on them. A tool call adds model requests
   # to the reported usage, so a run that uses one counts nothing: for Codex, a tool item or a second
