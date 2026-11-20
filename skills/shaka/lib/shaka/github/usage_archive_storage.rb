@@ -68,7 +68,8 @@ module Shaka
     def read_chunk(id)
       comment = @github.api("repos/#{@github.repository}/issues/comments/#{id}")
       path = URI.parse(comment.fetch('issue_url')).path
-      encoded = comment.fetch('body')[UsageArchive::PAYLOAD, 1]
+      body = comment.fetch('body')
+      encoded = body[UsageArchive::COLLAPSED_COMMENT, 1] || body[UsageArchive::LEGACY_COMMENT, 1]
       unless path.casecmp?("/repos/#{@github.repository}/issues/#{@github.number}") &&
              encoded && encoded.length <= UsageArchive::CHUNK_SIZE
         raise Error, 'Usage archive comment is changed or belongs to another PR.'
@@ -78,7 +79,8 @@ module Shaka
     end
 
     def write(chunk)
-      body = "#{@writer}\n\n#{UsageArchive::HEADER}```base64\n#{chunk}\n```\n"
+      body = "#{@writer}\n\n#{UsageArchive::HEADER}#{UsageArchive::DETAILS_OPEN}" \
+             "```base64\n#{chunk}\n```\n#{UsageArchive::DETAILS_CLOSE}"
       comment = @github.api("repos/#{@github.repository}/issues/#{@github.number}/comments",
                             method: 'POST', fields: { body: })
       unless comment['body'] == body && comment['id'].is_a?(Integer) && comment['id'].positive?

@@ -44,14 +44,18 @@ class UsageArchiveTest < Minitest::Test
     assert_operator compact.length, :<=, 65_536
     assert_includes compact, 'UNKNOWN pricing stays visible'
     assert_equal original, @archive.expand(compact)
-    assert_bounded_chunks
+    assert_bounded_collapsed_chunks
   end
 
-  def assert_bounded_chunks
+  def assert_bounded_collapsed_chunks
     assert_operator @github.comments.size, :>, 1
-    @github.comments.each_value { |comment| assert_operator comment['body'].length, :<=, 65_536 }
+    @github.comments.each_value do |comment|
+      body = comment.fetch('body')
+      assert_operator body.length, :<=, 65_536
+      assert_match(%r{<details>\n<summary>Archived usage data</summary>\n\n```base64\n.+\n```\n\n</details>\n\z}, body)
+    end
   end
-  private :assert_bounded_chunks
+  private :assert_bounded_collapsed_chunks
 
   def test_normal_and_exact_limit_bodies_do_not_create_archives
     ['ordinary', 'x' * 65_536].each do |body|
