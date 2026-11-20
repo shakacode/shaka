@@ -24,8 +24,31 @@ gems. It refuses installation folders other accounts can write to.
 ## Install
 
 If you prefer the terminal, use Ruby 3.4 or later, Git 2.41 or later, and an
-authenticated [GitHub CLI](https://cli.github.com/). Read the source and the
-[installer](https://github.com/shakacode/shaka/blob/main/bin/install) before running it.
+authenticated [GitHub CLI](https://cli.github.com/).
+
+### Install a published release
+
+For a first installation, use the gem once the version appears in
+[Shaka's RubyGems versions](https://rubygems.org/gems/shaka/versions).
+
+```sh
+gem install shaka --version 1.0.0
+shaka-install _1.0.0_ --agent codex
+```
+
+`_1.0.0_` selects that gem version when several are installed. Replace `codex`
+with your coding agent's identifier from the table below. The
+installer fetches the release tag and links the skill at that commit. Start a new
+chat and run the [health check](getting-started.md#1-install-shaka).
+
+If you already have Shaka installed, [check your project settings](migration.md#check-your-projects-against-10)
+before updating.
+
+### Install from source
+
+Use the source checkout if the release you want is unavailable. Read the source
+and [installer](https://github.com/shakacode/shaka/blob/main/bin/install) before
+running it.
 
 <details>
 <summary>Manual installation commands</summary>

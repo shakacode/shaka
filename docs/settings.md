@@ -7,6 +7,8 @@ prompts you can give your agent. This reference covers each option and its limit
 
 Settings live in `.agents/shaka/config.yml`. Ask your agent to
 [configure the repository](configure-repository.md), or edit the file in a PR.
+See [what stays compatible in 1.x](migration.md#what-stays-compatible-in-1x)
+before updating Shaka or moving older settings.
 
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
