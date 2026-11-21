@@ -35,11 +35,16 @@ module ReviewerCommandFixture
 
   def reviewer(root, *)
     env = { 'PATH' => ReviewerCliStubs.path('/usr/bin:/bin'), 'OPENROUTER_API_KEY' => nil,
-            'SHAKA_RUBY' => RbConfig.ruby }
+            'SHAKA_RUBY' => RbConfig.ruby, 'HOME' => isolated_home(root) }
     output, error, status = Open3.capture3(env, *COMMAND, 'reviewer', '--root', root, *)
     raise error unless status.success?
 
     JSON.parse(output)
+  end
+
+  # The command reads the machine reviewer list from HOME, so a real list would change the selection.
+  def isolated_home(root)
+    File.join(root, 'home').tap { |home| FileUtils.mkdir_p(home) }
   end
 
   def rewrite_reviewers(root, reviewers, coverage: nil)
