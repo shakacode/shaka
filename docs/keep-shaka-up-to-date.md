@@ -1,8 +1,8 @@
 # Keep Shaka up to date
 
 Shaka has no automatic updates: it never installs one on its own. An
-installation from a GitHub branch checks for updates about once a day, when you
-start a Shaka chat.
+installation from a GitHub branch checks for updates about once a day, the first
+time you use Shaka in a chat.
 If you want to update daily, schedule `install --update`, or schedule a daily
 check and update between chats.
 
