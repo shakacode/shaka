@@ -17,8 +17,7 @@ model runs. No person has rechecked the classification.*
   example of the failure mode. The article marked that advice Evaluate first, because nobody knew how often Shaka's review
   findings repeat.
 - `shaka enforcement` reports that 89 of 100 audited workflow rules are enforced by
-  nothing but the agent. More prose is the default way this repository answers a
-  finding.
+  nothing but the agent.
 - The maintainer asked for counts: which kinds of finding come back across PRs, and
   whether code could catch each one.
 
