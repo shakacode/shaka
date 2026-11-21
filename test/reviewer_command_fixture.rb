@@ -42,7 +42,7 @@ module ReviewerCommandFixture
     JSON.parse(output)
   end
 
-  # The command reads the machine reviewer list from HOME, so a real list would change the selection.
+  # The command reads the machine reviewer list from HOME, and a real list can suppress setup notices.
   def isolated_home(root)
     File.join(root, 'home').tap { |home| FileUtils.mkdir_p(home) }
   end
