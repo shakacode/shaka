@@ -32,10 +32,10 @@ module Shaka
     end
 
     # What prepare found when the bound reviews number fewer than the trusted settings configure,
-    # and the zone PR times are shown in.
+    # the zone PR times are shown in, and the pull request template's headings.
     # Read here, beside the renderers a preview loads from the PR head, so an installed helper
-    # that never sets it previews with no shortfall instead of failing.
-    attr_reader :reviewer_shortfall, :time_zone
+    # that never sets them previews with no shortfall and the usual order instead of failing.
+    attr_reader :reviewer_shortfall, :time_zone, :template_headings
 
     private
 
