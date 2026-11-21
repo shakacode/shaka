@@ -267,7 +267,8 @@ below the threshold.
 - The per-kind title patterns, the scripts, and the comment snapshot are not published.
   A rerun sorts findings by hand into the kinds above and should expect different counts.
 - Hosted claude-review reports: keep comments by `claude[bot]` with a `REVIEWED <sha> BY`
-  line and `FINDINGS` greater than 0, read their findings by hand, and use them only to
+  line, count them by date before and after 2026-10-19, then take those with `FINDINGS`
+  greater than 0, read their findings by hand, and use them only to
   corroborate kinds, since they carry no disposition.
 - Enforcement audit: run the installed helper's `shaka enforcement`; this study used the
   helper at `6a6f876`.
