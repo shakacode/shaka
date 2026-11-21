@@ -215,8 +215,10 @@ below the threshold.
 - Reviewers read the diff and the PR description. They see a workflow rule only where
   breaking it leaves a trace in the PR. Examples are an empty PR description (4 hosted
   findings in October) or a missing changelog entry.
-- None of the 412 classified findings reports an agent breaking a delivery rule during
-  its task, such as merging without consent. The 1,304 unclassified findings and the
+- Rule breaks that leave a trace in the PR do appear: the changelog kind includes two
+  missing entries and one edit against the release-only rule. None of the 412 classified
+  findings reports a break visible only in the agent session, such as merging without
+  consent. The 1,304 unclassified findings and the
   nits were not searched for such reports. This data cannot say how often the 89 rules
   are broken.
 - Two kinds concern how the docs describe enforcement: prose calling an agent-only rule
@@ -265,4 +267,9 @@ below the threshold.
   findings and, for dismissed ones, the agent's reason cut to 400 characters.
 - The per-kind title patterns, the scripts, and the comment snapshot are not published.
   A rerun sorts findings by hand into the kinds above and should expect different counts.
+- Hosted claude-review reports: keep comments by `claude[bot]` with a `REVIEWED <sha> BY`
+  line and `FINDINGS` greater than 0, read their findings by hand, and use them only to
+  corroborate kinds, since they carry no disposition.
+- Enforcement audit: run the installed helper's `shaka enforcement`; this study used the
+  helper at `6a6f876`.
 - Ledger comments can change after the snapshot was taken.
