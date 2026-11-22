@@ -45,14 +45,22 @@ class HelpTest < Minitest::Test
     end
   end
 
-  def test_help_resolves_topic_aliases_case_insensitively_and_accepts_trailing_help
-    [%w[CONFIG], %w[merging --help]].each do |args|
-      output, error, status = Open3.capture3(*COMMAND, 'help', *args)
+  def test_help_resolves_topic_aliases_case_insensitively
+    output, error, status = Open3.capture3(*COMMAND, 'help', 'CONFIG')
 
-      assert_predicate status, :success?, error
-      assert_empty error
-      assert_includes output, 'Guide: https://github.com/shakacode/shaka/blob/main/docs/'
-    end
+    assert_predicate status, :success?, error
+    assert_empty error
+    assert_includes output, 'Guide: https://github.com/shakacode/shaka/blob/main/docs/'
+  end
+
+  def test_help_flag_prints_usage_and_respects_double_dash_delimiter
+    output, error, status = Open3.capture3(*COMMAND, 'help', 'merging', '--help')
+    assert_predicate status, :success?, error
+    assert_includes output, 'Usage: shaka help [TOPIC] [--json]'
+
+    _out, err, fail_status = Open3.capture3(*COMMAND, 'help', 'merging', '--', '--help')
+    refute_predicate fail_status, :success?
+    assert_includes err, 'unknown help topic'
   end
 
   def test_help_json_returns_all_topics

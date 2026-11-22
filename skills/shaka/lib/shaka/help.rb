@@ -24,7 +24,6 @@ module Shaka
 
     def run
       parser = option_parser
-      @arguments.pop while trailing_help?(@arguments)
       parser.permute!(@arguments)
       return print_text(parser) if @options[:help]
 
@@ -43,10 +42,6 @@ module Shaka
         flags.on('--json', 'Print topics or one topic as JSON') { @options[:json] = true }
         flags.on('-h', '--help', 'Show usage') { @options[:help] = true }
       end
-    end
-
-    def trailing_help?(args)
-      %w[-h --help].include?(args.last) && args.any? { |arg| !arg.start_with?('-') }
     end
 
     def print_text(text)
