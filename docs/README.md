@@ -53,7 +53,9 @@ Ask your agent for topics, prompts, or answers, or choose a guide below:
 ```
 
 You can also name a topic (such as `/shaka help settings`), ask a specific question, or run
-`shaka help` in your terminal.
+the installed helper with `help` from a terminal (see
+[Verify and update](manual-installation.md#verify-and-update) for the helper path, or run
+`shaka help` if `shaka` is on `PATH`).
 
 | I want to… | Guide |
 | --- | --- |

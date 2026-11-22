@@ -17,10 +17,10 @@ merge. Stay in help mode until the user gives a task or asks for another route.
   Invite the user to name a topic or ask any question, then stop.
 - For `help <topic>` or a specific question, run the saved helper's `help TOPIC` (or
   `help --json` to match a question to a topic). When the output reports a `Local guide`
-  path, read the relevant section of that file from the installed Shaka checkout so the
-  answer comes from the authoritative guide rather than memory. When no local guide is
-  packaged, answer from the `help` output and the installed references beside this file,
-  and link the public guide URL.
+  path (or `local_doc` and optional `anchor` in JSON), read the relevant section of that
+  file from the installed Shaka checkout so the answer comes from the authoritative guide
+  rather than memory. When no local guide is packaged, answer from the `help` output and
+  the installed references beside this file, and link the public guide URL.
 - For a question about a Shaka CLI command's options, run the saved helper with
   `SHAKA_NOTICES=off` and `COMMAND [OPERATION] --help` (for example
   `SHAKA_NOTICES=off "$SHAKA" doctor --help` or `SHAKA_NOTICES=off "$SHAKA" seam check --help`)

@@ -34,7 +34,9 @@ before starting your task.
 
 If your agent doesn't recognize `/shaka` or `$shaka`, start a new chat and try again.
 If Shaka still doesn't appear, restart your coding tool. Ask `/shaka help` anytime to
-browse topics, example prompts, and guides (or run `shaka help` in your terminal).
+browse topics, example prompts, and guides. From a terminal, run the installed helper
+with `help` (see [Verify and update](manual-installation.md#verify-and-update) for the
+helper path, or run `shaka help` if `shaka` is on `PATH`).
 
 Shaka never installs updates on its own. To keep a branch install current, ask your agent to
 set up a [daily update or update check](keep-shaka-up-to-date.md). For a pinned release,
