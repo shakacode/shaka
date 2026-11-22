@@ -179,14 +179,6 @@ class CursorUsageTest < Minitest::Test
     end
   end
 
-  def test_gemini_without_a_fast_flag_uses_the_standard_rate
-    params = [{ id: 'context', value: '300k' }, { id: 'reasoning_effort', value: 'high' }]
-    record = stored(NEW, 100).merge(model: 'gemini-4-neon-high', model_id: 'gemini-4-neon', model_params: params)
-    output = cursor_file_report(record)
-    assert_includes output, '| Configured model | gemini-4-neon |'
-    assert_includes output, '| USD estimate | $0.000486 |'
-  end
-
   def test_grok_47_reasoning_effort_is_priced_without_a_context_surcharge
     output = cursor_file_report(grok47_record)
     assert_includes output, '| Configured model | grok-4.7 |'
@@ -223,6 +215,32 @@ class CursorUsageTest < Minitest::Test
       assert_equal NEW, saved['generation_id']
       assert_equal 100, saved['input_tokens']
     end
+  end
+end
+
+class CursorBillingFlagTest < Minitest::Test
+  include CursorUsageFixture
+
+  def test_grok_without_a_fast_flag_stays_unpriced
+    params = [{ id: 'effort', value: 'medium' }]
+    output = cursor_file_report(stored(NEW, 100).merge(model_params: params))
+    assert_includes output, '| Configured model | grok-4.6 |'
+    assert_includes output, '| USD estimate | UNKNOWN |'
+  end
+
+  def test_gemini_without_a_fast_flag_uses_the_standard_rate
+    params = [{ id: 'context', value: '300k' }, { id: 'reasoning_effort', value: 'high' }]
+    record = stored(NEW, 100).merge(model: 'gemini-4-neon-high', model_id: 'gemini-4-neon', model_params: params)
+    output = cursor_file_report(record)
+    assert_includes output, '| Configured model | gemini-4-neon |'
+    assert_includes output, '| USD estimate | $0.000486 |'
+  end
+
+  def test_gemini_null_fast_flag_stays_unpriced
+    params = [{ id: 'reasoning_effort', value: 'high' }, { id: 'fast', value: nil }]
+    record = stored(NEW, 100).merge(model: 'gemini-4-neon-high', model_id: 'gemini-4-neon', model_params: params)
+    output = cursor_file_report(record)
+    assert_includes output, '| USD estimate | UNKNOWN |'
   end
 end
 

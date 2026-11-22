@@ -36,7 +36,7 @@ module Shaka
       @threshold = false
       @cursor_threshold_models = []
       reasons = []
-      groups = @responses.group_by { |record| [record['configuration'], record['billing_mode']] }
+      groups = @responses.group_by { |record| [record['configuration'], billed_mode(record)] }
       columns = groups.map { |key, group| column(key, group, reasons) }
       columns = [blank_column] if columns.empty?
       { columns: columns, reasons: reasons, groups: groups.values }
@@ -83,6 +83,14 @@ module Shaka
       [value, nil]
     end
 
+    def billed_mode(record)
+      billing = record['billing_mode']
+      configuration = record['configuration']
+      return billing unless configuration.is_a?(Array) && configuration[0] == 'cursor'
+
+      published_billing(configuration[1], billing)
+    end
+
     def configured_price(record, mode)
       provider, model = record['configuration']
       return anthropic_price(record, mode) if provider == 'anthropic' && !@inclusive_input
@@ -94,7 +102,7 @@ module Shaka
 
       return openai_price(model, mode, tokens) if provider == 'openai'
 
-      cursor_price(model, record['billing_mode'], mode, tokens)
+      cursor_price(model, billed_mode(record), mode, tokens)
     end
 
     def categories(usage)

@@ -300,7 +300,7 @@ report.
 | --- | --- |
 | Standard Codex credits | Configured supported OpenAI model. Codex has no separate cache-write charge. Shaka leaves responses with reported cache writes unpriced in this estimate. |
 | Standard API-equivalent USD | Ordinary input excludes cache reads and writes. Cache reads use the published cache-read rate. Cache writes use the 30-minute rate. |
-| Cursor on-demand USD | Configured supported Grok or Gemini model and recorded Fast or standard mode. An omitted fast flag is standard. Gemini has no separate Fast rate, so that column repeats standard. Cache writes remain ordinary input because no separate rate is published. |
+| Cursor on-demand USD | Configured supported Grok or Gemini model and recorded Fast or standard mode. Gemini has no separate Fast rate. Its Fast column repeats standard so the loader accepts the card, and an explicit Fast response stays unpriced. A missing flag uses that one rate. Grok's rates differ, so a missing or unrecognized flag stays unpriced. Cache writes remain ordinary input because no separate rate is published. |
 | Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published fast-mode rates are priced. |
 | Pi native nominal USD | Copy the host's recorded cost instead of applying a rate card. |
 
@@ -330,11 +330,14 @@ search charge. Absent US routing uses the provider's global default. The Septemb
 The November 21, 2026 Cursor rate record covers Grok 4.6 and 4.7, including Fast
 variants, and the selectable Gemini models at their published standard rates.
 Grok 4.7 above 256k reported input uses twice standard rates, or three
-times Fast rates. Grok 4.6 has no long-context multiplier. Gemini has no separate Fast rate, so that
-column repeats the standard rate; an omitted fast flag is standard billing. Gemini 3.1 Pro's model page says
-input above 200k costs more, and the pricing table publishes no second rate, so
-those tokens use the published base rate. An unrecognized fast value
-leaves the estimate unknown. Cursor-only reports omit Codex credits.
+times Fast rates. Grok 4.6 has no long-context multiplier. Gemini has no separate Fast rate. Its Fast
+column repeats standard so the loader accepts the card, and an explicit Fast response
+stays unpriced. A missing flag uses that one rate. A null or other unrecognized flag
+stays unpriced. Grok's Fast rate is different, so a missing or unrecognized flag stays
+unpriced.
+Gemini 3.1 Pro's model page says input above 200k costs more, and the pricing table
+publishes no second rate, so those tokens use the published base rate.
+Cursor-only reports omit Codex credits.
 
 OpenCode's cache-exclusive input does not match the OpenAI/Cursor estimator's
 required input shape, so those scenarios remain unknown. Its Anthropic responses
