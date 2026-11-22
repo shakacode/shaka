@@ -130,24 +130,31 @@ class HelpCatalogTest < Minitest::Test
 
   def test_corrupt_or_missing_catalog_raises_shaka_error
     Dir.mktmpdir do |dir|
-      syntax = File.join(dir, 'syntax.yml')
-      shape = File.join(dir, 'shape.yml')
-      File.write(syntax, ":\n  - [unterminated\n")
-      File.write(shape, "groups: []\ntopics:\n")
-      [syntax, shape, File.join(dir, 'missing.yml')].each do |path|
+      fixtures = { 'syntax.yml' => ":\n  - [unterminated\n", 'bad_topics.yml' => "groups: []\ntopics:\n",
+                   'bad_groups.yml' => "groups:\ntopics: []\n" }
+      paths = fixtures.map { |name, body| File.join(dir, name).tap { |path| File.write(path, body) } }
+      (paths + [File.join(dir, 'missing.yml')]).each do |path|
         assert_raises(Shaka::Error) { Shaka::Help::Catalog.load(path:) }
       end
     end
   end
 
-  def test_topic_keys_are_unique_and_docs_and_anchors_exist
+  def test_topic_keys_groups_fields_docs_and_anchors_are_valid
     catalog = Shaka::Help::Catalog.load
+    group_ids = catalog.groups.map { it.fetch('id') }
     keys = catalog.topics.flat_map { |topic| [topic.fetch('id'), *topic.fetch('aliases')] }
     assert_equal keys.uniq, keys, 'Help topic IDs and aliases must be unique'
-    catalog.topics.each { |topic| assert_doc_and_anchor(topic) }
+    catalog.topics.each { |topic| assert_valid_topic(topic, group_ids) }
   end
 
   private
+
+  def assert_valid_topic(topic, group_ids)
+    assert_includes group_ids, topic.fetch('group')
+    %w[title summary].each { |key| refute_empty topic.fetch(key).to_s.strip }
+    refute_empty Array(topic.fetch('prompts'))
+    assert_doc_and_anchor(topic)
+  end
 
   def assert_doc_and_anchor(topic)
     path = File.join(REPO_ROOT, topic.fetch('doc'))

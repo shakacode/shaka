@@ -10,6 +10,7 @@ class SubcommandsTest < Minitest::Test
     output, error, status = Open3.capture3(*COMMAND, '--help')
     assert_predicate status, :success?, error
     assert_includes output, 'shaka pr watch OWNER/REPO NUMBER'
+    assert_includes output, 'shaka usage [publish|collect]'
     Shaka::Subcommands.usage_lines.each { |line| assert_match(/^ +#{Regexp.escape(line)}$/, output) }
   end
 

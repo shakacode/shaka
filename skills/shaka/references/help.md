@@ -10,9 +10,10 @@ merge. Stay in help mode until the user gives a task or asks for another route.
 
 ## Show topics or answer a question
 
-- For `help` alone, run the saved helper's `help` command. Present a brief, scannable reply
-  with the topic groups and a few copyable prompts matched to the user's host (`$shaka` in
-  Codex; `/shaka` in Claude Code, Cursor, OpenCode, and GitHub Copilot; loaded skill in Pi).
+- For `help` alone, run the saved helper's `help --json` command so you receive the topic
+  groups and catalog prompts. Present a brief, scannable reply with the topic groups and a
+  few copyable prompts from the catalog matched to the user's host (`$shaka` in Codex;
+  `/shaka` in Claude Code, Cursor, OpenCode, and GitHub Copilot; loaded skill in Pi).
   Invite the user to name a topic or ask any question, then stop.
 - For `help <topic>` or a specific question, run the saved helper's `help TOPIC` (or
   `help --json` to match a question to a topic). When the output reports a `Local guide`
