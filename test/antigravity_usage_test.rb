@@ -72,26 +72,6 @@ class AntigravityUsageTest < Minitest::Test
     end
   end
 
-  def test_all_turns_and_explicit_turns_select_by_user_input_step
-    Dir.mktmpdir do |home|
-      file = write_transcript(home, two_turns)
-      all = explicit(file, '--all-turns')
-      assert_includes all, '3 responses'
-      assert_metric all, 'Input', 900, 300
-      assert_metric all, 'Effort', 'low', 'high'
-      assert_metric explicit(file, '--turn', '0'), 'Input', 900
-    end
-  end
-
-  def test_a_mistyped_turn_names_the_field_to_use
-    Dir.mktmpdir do |home|
-      _output, error, status = capture_report('--host', 'antigravity', '--file', write_transcript(home, two_turns),
-                                              '--turn', '7')
-      refute_predicate status, :success?
-      assert_includes error, 'antigravity turns use the USER_INPUT step_index field'
-    end
-  end
-
   def test_a_transcript_without_models_keeps_its_tokens
     Dir.mktmpdir do |home|
       output = explicit(write_transcript(home, [prompt(0, '10'), response(1, '11', 300, model: nil)]))
@@ -103,9 +83,9 @@ class AntigravityUsageTest < Minitest::Test
 
   def test_a_model_id_without_an_effort_segment_reports_no_effort
     Dir.mktmpdir do |home|
-      records = [prompt(0, '10'), response(1, '11', 300, model: 'gemini-pro-orchestrator-neon')]
+      records = [prompt(0, '10'), response(1, '11', 300, model: 'tuned-gateway-model')]
       output = explicit(write_transcript(home, records))
-      assert_metric output, 'Configured model', 'gemini-pro-orchestrator-neon'
+      assert_metric output, 'Configured model', 'tuned-gateway-model'
       assert_metric output, 'Effort', 'UNKNOWN'
     end
   end
@@ -131,24 +111,6 @@ class AntigravityUsageTest < Minitest::Test
     end
   end
 
-  def test_each_conversation_contributes_its_own_latest_turn
-    Dir.mktmpdir do |home|
-      other = write_transcript(home, [prompt(0, '30'), response(1, '31', 5000), prompt(4, '32'), response(5, '33', 7)],
-                               conversation: CONVERSATION.sub(/5\z/, '7'))
-      output = explicit(write_transcript(home, two_turns), '--file', other)
-      assert_includes output, '3 responses'
-      assert_metric output, 'Input', 307
-    end
-  end
-
-  def test_since_time_keeps_responses_from_the_cutoff_second
-    Dir.mktmpdir do |home|
-      output = explicit(write_transcript(home, two_turns), '--since-time', '2026-11-22T16:57:21.500Z')
-      assert_includes output, '2 responses'
-      assert_metric output, 'Input', 300
-    end
-  end
-
   private
 
   def assert_latest_turn(output)
@@ -162,6 +124,70 @@ class AntigravityUsageTest < Minitest::Test
     assert_metric output, 'Reasoning output', 'UNKNOWN'
     assert_metric output, 'Cache writes', 'UNKNOWN'
     assert_metric output, 'USD estimate', 'UNKNOWN'
+  end
+end
+
+class AntigravityTurnSelectionTest < Minitest::Test
+  include AntigravityUsageFixture
+  include MetricAssert
+
+  def test_all_turns_and_explicit_turns_select_by_user_input_step
+    Dir.mktmpdir do |home|
+      file = write_transcript(home, two_turns)
+      all = explicit(file, '--all-turns')
+      assert_includes all, '3 responses'
+      assert_metric all, 'Input', 900, 300
+      assert_metric all, 'Effort', 'low', 'high'
+      assert_metric explicit(file, '--turn', '0'), 'Input', 900
+    end
+  end
+
+  def test_a_mistyped_turn_names_the_field_to_use
+    Dir.mktmpdir do |home|
+      _output, error, status = capture_report('--host', 'antigravity', '--file', write_transcript(home, two_turns),
+                                              '--turn', '7')
+      refute_predicate status, :success?
+      assert_includes error, 'antigravity turns use the USER_INPUT step_index field'
+    end
+  end
+
+  def test_each_conversation_contributes_its_own_latest_turn
+    Dir.mktmpdir do |home|
+      other = write_transcript(home, [prompt(0, '30'), response(1, '31', 5000), prompt(4, '32'), response(5, '33', 7)],
+                               conversation: CONVERSATION.sub(/5\z/, '7'))
+      output = explicit(write_transcript(home, two_turns), '--file', other)
+      assert_includes output, '3 responses'
+      assert_metric output, 'Input', 307
+    end
+  end
+
+  def test_a_turn_cannot_be_selected_across_conversations
+    Dir.mktmpdir do |home|
+      first = write_transcript(home, two_turns)
+      other = write_transcript(home, two_turns, conversation: CONVERSATION.sub(/5\z/, '7'))
+      output, error, status = capture_report('--host', 'antigravity', '--file', first, '--file', other, '--turn', '0')
+      refute_predicate status, :success?
+      assert_empty output
+      assert_includes error, '--turn selects steps of one Antigravity conversation'
+      assert_metric explicit(first, '--file', first, '--turn', '0'), 'Input', 900
+    end
+  end
+
+  def test_a_step_written_again_keeps_its_place_and_its_last_line
+    Dir.mktmpdir do |home|
+      rewritten = [*two_turns, prompt(0, '40'), response(1, '41', 950, model: 'gemini-4-argon-low')]
+      file = write_transcript(home, rewritten)
+      assert_metric explicit(file), 'Input', 300
+      assert_metric explicit(file, '--all-turns'), 'Input', 950, 300
+    end
+  end
+
+  def test_since_time_keeps_responses_from_the_cutoff_second
+    Dir.mktmpdir do |home|
+      output = explicit(write_transcript(home, two_turns), '--since-time', '2026-11-22T16:57:21.500Z')
+      assert_includes output, '2 responses'
+      assert_metric output, 'Input', 300
+    end
   end
 end
 

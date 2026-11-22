@@ -285,12 +285,13 @@ ending in `brain/CONVERSATION_ID/.system_generated/logs/NAME`, because that dire
 identifies its responses.
 
 A turn is the `step_index` of a `USER_INPUT` step. Each transcript contributes its own
-latest turn by default. Step numbers repeat across conversations, so pass `--turn` with
-one conversation at a time. A subagent has its own conversation and needs its own report.
+latest turn by default. Step numbers repeat across conversations, so `--turn` with
+transcripts of more than one conversation is refused. A subagent has its own conversation
+and needs its own report.
 
 The recorded model is the ID the user selected, so it is the configured model. Its last
-segment is the effort when it is `low`, `medium`, `high`, `xhigh`, or `max`; any other
-ending leaves the effort unknown. A transcript from before Antigravity recorded models
+segment is the effort when it is `low`, `medium`, `high`, or `xhigh`; any other ending
+leaves the effort unknown. A transcript from before Antigravity recorded models
 keeps its tokens with an unknown model.
 
 Validation used CLI `1.5.14`: two print-mode runs matched their `--output-format json`
@@ -497,7 +498,8 @@ publication from one would carry the main chat's settings; subagents do not publ
 For Antigravity publications, Ruby reads that host's transcript and takes the model ID
 and its effort from the current turn's latest response. The header labels the model
 `(configured)`, and the provider stays as supplied. A turn without a response, a response
-without a model, or an unreadable line leaves the fields `UNKNOWN` with a note.
+without a model, or an unreadable line anywhere in the transcript leaves the fields
+`UNKNOWN` with a note.
 
 Other hosts retain supplied attribution with an explicit unverified note until
 a native publisher reader is available. So does a session that carries more than

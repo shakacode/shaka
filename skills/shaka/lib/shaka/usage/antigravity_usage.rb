@@ -2,6 +2,7 @@
 
 require 'json'
 require 'pathname'
+require_relative '../error'
 require_relative 'response_count'
 
 module Shaka
@@ -14,11 +15,12 @@ module Shaka
     LAYOUT = %r{/brain/([^/]+)/\.system_generated/logs/[^/]+\z}
     COUNTERS = { 'input_tokens' => 'input_tokens', 'cached_input_tokens' => 'cache_read_tokens',
                  'output_tokens' => 'output_tokens' }.freeze
-    # The levels `agy --effort` accepts. A model ID ends in the one in use, such as
-    # `gemini-4-argon-high`; an ID that ends otherwise, such as an orchestrator's, names none.
-    EFFORTS = %w[low medium high xhigh max].freeze
+    KEPT = ['step_index', 'type', 'created_at', 'model', *COUNTERS.values].freeze
+    # A model ID ends in its effort, such as `gemini-4-argon-high`. These are the endings
+    # `agy models` lists; an ID that ends otherwise, such as a gateway's own model, names none.
+    EFFORTS = %w[low medium high xhigh].freeze
 
-    attr_reader :source, :gaps
+    attr_reader :source, :gaps, :conversation
 
     # The transcript of the conversation the calling shell belongs to, or nil.
     def self.session_file(environment)
@@ -31,19 +33,34 @@ module Shaka
       file if File.file?(file)
     end
 
+    # Steps in index order, so a step written again keeps its last line and its place, and the
+    # number of lines that are not steps. Only usage metadata leaves this method.
+    def self.steps(file)
+      found = {}
+      skipped = 0
+      File.foreach(file, encoding: 'UTF-8') do |line|
+        step = parse(line)
+        step ? found[step['step_index']] = step : skipped += 1
+      end
+      [found.sort.map(&:last), skipped]
+    end
+
     def self.parse(line)
       record = JSON.parse(line) if line.valid_encoding?
-      record if record.is_a?(Hash)
+      index = record['step_index'] if record.is_a?(Hash)
+      record.slice(*KEPT) if index.is_a?(Integer) && index >= 0
     rescue JSON::ParserError, EncodingError
       nil
     end
 
-    def self.response?(record)
-      record['type'] == 'PLANNER_RESPONSE' || COUNTERS.values.any? { |key| record.key?(key) }
+    def self.user_input?(step) = step['type'] == 'USER_INPUT'
+
+    def self.response?(step)
+      step['type'] == 'PLANNER_RESPONSE' || COUNTERS.values.any? { |key| step.key?(key) }
     end
 
-    def self.model(record)
-      model = record['model']
+    def self.model(step)
+      model = step['model']
       model if model.is_a?(String) && !model.empty?
     end
 
@@ -60,25 +77,21 @@ module Shaka
 
     private
 
-    # A step written again replaces its earlier line, so the transcript's last word counts.
     def read(file)
-      records = {}
-      turn = nil
-      File.foreach(file, encoding: 'UTF-8') do |line|
-        next unless (record = step(line))
-
-        turn = record['step_index'].to_s if record['type'] == 'USER_INPUT'
-        records[record['step_index']] = response(record, turn) if self.class.response?(record)
-      end
-      [records, turn]
+      steps, skipped = self.class.steps(file)
+      unreadable if skipped.positive?
+      responses(steps)
     rescue SystemCallError
       unavailable
     end
 
-    def step(line)
-      record = self.class.parse(line)
-      index = record['step_index'] if record
-      index.is_a?(Integer) && index >= 0 ? record : unreadable
+    def responses(steps)
+      turn = nil
+      records = steps.each_with_object({}) do |step, found|
+        turn = step['step_index'].to_s if self.class.user_input?(step)
+        found[step['step_index']] = response(step, turn) if self.class.response?(step)
+      end
+      [records, turn]
     end
 
     def response(record, turn)
@@ -127,14 +140,22 @@ module Shaka
       @versions = []
       @gaps = []
       unreadable if files.empty?
+      transcripts = files.map { |file| AntigravityTranscript.new(file) }
+      one_conversation!(transcripts) if turns.any?
       # Step numbers repeat across conversations, so each transcript selects its own latest turn.
-      files.each { |file| count_selected([load_transcript(file)], turns, all_turns) }
+      transcripts.each { |transcript| count_selected([load(transcript)], turns, all_turns) }
     end
 
     private
 
-    def load_transcript(file)
-      transcript = AntigravityTranscript.new(file)
+    # The same turn number names unrelated work in two conversations.
+    def one_conversation!(transcripts)
+      return if transcripts.map(&:conversation).uniq.size < 2
+
+      raise Error, '--turn selects steps of one Antigravity conversation; report each conversation separately.'
+    end
+
+    def load(transcript)
       @gaps.concat(transcript.gaps)
       transcript.source
     end

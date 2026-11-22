@@ -22,8 +22,12 @@ module Shaka
     end
 
     def read(file)
-      clear(UNAVAILABLE)
-      File.foreach(file, encoding: 'UTF-8') { |line| consume(AntigravityTranscript.parse(line)) }
+      steps, skipped = AntigravityTranscript.steps(file)
+      # A line that cannot be read could be the step that started the current turn.
+      return { 'reason' => 'Antigravity transcript contains unreadable metadata' } if skipped.positive?
+
+      clear('Antigravity transcript has no user turn')
+      steps.each { |step| consume(step) }
       @settings.merge('reason' => @reason)
     rescue SystemCallError
       { 'reason' => 'Antigravity transcript unreadable' }
@@ -32,11 +36,14 @@ module Shaka
     private
 
     # A user step starts a turn, which never inherits the settings of the one before it.
-    def consume(record)
-      return clear('Antigravity transcript contains unreadable metadata') unless record
-      return clear(UNAVAILABLE) if record['type'] == 'USER_INPUT'
-
-      response(AntigravityTranscript.model(record)) if AntigravityTranscript.response?(record)
+    # A response before the first user step belongs to no turn.
+    def consume(step)
+      if AntigravityTranscript.user_input?(step)
+        @turn = true
+        clear(UNAVAILABLE)
+      elsif @turn && AntigravityTranscript.response?(step)
+        response(AntigravityTranscript.model(step))
+      end
     end
 
     def response(model)

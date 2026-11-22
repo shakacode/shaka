@@ -45,19 +45,35 @@ class AntigravityPublisherAttributionTest < Minitest::Test
   end
 
   def test_a_model_id_without_an_effort_segment_leaves_effort_unknown
-    with_transcript(prompt(0), response(1, 'gemini-pro-orchestrator-neon')) do |session|
+    with_transcript(prompt(0), response(1, 'tuned-gateway-model')) do |session|
       result = prepare(session)
-      assert_equal ['gemini-pro-orchestrator-neon (configured)', 'UNKNOWN'],
+      assert_equal ['tuned-gateway-model (configured)', 'UNKNOWN'],
                    result.fetch('identity').values_at('model', 'effort')
       assert_includes result['publisher_note'], 'UNKNOWN effort: Antigravity model ID names no effort'
     end
   end
 
-  def test_an_unreadable_line_clears_what_was_read
-    with_transcript(prompt(0), response(1), raw_tail: "{\"step_index\": 2, SENSITIVE\n") do |session|
+  def test_an_unreadable_line_anywhere_leaves_the_settings_unknown
+    records = [prompt(0), '{"step_index": 1, SENSITIVE', response(2)]
+    with_transcript(*records) do |session|
       result = prepare(session)
       assert_equal 'UNKNOWN', result.dig('identity', 'model')
       assert_includes result['publisher_note'], 'Antigravity transcript contains unreadable metadata'
+    end
+  end
+
+  def test_a_response_before_any_user_step_belongs_to_no_turn
+    with_transcript(response(0)) do |session|
+      result = prepare(session)
+      assert_equal 'UNKNOWN', result.dig('identity', 'model')
+      assert_includes result['publisher_note'], 'UNKNOWN model, effort: Antigravity transcript has no user turn'
+    end
+  end
+
+  def test_an_earlier_step_written_again_does_not_join_the_current_turn
+    earlier = response(1, 'gemini-4-argon-low')
+    with_transcript(prompt(0), earlier, prompt(2), earlier) do |session|
+      assert_equal 'UNKNOWN', prepare(session).dig('identity', 'model')
     end
   end
 
@@ -78,11 +94,12 @@ class AntigravityPublisherAttributionTest < Minitest::Test
 
   private
 
-  def with_transcript(*records, raw_tail: '')
+  def with_transcript(*records)
     Dir.mktmpdir do |home|
       file = File.join(home, 'brain', CONVERSATION, '.system_generated', 'logs', 'transcript.jsonl')
       FileUtils.mkdir_p(File.dirname(file))
-      File.write(file, "#{records.map { |record| JSON.generate(record) }.join("\n")}\n#{raw_tail}")
+      lines = records.map { |record| record.is_a?(String) ? record : JSON.generate(record) }
+      File.write(file, "#{lines.join("\n")}\n")
       yield({ 'ANTIGRAVITY_CONVERSATION_ID' => CONVERSATION, 'ANTIGRAVITY_APP_DATA_DIR' => home })
     end
   end
