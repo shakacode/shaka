@@ -1,0 +1,104 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require 'shaka/usage/publisher_attribution'
+
+class AntigravityPublisherAttributionTest < Minitest::Test
+  CONVERSATION = '00000000-0000-4000-8000-000000000006'
+
+  def test_configured_model_and_its_effort_fill_unknown_fields_without_a_note
+    with_transcript(prompt(0), response(1, 'gemini-4-argon-low'), prompt(2), response(3), response(5)) do |session|
+      result = prepare(session)
+      assert_equal({ 'agent' => 'Antigravity', 'provider' => 'Google',
+                     'model' => 'gemini-4-argon-high (configured)', 'effort' => 'high' }, result['identity'])
+      assert_equal 'gemini-4-argon-high', result.dig('provenance', 'active_model')
+      assert_equal 'high', result.dig('provenance', 'active_effort')
+      assert_nil result['publisher_note']
+    end
+  end
+
+  def test_conflicting_supplied_settings_are_refused
+    with_transcript(prompt(0), response(1)) do |session|
+      [%w[identity model], %w[identity effort], %w[provenance active_model]].each do |section, field|
+        supplied = content
+        supplied[section][field] = 'wrong'
+        error = assert_raises(Shaka::Error) { Shaka::PublisherAttribution.prepare(supplied, environment: session) }
+        assert_includes error.message, 'conflicts with native publisher settings'
+      end
+    end
+  end
+
+  def test_a_new_turn_without_a_response_does_not_inherit_the_previous_turn
+    with_transcript(prompt(0), response(1), prompt(2)) do |session|
+      result = prepare(session)
+      assert_equal %w[UNKNOWN UNKNOWN], result.fetch('identity').values_at('model', 'effort')
+      assert_includes result['publisher_note'], 'UNKNOWN model, effort: Antigravity current turn settings unavailable'
+    end
+  end
+
+  def test_a_response_without_a_model_leaves_both_fields_unknown
+    with_transcript(prompt(0), response(1), response(3, nil)) do |session|
+      result = prepare(session)
+      assert_equal %w[UNKNOWN UNKNOWN], result.fetch('identity').values_at('model', 'effort')
+      assert_includes result['publisher_note'], 'UNKNOWN model, effort'
+    end
+  end
+
+  def test_a_model_id_without_an_effort_segment_leaves_effort_unknown
+    with_transcript(prompt(0), response(1, 'gemini-pro-orchestrator-neon')) do |session|
+      result = prepare(session)
+      assert_equal ['gemini-pro-orchestrator-neon (configured)', 'UNKNOWN'],
+                   result.fetch('identity').values_at('model', 'effort')
+      assert_includes result['publisher_note'], 'UNKNOWN effort: Antigravity model ID names no effort'
+    end
+  end
+
+  def test_an_unreadable_line_clears_what_was_read
+    with_transcript(prompt(0), response(1), raw_tail: "{\"step_index\": 2, SENSITIVE\n") do |session|
+      result = prepare(session)
+      assert_equal 'UNKNOWN', result.dig('identity', 'model')
+      assert_includes result['publisher_note'], 'Antigravity transcript contains unreadable metadata'
+    end
+  end
+
+  def test_a_missing_transcript_names_the_reason
+    Dir.mktmpdir do |home|
+      session = { 'ANTIGRAVITY_CONVERSATION_ID' => CONVERSATION, 'ANTIGRAVITY_APP_DATA_DIR' => home }
+      assert_includes prepare(session)['publisher_note'], 'UNKNOWN model, effort: Antigravity transcript unavailable'
+    end
+  end
+
+  def test_a_second_host_marker_keeps_supplied_attribution_unverified
+    with_transcript(prompt(0), response(1)) do |session|
+      result = prepare(session.merge('CLAUDE_CODE_SESSION_ID' => 'outer-claude-session'))
+      assert_equal content['identity'], result['identity']
+      assert_includes result['publisher_note'], 'supplied attribution is unverified'
+    end
+  end
+
+  private
+
+  def with_transcript(*records, raw_tail: '')
+    Dir.mktmpdir do |home|
+      file = File.join(home, 'brain', CONVERSATION, '.system_generated', 'logs', 'transcript.jsonl')
+      FileUtils.mkdir_p(File.dirname(file))
+      File.write(file, "#{records.map { |record| JSON.generate(record) }.join("\n")}\n#{raw_tail}")
+      yield({ 'ANTIGRAVITY_CONVERSATION_ID' => CONVERSATION, 'ANTIGRAVITY_APP_DATA_DIR' => home })
+    end
+  end
+
+  def prompt(index) = { 'step_index' => index, 'type' => 'USER_INPUT', 'content' => 'SENSITIVE-PROMPT' }
+
+  def response(index, model = 'gemini-4-argon-high')
+    { 'step_index' => index, 'type' => 'PLANNER_RESPONSE', 'model' => model, 'input_tokens' => 100,
+      'output_tokens' => 20 }.compact
+  end
+
+  def prepare(session) = Shaka::PublisherAttribution.prepare(content, environment: session)
+
+  def content
+    { 'identity' => { 'agent' => 'Antigravity', 'provider' => 'Google', 'model' => 'UNKNOWN',
+                      'effort' => 'UNKNOWN' },
+      'provenance' => { 'active_model' => 'UNKNOWN', 'active_effort' => 'UNKNOWN' } }
+  end
+end

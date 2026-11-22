@@ -76,8 +76,8 @@ is published.
 
 ## Select the work being reported
 
-The helper supports Codex, Claude Code, Cursor, OpenCode, and Pi. It normally
-selects the latest turn. That is a snapshot, not necessarily the whole task.
+The helper supports Codex, Claude Code, Cursor, OpenCode, Pi, and Antigravity. It
+normally selects the latest turn. That is a snapshot, not necessarily the whole task.
 
 | Option | Use |
 | --- | --- |
@@ -141,6 +141,7 @@ per configuration. Configured and routed models remain distinct.
 | Cursor | Input includes cache reads and writes; rows show the subsets. | Reasoning, native total, and parent-chat subagent usage are unknown or absent. |
 | OpenCode | Input excludes cache reads and writes. | Native total sums input, output, reasoning, cache reads, and cache writes; OpenCode 2 omits it, so it is unknown. |
 | Pi | Input excludes cache reads and writes. | Native total is copied. Reasoning, when recorded, is part of output. |
+| Antigravity | Input excludes cache reads. Cache writes are unknown. | Reasoning is part of output. Routed model, native total, and subagent usage are unknown or absent. |
 
 Reports are **PARTIAL** while sources omit active work, reviewers, subagents, or
 tool-model usage. They do not establish actual charges or human active time.
@@ -274,6 +275,28 @@ discloses excluded summarizer usage on the active branch. A dedicated session's
 `/session` total may be separate comparison evidence; do not edit it into the
 helper report or attribute summary usage to a turn.
 
+## What the Antigravity reader includes
+
+`ANTIGRAVITY_CONVERSATION_ID` and `ANTIGRAVITY_APP_DATA_DIR`, set in the agent's shell,
+select `brain/CONVERSATION_ID/.system_generated/logs/transcript.jsonl` under that data
+directory. The reader keeps each step's index, time, model, and token counters, never
+its content. A saved copy needs `--host antigravity --file PATH` with the path still
+ending in `brain/CONVERSATION_ID/.system_generated/logs/NAME`, because that directory
+identifies its responses.
+
+A turn is the `step_index` of a `USER_INPUT` step. Each transcript contributes its own
+latest turn by default. Step numbers repeat across conversations, so pass `--turn` with
+one conversation at a time. A subagent has its own conversation and needs its own report.
+
+The recorded model is the ID the user selected, so it is the configured model. Its last
+segment is the effort when it is `low`, `medium`, `high`, `xhigh`, or `max`; any other
+ending leaves the effort unknown. A transcript from before Antigravity recorded models
+keeps its tokens with an unknown model.
+
+Validation used CLI `1.5.14`: two print-mode runs matched their `--output-format json`
+usage for input, cache reads, and output. A transcript long enough to be split, the
+desktop app, and the IDE were not tested.
+
 ## Cost estimates
 
 For an OpenRouter usage source, read [recorded API charges](openrouter.md#recorded-charges)
@@ -335,6 +358,9 @@ leaves the estimate unknown. Cursor-only reports omit Codex credits.
 OpenCode's cache-exclusive input does not match the OpenAI/Cursor estimator's
 required input shape, so those scenarios remain unknown. Its Anthropic responses
 also remain unpriced because exports lack billing speed.
+
+Antigravity responses remain unpriced. The rate card has no Gemini rates, and the
+transcript names no provider.
 
 These are dated rate-card scenarios, not invoices. Subscription treatment,
 discounts, service tier, routing, account terms, and actual charges may differ.
@@ -468,6 +494,12 @@ no `(configured)` label. The provider stays as supplied. A note appears only whe
 the model or effort is `UNKNOWN`. A subagent shares its parent's session ID, so a
 publication from one would carry the main chat's settings; subagents do not publish.
 
+For Antigravity publications, Ruby reads that host's transcript and takes the model ID
+and its effort from the current turn's latest response. The header labels the model
+`(configured)`, and the provider stays as supplied. A turn without a response, a response
+without a model, or an unreadable line leaves the fields `UNKNOWN` with a note.
+
 Other hosts retain supplied attribution with an explicit unverified note until
-a native publisher reader is available. Aggregate usage rows cannot establish
-the current publisher's settings.
+a native publisher reader is available. So does a session that carries more than
+one host's marker, such as Antigravity started from another agent's shell. Aggregate
+usage rows cannot establish the current publisher's settings.

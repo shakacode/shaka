@@ -7,9 +7,8 @@ module Shaka
     FULL_SHA = /\A[0-9a-f]{40}\z/
 
     def source_options(flags, options)
-      flags.on('--host NAME', Usage::READERS.keys, 'codex, claude-code, cursor, opencode, pi, or openrouter') do |value|
-        options[:host] = value
-      end
+      hosts = 'codex, claude-code, cursor, opencode, pi, antigravity, or openrouter'
+      flags.on('--host NAME', Usage::READERS.keys, hosts) { |value| options[:host] = value }
       source_file_options(flags, options)
       flags.on('--all-turns', 'Only for sources dedicated to this task') { options[:all_turns] = true }
       flags.on('--turn ID', 'Select a native turn; repeat for a shared interval') { |value| options[:turns] << value }
