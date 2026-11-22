@@ -63,9 +63,8 @@ module Shaka
 
     def self.user_input?(step) = step['type'] == 'USER_INPUT'
 
-    def self.response?(step)
-      step['type'] == 'PLANNER_RESPONSE' || COUNTERS.values.any? { |key| step.key?(key) }
-    end
+    # In transcripts from CLI 1.5.14, these are the only steps that carry token counters.
+    def self.response?(step) = step['type'] == 'PLANNER_RESPONSE'
 
     def self.model(step)
       model = step['model']

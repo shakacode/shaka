@@ -100,6 +100,13 @@ class AntigravityPublisherAttributionTest < Minitest::Test
     end
   end
 
+  def test_a_step_that_is_not_a_model_response_keeps_the_settings
+    tool = { 'step_index' => 2, 'type' => 'GENERIC', 'input_tokens' => nil }
+    with_transcript(prompt(0), response(1), tool) do |session|
+      assert_equal 'gemini-4-argon-high (configured)', prepare(session).dig('identity', 'model')
+    end
+  end
+
   def test_a_response_before_any_user_step_belongs_to_no_turn
     with_transcript(response(0)) do |session|
       result = prepare(session)

@@ -26,7 +26,8 @@ module AntigravityUsageFixture
                                             output_tokens: 20, content: 'SENSITIVE-RESPONSE', **fields).compact
   end
 
-  def tool_output(index, second) = step(index, 'GENERIC', second, content: 'SENSITIVE-TOOL-OUTPUT')
+  # A step that is not a model response, even if it ever carried a counter key.
+  def tool_output(index, second) = step(index, 'GENERIC', second, content: 'SENSITIVE-TOOL-OUTPUT', input_tokens: nil)
 
   def two_turns
     [prompt(0, '10'), response(1, '11', 900, model: 'gemini-4-argon-low'),

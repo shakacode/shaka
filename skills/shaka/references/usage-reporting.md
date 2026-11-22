@@ -285,7 +285,8 @@ ending in `brain/CONVERSATION_ID/.system_generated/logs/NAME`, because that dire
 identifies its responses. A transcript with an unreadable line reports no responses,
 since the line could be a turn boundary.
 
-A turn is the `step_index` of a `USER_INPUT` step. The reader takes one transcript per
+A turn is the `step_index` of a `USER_INPUT` step, and its responses are the
+`PLANNER_RESPONSE` steps that follow. The reader takes one transcript per
 run and refuses a second `--file`, because step numbers repeat across conversations.
 Report each conversation, including a subagent's, on its own.
 

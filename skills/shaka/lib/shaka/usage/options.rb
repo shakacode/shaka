@@ -18,7 +18,7 @@ module Shaka
     end
 
     def source_file_options(flags, options)
-      flags.on('--file PATH', 'Native transcript or export file; repeat for contributors/resumes') do |value|
+      flags.on('--file PATH', 'Native transcript or export file; repeat it, except for antigravity') do |value|
         options[:files] << value
       end
       flags.on('--session ID', 'OpenCode session; needs --host opencode') do |value|
