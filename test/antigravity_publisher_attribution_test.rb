@@ -29,6 +29,8 @@ module AntigravityTranscriptFixture
                       'effort' => 'UNKNOWN' },
       'provenance' => { 'active_model' => 'UNKNOWN', 'active_effort' => 'UNKNOWN' } }
   end
+
+  def prepare(session) = Shaka::PublisherAttribution.prepare(content, environment: session)
 end
 
 class AntigravityPublisherAttributionTest < Minitest::Test
@@ -56,19 +58,21 @@ class AntigravityPublisherAttributionTest < Minitest::Test
     end
   end
 
-  def test_a_new_turn_without_a_response_does_not_inherit_the_previous_turn
-    with_transcript(prompt(0), response(1), prompt(2)) do |session|
-      result = prepare(session)
-      assert_equal %w[UNKNOWN UNKNOWN], result.fetch('identity').values_at('model', 'effort')
-      assert_includes result['publisher_note'], 'UNKNOWN model, effort: Antigravity current turn settings unavailable'
-    end
-  end
-
   def test_a_response_without_a_model_leaves_both_fields_unknown
     with_transcript(prompt(0), response(1), response(3, nil)) do |session|
       result = prepare(session)
       assert_equal %w[UNKNOWN UNKNOWN], result.fetch('identity').values_at('model', 'effort')
       assert_includes result['publisher_note'], 'UNKNOWN model, effort'
+    end
+  end
+
+  def test_a_model_id_that_usage_refuses_leaves_both_fields_unknown
+    ['www.example.test-high', 'vendor/model-high', 'UNKNOWN'].each do |model|
+      with_transcript(prompt(0), response(1, model)) do |session|
+        result = prepare(session)
+        assert_equal %w[UNKNOWN UNKNOWN], result.fetch('identity').values_at('model', 'effort'), model
+        assert_includes result['publisher_note'], 'UNKNOWN model, effort'
+      end
     end
   end
 
@@ -78,6 +82,34 @@ class AntigravityPublisherAttributionTest < Minitest::Test
       assert_equal ['tuned-gateway-model (configured)', 'UNKNOWN'],
                    result.fetch('identity').values_at('model', 'effort')
       assert_includes result['publisher_note'], 'UNKNOWN effort: Antigravity model ID names no effort'
+    end
+  end
+
+  def test_a_missing_transcript_names_the_reason
+    Dir.mktmpdir do |home|
+      session = { 'ANTIGRAVITY_CONVERSATION_ID' => CONVERSATION, 'ANTIGRAVITY_APP_DATA_DIR' => home }
+      assert_includes prepare(session)['publisher_note'], 'UNKNOWN model, effort: Antigravity transcript unavailable'
+    end
+  end
+
+  def test_a_second_host_marker_keeps_supplied_attribution_unverified
+    with_transcript(prompt(0), response(1)) do |session|
+      result = prepare(session.merge('CLAUDE_CODE_SESSION_ID' => 'outer-claude-session'))
+      assert_equal content['identity'], result['identity']
+      assert_includes result['publisher_note'], 'supplied attribution is unverified'
+    end
+  end
+end
+
+# Which steps of a transcript establish the current turn's settings.
+class AntigravityPublisherTurnTest < Minitest::Test
+  include AntigravityTranscriptFixture
+
+  def test_a_new_turn_without_a_response_does_not_inherit_the_previous_turn
+    with_transcript(prompt(0), response(1), prompt(2)) do |session|
+      result = prepare(session)
+      assert_equal %w[UNKNOWN UNKNOWN], result.fetch('identity').values_at('model', 'effort')
+      assert_includes result['publisher_note'], 'UNKNOWN model, effort: Antigravity current turn settings unavailable'
     end
   end
 
@@ -121,25 +153,6 @@ class AntigravityPublisherAttributionTest < Minitest::Test
       assert_equal 'UNKNOWN', prepare(session).dig('identity', 'model')
     end
   end
-
-  def test_a_missing_transcript_names_the_reason
-    Dir.mktmpdir do |home|
-      session = { 'ANTIGRAVITY_CONVERSATION_ID' => CONVERSATION, 'ANTIGRAVITY_APP_DATA_DIR' => home }
-      assert_includes prepare(session)['publisher_note'], 'UNKNOWN model, effort: Antigravity transcript unavailable'
-    end
-  end
-
-  def test_a_second_host_marker_keeps_supplied_attribution_unverified
-    with_transcript(prompt(0), response(1)) do |session|
-      result = prepare(session.merge('CLAUDE_CODE_SESSION_ID' => 'outer-claude-session'))
-      assert_equal content['identity'], result['identity']
-      assert_includes result['publisher_note'], 'supplied attribution is unverified'
-    end
-  end
-
-  private
-
-  def prepare(session) = Shaka::PublisherAttribution.prepare(content, environment: session)
 end
 
 # `shaka description` and `shaka reply` are the callers a real publication uses.

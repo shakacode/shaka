@@ -92,6 +92,17 @@ class AntigravityUsageTest < Minitest::Test
     end
   end
 
+  def test_a_model_id_that_publication_refuses_supplies_no_model_or_effort
+    Dir.mktmpdir do |home|
+      ['www.example.test-high', 'vendor/model-high', "#{'m' * 80}-high", 'UNKNOWN'].each do |model|
+        output = explicit(write_transcript(home, [prompt(0, '10'), response(1, '11', 300, model: model)]))
+        assert_metric output, 'Configured model', 'UNKNOWN'
+        assert_metric output, 'Effort', 'UNKNOWN'
+        assert_metric output, 'Input', 300
+      end
+    end
+  end
+
   def test_mixed_host_context_requires_an_explicit_host
     Dir.mktmpdir do |home|
       write_transcript(home, two_turns)

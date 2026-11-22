@@ -4,6 +4,7 @@ require 'json'
 require 'pathname'
 require_relative '../error'
 require_relative 'response_count'
+require_relative 'value_token'
 
 module Shaka
   # Reads one Antigravity conversation transcript (tested with CLI 1.5.14), keeping only usage
@@ -15,6 +16,7 @@ module Shaka
     LAYOUT = %r{/brain/([^/]+)/\.system_generated/logs/[^/]+\z}
     COUNTERS = { 'input_tokens' => 'input_tokens', 'cached_input_tokens' => 'cache_read_tokens',
                  'output_tokens' => 'output_tokens' }.freeze
+    MODEL = /\A[A-Za-z0-9][A-Za-z0-9._:-]{0,79}\z/
     KEPT = ['step_index', 'type', 'created_at', 'model', *COUNTERS.values].freeze
     # A model ID ends in its effort, such as `gemini-4-argon-high`. These are the endings
     # `agy models` lists; an ID that ends otherwise, such as a gateway's own model, names none.
@@ -66,9 +68,11 @@ module Shaka
     # In transcripts from CLI 1.5.14, these are the only steps that carry token counters.
     def self.response?(step) = step['type'] == 'PLANNER_RESPONSE'
 
+    # One check for usage rows and publication, so neither shows an ID the other refuses,
+    # and no effort is read from an ID that is not shown.
     def self.model(step)
       model = step['model']
-      model if model.is_a?(String) && !model.empty?
+      model if model.is_a?(String) && model.match?(MODEL) && model != 'UNKNOWN' && UsageValue.token(model)
     end
 
     def self.effort(model)

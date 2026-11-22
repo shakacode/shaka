@@ -295,7 +295,7 @@ segment is the effort when it is `low`, `medium`, `high`, or `xhigh`; any other 
 leaves the effort unknown. A transcript from before Antigravity recorded models
 keeps its tokens with an unknown model.
 
-Validation used CLI `1.5.14`: two print-mode runs matched their `--output-format json`
+Validation used CLI `1.5.14`: six print-mode runs matched their `--output-format json`
 usage for input, cache reads, and output. A transcript long enough to be split, the
 desktop app, and the IDE were not tested.
 
@@ -361,8 +361,8 @@ OpenCode's cache-exclusive input does not match the OpenAI/Cursor estimator's
 required input shape, so those scenarios remain unknown. Its Anthropic responses
 also remain unpriced because exports lack billing speed.
 
-Antigravity responses remain unpriced. The rate card has no Gemini rates, and the
-transcript names no provider.
+Antigravity responses remain unpriced: no estimator scenario covers its counters, and
+the transcript names no provider.
 
 These are dated rate-card scenarios, not invoices. Subscription treatment,
 discounts, service tier, routing, account terms, and actual charges may differ.

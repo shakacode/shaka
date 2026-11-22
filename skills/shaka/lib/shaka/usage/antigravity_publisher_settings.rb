@@ -11,7 +11,6 @@ module Shaka
     NOTE = nil
     # The transcript does not record which service served the model, so the provider stays as supplied.
     FIELDS = %w[model effort].freeze
-    TOKEN = /\A[A-Za-z0-9][A-Za-z0-9._:-]{0,79}\z/
     UNAVAILABLE = 'Antigravity current turn settings unavailable'
 
     def self.read(environment)
@@ -47,7 +46,6 @@ module Shaka
     end
 
     def response(model)
-      model = nil unless model&.match?(TOKEN) && model != 'UNKNOWN'
       @settings = { 'model' => model, 'effort' => AntigravityTranscript.effort(model) }
       @reason = model ? 'Antigravity model ID names no effort' : UNAVAILABLE
     end

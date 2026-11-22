@@ -88,7 +88,7 @@ charge uncached input, cache reads, and cache writes separately. A one-hour
 cache write costs more than a five-minute write. Supported fast-mode
 responses use their published fast-mode rates. Standard-speed responses use
 standard rates. Fast-mode responses without a published rate remain unpriced. Pi uses its recorded nominal USD instead of repricing it.
-Antigravity rows show tokens without an estimate, because the rate card has no Gemini prices.
+Antigravity rows show tokens without an estimate. Shaka has no pricing rule for Antigravity's counters yet.
 OpenRouter uses the response's reported account charge in USD credits instead of
 direct DeepSeek list prices. Missing counters or cost remain UNKNOWN. A paid
 incomplete response can still contribute reported cost without establishing a
