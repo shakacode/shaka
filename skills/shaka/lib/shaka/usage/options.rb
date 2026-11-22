@@ -6,6 +6,21 @@ module Shaka
     ISO_TIME = /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/
     FULL_SHA = /\A[0-9a-f]{40}\z/
 
+    def detected_host
+      found = Usage::HOST_CONTEXT.select { |host, variable| host_marker?(host, ENV.fetch(variable, nil)) }.keys
+      found.size > 1 ? nil : found.first || 'codex'
+    end
+
+    # Pi sets a flag. An empty Antigravity ID names no conversation, so a wrapper that exports
+    # the variable empty leaves another host's session unambiguous, as publication already reads it.
+    def host_marker?(host, value)
+      case host
+      when 'pi' then value == 'true'
+      when 'antigravity' then !value.to_s.empty?
+      else !value.nil?
+      end
+    end
+
     def source_options(flags, options)
       hosts = 'codex, claude-code, cursor, opencode, pi, antigravity, or openrouter'
       flags.on('--host NAME', Usage::READERS.keys, hosts) { |value| options[:host] = value }

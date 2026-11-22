@@ -103,6 +103,14 @@ class AntigravityUsageTest < Minitest::Test
     end
   end
 
+  def test_an_empty_marker_leaves_another_host_selected
+    Dir.mktmpdir do |home|
+      environment = { 'ANTIGRAVITY_CONVERSATION_ID' => '', 'CLAUDE_CODE_SESSION_ID' => 'outer-claude-session',
+                      'CLAUDE_CONFIG_DIR' => home }
+      assert_includes report(environment: environment), 'Claude Code source versions'
+    end
+  end
+
   def test_mixed_host_context_requires_an_explicit_host
     Dir.mktmpdir do |home|
       write_transcript(home, two_turns)

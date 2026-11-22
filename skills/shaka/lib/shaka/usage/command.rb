@@ -72,11 +72,6 @@ module Shaka
       end
     end
 
-    def self.detected_host
-      found = HOST_CONTEXT.select { |host, variable| host == 'pi' ? ENV[variable] == 'true' : ENV.key?(variable) }.keys
-      found.size > 1 ? nil : found.first || 'codex'
-    end
-
     def initialize(options)
       @options = options
       reader = READERS.fetch(options[:host])
