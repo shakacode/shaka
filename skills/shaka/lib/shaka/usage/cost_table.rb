@@ -13,7 +13,13 @@ module Shaka
       'gpt-6-sol' => '[GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol)',
       'gpt-6-luna' => '[GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna)',
       'grok-4.6' => '[Cursor Grok 4.6](https://cursor.com/docs/models/grok-4-6)',
-      'grok-4.7' => '[Cursor Grok 4.7](https://cursor.com/docs/models/grok-4-7)'
+      'grok-4.7' => '[Cursor Grok 4.7](https://cursor.com/docs/models/grok-4-7)',
+      'gemini-3.1-pro' => '[Cursor Gemini 3.1 Pro](https://cursor.com/docs/models/gemini-3-1-pro)',
+      'gemini-3.8-flash' => '[Cursor Gemini 3.8 Flash](https://cursor.com/docs/models/gemini-3-8-flash)',
+      'gemini-4-argon' => '[Cursor Gemini 4 Argon](https://cursor.com/docs/models/gemini-4-argon)',
+      'gemini-4-carbon' => '[Cursor Gemini 4 Carbon](https://cursor.com/docs/models/gemini-4-carbon)',
+      'gemini-4-hydrogen' => '[Cursor Gemini 4 Hydrogen](https://cursor.com/docs/models/gemini-4-hydrogen)',
+      'gemini-4-neon' => '[Cursor Gemini 4 Neon](https://cursor.com/docs/models/gemini-4-neon)'
     }.freeze
     CREDIT_SOURCE = '[Codex credit rates](https://learn.chatgpt.com/docs/pricing#token-rates)'
     CACHE_SOURCE = '[prompt-cache accounting](https://developers.openai.com/api/docs/guides/prompt-caching)'

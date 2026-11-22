@@ -174,8 +174,8 @@ module Shaka
 
       def cursor_model(entry, label)
         fields = mapping(entry, label, %w[standard fast threshold])
-        priced = { 'standard' => prices(fields.fetch('standard'), 3, "#{label} standard"),
-                   'fast' => prices(fields.fetch('fast'), 3, "#{label} fast") }
+        priced = { 'standard' => prices(fields.fetch('standard'), 3, "#{label} standard") }
+        priced['fast'] = prices(fields.fetch('fast'), 3, "#{label} fast") if fields.key?('fast')
         priced['threshold'] = positive(fields.fetch('threshold'), "#{label} threshold") if fields.key?('threshold')
         priced
       end
