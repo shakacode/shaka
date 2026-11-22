@@ -82,7 +82,7 @@ normally selects the latest turn. That is a snapshot, not necessarily the whole 
 | Option | Use |
 | --- | --- |
 | `--host NAME` | Select a host when multiple host markers are present |
-| `--file PATH` | Read a saved native source; repeat for additional sources |
+| `--file PATH` | Read a saved native source; repeat for additional sources, except Antigravity, which takes one |
 | `--turn ID` | Select specific turns; repeat as needed. Each host section below names the ID field |
 | `--all-turns` | Include a session dedicated entirely to this task; cannot combine with `--turn` |
 | `--since-time UTC` | Include responses at or after the task began in a shared session; whole-second sources include the start second. Cannot combine with `--turn` or `--all-turns` |
@@ -112,8 +112,8 @@ An interval associated with several commits is **SHARED**. Never divide its toke
 into invented per-commit amounts. Preserve the original mapping after squash and
 associate the merged SHA without recounting it.
 
-The helper deduplicates response IDs across supplied files, including resumed or
-forked copies, and ignores cumulative snapshots. Conflicting counters,
+Where a reader accepts several files, the helper deduplicates response IDs across
+them, including resumed or forked copies, and ignores cumulative snapshots. Conflicting counters,
 configuration, or interval metadata produce `UNKNOWN`.
 
 ## Keep earlier reports when work changes hands
@@ -282,7 +282,8 @@ select `brain/CONVERSATION_ID/.system_generated/logs/transcript.jsonl` under tha
 directory. The reader keeps each step's index, time, model, and token counters, never
 its content. A saved copy needs `--host antigravity --file PATH` with the path still
 ending in `brain/CONVERSATION_ID/.system_generated/logs/NAME`, because that directory
-identifies its responses.
+identifies its responses. A transcript with an unreadable line reports no responses,
+since the line could be a turn boundary.
 
 A turn is the `step_index` of a `USER_INPUT` step. The reader takes one transcript per
 run and refuses a second `--file`, because step numbers repeat across conversations.

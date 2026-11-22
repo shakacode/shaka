@@ -33,10 +33,11 @@ module AntigravityUsageFixture
      prompt(2, '20'), response(3, '21', 100), tool_output(4, '22'), response(5, '23', 200)]
   end
 
-  def write_transcript(home, records, conversation: CONVERSATION, raw_tail: '')
+  def write_transcript(home, records, conversation: CONVERSATION)
     file = File.join(home, 'brain', conversation, '.system_generated', 'logs', 'transcript.jsonl')
     FileUtils.mkdir_p(File.dirname(file))
-    File.write(file, "#{records.map { |record| JSON.generate(record) }.join("\n")}\n#{raw_tail}")
+    lines = records.map { |record| record.is_a?(String) ? record : JSON.generate(record) }
+    File.write(file, "#{lines.join("\n")}\n")
     file
   end
 
@@ -199,12 +200,20 @@ class AntigravityUnreadableUsageTest < Minitest::Test
     end
   end
 
-  def test_malformed_lines_are_gaps_and_never_zero
+  def test_an_unreadable_line_hides_a_turn_boundary_so_nothing_is_counted
     Dir.mktmpdir do |home|
-      records = [prompt(0, '10'), response(1, '11', 300), response(2, '12', '999'), *malformed_steps]
-      output = explicit(write_transcript(home, records, raw_tail: "{\"step_index\": 9, SENSITIVE\n"))
+      unreadable_lines.each do |line|
+        file = write_transcript(home, [prompt(0, '10'), response(1, '11', 900), line, response(3, '21', 100)])
+        assert_unavailable(explicit(file))
+        assert_unavailable(explicit(file, '--turn', '0'))
+      end
+    end
+  end
+
+  def test_a_counter_that_is_not_a_whole_number_is_unknown_and_never_zero
+    Dir.mktmpdir do |home|
+      output = explicit(write_transcript(home, [prompt(0, '10'), response(1, '11', 300), response(2, '12', '999')]))
       assert_includes output, '2 responses'
-      assert_includes output, 'Unreadable or unidentifiable records'
       assert_metric output, 'Input', 'UNKNOWN'
       assert_metric output, 'Output', 40
       refute_match(/999|SENSITIVE/, without_usage_identity(output))
@@ -223,13 +232,16 @@ class AntigravityUnreadableUsageTest < Minitest::Test
 
   private
 
-  def malformed_steps
-    [response('x', '13', 999), response(4, '14', 999).merge(type: nil), response(5, '15', 999).merge(type: ' ')]
+  # A user step that is not JSON, then steps without a whole-number index or a readable type.
+  def unreadable_lines
+    steps = [response('x', '13', 999), response(4, '14', 999).merge(type: nil),
+             response(5, '15', 999).merge(type: ' ')]
+    [JSON.generate(prompt(2, '20')).sub('"USER_INPUT"', 'USER_INPUT'), *steps.map { |step| JSON.generate(step) }]
   end
 
   def assert_unavailable(output)
     assert_includes output, 'Responses: UNKNOWN'
     assert_includes output, 'Unreadable or unidentifiable records'
-    refute_match(/900|SENSITIVE/, without_usage_identity(output))
+    refute_match(/900|999|SENSITIVE/, without_usage_identity(output))
   end
 end

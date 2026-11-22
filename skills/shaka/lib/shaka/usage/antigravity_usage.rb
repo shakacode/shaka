@@ -88,8 +88,8 @@ module Shaka
 
     def read(file)
       steps, skipped = self.class.steps(file)
-      unreadable if skipped.positive?
-      responses(steps)
+      # A line that cannot be read could be a user step, so no response has a known turn.
+      skipped.positive? ? unavailable : responses(steps)
     rescue SystemCallError
       unavailable
     end
@@ -119,13 +119,8 @@ module Shaka
     end
 
     def unavailable
-      unreadable
-      [{}, nil]
-    end
-
-    def unreadable
       @gaps << 'Unreadable or unidentifiable records'
-      nil
+      [{}, nil]
     end
   end
 
