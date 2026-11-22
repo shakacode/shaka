@@ -34,12 +34,16 @@ module Shaka
 
       def command_pointer(name, operation: nil, operations: [])
         command = ['shaka', name, operation].compact.join(' ')
-        lines = ["`#{command}` is a CLI command. Run `#{command} --help` for its options."]
+        lines = ["`#{command}` is a CLI command. Run `#{help_target(command, operation, operations)} --help` " \
+                 'for its options.']
         lines << "Operations: #{operations.join(', ')}" if operation.nil? && !operations.empty?
         lines << PackagedText.render('walkthrough-help.md').chomp if name == 'walkthrough'
-        related = RELATED_TOPICS[name]
-        lines << "Related topic: shaka help #{related}" if related
+        lines << "Related topic: shaka help #{RELATED_TOPICS[name]}" if RELATED_TOPICS.key?(name)
         "#{lines.join("\n")}\n"
+      end
+
+      def help_target(command, operation, operations)
+        operation.nil? && !operations.empty? ? "#{command} <operation>" : command
       end
 
       def local_guide(entry)

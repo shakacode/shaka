@@ -55,12 +55,20 @@ class StartupNoticeRemindersTest < Minitest::Test
     %w[doctor seam].each { |command| assert_nil reminder(command:), command }
   end
 
-  # Help skips startup notices entirely so it never writes update-notice state.
-  def test_help_skips_startup_notices_and_writes_no_notice_state
-    remember('available', at: NOW)
-    output = StringIO.new
-    Shaka::StartupNotice.call(['help'], env: {}, output:)
-    assert_empty output.string
+  # Help skips startup notices entirely so a registered install's update cache stays unchanged.
+  def test_help_skips_startup_notices_and_preserves_update_cache
+    FileUtils.cp_r(File.join(Shaka::StartupNotice::ROOT, 'skills/shaka'), File.join(@root, 'skills'))
+    File.write(File.join(@root, '.git/shaka-ruby'), "#{RbConfig.ruby}\n")
+    remember('available', at: Time.now)
+    cache = Shaka::UpdateCheck::Cache.path(@home)
+    before = File.read(cache)
+
+    env = { 'HOME' => @home, 'SHAKA_NOTICES' => nil, 'SHAKA_CALL_LOG' => 'off' }
+    _output, error, status = Open3.capture3(env, File.join(@root, 'skills/shaka/scripts/shaka'), 'help')
+
+    assert_predicate status, :success?, error
+    assert_empty error
+    assert_equal before, File.read(cache)
   end
 
   def test_an_update_notice_comes_first_and_the_reminder_waits_for_the_next_call

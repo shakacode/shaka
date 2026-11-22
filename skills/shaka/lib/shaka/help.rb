@@ -25,7 +25,8 @@ module Shaka
 
     def run
       parser = option_parser
-      parser.parse!(@arguments)
+      @arguments.pop while trailing_help?(@arguments)
+      parser.permute!(@arguments)
       return print_text(parser) if @options[:help]
       return run_json if @options[:json]
       return print_text(Formatter.overview(@catalog)) if @arguments.empty?
@@ -37,10 +38,14 @@ module Shaka
 
     def option_parser
       OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka help [TOPIC | COMMAND] [--json]'
+        flags.banner = "Usage: shaka help [TOPIC] [--json]\n       shaka help COMMAND [OPERATION]"
         flags.on('--json', 'Print topics or one topic as JSON') { @options[:json] = true }
         flags.on('-h', '--help', 'Show usage') { @options[:help] = true }
       end
+    end
+
+    def trailing_help?(args)
+      %w[-h --help].include?(args.last) && args.any? { |arg| !arg.start_with?('-') }
     end
 
     def print_text(text)
@@ -72,7 +77,7 @@ module Shaka
     end
 
     def command_pointer(args)
-      name, operation = args
+      name, operation = args.map(&:downcase)
       return unless CallLog::COMMANDS.include?(name)
 
       operations = CallLog::OPERATIONS.fetch(name, [])
