@@ -84,7 +84,8 @@ module Shaka
       @gaps = []
       identity = File.expand_path(file)[LAYOUT, 1]
       @conversation = identity if identity&.match?(IDENTITY)
-      @source = @conversation ? read(file) : unavailable
+      # Opening anything but a regular file, such as a pipe with no writer, could block forever.
+      @source = @conversation && File.file?(file) ? read(file) : unavailable
     end
 
     private

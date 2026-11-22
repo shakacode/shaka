@@ -210,6 +210,18 @@ class AntigravityUnreadableUsageTest < Minitest::Test
     end
   end
 
+  def test_a_named_pipe_in_the_conversation_layout_is_not_opened
+    skip 'needs named pipes' unless File.respond_to?(:mkfifo)
+    Dir.mktmpdir do |home|
+      pipe = File.join(File.dirname(write_transcript(home, two_turns)), 'pipe.jsonl')
+      File.mkfifo(pipe)
+      writer = Thread.new { release_reader(pipe) }
+      assert_unavailable(explicit(pipe, '--all-turns'))
+    ensure
+      writer&.kill
+    end
+  end
+
   def test_a_relative_data_directory_is_not_searched
     Dir.mktmpdir do |home|
       write_transcript(home, two_turns)
@@ -251,6 +263,15 @@ class AntigravityUnreadableUsageTest < Minitest::Test
   end
 
   private
+
+  # A reader that opened the pipe would block until a writer appears. This supplies one, so a
+  # regression fails the assertion instead of hanging the suite.
+  def release_reader(pipe)
+    sleep 5
+    File.open(pipe, File::WRONLY | File::NONBLOCK) { nil }
+  rescue SystemCallError
+    nil
+  end
 
   # A user step that is not JSON, then steps without a whole-number index or a readable type.
   def unreadable_lines
