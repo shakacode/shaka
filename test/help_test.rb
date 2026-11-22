@@ -2,30 +2,9 @@
 
 require_relative 'test_helper'
 require 'json'
-require 'shaka/call_log'
 require 'shaka/help'
 
-module HelpTestEnv
-  private
-
-  def with_isolated_env
-    Dir.mktmpdir do |dir|
-      home = FileUtils.mkdir_p(File.join(dir, 'home')).first
-      sentinel = File.join(dir, 'contacted')
-      %w[gh git].each { |tool| stub_tool(File.join(dir, tool), sentinel) }
-      yield dir, home, sentinel
-    end
-  end
-
-  def stub_tool(path, sentinel)
-    File.write(path, "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
-    File.chmod(0o755, path)
-  end
-end
-
 class HelpTest < Minitest::Test
-  include HelpTestEnv
-
   COMMAND = SHAKA_COMMAND
   REPO_ROOT = File.expand_path('..', __dir__)
 
@@ -36,7 +15,7 @@ class HelpTest < Minitest::Test
       assert_predicate status, :success?, error
       assert_empty error
       %w[setup tasks reviews settings].each { |topic| assert_includes output, topic }
-      assert_includes output, 'shaka COMMAND [OP] --help'
+      assert_includes output, 'shaka --help'
       refute_path_exists sentinel
       assert_only_call_log_written(home)
     end
@@ -65,12 +44,14 @@ class HelpTest < Minitest::Test
     end
   end
 
-  def test_help_resolves_topic_aliases_case_insensitively
-    output, error, status = Open3.capture3(*COMMAND, 'help', 'CONFIG')
+  def test_help_resolves_topic_aliases_case_insensitively_and_accepts_trailing_help
+    [%w[CONFIG], %w[merging --help]].each do |args|
+      output, error, status = Open3.capture3(*COMMAND, 'help', *args)
 
-    assert_predicate status, :success?, error
-    assert_empty error
-    assert_includes output, 'settings-guide.md'
+      assert_predicate status, :success?, error
+      assert_empty error
+      assert_includes output, 'Guide: https://github.com/shakacode/shaka/blob/main/docs/'
+    end
   end
 
   def test_help_json_returns_all_topics
@@ -91,17 +72,35 @@ class HelpTest < Minitest::Test
     end
   end
 
-  def test_help_json_rejects_unknown_topic_and_extra_arguments
-    _out, bad_error, bad_status = Open3.capture3(*COMMAND, 'help', '--json', 'doctor')
-    refute_predicate bad_status, :success?
-    assert_includes bad_error, 'doctor'
+  def test_help_usage_and_errors
+    [%w[help], %w[--help], %w[--json --help]].each do |args|
+      output, error, status = Open3.capture3(*COMMAND, 'help', *args)
+      assert_predicate status, :success?, error
+      assert_includes output, 'Usage: shaka help [TOPIC] [--json]'
+    end
 
-    _out, extra_error, extra_status = Open3.capture3(*COMMAND, 'help', '--json', 'setup', 'extra')
-    refute_predicate extra_status, :success?
-    assert_includes extra_error, 'at most one'
+    [%w[not-a-real-topic], %w[--json doctor], %w[--json setup extra], %w[setup extra]].each do |args|
+      _output, error, status = Open3.capture3(*COMMAND, 'help', *args)
+      refute_predicate status, :success?
+      assert_includes error, 'shaka help'
+    end
   end
 
   private
+
+  def with_isolated_env
+    Dir.mktmpdir do |dir|
+      home = FileUtils.mkdir_p(File.join(dir, 'home')).first
+      sentinel = File.join(dir, 'contacted')
+      %w[gh git].each { |tool| stub_tool(File.join(dir, tool), sentinel) }
+      yield dir, home, sentinel
+    end
+  end
+
+  def stub_tool(path, sentinel)
+    File.write(path, "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
+    File.chmod(0o755, path)
+  end
 
   def run_help(dir, home, *, call_log: 'off')
     env = { 'HOME' => home, 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'SHAKA_NOTICES' => nil,
@@ -117,72 +116,6 @@ class HelpTest < Minitest::Test
   end
 end
 
-class HelpPointersTest < Minitest::Test
-  include HelpTestEnv
-
-  COMMAND = SHAKA_COMMAND
-
-  def test_help_points_cli_commands_and_operations_to_their_help_flag
-    assert_command_pointer('shaka doctor --help', 'Related topic: shaka help setup', 'doctor')
-    assert_command_pointer('shaka doctor --help', 'Related topic: shaka help setup', 'Doctor')
-    assert_command_pointer('shaka doctor --help', 'Related topic: shaka help setup', 'doctor', '--help')
-    assert_command_pointer('shaka seam <operation> --help', 'Operations: check, init', 'seam')
-    assert_command_pointer('shaka seam check --help', 'Related topic: shaka help setup', 'seam', 'check')
-    assert_command_pointer('shaka seam check --help', 'Related topic: shaka help setup', 'seam', 'check', '--help')
-    assert_command_pointer('shaka pr watch --help', nil, 'pr', 'watch')
-    assert_command_pointer('shaka walkthrough --help', 'Walkthrough input:', 'walkthrough')
-  end
-
-  def test_help_usage_banner_and_help_flags
-    banner = "Usage: shaka help [TOPIC] [--json]\n       shaka help COMMAND [OPERATION]"
-    assert_command_pointer(banner, nil, 'help')
-    assert_command_pointer(banner, nil, '--help')
-    assert_command_pointer(banner, nil, '--json', '--help')
-  end
-
-  def test_every_advertised_help_target_exits_zero_offline
-    with_isolated_env do |dir, home, sentinel|
-      env = { 'HOME' => home, 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'SHAKA_NOTICES' => 'off',
-              'SHAKA_CALL_LOG' => 'off' }
-      advertised_targets.each { |words| assert_cli_help(env, dir, words) }
-      refute_path_exists sentinel
-      assert_empty Dir.children(home)
-    end
-  end
-
-  def test_unknown_topic_or_invalid_operation_exits_nonzero
-    [['not-a-real-topic'], %w[seam nonexistent]].each do |args|
-      _output, error, status = Open3.capture3(*COMMAND, 'help', *args)
-
-      refute_predicate status, :success?
-      assert_includes error, args.join(' ')
-      assert_includes error, 'shaka help'
-    end
-  end
-
-  private
-
-  def advertised_targets
-    Shaka::CallLog::COMMANDS.flat_map do |name|
-      ops = Shaka::CallLog::OPERATIONS.fetch(name, [])
-      ops.empty? ? [[name]] : ops.map { |op| [name, op] }
-    end
-  end
-
-  def assert_command_pointer(expected_cmd, expected_extra, *)
-    output, error, status = Open3.capture3(*COMMAND, 'help', *)
-    assert_predicate status, :success?, error
-    assert_includes output, expected_cmd
-    assert_includes output, expected_extra if expected_extra
-  end
-
-  def assert_cli_help(env, dir, words)
-    output, error, status = Open3.capture3(env, *COMMAND, *words, '--help', chdir: dir)
-    assert_predicate status, :success?, "#{words.join(' ')}: #{error}"
-    assert_includes output, 'Usage:', words.join(' ')
-  end
-end
-
 class HelpCatalogTest < Minitest::Test
   REPO_ROOT = File.expand_path('..', __dir__)
 
@@ -195,37 +128,20 @@ class HelpCatalogTest < Minitest::Test
     end
   end
 
-  def test_topic_keys_are_unique_do_not_collide_with_cli_commands_and_docs_and_anchors_exist
+  def test_corrupt_or_missing_catalog_raises_shaka_error
+    Dir.mktmpdir do |dir|
+      bad = File.join(dir, 'bad.yml')
+      File.write(bad, ":\n  - [unterminated\n")
+      assert_raises(Shaka::Error) { Shaka::Help::Catalog.load(path: bad) }
+      assert_raises(Shaka::Error) { Shaka::Help::Catalog.load(path: File.join(dir, 'missing.yml')) }
+    end
+  end
+
+  def test_topic_keys_are_unique_and_docs_and_anchors_exist
     catalog = Shaka::Help::Catalog.load
     keys = catalog.topics.flat_map { |topic| [topic.fetch('id'), *topic.fetch('aliases')] }
     assert_equal keys.uniq, keys, 'Help topic IDs and aliases must be unique'
-    assert_empty keys & Shaka::CallLog::COMMANDS, 'Help topic keys must not collide with CLI commands'
     catalog.topics.each { |topic| assert_doc_and_anchor(topic) }
-  end
-
-  def test_every_related_topic_pointer_is_reachable_and_valid
-    catalog = Shaka::Help::Catalog.load
-    topic_ids = catalog.topics.map { it.fetch('id') }
-    Shaka::Help::Formatter::RELATED_TOPICS.each do |command, topic_id|
-      assert_includes Shaka::CallLog::COMMANDS, command
-      assert_includes topic_ids, topic_id
-      output, = capture_io { assert_equal 0, Shaka::Help.run([command]) }
-      assert_includes output, "Related topic: shaka help #{topic_id}"
-    end
-  end
-
-  def test_every_dispatched_command_and_operation_prints_pointer_offline
-    bare = [[]]
-    Shaka::CallLog::COMMANDS.each do |name|
-      next if name == 'help'
-
-      ops = Shaka::CallLog::OPERATIONS.fetch(name, [])
-      (bare + ops.zip).each do |words|
-        output, = capture_io { assert_equal 0, Shaka::Help.run([name, *words]) }
-        target = words.empty? && !ops.empty? ? "#{name} <operation>" : [name, *words].join(' ')
-        assert_includes output, "shaka #{target} --help"
-      end
-    end
   end
 
   private

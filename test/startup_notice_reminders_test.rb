@@ -113,7 +113,7 @@ end
 class HelpStartupNoticeTest < Minitest::Test
   include StartupNoticeSupport
 
-  # Help skips startup notices, and SHAKA_NOTICES=off keeps command --help lookups from mutating cache.
+  # Help skips startup notices; merge --help with SHAKA_NOTICES=off guards the help.md lookup contract.
   def test_help_skips_startup_notices_and_preserves_update_cache
     script = install_registered_helper
     remember('available', at: Time.now)

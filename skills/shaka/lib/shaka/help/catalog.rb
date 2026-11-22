@@ -13,7 +13,11 @@ module Shaka
 
       def self.load(path: PATH, source_root: SOURCE_ROOT)
         data = YAML.safe_load_file(path)
+        raise Shaka::Error, "Invalid help catalog: #{path}" unless data.is_a?(Hash)
+
         new(groups: data.fetch('groups'), topics: data.fetch('topics'), source_root:)
+      rescue Psych::SyntaxError, KeyError, SystemCallError => e
+        raise Shaka::Error, "Could not load help catalog (#{path}): #{e.message}"
       end
 
       attr_reader :groups, :topics

@@ -1,16 +1,9 @@
 # frozen_string_literal: true
 
-require_relative '../packaged_text'
-
 module Shaka
   class Help
-    # Renders human-readable help overviews, topic cards, and CLI command pointers.
+    # Renders human-readable help overviews and topic cards.
     module Formatter
-      RELATED_TOPICS = { 'doctor' => 'setup', 'install' => 'setup', 'merge' => 'merging',
-                         'review' => 'reviews', 'walkthrough' => 'reviews', 'configure' => 'settings',
-                         'prompt' => 'settings', 'seam' => 'setup', 'companions' => 'skills',
-                         'timings' => 'retrospective', 'usage' => 'retrospective' }.freeze
-
       module_function
 
       def overview(catalog)
@@ -32,20 +25,6 @@ module Shaka
         "#{lines.join("\n")}\n"
       end
 
-      def command_pointer(name, operation: nil, operations: [])
-        command = ['shaka', name, operation].compact.join(' ')
-        lines = ["`#{command}` is a CLI command. Run `#{help_target(command, operation, operations)} --help` " \
-                 'for its options.']
-        lines << "Operations: #{operations.join(', ')}" if operation.nil? && !operations.empty?
-        lines << PackagedText.render('walkthrough-help.md').chomp if name == 'walkthrough'
-        lines << "Related topic: shaka help #{RELATED_TOPICS[name]}" if RELATED_TOPICS.key?(name)
-        "#{lines.join("\n")}\n"
-      end
-
-      def help_target(command, operation, operations)
-        operation.nil? && !operations.empty? ? "#{command} <operation>" : command
-      end
-
       def local_guide(entry)
         entry['anchor'] ? "#{entry['local_doc']}##{entry['anchor']}" : entry['local_doc']
       end
@@ -61,10 +40,9 @@ module Shaka
         [
           '',
           'Next steps:',
-          '  shaka help TOPIC             Show prompts and guide link for a topic.',
-          '  shaka COMMAND [OP] --help    Show options for a CLI command (e.g. shaka seam check --help).',
-          '  shaka doctor                 Check this machine and repository setup.',
-          '  shaka --help                 List every CLI command.'
+          '  shaka help TOPIC        Show prompts and guide link for a topic.',
+          '  shaka --help            List every CLI command and how to inspect its options.',
+          '  shaka doctor            Check this machine and repository setup.'
         ]
       end
     end

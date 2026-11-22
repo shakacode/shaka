@@ -2,13 +2,12 @@
 
 require 'json'
 require 'optparse'
-require_relative 'call_log'
 require_relative 'error'
 require_relative 'help/catalog'
 require_relative 'help/formatter'
 
 module Shaka
-  # Prints human-oriented help topics, example prompts, guide paths, and CLI command pointers.
+  # Prints human-oriented help topics, example prompts, and guide locations.
   class Help
     def self.run(arguments)
       new(arguments).run
@@ -17,7 +16,7 @@ module Shaka
       1
     end
 
-    def initialize(arguments, catalog: Catalog.load)
+    def initialize(arguments, catalog: nil)
       @arguments = arguments.dup
       @catalog = catalog
       @options = {}
@@ -28,6 +27,8 @@ module Shaka
       @arguments.pop while trailing_help?(@arguments)
       parser.permute!(@arguments)
       return print_text(parser) if @options[:help]
+
+      @catalog ||= Catalog.load
       return run_json if @options[:json]
       return print_text(Formatter.overview(@catalog)) if @arguments.empty?
 
@@ -38,7 +39,7 @@ module Shaka
 
     def option_parser
       OptionParser.new do |flags|
-        flags.banner = "Usage: shaka help [TOPIC] [--json]\n       shaka help COMMAND [OPERATION]"
+        flags.banner = 'Usage: shaka help [TOPIC] [--json]'
         flags.on('--json', 'Print topics or one topic as JSON') { @options[:json] = true }
         flags.on('-h', '--help', 'Show usage') { @options[:help] = true }
       end
@@ -57,37 +58,22 @@ module Shaka
       return print_text(JSON.pretty_generate(@catalog.to_h)) if @arguments.empty?
       raise Shaka::Error, 'shaka help --json accepts at most one topic name.' if @arguments.length > 1
 
-      topic = @catalog.find(@arguments.first)
-      raise Shaka::Error, unknown_message(@arguments) unless topic
-
-      print_text(JSON.pretty_generate(topic))
+      print_text(JSON.pretty_generate(find_topic!(@arguments)))
     end
 
     def dispatch(args, parser)
-      if args.length == 1
-        topic = @catalog.find(args.first)
-        return print_text(Formatter.topic(topic)) if topic
-        return print_text(parser) if args.first == 'help'
-      end
+      return print_text(parser) if args == ['help']
+      raise Shaka::Error, unknown_message(args) if args.length > 1
 
-      pointer = command_pointer(args)
-      return print_text(pointer) if pointer
-
-      raise Shaka::Error, unknown_message(args)
+      print_text(Formatter.topic(find_topic!(args)))
     end
 
-    def command_pointer(args)
-      name, operation = args.map(&:downcase)
-      return unless CallLog::COMMANDS.include?(name)
-
-      operations = CallLog::OPERATIONS.fetch(name, [])
-      return unless args.length == 1 || (args.length == 2 && operations.include?(operation))
-
-      Formatter.command_pointer(name, operation:, operations:)
+    def find_topic!(args)
+      @catalog.find(args.first) || raise(Shaka::Error, unknown_message(args))
     end
 
     def unknown_message(args)
-      "unknown help topic or command: #{args.join(' ')}. Run `shaka help` to list topics."
+      "unknown help topic: #{args.join(' ')}. Run `shaka help` for topics or `shaka --help` for CLI commands."
     end
   end
 end
