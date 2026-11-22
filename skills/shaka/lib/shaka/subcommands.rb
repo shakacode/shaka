@@ -8,6 +8,7 @@ require_relative 'doctor'
 require_relative 'enforcement'
 require_relative 'evidence/command'
 require_relative 'guidance'
+require_relative 'help'
 require_relative 'issue_create'
 require_relative 'local_review'
 require_relative 'post_implementation'
@@ -44,6 +45,7 @@ module Shaka
       'enforcement' => entry { |arguments| Enforcement.run(arguments) },
       'evidence' => entry(Evidence::Command::ACTIONS.keys) { |arguments| Evidence::Command.run(arguments) },
       'guidance' => entry { |arguments| Guidance.run(arguments) },
+      'help' => entry { |arguments| Help.run(arguments) },
       'install' => entry do |arguments|
         require_relative 'install/command'
         Install::Command.new(File.expand_path('../../../..', __dir__), program: 'shaka install').run(arguments)

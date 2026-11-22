@@ -46,11 +46,14 @@ If you need a practice project, follow [Shaka in pictures](shaka-in-pictures.md)
 
 ## Find help
 
-Ask your agent, or choose a guide below:
+Ask your agent for topics, prompts, or answers, or choose a guide below:
 
 ```text
-Explain what I need to check before merging this PR: <PR link>
+/shaka help
 ```
+
+You can also name a topic (such as `/shaka help settings`), ask a specific question, or run
+`shaka help` in your terminal.
 
 | I want to… | Guide |
 | --- | --- |

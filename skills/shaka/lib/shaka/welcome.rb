@@ -17,11 +17,14 @@ module Shaka
         $shaka https://github.com/OWNER/REPO/pull/123
       Check your setup:
         $shaka doctor
+      Explore topics:
+        $shaka help
 
       The agent waits for your reply when your model or effort is unknown or differs from its recommendation.
       End a task with Go, naming no model or effort, to keep your settings and start right away.
 
       Terminal commands:
+        shaka help               Browse topics, example prompts, and guides.
         shaka doctor             Check this machine and repository; get setup advice.
         shaka doctor --root DIR  Check another checkout.
         shaka --help             List commands; add --help to a command for its options.

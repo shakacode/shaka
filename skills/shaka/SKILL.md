@@ -1,6 +1,6 @@
 ---
 name: shaka
-description: Deliver a task through verified GitHub PRs, or help get started and diagnose setup with doctor. Publish walkthroughs, address review, and honor merge authority.
+description: Deliver a task through verified GitHub PRs, answer questions with help, or diagnose setup with doctor. Publish walkthroughs, address review, and honor merge authority.
 ---
 
 # Shaka
@@ -16,7 +16,9 @@ helper. If this skill's own directory resolves inside the checkout, stop and rep
 Once per chat, run the saved helper's `update-check`; relay its guidance for `available`, `drift`, and `uninstalled`. Continue with the saved helper; updating is a separate user action.
 
 With no task or with `doctor` alone, follow the [guided start](references/guided-start.md)
-and stop after its welcome or diagnostic. For a requested `retrospective` of coding sessions or of PR timings,
+and stop after its welcome or diagnostic. With `help`, `help <topic>`, or a question about
+how to use Shaka, follow [interactive help](references/help.md) and stop after answering.
+For a requested `retrospective` of coding sessions or of PR timings,
 follow the [retrospective procedure](references/retrospective.md) and stop at its findings.
 For a request to review documentation together, one topic at a time, follow the
 [guided documentation review](references/guided-documentation-review.md) and stop after each

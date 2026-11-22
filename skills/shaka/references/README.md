@@ -12,6 +12,7 @@ the workflow reaches that decision:
 | Task | Reference |
 | --- | --- |
 | Start without a task or diagnose setup | [Guided start](guided-start.md) |
+| Browse topics or answer how-to questions | [Interactive help](help.md) |
 | Try an unmerged Shaka version on real work | [PR trials](pr-trials.md) |
 | Install, update, or verify Shaka | [Official installation](official-installation.md) |
 | Install prerequisites, forks, removal, or host details | [Installation details](installation.md) |

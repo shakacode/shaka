@@ -17,8 +17,8 @@ module Shaka
     ROOT = File.expand_path('../../../..', __dir__)
     # update-check prints its own answer, and install reports the installation it changes.
     SKIPPED = %w[install update-check].freeze
-    # Doctor reports settings and its own run, and seam is the setup the settings reminder asks for.
-    QUIET = %w[doctor seam].freeze
+    # Doctor reports settings and its own run, seam is setup, and help is read-only guidance.
+    QUIET = %w[doctor seam help].freeze
     ACTIONABLE = %w[available drift].freeze
     SETUP_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/getting-started.md#2-choose-individual-or-team-setup'
 

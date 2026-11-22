@@ -1,0 +1,132 @@
+groups:
+  - id: start
+    title: Start and deliver work
+  - id: steer
+    title: Plan, steer, and recover
+  - id: review
+    title: Review, merge, and learn
+  - id: configure
+    title: Configure and extend
+
+topics:
+  - id: setup
+    group: start
+    title: Install, doctor, and project setup
+    summary: Check your machine and configure Shaka just for you or for your team.
+    prompts:
+      - "/shaka doctor"
+      - "/shaka Set up Shaka just for me in this project"
+      - "/shaka Configure this repository for Shaka. Keep merge policy ask"
+    url: https://github.com/shakacode/shaka/blob/main/docs/getting-started.md
+    aliases: [getting-started, onboarding, init]
+
+  - id: tasks
+    group: start
+    title: Give Shaka a task and give feedback
+    summary: Turn a task or issue link into a verified PR and iterate in chat.
+    prompts:
+      - "/shaka Fix search when the query contains an apostrophe"
+      - "/shaka https://github.com/OWNER/REPO/issues/123"
+    url: https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md
+    aliases: [task, deliver, feedback]
+
+  - id: planning
+    group: steer
+    title: Plan, agree on a design, or split PRs
+    summary: Ask for a plan or design approval before editing code, or split large work into sequential PRs.
+    prompts:
+      - "/shaka Plan CSV export for the orders page. Planning only"
+      - "/shaka https://github.com/OWNER/REPO/issues/123 Agree on the design first. Wait for my approval before implementing"
+      - "/shaka Add CSV export first. Keep scheduled export emails in a separate PR"
+    url: https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#choose-the-outcome-you-need
+    aliases: [plan, design, split]
+
+  - id: interactive
+    group: steer
+    title: Steer a draft in interactive mode
+    summary: Open a fast draft PR early, iterate quickly, and run full validation and review once you say ready.
+    prompts:
+      - "/shaka Add CSV export to the orders page. Interactive"
+    url: https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#steer-a-draft-in-interactive-mode
+    aliases: [draft, steer]
+
+  - id: recovery
+    group: steer
+    title: Resume unfinished work and return points
+    summary: Take over an unfinished PR in a new chat or return to an earlier recorded return point.
+    prompts:
+      - "/shaka take over https://github.com/OWNER/REPO/pull/123"
+      - "Return to C2. Keep CSV export, but leave out the export settings screen. First explain what you can restore and what would change"
+    url: https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#resume-unfinished-work
+    aliases: [resume, recover, takeover, return-points, wip]
+
+  - id: reviews
+    group: review
+    title: Review PRs, walkthroughs, and docs
+    summary: Run a review-only pass, take an interactive code walkthrough, or review documentation one topic at a time.
+    prompts:
+      - "/shaka Review only: https://github.com/OWNER/REPO/pull/123"
+      - "/shaka Walk me through https://github.com/OWNER/REPO/pull/123 one concept at a time"
+      - "/shaka Review docs with me: https://github.com/OWNER/REPO/pull/123"
+    url: https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md
+    aliases: [docs-review, tour, verification]
+
+  - id: merging
+    group: review
+    title: Merge policies and attention labels
+    summary: Choose Ask vs Auto merge, understand risk and size limits, and find PRs waiting on you.
+    prompts:
+      - "/shaka Fix search when the query contains an apostrophe. Merge when ready"
+      - "/shaka Add CSV export to the orders page. Do not merge"
+    url: https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#choose-a-merge-policy
+    aliases: [ask, auto, labels]
+
+  - id: retrospective
+    group: review
+    title: Retrospectives, timings, and usage cost
+    summary: Review a session for workflow improvements or rank where time went across merged PRs.
+    prompts:
+      - "/shaka retrospective"
+      - "/shaka retrospective of PR timings since 2026-11-01: rank what to speed up"
+    url: https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#review-a-session-for-improvements
+    aliases: [retro, cost]
+
+  - id: settings
+    group: configure
+    title: Inspect settings, reviewer prompts, and config changes
+    summary: Explain active repository settings, inspect what a reviewer receives, or change settings in a PR.
+    prompts:
+      - "/shaka Tell me about the Shaka configuration"
+      - "/shaka Show me the prompt the local reviewer receives for this repository"
+      - "/shaka Have the local reviewer flag API changes that break existing clients"
+    url: https://github.com/shakacode/shaka/blob/main/docs/settings-guide.md
+    aliases: [config, reviewers, prompts]
+
+  - id: skills
+    group: configure
+    title: Combine Shaka with companion skills
+    summary: Use another installed skill inside a Shaka task or offer team skills at workflow skill points.
+    prompts:
+      - "/shaka Improve checkout error messages. Use pstack's technical-writing skill for wording"
+    url: https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#combine-shaka-with-other-skills
+    aliases: [packs, pstack]
+
+  - id: towers
+    group: configure
+    title: Control towers for parallel work
+    summary: Coordinate tasks across repositories using optional master and repository control towers.
+    prompts:
+      - "/rct"
+      - "/rct-claude"
+    url: https://github.com/shakacode/shaka/blob/main/docs/control-towers.md
+    aliases: [control-towers, mct, rct]
+
+  - id: faq
+    group: configure
+    title: Troubleshooting, updates, and FAQ
+    summary: Answer common questions about setup, review limits, comment trust, and updates.
+    prompts:
+      - "/shaka doctor"
+      - "Update Shaka"
+    url: https://github.com/shakacode/shaka/blob/main/docs/faq.md
+    aliases: [troubleshooting, problems, updates]
