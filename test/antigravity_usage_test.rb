@@ -67,7 +67,7 @@ class AntigravityUsageTest < Minitest::Test
       assert_latest_turn(output)
       assert_includes output, '2 responses'
       assert_includes output, 'Source selection: host context'
-      assert_includes output, 'latest user turn of each conversation'
+      assert_includes output, 'latest user turn of the conversation'
       refute_match(REDACTED_OUTPUT, without_usage_identity(output))
     end
   end
@@ -99,15 +99,6 @@ class AntigravityUsageTest < Minitest::Test
       assert_empty output
       assert_includes error, 'invalid options'
       assert_latest_turn(report('--host', 'antigravity', environment: environment))
-    end
-  end
-
-  def test_the_same_transcript_supplied_twice_counts_once
-    Dir.mktmpdir do |home|
-      file = write_transcript(home, two_turns)
-      output = explicit(file, '--file', file, '--all-turns')
-      assert_includes output, '3 responses'
-      assert_metric output, 'Input', 900, 300
     end
   end
 
@@ -151,36 +142,13 @@ class AntigravityTurnSelectionTest < Minitest::Test
     end
   end
 
-  def test_each_conversation_contributes_its_own_latest_turn
+  def test_a_second_transcript_is_refused
     Dir.mktmpdir do |home|
-      other = write_transcript(home, [prompt(0, '30'), response(1, '31', 5000), prompt(4, '32'), response(5, '33', 7)],
-                               conversation: CONVERSATION.sub(/5\z/, '7'))
-      output = explicit(write_transcript(home, two_turns), '--file', other)
-      assert_includes output, '3 responses'
-      assert_metric output, 'Input', 307
-    end
-  end
-
-  def test_a_turn_cannot_be_selected_across_conversations
-    Dir.mktmpdir do |home|
-      first = write_transcript(home, two_turns)
-      other = write_transcript(home, two_turns, conversation: CONVERSATION.sub(/5\z/, '7'))
-      output, error, status = capture_report('--host', 'antigravity', '--file', first, '--file', other, '--turn', '0')
+      file = write_transcript(home, two_turns)
+      output, error, status = capture_report('--host', 'antigravity', '--file', file, '--file', file)
       refute_predicate status, :success?
       assert_empty output
-      assert_includes error, '--turn selects steps of one Antigravity conversation'
-      assert_metric explicit(first, '--file', first, '--turn', '0'), 'Input', 900
-    end
-  end
-
-  def test_a_copy_without_an_identity_is_a_gap_and_not_a_second_conversation
-    Dir.mktmpdir do |home|
-      first = write_transcript(home, two_turns)
-      copy = File.join(home, 'saved.jsonl')
-      FileUtils.cp(first, copy)
-      output = explicit(first, '--file', copy, '--turn', '0')
-      assert_metric output, 'Input', 900
-      assert_includes output, 'Unreadable or unidentifiable records'
+      assert_includes error, 'Antigravity usage reads one transcript per run'
     end
   end
 
@@ -233,8 +201,7 @@ class AntigravityUnreadableUsageTest < Minitest::Test
 
   def test_malformed_lines_are_gaps_and_never_zero
     Dir.mktmpdir do |home|
-      records = [prompt(0, '10'), response(1, '11', 300), response(2, '12', '999'), response('x', '13', 999),
-                 response(4, '14', 999).merge(type: nil)]
+      records = [prompt(0, '10'), response(1, '11', 300), response(2, '12', '999'), *malformed_steps]
       output = explicit(write_transcript(home, records, raw_tail: "{\"step_index\": 9, SENSITIVE\n"))
       assert_includes output, '2 responses'
       assert_includes output, 'Unreadable or unidentifiable records'
@@ -255,6 +222,10 @@ class AntigravityUnreadableUsageTest < Minitest::Test
   end
 
   private
+
+  def malformed_steps
+    [response('x', '13', 999), response(4, '14', 999).merge(type: nil), response(5, '15', 999).merge(type: ' ')]
+  end
 
   def assert_unavailable(output)
     assert_includes output, 'Responses: UNKNOWN'

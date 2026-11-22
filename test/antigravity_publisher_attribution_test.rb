@@ -91,10 +91,12 @@ class AntigravityPublisherAttributionTest < Minitest::Test
   end
 
   def test_a_step_without_a_readable_type_leaves_the_settings_unknown
-    with_transcript(prompt(0), response(1), '{"step_index": 2, "type": null}') do |session|
-      result = prepare(session)
-      assert_equal 'UNKNOWN', result.dig('identity', 'model')
-      assert_includes result['publisher_note'], 'Antigravity transcript contains unreadable metadata'
+    ['null', '""', '" "', '7'].each do |type|
+      with_transcript(prompt(0), response(1), %({"step_index": 2, "type": #{type}})) do |session|
+        result = prepare(session)
+        assert_equal 'UNKNOWN', result.dig('identity', 'model'), type
+        assert_includes result['publisher_note'], 'Antigravity transcript contains unreadable metadata'
+      end
     end
   end
 

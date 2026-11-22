@@ -284,10 +284,9 @@ its content. A saved copy needs `--host antigravity --file PATH` with the path s
 ending in `brain/CONVERSATION_ID/.system_generated/logs/NAME`, because that directory
 identifies its responses.
 
-A turn is the `step_index` of a `USER_INPUT` step. Each transcript contributes its own
-latest turn by default. Step numbers repeat across conversations, so `--turn` with
-transcripts of more than one conversation is refused. A subagent has its own conversation
-and needs its own report.
+A turn is the `step_index` of a `USER_INPUT` step. The reader takes one transcript per
+run and refuses a second `--file`, because step numbers repeat across conversations.
+Report each conversation, including a subagent's, on its own.
 
 The recorded model is the ID the user selected, so it is the configured model. Its last
 segment is the effort when it is `low`, `medium`, `high`, or `xhigh`; any other ending

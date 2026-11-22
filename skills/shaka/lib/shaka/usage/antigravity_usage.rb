@@ -20,7 +20,7 @@ module Shaka
     # `agy models` lists; an ID that ends otherwise, such as a gateway's own model, names none.
     EFFORTS = %w[low medium high xhigh].freeze
 
-    attr_reader :source, :gaps, :conversation
+    attr_reader :source, :gaps
 
     # The transcript of the conversation the calling shell belongs to, or nil.
     def self.session_file(environment)
@@ -47,12 +47,18 @@ module Shaka
 
     def self.parse(line)
       record = JSON.parse(line) if line.valid_encoding?
-      return unless record.is_a?(Hash) && record['type'].is_a?(String)
-
-      index = record['step_index']
-      record.slice(*KEPT) if index.is_a?(Integer) && index >= 0
+      record.slice(*KEPT) if step?(record)
     rescue JSON::ParserError, EncodingError
       nil
+    end
+
+    # A step has a whole-number index and names its type. Any other line could be a turn boundary.
+    def self.step?(record)
+      return false unless record.is_a?(Hash)
+
+      type = record['type']
+      index = record['step_index']
+      type.is_a?(String) && !type.strip.empty? && index.is_a?(Integer) && index >= 0
     end
 
     def self.user_input?(step) = step['type'] == 'USER_INPUT'
@@ -131,7 +137,9 @@ module Shaka
     NOTE = 'Input excludes cache reads; reasoning output is part of output. Cache writes and native total ' \
            'are UNKNOWN. The model is the configured ID; its last segment is the effort when it names a level. ' \
            'Subagent conversations excluded.'
-    LATEST_SCOPE = 'latest user turn of each conversation; earlier turns excluded'
+    LATEST_SCOPE = 'latest user turn of the conversation; earlier turns excluded'
+    # Step numbers repeat across conversations, and copies of one conversation overlap.
+    ONE_TRANSCRIPT = 'Antigravity usage reads one transcript per run; report each conversation separately.'
     INCLUSIVE_INPUT = false
 
     attr_reader :responses, :versions, :gaps
@@ -142,24 +150,15 @@ module Shaka
       @responses = {}
       @versions = []
       @gaps = []
-      unreadable if files.empty?
-      transcripts = files.map { |file| AntigravityTranscript.new(file) }
-      one_conversation!(transcripts) if turns.any?
-      # Step numbers repeat across conversations, so each transcript selects its own latest turn.
-      transcripts.each { |transcript| count_selected([load(transcript)], turns, all_turns) }
+      raise Error, ONE_TRANSCRIPT if files.size > 1
+
+      count_selected([files.empty? ? [unreadable, nil] : load(files.first)], turns, all_turns)
     end
 
     private
 
-    # The same turn number names unrelated work in two conversations. A transcript without an
-    # identity counts nothing, so it reports its own gap instead of standing for a second one.
-    def one_conversation!(transcripts)
-      return if transcripts.filter_map(&:conversation).uniq.size < 2
-
-      raise Error, '--turn selects steps of one Antigravity conversation; report each conversation separately.'
-    end
-
-    def load(transcript)
+    def load(file)
+      transcript = AntigravityTranscript.new(file)
       @gaps.concat(transcript.gaps)
       transcript.source
     end
