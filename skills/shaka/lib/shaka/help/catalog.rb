@@ -40,14 +40,15 @@ module Shaka
       private
 
       def enrich(topic)
-        doc = relative_doc(topic.fetch('url'))
+        doc, anchor = parse_doc(topic.fetch('url'))
         topic.merge('aliases' => Array(topic['aliases']).map(&:downcase),
                     'doc' => doc,
+                    'anchor' => anchor,
                     'local_doc' => local_doc(doc))
       end
 
-      def relative_doc(url)
-        url.delete_prefix(DOCS_PREFIX).split('#', 2).first
+      def parse_doc(url)
+        url.delete_prefix(DOCS_PREFIX).split('#', 2)
       end
 
       def local_doc(doc)

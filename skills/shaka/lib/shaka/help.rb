@@ -27,7 +27,7 @@ module Shaka
 
     def run
       parser = option_parser
-      parser.parse!(@arguments)
+      parser.order!(@arguments)
       return print_text(parser) if @options[:help]
       return run_json if @options[:json]
       return print_text(Formatter.overview(@catalog)) if @arguments.empty?
@@ -65,10 +65,14 @@ module Shaka
         return print_text(Formatter.topic(topic))
       end
 
-      status = forward_command(args, parser)
+      status = forward_command(strip_trailing_help(args), parser)
       return status unless status.nil?
 
       raise Shaka::Error, unknown_message(args)
+    end
+
+    def strip_trailing_help(args)
+      args.length > 1 && %w[-h --help].include?(args.last) ? args[0...-1] : args
     end
 
     def forward_command(args, parser)

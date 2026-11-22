@@ -28,8 +28,12 @@ module Shaka
         entry.fetch('prompts').each { |prompt| lines << "  #{prompt}" }
         lines << ''
         lines << "Guide: #{entry.fetch('url')}"
-        lines << "Local guide: #{entry['local_doc']}" if entry['local_doc']
+        lines << "Local guide: #{local_guide(entry)}" if entry['local_doc']
         "#{lines.join("\n")}\n"
+      end
+
+      def local_guide(entry)
+        entry['anchor'] ? "#{entry['local_doc']}##{entry['anchor']}" : entry['local_doc']
       end
 
       def pr_command(name)
