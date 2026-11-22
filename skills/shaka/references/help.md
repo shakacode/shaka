@@ -25,8 +25,10 @@ merge. Stay in help mode until the user gives a task or asks for another route.
   `SHAKA_NOTICES=off "$SHAKA" doctor --help` or `SHAKA_NOTICES=off "$SHAKA" seam check --help`)
   so the lookup does not consume startup notices, and summarize its purpose and key flags.
 - For a question about this repository's active settings or what a reviewer receives, switch
-  to the [configure procedure](configure.md). For setup or environment diagnosis, switch
-  to [guided start](guided-start.md) and run `doctor`.
+  to the [configure procedure](configure.md). When the user asks to run a live setup or
+  environment diagnosis, switch to [guided start](guided-start.md) and run `doctor`; when
+  they only ask how setup works or what a symptom means, answer from the setup guide without
+  running `doctor`.
 
 ## Keep answers actionable
 

@@ -32,9 +32,9 @@ module Shaka
   # Commands that parse their own arguments, with the operations each takes as its second word.
   # The helper dispatches through this table and lists it in its usage banner.
   module Subcommands
-    Entry = Data.define(:operations, :run)
+    Entry = Data.define(:operations, :bare, :run)
 
-    def self.entry(operations = [], &run) = Entry.new(operations:, run:)
+    def self.entry(operations = [], bare: false, &run) = Entry.new(operations:, bare:, run:)
 
     TABLE = {
       'checkpoint' => entry { |arguments| Checkpoint.run(arguments) },
@@ -64,14 +64,18 @@ module Shaka
       'trial' => entry(Trial::Command::ACTIONS) { |arguments| Trial::Command.run(arguments) },
       'ui-check' => entry { |arguments| UiCheck.run(arguments) },
       'update-check' => entry { |arguments| UpdateCheck.run(arguments) },
-      'usage' => entry(%w[publish collect]) { |arguments| UsageJournalCommand.dispatch(arguments) },
+      'usage' => entry(%w[publish collect], bare: true) { |arguments| UsageJournalCommand.dispatch(arguments) },
       'work' => entry { |arguments| Work.run(arguments) },
       'workflow' => entry { |arguments| Workflow.run(arguments) }
     }.freeze
 
-    # One banner line per command, naming its operations.
+    # One banner line per command, naming its operations (bracketed when a bare call also works).
     def self.usage_lines
-      TABLE.map { |name, entry| "shaka #{name} #{entry.operations.join('|')}".rstrip }
+      TABLE.map do |name, entry|
+        ops = entry.operations.join('|')
+        ops = "[#{ops}]" if entry.bare && !ops.empty?
+        "shaka #{name} #{ops}".rstrip
+      end
     end
   end
 end

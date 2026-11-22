@@ -130,10 +130,13 @@ class HelpCatalogTest < Minitest::Test
 
   def test_corrupt_or_missing_catalog_raises_shaka_error
     Dir.mktmpdir do |dir|
-      bad = File.join(dir, 'bad.yml')
-      File.write(bad, ":\n  - [unterminated\n")
-      assert_raises(Shaka::Error) { Shaka::Help::Catalog.load(path: bad) }
-      assert_raises(Shaka::Error) { Shaka::Help::Catalog.load(path: File.join(dir, 'missing.yml')) }
+      syntax = File.join(dir, 'syntax.yml')
+      shape = File.join(dir, 'shape.yml')
+      File.write(syntax, ":\n  - [unterminated\n")
+      File.write(shape, "groups: []\ntopics:\n")
+      [syntax, shape, File.join(dir, 'missing.yml')].each do |path|
+        assert_raises(Shaka::Error) { Shaka::Help::Catalog.load(path:) }
+      end
     end
   end
 

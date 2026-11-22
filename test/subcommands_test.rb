@@ -16,6 +16,7 @@ class SubcommandsTest < Minitest::Test
   def test_every_command_and_operation_prints_its_own_help
     Shaka::Subcommands::TABLE.each do |name, entry|
       invocations = entry.operations.empty? ? [[]] : entry.operations.zip
+      invocations.unshift([]) if entry.bare
       invocations.each do |words|
         output, status = help(entry, words)
         label = ['shaka', name, *words, '--help'].join(' ')

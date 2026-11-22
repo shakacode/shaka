@@ -13,11 +13,26 @@ module Shaka
 
       def self.load(path: PATH, source_root: SOURCE_ROOT)
         data = YAML.safe_load_file(path)
-        raise Shaka::Error, "Invalid help catalog: #{path}" unless data.is_a?(Hash)
-
-        new(groups: data.fetch('groups'), topics: data.fetch('topics'), source_root:)
+        groups, topics = extract_collections!(data, path)
+        new(groups:, topics:, source_root:)
       rescue Psych::SyntaxError, KeyError, SystemCallError => e
         raise Shaka::Error, "Could not load help catalog (#{path}): #{e.message}"
+      end
+
+      def self.extract_collections!(data, path)
+        raise Shaka::Error, "Invalid help catalog: #{path}" unless data.is_a?(Hash)
+
+        groups = data.fetch('groups')
+        topics = data.fetch('topics')
+        unless valid_hashes?(groups) && valid_hashes?(topics)
+          raise Shaka::Error, "Invalid help catalog collections: #{path}"
+        end
+
+        [groups, topics]
+      end
+
+      def self.valid_hashes?(list)
+        list.is_a?(Array) && list.all?(Hash)
       end
 
       attr_reader :groups, :topics
