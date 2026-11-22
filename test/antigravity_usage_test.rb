@@ -173,6 +173,17 @@ class AntigravityTurnSelectionTest < Minitest::Test
     end
   end
 
+  def test_a_copy_without_an_identity_is_a_gap_and_not_a_second_conversation
+    Dir.mktmpdir do |home|
+      first = write_transcript(home, two_turns)
+      copy = File.join(home, 'saved.jsonl')
+      FileUtils.cp(first, copy)
+      output = explicit(first, '--file', copy, '--turn', '0')
+      assert_metric output, 'Input', 900
+      assert_includes output, 'Unreadable or unidentifiable records'
+    end
+  end
+
   def test_a_step_written_again_keeps_its_place_and_its_last_line
     Dir.mktmpdir do |home|
       rewritten = [*two_turns, prompt(0, '40'), response(1, '41', 950, model: 'gemini-4-argon-low')]
@@ -222,7 +233,8 @@ class AntigravityUnreadableUsageTest < Minitest::Test
 
   def test_malformed_lines_are_gaps_and_never_zero
     Dir.mktmpdir do |home|
-      records = [prompt(0, '10'), response(1, '11', 300), response(2, '12', '999'), response('x', '13', 999)]
+      records = [prompt(0, '10'), response(1, '11', 300), response(2, '12', '999'), response('x', '13', 999),
+                 response(4, '14', 999).merge(type: nil)]
       output = explicit(write_transcript(home, records, raw_tail: "{\"step_index\": 9, SENSITIVE\n"))
       assert_includes output, '2 responses'
       assert_includes output, 'Unreadable or unidentifiable records'

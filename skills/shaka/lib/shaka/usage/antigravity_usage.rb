@@ -47,7 +47,9 @@ module Shaka
 
     def self.parse(line)
       record = JSON.parse(line) if line.valid_encoding?
-      index = record['step_index'] if record.is_a?(Hash)
+      return unless record.is_a?(Hash) && record['type'].is_a?(String)
+
+      index = record['step_index']
       record.slice(*KEPT) if index.is_a?(Integer) && index >= 0
     rescue JSON::ParserError, EncodingError
       nil
@@ -71,8 +73,9 @@ module Shaka
 
     def initialize(file)
       @gaps = []
-      @conversation = File.expand_path(file)[LAYOUT, 1]
-      @source = @conversation&.match?(IDENTITY) ? read(file) : unavailable
+      identity = File.expand_path(file)[LAYOUT, 1]
+      @conversation = identity if identity&.match?(IDENTITY)
+      @source = @conversation ? read(file) : unavailable
     end
 
     private
@@ -126,7 +129,7 @@ module Shaka
 
     HOST = 'Antigravity'
     NOTE = 'Input excludes cache reads; reasoning output is part of output. Cache writes and native total ' \
-           'are UNKNOWN. The model is the configured ID, whose last segment is the effort. ' \
+           'are UNKNOWN. The model is the configured ID; its last segment is the effort when it names a level. ' \
            'Subagent conversations excluded.'
     LATEST_SCOPE = 'latest user turn of each conversation; earlier turns excluded'
     INCLUSIVE_INPUT = false
@@ -148,9 +151,10 @@ module Shaka
 
     private
 
-    # The same turn number names unrelated work in two conversations.
+    # The same turn number names unrelated work in two conversations. A transcript without an
+    # identity counts nothing, so it reports its own gap instead of standing for a second one.
     def one_conversation!(transcripts)
-      return if transcripts.map(&:conversation).uniq.size < 2
+      return if transcripts.filter_map(&:conversation).uniq.size < 2
 
       raise Error, '--turn selects steps of one Antigravity conversation; report each conversation separately.'
     end
