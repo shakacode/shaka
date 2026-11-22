@@ -15,6 +15,8 @@ module Shaka
 
     def billing_mode(params)
       value = param(params, 'fast')
+      return 'standard' if value.nil?
+
       if [true, 'true'].include?(value)
         'fast'
       elsif [false, 'false'].include?(value)

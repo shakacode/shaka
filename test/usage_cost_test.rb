@@ -310,10 +310,10 @@ class UsageCursorGeminiCostTest < Minitest::Test
     refute_includes report, 'Cursor credit rates unpublished'
   end
 
-  def test_cursor_gemini_fast_stays_unpriced
+  def test_cursor_gemini_fast_repeats_the_standard_rate
     report = estimate('gemini-4-neon', billing: 'fast')
-    assert_metric report, 'USD estimate', 'UNKNOWN'
-    assert_includes report, 'Unsupported provider or configured model'
+    assert_metric report, 'USD estimate', '$0.000486'
+    assert_includes report, 'Cursor on-demand'
   end
 
   def test_cursor_gemini_neon_has_no_long_context_multiple
