@@ -4,12 +4,12 @@ require_relative '../packaged_text'
 
 module Shaka
   class Help
-    # Renders human-readable help overviews, topic cards, and top-level PR command pointers.
+    # Renders human-readable help overviews, topic cards, and CLI command pointers.
     module Formatter
-      RELATED_TOPICS = { 'doctor' => 'setup', 'merge' => 'merging', 'review' => 'reviews',
-                         'walkthrough' => 'reviews', 'configure' => 'settings', 'prompt' => 'settings',
-                         'seam' => 'setup', 'companions' => 'skills', 'timings' => 'retrospective',
-                         'usage' => 'retrospective' }.freeze
+      RELATED_TOPICS = { 'doctor' => 'setup', 'install' => 'setup', 'merge' => 'merging',
+                         'review' => 'reviews', 'walkthrough' => 'reviews', 'configure' => 'settings',
+                         'prompt' => 'settings', 'seam' => 'setup', 'companions' => 'skills',
+                         'timings' => 'retrospective', 'usage' => 'retrospective' }.freeze
 
       module_function
 
@@ -32,17 +32,18 @@ module Shaka
         "#{lines.join("\n")}\n"
       end
 
-      def local_guide(entry)
-        entry['anchor'] ? "#{entry['local_doc']}##{entry['anchor']}" : entry['local_doc']
+      def command_pointer(name, operation: nil, operations: [])
+        command = ['shaka', name, operation].compact.join(' ')
+        lines = ["`#{command}` is a CLI command. Run `#{command} --help` for its options."]
+        lines << "Operations: #{operations.join(', ')}" if operation.nil? && !operations.empty?
+        lines << PackagedText.render('walkthrough-help.md').chomp if name == 'walkthrough'
+        related = RELATED_TOPICS[name]
+        lines << "Related topic: shaka help #{related}" if related
+        "#{lines.join("\n")}\n"
       end
 
-      def pr_command(name)
-        lines = ["Usage: shaka #{name} OWNER/REPO NUMBER [options]"]
-        lines << PackagedText.render('walkthrough-help.md').chomp if name == 'walkthrough'
-        lines << "Run `shaka #{name} --help` for all options."
-        related = RELATED_TOPICS[name]
-        lines << "See also: shaka help #{related}" if related
-        "#{lines.join("\n")}\n"
+      def local_guide(entry)
+        entry['anchor'] ? "#{entry['local_doc']}##{entry['anchor']}" : entry['local_doc']
       end
 
       def group_lines(catalog, group)
@@ -57,7 +58,7 @@ module Shaka
           '',
           'Next steps:',
           '  shaka help TOPIC        Show prompts and guide link for a topic.',
-          '  shaka help COMMAND      Show options for a CLI command (e.g. shaka help doctor).',
+          '  shaka COMMAND --help    Show options for a CLI command (e.g. shaka doctor --help).',
           '  shaka doctor            Check this machine and repository setup.',
           '  shaka --help            List every CLI command.'
         ]

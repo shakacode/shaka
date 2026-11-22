@@ -2,16 +2,14 @@
 
 require 'json'
 require 'optparse'
+require_relative 'call_log'
 require_relative 'error'
 require_relative 'help/catalog'
 require_relative 'help/formatter'
 
 module Shaka
-  # Prints human-oriented help topics, example prompts, guide paths, and CLI command usage.
+  # Prints human-oriented help topics, example prompts, guide paths, and CLI command pointers.
   class Help
-    PR_COMMANDS = %w[pr comments description reply start resolve walkthrough merge attention
-                     squash-message handoff].freeze
-
     def self.run(arguments)
       new(arguments).run
     rescue OptionParser::ParseError, Shaka::Error => e
@@ -27,7 +25,7 @@ module Shaka
 
     def run
       parser = option_parser
-      parser.order!(@arguments)
+      parser.parse!(@arguments)
       return print_text(parser) if @options[:help]
       return run_json if @options[:json]
       return print_text(Formatter.overview(@catalog)) if @arguments.empty?
@@ -39,7 +37,7 @@ module Shaka
 
     def option_parser
       OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka help [TOPIC | COMMAND [OPERATION]] [--json]'
+        flags.banner = 'Usage: shaka help [TOPIC | COMMAND] [--json]'
         flags.on('--json', 'Print topics or one topic as JSON') { @options[:json] = true }
         flags.on('-h', '--help', 'Show usage') { @options[:help] = true }
       end
@@ -61,43 +59,26 @@ module Shaka
     end
 
     def dispatch(args, parser)
-      if args.length == 1 && (topic = @catalog.find(args.first))
-        return print_text(Formatter.topic(topic))
+      if args.length == 1
+        topic = @catalog.find(args.first)
+        return print_text(Formatter.topic(topic)) if topic
+        return print_text(parser) if args.first == 'help'
       end
 
-      status = forward_command(strip_trailing_help(args), parser)
-      return status unless status.nil?
+      pointer = command_pointer(args)
+      return print_text(pointer) if pointer
 
       raise Shaka::Error, unknown_message(args)
     end
 
-    def strip_trailing_help(args)
-      args.length > 1 && %w[-h --help].include?(args.last) ? args[0...-1] : args
-    end
+    def command_pointer(args)
+      name, operation = args
+      return unless CallLog::COMMANDS.include?(name)
 
-    def forward_command(args, parser)
-      return print_text(parser) if args == ['help']
-      return forward_pr_watch if args == %w[pr watch]
+      operations = CallLog::OPERATIONS.fetch(name, [])
+      return unless args.length == 1 || (args.length == 2 && operations.include?(operation))
 
-      name, *rest = args
-      return forward_subcommand(name, rest) if Subcommands::TABLE.key?(name)
-
-      print_text(Formatter.pr_command(name)) if rest.empty? && PR_COMMANDS.include?(name)
-    end
-
-    def forward_pr_watch
-      require_relative 'pr_watch/command'
-      PrWatch::Command.run(['--help'])
-    end
-
-    def forward_subcommand(name, rest)
-      entry = Subcommands::TABLE.fetch(name)
-      return unless rest.empty? || (rest.length == 1 && entry.operations.include?(rest.first))
-
-      status = entry.run.call([*rest, '--help'])
-      status.is_a?(Integer) ? status : 0
-    rescue SystemExit => e
-      e.status
+      Formatter.command_pointer(name, operation:, operations:)
     end
 
     def unknown_message(args)

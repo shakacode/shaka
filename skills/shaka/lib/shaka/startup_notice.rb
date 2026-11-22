@@ -15,10 +15,10 @@ module Shaka
   class StartupNotice
     VARIABLE = 'SHAKA_NOTICES'
     ROOT = File.expand_path('../../../..', __dir__)
-    # update-check prints its own answer, and install reports the installation it changes.
-    SKIPPED = %w[install update-check].freeze
-    # Doctor reports settings and its own run, seam is setup, and help is read-only guidance.
-    QUIET = %w[doctor seam help].freeze
+    # update-check prints its own answer, install reports what it changes, and help stays quiet.
+    SKIPPED = %w[install update-check help].freeze
+    # Doctor reports settings and its own run, and seam is the setup the settings reminder asks for.
+    QUIET = %w[doctor seam].freeze
     ACTIONABLE = %w[available drift].freeze
     SETUP_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/getting-started.md#2-choose-individual-or-team-setup'
 

@@ -1,11 +1,12 @@
 # Interactive help
 
-Use this path when Shaka is invoked with `help`, `help <topic>`, or a question about how to
-use Shaka. Resolve the trusted installed helper as the skill directs before running it.
+Use this path when Shaka is invoked with `help`, `help <topic>`, or a general question
+about Shaka that does not match a dedicated route such as `doctor`, `configure`, or
+installation verification. Resolve the trusted installed helper as the skill directs before
+running it.
 
-This path is read-only. Do not run `workflow`, run `doctor` unless asked, edit files,
-commit, publish comments, or merge. Stay in help mode until the user gives a task or asks
-for another route such as `doctor` or `configure`.
+Do not run `workflow`, run `doctor` unless asked, edit files, commit, publish comments, or
+merge. Stay in help mode until the user gives a task or asks for another route.
 
 ## Show topics or answer a question
 
@@ -19,9 +20,9 @@ for another route such as `doctor` or `configure`.
   answer comes from the authoritative guide rather than memory. When no local guide is
   packaged, answer from the `help` output and the installed references beside this file,
   and link the public guide URL.
-- For a question about a Shaka CLI command (such as `shaka help doctor` or
-  `shaka help seam check`), run `help COMMAND [OPERATION]` and summarize its purpose and
-  key flags.
+- For a question about a Shaka CLI command's options, run the saved helper's
+  `COMMAND [OPERATION] --help` (for example `doctor --help` or `seam check --help`) and
+  summarize its purpose and key flags.
 - For a question about this repository's active settings or what a reviewer receives, switch
   to the [configure procedure](configure.md). For setup or environment diagnosis, switch
   to [guided start](guided-start.md) and run `doctor`.

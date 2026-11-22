@@ -3,27 +3,28 @@
 require_relative 'test_helper'
 require 'json'
 require 'shaka/call_log'
-require 'shaka/subcommands'
+require 'shaka/help'
 
 class HelpTest < Minitest::Test
   COMMAND = SHAKA_COMMAND
   REPO_ROOT = File.expand_path('..', __dir__)
 
-  def test_help_lists_topics_and_prompts_offline_without_contacting_github
-    without_github do |directory, sentinel|
-      output, error, status = run_help(directory)
+  def test_help_lists_topics_offline_with_notices_enabled_and_writes_nothing_to_home
+    with_isolated_env do |dir, home, sentinel|
+      output, error, status = run_help(dir, home)
 
       assert_predicate status, :success?, error
       assert_empty error
       %w[setup tasks reviews settings].each { |topic| assert_includes output, topic }
-      assert_includes output, 'shaka help TOPIC'
+      assert_includes output, 'shaka COMMAND --help'
       refute_path_exists sentinel
+      assert_empty Dir.children(home)
     end
   end
 
   def test_help_topic_shows_prompts_url_and_local_guide_with_anchor
-    without_github do |directory, sentinel|
-      output, error, status = run_help(directory, 'merging')
+    with_isolated_env do |dir, home, sentinel|
+      output, error, status = run_help(dir, home, 'merging')
 
       assert_predicate status, :success?, error
       assert_empty error
@@ -41,23 +42,17 @@ class HelpTest < Minitest::Test
     assert_includes output, 'settings-guide.md'
   end
 
-  def test_help_json_returns_all_topics
-    output, error, status = Open3.capture3(*COMMAND, 'help', '--json')
+  def test_help_json_returns_all_topics_and_accepts_flag_before_or_after_topic
+    all_output, all_error, all_status = Open3.capture3(*COMMAND, 'help', '--json')
+    assert_predicate all_status, :success?, all_error
+    refute_empty JSON.parse(all_output).fetch('topics')
 
-    assert_predicate status, :success?, error
-    data = JSON.parse(output)
-    assert_kind_of Array, data['groups']
-    refute_empty data['topics']
-  end
-
-  def test_help_json_returns_one_topic
-    output, error, status = Open3.capture3(*COMMAND, 'help', '--json', 'merging')
-
-    assert_predicate status, :success?, error
-    topic = JSON.parse(output)
-    assert_equal 'merging', topic['id']
-    assert_equal File.join(REPO_ROOT, 'docs/working-with-shaka.md'), topic['local_doc']
-    assert_equal 'choose-a-merge-policy', topic['anchor']
+    [%w[--json merging], %w[merging --json]].each do |args|
+      output, error, status = Open3.capture3(*COMMAND, 'help', *args)
+      assert_predicate status, :success?, error
+      topic = JSON.parse(output)
+      assert_equal %w[merging choose-a-merge-policy], [topic['id'], topic['anchor']]
+    end
   end
 
   def test_help_json_rejects_unknown_topic_and_extra_arguments
@@ -70,28 +65,17 @@ class HelpTest < Minitest::Test
     assert_includes extra_error, 'at most one'
   end
 
-  def test_help_forwards_cli_subcommands_trailing_help_and_operations
-    assert_command_help('Usage: shaka doctor', 'doctor')
-    assert_command_help('Usage: shaka doctor', 'doctor', '--help')
-    assert_command_help('shaka seam', 'seam', 'check')
-    assert_command_help('shaka pr watch', 'pr', 'watch')
-    assert_command_help('Usage: shaka help', 'help')
+  def test_help_points_cli_commands_and_operations_to_their_help_flag
+    assert_command_pointer('shaka doctor --help', 'Related topic: shaka help setup', 'doctor')
+    assert_command_pointer('shaka seam --help', 'Operations: check, init', 'seam')
+    assert_command_pointer('shaka seam check --help', 'Related topic: shaka help setup', 'seam', 'check')
+    assert_command_pointer('shaka pr watch --help', nil, 'pr', 'watch')
+    assert_command_pointer('shaka walkthrough --help', 'Walkthrough input:', 'walkthrough')
+    assert_command_pointer('Usage: shaka help', nil, 'help')
   end
 
-  def test_help_explains_top_level_pr_commands_including_walkthrough
-    output, error, status = Open3.capture3(*COMMAND, 'help', 'walkthrough')
-    assert_predicate status, :success?, error
-    assert_includes output, 'shaka walkthrough OWNER/REPO NUMBER'
-    assert_includes output, 'Walkthrough input:'
-
-    merge_output, merge_error, merge_status = Open3.capture3(*COMMAND, 'help', 'merge')
-    assert_predicate merge_status, :success?, merge_error
-    assert_includes merge_output, 'shaka merge OWNER/REPO NUMBER'
-    assert_includes merge_output, 'See also: shaka help merging'
-  end
-
-  def test_unknown_topic_invalid_operation_and_command_flags_exit_nonzero
-    [['not-a-real-topic'], %w[seam nonexistent], %w[doctor --root /tmp]].each do |args|
+  def test_unknown_topic_or_invalid_operation_exits_nonzero
+    [['not-a-real-topic'], %w[seam nonexistent]].each do |args|
       _output, error, status = Open3.capture3(*COMMAND, 'help', *args)
 
       refute_predicate status, :success?
@@ -102,23 +86,30 @@ class HelpTest < Minitest::Test
 
   private
 
-  def assert_command_help(expected, *)
+  def assert_command_pointer(expected_cmd, expected_extra, *)
     output, error, status = Open3.capture3(*COMMAND, 'help', *)
     assert_predicate status, :success?, error
-    assert_includes output, expected
+    assert_includes output, expected_cmd
+    assert_includes output, expected_extra if expected_extra
   end
 
-  def without_github
-    Dir.mktmpdir do |directory|
-      sentinel = File.join(directory, 'contacted')
-      File.write(File.join(directory, 'gh'), "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
-      File.chmod(0o755, File.join(directory, 'gh'))
-      yield directory, sentinel
+  def with_isolated_env
+    Dir.mktmpdir do |dir|
+      home = FileUtils.mkdir_p(File.join(dir, 'home')).first
+      sentinel = File.join(dir, 'contacted')
+      %w[gh git].each { |tool| stub_tool(File.join(dir, tool), sentinel) }
+      yield dir, home, sentinel
     end
   end
 
-  def run_help(directory, *)
-    Open3.capture3({ 'PATH' => "#{directory}:#{ENV.fetch('PATH')}" }, *COMMAND, 'help', *, chdir: directory)
+  def stub_tool(path, sentinel)
+    File.write(path, "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
+    File.chmod(0o755, path)
+  end
+
+  def run_help(dir, home, *)
+    env = { 'HOME' => home, 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'SHAKA_NOTICES' => nil }
+    Open3.capture3(env, *COMMAND, 'help', *, chdir: dir)
   end
 end
 
@@ -142,23 +133,26 @@ class HelpCatalogTest < Minitest::Test
     catalog.topics.each { |topic| assert_doc_and_anchor(topic) }
   end
 
-  def test_pr_commands_and_related_topics_match_live_tables
-    all_commands = (Shaka::Help::PR_COMMANDS + Shaka::Subcommands::TABLE.keys).sort
-    assert_equal Shaka::CallLog::COMMANDS, all_commands
-
+  def test_every_related_topic_pointer_is_reachable_and_valid
     catalog = Shaka::Help::Catalog.load
     topic_ids = catalog.topics.map { it.fetch('id') }
     Shaka::Help::Formatter::RELATED_TOPICS.each do |command, topic_id|
       assert_includes Shaka::CallLog::COMMANDS, command
       assert_includes topic_ids, topic_id
+      output, = capture_io { assert_equal 0, Shaka::Help.run([command]) }
+      assert_includes output, "Related topic: shaka help #{topic_id}"
     end
   end
 
-  def test_every_dispatched_subcommand_help_is_read_only_and_offline
-    with_isolated_env do |home, sentinel|
-      Shaka::Subcommands::TABLE.each do |name, entry|
-        invocations = entry.operations.empty? ? [[]] : entry.operations.zip
-        invocations.each { |words| assert_subcommand_help_offline(name, words, home, sentinel) }
+  def test_every_dispatched_command_and_operation_prints_pointer_offline
+    bare = [[]]
+    Shaka::CallLog::COMMANDS.each do |name|
+      next if name == 'help'
+
+      ops = Shaka::CallLog::OPERATIONS.fetch(name, [])
+      (bare + ops.zip).each do |words|
+        output, = capture_io { assert_equal 0, Shaka::Help.run([name, *words]) }
+        assert_includes output, "shaka #{[name, *words].join(' ')} --help"
       end
     end
   end
@@ -180,33 +174,5 @@ class HelpCatalogTest < Minitest::Test
              .downcase.strip.gsub(/[^\p{Word}\- ]/, '').tr(' ', '-')
     end
     headings + text.scan(/<a\s+(?:id|name)\s*=\s*["']([^"']+)["']/).flatten
-  end
-
-  def with_isolated_env
-    Dir.mktmpdir do |dir|
-      home = File.join(dir, 'home')
-      FileUtils.mkdir_p(home)
-      sentinel = File.join(dir, 'contacted')
-      File.write(File.join(dir, 'gh'), "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
-      File.chmod(0o755, File.join(dir, 'gh'))
-      with_env('HOME' => home, 'PATH' => "#{dir}:#{ENV.fetch('PATH')}") { yield home, sentinel }
-    end
-  end
-
-  def with_env(overrides)
-    saved = overrides.keys.to_h { |key| [key, ENV.fetch(key, nil)] }
-    overrides.each { |key, value| ENV[key] = value }
-    yield
-  ensure
-    saved.each { |key, value| value.nil? ? ENV.delete(key) : ENV[key] = value }
-  end
-
-  def assert_subcommand_help_offline(name, words, home, sentinel)
-    status = nil
-    output, = capture_io { status = Shaka::Help.run([name, *words]) }
-    assert_equal 0, status, "shaka help #{[name, *words].join(' ')} failed"
-    assert_includes output, "shaka #{name}"
-    refute_path_exists sentinel
-    assert_empty Dir.children(home)
   end
 end
