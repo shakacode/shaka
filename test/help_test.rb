@@ -15,6 +15,7 @@ class HelpTest < Minitest::Test
       assert_predicate status, :success?, error
       assert_empty error
       %w[setup tasks reviews settings].each { |topic| assert_includes output, topic }
+      assert_includes output, 'installed helper path'
       assert_includes output, 'shaka --help'
       refute_path_exists sentinel
       assert_only_call_log_written(home)

@@ -23,7 +23,7 @@ module Shaka
       The agent waits for your reply when your model or effort is unknown or differs from its recommendation.
       End a task with Go, naming no model or effort, to keep your settings and start right away.
 
-      Terminal commands:
+      Terminal commands (use the installed helper path if `shaka` is not on PATH):
         shaka help               Browse topics, example prompts, and guides.
         shaka doctor             Check this machine and repository; get setup advice.
         shaka doctor --root DIR  Check another checkout.

@@ -21,6 +21,7 @@ class WelcomeTest < Minitest::Test
 
   def assert_welcome_has_next_steps(output)
     assert_includes output, 'Review the intent and the evidence'
+    assert_includes output, 'installed helper path'
     assert_includes output, 'shaka doctor'
     assert_includes output, 'Configure this repository'
     assert_includes output, 'https://github.com/OWNER/REPO/pull/123'

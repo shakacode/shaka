@@ -39,7 +39,7 @@ module Shaka
       def footer_lines
         [
           '',
-          'Next steps:',
+          'Next steps (use the installed helper path if `shaka` is not on PATH):',
           '  shaka help TOPIC        Show prompts and guide link for a topic.',
           '  shaka --help            List every CLI command and how to inspect its options.',
           '  shaka doctor            Check this machine and repository setup.'
