@@ -20,9 +20,10 @@ merge. Stay in help mode until the user gives a task or asks for another route.
   answer comes from the authoritative guide rather than memory. When no local guide is
   packaged, answer from the `help` output and the installed references beside this file,
   and link the public guide URL.
-- For a question about a Shaka CLI command's options, run the saved helper's
-  `COMMAND [OPERATION] --help` (for example `doctor --help` or `seam check --help`) and
-  summarize its purpose and key flags.
+- For a question about a Shaka CLI command's options, run the saved helper with
+  `SHAKA_NOTICES=off` and `COMMAND [OPERATION] --help` (for example
+  `SHAKA_NOTICES=off "$SHAKA" doctor --help` or `SHAKA_NOTICES=off "$SHAKA" seam check --help`)
+  so the lookup does not consume startup notices, and summarize its purpose and key flags.
 - For a question about this repository's active settings or what a reviewer receives, switch
   to the [configure procedure](configure.md). For setup or environment diagnosis, switch
   to [guided start](guided-start.md) and run `doctor`.

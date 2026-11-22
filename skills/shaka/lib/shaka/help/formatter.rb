@@ -61,10 +61,10 @@ module Shaka
         [
           '',
           'Next steps:',
-          '  shaka help TOPIC        Show prompts and guide link for a topic.',
-          '  shaka COMMAND --help    Show options for a CLI command (e.g. shaka doctor --help).',
-          '  shaka doctor            Check this machine and repository setup.',
-          '  shaka --help            List every CLI command.'
+          '  shaka help TOPIC             Show prompts and guide link for a topic.',
+          '  shaka COMMAND [OP] --help    Show options for a CLI command (e.g. shaka seam check --help).',
+          '  shaka doctor                 Check this machine and repository setup.',
+          '  shaka --help                 List every CLI command.'
         ]
       end
     end

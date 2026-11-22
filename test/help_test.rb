@@ -5,7 +5,27 @@ require 'json'
 require 'shaka/call_log'
 require 'shaka/help'
 
+module HelpTestEnv
+  private
+
+  def with_isolated_env
+    Dir.mktmpdir do |dir|
+      home = FileUtils.mkdir_p(File.join(dir, 'home')).first
+      sentinel = File.join(dir, 'contacted')
+      %w[gh git].each { |tool| stub_tool(File.join(dir, tool), sentinel) }
+      yield dir, home, sentinel
+    end
+  end
+
+  def stub_tool(path, sentinel)
+    File.write(path, "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
+    File.chmod(0o755, path)
+  end
+end
+
 class HelpTest < Minitest::Test
+  include HelpTestEnv
+
   COMMAND = SHAKA_COMMAND
   REPO_ROOT = File.expand_path('..', __dir__)
 
@@ -16,7 +36,7 @@ class HelpTest < Minitest::Test
       assert_predicate status, :success?, error
       assert_empty error
       %w[setup tasks reviews settings].each { |topic| assert_includes output, topic }
-      assert_includes output, 'shaka COMMAND --help'
+      assert_includes output, 'shaka COMMAND [OP] --help'
       refute_path_exists sentinel
       assert_only_call_log_written(home)
     end
@@ -83,20 +103,6 @@ class HelpTest < Minitest::Test
 
   private
 
-  def with_isolated_env
-    Dir.mktmpdir do |dir|
-      home = FileUtils.mkdir_p(File.join(dir, 'home')).first
-      sentinel = File.join(dir, 'contacted')
-      %w[gh git].each { |tool| stub_tool(File.join(dir, tool), sentinel) }
-      yield dir, home, sentinel
-    end
-  end
-
-  def stub_tool(path, sentinel)
-    File.write(path, "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
-    File.chmod(0o755, path)
-  end
-
   def run_help(dir, home, *, call_log: 'off')
     env = { 'HOME' => home, 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'SHAKA_NOTICES' => nil,
             'SHAKA_CALL_LOG' => call_log }
@@ -112,6 +118,8 @@ class HelpTest < Minitest::Test
 end
 
 class HelpPointersTest < Minitest::Test
+  include HelpTestEnv
+
   COMMAND = SHAKA_COMMAND
 
   def test_help_points_cli_commands_and_operations_to_their_help_flag
@@ -132,15 +140,13 @@ class HelpPointersTest < Minitest::Test
     assert_command_pointer(banner, nil, '--json', '--help')
   end
 
-  def test_advertised_help_targets_exit_zero_offline
-    Dir.mktmpdir do |dir|
-      home = FileUtils.mkdir_p(File.join(dir, 'home')).first
-      sentinel = File.join(dir, 'contacted')
-      %w[gh git].each { |tool| stub_tool(File.join(dir, tool), sentinel) }
-      env = { 'HOME' => home, 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'SHAKA_NOTICES' => nil,
+  def test_every_advertised_help_target_exits_zero_offline
+    with_isolated_env do |dir, home, sentinel|
+      env = { 'HOME' => home, 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'SHAKA_NOTICES' => 'off',
               'SHAKA_CALL_LOG' => 'off' }
-      [%w[doctor], %w[merge], %w[evidence run], %w[seam check]].each { |words| assert_cli_help(env, dir, words) }
+      advertised_targets.each { |words| assert_cli_help(env, dir, words) }
       refute_path_exists sentinel
+      assert_empty Dir.children(home)
     end
   end
 
@@ -156,6 +162,13 @@ class HelpPointersTest < Minitest::Test
 
   private
 
+  def advertised_targets
+    Shaka::CallLog::COMMANDS.flat_map do |name|
+      ops = Shaka::CallLog::OPERATIONS.fetch(name, [])
+      ops.empty? ? [[name]] : ops.map { |op| [name, op] }
+    end
+  end
+
   def assert_command_pointer(expected_cmd, expected_extra, *)
     output, error, status = Open3.capture3(*COMMAND, 'help', *)
     assert_predicate status, :success?, error
@@ -165,13 +178,8 @@ class HelpPointersTest < Minitest::Test
 
   def assert_cli_help(env, dir, words)
     output, error, status = Open3.capture3(env, *COMMAND, *words, '--help', chdir: dir)
-    assert_predicate status, :success?, error
-    assert_includes output, 'Usage:'
-  end
-
-  def stub_tool(path, sentinel)
-    File.write(path, "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
-    File.chmod(0o755, path)
+    assert_predicate status, :success?, "#{words.join(' ')}: #{error}"
+    assert_includes output, 'Usage:', words.join(' ')
   end
 end
 

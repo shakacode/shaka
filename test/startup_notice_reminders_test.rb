@@ -55,22 +55,6 @@ class StartupNoticeRemindersTest < Minitest::Test
     %w[doctor seam].each { |command| assert_nil reminder(command:), command }
   end
 
-  # Help skips startup notices entirely so a registered install's update cache stays unchanged.
-  def test_help_skips_startup_notices_and_preserves_update_cache
-    FileUtils.cp_r(File.join(Shaka::StartupNotice::ROOT, 'skills/shaka'), File.join(@root, 'skills'))
-    File.write(File.join(@root, '.git/shaka-ruby'), "#{RbConfig.ruby}\n")
-    remember('available', at: Time.now)
-    cache = Shaka::UpdateCheck::Cache.path(@home)
-    before = File.read(cache)
-
-    env = { 'HOME' => @home, 'SHAKA_NOTICES' => nil, 'SHAKA_CALL_LOG' => 'off' }
-    _output, error, status = Open3.capture3(env, File.join(@root, 'skills/shaka/scripts/shaka'), 'help')
-
-    assert_predicate status, :success?, error
-    assert_empty error
-    assert_equal before, File.read(cache)
-  end
-
   def test_an_update_notice_comes_first_and_the_reminder_waits_for_the_next_call
     remember('available', at: NOW)
     assert_equal 'available guidance', reminder(root: @root)
@@ -123,5 +107,37 @@ class StartupNoticeRemindersTest < Minitest::Test
   def run_doctor(env)
     _output, error, = Open3.capture3(env, *COMMAND, 'doctor', '--brief', '--root', @repository)
     refute_includes error, 'not recorded'
+  end
+end
+
+class HelpStartupNoticeTest < Minitest::Test
+  include StartupNoticeSupport
+
+  # Help skips startup notices, and SHAKA_NOTICES=off keeps command --help lookups from mutating cache.
+  def test_help_skips_startup_notices_and_preserves_update_cache
+    script = install_registered_helper
+    remember('available', at: Time.now)
+    cache = Shaka::UpdateCheck::Cache.path(@home)
+    before = File.read(cache)
+
+    [[nil, %w[help]], ['off', %w[merge --help]]].each do |notices, args|
+      assert_quiet_help(script, notices, args, cache, before)
+    end
+  end
+
+  private
+
+  def install_registered_helper
+    FileUtils.cp_r(File.join(Shaka::StartupNotice::ROOT, 'skills/shaka'), File.join(@root, 'skills'))
+    File.write(File.join(@root, '.git/shaka-ruby'), "#{RbConfig.ruby}\n")
+    File.join(@root, 'skills/shaka/scripts/shaka')
+  end
+
+  def assert_quiet_help(script, notices, args, cache, before)
+    env = { 'HOME' => @home, 'SHAKA_NOTICES' => notices, 'SHAKA_CALL_LOG' => 'off' }
+    _output, error, status = Open3.capture3(env, script, *args)
+    assert_predicate status, :success?, error
+    assert_empty error
+    assert_equal before, File.read(cache)
   end
 end
