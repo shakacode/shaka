@@ -3,6 +3,7 @@
 require_relative 'rate_card'
 require_relative 'cursor_cost'
 require_relative 'anthropic_cost'
+require_relative 'google_cost'
 require_relative 'openai_cost'
 require_relative 'cost_copy'
 require_relative 'cost_table'
@@ -14,6 +15,7 @@ module Shaka
   class CostEstimate
     include CursorCost
     include AnthropicCost
+    include GoogleCost
     include OpenAICost
     include CostCopy
     include CostTable
@@ -85,8 +87,7 @@ module Shaka
 
     def configured_price(record, mode)
       provider, model = record['configuration']
-      return anthropic_price(record, mode) if provider == 'anthropic' && !@inclusive_input
-      return [nil, 'Cache-exclusive input is unpriced'] unless @inclusive_input
+      return exclusive_price(provider, record, mode) unless @inclusive_input
       return [nil, 'Unsupported provider or configured model'] unless %w[openai cursor].include?(provider)
 
       tokens, reason = categories(record['usage'])
@@ -95,6 +96,15 @@ module Shaka
       return openai_price(model, mode, tokens) if provider == 'openai'
 
       cursor_price(model, record['billing_mode'], mode, tokens)
+    end
+
+    # Providers whose list prices bill input apart from its cached and written subsets.
+    def exclusive_price(provider, record, mode)
+      case provider
+      when 'anthropic' then anthropic_price(record, mode)
+      when 'google' then google_price(record, mode)
+      else [nil, 'Cache-exclusive input is unpriced']
+      end
     end
 
     def categories(usage)

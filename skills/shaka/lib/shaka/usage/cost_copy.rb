@@ -20,7 +20,7 @@ module Shaka
     end
 
     def rate_intro(columns)
-      sentences = [rate_card_intro(columns), anthropic_intro(columns)].compact
+      sentences = [rate_card_intro(columns), anthropic_intro(columns), google_intro(columns)].compact
       sentences.join(' ') unless sentences.empty?
     end
 
@@ -53,9 +53,18 @@ module Shaka
         'Standard-speed responses are priced; fast mode is priced for models with a published rate.'
     end
 
+    def google_intro(columns)
+      return unless google_priced?(priced_columns(columns))
+
+      "Google Gemini API paid-tier list prices, verified #{@rate_card.google_verified}. Uncached input, cache " \
+        'reads and output are separate charges, and output includes thinking. A dated price applies from that ' \
+        'UTC date of the response.'
+    end
+
     def openai_priced?(priced) = priced.any? { |column| openai_rated?(column) }
     def cursor_priced?(priced) = priced.any? { |column| cursor_rated?(column) }
     def anthropic_priced?(priced) = priced.any? { |column| anthropic_rated?(column) }
+    def google_priced?(priced) = priced.any? { |column| google_rated?(column) }
 
     def native_intro(columns)
       sources = columns.flat_map { |column| column[:native_sources] || [] }
@@ -88,6 +97,10 @@ module Shaka
 
       model = @rate_card.anthropic_name(column[:routed], column[:model], column[:billing])
       @rate_card.anthropic_speed?(model, column[:billing])
+    end
+
+    def google_rated?(column)
+      column[:provider] == 'google' && !@inclusive_input && @rate_card.google_name(column[:model], column[:effort])
     end
 
     def footer(columns, reasons)

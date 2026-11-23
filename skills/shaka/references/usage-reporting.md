@@ -141,7 +141,7 @@ per configuration. Configured and routed models remain distinct.
 | Cursor | Input includes cache reads and writes; rows show the subsets. | Reasoning, native total, and parent-chat subagent usage are unknown or absent. |
 | OpenCode | Input excludes cache reads and writes. | Native total sums input, output, reasoning, cache reads, and cache writes; OpenCode 2 omits it, so it is unknown. |
 | Pi | Input excludes cache reads and writes. | Native total is copied. Reasoning, when recorded, is part of output. |
-| Antigravity | Input excludes cache reads. Cache writes are unknown. | Reasoning is part of output. Routed model, native total, and subagent usage are unknown or absent. |
+| Antigravity | Input excludes cache reads. Cache writes are unknown. | Reasoning is part of output. Provider is Google for a Gemini model. Routed model, native total, and subagent usage are unknown or absent. |
 
 Reports are **PARTIAL** while sources omit active work, reviewers, subagents, or
 tool-model usage. They do not establish actual charges or human active time.
@@ -294,7 +294,8 @@ step, so the reader reports no responses for it, and the main conversation leave
 
 The recorded model is the ID the user selected, so it is the configured model. Its last
 segment is the effort when it is `low`, `medium`, `high`, or `xhigh`; any other ending
-leaves the effort unknown. A transcript from before Antigravity recorded models
+leaves the effort unknown. A `gemini-` ID names Google as the provider; the transcript
+names none for any other ID. A transcript from before Antigravity recorded models
 keeps its tokens with an unknown model.
 
 Validation used CLI `1.5.14` and `1.5.15`. Single-turn runs, a two-turn conversation, a
@@ -332,6 +333,7 @@ report.
 | Standard API-equivalent USD | Ordinary input excludes cache reads and writes. Cache reads use the published cache-read rate. Cache writes use the 30-minute rate. |
 | Cursor on-demand USD | Configured supported Grok model and recorded Fast/standard mode. Cache writes remain ordinary input because no separate rate is published. |
 | Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published fast-mode rates are priced. |
+| Google list-price USD | Antigravity Gemini model, priced as the configured ID or that ID without its effort, such as `gemini-4-argon` for `gemini-4-argon-high`. |
 | Pi native nominal USD | Copy the host's recorded cost instead of applying a rate card. |
 
 Rate notes and source links apply only to supported provider/model pairs. A
@@ -366,8 +368,17 @@ OpenCode's cache-exclusive input does not match the OpenAI/Cursor estimator's
 required input shape, so those scenarios remain unknown. Its Anthropic responses
 also remain unpriced because exports lack billing speed.
 
-Antigravity responses remain unpriced: no estimator scenario covers its counters, and
-the transcript names no provider.
+### Google details
+
+Uncached input, cache reads, and output are separate charges, and output includes
+thinking. Gemini 4 models cache implicitly, with no write charge, so a recorded cache
+write leaves the response unpriced. A model's `from` entries change its price from that
+UTC date of the response, so a response without a readable time stays unpriced for that
+model. Search grounding and explicit-cache storage are not recorded and are excluded.
+
+A card without a `google` section prices no Google model, so a Shaka checkout cut before
+the section existed still loads. Claude models run in Antigravity stay unpriced: the
+transcript records no cache writes, which Anthropic bills separately.
 
 These are dated rate-card scenarios, not invoices. Subscription treatment,
 discounts, service tier, routing, account terms, and actual charges may differ.
