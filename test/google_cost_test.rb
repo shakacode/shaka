@@ -15,6 +15,14 @@ class GoogleCostTest < Minitest::Test
       'usage' => { 'input_tokens' => 1_000, 'cached_input_tokens' => 2_000, 'output_tokens' => 300 }.merge(usage) }
   end
 
+  def with_zone(zone)
+    previous = ENV.fetch('TZ', nil)
+    ENV['TZ'] = zone
+    yield
+  ensure
+    ENV['TZ'] = previous
+  end
+
   def estimate(*records, rate_card: nil)
     Shaka::CostEstimate.new(records, inclusive_input: false, google_counters: true, rate_card: rate_card).report
   end
@@ -36,13 +44,24 @@ class GoogleCostTest < Minitest::Test
     assert_metric offset, 'USD estimate', '$0.010400'
   end
 
-  # Time.iso8601 alone reads November 31 as December 1, which would select the later price.
+  # Time.iso8601 alone reads November 31 as December 1, and a time without an offset in the
+  # machine's own zone, so either could select the later price.
   def test_a_dated_price_needs_the_response_date
-    [nil, 'yesterday', '2026-11-31T00:00:00Z'].each do |timestamp|
-      report = estimate(gemini('gemini-4-argon-high', 'high', timestamp: timestamp))
-      assert_metric report, 'USD estimate', 'UNKNOWN'
-      assert_includes report, 'Response date UNKNOWN for the dated gemini-4-argon rate'
+    zones = %w[UTC America/New_York]
+    [nil, 'yesterday', '2026-11-31T00:00:00Z', '2026-11-30T23:30:00'].each do |timestamp|
+      zones.each do |zone|
+        report = with_zone(zone) { estimate(gemini('gemini-4-argon-high', 'high', timestamp: timestamp)) }
+        assert_metric report, 'USD estimate', 'UNKNOWN'
+        assert_includes report, 'Response date UNKNOWN for the dated gemini-4-argon rate'
+      end
     end
+  end
+
+  def test_gemini_flash_changes_price_on_january_first
+    before = estimate(gemini('gemini-3.8-flash-low', 'low', timestamp: '2026-12-31T23:59:59Z'))
+    after = estimate(gemini('gemini-3.8-flash-low', 'low', timestamp: '2027-01-01T00:00:00Z'))
+    assert_metric before, 'USD estimate', '$0.002025'
+    assert_metric after, 'USD estimate', '$0.004050'
   end
 
   def test_an_undated_price_needs_no_response_date

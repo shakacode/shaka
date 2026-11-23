@@ -2,6 +2,7 @@
 
 require 'date'
 require 'time'
+require_relative 'options'
 
 module Shaka
   # Google Gemini API list prices, which bill uncached input, cache reads, and output separately.
@@ -47,10 +48,10 @@ module Shaka
       [tokens, nil]
     end
 
-    # Time.iso8601 rolls an impossible date such as November 31 into the next month, so the
-    # calendar date is checked first.
+    # Time.iso8601 rolls an impossible date such as November 31 into the next month and reads
+    # a time without an offset in the machine's zone, so both are refused first.
     def response_day(timestamp)
-      return unless timestamp.is_a?(String)
+      return unless timestamp.is_a?(String) && timestamp.match?(UsageOptions::ISO_TIME)
 
       Date.iso8601(timestamp)
       Time.iso8601(timestamp).utc.strftime('%F')
