@@ -366,14 +366,16 @@ leaves the estimate unknown. Cursor-only reports omit Codex credits.
 
 OpenCode's cache-exclusive input does not match the OpenAI/Cursor estimator's
 required input shape, so those scenarios remain unknown. Its Anthropic responses
-also remain unpriced because exports lack billing speed.
+also remain unpriced because exports lack billing speed, and its Google responses
+because it counts reasoning beside output, while Google's rates price output that
+includes thinking.
 
 ### Google details
 
 Uncached input, cache reads, and output are separate charges, and output includes
 thinking. Gemini 4 models cache implicitly, with no write charge, so a recorded cache
 write leaves the response unpriced. A model's `from` entries change its price from that
-UTC date of the response, so a response without a readable time stays unpriced for that
+UTC date of the response, so a response without a valid time stays unpriced for that
 model. Search grounding and explicit-cache storage are not recorded and are excluded.
 
 A card without a `google` section prices no Google model, so a Shaka checkout cut before

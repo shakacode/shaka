@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'date'
+
 module Shaka
   # Google rates in the rate card. The section is optional, so a card from a checkout cut
   # before it existed still loads and prices no Google model.
@@ -47,11 +49,18 @@ module Shaka
         priced
       end
 
-      # A price under `from` applies from that date, so each date must be one.
+      # A price under `from` applies from that date, so each date must exist on the calendar.
       def price_changes(value, label)
         mapping(value, "#{label} from").to_h do |day, change|
-          [date(day, "#{label} from date"), prices(change, 3, "#{label} prices from #{day}")]
+          [calendar_date(day, "#{label} from date"), prices(change, 3, "#{label} prices from #{day}")]
         end
+      end
+
+      def calendar_date(value, label)
+        date(value, label)
+        raise Error, "#{label} is not a calendar date: #{value}" unless Date.valid_date?(*value.split('-').map(&:to_i))
+
+        value
       end
     end
   end

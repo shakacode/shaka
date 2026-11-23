@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'date'
 require 'time'
 
 module Shaka
@@ -22,6 +23,19 @@ module Shaka
       reason ? [nil, reason] : [tokens.zip(rate).sum { |count, price| count * Rational(price) } / 1_000_000, nil]
     end
 
+    def google_intro(columns)
+      return unless google_priced?(priced_columns(columns))
+
+      "Google Gemini API paid-tier list prices, verified #{@rate_card.google_verified}. Uncached input, cache " \
+        'reads and output are separate charges, and output includes thinking. A dated price applies from that ' \
+        'UTC date of the response.'
+    end
+
+    def google_rated?(column)
+      column[:provider] == 'google' && @google_counters && !@inclusive_input &&
+        @rate_card.google_name(column[:model], column[:effort])
+    end
+
     def google_categories(usage)
       return [nil, 'Incomplete billable token categories'] unless usage.is_a?(Hash)
 
@@ -33,8 +47,13 @@ module Shaka
       [tokens, nil]
     end
 
+    # Time.iso8601 rolls an impossible date such as November 31 into the next month, so the
+    # calendar date is checked first.
     def response_day(timestamp)
-      Time.iso8601(timestamp).utc.strftime('%F') if timestamp.is_a?(String)
+      return unless timestamp.is_a?(String)
+
+      Date.iso8601(timestamp)
+      Time.iso8601(timestamp).utc.strftime('%F')
     rescue ArgumentError
       nil
     end

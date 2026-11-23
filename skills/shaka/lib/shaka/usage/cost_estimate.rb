@@ -21,9 +21,10 @@ module Shaka
     include CostTable
     include CostColumns
 
-    def initialize(responses, inclusive_input: true, rate_card: nil)
+    def initialize(responses, inclusive_input: true, google_counters: false, rate_card: nil)
       @responses = responses
       @inclusive_input = inclusive_input
+      @google_counters = google_counters
       @rate_card = rate_card || RateCard.installed
       @cursor_threshold_models = []
     end
@@ -100,11 +101,10 @@ module Shaka
 
     # Providers whose list prices bill input apart from its cached and written subsets.
     def exclusive_price(provider, record, mode)
-      case provider
-      when 'anthropic' then anthropic_price(record, mode)
-      when 'google' then google_price(record, mode)
-      else [nil, 'Cache-exclusive input is unpriced']
-      end
+      return anthropic_price(record, mode) if provider == 'anthropic'
+      return google_price(record, mode) if provider == 'google' && @google_counters
+
+      [nil, 'Cache-exclusive input is unpriced']
     end
 
     def categories(usage)

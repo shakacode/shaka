@@ -16,7 +16,7 @@ class GoogleCostTest < Minitest::Test
   end
 
   def estimate(*records, rate_card: nil)
-    Shaka::CostEstimate.new(records, inclusive_input: false, rate_card: rate_card).report
+    Shaka::CostEstimate.new(records, inclusive_input: false, google_counters: true, rate_card: rate_card).report
   end
 
   def test_prices_input_cache_reads_and_output_separately
@@ -36,8 +36,9 @@ class GoogleCostTest < Minitest::Test
     assert_metric offset, 'USD estimate', '$0.010400'
   end
 
+  # Time.iso8601 alone reads November 31 as December 1, which would select the later price.
   def test_a_dated_price_needs_the_response_date
-    [nil, 'yesterday'].each do |timestamp|
+    [nil, 'yesterday', '2026-11-31T00:00:00Z'].each do |timestamp|
       report = estimate(gemini('gemini-4-argon-high', 'high', timestamp: timestamp))
       assert_metric report, 'USD estimate', 'UNKNOWN'
       assert_includes report, 'Response date UNKNOWN for the dated gemini-4-argon rate'
@@ -69,9 +70,12 @@ class GoogleCostTest < Minitest::Test
     assert_metric report, 'USD estimate', '$0.007800 (partial)'
   end
 
-  def test_inclusive_input_is_not_priced_on_google_rates
-    report = Shaka::CostEstimate.new([gemini('gemini-4-neon-high', 'high')]).report
-    assert_metric report, 'USD estimate', 'UNKNOWN'
+  def test_only_a_source_whose_output_includes_thinking_is_priced_on_google_rates
+    [{}, { inclusive_input: false }].each do |options|
+      report = Shaka::CostEstimate.new([gemini('gemini-4-neon-high', 'high')], **options).report
+      assert_metric report, 'USD estimate', 'UNKNOWN'
+      refute_includes report, 'Google Gemini API'
+    end
   end
 end
 
@@ -109,8 +113,11 @@ class GoogleRateCardTest < Minitest::Test
   def test_a_malformed_google_entry_fails_the_card
     { { 'prices' => %w[1 0.1] } => 'gemini-test prices must be 3 prices',
       { 'prices' => %w[1 0.1 10], 'from' => { 'soon' => %w[2 0.2 20] } } => 'gemini-test from date must be YYYY-MM-DD',
+      { 'prices' => %w[1 0.1 10], 'from' => { '2026-11-31' => %w[2 0.2 20] } } =>
+        'gemini-test from date is not a calendar date: 2026-11-31',
       { 'prices' => %w[1 0.1 10], 'until' => '2027-01-01' } => 'unknown rate-card key: until' }.each do |entry, message|
-      error = assert_raises(Shaka::Error) { card(model(entry)) { flunk 'card loaded' } }
+      document = YAML.safe_load_file(Shaka::RateCard::INSTALLED_PATH).merge('google' => model(entry))
+      error = assert_raises(Shaka::Error) { Shaka::RateCard::Schema.check(document) }
       assert_includes error.message, message
     end
   end

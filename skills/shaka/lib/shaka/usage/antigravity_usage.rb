@@ -148,6 +148,7 @@ module Shaka
     # Step numbers repeat across conversations, and copies of one conversation overlap.
     ONE_TRANSCRIPT = 'Antigravity usage reads one transcript per run; report each conversation separately.'
     INCLUSIVE_INPUT = false
+    GOOGLE_COUNTERS = true
 
     attr_reader :responses, :versions, :gaps
 
