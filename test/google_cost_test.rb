@@ -38,17 +38,20 @@ class GoogleCostTest < Minitest::Test
   def test_a_dated_price_applies_from_its_utc_date
     before = estimate(gemini('gemini-4-argon-high', 'high', timestamp: '2026-11-30T23:59:59Z'))
     after = estimate(gemini('gemini-4-argon-high', 'high', timestamp: '2026-12-01T00:00:00Z'))
-    offset = estimate(gemini('gemini-4-argon-high', 'high', timestamp: '2026-11-30T23:30:00-02:00'))
+    offset = estimate(gemini('gemini-4-argon-high', 'high', timestamp: '2026-11-30T23:30:00.250-02:00'))
     assert_metric before, 'USD estimate', '$0.005200'
     assert_metric after, 'USD estimate', '$0.010400'
     assert_metric offset, 'USD estimate', '$0.010400'
   end
 
-  # Time.iso8601 alone reads November 31 as December 1, and a time without an offset in the
-  # machine's own zone, so either could select the later price.
+  # Time.iso8601 alone rolls an out-of-range date, clock field, or offset into a later day, and
+  # reads a time without an offset in the machine's own zone, so any of them could select the
+  # later price.
   def test_a_dated_price_needs_the_response_date
     zones = %w[UTC America/New_York]
-    [nil, 'yesterday', '2026-11-31T00:00:00Z', '2026-11-30T23:30:00'].each do |timestamp|
+    invalid = [nil, 'yesterday', '2026-11-31T00:00:00Z', '2026-11-30T23:30:00', '2026-11-30T23:30:00-00:99',
+               '2026-11-30T24:00:00Z', '2026-11-30T23:60:00Z', '2027-02-29T00:00:00Z']
+    invalid.each do |timestamp|
       zones.each do |zone|
         report = with_zone(zone) { estimate(gemini('gemini-4-argon-high', 'high', timestamp: timestamp)) }
         assert_metric report, 'USD estimate', 'UNKNOWN'

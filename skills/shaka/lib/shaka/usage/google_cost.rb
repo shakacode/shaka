@@ -2,12 +2,14 @@
 
 require 'date'
 require 'time'
-require_relative 'options'
 
 module Shaka
   # Google Gemini API list prices, which bill uncached input, cache reads, and output separately.
   # Output includes thinking. Implicit caching has no write charge, so a recorded write is unpriced.
   module GoogleCost
+    # A zoned ISO 8601 time whose clock fields and offset are in range.
+    ZONED_TIME = /\A\d{4}-\d\d-\d\dT(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)\z/
+
     private
 
     def google_price(record, mode)
@@ -48,10 +50,10 @@ module Shaka
       [tokens, nil]
     end
 
-    # Time.iso8601 rolls an impossible date such as November 31 into the next month and reads
-    # a time without an offset in the machine's zone, so both are refused first.
+    # Time.iso8601 rolls an out-of-range date, clock field, or offset into a later day, and reads
+    # a time without an offset in the machine's zone, so each is refused before it converts.
     def response_day(timestamp)
-      return unless timestamp.is_a?(String) && timestamp.match?(UsageOptions::ISO_TIME)
+      return unless timestamp.is_a?(String) && timestamp.match?(ZONED_TIME)
 
       Date.iso8601(timestamp)
       Time.iso8601(timestamp).utc.strftime('%F')
