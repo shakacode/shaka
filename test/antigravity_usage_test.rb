@@ -29,6 +29,12 @@ module AntigravityUsageFixture
   # A step that is not a model response, even if it ever carried a counter key.
   def tool_output(index, second) = step(index, 'GENERIC', second, content: 'SENSITIVE-TOOL-OUTPUT', input_tokens: nil)
 
+  # The step Antigravity writes when it compacts a conversation: counters, but no model.
+  def checkpoint(index, second)
+    step(index, 'CHECKPOINT', second, input_tokens: 500, cache_read_tokens: 60, output_tokens: 70,
+                                      content: 'SENSITIVE-SUMMARY')
+  end
+
   def two_turns
     [prompt(0, '10'), response(1, '11', 900, model: 'gemini-4-argon-low'),
      prompt(2, '20'), response(3, '21', 100), tool_output(4, '22'), response(5, '23', 200)]
@@ -160,6 +166,19 @@ class AntigravityTurnSelectionTest < Minitest::Test
                                               '--turn', '7')
       refute_predicate status, :success?
       assert_includes error, 'antigravity turns use the USER_INPUT step_index field'
+    end
+  end
+
+  def test_a_step_that_carries_counters_without_a_model_is_counted
+    Dir.mktmpdir do |home|
+      output = explicit(write_transcript(home, [prompt(0, '10'), response(1, '11', 300), checkpoint(2, '12'),
+                                                tool_output(3, '13'), response(4, '14', 100)]))
+      assert_includes output, '3 responses'
+      assert_metric output, 'Configured model', 'gemini-4-argon-high', 'UNKNOWN'
+      assert_metric output, 'Input', 400, 500
+      assert_metric output, 'Cached input', 80, 60
+      assert_metric output, 'Output', 40, 70
+      refute_match(REDACTED_OUTPUT, without_usage_identity(output))
     end
   end
 

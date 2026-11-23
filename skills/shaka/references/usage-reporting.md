@@ -286,18 +286,23 @@ identifies its responses. A transcript with an unreadable line reports no respon
 since the line could be a turn boundary.
 
 A turn is the `step_index` of a `USER_INPUT` step, and its responses are the
-`PLANNER_RESPONSE` steps that follow. The reader takes one transcript per
-run and refuses a second `--file`, because step numbers repeat across conversations.
-Report each conversation, including a subagent's, on its own.
+`PLANNER_RESPONSE` steps that follow. A step of another type counts when it carries a
+token counter: compacting a conversation writes a `CHECKPOINT` step with counters and no
+model. The reader takes one transcript per run and refuses a second `--file`, because
+step numbers repeat across conversations. A subagent's conversation has no `USER_INPUT`
+step, so the reader reports no responses for it, and the main conversation leaves it out.
 
 The recorded model is the ID the user selected, so it is the configured model. Its last
 segment is the effort when it is `low`, `medium`, `high`, or `xhigh`; any other ending
 leaves the effort unknown. A transcript from before Antigravity recorded models
 keeps its tokens with an unknown model.
 
-Validation used CLI `1.5.14`: six print-mode runs matched their `--output-format json`
-usage for input, cache reads, and output. A transcript long enough to be split, the
-desktop app, and the IDE were not tested.
+Validation used CLI `1.5.14` and `1.5.15`. Single-turn runs, a two-turn conversation, a
+compacted one, and one whose transcript Antigravity had split into 100 KB chunk files
+matched their `--output-format json` usage for input, cache reads, and output;
+`transcript.jsonl` stayed whole after the split. Desktop app `2.34.0` and IDE `2.8.0` set
+the same variables and write the same transcript under `~/.gemini/antigravity`. Their
+sandbox hides files outside the workspace until the user allows the command.
 
 ## Cost estimates
 

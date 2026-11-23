@@ -134,7 +134,8 @@ class AntigravityPublisherTurnTest < Minitest::Test
 
   def test_a_step_that_is_not_a_model_response_keeps_the_settings
     tool = { 'step_index' => 2, 'type' => 'GENERIC', 'input_tokens' => nil }
-    with_transcript(prompt(0), response(1), tool) do |session|
+    checkpoint = { 'step_index' => 3, 'type' => 'CHECKPOINT', 'input_tokens' => 500, 'output_tokens' => 70 }
+    with_transcript(prompt(0), response(1), tool, checkpoint) do |session|
       assert_equal 'gemini-4-argon-high (configured)', prepare(session).dig('identity', 'model')
     end
   end

@@ -7,7 +7,7 @@ require_relative 'response_count'
 require_relative 'value_token'
 
 module Shaka
-  # Reads one Antigravity conversation transcript (tested with CLI 1.5.14), keeping only usage
+  # Reads one Antigravity conversation transcript (tested with CLI 1.5.14 and 1.5.15), keeping only usage
   # metadata. Each line is one step; a step's content, thinking, and tool calls are never kept.
   class AntigravityTranscript
     IDENTITY = /\A[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\z/
@@ -65,8 +65,14 @@ module Shaka
 
     def self.user_input?(step) = step['type'] == 'USER_INPUT'
 
-    # In transcripts from CLI 1.5.14, these are the only steps that carry token counters.
+    # One answer from the model the user selected. Publication reads its settings from these only.
     def self.response?(step) = step['type'] == 'PLANNER_RESPONSE'
+
+    # Antigravity's own totals include every step that carries a token counter, such as the
+    # CHECKPOINT step it writes when it compacts a conversation. That step names no model.
+    def self.counted?(step) = response?(step) || COUNTERS.each_value.any? { |key| counter(step[key]) }
+
+    def self.counter(value) = (value if value.is_a?(Integer) && value >= 0)
 
     # One check for usage rows and publication, so neither shows an ID the other refuses,
     # and no effort is read from an ID that is not shown.
@@ -102,7 +108,7 @@ module Shaka
       turn = nil
       records = steps.each_with_object({}) do |step, found|
         turn = step['step_index'].to_s if self.class.user_input?(step)
-        found[step['step_index']] = response(step, turn) if self.class.response?(step)
+        found[step['step_index']] = response(step, turn) if self.class.counted?(step)
       end
       [records, turn]
     end
@@ -116,10 +122,7 @@ module Shaka
 
     # Reasoning is part of output and cache writes are not recorded, so neither has a counter here.
     def token_usage(record)
-      COUNTERS.transform_values do |key|
-        value = record[key]
-        value if value.is_a?(Integer) && value >= 0
-      end
+      COUNTERS.transform_values { |key| self.class.counter(record[key]) }
     end
 
     def unavailable
