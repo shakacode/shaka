@@ -373,8 +373,8 @@ includes thinking.
 ### Google details
 
 Uncached input, cache reads, and output are separate charges, and output includes
-thinking. Gemini 4 models cache implicitly, with no write charge, so a recorded cache
-write leaves the response unpriced. A model's `from` entries change its price from that
+thinking. Antigravity records no cache writes, and Gemini 4 models cache implicitly with
+no write charge, so none is added. A model's `from` entries change its price from that
 UTC date of the response, so a response without a valid time stays unpriced for that
 model. Search grounding and explicit-cache storage are not recorded and are excluded.
 
