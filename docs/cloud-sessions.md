@@ -54,7 +54,7 @@ has, so start a new session to use an edited script.
 
 A cached session therefore runs the Shaka its copy was saved with. The
 installer tries to turn on Shaka's
-[update reminder](reference/scheduled-update-checks.md#get-a-reminder-when-a-claude-code-chat-starts),
+[update reminder](keep-shaka-up-to-date.md#get-a-reminder-when-a-claude-code-chat-starts),
 which tells you in a new chat when Shaka needs a check or an update. An update
 made in a session lasts only for that session, because the next one starts from
 the saved copy again. To update the saved copy, edit the setup script, which
