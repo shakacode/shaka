@@ -152,6 +152,10 @@ unavailable update; the new report stays published so the same execution can be 
 
 ### Recommend the next action
 
+Skill point, when this checkpoint rated the change `high`: run the saved helper's
+`companions post-implementation-validation#recommend-the-next-action --root DIR --ref SHA`
+and follow it as [skill points](companion-skills.md#skill-points) describe.
+
 Verification gathers evidence about the finished result. After assessing that evidence,
 the task owner recommends what happens to the PR. Every completed implementation ends
 with this recommendation, even when verification confirms the requested behavior works.

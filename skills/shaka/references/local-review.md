@@ -179,12 +179,16 @@ whose local diagnostic establishes a real reviewer outage. A bad argument, setup
 dirty worktree, or report-validation failure does not qualify.
 
 The helper runs `codex exec -s read-only --ignore-rules --ignore-user-config
--c skills.include_instructions=false --skip-git-repo-check --json -o REPORT -` from its neutral directory,
+-c skills.include_instructions=false --disable apps --disable view_image
+-c 'web_search="disabled"' --skip-git-repo-check --json -o REPORT -` from its neutral directory,
 adding `-m MODEL` for `--model` and `-c model_reasoning_effort="EFFORT"` for `--effort`. An effort
 must be a lowercase level name such as `medium`; without one the report records `EFFORT UNKNOWN`.
-`-s read-only` confines it, the ignore flags skip user/project rules and config, and the skills
-setting keeps installed skill descriptions out of the reviewer's instructions to prevent
+`-s read-only` keeps sandboxed shell reads for source inspection. The ignore flags skip user/project rules
+and config, and the skills setting keeps installed skill descriptions out of the reviewer's instructions to prevent
 description-based routing to an unrelated installed skill. The report is created outside the checkout.
+`--disable apps` removes connected ChatGPT apps, `--disable view_image` removes the native image viewer,
+and `-c 'web_search="disabled"'` turns off built-in web search. These flags target named tools.
+New or renamed tools can require fresh verification and changes to the flags after a Codex upgrade.
 It does not use `--ephemeral`, so the session remains saved. `--json` reports its thread ID,
 and the result's `usage` names that saved session under `CODEX_HOME` (default `~/.codex`);
 run `shaka usage --host codex --file USAGE --commit "$(git rev-parse HEAD)" --contribution review --all-turns`

@@ -6,6 +6,10 @@ those gates require.
 
 ## UI changes
 
+Skill point, before using the change by hand: run the saved helper's
+`companions ui-verification#ui-changes --root DIR --ref SHA` and follow it as
+[skill points](companion-skills.md#skill-points) describe.
+
 For UI changes, meaning anything a person sees on screen other than command-line output,
 use the change by hand on the head you will push, and capture before and after screenshots
 on desktop and mobile, adding a short video when interaction or timing matters. Inspect each capture

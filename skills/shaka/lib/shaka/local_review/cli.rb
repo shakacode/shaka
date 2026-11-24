@@ -6,6 +6,7 @@ require 'tempfile'
 require_relative '../repository_config/review_schema'
 require_relative '../usage/codex_usage'
 require_relative 'codex_commands'
+require_relative 'codex_exec'
 require_relative '../usage/claude_usage'
 require_relative 'path_guard'
 require_relative 'process'
@@ -159,7 +160,7 @@ module Shaka
       return missing('codex') unless executable
 
       args = [executable, 'exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
-              '-c', 'skills.include_instructions=false',
+              '-c', 'skills.include_instructions=false', *CodexExec::TOOL_RESTRICTIONS,
               '--skip-git-repo-check', '--json', '-o', @report, *codex_choices, '-']
       stdout, stderr, status = reviewer_process(args, prompt)
       return process_failure('codex exec', status, stderr, stdout) unless status&.success?

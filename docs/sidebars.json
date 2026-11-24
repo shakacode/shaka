@@ -20,13 +20,14 @@
       "items": [
         "configure-repository",
         "settings-guide",
+        "pr-template",
         "changelog-in-pr-descriptions",
         "coding-agents",
         "cloud-sessions",
         "linear",
         "pstack",
         "manual-installation",
-        "reference/scheduled-update-checks",
+        "keep-shaka-up-to-date",
         "fork-and-hack",
         "migration"
       ]

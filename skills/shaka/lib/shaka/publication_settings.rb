@@ -6,6 +6,7 @@ require_relative 'repository_config'
 require_relative 'published_results'
 require_relative 'publication/feature_guard'
 require_relative 'opening_publication'
+require_relative 'pr_template'
 require_relative 'review_coverage'
 require_relative 'ready_time'
 require_relative 'local_review/ledger'
@@ -36,7 +37,7 @@ module Shaka
           reviewer_shortfall: reviewer_shortfall(verdict, review), time_zone: config&.time_zone,
           ignored_human_comments: config&.pr_description&.fetch('ignored_human_comments', nil),
           ready_gate: ReadyTime.gate(config, override: options[:ci_review_wait]), config:,
-          privacy: Configuration::PersonalPrivacy.load)
+          privacy: Configuration::PersonalPrivacy.load).with_template(root:, ref:, config:)
     end
 
     # Current results win. Failing those, a commit whose description already shows verified results
@@ -134,6 +135,11 @@ module Shaka
 
     # The user's own choices, read for this publication; nothing hidden when none were read.
     attr_reader :privacy
+
+    # Reads the pull request template's headings for the description; publication/settings.rb exposes them.
+    def with_template(root:, ref:, config:)
+      tap { @template_headings = PrTemplate.layout(root:, ref:, config:) }
+    end
 
     # Only resolved settings can establish whether the repository opted out.
     def attribution? = @current&.fetch('pr_description.show_shaka_credit', false) == true
