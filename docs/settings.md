@@ -1150,8 +1150,10 @@ add outside it is left alone.
 `shaka description` reports identity, task source, verification check and
 skill metadata errors together before it reads the PR. Shaka reports each
 sentence, paragraph and total overage it finds in rendered prose. The overall
-limit uses the PR's diff size. If GitHub refuses to render the Markdown and
-the description includes unmanaged text, Shaka reports the prose as unchecked.
+limit uses the PR's diff size. When GitHub omits either line count, descriptions
+use `max_description_words` and walkthroughs use the sentence and paragraph
+limits. If GitHub refuses to render the Markdown and the description includes
+unmanaged text, Shaka reports the prose as unchecked.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and
