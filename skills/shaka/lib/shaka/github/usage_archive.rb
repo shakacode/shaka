@@ -21,7 +21,12 @@ module Shaka
     REFERENCES = /#{Regexp.escape(PREFIX)}([^\n]*) -->\n(.*?)#{Regexp.escape(END_MARK)}/m
     HEADER = 'Usage accounting archive. ' \
              "Keep this comment: later description updates verify its checksum.\n\n"
-    PAYLOAD = %r{\A🤖 [^\r\n]+\n\n#{Regexp.escape(HEADER)}```base64\n([A-Za-z0-9+/=]+)\n```\n\z}
+    DETAILS_OPEN = "<details>\n<summary>Archived usage data</summary>\n\n"
+    DETAILS_CLOSE = "\n</details>\n"
+    COMMENT_PREFIX = /\A🤖 [^\r\n]+\n\n#{Regexp.escape(HEADER)}/
+    PAYLOAD = %r{```base64\n([A-Za-z0-9+/=]+)\n```\n}
+    LEGACY_COMMENT = /#{COMMENT_PREFIX}#{PAYLOAD}\z/
+    COLLAPSED_COMMENT = /#{COMMENT_PREFIX}#{Regexp.escape(DETAILS_OPEN)}#{PAYLOAD}#{Regexp.escape(DETAILS_CLOSE)}\z/
     CHUNKS = /.{1,#{CHUNK_SIZE}}/o
 
     Plan = Struct.new(:preview, :writer) do
