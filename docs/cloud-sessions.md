@@ -59,8 +59,8 @@ installer tries to turn on Shaka's
 [update reminder](keep-shaka-up-to-date.md#get-a-reminder-when-a-claude-code-chat-starts),
 which tells you in a new chat when Shaka needs a check or an update. An update
 made in a session lasts only for that session, because the next one starts from
-the saved copy again. To update the saved copy, edit the setup script, which
-makes Claude Code rebuild it.
+the saved copy again. Editing the setup script makes Claude Code run it again;
+the script clones the latest Shaka only when no clone is there yet.
 
 Shaka runs on the Ruby that installed it, but the session's own shell still
 starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, review the
