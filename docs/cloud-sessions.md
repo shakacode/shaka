@@ -22,7 +22,7 @@ ships Ruby 3.3, and Shaka needs Ruby 3.4. Give the environment a setup script so
 Add a setup script to this cloud environment that installs Ruby 3.4 and Shaka for Claude Code
 ```
 
-You approve the change on a card. To add it yourself, open the cloud environment
+To add the script yourself instead, open the cloud environment
 menu in the session's title bar, choose **Edit**, and paste this under
 **Setup script**:
 
