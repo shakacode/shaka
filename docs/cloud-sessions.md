@@ -44,13 +44,15 @@ fi
 The script installs Shaka from its own clone, separate from your project, so
 the branch you are changing cannot change the Shaka that checks it.
 
-Building Ruby takes a few minutes. When the script finishes within about five
-minutes, Claude Code saves the container and starts later sessions from that
-copy without running the script again; a slower script is not saved, so every
-new session waits for it. Claude Code reruns the script when you edit it, when
-you change the environment's allowed network hosts, and when the saved copy
-expires after about a week. A session that is already running keeps what it
-has, so start a new session to use an edited script.
+Building Ruby takes a few minutes. Claude Code's
+[environment caching](https://code.claude.com/docs/en/cloud-environments#environment-caching)
+works like this: when the script finishes within about five minutes, it saves
+the container and starts later sessions from that copy without running the
+script again; a slower script is not saved, so every new session waits for it.
+Claude Code reruns the script when you edit it, when you change the
+environment's allowed network hosts, and when the saved copy expires after about
+a week. A session that is already running keeps what it has, so start a new
+session to use an edited script.
 
 A cached session therefore runs the Shaka its copy was saved with. The
 installer tries to turn on Shaka's
@@ -63,8 +65,9 @@ makes Claude Code rebuild it.
 Shaka runs on the Ruby that installed it, but the session's own shell still
 starts on Ruby 3.3. If your project's commands need Ruby 3.4 too, review the
 branch's Gemfile, its gemspec, and any file they load first. `bundle install`
-runs them as Ruby with the session's credentials and GitHub access, so do not run it on a branch you have not
-reviewed, such as one from a fork. Then ask Claude in the session:
+runs them as Ruby with the session's credentials and GitHub access, so do not
+run it on a branch you have not reviewed, such as one from a fork. Then ask
+Claude in the session:
 
 ```text
 Run this project's Ruby commands with /opt/rbenv/versions/3.4.10/bin first on PATH. Stop if ruby -v does not report 3.4, otherwise run bundle install
