@@ -69,20 +69,6 @@ class LocalReviewCodexHomeTest < Minitest::Test
     end
   end
 
-  # Break caught: deleting the home under a reviewer that survived termination would send its
-  # late sign-in save to a deleted directory instead of the user's file.
-  def test_home_is_kept_for_a_reviewer_that_survived_termination
-    with_user_home do |user_home|
-      Shaka::LocalReviewCodexHome.with_isolated({ 'CODEX_HOME' => user_home }) do |home|
-        @home = home
-        ['', 'cleanup denied', Shaka::LocalReviewProcess::CleanupError.new('cleanup denied')]
-      end
-    end
-    assert_path_exists @home
-  ensure
-    FileUtils.remove_entry(@home) if @home && File.exist?(@home)
-  end
-
   private
 
   def review_in(home, repository, trace_dir:)
@@ -119,4 +105,35 @@ class LocalReviewCodexHomeTest < Minitest::Test
   def saved_sessions(home) = Dir.glob(File.join(home, 'sessions', '*', '*', '*', '*.jsonl'))
 
   def attestation(head) = "REVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n"
+end
+
+# Direct checks of the launcher's home handling.
+class LocalReviewCodexHomeUnitTest < Minitest::Test
+  # Break caught: File.expand_path collapsed `..` after a symlink, so the review linked and
+  # searched a different directory from the one the filesystem names.
+  def test_explicit_codex_home_is_kept_as_given
+    Dir.mktmpdir('shaka-codex-real') do |real|
+      Dir.mktmpdir('shaka-codex-links') do |links|
+        FileUtils.mkdir_p(File.join(real, 'inner', 'codex'))
+        File.symlink(File.join(real, 'inner'), File.join(links, 'shortcut'))
+        configured = File.join(links, 'shortcut', '..', 'inner', 'codex')
+        assert_equal configured, Shaka::LocalReviewCodexHome.real_home('CODEX_HOME' => configured)
+        assert_path_exists configured
+      end
+    end
+  end
+
+  # Break caught: deleting the home under a reviewer that survived termination would send its
+  # late sign-in save to a deleted directory instead of the user's file.
+  def test_home_is_kept_for_a_reviewer_that_survived_termination
+    Dir.mktmpdir('shaka-codex-user-home') do |user_home|
+      Shaka::LocalReviewCodexHome.with_isolated({ 'CODEX_HOME' => user_home }) do |home|
+        @home = home
+        ['', 'cleanup denied', Shaka::LocalReviewProcess::CleanupError.new('cleanup denied')]
+      end
+    end
+    assert_path_exists @home
+  ensure
+    FileUtils.remove_entry(@home) if @home && File.exist?(@home)
+  end
 end
