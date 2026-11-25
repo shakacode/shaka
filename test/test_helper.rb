@@ -21,6 +21,9 @@ ENV['SHAKA_CALL_LOG'] = 'off'
 ENV.delete('SHAKA_PHASE_LOG')
 # This checkout is not the developer's linked installation, so every spawned call would say so.
 ENV['SHAKA_NOTICES'] = 'off'
+# A Codex review launch links sessions from CODEX_HOME and creates the folder when it is missing,
+# so fake reviewers must not reach the developer's own Codex home.
+ENV['CODEX_HOME'] = Dir.mktmpdir('shaka-test-codex-home').tap { |home| at_exit { FileUtils.remove_entry(home) } }
 # Background maintenance outlives a fixture repository and races Dir.mktmpdir's cleanup.
 # Trial preparation refuses an inherited GIT_CONFIG_PARAMETERS, so a generated global config
 # carries the setting after including the files Git would have read, in Git's own order.
