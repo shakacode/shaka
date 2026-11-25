@@ -185,12 +185,17 @@ adding `-m MODEL` for `--model` and `-c model_reasoning_effort="EFFORT"` for `--
 must be a lowercase level name such as `medium`; without one the report records `EFFORT UNKNOWN`.
 `-s read-only` keeps sandboxed shell reads for source inspection. The ignore flags skip user/project rules
 and config, and the skills setting keeps installed skill descriptions out of the reviewer's instructions to prevent
-description-based routing to an unrelated installed skill. The report is created outside the checkout.
+description-based routing to an unrelated installed skill. Codex still reads `AGENTS.md` from
+`CODEX_HOME` despite those flags, so the helper sets `CODEX_HOME` to a temporary directory that
+links only `auth.json` and `sessions` from the real one (default `~/.codex`). If Codex replaces
+the linked `auth.json` during the run, the helper writes the new file back to the real one when
+it is a complete JSON object and the real file has not changed since launch.
+The report is created outside the checkout.
 `--disable apps` removes connected ChatGPT apps, `--disable view_image` removes the native image viewer,
 and `-c 'web_search="disabled"'` turns off built-in web search. These flags target named tools.
 New or renamed tools can require fresh verification and changes to the flags after a Codex upgrade.
 It does not use `--ephemeral`, so the session remains saved. `--json` reports its thread ID,
-and the result's `usage` names that saved session under `CODEX_HOME` (default `~/.codex`);
+and the result's `usage` names that saved session under the real `CODEX_HOME`;
 run `shaka usage --host codex --file USAGE --commit "$(git rev-parse HEAD)" --contribution review --all-turns`
 on it. A missing `usage` means the session file was not found, and review usage stays UNKNOWN.
 `codex exec review --base REF` cannot accept the custom review prompt, so the helper uses `exec`.
