@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'json'
+require 'shaka/publication/text'
 
 module AntigravityUsageFixture
   COMMAND = SHAKA_COMMAND
@@ -102,6 +103,12 @@ class AntigravityUsageTest < Minitest::Test
       refute_includes output, 'Cache-exclusive input is unpriced'
       refute_includes output, 'Anthropic API list prices'
     end
+  end
+
+  def test_a_usage_header_names_google_like_other_providers
+    header = Shaka::PublicationText.identity('agent' => 'Antigravity', 'provider' => 'google',
+                                             'model' => 'gemini-4-argon-high', 'effort' => 'high')
+    assert_includes header, ' · Google · '
   end
 
   def test_a_model_id_without_an_effort_segment_reports_no_effort
