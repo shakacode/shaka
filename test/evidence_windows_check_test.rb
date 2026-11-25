@@ -149,10 +149,12 @@ class EvidenceWindowsCheckStopTest < Minitest::Test
     end
   end
 
+  # The check runs in the system temp folder: a descendant left running keeps its working folder,
+  # which Windows will not delete.
   def with_descendant(**)
-    Dir.mktmpdir('shaka-windows-check') do |root|
-      pid_file = File.join(root, 'descendant')
-      started = check([RbConfig.ruby, '-e', LEADER_EXITS, pid_file], root, **)
+    Dir.mktmpdir('shaka-windows-check') do |directory|
+      pid_file = File.join(directory, 'descendant')
+      started = check([RbConfig.ruby, '-e', LEADER_EXITS, pid_file], Dir.tmpdir, **)
       started.waiter.join(30)
       yield started, Integer(File.read(pid_file))
     end
