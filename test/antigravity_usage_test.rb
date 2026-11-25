@@ -105,6 +105,17 @@ class AntigravityUsageTest < Minitest::Test
     end
   end
 
+  # A PR's usage table is built from the JSON record, not the Markdown report.
+  def test_the_json_record_carries_the_google_price
+    Dir.mktmpdir do |home|
+      document = JSON.parse(explicit(write_transcript(home, two_turns), '--format', 'json'))
+      column = document.fetch('columns').first
+      assert_equal 'google', column['provider']
+      assert_equal '$0.001008', column['usd']
+      assert_includes document.to_s, 'Google Gemini API paid-tier list prices'
+    end
+  end
+
   def test_a_usage_header_names_google_like_other_providers
     header = Shaka::PublicationText.identity('agent' => 'Antigravity', 'provider' => 'google',
                                              'model' => 'gemini-4-argon-high', 'effort' => 'high')
