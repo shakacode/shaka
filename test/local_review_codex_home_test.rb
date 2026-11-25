@@ -54,6 +54,21 @@ class LocalReviewCodexHomeTest < Minitest::Test
     end
   end
 
+  # Break caught: an empty CODEX_HOME saved the session under ~/.codex while usage looked in
+  # /sessions, so review usage read UNKNOWN.
+  def test_empty_codex_home_finds_the_session_under_the_default_home
+    with_repository do |root, base, head, bin|
+      Dir.mktmpdir('shaka-user-home') do |user|
+        fake_codex_reading_home(bin, head, trace_dir: user)
+        output, error, status = run_review(root, base, head, bin, env: { 'CODEX_HOME' => '', 'HOME' => user })
+        result = assert_successful_review(output, error, status, head, 'openai/codex')
+        assert_equal saved_sessions(File.join(user, '.codex')), [result.fetch('usage')]
+      ensure
+        cleanup_artifacts(result)
+      end
+    end
+  end
+
   # Break caught: deleting the home under a reviewer that survived termination would send its
   # late sign-in save to a deleted directory instead of the user's file.
   def test_home_is_kept_for_a_reviewer_that_survived_termination

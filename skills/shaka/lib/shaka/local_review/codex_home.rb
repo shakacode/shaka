@@ -2,6 +2,7 @@
 
 require 'fileutils'
 require 'tmpdir'
+require_relative '../usage/codex_usage'
 
 module Shaka
   # Codex reads AGENTS.md from CODEX_HOME even with --ignore-rules --ignore-user-config, and a
@@ -16,17 +17,10 @@ module Shaka
     # termination keeps its home, so a late sign-in save still reaches the user's file.
     def self.with_isolated(environment = ENV)
       home = Dir.mktmpdir('shaka-codex-home-')
-      link(source(environment), home)
+      link(CodexUsage.home(environment), home)
       result = yield home
     ensure
       FileUtils.remove_entry(home) if home && !survivor?(result)
-    end
-
-    # The variable and default CodexUsage reads; an empty value uses the default instead of
-    # resolving to the working directory.
-    def self.source(environment)
-      value = environment['CODEX_HOME'].to_s
-      File.expand_path(value.empty? ? '~/.codex' : value)
     end
 
     def self.link(source, home)
@@ -48,6 +42,6 @@ module Shaka
       result.is_a?(Array) && result.last.is_a?(LocalReviewProcess::CleanupError)
     end
 
-    private_class_method :source, :link, :link_sessions, :survivor?
+    private_class_method :link, :link_sessions, :survivor?
   end
 end

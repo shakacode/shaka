@@ -38,12 +38,14 @@ module Shaka
       nil
     end
 
+    # The user's Codex home; an empty CODEX_HOME uses the default, as the review launcher does.
+    def self.home(env = ENV) = File.expand_path(env['CODEX_HOME'].to_s.then { it.empty? ? '~/.codex' : it })
+
     # The saved session for one thread ID, or nil when it is not exactly one matching file.
     def self.session_file(identity, environment: ENV)
       return unless identity.is_a?(String) && identity.match?(/\A[0-9a-f-]{36}\z/)
 
-      home = environment.fetch('CODEX_HOME', File.expand_path('~/.codex'))
-      files = Dir.glob(File.join(home, 'sessions', '*', '*', '*', "*#{identity}.jsonl"))
+      files = Dir.glob(File.join(home(environment), 'sessions', '*', '*', '*', "*#{identity}.jsonl"))
       return unless files.one?
 
       metadata = JSON.parse(File.open(files.first, encoding: 'UTF-8', &:readline))
