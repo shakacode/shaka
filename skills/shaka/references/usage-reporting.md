@@ -46,8 +46,8 @@ was measured and priced** list under the table shows each report's rate card,
 the date its prices were verified, source links, and what its sources left out. Known accounting
 boilerplate moves to the guide; unknown prose and report-specific limitations stay visible.
 The full original note stays in the hidden record for later publication. A PR left open across
-a price change therefore shows which rows used which prices. To price every row with current rates, rerun `shaka usage` for each report and
-publish the new records.
+a price change therefore shows which rows used which prices. To price every row with the current rate card, rerun `shaka usage` for each report and
+publish the new records. A dated price still follows each response's date.
 
 Put that `usage` object in the PR, or the JSON report in the final response when
 there is no PR. **Native** figures come from the host's records. **Estimated** figures apply a
@@ -141,7 +141,7 @@ per configuration. Configured and routed models remain distinct.
 | Cursor | Input includes cache reads and writes; rows show the subsets. | Reasoning, native total, and parent-chat subagent usage are unknown or absent. |
 | OpenCode | Input excludes cache reads and writes. | Native total sums input, output, reasoning, cache reads, and cache writes; OpenCode 2 omits it, so it is unknown. |
 | Pi | Input excludes cache reads and writes. | Native total is copied. Reasoning, when recorded, is part of output. |
-| Antigravity | Input excludes cache reads. Cache writes are unknown. | Reasoning is part of output. Provider is Google for a Gemini model. Routed model, native total, and subagent usage are unknown or absent. |
+| Antigravity | Input excludes cache reads. Cache writes are unknown. | Reasoning is part of output. Routed model, native total, and subagent usage are unknown or absent. |
 
 Reports are **PARTIAL** while sources omit active work, reviewers, subagents, or
 tool-model usage. They do not establish actual charges or human active time.
@@ -372,15 +372,9 @@ includes thinking.
 
 ### Google details
 
-Uncached input, cache reads, and output are separate charges, and output includes
-thinking. Antigravity records no cache writes, and Gemini 4 models cache implicitly with
-no write charge, so none is added. A model's `from` entries change its price from that
-UTC date of the response, so a response without a valid time stays unpriced for that
-model. Search grounding and explicit-cache storage are not recorded and are excluded.
-
-A card without a `google` section prices no Google model, so a Shaka checkout cut before
-the section existed still loads. Claude models run in Antigravity stay unpriced: the
-transcript records no cache writes, which Anthropic bills separately.
+Search grounding and explicit-cache storage are not recorded and are excluded. Claude
+models run in Antigravity stay unpriced, and so does every Google model when the rate
+card has no `google` section.
 
 These are dated rate-card scenarios, not invoices. Subscription treatment,
 discounts, service tier, routing, account terms, and actual charges may differ.
