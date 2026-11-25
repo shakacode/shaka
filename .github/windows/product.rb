@@ -94,8 +94,10 @@ class WindowsProduct < WindowsSession
      File.join(scripts, 'shaka.rb')]
   end
 
+  # An inherited GIT_DIR or similar would point git at another repository, as Source#git_raw notes.
   def git_output(*arguments)
-    output, status = Open3.capture2('git', '-C', root, *arguments)
+    environment = ENV.keys.grep(/\AGIT_/).to_h { |key| [key, nil] }
+    output, status = Open3.capture2(environment, 'git', '-C', root, *arguments)
     raise "git #{arguments.first} failed" unless status.success?
 
     output.strip
