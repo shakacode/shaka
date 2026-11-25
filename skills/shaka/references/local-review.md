@@ -188,7 +188,10 @@ and config, and the skills setting keeps installed skill descriptions out of the
 description-based routing to an unrelated installed skill. Codex still reads `AGENTS.md` from
 `CODEX_HOME` despite those flags, so the helper sets `CODEX_HOME` to a temporary directory that
 links only `auth.json` and `sessions` from the real one (default `~/.codex`). Codex saves a
-refreshed sign-in through the `auth.json` link, so the real file stays current.
+refreshed sign-in through the `auth.json` link, so the real file stays current. A sign-in kept in
+the OS keyring is keyed to the real home's path, so the reviewer may not find it; when a Codex
+review fails to sign in and the real home has no `auth.json`, tell the user to sign in with file
+storage or choose another reviewer.
 The report is created outside the checkout.
 `--disable apps` removes connected ChatGPT apps, `--disable view_image` removes the native image viewer,
 and `-c 'web_search="disabled"'` turns off built-in web search. These flags target named tools.
