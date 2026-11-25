@@ -103,6 +103,8 @@ module Shaka
     def exclusive_price(provider, record, mode)
       return anthropic_price(record, mode) if provider == 'anthropic'
       return google_price(record, mode) if provider == 'google' && @google_counters
+      # Antigravity names no provider for a Claude model or a step without one.
+      return [nil, 'Unsupported provider or configured model'] if @google_counters
 
       [nil, 'Cache-exclusive input is unpriced']
     end

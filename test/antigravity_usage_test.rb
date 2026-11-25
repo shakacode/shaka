@@ -98,6 +98,8 @@ class AntigravityUsageTest < Minitest::Test
       assert_metric output, 'Provider', 'UNKNOWN'
       assert_metric output, 'Effort', 'low'
       assert_metric output, 'USD estimate', 'UNKNOWN'
+      assert_includes output, 'Unsupported provider or configured model'
+      refute_includes output, 'Cache-exclusive input is unpriced'
       refute_includes output, 'Anthropic API list prices'
     end
   end
