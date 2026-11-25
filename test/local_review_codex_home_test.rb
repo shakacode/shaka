@@ -123,6 +123,31 @@ class LocalReviewCodexHomeUnitTest < Minitest::Test
     end
   end
 
+  # Break caught: Dir.glob read brackets in the home's path as a pattern and missed the session.
+  def test_session_is_found_under_a_home_whose_path_has_brackets
+    Dir.mktmpdir('shaka-codex') do |parent|
+      home = File.join(parent, 'project[qa]', '.codex')
+      thread = LocalReviewCodexHomeTest::THREAD
+      folder = FileUtils.mkdir_p(File.join(home, 'sessions', '2026', '11', '24')).first
+      session = File.join(folder, "rollout-#{thread}.jsonl")
+      File.write(session, JSON.generate(type: 'session_meta', payload: { id: thread }))
+      assert_equal session, Shaka::CodexUsage.session_file(thread, environment: { 'CODEX_HOME' => home })
+    end
+  end
+
+  # Break caught: a reviewer that raised left its temporary home behind.
+  def test_home_is_removed_when_the_reviewer_fails
+    Dir.mktmpdir('shaka-codex-user-home') do |user_home|
+      assert_raises(RuntimeError) do
+        Shaka::LocalReviewCodexHome.with_isolated({ 'CODEX_HOME' => user_home }) do |home|
+          @home = home
+          raise 'reviewer failed'
+        end
+      end
+    end
+    refute_path_exists @home
+  end
+
   # Break caught: deleting the home under a reviewer that survived termination would send its
   # late sign-in save to a deleted directory instead of the user's file.
   def test_home_is_kept_for_a_reviewer_that_survived_termination
