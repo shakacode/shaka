@@ -88,6 +88,9 @@ class WindowsProduct < WindowsSession
     ["#{output}#{error}", success]
   end
 
+  # The start tests run with the same PATH as the product calls, so they also prove the native start.
+  def test_env = super.merge(native_path)
+
   # A native shell finds git through Git\cmd and nothing from Git's Unix tree.
   def native_path
     entries = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).grep_v(UNIX_TOOLS)
