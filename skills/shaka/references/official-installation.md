@@ -19,6 +19,9 @@ git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/sourc
 "$HOME/.local/share/shaka/source/bin/install" --agent codex
 ```
 
+On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the `git clone`, or the
+installer refuses the checkout because Git converted its line endings.
+
 Default: `~/.local/share/shaka/source`; respect chosen locations with `--directory DIR`.
 The installer refuses `~/.agents/` and every directory under it, where settings live. An install
 registered there refuses every action. Follow [Before take-over](#before-take-over), run the

@@ -37,6 +37,10 @@ mkdir -p "$(dirname "$shaka_install_dir")"
 git clone https://github.com/shakacode/shaka.git "$shaka_install_dir"
 ```
 
+On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the `git clone`
+command. Git for Windows otherwise converts line endings, and the installer then refuses
+the checkout because its files no longer match the commit.
+
 After reading the checkout, run its installer:
 
 ```bash

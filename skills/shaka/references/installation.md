@@ -102,7 +102,8 @@ Use `install --update` when the latest branch tip is acceptable. It fetches
 and verifies the tip it receives.
 
 Use take-over when the request is to install the exact tested or inspected commit.
-Clone directly at the install branch in a separate directory. In that clean
+Clone directly at the install branch in a separate directory, with the Windows line-ending options
+above. In that clean
 clone, run `git -C DIR reset --keep TESTED_SHA` to set the branch to the tested
 commit while keeping its `origin/BRANCH` tracking configuration. Before
 take-over, verify the checkout is clean, the branch tracks `origin/BRANCH`,
