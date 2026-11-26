@@ -44,14 +44,11 @@ class WindowsLocalReviewTest < Minitest::Test
 
   def setup
     @windows = Shaka::LocalReviewProcess.windows
-    @stop_seconds = Shaka::LocalReviewWindowsTree.stop_seconds
     Shaka::LocalReviewProcess.windows = true
-    Shaka::LocalReviewWindowsTree.stop_seconds = 0.5
   end
 
   def teardown
     Shaka::LocalReviewProcess.windows = @windows
-    Shaka::LocalReviewWindowsTree.stop_seconds = @stop_seconds
   end
 
   def test_capture_starts_without_a_process_group
@@ -94,11 +91,14 @@ class WindowsLocalReviewTest < Minitest::Test
     assert_equal "4|a\r\nb\n", output
   end
 
-  # Off Windows neither a job nor taskkill exists, as when both fail there, so only the direct
-  # termination can end the leader.
-  def test_timeout_ends_a_leader_that_outlasts_the_job_and_taskkill
+  # Off Windows no job exists, as when adoption fails there, so the stop ends the live leader
+  # through Ruby's handle and says what it could not cover.
+  def test_timeout_without_a_job_ends_the_leader_and_reports_the_limit
     started = clock
-    _output, _error, status = capture(['sleep 120'], stdin_data: nil, timeout: 1)
+    status = nil
+    assert_output(nil, /no Windows job ended this check/) do
+      _output, _error, status = capture(['sleep 120'], stdin_data: nil, timeout: 1)
+    end
 
     assert_nil status
     assert_operator clock - started, :<, 30
@@ -127,7 +127,7 @@ class WindowsLocalReviewTest < Minitest::Test
     refute running?(Integer(File.read(pid_file))), 'the descendant outlived the stop'
   end
 
-  # The sleep lets the job hold the leader first; a descendant started earlier escapes it (F1).
+  # The sleep lets the job hold the leader before it starts a descendant.
   LEAVE_DESCENDANT = <<~RUBY
     sleep 1
     pid = spawn(RbConfig.ruby, '-e', 'sleep 120')
@@ -141,25 +141,17 @@ class WindowsLocalReviewTest < Minitest::Test
   end
 
   # Off Windows the descendant survives the stop, so its readers fail once the pipes close.
-  def with_recorded_kills(&)
+  def with_recorded_kills
     signals = []
     reporting = Thread.report_on_exception
     Thread.report_on_exception = false
-    tree = Shaka::LocalReviewWindowsTree.singleton_class
-    replacing(Process.singleton_class, :kill, ->(*call) { signals << call }) do
-      replacing(tree, :start_taskkill, ->(pid) { signals << [:taskkill, pid] }, &)
-    end
+    original = Process.method(:kill)
+    Process.define_singleton_method(:kill) { |*call| signals << call }
+    yield
     signals
   ensure
+    Process.define_singleton_method(:kill, original)
     Thread.report_on_exception = reporting
-  end
-
-  def replacing(owner, name, body)
-    original = owner.instance_method(name)
-    owner.define_method(name, &body)
-    yield
-  ensure
-    owner.define_method(name, original)
   end
 
   def windows_host? = Shaka::ExecutableFile.windows?

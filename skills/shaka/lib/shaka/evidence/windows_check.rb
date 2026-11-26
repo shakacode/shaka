@@ -21,21 +21,20 @@ module Shaka
       STOP_SECONDS = 10
       POLL_SECONDS = 0.05
 
-      attr_reader :pid, :output, :error, :waiter, :limitation
+      attr_reader :pid, :input, :output, :error, :waiter, :limitation
 
       # The job holds the leader before the waiter can reap it; AFTER_REAP lets a test hold the waiter
-      # between releasing the handle and exiting.
-      def initialize(command, root:, job: method(:adopt), after_reap: nil)
-        @output, output = IO.pipe
-        @error, error = IO.pipe
-        @pid = Process.spawn(*command, chdir: root, in: File::NULL, out: output, err: error)
+      # between releasing the handle and exiting. With INPUT, the check reads standard input from #input.
+      def initialize(command, root:, job: method(:adopt), after_reap: nil, input: false)
+        reader, output, error = open_pipes(input)
+        @pid = Process.spawn(*command, chdir: root, in: reader || File::NULL, out: output, err: error)
         @job = job.call(@pid)
         start_waiter(after_reap)
       rescue StandardError
         abandon_start
         raise
       ensure
-        [output, error].each { |writer| writer&.close }
+        [reader, output, error].each { |child_end| child_end&.close }
       end
 
       # Ends the check. Returns the limitation when descendants may outlive the stop. The wait is
@@ -53,11 +52,19 @@ module Shaka
       def close(finished:)
         Thread.handle_interrupt(Object => :never) do
           finished ? @job&.close : @job&.terminate
-          [@output, @error].each { |stream| stream.close unless stream.closed? }
+          [@input, @output, @error].each { |stream| stream.close unless stream.nil? || stream.closed? }
         end
       end
 
       private
+
+      # Returns the child's ends: its standard input when INPUT is set, then its output and errors.
+      def open_pipes(input)
+        reader, @input = IO.pipe if input
+        @output, output = IO.pipe
+        @error, error = IO.pipe
+        [reader, output, error]
+      end
 
       def start_waiter(after_reap)
         @lock = Mutex.new
@@ -67,7 +74,7 @@ module Shaka
 
       # A start that failed after spawning ends its job and its unreaped leader through Ruby's handle.
       def abandon_start
-        [@output, @error].each { |reader| reader&.close }
+        [@input, @output, @error].each { |stream| stream&.close }
         @job&.terminate
         return unless @pid && !@waiter
 
