@@ -82,6 +82,18 @@ class WindowsLocalReviewTest < Minitest::Test
     end_descendant
   end
 
+  # A second stop would find the job already closed and report a limitation the first stop avoided.
+  def test_a_windows_capture_stops_its_check_only_once
+    stops = []
+    check = Object.new
+    check.define_singleton_method(:stop) { (stops << :stop) && nil }
+    capture = Shaka::LocalReviewWindowsCapture.new
+    capture.instance_variable_set(:@check, check)
+    2.times { capture.send(:stop) }
+
+    assert_equal [:stop], stops
+  end
+
   # Git's blob sizes count bytes, so a Windows text-mode pipe that rewrote line endings broke the
   # commit export on the hosted job.
   def test_capture_passes_line_endings_through_both_ways

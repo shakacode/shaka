@@ -3,7 +3,7 @@
 require 'open3'
 require_relative '../error'
 require_relative '../executable_file'
-require_relative '../evidence/windows_check'
+require_relative 'windows_capture'
 
 module Shaka
   # Captures a reviewer process with a deadline and ends its process tree on timeout: its process
@@ -19,38 +19,14 @@ module Shaka
     end
 
     singleton_class.attr_accessor :windows
-    # Tests set it to run the Windows branch on any host.
+    # Tests set it to run the Windows branch, LocalReviewWindowsCapture, on any host.
     self.windows = ExecutableFile.windows?
 
     def self.capture(arguments, stdin_data:, chdir:, timeout:, env: {})
-      return capture_on_windows([env, *arguments], stdin_data, chdir, timeout) if windows
+      return LocalReviewWindowsCapture.call([env, *arguments], stdin_data, chdir, timeout) if windows
 
       Open3.popen3(env, *arguments, chdir:, pgroup: true) do |*streams, waiter|
         capture_streams(streams, waiter, stdin_data, timeout)
-      end
-    end
-
-    # Windows Ruby refuses `pgroup` (see Doctor::BoundedCommand.process_groups?), so there an
-    # Evidence::WindowsCheck starts the reviewer, holds it in a job, and stops it without naming a
-    # process that may not be the reviewer any more. An interrupt or error stops it too, and nothing
-    # waits on a leader that outlived its stop.
-    def self.capture_on_windows(command, input, chdir, timeout)
-      check = nil
-      # Assigned inside the mask, so an interrupt pending at its end still finds the check to stop.
-      Thread.handle_interrupt(Object => :never) { check = Evidence::WindowsCheck.new(command, root: chdir, input: true) }
-      streams = [check.input, check.output, check.error]
-      result = capture_streams(streams, check.waiter, input, timeout, -> { stop_on_windows(check) })
-      finished = true
-      result
-    ensure
-      stop_on_windows(check) if check && !finished
-      check&.close(finished: finished == true)
-    end
-
-    def self.stop_on_windows(check)
-      Thread.handle_interrupt(Object => :never) do
-        limitation = check.stop
-        warn "shaka: #{limitation}" if limitation
       end
     end
 
