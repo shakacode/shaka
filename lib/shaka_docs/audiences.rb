@@ -84,9 +84,7 @@ module ShakaDocs
 
     # One spelling names the ref known to hold the file; relative links and other refs do not qualify.
     def copyable_example_url?(path, target)
-      link = url(target)
-      link = link.omit(:query, :fragment) if link.host
-      COPYABLE_EXAMPLES.include?(path) && link.to_s == "https://github.com/shakacode/shaka/blob/main/#{path}"
+      COPYABLE_EXAMPLES.include?(path) && url(target).to_s == "https://github.com/shakacode/shaka/blob/main/#{path}"
     end
 
     def document_files(repository)

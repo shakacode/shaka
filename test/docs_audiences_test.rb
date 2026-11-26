@@ -344,9 +344,10 @@ class DocsCopyableExamplesTest < Minitest::Test
     assert_includes agent_line, 'expected-experience.md -> ../skills/shaka/config/review-prompt.md'
   end
 
-  def test_example_links_off_github_main_fail
+  def test_other_spellings_of_example_links_fail
     %w[https://github.com/shakacode/shaka/blob/no-such-branch/skills/shaka/config/review-prompt.md
-       https://raw.githubusercontent.com/shakacode/shaka/main/skills/shaka/config/review-prompt.md].each do |target|
+       https://raw.githubusercontent.com/shakacode/shaka/main/skills/shaka/config/review-prompt.md
+       https://github.com/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md#missing].each do |target|
       output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, "[Prompt](#{target})")
       refute_predicate status, :success?
       assert_includes output.lines.grep(/\ALink a human guide/).first.to_s, target
