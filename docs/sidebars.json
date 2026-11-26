@@ -60,21 +60,40 @@
     },
     {
       "type": "category",
-      "label": "Articles",
+      "label": "Articles & case studies",
       "collapsed": true,
       "items": [
         "articles/engineering-teams-software-factory",
         "articles/pull-requests-in-the-age-of-agents",
+        {
+          "type": "link",
+          "label": "Case studies",
+          "href": "/case-studies"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "AI evals",
+      "collapsed": true,
+      "items": [
         "articles/review-process-study",
-        "articles/claude-code-team-review",
         "articles/checkpoint-sentence-eval",
         "articles/one-shot-pr-study",
         "articles/ci-and-hosted-review-repairs",
         "articles/hosted-review-prompt-comparison",
         "articles/review-signal-study",
         "articles/review-scope-pilot",
+        "articles/review-finding-recurrence"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "AI comparisons",
+      "collapsed": true,
+      "items": [
+        "articles/claude-code-team-review",
         "articles/evidence-first-review",
-        "articles/review-finding-recurrence",
         "articles/agents-made-you-a-manager",
         "articles/shaka-with-pstack-and-agent-skills"
       ]
