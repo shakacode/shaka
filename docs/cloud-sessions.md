@@ -107,8 +107,14 @@ The opt-in [DeepSeek reviewer](settings.md#reviewlocal_review_agents) runs throu
 Shaka's Ruby OpenRouter API adapter. It does not require native DeepSeek support in
 Codex, Claude Code or Cursor, and does not change the coding host's model.
 To use it, add DeepSeek to the repository's reviewer list and set
-`OPENROUTER_API_KEY` as a secret in the cloud environment running Shaka. It needs
-Ruby and outbound HTTPS.
+`OPENROUTER_API_KEY` as an environment variable in the cloud environment running Shaka.
+It needs Ruby and outbound HTTPS.
+
+In Claude Code on the web, add the key under the environment's **Environment variables**,
+not as a [network secret](https://code.claude.com/docs/en/cloud-environments#add-network-secrets).
+A network secret stays outside the session's machine, so Shaka cannot read it and the
+review reports a missing key. Anyone who can use the environment can read its variables,
+so keep the key out of an environment other people share.
 
 Try one review in the target environment before relying on it. A
 [recorded Claude Code web trial](https://github.com/shakacode/shaka/issues/277#issuecomment-6541487155)
