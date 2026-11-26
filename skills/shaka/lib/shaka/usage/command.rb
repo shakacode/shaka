@@ -2,6 +2,7 @@
 
 require 'optparse'
 require_relative '../error'
+require_relative 'antigravity_usage'
 require_relative 'claude_usage'
 require_relative 'codex_usage'
 require_relative 'cost_estimate'
@@ -39,10 +40,11 @@ module Shaka
       ['Native total', 'total_tokens']
     ].freeze
     READERS = { 'codex' => CodexUsage, 'claude-code' => ClaudeUsage, 'cursor' => CursorUsage,
-                'opencode' => OpencodeUsage, 'pi' => PiUsage, 'openrouter' => OpenrouterUsage }.freeze
+                'opencode' => OpencodeUsage, 'pi' => PiUsage, 'antigravity' => AntigravityUsage,
+                'openrouter' => OpenrouterUsage }.freeze
     HOST_CONTEXT = { 'codex' => 'CODEX_THREAD_ID', 'claude-code' => 'CLAUDE_CODE_SESSION_ID',
                      'cursor' => 'CURSOR_CONVERSATION_ID', 'opencode' => 'OPENCODE_SESSION_ID',
-                     'pi' => 'PI_CODING_AGENT' }.freeze
+                     'pi' => 'PI_CODING_AGENT', 'antigravity' => 'ANTIGRAVITY_CONVERSATION_ID' }.freeze
 
     def self.run(arguments)
       options = { files: [], turns: [], host: detected_host, format: 'markdown' }
@@ -68,11 +70,6 @@ module Shaka
         flags.on('--rate-root DIR', 'Implementation rate-card checkout') { |value| options[:rate_root] = value }
         flags.on('-h', '--help') { options[:help] = true }
       end
-    end
-
-    def self.detected_host
-      found = HOST_CONTEXT.select { |host, variable| host == 'pi' ? ENV[variable] == 'true' : ENV.key?(variable) }.keys
-      found.size > 1 ? nil : found.first || 'codex'
     end
 
     def initialize(options)

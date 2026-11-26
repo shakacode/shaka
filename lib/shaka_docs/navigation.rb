@@ -14,6 +14,7 @@ module ShakaDocs
     def node(item)
       case item
       when String then [[:doc, item]]
+      when Array then items(item)
       when Hash then typed_items(item)
       else raise ArgumentError, "Unsupported sidebar item: #{item.inspect}"
       end
@@ -26,6 +27,25 @@ module ShakaDocs
       when 'category' then items(item.fetch('items')) + landing_items(item['link'])
       else raise ArgumentError, "Unsupported sidebar item: #{item.inspect}"
       end
+    end
+
+    # A page filed under docs/reference/ is listed under a Reference category at any depth, so its folder
+    # matches where readers find it.
+    def misplaced_reference_pages(item)
+      return item.flat_map { |child| misplaced_reference_pages(child) } if item.is_a?(Array)
+      return misplaced_category_pages(item) if item.is_a?(Hash) && item['type'] == 'category'
+
+      reference_doc_ids(node(item))
+    end
+
+    def misplaced_category_pages(item)
+      return [] if item['label'] == 'Reference'
+
+      misplaced_reference_pages(item.fetch('items')) + reference_doc_ids(landing_items(item['link']))
+    end
+
+    def reference_doc_ids(entries)
+      entries.filter_map { |kind, value| value if kind == :doc && value.start_with?('reference/') }
     end
 
     def landing_items(item)

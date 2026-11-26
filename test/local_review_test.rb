@@ -1605,9 +1605,9 @@ module LocalReviewContextAssertion
   def assert_codex_invocation(trace, root, head)
     invocation = JSON.parse(File.read(trace))
     expected = ['exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
-                '-c', 'skills.include_instructions=false']
-    assert_equal expected, invocation.fetch('args').first(expected.length)
-    assert_includes invocation.fetch('args'), '--skip-git-repo-check'
+                '-c', 'skills.include_instructions=false', '--disable', 'apps',
+                '--disable', 'view_image', '-c', 'web_search="disabled"', '--skip-git-repo-check', '--json', '-o']
+    assert_equal expected, invocation.fetch('args')[0...-2]
     assert_includes invocation.fetch('prompt'), '+after'
     assert_match(/--- BEGIN DIFF DATA [0-9a-f]{32} ---/, invocation.fetch('prompt'))
     assert_codex_source_context(invocation, root, head)

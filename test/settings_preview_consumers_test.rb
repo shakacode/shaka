@@ -51,9 +51,10 @@ class SettingsPreviewConsumersTest < Minitest::Test
   end
 
   def reviewer(root, trusted, *)
-    output, error, status = Open3.capture3({ 'PATH' => ReviewerCliStubs.path }, *COMMAND, 'reviewer',
-                                           '--root', root, '--ref', trusted,
-                                           '--implementer', 'anthropic/claude', *)
+    output, error, status = Dir.mktmpdir('shaka-home') do |home|
+      Open3.capture3({ 'PATH' => ReviewerCliStubs.path, 'HOME' => home }, *COMMAND, 'reviewer',
+                     '--root', root, '--ref', trusted, '--implementer', 'anthropic/claude', *)
+    end
     assert_predicate status, :success?, error
     JSON.parse(output)
   end

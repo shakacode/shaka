@@ -2,6 +2,45 @@
 
 require_relative 'support/docs_navigation_fixture'
 
+class DocsReferenceFolderTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_reference_folder_page_outside_reference_category_fails
+    setup = { 'type' => 'category', 'label' => 'Setup', 'items' => %w[expected-experience reference/updates] }
+    output, _, status = check({ 'docsSidebar' => [setup, 'reference/timings'] }, '# What to expect',
+                              'docs/reference/updates.md' => '# Updates', 'docs/reference/timings.md' => '# Timings')
+    refute_predicate status, :success?
+    misplaced = output.lines.grep(%r{docs/reference/}).first
+    assert_includes misplaced, 'reference/updates'
+    assert_includes misplaced, 'reference/timings'
+  end
+
+  def test_non_string_document_id_fails_without_a_backtrace
+    numeric = { 'type' => 'doc', 'id' => 42 }
+    setup = { 'type' => 'category', 'label' => 'Setup', 'items' => ['expected-experience', numeric] }
+    _, errors, status = check('docsSidebar' => [setup])
+    refute_predicate status, :success?
+    assert_includes errors, 'Expected a string sidebar id'
+    refute_includes errors, 'NoMethodError'
+  end
+
+  def test_reference_folder_page_in_reference_category_passes
+    reference = { 'type' => 'category', 'label' => 'Reference', 'items' => ['reference/updates'] }
+    _, _, status = check({ 'docsSidebar' => ['expected-experience', reference] }, '# What to expect',
+                         'docs/reference/updates.md' => '# Updates')
+    assert_predicate status, :success?
+  end
+
+  def test_reference_folder_page_in_nested_reference_category_passes
+    reference = { 'type' => 'category', 'label' => 'Reference', 'items' => ['reference/updates'] }
+    guides = { 'type' => 'category', 'label' => 'Guides', 'items' => ['expected-experience', reference] }
+    [[guides], ['expected-experience', [reference]]].each do |sidebar|
+      _, _, status = check({ 'docsSidebar' => sidebar }, '# What to expect', 'docs/reference/updates.md' => '# Updates')
+      assert_predicate status, :success?, sidebar.inspect
+    end
+  end
+end
+
 class DocsNavigationTest < Minitest::Test
   include DocsNavigationFixture
 

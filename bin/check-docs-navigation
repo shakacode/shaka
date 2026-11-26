@@ -201,6 +201,7 @@ begin
 
   sidebar_items = navigation.transform_values { |sidebar| ShakaDocs::Navigation.items(sidebar) }
   ids = sidebar_items.fetch('docsSidebar').filter_map { |kind, value| value if kind == :doc }
+  misplaced = ShakaDocs::Navigation.misplaced_reference_pages(navigation.fetch('docsSidebar'))
   all_items = sidebar_items.values.flatten(1)
   doc_paths = inventory.filter_map { |file| File.join(repository, file) if file.start_with?(prefix) }
   reject_docs_symlinks(doc_paths, repository, indexed)
@@ -251,6 +252,9 @@ begin
   end
   puts "Missing from docs/sidebars.json: #{missing.join(', ')}" unless missing.empty?
   puts "Navigation targets missing pages: #{stale.join(', ')}" unless stale.empty?
+  unless misplaced.empty?
+    puts "Move these pages out of docs/reference/ or list them under Reference: #{misplaced.join(', ')}"
+  end
   puts "Link a human guide, not agent instructions: #{agent_links.join(', ')}" unless agent_links.empty?
   checked_paths = [repository] + inventory.flat_map do |file|
     source_components(File.join(repository, file), repository)
@@ -259,11 +263,12 @@ begin
   puts "Unresolved links in docs/ and skills/:\n#{broken.join("\n")}" unless broken.empty?
   malformed = malformed_figures(root, doc_paths)
   puts "Figures that do not parse as SVG: #{malformed.join(', ')}" unless malformed.empty?
-  exit 1 unless [missing, stale, duplicates, collisions, generated, unsupported_home, numbered, excluded,
+  exit 1 unless [missing, stale, misplaced, duplicates, collisions, generated, unsupported_home, numbered, excluded,
                  overrides, unclassified, agent_links, broken, malformed].all?(&:empty?)
 
-  puts "All #{pages.size} published pages are in docs/sidebars.json and link no agent instructions; " \
-       'Markdown links and heading anchors in docs/ and skills/ resolve; figures parse.'
+  puts "All #{pages.size} published pages are in docs/sidebars.json, reference pages sit under Reference, " \
+       'and no page links agent instructions; Markdown links and heading anchors in docs/ and skills/ resolve; ' \
+       'figures parse.'
 rescue JSON::ParserError, KeyError, ArgumentError, Errno::ENOENT, Addressable::URI::InvalidURIError,
        Psych::Exception => e
   warn "Docs navigation check failed: #{e.message}"
