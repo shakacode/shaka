@@ -127,8 +127,8 @@ selected paths have clean Git status, the file bytes and executable modes match
 `HEAD`, each selected directory contains a tracked file, and no selected file is
 world-writable. Windows reports no execute bit, so there the execute modes are not compared.
 A Git-clean checkout with converted line endings can therefore record a development
-installation; on Windows the installer's own clones keep stored line endings unless an attribute
-sets eol=crlf.
+installation. On Windows the installer's own clones set `core.autocrlf=false` and `core.eol=lf`, which keep
+stored line endings unless an attribute sets eol=crlf or a filter rewrites the files.
 Development installations record a base
 revision when available and a content hash.
 Doctor reports the identity recorded at install time; it does not recheck the

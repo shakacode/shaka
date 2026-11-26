@@ -2,6 +2,7 @@
 
 require 'open3'
 require_relative '../call_log'
+require_relative '../doctor/bounded_command'
 require_relative '../error'
 require_relative '../executable_file'
 require_relative '../local_review/executable'
@@ -17,6 +18,9 @@ module Shaka
     # on what machine, and the phases and failing test classes the command reported into the file its
     # environment names.
     module TimedCheck
+      # A stalled git.exe fails the run instead of holding it before the check starts.
+      EXEC_PATH_SECONDS = 30
+
       module_function
 
       def run(context, tree, path:, arguments:)
@@ -45,8 +49,9 @@ module Shaka
         git = LocalReviewPathGuard.safe_executable(ENV.fetch('PATH', ''), 'git.exe', checkout)
         raise Error, 'Cannot find git.exe outside the checkout on PATH' unless git
 
-        output, status = Open3.capture2({ 'GIT_EXEC_PATH' => nil }, git, '--exec-path')
-        raise Error, 'Cannot find Git for Windows: git --exec-path failed' unless status.success?
+        output, error, ok = Doctor::BoundedCommand.new(timeout: EXEC_PATH_SECONDS)
+                                                  .call([{ 'GIT_EXEC_PATH' => nil }, git, '--exec-path'])
+        raise Error, "Cannot find Git for Windows: git --exec-path failed: #{error.strip}" unless ok
 
         trusted_shell(File.expand_path('../../..', output.strip), checkout)
       end
