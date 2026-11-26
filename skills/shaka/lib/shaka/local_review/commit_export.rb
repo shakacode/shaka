@@ -96,10 +96,11 @@ module Shaka
     end
 
     # Compared the way Windows reads the name: trailing dots and spaces dropped, then the text
-    # before the first dot. Paths arrive as raw bytes; one that is not UTF-8 names no device.
+    # before the first dot. Paths arrive as raw bytes; one that is not UTF-8 cannot be written
+    # faithfully on Windows or checked, so it is refused.
     def windows_device?(part)
       name = part.dup.force_encoding(Encoding::UTF_8)
-      return false unless name.valid_encoding?
+      return true unless name.valid_encoding?
 
       name.sub(/[. ]+\z/, '').split('.', 2).first.to_s.sub(/ +\z/, '').match?(WINDOWS_DEVICE)
     end
