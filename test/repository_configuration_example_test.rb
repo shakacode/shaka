@@ -96,6 +96,16 @@ class RepositoryConfigurationExampleRiskAreasTest < Minitest::Test
       assert_equal 'merge_and_trust', Shaka::PostImplementationRisk.hits(areas, [path]).first&.fetch('area'), path
     end
   end
+
+  # The description's verification line is wording that no merge check reads, so the reviewer rates a change to it.
+  def test_the_verification_line_renderer_is_rated_by_the_reviewer
+    areas = Shaka::RepositoryConfig.load(root: File.expand_path('..', __dir__)).high_risk_areas
+    publication = 'skills/shaka/lib/shaka/publication'
+
+    assert_empty Shaka::PostImplementationRisk.hits(areas, ["#{publication}/verification_gates.rb"])
+    assert_equal 'merge_and_trust',
+                 Shaka::PostImplementationRisk.hits(areas, ["#{publication}/feature_guard.rb"]).first&.fetch('area')
+  end
 end
 
 # Areas the example shows from the packaged defaults keep the packaged patterns, so the example cannot drift.
