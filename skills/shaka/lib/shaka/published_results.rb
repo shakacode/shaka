@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'publication/managed_region'
-require_relative 'publication/verification_gates'
+require_relative 'publication/verification_line'
 
 module Shaka
   # The results a description already shows for its head. Only `description` reads this, to
@@ -9,7 +9,7 @@ module Shaka
   # It stays outside evidence/ so a change here supersedes no earlier result.
   module PublishedResults
     SETTINGS_DRIFT = /\A(?:settings components differ: |public settings snapshot differs)/
-    GAPS = /^#{Regexp.escape(VerificationGates::GAPS)} .+$/
+    GAPS = /^#{Regexp.escape(VerificationLine::GAPS)} .+$/
 
     module_function
 
@@ -34,7 +34,7 @@ module Shaka
     end
 
     def verified_line(short_head)
-      /^#{Regexp.escape(VerificationGates::LABEL)} (?!UNKNOWN).* at `#{Regexp.escape(short_head)}`\./
+      /^#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN).* at `#{Regexp.escape(short_head)}`\./
     end
     private_class_method :verified_line
   end

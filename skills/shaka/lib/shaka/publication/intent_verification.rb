@@ -2,7 +2,7 @@
 
 require_relative '../error'
 require_relative 'text'
-require_relative 'verification_gates'
+require_relative 'verification_line'
 require_relative 'diff_buckets'
 
 module Shaka
@@ -23,7 +23,7 @@ module Shaka
     # The shortfall compares the bound reviews with the trusted reviewer count; nil when none.
     # An intent review_effort, the retired 1-5 rating, is ignored.
     def render(content, verdict = nil, pull = nil, task: nil, shortfall: nil)
-      gate_line = VerificationGates.render(verdict, content['review'], shortfall)
+      gate_line = VerificationLine.render(verdict, content['review'], shortfall)
       spec = object(content, 'verification')
       evidence(spec, content['wip'].nil? ? CHECKS : (0..CHECKS.max))
       [intent(object(content, 'intent'), pull, task),
