@@ -12,13 +12,15 @@ class CliDescriptionKeptResultsTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'Rewording keeps verified results.'
   LINE = '**Validation and review:** `validate` passed (exit 0); local review by openai/codex at `ccccccc`.'
+  # A description published before passes dropped their exit code shows the trimmed line on republish.
+  SHOWN = LINE.sub(' (exit 0)', '')
   KEPT = 'not rechecked under the current Shaka or settings'
 
   def test_rewording_keeps_the_verified_line_and_reports_that_it_was_not_rechecked
     published, result = republish("<!-- shaka:begin -->\n#{LINE}\n<!-- shaka:end -->")
 
-    assert_includes published, "#{LINE} Kept from this commit’s earlier description"
-    refute_includes published, "\n#{LINE}\n"
+    assert_includes published, "#{SHOWN} Kept from this commit’s earlier description"
+    refute_includes published, '(exit 0)'
     refute_includes published, 'UNKNOWN: no validation or review results'
     assert_includes result.fetch('evidence_kept'), KEPT
   end

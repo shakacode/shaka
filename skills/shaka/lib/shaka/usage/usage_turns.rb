@@ -8,7 +8,7 @@ module Shaka
   module UsageTurns
     FIELDS = { 'codex' => 'turn_id', 'claude-code' => 'promptId (session_id for claude -p JSON)',
                'cursor' => 'generation_id', 'opencode' => 'user message id', 'pi' => 'user entry id',
-               'openrouter' => 'API response id' }.freeze
+               'antigravity' => 'USER_INPUT step_index', 'openrouter' => 'API response id' }.freeze
 
     # A mistyped turn would otherwise publish an empty table that reads as missing records.
     # A source with no readable turns keeps its own unavailable-records report instead.

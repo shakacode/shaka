@@ -241,7 +241,7 @@ class UsageCursorCostTest < Minitest::Test
     assert_metric report, 'Metric', 'grok-4.7'
     assert_metric report, 'USD estimate', '$0.000260'
     assert_includes report, 'cursor.com/docs/models/grok-4-7'
-    assert_includes report, '2026-09-21'
+    assert_includes report, '2026-11-21'
     refute_includes report, 'grok-4-6'
     refute_includes report, '256K'
   end
@@ -282,6 +282,73 @@ class UsageCursorCostTest < Minitest::Test
     ['developers.openai.com', 'learn.chatgpt.com', 'Pi recorded', '0.000000'].each do |snippet|
       refute_includes report, snippet
     end
+  end
+end
+
+class UsageCursorGeminiCostTest < Minitest::Test
+  RATES = {
+    'gemini-3.1-pro' => '$0.000368',
+    'gemini-3.8-flash' => '$0.000123',
+    'gemini-4-argon' => '$0.000324',
+    'gemini-4-carbon' => '$0.000324',
+    'gemini-4-hydrogen' => '$0.000243',
+    'gemini-4-neon' => '$0.000486'
+  }.freeze
+
+  def test_cursor_gemini_standard_rates
+    RATES.each do |model, usd|
+      report = estimate(model)
+      assert_metric report, 'Metric', model
+      assert_metric report, 'USD estimate', usd
+      assert_includes report, "cursor.com/docs/models/#{model.tr('.', '-')}"
+    end
+  end
+
+  def test_cursor_gemini_neon_names_the_verified_card
+    report = estimate('gemini-4-neon')
+    assert_includes report, '2026-11-21'
+    refute_includes report, 'Cursor credit rates unpublished'
+  end
+
+  def test_cursor_gemini_explicit_fast_stays_unpriced
+    report = estimate('gemini-4-neon', billing: 'fast')
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    assert_includes report, 'Unsupported provider or configured model'
+  end
+
+  def test_cursor_gemini_missing_billing_uses_the_only_published_rate
+    report = estimate('gemini-4-neon', billing: nil)
+    assert_metric report, 'USD estimate', '$0.000486'
+    assert_includes report, 'cursor.com/docs/models/gemini-4-neon'
+  end
+
+  def test_cursor_gemini_neon_has_no_long_context_multiple
+    report = estimate('gemini-4-neon', usage: tokens(300_000))
+    assert_metric report, 'USD estimate', '$0.900000'
+    refute_includes report, '256K'
+  end
+
+  def test_cursor_gemini_31_pro_keeps_the_base_rate_above_200k
+    report = estimate('gemini-3.1-pro', usage: tokens(200_001))
+    assert_metric report, 'USD estimate', '$0.400002'
+    refute_includes report, '200K'
+  end
+
+  private
+
+  def estimate(model, billing: 'standard', usage: {})
+    Shaka::CostEstimate.new([cursor_record(model, billing, usage)]).report
+  end
+
+  def tokens(input)
+    { 'input_tokens' => input, 'cached_input_tokens' => 0, 'cache_write_input_tokens' => 0, 'output_tokens' => 0 }
+  end
+
+  def cursor_record(model, billing, usage)
+    { 'configuration' => ['cursor', model, "cursor-#{model}-medium", 'medium'],
+      'billing_mode' => billing,
+      'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 40,
+                   'cache_write_input_tokens' => 7, 'output_tokens' => 20 }.merge(usage) }
   end
 end
 

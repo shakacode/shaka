@@ -46,8 +46,8 @@ was measured and priced** list under the table shows each report's rate card,
 the date its prices were verified, source links, and what its sources left out. Known accounting
 boilerplate moves to the guide; unknown prose and report-specific limitations stay visible.
 The full original note stays in the hidden record for later publication. A PR left open across
-a price change therefore shows which rows used which prices. To price every row with current rates, rerun `shaka usage` for each report and
-publish the new records.
+a price change therefore shows which rows used which prices. To price every row with the current rate card, rerun `shaka usage` for each report and
+publish the new records. A dated price still follows each response's date.
 
 Put that `usage` object in the PR, or the JSON report in the final response when
 there is no PR. **Native** figures come from the host's records. **Estimated** figures apply a
@@ -76,13 +76,13 @@ is published.
 
 ## Select the work being reported
 
-The helper supports Codex, Claude Code, Cursor, OpenCode, and Pi. It normally
-selects the latest turn. That is a snapshot, not necessarily the whole task.
+The helper supports Codex, Claude Code, Cursor, OpenCode, Pi, and Antigravity. It
+normally selects the latest turn. That is a snapshot, not necessarily the whole task.
 
 | Option | Use |
 | --- | --- |
 | `--host NAME` | Select a host when multiple host markers are present |
-| `--file PATH` | Read a saved native source; repeat for additional sources |
+| `--file PATH` | Read a saved native source; repeat for additional sources, except Antigravity, which takes one |
 | `--turn ID` | Select specific turns; repeat as needed. Each host section below names the ID field |
 | `--all-turns` | Include a session dedicated entirely to this task; cannot combine with `--turn` |
 | `--since-time UTC` | Include responses at or after the task began in a shared session; whole-second sources include the start second. Cannot combine with `--turn` or `--all-turns` |
@@ -112,8 +112,8 @@ An interval associated with several commits is **SHARED**. Never divide its toke
 into invented per-commit amounts. Preserve the original mapping after squash and
 associate the merged SHA without recounting it.
 
-The helper deduplicates response IDs across supplied files, including resumed or
-forked copies, and ignores cumulative snapshots. Conflicting counters,
+Where a reader accepts several files, the helper deduplicates response IDs across
+them, including resumed or forked copies, and ignores cumulative snapshots. Conflicting counters,
 configuration, or interval metadata produce `UNKNOWN`.
 
 ## Keep earlier reports when work changes hands
@@ -141,6 +141,7 @@ per configuration. Configured and routed models remain distinct.
 | Cursor | Input includes cache reads and writes; rows show the subsets. | Reasoning, native total, and parent-chat subagent usage are unknown or absent. |
 | OpenCode | Input excludes cache reads and writes. | Native total sums input, output, reasoning, cache reads, and cache writes; OpenCode 2 omits it, so it is unknown. |
 | Pi | Input excludes cache reads and writes. | Native total is copied. Reasoning, when recorded, is part of output. |
+| Antigravity | Input excludes cache reads. Cache writes are unknown. | Reasoning is part of output. Routed model, native total, and subagent usage are unknown or absent. |
 
 Reports are **PARTIAL** while sources omit active work, reviewers, subagents, or
 tool-model usage. They do not establish actual charges or human active time.
@@ -274,6 +275,36 @@ discloses excluded summarizer usage on the active branch. A dedicated session's
 `/session` total may be separate comparison evidence; do not edit it into the
 helper report or attribute summary usage to a turn.
 
+## What the Antigravity reader includes
+
+`ANTIGRAVITY_CONVERSATION_ID` and `ANTIGRAVITY_APP_DATA_DIR`, set in the agent's shell,
+select `brain/CONVERSATION_ID/.system_generated/logs/transcript.jsonl` under that data
+directory. The reader keeps each step's index, time, model, and token counters, never
+its content. A saved copy needs `--host antigravity --file PATH` with the path still
+ending in `brain/CONVERSATION_ID/.system_generated/logs/NAME`, because that directory
+identifies its responses. A transcript with an unreadable line reports no responses,
+since the line could be a turn boundary.
+
+A turn is the `step_index` of a `USER_INPUT` step, and its responses are the
+`PLANNER_RESPONSE` steps that follow. A step of another type counts when it carries a
+token counter: compacting a conversation writes a `CHECKPOINT` step with counters and no
+model. The reader takes one transcript per run and refuses a second `--file`, because
+step numbers repeat across conversations. A subagent's conversation has no `USER_INPUT`
+step, so the reader reports no responses for it, and the main conversation leaves it out.
+
+The recorded model is the ID the user selected, so it is the configured model. Its last
+segment is the effort when it is `low`, `medium`, `high`, or `xhigh`; any other ending
+leaves the effort unknown. A `gemini-` ID names Google as the provider; the transcript
+names none for any other ID. A transcript from before Antigravity recorded models
+keeps its tokens with an unknown model.
+
+Validation used CLI `1.5.14` and `1.5.15`. Single-turn runs, a two-turn conversation, a
+compacted one, and one whose transcript Antigravity had split into 100 KB chunk files
+matched their `--output-format json` usage for input, cache reads, and output;
+`transcript.jsonl` stayed whole after the split. Desktop app `2.34.0` and IDE `2.8.0` set
+the same variables and write the same transcript under `~/.gemini/antigravity`. Their
+sandbox hides files outside the workspace until the user allows the command.
+
 ## Cost estimates
 
 For an OpenRouter usage source, read [recorded API charges](openrouter.md#recorded-charges)
@@ -300,8 +331,9 @@ report.
 | --- | --- |
 | Standard Codex credits | Configured supported OpenAI model. Codex has no separate cache-write charge. Shaka leaves responses with reported cache writes unpriced in this estimate. |
 | Standard API-equivalent USD | Ordinary input excludes cache reads and writes. Cache reads use the published cache-read rate. Cache writes use the 30-minute rate. |
-| Cursor on-demand USD | Configured supported Grok model and recorded Fast/standard mode. Cache writes remain ordinary input because no separate rate is published. |
+| Cursor on-demand USD | Configured supported Grok or Gemini model and recorded Fast or standard mode. Gemini has no separate Fast rate. Its Fast column repeats standard so the loader accepts the card, and an explicit Fast response stays unpriced. A missing flag uses that one rate. Grok's rates differ, so a missing or unrecognized flag stays unpriced. Cache writes remain ordinary input because no separate rate is published. |
 | Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published fast-mode rates are priced. |
+| Google list-price USD | Antigravity Gemini model, priced as the configured ID or that ID without its effort, such as `gemini-4-argon` for `gemini-4-argon-high`. |
 | Pi native nominal USD | Copy the host's recorded cost instead of applying a rate card. |
 
 Rate notes and source links apply only to supported provider/model pairs. A
@@ -327,14 +359,29 @@ search charge. Absent US routing uses the provider's global default. The Septemb
 
 ### Cursor and OpenCode details
 
-The September 21, 2026 Cursor rate record covers Grok 4.6 and 4.7, including Fast
-variants. Grok 4.7 above 256k reported input uses twice standard rates, or three
-times Fast rates. Grok 4.6 has no long-context multiplier. Missing billing mode
-leaves the estimate unknown. Cursor-only reports omit Codex credits.
+The November 21, 2026 Cursor rate record covers Grok 4.6 and 4.7, including Fast
+variants, and the selectable Gemini models at their published standard rates.
+Grok 4.7 above 256k reported input uses twice standard rates, or three
+times Fast rates. Grok 4.6 has no long-context multiplier. Gemini has no separate Fast rate. Its Fast
+column repeats standard so the loader accepts the card, and an explicit Fast response
+stays unpriced. A missing flag uses that one rate. A null or other unrecognized flag
+stays unpriced. Grok's Fast rate is different, so a missing or unrecognized flag stays
+unpriced.
+Gemini 3.1 Pro's model page says input above 200k costs more, and the pricing table
+publishes no second rate, so those tokens use the published base rate.
+Cursor-only reports omit Codex credits.
 
 OpenCode's cache-exclusive input does not match the OpenAI/Cursor estimator's
 required input shape, so those scenarios remain unknown. Its Anthropic responses
-also remain unpriced because exports lack billing speed.
+also remain unpriced because exports lack billing speed, and its Google responses
+because it counts reasoning beside output, while Google's rates price output that
+includes thinking.
+
+### Google details
+
+Search grounding and explicit-cache storage are not recorded and are excluded. Claude
+models run in Antigravity stay unpriced, and so does every Google model when the rate
+card has no `google` section.
 
 These are dated rate-card scenarios, not invoices. Subscription treatment,
 discounts, service tier, routing, account terms, and actual charges may differ.
@@ -468,6 +515,13 @@ no `(configured)` label. The provider stays as supplied. A note appears only whe
 the model or effort is `UNKNOWN`. A subagent shares its parent's session ID, so a
 publication from one would carry the main chat's settings; subagents do not publish.
 
+For Antigravity publications, Ruby reads that host's transcript and takes the model ID
+and its effort from the current turn's latest response. The header labels the model
+`(configured)`, and the provider stays as supplied. A turn without a response, a response
+without a model, or an unreadable line anywhere in the transcript leaves the fields
+`UNKNOWN` with a note.
+
 Other hosts retain supplied attribution with an explicit unverified note until
-a native publisher reader is available. Aggregate usage rows cannot establish
-the current publisher's settings.
+a native publisher reader is available. So does a session that carries more than
+one host's marker, such as Antigravity started from another agent's shell. Aggregate
+usage rows cannot establish the current publisher's settings.

@@ -68,6 +68,12 @@ module Shaka
       @source.context_configuration if @source.respond_to?(:context_configuration)
     end
 
+    # The source's counter conventions decide which list prices can apply.
+    def cost_estimate
+      CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT,
+                                       google_counters: @source.class::GOOGLE_COUNTERS, rate_card: selected_rate_card)
+    end
+
     def cost_responses
       return @responses unless @responses.empty? && context_row
 
