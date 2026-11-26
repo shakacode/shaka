@@ -82,7 +82,7 @@ module ShakaDocs
       end
     end
 
-    # The docs site cannot resolve a relative link out of docs/, and only main is known to hold the file.
+    # One spelling names the ref known to hold the file; relative links and other refs do not qualify.
     def copyable_example_url?(path, target)
       link = url(target)
       link = link.omit(:query, :fragment) if link.host

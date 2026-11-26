@@ -335,7 +335,7 @@ class DocsCopyableExamplesTest < Minitest::Test
     assert_predicate status, :success?, output
   end
 
-  def test_relative_links_to_examples_fail_because_the_site_cannot_resolve_them
+  def test_relative_links_to_examples_fail
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] },
                               '[Prompt](../skills/shaka/config/review-prompt.md)',
                               'skills/shaka/config/review-prompt.md' => "# Review\n")
