@@ -82,9 +82,11 @@ module ShakaDocs
       end
     end
 
-    # The docs site cannot resolve a relative link out of docs/, so only an absolute URL qualifies.
+    # The docs site cannot resolve a relative link out of docs/, and only main is known to hold the file.
     def copyable_example_url?(path, target)
-      COPYABLE_EXAMPLES.include?(path) && !url(target).host.nil?
+      link = url(target)
+      link = link.omit(:query, :fragment) if link.host
+      COPYABLE_EXAMPLES.include?(path) && link.to_s == "https://github.com/shakacode/shaka/blob/main/#{path}"
     end
 
     def document_files(repository)

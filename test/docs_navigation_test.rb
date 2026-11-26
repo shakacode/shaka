@@ -15,6 +15,14 @@ class DocsReferenceFolderTest < Minitest::Test
     assert_includes misplaced, 'reference/timings'
   end
 
+  def test_reference_folder_page_outside_reference_category_in_a_secondary_sidebar_fails
+    reference = { 'type' => 'category', 'label' => 'Reference', 'items' => ['reference/updates'] }
+    sidebars = { 'docsSidebar' => ['expected-experience', reference], 'otherSidebar' => ['reference/updates'] }
+    output, _, status = check(sidebars, '# What to expect', 'docs/reference/updates.md' => '# Updates')
+    refute_predicate status, :success?
+    assert_includes output, 'list them under Reference: reference/updates'
+  end
+
   def test_non_string_document_id_fails_without_a_backtrace
     numeric = { 'type' => 'doc', 'id' => 42 }
     setup = { 'type' => 'category', 'label' => 'Setup', 'items' => ['expected-experience', numeric] }

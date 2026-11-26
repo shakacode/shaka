@@ -56,8 +56,9 @@ legacy control filenames are listed in `lib/shaka_docs/audiences.rb`.
 Configuration data and installable workflow templates, including
 `claude-code-review.yml`, remain linkable for setup. So do the default prompts and
 configuration examples maintainers open or copy, listed in `COPYABLE_EXAMPLES` in
-`lib/shaka_docs/audiences.rb`. Link them by GitHub `main` URL; the check refuses relative links
-to them because the docs site cannot resolve paths outside `docs/`.
+`lib/shaka_docs/audiences.rb`, when linked as `https://github.com/shakacode/shaka/blob/main/PATH`.
+The check refuses other links to them: the docs site cannot resolve paths outside `docs/`,
+and another ref may not hold the file.
 Citations of other projects'
 skills remain available. Extensionless source paths under `skills/` or `.agents/`
 are treated as agent targets, including directories and scripts.

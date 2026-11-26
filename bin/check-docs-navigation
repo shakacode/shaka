@@ -201,7 +201,7 @@ begin
 
   sidebar_items = navigation.transform_values { |sidebar| ShakaDocs::Navigation.items(sidebar) }
   ids = sidebar_items.fetch('docsSidebar').filter_map { |kind, value| value if kind == :doc }
-  misplaced = ShakaDocs::Navigation.misplaced_reference_pages(navigation.fetch('docsSidebar'))
+  misplaced = navigation.values.flat_map { |sidebar| ShakaDocs::Navigation.misplaced_reference_pages(sidebar) }.uniq
   all_items = sidebar_items.values.flatten(1)
   doc_paths = inventory.filter_map { |file| File.join(repository, file) if file.start_with?(prefix) }
   reject_docs_symlinks(doc_paths, repository, indexed)
