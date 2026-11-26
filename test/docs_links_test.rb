@@ -111,7 +111,7 @@ class DocsFootnotesTest < Minitest::Test
   end
 
   def test_rendered_links_inside_footnotes_get_the_audience_check
-    page = "Text[^1]\n\n[^1]: [Agent](../skills/shaka/config/review-prompt.md)\n"
+    page = "Text[^1]\n\n[^1]: [Agent](../skills/shaka/config/work-prompt.md)\n"
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
     refute_predicate status, :success?
     assert_includes output, 'Link a human guide, not agent instructions:'

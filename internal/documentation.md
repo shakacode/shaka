@@ -54,7 +54,10 @@ Agent Markdown and rules in host configuration directories, such as `.claude/`
 and `.github/instructions/`, are agent destinations too. The canonical paths and
 legacy control filenames are listed in `lib/shaka_docs/audiences.rb`.
 Configuration data and installable workflow templates, including
-`claude-code-review.yml`, remain linkable for setup. Citations of other projects'
+`claude-code-review.yml`, remain linkable for setup. So do the default prompts and
+configuration examples maintainers open or copy, listed in `COPYABLE_EXAMPLES` in
+`lib/shaka_docs/audiences.rb`; link them on GitHub `main` so docs-site readers can open them.
+Citations of other projects'
 skills remain available. Extensionless source paths under `skills/` or `.agents/`
 are treated as agent targets, including directories and scripts.
 Source citations use a commit, tag, or branch without

@@ -120,7 +120,7 @@ class DocsCaseInventoryTest < Minitest::Test
   end
 
   def test_cdn_repository_paths_get_the_same_agent_classification
-    paths = %w[skills/shaka/config/review-prompt.md .agents/shaka/instructions/review.md]
+    paths = %w[skills/shaka/config/work-prompt.md .agents/shaka/instructions/checkpoint.md]
     paths.each do |path|
       page = "[Guide](https://cdn.jsdelivr.net/gh/shakacode/shaka@main/#{path})"
       output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)

@@ -326,8 +326,8 @@ None of these ideas has shipped:
 - Shaka at [`e13cc94`](https://github.com/shakacode/shaka/tree/e13cc94b4cdf), rechecked at
   [`5ffb304`](https://github.com/shakacode/shaka/tree/5ffb3041a382): the
   [settings reference](../settings.md), the
-  [enforcement map](../../skills/shaka/config/enforcement.yml), the built-in
-  `skills/shaka/config/review-prompt.md`, the [hosted review guide](../settings.md#hosted-claude-review),
+  [enforcement map](../../skills/shaka/config/enforcement.yml), the
+  [review prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md), the [hosted review guide](../settings.md#hosted-claude-review),
   and the studies linked above.
 - The "Protect main" ruleset of `shakacode/shaka`, read through the GitHub API on
   2026-11-14 (UTC).

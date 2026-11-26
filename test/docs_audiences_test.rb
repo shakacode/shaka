@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'support/docs_navigation_fixture'
+require_relative '../lib/shaka_docs/audiences'
 
 class DocsAudienceTest < Minitest::Test
   include DocsNavigationFixture
@@ -41,9 +42,9 @@ class DocsAudienceTest < Minitest::Test
     assert_predicate status, :success?, output
   end
 
-  AGENT_DESTINATIONS = %w[../skills/mct/SKILL.md ../skills/shaka/config/review-prompt.md
+  AGENT_DESTINATIONS = %w[../skills/mct/SKILL.md ../skills/shaka/config/work-prompt.md
                           ../skills/shaka/config/workflow.yml
-                          ../.agents/shaka/instructions/review.md ../AGENTS.md ../agents.override.md
+                          ../.agents/shaka/instructions/checkpoint.md ../AGENTS.md ../agents.override.md
                           ../CLAUDE.local.md ../GEMINI.md
                           https://github.com/shakacode/shaka/blob/main/AGENTS.日本.md
                           ../.github/copilot-instructions.md ../.github/instructions/ruby.instructions.md
@@ -143,7 +144,7 @@ class DocsAudienceRoutesTest < Minitest::Test
 
   def test_quoted_and_list_reference_definitions_cannot_hide_agent_links
     ['> ', '> > ', '- '].each do |prefix|
-      page = "#{prefix}[Review][prompt]\n#{prefix}\n#{prefix}[prompt]: ../skills/shaka/config/review-prompt.md\n"
+      page = "#{prefix}[Review][prompt]\n#{prefix}\n#{prefix}[prompt]: ../skills/shaka/config/work-prompt.md\n"
       output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
       refute_predicate status, :success?, output
       assert_includes output, 'Link a human guide, not agent instructions:'
@@ -151,7 +152,7 @@ class DocsAudienceRoutesTest < Minitest::Test
   end
 
   def test_multiline_quoted_reference_is_checked
-    page = "> [Review][prompt]\n>\n> [prompt]:\n>   ../skills/shaka/config/review-prompt.md\n"
+    page = "> [Review][prompt]\n>\n> [prompt]:\n>   ../skills/shaka/config/work-prompt.md\n"
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
     refute_predicate status, :success?, output
     assert_includes output, 'Link a human guide, not agent instructions:'
@@ -187,7 +188,7 @@ class DocsAudienceExamplesTest < Minitest::Test
   end
 
   def test_html_attribute_case_does_not_hide_an_agent_destination
-    page = '<a HREF="//github.com/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md">Review</a>'
+    page = '<a HREF="//github.com/shakacode/shaka/blob/main/skills/shaka/config/work-prompt.md">Review</a>'
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
     refute_predicate status, :success?
     assert_includes output, 'Link a human guide, not agent instructions:'
@@ -229,11 +230,11 @@ class DocsAudienceExamplesTest < Minitest::Test
   def test_code_examples_and_unused_definitions_are_not_links
     page = <<~MARKDOWN
       ```markdown
-      [Agent](../skills/shaka/config/review-prompt.md)
+      [Agent](../skills/shaka/config/work-prompt.md)
       ```
       `[Agent](../AGENTS.md)`
 
-      [unused]: ../skills/shaka/config/review-prompt.md
+      [unused]: ../skills/shaka/config/work-prompt.md
     MARKDOWN
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
     assert_predicate status, :success?, output
@@ -319,5 +320,18 @@ class DocsSlashRefTest < Minitest::Test
     output, errors, status = check({ 'docsSidebar' => ['expected-experience'] },
                                    "[Guide](#{prefix}/docs/settings.md)")
     assert_predicate status, :success?, "#{output}\n#{errors}"
+  end
+end
+
+# Maintainers open and copy these from guides, so the docs site needs a link to each.
+class DocsCopyableExamplesTest < Minitest::Test
+  include DocsNavigationFixture
+
+  def test_default_prompts_and_configuration_examples_stay_linkable
+    page = ShakaDocs::Audiences::COPYABLE_EXAMPLES.map do |path|
+      "[example](https://github.com/shakacode/shaka/blob/main/#{path})"
+    end.join("\n")
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
+    assert_predicate status, :success?, output
   end
 end

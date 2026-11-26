@@ -17,6 +17,16 @@ module ShakaDocs
                            .github/agents .github/instructions .github/skills].freeze
     AGENT_CONTROL_FILES = %w[.cursorrules .windsurfrules .clinerules].freeze
     AGENT_WORKFLOW = 'skills/shaka/config/workflow.yml'
+    # Default prompts and configuration examples that maintainers open and copy when configuring Shaka.
+    COPYABLE_EXAMPLES = %w[
+      skills/shaka/config/review-prompt.md
+      skills/shaka/config/post-implementation-prompt.md
+      skills/shaka/config/post-implementation-risk.md
+      skills/shaka/config/opening-prompt.md
+      .agents/shaka/README.md
+      .agents/shaka/instructions/review.md
+      .agents/shaka/pr-evidence.md
+    ].freeze
 
     module_function
 
@@ -68,7 +78,7 @@ module ShakaDocs
     def agent_targets(repository, source, targets)
       targets.select do |target|
         path = SourcePaths.local_path(repository, source, target)
-        path && agent_path?(path)
+        path && agent_path?(path) && !COPYABLE_EXAMPLES.include?(path)
       end
     end
 

@@ -44,7 +44,7 @@ class DocsCommitHookTest < Minitest::Test
 
   def stage_partial_guide(root)
     path = File.join(root, 'docs/expected-experience.md')
-    staged = "# Guide\n[Agent](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md)\n"
+    staged = "# Guide\n[Agent](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/work-prompt.md)\n"
     working = "# Guide\n"
     File.write(path, staged)
     system('git', '-C', root, 'add', 'docs/expected-experience.md', exception: true)
