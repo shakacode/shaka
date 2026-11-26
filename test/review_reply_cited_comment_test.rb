@@ -54,6 +54,21 @@ class ReviewReplyCitedCommentTest < Minitest::Test
     refute(@paths.any? { |path| path.include?('collaborators') })
   end
 
+  # The screen needs GitHub's answer. Without one the author stays excluded.
+  def test_an_author_whose_permission_is_unavailable_is_not_read
+    line = cited("#{PULL}#issuecomment-7", issue_comments: [comment(7, 'unverified')])
+
+    assert_equal "Responded to the [review](#{PULL}#issuecomment-7) by `unverified`.", line
+  end
+
+  def test_unknown_visibility_stops_the_reply_without_quoting_the_comment
+    error = assert_raises(Shaka::Error) do
+      cited("#{PULL}#issuecomment-7", issue_comments: [comment(7, 'outsider')], visibility: nil)
+    end
+
+    assert_equal 'Repository visibility is unavailable.', error.message
+  end
+
   def test_a_private_repository_screens_no_author
     line = cited("#{PULL}#issuecomment-7", issue_comments: [comment(7, 'outsider')], visibility: 'private')
 
@@ -96,6 +111,6 @@ class ReviewReplyCitedCommentTest < Minitest::Test
 
   def permission(path)
     login = path[%r{collaborators/([^/]+)/permission}, 1] or raise "unexpected request #{path}"
-    { 'permission' => PERMISSIONS.fetch(login), 'user' => { 'login' => login } }
+    { 'permission' => PERMISSIONS[login], 'user' => { 'login' => login } }
   end
 end

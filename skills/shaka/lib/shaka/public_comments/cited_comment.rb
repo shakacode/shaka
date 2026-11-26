@@ -5,7 +5,8 @@ require_relative 'trust_lookup'
 
 module Shaka
   module PublicComments
-    # Gives a reply the text of a comment it cites only when `comments` would show that text.
+    # Gives a reply the text of a comment it cites only when `comments` would show that text, or
+    # when this account wrote the comment.
     #
     # A reply copies a cited comment's heading and reviewer line into the agent's own post. Without
     # this screen, citing the URL of a comment whose prose `comments` withheld published that prose.
@@ -40,7 +41,8 @@ module Shaka
         @public_repository
       end
 
-      # This account wrote its own comments, such as a published local review.
+      # This account wrote its own comments, such as a published local review. `comments` withholds
+      # them when the account cannot write to the repository, but their text is the account's own.
       def own?(comment)
         user = comment['user']
         user.is_a?(Hash) && user['login'].is_a?(String) && user['login'] == @github.viewer_login
