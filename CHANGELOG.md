@@ -100,7 +100,7 @@ Shaka handles merging. Repository checks and approvals still apply.
 
 Reserved the `shaka` name on RubyGems. This prerelease does not include the
 current workflow; install from source as described in
-[getting started](docs/getting-started.md).
+[getting started](https://shaka.shakacode.com/docs/getting-started).
 
 [Unreleased]: https://github.com/shakacode/shaka/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/shakacode/shaka/compare/v0.1.0.pre.1...v1.0.0

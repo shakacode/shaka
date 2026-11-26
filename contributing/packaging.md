@@ -6,8 +6,8 @@ strictly validates and renders its packaged `skills/shaka/config/workflow.yml` b
 an agent follows the procedure.
 It adds no runtime gems and does not install a global agent profile. The source
 prepares `1.0.0`; publication requires the checks and explicit approval in the
-[release process](releasing.md). The published `0.1.0.pre.1` gem only reserves the
-name and lacks the current workflow. Registry publication alone establishes neither
+[release process](releasing.md). Gem versions before `1.0.0` lack the current
+workflow. Registry publication alone establishes neither
 real-use acceptance nor broader host compatibility.
 
 Build from the trusted source directory; RubyGems reads package files relative
@@ -37,8 +37,8 @@ your application's shell or add the pilot to its Gemfile.
 ## Validate a consumer seam in CI
 
 Use the [pinned validation commands](../README.gem.md#validate-team-configuration)
-from the gem README. The name-reservation gem lacks this check. Keep the
-existing pinned source checkout until a tested gem is published.
+from the gem README. Gem versions before `1.0.0` lack this check. Keep an
+existing pinned source checkout until you can pin a published `1.0.0` or later.
 
 That command uses the same `RepositoryConfig` implementation as the installed skill.
 A passing payload includes `"mode": "local/candidate"` with `grants_policy` and

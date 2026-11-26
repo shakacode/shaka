@@ -2,7 +2,7 @@
 
 Shaka uses an explicit RubyGems release flow adapted from
 `shakacode/control-plane-flow`. The source prepares `1.0.0`; it is not published.
-The existing `0.1.0.pre.1` gem only reserves the name and lacks the current workflow.
+Gem versions before `1.0.0` lack the current workflow.
 A release starts from an approved version on `main`, validates the packaged artifact,
 tags that exact commit, publishes the gem, and creates the matching GitHub release.
 Registry publication requires explicit maintainer approval because a published version

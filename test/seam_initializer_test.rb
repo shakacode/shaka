@@ -543,7 +543,7 @@ module SeamInitializerPointerAssertions
   def assert_pointer_identity(pointer)
     assert_includes pointer, SeamInitializerTestHelpers::GENERATED_MARKER
     assert_includes pointer, "from Shaka #{Shaka::VERSION}"
-    assert_includes pointer, Shaka::PRODUCT_STAGE
+    refute_includes pointer, 'pilot stage'
     assert_includes pointer, 'version: 1'
     refute_includes pointer, 'Shaka V2'
     refute_includes pointer, 'Shaka V1'

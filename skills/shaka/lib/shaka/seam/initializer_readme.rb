@@ -25,8 +25,7 @@ module Shaka
 
       # The one renderer for .agents/shaka.md, shared by init, migrate, and `seam pointer --readme`.
       def self.text(generated_by: INIT_COMMAND)
-        PackagedText.render('seam-readme.md', marker: marker(generated_by), version: Shaka::VERSION,
-                                              stage: Shaka::PRODUCT_STAGE, generated_by:,
+        PackagedText.render('seam-readme.md', marker: marker(generated_by), version: Shaka::VERSION, generated_by:,
                                               contract: pointer_relative(Configuration::Paths::CONTRACT),
                                               commands: pointer_relative(Configuration::Paths::COMMAND_DIRECTORY))
       end
