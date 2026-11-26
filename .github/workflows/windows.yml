@@ -28,9 +28,6 @@ jobs:
     runs-on: windows-latest
     continue-on-error: true
     timeout-minutes: 45
-    env:
-      # Gems in the lockfile are pure Ruby or ship a generic platform build.
-      BUNDLE_FORCE_RUBY_PLATFORM: "true"
     defaults:
       run:
         shell: bash --noprofile --norc -eo pipefail {0}
@@ -46,6 +43,10 @@ jobs:
         with:
           ruby-version: .ruby-version
           bundler-cache: true
+
+      - name: Documentation navigation
+        continue-on-error: true
+        run: ruby bin/check-docs-navigation
 
       - name: shaka doctor
         continue-on-error: true
