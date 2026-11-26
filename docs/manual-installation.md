@@ -19,7 +19,9 @@ stay in the project. See [where Shaka keeps things](settings-guide.md#where-shak
 and the [local timing log](reference/timings.md#local-timing-log).
 
 The installer does not use `sudo`, edit your shell profile or `PATH`, or install
-gems. It refuses installation folders other accounts can write to.
+gems. It refuses installation folders other accounts can write to. On Windows it checks only the
+permissions Ruby reports, not the folder's access control list, so another account's write access
+granted there goes unnoticed.
 
 ## Install
 
