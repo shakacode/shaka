@@ -199,7 +199,7 @@ New or renamed tools can require fresh verification and changes to the flags aft
 `--json` reports its thread ID, and before removing the temporary home the helper copies that
 thread's saved session to a temporary file, which the result's `usage` names;
 run `shaka usage --host codex --file USAGE --commit "$(git rev-parse HEAD)" --contribution review --all-turns`
-on it. A missing `usage` means the session file was not found, and review usage stays UNKNOWN.
+on it. A missing `usage` means the helper could not find or copy the session, and review usage stays UNKNOWN.
 Review sessions do not appear in the user's own Codex session history.
 `codex exec review --base REF` cannot accept the custom review prompt, so the helper uses `exec`.
 
