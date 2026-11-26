@@ -48,6 +48,8 @@ class WindowsCommandStartTest < Minitest::Test
       tracked = { 'skills/shaka/scripts/shaka' => %w[100755 blob] }
 
       assert source.send(:matching_modes?, tracked, windows: true)
+      refute source.send(:matching_modes?, { 'skills/shaka/scripts/shaka' => %w[120000 blob] }, windows: true),
+             'a symlink written out as a plain file matched'
       refute source.send(:matching_modes?, tracked, windows: false) unless Shaka::ExecutableFile.windows?
       File.chmod(0o646, path)
       refute source.send(:matching_modes?, tracked, windows: true) unless Shaka::ExecutableFile.windows?
