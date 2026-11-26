@@ -74,6 +74,12 @@ phase-scoped rendering to reuse.
    and before running any command its index line lists. That one rule covers every
    early caller, such as publishing or clearing `decisions`, refreshing WIP Details
    after a rename, or a Finish repair returning to Verify, without a pointer at each.
+   Each command appears in exactly one list: the phase whose text a caller outside the
+   normal order needs. `review run` belongs to Review, which describes running a local
+   reviewer; a delivery reaches it through Verify, which loads before validation.
+   Loading the workflow refuses a command listed twice, and a later phase whose text
+   names a helper command that no list covers. The mapping is therefore checked by
+   Ruby, not kept by hand.
    `SKILL.md` changes from "follow the complete validated procedure it prints" to
    following it and loading each later phase when it directs.
 4. **Nothing refuses a missed load.** `enforcement.yml` quotes the Always rule and
@@ -136,7 +142,7 @@ phase-scoped rendering to reuse.
 - Moving rules off the startup path has an ongoing cost. Five review rounds of this
   design each found another early caller of a later phase's rules. The `commands` rule
   covers callers of listed commands, so a new early step that uses one needs no new
-  pointer. A new rule that applies before its phase still needs a move to Always, and
+  pointer. A new command named in a later phase fails loading until it is listed. A new rule that applies before its phase still needs a move to Always, and
   only review catches a missed one.
 - An agent that never loads a later phase skips its rules. The index and the `Done
   when` pointers make that less likely; nothing makes it impossible.
@@ -175,7 +181,8 @@ judges a value.
 
 Unit tests cover the renderer through the CLI: startup keeps the standing rules and
 omits later phase bodies, `--phase` keeps phase numbers, and a config without
-`startup_phases` renders in full. Link checks run against `--all`. A report test with
+`startup_phases` renders in full. Config tests check that loading refuses a command
+listed twice or named in a later phase but listed nowhere. Link checks run against `--all`. A report test with
 a recording counter checks that an older baseline counts the full workflow and the
 head counts the same startup text the CLI prints. The implementation PR reports
 `bin/report-instruction-growth --tokens` for both CLIs, run with the providers' API-key
