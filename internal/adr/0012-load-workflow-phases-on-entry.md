@@ -26,8 +26,9 @@ A prototype rendered the startup text this design proposes and counted it the sa
 way. It includes the reworded `SKILL.md`, Intake, Plan, Always with the moved rules,
 Code quality, the later-phase index, and the next-phase pointers. Every row includes
 `SKILL.md`. Separate runs of the same text differ by a few tokens, as 30,421 and 30,419 do.
-The API-key variables for both providers were unset, so each CLI used its signed-in
-subscription login.
+The API-key variables for both providers were unset. Asked in the same environment,
+`claude auth status` reported a claude.ai Max subscription and `codex login status`
+reported a ChatGPT login.
 
 | Paths | Words | Claude before → after | Codex before → after |
 | --- | --- | --- | --- |
@@ -63,18 +64,18 @@ phase-scoped rendering to reuse.
    work. `--all` prints the whole workflow, as today. An unknown id, or `always` or
    `code_quality`, fails with the list of phase ids. Every rendering still validates and
    expands the whole workflow, so a broken template in Finish fails at startup.
-3. **The handoff comes before the phase.** Always states the rule in authored text:
-   load each later phase with `workflow --phase ID` before its first step, and before
-   any earlier step that uses one of its commands. Each later phase gains one
+3. **The handoff comes before the phase.** Each later phase in `workflow.yml` gains a
    `load_before` line naming its first step, such as "before rechecking that the
-   problem still exists" for Implement. The renderer writes that line into the index and appends the load command to the
-   previous phase's `Done when`, so the timing has one source. A Review or Finish step
-   that sends work back to Verify names `--phase verify` at that step. The Always rule
-   that publishes `description` with `decisions` when a task with a PR stops for an
-   answer names `--phase explain`, since Explain holds the description rules and the
-   `pr_evidence` guide step. `SKILL.md` changes
-   from "follow the complete validated procedure it prints" to following it and loading
-   each later phase when it directs.
+   problem still exists" for Implement. It also gains a `commands` list of the helper
+   commands its text governs, such as `description`, `walkthrough`, and `reply` for
+   Explain. The renderer writes both into the index and appends the load command to
+   the previous phase's `Done when`, so timing and commands each have one source.
+   Always states the rule in authored text: load a later phase before its first step,
+   and before running any command its index line lists. That one rule covers every
+   early caller, such as publishing or clearing `decisions`, refreshing WIP Details
+   after a rename, or a Finish repair returning to Verify, without a pointer at each.
+   `SKILL.md` changes from "follow the complete validated procedure it prints" to
+   following it and loading each later phase when it directs.
 4. **Nothing refuses a missed load.** `enforcement.yml` quotes the Always rule and
    records it as `agent`. The generated index and pointers are routing details, not
    quoted rules, because the quote check reads authored text only.
@@ -89,8 +90,8 @@ phase-scoped rendering to reuse.
      whether agents load phases when the pointers say so. A missed load in any run
      sends this decision back to the maintainer before the implementation PR is ready.
 5. **Rules needed before their phase move to Always.** An audit of phases 3 to 7 found
-   three that apply before their phase loads. Each moves to Always word for word, with
-   the rest of its paragraph, and its enforcement entries change phase.
+   three that apply before their phase loads. Each moves to Always with the rest of its
+   paragraph, word for word except as noted, and its enforcement entries change phase.
    - The public-comment paragraph in Explain, from "Read public issue and PR feedback
      only with `comments`" through the public-comment guide pointer. Its prohibitions
      on raw `gh` reads and replies to excluded authors govern Intake's first read.
@@ -99,6 +100,7 @@ phase-scoped rendering to reuse.
    - The credential check before each review, in Verify. A review-only task can run
      `review run` without loading Verify. Its "that diff" refers back to Verify's
      `git diff BASE...HEAD`, so the moved text names that range in place of "that diff".
+     This is the one wording change.
 
    `evidence guard` and the `handoff` rule already sit in the phase that first needs
    them or in Always.
@@ -131,6 +133,11 @@ phase-scoped rendering to reuse.
 - Prompt caching can lower the price of re-reading the same text in a session, but the
   text still fills the context window. This design reduces what is in context, not
   only what is billed.
+- Moving rules off the startup path has an ongoing cost. Five review rounds of this
+  design each found another early caller of a later phase's rules. The `commands` rule
+  covers callers of listed commands, so a new early step that uses one needs no new
+  pointer. A new rule that applies before its phase still needs a move to Always, and
+  only review catches a missed one.
 - An agent that never loads a later phase skips its rules. The index and the `Done
   when` pointers make that less likely; nothing makes it impossible.
 - A smaller alternative keeps one full load and moves more conditional procedures
@@ -154,11 +161,11 @@ and Codex chats.
 | --- | --- |
 | Full delivery of a small task to an Ask handoff | Each load comes before that phase's first step: the recheck that the problem still exists for Implement, `evidence run` for Verify, `git push` for Explain, reading published reviews for Review, `post-implementation run` for Finish |
 | A hosted review that needs a code repair | Verify loads again before the repair's validation, and the PR stays out of ready state until the new head has its evidence |
-| A Finish checkpoint that asks for a repair, in a new chat | `handoff` and `--later` run first, the repair goes through Verify again, and Finish publishes a new checkpoint for the repaired head before the handoff |
+| A Finish checkpoint that asks for a repair, in the owning chat | Verify loads again before the repair's validation, the repaired head gets fresh evidence, and Finish publishes a new checkpoint for it before the handoff |
 | Plan-only request | No later phase loads; the task stops at the recommendation |
 | No-change task | The task stops in Intake with no later phase loads |
 | Resume an unfinished PR in a new chat | `handoff` runs, then `workflow --later`, before any write |
-| A task with an open PR stops for an answer during Verify | Explain loads before `description` publishes the decision; nothing is pushed and readiness is unchanged |
+| A task with an open PR renames its chat, then stops for an answer during Verify and gets one | Explain loads before the first `description` call, which refreshes WIP Details; the decision is set and then cleared with the matching labels; nothing is pushed and readiness is unchanged |
 | Review-only request on a clean diff | Only Review loads, the transcript shows the credential check of `git diff BASE...HEAD` before `review run`, and the review completes with no PR writes |
 
 The credential rule covers real credentials, so a planted fake one cannot show whether
