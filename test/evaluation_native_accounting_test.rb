@@ -39,6 +39,15 @@ class EvaluationNativeAccountingTest < Minitest::Test
     assert_in_delta 1.215, result['cache_neutral_dollars'], 0.000001
   end
 
+  def test_claude_print_reprices_the_aggregate_without_its_cached_iteration_split
+    path = File.join(@directory, 'print.json')
+    File.write(path, JSON.generate(claude_print))
+
+    result = @reader.read(host: 'claude-code', files: [path], print_result: true)
+
+    assert_costs result, neutral: 0.0230005, billed: 0.018
+  end
+
   def test_native_billed_cost_cannot_override_cache_neutral_repricing
     rows = codex_rows
     rows.last['payload']['usage']['native_cost_usd'] = 0.001
@@ -103,5 +112,16 @@ class EvaluationNativeAccountingTest < Minitest::Test
       assert_equal 'UNKNOWN', result['cache_neutral_dollars']
       refute_includes JSON.generate(result), @directory
     end
+  end
+
+  private
+
+  def claude_print
+    usage = { input_tokens: 1_000, output_tokens: 300, cache_read_input_tokens: 8_000,
+              cache_creation_input_tokens: 1_000, speed: 'standard',
+              iterations: [{ type: 'message',
+                             cache_creation: { ephemeral_1h_input_tokens: 1000, ephemeral_5m_input_tokens: 0 } }] }
+    { type: 'result', model: 'claude-sonnet-5', session_id: '6db48dcd-1907-4f32-86d5-b6519e13a4cd',
+      shaka_usage_scope: 'independent_call', total_cost_usd: 0.018, usage: }
   end
 end

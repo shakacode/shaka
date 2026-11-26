@@ -103,8 +103,9 @@ Three earlier pieces cover nearby ground:
   label. Nits still reach the agent, which has to read each one.
 - **Evidence:** `review record` refuses to mark a nit fixed, and a documented nit never
   holds the loop open. The classes are fixed rules in
-  [`review_prompt.rb`](../../skills/shaka/lib/shaka/review_prompt.rb), and the hosted prompt is
-  in [`claude-code-review.yml`](../../skills/shaka/config/claude-code-review.yml). Shaka tested
+  [`review_prompt.rb`](../../skills/shaka/lib/shaka/review_prompt.rb). The
+  [hosted review guide](../settings.md#hosted-claude-review) explains the installable
+  `claude-code-review.yml` template. Shaka tested
   its filter once, after the fact. In the
   [hosted prompt comparison](hosted-review-prompt-comparison.md), the strict prompt caught 0 of
   21 missed bugs and the looser one caught 3. The looser prompt fell short of the preset bar of
@@ -151,8 +152,8 @@ Three earlier pieces cover nearby ground:
   trusted-author list for review. Its
   [trusted people](../workflow.md#trust-model) affect only whose input the agent reads.
 - **Evidence:** `merge` refuses a head rated above the limit or changing a high-risk file. The
-  [risk rubric](../../skills/shaka/config/post-implementation-risk.md) tells the checkpoint
-  reviewer how to rate. The manager article covers
+  [risk guidance](../settings.md#change-how-risk-is-rated) explains how maintainers
+  can raise risk ratings. The manager article covers
   [who decides what ships](agents-made-you-a-manager.md#who-decides-what-ships).
 
 ### 5. Approvals agents can't give, one commit each
@@ -325,7 +326,8 @@ None of these ideas has shipped:
 - Shaka at [`e13cc94`](https://github.com/shakacode/shaka/tree/e13cc94b4cdf), rechecked at
   [`5ffb304`](https://github.com/shakacode/shaka/tree/5ffb3041a382): the
   [settings reference](../settings.md), the
-  [enforcement map](../../skills/shaka/config/enforcement.yml), the review prompt and hosted
-  review workflow linked above, and the studies linked above.
+  [enforcement map](../../skills/shaka/config/enforcement.yml), the
+  [review prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md), the [hosted review guide](../settings.md#hosted-claude-review),
+  and the studies linked above.
 - The "Protect main" ruleset of `shakacode/shaka`, read through the GitHub API on
   2026-11-14 (UTC).

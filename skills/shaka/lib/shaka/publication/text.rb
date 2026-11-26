@@ -13,7 +13,7 @@ module Shaka
 
     DISPLAY_NAMES = {
       'agent' => { 'codex' => 'Codex', 'claude' => 'Claude', 'grok' => 'Grok' },
-      'provider' => { 'openai' => 'OpenAI', 'anthropic' => 'Anthropic', 'xai' => 'xAI' }
+      'provider' => { 'openai' => 'OpenAI', 'anthropic' => 'Anthropic', 'xai' => 'xAI', 'google' => 'Google' }
     }.freeze
 
     module_function

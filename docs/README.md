@@ -70,7 +70,8 @@ Explain what I need to check before merging this PR: <PR link>
 - [Releases after merge](releases-after-merge.md)
 - [Control towers](control-towers.md) and [repository catalog](repository-catalog.md)
 - [How Shaka is built](architecture.md), [PR trials](trying-pr-versions.md), [canary runs](canary.md), and [Contributing](../CONTRIBUTING.md)
-- [Articles](articles/review-process-study.md) about measured experiments with AI review
+- [AI evals](articles/review-process-study.md) that measure AI review, and
+  [AI comparisons](articles/claude-code-team-review.md) of Shaka with other people's advice
 
 </details>
 

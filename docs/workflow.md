@@ -23,7 +23,7 @@ Effort is not priced per token, the input the agent reads dominates spend, and r
 costs the most ([evidence](https://github.com/shakacode/shaka/issues/45)).
 
 `shaka workflow` validates and prints the
-[workflow definition](../skills/shaka/config/workflow.yml). The agent loads
+workflow definition in `skills/shaka/config/workflow.yml`. The agent loads
 supporting procedures as needed.
 
 ## Trust model
