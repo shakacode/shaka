@@ -77,6 +77,8 @@ $shaka Fix search when the query contains an apostrophe
 
 Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, GitHub Copilot, or OpenCode.
 For Pi, load the installed skill. See [other coding agents](docs/coding-agents.md).
+If your agent doesn't recognize `$shaka` or `/shaka` right after installing, start a new chat
+and send the task again.
 Your agent checks setup and tells you if
 anything is missing.
 
