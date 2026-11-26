@@ -1120,10 +1120,8 @@ same.
 
 ## `prose_limits`
 
-**Optional.** Limit the length of PR descriptions and code walkthroughs. These
-limits are checked in code before publication. Recommendations and review
-replies follow the agent's writing instructions but are not checked against
-these limits.
+**Optional.** Limit the length of PR descriptions and code walkthroughs.
+Recommendations and review replies follow the agent's writing instructions.
 
 ```yaml
 prose_limits:
@@ -1152,8 +1150,12 @@ skill metadata errors together before it reads the PR. Shaka reports each
 sentence, paragraph and total overage it finds in rendered prose. The overall
 limit uses the PR's diff size. When GitHub omits either line count, descriptions
 use `max_description_words` and walkthroughs use the sentence and paragraph
-limits. If GitHub refuses to render the Markdown and the description includes
-unmanaged text, Shaka reports the prose as unchecked.
+limits.
+
+If GitHub declines to render a description before publication, Shaka checks the
+saved version when the body contains only Shaka's section, whitespace and HTML
+comments. If the body contains other content outside that section, Shaka reports
+the prose limits as unchecked.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and
