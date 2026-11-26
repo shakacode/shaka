@@ -65,6 +65,7 @@ removing the references does not preserve the lost history.
 | Cursor | Includes cache reads and writes | Reasoning is unreported |
 | OpenCode | Excludes cache reads and writes | Reasoning is counted separately |
 | Pi | Excludes cache reads and writes | Includes reasoning |
+| Antigravity | Excludes cache reads; cache writes are unreported | Includes reasoning |
 | OpenRouter | Includes cached input | Includes reasoning |
 
 For example, a Codex row with 100,000 input tokens and 80,000 cached input
@@ -72,7 +73,7 @@ tokens has 20,000 uncached input tokens. A Claude row with 20,000 input tokens
 and 80,000 cached input tokens describes the same input quantities.
 Do not add a Codex row's cached input to its input again.
 OpenCode's native total includes input, output, reasoning, and cache tokens,
-but OpenCode 2 does not report one; Cursor's native total is unreported.
+but OpenCode 2 does not report one; Cursor's and Antigravity's native totals are unreported.
 
 ## How estimates are priced
 
@@ -87,6 +88,7 @@ charge uncached input, cache reads, and cache writes separately. A one-hour
 cache write costs more than a five-minute write. Supported fast-mode
 responses use their published fast-mode rates. Standard-speed responses use
 standard rates. Fast-mode responses without a published rate remain unpriced. Pi uses its recorded nominal USD instead of repricing it.
+Antigravity rows show tokens without an estimate. Shaka has no pricing rule for Antigravity's counters yet.
 OpenRouter uses the response's reported account charge in USD credits instead of
 direct DeepSeek list prices. Missing counters or cost remain UNKNOWN. A paid
 incomplete response can still contribute reported cost without establishing a

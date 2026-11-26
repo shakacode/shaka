@@ -6,10 +6,24 @@ module Shaka
     ISO_TIME = /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/
     FULL_SHA = /\A[0-9a-f]{40}\z/
 
-    def source_options(flags, options)
-      flags.on('--host NAME', Usage::READERS.keys, 'codex, claude-code, cursor, opencode, pi, or openrouter') do |value|
-        options[:host] = value
+    def detected_host
+      found = Usage::HOST_CONTEXT.select { |host, variable| host_marker?(host, ENV.fetch(variable, nil)) }.keys
+      found.size > 1 ? nil : found.first || 'codex'
+    end
+
+    # Pi sets a flag. An empty Antigravity ID names no conversation, so a wrapper that exports
+    # the variable empty leaves another host's session unambiguous, as publication already reads it.
+    def host_marker?(host, value)
+      case host
+      when 'pi' then value == 'true'
+      when 'antigravity' then !value.to_s.empty?
+      else !value.nil?
       end
+    end
+
+    def source_options(flags, options)
+      hosts = 'codex, claude-code, cursor, opencode, pi, antigravity, or openrouter'
+      flags.on('--host NAME', Usage::READERS.keys, hosts) { |value| options[:host] = value }
       source_file_options(flags, options)
       flags.on('--all-turns', 'Only for sources dedicated to this task') { options[:all_turns] = true }
       flags.on('--turn ID', 'Select a native turn; repeat for a shared interval') { |value| options[:turns] << value }
@@ -19,7 +33,7 @@ module Shaka
     end
 
     def source_file_options(flags, options)
-      flags.on('--file PATH', 'Native transcript or export file; repeat for contributors/resumes') do |value|
+      flags.on('--file PATH', 'Native transcript or export file; repeat it, except for antigravity') do |value|
         options[:files] << value
       end
       flags.on('--session ID', 'OpenCode session; needs --host opencode') do |value|

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'antigravity_publisher_settings'
 require_relative 'claude_publisher_settings'
 require_relative 'codex_publisher_settings'
 
@@ -8,9 +9,10 @@ module Shaka
   # Resolves publisher fields once for the header and active provenance. Reviewers stay separate.
   module PublisherAttribution
     HOST_VARIABLES = %w[CODEX_THREAD_ID CLAUDE_CODE_SESSION_ID CURSOR_CONVERSATION_ID
-                        OPENCODE_SESSION_ID PI_CODING_AGENT].freeze
+                        OPENCODE_SESSION_ID PI_CODING_AGENT ANTIGRAVITY_CONVERSATION_ID].freeze
     READERS = { 'CODEX_THREAD_ID' => CodexPublisherSettings,
-                'CLAUDE_CODE_SESSION_ID' => ClaudePublisherSettings }.freeze
+                'CLAUDE_CODE_SESSION_ID' => ClaudePublisherSettings,
+                'ANTIGRAVITY_CONVERSATION_ID' => AntigravityPublisherSettings }.freeze
 
     def self.prepare(content, environment: ENV)
       hosts = HOST_VARIABLES.select { |variable| present?(environment, variable) }

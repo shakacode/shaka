@@ -21,6 +21,8 @@ ENV['SHAKA_CALL_LOG'] = 'off'
 ENV.delete('SHAKA_PHASE_LOG')
 # This checkout is not the developer's linked installation, so every spawned call would say so.
 ENV['SHAKA_NOTICES'] = 'off'
+# A suite run from an Antigravity chat would add that host to every fixture's own, making each ambiguous.
+ENV.delete('ANTIGRAVITY_CONVERSATION_ID')
 # Background maintenance outlives a fixture repository and races Dir.mktmpdir's cleanup.
 # Trial preparation refuses an inherited GIT_CONFIG_PARAMETERS, so a generated global config
 # carries the setting after including the files Git would have read, in Git's own order.
