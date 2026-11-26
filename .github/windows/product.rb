@@ -15,7 +15,8 @@ class WindowsProduct < WindowsSession
   UNIX_TOOLS = %r{msys64|[\\/]Git[\\/](?:usr[\\/]bin|bin|mingw64[\\/]bin)[\\/]?\z}i
 
   def call
-    record('helper and command start tests') { start_tests }
+    # One record per file, so a failing file does not hide the others' counts.
+    START_TESTS.each { |file| record("start test #{File.basename(file)}") { start_test(file) } }
     record('evidence run starts a repository command') { evidence_run }
     record('bin/install installs and verifies the helper') { install }
     self
@@ -23,12 +24,11 @@ class WindowsProduct < WindowsSession
 
   private
 
-  # Every file must exist, so a missing one fails the record instead of passing with fewer tests.
-  def start_tests
-    missing = START_TESTS.reject { |file| File.file?(File.join(root, file)) }
-    raise "missing test files: #{missing.join(', ')}" unless missing.empty?
+  # A missing file fails its record instead of passing with fewer tests.
+  def start_test(file)
+    raise "missing test file: #{file}" unless File.file?(File.join(root, file))
 
-    ruby_tests(*START_TESTS)
+    ruby_tests(file)
   end
 
   def evidence_run
@@ -92,8 +92,12 @@ class WindowsProduct < WindowsSession
   def test_env = super.merge(native_path)
 
   # A native shell finds git through Git\cmd and nothing from Git's Unix tree.
+  # Refuses a filtered PATH that still reaches an sh.exe, which would undo the native premise.
   def native_path
     entries = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).grep_v(UNIX_TOOLS)
+    shells = entries.select { |entry| File.file?(File.join(entry, 'sh.exe')) }
+    raise "filtered PATH still reaches sh.exe in #{shells.join(', ')}" unless shells.empty?
+
     puts "  PATH keeps #{entries.size} entries without Unix tools"
     { 'PATH' => entries.join(File::PATH_SEPARATOR) }
   end
