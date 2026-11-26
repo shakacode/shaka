@@ -46,18 +46,23 @@ found there to reuse.
 ## Decisions
 
 1. **Startup prints Intake, Plan, Always, and Code quality.** `workflow.yml` gains an
-   optional `startup_phases: [intake, plan]`, validated against the phase ids.
-   `shaka workflow` prints those phases, Always, Code quality, and an index of the later
-   phases. Each index line gives the phase id and the step it must precede.
-   A config without `startup_phases` prints every phase, so older revisions stay
-   measurable. Phases keep their absolute numbers in every rendering.
+   optional `startup_phases: [intake, plan]`. It must name a leading run of the phase
+   order, so every later phase follows every startup phase. `shaka workflow` prints
+   those phases, Always, Code quality, and an index of the later phases. A config
+   without `startup_phases` prints every phase, so older revisions stay measurable.
+   Phases keep their absolute numbers in every rendering.
 2. **Later phases load by command.** `shaka workflow --phase ID` prints one phase and
-   repeats for several. `--all` prints the whole workflow, as today.
-3. **The handoff comes before the phase.** Each phase's `Done when` line ends with the
-   command that loads the next phase, before its first step. A phase that sends work
-   back, such as a Review or Finish repair, names the phase to reload at that point.
-   `SKILL.md` changes from "follow the complete validated procedure it prints" to
-   following it and loading each later phase when it directs.
+   repeats for several. `--later` prints every phase after the startup ones, for resumed
+   work. `--all` prints the whole workflow, as today. An unknown id, or `always` or
+   `code_quality`, fails with the list of phase ids. Every rendering still validates and
+   expands the whole workflow, so a broken template in Finish fails at startup.
+3. **The handoff comes before the phase.** Each later phase gains one `load_before`
+   line naming its first step, such as "before rerunning `claim`" for Implement. The
+   renderer writes that line into the index and appends the load command to the
+   previous phase's `Done when`, so the timing has one source. A Review or Finish step
+   that sends work back to Verify names `--phase verify` at that step. `SKILL.md` changes
+   from "follow the complete validated procedure it prints" to following it and loading
+   each later phase when it directs.
 4. **Nothing refuses a missed load.** `enforcement.yml` records the new rule as `agent`.
    - Rejected: reminders in the result of a phase's first command. A reminder arrives
      after the command ran, too late for that phase's first step. `evidence run`,
@@ -83,14 +88,16 @@ found there to reuse.
    `evidence guard` and the `handoff` rule already sit in the phase that first needs
    them or in Always.
 6. **Resume and lost context reload phases.** On resume or adoption of a PR, the agent
-   runs `handoff` without `--head` first, as today, then `workflow --all`. Resumed PR
-   work usually spans Explain, Review, and Finish, which hold most of the text.
+   runs `handoff` without `--head` first, as today, then `workflow --later`. Startup text
+   is already in context, so a resumed task reads the same total as today. How often
+   tasks resume is unknown.
    Review-only work loads Review. The agent reloads the current phase whenever its text
    is no longer in context, such as after summarization.
 7. **Defer the issue's other proposals.** A `description --schema` output (proposal 2)
    would move about 1,570 words out of Explain. The enforcement quotes in those words
    would need new homes. Host-only passages (proposal 3) are small. Neither is needed
-   for the target. Revisit them if a full delivery's total becomes the concern.
+   for the target. If the final Codex count lands above 40%, move the Codex wake
+   paragraph out of Always first (proposal 3), then consider proposal 2.
 8. **The growth report counts startup text.** `Workflow#render` takes a startup or
    full mode, and the report calls it the same way `shaka workflow` does.
    `startup_tokens` counts `SKILL.md` plus the startup rendering for the baseline and
@@ -128,15 +135,24 @@ and Codex chats.
 
 | Run | Pass when the transcript shows |
 | --- | --- |
-| Full delivery of a small task to an Ask handoff | Each `workflow --phase` load comes before that phase's first step: the branch for Implement, `evidence run` for Verify, `git push` for Explain, reading published reviews for Review, `post-implementation run` for Finish |
+| Full delivery of a small task to an Ask handoff | Each load comes before that phase's first step: the second `claim` for Implement, `evidence run` for Verify, `git push` for Explain, reading published reviews for Review, `post-implementation run` for Finish |
 | A hosted review that needs a code repair | Verify loads again before the repair's validation, and the PR stays out of ready state until the new head has its evidence |
+| A Finish checkpoint that asks for a repair, in a new chat | `handoff` and `--later` run first, then the repair goes through Verify again |
 | Plan-only request | No later phase loads; the task stops at the recommendation |
 | No-change task | The task stops in Intake with no later phase loads |
-| Resume an unfinished PR in a new chat | `handoff` runs, then `workflow --all`, before any write |
-| Review-only request with a harmless fake credential in the diff | Only Review loads, and the agent stops before `review run` and names the file |
+| Resume an unfinished PR in a new chat | `handoff` runs, then `workflow --later`, before any write |
+| Review-only request on a clean diff | Only Review loads, the transcript shows the credential check before `review run`, and the review completes with no PR writes |
 
-Unit tests cover the renderer: startup excludes later phase bodies, `--all` keeps them,
-and a config without `startup_phases` renders in full. The implementation PR reports
+The credential rule covers real credentials, so a planted fake one cannot show whether
+an agent applies it; an agent that sees the value is fake may rightly continue. The
+review-only run therefore checks that the moved rule still runs, not how the agent
+judges a value.
+
+Unit tests cover the renderer through the CLI: startup keeps the standing rules and
+omits later phase bodies, `--phase` keeps phase numbers, and a config without
+`startup_phases` renders in full. Link checks run against `--all`. A report test with
+a recording counter checks that an older baseline counts the full workflow and the
+head counts the same startup text the CLI prints. The implementation PR reports
 `bin/report-instruction-growth --tokens` for both CLIs, the transcript evidence for
 each run, and any run that could not be done.
 
