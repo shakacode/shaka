@@ -82,7 +82,7 @@ text{fill:#e6edf5}
 <text class="u" x="28" y="646"><tspan class="b">Scope:</tspan> pr watch records the merge time. (5 files, +86 / −6)</text>
 <rect class="tag" x="452" y="634" width="44" height="16" rx="8"/><text class="tt" x="474" y="646">#888</text>
 <text class="u b" x="28" y="670">Verification</text>
-<text class="u" x="28" y="688"><tspan class="b">Validation and review:</tspan> validate passed (exit 0); local</text>
+<text class="u" x="28" y="688"><tspan class="b">Validation and review:</tspan> validate passed; local</text>
 <rect class="tag" x="404" y="676" width="92" height="16" rx="8"/><text class="tt" x="450" y="688">#740 · Osmani</text>
 <text class="u" x="28" y="702">review by openai/codex at 570d2ad.</text>
 <text class="u" x="28" y="720"><tspan class="b">Setup gaps:</tspan> 1 of 2 configured reviewers completed;</text>
