@@ -4,6 +4,7 @@ require 'open3'
 require_relative '../call_log'
 require_relative '../error'
 require_relative '../executable_file'
+require_relative '../local_review/executable'
 require_relative '../local_review/path_guard'
 require_relative 'machine_facts'
 require_relative 'phase_log'
@@ -47,9 +48,16 @@ module Shaka
         output, status = Open3.capture2({ 'GIT_EXEC_PATH' => nil }, git, '--exec-path')
         raise Error, 'Cannot find Git for Windows: git --exec-path failed' unless status.success?
 
-        git_root = File.expand_path('../../..', output.strip)
+        trusted_shell(File.expand_path('../../..', output.strip), checkout)
+      end
+
+      # The sh is held to the same boundary as git.exe: one that resolves into the checkout is refused.
+      def trusted_shell(git_root, checkout)
         shell = %w[bin/sh.exe usr/bin/sh.exe].map { File.join(git_root, it) }.find { File.file?(it) }
-        shell || raise(Error, "Cannot find sh.exe from Git for Windows under #{git_root}")
+        raise Error, "Cannot find sh.exe from Git for Windows under #{git_root}" unless shell
+        return shell unless LocalReviewExecutable.candidate_owned?(File.realpath(shell), File.realpath(checkout))
+
+        raise Error, "sh.exe under #{git_root} resolves inside the checkout"
       end
     end
   end

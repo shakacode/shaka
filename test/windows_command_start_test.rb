@@ -37,6 +37,21 @@ class WindowsCommandStartTest < Minitest::Test
     end
   end
 
+  # Git's sh is refused when it resolves into the checkout, as git.exe already is.
+  def test_git_shell_refuses_an_sh_inside_the_checkout
+    skip 'Windows runners may lack the symlink privilege' if Shaka::ExecutableFile.windows?
+
+    Dir.mktmpdir('shaka-windows-shell') do |directory|
+      checkout = File.join(directory, 'checkout')
+      FileUtils.mkdir_p([checkout, File.join(directory, 'git/bin')])
+      File.write(File.join(checkout, 'sh.exe'), '')
+      File.symlink(File.join(checkout, 'sh.exe'), File.join(directory, 'git/bin/sh.exe'))
+
+      error = assert_raises(Shaka::Error) { Shaka::Evidence::TimedCheck.trusted_shell(File.join(directory, 'git'), checkout) }
+      assert_match(/resolves inside the checkout/, error.message)
+    end
+  end
+
   # Only Windows clones override line endings; elsewhere the user's Git settings stay in charge.
   def test_installer_clones_set_line_endings_only_on_windows
     assert_includes Shaka::Install::ReleaseCheckout.clone_config(windows: true), 'core.eol=lf'

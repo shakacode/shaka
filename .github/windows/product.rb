@@ -8,21 +8,28 @@ require_relative 'session'
 # Product paths that start other programs, run the way a PowerShell or cmd user starts Shaka:
 # Ruby itself, with no Git Bash in between and none of Git's or MSYS2's Unix tools on PATH.
 class WindowsProduct < WindowsSession
+  START_TESTS = %w[test/windows_helper_start_test.rb test/windows_command_start_test.rb
+                   test/evidence_windows_check_test.rb].freeze
   EVIDENCE_RUN = %w[evidence run --repository shakacode/shaka --command test].freeze
   TEST = %w[-- test/executable_file_test.rb].freeze
   UNIX_TOOLS = %r{msys64|[\\/]Git[\\/](?:usr[\\/]bin|bin|mingw64[\\/]bin)[\\/]?\z}i
 
   def call
-    record('helper and command start tests') do
-      ruby_tests('test/windows_helper_start_test.rb', 'test/windows_command_start_test.rb',
-                 'test/evidence_windows_check_test.rb')
-    end
+    record('helper and command start tests') { start_tests }
     record('evidence run starts a repository command') { evidence_run }
     record('bin/install installs and verifies the helper') { install }
     self
   end
 
   private
+
+  # Every file must exist, so a missing one fails the record instead of passing with fewer tests.
+  def start_tests
+    missing = START_TESTS.reject { |file| File.file?(File.join(root, file)) }
+    raise "missing test files: #{missing.join(', ')}" unless missing.empty?
+
+    ruby_tests(*START_TESTS)
+  end
 
   def evidence_run
     head = git_output('rev-parse', 'HEAD')
