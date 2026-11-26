@@ -19,12 +19,15 @@ full workflow is 12,753 words:
 
 The report replaces the installed package path with `<package>`. An installed workflow
 prints the full absolute path in every reference link. A real agent therefore reads
-about 2,200 more Claude tokens than the report shows.
+about 2,200 more Claude tokens than the report shows. The 40% target uses the report's
+normalized basis, as the issue's done-when does.
 
 A prototype rendered the startup text this design proposes and counted it the same
 way. It includes the reworded `SKILL.md`, Intake, Plan, Always with the moved rules,
 Code quality, the later-phase index, and the next-phase pointers. Every row includes
-`SKILL.md`.
+`SKILL.md`. Separate runs of the same text differ by a few tokens, as 30,421 and 30,419 do.
+The API-key variables for both providers were unset, so each CLI used its signed-in
+subscription login.
 
 | Paths | Words | Claude before → after | Codex before → after |
 | --- | --- | --- | --- |
@@ -57,7 +60,7 @@ found there to reuse.
    `code_quality`, fails with the list of phase ids. Every rendering still validates and
    expands the whole workflow, so a broken template in Finish fails at startup.
 3. **The handoff comes before the phase.** Each later phase gains one `load_before`
-   line naming its first step, such as "before rerunning `claim`" for Implement. The
+   line naming its first step, such as "before rechecking that the problem still exists" for Implement. The
    renderer writes that line into the index and appends the load command to the
    previous phase's `Done when`, so the timing has one source. A Review or Finish step
    that sends work back to Verify names `--phase verify` at that step. `SKILL.md` changes
@@ -83,13 +86,14 @@ found there to reuse.
    - The `🤖 AGENT · PROVIDER · MODEL · EFFORT` first-line rule in Explain. Plan
      comments, issue offers, and replies are posted before Explain.
    - The credential check before each review, in Verify. A review-only task can run
-     `review run` without loading Verify.
+     `review run` without loading Verify. Its "that diff" refers back to Verify's
+     `git diff BASE...HEAD`, so the moved text names that range in place of "that diff".
 
    `evidence guard` and the `handoff` rule already sit in the phase that first needs
    them or in Always.
 6. **Resume and lost context reload phases.** On resume or adoption of a PR, the agent
    runs `handoff` without `--head` first, as today, then `workflow --later`. Startup text
-   is already in context, so a resumed task reads the same total as today. How often
+   is already in context, so a resumed task reads about the same total as today. How often
    tasks resume is unknown.
    Review-only work loads Review. The agent reloads the current phase whenever its text
    is no longer in context, such as after summarization.
@@ -135,13 +139,13 @@ and Codex chats.
 
 | Run | Pass when the transcript shows |
 | --- | --- |
-| Full delivery of a small task to an Ask handoff | Each load comes before that phase's first step: the second `claim` for Implement, `evidence run` for Verify, `git push` for Explain, reading published reviews for Review, `post-implementation run` for Finish |
+| Full delivery of a small task to an Ask handoff | Each load comes before that phase's first step: the recheck that the problem still exists for Implement, `evidence run` for Verify, `git push` for Explain, reading published reviews for Review, `post-implementation run` for Finish |
 | A hosted review that needs a code repair | Verify loads again before the repair's validation, and the PR stays out of ready state until the new head has its evidence |
-| A Finish checkpoint that asks for a repair, in a new chat | `handoff` and `--later` run first, then the repair goes through Verify again |
+| A Finish checkpoint that asks for a repair, in a new chat | `handoff` and `--later` run first, the repair goes through Verify again, and Finish publishes a new checkpoint for the repaired head before the handoff |
 | Plan-only request | No later phase loads; the task stops at the recommendation |
 | No-change task | The task stops in Intake with no later phase loads |
 | Resume an unfinished PR in a new chat | `handoff` runs, then `workflow --later`, before any write |
-| Review-only request on a clean diff | Only Review loads, the transcript shows the credential check before `review run`, and the review completes with no PR writes |
+| Review-only request on a clean diff | Only Review loads, the transcript shows the credential check of `git diff BASE...HEAD` before `review run`, and the review completes with no PR writes |
 
 The credential rule covers real credentials, so a planted fake one cannot show whether
 an agent applies it; an agent that sees the value is fake may rightly continue. The
@@ -153,8 +157,11 @@ omits later phase bodies, `--phase` keeps phase numbers, and a config without
 `startup_phases` renders in full. Link checks run against `--all`. A report test with
 a recording counter checks that an older baseline counts the full workflow and the
 head counts the same startup text the CLI prints. The implementation PR reports
-`bin/report-instruction-growth --tokens` for both CLIs, the transcript evidence for
-each run, and any run that could not be done.
+`bin/report-instruction-growth --tokens` for both CLIs, run with the providers' API-key
+variables unset and each CLI's login status recorded without credential values. It also
+reports the transcript evidence for each run and any run that could not be done. Each
+row runs once per host, and the full delivery runs twice per host because it
+exercises every phase.
 
 ## Delivery
 
