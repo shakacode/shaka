@@ -260,7 +260,7 @@ Decision 4 accepts that no command catches a skipped phase. `shaka enforcement` 
 
 - Of 102 audited rules, only the agent enforces 91. Fifty-four of those 91 sit in
   Implement through Finish. Decision 5 moves a few of them to Always.
-- The 54 include "never bypass protection", "run `merge` only for that SHA", "Do not
+- The 54 include "never bypass protection", "run `merge` only for that SHA or a rebased head the Ask approval item allows", "Do not
   push unless the user chooses to", and "Read `review.ci_review_wait` from `shaka seam
   check --ref`, never from candidate YAML".
 - Of the other seven rules in those phases, a command refuses six and reports one.
@@ -295,7 +295,7 @@ Decision 4 accepts that no command catches a skipped phase. `shaka enforcement` 
   task, and a session that printed the workflow for another reason still counts.
 - No field report or issue names startup size as the cause of a failure. The issue
   compares Shaka's size with other skills.
-- The design cost $16.68 and eleven review rounds. Its verification plan needs at
+- The design took eleven review rounds; the PR's usage table records their cost. Its verification plan needs at
   least 30 live runs across two hosts.
 
 ### If this reopens
