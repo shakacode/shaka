@@ -47,7 +47,8 @@ With no registered installation, clone the fork directly at its install branch
 with `git clone --branch BRANCH URL DIR`; on Windows add `--config core.autocrlf=false --config core.eol=lf`,
 as the installer does, so the files keep their stored line endings. Review that source and installer before
 running `bin/install --directory DIR --repository URL --branch BRANCH --agent HOST`
-with that prepared checkout. Keep the fork as `origin` and add the official
+with that prepared checkout; on Windows start it as `ruby DIR\bin\install`, as
+[official installation](official-installation.md#install) says. Keep the fork as `origin` and add the official
 repository with `git -C DIR remote add upstream https://github.com/shakacode/shaka.git`.
 See [official installation](official-installation.md) for prerequisites.
 
