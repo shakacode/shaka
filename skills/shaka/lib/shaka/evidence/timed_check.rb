@@ -53,8 +53,8 @@ module Shaka
 
       # The sh is held to the same boundary as git.exe: one that resolves into the checkout is refused.
       def trusted_shell(git_root, checkout)
-        shell = %w[bin/sh.exe usr/bin/sh.exe].map { File.join(git_root, it) }.find { File.file?(it) }
-        raise Error, "Cannot find sh.exe from Git for Windows under #{git_root}" unless shell
+        shell = File.join(git_root, 'bin/sh.exe')
+        raise Error, "evidence run needs Git for Windows' bin/sh.exe under #{git_root}" unless File.file?(shell)
         return shell unless LocalReviewExecutable.candidate_owned?(File.realpath(shell), File.realpath(checkout))
 
         raise Error, "sh.exe under #{git_root} resolves inside the checkout"

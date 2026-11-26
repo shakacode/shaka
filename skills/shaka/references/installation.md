@@ -44,7 +44,8 @@ Confirm which GitHub fork and branch to install. Create the fork if requested.
 If the request needs a new install branch, create and publish a dedicated branch
 such as `mine` so the fork's `main` can follow upstream.
 With no registered installation, clone the fork directly at its install branch
-with `git clone --branch BRANCH URL DIR`. Review that source and installer before
+with `git clone --branch BRANCH URL DIR`; on Windows add `--config core.autocrlf=false --config core.eol=lf`,
+as the installer does, so the files keep their stored line endings. Review that source and installer before
 running `bin/install --directory DIR --repository URL --branch BRANCH --agent HOST`
 with that prepared checkout. Keep the fork as `origin` and add the official
 repository with `git -C DIR remote add upstream https://github.com/shakacode/shaka.git`.
@@ -58,7 +59,8 @@ destination. Explain this before switching. If rollback is required, identify
 a supported directory and verify the saved source and revision are still
 installable there before moving any links.
 Clone the actual destination directly at the selected branch with
-`git clone --branch BRANCH URL DIR`, or prepare it at the selected release.
+`git clone --branch BRANCH URL DIR`, with the same Windows line-ending options, or prepare it at the
+selected release.
 For a fork, add the official repository as `upstream`.
 Inspect that revision before invoking take-over, which runs the incoming
 helper. Pass the prepared checkout as the destination.
