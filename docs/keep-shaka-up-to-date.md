@@ -1,23 +1,14 @@
 # Keep Shaka up to date
 
-Shaka has no automatic updates: it never updates itself, on a schedule or
-otherwise.
-If you want to update daily, schedule `install --update` for a time when no
-Shaka task is running, or schedule a daily check and update between chats.
-Every Shaka chat runs from the same installed checkout, so an update during a
-task can mix old and new instructions in that chat. When the update changes
-Shaka's validation or review code, the task also reruns those checks.
+Shaka has no automatic updates: it never installs one on its own. An
+installation from a GitHub branch checks for updates about once a day, the first
+time you use Shaka in a chat.
+If you want to update daily, schedule `install --update`, or schedule a daily
+check and update between chats.
 
-When you invoke Shaka, its skill also asks your agent to run the check. The
-check asks GitHub at most once a day. Later chats that day repeat its saved
-answer until you update Shaka. If an update is available, the agent tells you
-how to install it.
-
-A scheduled check helps most when you leave Shaka chats running overnight. The
-check compares an installation from a GitHub branch, such as the default `main`,
-with that branch. For a pinned release, the check reports only the pinned
-version and `install --update` keeps it; ask your agent about
-[installing a newer release](../manual-installation.md#keep-a-tested-release)
+For a pinned release, the check reports only the pinned version and
+`install --update` keeps it; ask your agent about
+[installing a newer release](manual-installation.md#keep-a-tested-release)
 instead.
 
 ## Get a reminder when a Claude Code chat starts
@@ -27,10 +18,6 @@ than a scheduled job. It runs no check of its own. When a new chat starts, it
 reads the last saved check result and adds its guidance when that check found
 an update or another change to act on. If no check has run in the last day, it
 reminds you to run one.
-
-A daily check keeps that result fresh. A scheduled `install --update` saves no
-check result, so with only an update job, the reminder asks for a check each
-day.
 
 The installer adds the reminder as a `SessionStart` hook in
 `~/.claude/settings.json` and prints that change. If it cannot read or write
@@ -44,12 +31,12 @@ Turn on Shaka's update reminder for new Claude Code chats
 
 The agent reruns the installer for Claude Code, which adds the hook. To turn
 the reminder off or run the command yourself, see
-[verify and update](../manual-installation.md#verify-and-update).
+[verify and update](manual-installation.md#verify-and-update).
 
 ## Schedule a daily update or check
 
 ```text
-Schedule a daily Shaka update using https://shaka.shakacode.com/docs/reference/scheduled-update-checks
+Schedule a daily Shaka update using https://shaka.shakacode.com/docs/keep-shaka-up-to-date
 ```
 
 To get only a notice, ask for a daily update check instead. Ask your agent to
@@ -62,27 +49,17 @@ the command. On macOS, replace `<string>update-check</string>` with
 WSL command, replace `update-check` with `install --update`. Keep the example
 job names so the stop steps below still apply.
 
-Choose a time when no Shaka task is running, including for the first run, which
-applies the update at once. A successful run exits 0 and logs
-`Verified Shaka installation` with the new commit. When the checkout has local
-changes or its history no longer matches the recorded branch, the update stops
-with an error, leaves the checkout unchanged, and logs the next step. A
-scheduled update installs whatever the branch holds, without the comparison you
-can review when you update by hand.
-
-When a check of the same installation ran in the last 23 hours, a scheduled check
-repeats that answer and adds its `checked_at` time. The limit is an hour short of
-a day, so a check that runs at the same time each day still asks GitHub.
+The job exits 0 when the update succeeds; otherwise, check its log for the error.
 
 For a check, read the job's log for `status` and `guidance`. If the guidance
 recommends an update, finish your active Shaka chats first. Then ask your agent to
-[update and verify Shaka](../manual-installation.md#verify-and-update). An `unknown`
+[update and verify Shaka](manual-installation.md#verify-and-update). An `unknown`
 result or an error without a status means the check could not determine whether
 an update is available.
 
 The default checkout is `~/.local/share/shaka/source`. If you installed
 elsewhere, ask your agent which checkout it uses or follow the terminal steps
-in the [installation guide](../manual-installation.md#verify-and-update). Use
+in the [installation guide](manual-installation.md#verify-and-update). Use
 the absolute path to `skills/shaka/scripts/shaka` inside that checkout. Run it
 under the account that installed Shaka,
 with Git and the authenticated GitHub CLI available to that account.
@@ -92,7 +69,7 @@ in the job or in a wrapper script. Include the directories that contain your
 reports success.
 
 Before enabling a schedule, use the helper from your registered installation.
-Run `"$shaka_helper" install --status` using the [terminal setup steps](../manual-installation.md#verify-and-update).
+Run `"$shaka_helper" install --status` using the [terminal setup steps](manual-installation.md#verify-and-update).
 Confirm the inventory identifies that checkout as your installed branch. For a
 PR trial, switch back to the helper from your registered installation. Then run
 `"$shaka_helper" update-check` once with that helper.
@@ -100,7 +77,7 @@ Continue when the result is `current`, `recent`, or `available`. For other
 results, follow the returned guidance first. If the reason is
 `unsupported_source` or `development_source`, ask your agent to compare with
 official Shaka `main`. To inspect the branch you installed from, use the
-[manual comparison](../manual-installation.md#verify-and-update).
+[manual comparison](manual-installation.md#verify-and-update).
 
 ## macOS
 
@@ -232,7 +209,7 @@ depends on your profile's `PATH`, put the Linux command in a wrapper that sets
 `PATH` and use that wrapper as the `--exec` target.
 
 For Shaka installed directly on Windows, use a daily reminder to ask your
-agent to [compare the installed branch with its upstream](../manual-installation.md#verify-and-update).
+agent to [compare the installed branch with its upstream](manual-installation.md#verify-and-update).
 The current `update-check` helper expects Unix-style paths when it looks up Git
 and the GitHub CLI. The WSL task checks the separate Shaka installation inside
 that distribution.

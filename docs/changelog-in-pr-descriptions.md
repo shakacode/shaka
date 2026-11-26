@@ -44,7 +44,8 @@ The setup PR makes three changes:
 
    The agent then fills the Changelog section and sees the template again each time
    it updates the description. When a later commit changes what users get, it revises
-   the note.
+   the note. [Use your pull request template](pr-template.md) covers the other
+   template options, such as where the section appears.
 
 3. **Contributor and release instructions.** Your contributing guide or `AGENTS.md`
    stops asking PRs to edit `CHANGELOG.md`. Your release steps build the version

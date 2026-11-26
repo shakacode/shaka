@@ -20,9 +20,8 @@ is the reusable default.
   ask their agent, and what the agent will do. Explain why rules exist and
   compare choices and their effects with examples. Put development records
   under `internal/`.
-- `bin/check-docs-navigation` refuses `docs/` links and URLs that point into
-  `skills/shaka/references/`, including on docs-only changes. Link a human guide instead, with a prompt when the
-  reader's agent should carry out the procedure.
+- `bin/check-docs-navigation` enforces [documentation destinations](internal/documentation.md#check-documentation-destinations),
+  including on docs-only changes. Use a human guide and a prompt when the reader's agent should carry out a procedure.
 - Under `skills/shaka/`, write to the executing agent. Give the trigger, action,
   and relevant command or flag rules. When a step belongs to a person, say
   what to ask them to do and point them to the public guide.

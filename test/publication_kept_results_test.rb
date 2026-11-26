@@ -10,10 +10,13 @@ module KeptResultsFixture
   REPOSITORY = 'shakacode/shaka'
   URL = 'https://github.com/shakacode/shaka/pull/9#issuecomment-1'
 
+  # Descriptions published before passes dropped their exit code; a republish still reads them.
   def published_line(head)
     '**Validation and review:** `validate` passed (exit 0); local review by openai/codex ' \
       "([attestation](#{URL})) at `#{head[0, 7]}`."
   end
+
+  def current_line(head) = published_line(head).sub(' (exit 0)', '')
 
   def body(head, gate = published_line(head)) = "before\n<!-- shaka:begin -->\n#{gate}\n<!-- shaka:end -->"
 
@@ -63,7 +66,7 @@ class PublicationKeptResultsTest < Minitest::Test
     with_checkout do |root, ref|
       settings = prepare(root, ref, {}, body: body(ref))
 
-      kept = "#{published_line(ref)} #{Shaka::VerificationGates::KEPT}"
+      kept = "#{current_line(ref)} #{Shaka::VerificationGates::KEPT}"
       assert_equal kept, Shaka::VerificationGates.line(settings.verdict)
       assert_equal kept, Shaka::VerificationGates.render(settings.verdict, URL)
     end
@@ -74,7 +77,7 @@ class PublicationKeptResultsTest < Minitest::Test
       with_results(run_check(root, ref, command: 'validate'), review_check(root, ref)) do |options|
         changed_relevant_code do
           settings = prepare(root, ref, options, body: body(ref))
-          assert_includes Shaka::VerificationGates.line(settings.verdict), published_line(ref)
+          assert_includes Shaka::VerificationGates.line(settings.verdict), current_line(ref)
         end
       end
     end
@@ -85,6 +88,19 @@ class PublicationKeptResultsTest < Minitest::Test
       first = Shaka::VerificationGates.render(prepare(root, ref, {}, body: body(ref)).verdict, URL)
       second = prepare(root, ref, {}, body: "<!-- shaka:begin -->\n#{first}\n<!-- shaka:end -->")
       assert_equal first, Shaka::VerificationGates.render(second.verdict, URL)
+    end
+  end
+
+  # The current wording must still read back as this commit's verified line.
+  def test_a_line_in_the_current_wording_is_kept_on_republish
+    with_checkout do |root, ref|
+      checks = { 'validation' => [{ 'original' => { 'command' => 'validate', 'exit_code' => 0 } }],
+                 'review' => [{ 'original' => { 'reviewer' => 'openai/codex', 'status' => 'completed' } }] }
+      line = Shaka::VerificationGates.line({ 'head' => ref, 'checks' => checks }, URL)
+      assert_equal current_line(ref), line
+
+      settings = prepare(root, ref, {}, body: body(ref, line))
+      assert_equal "#{line} #{Shaka::VerificationGates::KEPT}", Shaka::VerificationGates.line(settings.verdict)
     end
   end
 

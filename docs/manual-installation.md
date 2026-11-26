@@ -109,8 +109,8 @@ The installer can keep the earlier version available while it moves the skill li
 Which Shaka version am I using, and is an update available?
 ```
 
-The agent can check the source checkout, skill links, and Ruby. Shaka doesn't
-update itself automatically; [keep Shaka up to date](reference/scheduled-update-checks.md)
+The agent can check the source checkout, skill links, and Ruby. Shaka never
+installs updates on its own; [keep Shaka up to date](keep-shaka-up-to-date.md)
 shows how to schedule a daily update or update check. Finish active
 Shaka chats before updating. Then ask the agent to update and verify the
 installation, and start a new chat. Updates can stop if the installed checkout
@@ -213,7 +213,7 @@ Move my Shaka installation to its own checkout. Preserve my branches, worktrees,
 and local changes. Verify the installation afterward
 ```
 
-If you scheduled a daily check, [point it to the new checkout](reference/scheduled-update-checks.md#move-an-installation-with-a-scheduled-check)
+If you scheduled a daily check, [point it to the new checkout](keep-shaka-up-to-date.md#move-an-installation-with-a-scheduled-check)
 after moving the installation.
 
 The agent checks which copy is installed and explains what it needs to move.

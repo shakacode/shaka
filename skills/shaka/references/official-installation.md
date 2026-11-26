@@ -111,7 +111,7 @@ the recorded revision, and the compared branch stay the same.
 `bin/install --agent claude` adds a `SessionStart` hook that reports the saved `update-check` answer when each Claude
 Code chat starts; `--no-session-hook` removes it, and `install --update` leaves it unchanged.
 For a request to update Shaka automatically or every day, say that Shaka never
-updates itself, then follow [keep Shaka up to date](https://github.com/shakacode/shaka/blob/main/docs/reference/scheduled-update-checks.md)
+installs updates on its own, then follow [keep Shaka up to date](https://github.com/shakacode/shaka/blob/main/docs/keep-shaka-up-to-date.md)
 to offer a scheduled `install --update`, a daily check, or this hook in Claude Code.
 Use the registered helper at the installation's actual path:
 

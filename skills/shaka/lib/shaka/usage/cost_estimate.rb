@@ -3,6 +3,7 @@
 require_relative 'rate_card'
 require_relative 'cursor_cost'
 require_relative 'anthropic_cost'
+require_relative 'google_cost'
 require_relative 'openai_cost'
 require_relative 'cost_copy'
 require_relative 'cost_table'
@@ -14,14 +15,16 @@ module Shaka
   class CostEstimate
     include CursorCost
     include AnthropicCost
+    include GoogleCost
     include OpenAICost
     include CostCopy
     include CostTable
     include CostColumns
 
-    def initialize(responses, inclusive_input: true, rate_card: nil)
+    def initialize(responses, inclusive_input: true, google_counters: false, rate_card: nil)
       @responses = responses
       @inclusive_input = inclusive_input
+      @google_counters = google_counters
       @rate_card = rate_card || RateCard.installed
       @cursor_threshold_models = []
     end
@@ -36,7 +39,7 @@ module Shaka
       @threshold = false
       @cursor_threshold_models = []
       reasons = []
-      groups = @responses.group_by { |record| [record['configuration'], record['billing_mode']] }
+      groups = @responses.group_by { |record| [record['configuration'], billed_mode(record)] }
       columns = groups.map { |key, group| column(key, group, reasons) }
       columns = [blank_column] if columns.empty?
       { columns: columns, reasons: reasons, groups: groups.values }
@@ -83,10 +86,17 @@ module Shaka
       [value, nil]
     end
 
+    def billed_mode(record)
+      billing = record['billing_mode']
+      configuration = record['configuration']
+      return billing unless configuration.is_a?(Array) && configuration[0] == 'cursor'
+
+      published_billing(configuration[1], billing)
+    end
+
     def configured_price(record, mode)
       provider, model = record['configuration']
-      return anthropic_price(record, mode) if provider == 'anthropic' && !@inclusive_input
-      return [nil, 'Cache-exclusive input is unpriced'] unless @inclusive_input
+      return exclusive_price(provider, record, mode) unless @inclusive_input
       return [nil, 'Unsupported provider or configured model'] unless %w[openai cursor].include?(provider)
 
       tokens, reason = categories(record['usage'])
@@ -94,7 +104,17 @@ module Shaka
 
       return openai_price(model, mode, tokens) if provider == 'openai'
 
-      cursor_price(model, record['billing_mode'], mode, tokens)
+      cursor_price(model, billed_mode(record), mode, tokens)
+    end
+
+    # Providers whose list prices bill input apart from its cached and written subsets.
+    def exclusive_price(provider, record, mode)
+      return anthropic_price(record, mode) if provider == 'anthropic'
+      return google_price(record, mode) if provider == 'google' && @google_counters
+      # Antigravity names no provider for a Claude model or a step without one.
+      return [nil, 'Unsupported provider or configured model'] if @google_counters
+
+      [nil, 'Cache-exclusive input is unpriced']
     end
 
     def categories(usage)

@@ -34,8 +34,8 @@ before starting your task.
 
 If Shaka doesn't appear, restart your coding tool and try again.
 
-For a pinned release, ask your agent about [choosing a newer release](manual-installation.md#keep-a-tested-release).
-For a branch install, see [verify and update](manual-installation.md#verify-and-update).
+Shaka never installs updates on its own. To keep it current, ask your agent to
+set up a [daily update or update check](keep-shaka-up-to-date.md).
 
 <a id="2-choose-private-trial-or-team-setup"></a>
 <a id="2-choose-individual-trial-or-team-setup"></a>

@@ -1,5 +1,9 @@
 # Verify a speed-affecting change
 
+Skill point, before choosing or setting up a comparison: run the saved helper's
+`companions performance-verification#verify-a-speed-affecting-change --root DIR --ref SHA`
+and follow it as [skill points](companion-skills.md#skill-points) describe.
+
 When a change aims to speed up page load, rendering, or bundle size, likely slows them,
 or changes what a page loads or how it is cached or streamed, measure it against the base.
 Copy and styling tweaks with no speed aim or likely speed cost fall outside this step.

@@ -28,7 +28,7 @@ class DoctorBriefTest < Minitest::Test
 
   # A copied skill runs, so nothing else would tell the user it gets no update checks.
   def test_a_copied_skill_is_named_with_the_install_guide
-    report, blocked = brief(identity: COPIED)
+    report, blocked = brief(identity: COPIED, installation_status: -> { flunk 'A copy has no managed install to scan' })
     assert_includes report, 'Shaka start check: DEGRADED'
     assert_includes report, '[DEGRADED] Installation — 0.1.0 at '
     assert_includes report, 'was not set up by the Shaka installer'
@@ -96,12 +96,14 @@ class DoctorBriefTest < Minitest::Test
 
   private
 
-  def brief(identity: INSTALLED, git: {}, responses: {})
+  def brief(identity: INSTALLED, git: {}, responses: {}, installation_status: DoctorHelper::INSTALLED_STATE)
     reader = identity.respond_to?(:call) ? identity : -> { identity }
-    options = DEFAULTS.merge(runner: git_runner(git, responses))
+    options = DEFAULTS.merge(runner: git_runner(git, responses), installation_status:)
+    system = stub_system(options)
     checks = Shaka::Doctor::Checks.new(root: File.expand_path('..', __dir__), host: 'claude-code',
-                                       environment: options[:environment], system: stub_system(options))
-    subject = Shaka::Doctor::Brief.new(checks: checks.brief, identity: reader)
+                                       environment: options[:environment], system:)
+    state = Shaka::Doctor::InstallationState.new(system:)
+    subject = Shaka::Doctor::Brief.new(checks: checks.brief, identity: reader, installation_state: state)
     [subject.report, subject.blocked?]
   end
 

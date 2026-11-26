@@ -37,6 +37,7 @@ module Shaka
         lib/shaka/configuration/paths.rb
         lib/shaka/configuration/sources.rb
         lib/shaka/doctor/cli_inventory.rb
+        lib/shaka/usage/google_rates.rb
         lib/shaka/usage/rate_card.rb
         scripts/shaka
       ].freeze
