@@ -33,6 +33,10 @@ or how spacing changed. Otherwise, lead with an annotated after capture.
   annotation; use an editor, SVG/browser overlay, or an existing image tool rather
   than regenerating the screenshot. Flatten overlays into an image for PR upload.
 
+For a side-by-side image, when a browser tool is available, fill a copy of
+[before-after-template.html](before-after-template.html) as its opening comment
+describes and screenshot the result.
+
 With ImageMagick 7, this example outlines one region; choose coordinates for the
 actual capture and number it with a caption or your editor's text tool:
 

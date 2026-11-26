@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Before and after</title>
+<!--
+  Before/after comparison for Shaka UI evidence: Before on the left, After on
+  the right, numbered callouts in the gap with an arrow to each side, and one
+  caption line under each side. One viewport per copy of this file.
+  Adapted from the report template of ShakaPerf's shaka-perf-find-bugs skill.
+
+  1. Copy this file beside the two captures and fill every {{PLACEHOLDER}}.
+     Keep the markup and styles. Repeat the callout <g> once per difference.
+  2. Crop with each img's width and negative margins, not by editing the PNG.
+     Set the width to the capture's width in CSS pixels to show it at its own
+     scale, and give both sides the same crop. GitHub shows a PR image about
+     880px wide, so keep the stage under about 1100px or its text becomes
+     unreadable: crop to the changed region, or recapture at a narrower
+     viewport, before raising --shot-w. Change --shot-h freely; the gap stays
+     240px wide.
+  3. Callout coordinates are CSS pixels from the top-left corner of the Before
+     shot. Before spans x from 0 to --shot-w, the gap's center is --shot-w plus
+     120, and After starts at --shot-w plus 240. Keep labels inside the gap,
+     above or below their badge, about 24 characters a line. End each arrow at
+     the outline around what changed; an arrow may slant when the element
+     moved. When only one side has the element, delete the other side's arrow
+     and outline.
+  4. Open the filled file in the browser tool that took the captures and
+     screenshot the .stage element, or a window sized to it, at twice the
+     device scale when the tool allows it. Read the image back at 880px wide,
+     fix any unreadable text, overlapping label, or arrow that misses its
+     target, and use that PNG as the lead image.
+-->
+<style>
+  :root { --shot-w: 390px; --shot-h: 620px; --gap: 240px; --mark: #2563eb; --ink: #14171a; --muted: #5b6470; }
+  body { margin: 0; background: #fff; color: var(--ink); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .stage { box-sizing: content-box; width: calc(2 * var(--shot-w) + var(--gap)); padding: 16px; background: #fff; }
+  .titles, .captions { display: grid; grid-template-columns: var(--shot-w) var(--gap) var(--shot-w); text-align: center; }
+  .titles { align-items: end; margin-bottom: 10px; font-weight: 700; font-size: 20px; }
+  .titles small { display: block; font-weight: 400; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+  .shots { position: relative; height: var(--shot-h); }
+  .shot { position: absolute; top: 0; width: var(--shot-w); height: var(--shot-h); overflow: hidden; border-radius: 8px; box-shadow: 0 0 0 1px rgba(0,0,0,.18); background: #fff; }
+  .shot.before { left: 0; } .shot.after { right: 0; }
+  .shot img { display: block; max-width: none; }
+  .captions { margin-top: 12px; font-size: 16px; font-weight: 600; }
+  svg.overlay { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+  svg.overlay text { font: 700 17px system-ui, sans-serif; fill: var(--ink); text-anchor: middle; }
+  svg.overlay text.sub { font-weight: 400; font-size: 15px; fill: var(--muted); }
+  svg.overlay text.num { fill: #fff; dominant-baseline: central; }
+  svg.overlay circle.badge, svg.overlay marker path { fill: var(--mark); }
+  svg.overlay line, svg.overlay rect.mark { stroke: var(--mark); stroke-width: 2.5; fill: none; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="titles">
+    <div>Before <small>{{BASE_REVISION_OR_STATE}}</small></div>
+    <div><small>{{VIEWPORT_AND_ROUTE}}</small></div>
+    <div>After <small>{{HEAD_REVISION_OR_STATE}}</small></div>
+  </div>
+  <div class="shots">
+    <div class="shot before"><img src="{{BEFORE_PNG}}" alt="Before: {{WHAT_BEFORE_SHOWS}}" style="width: 390px; margin: 0 0 0 0"></div>
+    <div class="shot after"><img src="{{AFTER_PNG}}" alt="After: {{WHAT_AFTER_SHOWS}}" style="width: 390px; margin: 0 0 0 0"></div>
+    <svg class="overlay" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs>
+      <!-- One <g> per difference. The numbers below are examples: replace them. -->
+      <g>
+        <circle class="badge" cx="510" cy="120" r="14"/><text class="num" x="510" y="120">1</text>
+        <text x="510" y="158">{{WHAT_CHANGED}}</text>
+        <text class="sub" x="510" y="180">{{OPTIONAL_SECOND_LINE}}</text>
+        <line x1="494" y1="120" x2="344" y2="120" marker-end="url(#arrow)"/>
+        <rect class="mark" x="200" y="100" width="140" height="40" rx="6"/>
+        <line x1="526" y1="120" x2="676" y2="120" marker-end="url(#arrow)"/>
+        <rect class="mark" x="680" y="100" width="140" height="40" rx="6"/>
+      </g>
+    </svg>
+  </div>
+  <div class="captions">
+    <div>{{BEFORE_CAPTION}}</div>
+    <div></div>
+    <div>{{AFTER_CAPTION}}</div>
+  </div>
+</div>
+</body>
+</html>
