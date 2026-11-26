@@ -56,9 +56,6 @@ umask 022
 git clone --branch "$fork_branch" "$fork_url" "$shaka_source"
 ```
 
-On Windows, add the line-ending options from [manual installation](manual-installation.md)
-to that `git clone` command, and start the installer with `ruby` as that guide shows.
-
 Inspect the cloned source and its installer. When you're ready to use that
 revision, run this example for Codex. For other agents, see the
 [terminal installation options](manual-installation.md#install).
@@ -67,6 +64,23 @@ revision, run this example for Codex. For other agents, see the
 "$shaka_source/bin/install" --directory "$shaka_source" \
   --repository "$fork_url" --branch "$fork_branch" --agent codex &&
   "$shaka_source/bin/install" --verify
+```
+
+On Windows, use PowerShell. The clone keeps the stored line endings the installer needs, and
+Ruby starts the installer, which Windows cannot run directly:
+
+```powershell
+$fork_url = "https://github.com/YOU/shaka.git"
+$fork_branch = "mine"
+$shaka_source = "$HOME\.local\share\shaka\source"
+git clone --config core.autocrlf=false --config core.eol=lf --branch $fork_branch $fork_url $shaka_source
+```
+
+After inspecting the checkout:
+
+```powershell
+ruby "$shaka_source\bin\install" --directory $shaka_source --repository $fork_url --branch $fork_branch --agent codex
+ruby "$shaka_source\bin\install" --verify
 ```
 
 </details>
