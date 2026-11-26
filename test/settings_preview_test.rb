@@ -74,8 +74,10 @@ class SettingsPreviewTest < Minitest::Test
   private
 
   def assert_fresh_reviewer(root, trusted)
-    output, error, status = Open3.capture3(*COMMAND, 'reviewer', '--root', root, '--ref', trusted,
-                                           '--implementer', 'anthropic/claude')
+    output, error, status = Dir.mktmpdir('shaka-home') do |home|
+      Open3.capture3({ 'HOME' => home }, *COMMAND, 'reviewer', '--root', root, '--ref', trusted,
+                     '--implementer', 'anthropic/claude')
+    end
     assert_predicate status, :success?, error
     assert_equal(['openai/codex'], JSON.parse(output)['considered'].map { |entry| entry['reviewer'] })
   end
