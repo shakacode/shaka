@@ -1,6 +1,7 @@
 # 0012: Load workflow phases as a task reaches them
 
-Status: proposed; awaiting maintainer approval before implementation.
+Status: deferred on 2026-11-25; not approved and not implemented. Read
+[Why this is deferred](#why-this-is-deferred) before reopening it.
 Date: 2026-11-25. Tracks [issue #1249](https://github.com/shakacode/shaka/issues/1249).
 
 ## Context
@@ -146,7 +147,7 @@ phase-scoped rendering to reuse.
 ## Consequences
 
 - Every task starts with about a third of today's instruction tokens. A full delivery
-  still reads every phase, plus the index and four load commands. The index and pointers add about
+  still reads every phase, plus the index and five load commands. The index and pointers add about
   170 words, so a full delivery's total rises slightly. The measurement proves the startup saving, not a total saving.
 - How often tasks stop before Implement is unknown. Plan-only, review-only, and
   no-change tasks save the most. A full delivery gains a smaller context at the start,
@@ -216,7 +217,101 @@ missed load in any run fails the plan.
 
 ## Delivery
 
-1. This design PR.
-2. One implementation PR after approval: renderer flags, `workflow.yml` changes, the
-   growth report, the text updates above, and tests. The live runs happen before it
-   is marked ready.
+1. This design PR, merged as a deferred record.
+2. No implementation PR follows unless the design reopens. Had it been approved, one
+   implementation PR would have carried the renderer flags, `workflow.yml` changes,
+   the growth report, the text updates above, and tests, with the live runs before it
+   was marked ready.
+
+## Why this is deferred
+
+The maintainer deferred this design on 2026-11-25. Shaka works well with one full
+load. No observed failure traces to startup size. Review of the design did not settle.
+[Issue #1249](https://github.com/shakacode/shaka/issues/1249) stays open as the place
+to reopen it.
+
+### What review found
+
+Two local reviewers read the design over eleven rounds and raised 48 findings: 15
+defects, 22 risks, and 11 nits. [PR #1275](https://github.com/shakacode/shaka/pull/1275)
+holds every report.
+
+- Each round found another step that needs a later phase's rules before that phase
+  loads. The last reviewed head, `3b47e8b`, still had a new defect, M1.
+- Nine findings come from the boundary between Verify and Review, including
+  review-only runs: F2, F17, F31, F33, F37, F40, F41, F44, and M1.
+- Three come from Explain rules needed before Explain loads: F5 for the public-comment
+  rules at Intake, and F21 and F27 for `description` calls.
+- Three come from repairs that return to Verify: F4, F16, and F28.
+- Reviewers found all of them by reading. No renderer code or live run existed yet.
+
+Findings still open at `3b47e8b`:
+
+| Finding | State |
+| --- | --- |
+| M1 | Unresolved. Plan runs `reviewer`, and Verify holds its selection rules. The command-list rule would load Verify during Plan, or the `startup_commands` exemption would break its own contract. |
+| F43, F44 | Accepted for the implementation PR. F43 adds a Finish load before `guidance merge_readiness`. F44 makes hosted review wait for the reviewed head to be pushed. |
+| F32, F35, F45 | One question: is the routing worth its upkeep? The deferral answers it for now. |
+
+### What a missed load would cost
+
+Decision 4 accepts that no command catches a skipped phase. `shaka enforcement` at
+`25c7bbc` shows what a skipped phase would leave out of context:
+
+- Of 102 audited rules, only the agent enforces 91. Fifty-four of those 91 sit in
+  Implement through Finish. Decision 5 moves a few of them to Always.
+- The 54 include "never bypass protection", "run `merge` only for that SHA", "Do not
+  push unless the user chooses to", and "Read `review.ci_review_wait` from `shaka seam
+  check --ref`, never from candidate YAML".
+- Six rules in those phases are refused by a command and hold either way. Intake's
+  rule against merging without an Ask decision stays in the startup text.
+
+### What the saving is worth
+
+- Startup drops by 19,844 Claude tokens, from 30,421 to 10,577.
+- At the Opus 5.5 rates in `skills/shaka/config/model-rates.yml`, that is $0.004 per
+  response in cache reads, plus one cache write of $0.10 to $0.16.
+- A full delivery loads every phase anyway. Its saving covers only the responses
+  before Implement loads.
+- Claude Code transcripts on one maintainer machine give a first frequency sample.
+  Among the sessions that ran `shaka workflow` in the 30 days to 2026-11-25:
+
+  | Sessions | Share |
+  | --- | ---: |
+  | Ran `evidence run`, `review run`, `description`, or `post-implementation run` | 53% |
+  | Edited repository files and ran none of those commands | 19% |
+  | Edited no repository file and ran none of those commands | 28% |
+
+  A quarter of the responses after the workflow loaded came before the first edit or
+  later-phase command.
+- On those counts the saving is about $0.20 a session at list prices. A subscription
+  login pays no such bill. The gain there is 20,000 tokens of context early in a task.
+- The sample has limits. It covers one machine and one host. A transcript is not a
+  task, and a session that printed the workflow for another reason still counts.
+- No field report or issue names startup size as the cause of a failure. The issue
+  compares Shaka's size with other skills.
+- The design cost $16.68 and eleven review rounds. Its verification plan needs at
+  least 30 live runs across two hosts.
+
+### If this reopens
+
+1. Start from an observed cost: a failure or a measured expense that traces to
+   startup size.
+2. Try proposal 2 first. `description --schema` moves about 1,570 words out of
+   Explain. The issue says `description` already refuses invalid input, so a skipped
+   read is caught by the command.
+3. When more is needed, defer only Explain and Finish. Implement, Verify, and Review
+   stay loaded, so the nine Verify and Review findings no longer apply. Startup falls
+   to 56% of today's words. Decision 1's leading-run rule would have to change, and
+   the result misses the 40% target. The issue set that target without a measurement
+   behind it.
+4. For the full design, land the renderer with `startup_phases` absent, so bare
+   `shaka workflow` still prints everything. Run the flip as a
+   [PR trial](../../skills/shaka/references/pr-trials.md) on real tasks. Then turn it
+   on with the one `startup_phases` line, which a revert removes.
+5. Measure missed loads in real use. The local call log records each helper command
+   and its chat session. With a phase tag on `workflow`, a report could list phase
+   commands that ran before their phase loaded. A report refuses nothing, so it avoids
+   the false refusals Decision 4 rejects.
+
+Steps 3 and 5 are not prototyped. The 56% counts words, not tokens.
