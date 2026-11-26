@@ -47,6 +47,26 @@ over a spec with tickets or a companion's output, or asks you to use a companion
   Continue the authorized Shaka work that does not depend on it, and ask about the
   part that does. Do not install it.
 
+## Skill points
+
+A skill point is a step in a Shaka procedure where a companion skill can do part of
+the work. The procedure marks it with a `Skill point` line, which runs the saved
+helper's `companions POINT --root DIR --ref SHA` with the trusted default-branch commit.
+Without one, omit `--ref`; never pass a candidate commit.
+The command prints JSON with one row per skill configured for that step. Each row has a
+`mode`, the `reason` the skill fits, the `basis` for that mode, and whether it is installed.
+Apply a `use` skill inside the current phase. Name a `suggest` skill with its reason and
+run it only after the user says yes. When a row's `explicit_only` is true, give the user
+its invocation to type instead. When a row's `fans_out` is true, name the workers
+the skill would start before asking; only then does a yes authorize delegation, for that run.
+Leave a `decline` skill unused. Read a project skill from its commit with `git show`: its
+`skill_file`, then any file it names under `location`, never the checkout copy. Before
+reading a supporting file, check with `git ls-tree` that it is a regular file; skip a
+link and say so. Run a script the skill bundles only inside a copy of the whole skill
+directory taken from that commit, such as with `git archive`.
+An empty list needs nothing.
+When the command fails, report its error and continue without companion skills.
+
 ## Use a technique inside the phases
 
 A selected companion technique applies within the Shaka phase it concerns.

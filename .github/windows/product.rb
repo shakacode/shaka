@@ -16,7 +16,8 @@ class WindowsProduct < WindowsSession
 
   def call
     record('helper and command start tests') do
-      ruby_tests('test/windows_helper_start_test.rb', 'test/windows_command_start_test.rb')
+      ruby_tests('test/windows_helper_start_test.rb', 'test/windows_command_start_test.rb',
+                 'test/evidence_windows_check_test.rb')
     end
     record('local review start and stop tests') { ruby_tests(*REVIEW_TESTS) }
     record('evidence run starts a repository command') { evidence_run }
@@ -31,7 +32,7 @@ class WindowsProduct < WindowsSession
     head = git_output('rev-parse', 'HEAD')
     output, error, success = capture([native_path, *helper, *EVIDENCE_RUN, '--root', root, '--ref', head, *TEST], 600)
     puts "  helper #{success ? 'succeeded' : 'failed'}: #{excerpt(error)}"
-    return if completed?(output)
+    return if success && completed?(output)
 
     raise "evidence run did not complete the test command: #{excerpt(output)}"
   end
@@ -62,11 +63,18 @@ class WindowsProduct < WindowsSession
     branch = "shaka-windows-candidate-#{SecureRandom.hex(6)}"
     git_output('branch', branch, 'HEAD')
     created = branch
-    output, status = Dir.mktmpdir('shaka-windows-install') { |home| run_install(home, branch) }
-    puts "  exit #{status.exitstatus}: #{excerpt(output)}"
-    raise "bin/install did not verify candidate #{head}" unless status.success? && verified?(output, head)
+    output, success = Dir.mktmpdir('shaka-windows-install') { |home| install_and_verify(home, branch) }
+    puts "  #{success ? 'succeeded' : 'failed'}: #{excerpt(output)}"
+    raise "bin/install did not verify candidate #{head}" unless success && verified?(output, head)
   ensure
-    git_output('branch', '--delete', '--force', created) if created
+    delete_branch(created) if created
+  end
+
+  # Cleanup reports a failed delete instead of hiding the install's own error.
+  def delete_branch(branch)
+    git_output('branch', '--delete', '--force', branch)
+  rescue RuntimeError => e
+    puts "  cleanup: #{e.message}"
   end
 
   # The installer prints the revision it verified, abbreviated to however many digits Git chooses.
@@ -74,9 +82,19 @@ class WindowsProduct < WindowsSession
     output[/^Verified Shaka installation: .* \((\h{7,40})\)\r?$/, 1].then { |shown| shown && head.start_with?(shown) }
   end
 
-  def run_install(home, branch)
-    Open3.capture2e(native_path.merge('HOME' => home, 'USERPROFILE' => home), RbConfig.ruby,
-                    File.join(root, 'bin/install'), '--agent', 'codex', '--repository', root, '--branch', branch)
+  # The second run reads the record the first one saved, as a later --verify or --update does.
+  def install_and_verify(home, branch)
+    installed, installed_ok = run_installer(home, '--agent', 'codex', '--repository', root, '--branch', branch)
+    checked, checked_ok = run_installer(home, '--verify')
+    puts "  --verify #{checked_ok ? 'succeeded' : 'failed'}: #{excerpt(checked)}"
+    [installed, installed_ok && checked_ok]
+  end
+
+  # Bounded, so a hung install fails the record instead of holding the job.
+  def run_installer(home, *arguments)
+    environment = native_path.merge('HOME' => home, 'USERPROFILE' => home)
+    output, error, success = capture([environment, RbConfig.ruby, File.join(root, 'bin/install'), *arguments], 600)
+    ["#{output}#{error}", success]
   end
 
   # A native shell finds git through Git\cmd and nothing from Git's Unix tree.
@@ -92,8 +110,10 @@ class WindowsProduct < WindowsSession
      File.join(scripts, 'shaka.rb')]
   end
 
+  # An inherited GIT_DIR or similar would point git at another repository, as Source#git_raw notes.
   def git_output(*arguments)
-    output, status = Open3.capture2('git', '-C', root, *arguments)
+    environment = ENV.keys.grep(/\AGIT_/).to_h { |key| [key, nil] }
+    output, status = Open3.capture2(environment, 'git', '-C', root, *arguments)
     raise "git #{arguments.first} failed" unless status.success?
 
     output.strip

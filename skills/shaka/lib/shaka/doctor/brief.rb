@@ -4,6 +4,7 @@ require_relative '../error'
 require_relative 'check'
 require_relative 'checks'
 require_relative 'installation_identity'
+require_relative 'installation_state'
 require_relative 'system'
 require_relative '../startup_notice'
 
@@ -21,7 +22,9 @@ module Shaka
       def self.run(arguments, options)
         refuse_extra!(arguments, options)
         root = File.realpath(options.fetch(:root, Dir.pwd))
-        brief = new(checks: Checks.new(root:, host: nil, environment: ENV, system: System.default).brief)
+        system = System.default
+        checks = Checks.new(root:, host: nil, environment: ENV, system:).brief
+        brief = new(checks:, installation_state: InstallationState.new(system:))
         puts brief.report
         StartupNotice::Marks.doctor_ran
         brief.blocked? ? 1 : 0
@@ -33,13 +36,14 @@ module Shaka
       end
       private_class_method :refuse_extra!
 
-      def initialize(checks:, identity: InstallationIdentity.method(:read), home: Dir.home)
+      def initialize(checks:, installation_state:, identity: InstallationIdentity.method(:read), home: Dir.home)
         @checks = checks
+        @installation_state = installation_state
         @identity = identity
         @home = home
       end
 
-      def items = @items ||= [installation, *@checks]
+      def items = @items ||= [*installation_checks, *@checks]
 
       def report = ["Shaka start check: #{worst.upcase}", *items.map { |item| render(item) }].join("\n")
 
@@ -50,16 +54,21 @@ module Shaka
       def worst = items.map { |item| item.fetch(:status) }.max_by { |status| SEVERITY.fetch(status) }
 
       # A copied skill runs normally, so this line is the only place a user learns it gets no updates.
-      def installation
+      def installation_checks
         identity = @identity.call
         place = "#{identity.fetch('version')} at #{location}"
         installed = installed(identity.fetch('source'))
-        return check('Installation', 'healthy', "#{place}, #{installed}") if installed
+        return [check('Installation', 'healthy', "#{place}, #{installed}"), *recovery_warnings] if installed
 
-        check('Installation', 'degraded', "#{place} was not set up by the Shaka installer and gets no update checks",
-              guidance: "Install Shaka with the official installer: #{GUIDE}")
+        [check('Installation', 'degraded', "#{place} was not set up by the Shaka installer and gets no update checks",
+               guidance: "Install Shaka with the official installer: #{GUIDE}")]
       rescue Shaka::Error, KeyError, TypeError, SystemCallError => e
-        check('Installation', 'failed', first_line(e.message), guidance: "Reinstall Shaka: #{GUIDE}")
+        [check('Installation', 'failed', first_line(e.message), guidance: "Reinstall Shaka: #{GUIDE}")]
+      end
+
+      def recovery_warnings
+        state = @installation_state.call
+        state.fetch(:status) == 'healthy' ? [] : [state]
       end
 
       def installed(source)

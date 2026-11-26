@@ -44,7 +44,7 @@ module Shaka
         nil
       end
 
-      # Whether the job ended its processes. Closing the handle alone ends none of them.
+      # Returns whether Windows ended the job's processes.
       def terminate
         ended = !@handle.nil? && API.TerminateJobObject(@handle, 1) != 0
         close

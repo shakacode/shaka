@@ -6,8 +6,10 @@ module Shaka
     module ReleaseCheckout
       VERSION = /\A[0-9]+\.[0-9]+\.[0-9]+(?:[.-][A-Za-z0-9]+)*\z/
       # Git for Windows converts line endings on checkout by default, which leaves files that match
-      # no revision and an sh launcher with carriage returns. The checkout keeps the stored bytes.
-      CLONE_CONFIG = %w[--config core.autocrlf=false].freeze
+      # no revision and an sh launcher with carriage returns. The checkout keeps the stored bytes,
+      # also when a global attributes file marks files as text; an attribute that sets eol=crlf
+      # still converts.
+      CLONE_CONFIG = %w[--config core.autocrlf=false --config core.eol=lf].freeze
 
       def self.reference(record)
         record['release'] ? "refs/tags/v#{record['release']}" : record.fetch('branch')
