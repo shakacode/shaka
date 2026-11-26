@@ -10,6 +10,7 @@ require_relative 'pr_template'
 require_relative 'review_coverage'
 require_relative 'ready_time'
 require_relative 'local_review/ledger'
+require_relative 'configuration'
 require_relative 'configuration/personal_privacy'
 
 module Shaka
@@ -132,6 +133,13 @@ module Shaka
 
       Configuration::PersonalPrivacy::REDACTION unless @privacy.checkout_path?
     end
+
+    # True when the repository has no Shaka settings at all, which the description states above its links.
+    def settings_missing? = @missing == true
+
+    # Asked only when no settings were read, so a missed --ref in a repository with settings keeps the
+    # recovery the settings block names.
+    def with_missing_settings(root) = tap { @missing = @current.nil? && Configuration.checkout_without_contract?(root) }
 
     # The user's own choices, read for this publication; nothing hidden when none were read.
     attr_reader :privacy

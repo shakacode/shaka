@@ -113,13 +113,14 @@ module Shaka
               guidance: 'Repair the contract, or let `shaka seam init` rewrite a valid one.')
       end
 
-      # A missing contract is distinct from a present but unusable file.
+      # A missing contract is distinct from a present but unusable file. The brief report opens with
+      # a plain sentence when settings_missing is set.
       def missing_seam
         check('Repository seam', 'failed', "this root has no #{Configuration::Paths::CONTRACT} regular file",
               guidance: 'Choose a setup before the task. For a private trial in this clone, ask your coding ' \
                         'agent: Set up Shaka just for me. For team settings in a setup PR, ask: Configure this ' \
                         'repository for Shaka using its existing checks and merge policy ask. Or point `--root` ' \
-                        'at the checkout you meant.')
+                        'at the checkout you meant.').merge(settings_missing: true)
       end
 
       # A command that cannot even launch is this check's answer, never an aborted report.

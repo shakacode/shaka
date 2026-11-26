@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'open3'
 require_relative 'configuration/paths'
 require_relative 'configuration/layout'
 require_relative 'repository_config'
@@ -121,6 +122,15 @@ module Shaka
 
     def contract_entry?(root)
       !Layout.worktree(root:, allow_missing: true).nil?
+    end
+
+    # Whether the Git checkout holding directory has no settings file, team or private. A directory
+    # outside Git has no checkout to judge, so it never counts as one without settings.
+    def checkout_without_contract?(directory)
+      top, _error, status = Open3.capture3('git', '-C', directory.to_s, 'rev-parse', '--show-toplevel')
+      status.success? && !contract_entry?(top.strip)
+    rescue SystemCallError
+      false
     end
 
     def contract_matches?(root, source)
