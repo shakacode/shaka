@@ -3,6 +3,7 @@
 require 'fileutils'
 require 'tmpdir'
 require_relative '../error'
+require_relative '../executable_file'
 
 module Shaka
   # Gives restricted Claude the reviewed commit's files without untracked files, Git history, or links out.
@@ -77,10 +78,18 @@ module Shaka
                           'another committed path or uses a name the filesystem refuses'
     end
 
-    def check_path!(path)
-      return unless path.start_with?('/') || path.split('/').intersect?(['', '.', '..'])
+    def check_path!(path, windows: ExecutableFile.windows?)
+      return unless path.start_with?('/') || path.split('/').any? { |part| unsafe_part?(part, windows) }
 
       raise Shaka::Error, "Commit export path leaves the export: #{path.inspect}"
+    end
+
+    # Windows also splits on a backslash, reads a colon as a drive or stream, and drops trailing dots
+    # and spaces, so there "..." names the parent. Checked before anything is written.
+    def unsafe_part?(part, windows)
+      return true if ['', '.', '..'].include?(part)
+
+      windows && (part.match?(/[\\:]/) || part.sub(/[. ]+\z/, '').empty?)
     end
   end
 end

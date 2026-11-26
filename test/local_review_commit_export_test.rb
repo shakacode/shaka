@@ -187,6 +187,17 @@ class LocalReviewCommitExportUnitTest < Minitest::Test
     end
   end
 
+  # Windows resolves these outside the export, so they stop before anything is written there.
+  def test_windows_path_syntax_is_refused_on_windows
+    exporter = Exporter.new('', '')
+    ['dir\\..\\..\\escape', 'C:escape', 'C:/escape', 'dir/.../escape', 'dir/.. /escape',
+     'file.txt:stream'].each do |path|
+      assert_raises(Shaka::Error, path) { exporter.send(:check_path!, path, windows: true) }
+    end
+    exporter.send(:check_path!, 'dir\\name', windows: false)
+    exporter.send(:check_path!, 'dir/name.txt', windows: true)
+  end
+
   # Break caught: a short read wrote a truncated file as if it were the committed content.
   def test_truncated_blob_output_stops_the_export
     Dir.mktmpdir do |temporary|
