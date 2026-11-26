@@ -4,6 +4,7 @@ require 'json'
 require_relative 'checkout_development'
 require_relative 'checkout_drift'
 require_relative 'checkout_git'
+require_relative 'checkout_owned_worktree'
 require_relative 'checkout_record'
 require_relative 'checkout_validation'
 require_relative 'directory_safety'
@@ -19,6 +20,7 @@ module Shaka
       include CheckoutGit
       include CheckoutDrift
       include CheckoutDevelopment
+      include CheckoutOwnedWorktree
       include CheckoutRecord
       include CheckoutValidation
       include ReleaseCheckout
@@ -26,6 +28,8 @@ module Shaka
       REPOSITORY = 'https://github.com/shakacode/shaka.git'
       RECORD = Locations::RECORD
       attr_reader :root, :record, :repository, :release
+      # The requested skills folder, which a refusal checks for links into a linked worktree.
+      attr_writer :skills_dir
 
       # fresh_install is the installer's command for these selections in the default location.
       def initialize(directory, repository: nil, branch: nil, release: nil, fresh_install: nil)

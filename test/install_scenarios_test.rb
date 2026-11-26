@@ -13,6 +13,7 @@ class InstallScenariosTest < Minitest::Test
   include HealthyInstallScenarios
   include BrokenInstallScenarios
   include UnlistedRowScenarios
+  include InstallRefusalSteps
 
   # Every row of the #683 install matrix. A row that is not a status state needs build_row_<id>.
   MATRIX = %w[A1 A2 A3 A4 A5 A6 A8 A9 B1 B2 B3 B4 B5 B6 B7 B8 B9 B10 C1 C2 C3 C5
@@ -70,6 +71,39 @@ class InstallScenariosTest < Minitest::Test
     assert_includes report['findings'].map { |item| item['id'] }, 'C3'
   end
 
+  # Installing into the registered install's own worktree names the step that clears it, not a reinstall
+  # that the same worktree would refuse (#1284).
+  def test_installing_into_an_owned_worktree_names_its_removal
+    root, feature = owned_worktree
+    before = registration(root)
+    step = refused(feature, '--directory', feature)
+    assert_includes step, 'worktree remove'
+    run_step(step)
+    assert_equal 'A1', status(root)['state']
+    installer(root, '--verify')
+    assert_equal before, registration(root)
+  end
+
+  # A link that resolves into the worktree would break with it, so removal is left to a person.
+  def test_an_owned_worktree_serving_a_link_goes_to_a_person
+    _root, feature = owned_worktree
+    link = File.join(@home, '.agents/skills/shaka')
+    File.unlink(link)
+    File.symlink(File.join(feature, 'skills/shaka'), link)
+    output = refusal(feature, '--directory', feature)
+    assert_match(/Next: a person must decide whether to keep the skills links \S*shaka, which resolve into/, output)
+    assert_path_exists feature
+  end
+
+  def test_an_owned_worktree_serving_a_requested_skills_folder_goes_to_a_person
+    _root, feature = owned_worktree
+    custom = File.join(@directory, 'custom-skills')
+    FileUtils.mkdir_p(custom)
+    File.symlink(File.join(feature, 'skills/shaka'), File.join(custom, 'shaka'))
+    output = refusal(feature, '--directory', feature, '--skills-dir', custom)
+    assert_includes output, "Next: a person must decide whether to keep the skills links #{custom}/shaka"
+  end
+
   def test_status_changes_nothing
     root = default_install
     pull(root)
@@ -78,5 +112,19 @@ class InstallScenariosTest < Minitest::Test
     assert_predicate process, :success?, output
     assert_includes output, 'Shaka install state: B1'
     assert_equal before, snapshot
+  end
+
+  private
+
+  # A default install hosting a linked worktree on a new branch.
+  def owned_worktree
+    root = default_install
+    feature = File.join(@directory, 'feature')
+    git('-C', root, 'worktree', 'add', '-q', feature)
+    [root, feature]
+  end
+
+  def registration(root)
+    [File.read(File.join(root, '.git/shaka-install.json')), File.readlink(File.join(@home, '.agents/skills/shaka'))]
   end
 end
