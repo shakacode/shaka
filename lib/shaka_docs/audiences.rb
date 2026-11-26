@@ -82,7 +82,7 @@ module ShakaDocs
       end
     end
 
-    # One spelling names the ref known to hold the file; relative links and other refs do not qualify.
+    # Only the normalized main URL qualifies, so each guide names the ref known to hold the file.
     def copyable_example_url?(path, target)
       COPYABLE_EXAMPLES.include?(path) && url(target).to_s == "https://github.com/shakacode/shaka/blob/main/#{path}"
     end
