@@ -57,7 +57,7 @@ end
 
 def installed_helper?(options)
   helper = options.fetch(:helper)
-  File.executable?(helper) && !helper.start_with?("#{options.fetch(:source)}/")
+  File.file?(helper) && File.executable?(helper) && !helper.start_with?("#{options.fetch(:source)}/")
 end
 
 def validate_budget(options)
