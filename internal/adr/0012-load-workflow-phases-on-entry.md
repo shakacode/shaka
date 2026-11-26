@@ -274,8 +274,8 @@ Decision 4 accepts that no command catches a skipped phase. `shaka enforcement` 
 - Startup drops by 19,844 Claude tokens, from 30,421 to 10,577.
 - At the Opus 5.5 rates in `skills/shaka/config/model-rates.yml`, that is $0.004 per
   response in cache reads, plus one cache write of $0.10 to $0.16.
-- A full delivery loads every phase anyway. Its saving covers only the responses
-  before Implement loads.
+- A full delivery loads every phase anyway. Its saving shrinks as each later phase
+  loads, and the full 19,844 tokens apply only before Implement loads.
 - Claude Code transcripts on one maintainer machine give a first frequency sample.
   Among the sessions that ran `shaka workflow` in the 30 days to 2026-11-25:
 
@@ -302,9 +302,9 @@ Decision 4 accepts that no command catches a skipped phase. `shaka enforcement` 
 1. Start from an observed cost: a failure or a measured expense that traces to
    startup size.
 2. Try proposal 2 first. `description --schema` moves about 1,570 words out of
-   Explain. `description` refuses malformed input, so a skipped read of the input
-   rules is caught by the command. Evidence the agent never gathered, such as an item
-   a PR template asks for, is not caught that way.
+   Explain. `description` refuses input that fails its implemented checks, such as a
+   malformed field. It cannot judge content: evidence the agent never gathered, or a
+   paraphrase that misses a human correction, still passes.
 3. When more is needed, defer only Explain and Finish. Implement, Verify, and Review
    stay loaded, so most of the nine Verify and Review findings no longer apply. F44
    still does: hosted review must wait for the reviewed head to be pushed. Startup
