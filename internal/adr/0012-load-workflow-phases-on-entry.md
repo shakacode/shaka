@@ -217,11 +217,11 @@ missed load in any run fails the plan.
 
 ## Delivery
 
-1. This design PR, merged as a deferred record.
-2. No implementation PR follows unless the design reopens. Had it been approved, one
-   implementation PR would have carried the renderer flags, `workflow.yml` changes,
-   the growth report, the text updates above, and tests, with the live runs before it
-   was marked ready.
+1. PR #1275 records the design as deferred.
+2. No implementation PR follows unless the design reopens. An approved design would
+   get one implementation PR with the renderer flags, `workflow.yml` changes, the
+   growth report, the text updates above, and tests, with the live runs before it is
+   marked ready.
 
 ## Why this is deferred
 
@@ -263,8 +263,11 @@ Decision 4 accepts that no command catches a skipped phase. `shaka enforcement` 
 - The 54 include "never bypass protection", "run `merge` only for that SHA", "Do not
   push unless the user chooses to", and "Read `review.ci_review_wait` from `shaka seam
   check --ref`, never from candidate YAML".
-- Six rules in those phases are refused by a command and hold either way. Intake's
-  rule against merging without an Ask decision stays in the startup text.
+- Of the other seven rules in those phases, a command refuses six and reports one.
+  Each check guards only its helper's path. `merge` refuses an `UNSTABLE` state under
+  `ci_review_wait: all`, but a maintainer's merge click on GitHub skips that check.
+  `reply` refuses a thread with an excluded author, but a raw `gh` reply does not.
+  Intake's rule against merging without an Ask decision stays in the startup text.
 
 ### What the saving is worth
 
@@ -284,7 +287,8 @@ Decision 4 accepts that no command catches a skipped phase. `shaka enforcement` 
 
   A quarter of the responses after the workflow loaded came before the first edit or
   later-phase command.
-- On those counts the saving is about $0.20 a session at list prices. A subscription
+- On those counts the saving is about $0.20 a session at list prices. The figure is
+  an estimate from that sample's response counts, which this record does not include. A subscription
   login pays no such bill. The gain there is 20,000 tokens of context early in a task.
 - The sample has limits. It covers one machine and one host. A transcript is not a
   task, and a session that printed the workflow for another reason still counts.
@@ -302,9 +306,10 @@ Decision 4 accepts that no command catches a skipped phase. `shaka enforcement` 
    read is caught by the command.
 3. When more is needed, defer only Explain and Finish. Implement, Verify, and Review
    stay loaded, so the nine Verify and Review findings no longer apply. Startup falls
-   to 56% of today's words. Decision 1's leading-run rule would have to change, and
-   the result misses the 40% target. The issue set that target without a measurement
-   behind it.
+   to 56% of today's words; its token count is unmeasured. Review comes after Explain
+   in the phase order, so startup would no longer be a leading run of phases, and
+   Decision 1's rule would have to change. On words, the result misses the 40% target.
+   The issue set that target without a measurement behind it.
 4. For the full design, land the renderer with `startup_phases` absent, so bare
    `shaka workflow` still prints everything. Run the flip as a
    [PR trial](../../skills/shaka/references/pr-trials.md) on real tasks. Then turn it
