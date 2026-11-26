@@ -334,4 +334,19 @@ class DocsCopyableExamplesTest < Minitest::Test
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, page)
     assert_predicate status, :success?, output
   end
+
+  def test_relative_links_to_examples_fail_because_the_site_cannot_resolve_them
+    output, _, status = check({ 'docsSidebar' => ['expected-experience'] },
+                              '[Prompt](../skills/shaka/config/review-prompt.md)',
+                              'skills/shaka/config/review-prompt.md' => "# Review\n")
+    refute_predicate status, :success?
+    agent_line = output.lines.grep(/\ALink a human guide/).first.to_s
+    assert_includes agent_line, 'expected-experience.md -> ../skills/shaka/config/review-prompt.md'
+  end
+
+  def test_every_copyable_example_exists
+    repository = File.expand_path('..', __dir__)
+    missing = ShakaDocs::Audiences::COPYABLE_EXAMPLES.reject { |path| File.file?(File.join(repository, path)) }
+    assert_empty missing
+  end
 end

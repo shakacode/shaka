@@ -78,8 +78,13 @@ module ShakaDocs
     def agent_targets(repository, source, targets)
       targets.select do |target|
         path = SourcePaths.local_path(repository, source, target)
-        path && agent_path?(path) && !COPYABLE_EXAMPLES.include?(path)
+        path && agent_path?(path) && !copyable_example_url?(path, target)
       end
+    end
+
+    # The docs site cannot resolve a relative link out of docs/, so only an absolute URL qualifies.
+    def copyable_example_url?(path, target)
+      COPYABLE_EXAMPLES.include?(path) && !url(target).host.nil?
     end
 
     def document_files(repository)
