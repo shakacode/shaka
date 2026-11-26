@@ -45,6 +45,17 @@ class LocalReviewCodexHomeTest < Minitest::Test
     end
   end
 
+  def test_without_file_sign_in_codex_keeps_its_home_and_session
+    with_repository do |root, base, head, bin|
+      Dir.mktmpdir('shaka-codex-user-home') do |home|
+        reviewed(home, [root, base, head, bin], trace_dir: home) do |result, trace|
+          assert_equal home, trace.fetch('home')
+          assert_equal Dir.glob(File.join(home, 'sessions', '*', '*', '*', '*.jsonl')), [result.fetch('usage')]
+        end
+      end
+    end
+  end
+
   private
 
   def reviewed(home, repository, trace_dir:)
@@ -102,6 +113,19 @@ class LocalReviewCodexHomeUnitTest < Minitest::Test
   # Break caught: an empty CODEX_HOME resolved to the working directory instead of ~/.codex.
   def test_empty_codex_home_uses_the_default
     assert_equal File.join(Dir.home, '.codex'), Shaka::LocalReviewCodexHome.real_home('CODEX_HOME' => '')
+  end
+
+  def test_review_and_user_home_share_the_credential_lock
+    Dir.mktmpdir('shaka-codex-user-home') do |user_home|
+      File.write(File.join(user_home, 'auth.json'), '{}')
+      Shaka::LocalReviewCodexHome.with_isolated({ 'CODEX_HOME' => user_home }) do |home|
+        File.open(File.join(home, 'auth.lock'), 'a') do |reviewer_lock|
+          assert reviewer_lock.flock(File::LOCK_EX | File::LOCK_NB)
+          File.open(File.join(user_home, 'auth.lock'), 'a') { |lock| refute lock.flock(File::LOCK_EX | File::LOCK_NB) }
+        end
+      end
+      assert_path_exists File.join(user_home, 'auth.lock')
+    end
   end
 
   # Break caught: a reviewer that raised left its temporary home behind.

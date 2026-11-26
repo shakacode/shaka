@@ -8,18 +8,28 @@ require_relative '../usage/codex_usage'
 module Shaka
   # Codex reads AGENTS.md from CODEX_HOME even with --ignore-rules --ignore-user-config, and a
   # personal rule there can answer the review prompt instead of reviewing. The reviewer starts from
-  # a temporary home that links only the user's sign-in file; Codex saves a refreshed sign-in through
-  # the link. Its session stays in the temporary home, and usage gets a copy before cleanup.
+  # a temporary home that links the user's sign-in file and its lock when that file exists. Other
+  # sign-in methods keep the original home. Usage gets a copy of an isolated session before cleanup.
   # CODEX_HOME and TMPDIR are the maintainer's own settings, so they are used as given.
   module LocalReviewCodexHome
     SIGN_IN = 'auth.json'
+    SIGN_IN_LOCK = 'auth.lock'
+
+    def self.with_reviewer_home(environment = ENV, &)
+      return yield unless File.file?(File.join(real_home(environment), SIGN_IN))
+
+      with_isolated(environment, &)
+    end
+
+    def self.session(events, home)
+      home ? keep_session(events, home) : CodexUsage.announced_session(events)
+    end
 
     # Yields the temporary home; the block returns the process result. A reviewer that survived
     # termination keeps its home, so a late sign-in save still reaches the user's file.
     def self.with_isolated(environment = ENV)
       home = Dir.mktmpdir('shaka-codex-home-')
-      sign_in = File.join(real_home(environment), SIGN_IN)
-      File.symlink(sign_in, File.join(home, SIGN_IN)) if File.file?(sign_in)
+      link_sign_in(home, real_home(environment))
       result = yield home
     ensure
       # Best effort: a cleanup error must not replace the finished review.
@@ -59,10 +69,19 @@ module Shaka
       nil
     end
 
+    def self.link_sign_in(home, user_home)
+      sign_in = File.join(user_home, SIGN_IN)
+      return unless File.file?(sign_in)
+
+      # Codex opens the lock with create, so the link can point to a file that does not exist yet.
+      File.symlink(File.join(user_home, SIGN_IN_LOCK), File.join(home, SIGN_IN_LOCK))
+      File.symlink(sign_in, File.join(home, SIGN_IN))
+    end
+
     def self.survivor?(result)
       result.is_a?(Array) && result.last.is_a?(LocalReviewProcess::CleanupError)
     end
 
-    private_class_method :discard, :survivor?
+    private_class_method :discard, :link_sign_in, :survivor?
   end
 end

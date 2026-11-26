@@ -29,7 +29,7 @@ class PublicationVerificationGatesTest < Minitest::Test
   def test_bound_results_render_one_validation_and_review_line_before_the_checks
     rendered = render(bound(review: [CLAUDE, CODEX]), 'review' => URL)
 
-    line = '**Validation and review:** `validate` passed (exit 0); local review by anthropic/claude, ' \
+    line = '**Validation and review:** `validate` passed; local review by anthropic/claude, ' \
            "openai/codex (host-reported) ([attestation](#{URL})) at `abcdef1`."
     assert_includes rendered, line
   end
@@ -57,6 +57,7 @@ class PublicationVerificationGatesTest < Minitest::Test
     rendered = render(bound(validation: [VALIDATE.merge('exit_code' => 1)]))
 
     assert_includes rendered, '`validate` failed (exit 1); local review by anthropic/claude at `abcdef1`.'
+    assert_includes render(bound(validation: [VALIDATE.merge('exit_code' => nil)])), '`validate` failed; local review'
   end
 
   # The first description is published before the review comment exists, so it has no link yet.
@@ -75,7 +76,7 @@ class PublicationVerificationGatesTest < Minitest::Test
   def test_a_reviewer_shortfall_keeps_the_line_visible_and_names_the_missing_provider
     rendered = render(bound(shortfall: SHORTFALL), 'review' => URL)
 
-    line = '**Validation and review:** `validate` passed (exit 0); local review by anthropic/claude ' \
+    line = '**Validation and review:** `validate` passed; local review by anthropic/claude ' \
            "([attestation](#{URL})) at `abcdef1`."
     gaps = "**Setup gaps:** 1 of 2 configured reviewers completed; `openai` did not ([review comment](#{URL}))."
     assert_includes rendered, "## Verification\n\n#{line}\n\n#{gaps}\n\n"

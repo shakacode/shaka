@@ -4,10 +4,13 @@ require 'open3'
 require 'yaml'
 require_relative '../error'
 require_relative '../repository_config/duplicate_keys'
+require_relative 'google_rates'
 
 module Shaka
   # Checked rate-card data. The installed command prices with its own formulas.
   class RateCard
+    include GoogleRates
+
     PATH = 'skills/shaka/config/model-rates.yml'
     INSTALLED_PATH = File.expand_path("../../../config/#{File.basename(PATH)}", __dir__)
     PRICE = /\A(?:0|[1-9]\d*)(?:\.\d+)?\z/
@@ -128,23 +131,30 @@ module Shaka
 
     # Closed schema: a key the installed loader does not know fails the report.
     class Schema
+      include GoogleRates::Schema
+
       PROVIDERS = %w[openai cursor anthropic].freeze
+      OPTIONAL = %w[google].freeze
 
       def self.check(data) = new(data).check
 
       def initialize(data) = @data = data
 
       def check
-        unexpected = @data.keys - PROVIDERS
+        sections
+        checked = { 'openai' => openai, 'cursor' => cursor, 'anthropic' => anthropic }
+        @data.key?('google') ? checked.merge('google' => google) : checked
+      end
+
+      private
+
+      def sections
+        unexpected = @data.keys - PROVIDERS - OPTIONAL
         raise Error, "unknown rate-card section: #{unexpected.first}" if unexpected.any?
 
         missing = PROVIDERS - @data.keys
         raise Error, "rate card is missing #{missing.first}" if missing.any?
-
-        { 'openai' => openai, 'cursor' => cursor, 'anthropic' => anthropic }
       end
-
-      private
 
       def openai
         section = mapping(@data.fetch('openai'), 'openai', %w[verified threshold models])
