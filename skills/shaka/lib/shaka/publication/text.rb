@@ -82,11 +82,24 @@ module Shaka
       note ? "#{header}\n\n_#{single_line(note, 'publisher note')}_" : header
     end
 
-    def identity(value)
+    # A description's first line keeps the agent and the fields that were read. Missing values, under
+    # Shaka metrics, records the full line and the publisher note. Comments and reviews keep all four
+    # fields, because AgentPost tells an agent's post from a person's by counting them.
+    def description_identity(content)
+      agent, *rest = identity_fields(content['identity'])
+      return publisher_identity(content) unless rest.include?('UNKNOWN')
+
+      "🤖 #{[agent, *rest.reject { it == 'UNKNOWN' }].join(' · ')}"
+    end
+
+    def unknown_identity?(value) = identity_fields(value).drop(1).include?('UNKNOWN')
+
+    def identity(value) = "🤖 #{identity_fields(value).join(' · ')}"
+
+    def identity_fields(value)
       raise Error, 'Publication identity must be supplied.' unless value.is_a?(Hash)
 
-      fields = IDENTITY_FIELDS.map { |field| identity_field(value[field], field) }
-      "🤖 #{fields.join(' · ')}"
+      IDENTITY_FIELDS.map { |field| identity_field(value[field], field) }
     end
 
     def identity_field(value, field)

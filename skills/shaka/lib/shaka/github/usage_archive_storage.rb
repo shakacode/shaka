@@ -5,8 +5,10 @@ module Shaka
   module UsageArchiveStorage
     private
 
+    # A description's first line may omit unread fields, and an agent comment needs all four, so prefer the full line.
     def identify_writer(body)
-      @writer = Publishing.managed_region(body).to_s[/^🤖 [^\r\n]+$/] || '🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN'
+      region = Publishing.managed_region(body).to_s
+      @writer = region[MissingValues::WRITER, 1] || region[/^🤖 [^\r\n]+$/] || '🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN'
       @writer = @writer.split(ThroughputLine::SPEND, 2).first
     end
 

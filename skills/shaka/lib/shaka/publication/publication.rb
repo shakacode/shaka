@@ -81,8 +81,9 @@ module Shaka
 
     # The spend follows the model line, before an optional publisher note; the intervals sit in Timings.
     def opening
-      identity = PublicationText.publisher_identity(@content)
-      [@description ? identity.sub(/\A.*/) { "#{it}#{ThroughputStats.header(throughput)}" } : identity]
+      return [PublicationText.publisher_identity(@content)] unless @description
+
+      [PublicationText.description_identity(@content).sub(/\A.*/) { "#{it}#{ThroughputStats.header(throughput)}" }]
     end
 
     # Only a description is rendered with its pull request, so only a description lists what people wrote.
