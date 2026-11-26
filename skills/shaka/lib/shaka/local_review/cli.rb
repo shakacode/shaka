@@ -163,7 +163,7 @@ module Shaka
       stdout, stderr, status = codex_process(executable, prompt)
       return process_failure('codex exec', status, stderr, stdout) unless status&.success?
 
-      @options[:usage] = CodexUsage.announced_session(stdout) if @options.fetch(:capture_usage, true)
+      @options[:usage] = @codex_session if @options.fetch(:capture_usage, true)
       @options[:commands] = LocalReviewCodexCommands.summary(stdout)
       invalid('codex exec returned no review', stdout) unless File.size?(@report)
     end
@@ -173,7 +173,11 @@ module Shaka
               '-c', 'skills.include_instructions=false', *CodexExec::TOOL_RESTRICTIONS,
               '--skip-git-repo-check', '--json', '-o', @report, *codex_choices, '-']
       LocalReviewCodexHome.with_isolated(checkout: @candidate_root) do |home|
-        reviewer_process(args, prompt, env: { 'CODEX_HOME' => home })
+        result = reviewer_process(args, prompt, env: { 'CODEX_HOME' => home })
+        # The session lives in the temporary home, so usage keeps a copy before it is removed.
+        @codex_session = LocalReviewCodexHome.keep_session(result.first, home) if
+          result.last&.success? && @options.fetch(:capture_usage, true)
+        result
       end
     end
 

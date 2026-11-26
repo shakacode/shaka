@@ -11,8 +11,8 @@ class LocalReviewCodexHomeTest < Minitest::Test
   SIGNED_IN = %({"tokens":"first"}\n)
   THREAD = '01a0d246-e758-7052-92bc-95afb12a6f60'
 
-  # Answers like the hijacked reviewer whenever a global AGENTS.md is visible in its home, saves
-  # and announces a session.
+  # Answers like the hijacked reviewer whenever a global AGENTS.md is visible in its home, and
+  # saves and announces a session there.
   FAKE_CODEX = <<~'SCRIPT'
     #!/usr/bin/env ruby
     require 'fileutils'
@@ -20,9 +20,9 @@ class LocalReviewCodexHomeTest < Minitest::Test
     STDIN.read
     plan = JSON.parse(File.read(File.join(__dir__, 'codex-plan.json')))
     auth = File.join(home = ENV.fetch('CODEX_HOME'), 'auth.json')
-    trace = JSON.generate(home:, auth: File.exist?(auth) && File.read(auth), link: File.symlink?(auth) && File.realpath(auth))
+    trace = JSON.generate(home:, auth: File.exist?(auth) && File.read(auth))
     File.write(File.join(plan['trace_dir'], 'trace.json'), trace)
-    folder = FileUtils.mkdir_p(File.join(home, 'sessions', '2026', '11', '16')).first
+    folder = FileUtils.mkdir_p(File.join(home, 'sessions', '2026', '11', '25')).first
     meta = JSON.generate(type: 'session_meta', payload: { id: plan['thread'] })
     File.write(File.join(folder, "rollout-#{plan['thread']}.jsonl"), meta)
     puts JSON.generate(type: 'thread.started', thread_id: plan['thread'])
@@ -33,58 +33,51 @@ class LocalReviewCodexHomeTest < Minitest::Test
   # Break caught: a global AGENTS.md rule answered the review prompt with a skill suggestion,
   # so the run failed report validation like a reviewer outage.
   def test_global_agents_file_does_not_reach_the_reviewer
-    review_with_codex_home do |home, result|
-      trace = JSON.parse(File.read(File.join(home, 'trace.json')))
-      assert_equal [SIGNED_IN, File.realpath(File.join(home, 'auth.json'))], trace.values_at('auth', 'link')
-      refute_path_exists trace.fetch('home')
-      assert_equal saved_sessions(home), [result.fetch('usage')]
-    end
-  end
-
-  # Break caught: with no real home yet, the session stayed in the deleted temporary home and
-  # review usage read UNKNOWN.
-  def test_session_is_kept_when_the_real_home_does_not_exist_yet
     with_repository do |root, base, head, bin|
-      Dir.mktmpdir('shaka-codex-parent') do |parent|
-        home = File.join(parent, 'codex')
-        review_in(home, [root, base, head, bin], trace_dir: parent) do |result|
-          assert_equal saved_sessions(home), [result.fetch('usage')]
+      with_user_home do |home|
+        reviewed(home, [root, base, head, bin], trace_dir: home) do |result, trace|
+          assert_equal SIGNED_IN, trace.fetch('auth')
+          refute_path_exists trace.fetch('home')
+          refute_path_exists File.join(home, 'sessions')
+          assert_includes File.read(result.fetch('usage')), THREAD
         end
       end
     end
   end
 
-  # Break caught: an empty CODEX_HOME saved the session under ~/.codex while usage looked in
-  # /sessions, so review usage read UNKNOWN.
-  def test_empty_codex_home_finds_the_session_under_the_default_home
+  # Break caught: CODEX_HOME inside the reviewed checkout linked the candidate's auth.json as
+  # the reviewer's sign-in.
+  def test_a_sign_in_inside_the_checkout_is_not_linked
     with_repository do |root, base, head, bin|
-      Dir.mktmpdir('shaka-user-home') do |user|
-        fake_codex_reading_home(bin, head, trace_dir: user)
-        output, error, status = run_review(root, base, head, bin, env: { 'CODEX_HOME' => '', 'HOME' => user })
-        result = assert_successful_review(output, error, status, head, 'openai/codex')
-        assert_equal saved_sessions(File.join(user, '.codex')), [result.fetch('usage')]
-      ensure
-        cleanup_artifacts(result)
+      home = checkout_home(root)
+      Dir.mktmpdir('shaka-trace') do |trace_dir|
+        reviewed(home, [root, base, head, bin], trace_dir:) do |_result, trace|
+          refute trace.fetch('auth')
+          assert_equal SIGNED_IN, File.read(File.join(home, 'auth.json'))
+          refute_path_exists File.join(home, 'sessions')
+        end
       end
     end
   end
 
   private
 
-  def review_in(home, repository, trace_dir:)
+  def reviewed(home, repository, trace_dir:)
     root, base, head, bin = repository
-    fake_codex_reading_home(bin, head, trace_dir:)
+    plan = { trace_dir:, thread: THREAD, review: attestation(head), hijack: SUGGESTION }
+    File.write(File.join(bin, 'codex-plan.json'), JSON.generate(plan))
+    write_executable(bin, 'codex', FAKE_CODEX)
     output, error, status = run_review(root, base, head, bin, env: { 'CODEX_HOME' => home })
-    yield result = assert_successful_review(output, error, status, head, 'openai/codex')
+    result = assert_successful_review(output, error, status, head, 'openai/codex')
+    yield result, JSON.parse(File.read(File.join(trace_dir, 'trace.json')))
   ensure
     cleanup_artifacts(result)
   end
 
-  def review_with_codex_home
-    with_repository do |root, base, head, bin|
-      with_user_home do |home|
-        review_in(home, [root, base, head, bin], trace_dir: home) { |result| yield home, result }
-      end
+  # A Codex home inside the checkout, under .git so the checkout stays clean for review.
+  def checkout_home(root)
+    FileUtils.mkdir_p(File.join(root, '.git', 'codex-home')).first.tap do |home|
+      File.write(File.join(home, 'auth.json'), SIGNED_IN)
     end
   end
 
@@ -96,64 +89,28 @@ class LocalReviewCodexHomeTest < Minitest::Test
     end
   end
 
-  def fake_codex_reading_home(bin, head, trace_dir:)
-    plan = { trace_dir:, thread: THREAD, review: attestation(head), hijack: SUGGESTION }
-    File.write(File.join(bin, 'codex-plan.json'), JSON.generate(plan))
-    write_executable(bin, 'codex', FAKE_CODEX)
-  end
-
-  def saved_sessions(home) = Dir.glob(File.join(home, 'sessions', '*', '*', '*', '*.jsonl'))
-
   def attestation(head) = "REVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n"
 end
 
 # Direct checks of the launcher's home handling.
 class LocalReviewCodexHomeUnitTest < Minitest::Test
-  # Break caught: File.expand_path collapsed `..` after a symlink, so the review linked and
-  # searched a different directory from the one the filesystem names.
-  def test_explicit_codex_home_is_kept_as_given
-    Dir.mktmpdir('shaka-codex-real') do |real|
-      Dir.mktmpdir('shaka-codex-links') do |links|
-        FileUtils.mkdir_p(File.join(real, 'inner', 'codex'))
-        File.symlink(File.join(real, 'inner'), File.join(links, 'shortcut'))
-        configured = File.join(links, 'shortcut', '..', 'inner', 'codex')
-        assert_equal configured, Shaka::LocalReviewCodexHome.real_home('CODEX_HOME' => configured)
-        assert_path_exists configured
-      end
-    end
-  end
-
-  # Break caught: Dir.glob read brackets in the home's path as a pattern and missed the session.
-  def test_session_is_found_under_a_home_whose_path_has_brackets
-    Dir.mktmpdir('shaka-codex') do |parent|
-      home = File.join(parent, 'project[qa]', '.codex')
-      thread = LocalReviewCodexHomeTest::THREAD
-      folder = FileUtils.mkdir_p(File.join(home, 'sessions', '2026', '11', '24')).first
-      session = File.join(folder, "rollout-#{thread}.jsonl")
-      File.write(session, JSON.generate(type: 'session_meta', payload: { id: thread }))
-      assert_equal session, Shaka::CodexUsage.session_file(thread, environment: { 'CODEX_HOME' => home })
-    end
-  end
-
-  # Break caught: CODEX_HOME=. inside the reviewed checkout created a sessions folder there, and the
-  # review transcript would have followed it into the candidate.
-  def test_no_sessions_are_created_or_linked_inside_the_checkout
-    Dir.mktmpdir('shaka-checkout') do |checkout|
-      linked = isolated_sessions({ 'CODEX_HOME' => checkout }, checkout)
-      refute linked
-      refute_path_exists File.join(checkout, 'sessions')
-    end
-  end
-
-  # Break caught: a home outside the checkout whose sessions link led into it redirected writes.
-  def test_a_sessions_link_into_the_checkout_is_not_followed
+  # Break caught: an external sign-in link that led into the checkout was followed.
+  def test_a_sign_in_link_into_the_checkout_is_not_followed
     Dir.mktmpdir('shaka-checkout') do |checkout|
       Dir.mktmpdir('shaka-codex-user-home') do |user_home|
-        FileUtils.mkdir_p(File.join(checkout, 'planted'))
-        File.symlink(File.join(checkout, 'planted'), File.join(user_home, 'sessions'))
-        refute isolated_sessions({ 'CODEX_HOME' => user_home }, checkout)
+        File.write(File.join(checkout, 'planted.json'), '{}')
+        File.symlink(File.join(checkout, 'planted.json'), File.join(user_home, 'auth.json'))
+        linked = Shaka::LocalReviewCodexHome.with_isolated({ 'CODEX_HOME' => user_home }, checkout:) do |home|
+          File.exist?(File.join(home, 'auth.json'))
+        end
+        refute linked
       end
     end
+  end
+
+  # Break caught: an empty CODEX_HOME resolved to the working directory instead of ~/.codex.
+  def test_empty_codex_home_uses_the_default
+    assert_equal File.join(Dir.home, '.codex'), Shaka::LocalReviewCodexHome.real_home('CODEX_HOME' => '')
   end
 
   # Break caught: a reviewer that raised left its temporary home behind.
@@ -181,12 +138,5 @@ class LocalReviewCodexHomeUnitTest < Minitest::Test
     assert_path_exists @home
   ensure
     FileUtils.remove_entry(@home) if @home && File.exist?(@home)
-  end
-
-  private
-
-  # Whether the temporary home got a sessions link.
-  def isolated_sessions(environment, checkout)
-    Shaka::LocalReviewCodexHome.with_isolated(environment, checkout:) { |home| File.symlink?(File.join(home, 'sessions')) }
   end
 end
