@@ -75,11 +75,15 @@ phase-scoped rendering to reuse.
    early caller, such as publishing or clearing `decisions`, refreshing WIP Details
    after a rename, or a Finish repair returning to Verify, without a pointer at each.
    Each command appears in exactly one list: the phase whose text a caller outside the
-   normal order needs. `review run` belongs to Review, which describes running a local
-   reviewer; a delivery reaches it through Verify, which loads before validation.
-   Loading the workflow refuses a command listed twice, and a later phase whose text
-   names a helper command that no list covers. The mapping is therefore checked by
-   Ruby, not kept by hand.
+   normal order needs. `review run` and `review check` belong to Review, which describes
+   running a local reviewer. Verify's sentence requiring `--settings-ref TRUSTED_SHA
+   --repository OWNER/REPO` on `review run` and `--root DIR` on `review check` moves into
+   Review's invocation step, so a review-only task has it. A delivery's Verify loads
+   Review before its first local review under the same rule. The ledger loop stays in
+   Verify because only a delivery runs it. Loading the workflow refuses a command listed
+   twice. It also refuses a later phase whose text names a helper command that no list
+   covers and the startup text does not name. `handoff`, which Always already governs,
+   therefore needs no list. The mapping is checked by Ruby, not kept by hand.
    `SKILL.md` changes from "follow the complete validated procedure it prints" to
    following it and loading each later phase when it directs.
 4. **Nothing refuses a missed load.** `enforcement.yml` quotes the Always rule and
@@ -115,7 +119,8 @@ phase-scoped rendering to reuse.
    is already in context, so a resumed task reads about the same total as today. How often
    tasks resume is unknown.
    Review-only work runs `workflow --phase review`. Review needs no Verify-only step
-   once the credential check moves to Always. The agent reloads the current phase whenever its text
+   once the credential check moves to Always and the `review run` arguments move into
+   Review. The agent reloads the current phase whenever its text
    is no longer in context, such as after summarization.
 7. **Defer the issue's other proposals.** A `description --schema` output (proposal 2)
    would move about 1,570 words out of Explain. The enforcement quotes in those words
@@ -139,8 +144,8 @@ phase-scoped rendering to reuse.
 - Prompt caching can lower the price of re-reading the same text in a session, but the
   text still fills the context window. This design reduces what is in context, not
   only what is billed.
-- Moving rules off the startup path has an ongoing cost. Five review rounds of this
-  design each found another early caller of a later phase's rules. The `commands` rule
+- Moving rules off the startup path has an ongoing cost. Repeated review rounds
+  of this design each found another early caller of a later phase's rules. The `commands` rule
   covers callers of listed commands, so a new early step that uses one needs no new
   pointer. A new command named in a later phase fails loading until it is listed. A new rule that applies before its phase still needs a move to Always, and
   only review catches a missed one.
@@ -172,7 +177,7 @@ and Codex chats.
 | No-change task | The task stops in Intake with no later phase loads |
 | Resume an unfinished PR in a new chat | `handoff` runs, then `workflow --later`, before any write |
 | A task with an open PR renames its chat, then stops for an answer during Verify and gets one | Explain loads before the first `description` call, which refreshes WIP Details; the decision is set and then cleared with the matching labels; nothing is pushed and readiness is unchanged |
-| Review-only request on a clean diff | Only Review loads, the transcript shows the credential check of `git diff BASE...HEAD` before `review run`, and the review completes with no PR writes |
+| Review-only request on a clean diff | Only Review loads, the transcript shows the credential check of `git diff BASE...HEAD` before `review run`, `review run` carries `--settings-ref` and `--repository` in a repository with trusted settings, and the review completes with no PR writes |
 
 The credential rule covers real credentials, so a planted fake one cannot show whether
 an agent applies it; an agent that sees the value is fake may rightly continue. The
@@ -182,7 +187,8 @@ judges a value.
 Unit tests cover the renderer through the CLI: startup keeps the standing rules and
 omits later phase bodies, `--phase` keeps phase numbers, and a config without
 `startup_phases` renders in full. Config tests check that loading refuses a command
-listed twice or named in a later phase but listed nowhere. Link checks run against `--all`. A report test with
+listed twice or named in a later phase but listed nowhere, and accepts `handoff`, which
+startup text names. Link checks run against `--all`. A report test with
 a recording counter checks that an older baseline counts the full workflow and the
 head counts the same startup text the CLI prints. The implementation PR reports
 `bin/report-instruction-growth --tokens` for both CLIs, run with the providers' API-key
