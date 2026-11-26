@@ -11,6 +11,7 @@ module CliPublicationRun
   REVIEW_URL = 'https://github.com/owner/repo/pull/1#issuecomment-9'
   REPLY_GH_CASES = <<~CODE.freeze
     when 'user' then puts JSON.generate('login' => 'author')
+    when 'repos/owner/repo' then puts JSON.generate('visibility' => 'private')
     when %r{repos/owner/repo/issues/1/comments}
       if ARGV.include?('POST')
         File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
