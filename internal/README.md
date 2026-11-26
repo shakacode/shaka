@@ -15,6 +15,7 @@ instructions or private company plans.
 - [Companion skill points decision record](adr/0009-companion-skill-points.md) — proposed skill points in the procedures that load when a task reaches them, where ShakaPerf, pstack, and AI Hero skills are suggested by default; a packaged `use` entry, once a study supports it, applies only after the repository or machine turns the pack on.
 - [PR retrospective decision record](adr/0010-retrospective-over-merged-prs.md) — proposed PR record report beside `timings report`, and a retrospective across merged PRs that reads it.
 - [Companion skill results decision record](adr/0011-companion-skill-results.md) — accepted optional `companion_results` description list with commit and stale checks; build waits for a real `/statechart` or harness PR; not yet shipped.
+- [Phase loading decision record](adr/0012-load-workflow-phases-on-entry.md) — proposed startup workflow of Intake, Plan, Always, and Code quality, about a third of today's tokens, with later phases loaded by `shaka workflow --phase`; not yet shipped.
 - [Experiment index](../eval/README.md) — retained repositories, outcomes, and the next proposed case.
 - [Review outcomes](review-outcomes.md) — proposed record of review decisions and later assessments, not shipped behavior.
 - [Improving Shaka](improving-shaka.md) — maintainer method for investigating observed workflow failures.
