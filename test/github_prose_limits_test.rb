@@ -6,14 +6,14 @@ require_relative 'github_helper'
 class GitHubProseLimitsTest < Minitest::Test
   include GitHubHelper
 
-  WALL = Array.new(9) { "<p>Alpha #{Array.new(18, 'word').join(' ')} end.</p>" }.join("\n")
+  WALL = Array.new(7) { "<p>Alpha #{Array.new(38, 'word').join(' ')} end.</p>" }.join("\n")
 
   def test_description_is_refused_before_the_pull_request_is_edited
     github = client(response({ 'id' => 1, 'body' => '', 'additions' => 4, 'deletions' => 2 }), html_response(WALL))
 
     error = assert_raises(Shaka::Error) { github.description(body: "Summary.\n") }
 
-    assert_includes error.message, 'Description is hard to read'
+    assert_overages(error, 'Description')
     assert_equal 2, @calls.size
   end
 
@@ -24,7 +24,15 @@ class GitHubProseLimitsTest < Minitest::Test
 
     error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH) }
 
-    assert_includes error.message, 'Walkthrough is hard to read'
+    assert_overages(error, 'Walkthrough')
     refute(@calls.any? { |argv, _| argv.include?('POST') && argv.any? { |arg| arg.end_with?('/reviews') } })
+  end
+
+  private
+
+  def assert_overages(error, kind)
+    assert_includes error.message, "#{kind} is hard to read"
+    assert_equal 7, error.message.scan(/a sentence has 40 words[^;]*5 words over/).size
+    assert_includes error.message, 'the visible prose has 280 words (limit 174 for 6 changed lines), 106 words over'
   end
 end
