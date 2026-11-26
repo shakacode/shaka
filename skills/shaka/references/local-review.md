@@ -187,7 +187,7 @@ must be a lowercase level name such as `medium`; without one the report records 
 and config, and the skills setting keeps installed skill descriptions out of the reviewer's instructions to prevent
 description-based routing to an unrelated installed skill. Codex still reads `AGENTS.md` from
 `CODEX_HOME` despite those flags, so the helper sets `CODEX_HOME` to a temporary directory that
-links only `auth.json` from the real one (default `~/.codex`), and never one that resolves inside
+links only `auth.json` from the real one (default `~/.codex`), and never one reached through
 the checkout. Codex saves a refreshed sign-in through that link. A sign-in kept in
 the OS keyring is keyed to the real home's path, so the reviewer may not find it; when a Codex
 review fails to sign in and the real home has no `auth.json`, tell the user to sign in with file

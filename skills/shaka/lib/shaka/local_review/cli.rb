@@ -175,7 +175,7 @@ module Shaka
       LocalReviewCodexHome.with_isolated(checkout: @candidate_root) do |home|
         result = reviewer_process(args, prompt, env: { 'CODEX_HOME' => home })
         # The session lives in the temporary home, so usage keeps a copy before it is removed.
-        @codex_session = LocalReviewCodexHome.keep_session(result.first, home) if
+        @codex_session = LocalReviewCodexHome.keep_session(result.first, home, checkout: @candidate_root) if
           result.last&.success? && @options.fetch(:capture_usage, true)
         result
       end
