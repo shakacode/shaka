@@ -187,8 +187,8 @@ must be a lowercase level name such as `medium`; without one the report records 
 and config, and the skills setting keeps installed skill descriptions out of the reviewer's instructions to prevent
 description-based routing to an unrelated installed skill. Codex still reads `AGENTS.md` from
 `CODEX_HOME` despite those flags, so the helper sets `CODEX_HOME` to a temporary directory that
-links only `auth.json` from the real one (default `~/.codex`), and never one reached through
-the checkout. Codex saves a refreshed sign-in through that link. A sign-in kept in
+links only `auth.json` from the real one (default `~/.codex`). Codex saves a refreshed sign-in
+through that link. A sign-in kept in
 the OS keyring is keyed to the real home's path, so the reviewer may not find it; when a Codex
 review fails to sign in and the real home has no `auth.json`, tell the user to sign in with file
 storage or choose another reviewer.
@@ -196,11 +196,11 @@ The report is created outside the checkout.
 `--disable apps` removes connected ChatGPT apps, `--disable view_image` removes the native image viewer,
 and `-c 'web_search="disabled"'` turns off built-in web search. These flags target named tools.
 New or renamed tools can require fresh verification and changes to the flags after a Codex upgrade.
-It does not use `--ephemeral`. `--json` reports its thread ID, and before removing the temporary
-home the helper copies that thread's saved session to a file outside the checkout, which the
-result's `usage` names;
+`--json` reports its thread ID, and before removing the temporary home the helper copies that
+thread's saved session to a temporary file, which the result's `usage` names;
 run `shaka usage --host codex --file USAGE --commit "$(git rev-parse HEAD)" --contribution review --all-turns`
 on it. A missing `usage` means the session file was not found, and review usage stays UNKNOWN.
+Review sessions do not appear in the user's own Codex session history.
 `codex exec review --base REF` cannot accept the custom review prompt, so the helper uses `exec`.
 
 Claude Code, when the trusted entry names an effort:

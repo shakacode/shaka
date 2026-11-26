@@ -172,10 +172,10 @@ module Shaka
       args = [executable, 'exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
               '-c', 'skills.include_instructions=false', *CodexExec::TOOL_RESTRICTIONS,
               '--skip-git-repo-check', '--json', '-o', @report, *codex_choices, '-']
-      LocalReviewCodexHome.with_isolated(checkout: @candidate_root) do |home|
+      LocalReviewCodexHome.with_isolated do |home|
         result = reviewer_process(args, prompt, env: { 'CODEX_HOME' => home })
         # The session lives in the temporary home, so usage keeps a copy before it is removed.
-        @codex_session = LocalReviewCodexHome.keep_session(result.first, home, checkout: @candidate_root) if
+        @codex_session = LocalReviewCodexHome.keep_session(result.first, home) if
           result.last&.success? && @options.fetch(:capture_usage, true)
         result
       end

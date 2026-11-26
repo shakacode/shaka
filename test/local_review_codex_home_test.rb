@@ -45,21 +45,6 @@ class LocalReviewCodexHomeTest < Minitest::Test
     end
   end
 
-  # Break caught: CODEX_HOME inside the reviewed checkout linked the candidate's auth.json as
-  # the reviewer's sign-in.
-  def test_a_sign_in_inside_the_checkout_is_not_linked
-    with_repository do |root, base, head, bin|
-      home = checkout_home(root)
-      Dir.mktmpdir('shaka-trace') do |trace_dir|
-        reviewed(home, [root, base, head, bin], trace_dir:) do |_result, trace|
-          refute trace.fetch('auth')
-          assert_equal SIGNED_IN, File.read(File.join(home, 'auth.json'))
-          refute_path_exists File.join(home, 'sessions')
-        end
-      end
-    end
-  end
-
   private
 
   def reviewed(home, repository, trace_dir:)
@@ -72,13 +57,6 @@ class LocalReviewCodexHomeTest < Minitest::Test
     yield result, JSON.parse(File.read(File.join(trace_dir, 'trace.json')))
   ensure
     cleanup_artifacts(result)
-  end
-
-  # A Codex home inside the checkout, under .git so the checkout stays clean for review.
-  def checkout_home(root)
-    FileUtils.mkdir_p(File.join(root, '.git', 'codex-home')).first.tap do |home|
-      File.write(File.join(home, 'auth.json'), SIGNED_IN)
-    end
   end
 
   def with_user_home
@@ -109,35 +87,6 @@ end
 # Direct checks of the launcher's home handling.
 class LocalReviewCodexHomeUnitTest < Minitest::Test
   include CodexSessionFixture
-
-  # Break caught: an external sign-in link that led into the checkout was followed.
-  def test_a_sign_in_link_into_the_checkout_is_not_followed
-    Dir.mktmpdir('shaka-checkout') do |checkout|
-      Dir.mktmpdir('shaka-codex-user-home') do |user_home|
-        File.write(File.join(checkout, 'planted.json'), '{}')
-        File.symlink(File.join(checkout, 'planted.json'), File.join(user_home, 'auth.json'))
-        linked = Shaka::LocalReviewCodexHome.with_isolated({ 'CODEX_HOME' => user_home }, checkout:) do |home|
-          File.exist?(File.join(home, 'auth.json'))
-        end
-        refute linked
-      end
-    end
-  end
-
-  # Break caught: a committed auth.json link inside the checkout chose the reviewer's sign-in
-  # because its target lay outside.
-  def test_a_sign_in_link_placed_in_the_checkout_is_not_followed
-    Dir.mktmpdir('shaka-checkout') do |checkout|
-      Dir.mktmpdir('shaka-outside') do |outside|
-        File.write(File.join(outside, 'auth.json'), '{}')
-        File.symlink(File.join(outside, 'auth.json'), File.join(checkout, 'auth.json'))
-        linked = Shaka::LocalReviewCodexHome.with_isolated({ 'CODEX_HOME' => checkout }, checkout:) do |home|
-          File.exist?(File.join(home, 'auth.json'))
-        end
-        refute linked
-      end
-    end
-  end
 
   # Break caught: a failed session copy escaped after a successful review and discarded its report.
   def test_a_failed_session_copy_leaves_usage_unknown
@@ -193,81 +142,35 @@ class LocalReviewCodexHomeUnitTest < Minitest::Test
   end
 end
 
-# The launcher never takes a sign-in or temporary folder from the reviewed checkout.
-class LocalReviewCodexPathTest < Minitest::Test
+# The session copy that review usage reads after the temporary home is removed.
+class LocalReviewCodexSessionCopyTest < Minitest::Test
   include CodexSessionFixture
-
-  # Break caught: a symlinked Codex home inside the checkout chose an outside sign-in.
-  def test_a_symlinked_home_inside_the_checkout_is_not_followed
-    layout do |checkout, outside|
-      File.symlink(outside, File.join(checkout, 'codex-home'))
-      refute linked?(File.join(checkout, 'codex-home'), checkout)
-    end
-  end
-
-  # Break caught: a sign-in chain that passed through the checkout and ended outside was linked.
-  def test_a_sign_in_chain_through_the_checkout_is_not_followed
-    layout do |checkout, outside, user_home|
-      File.symlink(File.join(outside, 'auth.json'), File.join(checkout, 'hop.json'))
-      File.symlink(File.join(checkout, 'hop.json'), File.join(user_home, 'auth.json'))
-      refute linked?(user_home, checkout)
-    end
-  end
-
-  # Break caught: `..` after a missing folder reached the checkout without being seen.
-  def test_a_dot_dot_path_into_the_checkout_is_not_followed
-    layout do |checkout|
-      File.write(File.join(checkout, 'auth.json'), '{}')
-      home = File.join(File.dirname(checkout), 'missing', '..', File.basename(checkout))
-      refute linked?(home, checkout)
-    end
-  end
-
-  # Break caught: a TMPDIR inside the checkout put the temporary home and session copy there.
-  def test_temporary_files_stay_outside_a_checkout_that_holds_tmpdir
-    layout do |checkout, _outside, user_home|
-      with_tmpdir(FileUtils.mkdir_p(File.join(checkout, 'tmp')).first) do
-        home = Shaka::LocalReviewCodexHome.with_isolated({ 'CODEX_HOME' => user_home }, checkout:) { |dir| dir }
-        refute([checkout, File.realpath(checkout)].any? { home.start_with?("#{it}/") })
-      end
-    end
-  end
 
   # Break caught: removing a failed session copy raised in turn and discarded the finished review.
   def test_a_failed_cleanup_after_a_failed_copy_leaves_usage_unknown
-    layout do |_checkout, _outside, user_home|
-      events = saved_session(user_home)
+    Dir.mktmpdir('shaka-codex-home') do |home|
+      events = saved_session(home)
       failing(IO, :copy_stream, Errno::ENOSPC) do
         failing(FileUtils, :rm_f, Errno::EACCES) do
-          assert_nil Shaka::LocalReviewCodexHome.keep_session(events, user_home)
+          assert_nil Shaka::LocalReviewCodexHome.keep_session(events, home)
         end
       end
     end
   end
 
+  # Break caught: brackets in the temporary home's path were read as a glob pattern, so the saved
+  # session was missed and review usage read UNKNOWN.
+  def test_the_session_is_found_under_a_path_with_brackets
+    Dir.mktmpdir('shaka-codex') do |parent|
+      home = FileUtils.mkdir_p(File.join(parent, 'reviewer[local]')).first
+      copy = Shaka::LocalReviewCodexHome.keep_session(saved_session(home), home)
+      assert_includes File.read(copy), '01a0d246-e758-7052-92bc-95afb12a6f60'
+    ensure
+      File.unlink(copy) if copy
+    end
+  end
+
   private
-
-  def layout
-    Dir.mktmpdir('shaka-codex-paths') do |parent|
-      checkout, outside, user_home = %w[checkout outside user].map { FileUtils.mkdir_p(File.join(parent, it)).first }
-      File.write(File.join(outside, 'auth.json'), '{}')
-      yield checkout, outside, user_home
-    end
-  end
-
-  def linked?(codex_home, checkout)
-    Shaka::LocalReviewCodexHome.with_isolated({ 'CODEX_HOME' => codex_home }, checkout:) do |home|
-      File.exist?(File.join(home, 'auth.json'))
-    end
-  end
-
-  def with_tmpdir(dir)
-    original = ENV.fetch('TMPDIR', nil)
-    ENV['TMPDIR'] = dir
-    yield
-  ensure
-    ENV['TMPDIR'] = original
-  end
 
   def failing(owner, name, error)
     original = owner.method(name)
