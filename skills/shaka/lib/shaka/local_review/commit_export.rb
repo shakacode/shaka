@@ -13,8 +13,8 @@ module Shaka
     ENTRY = /\A100(?:644|755) blob (\h+)\t(.+)\z/m
     # Bounds how many blobs one Git call holds in memory at a time.
     BATCH = 200
-    # Names Windows opens as a device whatever the extension.
-    WINDOWS_DEVICE = /\A(?:con|prn|aux|nul|com\d|lpt\d)(?:\.|\z)/i
+    # Names Windows opens as a device whatever the extension, once trailing dots and spaces go.
+    WINDOWS_DEVICE = /\A(?:con|prn|aux|nul|conin\$|conout\$|com[0-9¹²³]|lpt[0-9¹²³])\z/i
 
     private
 
@@ -92,7 +92,16 @@ module Shaka
     def unsafe_part?(part, windows)
       return true if ['', '.', '..'].include?(part)
 
-      windows && (part.match?(/[\\:]/) || part.sub(/[. ]+\z/, '').empty? || part.match?(WINDOWS_DEVICE))
+      windows && (part.match?(/[\\:]/) || part.sub(/[. ]+\z/, '').empty? || windows_device?(part))
+    end
+
+    # Compared the way Windows reads the name: trailing dots and spaces dropped, then the text
+    # before the first dot. Paths arrive as raw bytes; one that is not UTF-8 names no device.
+    def windows_device?(part)
+      name = part.dup.force_encoding(Encoding::UTF_8)
+      return false unless name.valid_encoding?
+
+      name.sub(/[. ]+\z/, '').split('.', 2).first.to_s.sub(/ +\z/, '').match?(WINDOWS_DEVICE)
     end
   end
 end
