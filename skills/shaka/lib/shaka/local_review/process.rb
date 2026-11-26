@@ -35,13 +35,15 @@ module Shaka
     # process that may not be the reviewer any more. An interrupt or error stops it too, and nothing
     # waits on a leader that outlived its stop.
     def self.capture_on_windows(command, input, chdir, timeout)
-      check = Thread.handle_interrupt(Object => :never) { Evidence::WindowsCheck.new(command, root: chdir, input: true) }
+      check = nil
+      # Assigned inside the mask, so an interrupt pending at its end still finds the check to stop.
+      Thread.handle_interrupt(Object => :never) { check = Evidence::WindowsCheck.new(command, root: chdir, input: true) }
       streams = [check.input, check.output, check.error]
       result = capture_streams(streams, check.waiter, input, timeout, -> { stop_on_windows(check) })
       finished = true
       result
     ensure
-      stop_on_windows(check) if check && !finished && check.waiter.alive?
+      stop_on_windows(check) if check && !finished
       check&.close(finished: finished == true)
     end
 
@@ -60,8 +62,8 @@ module Shaka
       # Reviewer CLIs emit UTF-8 whatever the host locale; a US-ASCII default breaks parsing.
       [stdout, stderr].each { |stream| stream.set_encoding(Encoding::UTF_8) }
       writer = Thread.new { write_input(stdin, input) }
-      out_reader = Thread.new { stdout.read }
-      err_reader = Thread.new { stderr.read }
+      out_reader = Thread.new { read_until_closed(stdout) }
+      err_reader = Thread.new { read_until_closed(stderr) }
       status = wait_or_terminate(waiter, [writer, out_reader, err_reader], timeout, stop)
       [thread_output(out_reader), thread_output(err_reader), status]
     end
@@ -126,6 +128,13 @@ module Shaka
         sleep 0.01
         retry
       end
+    end
+
+    # A descendant the stop could not reach can hold a pipe open until capture closes it.
+    def self.read_until_closed(stream)
+      stream.read
+    rescue IOError
+      ''
     end
 
     def self.thread_output(thread)

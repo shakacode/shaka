@@ -12,6 +12,7 @@ module WindowsReviewProcesses
     reviewer = Thread.new do
       capture(['File.write(ARGV[0], Process.pid.to_s); sleep 120', file], stdin_data: nil, timeout: 120)
     end
+    reviewer.report_on_exception = false
     deadline = clock + 30
     sleep 0.1 until File.size?(file) || !reviewer.alive? || clock > deadline
     reviewer
@@ -94,6 +95,8 @@ class WindowsLocalReviewTest < Minitest::Test
   # Off Windows no job exists, as when adoption fails there, so the stop ends the live leader
   # through Ruby's handle and says what it could not cover.
   def test_timeout_without_a_job_ends_the_leader_and_reports_the_limit
+    skip 'Windows adopts the reviewer into a job' if windows_host?
+
     started = clock
     status = nil
     assert_output(nil, /no Windows job ended this check/) do
@@ -140,18 +143,14 @@ class WindowsLocalReviewTest < Minitest::Test
     Shaka::LocalReviewProcess.capture([RbConfig.ruby, '-e', *script], stdin_data:, chdir: Dir.tmpdir, timeout:)
   end
 
-  # Off Windows the descendant survives the stop, so its readers fail once the pipes close.
   def with_recorded_kills
     signals = []
-    reporting = Thread.report_on_exception
-    Thread.report_on_exception = false
     original = Process.method(:kill)
     Process.define_singleton_method(:kill) { |*call| signals << call }
     yield
     signals
   ensure
     Process.define_singleton_method(:kill, original)
-    Thread.report_on_exception = reporting
   end
 
   def windows_host? = Shaka::ExecutableFile.windows?

@@ -29,6 +29,7 @@ class WindowsReviewLookupTest < Minitest::Test
     assert owned.candidate_owned?('C:\\Repo\\bin\\claude.exe', 'c:/repo', windows: true)
     refute owned.candidate_owned?('C:/Repo/bin/claude.exe', 'c:/repo', windows: false)
     refute owned.candidate_owned?('C:/Repository/claude.exe', 'c:/repo', windows: true)
+    assert owned.candidate_owned?('C:/bin/claude.exe', 'C:\\', windows: true)
   end
 
   # The lookup stops at the first match, so a later PATH entry that cannot expand never matters.
