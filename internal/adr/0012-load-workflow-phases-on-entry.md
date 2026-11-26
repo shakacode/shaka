@@ -82,8 +82,10 @@ phase-scoped rendering to reuse.
    Review before its first local review under the same rule. The ledger loop stays in
    Verify because only a delivery runs it. Loading the workflow refuses a command listed
    twice. It also refuses a later phase whose text names a helper command that no list
-   covers and the startup text does not name. `handoff`, which Always already governs,
-   therefore needs no list. The mapping is checked by Ruby, not kept by hand.
+   covers, unless the command is on a short `startup_commands` list in `workflow.yml`.
+   That list holds commands the startup text fully governs, such as `handoff` and
+   `comments`. A command startup text merely mentions still needs its owning phase's
+   list. The mapping is checked by Ruby, not kept by hand.
    `SKILL.md` changes from "follow the complete validated procedure it prints" to
    following it and loading each later phase when it directs.
 4. **Nothing refuses a missed load.** `enforcement.yml` quotes the Always rule and
@@ -120,8 +122,11 @@ phase-scoped rendering to reuse.
    tasks resume is unknown.
    Review-only work runs `workflow --phase review`. Review needs no Verify-only step
    once the credential check moves to Always and the `review run` arguments move into
-   Review. The agent reloads the current phase whenever its text
-   is no longer in context, such as after summarization.
+   Review. When summarization or another loss removes workflow text from context, the
+   agent runs `workflow` again for the startup rules and the index, then loads the
+   current phase and any phase whose commands its next step runs. The agent can do
+   that only if its summary still says it runs Shaka. Today's full workflow has the same
+   limit when summarization removes it.
 7. **Defer the issue's other proposals.** A `description --schema` output (proposal 2)
    would move about 1,570 words out of Explain. The enforcement quotes in those words
    would need new homes. Host-only passages (proposal 3) are small. Neither is needed
@@ -170,7 +175,8 @@ and Codex chats.
 
 | Run | Pass when the transcript shows |
 | --- | --- |
-| Full delivery of a small task to an Ask handoff | Each load comes before that phase's first step: the recheck that the problem still exists for Implement, `evidence run` for Verify, `git push` for Explain, reading published reviews for Review, `post-implementation run` for Finish |
+| Full delivery of a small task to an Ask handoff | Each load comes before that phase's first step: the recheck that the problem still exists for Implement, `evidence run` for Verify, the first local `review run` for Review, `git push` for Explain, `post-implementation run` for Finish. The first local `review run` carries `--settings-ref` and `--repository` |
+| Same-chat summarization during Verify, before local review | `workflow` and `--phase verify` run again, Review loads before the reviewer runs, and the credential check of `git diff BASE...HEAD` comes first |
 | A hosted review that needs a code repair | Verify loads again before the repair's validation, and the PR stays out of ready state until the new head has its evidence |
 | A Finish checkpoint that asks for a repair, in the owning chat | Verify loads again before the repair's validation, the repaired head gets fresh evidence, and Finish publishes a new checkpoint for it before the handoff |
 | Plan-only request | No later phase loads; the task stops at the recommendation |
@@ -187,10 +193,12 @@ judges a value.
 Unit tests cover the renderer through the CLI: startup keeps the standing rules and
 omits later phase bodies, `--phase` keeps phase numbers, and a config without
 `startup_phases` renders in full. Config tests check that loading refuses a command
-listed twice or named in a later phase but listed nowhere, and accepts `handoff`, which
-startup text names. Link checks run against `--all`. A report test with
-a recording counter checks that an older baseline counts the full workflow and the
-head counts the same startup text the CLI prints. The implementation PR reports
+listed twice or named in a later phase but listed nowhere. They accept `handoff`
+through `startup_commands`, and refuse a later-phase command that startup text only
+mentions. A malformed template in a phase startup omits still fails startup. Link
+checks run against `--all`. A report test with a recording counter checks that an
+older baseline counts the full workflow. It also checks that the head's counted text
+holds the index and omits later phase bodies, and matches what the CLI prints. The implementation PR reports
 `bin/report-instruction-growth --tokens` for both CLIs, run with the providers' API-key
 variables unset. It records the login method each CLI reports, such as a subscription
 plan, without credential values, and marks a count unverified when that method is not
