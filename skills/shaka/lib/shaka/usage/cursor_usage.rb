@@ -14,11 +14,16 @@ module Shaka
     end
 
     def billing_mode(params)
-      value = param(params, 'fast')
+      found = params.find { |item| item.is_a?(Hash) && item['id'] == 'fast' } if params.is_a?(Array)
+      return unless found
+
+      value = found['value']
       if [true, 'true'].include?(value)
         'fast'
       elsif [false, 'false'].include?(value)
         'standard'
+      else
+        'unrecognized'
       end
     end
 

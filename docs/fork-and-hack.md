@@ -202,7 +202,7 @@ Prepare an upstream Shaka PR for this one change. Include what I tested and what
 
 Start from the official default branch and leave out your other customizations.
 See [Contributing](https://github.com/shakacode/shaka/blob/main/CONTRIBUTING.md)
-and [AGENTS.md](https://github.com/shakacode/shaka/blob/main/AGENTS.md).
+for contribution instructions.
 For a suggestion without code, use the [issue tracker](https://github.com/shakacode/shaka/issues/new/choose).
 
 <a id="share-your-fork"></a>
