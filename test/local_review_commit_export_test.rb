@@ -198,6 +198,15 @@ class LocalReviewCommitExportUnitTest < Minitest::Test
     exporter.send(:check_path!, 'dir/name.txt', windows: true)
   end
 
+  # Windows opens these as devices, so the reviewer would silently miss the file.
+  def test_windows_device_names_are_refused_on_windows
+    exporter = Exporter.new('', '')
+    %w[NUL dir/con.txt COM1.log].each do |path|
+      assert_raises(Shaka::Error, path) { exporter.send(:check_path!, path, windows: true) }
+    end
+    exporter.send(:check_path!, 'dir/console.txt', windows: true)
+  end
+
   # Break caught: a short read wrote a truncated file as if it were the committed content.
   def test_truncated_blob_output_stops_the_export
     Dir.mktmpdir do |temporary|

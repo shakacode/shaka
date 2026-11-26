@@ -13,6 +13,8 @@ module Shaka
     ENTRY = /\A100(?:644|755) blob (\h+)\t(.+)\z/m
     # Bounds how many blobs one Git call holds in memory at a time.
     BATCH = 200
+    # Names Windows opens as a device whatever the extension.
+    WINDOWS_DEVICE = /\A(?:con|prn|aux|nul|com\d|lpt\d)(?:\.|\z)/i
 
     private
 
@@ -84,12 +86,13 @@ module Shaka
       raise Shaka::Error, "Commit export path leaves the export: #{path.inspect}"
     end
 
-    # Windows also splits on a backslash, reads a colon as a drive or stream, and drops trailing dots
-    # and spaces, so there "..." names the parent. Checked before anything is written.
+    # Windows also splits on a backslash, reads a colon as a drive or stream, drops trailing dots
+    # and spaces, so there "..." names the parent, and opens a device for names such as NUL or
+    # com1.txt, so the reviewer would silently miss that file. Checked before anything is written.
     def unsafe_part?(part, windows)
       return true if ['', '.', '..'].include?(part)
 
-      windows && (part.match?(/[\\:]/) || part.sub(/[. ]+\z/, '').empty?)
+      windows && (part.match?(/[\\:]/) || part.sub(/[. ]+\z/, '').empty? || part.match?(WINDOWS_DEVICE))
     end
   end
 end
