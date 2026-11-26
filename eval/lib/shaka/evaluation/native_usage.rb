@@ -25,14 +25,44 @@ module Shaka
         @rate_card_hash = "sha256:#{Digest::SHA256.hexdigest(@card)}"
       end
 
-      def read(host:, files:)
+      def read(host:, files:, print_result: false)
         raise ArgumentError, 'Expected dedicated native sessions' unless %w[codex claude-code].include?(host) &&
                                                                          files.is_a?(Array) && !files.empty?
+
+        return read_print(files) if host == 'claude-code' && print_result
 
         capture(host, files)
       end
 
       private
+
+      def read_print(files)
+        Dir.mktmpdir('shaka-eval-usage') do |directory|
+          pin_card(directory)
+          original = files.fetch(0)
+          neutral = File.join(directory, 'neutral.json')
+          write_neutral_print(original, neutral)
+          reports = [original, neutral].map { |file| report(directory, 'claude-code', [file]) }
+          # Print records hash the token counters into the response identity. Both reports
+          # come from this one independent call, even though repricing changes its digest.
+          UsageReport.normalize(*reports, 'claude-code', expected: 1, same_aggregate: true)
+        end
+      rescue StandardError
+        { 'models' => [], 'cache_neutral_dollars' => 'UNKNOWN', 'billed_dollars' => 'UNKNOWN' }
+      end
+
+      def write_neutral_print(original, neutral)
+        record = JSON.parse(File.read(original))
+        raise ArgumentError unless record['shaka_usage_scope'] == 'independent_call'
+
+        record.delete('total_cost_usd')
+        usage = record.fetch('usage')
+        UsageSnapshot.claude(usage)
+        # The print result has aggregate counters. Its message iterations still
+        # carry the original cache-write split, which must not override the new one.
+        usage.delete('iterations')
+        File.write(neutral, JSON.generate(record), mode: 'wx', perm: 0o600)
+      end
 
       def capture(host, files)
         Dir.mktmpdir('shaka-eval-usage') do |directory|

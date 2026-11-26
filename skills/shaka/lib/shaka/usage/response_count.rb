@@ -7,6 +7,9 @@ module Shaka
     # as the OpenAI and Cursor rates in the cost estimator assume. A reader that reports
     # them separately is priced only where the estimator publishes exclusive rates.
     INCLUSIVE_INPUT = true
+    # Whether the reader's output includes thinking, as Google's list prices count it.
+    # Antigravity's transcript is the only source established to record output that way.
+    GOOGLE_COUNTERS = false
 
     # Turns of the selected records, noted before conflicting copies lose their turn.
     def matched_turns = @matched_turns || []

@@ -1,0 +1,179 @@
+# frozen_string_literal: true
+
+require 'json'
+require 'pathname'
+require_relative '../error'
+require_relative 'response_count'
+require_relative 'value_token'
+
+module Shaka
+  # Reads one Antigravity conversation transcript (tested with CLI 1.5.14 and 1.5.15), keeping only usage
+  # metadata. Each line is one step; a step's content, thinking, and tool calls are never kept.
+  class AntigravityTranscript
+    IDENTITY = /\A[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\z/
+    # The transcript names no conversation, so a response is identified by the directory
+    # Antigravity keeps it in. A copy saved elsewhere has no identity to deduplicate by.
+    LAYOUT = %r{/brain/([^/]+)/\.system_generated/logs/[^/]+\z}
+    COUNTERS = { 'input_tokens' => 'input_tokens', 'cached_input_tokens' => 'cache_read_tokens',
+                 'output_tokens' => 'output_tokens' }.freeze
+    MODEL = /\A[A-Za-z0-9][A-Za-z0-9._:-]{0,79}\z/
+    KEPT = ['step_index', 'type', 'created_at', 'model', *COUNTERS.values].freeze
+    # A model ID ends in its effort, such as `gemini-4-argon-high`. These are the endings
+    # `agy models` lists; an ID that ends otherwise, such as a gateway's own model, names none.
+    EFFORTS = %w[low medium high xhigh].freeze
+
+    attr_reader :source, :gaps
+
+    # The transcript of the conversation the calling shell belongs to, or nil.
+    def self.session_file(environment)
+      identity = environment['ANTIGRAVITY_CONVERSATION_ID']
+      directory = environment['ANTIGRAVITY_APP_DATA_DIR']
+      return unless identity.is_a?(String) && identity.match?(IDENTITY)
+      return unless directory.is_a?(String) && Pathname.new(directory).absolute?
+
+      file = File.join(directory, 'brain', identity, '.system_generated', 'logs', 'transcript.jsonl')
+      file if File.file?(file)
+    end
+
+    # Steps in index order, so a step written again keeps its last line and its place, and the
+    # number of lines that are not steps. Only usage metadata leaves this method.
+    def self.steps(file)
+      found = {}
+      skipped = 0
+      File.foreach(file, encoding: 'UTF-8') do |line|
+        step = parse(line)
+        step ? found[step['step_index']] = step : skipped += 1
+      end
+      [found.sort.map(&:last), skipped]
+    end
+
+    def self.parse(line)
+      record = JSON.parse(line) if line.valid_encoding?
+      record.slice(*KEPT) if step?(record)
+    rescue JSON::ParserError, EncodingError
+      nil
+    end
+
+    # A step has a whole-number index and names its type. Any other line could be a turn boundary.
+    def self.step?(record)
+      return false unless record.is_a?(Hash)
+
+      type = record['type']
+      index = record['step_index']
+      type.is_a?(String) && !type.strip.empty? && index.is_a?(Integer) && index >= 0
+    end
+
+    def self.user_input?(step) = step['type'] == 'USER_INPUT'
+
+    # One answer from the model the user selected. Publication reads its settings from these only.
+    def self.response?(step) = step['type'] == 'PLANNER_RESPONSE'
+
+    # Antigravity's own totals include every step that carries a token counter, such as the
+    # CHECKPOINT step it writes when it compacts a conversation. That step names no model.
+    def self.counted?(step) = response?(step) || COUNTERS.each_value.any? { |key| counter(step[key]) }
+
+    def self.counter(value) = (value if value.is_a?(Integer) && value >= 0)
+
+    # One check for usage rows and publication, so neither shows an ID the other refuses,
+    # and no effort is read from an ID that is not shown.
+    def self.model(step)
+      model = step['model']
+      model if model.is_a?(String) && model.match?(MODEL) && model != 'UNKNOWN' && UsageValue.token(model)
+    end
+
+    # Gemini models run on Google's own service. The transcript names no provider for any other ID,
+    # such as a Claude model, so those stay unknown.
+    def self.provider(model) = ('google' if model&.start_with?('gemini-'))
+
+    def self.effort(model)
+      level = model[/-([a-z]+)\z/, 1] if model
+      level if EFFORTS.include?(level)
+    end
+
+    def initialize(file)
+      @gaps = []
+      identity = File.expand_path(file)[LAYOUT, 1]
+      @conversation = identity if identity&.match?(IDENTITY)
+      # Opening anything but a regular file, such as a pipe with no writer, could block forever.
+      @source = @conversation && File.file?(file) ? read(file) : unavailable
+    end
+
+    private
+
+    def read(file)
+      steps, skipped = self.class.steps(file)
+      # A line that cannot be read could be a user step, so no response has a known turn.
+      skipped.positive? ? unavailable : responses(steps)
+    rescue SystemCallError
+      unavailable
+    end
+
+    def responses(steps)
+      turn = nil
+      records = steps.each_with_object({}) do |step, found|
+        turn = step['step_index'].to_s if self.class.user_input?(step)
+        found[step['step_index']] = response(step, turn) if self.class.counted?(step)
+      end
+      [records, turn]
+    end
+
+    def response(record, turn)
+      model = self.class.model(record)
+      { 'response_id' => "#{@conversation}:#{record['step_index']}", 'turn_id' => turn,
+        'timestamp' => record['created_at'],
+        'configuration' => [self.class.provider(model), model, nil, self.class.effort(model)],
+        'usage' => token_usage(record) }
+    end
+
+    # Reasoning is part of output and cache writes are not recorded, so neither has a counter here.
+    def token_usage(record)
+      COUNTERS.transform_values { |key| self.class.counter(record[key]) }
+    end
+
+    def unavailable
+      @gaps << 'Unreadable or unidentifiable records'
+      [{}, nil]
+    end
+  end
+
+  # Selects responses from Antigravity transcripts without retaining conversation content.
+  class AntigravityUsage
+    include ResponseCount
+
+    HOST = 'Antigravity'
+    NOTE = 'Input excludes cache reads; reasoning output is part of output. Cache writes and native total ' \
+           'are UNKNOWN. The model is the configured ID; its last segment is the effort when it names a level. ' \
+           'Subagent conversations excluded.'
+    LATEST_SCOPE = 'latest user turn of the conversation; earlier turns excluded'
+    # Step numbers repeat across conversations, and copies of one conversation overlap.
+    ONE_TRANSCRIPT = 'Antigravity usage reads one transcript per run; report each conversation separately.'
+    INCLUSIVE_INPUT = false
+    GOOGLE_COUNTERS = true
+
+    attr_reader :responses, :versions, :gaps
+
+    def self.discover = [AntigravityTranscript.session_file(ENV)].compact
+
+    def initialize(files, turns, all_turns: false)
+      @responses = {}
+      @versions = []
+      @gaps = []
+      raise Error, ONE_TRANSCRIPT if files.size > 1
+
+      count_selected([files.empty? ? [unreadable, nil] : load(files.first)], turns, all_turns)
+    end
+
+    private
+
+    def load(file)
+      transcript = AntigravityTranscript.new(file)
+      @gaps.concat(transcript.gaps)
+      transcript.source
+    end
+
+    def unreadable
+      @gaps << 'Unreadable or unidentifiable records'
+      {}
+    end
+  end
+end

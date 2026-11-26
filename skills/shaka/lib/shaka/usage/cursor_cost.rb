@@ -17,6 +17,7 @@ module Shaka
 
     # Input above the model's threshold uses a multiple of its standard rates.
     def cursor_rates(model, billing, input)
+      billing = published_billing(model, billing)
       listed = @rate_card.cursor_rate(model, billing)
       return unless listed
 
@@ -26,6 +27,19 @@ module Shaka
       @cursor_threshold_models << [model.to_s, limit]
       multiple = @rate_card.cursor_long_context(billing)
       @rate_card.cursor_rate(model, 'standard').map { |value| Rational(value) * multiple }
+    end
+
+    # The Fast column repeats standard when Cursor publishes one rate. That copy keeps the
+    # loader happy and is not a Fast price. A missing flag can use the one rate; an explicit
+    # Fast flag cannot. Distinct rates stay unpriced until the record names one.
+    def published_billing(model, billing)
+      standard = @rate_card.cursor_rate(model, 'standard')
+      fast = @rate_card.cursor_rate(model, 'fast')
+      same = standard && fast == standard
+      return 'unrecognized' if same && billing == 'fast'
+      return 'standard' if same && billing.nil?
+
+      billing
     end
   end
 end
