@@ -302,13 +302,15 @@ Decision 4 accepts that no command catches a skipped phase. `shaka enforcement` 
 1. Start from an observed cost: a failure or a measured expense that traces to
    startup size.
 2. Try proposal 2 first. `description --schema` moves about 1,570 words out of
-   Explain. The issue says `description` already refuses invalid input, so a skipped
-   read is caught by the command.
+   Explain. `description` refuses malformed input, so a skipped read of the input
+   rules is caught by the command. Evidence the agent never gathered, such as an item
+   a PR template asks for, is not caught that way.
 3. When more is needed, defer only Explain and Finish. Implement, Verify, and Review
-   stay loaded, so the nine Verify and Review findings no longer apply. Startup falls
-   to 56% of today's words; its token count is unmeasured. Review comes after Explain
+   stay loaded, so most of the nine Verify and Review findings no longer apply. F44
+   still does: hosted review must wait for the reviewed head to be pushed. Startup
+   falls to 56% of today's words; its token count is unmeasured. Review comes after Explain
    in the phase order, so startup would no longer be a leading run of phases, and
-   Decision 1's rule would have to change. On words, the result misses the 40% target.
+   Decision 1's rule would have to change. Whether it meets the 40% target is unknown.
    The issue set that target without a measurement behind it.
 4. For the full design, land the renderer with `startup_phases` absent, so bare
    `shaka workflow` still prints everything. Run the flip as a
