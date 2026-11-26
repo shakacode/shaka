@@ -12,6 +12,7 @@ class WindowsProduct < WindowsSession
                    test/evidence_windows_check_test.rb].freeze
   EVIDENCE_RUN = %w[evidence run --repository shakacode/shaka --command test].freeze
   TEST = %w[-- test/executable_file_test.rb].freeze
+  UNIX_TOOL_NAMES = %w[sh.exe bash.exe env.exe dirname.exe].freeze
   UNIX_TOOLS = %r{msys64|[\\/]Git[\\/](?:usr[\\/]bin|bin|mingw64[\\/]bin)[\\/]?\z}i
 
   def call
@@ -54,9 +55,7 @@ class WindowsProduct < WindowsSession
     branch = "shaka-windows-candidate-#{SecureRandom.hex(6)}"
     git_output('branch', branch, 'HEAD')
     created = branch
-    output, success = Dir.mktmpdir('shaka-windows-install') { |home| install_and_verify(home, branch) }
-    puts "  #{success ? 'succeeded' : 'failed'}: #{excerpt(output)}"
-    raise "bin/install did not verify candidate #{head}" unless success && verified?(output, head)
+    check_install(head, *Dir.mktmpdir('shaka-windows-install') { |home| install_and_verify(home, branch) })
   ensure
     delete_branch(created) if created
   end
@@ -78,7 +77,22 @@ class WindowsProduct < WindowsSession
     installed, installed_ok = run_installer(home, '--agent', 'codex', '--repository', root, '--branch', branch)
     checked, checked_ok = run_installer(home, '--verify')
     puts "  --verify #{checked_ok ? 'succeeded' : 'failed'}: #{excerpt(checked)}"
-    [installed, installed_ok && checked_ok]
+    [installed, installed_ok && checked_ok, saved_source(home)]
+  end
+
+  def check_install(head, output, success, source)
+    puts "  #{success ? 'succeeded' : 'failed'}: #{excerpt(output)}"
+    puts "  saved identity: #{source.inspect}"
+    raise "bin/install did not verify candidate #{head}" unless success && verified?(output, head)
+    return if source == { 'kind' => 'revision', 'revision' => head }
+
+    raise "bin/install did not save the exact revision #{head}"
+  end
+
+  # The record's source identity says whether the install counted as the exact revision.
+  def saved_source(home)
+    record = File.join(home, '.local/share/shaka/source/.git/shaka-install.json')
+    File.file?(record) ? JSON.parse(File.read(record)).dig('identity', 'source')&.slice('kind', 'revision') : nil
   end
 
   # Bounded, so a hung install fails the record instead of holding the job.
@@ -92,11 +106,11 @@ class WindowsProduct < WindowsSession
   def test_env = super.merge(native_path)
 
   # A native shell finds git through Git\cmd and nothing from Git's Unix tree.
-  # Refuses a filtered PATH that still reaches an sh.exe, which would undo the native premise.
+  # Refuses a filtered PATH that still reaches a Unix tool, which would undo the native premise.
   def native_path
     entries = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).grep_v(UNIX_TOOLS)
-    shells = entries.select { |entry| File.file?(File.join(entry, 'sh.exe')) }
-    raise "filtered PATH still reaches sh.exe in #{shells.join(', ')}" unless shells.empty?
+    tools = entries.product(UNIX_TOOL_NAMES).map { |entry, tool| File.join(entry, tool) }.select { File.file?(it) }
+    raise "filtered PATH still reaches #{tools.join(', ')}" unless tools.empty?
 
     puts "  PATH keeps #{entries.size} entries without Unix tools"
     { 'PATH' => entries.join(File::PATH_SEPARATOR) }
