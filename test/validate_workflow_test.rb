@@ -106,7 +106,7 @@ class ValidateWorkflowTest < Minitest::Test
 
   def test_documentation_fast_path_rejects_an_agent_prompt_link
     root = validation_fixture
-    target = 'https://github.com:443/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md'
+    target = 'https://github.com:443/shakacode/shaka/blob/main/skills/shaka/config/work-prompt.md'
     File.write(File.join(root, 'docs/guide.md'), "[Agent](#{target})\n")
     output, status = run_local_validation(root)
     refute_predicate status, :success?
