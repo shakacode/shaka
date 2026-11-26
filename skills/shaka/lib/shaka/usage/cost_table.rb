@@ -21,6 +21,7 @@ module Shaka
     ANTHROPIC_PRICING = '[Anthropic pricing](https://platform.claude.com/docs/en/about-claude/pricing)'
     ANTHROPIC_FAST_PRICING = '[Anthropic fast-mode pricing]' \
                              '(https://platform.claude.com/docs/en/build-with-claude/fast-mode)'
+    GOOGLE_PRICING = '[Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)'
 
     private
 
@@ -80,7 +81,7 @@ module Shaka
       fast_anthropic = priced.any? { |column| column[:billing] == 'fast' && anthropic_rated?(column) }
       [*rate_card_links(priced), (CURSOR_PRICING if cursor_priced?(priced)),
        (ANTHROPIC_PRICING if anthropic_priced?(priced)),
-       (ANTHROPIC_FAST_PRICING if fast_anthropic)].compact
+       (ANTHROPIC_FAST_PRICING if fast_anthropic), (GOOGLE_PRICING if google_priced?(priced))].compact
     end
 
     def rate_card_links(priced)

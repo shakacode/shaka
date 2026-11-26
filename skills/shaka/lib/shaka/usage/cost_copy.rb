@@ -20,7 +20,7 @@ module Shaka
     end
 
     def rate_intro(columns)
-      sentences = [rate_card_intro(columns), anthropic_intro(columns)].compact
+      sentences = [rate_card_intro(columns), anthropic_intro(columns), google_intro(columns)].compact
       sentences.join(' ') unless sentences.empty?
     end
 
@@ -56,6 +56,7 @@ module Shaka
     def openai_priced?(priced) = priced.any? { |column| openai_rated?(column) }
     def cursor_priced?(priced) = priced.any? { |column| cursor_rated?(column) }
     def anthropic_priced?(priced) = priced.any? { |column| anthropic_rated?(column) }
+    def google_priced?(priced) = priced.any? { |column| google_rated?(column) }
 
     def native_intro(columns)
       sources = columns.flat_map { |column| column[:native_sources] || [] }

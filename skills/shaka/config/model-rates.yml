@@ -2,7 +2,9 @@
 # checkout for implementation estimates. Pricing formulas stay in the installed code.
 # OpenAI credits and api, and Cursor standard and fast, are input, cached input, and
 # output per million tokens. Anthropic prices are input, cache read, 5-minute cache
-# write, 1-hour cache write, and output per million tokens. Retired models are omitted.
+# write, 1-hour cache write, and output per million tokens. Google prices are input, cache
+# read, and output per million tokens; a price under `from` applies from that UTC date of the
+# response. Retired models are omitted.
 openai:
   verified: "2026-11-18"
   threshold: 272000
@@ -85,3 +87,20 @@ anthropic:
       prices: ["3", "0.3", "3.75", "6", "15"]
     claude-haiku-4-5:
       prices: ["1", "0.1", "1.25", "2", "5"]
+google:
+  verified: "2026-11-23"
+  models:
+    # Paid-tier Standard rates, models Antigravity offers:
+    # https://ai.google.dev/gemini-api/docs/pricing
+    gemini-4-neon:
+      prices: ["3", "0.15", "15"]
+    gemini-4-argon:
+      prices: ["2", "0.1", "10"]
+      from:
+        "2026-12-01": ["4", "0.2", "20"]
+    gemini-4-hydrogen:
+      prices: ["1.5", "0.075", "7.5"]
+    gemini-3.8-flash:
+      prices: ["0.75", "0.075", "3.75"]
+      from:
+        "2027-01-01": ["1.5", "0.15", "7.5"]

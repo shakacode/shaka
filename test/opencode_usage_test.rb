@@ -238,6 +238,25 @@ class OpencodeUsageTest < Minitest::Test
   end
 end
 
+# Google's list prices count thinking inside output; OpenCode reports reasoning beside it.
+class OpencodeGooglePricingTest < Minitest::Test
+  include OpencodeUsageFixture
+  include MetricAssert
+
+  def test_google_provider_responses_are_never_priced_from_google_rates
+    Dir.mktmpdir do |directory|
+      gemini = assistant_message('resp-new', NEW_USER, 1_789_660_287_053, 1_789_660_292_357,
+                                 tokens(1_000, 2_000, 300, reasoning: 100))
+      gemini['info'].merge!('providerID' => 'google', 'modelID' => 'gemini-4-neon')
+      document = single_fixture(gemini).tap { |export| export['info']['model']['id'] = 'gemini-4-neon' }
+      output = report('--host', 'opencode', '--file', write_export(directory, document))
+      assert_metric output, 'USD estimate', 'UNKNOWN'
+      assert_includes output, 'Cache-exclusive input is unpriced'
+      refute_includes output, 'Google Gemini API'
+    end
+  end
+end
+
 module OpencodeV2UsageFixture
   include OpencodeUsageFixture
 

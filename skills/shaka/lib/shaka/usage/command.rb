@@ -86,8 +86,7 @@ module Shaka
 
     def report_body
       <<~MARKDOWN
-        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT,
-                                           rate_card: selected_rate_card).report.rstrip}
+        #{cost_estimate.report.rstrip}
 
         #{reviewer_coverage}
         Native usage is PARTIAL. #{count}. Scope: #{turn_scope}.
