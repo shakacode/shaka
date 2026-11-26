@@ -264,8 +264,9 @@ Decision 4 accepts that no command catches a skipped phase. `shaka enforcement` 
   push unless the user chooses to", and "Read `review.ci_review_wait` from `shaka seam
   check --ref`, never from candidate YAML".
 - Of the other seven rules in those phases, a command refuses six and reports one.
-  Each check guards only its helper's path. `merge` refuses an `UNSTABLE` state under
-  `ci_review_wait: all`, but a maintainer's merge click on GitHub skips that check.
+  Each check guards only its helper's path. When the PR is outside the merge queue,
+  `merge` refuses an `UNSTABLE` state under `ci_review_wait: all`. A maintainer's merge
+  click on GitHub skips that check.
   `reply` refuses a thread with an excluded author, but a raw `gh` reply does not.
   Intake's rule against merging without an Ask decision stays in the startup text.
 
