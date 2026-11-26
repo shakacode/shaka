@@ -37,16 +37,21 @@ mkdir -p "$(dirname "$shaka_install_dir")"
 git clone https://github.com/shakacode/shaka.git "$shaka_install_dir"
 ```
 
-On Windows, run these commands from PowerShell instead. The clone keeps the stored line
-endings, which the installer needs to match the commit, and Ruby starts the installer:
+On Windows, clone from PowerShell instead, so the checkout keeps the stored line endings the
+installer needs to match the commit:
 
 ```powershell
 $shaka_install_dir = "$HOME\.local\share\shaka\source"
 git clone --config core.autocrlf=false --config core.eol=lf https://github.com/shakacode/shaka.git $shaka_install_dir
+```
+
+After reading the checkout, run its installer. On Windows, from PowerShell:
+
+```powershell
 ruby "$shaka_install_dir\bin\install" --directory $shaka_install_dir --agent codex
 ```
 
-After reading the checkout, run its installer:
+On macOS or Linux:
 
 ```bash
 "$shaka_install_dir/bin/install" --directory "$shaka_install_dir" --agent codex

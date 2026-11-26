@@ -55,14 +55,17 @@ module WindowsProductInstall
 
   # The manual installation guide's Windows recipe: clone with stored line endings, then install that
   # checkout itself.
+  # The clone runs under the fresh home, so Git for Windows' own default, not the runner's global
+  # core.autocrlf=false, decides line endings unless the documented options do; the clone's own
+  # installer then runs.
   def documented_install(home, branch)
     directory = File.join(home, '.local/share/shaka/source')
-    cloned = system(git_environment, 'git', 'clone', '--quiet', '--config', 'core.autocrlf=false', '--config',
-                    'core.eol=lf', '--branch', branch, root, directory)
+    cloned = system(git_environment.merge('HOME' => home, 'USERPROFILE' => home), 'git', 'clone', '--quiet',
+                    '--config', 'core.autocrlf=false', '--config', 'core.eol=lf', '--branch', branch, root, directory)
     raise 'git clone failed' unless cloned
 
     output, success = run_installer(home, '--directory', directory, '--repository', root, '--branch', branch,
-                                    '--agent', 'codex')
+                                    '--agent', 'codex', installer: File.join(directory, 'bin/install'))
     [output, success, saved_source(home)]
   end
 
@@ -73,9 +76,9 @@ module WindowsProductInstall
   end
 
   # Bounded, so a hung install fails the record instead of holding the job.
-  def run_installer(home, *arguments)
+  def run_installer(home, *arguments, installer: File.join(root, 'bin/install'))
     environment = native_path.merge('HOME' => home, 'USERPROFILE' => home)
-    output, error, success = capture([environment, RbConfig.ruby, File.join(root, 'bin/install'), *arguments], 600)
+    output, error, success = capture([environment, RbConfig.ruby, installer, *arguments], 600)
     ["#{output}#{error}", success]
   end
 end
