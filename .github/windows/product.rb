@@ -11,7 +11,7 @@ class WindowsProduct < WindowsSession
   EVIDENCE_RUN = %w[evidence run --repository shakacode/shaka --command test].freeze
   TEST = %w[-- test/executable_file_test.rb].freeze
   REVIEW_TESTS = %w[test/windows_local_review_test.rb
-                    test/windows_review_lookup_test.rb].freeze
+                    test/windows_review_lookup_test.rb test/doctor_windows_stop_test.rb].freeze
   UNIX_TOOLS = %r{msys64|[\\/]Git[\\/](?:usr[\\/]bin|bin|mingw64[\\/]bin)[\\/]?\z}i
 
   def call
