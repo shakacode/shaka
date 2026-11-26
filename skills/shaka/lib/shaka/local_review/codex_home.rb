@@ -32,6 +32,11 @@ module Shaka
       IO.copy_stream(session, copy)
       copy.close
       copy.path
+    rescue SystemCallError, IOError
+      # The review itself succeeded; without the copy its usage reads UNKNOWN.
+      copy&.close
+      File.unlink(copy.path) if copy && File.exist?(copy.path)
+      nil
     end
 
     # The user's own Codex home; an empty value uses the default, as Codex does. An explicit value is
@@ -43,23 +48,29 @@ module Shaka
       File.absolute_path?(value) ? value : File.join(Dir.pwd, value)
     end
 
-    # A sign-in file that resolves inside the reviewed checkout is candidate content, not the
-    # user's credentials, so it is never linked.
+    # A sign-in file found in, or resolving into, the reviewed checkout is candidate content, not
+    # the user's credentials, so it is never linked.
     def self.link_sign_in(source, home, checkout)
       sign_in = File.join(source, SIGN_IN)
       return unless File.file?(sign_in)
 
       target = File.realpath(sign_in)
-      root = checkout && File.realpath(checkout)
-      return if root && (target == root || target.start_with?("#{root}/"))
+      return if [File.realpath(source), target].any? { inside?(it, checkout) }
 
       File.symlink(target, File.join(home, SIGN_IN))
+    end
+
+    def self.inside?(path, checkout)
+      return false unless checkout
+
+      root = File.realpath(checkout)
+      path == root || path.start_with?("#{root}/")
     end
 
     def self.survivor?(result)
       result.is_a?(Array) && result.last.is_a?(LocalReviewProcess::CleanupError)
     end
 
-    private_class_method :link_sign_in, :survivor?
+    private_class_method :link_sign_in, :inside?, :survivor?
   end
 end

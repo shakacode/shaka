@@ -108,6 +108,32 @@ class LocalReviewCodexHomeUnitTest < Minitest::Test
     end
   end
 
+  # Break caught: a committed auth.json link inside the checkout chose the reviewer's sign-in
+  # because its target lay outside.
+  def test_a_sign_in_link_placed_in_the_checkout_is_not_followed
+    Dir.mktmpdir('shaka-checkout') do |checkout|
+      Dir.mktmpdir('shaka-outside') do |outside|
+        File.write(File.join(outside, 'auth.json'), '{}')
+        File.symlink(File.join(outside, 'auth.json'), File.join(checkout, 'auth.json'))
+        linked = Shaka::LocalReviewCodexHome.with_isolated({ 'CODEX_HOME' => checkout }, checkout:) do |home|
+          File.exist?(File.join(home, 'auth.json'))
+        end
+        refute linked
+      end
+    end
+  end
+
+  # Break caught: a failed session copy escaped after a successful review and discarded its report.
+  def test_a_failed_session_copy_leaves_usage_unknown
+    Dir.mktmpdir('shaka-codex-home') do |home|
+      events = saved_session(home)
+      before = Dir.glob(File.join(Dir.tmpdir, 'shaka-codex-session-*'))
+      kept = with_failing_copy { Shaka::LocalReviewCodexHome.keep_session(events, home) }
+      assert_nil kept
+      assert_equal before, Dir.glob(File.join(Dir.tmpdir, 'shaka-codex-session-*'))
+    end
+  end
+
   # Break caught: an empty CODEX_HOME resolved to the working directory instead of ~/.codex.
   def test_empty_codex_home_uses_the_default
     assert_equal File.join(Dir.home, '.codex'), Shaka::LocalReviewCodexHome.real_home('CODEX_HOME' => '')
@@ -138,5 +164,24 @@ class LocalReviewCodexHomeUnitTest < Minitest::Test
     assert_path_exists @home
   ensure
     FileUtils.remove_entry(@home) if @home && File.exist?(@home)
+  end
+
+  private
+
+  # Saves a session for the test thread under the home and returns the events that announce it.
+  def saved_session(home)
+    thread = LocalReviewCodexHomeTest::THREAD
+    folder = FileUtils.mkdir_p(File.join(home, 'sessions', '2026', '11', '25')).first
+    meta = JSON.generate(type: 'session_meta', payload: { id: thread })
+    File.write(File.join(folder, "rollout-#{thread}.jsonl"), meta)
+    JSON.generate(type: 'thread.started', thread_id: thread)
+  end
+
+  def with_failing_copy
+    original = IO.method(:copy_stream)
+    IO.define_singleton_method(:copy_stream) { |*| raise Errno::ENOSPC }
+    yield
+  ensure
+    IO.define_singleton_method(:copy_stream, original)
   end
 end
