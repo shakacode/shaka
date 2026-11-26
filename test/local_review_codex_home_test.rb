@@ -180,3 +180,27 @@ class LocalReviewCodexSessionCopyTest < Minitest::Test
     owner.define_singleton_method(name, original)
   end
 end
+
+# Cleanup of the temporary home never replaces the review's own result.
+class LocalReviewCodexHomeCleanupTest < Minitest::Test
+  # Break caught: a failed removal of the temporary home replaced a successful review with an error.
+  def test_a_failed_home_removal_keeps_the_result
+    Dir.mktmpdir('shaka-codex-user-home') do |user_home|
+      result = Shaka::LocalReviewCodexHome.with_isolated({ 'CODEX_HOME' => user_home }) { |home| lock(home) }
+      assert_equal :finished, result
+    end
+  ensure
+    File.chmod(0o700, @home) if @home && File.exist?(@home)
+    FileUtils.remove_entry(@home, true) if @home
+  end
+
+  private
+
+  # Leaves a file in a read-only home, so removing the home fails.
+  def lock(home)
+    @home = home
+    File.write(File.join(home, 'session.jsonl'), '{}')
+    File.chmod(0o500, home)
+    :finished
+  end
+end

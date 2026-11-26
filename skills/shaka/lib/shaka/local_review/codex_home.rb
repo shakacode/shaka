@@ -22,7 +22,8 @@ module Shaka
       File.symlink(sign_in, File.join(home, SIGN_IN)) if File.file?(sign_in)
       result = yield home
     ensure
-      FileUtils.remove_entry(home) if home && !survivor?(result)
+      # Best effort: a cleanup error must not replace the finished review.
+      FileUtils.remove_entry(home, true) if home && !survivor?(result)
     end
 
     # The session `codex exec --json` announced, copied outside the temporary home, or nil. The
