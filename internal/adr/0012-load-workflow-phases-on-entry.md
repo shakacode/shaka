@@ -318,6 +318,8 @@ Decision 4 accepts that no command catches a skipped phase. `shaka enforcement` 
 5. Measure missed loads in real use. The local call log records each helper command
    and its chat session. With a phase tag on `workflow`, a report could list phase
    commands that ran before their phase loaded. A report refuses nothing, so it avoids
-   the false refusals Decision 4 rejects.
+   the false refusals Decision 4 rejects. Its count is a lower bound: after
+   summarization, an earlier load stays in the chat's log even when the agent skips the
+   reload. Context-loss cases need transcript evidence.
 
 Steps 3 and 5 are not prototyped. The 56% counts words, not tokens.
