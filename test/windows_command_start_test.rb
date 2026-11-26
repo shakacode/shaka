@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require 'shaka/executable_file'
 require 'shaka/evidence/timed_check'
 require 'shaka/evidence/tree_watch'
+require 'shaka/install/release_checkout'
 require 'shaka/install/source'
 
 # Native Windows starts a repository command through Git's sh, runs a check without a process
@@ -34,6 +35,12 @@ class WindowsCommandStartTest < Minitest::Test
 
       assert_equal 3, watch.run.status.exitstatus
     end
+  end
+
+  # Only Windows clones override line endings; elsewhere the user's Git settings stay in charge.
+  def test_installer_clones_set_line_endings_only_on_windows
+    assert_includes Shaka::Install::ReleaseCheckout.clone_config(windows: true), 'core.eol=lf'
+    assert_empty Shaka::Install::ReleaseCheckout.clone_config(windows: false)
   end
 
   def test_windows_install_accepts_an_executable_record_without_an_execute_bit
