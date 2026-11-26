@@ -13,7 +13,7 @@ on the candidate PR instead of duplicating each trial here.
 
 At the maintainer's request, each new comparison report, one whose result a
 maintainer acts on, ships with an article under [`docs/articles/`](../docs/articles/)
-in the same PR, listed under Articles in `docs/sidebars.json`. The report keeps the
+in the same PR, listed under AI evals in `docs/sidebars.json`. The report keeps the
 full evidence; the article states the main results, limits, method, findings and
 how to rerun it for a reader new to Shaka. Follow the
 [review process study](../docs/articles/review-process-study.md) for its shape. Harness attempts and reports that predate this rule have none.
