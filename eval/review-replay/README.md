@@ -9,6 +9,9 @@ criteria commits and the same model on both arms.
 
 ## Run the paired review
 
+Use this pilot on macOS. The Codex command isolation check was verified with
+Codex CLI 0.170.0. A full score across the four cases remains follow-up work.
+
 Sign in to `claude` with your Claude subscription or to `codex` with ChatGPT.
 Supply your trusted installed helper by absolute path. The runner strips
 platform key and endpoint overrides, verifies the subscription login, and
