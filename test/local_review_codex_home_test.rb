@@ -135,6 +135,27 @@ class LocalReviewCodexHomeUnitTest < Minitest::Test
     end
   end
 
+  # Break caught: CODEX_HOME=. inside the reviewed checkout created a sessions folder there, and the
+  # review transcript would have followed it into the candidate.
+  def test_no_sessions_are_created_or_linked_inside_the_checkout
+    Dir.mktmpdir('shaka-checkout') do |checkout|
+      linked = isolated_sessions({ 'CODEX_HOME' => checkout }, checkout)
+      refute linked
+      refute_path_exists File.join(checkout, 'sessions')
+    end
+  end
+
+  # Break caught: a home outside the checkout whose sessions link led into it redirected writes.
+  def test_a_sessions_link_into_the_checkout_is_not_followed
+    Dir.mktmpdir('shaka-checkout') do |checkout|
+      Dir.mktmpdir('shaka-codex-user-home') do |user_home|
+        FileUtils.mkdir_p(File.join(checkout, 'planted'))
+        File.symlink(File.join(checkout, 'planted'), File.join(user_home, 'sessions'))
+        refute isolated_sessions({ 'CODEX_HOME' => user_home }, checkout)
+      end
+    end
+  end
+
   # Break caught: a reviewer that raised left its temporary home behind.
   def test_home_is_removed_when_the_reviewer_fails
     Dir.mktmpdir('shaka-codex-user-home') do |user_home|
@@ -160,5 +181,12 @@ class LocalReviewCodexHomeUnitTest < Minitest::Test
     assert_path_exists @home
   ensure
     FileUtils.remove_entry(@home) if @home && File.exist?(@home)
+  end
+
+  private
+
+  # Whether the temporary home got a sessions link.
+  def isolated_sessions(environment, checkout)
+    Shaka::LocalReviewCodexHome.with_isolated(environment, checkout:) { |home| File.symlink?(File.join(home, 'sessions')) }
   end
 end

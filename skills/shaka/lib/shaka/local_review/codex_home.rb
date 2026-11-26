@@ -14,9 +14,9 @@ module Shaka
 
     # Yields the temporary home; the block returns the process result. A reviewer that survived
     # termination keeps its home, so a late sign-in save still reaches the user's file.
-    def self.with_isolated(environment = ENV)
+    def self.with_isolated(environment = ENV, checkout: nil)
       home = Dir.mktmpdir('shaka-codex-home-')
-      link(real_home(environment), home)
+      link(real_home(environment), home, checkout)
       result = yield home
     ensure
       FileUtils.remove_entry(home) if home && !survivor?(result)
@@ -31,25 +31,39 @@ module Shaka
       File.absolute_path?(value) ? value : File.join(Dir.pwd, value)
     end
 
-    def self.link(source, home)
-      link_sessions(source, home)
+    def self.link(source, home, checkout)
+      link_sessions(File.join(source, SESSIONS), home, checkout)
       sign_in = File.join(source, SIGN_IN)
       File.symlink(sign_in, File.join(home, SIGN_IN)) if File.exist?(sign_in)
     end
 
     # Without the link the session stays in the temporary home and usage reads UNKNOWN; the
-    # review itself still runs.
-    def self.link_sessions(source, home)
-      FileUtils.mkdir_p(File.join(source, SESSIONS))
-      File.symlink(File.join(source, SESSIONS), File.join(home, SESSIONS))
+    # review itself still runs. A sessions folder inside the reviewed checkout is never created or
+    # linked, so a review writes nothing into the candidate.
+    def self.link_sessions(sessions, home, checkout)
+      return if inside?(sessions, checkout)
+
+      FileUtils.mkdir_p(sessions)
+      File.symlink(sessions, File.join(home, SESSIONS)) unless inside?(sessions, checkout)
     rescue SystemCallError
       nil
+    end
+
+    # Resolves through the deepest existing folder, so a link into the checkout counts as inside.
+    def self.inside?(path, checkout)
+      return false unless checkout
+
+      existing = path
+      existing = File.dirname(existing) until File.exist?(existing)
+      resolved = File.join(File.realpath(existing), path.delete_prefix(existing))
+      root = File.realpath(checkout)
+      resolved == root || resolved.start_with?("#{root}/")
     end
 
     def self.survivor?(result)
       result.is_a?(Array) && result.last.is_a?(LocalReviewProcess::CleanupError)
     end
 
-    private_class_method :link, :link_sessions, :survivor?
+    private_class_method :link, :link_sessions, :inside?, :survivor?
   end
 end

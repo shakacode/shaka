@@ -172,7 +172,9 @@ module Shaka
       args = [executable, 'exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
               '-c', 'skills.include_instructions=false', *CodexExec::TOOL_RESTRICTIONS,
               '--skip-git-repo-check', '--json', '-o', @report, *codex_choices, '-']
-      LocalReviewCodexHome.with_isolated { |home| reviewer_process(args, prompt, env: { 'CODEX_HOME' => home }) }
+      LocalReviewCodexHome.with_isolated(checkout: @candidate_root) do |home|
+        reviewer_process(args, prompt, env: { 'CODEX_HOME' => home })
+      end
     end
 
     # --ignore-user-config also drops the user's model, so the CLI default runs unless one is named.
