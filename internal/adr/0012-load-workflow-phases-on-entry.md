@@ -42,9 +42,13 @@ Enforcement quotes stay valid. `enforcement.yml` checks each quote against its p
 text in `workflow.yml`, not against rendered output. A sentence moved between phases
 needs its entry's `phase` updated.
 
-The predecessor `shakacode/agent-workflows` splits its process into separate skills,
-such as `pr-batch` and `address-review`. No phase-scoped rendering of one workflow was
-found there to reuse.
+The [conditional loading investigation](../conditional-workflow-loading.md) took the
+smaller path first. It moved procedures that only some tasks need, such as UI
+verification and first-time setup, behind existing reference links. Those two moves
+cut the rendered workflow by 3.8% and 1.1%. Further moves of that kind would need about
+7,600 fewer startup words to reach this target. The same investigation checked the
+predecessor `shakacode/agent-workflows`, which uses conditional references but has no
+phase-scoped rendering to reuse.
 
 ## Decisions
 
@@ -59,14 +63,21 @@ found there to reuse.
    work. `--all` prints the whole workflow, as today. An unknown id, or `always` or
    `code_quality`, fails with the list of phase ids. Every rendering still validates and
    expands the whole workflow, so a broken template in Finish fails at startup.
-3. **The handoff comes before the phase.** Each later phase gains one `load_before`
-   line naming its first step, such as "before rechecking that the problem still exists" for Implement. The
-   renderer writes that line into the index and appends the load command to the
+3. **The handoff comes before the phase.** Always states the rule in authored text:
+   load each later phase with `workflow --phase ID` before its first step, and before
+   any earlier step that uses one of its commands. Each later phase gains one
+   `load_before` line naming its first step, such as "before rechecking that the
+   problem still exists" for Implement. The renderer writes that line into the index and appends the load command to the
    previous phase's `Done when`, so the timing has one source. A Review or Finish step
-   that sends work back to Verify names `--phase verify` at that step. `SKILL.md` changes
+   that sends work back to Verify names `--phase verify` at that step. The Always rule
+   that publishes `description` with `decisions` when a task with a PR stops for an
+   answer names `--phase explain`, since Explain holds the description rules and the
+   `pr_evidence` guide step. `SKILL.md` changes
    from "follow the complete validated procedure it prints" to following it and loading
    each later phase when it directs.
-4. **Nothing refuses a missed load.** `enforcement.yml` records the new rule as `agent`.
+4. **Nothing refuses a missed load.** `enforcement.yml` quotes the Always rule and
+   records it as `agent`. The generated index and pointers are routing details, not
+   quoted rules, because the quote check reads authored text only.
    - Rejected: reminders in the result of a phase's first command. A reminder arrives
      after the command ran, too late for that phase's first step. `evidence run`,
      `review run`, and `post-implementation run` also print JSON that later steps parse.
@@ -75,8 +86,8 @@ found there to reuse.
      agent-enforced. A new worktree or machine would lack the record, and the false
      refusal would block publication.
    - What this loses: no command catches a skipped phase. The live runs below measure
-     whether agents load phases when the pointers say so. A missed load they show is a
-     reason to revisit this decision.
+     whether agents load phases when the pointers say so. A missed load in any run
+     sends this decision back to the maintainer before the implementation PR is ready.
 5. **Rules needed before their phase move to Always.** An audit of phases 3 to 7 found
    three that apply before their phase loads. Each moves to Always word for word, with
    the rest of its paragraph, and its enforcement entries change phase.
@@ -95,7 +106,8 @@ found there to reuse.
    runs `handoff` without `--head` first, as today, then `workflow --later`. Startup text
    is already in context, so a resumed task reads about the same total as today. How often
    tasks resume is unknown.
-   Review-only work loads Review. The agent reloads the current phase whenever its text
+   Review-only work runs `workflow --phase review`. Review needs no Verify-only step
+   once the credential check moves to Always. The agent reloads the current phase whenever its text
    is no longer in context, such as after summarization.
 7. **Defer the issue's other proposals.** A `description --schema` output (proposal 2)
    would move about 1,570 words out of Explain. The enforcement quotes in those words
@@ -121,9 +133,10 @@ found there to reuse.
   only what is billed.
 - An agent that never loads a later phase skips its rules. The index and the `Done
   when` pointers make that less likely; nothing makes it impossible.
-- A smaller alternative is trimming the full workflow in place. Trimming keeps one
-  load and no skip risk, but the issue's 40% target would need about 7,600 fewer words
-  of rules.
+- A smaller alternative keeps one full load and moves more conditional procedures
+  behind reference links, as the conditional loading investigation did. It keeps
+  immediate access to every rule and has no skip risk. No measurement shows it can
+  reach the 40% target.
 - Text that names the old behavior changes in the same PR: `docs/architecture.md`
   (the 12,400-word row), `docs/workflow.md`, `README.gem.md`,
   `contributing/configuration-internals.md`, `contributing/development.md`,
@@ -145,6 +158,7 @@ and Codex chats.
 | Plan-only request | No later phase loads; the task stops at the recommendation |
 | No-change task | The task stops in Intake with no later phase loads |
 | Resume an unfinished PR in a new chat | `handoff` runs, then `workflow --later`, before any write |
+| A task with an open PR stops for an answer during Verify | Explain loads before `description` publishes the decision; nothing is pushed and readiness is unchanged |
 | Review-only request on a clean diff | Only Review loads, the transcript shows the credential check of `git diff BASE...HEAD` before `review run`, and the review completes with no PR writes |
 
 The credential rule covers real credentials, so a planted fake one cannot show whether
@@ -158,10 +172,12 @@ omits later phase bodies, `--phase` keeps phase numbers, and a config without
 a recording counter checks that an older baseline counts the full workflow and the
 head counts the same startup text the CLI prints. The implementation PR reports
 `bin/report-instruction-growth --tokens` for both CLIs, run with the providers' API-key
-variables unset and each CLI's login status recorded without credential values. It also
-reports the transcript evidence for each run and any run that could not be done. Each
-row runs once per host, and the full delivery runs twice per host because it
-exercises every phase.
+variables unset. It records the login method each CLI reports, such as a subscription
+plan, without credential values, and marks a count unverified when that method is not
+a subscription. It also
+reports the transcript evidence for each run and any run that could not be done. The full
+delivery and review-only rows run three times per host; the others run once. One
+missed load in any run fails the plan.
 
 ## Delivery
 
