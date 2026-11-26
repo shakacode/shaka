@@ -46,8 +46,8 @@ was measured and priced** list under the table shows each report's rate card,
 the date its prices were verified, source links, and what its sources left out. Known accounting
 boilerplate moves to the guide; unknown prose and report-specific limitations stay visible.
 The full original note stays in the hidden record for later publication. A PR left open across
-a price change therefore shows which rows used which prices. To price every row with current rates, rerun `shaka usage` for each report and
-publish the new records.
+a price change therefore shows which rows used which prices. To price every row with the current rate card, rerun `shaka usage` for each report and
+publish the new records. A dated price still follows each response's date.
 
 Put that `usage` object in the PR, or the JSON report in the final response when
 there is no PR. **Native** figures come from the host's records. **Estimated** figures apply a
@@ -294,7 +294,8 @@ step, so the reader reports no responses for it, and the main conversation leave
 
 The recorded model is the ID the user selected, so it is the configured model. Its last
 segment is the effort when it is `low`, `medium`, `high`, or `xhigh`; any other ending
-leaves the effort unknown. A transcript from before Antigravity recorded models
+leaves the effort unknown. A `gemini-` ID names Google as the provider; the transcript
+names none for any other ID. A transcript from before Antigravity recorded models
 keeps its tokens with an unknown model.
 
 Validation used CLI `1.5.14` and `1.5.15`. Single-turn runs, a two-turn conversation, a
@@ -332,6 +333,7 @@ report.
 | Standard API-equivalent USD | Ordinary input excludes cache reads and writes. Cache reads use the published cache-read rate. Cache writes use the 30-minute rate. |
 | Cursor on-demand USD | Configured supported Grok model and recorded Fast/standard mode. Cache writes remain ordinary input because no separate rate is published. |
 | Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published fast-mode rates are priced. |
+| Google list-price USD | Antigravity Gemini model, priced as the configured ID or that ID without its effort, such as `gemini-4-argon` for `gemini-4-argon-high`. |
 | Pi native nominal USD | Copy the host's recorded cost instead of applying a rate card. |
 
 Rate notes and source links apply only to supported provider/model pairs. A
@@ -364,10 +366,15 @@ leaves the estimate unknown. Cursor-only reports omit Codex credits.
 
 OpenCode's cache-exclusive input does not match the OpenAI/Cursor estimator's
 required input shape, so those scenarios remain unknown. Its Anthropic responses
-also remain unpriced because exports lack billing speed.
+also remain unpriced because exports lack billing speed, and its Google responses
+because it counts reasoning beside output, while Google's rates price output that
+includes thinking.
 
-Antigravity responses remain unpriced: no estimator scenario covers its counters, and
-the transcript names no provider.
+### Google details
+
+Search grounding and explicit-cache storage are not recorded and are excluded. Claude
+models run in Antigravity stay unpriced, and so does every Google model when the rate
+card has no `google` section.
 
 These are dated rate-card scenarios, not invoices. Subscription treatment,
 discounts, service tier, routing, account terms, and actual charges may differ.

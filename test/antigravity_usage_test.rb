@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'json'
+require 'shaka/publication/text'
 
 module AntigravityUsageFixture
   COMMAND = SHAKA_COMMAND
@@ -89,6 +90,38 @@ class AntigravityUsageTest < Minitest::Test
     end
   end
 
+  # The transcript records no cache writes, which Anthropic bills separately, so a Claude
+  # model names no provider here and stays unpriced.
+  def test_a_claude_model_stays_unpriced
+    Dir.mktmpdir do |home|
+      records = [prompt(0, '10'), response(1, '11', 300, model: 'claude-sonnet-5-5-low')]
+      output = explicit(write_transcript(home, records))
+      assert_metric output, 'Provider', 'UNKNOWN'
+      assert_metric output, 'Effort', 'low'
+      assert_metric output, 'USD estimate', 'UNKNOWN'
+      assert_includes output, 'Unsupported provider or configured model'
+      refute_includes output, 'Cache-exclusive input is unpriced'
+      refute_includes output, 'Anthropic API list prices'
+    end
+  end
+
+  # A PR's usage table is built from the JSON record, not the Markdown report.
+  def test_the_json_record_carries_the_google_price
+    Dir.mktmpdir do |home|
+      document = JSON.parse(explicit(write_transcript(home, two_turns), '--format', 'json'))
+      column = document.fetch('columns').first
+      assert_equal 'google', column['provider']
+      assert_equal '$0.001008', column['usd']
+      assert_includes document.to_s, 'Google Gemini API paid-tier list prices'
+    end
+  end
+
+  def test_a_usage_header_names_google_like_other_providers
+    header = Shaka::PublicationText.identity('agent' => 'Antigravity', 'provider' => 'google',
+                                             'model' => 'gemini-4-argon-high', 'effort' => 'high')
+    assert_includes header, ' · Google · '
+  end
+
   def test_a_model_id_without_an_effort_segment_reports_no_effort
     Dir.mktmpdir do |home|
       records = [prompt(0, '10'), response(1, '11', 300, model: 'tuned-gateway-model')]
@@ -132,7 +165,7 @@ class AntigravityUsageTest < Minitest::Test
   private
 
   def assert_latest_turn(output)
-    assert_metric output, 'Provider', 'UNKNOWN'
+    assert_metric output, 'Provider', 'google'
     assert_metric output, 'Configured model', 'gemini-4-argon-high'
     assert_metric output, 'Routed model', 'UNKNOWN'
     assert_metric output, 'Effort', 'high'
@@ -141,7 +174,8 @@ class AntigravityUsageTest < Minitest::Test
     assert_metric output, 'Output', 40
     assert_metric output, 'Reasoning output', 'UNKNOWN'
     assert_metric output, 'Cache writes', 'UNKNOWN'
-    assert_metric output, 'USD estimate', 'UNKNOWN'
+    # Gemini 4 Argon before December 1, 2026: 300 input at $2, 80 cache reads at $0.10, 40 output at $10.
+    assert_metric output, 'USD estimate', '$0.001008'
   end
 end
 

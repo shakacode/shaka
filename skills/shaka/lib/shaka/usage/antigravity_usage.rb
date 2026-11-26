@@ -81,6 +81,10 @@ module Shaka
       model if model.is_a?(String) && model.match?(MODEL) && model != 'UNKNOWN' && UsageValue.token(model)
     end
 
+    # Gemini models run on Google's own service. The transcript names no provider for any other ID,
+    # such as a Claude model, so those stay unknown.
+    def self.provider(model) = ('google' if model&.start_with?('gemini-'))
+
     def self.effort(model)
       level = model[/-([a-z]+)\z/, 1] if model
       level if EFFORTS.include?(level)
@@ -117,7 +121,8 @@ module Shaka
       model = self.class.model(record)
       { 'response_id' => "#{@conversation}:#{record['step_index']}", 'turn_id' => turn,
         'timestamp' => record['created_at'],
-        'configuration' => [nil, model, nil, self.class.effort(model)], 'usage' => token_usage(record) }
+        'configuration' => [self.class.provider(model), model, nil, self.class.effort(model)],
+        'usage' => token_usage(record) }
     end
 
     # Reasoning is part of output and cache writes are not recorded, so neither has a counter here.
@@ -143,6 +148,7 @@ module Shaka
     # Step numbers repeat across conversations, and copies of one conversation overlap.
     ONE_TRANSCRIPT = 'Antigravity usage reads one transcript per run; report each conversation separately.'
     INCLUSIVE_INPUT = false
+    GOOGLE_COUNTERS = true
 
     attr_reader :responses, :versions, :gaps
 

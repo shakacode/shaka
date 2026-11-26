@@ -21,8 +21,7 @@ module Shaka
     ].freeze
 
     def json_document
-      estimate = CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT,
-                                                  rate_card: selected_rate_card)
+      estimate = cost_estimate
       data = estimate.snapshot
       columns = json_columns(estimate, data)
       # The record keeps prices and coverage gaps, so a carried report keeps both. It leaves out the
