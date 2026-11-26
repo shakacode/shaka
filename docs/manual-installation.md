@@ -37,9 +37,14 @@ mkdir -p "$(dirname "$shaka_install_dir")"
 git clone https://github.com/shakacode/shaka.git "$shaka_install_dir"
 ```
 
-On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the `git clone`
-command. Git for Windows otherwise converts line endings, and the installer then refuses
-the checkout because its files no longer match the commit.
+On Windows, run these commands from PowerShell instead. The clone keeps the stored line
+endings, which the installer needs to match the commit, and Ruby starts the installer:
+
+```powershell
+$shaka_install_dir = "$HOME\.local\share\shaka\source"
+git clone --config core.autocrlf=false --config core.eol=lf https://github.com/shakacode/shaka.git $shaka_install_dir
+ruby "$shaka_install_dir\bin\install" --directory $shaka_install_dir --agent codex
+```
 
 After reading the checkout, run its installer:
 

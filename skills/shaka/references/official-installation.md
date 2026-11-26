@@ -20,7 +20,8 @@ git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/sourc
 ```
 
 On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the `git clone`, or the
-installer refuses the checkout because Git converted its line endings.
+installer refuses the checkout because Git converted its line endings. From PowerShell or cmd,
+start the installer as `ruby PATH\bin\install`, since Windows cannot run the extensionless script.
 
 Default: `~/.local/share/shaka/source`; respect chosen locations with `--directory DIR`.
 The installer refuses `~/.agents/` and every directory under it, where settings live. An install

@@ -57,7 +57,7 @@ git clone --branch "$fork_branch" "$fork_url" "$shaka_source"
 ```
 
 On Windows, add the line-ending options from [manual installation](manual-installation.md)
-to that `git clone` command.
+to that `git clone` command, and start the installer with `ruby` as that guide shows.
 
 Inspect the cloned source and its installer. When you're ready to use that
 revision, run this example for Codex. For other agents, see the
