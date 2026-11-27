@@ -10,7 +10,7 @@ module OwnedWorktreeScenarios
     File.unlink(link)
     File.symlink(File.join(feature, 'skills/shaka'), link)
     output = refusal(feature, '--directory', feature)
-    assert_match(/Next: a person must decide whether to keep the skills links \S*shaka, which resolve into/, output)
+    assert_match(/Next: a person must decide where the skills links \S*shaka should point; they resolve into/, output)
     assert_path_exists feature
   end
 
@@ -20,7 +20,7 @@ module OwnedWorktreeScenarios
     FileUtils.mkdir_p(custom)
     File.symlink(File.join(feature, 'skills/shaka'), File.join(custom, 'shaka'))
     output = refusal(feature, '--directory', feature, '--skills-dir', custom)
-    assert_includes output, "Next: a person must decide whether to keep the skills links #{custom}/shaka"
+    assert_includes output, "Next: a person must decide where the skills links #{custom}/shaka"
   end
 
   # The removal step clears every worktree the install hosts, so a link into a sibling stops it too.
@@ -32,7 +32,7 @@ module OwnedWorktreeScenarios
     File.unlink(link)
     File.symlink(File.join(sibling, 'skills/shaka'), link)
     output = refusal(feature, '--directory', feature)
-    assert_includes output, 'Next: a person must decide whether to keep the skills links'
+    assert_includes output, 'Next: a person must decide where the skills links'
     assert_path_exists sibling
   end
 
@@ -53,6 +53,20 @@ module OwnedWorktreeScenarios
     assert_includes output, 'chmod'
   ensure
     File.chmod(0o755, root) if root
+  end
+
+  # A take-over moves only links into the installation itself, so a link into its worktree would stop it.
+  def test_a_custom_owner_with_a_link_into_its_worktree_goes_to_a_person
+    root = clone_to(File.join(@directory, 'custom'))
+    run_install(root, '--directory', root, '--repository', @remote)
+    feature = File.join(@directory, 'feature')
+    git('-C', root, 'worktree', 'add', '-q', feature)
+    link = File.join(@home, '.agents/skills/shaka')
+    File.unlink(link)
+    File.symlink(File.join(feature, 'skills/shaka'), link)
+    output = refusal(feature, '--directory', feature)
+    assert_includes output, 'Next: a person must decide where the skills links'
+    assert_includes output, '--take-over'
   end
 
   private

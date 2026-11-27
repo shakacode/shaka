@@ -80,6 +80,7 @@ class InstallScenariosTest < Minitest::Test
     before = registration(root)
     step = refused(feature, '--directory', feature)
     assert_includes step, 'worktree remove'
+    assert_equal step, refused(feature, '--directory', feature, '--verify')
     run_step(step)
     assert_equal 'A1', status(root)['state']
     installer(root, '--verify')

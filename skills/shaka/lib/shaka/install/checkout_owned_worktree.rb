@@ -37,7 +37,7 @@ module Shaka
 
         guard_links(checkout, checkout.development_step)
       rescue ArgumentError
-        status_decision(checkout)
+        checkout && status_decision(checkout)
       end
 
       def real_owner(owner)
@@ -60,19 +60,18 @@ module Shaka
                                    'to see what needs repair', "#{checkout.installer} --status") }
       end
 
-      # The default location's step removes every worktree it hosts, which would break a link into any of them.
+      # A link into any worktree the installation hosts breaks when the default location's step removes them,
+      # and stops a take-over, which moves only links into the installation itself.
       def guard_links(checkout, step)
-        return step unless step[:command] && checkout.root == SettingsLocation.real(default_location)
+        return step unless step[:command]
 
         links = links_into(checkout, checkout.linked_worktrees)
         return step if links.empty?
 
-        { decision: Refusal.decide("whether to keep the skills links #{Refusal.paths(links)}, which resolve " \
-                                   'into worktrees the next step removes',
-                                   'to remove those worktrees and break those links', step[:command]) }
+        { decision: Refusal.decide("where the skills links #{Refusal.paths(links)} should point; they resolve " \
+                                   "into worktrees of #{checkout.root}",
+                                   'once they point elsewhere', step[:command]) }
       end
-
-      def default_location = SettingsLocation.default_directory(Dir.home)
 
       def links_into(checkout, worktrees)
         link_folders(checkout).flat_map { |folder| Package::ALLOWED.map { |name| File.join(folder, name) } }

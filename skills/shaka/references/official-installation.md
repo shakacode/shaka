@@ -27,7 +27,7 @@ the old checkout can be deleted. Never delete it for them. When the message name
 to the user; never move the default location's contents yourself.
 Use the registered helper to preserve an existing installation’s chosen path; the default applies to new installations.
 Keep it for direct links and develop separately. `~/agent-tools/shaka` is an optional example.
-Every action refuses a checkout that is itself a linked worktree. Show the user the step its message ends with; for a worktree of the registered installation, that is the step `install --status` gives.
+Every action refuses a checkout that is itself a linked worktree. Show the user the step its message ends with.
 Installation refuses a checkout with linked worktrees or extra local branches; verify and update warn.
 To move links off such a development clone, follow [Before take-over](#before-take-over)
 and run the take-over its message names. When it names commands that
