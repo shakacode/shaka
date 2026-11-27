@@ -32,6 +32,12 @@ module ShakaRelease
                      'notes_sha256' => Digest::SHA256.hexdigest(notes), 'publication_authorized' => false)
     end
 
+    # The body of the version's CHANGELOG.md entry, or nil when the file has no such heading.
+    def self.changelog_entry(root, version)
+      changelog = File.read(File.join(root, 'CHANGELOG.md'))
+      changelog.split(/^## \[#{Regexp.escape(version)}\][^\n]*\n/, 2)[1]&.split(/^## |^\[[^\]]+\]:/, 2)&.first
+    end
+
     private
 
     def check_source
@@ -83,8 +89,7 @@ module ShakaRelease
 
     def check_notes(version)
       notes = File.read(@notes)
-      changelog = File.read(File.join(@root, 'CHANGELOG.md'))
-      section = changelog.split(/^## \[#{Regexp.escape(version)}\][^\n]*\n/, 2)[1]&.split(/^## |^\[[^\]]+\]:/, 2)&.first
+      section = self.class.changelog_entry(@root, version)
       refuse 'notes must match the nonempty version changelog entry' unless section && !notes.strip.empty? &&
                                                                             section.strip == notes.strip
       notes

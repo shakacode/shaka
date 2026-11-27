@@ -39,113 +39,78 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
    `cli_prompt` counts. Compare with earlier rows, not the report's `delta`: an older tag can
    lack files the startup text now includes, such as the workflow. When a CLI shows
    `UNKNOWN`, log its reason in the row instead of a count.
-2. Start from a clean, current `main` checkout after those preparation edits land.
-3. Install dependencies and run the repository validation:
+2. Start from a clean, current `main` checkout after those preparation edits land, and
+   run `bundle install`.
+3. Run the [release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md)
+   for each host, model, and effort profile you intend to qualify, and keep each batch's
+   records outside the checkout. To release without it, the maintainer must accept that
+   first; the published release notes then say the gate did not run.
+4. Prepare the release inputs. Use a trusted Shaka helper installed outside this checkout;
+   its installation identity is part of the validation evidence:
 
    ```bash
-   bundle install
    shaka_helper=/absolute/path/to/trusted/shaka
-   "$shaka_helper" evidence run --root . --ref RELEASE_SHA \
-     --repository shakacode/shaka --command validate > /outside/checkout/validation.json
+   bin/release prepare --shaka "$shaka_helper" --out /outside/checkout/release \
+     --behavior-records /outside/checkout/release-records.json
    ```
 
-4. Build and inspect the gem before changing any remote state:
+   Repeat `--behavior-records` for each profile, or pass `--skip-behavior-gate` instead.
+   The command checks each batch against this commit, then runs `validate` through
+   `evidence run`, which takes a while. Pass `--validation FILE` to reuse a completed
+   result for the same commit. It then builds the gem, saves the version's
+   `CHANGELOG.md` entry as `RELEASE_NOTES.md`, and runs the `bin/release-preflight` checks. They
+   confirm a clean checkout at `shakacode/shaka`'s `main`, matching validation and
+   settings, package metadata, file contents and executable modes, notes that match the
+   changelog, and no existing release tag. The output directory then holds the gem, the
+   notes, the validation result, and `approval.json`, which names the commit, version, and
+   their digests. Nothing remote changes. A pass does not establish host compatibility or
+   grant publication authority.
+5. Ask the maintainer to approve the commit, version, and digests in `approval.json`, and
+   stop until the approval is recorded.
+6. Check what publication will do, then publish:
 
    ```bash
-   gem build shaka.gemspec --output /outside/checkout/shaka-VERSION.gem
-   gem specification /outside/checkout/shaka-VERSION.gem
+   bin/release publish --approval /outside/checkout/release/approval.json --dry-run
+   bin/release publish --approval /outside/checkout/release/approval.json
    ```
 
-5. Confirm the version's `CHANGELOG.md` entry merged with the version change and
-   follows the format the file's header names. Save that entry's body as
-   `RELEASE_NOTES.md`. Before requesting publication approval, complete the
-   [release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md) for the intended host/model/effort
-   profiles and retain its results. Then run the maintainer preflight from the
-   source checkout, with the gem, original validation JSON, and notes saved outside it:
-
-   ```bash
-   bin/release-preflight --commit RELEASE_SHA --gem /outside/checkout/shaka-VERSION.gem \
-     --validation /outside/checkout/validation.json --notes /outside/checkout/RELEASE_NOTES.md \
-     --shaka "$shaka_helper"
-   ```
-
-   A passing result identifies the commit, version, gem digest, validation digest and
-   notes digest for approval. Ruby checks a clean checkout at `shakacode/shaka`'s `main`, matching
-   validation and settings, package metadata, file contents and executable status,
-   matching changelog notes, and absence of the release tag. It makes no remote changes.
-   Use the same trusted helper outside the release checkout for validation and
-   preflight binding; its installation identity is part of the evidence.
-   Keep the JSON with the release evidence. A pass does not establish behavioral or
-   host compatibility, check registry availability, or grant publication authority.
-   Run the behavioral gate with this preflight's `commit` as its required `--commit`
-   input. Ruby refuses a mismatched skill or batch. Require passing results for every
-   intended profile before requesting approval.
-   Obtain approval for those exact inputs; stop until it is recorded. The preflight
-   is repository maintenance tooling and is not included in the gem.
-
-6. Set the approved version and confirm it is absent from RubyGems, GitHub releases,
-   and remote tags. The first command lists existing prereleases; the latter commands
-   should report that the target does not exist:
-
-   ```bash
-   shaka_version=1.0.0
-   gem list shaka --remote --all --exact --prerelease
-   gh release view "v$shaka_version" --repo shakacode/shaka
-   git ls-remote --exit-code --tags https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
-   ```
-
-7. Tag and push the validated commit. Replace `APPROVED_COMMIT` with the `commit`
-   recorded in the approval:
-
-   ```bash
-   git tag -a "v$shaka_version" APPROVED_COMMIT -m "Release shaka $shaka_version"
-   git push https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
-   ```
-
-8. Publish with the maintainer's RubyGems credentials and MFA code. Replace
-   `APPROVED_GEM_SHA256` with the approved `gem_sha256`. Keep the digest check joined
-   to the upload with `&&` so a changed file stops publication:
-
-   ```bash
-   ruby -rdigest -e 'abort "Gem differs from approval" unless
-     Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' \
-     "/outside/checkout/shaka-$shaka_version.gem" APPROVED_GEM_SHA256 &&
-     gem push "/outside/checkout/shaka-$shaka_version.gem"
-   ```
-
-9. Create the GitHub release from the verified tag and reviewed notes. GitHub appends
-   the merged PRs, grouped by label as `.github/release.yml` defines. Use
-   `--prerelease` only for a prerelease version; omit it for a stable version.
-   Replace `APPROVED_NOTES_SHA256` with the approved `notes_sha256` and keep its
-   check joined to release creation:
-
-   ```bash
-   ruby -rdigest -e 'abort "Notes differ from approval" unless
-     Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' \
-     /outside/checkout/RELEASE_NOTES.md APPROVED_NOTES_SHA256 &&
-     gh release create "v$shaka_version" --repo shakacode/shaka --verify-tag \
-       --title "shaka $shaka_version" --notes-file /outside/checkout/RELEASE_NOTES.md --generate-notes
-   ```
-
-10. Verify RubyGems and GitHub, then install the exact version into a temporary
-    `GEM_HOME` from the registry. Exercise `shaka --help`, then remove it:
-
-    ```bash
-    gem list shaka --remote --all --exact --prerelease
-    gh release view "v$shaka_version" --repo shakacode/shaka
-    shaka_gem_home=$(mktemp -d)
-    GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" \
-      gem install shaka --version "$shaka_version" --no-document
-    GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" \
-      "$shaka_gem_home/bin/shaka" --help
-    GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" \
-      gem uninstall shaka --all --executables
-    ```
+   `publish` rechecks the gem and notes against the approved digests. While the tag does
+   not exist yet, it also requires remote `main` to still be the approved commit, because
+   the tag is the first step users see: `install --release` pins to it. It then pushes the
+   annotated tag `vVERSION`, pushes the gem (type the RubyGems MFA code when `gem push`
+   asks), and creates the GitHub release from the notes. GitHub appends the merged PRs,
+   grouped by label as `.github/release.yml` defines, and a prerelease version is marked
+   as one. Last, it installs the version from RubyGems into a temporary `GEM_HOME` and runs
+   `shaka --help`.
 
 ## Failure recovery
 
-Before retrying, check RubyGems, the remote tag, and the GitHub release independently.
-If the gem was published but the GitHub release failed, preserve the tag and create the
-release. If the tag was pushed but RubyGems rejected the upload, diagnose credentials,
-MFA, or package policy before retrying the same artifact. Never reuse or overwrite a
-published version; prepare a new version through a pull request instead.
+Run `bin/release publish` again with the same approval file. Each run reads the remote
+tag, the RubyGems version, and the GitHub release separately, and performs only the steps
+that are missing. When the install check fails right after a push, RubyGems may not serve
+the version yet; rerun in a few minutes.
+
+`publish` refuses when the tag points at another commit or RubyGems holds a different gem
+for the version. Never reuse or overwrite a published version; prepare a new version
+through a pull request instead.
+
+## Publish without the command
+
+If `bin/release` cannot run, publish the approved files by hand in the same order. Keep
+each digest check joined to its upload with `&&`:
+
+```bash
+shaka_version=VERSION
+git tag -a "v$shaka_version" APPROVED_COMMIT -m "Release shaka $shaka_version"
+git push https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
+ruby -rdigest -e 'abort "Gem differs from approval" unless
+  Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' GEM_PATH APPROVED_GEM_SHA256 &&
+  gem push GEM_PATH
+ruby -rdigest -e 'abort "Notes differ from approval" unless
+  Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' NOTES_PATH APPROVED_NOTES_SHA256 &&
+  gh release create "v$shaka_version" --repo shakacode/shaka --verify-tag \
+    --title "shaka $shaka_version" --notes-file NOTES_PATH --generate-notes
+```
+
+Add `--prerelease` to `gh release create` for a prerelease version. If the gate was
+skipped, add its statement to the notes in a copy, not the approved file.
