@@ -64,8 +64,22 @@ class SquashMessageTest < Minitest::Test
                  squash(body:).reference_check)
   end
 
+  def test_a_closing_word_exempts_only_the_number_it_closes
+    body = "- Fixes the bullets #1242 had.\n\nFixes #7 and see #2"
+
+    assert_equal ['#1242', '#2'], squash(body:).reference_check.dig('squash_message_references', 'references')
+  end
+
+  def test_a_number_in_the_title_is_listed_but_the_prs_own_is_not
+    check = squash(title: 'Follow up on #1242 (#42)').reference_check
+
+    assert_equal ['#1242'], check.dig('squash_message_references', 'references')
+  end
+
   def test_a_body_whose_only_numbers_close_issues_needs_no_check
-    assert_empty squash(body: "Ends the bullets.\n\nFixes #7\n- Resolves owner/repo#3\nIssue&#39;s a#1").reference_check
+    body = "Ends the bullets.\n\nFixes #7\n- Resolves owner/repo#3\nCloses: #9\nIssue&#39;s a#1 at https://x.test/a/b#12"
+
+    assert_empty squash(body:).reference_check
   end
 
   def test_a_multiline_or_missing_title_is_refused
