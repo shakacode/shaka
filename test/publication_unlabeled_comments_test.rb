@@ -17,7 +17,7 @@ class PublicationUnlabeledCommentsTest < Minitest::Test
 
     assert_includes rendered, 'This reads as a warning'
     assert_includes rendered, "## Verification\n\nValidation passed; local review completed at ccccccc."
-    refute_includes rendered, Shaka::VerificationGates::GAPS
+    refute_includes rendered, Shaka::VerificationLine::GAPS
   end
 
   private

@@ -2,7 +2,7 @@
 
 require_relative '../error'
 require_relative 'text'
-require_relative 'verification_gates'
+require_relative 'verification_line'
 require_relative 'diff_buckets'
 
 module Shaka
@@ -23,11 +23,11 @@ module Shaka
     # The shortfall compares the bound reviews with the trusted reviewer count; nil when none.
     # An intent review_effort, the retired 1-5 rating, is ignored.
     def render(content, verdict = nil, pull = nil, task: nil, shortfall: nil)
-      gate_line = VerificationGates.render(verdict, content['review'], shortfall)
+      verification_line = VerificationLine.render(verdict, content['review'], shortfall)
       spec = object(content, 'verification')
       checks_for(content)
       [intent(object(content, 'intent'), pull, task),
-       verification(spec, gate_line)]
+       verification(spec, verification_line)]
     end
 
     # User impact follows Why when supplied, then the task names where the work came from.
@@ -99,9 +99,9 @@ module Shaka
     end
 
     # An unproven claim stays visible: a maintainer deciding whether to merge must not have to open the fold.
-    def verification(spec, gate_line)
+    def verification(spec, verification_line)
       summary = evidenced(PublicationText.single_line(spec['summary'], 'verification summary')) if spec['summary']
-      ['## Verification', gate_line, summary, *not_verified(spec['not_verified']),
+      ['## Verification', verification_line, summary, *not_verified(spec['not_verified']),
        *merge_limitations(spec['merge_limitations'])].compact.join("\n\n")
     end
 

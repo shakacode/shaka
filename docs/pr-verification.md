@@ -45,7 +45,9 @@ Start near the top of the PR description:
 
 See [what each risk level asks of you](reference/pr-record.md#risk-and-review).
 Inspect screenshots or try the changed feature when your judgment depends on the
-result. Open **Code Review**, or **Code Walkthrough** when the PR has one, for closer examination.
+result. When the agent posted a [UI check](reference/pr-record.md#visual-evidence) from the account
+that publishes the description, the **Screenshots** link at the top opens it.
+Open **Code Review**, or **Code Walkthrough** when the PR has one, for closer examination.
 To get a walkthrough, ask the agent for one; see [`walkthrough.publish`](settings.md#walkthroughpublish).
 
 Evidence should cover the version you're reviewing. Passing checks support a

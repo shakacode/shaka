@@ -3,7 +3,7 @@
 require_relative 'evidence_fixture'
 require 'shaka/evidence/relevant_code'
 require 'shaka/publication/settings'
-require 'shaka/publication/verification_gates'
+require 'shaka/publication/verification_line'
 
 # Builds the pull request and results a republish sees.
 module KeptResultsFixture
@@ -66,9 +66,9 @@ class PublicationKeptResultsTest < Minitest::Test
     with_checkout do |root, ref|
       settings = prepare(root, ref, {}, body: body(ref))
 
-      kept = "#{current_line(ref)} #{Shaka::VerificationGates::KEPT}"
-      assert_equal kept, Shaka::VerificationGates.line(settings.verdict)
-      assert_equal kept, Shaka::VerificationGates.render(settings.verdict, URL)
+      kept = "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}"
+      assert_equal kept, Shaka::VerificationLine.line(settings.verdict)
+      assert_equal kept, Shaka::VerificationLine.render(settings.verdict, URL)
     end
   end
 
@@ -77,7 +77,7 @@ class PublicationKeptResultsTest < Minitest::Test
       with_results(run_check(root, ref, command: 'validate'), review_check(root, ref)) do |options|
         changed_relevant_code do
           settings = prepare(root, ref, options, body: body(ref))
-          assert_includes Shaka::VerificationGates.line(settings.verdict), current_line(ref)
+          assert_includes Shaka::VerificationLine.line(settings.verdict), current_line(ref)
         end
       end
     end
@@ -85,9 +85,9 @@ class PublicationKeptResultsTest < Minitest::Test
 
   def test_the_kept_line_survives_another_republish_unchanged
     with_checkout do |root, ref|
-      first = Shaka::VerificationGates.render(prepare(root, ref, {}, body: body(ref)).verdict, URL)
+      first = Shaka::VerificationLine.render(prepare(root, ref, {}, body: body(ref)).verdict, URL)
       second = prepare(root, ref, {}, body: "<!-- shaka:begin -->\n#{first}\n<!-- shaka:end -->")
-      assert_equal first, Shaka::VerificationGates.render(second.verdict, URL)
+      assert_equal first, Shaka::VerificationLine.render(second.verdict, URL)
     end
   end
 
@@ -96,11 +96,11 @@ class PublicationKeptResultsTest < Minitest::Test
     with_checkout do |root, ref|
       checks = { 'validation' => [{ 'original' => { 'command' => 'validate', 'exit_code' => 0 } }],
                  'review' => [{ 'original' => { 'reviewer' => 'openai/codex', 'status' => 'completed' } }] }
-      line = Shaka::VerificationGates.line({ 'head' => ref, 'checks' => checks }, URL)
+      line = Shaka::VerificationLine.line({ 'head' => ref, 'checks' => checks }, URL)
       assert_equal current_line(ref), line
 
       settings = prepare(root, ref, {}, body: body(ref, line))
-      assert_equal "#{line} #{Shaka::VerificationGates::KEPT}", Shaka::VerificationGates.line(settings.verdict)
+      assert_equal "#{line} #{Shaka::VerificationLine::KEPT}", Shaka::VerificationLine.line(settings.verdict)
     end
   end
 
@@ -108,7 +108,7 @@ class PublicationKeptResultsTest < Minitest::Test
     with_checkout do |root, ref|
       gaps = '**Setup gaps:** 1 of 2 configured reviewers completed.'
       settings = prepare(root, ref, {}, body: body(ref, "#{published_line(ref)}\n\n#{gaps}"))
-      assert_includes Shaka::VerificationGates.render(settings.verdict, URL), gaps
+      assert_includes Shaka::VerificationLine.render(settings.verdict, URL), gaps
     end
   end
 
@@ -123,7 +123,7 @@ class PublicationKeptResultsTest < Minitest::Test
 
   def test_nothing_is_kept_without_a_verified_line_for_this_commit
     with_checkout do |root, ref|
-      [body('0' * 40), body(ref, Shaka::VerificationGates::UNKNOWN), published_line(ref), nil].each do |text|
+      [body('0' * 40), body(ref, Shaka::VerificationLine::UNKNOWN), published_line(ref), nil].each do |text|
         assert_nil prepare(root, ref, {}, body: text).verdict
       end
     end

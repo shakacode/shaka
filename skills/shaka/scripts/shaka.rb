@@ -177,6 +177,7 @@ def rendered_description(described, github, pull, workflow_version, options)
   root = options.fetch(:root)
   carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
   settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
+                                       .with_missing_settings(root)
   timeline = description_timeline(options.fetch(:timeline), carried, github, pull, settings)
   rendered = render_description(carried, workflow_version, pull, settings, timeline, options, github)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
@@ -186,7 +187,7 @@ def rendered_description(described, github, pull, workflow_version, options)
 end
 
 def kept_notes(notes, evidence, recommendation)
-  notes['evidence_kept'] = Shaka::VerificationGates::KEPT if evidence
+  notes['evidence_kept'] = Shaka::VerificationLine::KEPT if evidence
   notes['recommendation_kept'] = Shaka::ProvenanceRecommendation.note(recommendation) if recommendation
   notes
 end
@@ -222,7 +223,8 @@ end
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.
 def resolved_description(content, github, options)
   content = Shaka::LocalReviewUsage.attach(content, options[:review])
-  resolved = Shaka::CheckpointRecommendation.resolve(Shaka::DeploymentLink.resolve(content, github), github)
+  content = Shaka::UiCheck::Link.resolve(Shaka::DeploymentLink.resolve(content, github), github)
+  resolved = Shaka::CheckpointRecommendation.resolve(content, github)
   with_human_comments(resolved, options[:comments])
 end
 

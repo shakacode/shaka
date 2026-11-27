@@ -90,7 +90,10 @@ module Shaka
 
     def human_comments = HumanComments.for(@content, @pull, @settings)
 
-    def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']), @settings)
+    # Missing settings are stated after the decision and links, which stay first.
+    def lead = [*PublicationLinks.lead(@content, @pull, decisions, @settings), *@settings.missing_lines]
+
+    def decisions = PublicationSections.decisions(@content['decisions'])
 
     # The steps besides merging sit right under the summary so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)
@@ -108,7 +111,7 @@ module Shaka
     end
 
     def evidence
-      body = [VerificationGates.line(@settings.verdict, @content['review']),
+      body = [VerificationLine.line(@settings.verdict, @content['review']),
               IntentVerification.evidence(@content.fetch('verification'), @content['wip'].nil? ? (1..3) : (0..3)),
               *table, *details]
       evidence = { 'summary' => 'Evidence and limitations', 'body' => body.join("\n\n") }
