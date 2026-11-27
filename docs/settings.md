@@ -347,6 +347,14 @@ A review of an earlier commit still counts in two cases:
   files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or `skills/` need a
   new review.
 
+The PR description uses the same two cases. When the agent publishes without
+validation and review results, and the description holds no verified line for
+this commit to keep, the Validation and review line says UNKNOWN. It then names
+a local review published for this commit, or an earlier review that still covers
+it and why, for example: "The local review of `e33df55` covers this revision,
+which only updates it from `main`." The review's findings stay in its comment,
+and the line never says validation passed. When no review applies, it says UNKNOWN alone.
+
 When no review applies, `merge` stops before merging. A maintainer can record a
 waiver reason when review was skipped on purpose, a later commit only fixed nits,
 or a CI review covered the commit. The waiver also covers a PR whose
