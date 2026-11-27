@@ -125,6 +125,8 @@ adds a label when it stops for you and removes it when work resumes.
 - The ready time appears once a description update or a watch sees the gate green,
   so it can be missing until the description next updates. It stays missing when
   the configured CI review did not run, such as a review skipped for a small change.
+  In Shaka's own repository, a workflow fills the ready and merge times right after
+  any merge, including one you click on GitHub. Other repositories do not run it.
   When GitHub has no ready timestamp, a fork PR can keep the displayed ready
   time for the same head and mark it unverified. The description command reports
   that gap too.

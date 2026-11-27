@@ -1,0 +1,38 @@
+# Records CI to ready and Ready to merged in a merged pull request's description.
+# Nothing republishes the description after a GitHub merge click, so without this
+# those times stay pending. It runs the default branch's Shaka, never the pull
+# request's code, and edits only the stats block Shaka already wrote.
+name: PR stats
+
+on:
+  pull_request_target:
+    types: [closed]
+
+concurrency:
+  group: pr-stats-${{ github.event.pull_request.number }}
+
+permissions: {}
+
+jobs:
+  stats:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == github.event.repository.default_branch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@be3c7df29b3349ec6bcfc6b4792f1cf9f5237d18 # v1
+        with:
+          ruby-version: .ruby-version
+
+      - name: Record the ready and merge times
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: skills/shaka/scripts/shaka pr stats "$GITHUB_REPOSITORY" "$PR_NUMBER" --root . --ref "$GITHUB_SHA"

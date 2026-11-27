@@ -24,6 +24,7 @@ require_relative '../lib/shaka/attention'
 require_relative '../lib/shaka/merge_handoff'
 require_relative '../lib/shaka/post_implementation/stale'
 require_relative '../lib/shaka/pr_watch/command'
+require_relative '../lib/shaka/pr_watch/stats_command'
 require_relative '../lib/shaka/handoff'
 require_relative '../lib/shaka/hosts/codex_wake'
 require_relative '../lib/shaka/hosts/codex_task_start'
@@ -82,6 +83,11 @@ exit Shaka::Welcome.run if ARGV.empty?
 if ARGV.first == 'pr' && ARGV[1] == 'watch'
   ARGV.shift(2)
   exit Shaka::PrWatch::Command.run(ARGV)
+end
+
+if ARGV.first == 'pr' && ARGV[1] == 'stats'
+  ARGV.shift(2)
+  exit Shaka::PrWatch::StatsCommand.run(ARGV)
 end
 
 if Shaka::Subcommands::TABLE.key?(ARGV.first)
@@ -293,7 +299,8 @@ def help_flag(flags, command)
 end
 
 def usage_banner
-  lines = ["shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]", 'shaka pr watch OWNER/REPO NUMBER [options]']
+  lines = ["shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]", 'shaka pr watch OWNER/REPO NUMBER [options]',
+           'shaka pr stats OWNER/REPO NUMBER --ref SHA [--root DIR]']
   lines += Shaka::Subcommands.usage_lines
   "Usage: #{lines.join("\n       ")}\n" \
     "Run a command with --help, after its operation when it takes one, for its options.\n" \
