@@ -24,8 +24,22 @@ class BranchHeadSettingsTest < Minitest::Test
 
   # A mirror remote refuses a single-branch push, so the check pauses before any edit.
   def test_mirror_remote_pauses_the_check
-    git(@task, 'config', 'remote.origin.mirror', 'true')
+    %w[true 2].each do |value|
+      git(@task, 'config', 'remote.origin.mirror', value)
 
-    assert_includes check['error'], 'mirror'
+      assert_includes check['error'], 'mirror', "remote.origin.mirror=#{value}"
+    end
+  end
+
+  # Git keeps a trailing space in a push URL, so the check must read the very path a push writes.
+  def test_push_url_whitespace_is_kept
+    spaced = "#{bare_copy('spaced.git')} "
+    FileUtils.mv(spaced.strip, spaced)
+    git(@task, 'remote', 'set-url', '--push', 'origin', spaced)
+    commit(@task, 'first')
+    branch_head.push
+
+    refute_empty git(@task, 'ls-remote', spaced, "refs/heads/#{BRANCH}")
+    assert_equal 'unchanged', check['state']
   end
 end

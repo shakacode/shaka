@@ -95,14 +95,15 @@ module Shaka
         return 'origin has a push refspec; remove remote.origin.push.' if config_values('remote.origin.push').any?
 
         # A mirror remote refuses the single-branch push, so it pauses at the check, not at the push.
-        mirror = config_values('remote.origin.mirror').last.to_s.downcase
-        'origin is set to mirror pushes; remove remote.origin.mirror.' if %w[true yes on 1].include?(mirror)
+        # Git's own boolean parser decides, since `2` and a valueless key both read as true.
+        mirror = config_values('remote.origin.mirror', '--type=bool').last
+        'origin is set to mirror pushes; remove remote.origin.mirror.' if mirror == 'true'
       end
 
       # git config exits 1 for a missing key; any other failure is a failed read, never "not configured".
       # Empty values stay, since an empty last value still overrides an earlier origin.
-      def config_values(key)
-        output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', '--get-all', key)
+      def config_values(key, *type)
+        output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', *type, '--get-all', key)
         return [] if status.exitstatus == 1
         raise Error, "Cannot read #{key}: #{error.strip}" unless status.success?
 
@@ -113,7 +114,8 @@ module Shaka
         output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, *)
         raise Error, "git #{[*].first(2).join(' ')} failed: #{error.strip}" unless status.success?
 
-        output.lines.map(&:strip).reject(&:empty?)
+        # Only the line ending goes: Git keeps other whitespace in a URL, so trimming could name another repository.
+        output.lines.map(&:chomp).reject(&:empty?)
       end
 
       def exact_head(output)
