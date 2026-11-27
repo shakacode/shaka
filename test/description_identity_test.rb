@@ -5,7 +5,7 @@ require_relative 'usage_archive_test'
 require_relative 'canary_test'
 require_relative 'description_usage_archive_test'
 
-# A description's first line names only the identity fields that were read. The rest stay marked
+# A description's first line names only the known identity fields. The rest stay marked
 # UNKNOWN under Missing values, and every reader of that line takes both shapes.
 class DescriptionIdentityTest < Minitest::Test
   include ThroughputHelper
@@ -13,7 +13,7 @@ class DescriptionIdentityTest < Minitest::Test
   NOTE = 'UNKNOWN provider, model, effort: Codex session unavailable or ambiguous.'
   KNOWN = '🤖 Codex · OpenAI · gpt-5.6-terra · low'
   FULL = '🤖 Codex · UNKNOWN · UNKNOWN · UNKNOWN'
-  LABEL = '- **Writer identity:** the first line shows only the fields that were read. In full:'
+  LABEL = '- **Writer identity:** the first line shows only the known fields. In full:'
   ENTRY = "#{LABEL} #{FULL}\n  #{NOTE}".freeze
   BOTH = %r{<summary>Missing values</summary>\n\n- \*\*Task start\*\* [^\n]+\n- \*\*Writer identity:\*\* }
   STARTED = { 'task_started_at' => START, 'ci_started_at' => PUSH }.freeze

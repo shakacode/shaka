@@ -82,7 +82,7 @@ module Shaka
       note ? "#{header}\n\n_#{single_line(note, 'publisher note')}_" : header
     end
 
-    # A description's first line keeps the agent and the fields that were read. Missing values, under
+    # A description's first line keeps the agent and the known fields. Missing values, under
     # Shaka metrics, records the full line and the publisher note. Comments and reviews keep all four
     # fields, because AgentPost tells an agent's post from a person's by counting them.
     # The agent keeps its place even when unread, so the line never names another field as the agent.

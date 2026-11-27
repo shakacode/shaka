@@ -11,7 +11,7 @@ module Shaka
     TO_FILL = 'To fill it, the agent passes the original request as `codex_task_start` or its timestamp as ' \
               '`task_started_at`.'
 
-    WRITER_LABEL = '- **Writer identity:** the first line shows only the fields that were read. In full:'
+    WRITER_LABEL = '- **Writer identity:** the first line shows only the known fields. In full:'
 
     module_function
 
