@@ -105,9 +105,16 @@ class DescriptionDeferredRenderingTest < Minitest::Test
     fits = -> { { 'summary' => 'Five words the agent wrote.' } }
 
     assert_equal Shaka::DescriptionPublishing::CHECKED_AFTER, publish(helper_heavy, prose:, supplied: fits)['rendering']
-    error = assert_raises(Shaka::Error) { publish(helper_heavy, prose:, supplied: -> { { 'summary' => 'One ' * 11 } }) }
-    assert_match(/the prose you supplied has 11 words \(limit 10\).* The earlier description was restored\.\z/,
-                 error.message)
+  end
+
+  # The supplied total needs no rendering, so it is refused before writing, even beside a person's text.
+  def test_an_over_limit_supplied_total_is_refused_before_writing
+    prose = Shaka::ProseLimits.new('max_description_words' => 10)
+    [helper_heavy, RefusedRendererGitHub.new("A person wrote this.\n\n#{REGION}")].each do |github|
+      error = assert_raises(Shaka::Error) { publish(github, prose:, supplied: -> { { 'summary' => 'One ' * 11 } }) }
+      assert_includes error.message, 'the prose you supplied has 11 words (limit 10)'
+      assert_empty github.patches
+    end
   end
 
   def helper_heavy

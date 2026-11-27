@@ -8,16 +8,6 @@ require 'shaka/supplied_prose'
 # about 30% of the limit, and a higher risk rating took more (issue #1336). The length limit now counts the prose the
 # agent supplied, so the same text fits whatever the rating.
 class SuppliedProseTest < Minitest::Test
-  HEAD = 'a' * 40
-  # A high rating adds the most helper text to the description.
-  HIGH = { 'rating' => 'high', 'level' => 'high', 'areas_hit' => [], 'medium_areas_hit' => [], 'paths_read' => true,
-           'max_risk' => 'low', 'reasons' => ['Changes who may merge.'],
-           'url' => 'https://github.com/owner/repo/pull/1#issuecomment-9' }.freeze
-  # Structured fields the helper validates, links or renders itself are not prose the author writes.
-  STRUCTURED = %w[identity walkthrough deployment provenance usage head recommendation path when].freeze
-
-  FOCUS = { 'path' => 'lib/merge.rb', 'reason' => 'compares the queue base.' }.freeze
-
   def test_counts_the_authors_visible_text_without_the_helpers_labels
     content = { 'summary' => 'Count `only these words` here.',
                 'intent' => INTENT.merge('task_understanding' => { 'goal' => 'One two.', 'done_when' => 'Three.' }),
@@ -35,6 +25,22 @@ class SuppliedProseTest < Minitest::Test
 
     # A collapsed block's summary label stays visible, as GitHub shows it.
     assert_equal 4, Shaka::SuppliedProse.words(content)
+  end
+
+  # GitHub renders these as prose (3, 3, 2, 2 and 1 words): an issue number is no heading, a lone pipe line no
+  # table, and list numbers vanish.
+  def test_lines_that_only_look_hidden_still_count_and_list_markers_do_not
+    body = "#1336 fixes it.\n\n| Keep this because.\n\n1. First step.\n2. Second step.\n\n- Third."
+
+    assert_equal 11, Shaka::SuppliedProse.words('sections' => [{ 'heading' => 'H', 'body' => body }])
+  end
+
+  def test_a_publisher_note_counts_only_when_it_shows
+    known = { 'agent' => 'Claude Code', 'provider' => 'Anthropic', 'model' => 'm', 'effort' => 'low' }
+    content = { 'summary' => 'One.', 'publisher_note' => 'Two more.', 'identity' => known }
+
+    assert_equal 3, Shaka::SuppliedProse.words(content)
+    assert_equal 1, Shaka::SuppliedProse.words(content.merge('identity' => known.merge('effort' => 'UNKNOWN')))
   end
 
   def test_the_same_supplied_prose_fits_whatever_the_helper_adds
@@ -75,7 +81,22 @@ class SuppliedProseTest < Minitest::Test
     assert_includes error.message, 'the visible prose has 210 words'
   end
 
-  # Every word an author supplies that a reader sees must count, or a new field escapes the limit.
+  private
+
+  def sentence(words) = "Alpha #{Array.new(words - 2, 'word').join(' ')} end."
+end
+
+# Every word an author supplies that a reader sees must count, or a new field escapes the limit.
+class SuppliedProseCoverageTest < Minitest::Test
+  HEAD = 'a' * 40
+  # A high rating adds the most helper text to the description.
+  HIGH = { 'rating' => 'high', 'level' => 'high', 'areas_hit' => [], 'medium_areas_hit' => [], 'paths_read' => true,
+           'max_risk' => 'low', 'reasons' => ['Changes who may merge.'],
+           'url' => 'https://github.com/owner/repo/pull/1#issuecomment-9' }.freeze
+  # Structured fields the helper validates, links or renders itself are not prose the author writes.
+  STRUCTURED = %w[identity walkthrough deployment provenance usage head recommendation path when].freeze
+  FOCUS = { 'path' => 'lib/merge.rb', 'reason' => 'compares the queue base.' }.freeze
+
   def test_every_visible_supplied_field_is_counted
     content = marked(rich_content)
     rendered = rough_html(Shaka::Publication.description(content, nil, pull))
@@ -88,15 +109,13 @@ class SuppliedProseTest < Minitest::Test
 
   private
 
-  def sentence(words) = "Alpha #{Array.new(words - 2, 'word').join(' ')} end."
-
   def pull = { 'head' => { 'sha' => HEAD }, 'shaka_risk' => HIGH }
 
   def rich_content # rubocop:disable Metrics/MethodLength
     intent = INTENT.merge('user_impact' => 'Impact.', 'root_cause' => 'Cause.',
                           'task_understanding' => { 'goal' => 'Goal.', 'done_when' => 'Done.' },
                           'review_focus' => [FOCUS])
-    { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
+    { 'identity' => PublicationRegressionTest::IDENTITY, 'publisher_note' => 'Note.', 'summary' => 'A summary.',
       'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
       'steps_besides_merging' => [{ 'when' => 'after merge', 'step' => 'Step.', 'who' => 'Who.', 'where' => 'Where.',
                                     'verify' => 'Verify.' }],

@@ -3,6 +3,7 @@
 # Measures the description prose the agent wrote, so the length limit leaves out the helper's own lines.
 
 require_relative 'opening_prose'
+require_relative 'publication/text'
 require_relative 'visible_prose'
 
 module Shaka
@@ -10,7 +11,11 @@ module Shaka
   # quotes, code blocks, link addresses and collapsed details do not count, and an inline code span is one word.
   # It reads the content, not GitHub's rendering, so it gives the same count when GitHub refuses its renderer.
   module SuppliedProse
-    HIDDEN_LINE = /\A\s*(?:\||>|#)/
+    # A heading needs a space after its marks, so "#1336 fixes it" stays prose.
+    HIDDEN_LINE = /\A {0,3}(?:>|\#{1,6}(?:[ \t]|$))/
+    # Only a block with a delimiter row renders as a table; a lone line starting with a pipe is prose.
+    TABLE_DELIMITER = /^ {0,3}\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/
+    LIST_MARKER = /^ *(?:[-*+]|\d{1,9}[.)])[ \t]+/
     FENCE = /^ {0,3}(```|~~~).*?^ {0,3}\1[^\n]*$/m
 
     module_function
@@ -24,7 +29,12 @@ module Shaka
       pieces.filter_map { reduced(it) if it.is_a?(String) }.join("\n\n")
     end
 
-    def lead(content) = [content['summary'], *Array(content['decisions']), object(content['checkpoint'])['next_action']]
+    # The publisher note shows under the identity line only when every identity field is known; otherwise it folds.
+    def lead(content)
+      note = content['publisher_note']
+      note = nil if note && PublicationText.unknown_identity?(content['identity'])
+      [note, content['summary'], *Array(content['decisions']), object(content['checkpoint'])['next_action']]
+    end
 
     def trailing(content)
       [object(content['risk_record'])['summary'], *Array(content['sections']).map { object(it)['body'] }]
@@ -43,8 +53,9 @@ module Shaka
 
     # GitHub hides these in its rendering, so they are removed before counting.
     def reduced(text)
-      text.gsub(FENCE, '').lines.grep_v(HIDDEN_LINE).join
-          .gsub(/(`+).+?\1/m, ' Code ').gsub(/\]\([^)]*\)/, ']').gsub(/\]\[[^\]]*\]/, ']')
+      blocks = text.gsub(FENCE, '').split(/\n[ \t]*\n/).reject { it.match?(TABLE_DELIMITER) && it.include?('|') }
+      blocks.map { it.lines.grep_v(HIDDEN_LINE).join.gsub(LIST_MARKER, '') }.join("\n\n")
+            .gsub(/(`+).+?\1/m, ' Code ').gsub(/\]\([^)]*\)/, ']').gsub(/\]\[[^\]]*\]/, ']')
     end
   end
 end

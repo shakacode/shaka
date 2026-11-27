@@ -11,8 +11,8 @@ module Shaka
   module DescriptionPublishing
     CHECKED_AFTER = 'checked after writing, because GitHub refused its Markdown renderer'
     # GitHub drops the region markers from its stored rendering, so only a body that is all Shaka text can be measured.
-    PROSE_UNCHECKED = "#{CHECKED_AFTER}; prose limits not checked, because text outside Shaka's region " \
-                      'cannot be told apart in the stored rendering'.freeze
+    PROSE_UNCHECKED = "#{CHECKED_AFTER}; sentence and paragraph limits not checked, because text outside " \
+                      "Shaka's region cannot be told apart in the stored rendering".freeze
 
     # A block builds the body from the pull request it replaces, using this same read. With `deferred`, a
     # refused renderer moves the checks to the rendering GitHub stores, and a failing write is undone.
@@ -60,6 +60,8 @@ module Shaka
       raise unless deferred
 
       RenderedProse.source_escapes!(preview)
+      # The supplied prose needs no rendering, so its total is checked before writing, even beside text a person wrote.
+      prose.verify!('', kind: :description, changed_lines: ProseLimits.changed_lines(current))
       false
     end
 
