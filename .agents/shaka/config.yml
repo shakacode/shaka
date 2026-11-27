@@ -147,6 +147,6 @@ prose_limits: # Defaults: word limits for PR descriptions and walkthroughs.
 
 # Commands live in bin/ beside this file: setup, test, and validate. Ours: validate-local runs
 # the tests a change can reach and RuboCop on changed files, and counts as local evidence;
-# trigger-hosted-ci has nothing to start, because hosted validate runs the whole suite on every push.
+# trigger-hosted-ci has nothing to start, because hosted validate runs on every pull request push.
 # Review timeouts and pr watch timing are command flags, not settings (runtime in defaults.yml).
 # Whose public comments the agent may read: trusted-github-actors.yml.

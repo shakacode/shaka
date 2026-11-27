@@ -197,10 +197,11 @@ privacy rule, the predecessor reuse limit, and release approval requirements.
 Publish tested changes as bounded PRs, preferably below 500 changed lines each.
 Explain necessary larger changes; split independent work instead of hiding size.
 Required evidence is the PR's current commit, actual validation results, and review.
-Local evidence is a passing `validate_local` run on the head you push. It runs the tests the
-change can reach and RuboCop on the changed files. Do not run the full `validate` locally;
-the required hosted `validate` check runs the whole suite and gates merge. When a check
-fails, fix it and review the new head.
+For local evidence on the head you push, run `validate_local`, which runs the tests the change
+can reach and RuboCop on the changed files. Run the full `validate` locally only when the
+trusted settings lack `validate_local` or the workflow asks for it. The required hosted
+`validate` check runs the full suite on code changes and gates merge. When a check fails,
+fix it and review the new head.
 No extra closeout audit, receipt, automatic issue, heartbeat, or parallel tracker.
 Fill the Changelog section of the [PR template](.github/pull_request_template.md)
 instead of editing `CHANGELOG.md`; only a release PR edits that file. No check
