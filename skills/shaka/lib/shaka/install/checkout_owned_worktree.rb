@@ -7,8 +7,9 @@ require_relative 'settings_location'
 
 module Shaka
   module Install
-    # Refuses a checkout that is a linked worktree. For a worktree of a registered installation, a reinstall
-    # would only meet that installation's own refusal of the worktree, so the step is the one status gives.
+    # Refuses a checkout that is a linked worktree. A worktree of the installation at the default location
+    # cannot be cleared by reinstalling there, which that installation refuses for the same worktree, so it
+    # gets the step status gives for that installation's development instead.
     module CheckoutOwnedWorktree
       # A worktree disappears when its branch merges, taking every host link with it, so no action proceeds.
       def refuse_linked_worktree
@@ -18,7 +19,7 @@ module Shaka
         return if git_directory == common
 
         owner = File.dirname(common)
-        step = owned_worktree_step(owner)
+        step = default_worktree_step(owner)
         detail = "Installation checkout #{@root} is a linked worktree of #{owner}."
         raise ArgumentError, "#{detail} Install from a separate clone. Next: #{fresh_install}" unless step
 
@@ -27,64 +28,62 @@ module Shaka
 
       private
 
-      # nil when the owner is not a registered installation, so the caller keeps its reinstall step.
-      def owned_worktree_step(owner)
-        # Loaded here because the status classes require Official, which requires Checkout.
-        require_relative 'status_inventory'
-        checkout = StatusInventory.new(source: owner, home: Dir.home).checkouts[real_owner(owner)]
-        return unless checkout
-        return unsafe_owner_step(checkout) unless checkout.safe?
+      # nil unless the owner is the installation at the default location, so the caller keeps its reinstall step.
+      def default_worktree_step(owner)
+        default = SettingsLocation.real(SettingsLocation.default_directory(Dir.home))
+        return unless default && SettingsLocation.real(owner) == default
 
-        links = links_into(checkout, checkout.linked_worktrees)
-        links.empty? ? checkout.development_step : relink_decision(checkout, links)
+        owner_step(default)
       rescue ArgumentError
-        checkout && status_decision(checkout)
+        status_step("how to clear #{@root} from the installation at #{default}")
       end
 
-      def real_owner(owner)
-        File.realpath(owner)
-      rescue SystemCallError
-        nil
+      # The installation's own command only when it is safe to read, hosts this worktree, and serves no link
+      # from any of its worktrees; otherwise status, run from this worktree, names the next step.
+      def owner_step(default)
+        record = Checkout.new(default).read_record
+        return unless record
+
+        # Loaded here because the status classes require Official, which requires Checkout.
+        require_relative 'status_checkout'
+        checkout = StatusCheckout.new(default, record)
+        return status_step("how to repair the installation at #{default}") unless checkout.safe?
+
+        development_step_for(checkout)
       end
 
-      # Another account may control an unsafe checkout's files, so the step is status's repair, never that
-      # checkout's own installer.
-      def unsafe_owner_step(checkout)
-        finding = checkout.findings.compact.first
-        return status_decision(checkout) unless finding
+      def development_step_for(checkout)
+        worktrees = checkout.linked_worktrees.map { SettingsLocation.real(it) || it }
+        return status_step("how to clear #{@root} from the installation at #{checkout.root}") unless
+          worktrees.include?(@root)
 
-        finding['next_command'] ? { command: finding['next_command'] } : { decision: finding['decision'] }
+        links = links_into(checkout.record, worktrees)
+        return checkout.development_step if links.empty?
+
+        status_step("where the skills links #{Refusal.paths(links)} should point; they resolve into " \
+                    "worktrees of #{checkout.root}, and clearing them would break those links")
       end
 
-      def status_decision(checkout)
-        { decision: Refusal.decide("how to repair the installation at #{checkout.root}",
-                                   'to see what needs repair', "#{checkout.installer} --status") }
+      def status_step(question)
+        { decision: Refusal.decide(question, 'to see the next step',
+                                   Refusal.command(File.join(@root, 'bin/install'), '--status')) }
       end
 
-      # Every step status gives would lose such a link: the default location's removal breaks it, and a take-over
-      # moves only links into the installation itself. Status names the next step once the links point elsewhere.
-      def relink_decision(checkout, links)
-        { decision: Refusal.decide("where the skills links #{Refusal.paths(links)} should point; they resolve " \
-                                   "into worktrees of #{checkout.root}",
-                                   'once they point elsewhere, to see the next step',
-                                   "#{checkout.installer} --status") }
+      def links_into(record, worktrees)
+        link_folders(record).flat_map { |folder| Package::ALLOWED.map { |name| File.join(folder, name) } }
+                            .select { |link| File.symlink?(link) && inside?(link, worktrees) }
       end
 
-      def links_into(checkout, worktrees)
-        link_folders(checkout).flat_map { |folder| Package::ALLOWED.map { |name| File.join(folder, name) } }
-                              .select { |link| File.symlink?(link) && inside?(link, worktrees) }
-      end
-
-      # The host folders, the owner's recorded folders, and a requested skills folder.
-      def link_folders(checkout)
+      # The host folders, the installation's recorded folders, and a requested skills folder.
+      def link_folders(record)
         hosts = Locations::HOSTS.values.map { |folder| File.join(Dir.home, folder) }
         requested = [@skills_dir].compact.map { File.expand_path(it) }
-        (hosts + checkout.record['targets'].map { |target| target['directory'] } + requested).uniq
+        (hosts + record['targets'].map { |target| target['directory'] } + requested).uniq
       end
 
       def inside?(link, worktrees)
         resolved = File.realpath(link)
-        worktrees.map { SettingsLocation.real(it) || it }.any? { resolved == it || resolved.start_with?("#{it}/") }
+        worktrees.any? { resolved == it || resolved.start_with?("#{it}/") }
       rescue SystemCallError
         false
       end

@@ -47,29 +47,24 @@ module OwnedWorktreeScenarios
                     "Next: a person must decide whether to keep the uncommitted files in #{File.realpath(feature)}"
   end
 
-  # Another account could replace an unsafe owner's installer, so the step repairs the modes instead.
+  # Another account could replace an unsafe owner's installer, so status runs from the worktree instead.
   def test_an_unsafe_owner_never_names_its_own_installer
     root, feature = owned_worktree
     File.chmod(0o775, root)
     output = refusal(feature, '--directory', feature)
     refute_includes output, File.join(File.realpath(root), 'bin/install')
-    assert_includes output, 'chmod'
+    assert_includes output, "#{File.realpath(feature)}/bin/install --status"
   ensure
     File.chmod(0o755, root) if root
   end
 
-  # A take-over moves only links into the installation itself, so a link into its worktree would stop it.
-  def test_a_custom_owner_with_a_link_into_its_worktree_goes_to_a_person
+  # Only the default location refuses a reinstall over its own worktree; any other owner keeps that step.
+  def test_a_custom_owner_keeps_the_reinstall_step
     root = clone_to(File.join(@directory, 'custom'))
     run_install(root, '--directory', root, '--repository', @remote)
     feature = File.join(@directory, 'feature')
     git('-C', root, 'worktree', 'add', '-q', feature)
-    link = File.join(@home, '.agents/skills/shaka')
-    File.unlink(link)
-    File.symlink(File.join(feature, 'skills/shaka'), link)
-    output = refusal(feature, '--directory', feature)
-    assert_includes output, 'Next: a person must decide where the skills links'
-    assert_includes output, 'install --status'
+    assert_includes refusal(feature, '--directory', feature), 'Install from a separate clone. Next: '
   end
 
   private
