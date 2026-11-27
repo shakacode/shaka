@@ -95,9 +95,9 @@ did not run for 1.0.0; it applies again to later releases.
 ### Fixed
 
 - Installer diagnostics give a recovery command or explain which decision you
-  need to make. `shaka doctor --brief` shows a warning with the next step, and
-  `shaka install --status` lists every issue. Interrupted branch updates can
-  clean up their temporary worktree.
+  need to make. `shaka doctor --brief` and `shaka install --status` show the main
+  issue and its next step; `shaka install --status --json` lists every finding.
+  Interrupted branch updates can clean up their temporary worktree.
 - Validation keeps evidence tied to the tested tree and settings. Fixes to a base
   branch are tracked separately when that branch already fails a check.
 - Claude Code cloud sessions can read PR status and publish PR descriptions when
