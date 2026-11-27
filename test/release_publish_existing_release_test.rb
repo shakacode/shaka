@@ -32,6 +32,16 @@ class ReleasePublishExistingReleaseTest < Minitest::Test
     assert_empty publish
   end
 
+  def test_approved_notes_with_windows_line_endings_match_either_form
+    @approval = write_approval('1.2.0', notes_text: "Fixes things.\r\nAnd more.\r\n")
+    push_annotated_tag(@commit)
+    File.write(state('registry'), Digest::SHA256.file(@gem).hexdigest)
+    ["Fixes things.\r\nAnd more.\r\n", "Fixes things.\nAnd more.\n"].each do |body|
+      write_release([], body)
+      assert_empty publish
+    end
+  end
+
   private
 
   # A skipped-gate approval whose tag and gem are published; returns its approved release text.

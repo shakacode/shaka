@@ -106,11 +106,11 @@ module ReleasePublishFixture
     git('push', '-q', 'origin', 'HEAD:refs/heads/main')
   end
 
-  def write_approval(version, gate: { 'status' => 'passed', 'records' => [] })
+  def write_approval(version, gate: { 'status' => 'passed', 'records' => [] }, notes_text: "Fixes things.\n")
     @gem = File.join(@directory, "shaka-#{version}.gem")
     notes = File.join(@directory, 'RELEASE_NOTES.md')
     File.write(@gem, "gem #{version}")
-    File.write(notes, "Fixes things.\n")
+    File.write(notes, notes_text)
     path = File.join(@directory, 'approval.json')
     File.write(path, JSON.generate('status' => 'ready_for_approval', 'commit' => @commit, 'version' => version,
                                    'gem' => @gem, 'gem_sha256' => Digest::SHA256.file(@gem).hexdigest,

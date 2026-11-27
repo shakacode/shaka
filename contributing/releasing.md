@@ -101,15 +101,17 @@ through a pull request instead.
 
 `bin/release` is the supported path; when it fails, fix it or report it. If a release
 cannot wait, do by hand what `publish` does, one step at a time, and stop at the first
-surprise:
+surprise. Run every `gh` command as `GH_HOST=github.com gh ... --repo shakacode/shaka`.
 
-1. Read what exists: remote `main` and the peeled `vVERSION^{}` tag with `git ls-remote`,
-   the version at `https://rubygems.org/api/v2/rubygems/shaka/versions/VERSION.json`, and
-   the GitHub release with `GH_HOST=github.com gh release view`. A tag on another commit,
-   a RubyGems `sha` other than the approved gem digest, or a draft release means stop and
-   prepare a new version.
+1. Read what exists: remote `main`, `refs/tags/vVERSION`, and its peeled
+   `refs/tags/vVERSION^{}` with `git ls-remote`; the version at
+   `https://rubygems.org/api/v2/rubygems/shaka/versions/VERSION.json`; and the GitHub
+   release with `gh release view`. Stop and prepare a new version when the tag has no
+   peeled line (it is not annotated) or peels to another commit, when RubyGems reports a
+   `sha` other than the approved gem digest, or when the release is a draft.
 2. Without a remote tag, confirm remote `main` is still the approved commit, create the
-   annotated tag `vVERSION` on that commit, push only that tag, and read it back.
+   annotated tag `vVERSION` on that commit, push only that tag with `--no-follow-tags`, and
+   read it back until its peeled line shows the approved commit.
 3. Check the gem against its approved digest, then `gem push --host https://rubygems.org`.
 4. Check the notes against their approved digest, then create the release with
    `gh release create --verify-tag --generate-notes`, adding `--prerelease` for a

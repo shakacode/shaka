@@ -111,8 +111,11 @@ module ShakaRelease
       refuse "#{name} has the wrong prerelease flag" unless release.fetch('isPrerelease') == @approval.prerelease?
       # GitHub appends its generated notes, so the approved text need only appear in the body.
       refuse "#{name} lacks the approved notes" unless
-        release.fetch('body').to_s.gsub("\r\n", "\n").include?(@approval.release_body.strip)
+        lf(release.fetch('body').to_s).include?(lf(@approval.release_body).strip)
     end
+
+    # GitHub may return either line ending, so compare with LF on both sides.
+    def lf(text) = text.gsub("\r\n", "\n")
 
     def commit = @approval.commit
     def version = @approval.version
