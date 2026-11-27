@@ -353,7 +353,7 @@ this commit to keep, the Validation and review line says UNKNOWN. It then names
 a local review published for this commit, or an earlier review that still covers
 it and why, for example: "The local review of `e33df55` covers this revision,
 which only updates it from `main`." The review's findings stay in its comment,
-and the line never says validation passed.
+and the line never says validation passed. When no review applies, it says UNKNOWN alone.
 
 When no review applies, `merge` stops before merging. A maintainer can record a
 waiver reason when review was skipped on purpose, a later commit only fixed nits,
