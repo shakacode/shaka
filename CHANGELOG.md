@@ -89,7 +89,7 @@ did not run for 1.0.0; it applies again to later releases.
   `pr_description.human_review_floors` to `high_risk_areas` or `medium_risk_areas`.
   Then remove those retired keys. Use `merge.auto_merge_max_risk` to set the
   highest risk eligible for Auto. Shaka 1.0 rejects the retired keys. See
-  [move shared pilot settings](https://shaka.shakacode.com/docs/migration#move-shared-pilot-settings-to-10).
+  [`merge.auto_merge_max_risk`](https://shaka.shakacode.com/docs/settings#mergeauto_merge_max_risk).
 
 ### Fixed
 
