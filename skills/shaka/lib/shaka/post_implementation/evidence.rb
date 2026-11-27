@@ -22,9 +22,9 @@ module Shaka
 
     # The reviewer's verification verdict sits above those lines for the same reason.
     # Comments published before the rename carry the earlier slug; it reads as the current name.
+    LEGACY_ADEQUACY_SLUGS = PostImplementationReport::LEGACY_ADEQUACY.to_h { |old, new| [old.tr(' ', '_'), new] }
     ADEQUACY_SLUGS = PostImplementationReport::ADEQUACY.to_h { |verdict| [verdict.tr(' ', '_'), verdict] }
-                                                       .merge('adequate_with_accepted_gaps' => 'adequate with named gaps')
-                                                       .freeze
+                                                       .merge(LEGACY_ADEQUACY_SLUGS).freeze
     ADEQUACY = Regexp.new("\n<!-- #{MARK}-adequacy (#{ADEQUACY_SLUGS.keys.join('|')}) -->" \
                           "\n(?:<!-- #{MARK}-disposition (?:#{RECOMMENDATION}) -->\n)?" \
                           "<!-- #{MARK} ([0-9a-f]{40}) (?:ready|blocked) -->\\s*\\z")

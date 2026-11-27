@@ -24,6 +24,9 @@ module Shaka
     # A report with no rating, such as a run from before risk ratings published after an upgrade, counts as
     # unknown.
     LEGACY_RISK = { 'rating' => 'unknown', 'reasons' => ['The checkpoint report gave no risk rating.'] }.freeze
+    # A report or comment from before the rename, read under the current name. The maintainer accepted nothing then
+    # either: a reviewer judged those gaps.
+    LEGACY_ADEQUACY = { 'adequate with accepted gaps' => 'adequate with named gaps' }.freeze
 
     module_function
 
@@ -32,12 +35,18 @@ module Shaka
       raise Error, 'Checkpoint report exceeds 100 KB' if text.bytesize > 100_000
 
       report = JSON.parse(text)
+      rename_legacy_adequacy(report)
       validate(report, head:)
       report.slice('head', 'conclusion', 'reasons', 'concerns', 'alternative', 'summary', 'next_action')
             .merge('verification_adequacy' => report['verification_adequacy'].slice(*ADEQUACY_FIELDS),
                    'risk' => report.fetch('risk', LEGACY_RISK).slice('rating', 'reasons'))
     rescue JSON::ParserError => e
       raise Error, "Malformed checkpoint report: not valid JSON#{position(e)}"
+    end
+
+    def rename_legacy_adequacy(report)
+      adequacy = report.is_a?(Hash) && report['verification_adequacy']
+      adequacy['verdict'] = LEGACY_ADEQUACY.fetch(adequacy['verdict'], adequacy['verdict']) if adequacy.is_a?(Hash)
     end
 
     # The parser's message quotes the reviewer's text, which can hold escapes publication refuses.

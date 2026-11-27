@@ -56,6 +56,16 @@ class PostImplementationAdequacyTest < Minitest::Test
     assert_equal 'adequate with named gaps', evidence(published).adequacy(HEAD)
   end
 
+  # A report saved before the rename can still be published on a retry, under the current name.
+  def test_a_report_saved_with_the_earlier_label_publishes_under_the_current_name
+    with_result do |result, path|
+      with_verdict(result, ADEQUACY.merge('verdict' => 'adequate with accepted gaps'))
+      github, status = publish(result, path)
+      assert_equal 0, status
+      assert_includes github.bodies.first.first, '<!-- shaka:post-implementation-adequacy adequate_with_named_gaps -->'
+    end
+  end
+
   def test_the_owner_disposition_keeps_the_verification_verdict_readable
     with_result do |result, path|
       with_verdict(result, ADEQUACY.merge('verdict' => 'adequate with named gaps'))
