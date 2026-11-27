@@ -53,9 +53,6 @@
   and list one change per bullet. List known limits and follow-up issues the
   same way, each bullet a full sentence with its own verb. Put a blank line
   before each label line, or the helper joins it to the bullet above.
-- A squash body may list more than the description summary allows. Take the
-  extra changes, limits, and follow-ups from the description's Intent and
-  limitations.
 - Replace internal terms with what the part does.
   - Instead of: “Without a job, only a leader Ruby has not reaped is ended,
     through Ruby's own handle.”
