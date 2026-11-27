@@ -4,12 +4,16 @@ require_relative 'test_helper'
 require 'shaka/handoff'
 require 'shaka/publication/publication'
 require 'shaka/publication/publishing'
+require 'shaka/usage/journal'
 
 # Answers the reads handoff makes, so each test states only the PR state it cares about.
 class HandoffFakeGitHub
   LABELS = 'repos/owner/repo/issues/42/labels'
   REVIEWS = 'repos/owner/repo/pulls/42/reviews'
   COMMENTS = 'repos/owner/repo/issues/42/comments'
+  # The agent's own account can write, so its usage snapshots count without a test naming it.
+  AGENT_PERMISSION = 'repos/owner/repo/collaborators/shaka-agent/permission'
+  AGENT_WRITER = { 'user' => { 'login' => 'shaka-agent' }, 'permission' => 'write' }.freeze
   TRUST_FILE = '.agents/shaka/trusted-github-actors.yml'
 
   attr_reader :repository, :number
@@ -53,6 +57,7 @@ class HandoffFakeGitHub
 
   def api(path, **)
     return { 'login' => 'shaka-agent' } if path == 'user'
+    return AGENT_WRITER if path == AGENT_PERMISSION
     return visibility if path == 'repos/owner/repo'
     return team_membership(Regexp.last_match(1)) if path =~ %r{\Aorgs/owner/teams/core/memberships/([^/]+)\z}
     return permission(Regexp.last_match(1)) if path =~ %r{\Arepos/owner/repo/collaborators/([^/]+)/permission\z}
@@ -106,10 +111,13 @@ class HandoffFakeGitHub
   def api_list(path)
     return @pull[:labels].map { |name| { 'name' => name } } if path.start_with?(HandoffFakeGitHub::LABELS)
     return @pull[:reviews] if path.start_with?(HandoffFakeGitHub::REVIEWS)
-    return Array(@pull[:comments]) if path.start_with?(HandoffFakeGitHub::COMMENTS)
+    return Array(@pull[:comments]) + usage if path.start_with?(HandoffFakeGitHub::COMMENTS)
 
     raise "unexpected list #{path}"
   end
+
+  # A PR whose head already has a usage snapshot, unless a test names other snapshots.
+  def usage = @pull.fetch(:usage) { [HandoffFixtures.usage_snapshot(@pull[:head])] }
 end
 
 # Renders the PR text handoff reads, so parsing is tested against what the helper publishes.
@@ -177,6 +185,15 @@ module HandoffFixtures
   def self.comment(id, body = PERSON_POST, author: 'shaka-agent')
     { 'id' => id, 'user' => { 'login' => author }, 'body' => body,
       'html_url' => "https://github.com/owner/repo/pull/42#issuecomment-#{id}" }
+  end
+
+  # A usage-journal comment, as `usage publish` appends it, naming the given commits.
+  def self.usage_snapshot(*commits, author: 'shaka-agent', id: 900)
+    column = USAGE_COLUMN.merge('label' => 'implementation')
+    record = USAGE_RECORD.merge('host' => 'codex', 'responses' => ["r-#{id}"], 'commits' => commits,
+                                'note' => 'Native sample.', 'columns' => [column])
+    body = Shaka::UsageJournal.new(nil, identity: AGENT_POST.lines.first.chomp).send(:body, [record], 'handoff')
+    comment(id, body, author:)
   end
 
   def self.check(bucket) = { 'name' => 'validate', 'state' => STATES.fetch(bucket), 'bucket' => bucket }

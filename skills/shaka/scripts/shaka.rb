@@ -313,7 +313,14 @@ def merge_flags(flags, options)
   flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
   confirmation_flags(flags, options)
   auto_flags(flags, options)
+  handoff_flags(flags, options)
+end
+
+def handoff_flags(flags, options)
   flags.on('--woken-by WHAT', 'For handoff: what will wake this session') { |value| options[:woken_by] = value }
+  flags.on('--usage-gap REASON', 'For handoff: why this host cannot publish a usage snapshot') do |value|
+    options[:usage_gap] = value
+  end
   flags.on('--codex-wake PATH', 'For handoff: native Codex registration evidence as JSON') do |path|
     options[:codex_wake] = path
   end
@@ -433,6 +440,7 @@ begin
   end
   raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
   raise Shaka::Error, '--woken-by is only for handoff.' if options[:woken_by] && command != 'handoff'
+  raise Shaka::Error, '--usage-gap is only for handoff.' if options[:usage_gap] && command != 'handoff'
   raise Shaka::Error, '--comments is only for description.' if options[:comments] && command != 'description'
   if options[:rendering_preview_root] && command != 'description'
     raise Shaka::Error, '--rendering-preview-root is only for description.'
@@ -584,7 +592,10 @@ begin
            when 'handoff'
              Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint, review: merge_wait,
                                         walkthrough_publish:)
-                           .tap { |handoff| handoff.hold = hold }
+                           .tap do |handoff|
+                             handoff.hold = hold
+                             handoff.usage_gap = options[:usage_gap]
+                           end
                            .call(head: options[:head], woken_by: options[:woken_by])
            end
   if native_wake

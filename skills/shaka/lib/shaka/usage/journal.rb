@@ -78,6 +78,11 @@ module Shaka
         'records' => UsageJournalSummary.compact(UsageJournalRecords.combine(stored_records)) }
     end
 
+    # Whether a trusted snapshot names this commit, so handoff can tell if the head's usage is on the PR.
+    def covers?(commit)
+      stored_records.any? { |record| record['commits'].any? { |named| named.casecmp?(commit) } }
+    end
+
     private
 
     def unpublished(records)

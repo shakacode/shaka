@@ -11,7 +11,7 @@ class HandoffTest < Minitest::Test
     assert_empty result.fetch('owed')
     assert_equal 'status', result.keys.first
     assert_equal "PR #42 OPEN head #{HEAD[0, 7]} · awaiting-resume · required checks 1 pass · " \
-                 "walkthrough #{HEAD[0, 7]} · WIP #{HEAD[0, 7]}", result['status']
+                 "walkthrough #{HEAD[0, 7]} · WIP #{HEAD[0, 7]} · usage #{HEAD[0, 7]}", result['status']
   end
 
   def test_a_hold_label_is_reported_without_owing_anything

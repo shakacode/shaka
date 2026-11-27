@@ -116,7 +116,10 @@ Usage saved as comments on the PR survives a change of model or coding tool. A n
 reads those comments instead of the earlier machine's records, and each response counts
 once even if two agents saved it. Comments from accounts without write access are ignored.
 
-Ask the agent:
+The agent saves its usage before it stops: `handoff` lists a usage snapshot for the
+current commit as owed work until one is on the PR. When the coding tool has no usage
+reader, the agent passes `handoff --usage-gap REASON`, and the reason stays visible as
+a note instead. To save usage at another point, ask the agent:
 
 > Save this task's usage on the PR before handing it over.
 
