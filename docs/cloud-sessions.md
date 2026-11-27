@@ -101,6 +101,10 @@ including a reviewer report that shows `\n` outside code; publish that review lo
 The comment is public, and GitHub sends its notifications, until it is taken back. If the
 comment was already published unchanged, or taking it back fails, the error names the live comment.
 A PR description is checked the same way; an edit made just before a restore can be lost. Its length limit is checked before writing, but its other prose limits go unchecked when it holds text Shaka did not write.
+Labeling a ready PR for your merge approval also reads over REST. The label's result names the
+fields it could not read, such as the review decision and merge queue state; GitHub still
+enforces both when you click merge. Over REST, a required check that a rule ties to one app
+matches any check with that name.
 Other PR actions still need GraphQL.
 
 The opt-in [DeepSeek reviewer](settings.md#reviewlocal_review_agents) runs through
