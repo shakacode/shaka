@@ -59,8 +59,9 @@
   - Write: “Squash messages now replace internal terms with what each part
     does.”
   - `squash-message` and ready checkpoint publication list every number but
-    the PR's own under `squash_message_references`. Keep a number that
-    `Fixes`, `Closes`, or `Part of` introduces, and ignore one inside a URL.
+    the PR's own under `squash_message_references`. Keep a number that a
+    closing keyword introduces, such as `Fixes`, `Closes`, `Resolves`, or
+    `Part of`, and ignore one inside a URL.
     When another number lacks what that PR did, add it or drop the number,
     then publish again.
 - Replace internal terms with what the part does.
