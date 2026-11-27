@@ -1161,9 +1161,19 @@ add outside it is left alone.
   changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
 - The description also stops at `max_description_words`, however large the change.
 
+In a description, the two length limits count only the prose the agent writes:
+the summary, decisions, intent and verification fields, risk record summary, and
+sections. The lines Shaka adds, such as the links line, metrics, field labels, and
+the risk text that grows with the risk rating, do not count, so the same text fits
+at every rating. Shaka counts these words from the agent's content, so the count
+is the same when GitHub declines to render. Sentence and paragraph limits still
+apply to everything a reader sees, and a walkthrough's length counts all its
+visible prose.
+
 `shaka description` reports identity, task source, verification check and
 skill metadata errors together before it reads the PR. Shaka reports each
-sentence, paragraph and total overage it finds in rendered prose. The overall
+sentence, paragraph and total overage it finds. A description's total names the
+words the agent wrote, which are the ones it can change. The overall
 limit uses the PR's diff size. When GitHub omits either line count, descriptions
 use `max_description_words` and walkthroughs use the sentence and paragraph
 limits.

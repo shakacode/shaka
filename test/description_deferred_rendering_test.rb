@@ -99,6 +99,21 @@ class DescriptionDeferredRenderingTest < Minitest::Test
     assert_equal REGION, github.body
   end
 
+  # A cloud session gets the same budget: the stored rendering's helper text does not count, the supplied prose does.
+  def test_the_stored_check_counts_only_the_supplied_prose
+    prose = Shaka::ProseLimits.new('max_description_words' => 10)
+    fits = -> { { 'summary' => 'Five words the agent wrote.' } }
+
+    assert_equal Shaka::DescriptionPublishing::CHECKED_AFTER, publish(helper_heavy, prose:, supplied: fits)['rendering']
+    error = assert_raises(Shaka::Error) { publish(helper_heavy, prose:, supplied: -> { { 'summary' => 'One ' * 11 } }) }
+    assert_match(/the prose you supplied has 11 words \(limit 10\).* The earlier description was restored\.\z/,
+                 error.message)
+  end
+
+  def helper_heavy
+    RefusedRendererGitHub.new(REGION).tap { it.html = Array.new(20) { '<p>Helper words fill this line.</p>' }.join }
+  end
+
   def test_text_outside_the_region_leaves_prose_limits_unchecked_and_says_so
     github = RefusedRendererGitHub.new("A person wrote this.\n\n#{REGION}")
     github.html = '<p>One two three four five six.</p>'

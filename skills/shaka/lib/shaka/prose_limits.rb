@@ -5,6 +5,7 @@
 
 require_relative 'defaults'
 require_relative 'error'
+require_relative 'supplied_prose'
 require_relative 'visible_prose'
 
 module Shaka
@@ -50,6 +51,14 @@ module Shaka
     end
 
     def to_h = @limits.dup
+
+    # A description's length then counts only the prose its author supplied, so the helper's own lines,
+    # which grow with the risk rating, do not shrink the author's budget. Other limits still read everything.
+    def with_supplied(content)
+      dup.tap { it.supplied = SuppliedProse.words(content) }
+    end
+
+    protected attr_writer :supplied
 
     # Measures GitHub's rendering of body; the pull request supplies the change size.
     def verify_publication!(github, body, kind:, pull:)
@@ -103,12 +112,18 @@ module Shaka
 
     def length_problem(paragraphs, kind, changed_lines)
       limit = budget(kind, changed_lines)
-      count = VisibleProse.words(paragraphs.flatten.join(' '))
+      measured, count = length(paragraphs, kind)
       return unless limit && count > limit
 
       scaled = kind == :walkthrough || limit != @limits.fetch('max_description_words')
       scope = scaled ? " for #{changed_lines} changed lines" : ''
-      "the visible prose has #{count} words (limit #{limit}#{scope}), #{overage(count, limit)}"
+      "#{measured} has #{count} words (limit #{limit}#{scope}), #{overage(count, limit)}"
+    end
+
+    def length(paragraphs, kind)
+      return ['the prose you supplied', @supplied] if @supplied && kind == :description
+
+      ['the visible prose', VisibleProse.words(paragraphs.flatten.join(' '))]
     end
 
     def overage(count, limit)
