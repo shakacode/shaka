@@ -6,6 +6,7 @@ require 'optparse'
 require_relative '../branch_head'
 require_relative '../doctor/bounded_command'
 require_relative '../error'
+require_relative '../git_origin'
 
 module Shaka
   class BranchHead
@@ -97,10 +98,12 @@ module Shaka
         flags.on('--absent', 'Accept that the branch is not on the remote') { options[:absent] = true }
       end
 
-      # The named PR's state, head repository, and branch; the repository is explicit, so gh cannot pick another.
+      # The named PR's state, head repository, and branch. The repository and origin's host are explicit, so gh
+      # cannot pick another repository or host.
       def pr_head(root, request)
         fields = 'url,state,headRefName,headRepository,headRepositoryOwner'
-        argv = ['gh', 'pr', 'view', request[:number], '--repo', request[:repository], '--json', fields]
+        repository = "#{GitOrigin.from(root:).fetch(:host)}/#{request[:repository]}"
+        argv = ['gh', 'pr', 'view', request[:number], '--repo', repository, '--json', fields]
         output, error, success = Doctor::BoundedCommand.new(timeout: PR_SECONDS).call(argv, root)
         raise Error, "Cannot read PR #{request}: #{error.strip}" unless success
 

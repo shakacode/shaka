@@ -90,7 +90,7 @@ module Shaka
       # Settings that would make a plain push of this branch go somewhere other than origin's same-named branch.
       def refuse_redirected_push
         ["branch.#{@branch}.pushRemote", 'remote.pushDefault'].each do |key|
-          value = config_values(key).first
+          value = config_values(key).last # Git uses the last value of a repeated key.
           if value && value != REMOTE
             raise Error,
                   "#{key} sends pushes to #{value}; Shaka pushes task branches to origin only."

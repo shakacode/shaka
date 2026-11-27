@@ -34,6 +34,14 @@ class BranchHeadDestinationTest < Minitest::Test
     assert_includes unreadable_error, 'origin only'
   end
 
+  # Git uses the last value of a repeated key, so a later override wins over an earlier origin.
+  def test_later_push_default_overrides_an_earlier_origin
+    git(@task, 'config', '--add', 'remote.pushDefault', 'origin')
+    git(@task, 'config', '--add', 'remote.pushDefault', '.')
+
+    assert_includes unreadable_error, 'origin only'
+  end
+
   def test_checkout_without_origin_is_unreadable
     git(@task, 'remote', 'rename', 'origin', 'upstream')
 
