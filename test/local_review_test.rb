@@ -1227,8 +1227,8 @@ class LocalReviewCodexUsageTest < Minitest::Test
         fake_codex_with_session(bin, head)
         output, error, status = run_review(root, base, head, bin, env: { 'CODEX_HOME' => home })
         result = assert_successful_review(output, error, status, head, 'openai/codex')
-        assert_equal Dir.glob(File.join(home, 'sessions', '*', '*', '*', '*.jsonl')), [result.fetch('usage')]
-        File.unlink(result.fetch('report'))
+        assert_includes File.read(result.fetch('usage')), '01a0d246-e758-7052-92bc-95afb12a6f60'
+        cleanup_artifacts(result)
       end
     end
   end

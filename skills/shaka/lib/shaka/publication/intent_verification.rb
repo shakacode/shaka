@@ -25,7 +25,7 @@ module Shaka
     def render(content, verdict = nil, pull = nil, task: nil, shortfall: nil)
       gate_line = VerificationGates.render(verdict, content['review'], shortfall)
       spec = object(content, 'verification')
-      evidence(spec, content['wip'].nil? ? CHECKS : (0..CHECKS.max))
+      checks_for(content)
       [intent(object(content, 'intent'), pull, task),
        verification(spec, gate_line)]
     end
@@ -106,6 +106,10 @@ module Shaka
     end
 
     def evidence(spec, allowed) = checks(spec['checks'], allowed).join("\n\n")
+
+    def checks_for(content)
+      evidence(object(content, 'verification'), content['wip'].nil? ? CHECKS : (0..CHECKS.max))
+    end
 
     # The agent still answers, but a reader learns nothing from being told no claim went unproven.
     PROVED = /\Anothing\.?\z/i

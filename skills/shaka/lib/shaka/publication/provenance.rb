@@ -41,6 +41,13 @@ module Shaka
         'recommended' => route(values, 'recommended'), 'active' => route(values, 'active') }
     end
 
+    def check_task_source!
+      raise Error, 'Publication provenance must be an object.' unless @spec.is_a?(Hash)
+      return if TASK_SOURCES.include?(@spec['task_source'])
+
+      raise Error, 'Publication provenance task_source is invalid.'
+    end
+
     private
 
     def table
@@ -76,7 +83,7 @@ module Shaka
       raise Error, 'Publication provenance must be an object.' unless @spec.is_a?(Hash)
 
       validate_fields
-      validate_task_source
+      check_task_source!
       validate_task_number
       TaskSourceLine.validate!(@spec)
       validate_prompt_exclusion
@@ -86,12 +93,6 @@ module Shaka
       return if (@spec.keys - OPTIONAL_FIELDS).sort == FIELDS.sort
 
       raise Error, 'Publication provenance fields do not match the metadata allowlist.'
-    end
-
-    def validate_task_source
-      return if TASK_SOURCES.include?(@spec['task_source'])
-
-      raise Error, 'Publication provenance task_source is invalid.'
     end
 
     def validate_task_number
