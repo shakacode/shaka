@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'open3'
 require 'uri'
 require 'optparse'
 require_relative '../branch_head'
@@ -98,16 +99,24 @@ module Shaka
         flags.on('--absent', 'Accept that the branch is not on the remote') { options[:absent] = true }
       end
 
-      # The named PR's state, head repository, and branch. The repository and origin's host are explicit, so gh
-      # cannot pick another repository or host.
+      # The named PR's state, head repository, and branch. The repository and origin's push host are explicit, so
+      # gh cannot pick another repository or host.
       def pr_head(root, request)
         fields = 'url,state,headRefName,headRepository,headRepositoryOwner'
-        repository = "#{GitOrigin.from(root:).fetch(:host)}/#{request[:repository]}"
+        repository = "#{push_host(root)}/#{request[:repository]}"
         argv = ['gh', 'pr', 'view', request[:number], '--repo', repository, '--json', fields]
         output, error, success = Doctor::BoundedCommand.new(timeout: PR_SECONDS).call(argv, root)
         raise Error, "Cannot read PR #{request}: #{error.strip}" unless success
 
         head_of(JSON.parse(output), request[:number])
+      end
+
+      # The host origin pushes to, which may differ from the host it fetches from.
+      def push_host(root)
+        url, error, status = Open3.capture3('git', '-C', root, 'remote', 'get-url', '--push', 'origin')
+        raise Error, "Cannot read origin's push URL: #{error.strip}" unless status.success?
+
+        URI(GitOrigin.canonical_url(url.strip)).host
       end
 
       # A deleted fork leaves no head repository, so there is no destination to match.
@@ -122,7 +131,8 @@ module Shaka
           'branch' => pull['headRefName'] }
       end
 
-      private_class_method :outcome, :pr_head, :head_of, :finished, :perform, :parse, :option_parser, :operation_flags,
+      private_class_method :outcome, :pr_head, :push_host, :head_of, :finished, :perform, :parse, :option_parser,
+                           :operation_flags,
                            :accept_flags
     end
   end

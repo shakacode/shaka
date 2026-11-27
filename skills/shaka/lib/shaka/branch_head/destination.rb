@@ -99,16 +99,17 @@ module Shaka
         return unless config_values('remote.origin.push').any?
 
         raise Error,
-              'origin has a custom push refspec; push the task branch by hand.'
+              'origin has a custom push refspec; remove remote.origin.push.'
       end
 
       # git config exits 1 for a missing key; any other failure is a failed read, never "not configured".
+      # Empty values stay, since an empty last value still overrides an earlier origin.
       def config_values(key)
         output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', '--get-all', key)
         return [] if status.exitstatus == 1
         raise Error, "Cannot read #{key}: #{error.strip}" unless status.success?
 
-        output.lines.map(&:strip).reject(&:empty?)
+        output.lines.map(&:chomp)
       end
 
       def git_lines(*)
