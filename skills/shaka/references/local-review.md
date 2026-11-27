@@ -185,14 +185,23 @@ adding `-m MODEL` for `--model` and `-c model_reasoning_effort="EFFORT"` for `--
 must be a lowercase level name such as `medium`; without one the report records `EFFORT UNKNOWN`.
 `-s read-only` keeps sandboxed shell reads for source inspection. The ignore flags skip user/project rules
 and config, and the skills setting keeps installed skill descriptions out of the reviewer's instructions to prevent
-description-based routing to an unrelated installed skill. The report is created outside the checkout.
+description-based routing to an unrelated installed skill. Codex still reads `AGENTS.md` from
+`CODEX_HOME` despite those flags. When the real home (default `~/.codex`) has `auth.json`, the helper
+starts the reviewer in a temporary home with links to `auth.json` and `auth.lock`. This lets the
+reviewer save a refreshed sign-in under the same lock as other Codex processes. Without `auth.json`,
+the reviewer keeps the original home so it can use sign-in tied to that path, such as an OS keyring.
+In that case, a global `AGENTS.md` can still affect the review. If it does, suggest file-based sign-in
+or another reviewer.
+The report is created outside the checkout.
 `--disable apps` removes connected ChatGPT apps, `--disable view_image` removes the native image viewer,
 and `-c 'web_search="disabled"'` turns off built-in web search. These flags target named tools.
 New or renamed tools can require fresh verification and changes to the flags after a Codex upgrade.
-It does not use `--ephemeral`, so the session remains saved. `--json` reports its thread ID,
-and the result's `usage` names that saved session under `CODEX_HOME` (default `~/.codex`);
+`--json` reports the thread ID. For an isolated reviewer, the helper copies the saved session to a
+temporary file before removing the home. Otherwise `usage` points to the saved session in the
+original home. Run
 run `shaka usage --host codex --file USAGE --commit "$(git rev-parse HEAD)" --contribution review --all-turns`
-on it. A missing `usage` means the session file was not found, and review usage stays UNKNOWN.
+on it. A missing `usage` means the helper could not find or copy the session, and review usage stays UNKNOWN.
+Isolated review sessions do not appear in the user's own Codex session history.
 `codex exec review --base REF` cannot accept the custom review prompt, so the helper uses `exec`.
 
 Claude Code, when the trusted entry names an effort:
