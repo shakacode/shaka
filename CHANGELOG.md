@@ -66,8 +66,9 @@ did not run for 1.0.0; it applies again to later releases.
   visible omission reason. Common description input errors are reported
   together, with each exact overage. When a description has no validation or
   review results of its own, it links a review the same GitHub account
-  published that still covers its commit, if there is one. Descriptions and walkthroughs refuse a bare
-  finding ID such as `N3` in visible prose; describe the finding in words.
+  published that still covers its commit, if there is one, and says why it
+  still applies. Descriptions and walkthroughs refuse a bare finding ID such
+  as `N3` in visible prose; describe the finding in words.
   When an identity field is unknown, the first line keeps the agent and drops
   the other unknown fields; the full identity appears under **Missing values**.
 - Local Codex reviews run without connected ChatGPT apps, web search, or image
