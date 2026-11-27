@@ -14,6 +14,7 @@ class PublicationSettingsMissingTest < Minitest::Test
     without_settings do |root, ref|
       assert_predicate prepare(root, nil, ref), :settings_missing?
       assert_predicate prepare(root, ref, ref), :settings_missing?
+      assert_equal Shaka::PublicationSettings::NO_SETTINGS, prepare(root, nil, ref).path_redaction
       subdirectory = File.join(root, 'src')
       FileUtils.mkdir_p(subdirectory)
       assert_predicate prepare(subdirectory, nil, ref), :settings_missing?
@@ -25,6 +26,7 @@ class PublicationSettingsMissingTest < Minitest::Test
     with_checkout do |root, ref|
       refute_predicate prepare(root, nil, ref), :settings_missing?
       refute_predicate prepare(root, ref, ref), :settings_missing?
+      assert_equal Shaka::PublicationSettings::MISSING_REF, prepare(root, nil, ref).path_redaction
       refute_predicate prepare(File.join(root, '.agents'), nil, ref), :settings_missing?
     end
   end

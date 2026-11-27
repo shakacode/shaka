@@ -187,7 +187,7 @@ The renderer uses `REDACTED` for Workspace when the setting is explicitly false,
 `wip.include_checkout_path: false`. Unread or unavailable settings
 withhold Workspace and explain the recovery action:
 rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
-republishing when loading failed. No setting hides Chat link; supply `UNKNOWN`
+republishing when loading failed. A checkout with no settings file says so instead. No setting hides Chat link; supply `UNKNOWN`
 with `wip_disclosure.thread` set to `withheld` when the user asks to keep it off the PR. Unfinished publication remains possible without
 validation/review evidence; the diagnostic establishes no readiness. Retain the
 fields and public owner alias. Inspect all other supplied prose before publication.

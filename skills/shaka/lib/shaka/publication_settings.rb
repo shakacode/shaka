@@ -21,6 +21,7 @@ module Shaka
     SUMMARY = 'Shaka settings used'
     MISSING_REF = 'Withheld: settings not read; rerun description with --ref'
     UNAVAILABLE_SETTINGS = 'Withheld: settings unavailable; fix seam check --ref, then rerun description'
+    NO_SETTINGS = 'Withheld: this repository has no Shaka settings'
 
     def self.refuse_free_form!(items)
       return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(SUMMARY) }
@@ -126,10 +127,10 @@ module Shaka
     def include_checkout_path? = @current&.fetch('wip.include_checkout_path', false) == true
 
     # The repository's choice first, then the user's, which can only hide the path. Unread settings keep the
-    # diagnostic, because it names the recovery step.
+    # diagnostic, because it names the recovery step; a repository with no settings has no --ref to recover.
     def path_redaction
       return 'REDACTED' if @current&.fetch('wip.include_checkout_path', nil) == false
-      return @location_diagnostic unless include_checkout_path?
+      return settings_missing? ? NO_SETTINGS : @location_diagnostic unless include_checkout_path?
 
       Configuration::PersonalPrivacy::REDACTION unless @privacy.checkout_path?
     end
