@@ -45,8 +45,9 @@ did not run for 1.0.0; it applies again to later releases.
   reports cover Antigravity and price GPT-6.2 and Gemini models. When the agent has
   published a UI check, the description links it as **Screenshots**. Shaka's
   own records sit under **Shaka metrics** in one 🤙 Shaka details fold, led by
-  a copyable Claude or Codex chat link when one is available. Squash messages lead with the outcome
-  and list changes, limits, and follow-ups as bullets.
+  a copyable Claude or Codex chat link when one is available. Shaka asks the
+  agent for squash messages that lead with the outcome, draw on the whole PR
+  description, and list changes, limits, and follow-ups as bullets.
 - With team settings, list your team's skills in `.agents/shaka/packs/` on the
   default branch so Shaka offers each one at the step where it helps. PRs show
   the results of those companion skills, including whether their findings were
@@ -64,8 +65,8 @@ did not run for 1.0.0; it applies again to later releases.
   or PR in the same repository needs exactly one of a safe https task link or a
   visible omission reason. Common description input errors are reported
   together, with each exact overage. When a description has no validation or
-  review results of its own, it links the published review that still covers
-  its commit, if there is one. Descriptions and walkthroughs refuse a bare
+  review results of its own, it links a review the same GitHub account
+  published that still covers its commit, if there is one. Descriptions and walkthroughs refuse a bare
   finding ID such as `N3` in visible prose; describe the finding in words.
   When an identity field is unknown, the first line keeps the agent and drops
   the other unknown fields; the full identity appears under **Missing values**.
