@@ -334,11 +334,9 @@ results. Shaka keeps control of delivery; pstack's separate delivery playbooks a
 not part of this flow.
 
 When the harness can run unattended, call it from your
-[validate script](settings.md#standard-command-scripts). Shaka records each validation run
-with the commit it tested, so the PR's validation line then covers the harness too, and a
-later commit needs a new run before the PR is ready. If the harness is too slow for every
-review repair, leave it out of [`validate-local`](settings.md#count-a-faster-check-as-validation);
-the agent still runs the full `validate` once repairs finish.
+[validate script](settings.md#standard-command-scripts) and let a harness failure fail the
+script. Shaka records each validation run with the code it tested, so the PR's validation
+line then covers the harness too, and a later code change needs a new run.
 
 ## Review a session for improvements
 
