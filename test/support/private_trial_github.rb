@@ -36,7 +36,9 @@ module PrivateTrialGitHub
                  reviews
                end
              when %r{/issues/1/labels} then [{ 'name' => 'awaiting-resume' }]
-             when %r{/issues/1/comments} then []
+             when %r{/issues/1/comments} then fixture.fetch('comments', [])
+             when %r{/collaborators/([^/]+)/permission\z}
+               { 'permission' => 'write', 'user' => { 'login' => Regexp.last_match(1) } }
              when %r{/pulls/1}
                { 'body' => fixture.fetch('body'), 'head' => { 'sha' => head } }
              else abort "unexpected request: #{ARGV.inspect}"
