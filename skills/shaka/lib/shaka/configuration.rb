@@ -123,6 +123,18 @@ module Shaka
       !Layout.worktree(root:, allow_missing: true).nil?
     end
 
+    # Whether the Git checkout holding directory has no settings file, team or private. It walks up to the
+    # nearest .git instead of running git, because git on PATH or the checkout's Git config may be candidate
+    # code. A directory outside Git has no checkout to judge, and a settings entry that exists but cannot be
+    # used is still present, so neither counts as a checkout without settings.
+    def checkout_without_contract?(directory)
+      top = File.expand_path(directory.to_s)
+      top = File.dirname(top) until File.exist?(File.join(top, '.git')) || File.dirname(top) == top
+      File.exist?(File.join(top, '.git')) && !contract_entry?(top)
+    rescue Error, SystemCallError
+      false
+    end
+
     def contract_matches?(root, source)
       target = path(root, :CONTRACT)
       File.file?(target) && !File.symlink?(target) && File.read(target) == source

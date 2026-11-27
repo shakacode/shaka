@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require_relative '../.github/windows/doctor'
+require_relative '../.github/windows/product'
 require_relative '../.github/windows/commands'
 require_relative '../.github/windows/cursor'
 require_relative '../.github/windows/suite'
@@ -19,6 +20,7 @@ runner = case section
          when 'doctor' then WindowsDoctor.new(root).call
          when 'commands' then WindowsCommands.new(root).call
          when 'cursor' then WindowsCursor.new(root).call
+         when 'product' then WindowsProduct.new(root).call
          when 'suite' then WindowsSuite.new(root).call
          else
            warn "unknown section: #{section}"

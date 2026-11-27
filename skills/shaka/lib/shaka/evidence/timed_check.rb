@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
+require 'open3'
 require_relative '../call_log'
+require_relative '../doctor/bounded_command'
+require_relative '../error'
+require_relative '../executable_file'
+require_relative '../local_review/executable'
+require_relative '../local_review/path_guard'
 require_relative 'machine_facts'
 require_relative 'phase_log'
 require_relative 'tree_watch'
@@ -12,12 +18,14 @@ module Shaka
     # on what machine, and the phases and failing test classes the command reported into the file its
     # environment names.
     module TimedCheck
+      # A stalled git.exe fails the run instead of holding it before the check starts.
+      EXEC_PATH_SECONDS = 30
+
       module_function
 
       def run(context, tree, path:, arguments:)
         (outcome, timing), reported = PhaseLog.with_file do |log|
-          command = [{ 'PATH' => path, PhaseLog::VARIABLE => log }, File.join(*context.values_at(:root, :path)),
-                     *arguments]
+          command = command(context, { 'PATH' => path, PhaseLog::VARIABLE => log }, arguments)
           TrustedCommand.around(context, tree) do |root, watched|
             MachineFacts.measure { CallLog.measure { TreeWatch.new(command, root:, tree: watched).run } }
           end
@@ -25,6 +33,36 @@ module Shaka
         measured = { 'phases' => CallLog.phases(reported['phases']),
                      'failed_tests' => CallLog.failed_tests(reported['failed_tests']) }
         [outcome, timing.merge(measured.compact)]
+      end
+
+      def command(context, environment, arguments)
+        root = context.fetch(:root)
+        script = File.join(root, context.fetch(:path))
+        [environment, *ExecutableFile.script_command(script, shell: -> { git_shell(root) }), *arguments]
+      end
+
+      # Git for Windows keeps git-core under GIT/<mingw dir>/libexec and its sh under GIT/bin, whose sh
+      # puts Git's Unix tools on PATH. git.exe comes by full path from a PATH entry outside the
+      # candidate CHECKOUT, so a git.exe in the current directory or one the checkout put on PATH
+      # cannot answer, and an inherited GIT_EXEC_PATH cannot move the root.
+      def git_shell(checkout)
+        git = LocalReviewPathGuard.safe_executable(ENV.fetch('PATH', ''), 'git.exe', checkout)
+        raise Error, 'Cannot find git.exe outside the checkout on PATH' unless git
+
+        output, error, ok = Doctor::BoundedCommand.new(timeout: EXEC_PATH_SECONDS)
+                                                  .call([{ 'GIT_EXEC_PATH' => nil }, git, '--exec-path'])
+        raise Error, "Cannot find Git for Windows: git --exec-path failed: #{error.strip}" unless ok
+
+        trusted_shell(File.expand_path('../../..', output.strip), checkout)
+      end
+
+      # The sh is held to the same boundary as git.exe: one that resolves into the checkout is refused.
+      def trusted_shell(git_root, checkout)
+        shell = File.join(git_root, 'bin/sh.exe')
+        raise Error, "evidence run needs Git for Windows' bin/sh.exe under #{git_root}" unless File.file?(shell)
+        return shell unless LocalReviewExecutable.candidate_owned?(File.realpath(shell), File.realpath(checkout))
+
+        raise Error, "sh.exe under #{git_root} resolves inside the checkout"
       end
     end
   end
