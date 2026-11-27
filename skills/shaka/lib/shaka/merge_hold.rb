@@ -13,6 +13,9 @@ module Shaka
     # seam is the trusted RepositoryConfig; without one the shipped labels apply.
     def self.from(seam) = new(seam&.merge&.fetch('hold_labels', nil) || DEFAULT)
 
+    # Individual settings may add merge gates but never remove one, so their labels join the shipped ones.
+    def self.individual(seam) = new((DEFAULT + from(seam).labels).uniq(&:downcase))
+
     attr_reader :labels
 
     def initialize(labels = DEFAULT)

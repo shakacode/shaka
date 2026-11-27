@@ -37,7 +37,8 @@ that `--ref` is the current default-branch commit; Ruby only checks that it is a
 full commit SHA. Private settings do not grant trusted policy,
 public-comment trust, or merge authority. Under Ask, the user's approval of a named
 head still lets `merge` run: it ignores the private settings and applies default limits,
-an independent review, the checkpoint, and GitHub's gates.
+an independent review, the checkpoint, and GitHub's gates. The private `merge.hold_labels`
+still hold the PR, in addition to the default `hold`.
 
 After setup, run `seam private inspect --root DIR` and
 `seam private check --root DIR --ref DEFAULT_BRANCH_SHA`. The latter reports
