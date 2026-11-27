@@ -110,18 +110,17 @@ gh release view "v$shaka_version" --repo shakacode/shaka
 ```
 
 The first command should print the approved commit, and the other three should report
-that the version does not exist. Then publish in this order. Keep the tag joined to its
-push, and each digest check joined to its upload, with `&&`, so a failed step stops the
-next:
+that the version does not exist. Then publish with one command chain, so a failed step stops
+every step after it:
 
 ```bash
 git tag -a "v$shaka_version" APPROVED_COMMIT -m "Release shaka $shaka_version" &&
-  git push https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
-ruby -rdigest -e 'abort "Gem differs from approval" unless
-  Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' GEM_PATH APPROVED_GEM_SHA256 &&
-  gem push --host https://rubygems.org GEM_PATH
-ruby -rdigest -e 'abort "Notes differ from approval" unless
-  Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' NOTES_PATH APPROVED_NOTES_SHA256 &&
+  git push https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version" &&
+  ruby -rdigest -e 'abort "Gem differs from approval" unless
+    Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' GEM_PATH APPROVED_GEM_SHA256 &&
+  gem push --host https://rubygems.org GEM_PATH &&
+  ruby -rdigest -e 'abort "Notes differ from approval" unless
+    Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' NOTES_PATH APPROVED_NOTES_SHA256 &&
   gh release create "v$shaka_version" --repo shakacode/shaka --verify-tag \
     --title "shaka $shaka_version" --notes-file NOTES_PATH --generate-notes
 ```

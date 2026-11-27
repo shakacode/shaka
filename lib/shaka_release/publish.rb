@@ -4,6 +4,7 @@ require 'tmpdir'
 require_relative 'approval'
 require_relative 'preflight'
 require_relative 'registry'
+require_relative 'release_tag'
 require_relative 'shell'
 
 module ShakaRelease
@@ -23,6 +24,7 @@ module ShakaRelease
       @registry = context.fetch(:registry) { Registry.new }
       @env = context.fetch(:env, {})
       @out = context.fetch(:out, $stdout)
+      @tag = ReleaseTag.new(root:, commit:, version:, env: @env)
     end
 
     def run
@@ -46,27 +48,17 @@ module ShakaRelease
     end
 
     def missing_steps
-      tagged = remote_tag
+      tagged = @tag.remote
       published = @registry.published_sha256(version)
       refuse "v#{version} on GitHub points at #{tagged}, not the approved commit" unless [nil, commit].include?(tagged)
       refuse "RubyGems has a different shaka #{version}; prepare a new version" unless
         [nil, @approval.gem_sha256].include?(published)
-      check_main unless tagged
+      @tag.check_source unless tagged
       [(:push_tag unless tagged), (:push_gem unless published), (:create_release unless release?)].compact
     end
 
-    # The tag is the first step users can see, so the approved commit must still be main.
-    def check_main
-      remote = git('ls-remote', '--exit-code', Preflight::REMOTE, 'refs/heads/main').split.first
-      refuse 'remote main moved after approval; prepare and approve again' unless remote == commit
-    end
-
     def push_tag
-      check_main # again, just before the push, to narrow the window since the first check
-      local = local_tag
-      refuse "local tag v#{version} points at another commit; delete it and rerun" if local && local != commit
-      git('tag', '-a', "v#{version}", commit, '-m', "Release shaka #{version}") unless local
-      git('push', Preflight::REMOTE, "refs/tags/v#{version}")
+      @tag.push
       say "Pushed tag v#{version}."
     end
 
@@ -115,21 +107,8 @@ module ShakaRelease
       true
     end
 
-    def remote_tag
-      output = git('ls-remote', Preflight::REMOTE, "refs/tags/v#{version}", "refs/tags/v#{version}^{}")
-      refs = output.lines.to_h { it.split.reverse }
-      refs["refs/tags/v#{version}^{}"] || refs["refs/tags/v#{version}"]
-    end
-
-    def local_tag
-      output, status = Open3.capture2(@env, 'git', '-C', @root, 'rev-parse', '--verify', '--quiet',
-                                      "refs/tags/v#{version}^{commit}")
-      status.success? ? output.strip : nil
-    end
-
     def commit = @approval.commit
     def version = @approval.version
-    def git(*) = run!(@env, 'git', '-C', @root, *)
     def say(message) = @out.puts(message)
   end
 end

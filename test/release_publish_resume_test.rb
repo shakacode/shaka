@@ -28,12 +28,24 @@ class ReleasePublishResumeTest < Minitest::Test
     assert_nil remote_tag
   end
 
-  def test_a_local_tag_on_another_commit_is_refused
+  def test_a_local_tag_on_another_commit_is_refused_even_in_a_dry_run
     git('-c', 'user.name=T', '-c', 'user.email=t@example.com', 'commit', '--allow-empty', '-qm', 'Other')
     git('tag', 'v1.2.0', 'HEAD')
     git('push', '-q', 'origin', 'HEAD^:refs/heads/main', '-f')
+    error = assert_raises(Shaka::Error) { publish(dry_run: true) }
+    assert_includes error.message, 'local tag v1.2.0 points at another commit'
     assert_refused 'local tag v1.2.0 points at another commit'
     assert_nil remote_tag
+  end
+
+  def test_inherited_git_overrides_do_not_redirect_publication
+    other = File.join(@directory, 'other')
+    Open3.capture3('git', 'init', '-q', other)
+    Open3.capture3('git', '-C', other, 'config', "url.#{File.join(@directory, 'elsewhere.git')}.insteadOf",
+                   ShakaRelease::Preflight::REMOTE)
+    @env['GIT_DIR'] = File.join(other, '.git')
+    publish
+    assert_equal @commit, remote_tag
   end
 
   def test_an_incomplete_or_unready_approval_is_refused
