@@ -151,3 +151,4 @@ gave `f2441b6` 12,251 words and 30,051 Claude tokens.
 | 2026-11-16 | `f2441b6` | 12,057 | 30,014 | 20,109 | 4,227 | 15,193 | First measurement, PR #1200 |
 | 2026-11-17 | `5ffb304` | 12,057 | 30,012 | 20,109 | 4,231 | 15,191 | Same text as the row above; shows run-to-run noise |
 | 2026-11-17 | `65e0066` | 12,289 | 30,151 | 20,171 | 4,229 | 15,191 | +100 Claude and +62 GPT against `f2441b6`, counted together |
+| 2026-11-26 | `856ea13` | 12,437 | 30,427 | 20,366 | 4,222 | 11,135 | 1.0.0 version PR #913; +276 Claude and +195 GPT against `65e0066`. Codex CLI prompt fell from 15,191; compare later Codex prompts with this row |

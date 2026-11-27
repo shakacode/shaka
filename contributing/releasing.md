@@ -1,8 +1,8 @@
 # Releasing the Gem
 
 Shaka uses an explicit RubyGems release flow adapted from
-`shakacode/control-plane-flow`. The source prepares `1.0.0`; it is not published.
-The existing `0.1.0.pre.1` gem only reserves the name and lacks the current workflow.
+`shakacode/control-plane-flow`. The source prepares `1.0.0`.
+Gem versions before `1.0.0` lack the current workflow.
 A release starts from an approved version on `main`, validates the packaged artifact,
 tags that exact commit, publishes the gem, and creates the matching GitHub release.
 Registry publication requires explicit maintainer approval because a published version
@@ -44,7 +44,10 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
 3. Run the [release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md)
    for each host, model, and effort profile you intend to qualify, and keep each batch's
    records outside the checkout. To release without it, the maintainer must accept that
-   first; the published release notes then say the gate did not run.
+   first; the published release notes then say the gate did not run. The maintainer
+   waived the gate for 1.0.0
+   ([decision 3](https://github.com/shakacode/shaka/issues/580#issuecomment-7206389918)),
+   so prepare that release with `--skip-behavior-gate`.
 4. Prepare the release inputs. Use a trusted Shaka helper installed outside this checkout;
    its installation identity is part of the validation evidence:
 
