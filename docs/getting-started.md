@@ -35,8 +35,9 @@ before starting your task.
 If your agent doesn't recognize `/shaka` or `$shaka`, start a new chat and try again.
 If Shaka still doesn't appear, restart your coding tool.
 
-Shaka never installs updates on its own. To keep it current, ask your agent to
-set up a [daily update or update check](keep-shaka-up-to-date.md).
+Shaka never installs updates on its own. To keep a branch install current, ask your agent to
+set up a [daily update or update check](keep-shaka-up-to-date.md). For a pinned release,
+ask your agent about [choosing a newer release](manual-installation.md#keep-a-tested-release).
 
 <a id="2-choose-private-trial-or-team-setup"></a>
 <a id="2-choose-individual-trial-or-team-setup"></a>
