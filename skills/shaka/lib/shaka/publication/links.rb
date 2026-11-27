@@ -83,7 +83,8 @@ module Shaka
     # Without a publish setting the walkthrough is on request, the packaged default.
     def links(content, pull, deciding: false, publish: nil)
       reviews = [WalkthroughLink.call(content['walkthrough'], deciding:, publish:), review(content['review']),
-                 post_implementation(content['post_implementation'])].compact.join(' · ')
+                 post_implementation(content['post_implementation']), screenshots(content['ui_check'])]
+                .compact.join(' · ')
       preview = deployment(content['deployment']) ||
                 deployment_not_found(content['deployment_not_found_for'], pull&.dig('head', 'sha'))
       preview ? "#{reviews} · #{preview}" : reviews
@@ -111,6 +112,15 @@ module Shaka
       raise Error, 'Publication review must be a GitHub pull request comment URL.' unless url.match?(REVIEW_URL)
 
       "[Code Review](#{url})"
+    end
+
+    # The helper sets this to the PR's current UI check comment, so a PR without one shows no link.
+    def screenshots(url)
+      return if url.nil?
+      raise Error, 'Publication ui_check must be a GitHub pull request comment URL.' unless
+        url.is_a?(String) && url.match?(REVIEW_URL)
+
+      "[Screenshots](#{url})"
     end
 
     # Required so a deployable repository cannot silently omit its preview; `none` opts out.

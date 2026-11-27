@@ -48,6 +48,7 @@ require_relative '../lib/shaka/publication/squash_message'
 require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/guidance'
 require_relative '../lib/shaka/publication/publication'
+require_relative '../lib/shaka/description_preflight'
 require_relative '../lib/shaka/published_timing'
 require_relative '../lib/shaka/publication/rendering_preview'
 require_relative '../lib/shaka/review_focus'
@@ -185,7 +186,7 @@ def rendered_description(described, github, pull, workflow_version, options)
 end
 
 def kept_notes(notes, evidence, recommendation)
-  notes['evidence_kept'] = Shaka::VerificationGates::KEPT if evidence
+  notes['evidence_kept'] = Shaka::VerificationLine::KEPT if evidence
   notes['recommendation_kept'] = Shaka::ProvenanceRecommendation.note(recommendation) if recommendation
   notes
 end
@@ -220,9 +221,9 @@ end
 
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.
 def resolved_description(content, github, options)
-  content = Shaka::PublisherAttribution.prepare(content)
   content = Shaka::LocalReviewUsage.attach(content, options[:review])
-  resolved = Shaka::CheckpointRecommendation.resolve(Shaka::DeploymentLink.resolve(content, github), github)
+  content = Shaka::UiCheck::Link.resolve(Shaka::DeploymentLink.resolve(content, github), github)
+  resolved = Shaka::CheckpointRecommendation.resolve(content, github)
   with_human_comments(resolved, options[:comments])
 end
 
@@ -477,9 +478,10 @@ begin
                                                             expected_head: issue_only ? nil : options[:head])
            when 'description'
              root = options[:root] || Dir.pwd
+             supplied = content(options.fetch(:content_file))
+             description_content = Shaka::DescriptionPreflight.new(supplied).call
              prose, prose_note = description_prose_limits(root, options[:ref])
              notes = prose_note.merge(description_pr_evidence(root, options[:ref]))
-             description_content = content(options.fetch(:content_file))
              Shaka::OpeningPublication.with_safe_path(root:) do |candidate_root, gh, neutral|
                raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
 

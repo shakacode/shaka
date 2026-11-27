@@ -7,6 +7,8 @@ prompts you can give your agent. This reference covers each option and its limit
 
 Settings live in `.agents/shaka/config.yml`. Ask your agent to
 [configure the repository](configure-repository.md), or edit the file in a PR.
+See [what stays compatible in 1.x](migration.md#what-stays-compatible-in-1x)
+before updating Shaka or moving older settings.
 
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
@@ -1120,10 +1122,8 @@ same.
 
 ## `prose_limits`
 
-**Optional.** Limit the length of PR descriptions and code walkthroughs. These
-limits are checked in code before publication. Recommendations and review
-replies follow the agent's writing instructions but are not checked against
-these limits.
+**Optional.** Limit the length of PR descriptions and code walkthroughs.
+Recommendations and review replies follow the agent's writing instructions.
 
 ```yaml
 prose_limits:
@@ -1147,9 +1147,17 @@ add outside it is left alone.
   changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
 - The description also stops at `max_description_words`, however large the change.
 
-When text breaks a limit, nothing reaches GitHub. The command exits with an
-error identifying the long passage or total word count. The agent shortens the
-explanation before publishing.
+`shaka description` reports identity, task source, verification check and
+skill metadata errors together before it reads the PR. Shaka reports each
+sentence, paragraph and total overage it finds in rendered prose. The overall
+limit uses the PR's diff size. When GitHub omits either line count, descriptions
+use `max_description_words` and walkthroughs use the sentence and paragraph
+limits.
+
+If GitHub declines to render a description before publication, Shaka checks the
+saved version when the body contains only Shaka's section, whitespace and HTML
+comments. If the body contains other content outside that section, Shaka reports
+the prose limits as unchecked.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and
