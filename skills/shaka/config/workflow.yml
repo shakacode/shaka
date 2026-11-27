@@ -189,6 +189,13 @@ phases:
         request that already chooses, gets no new question. When the user chooses to agree first,
         follow [agree on the design first](<{{package_root}}/skills/shaka/references/delivery.md#agree-on-the-design-first>),
         and do not make implementation edits until the user approves the design.
+      - When the task changes merge, trust, or risk policy, such as merge gates, risk areas,
+        review requirements, or the settings that govern them, settle that policy before the
+        first edit. List every path class the change touches with the risk area it belongs in,
+        high, medium, or none, and every setting it retires or renames with its upgrade path.
+        Rate that plan as the checkpoint would, then ask the maintainer every open policy
+        question together, each with a recommendation. Planning is complete when every
+        touched path has an assigned area and every retired setting has an upgrade path.
       - For a planning-only request, include the rendered recommendation in a compact execution
         prompt with the usage report. Follow
         [keep the task plan recoverable](<{{package_root}}/skills/shaka/references/delivery.md#keep-the-task-plan-recoverable>)
