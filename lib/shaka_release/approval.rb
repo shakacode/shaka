@@ -31,8 +31,10 @@ module ShakaRelease
     # The approved notes, plus a statement when the behavior gate did not run.
     def release_body
       notes = File.read(checked('notes'))
-      @values.dig('behavior_gate', 'status') == 'skipped' ? "#{notes.chomp}\n\n#{SKIPPED_GATE}\n" : notes
+      gate_skipped? ? "#{notes.chomp}\n\n#{SKIPPED_GATE}\n" : notes
     end
+
+    def gate_skipped? = @values.dig('behavior_gate', 'status') == 'skipped'
 
     def check_files = %w[gem notes].each { checked(it) }
 

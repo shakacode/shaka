@@ -94,17 +94,23 @@ module ShakaRelease
       say "Installed shaka #{version} from RubyGems and ran shaka --help."
     end
 
-    # A draft is not public, so it does not count as a published release.
+    # An existing release counts only when it is public and matches the approval.
     def release?
       output, error, status = Open3.capture3(gh_env, 'gh', 'release', 'view', "v#{version}", '--repo', REPOSITORY,
-                                             '--json', 'isDraft')
+                                             '--json', 'isDraft,isPrerelease,body')
       return false if !status.success? && error.include?('release not found')
 
       refuse "Cannot read the GitHub release: #{error.strip}" unless status.success?
-      refuse "GitHub release v#{version} is a draft; publish or delete it, then rerun" if
-        JSON.parse(output).fetch('isDraft')
-
+      check_release(JSON.parse(output))
       true
+    end
+
+    def check_release(release)
+      name = "GitHub release v#{version}"
+      refuse "#{name} is a draft; publish or delete it, then rerun" if release.fetch('isDraft')
+      refuse "#{name} has the wrong prerelease flag" unless release.fetch('isPrerelease') == @approval.prerelease?
+      refuse "#{name} lacks the skipped behavior gate statement" unless
+        !@approval.gate_skipped? || release.fetch('body').to_s.include?(Approval::SKIPPED_GATE)
     end
 
     def commit = @approval.commit

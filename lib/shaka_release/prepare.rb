@@ -82,7 +82,7 @@ module ShakaRelease
       { 'status' => 'passed', 'records' => records }
     end
 
-    # Keeps the checker's result, which names the profile and its limits, beside the approval.
+    # Keeps the checker's result beside the approval; the records it checked name the profile.
     def check_behavior(path, index, commit)
       require_relative '../../eval/lib/shaka/evaluation/release_behavior'
       records = JSON.parse(File.read(path, encoding: 'UTF-8'))

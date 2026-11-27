@@ -53,8 +53,7 @@ class ReleasePublishTest < Minitest::Test
 
   def test_refuses_a_tag_or_gem_that_differs_from_the_approval
     git('-c', 'user.name=T', '-c', 'user.email=t@example.com', 'commit', '--allow-empty', '-qm', 'Other')
-    git('tag', 'v1.2.0', 'HEAD')
-    git('push', '-q', 'origin', 'refs/tags/v1.2.0')
+    push_annotated_tag
     assert_refused 'points at'
     git('push', '-q', 'origin', ':refs/tags/v1.2.0')
     File.write(state('registry'), 'f' * 64)

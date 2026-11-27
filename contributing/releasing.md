@@ -115,8 +115,10 @@ GH_HOST=github.com gh release view "v$shaka_version" --repo shakacode/shaka
 On a first attempt, `main` should be `APPROVED_COMMIT`, and the tag, the RubyGems version,
 and the release should not exist. After an earlier attempt, the `^{}` tag line must show
 `APPROVED_COMMIT`, and a published RubyGems `sha` must equal `APPROVED_GEM_SHA256`; anything
-else means stop and prepare a new version. Then run the chain below from the first missing
-step. It is one command chain, so a failed step stops every step after it:
+else means stop and prepare a new version. When the local tag exists but its push failed,
+confirm `git rev-parse "v$shaka_version^{commit}"` prints `APPROVED_COMMIT` and start at
+`git push`. Otherwise run the chain below from the first missing step. It is one command
+chain, so a failed step stops every step after it:
 
 ```bash
 git tag -a "v$shaka_version" APPROVED_COMMIT -m "Release shaka $shaka_version" &&

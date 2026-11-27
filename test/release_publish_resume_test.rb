@@ -7,7 +7,7 @@ class ReleasePublishResumeTest < Minitest::Test
   include ReleasePublishFixture
 
   def test_a_published_gem_without_a_release_only_creates_the_release
-    git('push', '-q', ShakaRelease::Preflight::REMOTE, "#{@commit}:refs/tags/v1.2.0")
+    push_annotated_tag(@commit)
     File.write(state('registry'), Digest::SHA256.file(@gem).hexdigest)
     assert_equal %i[create_release], publish
     refute_path_exists state('pushes')
@@ -65,6 +65,30 @@ class ReleasePublishResumeTest < Minitest::Test
                                            '--approval', @approval, '--dry-run', chdir: @root)
     refute_predicate status, :success?
     assert_equal ['', "Release refused: approval file has an invalid version\n"], [output, error]
+  end
+
+  def test_a_remote_lightweight_tag_is_refused_before_upload
+    git('push', '-q', 'origin', "#{@commit}:refs/tags/v1.2.0")
+    assert_refused 'remote tag v1.2.0 is not annotated'
+    refute_path_exists state('pushes')
+  end
+
+  def test_a_tag_pushed_elsewhere_stops_before_the_gem_upload
+    elsewhere = File.join(@directory, 'elsewhere.git')
+    git('clone', '-q', '--bare', @root, elsewhere)
+    git('config', "url.#{elsewhere}.pushInsteadOf", ShakaRelease::Preflight::REMOTE)
+    assert_refused 'is not on'
+    refute_path_exists state('pushes')
+  end
+
+  def test_an_existing_release_must_match_the_approval
+    @approval = write_approval('1.2.0', gate: { 'status' => 'skipped' })
+    push_annotated_tag(@commit)
+    File.write(state('registry'), Digest::SHA256.file(@gem).hexdigest)
+    File.write(state('release'), JSON.generate('args' => [], 'body' => 'Notes without the statement'))
+    assert_refused 'lacks the skipped behavior gate statement'
+    File.write(state('release'), JSON.generate('args' => ['--prerelease'], 'body' => ShakaRelease::Approval::SKIPPED_GATE))
+    assert_refused 'wrong prerelease flag'
   end
 
   def test_inherited_git_overrides_do_not_redirect_publication

@@ -16,11 +16,14 @@ module ShakaRelease
       @env = env.merge(Shaka::WorkflowVersion::GIT_ENVIRONMENT)
     end
 
-    # The commit the remote tag names, or nil when it does not exist.
+    # The commit the remote annotated tag names, or nil when it does not exist.
     def remote
       output = git('ls-remote', Preflight::REMOTE, "refs/tags/#{@name}", "refs/tags/#{@name}^{}")
       refs = output.lines.to_h { it.split.reverse }
-      refs["refs/tags/#{@name}^{}"] || refs["refs/tags/#{@name}"]
+      return nil unless refs["refs/tags/#{@name}"]
+
+      # Only an annotated tag has a peeled ^{} line.
+      refs["refs/tags/#{@name}^{}"] || refuse("remote tag #{@name} is not annotated; prepare a new version")
     end
 
     # The tag is the first step users can see, so the approved commit must still be main, and a
@@ -37,6 +40,9 @@ module ShakaRelease
       git('tag', '-a', @name, @commit, '-m', "Release shaka #{@name.delete_prefix('v')}") unless local
       # push.followTags could otherwise publish other local tags alongside this one.
       git('push', '--no-follow-tags', Preflight::REMOTE, "refs/tags/#{@name}")
+      # A push URL rewrite could send the tag elsewhere; read it back before anything depends on it.
+      refuse "the pushed tag #{@name} is not on #{Preflight::REMOTE}; check url.*.pushInsteadOf" unless
+        remote == @commit
     end
 
     private

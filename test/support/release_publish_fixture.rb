@@ -5,19 +5,8 @@ require 'json'
 require 'stringio'
 require_relative '../../lib/shaka_release/publish'
 
-# A release checkout with a local bare remote, and stand-in `gh`, `gem`, and RubyGems that
-# record what publication did in a state directory.
-module ReleasePublishFixture
-  # Reads what the stand-in `gem push` recorded, as the RubyGems API would.
-  class FakeRegistry
-    def initialize(state) = @state = state
-
-    def published_sha256(_version)
-      path = File.join(@state, 'registry')
-      File.exist?(path) ? File.read(path) : nil
-    end
-  end
-
+# Stand-in `gh` and `gem` scripts that record what publication did in FAKE_STATE.
+module ReleaseFakeCommands
   FAKE_GH = <<~RUBY
     state = ENV.fetch('FAKE_STATE')
     release = File.join(state, 'release')
@@ -25,7 +14,9 @@ module ReleasePublishFixture
     when %w[release view]
       abort 'HTTP 502' if File.exist?(File.join(state, 'gh_fails'))
       abort 'release not found' unless File.exist?(release)
-      puts JSON.generate('isDraft' => File.exist?(File.join(state, 'draft')))
+      record = JSON.parse(File.read(release))
+      puts JSON.generate('isDraft' => File.exist?(File.join(state, 'draft')), 'body' => record['body'].to_s,
+                         'isPrerelease' => Array(record['args']).include?('--prerelease'))
     when %w[release create]
       notes = ARGV[ARGV.index('--notes-file') + 1]
       File.write(release, JSON.generate('args' => ARGV, 'body' => File.read(notes), 'host' => ENV['GH_HOST']))
@@ -38,16 +29,30 @@ module ReleasePublishFixture
     when 'push'
       abort 'push refused' if File.exist?(File.join(state, 'push_fails'))
       File.write(File.join(state, 'registry'), Digest::SHA256.file(ARGV.last).hexdigest)
-      File.write(File.join(state, 'pushes'), "\#{ARGV.join(' ')}\\n", mode: 'a')
+      File.write(File.join(state, 'pushes'), "\#{ARGV.join(' ')}\n", mode: 'a')
     when 'install'
       abort 'not found' if File.exist?(File.join(state, 'install_fails'))
       bin = File.join(ENV.fetch('GEM_HOME'), 'bin')
       FileUtils.mkdir_p(bin)
-      File.write(File.join(bin, 'shaka'), "#!/bin/sh\\necho usage\\n")
+      File.write(File.join(bin, 'shaka'), "#!/bin/sh\necho usage\n")
       File.chmod(0o755, File.join(bin, 'shaka'))
-      File.write(File.join(state, 'installs'), "\#{ARGV.join(' ')}\\n", mode: 'a')
+      File.write(File.join(state, 'installs'), "\#{ARGV.join(' ')}\n", mode: 'a')
     end
   RUBY
+end
+
+# A release checkout with a local bare remote, and stand-in `gh`, `gem`, and RubyGems that
+# record what publication did in a state directory.
+module ReleasePublishFixture
+  # Reads what the stand-in `gem push` recorded, as the RubyGems API would.
+  class FakeRegistry
+    def initialize(state) = @state = state
+
+    def published_sha256(_version)
+      path = File.join(@state, 'registry')
+      File.exist?(path) ? File.read(path) : nil
+    end
+  end
 
   def setup
     @directory = Dir.mktmpdir('release-publish')
@@ -107,12 +112,17 @@ module ReleasePublishFixture
     path
   end
 
+  def push_annotated_tag(target = 'HEAD')
+    git('-c', 'user.name=T', '-c', 'user.email=t@example.com', 'tag', '-a', 'v1.2.0', target, '-m', 'Tag')
+    git('push', '-q', 'origin', 'refs/tags/v1.2.0')
+  end
+
   def remote_tag(version = '1.2.0') = git('ls-remote', 'origin', "refs/tags/v#{version}^{}").split.first
 
   def fake_bin
     bin = File.join(@directory, 'bin')
     FileUtils.mkdir_p(bin)
-    { 'gh' => FAKE_GH, 'gem' => FAKE_GEM }.each do |name, body|
+    { 'gh' => ReleaseFakeCommands::FAKE_GH, 'gem' => ReleaseFakeCommands::FAKE_GEM }.each do |name, body|
       File.write(File.join(bin, name), "#!#{RbConfig.ruby}\nrequire 'json'\nrequire 'digest'\n" \
                                        "require 'fileutils'\n#{body}")
       File.chmod(0o755, File.join(bin, name))
