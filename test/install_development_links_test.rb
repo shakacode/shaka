@@ -149,6 +149,20 @@ class InstallDevelopmentLinksTest < Minitest::Test
     refute_includes report['decision'], "\n"
   end
 
+  # Git cannot read a worktree whose index is damaged. Before, a failed status read counted as uncommitted
+  # files and the step offered to discard them with --force --force.
+  def test_a_failed_worktree_read_is_not_held_work
+    root, feature = default_with_worktree
+    File.write(File.join(root, '.git/worktrees/feature/index'), 'damaged')
+    report = status(root)
+    assert_nil report['next_command']
+    assert_includes report['decision'], "could not verify whether #{File.realpath(feature)} has uncommitted files"
+    [refusal(root), refusal(feature, '--directory', feature)].each do |output|
+      assert_includes output, 'could not verify whether'
+      refute_match(/branch -D|--force/, output)
+    end
+  end
+
   # Git cannot read a branch whose upstream names a blob; that proves nothing, so no command discards it.
   def test_a_failed_merge_read_is_not_unmerged_work
     root = default_install
