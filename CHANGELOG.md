@@ -23,12 +23,10 @@ did not run for 1.0.0; it applies again to later releases.
 
 ### Added
 
-- Install Shaka and run local validation and review from a native Windows
-  shell with full Git for Windows, which provides `sh.exe`. `bin/install`
-  accepts and later verifies a fresh checkout. `shaka evidence run` starts
-  repository commands. `shaka review run` finds `git.exe` and reviewer `.exe`
-  files. An interrupted or timed-out review or `shaka doctor` check tries to
-  stop its processes. Windows checks run in CI but do not yet block merges. See
+- Install Shaka and run `shaka evidence run` and `shaka review run` from a
+  native Windows shell with full Git for Windows, which provides `sh.exe`.
+  Stopping a check on Windows is best effort, and a stopped check never counts
+  as passing. Windows CI checks do not yet block merges. See
   [manual installation](https://shaka.shakacode.com/docs/manual-installation)
   for the PowerShell steps.
 - For a fresh install on Ruby 3.4 or later, run `gem install shaka --version 1.0.0`
