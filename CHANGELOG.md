@@ -73,8 +73,9 @@ did not run for 1.0.0; it applies again to later releases.
   together, with each exact overage. When a description has no validation or
   review results of its own and Shaka finds a review the same GitHub account
   published that still covers its commit, it links that review and says why
-  it still applies. Descriptions and walkthroughs refuse a bare finding ID such
-  as `N3` in visible prose; describe the finding in words.
+  it still applies. Descriptions and walkthroughs refuse a
+  bare finding ID in the `N3` form in visible prose; describe the finding in
+  words.
   When an identity field is unknown, the first line keeps the agent and drops
   the other unknown fields; the full identity appears under **Missing values**.
 - Local Codex reviews run without connected ChatGPT apps, web search, or image
