@@ -187,6 +187,27 @@ class LocalReviewCommitExportUnitTest < Minitest::Test
     end
   end
 
+  # Windows resolves these outside the export, so they stop before anything is written there.
+  def test_windows_path_syntax_is_refused_on_windows
+    exporter = Exporter.new('', '')
+    ['dir\\..\\..\\escape', 'C:escape', 'C:/escape', 'dir/.../escape', 'dir/.. /escape',
+     'file.txt:stream'].each do |path|
+      assert_raises(Shaka::Error, path) { exporter.send(:check_path!, path, windows: true) }
+    end
+    exporter.send(:check_path!, 'dir\\name', windows: false)
+    exporter.send(:check_path!, 'dir/name.txt', windows: true)
+  end
+
+  # Windows opens these as devices, so the reviewer would silently miss the file.
+  def test_windows_device_names_are_refused_on_windows
+    exporter = Exporter.new('', '')
+    ['NUL', 'dir/con.txt', 'COM1.log', 'NUL ', 'dir/aux .txt', 'CONIN$', 'COM¹.txt'.b, "dir/\xFFname".b].each do |path|
+      assert_raises(Shaka::Error, path) { exporter.send(:check_path!, path, windows: true) }
+    end
+    exporter.send(:check_path!, 'dir/console.txt', windows: true)
+    exporter.send(:check_path!, "dir/\xFFname".b, windows: false)
+  end
+
   # Break caught: a short read wrote a truncated file as if it were the committed content.
   def test_truncated_blob_output_stops_the_export
     Dir.mktmpdir do |temporary|
