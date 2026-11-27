@@ -1058,7 +1058,7 @@ always: |-
   once, prioritizing the primary owner. This also applies after checks pass in other phases.
   When a monitor will cause the coding tool to resume this session for pending work, add
   `--woken-by` naming it in place of a label. Settle each owed item and run it again before
-  stopping. An Ask handoff's comment-only watch keeps the merge label and omits `--woken-by`;
+  stopping. Relay its notes to the user. An Ask handoff's comment-only watch keeps the merge label and omits `--woken-by`;
   keep that owning chat available while automatic follow-up depends on it. Review-only work reports
   what `handoff` lists and leaves the PR unchanged. A session
   resuming a PR after a restart, crash, or new chat runs `handoff` without `--head` first, treats

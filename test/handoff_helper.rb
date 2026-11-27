@@ -48,9 +48,25 @@ class HandoffFakeGitHub
 
   def api(path, **)
     return { 'login' => 'shaka-agent' } if path == 'user'
+    return visibility if path == 'repos/owner/repo'
+    return permission(Regexp.last_match(1)) if path =~ %r{\Arepos/owner/repo/collaborators/([^/]+)/permission\z}
     raise "unexpected read #{path}" unless path == 'repos/owner/repo/pulls/42'
 
     { 'body' => @pull[:body], 'head' => { 'sha' => @pull.fetch(:final_head, @pull[:head]) } }
+  end
+
+  # A repository is private unless a test says otherwise, so no author is screened.
+  def visibility
+    raise Shaka::Error, 'Repository visibility is unavailable.' if @pull[:visibility] == :unreadable
+
+    { 'visibility' => @pull.fetch(:visibility, 'private') }
+  end
+
+  # Logins in :writers have write access; one in :unverifiable fails its permission read.
+  def permission(login)
+    raise Shaka::Error, 'permission read failed' if @pull.fetch(:unverifiable, []).include?(login)
+
+    { 'user' => { 'login' => login }, 'permission' => @pull.fetch(:writers, []).include?(login) ? 'write' : 'read' }
   end
 
   def api_list(path)
@@ -147,10 +163,14 @@ module HandoffHarness
 
   def description(wip = WIP, extra = {}) = HandoffFixtures.description(wip, extra)
 
+  # pull[:trusted] lists the users the trusted-actor settings name.
   def handoff(expected: HEAD, woken_by: nil, post_implementation: nil, walkthrough_publish: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,
                  reviews: [walkthrough(HEAD)], checks: [check('pass')], comments: [] }
-    Shaka::Handoff.new(HandoffFakeGitHub.new(defaults.merge(pull)), post_implementation:, walkthrough_publish:)
+    github = HandoffFakeGitHub.new(defaults.merge(pull))
+    trust_config = { users: pull.fetch(:trusted, []), bots: [], metadata_bots: [], teams: [] }
+    Shaka::Handoff.new(github, post_implementation:, walkthrough_publish:)
+                  .tap { |handoff| handoff.thread_screen = Shaka::Handoff::ThreadScreen.new(github, trust_config:) }
                   .call(head: expected, woken_by:)
   end
 end
