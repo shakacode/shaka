@@ -49,7 +49,9 @@ An explicit task choice takes
 precedence where an option supports it, such as choosing Ask for one task.
 Each option below describes any such override. Individual settings govern
 delivery preferences, such as AI reviewers and writing limits; they cannot
-disable required merge gates or authorize merging.
+disable required merge gates or authorize merging. `shaka merge` does not read them at all.
+When you approve a merge under individual setup, it applies Shaka's default merge gates,
+such as the default [hold label](#mergehold_labels), whatever your file says.
 
 A settings PR becomes the team's default after it merges into the default branch.
 You can also select it for one task before adoption. Local settings do not override
@@ -270,6 +272,9 @@ merge:
 label added while the agent checks the PR still stops it. The agent then names the label and
 hands the PR back to you. No confirmation in chat gets past a hold; remove the label when the PR
 may merge. Label names match without regard to case.
+
+With individual setup, `shaka merge` stops only for the default `hold` label. It does not read
+your local `merge.hold_labels`, so a label you list there does not stop a merge.
 
 The hold governs only Shaka. GitHub does not know about it, so it does not stop anyone from
 clicking merge, and it does not take a PR out of a merge queue it has already joined. While
