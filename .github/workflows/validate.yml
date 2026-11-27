@@ -41,16 +41,15 @@ jobs:
           fi
           echo "docs_only=false" >> "$GITHUB_OUTPUT"
 
+      - uses: ruby/setup-ruby@be3c7df29b3349ec6bcfc6b4792f1cf9f5237d18 # v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
       - name: Report documentation-only validation
         if: steps.changes.outputs.docs_only == 'true'
         run: |
           ruby bin/check-docs-navigation
           echo "Documentation-only change; Ruby tests and RuboCop skipped."
-
-      - uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1
-        if: steps.changes.outputs.docs_only != 'true'
-        with:
-          ruby-version: .ruby-version
-          bundler-cache: true
       - if: steps.changes.outputs.docs_only != 'true'
         run: bin/validate

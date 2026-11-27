@@ -38,7 +38,8 @@ Shaka then keeps the full records in comments on the same PR. A **Usage archive*
 with links and a SHA256 checksum identifies each set of those comments; the tables and
 pricing notes stay in the description. Table reports archived together share one such
 line, so an update adds a few hundred characters however many of them it archives. A
-report that shows its own text keeps its own line.
+report that shows its own text keeps its own line. New archive comments show the
+encoded records under a collapsed **Archived usage data** section.
 Keep those comments. A later update checks their contents before using them and stops
 if a comment is missing or changed. The checksum detects changes; it does not make a
 GitHub comment immutable.
@@ -64,6 +65,7 @@ removing the references does not preserve the lost history.
 | Cursor | Includes cache reads and writes | Reasoning is unreported |
 | OpenCode | Excludes cache reads and writes | Reasoning is counted separately |
 | Pi | Excludes cache reads and writes | Includes reasoning |
+| Antigravity | Excludes cache reads; cache writes are unreported | Includes reasoning |
 | OpenRouter | Includes cached input | Includes reasoning |
 
 For example, a Codex row with 100,000 input tokens and 80,000 cached input
@@ -71,7 +73,7 @@ tokens has 20,000 uncached input tokens. A Claude row with 20,000 input tokens
 and 80,000 cached input tokens describes the same input quantities.
 Do not add a Codex row's cached input to its input again.
 OpenCode's native total includes input, output, reasoning, and cache tokens,
-but OpenCode 2 does not report one; Cursor's native total is unreported.
+but OpenCode 2 does not report one; Cursor's and Antigravity's native totals are unreported.
 
 ## How estimates are priced
 
@@ -86,6 +88,11 @@ charge uncached input, cache reads, and cache writes separately. A one-hour
 cache write costs more than a five-minute write. Supported fast-mode
 responses use their published fast-mode rates. Standard-speed responses use
 standard rates. Fast-mode responses without a published rate remain unpriced. Pi uses its recorded nominal USD instead of repricing it.
+Antigravity estimates for Gemini models use Google's Gemini API list prices, which
+charge uncached input, cache reads, and output separately; output includes thinking.
+When Google has announced a price change, each response uses the price on its date.
+Claude models run in Antigravity remain unpriced, because Antigravity records no cache
+writes and Anthropic charges for them.
 OpenRouter uses the response's reported account charge in USD credits instead of
 direct DeepSeek list prices. Missing counters or cost remain UNKNOWN. A paid
 incomplete response can still contribute reported cost without establishing a

@@ -2,6 +2,7 @@
 
 require_relative 'checkpoint'
 require_relative 'claim'
+require_relative 'companions/command'
 require_relative 'configure_settings'
 require_relative 'doctor'
 require_relative 'enforcement'
@@ -37,6 +38,7 @@ module Shaka
     TABLE = {
       'checkpoint' => entry { |arguments| Checkpoint.run(arguments) },
       'claim' => entry { |arguments| Claim.run(arguments) },
+      'companions' => entry { |arguments| Companions::Command.run(arguments) },
       'configure' => entry(ConfigureSettings::OPERATIONS) { |arguments| ConfigureSettings.run(arguments) },
       'doctor' => entry { |arguments| Doctor.run(arguments) },
       'enforcement' => entry { |arguments| Enforcement.run(arguments) },

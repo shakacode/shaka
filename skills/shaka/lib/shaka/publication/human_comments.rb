@@ -5,8 +5,8 @@ require_relative 'human_comment_rows'
 require_relative 'managed_region'
 
 module Shaka
-  # Lists what people wrote on a pull request ahead of the agent's own sections, so their comments
-  # are not lost among agent posts. The rows come from the `shaka comments` result; the agent adds
+  # Lists what people wrote on a pull request, by default ahead of the agent's own sections, so their
+  # comments are not lost among agent posts. The rows come from the `shaka comments` result; the agent adds
   # only a one-line summary of each comment too long to repeat.
   class HumanComments
     # `shaka description --comments PATH` puts that result under this content key.

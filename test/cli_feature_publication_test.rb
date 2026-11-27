@@ -106,7 +106,7 @@ class CliFeaturePublicationTest < Minitest::Test
     linked = %r{\[`\h{7}`\]\(https://github\.com/[^)]+/commit/\h{40}\)}
     body = File.read(File.join(dir, 'published.md'))
     assert_match(/\| Validation \| Repository settings from commit #{linked} \| validate: \d+s[^|]* \|/, body)
-    assert_includes body, '**Validation and review:** `validate` passed (exit 0); ' \
+    assert_includes body, '**Validation and review:** `validate` passed; ' \
                           "local review by openai/codex (host-reported) at `#{@head[0, 7]}`."
   end
 

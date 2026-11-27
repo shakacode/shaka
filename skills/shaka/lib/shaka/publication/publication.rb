@@ -16,11 +16,13 @@ require_relative 'settings'
 require_relative 'steps_besides_merging'
 require_relative 'human_comments'
 require_relative 'skills_used'
+require_relative 'companion_results'
 require_relative 'metrics'
 require_relative 'missing_values'
 require_relative 'intent_verification'
 require_relative 'risk_review'
 require_relative 'quoted_markers'
+require_relative 'template_layout'
 require_relative '../publication_sections'
 
 module Shaka
@@ -33,8 +35,8 @@ module Shaka
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil, # rubocop:disable Metrics/ParameterLists
                          environment: nil, host_name: nil)
       new(content, description: true, workflow_version:, pull:, settings:, timeline:, environment:, host_name:)
-        .render(%i[steps intent_verification human_comments evidence metrics wip sections credit],
-                lead: %i[lead]).tap { QuotedMarkers.refuse!(content) }
+        .render(%i[steps intent_verification human_comments evidence metrics wip],
+                lead: %i[lead], closing: %i[credit]).tap { QuotedMarkers.refuse!(content) }
     end
 
     def self.comment(content) = new(content).render([])
@@ -61,17 +63,21 @@ module Shaka
 
     # A description leads with the maintainer's decision, so lead parts come before the summary.
     # Only a description names its summary, because there the decision line stands above it.
-    def render(parts, title: false, lead: [])
-      blocks = opening
-      blocks << '# Code Walkthrough' if title
-      lead.each { |part| blocks.concat(send(part)) }
+    def render(parts, title: false, lead: [], closing: [])
+      blocks = [*opening, *('# Code Walkthrough' if title), *lead.flat_map { send(it) }]
       summary = PublicationText.required(@content['summary'], 'summary')
-      blocks << (@description ? "## Summary\n\n#{summary}" : summary)
-      parts.each { |part| blocks.concat(send(part)) }
-      "#{blocks.join("\n\n")}\n"
+      body = [@description ? "## Summary\n\n#{summary}" : summary, *parts.flat_map { send(it) }]
+      "#{[*blocks, *arranged(body), *closing.flat_map { send(it) }].join("\n\n")}\n"
     end
 
     private
+
+    # A description's own sections come as data with their headings, so the pull request template can order them
+    # around Shaka's without reading Markdown. Other posts keep their order.
+    def arranged(body) = @description ? TemplateLayout.arrange(body, supplied, @settings.template_headings) : body
+
+    # Each supplied section beside its rendered block; rendering validates the list first.
+    def supplied = Array(@content['sections']).zip(sections)
 
     # The spend follows the model line, before an optional publisher note; the intervals sit in Timings.
     def opening
@@ -102,10 +108,11 @@ module Shaka
     end
 
     def evidence
-      spec = @content.fetch('verification')
       body = [VerificationGates.line(@settings.verdict, @content['review']),
-              IntentVerification.evidence(spec, @content['wip'].nil? ? (1..3) : (0..3)), *table, *details]
-      [details_block('summary' => 'Evidence and limitations', 'body' => body.join("\n\n"))]
+              IntentVerification.evidence(@content.fetch('verification'), @content['wip'].nil? ? (1..3) : (0..3)),
+              *table, *details]
+      evidence = { 'summary' => 'Evidence and limitations', 'body' => body.join("\n\n") }
+      [evidence, *CompanionResults.for(@content, @pull)].map { details_block(it) }
     end
 
     # Verification carries the proof, so a table only adds facts that fit no check.
@@ -140,9 +147,8 @@ module Shaka
     def table_line(cells) = "| #{cells.map { |cell| PublicationText.table_cell(cell) }.join(' | ')} |"
 
     def details
-      items = PublicationText.list(@content['details'], 'details')
-      validate_details(items) if @description
-      items.map { |detail| details_block(detail) }
+      items = PublicationText.list(@content['details'], 'details').tap { validate_details(it) if @description }
+      items.map { details_block(it) }
     end
 
     def validate_details(items)

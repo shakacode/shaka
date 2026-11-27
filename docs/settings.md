@@ -11,7 +11,7 @@ Settings live in `.agents/shaka/config.yml`. Ask your agent to
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
 Optional choices without fixed defaults, such as the base branch and local reviewer models, stay commented.
-Its [README](https://github.com/shakacode/shaka/tree/main/.agents/shaka#readme) notes
+Its [README](https://github.com/shakacode/shaka/blob/main/.agents/shaka/README.md) notes
 why its prompts and reviewer count differ from the defaults.
 
 ## Which settings apply?
@@ -717,7 +717,7 @@ Codex reviewed locally still gets a full Claude review on GitHub.
 
 **Optional. Default: `.agents/shaka/instructions/review.md`.** Add your own rules to the
 local code review without copying Shaka's prompt. Write them in that file. Shaka's
-[review instructions](../skills/shaka/config/review-prompt.md) still apply in full; the
+[review instructions](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md) still apply in full; the
 reviewer reads them, then your `AGENTS.md` files, then your file. For example:
 
 ```markdown
@@ -737,7 +737,7 @@ say it is ignored. The [checkpoint](#checkpoint) works the same way.
 
 ## `review.replacement_prompt_file`
 
-**Optional. Default: Shaka's [review instructions](../skills/shaka/config/review-prompt.md).**
+**Optional. Default: Shaka's [review instructions](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md).**
 A Markdown file in your repository that replaces what the local reviewer looks for
 and how it reports. Prefer [custom instructions](#reviewcustom_instructions_file); replace
 only to remove one of Shaka's rules, and copy the default to start.
@@ -835,7 +835,7 @@ you [accepted](reference/pr-record.md#checkpoint) as resolved, or an explicit op
 ### Add your own checkpoint questions
 
 Write them in `.agents/shaka/instructions/checkpoint.md`. Shaka's
-[built-in checkpoint prompt](../skills/shaka/config/post-implementation-prompt.md)
+[built-in checkpoint prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/post-implementation-prompt.md)
 still applies in full. The reviewer reads it, then your `AGENTS.md` files, then your
 file. For example:
 
@@ -923,7 +923,7 @@ reviewer's.
   Rate a change to a public API response as at least medium.
   ```
 
-  Shaka's [risk rubric](../skills/shaka/config/post-implementation-risk.md) tells the
+  Shaka's [risk rubric](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/post-implementation-risk.md) tells the
   reviewer that guidance may raise a rating but never lower one. The same holds for
   guidance in `AGENTS.md` or a replacement prompt. Shaka does not check the reviewer's
   rating against your guidance.
@@ -984,30 +984,9 @@ project_guidance:
   a large table and how to roll it back. The guide adds to Shaka's own walkthrough
   rules, such as opening with the behavior that changed; it does not replace them.
 
-Set `pr_evidence` to have Shaka show the agent your pull request template alongside
-a separate evidence guide. You can also use the template as the guide, for example by
-setting `pr_evidence` to `.github/pull_request_template.md`. Use the template for
-sections you want in the PR description. Use the evidence guide for what to run or
-report, and `AGENTS.md` for standing instructions such as when to update the changelog.
-
-Put instructions for a specific section in an HTML comment directly below its
-heading. GitHub hides the comment in the rendered description. For example, a
-Changelog comment can ask for a short note about what users can now do and say to
-write `None` for internal work. Keep the release-only rule for editing
-`CHANGELOG.md` in `AGENTS.md`.
-
-Shaka's built-in headings keep their usual behavior. For example, **Decisions to
-make** appears only if there's a decision to make. Extra template sections appear
-unless an HTML comment says to omit them for the current diff. A **Settings
-changes** comment can ask Shaka to omit its heading and body when the diff leaves
-repository settings alone. Required verification still appears. Extra sections
-follow metrics and any WIP Details. See
-[Keep changelog notes in PR descriptions](changelog-in-pr-descriptions.md) for setup.
-
-With a separate evidence guide, Shaka looks for `pull_request_template.md` or
-`PULL_REQUEST_TEMPLATE.md` in `.github/`, the repository root, then `docs/`. It
-selects the first file it can resolve. If that template fails the read checks, the
-agent sees the evidence guide and a skip message.
+With `pr_evidence` set, the agent also fills your pull request template. A marker line in
+the template can set where Shaka's own sections appear. You can point `pr_evidence` at
+the template itself. [Use your pull request template](pr-template.md) explains both.
 
 Put anything a command can check in your [validate script](#standard-command-scripts)
 or CI, where a failure stops the PR. Keep the guides for judgment calls, such as
@@ -1141,10 +1120,8 @@ same.
 
 ## `prose_limits`
 
-**Optional.** Limit the length of PR descriptions and code walkthroughs. These
-limits are checked in code before publication. Recommendations and review
-replies follow the agent's writing instructions but are not checked against
-these limits.
+**Optional.** Limit the length of PR descriptions and code walkthroughs.
+Recommendations and review replies follow the agent's writing instructions.
 
 ```yaml
 prose_limits:
@@ -1168,9 +1145,17 @@ add outside it is left alone.
   changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
 - The description also stops at `max_description_words`, however large the change.
 
-When text breaks a limit, nothing reaches GitHub. The command exits with an
-error identifying the long passage or total word count. The agent shortens the
-explanation before publishing.
+`shaka description` reports identity, task source, verification check and
+skill metadata errors together before it reads the PR. Shaka reports each
+sentence, paragraph and total overage it finds in rendered prose. The overall
+limit uses the PR's diff size. When GitHub omits either line count, descriptions
+use `max_description_words` and walkthroughs use the sentence and paragraph
+limits.
+
+If GitHub declines to render a description before publication, Shaka checks the
+saved version when the body contains only Shaka's section, whitespace and HTML
+comments. If the body contains other content outside that section, Shaka reports
+the prose limits as unchecked.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and

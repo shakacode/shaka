@@ -10,6 +10,8 @@ module Shaka
     # Verification reaches ready without a review only when the trusted review.required is none.
     NOT_REQUIRED = 'review not required by this repository’s settings'
     KEPT = 'Kept from this commit’s earlier description; not rechecked under the current Shaka or settings.'
+    # Descriptions published before a pass dropped its exit code still carry one.
+    OLD_PASS = /(?<=passed) \(exit 0\)/
     CONTAINER_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#run-codex-reviews-in-a-container'
 
     module_function
@@ -37,7 +39,7 @@ module Shaka
     # Binding accepts a completed run whatever its exit, so the exit code decides the wording here.
     def line(verdict, review_url = nil)
       return UNKNOWN unless verdict
-      return "#{verdict['kept_line']} #{KEPT}" if verdict.key?('kept_line')
+      return "#{verdict['kept_line'].gsub(OLD_PASS, '')} #{KEPT}" if verdict.key?('kept_line')
 
       validation, reviews = results(verdict)
       reviewed = reviews.empty? && verdict['review_required'] == false ? NOT_REQUIRED : review(reviews, review_url)
@@ -63,10 +65,14 @@ module Shaka
     end
 
     def validations(results)
-      results.map do |result|
-        code = result['exit_code']
-        "`#{result['command']}` #{code&.zero? ? 'passed' : 'failed'} (exit #{code})"
-      end
+      results.map { |result| "`#{result['command']}` #{outcome(result['exit_code'])}" }
+    end
+
+    # A pass needs no exit code; a failure keeps it as a clue to what went wrong.
+    def outcome(code)
+      return 'passed' if code&.zero?
+
+      code ? "failed (exit #{code})" : 'failed'
     end
 
     def setup_gaps(shortfall, blind, url)
@@ -113,7 +119,7 @@ module Shaka
       url ? "#{text} ([attestation](#{url}))" : text
     end
 
-    private_class_method :routine?, :kept, :summary, :short_head, :results, :validations,
+    private_class_method :routine?, :kept, :summary, :short_head, :results, :validations, :outcome,
                          :setup_gaps, :blind_reviewers, :blind?, :blind_gap, :reviewer_gap, :review
   end
 end

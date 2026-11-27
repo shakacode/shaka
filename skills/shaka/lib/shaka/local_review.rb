@@ -127,6 +127,7 @@ module Shaka
     def check_parser
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka review check --head SHA (--reviewer ID --report PATH | --not-run-reason TEXT)'
+        flags.separator '  --settings-ref requires --repository and --root.'
         %w[head reviewer report not-run-reason root settings-ref repository].each do |key|
           flags.on("--#{key} VALUE") { |value| CallLog.tag(key => @options[key.tr('-', '_').to_sym] = value) }
         end

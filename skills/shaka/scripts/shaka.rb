@@ -48,6 +48,7 @@ require_relative '../lib/shaka/publication/squash_message'
 require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/guidance'
 require_relative '../lib/shaka/publication/publication'
+require_relative '../lib/shaka/description_preflight'
 require_relative '../lib/shaka/published_timing'
 require_relative '../lib/shaka/publication/rendering_preview'
 require_relative '../lib/shaka/review_focus'
@@ -220,7 +221,6 @@ end
 
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.
 def resolved_description(content, github, options)
-  content = Shaka::PublisherAttribution.prepare(content)
   content = Shaka::LocalReviewUsage.attach(content, options[:review])
   resolved = Shaka::CheckpointRecommendation.resolve(Shaka::DeploymentLink.resolve(content, github), github)
   with_human_comments(resolved, options[:comments])
@@ -238,11 +238,17 @@ end
 def walkthrough_parts(options, github)
   return [File.read(options.fetch(:body_file), encoding: 'UTF-8'), []] if options[:body_file]
 
+  walkthrough, rendered = walkthrough_input(options, github.repository)
+  body = Shaka::Walkthrough::CodeLinks.resolve(rendered, walkthrough, github)
+  [body, Shaka::Walkthrough::Notes.resolve(walkthrough, github), walkthrough['summary']]
+end
+
+def walkthrough_input(options, repository)
   walkthrough = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
   walkthrough = walkthrough.merge('head' => options.fetch(:head))
-  body = Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough, github.repository),
-                                               walkthrough, github)
-  [body, Shaka::Walkthrough::Notes.resolve(walkthrough, github), walkthrough['summary']]
+  [walkthrough, Shaka::Publication.walkthrough(walkthrough, repository)]
+rescue Shaka::Error => e
+  raise Shaka::Error, "#{e.message} See shaka walkthrough --help for the JSON format and example."
 end
 
 # The opening check runs after GitHub has the text, so its advice never blocks publication.
@@ -471,9 +477,10 @@ begin
                                                             expected_head: issue_only ? nil : options[:head])
            when 'description'
              root = options[:root] || Dir.pwd
+             supplied = content(options.fetch(:content_file))
+             description_content = Shaka::DescriptionPreflight.new(supplied).call
              prose, prose_note = description_prose_limits(root, options[:ref])
              notes = prose_note.merge(description_pr_evidence(root, options[:ref]))
-             description_content = content(options.fetch(:content_file))
              Shaka::OpeningPublication.with_safe_path(root:) do |candidate_root, gh, neutral|
                raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
 

@@ -2,11 +2,22 @@
 # checkout for implementation estimates. Pricing formulas stay in the installed code.
 # OpenAI credits and api, and Cursor standard and fast, are input, cached input, and
 # output per million tokens. Anthropic prices are input, cache read, 5-minute cache
-# write, 1-hour cache write, and output per million tokens. Retired models are omitted.
+# write, 1-hour cache write, and output per million tokens. Google prices are input, cache
+# read, and output per million tokens; a price under `from` applies from that UTC date of the
+# response. Retired models are omitted.
 openai:
-  verified: "2026-09-29"
+  verified: "2026-11-18"
   threshold: 272000
   models:
+    # GPT-6.2 Standard rates:
+    # https://developers.openai.com/api/docs/pricing
+    # https://learn.chatgpt.com/docs/pricing#token-rates
+    gpt-6.2-astra:
+      credits: ["200", "10", "1000"]
+      api: ["8", "0.4", "40"]
+    gpt-6.2-sol:
+      credits: ["50", "2.5", "250"]
+      api: ["2", "0.1", "10"]
     # Sol 6.1 rates verified 2026-09-29:
     # https://developers.openai.com/api/docs/models/gpt-6.1-sol
     # https://learn.chatgpt.com/docs/pricing#token-rates
@@ -29,7 +40,7 @@ openai:
       credits: ["2.5", "0.25", "12.5"]
       api: ["0.1", "0.01", "0.5"]
 cursor:
-  verified: "2026-09-21"
+  verified: "2026-11-21"
   long_context:
     standard: 2
     fast: 3
@@ -41,6 +52,32 @@ cursor:
       standard: ["2", "0.5", "6"]
       fast: ["4", "1", "12"]
       threshold: 256000
+    # Gemini rates, verified 2026-11-21:
+    # https://cursor.com/docs/models-and-pricing
+    # No separate Fast rate is published. Fast repeats standard because the installed loader
+    # requires both columns; an explicit Fast response is not priced from that copy.
+    # Gemini 4 Carbon's introductory rates apply through 2026-11-30;
+    # from 2026-12-01 they are input 4, cached input 0.20, and output 20.
+    # Gemini 3.1 Pro's model page says input above 200k costs more. The pricing table
+    # publishes no second rate, so this card has no threshold for it.
+    gemini-3.1-pro:
+      standard: ["2", "0.2", "12"]
+      fast: ["2", "0.2", "12"]
+    gemini-3.8-flash:
+      standard: ["0.75", "0.075", "3.75"]
+      fast: ["0.75", "0.075", "3.75"]
+    gemini-4-argon:
+      standard: ["2", "0.1", "10"]
+      fast: ["2", "0.1", "10"]
+    gemini-4-carbon:
+      standard: ["2", "0.1", "10"]
+      fast: ["2", "0.1", "10"]
+    gemini-4-hydrogen:
+      standard: ["1.5", "0.075", "7.5"]
+      fast: ["1.5", "0.075", "7.5"]
+    gemini-4-neon:
+      standard: ["3", "0.15", "15"]
+      fast: ["3", "0.15", "15"]
 anthropic:
   verified: "2026-11-12"
   models:
@@ -76,3 +113,20 @@ anthropic:
       prices: ["3", "0.3", "3.75", "6", "15"]
     claude-haiku-4-5:
       prices: ["1", "0.1", "1.25", "2", "5"]
+google:
+  verified: "2026-11-23"
+  models:
+    # Paid-tier Standard rates, models Antigravity offers:
+    # https://ai.google.dev/gemini-api/docs/pricing
+    gemini-4-neon:
+      prices: ["3", "0.15", "15"]
+    gemini-4-argon:
+      prices: ["2", "0.1", "10"]
+      from:
+        "2026-12-01": ["4", "0.2", "20"]
+    gemini-4-hydrogen:
+      prices: ["1.5", "0.075", "7.5"]
+    gemini-3.8-flash:
+      prices: ["0.75", "0.075", "3.75"]
+      from:
+        "2027-01-01": ["1.5", "0.15", "7.5"]

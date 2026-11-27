@@ -15,10 +15,12 @@ instructions or private company plans.
 - [Companion skill points decision record](adr/0009-companion-skill-points.md) — proposed skill points in the procedures that load when a task reaches them, where ShakaPerf, pstack, and AI Hero skills are suggested by default; a packaged `use` entry, once a study supports it, applies only after the repository or machine turns the pack on.
 - [PR retrospective decision record](adr/0010-retrospective-over-merged-prs.md) — proposed PR record report beside `timings report`, and a retrospective across merged PRs that reads it.
 - [Companion skill results decision record](adr/0011-companion-skill-results.md) — accepted optional `companion_results` description list with commit and stale checks; build waits for a real `/statechart` or harness PR; not yet shipped.
+- [Phase loading decision record](adr/0012-load-workflow-phases-on-entry.md) — deferred on 2026-11-25: a startup workflow of Intake, Plan, Always, and Code quality at 35% to 37% of today's tokens, with later phases loaded by `shaka workflow --phase`. The record lists the review findings and a smaller first step; not shipped.
 - [Experiment index](../eval/README.md) — retained repositories, outcomes, and the next proposed case.
 - [Review outcomes](review-outcomes.md) — proposed record of review decisions and later assessments, not shipped behavior.
 - [Improving Shaka](improving-shaka.md) — maintainer method for investigating observed workflow failures.
 - [Documentation structure](documentation.md) — help users start with the skill and consult guides as needed.
 - [Rendering preview](rendering-preview.md) — how an agent shows a rendering change on its own PR.
 - [Conditional workflow loading](conditional-workflow-loading.md) — bounded extraction and Ponytail structure comparison.
+- [Startup token cost](startup-token-cost.md) — what Shaka's startup text costs in Claude and Codex tokens, a release-time log, and one comparison with popular skill libraries.
 - [Predecessor retirement](retirement.md) — temporary migration record; remove after its acceptance conditions are met.

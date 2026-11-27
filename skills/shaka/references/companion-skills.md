@@ -47,6 +47,26 @@ over a spec with tickets or a companion's output, or asks you to use a companion
   Continue the authorized Shaka work that does not depend on it, and ask about the
   part that does. Do not install it.
 
+## Skill points
+
+A skill point is a step in a Shaka procedure where a companion skill can do part of
+the work. The procedure marks it with a `Skill point` line, which runs the saved
+helper's `companions POINT --root DIR --ref SHA` with the trusted default-branch commit.
+Without one, omit `--ref`; never pass a candidate commit.
+The command prints JSON with one row per skill configured for that step. Each row has a
+`mode`, the `reason` the skill fits, the `basis` for that mode, and whether it is installed.
+Apply a `use` skill inside the current phase. Name a `suggest` skill with its reason and
+run it only after the user says yes. When a row's `explicit_only` is true, give the user
+its invocation to type instead. When a row's `fans_out` is true, name the workers
+the skill would start before asking; only then does a yes authorize delegation, for that run.
+Leave a `decline` skill unused. Read a project skill from its commit with `git show`: its
+`skill_file`, then any file it names under `location`, never the checkout copy. Before
+reading a supporting file, check with `git ls-tree` that it is a regular file; skip a
+link and say so. Run a script the skill bundles only inside a copy of the whole skill
+directory taken from that commit, such as with `git archive`.
+An empty list needs nothing.
+When the command fails, report its error and continue without companion skills.
+
 ## Use a technique inside the phases
 
 A selected companion technique applies within the Shaka phase it concerns.
@@ -67,9 +87,12 @@ A selected companion technique applies within the Shaka phase it concerns.
 
 ## Consume verification evidence
 
-Carry companion verification evidence into the existing verification record: the
-command, the commit it ran on, the observed result, its artifacts, and what it did not
-cover. Shaka's current-head requirements override a companion's verdict-reuse policy.
+Record runs in `companion_results`: `skill`, `command`, `checked`, `result`,
+`not_covered` (`Nothing.` if none), full `commit` SHA, and `artifacts` (HTTP(S) links
+or `[]`). Disambiguate Skills used with `source` or `revision`. Link public-safe
+attachment comments. Remove workstation paths, including encoded paths, from
+commands and prose before publishing. Summarize merge-relevant results in Verification. Earlier
+commits show as stale. Rerun when a later commit touches what the run checked.
 Record applied skills through [skill attribution](skill-attribution.md).
 
 ## Use PR-body advice inside the managed description
@@ -79,9 +102,9 @@ A companion that prescribes PR text, such as AI Hero's `pr` template or pstack's
 
 - Publish through `description`. Never write the companion template as the PR body or
   over the managed region, and keep every required field.
-- Put a useful diagram or sketch in a `sections` item. Put before and after evidence
-  in a `details` item, and reversibility and blast radius in the `details` item
-  that holds risk and rollback.
+- Put a diagram in `sections` or a before-and-after comparison in `details`. Name
+  that heading or summary in the result for the run that produced the evidence.
+  Put reversibility and blast radius in the risk and rollback `details` item.
 - Apply prose advice to the content you supply before the helper renders it. Keep
   the helper's headings and identity line.
 - Text outside the managed region stays the human's; do not add a second summary there.
