@@ -56,8 +56,8 @@
 - Say what each change does, not what the diff adds. Name another PR or issue
   only with what it did, since a bare number means nothing in `git log`.
   - Instead of: “It shows one before-and-after rewrite from #1242.”
-  - Write: “The writing guide shows how to replace an internal term with what
-    the part does.”
+  - Write: “Squash messages now replace internal terms with what each part
+    does.”
 - Replace internal terms with what the part does.
   - Instead of: “Without a job, only a leader Ruby has not reaped is ended,
     through Ruby's own handle.”
