@@ -91,10 +91,11 @@ class WindowsSession
 
   private
 
+  # Bounded, so a hung test fails its record instead of holding the job until its timeout.
   def run_one_test(file)
-    output, status = Open3.capture2e(test_env, *test_command(file), chdir: root)
-    puts output
-    raise "tests failed: #{file}" unless status.success?
+    output, error, success = capture([test_env, *test_command(file)], 600)
+    puts output, error
+    raise "tests failed: #{file}" unless success
   end
 
   def test_command(file) = [bundle_command, 'exec', RbConfig.ruby, '-Itest', file]

@@ -101,8 +101,8 @@ module Shaka
         changed = inputs_changed?(context, execution)
         process = execution.outcome.status
         { 'kind' => 'validation', 'command' => context.fetch(:name),
-          'status' => process.success? && !changed ? 'completed' : 'not_completed',
-          'exit_code' => process.exitstatus, 'tested_tree' => execution.before_tree,
+          'status' => process&.success? && !changed ? 'completed' : 'not_completed',
+          'exit_code' => process&.exitstatus, 'tested_tree' => execution.before_tree,
           'public_settings' => context.fetch(:public_settings), 'settings' => context.fetch(:settings),
           'inputs_changed' => changed,
           'tree_after' => execution.after_tree, 'settings_after' => execution.after_settings,

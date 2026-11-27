@@ -2,6 +2,7 @@
 
 require 'open3'
 require 'uri'
+require_relative '../executable_file'
 require_relative 'version'
 
 module Shaka
@@ -84,12 +85,15 @@ module Shaka
         tracked.each_slice(100).all? { |batch| matching_blob_batch?(batch) }
       end
 
-      def matching_modes?(tracked)
+      # Windows reports no execute bit for an extensionless file, so there only the blob and the
+      # writable check can tell a changed file from the revision. Only the execute bit is waived, not a
+      # symlink or submodule entry that Git wrote out as a plain file.
+      def matching_modes?(tracked, windows: ExecutableFile.windows?)
         tracked.all? do |path, (mode, _object)|
           actual = File.join(@root, path)
           file_mode = File.stat(actual).mode
           expected_mode = file_mode.anybits?(0o100) ? '100755' : '100644'
-          file_mode.nobits?(0o002) && mode == expected_mode
+          file_mode.nobits?(0o002) && (mode == expected_mode || (windows && %w[100644 100755].include?(mode)))
         end
       end
 
