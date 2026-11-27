@@ -137,9 +137,12 @@ class CliUiCheckLinkTest < Minitest::Test
   include CliOpeningCheckFakes
   include UiCheckLinkFixture
 
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  COMMAND = SHAKA_COMMAND
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'Adds a button.'
+
+  # The command publishes to owner/repo#1, so its comments carry that pull request's URLs.
+  def url(id) = "https://github.com/owner/repo/pull/1#issuecomment-#{id}"
 
   # Without comments, gh answers the login and then fails the comment listing.
   def fake_gh
