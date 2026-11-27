@@ -18,6 +18,7 @@ module ShakaRelease
       refuse "approval file lacks #{missing.join(', ')}" unless missing.empty?
       refuse 'approval file was not ready for approval' unless @values['status'] == 'ready_for_approval'
       refuse 'approval file has an invalid version' unless Gem::Version.correct?(@values['version'].to_s)
+      check_shape
     end
 
     def commit = @values.fetch('commit')
@@ -39,6 +40,14 @@ module ShakaRelease
     def check_files = %w[gem notes].each { checked(it) }
 
     private
+
+    # Checked before any publication step, so a malformed file cannot stop publish halfway.
+    def check_shape
+      refuse 'approval file has an invalid commit' unless @values['commit'].to_s.match?(/\A\h{40}\z/)
+      gate = @values['behavior_gate']
+      refuse 'approval file has an invalid behavior gate' unless
+        gate.is_a?(Hash) && %w[passed skipped].include?(gate['status'])
+    end
 
     def checked(name)
       path = @values.fetch(name)

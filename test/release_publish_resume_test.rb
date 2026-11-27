@@ -89,4 +89,14 @@ class ReleasePublishResumeTest < Minitest::Test
     File.write(@approval, JSON.generate(JSON.parse(File.read(@approval)).merge('status' => 'refused')))
     assert_refused 'not ready for approval'
   end
+
+  def test_a_malformed_gate_or_commit_is_refused_before_any_push
+    { 'behavior_gate' => 'skipped', 'commit' => 'refs/heads/main' }.each do |key, value|
+      @approval = write_approval('1.2.0')
+      File.write(@approval, JSON.generate(JSON.parse(File.read(@approval)).merge(key => value)))
+      assert_refused 'approval file has an invalid'
+    end
+    assert_nil remote_tag
+    refute_path_exists state('pushes')
+  end
 end
