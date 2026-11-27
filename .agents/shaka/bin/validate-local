@@ -21,7 +21,7 @@ git ls-files --others --exclude-standard -z >"$inventory"
 while IFS= read -r -d '' path; do
   # Exit status 1 means only that the new file differs from /dev/null; whitespace problems add 2.
   status=0
-  git diff --no-index --check /dev/null "$path" 2>"$errors" || status=$?
+  git diff --no-index --check -- /dev/null "$path" 2>"$errors" || status=$?
   if [[ "$status" -ne 1 || -s "$errors" ]]; then
     cat "$errors" >&2
     exit 1

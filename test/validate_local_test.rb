@@ -89,7 +89,7 @@ class ValidateLocalTest < Minitest::Test
   end
 
   def test_untracked_whitespace_fails_and_an_empty_untracked_file_does_not
-    File.write(File.join(@root, 'lib/empty.rb'), '')
+    %w[lib/empty.rb --help].each { File.write(File.join(@root, it), '') }
     _output, status = validate_local
 
     assert_predicate status, :success?
@@ -106,7 +106,7 @@ class ValidateLocalTest < Minitest::Test
     commit('Add nested RuboCop settings')
     assert_full_lint
 
-    git('rm', '-q', '.rubocop.yml')
+    git('rm', '-q', '.rubocop.yml', 'lib/.rubocop.yml')
     commit('Remove RuboCop settings')
     assert_full_lint
   end
