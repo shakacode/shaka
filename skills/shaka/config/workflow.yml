@@ -655,7 +655,9 @@ phases:
         `post-implementation publish --squash-message`, `squash-message`, and
         `merge --squash-message` read the same JSON: `title`, the PR title,
         and `body`, plain text for a `git log` reader that says what changed and why, drawn from
-        the description summary without its links, tables, or evidence. The helper appends
+        the whole description without its links, tables, or evidence, so it may list more
+        than the summary's bullets. Write it by the
+        [squash message rules](<{{package_root}}/skills/shaka/references/writing.md#squash-commit-messages>). The helper appends
         `(#N)`, wraps the body, and carries the branch commits' `Co-authored-by` trailers.
         Ready checkpoint publication embeds copyable title and body blocks in the checkpoint.
         `squash-message` remains the standalone path for an opted-out checkpoint and older installations.

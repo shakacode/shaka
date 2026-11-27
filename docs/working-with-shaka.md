@@ -90,7 +90,7 @@ Open your repository's **Pull requests** tab on GitHub and search:
 | --- | --- |
 | `is:open label:awaiting-answer` | Answer **Decisions to make** in the PR description. |
 | `is:open label:awaiting-merge-approval` | Review the PR, then merge on GitHub or tell the agent, "You can merge." |
-| `is:open label:awaiting-resume` | Open **WIP Details → Chat link** and paste **Next action** there. |
+| `is:open label:awaiting-resume` | Open the original chat as [Resume unfinished work](#resume-unfinished-work) describes, and paste **Next action** from **WIP Details** there. |
 
 A label does not wake the agent. See [merge and queue details](reference/pr-record.md#merge-messages).
 
@@ -105,8 +105,13 @@ names the pending review.
 
 ## Resume unfinished work
 
-Return to the original chat through **WIP Details → Chat link** in the PR
-description. If you need a new chat, make sure the previous agent has stopped,
+Return to the original chat: in the PR description, open **🤙 Shaka details**, use
+the copy button on the **Chat link**, and paste it into your browser's address bar.
+When the fold does not open with a **Chat link** block, read **WIP Details → Chat
+link** inside the fold, or below Shaka metrics on PRs published before this
+layout. When neither shows a link, the PR has none published.
+
+If you need a new chat, make sure the previous agent has stopped,
 then give Shaka the PR:
 
 ```text
