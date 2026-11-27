@@ -29,6 +29,15 @@ class PublicationSettingsMissingTest < Minitest::Test
     end
   end
 
+  # An unusable settings entry is a repair, not a repository that never set Shaka up.
+  def test_a_settings_entry_that_is_not_a_regular_file_is_not_reported_missing
+    without_settings do |root, ref|
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
+      File.symlink(File.join(root, 'missing.yml'), File.join(root, '.agents/shaka/config.yml'))
+      refute_predicate prepare(root, nil, ref), :settings_missing?
+    end
+  end
+
   def test_a_directory_outside_git_is_not_reported_missing
     Dir.mktmpdir { |directory| refute_predicate prepare(directory, nil, nil), :settings_missing? }
   end
