@@ -6,9 +6,8 @@ or [Fork Shaka and make it yours](https://github.com/shakacode/shaka/blob/main/d
 for prompts and terminal instructions.
 Use [official installation](official-installation.md) for the agent procedure
 to install, update, and verify the official version.
-Use source installation: the published name-reservation gem
-predates the current workflow. Confirm the requested source, version, and coding
-environment before installation. Preserve existing customizations during updates.
+Confirm the requested source, version, and coding environment before installation.
+Preserve existing customizations during updates.
 Shaka is the successor to `shakacode/agent-workflows`; new installations need only
 this repository.
 

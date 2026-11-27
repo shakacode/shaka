@@ -223,7 +223,8 @@ end
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.
 def resolved_description(content, github, options)
   content = Shaka::LocalReviewUsage.attach(content, options[:review])
-  resolved = Shaka::CheckpointRecommendation.resolve(Shaka::DeploymentLink.resolve(content, github), github)
+  content = Shaka::UiCheck::Link.resolve(Shaka::DeploymentLink.resolve(content, github), github)
+  resolved = Shaka::CheckpointRecommendation.resolve(content, github)
   with_human_comments(resolved, options[:comments])
 end
 
