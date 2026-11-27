@@ -103,12 +103,13 @@ module Shaka
     # Keep review guidance between the purpose and its proof.
     def intent_verification
       intent, verification = IntentVerification.render(@content, @settings.verdict, @pull,
-                                                       task: task_line, shortfall: @settings.reviewer_shortfall)
+                                                       task: task_line, shortfall: @settings.reviewer_shortfall,
+                                                       earlier: @settings.earlier_review)
       [intent, *RiskReview.render(@content, @pull), verification]
     end
 
     def evidence
-      body = [VerificationGates.line(@settings.verdict, @content['review']),
+      body = [VerificationGates.line(@settings.verdict, @content['review'], @settings.earlier_review),
               IntentVerification.evidence(@content.fetch('verification'), @content['wip'].nil? ? (1..3) : (0..3)),
               *table, *details]
       evidence = { 'summary' => 'Evidence and limitations', 'body' => body.join("\n\n") }

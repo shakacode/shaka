@@ -89,4 +89,15 @@ class PublicationVerificationGatesTest < Minitest::Test
 
     assert_includes rendered, "at `abcdef1`.\n\n**Setup gaps:** 1 of 2 configured reviewers completed.\n\n"
   end
+
+  # PR #1301: a review of the commit before main was merged in still covered the head, yet the line
+  # read as if nothing had been checked.
+  def test_without_results_a_sentence_about_a_review_that_still_covers_the_head_follows
+    covered = 'A local review covered `e33df55`, and this revision only merges `main` into it cleanly.'
+    rendered = render(Shaka::PublicationSettings.new.with_earlier_review(covered))
+
+    assert_includes rendered, "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN} #{covered}\n\n"
+    evidence = "<summary>Evidence and limitations</summary>\n\n#{Shaka::VerificationGates::UNKNOWN} #{covered}"
+    assert_includes rendered, evidence
+  end
 end

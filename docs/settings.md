@@ -347,6 +347,12 @@ A review of an earlier commit still counts in two cases:
   files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or `skills/` need a
   new review.
 
+The PR description uses the same two cases. When the agent publishes without
+validation and review results, the Validation and review line says UNKNOWN. If an
+earlier review still applies, the line names it and says why, for example: "The
+local review of `e33df55` still applies: this revision only adds a clean merge of
+`main`." It never says validation passed.
+
 When no review applies, `merge` stops before merging. A maintainer can record a
 waiver reason when review was skipped on purpose, a later commit only fixed nits,
 or a CI review covered the commit. The waiver also covers a PR whose
@@ -1146,6 +1152,9 @@ add outside it is left alone.
 - The whole text may use 150 words plus `words_per_changed_line` for each
   changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
 - The description also stops at `max_description_words`, however large the change.
+- Visible prose may not cite a review finding by its ledger ID alone, such as
+  "accepted on N3". Readers of the PR cannot look the ID up, so the agent says
+  what the finding is instead. This rule has no setting.
 
 `shaka description` reports identity, task source, verification check and
 skill metadata errors together before it reads the PR. Shaka reports each

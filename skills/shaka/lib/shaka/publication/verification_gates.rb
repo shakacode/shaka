@@ -19,12 +19,13 @@ module Shaka
     # A reader needs to see a failure, a missing result, fewer reviewers than configured, or a
     # reviewer that read only the diff; a routine run folds behind its summary. A completed review
     # may still have reported findings, so the summary claims only that it ran.
-    def render(verdict, review_url = nil, shortfall = nil)
+    # Without results, `earlier` is EarlierReview's sentence about a review that still covers the head.
+    def render(verdict, review_url = nil, shortfall = nil, earlier = nil)
       return kept(verdict) if verdict&.key?('kept_line')
 
       blind = blind_reviewers(verdict)
       folded = shortfall.nil? && blind.empty? && routine?(verdict)
-      text = folded ? summary(verdict, review_url) : line(verdict, review_url)
+      text = folded ? summary(verdict, review_url) : line(verdict, review_url, earlier)
       gaps = setup_gaps(shortfall, blind, review_url)
       gaps ? "#{text}\n\n#{gaps}" : text
     end
@@ -37,8 +38,8 @@ module Shaka
     end
 
     # Binding accepts a completed run whatever its exit, so the exit code decides the wording here.
-    def line(verdict, review_url = nil)
-      return UNKNOWN unless verdict
+    def line(verdict, review_url = nil, earlier = nil)
+      return [UNKNOWN, *earlier].join(' ') unless verdict
       return "#{verdict['kept_line'].gsub(OLD_PASS, '')} #{KEPT}" if verdict.key?('kept_line')
 
       validation, reviews = results(verdict)

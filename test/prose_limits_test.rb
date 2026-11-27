@@ -73,6 +73,18 @@ class ProseLimitsTest < Minitest::Test
     assert_includes error.message, 'still makes sense without its neighbors'
   end
 
+  # PR #1301 said "accepted on N3"; only the review ledger explains what N3 is.
+  def test_refuses_a_bare_review_finding_id
+    error = assert_raises(Shaka::Error) { verify(html('Not verified end to end (accepted on N3).', 'See N12 too.')) }
+
+    assert_includes error.message, 'ledger ID (N3, N12)'
+  end
+
+  def test_finding_ids_in_collapsed_content_and_lookalikes_are_allowed
+    verify([html('Run on N2D instances, v1.N3 and NN3 stay, as does N-3.'),
+            '<details><summary>History</summary><p>N3 accepted.</p></details>'].join("\n"))
+  end
+
   private
 
   def verify(rendered) = LIMITS.verify!(rendered, kind: :walkthrough, changed_lines: 1_000)

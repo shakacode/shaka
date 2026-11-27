@@ -37,6 +37,9 @@ module Shaka
     # that never sets them previews with no shortfall and the usual order instead of failing.
     attr_reader :reviewer_shortfall, :time_zone, :template_headings
 
+    # EarlierReview's sentence when no results were supplied, or nil.
+    attr_reader :earlier_review
+
     private
 
     def review_not_required

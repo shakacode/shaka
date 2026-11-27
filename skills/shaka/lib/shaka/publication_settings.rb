@@ -11,6 +11,7 @@ require_relative 'review_coverage'
 require_relative 'ready_time'
 require_relative 'local_review/ledger'
 require_relative 'configuration/personal_privacy'
+require_relative 'earlier_review'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
@@ -140,6 +141,9 @@ module Shaka
     def with_template(root:, ref:, config:)
       tap { @template_headings = PrTemplate.layout(root:, ref:, config:) }
     end
+
+    # Without results, says which published review still covers the head; publication/settings.rb exposes it.
+    def with_earlier_review(sentence) = tap { @earlier_review = sentence }
 
     # Only resolved settings can establish whether the repository opted out.
     def attribution? = @current&.fetch('pr_description.show_shaka_credit', false) == true

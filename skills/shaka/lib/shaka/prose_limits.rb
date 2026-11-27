@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-# Refuses a description or walkthrough whose rendered, visible prose is shaped as a wall of text.
+# Refuses a description or walkthrough whose rendered, visible prose is shaped as a wall of text
+# or cites review findings by an ID only the review ledger explains.
 
 require_relative 'defaults'
 require_relative 'error'
@@ -13,6 +14,7 @@ module Shaka
     # Room for a short summary however small the change is.
     BASE_WORDS = 150
     QUOTED_WORDS = 8
+    FINDING_ID = /(?<![[:alnum:]_.-])N\d{1,3}(?![[:alnum:]_-])/
     ADVICE = 'Split long sentences and paragraphs, move supporting detail into details, ' \
              'and link to the code instead of retelling it. Each labeled field renders on its own line, ' \
              'so after trimming, check that every field still makes sense without its neighbors.'
@@ -57,7 +59,7 @@ module Shaka
     # html is GitHub's rendering, so Markdown rules come from GitHub rather than a copy of them.
     def verify!(html, kind:, changed_lines:)
       paragraphs = VisibleProse.new(html).paragraphs
-      problems = long_sentences(paragraphs) + long_paragraphs(paragraphs) +
+      problems = finding_ids(paragraphs) + long_sentences(paragraphs) + long_paragraphs(paragraphs) +
                  [length_problem(paragraphs, kind, changed_lines)].compact
       return if problems.empty?
 
@@ -65,6 +67,16 @@ module Shaka
     end
 
     private
+
+    # A review ledger numbers its findings N1, N2, and so on. A PR reader never sees the ledger, so a
+    # bare ID such as "accepted on N3" tells them nothing (PR #1301).
+    def finding_ids(paragraphs)
+      ids = paragraphs.flatten.flat_map { |sentence| sentence.scan(FINDING_ID) }.uniq
+      return [] if ids.empty?
+
+      ["it cites review findings by ledger ID (#{ids.join(', ')}), which a reader cannot look up; " \
+       'say what each finding is instead']
+    end
 
     def long_sentences(paragraphs)
       limit = @limits.fetch('max_sentence_words')
