@@ -60,7 +60,8 @@ module Shaka
     end
 
     def repository_path?(path)
-      path.is_a?(String) && !path.strip.empty? && !UNSAFE_PATH.match?(path) &&
+      # Markdown trims a code span's edge spaces, so a padded value could render as an absolute path.
+      path.is_a?(String) && !path.empty? && path == path.strip && !UNSAFE_PATH.match?(path) &&
         !CompanionResults::LOCAL_PATH.match?(path)
     end
 

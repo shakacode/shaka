@@ -51,7 +51,7 @@ class PublicationCompanionResultOutcomesTest < Minitest::Test
   def test_refuses_cleared_paths_outside_the_repository_or_unsafe_to_render
     ['/etc/hosts', '../other/file.rb', 'lib/../../x', 'a`b', "a\nb", '', ' ', 'docs/</details>', nil,
      'C:\\Users\\x', '~/notes.md', '~other/notes.md', 'file:///Users/example/x', 'https://example.org/a',
-     'docs /Users/example/x'].each do |path|
+     'docs /Users/example/x', ' /custom-root/report.txt ', 'docs/a.md '].each do |path|
       assert_refused(run_record('cleared_paths' => [path]), 'cleared_paths')
     end
     assert_refused(run_record('cleared_paths' => 'docs/a.md'), 'cleared_paths')

@@ -218,7 +218,8 @@ manual check only, replaces decision 3's command rules; every other decision sta
   with that outcome and refuses the key, even an empty list, with any other.
 - `cleared_paths`: repository-relative paths or globs the run found safe. Ruby refuses
   absolute and home-directory paths, URI schemes, workstation roots anywhere in the value,
-  `..` segments, backslashes, backticks, angle brackets, and control characters. A collector can compare these with later review findings and human comments.
+  surrounding whitespace, `..` segments, backslashes, backticks, angle brackets, and control
+  characters. A collector can compare these with later review findings and human comments.
 
 Ruby still checks shape only. Whether a commit followed from a finding, and whether a
 path was safe, stay the agent's account.
