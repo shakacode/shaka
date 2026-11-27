@@ -80,7 +80,7 @@ def passes?(mode, files)
 end
 
 def syntax_valid?(files)
-  broken = files.reject { system(RbConfig.ruby, '-c', '--', it, out: File::NULL) }
+  broken = files.reject { system(RbConfig.ruby, '-c', '--', File.expand_path(it), out: File::NULL) }
   warn "Syntax errors in: #{broken.join(', ')}" unless broken.empty?
   broken.empty?
 end
