@@ -1,0 +1,61 @@
+# frozen_string_literal: true
+
+module Shaka
+  # The optional account of one companion run: whether it was manual, and what it led to in fixed labels a later
+  # study can count. The agent reports it; Ruby checks shape.
+  class CompanionOutcome
+    FIELDS = %w[manual outcome caused_commits cleared_paths].freeze
+    LABELS = { 'changed_code' => 'Changed code', 'findings_not_applied' => 'Findings not applied',
+               'no_findings' => 'No findings' }.freeze
+    SHA = /\A\h{40}\z/
+    # Repository-relative paths and globs only, so a cleared path can be compared with a PR's changed files.
+    UNSAFE_PATH = %r{\A/|\A[a-zA-Z]:|(?:\A|/)\.\.(?:/|\z)|[`\\<>[:cntrl:]]}
+
+    def initialize(entry)
+      @entry = entry
+    end
+
+    def lines = [outcome_line, cleared_line].compact
+
+    def manual?
+      manual = @entry.fetch('manual', false)
+      return manual if [true, false].include?(manual)
+
+      raise Error, 'Publication companion_results manual must be true or false.'
+    end
+
+    private
+
+    def outcome_line
+      commits = caused_commits
+      return unless @entry.key?('outcome')
+
+      label = LABELS.fetch(@entry['outcome']) do
+        raise Error, "Publication companion_results outcome must be one of #{LABELS.keys.join(', ')}."
+      end
+      "**Outcome:** #{[label, (code_list(commits) if commits.any?)].compact.join(' · ')}"
+    end
+
+    def caused_commits
+      commits = @entry.fetch('caused_commits', [])
+      valid = commits.is_a?(Array) && commits.all? { |sha| sha.is_a?(String) && SHA.match?(sha) }
+      return commits if valid && commits.any? == (@entry['outcome'] == 'changed_code')
+
+      raise Error, 'Publication companion_results caused_commits must list full SHAs for a changed_code outcome ' \
+                   'and be absent otherwise.'
+    end
+
+    def cleared_line
+      paths = @entry.fetch('cleared_paths', [])
+      unless paths.is_a?(Array) && paths.all? { |path| repository_path?(path) }
+        raise Error, 'Publication companion_results cleared_paths must list repository-relative paths.'
+      end
+
+      "**Cleared paths:** #{code_list(paths)}" if paths.any?
+    end
+
+    def repository_path?(path) = path.is_a?(String) && !path.strip.empty? && !UNSAFE_PATH.match?(path)
+
+    def code_list(values) = values.map { |value| "`#{value}`" }.join(', ')
+  end
+end

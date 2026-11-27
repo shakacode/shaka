@@ -1,6 +1,6 @@
 # 0011: Show companion skill results on the PR
 
-Status: design answers accepted on 2026-11-12 and 2026-11-13; build waits for decision 1's trigger.
+Status: design answers accepted on 2026-11-12 and 2026-11-13; shipped in #1250; amended on 2026-11-26 (see the end).
 Date: 2026-11-09. Tracks [issue #1075](https://github.com/shakacode/shaka/issues/1075).
 
 ## Context
@@ -196,3 +196,38 @@ images.
 
 This ADR merges first as the design record. Once decision 1's trigger arrives, one
 implementation PR delivers decisions 2 to 6, and its description links the triggering PR.
+
+## Amendment, 2026-11-26: record what a run led to
+
+[Issue #1285](https://github.com/shakacode/shaka/issues/1285) found that the shipped
+section cannot answer whether a companion skill helped. The maintainer named the reader:
+a later retrospective that counts outcomes per skill, with the PR reviewer second. The
+[accepted plan](https://github.com/shakacode/shaka/issues/1285#issuecomment-7205630613)
+adds four optional entry keys and keeps every decision above.
+
+- `manual`: `true` when the check was reading or inspection. `command` then renders as
+  a **Manual check** line of escaped prose instead of a code span, because there is no
+  command to rerun. #1259 published `manual source inspection and gemspec check` as a command.
+- `outcome`: `changed_code`, `findings_not_applied`, or `no_findings`. The set is fixed
+  so a collector counts labels instead of reading `result` prose.
+- `caused_commits`: the full SHAs a `changed_code` outcome led to. Ruby requires it
+  with that outcome and refuses it with any other.
+- `cleared_paths`: repository-relative paths or globs the run found safe. Ruby refuses
+  absolute paths, `..` segments, backslashes, backticks, angle brackets, and control
+  characters. A collector can compare these with later review findings and human comments.
+
+Ruby still checks shape only. Whether a commit followed from a finding, and whether a
+path was safe, stay the agent's account.
+
+Left out, with reasons:
+
+- **One table with Skills used.** The alternative above still holds: a record describes
+  a skill and a result describes a run.
+- **A stale label that names changed paths.** It serves the PR reviewer and adds a GitHub
+  comparison to each publication. `cleared_paths` records what such a label would need.
+- **Resolved revisions.** Counting needs a consistent pack and version, which is
+  [#1027](https://github.com/shakacode/shaka/issues/1027).
+- **A proof level.** It is one pack's scale; `result` and `artifacts` carry the proof.
+- **Counting misses.** That belongs to the collector in [ADR 0010](0010-retrospective-over-merged-prs.md).
+
+On 2026-11-26, three shakacode PRs contained the section, so real-use frequency is still unknown.

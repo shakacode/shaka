@@ -321,7 +321,9 @@ create-verification-skill to check that searching for O'Brien finds the order
 ```
 
 Open **Companion skill results** on the PR to see what ran, which commit it checked,
-what it showed, and where to find any artifacts. At publication, Shaka labels runs
+what it showed, and where to find any artifacts. A run can also say whether it changed
+the code, which commits followed, and which paths it found safe, so you can later count
+how often a skill helped. Shaka publishes that account as the agent reports it. At publication, Shaka labels runs
 from earlier commits as stale. The agent reruns affected checks and republishes the
 results. Shaka keeps control of delivery; pstack's separate delivery playbooks are
 not part of this flow.
