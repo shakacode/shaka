@@ -28,6 +28,7 @@ class PublicationSkillsTest < Minitest::Test
     assert_equal 1, rendered.scan('<summary>Skills used</summary>').size
     assert_includes rendered, '| pstack-investigate | PStack | UNKNOWN | implementation |'
     assert_includes rendered, '| Agent-reported | — |'
+    refute_includes rendered, '| Pack |'
     assert_includes rendered, '| Corroborated | Native invocation event |'
     assert_includes rendered, 'Shaka does not check that record'
     assert_includes rendered, 'Completeness is not verified'
@@ -95,6 +96,24 @@ class PublicationSkillsTest < Minitest::Test
   def test_duplicate_reports_collapse_but_different_phases_remain
     rendered = render('skills_used' => [skill, skill, skill('phase' => 'review')])
     assert_equal 2, rendered.scan('| pstack-investigate |').size
+  end
+
+  def test_pack_names_the_upstream_pack_so_renamed_ports_count_together
+    records = [skill('name' => 'pstack-tdd', 'source' => 'justin808/plugins', 'pack' => 'cursor/plugins/pstack'),
+               skill('name' => 'to-spec', 'source' => 'AI Hero')]
+    rendered = render('skills_used' => records)
+
+    assert_includes rendered, '| Skill | Pack | Source | Revision |'
+    assert_includes rendered, '| pstack-tdd | cursor/plugins/pstack | justin808/plugins | UNKNOWN |'
+    assert_includes rendered, '| to-spec | — | AI Hero | UNKNOWN |'
+  end
+
+  def test_pack_must_be_a_repository_and_optional_path
+    ['pstack', 'cursor/plugins pstack', 'cursor/../pstack', 'https://github.com/cursor/plugins', '', nil,
+     'cursor//pstack', '/cursor/plugins', ['cursor/plugins']].each do |pack|
+      error = assert_raises(Shaka::Error) { render('skills_used' => [skill('pack' => pack)]) }
+      assert_includes error.message, 'pack'
+    end
   end
 
   def test_free_form_skill_details_are_refused

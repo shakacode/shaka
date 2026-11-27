@@ -24,6 +24,10 @@ other skills. Use the resolved name, public source and available revision
 }
 ```
 
+When the skill belongs to a pack, add `pack` with the upstream repository and path,
+such as `cursor/plugins/pstack`, whichever port or copy you installed; `source` still
+names where this copy came from. Omit `pack` when you cannot tell.
+
 Select `agent-reported` with null `corroboration`, or `corroborated` when a native
 event or recorded tool call confirms invocation/loading; name that record in
 `corroboration`. Both labels are agent-assessed. Ruby validates metadata, not
