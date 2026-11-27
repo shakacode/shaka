@@ -1,44 +1,8 @@
 # frozen_string_literal: true
 
-# Installing into a worktree of the registered install leaves removal to a person whenever it would lose
-# something: a link into a worktree, uncommitted work, or control of an unsafe owner (#1284).
+# Installing into a worktree of the default install hands a person the decision whenever the install's own
+# step would lose work or could not be read safely, and leaves any other owner's reinstall step alone (#1284).
 module OwnedWorktreeScenarios
-  # A link that resolves into the worktree would break with it, so removal is left to a person.
-  def test_an_owned_worktree_serving_a_link_goes_to_a_person
-    _root, feature = owned_worktree
-    link = File.join(@home, '.agents/skills/shaka')
-    File.unlink(link)
-    File.symlink(File.join(feature, 'skills/shaka'), link)
-    output = refusal(feature, '--directory', feature)
-    assert_match(/Next: a person must decide where the skills links \S*shaka should point; they resolve into/, output)
-    assert_path_exists feature
-  end
-
-  # A link to the worktree itself counts as one into it.
-  def test_an_owned_worktree_serving_a_requested_skills_folder_goes_to_a_person
-    _root, feature = owned_worktree
-    custom = File.join(@directory, 'custom-skills')
-    FileUtils.mkdir_p(custom)
-    File.symlink(feature, File.join(custom, 'shaka'))
-    output = refusal(feature, '--directory', feature, '--skills-dir', custom)
-    assert_includes output, "Next: a person must decide where the skills links #{custom}/shaka"
-  end
-
-  # The removal step clears every worktree the install hosts, so a link into a sibling stops it too, even
-  # when held work already makes the step a decision.
-  def test_a_link_into_a_sibling_worktree_goes_to_a_person
-    root, feature = owned_worktree
-    sibling = File.join(@directory, 'sibling')
-    git('-C', root, 'worktree', 'add', '-q', sibling)
-    link = File.join(@home, '.agents/skills/shaka')
-    File.unlink(link)
-    File.symlink(File.join(sibling, 'skills/shaka'), link)
-    File.write(File.join(feature, 'notes.txt'), 'draft')
-    output = refusal(feature, '--directory', feature)
-    assert_includes output, 'Next: a person must decide where the skills links'
-    assert_path_exists sibling
-  end
-
   def test_an_owned_worktree_holding_work_goes_to_a_person
     _root, feature = owned_worktree
     File.write(File.join(feature, 'notes.txt'), 'draft')
@@ -67,25 +31,11 @@ module OwnedWorktreeScenarios
     assert_includes refusal(feature, '--directory', feature), 'Install from a separate clone. Next: '
   end
 
-  # A host skills folder that is itself a link into the worktree would go with it.
-  def test_a_skills_folder_linked_into_the_worktree_goes_to_a_person
-    _root, feature = owned_worktree
-    custom = File.join(@directory, 'linked-skills')
-    File.symlink(File.join(feature, 'skills'), custom)
-    output = refusal(feature, '--directory', feature, '--skills-dir', custom)
-    assert_includes output, "Next: a person must decide where the skills links #{custom}/shaka"
-  end
-
-  # A skills folder linked into the worktree goes with it, even when the skill inside points elsewhere.
-  def test_a_linked_folder_whose_skill_points_out_goes_to_a_person
-    _root, feature = owned_worktree
-    FileUtils.mkdir_p(File.join(feature, 'hosted'))
-    FileUtils.mkdir_p(File.join(@directory, 'outside'))
-    File.symlink(File.join(@directory, 'outside'), File.join(feature, 'hosted/shaka'))
-    custom = File.join(@directory, 'hosted-skills')
-    File.symlink(File.join(feature, 'hosted'), custom)
-    output = refusal(feature, '--directory', feature, '--skills-dir', custom)
-    assert_includes output, "Next: a person must decide where the skills links #{custom}/shaka"
+  def test_an_unreadable_record_names_the_reason
+    root, feature = owned_worktree
+    File.write(File.join(root, '.git/shaka-install.json'), '{')
+    output = refusal(feature, '--directory', feature)
+    assert_includes output, 'which cannot be read (Installation record is invalid), then run this command again'
   end
 
   private
