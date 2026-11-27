@@ -188,6 +188,7 @@ end
 # Without results, the description still says which published review covers the head.
 def publication_settings(root, pull, options, github)
   settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
+                                       .with_missing_settings(root)
   return settings if settings.verdict
 
   settings.with_earlier_review(Shaka::EarlierReview.vetted_sentence(github, pull, root:))
