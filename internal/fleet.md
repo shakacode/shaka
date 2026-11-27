@@ -193,11 +193,11 @@ For each selected repository:
 4. Before upgrading Shaka, use the previous trusted installation to check the candidate
    worktree with `shaka seam check --root ROOT --ref OLD_DEFAULT_SHA`. The old trusted
    mapping remains authoritative for this first PR, which is why its paths must remain
-   usable. Separately use the target Shaka version with `--local` to parse the candidate's
-   mapping-free YAML and validate its fixed scripts; this local check grants no authority.
-   Run focused checks and full validation, then merge through normal gates.
-5. Upgrade the trusted Shaka installation only after the default branch has the new seam.
-   Check a clean worktree with `shaka seam check --root ROOT --ref NEW_DEFAULT_SHA`, then
+   usable. Then run the target Shaka version's pre-merge and post-merge checks in the
+   agent guide's [migration procedure](../skills/shaka/references/migration.md#migrate-an-older-contract):
+   the exact PR commit before merge, and the new default-branch SHA before switching
+   installations. Run focused checks and full validation, then merge through normal gates.
+5. Upgrade the trusted Shaka installation only after that post-merge check passes, then
    remove obsolete compatibility adapters in a follow-up PR.
 6. Open each repository PR pinned to its tested head. Update this fleet table only from
    verified PR or merge evidence.

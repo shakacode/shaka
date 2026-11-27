@@ -102,7 +102,7 @@ class RepositoryConfigurationExampleRiskAreasTest < Minitest::Test
     areas = Shaka::RepositoryConfig.load(root: File.expand_path('..', __dir__)).high_risk_areas
     publication = 'skills/shaka/lib/shaka/publication'
 
-    assert_empty Shaka::PostImplementationRisk.hits(areas, ["#{publication}/verification_gates.rb"])
+    assert_empty Shaka::PostImplementationRisk.hits(areas, ["#{publication}/verification_line.rb"])
     assert_equal 'merge_and_trust',
                  Shaka::PostImplementationRisk.hits(areas, ["#{publication}/feature_guard.rb"]).first&.fetch('area')
   end

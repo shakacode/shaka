@@ -3,7 +3,7 @@
 module Shaka
   # Writes the repository validation and local review line from their bound results, so no
   # check has to restate them and no paraphrase can call a failed run a pass.
-  module VerificationGates
+  module VerificationLine
     LABEL = '**Validation and review:**'
     UNKNOWN = "#{LABEL} UNKNOWN: no validation or review results were supplied for this revision.".freeze
     GAPS = '**Setup gaps:**'

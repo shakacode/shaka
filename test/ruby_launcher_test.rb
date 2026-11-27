@@ -72,6 +72,7 @@ class RubyLauncherTest < Minitest::Test
       output, status = Open3.capture2e(RbConfig.ruby, '-W0', '-e', OLD_RUBY, script, '--help', chdir: project)
       refute_predicate status, :success?, output
       assert_includes output, 'Shaka needs Ruby 3.4 or newer; this Ruby is 3.3.7.'
+      assert_includes output, 'Install Ruby 3.4 with a version manager such as mise or rbenv'
     end
   end
 

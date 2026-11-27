@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.metadata['documentation_uri'] = 'https://shaka.shakacode.com/docs/getting-started'
   spec.files = Dir['skills/mct/SKILL.md', 'skills/rct/SKILL.md', 'skills/mct-claude/SKILL.md',
                    'skills/rct-claude/SKILL.md',
-                   'skills/shaka/SKILL.md', 'skills/shaka/references/*.md',
+                   'skills/shaka/SKILL.md', 'skills/shaka/references/*.md', 'skills/shaka/references/*.html',
                    'skills/shaka/config/*.yml', 'skills/shaka/config/*.md', 'skills/shaka/lib/**/*.rb',
                    'skills/shaka/scripts/*', 'bin/install', 'exe/*', 'README.gem.md', 'CHANGELOG.md', 'LICENSE']
   spec.extra_rdoc_files = ['README.gem.md']

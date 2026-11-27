@@ -108,7 +108,7 @@ module Shaka
     end
 
     def evidence
-      body = [VerificationGates.line(@settings.verdict, @content['review']),
+      body = [VerificationLine.line(@settings.verdict, @content['review']),
               IntentVerification.evidence(@content.fetch('verification'), @content['wip'].nil? ? (1..3) : (0..3)),
               *table, *details]
       evidence = { 'summary' => 'Evidence and limitations', 'body' => body.join("\n\n") }

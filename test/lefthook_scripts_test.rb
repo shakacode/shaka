@@ -68,6 +68,16 @@ class LefthookScriptsTest < Minitest::Test
     assert_includes output, 'Syntax errors in: broken.rb'
   end
 
+  # Ruby must read these from disk, not take them as an option or standard input.
+  def test_checks_the_syntax_of_files_named_like_options
+    write('-x.rb', "def broken\n")
+    write('-', "#!/usr/bin/env ruby\ndef broken\n")
+    output, status = script('ruby-check', 'lint', '-x.rb', '-')
+
+    refute_predicate status, :success?
+    assert_includes output, 'Syntax errors in: -x.rb, -'
+  end
+
   def test_rejects_an_offence_rubocop_cannot_fix
     write('lint.rb', "# frozen_string_literal: true\n\ndef lintMe = 1\n")
     output, status = script('ruby-check', 'fix', 'lint.rb')
