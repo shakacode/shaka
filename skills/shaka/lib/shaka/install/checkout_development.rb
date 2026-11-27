@@ -74,9 +74,9 @@ module Shaka
         links = WorktreeLinks.into(worktrees.map { |entry| entry[:path] }, link_folders)
         return if links.empty?
 
-        { decision: "a person must decide where #{Refusal.paths(links)} should point, because removing the " \
-                    'linked worktrees would leave them pointing at nothing; repoint them, then run this command ' \
-                    'again' }
+        { decision: "a person must decide where #{Refusal.paths(links)} should point, because they lead into " \
+                    'the linked worktrees this step would remove, or could not be read to rule that out; repoint ' \
+                    'them, then run this command again' }
       end
 
       def unread_decision(unread, held)

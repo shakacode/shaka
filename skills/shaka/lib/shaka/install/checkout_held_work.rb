@@ -10,7 +10,7 @@ module Shaka
       # The work found, and what Shaka could not verify.
       def held_work(worktrees, branches)
         checks = branches.map do |name|
-          merged = merged?(name)
+          merged = merge_answer(name)
           ["the unmerged commits on branch #{name}", "whether branch #{name} is merged", merged.nil? ? nil : !merged]
         end
         checks += worktrees.flat_map { |entry| worktree_holds(entry) }
@@ -37,18 +37,15 @@ module Shaka
         false
       end
 
-      # git branch -d accepts a branch merged into the remote branch it tracks, or into HEAD when it has none.
-      # Exit 1 means not merged; any other failure is a read that proves nothing.
-      def merged?(name)
-        _output, _error, status = run_git('merge-base', '--is-ancestor', "refs/heads/#{name}",
-                                          tracked(name) || 'HEAD')
-        { 0 => true, 1 => false }[status.exitstatus]
-      end
+      # git branch -d accepts a branch merged into the remote branch it tracks, or into HEAD when it has none or
+      # its remote branch is gone; rev-parse exits 1 for both. Any other failure is a read that proves nothing.
+      def merge_answer(name)
+        output, _error, found = run_git('rev-parse', '--verify', '--quiet', "#{name}@{upstream}")
+        return unless [0, 1].include?(found.exitstatus)
 
-      def tracked(name)
-        git('rev-parse', '--verify', '--quiet', "#{name}@{upstream}")
-      rescue ArgumentError
-        nil
+        upstream = found.success? ? output.strip : 'HEAD'
+        _output, _error, answer = run_git('merge-base', '--is-ancestor', "refs/heads/#{name}", upstream)
+        { 0 => true, 1 => false }[answer.exitstatus]
       end
 
       # No fsmonitor hook: a status read must not start a program the checkout's config names. Ignored files

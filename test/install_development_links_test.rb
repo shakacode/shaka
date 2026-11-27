@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'pathname'
 require_relative 'install_scenario_support'
 
 # The step that clears a default checkout's development removes its linked worktrees, so it is not printed
@@ -15,10 +16,35 @@ class InstallDevelopmentLinksTest < Minitest::Test
     assert_names_link(root, feature, link)
   end
 
-  def test_a_link_to_the_worktree_root_goes_to_a_person
+  # A relative link that climbs with .. resolves from the folder that holds it.
+  def test_a_relative_link_to_the_worktree_root_goes_to_a_person
     root, feature = default_with_worktree
-    link = host_link('.cursor/skills/feature', feature)
+    folder = File.join(@home, '.cursor/skills')
+    FileUtils.mkdir_p(folder)
+    relative = Pathname.new(feature).relative_path_from(Pathname.new(folder)).to_s
+    link = host_link('.cursor/skills/feature', relative)
     assert_names_link(root, feature, link)
+  end
+
+  # On a case-insensitive volume a link can name the worktree in another case and still open it.
+  def test_a_link_spelling_the_worktree_in_another_case_goes_to_a_person
+    root, feature = default_with_worktree
+    other_case = File.join(File.dirname(feature), File.basename(feature).upcase)
+    skip 'this volume is case-sensitive' unless File.directory?(other_case)
+
+    link = host_link('.claude/skills/shaka-dev', File.join(other_case, 'skills/shaka'))
+    assert_names_link(root, feature, link)
+  end
+
+  # A folder Shaka can pass through but not list could hold a link into the worktree, so it is named.
+  def test_an_unlistable_skills_folder_goes_to_a_person
+    root, feature = default_with_worktree
+    link = host_link('.claude/skills/shaka-dev', File.join(feature, 'skills/shaka'))
+    folder = File.dirname(link)
+    File.chmod(0o311, folder)
+    assert_names_link(root, feature, folder)
+  ensure
+    File.chmod(0o755, folder) if folder
   end
 
   def test_a_skills_folder_linked_into_a_worktree_goes_to_a_person
