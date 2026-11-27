@@ -13,17 +13,6 @@ class BranchHeadDestinationTest < Minitest::Test
     assert_includes unreadable_error, 'custom push refspec'
   end
 
-  def test_push_remote_other_than_the_same_named_upstream_is_unreadable
-    fork = File.join(@dir, 'fork.git')
-    git(@dir, 'clone', '--quiet', '--bare', @origin, fork)
-    git(@task, 'remote', 'add', 'fork', fork)
-    git(@task, 'config', "branch.#{BRANCH}.remote", 'fork')
-    git(@task, 'config', "branch.#{BRANCH}.merge", "refs/heads/#{BRANCH}")
-    git(@task, 'config', 'remote.pushDefault', 'origin')
-
-    assert_includes unreadable_error, 'pushes to origin'
-  end
-
   def test_push_url_that_insteadof_rewrites_again_is_unreadable
     git(@task, 'remote', 'set-url', '--push', 'origin', 'alias:repo')
     git(@task, 'config', 'url.mirror:.insteadOf', 'alias:')
@@ -37,6 +26,28 @@ class BranchHeadDestinationTest < Minitest::Test
     git(@task, 'config', "branch.#{BRANCH}.merge", 'refs/heads/main')
 
     assert_equal 'not_pushed', check['state']
+  end
+
+  def test_push_default_other_than_origin_is_unreadable
+    git(@task, 'config', 'remote.pushDefault', '.')
+
+    assert_includes unreadable_error, 'origin only'
+  end
+
+  def test_checkout_without_origin_is_unreadable
+    git(@task, 'remote', 'rename', 'origin', 'upstream')
+
+    assert_equal 'unreadable', check['state']
+  end
+
+  # gh pr checkout can record a fork's URL, with credentials, as the branch upstream; origin stays the destination.
+  def test_upstream_url_is_ignored_and_never_printed
+    git(@task, 'config', "branch.#{BRANCH}.remote", 'https://user:secret@git.example.com/someone/fork.git')
+    git(@task, 'config', "branch.#{BRANCH}.merge", "refs/heads/#{BRANCH}")
+    result = check
+
+    assert_equal %w[origin not_pushed], result.values_at('remote', 'state')
+    refute_includes JSON.generate(result), 'secret'
   end
 
   # symbolic-ref --short spells a branch shadowed by a same-named tag as heads/NAME.
@@ -70,19 +81,11 @@ class BranchHeadDestinationTest < Minitest::Test
     assert_includes Shaka::BranchHead.new(root: @task, pr_head:).check['error'], 'git.example.com'
   end
 
-  def test_sole_remote_not_named_origin_is_the_destination
-    git(@task, 'remote', 'rename', 'origin', 'upstream')
-    result = check
+  # A bare number would let gh pick the repository, so --pr names it.
+  def test_pr_option_needs_the_repository
+    _out, err = capture_io { assert_equal 1, Shaka::BranchHead::Command.run(['check', '--root', @task, '--pr', '7']) }
 
-    assert_equal %w[upstream not_pushed], result.values_at('remote', 'state')
-  end
-
-  # gh pr checkout records a fork PR's remote as a URL, which gets push rewriting a read cannot match.
-  def test_remote_given_as_a_url_is_unreadable
-    git(@task, 'config', "branch.#{BRANCH}.remote", 'https://user:secret@git.example.com/someone/fork.git')
-    git(@task, 'config', "branch.#{BRANCH}.merge", "refs/heads/#{BRANCH}")
-
-    assert_includes unreadable_error, 'not a named remote'
+    assert_includes err, 'OWNER/REPO#NUMBER'
   end
 
   def test_printed_errors_drop_url_credentials
@@ -95,16 +98,6 @@ class BranchHeadDestinationTest < Minitest::Test
 
     assert_equal 'pr_finished', Shaka::BranchHead::Command.send(:finished, 'check', head)['state']
     assert_raises(Shaka::Error) { Shaka::BranchHead::Command.send(:finished, 'push', head) }
-  end
-
-  def test_tracking_the_base_branch_while_pushing_to_a_fork_is_allowed
-    fork = bare_copy('fork.git')
-    git(@task, 'remote', 'add', 'fork', fork)
-    git(@task, 'config', "branch.#{BRANCH}.remote", 'origin')
-    git(@task, 'config', "branch.#{BRANCH}.merge", 'refs/heads/main')
-    git(@task, 'config', "branch.#{BRANCH}.pushRemote", 'fork')
-
-    assert_equal %w[fork not_pushed], check.values_at('remote', 'state')
   end
 
   # Git skips pushInsteadOf for an explicit push URL, so the push lands where the check read.

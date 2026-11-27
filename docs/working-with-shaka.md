@@ -121,7 +121,9 @@ Each time it pushes, it records the commit it pushed. It then compares the branc
 with that record. When they differ, or the branch is gone or unreadable, the agent stops
 editing and publishing and tells you. It keeps its local work and resumes once it has
 combined your commits with its own. Its pushes go through `shaka branch push`, which
-refuses to push over a commit the agent has not seen.
+refuses to push over a commit the agent has not seen. The agent works with the branch of the
+same name on `origin`; a checkout set to push anywhere else pauses until you push by hand or
+change that setting.
 
 Before a PR exists, return to the original chat and checkout. An issue's start
 comment may identify the machine holding the work. See

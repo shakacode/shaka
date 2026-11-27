@@ -8,27 +8,27 @@ require_relative '../workflow_version'
 
 module Shaka
   class BranchHead
-    # The remote branch a push of the checked-out branch writes to, read and written under a deadline.
+    # The task branch on origin, read and written under a deadline. Origin and the same-named branch are the only
+    # destination: any setting that would send a push elsewhere is refused, so a read and a push cannot diverge.
     class Destination
       SHA = /\A\h{40}\z/
+      REMOTE = 'origin'
       READ_SECONDS = 30
       PUSH_SECONDS = 120
       ENVIRONMENT = WorkflowVersion::GIT_ENVIRONMENT.merge('GIT_TERMINAL_PROMPT' => '0').freeze
 
-      attr_reader :remote
-
-      # pr_head, when given, is the PR's head as { 'url' => 'https://HOST/OWNER/NAME', 'branch' => NAME }; the
-      # destination must be that branch in that repository on that host.
+      # pr_head, when given, is the PR's head as { 'url' => 'https://HOST/OWNER/NAME', 'branch' => NAME }; origin
+      # must be that repository and the checked-out branch that branch.
       def initialize(root:, branch:, pr_head: nil)
         @root = root
         @branch = branch
         @pr_head = pr_head
-        @remote = push_remote
       end
 
+      def remote = REMOTE
+
       # The SHA there, nil when the branch is absent, or { error: } when it cannot be read.
-      # Reads the URL a push writes to, which may differ from the fetch URL. ls-remote matches refs by suffix,
-      # so only the exact ref counts; a failure or timeout is unreadable, never absent.
+      # ls-remote matches refs by suffix, so only the exact ref counts; a failure or timeout is unreadable.
       def head
         output, error, success = bounded(READ_SECONDS, 'ls-remote', url, "refs/heads/#{@branch}")
         return { error: error.strip.empty? ? 'git ls-remote failed' : error.strip } unless success
@@ -40,18 +40,19 @@ module Shaka
 
       # Pushes one commit to the branch alone, leased on the accepted head; an empty lease means the branch must
       # not exist yet. Tags and submodules stay unpushed whatever push.followTags or push.recurseSubmodules say.
-      # It pushes through the remote, as `get-url --push` resolved it, and first refuses when that resolution
-      # changed since the read, so push rewriting applies exactly as it did to the URL that was read.
+      # Returns false when Git reports the branch already at that commit: someone else put it there.
       def push(accepted, sha)
-        raise Error, "#{@remote} now pushes somewhere other than #{url}; check again." unless push_url == url
+        raise Error, "origin now pushes somewhere other than #{url}; check again." unless push_url == url
 
         lease = "--force-with-lease=refs/heads/#{@branch}:#{accepted}"
-        _output, error, success = bounded(PUSH_SECONDS, 'push', '--quiet', '--no-follow-tags',
-                                          '--recurse-submodules=no', lease, @remote, "#{sha}:refs/heads/#{@branch}")
-        return if success
+        output, error, success = bounded(PUSH_SECONDS, 'push', '--porcelain', '--no-follow-tags',
+                                         '--recurse-submodules=no', lease, REMOTE, "#{sha}:refs/heads/#{@branch}")
+        unless success
+          raise Error, "git push of #{sha} to origin/#{@branch} was refused, failed, or timed out, so it may " \
+                       "have landed: #{error.strip}"
+        end
 
-        raise Error, "git push of #{sha} to #{@remote}/#{@branch} was refused, failed, or timed out, so it may " \
-                     "have landed: #{error.strip}"
+        output.lines.none? { |line| line.start_with?("=\t") }
       end
 
       # Resolved once per command, so the read and the push name the same URL.
@@ -71,44 +72,34 @@ module Shaka
         end
         return if @pr_head['branch'] == @branch && @pr_head['url'].casecmp?(repository)
 
-        raise Error, "The PR head is #{@pr_head['url']}:#{@pr_head['branch']}, but this branch pushes to " \
-                     "#{repository}:#{@branch}; check out the PR head and push there."
+        raise Error, "The PR head is #{@pr_head['url']}:#{@pr_head['branch']}, but origin is " \
+                     "#{repository}:#{@branch}; work on the PR head from a checkout whose origin holds it."
       end
 
-      # The one URL a push of this branch writes to. Configurations where the read could reach another branch or
-      # repository than the push are refused rather than guessed: a custom push refspec, a push remote other than
-      # the branch's same-named upstream, several push URLs, or a URL that insteadOf would rewrite again on read.
       def push_url
         refuse_redirected_push
-        # A remote given as a URL, as `gh pr checkout` records for a fork, gets push rewriting a read cannot match.
-        unless remote_names.include?(@remote)
-          raise Error,
-                'This branch pushes to a URL, not a named remote; add the URL as a remote.'
-        end
-
-        urls = git_lines('remote', 'get-url', '--push', '--all', @remote)
-        raise Error, "#{@remote} has #{urls.size} push URLs; configure one for the task branch." unless urls.one?
+        urls = git_lines('remote', 'get-url', '--push', '--all', REMOTE)
+        raise Error, "origin has #{urls.size} push URLs; configure one for the task branch." unless urls.one?
 
         reread = git_lines('ls-remote', '--get-url', urls.first)
-        raise Error, "insteadOf rewrites #{urls.first} again; configure a direct push URL." unless reread == urls
+        raise Error, 'insteadOf rewrites the origin push URL again; configure a direct push URL.' unless reread == urls
 
         urls.first
       end
 
+      # Settings that would make a plain push of this branch go somewhere other than origin's same-named branch.
       def refuse_redirected_push
-        if config_values("remote.#{@remote}.push").any?
-          raise Error, "#{@remote} has a custom push refspec; push the task branch by hand."
+        ["branch.#{@branch}.pushRemote", 'remote.pushDefault'].each do |key|
+          value = config_values(key).first
+          if value && value != REMOTE
+            raise Error,
+                  "#{key} sends pushes to #{value}; Shaka pushes task branches to origin only."
+          end
         end
+        return unless config_values('remote.origin.push').any?
 
-        upstream_mismatch
-      end
-
-      def upstream_mismatch
-        upstream = config_values("branch.#{@branch}.remote").first
-        return unless upstream && upstream != @remote
-        return unless config_values("branch.#{@branch}.merge").first == "refs/heads/#{@branch}"
-
-        raise Error, "#{@branch} tracks #{upstream}/#{@branch} but pushes to #{@remote}; make them agree."
+        raise Error,
+              'origin has a custom push refspec; push the task branch by hand.'
       end
 
       # git config exits 1 for a missing key; any other failure is a failed read, never "not configured".
@@ -136,18 +127,6 @@ module Shaka
 
         shas.empty? ? nil : { error: "Unexpected ls-remote output for refs/heads/#{@branch}." }
       end
-
-      # Git's own push order: the branch's pushRemote, then remote.pushDefault, then its upstream remote.
-      def push_remote
-        ["branch.#{@branch}.pushRemote", 'remote.pushDefault', "branch.#{@branch}.remote"].each do |key|
-          output, _error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', '--get', key)
-          return output.strip if status.success? && !output.strip.empty? && output.strip != '.'
-        end
-        names = remote_names
-        names.one? && !names.include?('origin') ? names.first : 'origin'
-      end
-
-      def remote_names = git_lines('remote')
 
       def bounded(seconds, *arguments)
         Doctor::BoundedCommand.new(timeout: seconds).call([ENVIRONMENT, 'git', '-C', @root, *arguments])

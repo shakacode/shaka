@@ -14,6 +14,7 @@ module Shaka
       OPERATIONS = %w[check accept push].freeze
       PAUSE_EXIT = 2
       PR_SECONDS = 30
+      PR = %r{\A(?<repository>[\w.-]+/[\w.-]+)#(?<number>\d+)\z}
 
       module_function
 
@@ -69,10 +70,11 @@ module Shaka
 
       def option_parser(operation, options)
         OptionParser.new do |flags|
-          flags.banner = "Usage: shaka branch #{operation} [--root DIR] [--pr NUMBER]"
+          flags.banner = "Usage: shaka branch #{operation} [--root DIR] [--pr OWNER/REPO#NUMBER]"
           flags.on('--root DIR', 'Checkout with the task branch checked out') { |value| options[:root] = value }
-          flags.on('--pr NUMBER', Integer, 'PR whose head must be the push destination') do |value|
-            options[:pr] = value
+          flags.on('--pr OWNER/REPO#NUMBER', 'PR whose head origin must hold') do |value|
+            options[:pr] =
+              PR.match(value) || raise(OptionParser::InvalidArgument, "--pr needs OWNER/REPO#NUMBER, not #{value}")
           end
           operation_flags(operation, flags, options)
           flags.on('-h', '--help', 'Show usage') { options[:help] = true }
@@ -95,14 +97,14 @@ module Shaka
         flags.on('--absent', 'Accept that the branch is not on the remote') { options[:absent] = true }
       end
 
-      # The PR's head repository and branch, read with gh from the checkout's repository.
-      def pr_head(root, number)
+      # The named PR's state, head repository, and branch; the repository is explicit, so gh cannot pick another.
+      def pr_head(root, request)
         fields = 'url,state,headRefName,headRepository,headRepositoryOwner'
-        output, error, success = Doctor::BoundedCommand.new(timeout: PR_SECONDS)
-                                                       .call(['gh', 'pr', 'view', number.to_s, '--json', fields], root)
-        raise Error, "Cannot read PR ##{number}: #{error.strip}" unless success
+        argv = ['gh', 'pr', 'view', request[:number], '--repo', request[:repository], '--json', fields]
+        output, error, success = Doctor::BoundedCommand.new(timeout: PR_SECONDS).call(argv, root)
+        raise Error, "Cannot read PR #{request}: #{error.strip}" unless success
 
-        head_of(JSON.parse(output), number)
+        head_of(JSON.parse(output), request[:number])
       end
 
       # A deleted fork leaves no head repository, so there is no destination to match.

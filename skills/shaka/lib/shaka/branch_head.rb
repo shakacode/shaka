@@ -72,7 +72,9 @@ module Shaka
         raise Error, "HEAD lacks the accepted head #{before['accepted']}; pass --rewrite only for an intended rebase."
       end
 
-      @destination.push(before['accepted'], before['local'])
+      # Git leaves an up-to-date branch alone, so the commit got there by someone else's push.
+      return check.merge('pushed' => false) unless @destination.push(before['accepted'], before['local'])
+
       record_push(before['local'])
     end
 

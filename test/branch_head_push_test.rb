@@ -37,15 +37,16 @@ class BranchHeadPushTest < Minitest::Test
     assert_equal 'unchanged', branch_head.push(rewrite: true)['state']
   end
 
-  def test_branch_push_remote_is_the_destination
+  def test_push_remote_other_than_origin_is_refused
     fork = bare_copy('fork.git')
     git(@task, 'remote', 'add', 'fork', fork)
     git(@task, 'config', "branch.#{BRANCH}.pushRemote", 'fork')
     commit(@task, 'first')
+    result = branch_head.push
 
-    assert_equal 'fork', branch_head.push['remote']
-    refute_empty git(@task, 'ls-remote', fork, "refs/heads/#{BRANCH}")
-    assert_empty git(@task, 'ls-remote', @origin, "refs/heads/#{BRANCH}")
+    assert_equal %w[unreadable false], [result['state'], result['pushed'].to_s]
+    assert_includes result['error'], 'origin only'
+    assert_empty git(@task, 'ls-remote', fork, "refs/heads/#{BRANCH}")
   end
 
   # A remote may fetch from one repository and push to another; the push URL is the one that matters.

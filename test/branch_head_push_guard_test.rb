@@ -55,6 +55,17 @@ class BranchHeadPushGuardTest < Minitest::Test
     assert_equal 'unconfirmed', result['state']
   end
 
+  # Git reports an up-to-date branch as success, so a commit someone else put there must not count as ours.
+  def test_up_to_date_push_is_not_recorded
+    accept(push_task('first'))
+    commit(@task, 'mine')
+    head = branch_head
+    before_push(head) { git(@task, 'push', '--quiet', 'origin', "HEAD:refs/heads/#{BRANCH}") }
+    result = head.push
+
+    assert_equal %w[moved false], [result['state'], result['pushed'].to_s]
+  end
+
   def test_several_push_urls_are_unreadable
     git(@task, 'remote', 'set-url', '--add', '--push', 'origin', @origin)
     git(@task, 'remote', 'set-url', '--add', '--push', 'origin', File.join(@dir, 'other.git'))

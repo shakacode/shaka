@@ -1045,7 +1045,8 @@ always: |-
 
   At the start of every turn on a task with a branch, including a resume and a monitor wake,
   run the saved helper's `branch check --root DIR` before fetching, pulling, or editing, and again
-  before each PR write. Once the task has a PR, add `--pr NUMBER` to every `branch` command.
+  before each PR write. Once the task has a PR, add `--pr OWNER/REPO#NUMBER` to every `branch`
+  command.
   Continue on `unchanged`, `not_pushed`, or `pr_finished`. Any other state, or a check that fails
   to run, pauses edits and publication, including PR writes this workflow otherwise requires:
   preserve local work and report in the conversation what changed or what could not be read.
