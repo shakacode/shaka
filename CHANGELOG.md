@@ -41,10 +41,13 @@ did not run for 1.0.0; it applies again to later releases.
 - See evidence on the PR for what changed, what passed, and what the reviewer
   found. Ask for a code walkthrough, use interactive mode to steer a draft PR,
   and use timing and token estimates to review your delivery process. Usage
-  reports cover Antigravity and price GPT-6.2 and Gemini models.
+  reports cover Antigravity and price GPT-6.2 and Gemini models. For a change
+  people see on screen, the description links the agent's latest UI check as
+  **Screenshots**.
 - With team settings, list your team's skills in `.agents/shaka/packs/` on the
   default branch so Shaka offers each one at the step where it helps. PRs show
-  the results of those companion skills. See
+  the results of those companion skills, including whether their findings were
+  applied. See
   [offer your team's skills](https://shaka.shakacode.com/docs/working-with-shaka#offer-your-teams-skills-at-the-right-step).
 - With `project_guidance.pr_evidence` set, add a `<!-- shaka -->` line to your
   pull request template to choose where Shaka's sections appear. See [use your pull request template](https://shaka.shakacode.com/docs/pr-template).
@@ -61,8 +64,10 @@ did not run for 1.0.0; it applies again to later releases.
 - Local Codex reviews run without connected ChatGPT apps, web search, or image
   viewing. Read-only shell inspection remains available. With file-backed
   sign-in, they also skip your global `AGENTS.md`.
-- Existing 1.x `.agents/shaka/config.yml` files and documented commands keep
-  working across 1.x updates. Use the target release to check settings before
+- Existing 1.x `.agents/shaka/config.yml` files and the commands
+  [Update Shaka](https://shaka.shakacode.com/docs/migration#what-stays-compatible-in-1x)
+  lists keep working across 1.x updates. Commands Shaka runs for the agent can
+  change within 1.x. Use the target release to check settings before
   switching. For team settings, run `shaka seam check --root DIR --ref DEFAULT_SHA`
   and confirm it reports `trusted/ref` for that commit. For individual settings,
   run `shaka seam private check --root DIR --ref DEFAULT_SHA`.
@@ -96,7 +101,8 @@ did not run for 1.0.0; it applies again to later releases.
 - Installer diagnostics give a recovery command or explain which decision you
   need to make. `shaka doctor --brief` and `shaka install --status` show the main
   issue and its next step; `shaka install --status --json` lists every finding.
-  Interrupted branch updates can clean up their temporary worktree.
+  On an older Ruby, the installer suggests mise or rbenv. Interrupted branch
+  updates can clean up their temporary worktree.
 - Validation keeps evidence tied to the tested tree and settings. Fixes to a base
   branch are tracked separately when that branch already fails a check.
 - Claude Code cloud sessions can read PR status and publish PR descriptions when
