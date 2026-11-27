@@ -3,11 +3,16 @@
 require_relative '../error'
 require_relative 'text'
 require_relative 'wip_metadata'
+require_relative '../hosts/codex_wake'
 
 module Shaka
   # Renders the WIP Details note as one table, so every host publishes the same fields in the same shape.
   class WipDetails
     SUMMARY = 'WIP Details'
+    # The two chat locators hosts publish get the copy block, in exactly the form they publish: a Claude Code session
+    # link and a Codex thread whose id passes the session reader's check. Anything else stays in the table alone.
+    CLAUDE_LINK = %r{\Aclaude://claude\.ai/epitaxy/local_\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z}i
+    CODEX_LINK = %r{\Acodex://threads/(?<id>.+)\z}i
     FIELDS = {
       'owner' => 'Owner',
       'task' => 'Chat name',
@@ -45,7 +50,17 @@ module Shaka
     end
 
     def detail
-      { 'summary' => SUMMARY, 'body' => "#{table}\n\n#{@collection}" }
+      @detail ||= { 'summary' => SUMMARY, 'body' => "#{table}\n\n#{@collection}" }
+    end
+
+    # The published chat link, or nil when it is not a Claude or Codex chat address. Validated with the note.
+    def chat_link
+      detail
+      value = @spec['thread'].strip
+      return value if value.match?(CLAUDE_LINK)
+
+      id = value[CODEX_LINK, :id]
+      value if id&.match?(CodexWake::THREAD)
     end
 
     private

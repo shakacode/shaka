@@ -35,7 +35,7 @@ module Shaka
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil, # rubocop:disable Metrics/ParameterLists
                          environment: nil, host_name: nil)
       new(content, description: true, workflow_version:, pull:, settings:, timeline:, environment:, host_name:)
-        .render(%i[steps intent_verification human_comments evidence metrics wip],
+        .render(%i[steps intent_verification human_comments evidence metrics],
                 lead: %i[lead], closing: %i[credit]).tap { QuotedMarkers.refuse!(content) }
     end
 
@@ -157,14 +157,6 @@ module Shaka
     def validate_details(items)
       [UsageDetails, PublicationSettings, SkillsUsed, TimingsDetails, WipDetails].each { it.refuse_free_form!(items) }
       refuse_supplied_history(items)
-    end
-
-    # The note is optional because it disappears once GitHub confirms the outcome.
-    def wip
-      return [] unless (spec = @content['wip'])
-
-      info = { environment: @environment, disclosure: @content['wip_disclosure'], pull: @pull, host_name: @host_name }
-      [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction, session: info).detail)]
     end
 
     # Only the helper writes the history, from the previous body.
