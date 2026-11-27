@@ -213,9 +213,9 @@ command rules; every other decision stands.
   without a local absolute path, with HTML escaped, so a backtick or `</` is published as
   text rather than refused. #1259 published `manual source inspection and gemspec check`
   as a command.
-- `outcome`: `changed_code`, `findings_not_applied`, or `no_findings`. The set is fixed
+- `outcome`: `findings_applied`, `findings_not_applied`, or `no_findings`. The set is fixed
   so a collector counts labels instead of reading `result` prose.
-- `caused_commits`: the full SHAs a `changed_code` outcome led to. Ruby requires it
+- `caused_commits`: the full SHAs a `findings_applied` outcome led to. Ruby requires it
   with that outcome and refuses the key, even an empty list, with any other.
 
 Ruby still checks shape only. Whether a commit followed from a finding stays the

@@ -5,7 +5,7 @@ module Shaka
   # study can count. The agent reports it; Ruby checks shape.
   class CompanionOutcome
     FIELDS = %w[manual outcome caused_commits].freeze
-    LABELS = { 'changed_code' => 'Changed code', 'findings_not_applied' => 'Findings not applied',
+    LABELS = { 'findings_applied' => 'Findings applied', 'findings_not_applied' => 'Findings not applied',
                'no_findings' => 'No findings' }.freeze
     SHA = /\A\h{40}\z/
 
@@ -35,13 +35,13 @@ module Shaka
     end
 
     def caused_commits
-      changed = @entry['outcome'] == 'changed_code'
+      changed = @entry['outcome'] == 'findings_applied'
       return [] unless changed || @entry.key?('caused_commits')
 
       commits = @entry['caused_commits']
       return commits if changed && shas?(commits)
 
-      raise Error, 'Publication companion_results caused_commits must list full SHAs for a changed_code outcome ' \
+      raise Error, 'Publication companion_results caused_commits must list full SHAs for a findings_applied outcome ' \
                    'and be absent otherwise.'
     end
 

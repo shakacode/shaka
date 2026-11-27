@@ -91,10 +91,11 @@ Record runs in `companion_results`: `skill`, `command`, `checked`, `result`,
 `not_covered` (`Nothing.` if none), full `commit` SHA, and `artifacts` (HTTP(S) links
 or `[]`). Disambiguate Skills used with `source` or `revision`. Set `manual: true` when
 the check was reading or inspection; `command` then says what you inspected. Give each run
-an `outcome` when you know it: `changed_code` when its findings led to commits, listed as full
-SHAs in `caused_commits`; `findings_not_applied` when it reported findings that changed
-nothing, and say why in `result`; or `no_findings`. A rerun is a new entry with its own outcome; keep the earlier entry. Record only runs that
-checked the change, not prose or formatting skills. Link public-safe
+an `outcome` when you know it: `findings_applied` when its findings led to commits, listed
+as full SHAs in `caused_commits`; `findings_not_applied` when it reported findings that
+changed nothing, and say why in `result`; or `no_findings`. A rerun is a new entry with its
+own outcome; keep the earlier entry. Record only runs that checked the change, not prose or
+formatting skills. Link public-safe
 attachment comments. Remove workstation paths, including encoded paths, from
 commands and prose before publishing. Summarize merge-relevant results in Verification. Earlier
 commits show as stale. Rerun when a later commit touches what the run checked.

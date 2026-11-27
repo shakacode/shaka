@@ -19,15 +19,15 @@ class PublicationCompanionResultOutcomesTest < Minitest::Test
   end
 
   def test_names_the_commits_a_finding_caused
-    entry = run_record('outcome' => 'changed_code', 'caused_commits' => [FIX, EARLIER])
-    assert_includes render(results: [entry]), "- **Outcome:** Changed code · `#{FIX}`, `#{EARLIER}`\n"
+    entry = run_record('outcome' => 'findings_applied', 'caused_commits' => [FIX, EARLIER])
+    assert_includes render(results: [entry]), "- **Outcome:** Findings applied · `#{FIX}`, `#{EARLIER}`\n"
   end
 
   def test_refuses_an_outcome_that_disagrees_with_its_commits
     assert_refused(run_record('outcome' => 'fixed'), 'outcome')
     assert_refused(run_record('outcome' => nil), 'outcome')
-    assert_refused(run_record('outcome' => 'changed_code'), 'caused_commits')
-    assert_refused(run_record('outcome' => 'changed_code', 'caused_commits' => []), 'caused_commits')
+    assert_refused(run_record('outcome' => 'findings_applied'), 'caused_commits')
+    assert_refused(run_record('outcome' => 'findings_applied', 'caused_commits' => []), 'caused_commits')
     assert_refused(run_record('outcome' => 'no_findings', 'caused_commits' => [FIX]), 'caused_commits')
     assert_refused(run_record('caused_commits' => [FIX]), 'caused_commits')
     assert_refused(run_record('outcome' => 'no_findings', 'caused_commits' => []), 'caused_commits')
@@ -36,9 +36,9 @@ class PublicationCompanionResultOutcomesTest < Minitest::Test
 
   def test_refuses_caused_commits_that_are_not_full_shas
     [FIX[0, 7], nil, "#{FIX}\n"].each do |sha|
-      assert_refused(run_record('outcome' => 'changed_code', 'caused_commits' => [sha]), 'caused_commits')
+      assert_refused(run_record('outcome' => 'findings_applied', 'caused_commits' => [sha]), 'caused_commits')
     end
-    assert_refused(run_record('outcome' => 'changed_code', 'caused_commits' => FIX), 'caused_commits')
+    assert_refused(run_record('outcome' => 'findings_applied', 'caused_commits' => FIX), 'caused_commits')
   end
 
   def test_a_manual_check_renders_as_prose_not_a_command
