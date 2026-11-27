@@ -23,7 +23,7 @@ class ChangedTestsRepositoryTest < Minitest::Test
   def test_this_repository_selects_a_strict_subset_for_instruction_and_settings_changes
     selected = ChangedTests.new(ROOT).tests_for([%w[M AGENTS.md], %w[M .agents/shaka/config.yml]])
 
-    refute_nil selected
+    assert_includes selected, 'test/repository_configuration_example_test.rb'
     assert_operator selected.size, :<, Dir.glob('test/**/*_test.rb', base: ROOT).size
   end
 end

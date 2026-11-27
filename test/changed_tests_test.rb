@@ -75,6 +75,16 @@ class ChangedTestsTest < Minitest::Test
     assert_empty @selector.tests_for([%w[M internal/notes.md], %w[A docs/new-guide.md]])
   end
 
+  def test_an_executable_or_linked_data_file_runs_the_whole_suite
+    FileUtils.mkdir_p(File.join(@root, 'docs'))
+    File.write(File.join(@root, 'docs/run.md'), '')
+    File.chmod(0o755, File.join(@root, 'docs/run.md'))
+    File.symlink('run.md', File.join(@root, 'docs/link.md'))
+
+    assert_nil @selector.tests_for([%w[A docs/run.md]])
+    assert_nil @selector.tests_for([%w[A docs/link.md]])
+  end
+
   def test_a_renamed_library_file_selects_the_tests_that_reached_it_at_the_base
     base = commit_fixture
     File.rename(File.join(@root, 'skills/shaka/lib/shaka/beta.rb'), File.join(@root, 'skills/shaka/lib/shaka/delta.rb'))

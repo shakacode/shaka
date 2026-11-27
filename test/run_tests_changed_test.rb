@@ -6,6 +6,8 @@ require 'open3'
 class RunTestsChangedTest < Minitest::Test
   def test_the_runner_runs_nothing_when_no_test_reads_the_change
     Dir.mktmpdir('run-tests-changed') do |root|
+      FileUtils.mkdir_p(File.join(root, 'test'))
+      File.write(File.join(root, 'test/sentinel_test.rb'), "abort 'the runner started a test'\n")
       commit_base(root)
       FileUtils.mkdir_p(File.join(root, 'internal'))
       File.write(File.join(root, 'internal/notes.md'), "# Notes\n")

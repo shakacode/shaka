@@ -82,7 +82,7 @@ class ChangedTests
 
   # Tests that no longer exist cannot run.
   def deleted_readers(path, base)
-    found = ChangedTests.new(@root, revision: base).code_readers(path)
+    found = (@base ||= ChangedTests.new(@root, revision: base)).code_readers(path)
     found && (found & map.keys)
   end
 
@@ -96,8 +96,9 @@ class ChangedTests
     map.select { |_, files| files.any? { reads[it] } }.keys
   end
 
+  # An executable or linked file is not plain data, as bin/docs-only-change also decides.
   def data_place(path)
-    return nil unless path.match?(DATA)
+    return nil unless path.match?(DATA) && @files.plain?(path)
 
     DATA_PLACES.find { |key, _| key.end_with?('/') ? path.start_with?(key) : path == key }&.last
   end
@@ -161,6 +162,11 @@ class ChangedTests
 
     def tests = @revision ? paths.grep(%r{\Atest/.*_test\.rb\z}) : Dir.glob('test/**/*_test.rb', base: @root)
 
+    def plain?(path)
+      full = File.join(@root, path)
+      !File.symlink?(full) && !File.executable?(full)
+    end
+
     def file?(path) = @revision ? paths.include?(path) : File.file?(File.join(@root, path))
 
     def read(path)
@@ -195,7 +201,8 @@ class ChangedTests
     # One git process reads every Ruby file and entry point of the revision.
     def blobs
       @blobs ||= begin
-        wanted = paths.select { it.end_with?('.rb') || @entry_points.include?(it) }
+        # The batch reads one name per line, so a name holding a newline is read on its own.
+        wanted = paths.select { (it.end_with?('.rb') || @entry_points.include?(it)) && !it.include?("\n") }
         stream = StringIO.new(git('cat-file', '--batch', input: wanted.map { "#{@revision}:#{it}\n" }.join))
         wanted.to_h { [it, blob(stream)] }
       end
