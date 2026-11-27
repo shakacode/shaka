@@ -22,6 +22,7 @@ module ShakaRelease
     end
 
     def run
+      check_helper
       check_out_directory
       commit = run!({}, 'git', '-C', @root, 'rev-parse', 'HEAD').strip
       gate = behavior_gate(commit)
@@ -43,6 +44,15 @@ module ShakaRelease
                .merge('gem' => gem, 'notes' => notes)
     end
 
+    # The helper runs validation, so it must be trusted before its first call.
+    def check_helper
+      @shaka = File.realpath(@shaka)
+      refuse 'trusted Shaka helper must be an executable outside the release checkout' if
+        "#{@shaka}/".start_with?("#{@root}/") || !File.executable?(@shaka)
+    rescue SystemCallError => e
+      refuse "trusted Shaka helper: #{e.message}"
+    end
+
     def check_out_directory
       FileUtils.mkdir_p(@out)
       @out = File.realpath(@out)
@@ -54,17 +64,26 @@ module ShakaRelease
       refuse 'choose --behavior-records or --skip-behavior-gate' if @skip_behavior_gate == @behavior_records.any?
       return { 'status' => 'skipped' } if @skip_behavior_gate
 
-      { 'status' => 'passed', 'records' => @behavior_records.map { check_behavior(it, commit) } }
+      records = @behavior_records.each_with_index.map { |path, index| check_behavior(path, index, commit) }
+      { 'status' => 'passed', 'records' => records }
     end
 
-    def check_behavior(path, commit)
+    # Keeps the checker's result, which names the profile and its limits, beside the approval.
+    def check_behavior(path, index, commit)
       require_relative '../../eval/lib/shaka/evaluation/release_behavior'
       records = JSON.parse(File.read(path, encoding: 'UTF-8'))
       result = Shaka::Evaluation::ReleaseBehavior.new(records:, skill: File.join(@root, 'skills/shaka'), commit:).check
       refuse "release behavior batch did not pass: #{path}" unless result['status'] == 'passed'
-      { 'path' => File.expand_path(path), 'sha256' => Digest::SHA256.file(path).hexdigest }
+      { 'path' => File.expand_path(path), 'sha256' => Digest::SHA256.file(path).hexdigest,
+        'result' => save_result(result, index) }
     rescue ArgumentError, JSON::ParserError, SystemCallError => e
       refuse "release behavior batch is unreadable or invalid: #{e.class}"
+    end
+
+    def save_result(result, index)
+      path = File.join(@out, "behavior-result-#{index + 1}.json")
+      File.write(path, "#{JSON.pretty_generate(result)}\n")
+      path
     end
 
     def run_validation(commit)

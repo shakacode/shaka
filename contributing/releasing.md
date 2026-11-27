@@ -96,21 +96,37 @@ through a pull request instead.
 
 ## Publish without the command
 
-If `bin/release` cannot run, publish the approved files by hand in the same order. Keep
-each digest check joined to its upload with `&&`:
+If `bin/release` cannot run, publish the approved files by hand. Before the tag, confirm
+that remote `main` is still the approved commit and that RubyGems, the remote tags, and
+GitHub releases do not have the version yet:
 
 ```bash
 shaka_version=VERSION
+git ls-remote https://github.com/shakacode/shaka.git refs/heads/main
+curl -fsS "https://rubygems.org/api/v2/rubygems/shaka/versions/$shaka_version.json"
+git ls-remote --exit-code --tags https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
+gh release view "v$shaka_version" --repo shakacode/shaka
+```
+
+The first command should print the approved commit, and the other three should report
+that the version does not exist. Then publish in this order, keeping each digest check
+joined to its upload with `&&`:
+
+```bash
 git tag -a "v$shaka_version" APPROVED_COMMIT -m "Release shaka $shaka_version"
 git push https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
 ruby -rdigest -e 'abort "Gem differs from approval" unless
   Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' GEM_PATH APPROVED_GEM_SHA256 &&
-  gem push GEM_PATH
+  gem push --host https://rubygems.org GEM_PATH
 ruby -rdigest -e 'abort "Notes differ from approval" unless
   Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' NOTES_PATH APPROVED_NOTES_SHA256 &&
   gh release create "v$shaka_version" --repo shakacode/shaka --verify-tag \
     --title "shaka $shaka_version" --notes-file NOTES_PATH --generate-notes
 ```
 
-Add `--prerelease` to `gh release create` for a prerelease version. If the gate was
-skipped, add its statement to the notes in a copy, not the approved file.
+Add `--prerelease` to `gh release create` for a prerelease version. When the behavior gate
+was skipped, the notes check still reads the approved file; pass a copy with this line
+added as `--notes-file`: `The release behavior gate did not run for this release.` Last,
+install the version into an empty `GEM_HOME` with
+`gem install shaka --version "$shaka_version" --clear-sources --source https://rubygems.org`
+and run its `shaka --help`.

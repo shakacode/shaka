@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require 'json'
 require_relative 'release_preflight_helpers'
+require_relative 'support/release_behavior_fixture'
 
 # Each fixture builds a gem, so related cases share one test. The command runs in a child
 # process because loading the fixture's gemspec redefines Shaka::VERSION.
@@ -26,6 +27,27 @@ class ReleasePrepareTest < Minitest::Test
     # Without --validation, the helper's evidence run result is saved and bound.
     assert_equal File.join(File.realpath(@out), 'validation.json'), approval.fetch('validation')
     assert_equal Digest::SHA256.file(@validation).hexdigest, approval.fetch('validation_sha256')
+  end
+
+  def test_a_passing_behavior_batch_is_recorded_with_its_checker_result
+    records = write_behavior_records
+    approval = prepare('--behavior-records', records)
+    status, (record, *others) = approval.fetch('behavior_gate').values_at('status', 'records')
+    assert_equal ['passed', []], [status, others]
+    assert_equal Digest::SHA256.file(records).hexdigest, record.fetch('sha256')
+    assert_equal 'passed', JSON.parse(File.read(record.fetch('result'))).fetch('status')
+  end
+
+  def test_refuses_a_behavior_batch_for_another_commit_or_an_untrusted_helper
+    records = write_behavior_records
+    execute('git', '-c', 'user.name=T', '-c', 'user.email=t@example.com', 'commit', '--allow-empty', '-qm', 'Next')
+    assert_refused_prepare('release behavior batch did not pass', '--behavior-records', records)
+    marker = File.join(@directory, 'helper-ran')
+    helper = File.join(@root, 'helper')
+    File.write(helper, "#!/bin/sh\ntouch #{marker}\n")
+    File.chmod(0o755, helper)
+    assert_refused_prepare('outside the release checkout', '--shaka', helper, '--skip-behavior-gate')
+    refute_path_exists marker
   end
 
   def test_refuses_before_building_without_a_passing_behavior_choice_or_outside_output
@@ -68,6 +90,13 @@ class ReleasePrepareTest < Minitest::Test
     _output, error, status = run_prepare(*)
     refute_predicate status, :success?
     assert_includes error, message
+  end
+
+  def write_behavior_records
+    _commit, records = ReleaseBehaviorFixture::Records.passing(File.join(@root, 'skills/shaka'))
+    path = File.join(@directory, 'release-records.json')
+    File.write(path, JSON.generate(records))
+    path
   end
 
   # Answers `evidence run` with the fixture's result and passes every other call to the real helper.

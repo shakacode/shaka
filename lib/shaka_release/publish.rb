@@ -71,8 +71,10 @@ module ShakaRelease
 
     def push_gem
       # Inherits the terminal so the person enters the RubyGems MFA code.
-      refuse 'gem push failed; rerun publish after fixing credentials or MFA' unless
-        system(@env, 'gem', 'push', @approval.gem)
+      unless system(@env, 'gem', 'push', '--host', Registry::HOST, @approval.gem)
+        refuse 'gem push failed. If RubyGems already accepted this version, rerun publish in a few minutes; ' \
+               'otherwise fix credentials or MFA and rerun.'
+      end
       say "Pushed shaka #{version} to RubyGems."
     end
 
@@ -91,20 +93,25 @@ module ShakaRelease
     def install_check
       Dir.mktmpdir('shaka-release-install') do |home|
         env = @env.merge('GEM_HOME' => home, 'GEM_PATH' => home)
-        run!(env, 'gem', 'install', 'shaka', '--version', version, '--no-document',
+        run!(env, 'gem', 'install', 'shaka', '--version', version, '--no-document', '--clear-sources',
+             '--source', Registry::HOST,
              failure: 'RubyGems may not serve the new version yet; rerun publish in a few minutes')
         run!(env, File.join(home, 'bin/shaka'), '--help')
       end
       say "Installed shaka #{version} from RubyGems and ran shaka --help."
     end
 
+    # A draft is not public, so it does not count as a published release.
     def release?
-      _output, error, status = Open3.capture3(@env, 'gh', 'release', 'view', "v#{version}", '--repo', REPOSITORY,
-                                              '--json', 'tagName')
-      return true if status.success?
-      return false if error.include?('release not found')
+      output, error, status = Open3.capture3(@env, 'gh', 'release', 'view', "v#{version}", '--repo', REPOSITORY,
+                                             '--json', 'isDraft')
+      return false if !status.success? && error.include?('release not found')
 
-      refuse "Cannot read the GitHub release: #{error.strip}"
+      refuse "Cannot read the GitHub release: #{error.strip}" unless status.success?
+      refuse "GitHub release v#{version} is a draft; publish or delete it, then rerun" if
+        JSON.parse(output).fetch('isDraft')
+
+      true
     end
 
     def remote_tag

@@ -23,9 +23,9 @@ module ReleasePublishFixture
     release = File.join(state, 'release')
     case ARGV.first(2)
     when %w[release view]
-      exit 0 if File.exist?(release)
-      warn 'release not found'
-      exit 1
+      abort 'HTTP 502' if File.exist?(File.join(state, 'gh_fails'))
+      abort 'release not found' unless File.exist?(release)
+      puts JSON.generate('isDraft' => File.exist?(File.join(state, 'draft')))
     when %w[release create]
       notes = ARGV[ARGV.index('--notes-file') + 1]
       File.write(release, JSON.generate('args' => ARGV, 'body' => File.read(notes)))
@@ -37,15 +37,15 @@ module ReleasePublishFixture
     case ARGV.first
     when 'push'
       abort 'push refused' if File.exist?(File.join(state, 'push_fails'))
-      File.write(File.join(state, 'registry'), Digest::SHA256.file(ARGV[1]).hexdigest)
-      File.write(File.join(state, 'pushes'), "push\\n", mode: 'a')
+      File.write(File.join(state, 'registry'), Digest::SHA256.file(ARGV.last).hexdigest)
+      File.write(File.join(state, 'pushes'), "\#{ARGV.join(' ')}\\n", mode: 'a')
     when 'install'
       abort 'not found' if File.exist?(File.join(state, 'install_fails'))
       bin = File.join(ENV.fetch('GEM_HOME'), 'bin')
       FileUtils.mkdir_p(bin)
       File.write(File.join(bin, 'shaka'), "#!/bin/sh\\necho usage\\n")
       File.chmod(0o755, File.join(bin, 'shaka'))
-      File.write(File.join(state, 'installs'), "install\\n", mode: 'a')
+      File.write(File.join(state, 'installs'), "\#{ARGV.join(' ')}\\n", mode: 'a')
     end
   RUBY
 
