@@ -26,6 +26,7 @@ module Shaka
       # The job holds the leader before the waiter can reap it; AFTER_REAP lets a test hold the waiter
       # between releasing the handle and exiting. With INPUT, the check reads standard input from #input.
       def initialize(command, root:, job: method(:adopt), after_reap: nil, input: false)
+        @child_ends = []
         reader, output, error = open_pipes(input)
         @pid = Process.spawn(*command, chdir: root, in: reader || File::NULL, out: output, err: error)
         @job = job.call(@pid)
@@ -34,7 +35,7 @@ module Shaka
         abandon_start
         raise
       ensure
-        [reader, output, error].each { |child_end| child_end&.close }
+        @child_ends.each { |child_end| child_end.close unless child_end.closed? }
       end
 
       # Ends the check. Returns the limitation when descendants may outlive the stop. The wait is
@@ -59,10 +60,11 @@ module Shaka
       private
 
       # Returns the child's ends: its standard input when INPUT is set, then its output and errors.
+      # Each end is recorded as soon as it exists, so a failed later pipe still closes the earlier ones.
       def open_pipes(input)
-        reader, @input = IO.pipe if input
-        @output, output = IO.pipe
-        @error, error = IO.pipe
+        reader, @input = IO.pipe.tap { |pair| @child_ends << pair.first } if input
+        @output, output = IO.pipe.tap { |pair| @child_ends << pair.last }
+        @error, error = IO.pipe.tap { |pair| @child_ends << pair.last }
         [reader, output, error]
       end
 

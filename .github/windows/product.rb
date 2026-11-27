@@ -14,7 +14,7 @@ class WindowsProduct < WindowsSession
   EVIDENCE_RUN = %w[evidence run --repository shakacode/shaka --command test].freeze
   TEST = %w[-- test/executable_file_test.rb].freeze
   REVIEW_TESTS = %w[test/windows_local_review_test.rb test/windows_review_lookup_test.rb
-                    test/doctor_windows_stop_test.rb].freeze
+                    test/doctor_windows_stop_test.rb test/windows_check_pipes_test.rb].freeze
   # Not bash.exe: System32 ships one as the WSL launcher.
   UNIX_TOOL_NAMES = %w[sh.exe env.exe dirname.exe].freeze
   UNIX_TOOLS = %r{msys64|[\\/]Git[\\/](?:usr[\\/]bin|bin|mingw64[\\/]bin)[\\/]?\z}i
