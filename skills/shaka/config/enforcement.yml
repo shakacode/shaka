@@ -53,7 +53,8 @@ rules:
     enforced_by: agent
     note: >-
       Publication helpers render supplied identity fields and show UNKNOWN for missing values;
-      a description's first line omits them and its Missing values entry keeps all four.
+      a description's first line omits an unread provider, model, or effort, and its Missing values
+      entry keeps all four.
       Nothing intercepts direct gh posts or verifies the writer's actual model and effort;
       the agent checks the attributed body, including attachment and verification comments.
   - id: durable-task-plan

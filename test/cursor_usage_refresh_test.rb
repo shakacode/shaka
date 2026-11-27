@@ -338,9 +338,11 @@ class CursorUsageRefreshDescriptionTest < Minitest::Test
 
   private
 
+  # The writer signs any archive comments the refresh posts; the description's first line drops unread fields.
   def assert_bound(request)
     assert_equal 1, request.dig('publication', 'number')
     assert_equal 'owner/repo', request.dig('publication', 'repository')
+    assert_equal '🤖 Codex · UNKNOWN · UNKNOWN · UNKNOWN', request.dig('publication', 'writer')
   end
 
   def recorded_request(dir)
@@ -367,5 +369,35 @@ class CursorUsageRefreshDescriptionTest < Minitest::Test
     { 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir, 'CURSOR_CONVERSATION_ID' => SESSION,
       'CURSOR_USAGE_DIR' => File.join(dir, 'usage'), 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => nil,
       'CLAUDE_CODE_SESSION_ID' => nil }
+  end
+end
+
+# The refresh republishes a description without its content, so it signs archive comments with the stored writer.
+class CursorUsageRefreshWriterTest < Minitest::Test
+  # Records the writer a refresh hands to the description it republishes.
+  class Description
+    attr_reader :writer
+
+    def description(writer:)
+      @writer = writer.call
+    end
+  end
+
+  def test_the_refresh_passes_the_stored_writer_to_the_archive
+    github = Description.new
+    publication = { 'repository' => 'owner/repo', 'number' => 42, 'writer' => '🤖 Cursor · OpenAI · UNKNOWN · high' }
+    Shaka::GitHub.define_singleton_method(:new) { |*| github }
+    Shaka::CursorUsageRefresh.send(:publish, publication, {})
+    assert_equal '🤖 Cursor · OpenAI · UNKNOWN · high', github.writer
+  ensure
+    Shaka::GitHub.singleton_class.remove_method(:new)
+  end
+
+  def test_only_a_four_field_writer_is_stored
+    usage = { 'records' => [USAGE_RECORD.merge('host' => 'cursor')] }
+    stored = ->(line) { Shaka::CursorUsageRequest.send(:publication, 'owner/repo', 42, usage, line)['writer'] }
+    assert_equal '🤖 Cursor · OpenAI · UNKNOWN · high', stored.call('🤖 Cursor · OpenAI · UNKNOWN · high')
+    assert_nil stored.call('🤖 Cursor · OpenAI')
+    assert_nil stored.call(nil)
   end
 end
