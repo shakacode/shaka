@@ -805,7 +805,7 @@ phases:
         [review guide](<{{package_root}}/skills/shaka/references/review.md>).
       - After repairs, run the deferred resolved `validate` command, then
         the resolved `trigger_hosted_ci` command when present. Later fixes need fresh evidence.
-        A check the saved helper's `pr` reports as required can replace that deferred run when a
+        A check the saved helper's `pr` reports as required replaces that deferred run when a
         workflow at the trusted base defines it and runs that full `validate`: push, run the trigger,
         and count the check's passing run on the pushed head as the full validation. Run the local
         `validate` instead when this PR adds, removes, or changes any workflow or the script it runs,
