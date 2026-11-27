@@ -53,7 +53,7 @@ module Shaka
       def valid_targets?(targets)
         targets.is_a?(Array) && !targets.empty? && targets.all? do |target|
           target.is_a?(Hash) && target['directory'].is_a?(String) &&
-            target['directory'].start_with?('/') && Package.valid_skills?(target['names'])
+            File.absolute_path?(target['directory']) && Package.valid_skills?(target['names'])
         end
       end
     end

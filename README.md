@@ -67,18 +67,22 @@ You don't need to study the docs first. Ask your coding agent to install Shaka:
 
 ```text
 Install Shaka from https://github.com/shakacode/shaka
+Use the latest published stable release. If none is published, install from source
 ```
 
 Then give it a small task:
 
 ```text
 $shaka Fix search when the query contains an apostrophe
+Set up Shaka just for me if needed. Ask me before merging. Go
 ```
 
 Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, GitHub Copilot, or OpenCode.
 For Pi, load the installed skill. See [other coding agents](docs/coding-agents.md).
-Your agent checks setup and tells you if
-anything is missing.
+If your agent doesn't recognize `$shaka` or `/shaka` right after installing, start a new chat
+and send the task again.
+Your agent uses shared project settings when they exist. Otherwise, individual
+setup keeps your settings in your local copy of the project.
 
 Before coding, the agent recommends a model and effort. If your coding agent uses
 different settings, or the agent can't tell which it uses, it waits for your reply.
@@ -90,6 +94,7 @@ Read the PR, ask for revisions if needed, and decide whether to merge.
 
 Prefer to install it manually? Follow [manual installation](docs/manual-installation.md).
 New to pull requests? Try [Shaka in pictures](docs/shaka-in-pictures.md).
+Already using Shaka? See [upgrade and configuration compatibility](docs/migration.md).
 
 ## Book a live demo
 

@@ -34,6 +34,10 @@ module Shaka
         report(published, earlier)
       end
 
+      # The newest check still open, or nil. It is the comment a reader opens for the PR's captures:
+      # earlier checks are folded under it and it carries what they showed.
+      def current = open_checks([]).max_by { |comment| CommentHistory.order(comment) }
+
       private
 
       def verify_head(head)

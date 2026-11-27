@@ -17,7 +17,7 @@ class PublicationIntentVerificationTest < Minitest::Test
              "**Safe because:** #{INTENT['safe_because']}\n\n" \
              "**Leaves out:** #{INTENT['leaves_out']}\n\n" \
              "**Scope:** #{INTENT['scope']}"
-    verification = "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n" \
+    verification = "## Verification\n\n#{Shaka::VerificationLine::UNKNOWN}\n\n" \
                    "<details>\n<summary>Evidence and limitations</summary>"
     assert_includes rendered, intent
     assert_includes rendered, verification
