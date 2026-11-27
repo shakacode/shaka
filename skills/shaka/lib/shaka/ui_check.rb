@@ -5,6 +5,7 @@ require 'optparse'
 require_relative 'call_log'
 require_relative 'error'
 require_relative 'github'
+require_relative 'ui_check/link'
 require_relative 'ui_check/publisher'
 
 module Shaka
