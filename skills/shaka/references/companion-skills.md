@@ -94,9 +94,9 @@ the check was reading or inspection; `command` then says what you inspected. Giv
 an `outcome` when you know it: `findings_applied` when its findings led to commits, listed
 as full SHAs in `caused_commits`; `findings_not_applied` when it reported findings that
 changed nothing, and say why in `result`; or `no_findings`. A rerun is a new entry; keep the
-earlier entry. List each commit under the first run that reported its finding only, and
-give a run that only repeats earlier findings no outcome. Record only runs that checked the change, not prose or
-formatting skills. Link public-safe
+earlier entry. List a commit under each run whose own finding it fixed, and give a run that
+only repeats earlier findings no outcome. Record only runs that checked the change, not
+prose or formatting skills. Link public-safe
 attachment comments. Remove workstation paths, including encoded paths, from
 commands and prose before publishing. Summarize merge-relevant results in Verification. Earlier
 commits show as stale. Rerun when a later commit touches what the run checked.
