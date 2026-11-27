@@ -43,8 +43,17 @@ module Shaka
       end
 
       # Threads with the same other authors share one screen, so a PR with many threads from one
-      # reviewer reads each permission once. A failed screen raises and is not kept.
-      def screened(logins) = (@screens ||= {})[logins.sort_by(&:to_s)] ||= screen(logins)
+      # reviewer reads each permission once. A screen with a failed read is not kept, so the next
+      # thread asks GitHub again.
+      def screened(logins)
+        @screens ||= {}
+        key = logins.sort_by(&:to_s)
+        return @screens[key] if @screens.key?(key)
+
+        rows = screen(logins)
+        @screens[key] = rows unless rows.any? { |row| row['verification_unavailable'] }
+        rows
+      end
 
       # Authors reads REST comments, so each login becomes one with a numbered ID and the user type
       # GraphQL implies: only an app account's login carries the [bot] suffix.

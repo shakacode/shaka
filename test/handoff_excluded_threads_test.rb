@@ -99,6 +99,23 @@ class HandoffExcludedThreadsTest < Minitest::Test
     assert_empty result['owed']
     assert_includes result['notes'], EXCLUDED_T1
   end
+end
+
+# Where the screen gets its trust evidence, and how often it asks GitHub.
+class HandoffThreadTrustTest < Minitest::Test
+  include HandoffHarness
+
+  EXCLUDED_T1 = HandoffExcludedThreadsTest::EXCLUDED_T1
+
+  def test_a_failed_read_is_asked_again_for_the_next_thread
+    threads = [thread('T1', opener: 'outsider'), thread('T2', opener: 'outsider')]
+    result = handoff(visibility: 'public', fail_once: ['outsider'], threads:)
+
+    assert_equal ['Reply on review threads waiting for an answer: T1.'], result['owed']
+    assert_includes result['notes'], 'Review thread T2 includes an author `comments` excludes, so the agent ' \
+                                     'cannot reply there. A maintainer can answer on GitHub and resolve it, or ' \
+                                     'add the author to the trusted actors.'
+  end
 
   def test_configured_bots_and_team_members_stay_owed
     threads = [thread('T1', opener: 'coderabbitai[bot]'), thread('T2', opener: 'teammate')]

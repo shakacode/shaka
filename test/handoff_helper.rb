@@ -80,10 +80,12 @@ class HandoffFakeGitHub
     { 'visibility' => @pull.fetch(:visibility, 'private') }
   end
 
-  # Logins in :writers have write access; one in :unverifiable fails its permission read.
+  # Logins in :writers have write access; one in :unverifiable fails every permission read, and one
+  # in :fail_once fails only its first.
   def permission(login)
     @pull[:permission_reads]&.push(login)
     raise Shaka::Error, 'permission read failed' if @pull.fetch(:unverifiable, []).include?(login)
+    raise Shaka::Error, 'permission read failed' if @pull[:fail_once]&.delete(login)
 
     { 'user' => { 'login' => login }, 'permission' => @pull.fetch(:writers, []).include?(login) ? 'write' : 'read' }
   end
