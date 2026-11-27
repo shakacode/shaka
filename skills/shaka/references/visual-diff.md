@@ -33,7 +33,7 @@ or how spacing changed. Otherwise, lead with an annotated after capture.
   annotation; use an editor, SVG/browser overlay, or an existing image tool rather
   than regenerating the screenshot. Flatten overlays into an image for PR upload.
 
-For a side-by-side image, when a browser tool is available, fill a copy of
+For a side-by-side image, when a browser tool can open a local HTML file, fill a copy of
 [before-after-template.html](before-after-template.html) as its opening comment
 describes and screenshot the result.
 
