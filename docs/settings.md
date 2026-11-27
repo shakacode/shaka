@@ -49,16 +49,16 @@ An explicit task choice takes
 precedence where an option supports it, such as choosing Ask for one task.
 Each option below describes any such override. Individual settings govern
 delivery preferences, such as AI reviewers and writing limits; they cannot
-disable required merge gates or authorize merging. `shaka merge` does not read them at all.
-When you approve a merge under individual setup, it applies Shaka's default merge gates,
-such as the default [hold label](#mergehold_labels), whatever your file says.
+disable required merge gates or authorize merging. `shaka merge` also ignores the merge
+settings in your file and uses Shaka's defaults, including the default
+[hold label](#mergehold_labels).
 
 A settings PR becomes the team's default after it merges into the default branch.
 You can also select it for one task before adoption. Local settings do not override
 shared settings.
 
-Individual setup honors the same settings as shared setup: reviewers, custom
-code-review instructions, checkpoint choices, writing limits, opening checks, and
+Individual setup honors the same settings as shared setup, except merge settings: reviewers,
+custom code-review instructions, checkpoint choices, writing limits, opening checks, and
 WIP reporting. [Prompt files](#where-shaka-reads-a-prompt-file) are the one
 setting whose location matters.
 
@@ -273,8 +273,9 @@ label added while the agent checks the PR still stops it. The agent then names t
 hands the PR back to you. No confirmation in chat gets past a hold; remove the label when the PR
 may merge. Label names match without regard to case.
 
-With individual setup, `shaka merge` stops only for the default `hold` label. It does not read
-your local `merge.hold_labels`, so a label you list there does not stop a merge.
+With individual setup, `shaka merge` checks the default `hold` label instead of your local
+`merge.hold_labels`. If your file lists `[hold, do-not-merge]`, `hold` still stops a merge and
+`do-not-merge` does not.
 
 The hold governs only Shaka. GitHub does not know about it, so it does not stop anyone from
 clicking merge, and it does not take a PR out of a merge queue it has already joined. While
