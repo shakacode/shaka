@@ -8,13 +8,20 @@ module Shaka
     private
 
     # An agent comment needs all four identity fields. A description's first line drops unread ones and does not
-    # say which, so a caller without the content keeps only the agent from a short line.
+    # say which, so the caller supplies the full line. A supplied line that no longer matches the body's first line,
+    # such as one stored before another session republished, gives way to the body.
     def identify_writer(body, writer)
-      @writer = writer || body_writer(Publishing.managed_region(body).to_s)
+      opening = Publishing.managed_region(body).to_s[/^🤖 [^\r\n]+$/]&.split(ThroughputLine::SPEND, 2)&.first
+      @writer = (writer if writer && (opening.nil? || [writer, shortened(writer)].include?(opening))) ||
+                body_writer(opening)
     end
 
-    def body_writer(region)
-      opening = region[/^🤖 [^\r\n]+$/]&.split(ThroughputLine::SPEND, 2)&.first
+    def shortened(writer)
+      agent, *rest = writer.split(' · ')
+      [agent, *rest.reject { it == 'UNKNOWN' }].join(' · ')
+    end
+
+    def body_writer(opening)
       return '🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN' unless opening
       return opening unless opening.match?(SHORT_OPENING)
 

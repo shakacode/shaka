@@ -451,7 +451,8 @@ phases:
         `🤖 AGENT · PROVIDER · MODEL · EFFORT`, using actual writer settings and
         `UNKNOWN` for unavailable values. This includes verification updates and
         attachment comments posted directly through `gh`; reviewer identity belongs
-        in the review record. A helper-rendered description omits unread values there.
+        in the review record. A helper-rendered description omits an unread provider,
+        model, or effort there.
         Preserve human text and label mixed work AI-edited.
         Before submission, check that the first visible line of the AI-authored post or
         managed section carries the writer identifier, keeping surrounding human text intact.
