@@ -31,6 +31,8 @@ module Shaka
         command ? { command: } : { decision: SettingsLocation.decision(home) }
       end
 
+      def linked_worktrees = worktree_entries.map { |entry| entry[:path] }
+
       private
 
       # The installer passes the same selections into the default location; status always has a record.
@@ -122,8 +124,6 @@ module Shaka
       def extra_branches
         git('for-each-ref', '--format=%(refname:lstrip=2)', 'refs/heads/').lines.map(&:strip) - [@branch]
       end
-
-      def linked_worktrees = worktree_entries.map { |entry| entry[:path] }
 
       # Prunable entries no longer exist on disk. A staging worktree a killed update left is not development;
       # status reports it as B7.
