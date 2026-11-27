@@ -42,8 +42,8 @@ Shaka handles merging. Repository checks and approvals still apply.
   default branch so Shaka offers each one at the step where it helps. PRs show
   the results of those companion skills. See
   [offer your team's skills](https://shaka.shakacode.com/docs/working-with-shaka#offer-your-teams-skills-at-the-right-step).
-- When `project_guidance.pr_evidence` points at your pull request template, add
-  a `<!-- shaka -->` line to choose where Shaka's sections appear. See [use your pull request template](https://shaka.shakacode.com/docs/pr-template).
+- With `project_guidance.pr_evidence` set, add a `<!-- shaka -->` line to your
+  pull request template to choose where Shaka's sections appear. See [use your pull request template](https://shaka.shakacode.com/docs/pr-template).
 - Make and validate a change in Claude Code on the web, then continue in a local
   session to open and finish its PR. See
   [cloud sessions](https://shaka.shakacode.com/docs/cloud-sessions).
