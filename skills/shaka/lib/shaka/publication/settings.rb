@@ -44,6 +44,14 @@ module Shaka
     # that never sets them previews with no shortfall and the usual order instead of failing.
     attr_reader :reviewer_shortfall, :time_zone, :template_headings
 
+    # EarlierReview's sentence when no results were supplied, or nil.
+    attr_reader :earlier_review
+
+    def with_earlier_review(sentence) = tap { @earlier_review = sentence }
+
+    # What the Verification line reads besides the bound results.
+    def verification_context = { shortfall: reviewer_shortfall, earlier: earlier_review }
+
     private
 
     def review_not_required

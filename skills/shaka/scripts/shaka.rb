@@ -176,14 +176,22 @@ end
 def rendered_description(described, github, pull, workflow_version, options)
   root = options.fetch(:root)
   carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
-  settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
-                                       .with_missing_settings(root)
+  settings = publication_settings(root, pull, options, github)
   timeline = description_timeline(options.fetch(:timeline), carried, github, pull, settings)
   rendered = render_description(carried, workflow_version, pull, settings, timeline, options, github)
   Shaka::DecisionLabels.guard(github, carried, pull['body'])
   Shaka::CheckpointRecommendation.require_decisions!(carried, pull, github.repository)
   Shaka::CheckpointRecommendation.refuse_decisions_under_merge!(carried, pull, github)
   [rendered, carried, usage_records, settings.verdict&.key?('kept_line'), timeline]
+end
+
+# Without results, the description still says which published review covers the head.
+def publication_settings(root, pull, options, github)
+  settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
+                                       .with_missing_settings(root)
+  return settings if settings.verdict
+
+  settings.with_earlier_review(Shaka::EarlierReview.vetted_sentence(github, pull, root:))
 end
 
 def kept_notes(notes, evidence, recommendation)
@@ -483,6 +491,8 @@ begin
              description_content = Shaka::DescriptionPreflight.new(supplied).call
              prose, prose_note = description_prose_limits(root, options[:ref])
              notes = prose_note.merge(description_pr_evidence(root, options[:ref]))
+             described = nil
+             writer = -> { described && Shaka::PublicationText.identity(described['identity']) }
              Shaka::OpeningPublication.with_safe_path(root:) do |candidate_root, gh, neutral|
                raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
 
@@ -492,7 +502,7 @@ begin
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
                described = lookup_note = usage_records = carried = kept = timeline = head = recommendation = nil
-               published = github.description(prose:, deferred: true) do |pull|
+               published = github.description(prose:, deferred: true, writer:) do |pull|
                  described, lookup_note, timeline = description_input(description_content, github, pull, options)
                  rendered, carried, usage_records, kept, timeline = rendered_description(
                    described, github, pull, workflow_version, options.merge(root:, timeline:)

@@ -5,6 +5,7 @@ require_relative 'merge_review_evidence'
 require_relative 'publication/agent_post'
 require_relative 'publication/publication'
 require_relative 'reviewer_selection'
+require_relative 'public_comments/cited_comment'
 require_relative 'public_comments/github_login'
 
 module Shaka
@@ -12,18 +13,22 @@ module Shaka
   #
   # The author supplies comment URLs. Provider, model, and effort come from that comment's
   # attestation and round ledger, so a reply cannot name a reviewer the comment does not show.
+  # A comment whose prose `comments` withholds contributes its link and author, never its text.
   class ReviewReply
     # GitHub puts a hyphen before an issue-comment id and a review id, and none before a discussion id.
     HYPHENATED = %r{\Ahttps://github\.com/([\w.-]+)/([\w.-]+)/(pull|issues)/(\d+)#(issuecomment|pullrequestreview)-(\d+)\z}
     DISCUSSION = %r{\Ahttps://github\.com/([\w.-]+)/([\w.-]+)/pull/(\d+)#discussion_r(\d+)\z}
 
-    def self.compose(content, github, publisher_note: nil) = new(content, github, publisher_note:).compose
+    def self.compose(content, github, publisher_note: nil, cited: nil)
+      new(content, github, publisher_note:, cited:).compose
+    end
 
-    def initialize(content, github, publisher_note: nil)
+    def initialize(content, github, publisher_note: nil, cited: nil)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
 
       @content = content
       @github = github
+      @cited = cited || PublicComments::CitedComment.new(github)
       validate_content
       @publisher_note = publisher_note
     end
@@ -61,8 +66,8 @@ module Shaka
     def line(url)
       raise Error, 'A review reply takes a comment URL, not a typed reviewer identity.' unless url.is_a?(String)
 
-      comment = located(url)
-      Evidence.line(body: comment.fetch('body').to_s, url: url, author: comment.dig('user', 'login'))
+      comment, fragment = located(url)
+      Evidence.line(body: @cited.body(comment, fragment), url: url, author: comment.dig('user', 'login'))
     end
 
     def located(url)
@@ -71,7 +76,7 @@ module Shaka
 
       _owner, _repo, _path, _number, fragment, id = parts
       found = comments(fragment, id).find { |comment| comment.is_a?(Hash) && comment['id'].to_s == id }
-      return found if found
+      return [found, fragment] if found
 
       raise Error, 'The review comment was not found on this pull request.'
     end

@@ -115,7 +115,7 @@ class ThroughputSummaryTest < Minitest::Test
   def test_cost_line_leaves_off_timing_and_details_say_why_when_task_start_was_not_recorded
     times = { 'ci_started_at' => PUSH, 'ready_at' => READY }
     rendered = describe('$7.27', timeline: times)
-    visible, details = rendered.split('<summary>Details</summary>')
+    visible, details = rendered.split('<summary>🤙 Shaka details</summary>')
     assert_includes visible, "**Estimated token costs:** $7.27\n"
     refute_includes visible, 'in UNKNOWN'
     assert_includes rendered, 'CI to ready 41m'
@@ -165,7 +165,7 @@ class ThroughputSummaryTest < Minitest::Test
 
   def test_pending_timing_is_visible_and_replaced_once_when_ready
     body = describe('$4.12', timeline: push_times, pull: head_pull)
-    assert_includes body.split('<summary>Details</summary>').first,
+    assert_includes body.split('<summary>🤙 Shaka details</summary>').first,
                     "**Estimated token costs:** $4.12 · ready pending\n"
     assert_equal body, Shaka::ThroughputStats.update(body, {})
     updated = Shaka::ThroughputStats.update(body, 't2' => READY.iso8601)

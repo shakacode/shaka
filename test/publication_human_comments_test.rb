@@ -608,7 +608,9 @@ class PublicationReviewReplyExcerptTest < Minitest::Test
     local = { 'id' => 8, 'html_url' => "#{URL}#issuecomment-8", 'body' => ATTESTED }
     hosted = { 'id' => 9, 'html_url' => "#{URL}#issuecomment-9", 'body' => "# Review\n",
                'user' => { 'login' => 'ann' } }
-    github = Struct.new(:repository, :number, :issue_comments).new('owner/repo', 7, [local, hosted])
+    github = Struct.new(:repository, :number, :issue_comments) do
+      def api(_path) = { 'visibility' => 'private' }
+    end.new('owner/repo', 7, [local, hosted])
     identity = { 'agent' => 'Codex', 'provider' => 'OpenAI', 'model' => 'gpt-test', 'effort' => 'high' }
     Shaka::ReviewReply.compose({ 'identity' => identity, 'summary' => ANSWER,
                                  'reviews' => [local['html_url'], hosted['html_url']] }, github)

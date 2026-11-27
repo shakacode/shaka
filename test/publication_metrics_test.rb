@@ -6,7 +6,7 @@ require_relative 'publication_test'
 class PublicationMetricsTest < Minitest::Test
   def test_cost_remains_visible_with_partial_data_and_unknown_labels_preserved
     rendered = render(usd: '$1.25 (partial)')
-    visible, metrics = rendered.split("<details>\n<summary>Details</summary>", 2)
+    visible, metrics = rendered.split("<details>\n<summary>🤙 Shaka details</summary>", 2)
     assert_includes visible, '**Estimated token costs:** $1.25+'
     assert_includes visible, 'AI spend: $1.25+'
     assert_includes metrics, '<summary>Usage and cost</summary>'
@@ -22,11 +22,11 @@ class PublicationMetricsTest < Minitest::Test
     hierarchy = disclosure_hierarchy(rendered)
     assert_includes hierarchy, [1, 'Capture limits']
     assert_includes hierarchy, [0, 'Evidence and limitations']
-    assert_includes hierarchy, [0, 'Details']
+    assert_includes hierarchy, [0, '🤙 Shaka details']
     ['Execution details', 'Skills used', 'Usage and cost', 'Shaka settings used'].each do |summary|
       assert hierarchy.any? { |depth, title| depth == 1 && title.start_with?(summary) }, summary
     end
-    assert_includes rendered.split('<summary>Details</summary>').first, '**Estimated token costs:** $0.00'
+    assert_includes rendered.split('<summary>🤙 Shaka details</summary>').first, '**Estimated token costs:** $0.00'
   end
 
   def test_metrics_prioritize_usage_and_time_before_configuration_and_history

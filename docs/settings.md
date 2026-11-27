@@ -347,6 +347,14 @@ A review of an earlier commit still counts in two cases:
   files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or `skills/` need a
   new review.
 
+The PR description uses the same two cases. When the agent publishes without
+validation and review results, and the description holds no verified line for
+this commit to keep, the Validation and review line says UNKNOWN. It then names
+a local review published for this commit, or an earlier review that still covers
+it and why, for example: "The local review of `e33df55` covers this revision,
+which only updates it from `main`." The review's findings stay in its comment,
+and the line never says validation passed. When no review applies, it says UNKNOWN alone.
+
 When no review applies, `merge` stops before merging. A maintainer can record a
 waiver reason when review was skipped on purpose, a later commit only fixed nits,
 or a CI review covered the commit. The waiver also covers a PR whose
@@ -1469,7 +1477,10 @@ the schema default.
 - **Workspace** is the checkout path. It can reveal local directory names. With
   `false`, the description shows `REDACTED` in its place.
 - **Chat link** is the chat locator. It stays in WIP Details whatever this
-  setting says, and reads `UNKNOWN` when the host has no supported locator.
+  setting says, and reads `UNKNOWN` when the host has no supported locator. A Claude Code
+  session link (`claude://claude.ai/epitaxy/local_` and a UUID) or Codex thread
+  link (`codex://threads/` and a lowercase UUID) also leads the Shaka details fold
+  as a copyable block; anything else appears only in WIP Details.
 
 Owner, revision, state, and next action also stay visible. When settings were
 not read or could not load, the description withholds the checkout path, says

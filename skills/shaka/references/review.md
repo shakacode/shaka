@@ -39,7 +39,9 @@ first. Under it, a reply that addresses a review has one line per review. Pass e
 comment URL in the reply content `reviews` list. The helper reads that comment's closing
 attestation and round ledger and writes the provider, model, effort, reviewed
 commit, and link. Without that attestation, the line says “Responded” and names
-the GitHub author when available; it omits execution fields. This also avoids
+the GitHub author when available; it omits execution fields. On a public repository, a
+comment whose author `comments` excludes gives only its link and author: none of its
+text reaches the reply. This account's own comments are always used. This also avoids
 claiming a repair when a hosted review needs only clarification. A missing or non-token local-review model, or a non-token recorded effort, is
 `UNKNOWN`. The closing attestation still names
 the reviewer for merge.

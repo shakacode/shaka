@@ -35,7 +35,7 @@ module Shaka
     def self.description(content, workflow_version = nil, pull = nil, settings = nil, timeline = nil, # rubocop:disable Metrics/ParameterLists
                          environment: nil, host_name: nil)
       new(content, description: true, workflow_version:, pull:, settings:, timeline:, environment:, host_name:)
-        .render(%i[steps intent_verification human_comments evidence metrics wip],
+        .render(%i[steps intent_verification human_comments evidence metrics],
                 lead: %i[lead], closing: %i[credit]).tap { QuotedMarkers.refuse!(content) }
     end
 
@@ -81,8 +81,9 @@ module Shaka
 
     # The spend follows the model line, before an optional publisher note; the intervals sit in Timings.
     def opening
-      identity = PublicationText.publisher_identity(@content)
-      [@description ? identity.sub(/\A.*/) { "#{it}#{ThroughputStats.header(throughput)}" } : identity]
+      return [PublicationText.publisher_identity(@content)] unless @description
+
+      [PublicationText.description_identity(@content).sub(/\A.*/) { "#{it}#{ThroughputStats.header(throughput)}" }]
     end
 
     # Only a description is rendered with its pull request, so only a description lists what people wrote.
@@ -106,12 +107,12 @@ module Shaka
     # Keep review guidance between the purpose and its proof.
     def intent_verification
       intent, verification = IntentVerification.render(@content, @settings.verdict, @pull,
-                                                       task: task_line, shortfall: @settings.reviewer_shortfall)
+                                                       task: task_line, **@settings.verification_context)
       [intent, *RiskReview.render(@content, @pull), verification]
     end
 
     def evidence
-      body = [VerificationLine.line(@settings.verdict, @content['review']),
+      body = [VerificationLine.line(@settings.verdict, @content['review'], @settings.earlier_review),
               IntentVerification.evidence(@content.fetch('verification'), @content['wip'].nil? ? (1..3) : (0..3)),
               *table, *details]
       evidence = { 'summary' => 'Evidence and limitations', 'body' => body.join("\n\n") }
@@ -157,14 +158,6 @@ module Shaka
     def validate_details(items)
       [UsageDetails, PublicationSettings, SkillsUsed, TimingsDetails, WipDetails].each { it.refuse_free_form!(items) }
       refuse_supplied_history(items)
-    end
-
-    # The note is optional because it disappears once GitHub confirms the outcome.
-    def wip
-      return [] unless (spec = @content['wip'])
-
-      info = { environment: @environment, disclosure: @content['wip_disclosure'], pull: @pull, host_name: @host_name }
-      [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction, session: info).detail)]
     end
 
     # Only the helper writes the history, from the previous body.
