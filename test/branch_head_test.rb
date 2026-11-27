@@ -79,4 +79,15 @@ class BranchHeadTest < Minitest::Test
     assert_includes error.message, 'check it again'
     assert_raises(Shaka::Error) { accept('abc123') }
   end
+
+  # The branch is captured once, so a checkout switch mid-command cannot make another branch's tip the local head.
+  def test_local_head_is_the_task_branch_after_a_checkout_switch
+    commit(@task, 'first')
+    task_tip = git(@task, 'rev-parse', 'HEAD').strip
+    head = branch_head
+    git(@task, 'switch', '--quiet', '-c', 'other')
+    commit(@task, 'elsewhere')
+
+    assert_equal task_tip, head.check['local']
+  end
 end

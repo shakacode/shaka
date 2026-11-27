@@ -44,7 +44,7 @@ module Shaka
       live = @destination.head
       accepted = accepted_head
       state = state_for(live, accepted)
-      local = git('rev-parse', 'HEAD').strip
+      local = git('rev-parse', '--verify', "refs/heads/#{@branch}").strip # the task branch, even if HEAD moves
       { 'state' => state, 'branch' => @branch, 'remote' => @remote, 'accepted' => accepted,
         'live' => live.is_a?(String) ? live : nil, 'local' => local,
         'rewrites' => rewrites?(accepted, local), 'guidance' => GUIDANCE.fetch(state),
