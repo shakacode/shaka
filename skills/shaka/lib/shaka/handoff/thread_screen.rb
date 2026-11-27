@@ -35,12 +35,16 @@ module Shaka
       private
 
       def sort(result, id, comments, account)
-        rows = screen(comments.map(&:first).reject { |login| login == account })
+        rows = screened(comments.map(&:first).reject { |login| login == account }.uniq)
         list = rows.all? { |row| row['verification_unavailable'] } ? result.unverified : result.excluded
         list << id if rows.any?
       rescue Error => e
         result.unscreened[id] = e.message
       end
+
+      # Threads with the same other authors share one screen, so a PR with many threads from one
+      # reviewer reads each permission once. A failed screen raises and is not kept.
+      def screened(logins) = (@screens ||= {})[logins.sort_by(&:to_s)] ||= screen(logins)
 
       # Authors reads REST comments, so each login becomes one with a numbered ID and the user type
       # GraphQL implies: only an app account's login carries the [bot] suffix.

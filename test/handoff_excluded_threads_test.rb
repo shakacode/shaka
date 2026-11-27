@@ -100,6 +100,33 @@ class HandoffExcludedThreadsTest < Minitest::Test
     assert_includes result['notes'], EXCLUDED_T1
   end
 
+  def test_configured_bots_and_team_members_stay_owed
+    threads = [thread('T1', opener: 'coderabbitai[bot]'), thread('T2', opener: 'teammate')]
+    result = handoff(visibility: 'public', bots: ['coderabbitai'], teams: [%w[owner core]], team_members: ['teammate'],
+                     threads:)
+
+    assert_equal ['Reply on review threads waiting for an answer: T1, T2.'], result['owed']
+    assert_empty result['notes']
+  end
+
+  def test_the_default_branch_allowlist_decides_who_stays_owed
+    allowlist = "trusted_users:\n  - reviewer\ntrusted_bots: []\ntrusted_metadata_bots: []\ntrusted_teams: []\n"
+    threads = [thread('T1', opener: 'outsider'), thread('T2', opener: 'reviewer')]
+    result = handoff(visibility: 'public', trust_from_github: true, allowlist:, threads:)
+
+    assert_equal ['Reply on review threads waiting for an answer: T2.'], result['owed']
+    assert_includes result['notes'], EXCLUDED_T1
+  end
+
+  def test_threads_with_the_same_authors_read_each_permission_once
+    reads = []
+    threads = %w[T1 T2 T3].map { |id| thread(id, opener: 'maintainer') }
+    result = handoff(visibility: 'public', writers: ['maintainer'], permission_reads: reads, threads:)
+
+    assert_equal ['Reply on review threads waiting for an answer: T1, T2, T3.'], result['owed']
+    assert_equal ['maintainer'], reads
+  end
+
   def test_an_answered_thread_is_not_screened
     result = handoff(visibility: :unreadable, threads: [thread('T1', opener: 'outsider', replies: ['shaka-agent'])])
 
