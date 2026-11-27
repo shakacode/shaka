@@ -802,12 +802,13 @@ phases:
         maintainer decides. Follow the packaged
         [review guide](<{{package_root}}/skills/shaka/references/review.md>).
       - After repairs, validate the repaired head as Verify does. When that ran `validate_local`,
-        the deferred resolved `validate` command remains: run it locally, then the resolved
-        `trigger_hosted_ci` command when present. Skip that local `validate` when a check the saved
-        helper's `pr` reports as required, defined by a workflow at the trusted base, runs on the
-        pushed head the steps the local `validate` would run for this change, and this PR changes
-        neither that workflow nor the script it runs. That passing hosted run is then the full
-        validation. Later fixes need fresh evidence.
+        also run the deferred resolved `validate` command locally, unless a check the saved helper's
+        `pr` reports as required, defined by a workflow at the trusted base, runs the steps the local
+        `validate` would run for this change, and this PR changes neither that workflow nor the
+        script it runs. That check's passing run on the pushed head is then the full validation; a
+        run that skipped those steps sends the task back to the local `validate`. Either way, run
+        the resolved `trigger_hosted_ci` command when present, after any local `validate`. Later
+        fixes need fresh evidence.
       - When the user expressly asks to resolve PR comments, follow the packaged
         [settlement procedure](<{{package_root}}/skills/shaka/references/comment-settlement.md>). Keep
         ownership until each known optional review settles or reaches its bounded handoff. Do not
