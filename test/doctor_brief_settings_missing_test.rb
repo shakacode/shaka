@@ -10,8 +10,9 @@ class DoctorBriefSettingsMissingTest < Minitest::Test
   IDENTITY = { 'version' => '0.1.0', 'package_id' => 'p',
                'source' => { 'kind' => 'revision', 'revision' => '2363e217b6034b4b684ef88f2a29ddda458d870f' } }.freeze
 
-  def test_a_repository_without_settings_opens_with_a_plain_sentence_and_the_next_step
+  def test_a_checkout_without_settings_opens_with_a_plain_sentence_and_the_next_step
     Dir.mktmpdir do |root|
+      Dir.mkdir(File.join(root, '.git'))
       report, blocked = brief(root)
       first, second, third = report.lines.map(&:strip).reject(&:empty?)
       assert_equal Shaka::Doctor::Brief::NOT_SET_UP, first
@@ -22,10 +23,19 @@ class DoctorBriefSettingsMissingTest < Minitest::Test
     end
   end
 
-  def test_a_repository_with_settings_opens_with_the_status_line
+  def test_a_checkout_with_settings_opens_with_the_status_line
     report, = brief(File.expand_path('..', __dir__))
     assert report.start_with?('Shaka start check: ')
     refute_includes report, Shaka::Doctor::Brief::NOT_SET_UP
+  end
+
+  # A subdirectory of a checkout with settings has none of its own; the seam line already says to fix --root.
+  def test_a_directory_below_a_checkout_top_keeps_the_status_line_first
+    report, blocked = brief(File.expand_path(__dir__))
+    assert report.start_with?('Shaka start check: FAILED')
+    assert_includes report, 'point `--root` at the checkout you meant'
+    refute_includes report, Shaka::Doctor::Brief::NOT_SET_UP
+    assert blocked
   end
 
   private
