@@ -29,20 +29,25 @@ module Shaka
         1
       end
 
-      # Reuses the watcher's writer, which edits only an existing stats block and never carries one head's times
-      # to another.
+      # Reuses the watcher's writer. It changes only Shaka's stats: the stats block, the spend after the model line,
+      # and the time after the estimated cost. It never carries one head's times to another.
       def record(github, seam)
         snapshot = Status.new(github, seam_required_checks: seam.merge&.fetch('required_checks', nil)).call
         publisher = publisher(github, snapshot.fetch('headRefOid'), seam.review)
-        required = required_names(snapshot['requiredChecks'])
-        publisher.call(required:) if required
+        record_ready(publisher, snapshot)
         publisher.merged
         { 'head' => snapshot['headRefOid'], 'state' => snapshot['state'],
           'stats' => ThroughputStats.read(body(github)) }
       end
 
-      # Nil when GitHub could not report the required checks, so no ready time is guessed.
-      def required_names(rows) = rows&.filter_map { |row| row['name'] if row.is_a?(Hash) }
+      # Without GitHub's required checks no ready time is guessed, and the log says why.
+      def record_ready(publisher, snapshot)
+        rows = snapshot['requiredChecks']
+        return publisher.call(required: rows.filter_map { |row| row['name'] if row.is_a?(Hash) }) if rows
+
+        warn "shaka pr stats: no ready time recorded: #{snapshot['requiredChecksUnavailable']}"
+      end
+
       def body(github) = github.api("repos/#{github.repository}/pulls/#{github.number}").fetch('body').to_s
 
       def publisher(github, head, review)

@@ -1,7 +1,7 @@
 # Records CI to ready and Ready to merged in a merged pull request's description.
 # Nothing republishes the description after a GitHub merge click, so without this
 # those times stay pending. It runs the default branch's Shaka, never the pull
-# request's code, and edits only the stats block Shaka already wrote.
+# request's code, and changes only the stats Shaka already wrote there.
 name: PR stats
 
 on:
@@ -19,8 +19,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
+      checks: read
       contents: read
       pull-requests: write
+      statuses: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
