@@ -42,7 +42,8 @@ class UiCheckLinkTest < Minitest::Test
   end
 
   def resolve(comments, content = { 'summary' => 'A summary.' }, **)
-    Shaka::UiCheck::Link.resolve(content, GitHub.new(comments, **))
+    @warnings = []
+    Shaka::UiCheck::Link.resolve(content, GitHub.new(comments, **), warn: ->(text) { @warnings << text })
   end
 
   def test_a_pull_request_without_a_ui_check_keeps_its_content_unchanged
@@ -86,7 +87,19 @@ class UiCheckLinkTest < Minitest::Test
     failing = -> { raise Shaka::Error, 'Comment listing exceeds 10 pages.' }
 
     assert_equal({ 'summary' => 'A summary.' }, resolve(failing))
+    assert_equal ['shaka: Screenshots link omitted; UI checks could not be read: Comment listing exceeds 10 pages.'],
+                 @warnings
     assert_equal({ 'summary' => 'A summary.' }, resolve([check(4)], login: nil))
+    assert_includes @warnings.first, 'login is unavailable'
+  end
+
+  # The renderer refuses any other URL, which would refuse the whole description over an optional link.
+  def test_a_check_whose_url_the_renderer_would_refuse_is_left_out
+    odd = check(4).merge('html_url' => 'https://github.com/example/test/issues/1#issuecomment-4')
+
+    assert_equal({ 'summary' => 'A summary.' }, resolve([odd]))
+    assert_equal({ 'summary' => 'A summary.' }, resolve([check(4).except('html_url')]))
+    assert_empty @warnings
   end
 end
 
@@ -128,20 +141,20 @@ class CliUiCheckLinkTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'Adds a button.'
 
+  # Without comments, gh answers the login and then fails the comment listing.
   def fake_gh
-    return super unless @comments
-
+    listing = @comments ? "puts #{JSON.generate(@comments).inspect}" : "abort 'listing refused'"
     reads = "when 'user' then puts JSON.generate('login' => 'ada')\n" \
-            "when %r{issues/1/comments} then puts #{JSON.generate(@comments).inspect}\n"
+            "when %r{issues/1/comments} then #{listing}\n"
     super.sub("when 'markdown'") { "#{reads}when 'markdown'" }
   end
 
   def published(comments)
     @comments = comments
     Dir.mktmpdir do |dir|
-      _output, error, status = run_description(dir)
+      _output, @error, status = run_description(dir)
 
-      assert_predicate status, :success?, error
+      assert_predicate status, :success?, @error
       File.read(File.join(dir, 'published.md'))
     end
   end
@@ -154,6 +167,8 @@ class CliUiCheckLinkTest < Minitest::Test
     unlisted = published(nil)
 
     refute_includes unlisted, 'Screenshots'
+    assert_includes @error, 'Screenshots link omitted'
     assert_equal unlisted, published([])
+    refute_includes @error, 'Screenshots'
   end
 end
