@@ -26,8 +26,9 @@ did not run for 1.0.0; it applies again to later releases.
 - Install Shaka and run local validation and review from a native Windows
   shell. `bin/install` accepts and later verifies a fresh checkout.
   `shaka evidence run` starts repository commands. `shaka review run` finds
-  `git.exe` and reviewer `.exe` files, and an interrupted or timed-out review
-  or `shaka doctor` check stops its processes. Windows checks run in CI but do
+  `git.exe` and reviewer `.exe` files. An interrupted or timed-out review or
+  `shaka doctor` check tries to stop its processes and warns when some may
+  still be running. Windows checks run in CI but do
   not yet block merges. See
   [manual installation](https://shaka.shakacode.com/docs/manual-installation)
   for the PowerShell steps.
