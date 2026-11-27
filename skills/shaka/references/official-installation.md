@@ -37,7 +37,8 @@ the old checkout can be deleted. Never delete it for them. When the message name
 to the user; never move the default location's contents yourself.
 Use the registered helper to preserve an existing installation’s chosen path; the default applies to new installations.
 Keep it for direct links and develop separately. `~/agent-tools/shaka` is an optional example.
-Every action refuses a checkout that is itself a linked worktree; reinstall from a separate clone as its message says.
+Every action refuses a checkout that is itself a linked worktree. Show the user the step that refusal ends with,
+and run neither that step nor the registered helper's status for it.
 Installation refuses a checkout with linked worktrees or extra local branches; verify and update warn.
 To move links off such a development clone, follow [Before take-over](#before-take-over)
 and run the take-over its message names. When it names commands that
@@ -126,11 +127,11 @@ Use the registered helper at the installation's actual path:
 ```
 
 Verification checks checkout identity, cleanliness, links, and Ruby without changes.
-When verification or update refuses, or the user asks which install is in use, run the
-registered helper's `install --status` (`--json` for tools) and relay its state, location,
-and next step. When the helper stops because its recorded Ruby is unavailable, run
-`ruby DIR/bin/install --status` with Ruby 3.4 or later instead. Status is read-only and
-offline; run the next command it names only with the user's approval.
+When verification or update refuses, except for a linked-worktree refusal (show its step instead),
+or the user asks which install is in use, run the registered helper's `install --status`
+(`--json` for tools) and relay its state, location, and next step. When the helper stops because
+its recorded Ruby is unavailable, run `ruby DIR/bin/install --status` with Ruby 3.4 or later instead.
+Status is read-only and offline; run the next command it names only with the user's approval.
 `install --repair` runs the next commands status names that repair can run, until a decision
 remains. Check status first. If repair will run take-over to reunite a split
 installation, follow [Before take-over](#before-take-over). Run repair only with
