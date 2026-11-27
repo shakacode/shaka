@@ -323,6 +323,9 @@ def auto_flags(flags, options)
   flags.on('--auto', 'Merge under Auto: every head check but --base-failure ones must pass; label auto-merged') do
     options[:auto] = true
   end
+  flags.on('--label-approval', "With --auto: a write-access maintainer's merge-approved label chose Auto") do
+    options[:label_approval] = true
+  end
   flags.on('--base-failure NAME', 'With --auto: a non-required check that fails on the base branch too') do |name|
     (options[:base_failures] ||= []) << name
   end
@@ -425,6 +428,9 @@ begin
     raise OptionParser::InvalidArgument, '--adequacy-confirmed-head is only for merge'
   end
   raise OptionParser::InvalidArgument, '--auto is only for merge' if options[:auto] && command != 'merge'
+  if options[:label_approval] && !options[:auto]
+    raise OptionParser::InvalidArgument, '--label-approval is only for merge --auto'
+  end
   if options[:base_failures] && !options[:auto]
     raise OptionParser::InvalidArgument, '--base-failure is only for merge --auto'
   end
@@ -566,6 +572,7 @@ begin
              merge.walkthrough_due = Shaka::WalkthroughDue.new(github, publish: walkthrough_publish)
              merge.risk_gate = auto_merge_gate(seam, review.fetch(:checkpoint), options[:confirmed_head])
              merge.hold = hold
+             merge.label_approval = options[:label_approval] && Shaka::MergeApprovalLabel.new(github)
              merge.call(head:, base: options.fetch(:base), walkthrough: options[:walkthrough],
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention'

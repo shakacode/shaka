@@ -121,6 +121,8 @@ class CliAttentionReviewTest < Minitest::Test
 
       assert_predicate status, :success?, output
       assert_equal 'current_head', JSON.parse(output).dig('review', 'basis')
+      # The fake repository already has merge-approved, so the maintainer's way to choose Auto is there.
+      assert_equal 'present', JSON.parse(output)['merge_approval_label']
       assert_path_exists @label_file
     end
   end

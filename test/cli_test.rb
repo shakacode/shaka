@@ -188,4 +188,13 @@ class CliMergeAutoTest < Minitest::Test
     refute_predicate status, :success?
     assert_match(/--base-failure is only for merge --auto/, error)
   end
+
+  # The merge-approved label chooses Auto, so it has no meaning for an Ask merge.
+  def test_label_approval_needs_auto
+    _output, error, status = Open3.capture3(*CliTest::COMMAND, 'merge', 'owner/repo', '1', '--head', HEAD,
+                                            '--ref', HEAD, '--label-approval')
+
+    refute_predicate status, :success?
+    assert_match(/--label-approval is only for merge --auto/, error)
+  end
 end

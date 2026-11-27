@@ -13,7 +13,7 @@ module Shaka
                'awaiting-resume' => '1D76DB' }.freeze
     DESCRIPTIONS = {
       'awaiting-answer' => 'Decisions for the maintainer are waiting for your answer',
-      'awaiting-merge-approval' => 'Ready under Ask: merge this commit or approve it so the agent merges',
+      'awaiting-merge-approval' => 'Ready under Ask: merge this commit, or add merge-approved so the agent merges under Auto',
       'awaiting-resume' => 'Paused with nothing to wake the agent; resume from WIP Details'
     }.freeze
     NOT_FOUND = 404

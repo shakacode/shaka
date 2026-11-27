@@ -154,6 +154,12 @@ Shaka uses your account's existing GitHub
 permissions; an account that can bypass protection needs no extra Shaka setting.
 
 Set a task's preference with `Use merge policy auto`.
+To choose Auto for one PR that waits under Ask, add the `merge-approved` label on GitHub.
+The agent then merges it once Auto's gates pass. The label covers the PR, not one commit,
+so later pushes keep it; remove it to take the choice back. `shaka merge --auto
+--label-approval` counts the label only when the PR's events show an account with write
+access added it. Shaka creates the label, with a description, when it first labels a PR
+`awaiting-merge-approval`.
 [First-setup previews](#preview-settings-before-adopting-them) use Ask.
 This is a task instruction;
 editing the PR's settings does not change its own merge authority. Required human
