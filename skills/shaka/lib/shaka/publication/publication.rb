@@ -90,7 +90,10 @@ module Shaka
 
     def human_comments = HumanComments.for(@content, @pull, @settings)
 
-    def lead = PublicationLinks.lead(@content, @pull, PublicationSections.decisions(@content['decisions']), @settings)
+    # Missing settings are stated after the decision and links, which stay first.
+    def lead = [*PublicationLinks.lead(@content, @pull, decisions, @settings), *@settings.missing_lines]
+
+    def decisions = PublicationSections.decisions(@content['decisions'])
 
     # The steps besides merging sit right under the summary so a reader cannot miss them.
     def steps = StepsBesidesMerging.render(@content)
