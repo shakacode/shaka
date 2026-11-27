@@ -7,6 +7,7 @@ require_relative '../repository_config/review_schema'
 require_relative '../usage/codex_usage'
 require_relative 'codex_commands'
 require_relative 'codex_exec'
+require_relative 'codex_home'
 require_relative '../usage/claude_usage'
 require_relative 'path_guard'
 require_relative 'process'
@@ -159,15 +160,25 @@ module Shaka
       executable = reviewer_executable('codex')
       return missing('codex') unless executable
 
+      stdout, stderr, status = codex_process(executable, prompt)
+      return process_failure('codex exec', status, stderr, stdout) unless status&.success?
+
+      @options[:usage] = @codex_session if @options.fetch(:capture_usage, true)
+      @options[:commands] = LocalReviewCodexCommands.summary(stdout)
+      invalid('codex exec returned no review', stdout) unless File.size?(@report)
+    end
+
+    def codex_process(executable, prompt)
       args = [executable, 'exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
               '-c', 'skills.include_instructions=false', *CodexExec::TOOL_RESTRICTIONS,
               '--skip-git-repo-check', '--json', '-o', @report, *codex_choices, '-']
-      stdout, stderr, status = reviewer_process(args, prompt)
-      return process_failure('codex exec', status, stderr, stdout) unless status&.success?
-
-      @options[:usage] = CodexUsage.announced_session(stdout) if @options.fetch(:capture_usage, true)
-      @options[:commands] = LocalReviewCodexCommands.summary(stdout)
-      invalid('codex exec returned no review', stdout) unless File.size?(@report)
+      LocalReviewCodexHome.with_reviewer_home do |home|
+        result = reviewer_process(args, prompt, env: home ? { 'CODEX_HOME' => home } : {})
+        if result.last&.success? && @options.fetch(:capture_usage, true)
+          @codex_session = LocalReviewCodexHome.session(result.first, home)
+        end
+        result
+      end
     end
 
     # --ignore-user-config also drops the user's model, so the CLI default runs unless one is named.
