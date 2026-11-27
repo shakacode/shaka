@@ -18,9 +18,10 @@ class CliDescriptionSettingsMissingTest < Minitest::Test
   # The writer identity and the links line keep their places; the statement follows them, above the summary.
   def test_a_description_from_a_checkout_without_settings_says_they_were_missing
     body = published(remove_settings: true)
-    blocks = body.split("\n\n").map(&:strip).reject { it.empty? || it.start_with?('<!--') }
-    assert_includes blocks[1], 'Checkpoint'
-    assert_equal Shaka::PublicationSettings::MISSING_LINE, blocks[2]
+    blocks = body.split("\n\n").map(&:strip)
+    links = blocks.index { it.start_with?('Checkpoint') }
+    assert_operator body.index('🤖'), :<, body.index('Checkpoint')
+    assert_equal Shaka::PublicationSettings::MISSING_LINE, blocks[links + 1]
     assert_operator body.index(Shaka::PublicationSettings::MISSING_LINE), :<, body.index('## Summary')
   end
 
