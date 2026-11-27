@@ -55,17 +55,13 @@ class BranchHeadPrTest < Minitest::Test
     assert_includes gh.calls.first, 'push.example.com/base/repo'
   end
 
-  def test_finished_pr_for_this_branch_ends_the_check
-    status, out, = run_branch('check', pull('MERGED', BRANCH))
+  # Once a PR merges or closes, branch commands refuse instead of reporting a safe state for any branch.
+  def test_finished_pr_refuses_the_check
+    [pull('MERGED', BRANCH), pull('CLOSED', 'someone-else')].each do |answer|
+      status, = run_branch('check', answer)
 
-    assert_equal [0, 'pr_finished'], [status, JSON.parse(out)['state']]
-  end
-
-  # A stale PR number for another branch must not skip this branch's check.
-  def test_finished_pr_for_another_branch_fails_the_check
-    status, = run_branch('check', pull('CLOSED', 'someone-else'))
-
-    assert_equal 1, status
+      assert_equal 1, status
+    end
   end
 
   def test_open_pr_in_another_repository_pauses_the_check

@@ -27,31 +27,15 @@ module Shaka
 
         result = outcome(operation, options)
         puts JSON.pretty_generate(result)
-        [*BranchHead::SAFE, BranchHead::FINISHED].include?(result['state']) ? 0 : PAUSE_EXIT
-      rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
+        BranchHead::SAFE.include?(result['state']) ? 0 : PAUSE_EXIT
+      rescue OptionParser::ParseError, SystemCallError, Shaka::Error, URI::Error, JSON::ParserError, KeyError => e
         warn "shaka: #{BranchHead.redact(e.message)}"
         1
       end
 
       def outcome(operation, options)
         pull = (pr_head(options[:root], options[:pr]) if options[:pr])
-        head = BranchHead.new(root: options[:root], pr_head: (pull if pull&.fetch('state') == 'OPEN'))
-        return finished(operation, pull, head.branch) if pull && pull['state'] != 'OPEN'
-
-        perform(operation, head, options)
-      end
-
-      # A merged or closed PR for this branch ends the branch check, even when its fork is gone; there is nothing
-      # left to push. A finished PR for another branch says nothing about this one.
-      def finished(operation, pull, branch)
-        unless pull['branch'] == branch
-          raise Error,
-                "PR is for #{pull['branch']}, not #{branch}; pass this branch's PR."
-        end
-        raise Error, "The PR is #{pull['state'].downcase}; there is nothing to #{operation}." if operation != 'check'
-
-        { 'state' => BranchHead::FINISHED, 'pr_state' => pull['state'],
-          'guidance' => 'The PR merged or closed, so its branch needs no check. Continue.' }
+        perform(operation, BranchHead.new(root: options[:root], pr_head: pull), options)
       end
 
       def perform(operation, head, options)
@@ -126,19 +110,22 @@ module Shaka
         URI(GitOrigin.canonical_url(url.strip)).host
       end
 
+      # Only an open PR has a head to check; once it merges or closes, the workflow stops running the check.
       # A deleted fork leaves no head repository, so there is no destination to match.
       def head_of(pull, number)
-        return { 'state' => pull['state'], 'branch' => pull['headRefName'] } unless pull['state'] == 'OPEN'
+        unless pull['state'] == 'OPEN'
+          raise Error,
+                "PR ##{number} is #{pull['state'].to_s.downcase}; stop running branch commands for it."
+        end
 
         owner = pull.dig('headRepositoryOwner', 'login')
         name = pull.dig('headRepository', 'name')
         raise Error, "PR ##{number} has no head repository." unless owner && name
 
-        { 'state' => 'OPEN', 'url' => "https://#{URI(pull.fetch('url')).host}/#{owner}/#{name}",
-          'branch' => pull['headRefName'] }
+        { 'url' => "https://#{URI(pull.fetch('url')).host}/#{owner}/#{name}", 'branch' => pull['headRefName'] }
       end
 
-      private_class_method :outcome, :pr_head, :push_host, :head_of, :finished, :perform, :parse, :option_parser,
+      private_class_method :outcome, :pr_head, :push_host, :head_of, :perform, :parse, :option_parser,
                            :operation_flags,
                            :accept_flags
     end

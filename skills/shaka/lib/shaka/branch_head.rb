@@ -10,7 +10,6 @@ module Shaka
   # overwritten. The accepted head lives in the checkout's own branch config; `accept` and `push` change it.
   class BranchHead
     SAFE = %w[unchanged not_pushed].freeze
-    FINISHED = 'pr_finished'
     USERINFO = %r{(://)[^/@\s]+@}
 
     # Drops user:password@ from any URL in text that a command prints.

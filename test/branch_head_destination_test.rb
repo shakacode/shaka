@@ -115,7 +115,7 @@ class BranchHeadDestinationTest < Minitest::Test
     pull = { 'url' => 'https://github.com/base/repo/pull/7', 'state' => 'OPEN', 'headRefName' => 'topic',
              'headRepository' => { 'name' => 'repo' }, 'headRepositoryOwner' => { 'login' => 'someone' } }
 
-    assert_equal({ 'state' => 'OPEN', 'url' => 'https://github.com/someone/repo', 'branch' => 'topic' },
+    assert_equal({ 'url' => 'https://github.com/someone/repo', 'branch' => 'topic' },
                  Shaka::BranchHead::Command.send(:head_of, pull, 7))
     assert_raises(Shaka::Error) { Shaka::BranchHead::Command.send(:head_of, pull.merge('headRepository' => nil), 7) }
   end
