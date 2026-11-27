@@ -6,7 +6,7 @@ require_relative 'cli_opening_check_fakes'
 require 'json'
 require 'shaka/publication/links'
 
-# The description command, run as an agent runs it in a repository that never set Shaka up, leads with that fact.
+# The description command, run as an agent runs it in a repository that never set Shaka up, states that fact.
 class CliDescriptionSettingsMissingTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include CliOpeningCheckFakes
