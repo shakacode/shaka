@@ -87,9 +87,8 @@ did not run for 1.0.0; it applies again to later releases.
 - Replace `wip.include_locations` with `wip.include_checkout_path`.
 - Move paths covered by `merge.auto_max_review_floor` or
   `pr_description.human_review_floors` to `high_risk_areas` or `medium_risk_areas`.
-  Then remove those retired keys; `shaka seam migrate` previews the change. Use
-  `merge.auto_merge_max_risk` to set the highest risk eligible for Auto. Shaka 1.0
-  rejects the retired keys. See
+  Then remove those retired keys. Use `merge.auto_merge_max_risk` to set the
+  highest risk eligible for Auto. Shaka 1.0 rejects the retired keys. See
   [move shared pilot settings](https://shaka.shakacode.com/docs/migration#move-shared-pilot-settings-to-10).
 
 ### Fixed
