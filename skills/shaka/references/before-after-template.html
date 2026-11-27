@@ -26,7 +26,7 @@
      the outline around what changed; an arrow may slant when the element
      moved. When only one side has the element, delete the other side's arrow
      and outline.
-  4. Open the filled file in the browser tool that took the captures and
+  4. Open the filled file in a browser tool that can open local files and
      screenshot the .stage element, or a window sized to it, at twice the
      device scale when the tool allows it. Read the image back at 880px wide,
      fix any unreadable text, overlapping label, or arrow that misses its
@@ -64,7 +64,7 @@
     <div class="shot after"><img src="{{AFTER_PNG}}" alt="After: {{WHAT_AFTER_SHOWS}}" style="width: 390px; margin: 0 0 0 0"></div>
     <svg class="overlay" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs>
-      <!-- One <g> per difference. The numbers below are examples: replace them. -->
+      <!-- An example callout. Its numbers are examples: replace them. -->
       <g>
         <circle class="badge" cx="510" cy="120" r="14"/><text class="num" x="510" y="120">1</text>
         <text x="510" y="158">{{WHAT_CHANGED}}</text>
