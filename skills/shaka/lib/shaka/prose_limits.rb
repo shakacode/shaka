@@ -13,7 +13,6 @@ module Shaka
     # Room for a short summary however small the change is.
     BASE_WORDS = 150
     QUOTED_WORDS = 8
-    SHOWN = 3
     ADVICE = 'Split long sentences and paragraphs, move supporting detail into details, ' \
              'and link to the code instead of retelling it. Each labeled field renders on its own line, ' \
              'so after trimming, check that every field still makes sense without its neighbors.'
@@ -62,22 +61,18 @@ module Shaka
                  [length_problem(paragraphs, kind, changed_lines)].compact
       return if problems.empty?
 
-      raise Error, "#{kind.to_s.capitalize} is hard to read: #{summary(problems)}. #{ADVICE}"
+      raise Error, "#{kind.to_s.capitalize} is hard to read: #{problems.join('; ')}. #{ADVICE}"
     end
 
     private
-
-    def summary(problems)
-      shown = problems.first(SHOWN)
-      shown << "#{problems.size - SHOWN} more" if problems.size > SHOWN
-      shown.join('; ')
-    end
 
     def long_sentences(paragraphs)
       limit = @limits.fetch('max_sentence_words')
       paragraphs.flatten.filter_map do |sentence|
         count = VisibleProse.words(sentence)
-        "a sentence has #{count} words (limit #{limit}): #{quote(sentence)}" if count > limit
+        next if count <= limit
+
+        "a sentence has #{count} words (limit #{limit}): #{quote(sentence)}, #{overage(count, limit)}"
       end
     end
 
@@ -85,7 +80,9 @@ module Shaka
       limit = @limits.fetch('max_paragraph_words')
       paragraphs.filter_map do |sentences|
         count = VisibleProse.words(sentences.join(' '))
-        "a paragraph has #{count} words (limit #{limit}): #{quote(sentences.first)}" if count > limit
+        next if count <= limit
+
+        "a paragraph has #{count} words (limit #{limit}): #{quote(sentences.first)}, #{overage(count, limit)}"
       end
     end
 
@@ -96,7 +93,12 @@ module Shaka
 
       scaled = kind == :walkthrough || limit != @limits.fetch('max_description_words')
       scope = scaled ? " for #{changed_lines} changed lines" : ''
-      "the visible prose has #{count} words (limit #{limit}#{scope})"
+      "the visible prose has #{count} words (limit #{limit}#{scope}), #{overage(count, limit)}"
+    end
+
+    def overage(count, limit)
+      excess = count - limit
+      "#{excess} #{excess == 1 ? 'word' : 'words'} over"
     end
 
     def budget(kind, changed_lines)
