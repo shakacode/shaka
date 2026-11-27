@@ -1,6 +1,6 @@
 # 0011: Show companion skill results on the PR
 
-Status: design answers accepted on 2026-11-12 and 2026-11-13; build waits for decision 1's trigger.
+Status: design answers accepted on 2026-11-12 and 2026-11-13; shipped in #1250; amended on 2026-11-26 (see the end).
 Date: 2026-11-09. Tracks [issue #1075](https://github.com/shakacode/shaka/issues/1075).
 
 ## Context
@@ -196,3 +196,47 @@ images.
 
 This ADR merges first as the design record. Once decision 1's trigger arrives, one
 implementation PR delivers decisions 2 to 6, and its description links the triggering PR.
+
+## Amendment, 2026-11-26: record what a run led to
+
+[Issue #1285](https://github.com/shakacode/shaka/issues/1285) found that the shipped
+section cannot answer whether a companion skill helped. The maintainer named the reader:
+a later retrospective that counts outcomes per skill, with the PR reviewer second. The
+[accepted plan](https://github.com/shakacode/shaka/issues/1285#issuecomment-7205630613)
+adds three optional entry keys. It extends decision 2's field list with them. They are not
+text fields, so decision 2's text escaping and decision 3's text checks do not apply to
+them; the list below gives their checks. For a manual check only, it replaces decision 2's
+code-span rendering of `command` and decision 3's command rules; every other decision stands.
+
+- `manual`: `true` when the check was reading or inspection. `command` then renders as
+  a **Manual check** line of escaped prose instead of a code span, because there is no
+  command to rerun. A manual `command` passes the same publication-text checks as `checked`,
+  including the refusal of local absolute paths. Like `checked`, it escapes HTML, so `</`
+  is published as text, and passes Markdown through, so backticks format as code. #1259
+  published `manual source inspection and gemspec check` as a command.
+- `outcome`: `findings_applied`, `findings_not_applied`, or `no_findings`. The set is fixed
+  so a collector counts labels instead of reading `result` prose.
+- `caused_commits`: the full SHAs a `findings_applied` outcome led to. Ruby requires it
+  with that outcome and refuses the key, even an empty list, with any other.
+
+Ruby still checks shape only. Whether a commit followed from a finding stays the
+agent's account.
+
+Left out, with reasons:
+
+- **One table with Skills used.** The alternative above still holds: a record describes
+  a skill and a result describes a run.
+- **A stale label that names changed paths.** It serves the PR reviewer and adds a GitHub
+  comparison to each publication.
+- **Resolved revisions.** Counting needs a consistent pack and version, which is
+  [#1027](https://github.com/shakacode/shaka/issues/1027).
+- **A proof level.** It is one pack's scale; `result` and `artifacts` carry the proof.
+- **Paths a run cleared (`cleared_paths`).** A list of files the run found safe would let a
+  collector count misses: later findings in files a skill vouched for. Four review rounds
+  each found a new way a path could slip past or be wrongly refused, and a refused value
+  blocked the whole description, while nothing reads the list yet. On 2026-11-26 the
+  maintainer chose to drop it until the collector shows it needs one. `checked` and
+  `not_covered` keep that scope in prose.
+- **Counting misses.** That belongs to the collector in [ADR 0010](0010-retrospective-over-merged-prs.md).
+
+On 2026-11-26, three shakacode PRs contained the section, so real-use frequency is still unknown.
