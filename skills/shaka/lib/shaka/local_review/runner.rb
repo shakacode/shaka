@@ -135,7 +135,7 @@ module Shaka
     def validate_tempdir!
       directory = File.realpath(Dir.tmpdir)
       raise Shaka::Error, 'Temporary reviewer directory is inside the candidate checkout' if
-        directory == root || directory.start_with?("#{root}/")
+        LocalReviewExecutable.candidate_owned?(directory, root)
     end
 
     def validate_timeout!
