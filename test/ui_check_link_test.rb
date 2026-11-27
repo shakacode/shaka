@@ -141,6 +141,8 @@ class CliUiCheckLinkTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'Adds a button.'
 
+  def setup = WINDOWS ? skip('the fake gh is an extensionless Ruby script') : super
+
   # The command publishes to owner/repo#1, so its comments carry that pull request's URLs.
   def url(id) = "https://github.com/owner/repo/pull/1#issuecomment-#{id}"
 
