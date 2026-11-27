@@ -18,16 +18,17 @@ independent review for substantial changes, and any gaps you still need to asses
 Use [Ask or Auto](https://shaka.shakacode.com/docs/working-with-shaka#choose-a-merge-policy) to choose how
 Shaka handles merging. Repository checks and approvals still apply.
 
-The
-[release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md)
+The [release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md)
 did not run for 1.0.0; it applies again to later releases.
 
 ### Added
 
 - Install Shaka and run local validation and review from a native Windows
-  shell. `bin/install` accepts and later verifies a fresh checkout, `shaka
-  evidence run` starts repository commands, and `shaka review run` finds
-  `git.exe` and reviewer `.exe` files. See
+  shell. `bin/install` accepts and later verifies a fresh checkout.
+  `shaka evidence run` starts repository commands. `shaka review run` finds
+  `git.exe` and reviewer `.exe` files, and an interrupted or timed-out review
+  or `shaka doctor` check stops its processes. Windows checks run in CI but do
+  not yet block merges. See
   [manual installation](https://shaka.shakacode.com/docs/manual-installation)
   for the PowerShell steps.
 - For a fresh install on Ruby 3.4 or later, run `gem install shaka --version 1.0.0`
