@@ -137,6 +137,7 @@ class ChangedTestsDataTest < Minitest::Test
   def test_a_figure_selects_the_tests_that_name_it_and_no_others
     assert_equal %w[test/docs_test.rb], @selector.tests_for([%w[M docs/img/flow.svg]])
     assert_empty @selector.tests_for([%w[A docs/img/new.webp]])
+    assert_empty @selector.tests_for([%w[A docs/img/example.rb]])
   end
 
   def test_a_data_file_no_test_reads_selects_no_tests

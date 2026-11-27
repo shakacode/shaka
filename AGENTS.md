@@ -202,8 +202,8 @@ can reach and RuboCop on the changed files. A documentation-only change runs onl
 name a changed page, locally and on hosted CI; otherwise `test/support/changed_tests.rb` chooses
 the tests, running the whole suite for a change it cannot map. A change to RuboCop's settings
 or gems lints every file. Run the full `validate` locally only when the trusted settings lack
-`validate_local` or the workflow asks for it. The required hosted `validate` check runs the full suite on code changes and gates
-merge. When a check fails, fix it and review the new head.
+`validate_local` or the workflow asks for it. The required hosted `validate` check runs the
+full suite on code changes and gates merge. When a check fails, fix it and review the new head.
 No extra closeout audit, receipt, automatic issue, heartbeat, or parallel tracker.
 Fill the Changelog section of the [PR template](.github/pull_request_template.md)
 instead of editing `CHANGELOG.md`; only a release PR edits that file. No check

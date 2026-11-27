@@ -68,7 +68,7 @@ class ChangedTests
 
   def tests_for_path(status, path, base)
     return nil if FOUNDATIONS.include?(path) || !%w[M A D].include?(status)
-    return data_readers(path) unless path.end_with?('.rb')
+    return data_readers(path) if !path.end_with?('.rb') || path.start_with?(FIGURES)
     return code_readers(path) unless status == 'D'
 
     base && deleted_readers(path, base)
