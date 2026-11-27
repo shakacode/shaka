@@ -82,13 +82,14 @@ module Shaka
                     'them, then run this command again' }
       end
 
-      # Control characters and bytes that are not valid text are shown as \xNN. A backslash is doubled, so an
-      # escaped character cannot be confused with a name that spells one.
+      # Control characters, line and paragraph separators, and bytes that are not valid text are shown as \xNN
+      # or \uNNNN. A backslash is doubled, so an escaped character cannot be confused with a name that spells one.
       def escaped(character)
         return character.bytes.map { |byte| format('\\x%02X', byte) }.join unless character.valid_encoding?
         return '\\\\' if character == '\\'
+        return character unless character.match?(/[[:cntrl:]\p{Zl}\p{Zp}]/)
 
-        character.match?(/[[:cntrl:]]/) ? format('\\x%02X', character.ord) : character
+        format(character.ord > 0xFF ? '\\u%04X' : '\\x%02X', character.ord)
       end
 
       def unread_decision(unread, held)

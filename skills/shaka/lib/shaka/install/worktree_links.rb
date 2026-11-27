@@ -42,7 +42,7 @@ module Shaka
       # A link inside a root that leads back out still passes through the root, so every path on the way
       # counts, not only where it ends. A path that cannot be looked up, or expanded, may reach a root.
       def reaches?(path, roots)
-        Walk.new(path).each { |step| return true if roots.include?(step) }
+        Walk.new(path).each { |step| return true if step && roots.include?(step) }
         false
       rescue SystemCallError, ArgumentError
         true
@@ -101,6 +101,8 @@ module Shaka
 
         private
 
+        # The path reached, or nil for a missing name: a link that already points at nothing loses nothing
+        # when a worktree goes.
         def step
           name = @pending.shift
           return @current = File.dirname(@current) if name == '..'
@@ -108,7 +110,7 @@ module Shaka
           candidate = File.join(@current, name)
           stat = look(candidate)
           stat&.symlink? ? follow(candidate) : enter(candidate, stat)
-          candidate
+          candidate if stat
         end
 
         def enter(path, stat)

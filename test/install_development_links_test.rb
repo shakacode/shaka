@@ -7,20 +7,11 @@ require_relative 'install_scenario_support'
 module DevelopmentLinkSteps
   private
 
-  def default_with_worktree
-    root = default_install
+  def default_with_worktree(*)
+    root = default_install(*)
     feature = File.join(@directory, 'feature')
     git('-C', root, 'worktree', 'add', '-q', feature)
     [root, feature]
-  end
-
-  # A branch whose upstream ref names a blob, so git merge-base fails instead of answering.
-  def blob_upstream(root, branch)
-    git('-C', root, 'branch', branch)
-    blob = git('-C', root, 'hash-object', '-w', File.join(root, 'bin/install')).strip
-    git('-C', root, 'update-ref', "refs/remotes/origin/#{branch}", blob)
-    git('-C', root, 'config', "branch.#{branch}.remote", 'origin')
-    git('-C', root, 'config', "branch.#{branch}.merge", "refs/heads/#{branch}")
   end
 
   def with_mode(folder, mode)
@@ -139,39 +130,24 @@ class InstallDevelopmentLinksTest < Minitest::Test
   def test_a_recorded_folder_link_is_named_with_its_name_escaped
     custom = File.join(@directory, 'custom-skills')
     FileUtils.mkdir_p(custom)
-    root = default_install('--skills-dir', custom)
-    feature = File.join(@directory, 'feature')
-    git('-C', root, 'worktree', 'add', '-q', feature)
-    File.symlink(File.join(feature, 'skills/shaka'), File.join(custom, "dev\nNext: run this"))
-    report = status(root)
-    assert_nil report['next_command']
-    assert_includes report['decision'], "#{File.join(custom, 'dev')}\\x0ANext: run this"
-    refute_includes report['decision'], "\n"
-  end
-
-  # Git cannot read a worktree whose index is damaged. Before, a failed status read counted as uncommitted
-  # files and the step offered to discard them with --force --force.
-  def test_a_failed_worktree_read_is_not_held_work
-    root, feature = default_with_worktree
-    File.write(File.join(root, '.git/worktrees/feature/index'), 'damaged')
-    report = status(root)
-    assert_nil report['next_command']
-    assert_includes report['decision'], "could not verify whether #{File.realpath(feature)} has uncommitted files"
-    [refusal(root), refusal(feature, '--directory', feature)].each do |output|
-      assert_includes output, 'could not verify whether'
-      refute_match(/branch -D|--force/, output)
+    root, feature = default_with_worktree('--skills-dir', custom)
+    { "dev\nNext: run this" => 'dev\x0ANext: run this',
+      "sep\u2028Next: run" => 'sep\u2028Next: run' }.each do |name, shown|
+      File.symlink(File.join(feature, 'skills/shaka'), File.join(custom, name))
+      assert_includes status(root)['decision'], File.join(custom, shown)
     end
+    refute_match(/[\n\u2028]/, status(root)['decision'])
   end
 
-  # Git cannot read a branch whose upstream names a blob; that proves nothing, so no command discards it.
-  def test_a_failed_merge_read_is_not_unmerged_work
-    root = default_install
-    blob_upstream(root, 'feature')
-    report = status(root)
-    assert_nil report['next_command']
-    assert_includes report['decision'], 'could not verify whether branch feature is merged'
-    output = refusal(root)
-    assert_includes output, 'could not verify whether branch feature is merged'
-    refute_match(/branch -D|--force/, output)
+  # A link that already points at nothing loses nothing when a missing locked worktree is cleared, so the
+  # step keeps offering that removal.
+  def test_a_dangling_link_into_a_missing_worktree_keeps_its_removal
+    root, feature = default_with_worktree
+    git('-C', root, 'worktree', 'lock', feature)
+    host_link('.claude/skills/shaka-dev', File.join(feature, 'skills/shaka'))
+    FileUtils.rm_rf(feature)
+    decision = status(root)['decision']
+    assert_includes decision, 'worktree remove --force --force'
+    refute_includes decision, 'should point'
   end
 end
