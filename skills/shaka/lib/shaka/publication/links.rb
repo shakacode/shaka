@@ -30,10 +30,11 @@ module Shaka
     # The head check keeps a stale recommendation off the page, so the text need not name the commit.
     # settings is the PublicationSettings whose walkthrough.publish decides whether the walkthrough has a slot.
     # A rendering preview loads these renderers beside an installed settings object that may predate it.
-    # A repository with no settings at all says so first, so a reader never takes the PR for a full Shaka run.
+    # A repository with no settings at all says so after the decision and links, still above the summary, so a
+    # reader never takes the PR for a full Shaka run.
     def lead(content, pull, decisions, settings = nil)
-      [*(SETTINGS_MISSING if settings.respond_to?(:settings_missing?) && settings.settings_missing?),
-       *decision_lead(content, pull, decisions, settings)]
+      [*decision_lead(content, pull, decisions, settings),
+       *(SETTINGS_MISSING if settings.respond_to?(:settings_missing?) && settings.settings_missing?)]
     end
 
     def decision_lead(content, pull, decisions, settings)

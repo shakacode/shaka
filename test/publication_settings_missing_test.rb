@@ -44,12 +44,13 @@ class PublicationSettingsMissingTest < Minitest::Test
     Dir.mktmpdir { |directory| refute_predicate prepare(directory, nil, nil), :settings_missing? }
   end
 
-  def test_the_lead_names_missing_settings_above_the_links
+  # A decision waiting on the maintainer stays first; the statement closes the opening lines.
+  def test_the_lead_names_missing_settings_after_the_decision_and_links
     missing = Object.new
     def missing.settings_missing? = true
-    lead = Shaka::PublicationLinks.lead(CONTENT, nil, [], missing)
-    assert_equal Shaka::PublicationLinks::SETTINGS_MISSING, lead.first
-    assert_includes lead.first, 'Shaka settings were missing'
+    lead = Shaka::PublicationLinks.lead(CONTENT, nil, ['**Decision:** Which base?'], missing)
+    assert_equal ['**Decision:** Which base?', Shaka::PublicationLinks::SETTINGS_MISSING], [lead.first, lead.last]
+    assert_includes lead.last, 'Shaka settings were missing'
     refute_includes Shaka::PublicationLinks.lead(CONTENT, nil, [], Shaka::PublicationSettings.new),
                     Shaka::PublicationLinks::SETTINGS_MISSING
   end

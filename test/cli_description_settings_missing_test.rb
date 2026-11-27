@@ -15,11 +15,12 @@ class CliDescriptionSettingsMissingTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'A counter resets to zero.'
 
-  # The writer identity stays the first line; the statement comes right after it, above the summary.
+  # The writer identity and the links line keep their places; the statement follows them, above the summary.
   def test_a_description_from_a_checkout_without_settings_says_they_were_missing
     body = published(remove_settings: true)
     blocks = body.split("\n\n").map(&:strip).reject { it.empty? || it.start_with?('<!--') }
-    assert_equal Shaka::PublicationLinks::SETTINGS_MISSING, blocks[1]
+    assert_includes blocks[1], 'Checkpoint'
+    assert_equal Shaka::PublicationLinks::SETTINGS_MISSING, blocks[2]
     assert_operator body.index(Shaka::PublicationLinks::SETTINGS_MISSING), :<, body.index('## Summary')
   end
 
