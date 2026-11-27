@@ -16,7 +16,7 @@ class PublicationUnlabeledCommentsTest < Minitest::Test
                                               Shaka::PublicationSettings.new(verdict: routine_verdict))
 
     assert_includes rendered, 'This reads as a warning'
-    assert_includes rendered, "## Verification\n\nValidation passed; local review completed at ccccccc."
+    assert_includes rendered, "## Verification\n\n**Validation and review:** `validate` passed"
     refute_includes rendered, Shaka::VerificationLine::GAPS
   end
 

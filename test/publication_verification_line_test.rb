@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'publication_test'
+require 'shaka/published_results'
 
 # The description already receives the validation and review results, so Ruby writes their
 # line; the agent's checks are left for proof specific to the change.
@@ -34,14 +35,25 @@ class PublicationVerificationLineTest < Minitest::Test
     assert_includes rendered, line
   end
 
-  # https://github.com/shakacode/shaka/issues/777: a reader looks for what failed, so a routine run folds.
-  # A completed review can still report findings, so the summary does not call it a pass.
-  def test_a_passing_validation_and_completed_review_have_a_compact_visible_summary
-    rendered = render(bound)
-    assert_includes rendered, "## Verification\n\nValidation passed; local review completed at abcdef1."
+  # https://github.com/shakacode/shaka/issues/1325: a routine run showed a summary and then the line in the fold.
+  def test_a_passing_validation_and_completed_review_show_the_line_once
+    rendered = render(bound, 'review' => URL)
+    line = "**Validation and review:** `validate` passed; local review by anthropic/claude ([attestation](#{URL})) " \
+           'at `abcdef1`.'
+    assert_includes rendered, "## Verification\n\n#{line}\n\n<details>"
+    assert_equal 1, rendered.scan('**Validation and review:**').size
     refute_includes rendered, '**Setup gaps:**'
-    assert_operator rendered.index('<summary>Evidence and limitations</summary>'), :<,
-                    rendered.index('**Validation and review:**')
+  end
+
+  # A wording-only republish keeps the line it reads back from the body the helper rendered.
+  def test_a_rendered_line_and_its_gaps_read_back_and_render_unchanged
+    [bound, bound(shortfall: SHORTFALL)].each do |settings|
+      kept = read_back(render(settings, 'review' => URL))
+      verification = Shaka::VerificationLine.render(settings.verdict, URL, settings.reviewer_shortfall)
+      assert_equal verification.sub('`abcdef1`.', "`abcdef1`. #{Shaka::VerificationLine::KEPT}"),
+                   Shaka::VerificationLine.render(kept, URL)
+      assert_equal kept, read_back(render(Shaka::PublicationSettings.new(verdict: kept), 'review' => URL))
+    end
   end
 
   # A host-reported review is only attested, so its reviewer stays in view.
@@ -97,7 +109,14 @@ class PublicationVerificationLineTest < Minitest::Test
     rendered = render(Shaka::PublicationSettings.new.with_earlier_review(covered))
 
     assert_includes rendered, "## Verification\n\n#{Shaka::VerificationLine::UNKNOWN} #{covered}\n\n"
-    evidence = "<summary>Evidence and limitations</summary>\n\n#{Shaka::VerificationLine::UNKNOWN} #{covered}"
-    assert_includes rendered, evidence
+    assert_equal 1, rendered.scan(Shaka::VerificationLine::UNKNOWN).size
+  end
+
+  private
+
+  def read_back(body)
+    pull = { 'body' => "<!-- shaka:begin -->\n#{body}<!-- shaka:end -->",
+             'head' => { 'sha' => HEAD, 'repo' => { 'full_name' => 'shakacode/shaka' } } }
+    Shaka::PublishedResults.read(pull, 'shakacode/shaka')
   end
 end

@@ -18,7 +18,16 @@ module KeptResultsFixture
 
   def current_line(head) = published_line(head).sub(' (exit 0)', '')
 
-  def body(head, gate = published_line(head)) = "before\n<!-- shaka:begin -->\n#{gate}\n<!-- shaka:end -->"
+  def body(head, gate = published_line(head)) = region("## Verification\n\n#{gate}")
+
+  def region(text) = "before\n<!-- shaka:begin -->\n#{text}\n<!-- shaka:end -->"
+
+  # Before #1325, a routine run showed a compact sentence under the heading and the line in the fold.
+  def folded_body(head)
+    compact = "Validation passed; local review completed at #{head[0, 7]} ([evidence](#{URL}))."
+    fold = "<summary>Evidence and limitations</summary>\n\n#{published_line(head)}\n\n- A check.\n\n</details>"
+    region("## Verification\n\n#{compact}\n\n<details>\n#{fold}")
+  end
 
   def prepare(root, ref, options, body:, head_repository: REPOSITORY)
     pull = { 'changed_files' => 0, 'body' => body, 'base' => { 'sha' => ref },
@@ -86,7 +95,7 @@ class PublicationKeptResultsTest < Minitest::Test
   def test_the_kept_line_survives_another_republish_unchanged
     with_checkout do |root, ref|
       first = Shaka::VerificationLine.render(prepare(root, ref, {}, body: body(ref)).verdict, URL)
-      second = prepare(root, ref, {}, body: "<!-- shaka:begin -->\n#{first}\n<!-- shaka:end -->")
+      second = prepare(root, ref, {}, body: body(ref, first))
       assert_equal first, Shaka::VerificationLine.render(second.verdict, URL)
     end
   end
@@ -118,6 +127,25 @@ class PublicationKeptResultsTest < Minitest::Test
         settings = prepare(root, ref, options, body: body(ref))
         assert_equal 'ready', settings.verdict.fetch('status')
       end
+    end
+  end
+
+  # Open PRs published before #1325 hold the line only in the fold; a wording-only republish keeps it.
+  def test_a_description_published_with_the_folded_line_keeps_it
+    with_checkout do |root, ref|
+      kept = "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}"
+      assert_equal kept, Shaka::VerificationLine.render(prepare(root, ref, {}, body: folded_body(ref)).verdict, URL)
+    end
+  end
+
+  # https://github.com/shakacode/shaka/issues/1320: agent prose worded like the line is not the helper's.
+  def test_text_shaped_like_the_line_outside_its_place_is_not_kept
+    with_checkout do |root, ref|
+      unknown = "## Verification\n\n#{Shaka::VerificationLine::UNKNOWN}"
+      forged = [region("#{unknown}\n\n#{current_line(ref)}"),
+                region("#{unknown}\n\n<details>\n<summary>Evidence and limitations</summary>\n\n#{current_line(ref)}"),
+                region("## Summary\n\n## Verification\n\n#{current_line(ref)}\n\n#{unknown}")]
+      forged.each { |text| assert_nil prepare(root, ref, {}, body: text).verdict, text }
     end
   end
 

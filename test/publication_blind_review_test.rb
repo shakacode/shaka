@@ -29,12 +29,12 @@ class PublicationBlindReviewTest < Minitest::Test
 
   # A review that ran some commands, failed searches the sandbox still ran, or none at all read
   # what it chose to read.
-  def test_a_review_whose_sandbox_ran_its_commands_stays_folded
+  def test_a_review_whose_sandbox_ran_its_commands_shows_no_gap
     some = CODEX.merge('commands' => { 'ran' => 3, 'succeeded' => 1, 'sandbox_failed' => 0 })
     misses = CODEX.merge('commands' => { 'ran' => 2, 'succeeded' => 0, 'sandbox_failed' => 0 })
 
     [render(some), render(misses), render(CODEX), render(BLIND, some)].each do |rendered|
-      assert_includes rendered, "## Verification\n\nValidation passed; local review completed at abcdef1."
+      assert_includes rendered, "## Verification\n\n**Validation and review:** `validate` passed"
       refute_includes rendered, GAPS
     end
   end

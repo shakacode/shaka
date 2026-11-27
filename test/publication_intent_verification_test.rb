@@ -103,6 +103,10 @@ class PublicationIntentVerificationTest < Minitest::Test
                       'verification' => { 'checks' => [], 'not_verified' => 'Validation has not run yet.' })
 
     assert_includes rendered, '**Not verified:** Validation has not run yet.'
+    # The Validation and review line stays under Verification, so nothing is left to fold.
+    refute_includes render('wip' => HandoffFixtures::WIP, 'table' => nil,
+                           'verification' => { 'checks' => [], 'not_verified' => 'Not run yet.' }),
+                    'Evidence and limitations'
   end
 
   def test_one_to_three_checks_are_allowed

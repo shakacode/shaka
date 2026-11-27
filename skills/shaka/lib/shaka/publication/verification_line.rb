@@ -16,26 +16,17 @@ module Shaka
 
     module_function
 
-    # A reader needs to see a failure, a missing result, fewer reviewers than configured, or a
-    # reviewer that read only the diff; a routine run folds behind its summary. A completed review
-    # may still have reported findings, so the summary claims only that it ran.
+    # The line appears once, directly under the Verification heading, where PublishedResults reads it
+    # back. Setup gaps follow it: fewer reviewers than configured, or a reviewer that read only the diff.
     # Without results, `earlier` is EarlierReview's sentence about a review that still covers the head.
     def render(verdict, review_url = nil, shortfall = nil, earlier = nil)
       return kept(verdict) if verdict&.key?('kept_line')
 
-      blind = blind_reviewers(verdict)
-      folded = shortfall.nil? && blind.empty? && routine?(verdict)
-      text = folded ? summary(verdict, review_url) : line(verdict, review_url, earlier)
-      gaps = setup_gaps(shortfall, blind, review_url)
-      gaps ? "#{text}\n\n#{gaps}" : text
+      gaps = setup_gaps(shortfall, blind_reviewers(verdict), review_url)
+      [line(verdict, review_url, earlier), *gaps].join("\n\n")
     end
 
     def kept(verdict) = [line(verdict), *verdict['kept_gaps']].join("\n\n")
-
-    def summary(verdict, url)
-      text = "Validation passed; local review completed at #{short_head(verdict)}"
-      url ? "#{text} ([evidence](#{url}))." : "#{text}."
-    end
 
     # Binding accepts a completed run whatever its exit, so the exit code decides the wording here.
     def line(verdict, review_url = nil, earlier = nil)
@@ -45,16 +36,6 @@ module Shaka
       validation, reviews = results(verdict)
       reviewed = reviews.empty? && verdict['review_required'] == false ? NOT_REQUIRED : review(reviews, review_url)
       "#{LABEL} #{[*validations(validation), reviewed].join('; ')} at `#{short_head(verdict)}`."
-    end
-
-    # Only a ready verdict reaches publication. A host-reported review rests on its attestation
-    # alone, so it stays visible with the reviewers' names.
-    def routine?(verdict)
-      return false unless verdict
-
-      validation, reviews = results(verdict)
-      validation.map { |result| result['exit_code'] }.uniq == [0] &&
-        reviews.map { |result| result['status'] }.uniq == ['completed']
     end
 
     def short_head(verdict) = verdict['head'][0, 7]
@@ -120,7 +101,7 @@ module Shaka
       url ? "#{text} ([attestation](#{url}))" : text
     end
 
-    private_class_method :routine?, :kept, :summary, :short_head, :results, :validations, :outcome,
+    private_class_method :kept, :short_head, :results, :validations, :outcome,
                          :setup_gaps, :blind_reviewers, :blind?, :blind_gap, :reviewer_gap, :review
   end
 end
