@@ -60,10 +60,12 @@ did not run for 1.0.0; it applies again to later releases.
 - A PR description for a task other than a prompt or a numbered GitHub issue
   or PR in the same repository needs exactly one of a safe https task link or a
   visible omission reason. Common description input errors are reported
-  together, with each exact overage. A description without validation or review
-  results links the review that still covers its commit. When the writer's
-  settings cannot be read, its first line shows only the known identity fields
-  and lists the rest under **Missing values**.
+  together, with each exact overage. When a description has no validation or
+  review results of its own, it links the published review that still covers
+  its commit, if there is one. Descriptions and walkthroughs refuse a bare
+  finding ID such as `N3` in visible prose; describe the finding in words. When
+  the writer's settings cannot be read, the first line shows only the known
+  identity fields and lists the rest under **Missing values**.
 - Local Codex reviews run without connected ChatGPT apps, web search, or image
   viewing. Read-only shell inspection remains available. With file-backed
   sign-in, they also skip your global `AGENTS.md`.
@@ -106,9 +108,10 @@ did not run for 1.0.0; it applies again to later releases.
   issue and its next step; `shaka install --status --json` lists every finding.
   On an older Ruby, the installer suggests mise or rbenv. Interrupted branch
   updates can clean up their temporary worktree. `bin/install --directory`
-  aimed at a worktree of the default install prints a cleanup step that works.
-- `shaka reply` links a cited comment from an untrusted author instead of
-  quoting it.
+  aimed at a worktree of the default install gives a next step that works for
+  that worktree's state.
+- In a public repository, `shaka reply` links a cited comment whose author
+  `shaka comments` would withhold instead of quoting it.
 - Validation keeps evidence tied to the tested tree and settings. Fixes to a base
   branch are tracked separately when that branch already fails a check.
 - Claude Code cloud sessions can read PR status and publish PR descriptions when
