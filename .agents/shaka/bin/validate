@@ -33,7 +33,8 @@ if git -C "$root" show "${base}:bin/docs-only-change" >"$classifier" 2>/dev/null
     fi
   done <"$inventory"
   ruby "$root/bin/check-docs-navigation"
-  # The classifier admitted only documentation, so this runner and its selector match the base copy.
+  # The classifier admitted only documentation, so this runner and its selector are as they were
+  # at the merge base.
   bundle exec ruby "$root/bin/run-tests" --changed "$base"
   exit 0
 fi

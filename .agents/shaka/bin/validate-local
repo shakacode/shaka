@@ -30,8 +30,9 @@ while IFS= read -r -d '' path; do
   fi
 done <"$inventory"
 
-# validate handles a documentation-only change, running only the tests that name a changed page. As in validate, the base copy of
-# the classifier decides. Without exec, the trap removes the temporary files.
+# validate handles a documentation-only change, running only the tests that name a changed page.
+# As in validate, the base copy of the classifier decides. Without exec, the trap removes the
+# temporary files.
 if git show "${base}:bin/docs-only-change" >"$scratch/classifier" 2>/dev/null &&
    chmod +x "$scratch/classifier" && "$scratch/classifier" "$base" >/dev/null 2>&1; then
   "$root/.agents/shaka/bin/validate"

@@ -166,9 +166,10 @@ class ChangedTests
     # Status letter and path for each file changed since BASE's merge base, including
     # uncommitted and untracked files.
     def changes(base)
-      listed = git('diff', '--no-ext-diff', '--no-renames', '--name-status', merge_base(base), '--')
-      tracked = listed.lines.map { |line| line.chomp.split("\t", 2) }
-      tracked + git('ls-files', '--others', '--exclude-standard').lines.map { ['A', it.chomp] }
+      # -z lists names as they are; line output quotes names with unusual characters.
+      listed = git('diff', '--no-ext-diff', '--no-renames', '--name-status', '-z', merge_base(base), '--')
+      listed.split("\0").each_slice(2).to_a +
+        git('ls-files', '--others', '--exclude-standard', '-z').split("\0").map { ['A', it] }
     end
 
     def merge_base(base) = git('merge-base', base, 'HEAD').strip

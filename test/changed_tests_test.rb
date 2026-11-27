@@ -114,6 +114,16 @@ class ChangedTestsTest < Minitest::Test
     assert_equal [%w[A test/new_test.rb], %w[M skills/shaka/lib/shaka/alpha.rb],
                   %w[M skills/shaka/lib/shaka/beta.rb]], @selector.files.changes('main').sort
   end
+
+  # Git quotes such names in line output, which would hide the page's extension.
+  def test_changes_list_names_git_would_quote_as_they_are
+    File.write(File.join(@root, 'internal-café.md'), '')
+    commit_fixture
+    File.write(File.join(@root, 'internal-café.md'), "Edited\n")
+    File.write(File.join(@root, "docs-new\tpage.md"), '')
+
+    assert_equal [['A', "docs-new\tpage.md"], %w[M internal-café.md]], @selector.files.changes('main').sort
+  end
 end
 
 class ChangedTestsDataTest < Minitest::Test
