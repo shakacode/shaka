@@ -1182,7 +1182,7 @@ Connect your existing tools at these fixed paths:
 | --- | --- | --- |
 | `.agents/shaka/bin/setup` | Yes | Install dependencies |
 | `.agents/shaka/bin/test` | Yes | Run tests; accept focused arguments |
-| `.agents/shaka/bin/validate` | Yes | Complete checks before publishing |
+| `.agents/shaka/bin/validate` | Yes | Complete checks |
 | `.agents/shaka/bin/validate-local` | No | Faster checks before local review; a pass [counts as evidence](#count-a-faster-check-as-validation) |
 | `.agents/shaka/bin/trigger-hosted-ci` | No | Start deferred CI after local fixes; requires `validate-local` |
 
@@ -1243,11 +1243,12 @@ The evidence check accepts either script's result; it does not require a full
 `validate` run.
 
 After review repairs, your agent can let a required hosted check that runs your full
-`validate` stand in for a second, local full run, so a slow machine does not repeat
-it. The agent still runs `validate` locally when the pull request changes a
-workflow or that check's script, or when the hosted run skipped part of the suite. The
-tradeoff: a failure only the full suite catches appears on the hosted check after
-the push instead of before it.
+`validate`, defined by a workflow on your default branch, stand in for the deferred
+local full run, so a slow machine does not repeat it. The agent still runs
+`validate` locally when the pull request adds, removes, or changes a workflow or
+that check's script, or when the hosted run skipped part of the suite. The tradeoff:
+a failure only the full suite catches appears on the hosted check after the push
+instead of before it.
 
 ### Run the scripts in a CI container
 
