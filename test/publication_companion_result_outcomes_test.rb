@@ -30,6 +30,8 @@ class PublicationCompanionResultOutcomesTest < Minitest::Test
     assert_refused(run_record('outcome' => 'changed_code', 'caused_commits' => []), 'caused_commits')
     assert_refused(run_record('outcome' => 'no_findings', 'caused_commits' => [FIX]), 'caused_commits')
     assert_refused(run_record('caused_commits' => [FIX]), 'caused_commits')
+    assert_refused(run_record('outcome' => 'no_findings', 'caused_commits' => []), 'caused_commits')
+    assert_refused(run_record('caused_commits' => []), 'caused_commits')
   end
 
   def test_refuses_caused_commits_that_are_not_full_shas

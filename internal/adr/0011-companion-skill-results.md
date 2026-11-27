@@ -203,18 +203,22 @@ implementation PR delivers decisions 2 to 6, and its description links the trigg
 section cannot answer whether a companion skill helped. The maintainer named the reader:
 a later retrospective that counts outcomes per skill, with the PR reviewer second. The
 [accepted plan](https://github.com/shakacode/shaka/issues/1285#issuecomment-7205630613)
-adds four optional entry keys and keeps every decision above.
+adds four optional entry keys. It extends decision 2's field list with them and, for a
+manual check only, replaces decision 3's command rules; every other decision stands.
 
 - `manual`: `true` when the check was reading or inspection. `command` then renders as
   a **Manual check** line of escaped prose instead of a code span, because there is no
-  command to rerun. #1259 published `manual source inspection and gemspec check` as a command.
+  command to rerun. A manual `command` follows the rules for `checked`: one nonempty line
+  without a local absolute path, with HTML escaped, so a backtick or `</` is published as
+  text rather than refused. #1259 published `manual source inspection and gemspec check`
+  as a command.
 - `outcome`: `changed_code`, `findings_not_applied`, or `no_findings`. The set is fixed
   so a collector counts labels instead of reading `result` prose.
 - `caused_commits`: the full SHAs a `changed_code` outcome led to. Ruby requires it
-  with that outcome and refuses it with any other.
+  with that outcome and refuses the key, even an empty list, with any other.
 - `cleared_paths`: repository-relative paths or globs the run found safe. Ruby refuses
-  absolute paths, `..` segments, backslashes, backticks, angle brackets, and control
-  characters. A collector can compare these with later review findings and human comments.
+  absolute and home-directory paths, URI schemes, workstation roots anywhere in the value,
+  `..` segments, backslashes, backticks, angle brackets, and control characters. A collector can compare these with later review findings and human comments.
 
 Ruby still checks shape only. Whether a commit followed from a finding, and whether a
 path was safe, stay the agent's account.

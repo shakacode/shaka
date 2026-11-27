@@ -38,13 +38,17 @@ module Shaka
     end
 
     def caused_commits
-      commits = @entry.fetch('caused_commits', [])
-      valid = commits.is_a?(Array) && commits.all? { |sha| sha.is_a?(String) && SHA.match?(sha) }
-      return commits if valid && commits.any? == (@entry['outcome'] == 'changed_code')
+      changed = @entry['outcome'] == 'changed_code'
+      return [] unless changed || @entry.key?('caused_commits')
+
+      commits = @entry['caused_commits']
+      return commits if changed && shas?(commits)
 
       raise Error, 'Publication companion_results caused_commits must list full SHAs for a changed_code outcome ' \
                    'and be absent otherwise.'
     end
+
+    def shas?(values) = values.is_a?(Array) && values.any? && values.all? { |sha| sha.is_a?(String) && SHA.match?(sha) }
 
     def cleared_line
       paths = @entry.fetch('cleared_paths', [])

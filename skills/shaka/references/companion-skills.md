@@ -90,10 +90,13 @@ A selected companion technique applies within the Shaka phase it concerns.
 Record runs in `companion_results`: `skill`, `command`, `checked`, `result`,
 `not_covered` (`Nothing.` if none), full `commit` SHA, and `artifacts` (HTTP(S) links
 or `[]`). Disambiguate Skills used with `source` or `revision`. Set `manual: true` when
-the check was reading or inspection; `command` then says what you inspected. Add `outcome`:
-`changed_code` with the full SHAs it led to in `caused_commits`, `findings_not_applied`, or
-`no_findings`. List the repository-relative paths or globs the run found safe in `cleared_paths`.
-Record only runs that checked the change, not prose or formatting skills. Link public-safe
+the check was reading or inspection; `command` then says what you inspected. Give each run
+an `outcome` when you know it: `changed_code` when its findings led to commits, listed as full
+SHAs in `caused_commits`; `findings_not_applied` when it reported findings that changed
+nothing, and say why in `result`; or `no_findings`. When the run established that particular
+files are unaffected, list those repository-relative paths or globs in `cleared_paths`.
+A rerun is a new entry with its own outcome; keep the earlier entry. Record only runs that
+checked the change, not prose or formatting skills. Link public-safe
 attachment comments. Remove workstation paths, including encoded paths, from
 commands and prose before publishing. Summarize merge-relevant results in Verification. Earlier
 commits show as stale. Rerun when a later commit touches what the run checked.
