@@ -109,12 +109,12 @@ rules:
   - id: branch-push-from-safe-state
     phase: always
     quote: Push the task branch with `branch push --root DIR`
-    enforced_by: code
-    detector: >-
-      `BranchHead#push` re-reads the push destination, refuses to push unless the state is unchanged or
-      not_pushed, refuses a push that drops the accepted head without `--rewrite`, and pushes with
-      `--force-with-lease` on the accepted head, so Git refuses a push that lands after the check. A
-      plain `git push` by the agent bypasses all of this.
+    enforced_by: agent
+    note: >-
+      The agent chooses the command; a plain `git push` bypasses it. Once used, `BranchHead#push`
+      re-reads the push destination, refuses to push unless the state is unchanged or not_pushed,
+      refuses a push that drops the accepted head without `--rewrite`, and pushes with
+      `--force-with-lease` on the accepted head, so Git refuses a push that lands after the check.
   - id: local-review-cap-push
     phase: verify
     quote: Do not push unless the user chooses to.

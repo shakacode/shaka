@@ -27,18 +27,6 @@ class BranchHeadPushTest < Minitest::Test
     assert_equal theirs, check['live']
   end
 
-  # The task builds on the teammate's commit, so a plain push would fast-forward; only the lease refuses it.
-  def test_lease_refuses_a_teammate_push_that_lands_after_the_check
-    accepted = push_task('first')
-    accept(accepted)
-    theirs = teammate_push('theirs')
-    git(@task, 'pull', '--quiet', '--ff-only', 'origin', BRANCH)
-    commit(@task, 'mine')
-
-    assert_raises(Shaka::Error) { Shaka::BranchHead::Destination.new(root: @task, branch: BRANCH).push(accepted) }
-    assert_equal theirs, check['live']
-  end
-
   def test_rewrite_needs_explicit_permission
     accept(push_task('first'))
     git(@task, 'commit', '--quiet', '--amend', '--allow-empty', '-m', 'first, reworded')

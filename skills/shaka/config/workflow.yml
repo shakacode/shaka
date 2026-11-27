@@ -1052,8 +1052,8 @@ always: |-
   `moved` or `unrecorded` head with local work, record it with `branch accept --root DIR --head
   SHA`, and rerun head-specific validation and review. Accepting a head transfers no ownership; the
   [takeover procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>)
-  still governs that. In a confirmed takeover, inspect the live head read-only and accept it
-  before publishing the takeover note. Push the task branch with `branch push --root DIR`, adding
+  still governs that. In a confirmed takeover, check out the PR head under its own branch name,
+  inspect it read-only, and accept it before publishing the takeover note. Push the task branch with `branch push --root DIR`, adding
   `--rewrite` only for an intended rebase.
 
   Before ending any turn on a task that owns an open PR, run the saved helper's

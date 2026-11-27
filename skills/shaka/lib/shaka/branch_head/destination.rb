@@ -26,24 +26,43 @@ module Shaka
       # Reads the URL a push writes to, which may differ from the fetch URL. ls-remote matches refs by suffix,
       # so only the exact ref counts; a failure or timeout is unreadable, never absent.
       def head
-        url, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'remote', 'get-url', '--push', @remote)
-        return { error: "Cannot resolve the push URL of #{@remote}: #{error.strip}" } unless status.success?
+        url = single_push_url
+        return url if url.is_a?(Hash)
 
-        output, error, success = bounded(READ_SECONDS, 'ls-remote', url.strip, "refs/heads/#{@branch}")
+        output, error, success = bounded(READ_SECONDS, 'ls-remote', url, "refs/heads/#{@branch}")
         return { error: error.strip.empty? ? 'git ls-remote failed' : error.strip } unless success
 
         exact_head(output)
       end
 
-      # Pushes HEAD leased on the accepted head; an empty lease means the branch must not exist yet.
-      def push(accepted)
+      # Pushes one commit to the branch alone, leased on the accepted head; an empty lease means the branch must
+      # not exist yet. --no-follow-tags keeps push.followTags from sending tags beside it.
+      def push(accepted, sha)
         lease = "--force-with-lease=refs/heads/#{@branch}:#{accepted}"
-        _output, error, success = bounded(PUSH_SECONDS, 'push', '--quiet', lease, @remote,
-                                          "HEAD:refs/heads/#{@branch}")
+        _output, error, success = bounded(PUSH_SECONDS, 'push', '--quiet', '--no-follow-tags', lease, @remote,
+                                          "#{sha}:refs/heads/#{@branch}")
         raise Error, "git push to #{@remote}/#{@branch} was refused or failed: #{error.strip}" unless success
       end
 
       private
+
+      # One push URL and no custom push refspec, so the branch read is the branch a push writes.
+      def single_push_url
+        unless lines('config', '--get-all', "remote.#{@remote}.push").empty?
+          return { error: "#{@remote} has a custom push refspec; push the task branch by hand." }
+        end
+
+        urls = lines('remote', 'get-url', '--push', '--all', @remote)
+        return { error: "Cannot resolve the push URL of #{@remote}." } if urls.empty?
+        return { error: "#{@remote} has #{urls.size} push URLs; configure one for the task branch." } if urls.size > 1
+
+        urls.first
+      end
+
+      def lines(*)
+        output, _error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, *)
+        status.success? ? output.lines.map(&:strip).reject(&:empty?) : []
+      end
 
       def exact_head(output)
         shas = output.lines.filter_map do |line|

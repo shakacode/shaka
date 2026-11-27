@@ -20,7 +20,8 @@ module Shaka
                  'new commits, and report them. Accept the head once reconciled.',
       'unrecorded' => 'The branch is on the remote but this checkout never accepted a head. Pause, inspect ' \
                       'the remote commits, and accept the head once reconciled.',
-      'disappeared' => 'The remote branch this task pushed is gone. Pause, preserve local work, and report it.',
+      'disappeared' => 'The remote branch this task pushed is gone. Pause, preserve local work, and report it. ' \
+                       'If the user wants it pushed again, run `branch accept --absent`, then `branch push`.',
       'unreadable' => 'The remote branch could not be read, so a teammate push cannot be ruled out. Pause, ' \
                       'preserve local work, and report the error.'
     }.freeze
@@ -36,9 +37,10 @@ module Shaka
       live = @destination.head
       accepted = accepted_head
       state = state_for(live, accepted)
+      local = git('rev-parse', 'HEAD').strip
       { 'state' => state, 'branch' => @branch, 'remote' => @remote, 'accepted' => accepted,
-        'live' => live.is_a?(String) ? live : nil, 'local' => git('rev-parse', 'HEAD').strip,
-        'rewrites' => rewrites?(accepted), 'guidance' => GUIDANCE.fetch(state),
+        'live' => live.is_a?(String) ? live : nil, 'local' => local,
+        'rewrites' => rewrites?(accepted, local), 'guidance' => GUIDANCE.fetch(state),
         'error' => (live[:error] if state == 'unreadable') }.compact
     end
 
@@ -53,8 +55,9 @@ module Shaka
       check
     end
 
-    # Pushes HEAD only from a safe state, leased on the accepted head, then accepts what it pushed.
-    # A push that would drop the accepted head from history needs rewrite: true, as an intended rebase does.
+    # Pushes the commit HEAD named at the check, only from a safe state and leased on the accepted head, then
+    # accepts it. Dropping the accepted head from history needs rewrite: true, as an intended rebase does.
+    # A push that lands but cannot be accepted reports the pushed commit and keeps the pausing state.
     def push(rewrite: false)
       before = check
       return before.merge('pushed' => false) unless SAFE.include?(before['state'])
@@ -62,11 +65,18 @@ module Shaka
         raise Error, "HEAD lacks the accepted head #{before['accepted']}; pass --rewrite only for an intended rebase."
       end
 
-      @destination.push(before['accepted'])
-      accept(before['local']).merge('pushed' => true)
+      @destination.push(before['accepted'], before['local'])
+      record_push(before['local'])
     end
 
     private
+
+    def record_push(sha)
+      pushed = { 'pushed' => true, 'pushed_head' => sha }
+      accept(sha).merge(pushed)
+    rescue Error => e
+      check.merge(pushed).merge('error' => e.message)
+    end
 
     def accept_head(head, live)
       raise Error, "--head must be a full 40-character SHA, not #{head.inspect}." unless head.match?(SHA)
@@ -92,11 +102,11 @@ module Shaka
 
     # A leased push from a HEAD that lacks the accepted head drops pushed commits, which only a rebase intends.
     # An accepted commit missing from this clone counts as a rewrite, since its ancestry cannot be shown.
-    def rewrites?(accepted)
+    def rewrites?(accepted, local)
       return false unless accepted
 
       _output, _error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'merge-base', '--is-ancestor',
-                                               accepted, 'HEAD')
+                                               accepted, local)
       !status.success?
     end
 
