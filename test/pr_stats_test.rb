@@ -48,6 +48,14 @@ class PrStatsTest < Minitest::Test
     assert_includes err, 'no ready time recorded: rules unreadable'
   end
 
+  def test_an_unreadable_check_list_still_records_the_merge
+    github = MergedFakeGitHub.new("Intro.\n\n#{unready_block}\n", merged_page)
+    def github.check_times = raise(Shaka::Error, 'checks unreadable')
+
+    _, err = capture_io { assert_equal MERGED.iso8601, Shaka::PrWatch::StatsCommand.record(github, SEAM)['stats']['t3'] }
+    assert_includes err, 'no ready time recorded: checks unreadable'
+  end
+
   def test_a_pull_request_without_a_stats_block_is_not_written
     github = MergedFakeGitHub.new("Written by hand.\n", merged_page)
     assert_nil Shaka::PrWatch::StatsCommand.record(github, SEAM)['stats']

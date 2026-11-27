@@ -40,12 +40,14 @@ module Shaka
           'stats' => ThroughputStats.read(body(github)) }
       end
 
-      # Without GitHub's required checks no ready time is guessed, and the log says why.
+      # Without readable checks no ready time is guessed, the log says why, and the merge time is still recorded.
       def record_ready(publisher, snapshot)
         rows = snapshot['requiredChecks']
         return publisher.call(required: rows.filter_map { |row| row['name'] if row.is_a?(Hash) }) if rows
 
         warn "shaka pr stats: no ready time recorded: #{snapshot['requiredChecksUnavailable']}"
+      rescue Error => e
+        warn "shaka pr stats: no ready time recorded: #{e.message.gsub(/[\r\n]+/, ' ')}"
       end
 
       def body(github) = github.api("repos/#{github.repository}/pulls/#{github.number}").fetch('body').to_s
