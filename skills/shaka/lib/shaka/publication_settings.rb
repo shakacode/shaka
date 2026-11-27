@@ -135,7 +135,8 @@ module Shaka
       Configuration::PersonalPrivacy::REDACTION unless @privacy.checkout_path?
     end
 
-    # True when the repository has no Shaka settings at all, which the description states above its links.
+    # True when the repository has no Shaka settings at all, which the description states after its opening
+    # lines, above the summary.
     def settings_missing? = @missing == true
 
     # Asked only when no settings were read, so a missed --ref in a repository with settings keeps the
