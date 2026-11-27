@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'merge_review_evidence_test'
+require_relative 'merge_tree_proof_test'
 require 'shaka/earlier_review'
 
 # A description without results says which published review merge would accept for the head.
@@ -72,5 +73,35 @@ class EarlierReviewTest < Minitest::Test
     @client.comments = [attestation(HEAD, author: 'someone-else')]
 
     assert_nil sentence
+  end
+end
+
+# The clean-update case reaches merge's Git proof, which needs the checkout the vetted path yields.
+class EarlierReviewProofTest < Minitest::Test
+  include MergeTreeProofRepository
+
+  def lookup(safe_path)
+    head = rebased_head
+    client = MergeReviewEvidenceFixtures::Client.new
+    fixtures = Class.new { include MergeReviewEvidenceFixtures }.new
+    client.comments = [fixtures.attestation(@reviewed)]
+    client.comparisons = { @reviewed => { 'status' => 'diverged', 'files' => [] },
+                           ['main', head] => { 'merge_base_commit' => { 'sha' => @new_base } } }
+    pull = { 'head' => { 'sha' => head }, 'base' => { 'ref' => 'main' } }
+    Shaka::EarlierReview.vetted_sentence(client, pull, root: '/checkout', safe_path:)
+  end
+
+  def test_a_clean_update_is_proved_in_the_vetted_checkout
+    root = @root
+    vetted = ->(**, &block) { block.call(root) }
+
+    assert_includes lookup(vetted), "of `#{@reviewed[0, 7]}` covers this revision, which only updates it from `main`."
+  end
+
+  def test_a_refused_git_or_another_checkout_proves_nothing
+    Dir.mktmpdir do |elsewhere|
+      assert_nil lookup(->(**, &block) { block.call(elsewhere) })
+    end
+    assert_nil lookup(->(**) { raise Shaka::Error, 'git resolves inside the candidate checkout' })
   end
 end

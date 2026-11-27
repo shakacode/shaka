@@ -76,7 +76,7 @@ module Shaka
       return [] if ids.empty?
 
       ["it cites review findings by ledger ID (#{ids.join(', ')}), which a reader cannot look up; " \
-       'say what each finding is instead, and format a term that is not a finding ID, such as an N2 ' \
+       'say what each finding is without its ID, and format a term that is not a finding ID, such as an N2 ' \
        'machine type, as code']
     end
 
