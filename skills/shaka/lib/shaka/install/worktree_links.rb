@@ -106,19 +106,20 @@ module Shaka
           return @current = File.dirname(@current) if name == '..'
 
           candidate = File.join(@current, name)
-          if link?(candidate)
-            follow(candidate)
-          else
-            @current = candidate
-          end
+          stat = look(candidate)
+          stat&.symlink? ? follow(candidate) : enter(candidate, stat)
           candidate
         end
 
-        def link?(path)
-          File.lstat(path).symlink?
+        def enter(path, stat)
+          @current = path
+          @pending.clear unless stat&.directory?
+        end
+
+        def look(path)
+          File.lstat(path)
         rescue Errno::ENOENT, Errno::ENOTDIR
-          @pending.clear
-          false
+          nil
         end
 
         def follow(link)

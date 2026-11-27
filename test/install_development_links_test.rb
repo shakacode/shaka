@@ -96,10 +96,12 @@ class InstallDevelopmentLinksTest < Minitest::Test
     end
   end
 
-  # A name that does not exist ends resolution, so a .. after it never reaches the worktree.
-  def test_a_link_through_a_missing_folder_keeps_the_removal
+  # A name that does not exist, or a file, ends resolution, so a .. after it never reaches the worktree.
+  def test_a_link_through_a_missing_folder_or_a_file_keeps_the_removal
     root, feature = default_with_worktree
+    File.write(File.join(File.dirname(feature), 'marker'), '')
     host_link('.claude/skills/stale', File.join(File.dirname(feature), 'missing/../feature'))
+    host_link('.claude/skills/under-file', File.join(File.dirname(feature), 'marker/../feature'))
     assert_includes status(root)['next_command'], 'worktree remove'
   end
 
