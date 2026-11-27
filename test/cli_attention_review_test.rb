@@ -138,6 +138,7 @@ class CliAttentionReviewTest < Minitest::Test
 
       assert_predicate status, :success?, output
       assert_equal 'current_head', JSON.parse(output).dig('review', 'basis')
+      refute JSON.parse(output).key?('readOver')
       assert_path_exists @label_file
     end
   end
