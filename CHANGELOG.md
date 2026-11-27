@@ -42,9 +42,8 @@ did not run for 1.0.0; it applies again to later releases.
 - See evidence on the PR for what changed, what passed, and what the reviewer
   found. Ask for a code walkthrough, use interactive mode to steer a draft PR,
   and use timing and token estimates to review your delivery process. Usage
-  reports cover Antigravity and price GPT-6.2 and Gemini models. For a change
-  people see on screen, the description links the agent's latest UI check as
-  **Screenshots**.
+  reports cover Antigravity and price GPT-6.2 and Gemini models. When the agent has
+  published a UI check, the description links it as **Screenshots**.
 - With team settings, list your team's skills in `.agents/shaka/packs/` on the
   default branch so Shaka offers each one at the step where it helps. PRs show
   the results of those companion skills, including whether their findings were
