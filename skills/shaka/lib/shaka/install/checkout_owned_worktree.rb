@@ -35,11 +35,11 @@ module Shaka
 
         owner_step(default)
       rescue ArgumentError, SystemCallError
-        status_step("how to clear #{@root} from the installation at #{default}")
+        person_step("how to clear #{@root} from the installation at #{default}")
       end
 
       # The installation's own command only when it is safe to read, hosts this worktree, and serves no link
-      # from any of its worktrees; otherwise status, run by the installer the person ran, names the next step.
+      # from any of its worktrees; otherwise a person decides, with the reason named.
       def owner_step(default)
         record = Checkout.new(default).read_record
         return unless record
@@ -47,43 +47,43 @@ module Shaka
         # Loaded here because the status classes require Official, which requires Checkout.
         require_relative 'status_checkout'
         checkout = StatusCheckout.new(default, record)
-        return status_step("how to repair the installation at #{default}") unless checkout.safe?
+        return person_step("how to make #{default} safe to read; another account can change it") unless checkout.safe?
 
         development_step_for(checkout)
       end
 
       def development_step_for(checkout)
         worktrees = checkout.linked_worktrees.map { SettingsLocation.real(it) || it }
-        return status_step("how to clear #{@root} from the installation at #{checkout.root}") unless
+        return person_step("how to clear #{@root}, which #{checkout.root} does not list as development") unless
           worktrees.include?(@root)
 
         links = links_into(checkout.record, worktrees)
         return checkout.development_step if links.empty?
 
-        status_step("where the skills links #{Refusal.paths(links)} should point; they resolve into " \
+        person_step("where the skills links #{Refusal.paths(links)} should point; they resolve into " \
                     "worktrees of #{checkout.root}, and clearing them would break those links")
       end
 
-      def status_step(question)
-        { decision: Refusal.decide(question, 'to see the next step',
-                                   Refusal.command(@installer || File.join(@root, 'bin/install'), '--status')) }
-      end
+      # No command: the cases that reach a person are the ones where no printed command is known to be safe.
+      def person_step(question) = { decision: "a person must decide #{question}, then run this command again" }
 
       def links_into(record, worktrees)
-        link_folders(record).flat_map { |folder| Package::ALLOWED.map { |name| File.join(folder, name) } }
-                            .select { |link| inside?(link, worktrees) }
+        link_folders(record).flat_map do |folder|
+          Package::ALLOWED.map { |name| File.join(folder, name) }
+                          .select { |link| [folder, link].any? { |path| inside?(path, worktrees) } }
+        end
       end
 
-      # The host folders, the installation's recorded folders, and a requested skills folder. A skill resolves
-      # into a worktree through its own link or through a linked folder.
+      # The host folders, the installation's recorded folders, and a requested skills folder. A skill depends
+      # on a worktree through its own link or through a folder linked into one.
       def link_folders(record)
         hosts = Locations::HOSTS.values.map { |folder| File.join(Dir.home, folder) }
         requested = [@skills_dir].compact.map { File.expand_path(it) }
         (hosts + record['targets'].map { |target| target['directory'] } + requested).uniq
       end
 
-      def inside?(link, worktrees)
-        resolved = File.realpath(link)
+      def inside?(path, worktrees)
+        resolved = File.realpath(path)
         worktrees.any? { resolved == it || resolved.start_with?("#{it}/") }
       rescue SystemCallError
         false

@@ -47,13 +47,13 @@ module OwnedWorktreeScenarios
                     "Next: a person must decide whether to keep the uncommitted files in #{File.realpath(feature)}"
   end
 
-  # Another account could replace an unsafe owner's installer, so status runs from the worktree instead.
+  # Another account could replace an unsafe owner's files, so no command is printed for it.
   def test_an_unsafe_owner_never_names_its_own_installer
     root, feature = owned_worktree
     File.chmod(0o775, root)
     output = refusal(feature, '--directory', feature)
     refute_includes output, File.join(File.realpath(root), 'bin/install')
-    assert_includes output, "#{feature}/bin/install --status"
+    assert_includes output, "Next: a person must decide how to make #{File.realpath(root)} safe to read"
   ensure
     File.chmod(0o755, root) if root
   end
@@ -72,6 +72,18 @@ module OwnedWorktreeScenarios
     _root, feature = owned_worktree
     custom = File.join(@directory, 'linked-skills')
     File.symlink(File.join(feature, 'skills'), custom)
+    output = refusal(feature, '--directory', feature, '--skills-dir', custom)
+    assert_includes output, "Next: a person must decide where the skills links #{custom}/shaka"
+  end
+
+  # A skills folder linked into the worktree goes with it, even when the skill inside points elsewhere.
+  def test_a_linked_folder_whose_skill_points_out_goes_to_a_person
+    _root, feature = owned_worktree
+    FileUtils.mkdir_p(File.join(feature, 'hosted'))
+    FileUtils.mkdir_p(File.join(@directory, 'outside'))
+    File.symlink(File.join(@directory, 'outside'), File.join(feature, 'hosted/shaka'))
+    custom = File.join(@directory, 'hosted-skills')
+    File.symlink(File.join(feature, 'hosted'), custom)
     output = refusal(feature, '--directory', feature, '--skills-dir', custom)
     assert_includes output, "Next: a person must decide where the skills links #{custom}/shaka"
   end
