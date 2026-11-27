@@ -50,7 +50,7 @@ class ReleasePrepareTest < Minitest::Test
     refute_path_exists marker
   end
 
-  def test_refuses_before_building_without_a_passing_behavior_choice_or_outside_output
+  def test_refuses_before_building_without_a_passing_behavior_choice
     gate = '--behavior-records or --skip-behavior-gate'
     assert_refused_prepare(gate)
     assert_refused_prepare(gate, '--skip-behavior-gate', '--behavior-records', @validation)
@@ -59,8 +59,16 @@ class ReleasePrepareTest < Minitest::Test
     assert_refused_prepare('release behavior batch', '--behavior-records', records)
     File.write(records, 'not json')
     assert_refused_prepare('unreadable or invalid', '--behavior-records', records)
+  end
+
+  def test_refuses_an_output_directory_inside_the_checkout_or_already_used
     @out = File.join(@root, 'tmp/release')
     assert_refused_prepare('outside the release checkout', '--skip-behavior-gate')
+    @out = File.join(@directory, 'used')
+    FileUtils.mkdir_p(@out)
+    File.write(File.join(@out, 'approval.json'), '{}')
+    assert_refused_prepare('must be empty', '--skip-behavior-gate')
+    assert_equal '{}', File.read(File.join(@out, 'approval.json'))
   end
 
   def test_refuses_a_version_without_a_changelog_entry

@@ -54,7 +54,8 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
      --behavior-records /outside/checkout/release-records.json
    ```
 
-   Repeat `--behavior-records` for each profile, or pass `--skip-behavior-gate` instead.
+   `--out` must be a new or empty directory. Repeat `--behavior-records` for each profile, or
+   pass `--skip-behavior-gate` instead.
    The command checks each batch against this commit, then runs `validate` through
    `evidence run`, which takes a while. Pass `--validation FILE` to reuse a completed
    result for the same commit. It then builds the gem, saves the version's
@@ -109,12 +110,13 @@ gh release view "v$shaka_version" --repo shakacode/shaka
 ```
 
 The first command should print the approved commit, and the other three should report
-that the version does not exist. Then publish in this order, keeping each digest check
-joined to its upload with `&&`:
+that the version does not exist. Then publish in this order. Keep the tag joined to its
+push, and each digest check joined to its upload, with `&&`, so a failed step stops the
+next:
 
 ```bash
-git tag -a "v$shaka_version" APPROVED_COMMIT -m "Release shaka $shaka_version"
-git push https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
+git tag -a "v$shaka_version" APPROVED_COMMIT -m "Release shaka $shaka_version" &&
+  git push https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
 ruby -rdigest -e 'abort "Gem differs from approval" unless
   Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' GEM_PATH APPROVED_GEM_SHA256 &&
   gem push --host https://rubygems.org GEM_PATH
@@ -127,6 +129,6 @@ ruby -rdigest -e 'abort "Notes differ from approval" unless
 Add `--prerelease` to `gh release create` for a prerelease version. When the behavior gate
 was skipped, the notes check still reads the approved file; pass a copy with this line
 added as `--notes-file`: `The release behavior gate did not run for this release.` Last,
-install the version into an empty `GEM_HOME` with
-`gem install shaka --version "$shaka_version" --clear-sources --source https://rubygems.org`
-and run its `shaka --help`.
+set `GEM_HOME` and `GEM_PATH` to a new temporary directory, run
+`gem install shaka --version "$shaka_version" --remote --clear-sources --source https://rubygems.org`
+and its `shaka --help`, then delete the directory.

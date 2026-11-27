@@ -13,6 +13,7 @@ class ReleaseRegistryTest < Minitest::Test
     assert_lookup_refused(response(Net::HTTPInternalServerError, '500', ''), 'answered 500')
     assert_lookup_refused(response(Net::HTTPOK, '200', 'not json'), 'Cannot read shaka')
     assert_lookup_refused(response(Net::HTTPOK, '200', '{}'), 'Cannot read shaka')
+    assert_lookup_refused(response(Net::HTTPOK, '200', '{"sha":null}'), 'without a SHA-256')
     assert_lookup_refused(-> { raise OpenSSL::SSL::SSLError, 'certificate' }, 'certificate')
     assert_lookup_refused(-> { raise Net::OpenTimeout }, 'Cannot read shaka')
   end

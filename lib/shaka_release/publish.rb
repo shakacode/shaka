@@ -62,6 +62,7 @@ module ShakaRelease
     end
 
     def push_tag
+      check_main # again, just before the push, to narrow the window since the first check
       local = local_tag
       refuse "local tag v#{version} points at another commit; delete it and rerun" if local && local != commit
       git('tag', '-a', "v#{version}", commit, '-m', "Release shaka #{version}") unless local
@@ -93,7 +94,7 @@ module ShakaRelease
     def install_check
       Dir.mktmpdir('shaka-release-install') do |home|
         env = @env.merge('GEM_HOME' => home, 'GEM_PATH' => home)
-        run!(env, 'gem', 'install', 'shaka', '--version', version, '--no-document', '--clear-sources',
+        run!(env, 'gem', 'install', 'shaka', '--version', version, '--no-document', '--remote', '--clear-sources',
              '--source', Registry::HOST,
              failure: 'RubyGems may not serve the new version yet; rerun publish in a few minutes')
         run!(env, File.join(home, 'bin/shaka'), '--help')

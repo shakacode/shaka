@@ -16,7 +16,7 @@ class ReleasePublishResumeTest < Minitest::Test
   def test_upload_and_install_use_the_public_registry
     publish
     assert_includes File.read(state('pushes')), "push --host #{ShakaRelease::Registry::HOST} "
-    assert_includes File.read(state('installs')), "--clear-sources --source #{ShakaRelease::Registry::HOST}"
+    assert_includes File.read(state('installs')), "--remote --clear-sources --source #{ShakaRelease::Registry::HOST}"
   end
 
   def test_a_draft_or_unreadable_release_is_refused_before_publishing

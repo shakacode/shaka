@@ -19,7 +19,11 @@ module ShakaRelease
       raise Shaka::Error, "RubyGems answered #{response.code} for shaka #{version}" unless
         response.is_a?(Net::HTTPSuccess)
 
-      JSON.parse(response.body).fetch('sha')
+      sha = JSON.parse(response.body).fetch('sha')
+      # A published version without a usable digest must not read as an absent one.
+      raise Shaka::Error, "RubyGems lists shaka #{version} without a SHA-256" unless sha.to_s.match?(/\A\h{64}\z/)
+
+      sha
     rescue SocketError, SystemCallError, IOError, Timeout::Error, OpenSSL::SSL::SSLError, JSON::ParserError,
            KeyError, TypeError => e
       raise Shaka::Error, "Cannot read shaka #{version} from RubyGems: #{e.message}"

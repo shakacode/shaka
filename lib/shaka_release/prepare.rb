@@ -53,10 +53,12 @@ module ShakaRelease
       refuse "trusted Shaka helper: #{e.message}"
     end
 
+    # A new or empty directory, so a refused run never overwrites an earlier release's approved files.
     def check_out_directory
       FileUtils.mkdir_p(@out)
       @out = File.realpath(@out)
       refuse 'the output directory must be outside the release checkout' if "#{@out}/".start_with?("#{@root}/")
+      refuse 'the output directory must be empty; choose a new one for each prepare' unless Dir.empty?(@out)
     end
 
     # Runs before validation so a missing or failing batch stops the release in seconds.
