@@ -3,15 +3,40 @@
 module Shaka
   # Groups workflow facts separately from a pull request's own evidence.
   module PublicationMetrics
+    # One fold holds everything Shaka records about the work, so the section stays one line until a reader digs.
+    DETAILS = '🤙 Shaka details'
+
     private
 
     # Only helper-owned metadata belongs here; caller-supplied details remain with the change's evidence.
     def metrics
       usage_detail = UsageDetails.new(@content['usage']).detail
-      blocks = [*missing_values, details_block(usage_detail), *timings,
-                provenance, details_block(@settings.detail), *skills_used, *task_history]
       ['## Shaka metrics', "#{UsageEstimate.markdown(usage_detail)}#{ThroughputStats.took(throughput)}",
-       details_block('summary' => 'Details', 'body' => blocks.join("\n\n"))]
+       details_block('summary' => DETAILS, 'body' => records(usage_detail).join("\n\n"))]
+    end
+
+    # The chat link leads because it is the record a returning maintainer reaches for most.
+    def records(usage_detail)
+      blocks = [*missing_values, details_block(usage_detail), *timings,
+                provenance, details_block(@settings.detail), *skills_used, *task_history, *wip]
+      [*chat_link, *blocks]
+    end
+
+    # GitHub drops links to app addresses such as claude:// and codex://, so the address goes in a
+    # code block, whose copy button takes it in one click.
+    def chat_link
+      address = wip_note&.chat_link
+      address ? ["**Chat link:**\n\n```text\n#{address}\n```"] : []
+    end
+
+    # The note is optional because it disappears once GitHub confirms the outcome.
+    def wip = wip_note ? [details_block(wip_note.detail)] : []
+
+    def wip_note
+      return unless (spec = @content['wip'])
+
+      info = { environment: @environment, disclosure: @content['wip_disclosure'], pull: @pull, host_name: @host_name }
+      @wip_note ||= WipDetails.new(spec, path_redaction: @settings.path_redaction, session: info)
     end
 
     def provenance_spec

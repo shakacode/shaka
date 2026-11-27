@@ -22,8 +22,8 @@ module Shaka
     def header(state) = "#{SPEND}#{shown_spend(state)}"
 
     # Appended to the estimated cost line: task start to merge once merged, otherwise to ready. Without a
-    # task start the span is left off, and Missing values in Details says why; a body published before that
-    # note existed keeps UNKNOWN until it is republished.
+    # task start the span is left off, and Missing values in the Shaka details fold says why; a body
+    # published before that note existed keeps UNKNOWN until it is republished.
     def took(state)
       ended, label = state['t3'] ? [state['t3'], 'merged'] : [state['t2'], 'ready']
       return ' · ready pending' unless ended
