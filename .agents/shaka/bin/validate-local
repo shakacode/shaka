@@ -13,9 +13,10 @@ git diff --check "$comparison" HEAD --
 git diff --cached --check HEAD --
 git diff --check --
 
-inventory=$(mktemp)
-errors=$(mktemp)
-trap 'rm -f "$inventory" "$errors"' EXIT
+scratch=$(mktemp -d)
+trap 'rm -rf "$scratch"' EXIT
+inventory=$scratch/inventory
+errors=$scratch/errors
 git ls-files --others --exclude-standard -z >"$inventory"
 while IFS= read -r -d '' path; do
   # Exit status 1 means only that the new file differs from /dev/null; whitespace problems add 2.
@@ -45,7 +46,7 @@ changed=()
 while IFS= read -r -d '' path; do
   case "$path" in
     # Changing or deleting RuboCop's settings or gems can make any file offend.
-    .rubocop.yml | Gemfile | Gemfile.lock | .ruby-version)
+    .rubocop.yml | */.rubocop.yml | Gemfile | Gemfile.lock | .ruby-version)
       bundle exec rubocop
       exit
       ;;

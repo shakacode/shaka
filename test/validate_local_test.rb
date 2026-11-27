@@ -25,7 +25,7 @@ module ValidateLocalStubs
               exec "$@"
             SH
             'stubs/ruby' => "#!/bin/sh\nexec \"$@\"\n",
-            'stubs/mktemp' => "#!/bin/sh\nexec /usr/bin/mktemp \"$STUB_TMP/tmp.XXXXXX\"\n"
+            'stubs/mktemp' => "#!/bin/sh\nexec /usr/bin/mktemp \"$@\" \"$STUB_TMP/tmp.XXXXXX\"\n"
           ).freeze
 end
 
@@ -101,15 +101,14 @@ class ValidateLocalTest < Minitest::Test
     assert_includes output, 'trailing whitespace'
   end
 
-  def test_deleting_the_rubocop_settings_lints_every_file
+  def test_adding_nested_or_deleting_root_rubocop_settings_lints_every_file
+    File.write(File.join(@root, 'lib/.rubocop.yml'), "AllCops: {}\n")
+    commit('Add nested RuboCop settings')
+    assert_full_lint
+
     git('rm', '-q', '.rubocop.yml')
     commit('Remove RuboCop settings')
-
-    _output, status = validate_local
-
-    assert_predicate status, :success?
-    assert_includes log, "rubocop \n"
-    refute_includes log, 'ruby-check'
+    assert_full_lint
   end
 
   def test_a_failing_test_run_fails_before_lint
@@ -129,6 +128,11 @@ class ValidateLocalTest < Minitest::Test
     [SCRIPT, 'bin/docs-only-change'].each { FileUtils.cp(File.expand_path("../#{it}", __dir__), File.join(@root, it)) }
     File.write(File.join(@root, '.gitignore'), "stubs/\nstub.log\n")
     STUBS.each { |path, content| write_executable(path, content) }
+  end
+
+  def assert_full_lint
+    assert_predicate validate_local.last, :success?
+    assert_equal "rubocop \n", log.lines.last
   end
 
   def write_executable(path, content)
