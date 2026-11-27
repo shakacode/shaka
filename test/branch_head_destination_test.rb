@@ -48,13 +48,13 @@ class BranchHeadDestinationTest < Minitest::Test
     assert_equal 'unreadable', check['state']
   end
 
-  # gh pr checkout can record a fork's URL, with credentials, as the branch upstream; origin stays the destination.
-  def test_upstream_url_is_ignored_and_never_printed
+  # gh pr checkout can record a fork's URL, with credentials, as the branch upstream; it pauses without printing them.
+  def test_upstream_url_pauses_and_is_never_printed
     git(@task, 'config', "branch.#{BRANCH}.remote", 'https://user:secret@git.example.com/someone/fork.git')
     git(@task, 'config', "branch.#{BRANCH}.merge", "refs/heads/#{BRANCH}")
     result = check
 
-    assert_equal %w[origin not_pushed], result.values_at('remote', 'state')
+    assert_equal %w[origin unreadable], result.values_at('remote', 'state')
     refute_includes JSON.generate(result), 'secret'
   end
 

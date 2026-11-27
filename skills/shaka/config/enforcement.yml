@@ -100,8 +100,8 @@ rules:
   - id: branch-check-each-turn
     phase: always
     quote: >-
-      run the saved helper's `branch check --root DIR` before fetching, pulling, or editing, and again
-      before each PR write.
+      run the saved helper's `branch check --root DIR` from the worktree with the task branch checked
+      out, before fetching, pulling, or editing, and again before each PR write.
     enforced_by: agent
     note: >-
       Nothing runs the check for the agent or refuses an edit or PR write after a pausing state;

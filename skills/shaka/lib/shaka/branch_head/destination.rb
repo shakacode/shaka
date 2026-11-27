@@ -62,6 +62,8 @@ module Shaka
         refuse_redirected_push
         urls = git_lines('remote', 'get-url', '--push', '--all', REMOTE)
         raise Error, "origin has #{urls.size} push URLs; configure one for the task branch." unless urls.one?
+        # Edge whitespace or a control character reads differently in ls-remote than in push, so it pauses instead.
+        raise Error, "origin's push URL has edge whitespace or control characters." if odd_url?(urls.first)
 
         reread = git_lines('ls-remote', '--get-url', urls.first)
         raise Error, 'insteadOf rewrites the origin push URL again; configure a direct push URL.' unless reread == urls
@@ -70,6 +72,8 @@ module Shaka
       end
 
       # Settings that would make a plain push of this branch go somewhere other than origin's same-named branch.
+      def odd_url?(url) = url != url.strip || url.match?(/[[:cntrl:]]/)
+
       def refuse_redirected_push
         reason = push_setting_redirect || upstream_redirect || origin_redirect
         raise Error, reason if reason
@@ -83,10 +87,10 @@ module Shaka
         nil
       end
 
-      # A plain push follows a named upstream remote, so tracking another remote's branch redirects it too.
+      # A plain push follows the branch upstream, a named remote or a URL, so any upstream besides origin redirects it.
       def upstream_redirect
         upstream = config_values("branch.#{@branch}.remote").last
-        return unless upstream != REMOTE && git_lines('remote').include?(upstream.to_s)
+        return if upstream.nil? || [REMOTE, '.'].include?(upstream)
 
         "#{@branch} tracks #{upstream}; Shaka pushes to origin only."
       end
@@ -114,8 +118,8 @@ module Shaka
         output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, *)
         raise Error, "git #{[*].first(2).join(' ')} failed: #{error.strip}" unless status.success?
 
-        # Only Git's newline goes: a URL may end in a space or carriage return, and trimming it names another path.
-        output.lines.map { |line| line.delete_suffix("\n") }.reject(&:empty?)
+        # Only Git's newline goes, and empty lines stay, so a URL ending in a newline counts as two and pauses.
+        output.lines.map { |line| line.delete_suffix("\n") }
       end
 
       def exact_head(output)
