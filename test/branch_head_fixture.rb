@@ -48,8 +48,10 @@ module BranchHeadFixture
         'commit', '--quiet', '--allow-empty', '-m', message)
   end
 
+  # An explicit identity, since CI runners have none and commits, amends, and annotated tags need one.
   def git(root, *arguments)
-    output, status = Open3.capture2e('git', '-C', root, *arguments)
+    output, status = Open3.capture2e('git', '-c', 'user.name=Test', '-c', 'user.email=test@example.com', '-C', root,
+                                     *arguments)
     raise "git #{arguments.join(' ')} failed: #{output}" unless status.success?
 
     output

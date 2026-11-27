@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'uri'
 require_relative '../doctor/bounded_command'
 require_relative '../error'
 require_relative '../git_origin'
@@ -65,15 +66,19 @@ module Shaka
       def refuse_other_pr_head(resolved)
         return unless @pr_head
 
-        repository = begin
-          GitOrigin.canonical_url(resolved)
-        rescue Error
-          resolved
-        end
-        return if @pr_head['branch'] == @branch && @pr_head['url'].casecmp?(repository)
+        repository = repository_key(resolved)
+        return if @pr_head['branch'] == @branch && repository_key(@pr_head['url']) == repository
 
         raise Error, "The PR head is #{@pr_head['url']}:#{@pr_head['branch']}, but origin is " \
                      "#{repository}:#{@branch}; work on the PR head from a checkout whose origin holds it."
+      end
+
+      # Host and repository path, whatever the transport, so an SSH origin matches the PR's https URL.
+      def repository_key(url)
+        uri = URI(GitOrigin.canonical_url(url))
+        "#{uri.host}#{uri.path}".downcase
+      rescue Error, URI::Error
+        url
       end
 
       def push_url

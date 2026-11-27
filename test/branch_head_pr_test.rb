@@ -23,6 +23,15 @@ class BranchHeadPrTest < Minitest::Test
     assert_equal(%w[--repo push.example.com/base/repo], argv.each_cons(2).find { |flag, _| flag == '--repo' })
   end
 
+  # GitHub Enterprise over SSH: the PR's https URL names the same host and repository as the SSH origin.
+  def test_ssh_origin_matches_the_pr_https_url
+    git(@task, 'remote', 'set-url', 'origin', 'git@git.example.com:acme/repo.git')
+    pr_head = { 'url' => 'https://git.example.com/acme/repo', 'branch' => BRANCH }
+    destination = Shaka::BranchHead::Destination.new(root: @task, branch: BRANCH, pr_head:)
+
+    assert_equal 'git@git.example.com:acme/repo.git', destination.url
+  end
+
   def test_empty_last_push_default_still_overrides_origin
     git(@task, 'config', '--add', 'remote.pushDefault', 'origin')
     git(@task, 'config', '--add', 'remote.pushDefault', '')
