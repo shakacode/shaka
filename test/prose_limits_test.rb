@@ -82,7 +82,7 @@ class ProseLimitsTest < Minitest::Test
   end
 
   def test_finding_ids_in_collapsed_content_and_lookalikes_are_allowed
-    verify([html('Run on N2D instances, v1.N3 and NN3 stay, as do N-3, N2.0 and <code>N2</code>.'),
+    verify([html('Run on N2D instances, v1.N3 and NN3 stay, as do N-3, N2.0, N3-N5D and <code>N2</code>.'),
             '<details><summary>History</summary><p>N3 accepted.</p></details>'].join("\n"))
   end
 
