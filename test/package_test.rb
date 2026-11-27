@@ -43,7 +43,7 @@ class PackageTest < Minitest::Test
     run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
     files = Gem::Package.new(archive).spec.files
 
-    %w[README.gem.md skills/shaka/SKILL.md skills/shaka/config/workflow.yml
+    %w[README.gem.md CHANGELOG.md skills/shaka/SKILL.md skills/shaka/config/workflow.yml
        skills/shaka/references/review.md skills/shaka/references/writing.md
        skills/shaka/references/publication.md].each do |path|
       assert_includes files, path
