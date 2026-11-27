@@ -4,6 +4,7 @@ require 'json'
 require_relative 'checkout_development'
 require_relative 'checkout_drift'
 require_relative 'checkout_git'
+require_relative 'checkout_owned_worktree'
 require_relative 'checkout_record'
 require_relative 'checkout_validation'
 require_relative 'directory_safety'
@@ -19,6 +20,7 @@ module Shaka
       include CheckoutGit
       include CheckoutDrift
       include CheckoutDevelopment
+      include CheckoutOwnedWorktree
       include CheckoutRecord
       include CheckoutValidation
       include ReleaseCheckout

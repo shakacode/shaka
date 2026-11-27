@@ -1,11 +1,15 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'stringio'
 
 # Chooses the test files a change can reach, for `bin/run-tests --changed`. A test reaches a
 # Ruby file it loads through require or require_relative, directly or through other files. A
 # test that starts the helper or a bin script also reaches every file that entry point loads.
-# Any change it cannot map returns nil, which means the whole suite.
+# A deleted Ruby file maps to the tests that reached it at the base. A Markdown, YAML, or JSON
+# file in a place DATA_PLACES lists maps to the tests that reach a file naming it; when none
+# does, the change runs no tests. Any other change it cannot map returns nil, which means the
+# whole suite.
 class ChangedTests
   LIBRARY = 'skills/shaka/lib/'
   # Changes here can affect every test, so they always run the whole suite.
@@ -22,38 +26,35 @@ class ChangedTests
     'bin/canary' => %r{bin/canary},
     'bin/report-instruction-growth' => /report-instruction-growth/
   }.freeze
+  DATA = /\.(?:md|ya?ml|json)\z/
+  # Places whose Markdown, YAML, and JSON files tests read only by naming them. A key ending in /
+  # covers a directory. Skill and settings files stay out: tests reach them through the helper,
+  # installs, and globs, so nearly every test reads them anyway.
+  DATA_PLACES = %w[docs/ internal/ contributing/ README.md CHANGELOG.md CONTRIBUTING.md].freeze
 
-  def initialize(root)
+  attr_reader :files
+
+  # REVISION reads the files of that commit instead of the working tree.
+  def initialize(root, revision: nil)
     @root = File.expand_path(root)
+    @files = Files.new(@root, revision, ENTRY_POINTS.keys)
     @loads = {}
   end
 
-  # Paths relative to the root, or nil for the whole suite.
-  def tests_for(changes)
+  # Paths relative to the root, or nil for the whole suite. BASE, the merge base, maps deletions.
+  def tests_for(changes, base: nil)
     return nil if changes.empty?
 
     changes.each_with_object([]) do |(status, path), selected|
-      found = tests_for_path(status, path)
+      found = tests_for_path(status, path, base)
       return nil unless found
 
       selected.concat(found)
     end.uniq.sort
   end
 
-  # Status letter and path for each file changed since BASE's merge base, including
-  # uncommitted and untracked files.
-  def changes(base)
-    merge_base = git('merge-base', base, 'HEAD').strip
-    listed = git('diff', '--no-ext-diff', '--no-renames', '--name-status', merge_base, '--')
-    tracked = listed.lines.map { |line| line.chomp.split("\t", 2) }
-    tracked + git('ls-files', '--others', '--exclude-standard').lines.map { ['A', it.chomp] }
-  end
-
-  private
-
-  def tests_for_path(status, path)
-    return nil unless mappable?(status, path)
-
+  # Tests that reach the Ruby file PATH, or nil when none does.
+  def code_readers(path)
     # A test reaches itself, and other tests may require it for its fixtures.
     loaders = map.select { |_, files| files.include?(path) }.keys
     return nil if loaders.empty?
@@ -61,10 +62,35 @@ class ChangedTests
     path.start_with?(LIBRARY) ? loaders + (SOURCE_READERS & map.keys) : loaders
   end
 
-  def mappable?(status, path) = %w[M A].include?(status) && path.end_with?('.rb') && !FOUNDATIONS.include?(path)
+  private
+
+  def tests_for_path(status, path, base)
+    return nil if FOUNDATIONS.include?(path) || !%w[M A D].include?(status)
+    return data_readers(path) unless path.end_with?('.rb')
+    return code_readers(path) unless status == 'D'
+
+    base && deleted_readers(path, base)
+  end
+
+  # Tests that no longer exist cannot run.
+  def deleted_readers(path, base)
+    found = (@base ||= ChangedTests.new(@root, revision: base)).code_readers(path)
+    found && (found & map.keys)
+  end
+
+  # A file names a data file by its last two path segments, such as docs/settings.md.
+  def data_readers(path)
+    return nil unless path.match?(DATA) && DATA_PLACES.any? { it.end_with?('/') ? path.start_with?(it) : path == it }
+
+    name = path.split('/').last(2).join('/')
+    reads = Hash.new { |known, file| known[file] = names?(file, name) }
+    map.select { |_, files| files.any? { reads[it] } }.keys
+  end
+
+  def names?(file, name) = @files.file?(file) && @files.read(file).include?(name)
 
   def map
-    @map ||= Dir.glob('test/**/*_test.rb', base: @root).to_h { |test| [test, reach(test)] }
+    @map ||= @files.tests.to_h { |test| [test, reach(test)] }
   end
 
   def reach(test)
@@ -75,9 +101,7 @@ class ChangedTests
     files
   end
 
-  def starts?(file, marker)
-    file != 'test/test_helper.rb' && read(file).match?(marker)
-  end
+  def starts?(file, marker) = file != 'test/test_helper.rb' && @files.read(file).match?(marker)
 
   def loads(path)
     @loads[path] ||= begin
@@ -87,16 +111,16 @@ class ChangedTests
     end
   end
 
-  def requires(path)
-    (@requires ||= {})[path] ||= required_paths(path)
-  end
+  def requires(path) = (@requires ||= {})[path] ||= required_paths(path)
 
   def required_paths(path)
-    source = read(path)
+    return [] unless @files.file?(path)
+
+    source = @files.read(path)
     relative = source.scan(/^\s*require_relative\s+['"]([^'"]+)['"]/).flatten.map do |name|
       File.join(File.dirname(path), name)
     end
-    (relative + library_names(source)).map { normalize(it) }.select { File.file?(File.join(@root, it)) }
+    (relative + library_names(source)).map { normalize(it) }.select { @files.file?(it) }
   end
 
   # A child Ruby started with -rshaka/NAME loads that library file too.
@@ -106,16 +130,68 @@ class ChangedTests
   end
 
   def normalize(name)
-    name = "#{name}.rb" unless name.end_with?('.rb') || File.file?(File.join(@root, name))
-    File.expand_path(name, @root).delete_prefix("#{@root}/")
+    path = File.expand_path(name, @root).delete_prefix("#{@root}/")
+    path.end_with?('.rb') || @files.file?(path) ? path : "#{path}.rb"
   end
+end
 
-  def read(path) = File.read(File.join(@root, path), encoding: 'UTF-8')
+class ChangedTests
+  # Lists and reads the files of the working tree, or of one commit when REVISION is given.
+  class Files
+    def initialize(root, revision, entry_points)
+      @root = root
+      @revision = revision
+      @entry_points = entry_points
+    end
 
-  def git(*args)
-    output, status = Open3.capture2('git', '-C', @root, *args)
-    raise "git #{args.first} failed" unless status.success?
+    def tests = @revision ? paths.grep(%r{\Atest/.*_test\.rb\z}) : Dir.glob('test/**/*_test.rb', base: @root)
 
-    output
+    def file?(path) = @revision ? paths.include?(path) : File.file?(File.join(@root, path))
+
+    def read(path)
+      return File.read(File.join(@root, path), encoding: 'UTF-8') unless @revision
+
+      blobs.fetch(path) { git('cat-file', 'blob', "#{@revision}:#{path}") }
+    end
+
+    # Status letter and path for each file changed since BASE's merge base, including
+    # uncommitted and untracked files.
+    def changes(base)
+      listed = git('diff', '--no-ext-diff', '--no-renames', '--name-status', merge_base(base), '--')
+      tracked = listed.lines.map { |line| line.chomp.split("\t", 2) }
+      tracked + git('ls-files', '--others', '--exclude-standard').lines.map { ['A', it.chomp] }
+    end
+
+    def merge_base(base) = git('merge-base', base, 'HEAD').strip
+
+    def git(*args, input: nil)
+      output, status = Open3.capture2('git', '-C', @root, *args, stdin_data: input, binmode: true)
+      raise "git #{args.first} failed" unless status.success?
+
+      output.force_encoding('UTF-8')
+    end
+
+    private
+
+    def paths
+      @paths ||= git('ls-tree', '-r', '-z', '--name-only', @revision).split("\0").to_set
+    end
+
+    # One git process reads every Ruby file and entry point of the revision.
+    def blobs
+      @blobs ||= begin
+        # The batch reads one name per line, so a name holding a newline is read on its own.
+        wanted = paths.select { (it.end_with?('.rb') || @entry_points.include?(it)) && !it.include?("\n") }
+        stream = StringIO.new(git('cat-file', '--batch', input: wanted.map { "#{@revision}:#{it}\n" }.join))
+        wanted.to_h { [it, blob(stream)] }
+      end
+    end
+
+    # Each object is a header line ending in its size, the content, and a newline.
+    def blob(stream)
+      content = stream.read(Integer(stream.gets.split.fetch(2)))
+      stream.read(1)
+      content.force_encoding('UTF-8')
+    end
   end
 end

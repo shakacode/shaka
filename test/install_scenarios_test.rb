@@ -3,6 +3,7 @@
 require_relative 'install_scenario_support'
 require_relative 'install_scenario_builders'
 require_relative 'install_row_scenarios'
+require_relative 'install_owned_worktree_scenarios'
 require_relative '../skills/shaka/lib/shaka/install/status_states'
 
 # Builds every install state `install --status` names, in a temporary HOME, and checks the state,
@@ -13,6 +14,8 @@ class InstallScenariosTest < Minitest::Test
   include HealthyInstallScenarios
   include BrokenInstallScenarios
   include UnlistedRowScenarios
+  include InstallRefusalSteps
+  include OwnedWorktreeScenarios
 
   # Every row of the #683 install matrix. A row that is not a status state needs build_row_<id>.
   MATRIX = %w[A1 A2 A3 A4 A5 A6 A8 A9 B1 B2 B3 B4 B5 B6 B7 B8 B9 B10 C1 C2 C3 C5
@@ -70,6 +73,20 @@ class InstallScenariosTest < Minitest::Test
     assert_includes report['findings'].map { |item| item['id'] }, 'C3'
   end
 
+  # Installing into the registered install's own worktree names the step that clears it, not a reinstall
+  # that the same worktree would refuse (#1284).
+  def test_installing_into_an_owned_worktree_names_its_removal
+    root, feature = owned_worktree
+    before = registration(root)
+    step = refused(feature, '--directory', feature)
+    assert_includes step, 'worktree remove'
+    assert_equal step, refused(feature, '--directory', feature, '--verify')
+    run_step(step)
+    assert_equal 'A1', status(root)['state']
+    installer(root, '--verify')
+    assert_equal before, registration(root)
+  end
+
   def test_status_changes_nothing
     root = default_install
     pull(root)
@@ -78,5 +95,11 @@ class InstallScenariosTest < Minitest::Test
     assert_predicate process, :success?, output
     assert_includes output, 'Shaka install state: B1'
     assert_equal before, snapshot
+  end
+
+  private
+
+  def registration(root)
+    [File.read(File.join(root, '.git/shaka-install.json')), File.readlink(File.join(@home, '.agents/skills/shaka'))]
   end
 end
