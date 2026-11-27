@@ -10,7 +10,11 @@ module Shaka
     # A closed fence hides the marker. An unclosed opener does not, so a broken
     # fence in an earlier section cannot drop a published question.
     # The opener is atomic, so it cannot shrink to let a later shorter fence close it.
-    FENCE = /^[ \t]*(?<fence>(?>(?<mark>[`~])\k<mark>{2,}))[^\n]*\n.*?^[ \t]*\k<fence>\k<mark>*[ \t]*$/m
+    # As in CommonMark, a backtick opener's info string has no backticks; such a line is inline code.
+    FENCE = /
+      ^[ \t]*(?<fence>(?>(?<mark>[`~])\k<mark>{2,}))(?:(?<=~)[^\n]*|[^`\n]*)\n
+      .*?^[ \t]*\k<fence>\k<mark>*[ \t]*$
+    /mx
 
     def self.guard(github, content, existing_body = nil)
       decisions = list(content)

@@ -77,6 +77,21 @@ class DecisionLabelsTest < Minitest::Test
     assert_includes error.message, 'empty list'
   end
 
+  # CommonMark renders a backtick run followed by more backticks on the line as inline code.
+  def test_inline_code_at_line_start_does_not_open_a_fence
+    body = "```js``` blocks need a newer highlighter.\n\n<!-- shaka:decisions -->\n## Decisions to make\n" \
+           "\n```sh\nbin/setup\n```\n"
+    error = assert_raises(Shaka::Error) { Shaka::DecisionLabels.guard(client, {}, body) }
+
+    assert_includes error.message, 'empty list'
+  end
+
+  def test_a_tilde_fence_info_string_may_contain_backticks
+    body = "~~~ `ruby`\n<!-- shaka:decisions -->\n~~~\n"
+    assert_nil Shaka::DecisionLabels.guard(client, {}, body)
+    assert_empty @calls
+  end
+
   def test_a_tilde_fence_keeps_a_backtick_line_inside_it
     body = "~~~\n```\n<!-- shaka:decisions -->\n~~~\n"
     assert_nil Shaka::DecisionLabels.guard(client, {}, body)
