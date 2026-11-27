@@ -208,11 +208,8 @@ and [WSL command reference](https://learn.microsoft.com/en-us/windows/wsl/basic-
 depends on your profile's `PATH`, put the Linux command in a wrapper that sets
 `PATH` and use that wrapper as the `--exec` target.
 
-For Shaka installed directly on Windows, use a daily reminder to ask your
-agent to [compare the installed branch with its upstream](manual-installation.md#verify-and-update).
-The current `update-check` helper expects Unix-style paths when it looks up Git
-and the GitHub CLI. The WSL task checks the separate Shaka installation inside
-that distribution.
+Shaka 1.0 does not support installing directly on Windows; install it inside WSL.
+The WSL task checks the Shaka installation inside that distribution.
 
 ## Stop a scheduled check
 

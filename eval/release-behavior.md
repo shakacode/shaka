@@ -1,10 +1,12 @@
 # Check release safety decisions
 
 Before requesting release publication approval, run a complete release-safety batch
-against the exact release skill. This offline gate checks 12 known failure and positive
-control decisions: the eight [merge-authority cases](decision-replays.md), failed
-checks, stale approval, and release publication with and without explicit approval.
-The actions are simulated; no merge, tag, upload or release runs.
+against the exact release skill, except where the
+[release procedure](../contributing/releasing.md) records a waiver, as it does for
+1.0.0. This offline gate checks 12 known failure and positive control decisions:
+the eight [merge-authority cases](decision-replays.md), failed checks, stale
+approval, and release publication with and without explicit approval. The
+actions are simulated; no merge, tag, upload or release runs.
 
 Use the existing native `DecisionTrial` API from the
 [decision replay guide](decision-replays.md). The trusted controller takes its cases,
