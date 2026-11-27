@@ -10,9 +10,10 @@ criteria commits and the same model on both arms.
 ## When to rescore
 
 Rescore by hand before merging a change to a local reviewer's model pin or
-repository prompt, and publish the aggregate on that PR. Also rescore when you
-notice a new CLI default model for a reviewer that has no pin, such as the
-default Codex reviewer, because that change happens outside Shaka.
+repository prompt, and publish the aggregate on that PR. A reviewer with no pin,
+such as the default Codex reviewer, changes when its CLI changes its default
+model, outside Shaka. When you notice that, open a PR that pins the old or the
+new model and rescore the two there, passing that PR's number to `--pr`.
 
 It stays a manual step, not a check on every PR, for three reasons. The runner
 signs in with a personal Claude or ChatGPT subscription, which hosted CI does

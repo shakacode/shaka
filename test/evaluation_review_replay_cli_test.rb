@@ -28,7 +28,7 @@ class EvaluationReviewReplayCliTest < Minitest::Test
     end
   end
 
-  # r05 is only in v2, so the default reaches fixture building while v1 refuses the case.
+  # r05 is only in v2, so the default selects it while v1 refuses it. Building its fixture needs the fetched PR refs.
   def test_replays_v2_by_default_and_v1_on_request
     default_error, = preview('--case', 'r05')
     v1_error, v1_status = preview('--case', 'r05', '--bank', 'v1')
