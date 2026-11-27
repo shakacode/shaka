@@ -57,8 +57,9 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
    `--out` must name a directory that does not exist yet. Repeat `--behavior-records` for
    each profile, or pass `--skip-behavior-gate` instead.
 
-   The command first confirms a clean checkout at `shakacode/shaka`'s `main`, before any
-   checkout code runs. It then checks each batch against this commit and runs `validate`
+   The command first confirms a clean checkout at `shakacode/shaka`'s `main`, before it
+   loads the gemspec, the behavior checker, or validation. `bin/release` itself loads from
+   the checkout, which is why step 2 starts from a clean `main`. It then checks each batch against this commit and runs `validate`
    through `evidence run`, which takes a while. Pass `--validation FILE` to reuse a completed
    result for the same commit; prepare copies it into the output directory. Next it builds
    the gem, saves the version's `CHANGELOG.md` entry as `RELEASE_NOTES.md`, and runs the
@@ -101,14 +102,16 @@ through a pull request instead.
 
 If `bin/release` cannot run, publish the approved files by hand. Before the tag, confirm
 that remote `main` is still the approved commit and that RubyGems, the remote tags, and
-GitHub releases do not have the version yet:
+GitHub releases do not have the version yet. If an earlier attempt already finished a
+step, confirm it matches the approval, the tag on `APPROVED_COMMIT` or the RubyGems `sha`
+equal to `APPROVED_GEM_SHA256`, and start the chain below at the first missing step:
 
 ```bash
 shaka_version=VERSION
 git ls-remote https://github.com/shakacode/shaka.git refs/heads/main
 curl -fsS "https://rubygems.org/api/v2/rubygems/shaka/versions/$shaka_version.json"
 git ls-remote --exit-code --tags https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
-gh release view "v$shaka_version" --repo shakacode/shaka
+GH_HOST=github.com gh release view "v$shaka_version" --repo shakacode/shaka
 ```
 
 The first command should print the approved commit, and the other three should report
@@ -117,13 +120,13 @@ every step after it:
 
 ```bash
 git tag -a "v$shaka_version" APPROVED_COMMIT -m "Release shaka $shaka_version" &&
-  git push https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version" &&
+  git push --no-follow-tags https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version" &&
   ruby -rdigest -e 'abort "Gem differs from approval" unless
     Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' GEM_PATH APPROVED_GEM_SHA256 &&
   gem push --host https://rubygems.org GEM_PATH &&
   ruby -rdigest -e 'abort "Notes differ from approval" unless
     Digest::SHA256.file(ARGV[0]).hexdigest == ARGV[1]' NOTES_PATH APPROVED_NOTES_SHA256 &&
-  gh release create "v$shaka_version" --repo shakacode/shaka --verify-tag \
+  GH_HOST=github.com gh release create "v$shaka_version" --repo shakacode/shaka --verify-tag \
     --title "shaka $shaka_version" --notes-file NOTES_PATH --generate-notes
 ```
 

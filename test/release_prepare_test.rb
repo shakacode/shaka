@@ -2,13 +2,42 @@
 
 require_relative 'test_helper'
 require 'json'
+require 'shellwords'
 require_relative 'release_preflight_helpers'
 require_relative 'support/release_behavior_fixture'
+
+# Inputs for the release prepare tests: behavior batches and a validation helper.
+module ReleasePrepareInputs
+  def write_behavior_records
+    _commit, records = ReleaseBehaviorFixture::Records.passing(File.join(@root, 'skills/shaka'))
+    path = File.join(@directory, 'release-records.json')
+    File.write(path, JSON.generate(records))
+    path
+  end
+
+  # Answers `evidence run` with the fixture's result and passes every other call to the real helper.
+  def fake_helper
+    path = File.join(@directory, 'helper')
+    File.write(path, <<~RUBY)
+      #!#{RbConfig.ruby}
+      exec(#{File.join(ReleasePreflightHelpers::ROOT, 'skills/shaka/scripts/shaka').inspect}, *ARGV) unless ARGV.first(2) == %w[evidence run]
+      print File.read(#{@validation.inspect})
+    RUBY
+    File.chmod(0o755, path)
+    path
+  end
+
+  # The printed next step survives a path with spaces when pasted into a shell.
+  def assert_publish_hint(approval)
+    assert_equal ['bin/release', 'publish', '--approval', approval], Shellwords.split(@output.lines.last)
+  end
+end
 
 # Each fixture builds a gem, so related cases share one test. The command runs in a child
 # process because loading the fixture's gemspec redefines Shaka::VERSION.
 class ReleasePrepareTest < Minitest::Test
   include ReleasePreflightHelpers
+  include ReleasePrepareInputs
 
   RELEASE = File.join(ROOT, 'bin/release')
 
@@ -23,9 +52,11 @@ class ReleasePrepareTest < Minitest::Test
 
   def test_binds_the_built_gem_and_the_helper_validation_result
     approval = prepare('--shaka', fake_helper, '--skip-behavior-gate')
+    out = File.realpath(@used_out)
     assert_equal Digest::SHA256.file(approval.fetch('gem')).hexdigest, approval.fetch('gem_sha256')
+    assert_publish_hint("#{out}/approval.json")
     # Without --validation, the helper's evidence run result is saved and bound.
-    assert_equal File.join(File.realpath(@used_out), 'validation.json'), approval.fetch('validation')
+    assert_equal "#{out}/validation.json", approval.fetch('validation')
     assert_equal Digest::SHA256.file(@validation).hexdigest, approval.fetch('validation_sha256')
   end
 
@@ -89,7 +120,7 @@ class ReleasePrepareTest < Minitest::Test
 
   def run_prepare(*arguments)
     # Each run needs a new output directory unless the test chose one.
-    @used_out = @out || File.join(@directory, "out-#{@runs = @runs.to_i + 1}")
+    @used_out = @out || File.join(@directory, "release out #{@runs = @runs.to_i + 1}")
     unless arguments.include?('--shaka')
       arguments = ['--shaka', File.join(ROOT, 'skills/shaka/scripts/shaka'), '--validation', @validation,
                    *arguments]
@@ -100,6 +131,7 @@ class ReleasePrepareTest < Minitest::Test
   def prepare(*)
     output, error, status = run_prepare(*)
     assert_predicate status, :success?, error
+    @output = output
     JSON.parse(output[/\A\{.*?^\}/m])
   end
 
@@ -107,24 +139,5 @@ class ReleasePrepareTest < Minitest::Test
     _output, error, status = run_prepare(*)
     refute_predicate status, :success?
     assert_includes error, message
-  end
-
-  def write_behavior_records
-    _commit, records = ReleaseBehaviorFixture::Records.passing(File.join(@root, 'skills/shaka'))
-    path = File.join(@directory, 'release-records.json')
-    File.write(path, JSON.generate(records))
-    path
-  end
-
-  # Answers `evidence run` with the fixture's result and passes every other call to the real helper.
-  def fake_helper
-    path = File.join(@directory, 'helper')
-    File.write(path, <<~RUBY)
-      #!#{RbConfig.ruby}
-      exec(#{File.join(ROOT, 'skills/shaka/scripts/shaka').inspect}, *ARGV) unless ARGV.first(2) == %w[evidence run]
-      print File.read(#{@validation.inspect})
-    RUBY
-    File.chmod(0o755, path)
-    path
   end
 end

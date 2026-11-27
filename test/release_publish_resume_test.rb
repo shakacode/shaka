@@ -46,6 +46,13 @@ class ReleasePublishResumeTest < Minitest::Test
     assert_includes error.message, 'does not name a commit'
   end
 
+  def test_the_tag_push_publishes_no_other_local_tags
+    git('config', 'push.followTags', 'true')
+    git('tag', '-a', 'private-note', '-m', 'Local only')
+    publish
+    assert_empty git('ls-remote', 'origin', 'refs/tags/private-note')
+  end
+
   def test_inherited_git_overrides_do_not_redirect_publication
     other = File.join(@directory, 'other')
     Open3.capture3('git', 'init', '-q', other)

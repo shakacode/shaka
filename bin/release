@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require 'optparse'
+require 'shellwords'
 require_relative '../lib/shaka_release/prepare'
 require_relative '../lib/shaka_release/publish'
 
@@ -40,7 +41,7 @@ begin
     approval = ShakaRelease::Prepare.new(root: Dir.pwd, **options).run
     puts JSON.pretty_generate(approval)
     puts "\nAsk for approval of this commit and these digests, then run:"
-    puts "bin/release publish --approval #{File.join(File.dirname(approval.fetch('gem')), 'approval.json')}"
+    puts "bin/release publish --approval #{File.join(File.dirname(approval.fetch('gem')), 'approval.json').shellescape}"
   when 'publish'
     abort parser.to_s unless options[:approval]
     ShakaRelease::Publish.new(root: Dir.pwd, approval: options[:approval], dry_run: options[:dry_run]).run

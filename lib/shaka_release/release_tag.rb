@@ -34,7 +34,8 @@ module ShakaRelease
     def push
       check_source # again, just before the push, to narrow the window since the first check
       git('tag', '-a', @name, @commit, '-m', "Release shaka #{@name.delete_prefix('v')}") unless local
-      git('push', Preflight::REMOTE, "refs/tags/#{@name}")
+      # push.followTags could otherwise publish other local tags alongside this one.
+      git('push', '--no-follow-tags', Preflight::REMOTE, "refs/tags/#{@name}")
     end
 
     private
