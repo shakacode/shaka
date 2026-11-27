@@ -45,7 +45,7 @@ did not run for 1.0.0; it applies again to later releases.
   reports cover Antigravity and price GPT-6.2 and Gemini models. When the agent has
   published a UI check, the description links it as **Screenshots**. Shaka's
   own records sit under **Shaka metrics** in one 🤙 Shaka details fold, led by
-  a copyable Claude or Codex chat link. Squash messages lead with the outcome
+  a copyable Claude or Codex chat link when one is available. Squash messages lead with the outcome
   and list changes, limits, and follow-ups as bullets.
 - With team settings, list your team's skills in `.agents/shaka/packs/` on the
   default branch so Shaka offers each one at the step where it helps. PRs show
