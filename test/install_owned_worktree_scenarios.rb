@@ -14,16 +14,18 @@ module OwnedWorktreeScenarios
     assert_path_exists feature
   end
 
+  # A link to the worktree itself counts as one into it.
   def test_an_owned_worktree_serving_a_requested_skills_folder_goes_to_a_person
     _root, feature = owned_worktree
     custom = File.join(@directory, 'custom-skills')
     FileUtils.mkdir_p(custom)
-    File.symlink(File.join(feature, 'skills/shaka'), File.join(custom, 'shaka'))
+    File.symlink(feature, File.join(custom, 'shaka'))
     output = refusal(feature, '--directory', feature, '--skills-dir', custom)
     assert_includes output, "Next: a person must decide where the skills links #{custom}/shaka"
   end
 
-  # The removal step clears every worktree the install hosts, so a link into a sibling stops it too.
+  # The removal step clears every worktree the install hosts, so a link into a sibling stops it too, even
+  # when held work already makes the step a decision.
   def test_a_link_into_a_sibling_worktree_goes_to_a_person
     root, feature = owned_worktree
     sibling = File.join(@directory, 'sibling')
@@ -31,6 +33,7 @@ module OwnedWorktreeScenarios
     link = File.join(@home, '.agents/skills/shaka')
     File.unlink(link)
     File.symlink(File.join(sibling, 'skills/shaka'), link)
+    File.write(File.join(feature, 'notes.txt'), 'draft')
     output = refusal(feature, '--directory', feature)
     assert_includes output, 'Next: a person must decide where the skills links'
     assert_path_exists sibling
@@ -66,7 +69,7 @@ module OwnedWorktreeScenarios
     File.symlink(File.join(feature, 'skills/shaka'), link)
     output = refusal(feature, '--directory', feature)
     assert_includes output, 'Next: a person must decide where the skills links'
-    assert_includes output, '--take-over'
+    assert_includes output, 'install --status'
   end
 
   private

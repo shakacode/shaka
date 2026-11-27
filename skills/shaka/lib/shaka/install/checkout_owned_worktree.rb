@@ -35,7 +35,8 @@ module Shaka
         return unless checkout
         return unsafe_owner_step(checkout) unless checkout.safe?
 
-        guard_links(checkout, checkout.development_step)
+        links = links_into(checkout, checkout.linked_worktrees)
+        links.empty? ? checkout.development_step : relink_decision(checkout, links)
       rescue ArgumentError
         checkout && status_decision(checkout)
       end
@@ -60,17 +61,13 @@ module Shaka
                                    'to see what needs repair', "#{checkout.installer} --status") }
       end
 
-      # A link into any worktree the installation hosts breaks when the default location's step removes them,
-      # and stops a take-over, which moves only links into the installation itself.
-      def guard_links(checkout, step)
-        return step unless step[:command]
-
-        links = links_into(checkout, checkout.linked_worktrees)
-        return step if links.empty?
-
+      # Every step status gives would lose such a link: the default location's removal breaks it, and a take-over
+      # moves only links into the installation itself. Status names the next step once the links point elsewhere.
+      def relink_decision(checkout, links)
         { decision: Refusal.decide("where the skills links #{Refusal.paths(links)} should point; they resolve " \
                                    "into worktrees of #{checkout.root}",
-                                   'once they point elsewhere', step[:command]) }
+                                   'once they point elsewhere, to see the next step',
+                                   "#{checkout.installer} --status") }
       end
 
       def links_into(checkout, worktrees)
@@ -87,7 +84,7 @@ module Shaka
 
       def inside?(link, worktrees)
         resolved = File.realpath(link)
-        worktrees.any? { |root| resolved.start_with?("#{SettingsLocation.real(root) || root}/") }
+        worktrees.map { SettingsLocation.real(it) || it }.any? { resolved == it || resolved.start_with?("#{it}/") }
       rescue SystemCallError
         false
       end
