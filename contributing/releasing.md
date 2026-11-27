@@ -115,10 +115,12 @@ surprise. Run every `gh` command as `GH_HOST=github.com gh ... --repo shakacode/
 2. Without a remote tag, confirm remote `main` is still the approved commit, create the
    annotated tag `vVERSION` on that commit, push only that tag with `--no-follow-tags`, and
    read it back until its peeled line shows the approved commit.
-3. Check the gem against its approved digest, then `gem push --host https://rubygems.org`.
-4. Check the notes against their approved digest, then create the release with
-   `gh release create --verify-tag --generate-notes`, adding `--prerelease` for a
-   prerelease version and the skipped-gate line when the gate did not run.
+3. When RubyGems lacks the version, check the gem against its approved digest, then
+   `gem push --host https://rubygems.org`.
+4. When no GitHub release exists, check the notes against their approved digest, then
+   create the release with `gh release create --verify-tag --generate-notes`, adding
+   `--prerelease` for a prerelease version and the skipped-gate line when the gate did not
+   run.
 5. Set both `GEM_HOME` and `GEM_PATH` to a new temporary directory, install the version
    with `gem install --remote --clear-sources --source https://rubygems.org`, run its
    `shaka --help`, and delete the directory.

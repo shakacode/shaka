@@ -100,8 +100,9 @@ class ReleasePrepareTest < Minitest::Test
   end
 
   def test_refuses_an_output_directory_inside_the_checkout_or_already_used
-    @out = File.join(@root, 'tmp/release')
+    @out = File.join(@root, 'new-parent/release')
     assert_refused_prepare('outside the release checkout', '--skip-behavior-gate')
+    refute_path_exists File.join(@root, 'new-parent')
     @out = File.join(@directory, 'used')
     FileUtils.mkdir_p(@out)
     File.write(File.join(@out, 'approval.json'), '{}')

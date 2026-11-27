@@ -56,12 +56,20 @@ module ShakaRelease
     # Creating the directory reserves it, so neither a refused run nor a concurrent one can overwrite
     # another release's approved files.
     def reserve_out_directory
-      FileUtils.mkdir_p(File.dirname(@out))
-      @out = File.join(File.realpath(File.dirname(@out)), File.basename(@out))
+      @out = resolved(@out)
+      # Checked before creating anything, so a refused path leaves the checkout untouched.
       refuse 'the output directory must be outside the release checkout' if "#{@out}/".start_with?("#{@root}/")
+      FileUtils.mkdir_p(File.dirname(@out))
       Dir.mkdir(@out)
     rescue Errno::EEXIST
       refuse 'the output directory must not exist yet; choose a new one for each prepare'
+    end
+
+    # The path with its deepest existing ancestor resolved, as File.realpath would resolve it.
+    def resolved(path)
+      return File.realpath(path) if File.exist?(path)
+
+      File.join(resolved(File.dirname(path)), File.basename(path))
     end
 
     # Runs before validation so a missing or failing batch stops the release in seconds.
