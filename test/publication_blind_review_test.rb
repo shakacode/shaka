@@ -5,6 +5,7 @@ require_relative 'publication_test'
 # https://github.com/shakacode/shaka/issues/887: a Codex review whose every command failed still
 # folded into "local review completed", though it had read only the diff in its prompt.
 class PublicationBlindReviewTest < Minitest::Test
+  VERIFIED = "## Verification\n\n#{Shaka::VerificationLine::MARKER}\n".freeze
   HEAD = "abcdef1#{'0' * 33}".freeze
   VALIDATE = { 'kind' => 'validation', 'command' => 'validate', 'status' => 'completed', 'exit_code' => 0 }.freeze
   CODEX = { 'kind' => 'review', 'reviewer' => 'openai/codex', 'status' => 'completed', 'head' => HEAD }.freeze
@@ -23,7 +24,7 @@ class PublicationBlindReviewTest < Minitest::Test
   def test_a_reviewer_whose_sandbox_refused_every_command_unfolds_the_line_and_is_named
     rendered = render(BLIND, BLIND, CODEX)
 
-    assert_includes rendered, "## Verification\n\n**Validation and review:** `validate` passed"
+    assert_includes rendered, "#{VERIFIED}**Validation and review:** `validate` passed"
     assert_includes rendered, "#{GAPS} `openai/codex` could not start its sandbox, so it reviewed only the diff ([why]("
   end
 
@@ -34,7 +35,7 @@ class PublicationBlindReviewTest < Minitest::Test
     misses = CODEX.merge('commands' => { 'ran' => 2, 'succeeded' => 0, 'sandbox_failed' => 0 })
 
     [render(some), render(misses), render(CODEX), render(BLIND, some)].each do |rendered|
-      assert_includes rendered, "## Verification\n\n**Validation and review:** `validate` passed"
+      assert_includes rendered, "#{VERIFIED}**Validation and review:** `validate` passed"
       refute_includes rendered, GAPS
     end
   end

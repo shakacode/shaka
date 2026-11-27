@@ -10,13 +10,12 @@ module Shaka
   module PublishedResults
     SETTINGS_DRIFT = /\A(?:settings components differ: |public settings snapshot differs)/
     GAPS = /\A#{Regexp.escape(VerificationLine::GAPS)} .+\z/
+    # Descriptions published before the marker hold the line under their Verification heading, or,
+    # for a routine run, a compact sentence there and the line at the top of the Evidence and
+    # limitations fold.
     HEADING = "## Verification\n\n"
-    # Descriptions published before the line stopped folding showed this sentence under the heading
-    # and the line at the top of the Evidence and limitations fold.
     FOLD = "<summary>Evidence and limitations</summary>\n\n"
     COMPACT = 'Validation passed; local review completed at '
-    # A fenced example in the summary may show these headings; GitHub renders it as code, not a section.
-    FENCE = /^(```|~~~)[^\n]*\n.*?^[^\n]*$/m
 
     module_function
 
@@ -25,24 +24,36 @@ module Shaka
       return unless pull.dig('head', 'repo', 'full_name').to_s.casecmp?(repository)
 
       # A person who saved the description in GitHub's editor may have left CRLF line endings.
-      region = Publishing.managed_region(pull['body'].to_s.gsub("\r\n", "\n"))&.gsub(FENCE, '')
+      region = Publishing.managed_region(pull['body'].to_s.gsub("\r\n", "\n"))
       line, gaps = region && own_line(region, pull.dig('head', 'sha').to_s[0, 7])
       line && { 'kept_line' => line, 'kept_gaps' => gaps&.match?(GAPS) ? gaps : nil }
     end
 
-    # Only the paragraph the helper writes under its one Verification heading counts, so a summary or
-    # check worded like the line is never kept. Returns that line and the paragraph after it.
+    # Supplied text cannot carry a Shaka marker, so only the paragraph after the helper's marker counts,
+    # and a summary or check worded like the line is never kept. Returns that line and the paragraph
+    # after it. A description without the marker is read where older helpers wrote the line, and
+    # keeps nothing when its headings or folds repeat.
     def own_line(region, short_head)
+      marked = region.scan(VerificationLine::MARKER).size
+      return if marked > 1
+      return line_after(region, VerificationLine::MARKER, short_head) if marked == 1
       return unless region.scan(HEADING).one?
 
-      first, second = paragraphs_after(region, HEADING)
-      return [first.to_s[verified_line(short_head)], second] unless first.to_s.start_with?("#{COMPACT}#{short_head}")
-      return unless region.scan(FOLD).one?
+      first, second = line_after(region, HEADING, short_head)
+      return [first, second] unless paragraphs_after(region, HEADING).first.start_with?("#{COMPACT}#{short_head}")
 
-      [paragraphs_after(region, FOLD).first.to_s[verified_line(short_head)], nil]
+      [line_after(region, FOLD, short_head).first, nil] if region.scan(FOLD).one?
     end
 
-    def paragraphs_after(region, marker) = region.split(marker, 2).last.split("\n\n", 3).first(2).map(&:strip)
+    def line_after(region, marker, short_head)
+      first, second = paragraphs_after(region, marker)
+      [first[verified_line(short_head)], second]
+    end
+
+    # The first paragraph is always a string, so a section that ends at the marker keeps nothing.
+    def paragraphs_after(region, marker)
+      [*region.split(marker, 2).last.strip.split("\n\n", 3).first(2).map(&:strip), '']
+    end
 
     # Every required result was supplied, none reports a failure, and only settings keep some from binding.
     def settings_drift?(verdict)
@@ -66,6 +77,6 @@ module Shaka
     def verified_line(short_head)
       /\A#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN).* at `#{Regexp.escape(short_head)}`\./
     end
-    private_class_method :own_line, :paragraphs_after, :verified_line, :passed?, :drifted_only?
+    private_class_method :own_line, :line_after, :paragraphs_after, :verified_line, :passed?, :drifted_only?
   end
 end

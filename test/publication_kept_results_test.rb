@@ -185,14 +185,16 @@ class PublicationKeptLinePlacementTest < Minitest::Test
     end
   end
 
-  # A fenced example of a description is code on GitHub, so it neither forges nor hides the line.
-  def test_a_fenced_example_of_the_headings_does_not_hide_the_line
+  # The helper marks its line; a marked UNKNOWN keeps nothing, and a second marker leaves the line ambiguous.
+  def test_only_the_paragraph_after_the_one_marker_is_kept
     with_checkout do |root, ref|
-      example = "```markdown\n## Verification\n\n#{current_line(ref)}\n\n" \
-                "<summary>Evidence and limitations</summary>\n\nexample\n```"
-      settings = prepare(root, ref, {}, body: body(ref).sub('## Verification', "#{example}\n\n## Verification"))
-      assert_equal "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}", Shaka::VerificationLine.line(settings.verdict)
-      assert_nil prepare(root, ref, {}, body: region("#{example}\n\n## Verification\n\nNothing.")).verdict
+      marker = Shaka::VerificationLine::MARKER
+      marked = region("## Verification\n\n#{marker}\n#{current_line(ref)}")
+      assert prepare(root, ref, {}, body: marked).verdict
+      [region("## Verification\n\n#{marker}\n#{Shaka::VerificationLine::UNKNOWN}\n\n#{current_line(ref)}"),
+       marked.sub('## Verification', "#{marker}\nNothing.\n\n## Verification")].each do |text|
+        assert_nil prepare(root, ref, {}, body: text).verdict, text
+      end
     end
   end
 

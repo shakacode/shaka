@@ -6,6 +6,7 @@ require_relative 'handoff_helper'
 # https://github.com/shakacode/shaka/pull/543 required only a summary, so its description left the
 # maintainer to infer the goal, and its check table listed commands without saying what went unproven.
 class PublicationIntentVerificationTest < Minitest::Test
+  VERIFIED = "## Verification\n\n#{Shaka::VerificationLine::MARKER}\n".freeze
   def render(**changes)
     Shaka::Publication.description(PublicationRegressionTest.new(name).description_content(**changes))
   end
@@ -17,7 +18,7 @@ class PublicationIntentVerificationTest < Minitest::Test
              "**Safe because:** #{INTENT['safe_because']}\n\n" \
              "**Leaves out:** #{INTENT['leaves_out']}\n\n" \
              "**Scope:** #{INTENT['scope']}"
-    verification = "## Verification\n\n#{Shaka::VerificationLine::UNKNOWN}\n\n" \
+    verification = "#{VERIFIED}#{Shaka::VerificationLine::UNKNOWN}\n\n" \
                    "<details>\n<summary>Evidence and limitations</summary>"
     assert_includes rendered, intent
     assert_includes rendered, verification

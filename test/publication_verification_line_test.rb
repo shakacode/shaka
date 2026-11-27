@@ -6,6 +6,7 @@ require 'shaka/published_results'
 # The description already receives the validation and review results, so Ruby writes their
 # line; the agent's checks are left for proof specific to the change.
 class PublicationVerificationLineTest < Minitest::Test
+  VERIFIED = "## Verification\n\n#{Shaka::VerificationLine::MARKER}\n".freeze
   HEAD = "abcdef1#{'0' * 33}".freeze
   VALIDATE = { 'kind' => 'validation', 'command' => 'validate', 'status' => 'completed', 'exit_code' => 0 }.freeze
   CLAUDE = { 'kind' => 'review', 'reviewer' => 'anthropic/claude', 'status' => 'completed', 'head' => HEAD }.freeze
@@ -40,7 +41,7 @@ class PublicationVerificationLineTest < Minitest::Test
     rendered = render(bound, 'review' => URL)
     line = "**Validation and review:** `validate` passed; local review by anthropic/claude ([attestation](#{URL})) " \
            'at `abcdef1`.'
-    assert_includes rendered, "## Verification\n\n#{line}\n\n<details>"
+    assert_includes rendered, "#{VERIFIED}#{line}\n\n<details>"
     assert_equal 1, rendered.scan('**Validation and review:**').size
     refute_includes rendered, '**Setup gaps:**'
   end
@@ -56,11 +57,18 @@ class PublicationVerificationLineTest < Minitest::Test
     end
   end
 
+  # Free-form text may show the headings: a fenced example in the summary or a section of its own.
+  def test_a_line_reads_back_beside_a_fenced_example_or_a_section_with_the_same_heading
+    example = "Example:\n\n```markdown\nAn example description.\n\n## Verification\n\nIt passed.\n```"
+    shapes = [{ 'summary' => example }, { 'sections' => [{ 'heading' => 'Verification', 'body' => 'More notes.' }] }]
+    assert_empty(shapes.reject { |extra| read_back(render(bound, 'review' => URL, **extra)) })
+  end
+
   # A host-reported review is only attested, so its reviewer stays in view.
   def test_a_failure_a_missing_review_or_a_host_reported_review_stays_visible
     [bound(validation: [VALIDATE.merge('exit_code' => 1)]), bound(review: []),
      bound(review: [CLAUDE, CODEX])].each do |settings|
-      assert_includes render(settings), "## Verification\n\n**Validation and review:**"
+      assert_includes render(settings), "#{VERIFIED}**Validation and review:**"
     end
   end
 
@@ -79,7 +87,7 @@ class PublicationVerificationLineTest < Minitest::Test
 
   def test_without_results_the_line_says_none_were_supplied
     rendered = render(nil)
-    assert_includes rendered, "## Verification\n\n#{Shaka::VerificationLine::UNKNOWN}\n\n"
+    assert_includes rendered, "#{VERIFIED}#{Shaka::VerificationLine::UNKNOWN}\n\n"
     refute_includes rendered, '**Setup gaps:**'
   end
 
@@ -91,7 +99,7 @@ class PublicationVerificationLineTest < Minitest::Test
     line = '**Validation and review:** `validate` passed; local review by anthropic/claude ' \
            "([attestation](#{URL})) at `abcdef1`."
     gaps = "**Setup gaps:** 1 of 2 configured reviewers completed; `openai` did not ([review comment](#{URL}))."
-    assert_includes rendered, "## Verification\n\n#{line}\n\n#{gaps}\n\n"
+    assert_includes rendered, "#{VERIFIED}#{line}\n\n#{gaps}\n\n"
     assert_equal 1, rendered.scan('**Setup gaps:**').size
   end
 
@@ -108,7 +116,7 @@ class PublicationVerificationLineTest < Minitest::Test
     covered = 'The local review of `e33df55` covers this revision, which only updates it from `main`.'
     rendered = render(Shaka::PublicationSettings.new.with_earlier_review(covered))
 
-    assert_includes rendered, "## Verification\n\n#{Shaka::VerificationLine::UNKNOWN} #{covered}\n\n"
+    assert_includes rendered, "#{VERIFIED}#{Shaka::VerificationLine::UNKNOWN} #{covered}\n\n"
     assert_equal 1, rendered.scan(Shaka::VerificationLine::UNKNOWN).size
   end
 

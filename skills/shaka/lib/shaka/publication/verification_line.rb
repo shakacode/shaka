@@ -5,6 +5,8 @@ module Shaka
   # check has to restate them and no paraphrase can call a failed run a pass.
   module VerificationLine
     LABEL = '**Validation and review:**'
+    # Written on its own line above the line, so a republish reads back only the line the helper wrote.
+    MARKER = '<!-- shaka:verification-line -->'
     UNKNOWN = "#{LABEL} UNKNOWN: no validation or review results were supplied for this revision.".freeze
     GAPS = '**Setup gaps:**'
     # Verification reaches ready without a review only when the trusted review.required is none.
