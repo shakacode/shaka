@@ -32,6 +32,14 @@ module Shaka
       [RbConfig.ruby, '--disable-gems', '--disable-rubyopt', '-r', requirement, File.join(scripts, 'shaka.rb')]
     end
 
+    # The argv that starts repository command SCRIPT. Windows CreateProcess ignores its shebang,
+    # so there SHELL, the sh that ships with Git for Windows, execs it, and that exec honors the shebang.
+    def script_command(script, shell:, windows: windows?)
+      return [script] unless windows
+
+      [shell.call, '-c', 'exec "$0" "$@"', script]
+    end
+
     def shebang?(path)
       File.open(path, 'rb') { |io| io.read(2) == '#!' }
     rescue SystemCallError

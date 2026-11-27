@@ -61,9 +61,10 @@ module Shaka
 
       private
 
-      # Marks the copy written once the file exists, so a failed write still removes it.
+      # Marks the copy written once the file exists, so a failed write still removes it. Binary mode
+      # keeps the blob's bytes, where Windows text mode would turn each LF into CRLF.
       def write_copy
-        File.open(target, File::WRONLY | File::CREAT | File::EXCL, 0o755) do |file|
+        File.open(target, File::WRONLY | File::CREAT | File::EXCL | File::BINARY, 0o755) do |file|
           @written = true
           file.write(@text)
         end
