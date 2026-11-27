@@ -110,6 +110,7 @@ class PublicationShakaDetailsTest < Minitest::Test
      WIP.merge('thread' => 'claude://claude.ai/x</details>'),
      WIP.merge('thread' => 'codex://threads/example'), WIP.merge('thread' => 'claude://claude.ai/%ZZ'),
      WIP.merge('thread' => 'claude://claude.ai/a\b'), WIP.merge('thread' => 'claude://example.com/x'),
+     WIP.merge('thread' => 'claude://claude.ai/EPITAXY/LOCAL_5922e8bb-d78e-4daa-843d-fd8087cebde8'),
      WIP.merge('thread' => 'claude://claude.ai/epitaxy/local_5922e8bb-d78e-4daa-843d-fd8087cebde8?x=a\b'),
      WIP.merge('thread' => 'codex://threads/1B4E28BA-2FA1-11D2-883F-0016D3CCA427'),
      WIP.merge('thread' => 'https://example.com/chat'), WIP.merge('thread' => 'vscode://file/x'), nil].each do |wip|

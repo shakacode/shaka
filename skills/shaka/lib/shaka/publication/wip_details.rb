@@ -11,8 +11,8 @@ module Shaka
     SUMMARY = 'WIP Details'
     # The two chat locators hosts publish get the copy block, in exactly the form they publish: a Claude Code session
     # link and a Codex thread whose id passes the session reader's check. Anything else stays in the table alone.
-    CLAUDE_LINK = %r{\Aclaude://claude\.ai/epitaxy/local_\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z}i
-    CODEX_LINK = %r{\Acodex://threads/(?<id>.+)\z}i
+    CLAUDE_LINK = %r{\A(?i:claude://claude\.ai)/epitaxy/local_\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z}
+    CODEX_LINK = %r{\A(?i:codex://)threads/(?<id>.+)\z}
     FIELDS = {
       'owner' => 'Owner',
       'task' => 'Chat name',
