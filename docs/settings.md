@@ -1242,6 +1242,13 @@ arguments can skip checks your settings never approved.
 The evidence check accepts either script's result; it does not require a full
 `validate` run.
 
+After review repairs, your agent reruns `validate-local` on the repaired commit.
+When a required hosted check runs your full `validate` on the pushed commit, that
+hosted pass is the full run, so a slow machine does not repeat it. Without such a
+check, the agent also runs `validate` locally before pushing. The tradeoff: a
+failure only the full suite catches appears on the hosted check after the push
+instead of before it.
+
 ### Run the scripts in a CI container
 
 
