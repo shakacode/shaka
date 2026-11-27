@@ -14,7 +14,6 @@ module Shaka
     TRAILER = /^co-authored-by:[ \t]*(\S[^<\n]*<[^>\n]+>)[ \t]*$/i
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
     REFERENCE = %r{(?<![\w&/#])(?:[\w.-]+/[\w.-]+)?#\d+\b}
-    URL = %r{[a-z][\w+.-]*://\S+}i
     REFERENCE_GUIDANCE = 'Check each number against the squash message rules in references/writing.md.'
 
     attr_reader :headline, :body
@@ -55,7 +54,7 @@ module Shaka
       title.strip.end_with?(suffix) ? title.strip : "#{title.strip} #{suffix}"
     end
 
-    def references(text) = text.gsub(URL, 'URL').scan(REFERENCE).uniq
+    def references(text) = text.scan(REFERENCE).uniq
 
     def plain(body)
       text = PublicationText.required(body, 'squash body')
