@@ -335,8 +335,10 @@ not part of this flow.
 
 When the harness can run unattended, call it from your
 [validate script](settings.md#standard-command-scripts) and let a harness failure fail the
-script. Shaka records each validation run with the code it tested, so the PR's validation
-line then covers the harness too, and a later code change needs a new run.
+script. Shaka records each validation run with the code it tested, and a later code change
+needs a new run. A result covers the harness only when the script that ran calls it, so a
+passing [`validate-local`](settings.md#count-a-faster-check-as-validation) run leaves the
+harness unchecked unless that script calls it too.
 
 ## Review a session for improvements
 
