@@ -9,36 +9,35 @@ module Shaka
   # It stays outside evidence/ so a change here supersedes no earlier result.
   module PublishedResults
     SETTINGS_DRIFT = /\A(?:settings components differ: |public settings snapshot differs)/
-    # The helper writes the full line as the first paragraph of this fold, even when the Verification
-    # section shows only a short summary, and agent text can come before or after the fold.
-    FOLD = '<summary>Evidence and limitations</summary>'
     HEADING = '## Verification'
+    PARAGRAPHS = /\r?\n\r?\n/
+    # Every paragraph of the Verification section is one line, and the Evidence and limitations fold
+    # follows it. The helper writes the full line first in that fold, even when the section shows only
+    # a short summary. A summary, check, or details item that repeats the line's wording sits elsewhere.
+    SECTION = %r{^#{Regexp.escape(HEADING)}\r?\n\r?\n(?<section>(?:[^\r\n]+\r?\n\r?\n)+?)
+                 <details>\r?\n<summary>Evidence\ and\ limitations</summary>\r?\n\r?\n}x
+    # Only the wording the helper writes for a missing reviewer or a sandbox that refused every command.
+    GAPS = /\A#{Regexp.escape(VerificationLine::GAPS)}\ (?:\d+\ of\ \d+\ configured\ reviewers\ completed|
+            `[^`\r\n]+`(?:,\ `[^`\r\n]+`)*\ could\ not\ start\ (?:its|their)\ sandbox)[^\r\n]*\z/x
 
     module_function
 
-    # A fork's author can edit its description, so only a same-repository one counts. Only the line in
-    # the helper's own place counts: a verification summary or check may repeat the line's wording.
+    # A fork's author can edit its description, so only a same-repository one counts.
     def read(pull, repository)
       return unless pull.dig('head', 'repo', 'full_name').to_s.casecmp?(repository)
 
       region = Publishing.managed_region(pull['body'])
-      return unless region && only_once?(region, FOLD)
-
-      line = region[after(FOLD, verified_line(pull.dig('head', 'sha')))]
-      line && { 'kept_line' => line, 'kept_gaps' => gaps(region, line) }
+      found = region&.match(/#{SECTION}(?<line>#{verified_line(pull.dig('head', 'sha')).source})/)
+      found && { 'kept_line' => found[:line], 'kept_gaps' => gaps(found[:section], found[:line]) }
     end
 
-    # Setup gaps follow the line under the heading and are not repeated in the fold.
-    def gaps(region, line)
-      return unless only_once?(region, HEADING)
-
-      region[after(HEADING, /#{Regexp.escape(line)}[^\r\n]*\r?\n\r?\n\K#{Regexp.escape(VerificationLine::GAPS)} .+$/)]
+    # Setup gaps follow the line under the heading and are not repeated in the fold. A section the agent
+    # headed the same way can come first, so the paragraphs after the last heading count.
+    def gaps(section, line)
+      paragraphs = "#{HEADING}\n\n#{section}".split(PARAGRAPHS)
+      shown, gap = paragraphs.drop(paragraphs.rindex(HEADING) + 1)
+      gap if shown&.start_with?(line) && gap&.match?(GAPS)
     end
-
-    # Agent text that copies the anchor makes it ambiguous, so nothing is kept.
-    def only_once?(region, anchor) = region.scan(/^#{Regexp.escape(anchor)}\r?$/).one?
-
-    def after(anchor, pattern) = /^#{Regexp.escape(anchor)}\r?\n\r?\n\K#{pattern.source}/
 
     # Every required result was supplied, none reports a failure, and only settings keep some from binding.
     def settings_drift?(verdict)
@@ -60,8 +59,8 @@ module Shaka
     end
 
     def verified_line(head)
-      /#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN).* at `#{Regexp.escape(head.to_s[0, 7])}`\./
+      /#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN)[^\r\n]* at `#{Regexp.escape(head.to_s[0, 7])}`\./
     end
-    private_class_method :verified_line, :passed?, :drifted_only?, :gaps, :only_once?, :after
+    private_class_method :verified_line, :passed?, :drifted_only?, :gaps
   end
 end

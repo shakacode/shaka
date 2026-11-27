@@ -12,6 +12,7 @@ class PublishedResultsTest < Minitest::Test
   CODEX = { 'kind' => 'review', 'reviewer' => 'openai/codex', 'status' => 'completed', 'head' => HEAD }.freeze
   BLIND = CODEX.merge('commands' => { 'ran' => 3, 'succeeded' => 0, 'sandbox_failed' => 3 }).freeze
   LINE = '**Validation and review:** `validate` passed; local review by openai/codex at `abcdef1`.'
+  FAILED = VALIDATE.merge('exit_code' => 1).freeze
 
   def test_a_routine_pass_keeps_the_line_from_the_fold
     kept = read(render(VALIDATE, CODEX))
@@ -35,19 +36,35 @@ class PublishedResultsTest < Minitest::Test
     assert_nil read(render(checks: [LINE]))
   end
 
-  # Agent Markdown that copies the fold leaves two candidates, and the helper cannot tell which it wrote.
-  def test_a_copied_fold_keeps_nothing
+  # A fold the agent wrote outside the Verification section is not the helper's.
+  def test_a_copied_fold_before_the_section_is_ignored
     fake = "<details>\n<summary>Evidence and limitations</summary>\n\n#{LINE}\n\n</details>"
-    body = render(VALIDATE, CODEX).sub('## Verification', "#{fake}\n\n## Verification")
 
-    assert_nil read(body)
+    assert_nil read(render.sub('## Verification', "#{fake}\n\n## Verification"))
   end
 
-  def test_a_copied_heading_drops_only_the_gaps
-    body = render(VALIDATE, BLIND).sub('## Intent', "## Verification\n\n#{LINE}\n\n**Setup gaps:** none.\n\n## Intent")
+  # A details item with the fold's title renders inside the fold, after the helper's line.
+  def test_a_details_item_titled_like_the_fold_keeps_the_real_line
+    item = { 'summary' => 'Evidence and limitations', 'body' => 'More notes.' }
+    kept = read(render(VALIDATE, BLIND, details: [item]))
 
-    kept = read(body)
     assert_equal LINE, kept.fetch('kept_line')
+    assert kept.fetch('kept_gaps').start_with?('**Setup gaps:** `openai/codex` could not start its sandbox')
+  end
+
+  def test_a_copied_heading_keeps_the_real_line_and_gaps
+    fake = "## Verification\n\n#{LINE}\n\n**Setup gaps:** none.\n\n## Intent"
+    kept = read(render(VALIDATE, BLIND).sub('## Intent', fake))
+
+    assert_equal LINE, kept.fetch('kept_line')
+    assert kept.fetch('kept_gaps').start_with?('**Setup gaps:** `openai/codex` could not start its sandbox')
+  end
+
+  # Without real gaps the agent's summary follows the line, and its own gap wording is not the helper's.
+  def test_a_summary_worded_like_a_gap_is_not_kept_as_one
+    kept = read(render(FAILED, CODEX, summary: '**Setup gaps:** none, see `x`.'))
+
+    assert kept.fetch('kept_line').start_with?('**Validation and review:** `validate` failed (exit 1)')
     assert_nil kept.fetch('kept_gaps')
   end
 
@@ -57,8 +74,8 @@ class PublishedResultsTest < Minitest::Test
 
   private
 
-  def render(validation = nil, *reviews, summary: nil, checks: nil)
-    content = PublicationRegressionTest.new(name).description_content
+  def render(validation = nil, *reviews, summary: nil, checks: nil, details: [])
+    content = PublicationRegressionTest.new(name).description_content('details' => details)
     content['verification'] = content['verification'].merge('summary' => summary) if summary
     content['verification'] = content['verification'].merge('checks' => checks) if checks
     Shaka::Publication.description(content, nil, nil, settings(validation, reviews))
