@@ -255,8 +255,10 @@ Queue submission retains GitHub’s default message and reports that custom text
 
 - Run `bundle install` for development setup and `bin/validate` locally and in CI.
   When the trusted classifier proves a change contains only regular, non-executable
-  `README.md` or `docs/**/*.md` files, that validation entry point and the hosted
-  Validate workflow run whitespace checks without Ruby tests or RuboCop. Ambiguous
+  documentation files, such as `README.md`, `docs/*.md`, figures under `docs/img/`, and
+  `internal/*.md`, that validation entry point and the hosted Validate workflow run
+  whitespace and docs navigation checks and only the Ruby tests that name a changed
+  page, without RuboCop. Ambiguous
   changes use the full gate, and always-on security checks still run.
 - Test failed/pending/missing checks, API errors, stale heads, unsupported merge state,
   rejected merges, queued submission and replay, and safe argument handling.
