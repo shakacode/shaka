@@ -19,7 +19,8 @@ Tests support the behavior they exercised. A review with no findings still has
 coverage limits. The agent reports these limits; Shaka does not prove the reports
 are complete. See [what is enforced](../workflow.md#what-is-enforced).
 
-Under **Shaka metrics → Details**, **Shaka settings used** shows how long each
+Under **Shaka metrics → 🤙 Shaka details** (**Details** on PRs published before
+that fold), **Shaka settings used** shows how long each
 check ran and on what kind of machine, such as
 `27m on m5 (Apple M5 Max, 18 cores, 128 GB RAM, 3 GB free, load 140→450)`.
 The hardware and the load at start and end help you tell a busy machine from slower
@@ -120,7 +121,7 @@ Comments that only run a command, such as `+deploy`, can be
 
 ## Skills used
 
-Under **Shaka metrics**, expand **Details**, then **Skills used**, to see the
+Under **Shaka metrics**, expand **🤙 Shaka details** (**Details** on older PRs), then **Skills used**, to see the
 skills the agent reported during planning,
 implementation, review, and integration, with their sources and revisions when
 available. **Agent-reported** means the agent says it applied the skill. The agent
