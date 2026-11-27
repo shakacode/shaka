@@ -10,13 +10,11 @@ module ShakaRelease
   class Prepare
     include Shell
 
-    # `options` takes `validation` (an existing result to reuse), `behavior_records`, and
-    # `skip_behavior_gate`.
+    # `options` takes `behavior_records` and `skip_behavior_gate`.
     def initialize(root:, shaka:, out:, **options)
       @root = File.realpath(root)
       @shaka = shaka
       @out = File.expand_path(out)
-      @validation = options[:validation]
       @behavior_records = options.fetch(:behavior_records, [])
       @skip_behavior_gate = options.fetch(:skip_behavior_gate, false)
     end
@@ -29,7 +27,7 @@ module ShakaRelease
       # load from the checkout before this, so the launcher must come from a trusted checkout.
       Preflight.new(root: @root, shaka: @shaka, commit:, gem: nil, validation: nil, notes: nil).check_source
       gate = behavior_gate(commit)
-      validation = @validation ? copy_validation : run_validation(commit)
+      validation = run_validation(commit)
       approval = preflight(commit, validation).merge('validation' => validation, 'behavior_gate' => gate)
       File.write(File.join(@out, 'approval.json'), "#{JSON.pretty_generate(approval)}\n")
       approval
@@ -64,13 +62,6 @@ module ShakaRelease
       Dir.mkdir(@out)
     rescue Errno::EEXIST
       refuse 'the output directory must not exist yet; choose a new one for each prepare'
-    end
-
-    # A copy inside the output directory, so that directory holds all the approved evidence.
-    def copy_validation
-      path = File.join(@out, 'validation.json')
-      FileUtils.cp(@validation, path)
-      path
     end
 
     # Runs before validation so a missing or failing batch stops the release in seconds.

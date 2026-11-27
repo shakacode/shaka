@@ -83,6 +83,7 @@ module ReleasePublishFixture
 
   def create_repository
     git('init', '-q', '-b', 'main')
+    configure_identity
     File.write(File.join(@root, 'README.md'), "release\n")
     git('add', '.')
     commit('Release')
@@ -91,6 +92,12 @@ module ReleasePublishFixture
     git('clone', '-q', '--bare', @root, remote)
     git('remote', 'add', 'origin', remote)
     git('config', "url.#{remote}.insteadOf", ShakaRelease::Preflight::REMOTE)
+  end
+
+  # publish creates an annotated tag, which needs a tagger even on a runner without one.
+  def configure_identity
+    git('config', 'user.name', 'Release Test')
+    git('config', 'user.email', 'release@example.com')
   end
 
   def advance_main

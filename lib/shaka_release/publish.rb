@@ -109,8 +109,9 @@ module ShakaRelease
       name = "GitHub release v#{version}"
       refuse "#{name} is a draft; publish or delete it, then rerun" if release.fetch('isDraft')
       refuse "#{name} has the wrong prerelease flag" unless release.fetch('isPrerelease') == @approval.prerelease?
-      refuse "#{name} lacks the skipped behavior gate statement" unless
-        !@approval.gate_skipped? || release.fetch('body').to_s.include?(Approval::SKIPPED_GATE)
+      # GitHub appends its generated notes, so the approved text need only appear in the body.
+      refuse "#{name} lacks the approved notes" unless
+        release.fetch('body').to_s.gsub("\r\n", "\n").include?(@approval.release_body.strip)
     end
 
     def commit = @approval.commit

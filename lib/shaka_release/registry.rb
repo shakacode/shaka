@@ -2,6 +2,7 @@
 
 require 'json'
 require 'net/http'
+require_relative '../../skills/shaka/lib/shaka/error'
 
 module ShakaRelease
   # Reads one published shaka version from the RubyGems API.

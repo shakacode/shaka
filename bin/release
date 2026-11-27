@@ -8,7 +8,6 @@ require_relative '../lib/shaka_release/publish'
 
 USAGE = <<~TEXT
   Usage: bin/release prepare --shaka PATH --out DIR (--behavior-records FILE... | --skip-behavior-gate)
-                             [--validation FILE]
          bin/release publish --approval FILE [--dry-run]
 TEXT
 
@@ -20,7 +19,6 @@ parser = OptionParser.new do |cli|
   when 'prepare'
     cli.on('--shaka PATH', 'Trusted Shaka helper outside this checkout') { options[:shaka] = it }
     cli.on('--out DIR', 'Directory outside this checkout for the gem, notes, and approval') { options[:out] = it }
-    cli.on('--validation FILE', 'Reuse a validate result instead of running it') { options[:validation] = it }
     cli.on('--behavior-records FILE', 'A release behavior batch; repeat for each profile') do |file|
       options[:behavior_records] << file
     end

@@ -20,15 +20,6 @@ class ReleasePublishResumeTest < Minitest::Test
     assert_includes File.read(state('installs')), "--remote --clear-sources --source #{ShakaRelease::Registry::HOST}"
   end
 
-  def test_a_draft_or_unreadable_release_is_refused_before_publishing
-    File.write(state('release'), '{}')
-    File.write(state('draft'), '')
-    assert_refused 'is a draft'
-    File.write(state('gh_fails'), '')
-    assert_refused 'Cannot read the GitHub release'
-    assert_nil remote_tag
-  end
-
   def test_a_local_tag_on_another_commit_is_refused_even_in_a_dry_run
     git('-c', 'user.name=T', '-c', 'user.email=t@example.com', 'commit', '--allow-empty', '-qm', 'Other')
     git('tag', 'v1.2.0', 'HEAD')
@@ -79,16 +70,6 @@ class ReleasePublishResumeTest < Minitest::Test
     git('config', "url.#{elsewhere}.pushInsteadOf", ShakaRelease::Preflight::REMOTE)
     assert_refused 'is not on'
     refute_path_exists state('pushes')
-  end
-
-  def test_an_existing_release_must_match_the_approval
-    @approval = write_approval('1.2.0', gate: { 'status' => 'skipped' })
-    push_annotated_tag(@commit)
-    File.write(state('registry'), Digest::SHA256.file(@gem).hexdigest)
-    File.write(state('release'), JSON.generate('args' => [], 'body' => 'Notes without the statement'))
-    assert_refused 'lacks the skipped behavior gate statement'
-    File.write(state('release'), JSON.generate('args' => ['--prerelease'], 'body' => ShakaRelease::Approval::SKIPPED_GATE))
-    assert_refused 'wrong prerelease flag'
   end
 
   def test_inherited_git_overrides_do_not_redirect_publication

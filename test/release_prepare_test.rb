@@ -55,7 +55,7 @@ class ReleasePrepareTest < Minitest::Test
     out = File.realpath(@used_out)
     assert_equal Digest::SHA256.file(approval.fetch('gem')).hexdigest, approval.fetch('gem_sha256')
     assert_publish_hint("#{out}/approval.json")
-    # Without --validation, the helper's evidence run result is saved and bound.
+    # The helper's evidence run result is saved and bound.
     assert_equal "#{out}/validation.json", approval.fetch('validation')
     assert_equal Digest::SHA256.file(@validation).hexdigest, approval.fetch('validation_sha256')
   end
@@ -121,10 +121,7 @@ class ReleasePrepareTest < Minitest::Test
   def run_prepare(*arguments)
     # Each run needs a new output directory unless the test chose one.
     @used_out = @out || File.join(@directory, "release out #{@runs = @runs.to_i + 1}")
-    unless arguments.include?('--shaka')
-      arguments = ['--shaka', File.join(ROOT, 'skills/shaka/scripts/shaka'), '--validation', @validation,
-                   *arguments]
-    end
+    arguments = ['--shaka', fake_helper, *arguments] unless arguments.include?('--shaka')
     Open3.capture3(RbConfig.ruby, RELEASE, 'prepare', '--out', @used_out, *arguments, chdir: @root)
   end
 
