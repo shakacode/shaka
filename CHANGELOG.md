@@ -23,8 +23,9 @@ did not run for 1.0.0; it applies again to later releases.
 
 ### Added
 
-- Install Shaka and run `shaka evidence run` and `shaka review run` from a
-  native Windows shell with full Git for Windows, which provides `sh.exe`.
+- Install Shaka and run `shaka review run` from a native Windows shell.
+  `shaka evidence run` also works there with full Git for Windows, which
+  provides `sh.exe`.
   Stopping a check on Windows is best effort, and a stopped check never counts
   as passing. Windows CI checks do not yet block merges. See
   [manual installation](https://shaka.shakacode.com/docs/manual-installation)
