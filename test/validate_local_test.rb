@@ -7,6 +7,9 @@ require 'tmpdir'
 
 # Stand-ins for the tools validate-local calls; each logging stub records its arguments.
 module ValidateLocalStubs
+  # Keeps the developer's Git settings, such as signing or hooks, out of the scratch repository.
+  GIT_ENV = { 'GIT_CONFIG_GLOBAL' => File::NULL, 'GIT_CONFIG_NOSYSTEM' => '1' }.freeze
+
   LOGGING_STUB = <<~SH
     #!/bin/sh
     printf '%s %s\n' "$(basename "$0")" "$*" >> "$STUB_LOG"
@@ -140,8 +143,8 @@ class ValidateLocalTest < Minitest::Test
 
   def validate_local(environment = {})
     File.write(stub_log, '')
-    env = { 'BASH_ENV' => nil, 'SHAKA_BASE_REF' => @base, 'STUB_LOG' => stub_log, 'STUB_TMP' => @tmp,
-            'PATH' => "#{File.join(@root, 'stubs')}:#{ENV.fetch('PATH')}" }
+    env = GIT_ENV.merge('BASH_ENV' => nil, 'SHAKA_BASE_REF' => @base, 'STUB_LOG' => stub_log, 'STUB_TMP' => @tmp,
+                        'PATH' => "#{File.join(@root, 'stubs')}:#{ENV.fetch('PATH')}")
     Open3.capture2e(env.merge(environment), File.join(@root, SCRIPT), chdir: @root)
   end
 
@@ -155,7 +158,7 @@ class ValidateLocalTest < Minitest::Test
   end
 
   def git(*args)
-    output, status = Open3.capture2e('git', '-C', @root, *args)
+    output, status = Open3.capture2e(GIT_ENV, 'git', '-C', @root, *args)
     raise "git #{args.first} failed: #{output}" unless status.success?
 
     output
