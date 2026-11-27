@@ -579,7 +579,8 @@ phases:
         corrections and checking it for private content. Publish a paraphrase of the assignment
         and success criteria as `goal` and `done_when`, one line each, excluding raw prompts and
         private links, and `confirmed` as whether a person confirmed the readback. The helper
-        nests them under the Task line; omit the field when prior intake is unrecoverable.
+        nests them under the Task line; omit the field when intake skipped the readback or prior
+        intake is unrecoverable.
         Write `Fixes #N` once per other issue the PR fully resolves and `Part of #N` for partial work.
         When `description` returns `closing_issues`, correct the wording it names once.
         For a work item in another tracker, such as Linear, Jira, or Shortcut, check through the
