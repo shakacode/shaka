@@ -1,0 +1,19 @@
+{
+  "summary": "Maintainers reading git history get squash messages that state the outcome first and list changes, limits, and follow-ups as bullets.",
+  "intent": {
+    "why": "The #1242 squash message packed several ideas into run-on sentences.",
+    "user_impact": "Merged Shaka PRs get clearer git history; runtime behavior is unchanged.",
+    "safe_because": "Only agent guidance changes; the squash renderer is untouched.",
+    "scope": "A squash section in the writing guide; the workflow lets the body use the whole description and links it."
+  },
+  "verification": {
+    "checks": [
+      "Validation passed with `validate` on the reviewed head."
+    ],
+    "not_verified": "No agent run compared squash messages before and after; the benefit rests on the #1242 rewrite."
+  },
+  "checkpoint": {
+    "audience": "Maintainers reading Shaka's git history.",
+    "repair_history": "Not recorded in the frozen case."
+  }
+}

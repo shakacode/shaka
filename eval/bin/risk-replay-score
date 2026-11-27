@@ -1,0 +1,56 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'json'
+require 'open3'
+require 'optparse'
+require_relative '../lib/shaka/evaluation/risk_replay_score'
+require_relative '../../skills/shaka/lib/shaka/trusted_config_source'
+
+# Scores the private records a `review-replay --checkpoint-risk` run left in its state directory.
+SOURCE = File.realpath('../..', __dir__)
+CASES = File.join(SOURCE, 'eval/risk-replay/v1.jsonl')
+
+def options
+  options = {}
+  parser = OptionParser.new do |flags|
+    flags.banner = 'Usage: eval/bin/risk-replay-score --state DIR'
+    flags.on('--state DIR') { |value| options[:state] = value }
+  end
+  parser.parse!
+  raise ArgumentError, parser.to_s unless ARGV.empty? && options[:state]
+
+  options
+end
+
+def records(state)
+  Dir.glob(File.join(state, '*.json')).map { |path| JSON.parse(File.read(path, encoding: 'UTF-8')) }
+end
+
+def changed_paths(row)
+  output, error, status = Open3.capture3('git', '-C', SOURCE, 'diff', '--name-only', '--no-renames', '-z',
+                                         row.fetch('base'), row.fetch('head'))
+  raise IOError, "Cannot read #{row.fetch('id')} files: #{error.strip}" unless status.success?
+
+  output.split("\0")
+end
+
+# Each arm's own settings commit decides its risk areas, as the trusted settings would have.
+def areas(records)
+  records.to_h { |record| [record.fetch('arm'), record.dig('selection', 'criteria')] }.transform_values do |ref|
+    Shaka::PostImplementationRisk.areas(Shaka::TrustedConfigSource.from_ref(root: SOURCE, ref:))
+  end
+end
+
+begin
+  saved = records(options.fetch(:state))
+  raise ArgumentError, 'No replay records in the state directory' if saved.empty?
+
+  cases = File.foreach(CASES).to_h { |line| JSON.parse(line).then { |row| [row.fetch('id'), row] } }
+  paths = cases.transform_values { |row| changed_paths(row) }
+  puts JSON.pretty_generate(Shaka::Evaluation::RiskReplayScore.score(records: saved, cases:, paths:,
+                                                                     areas: areas(saved)))
+rescue ArgumentError, IOError, SystemCallError, JSON::ParserError, OptionParser::ParseError, Shaka::Error => e
+  warn "Score incomplete: #{e.message}"
+  exit 1
+end
