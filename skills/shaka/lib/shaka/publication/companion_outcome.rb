@@ -4,20 +4,16 @@ module Shaka
   # The optional account of one companion run: whether it was manual, and what it led to in fixed labels a later
   # study can count. The agent reports it; Ruby checks shape.
   class CompanionOutcome
-    FIELDS = %w[manual outcome caused_commits cleared_paths].freeze
+    FIELDS = %w[manual outcome caused_commits].freeze
     LABELS = { 'changed_code' => 'Changed code', 'findings_not_applied' => 'Findings not applied',
                'no_findings' => 'No findings' }.freeze
     SHA = /\A\h{40}\z/
-    # Repository-relative paths and globs only, so a cleared path can be compared with a PR's changed files.
-    # Without whitespace, a colon, or a leading slash or tilde, no part of the value can be an absolute path, a home
-    # directory, a drive, or a URI, so glob syntax needs no special case. Paths containing spaces are refused too.
-    UNSAFE_PATH = %r{\A[/~]|(?:\A|/)\.\.(?:/|\z)|[:`\\<>[:space:][:cntrl:]\p{Cf}]}
 
     def initialize(entry)
       @entry = entry
     end
 
-    def lines = [outcome_line, cleared_line].compact
+    def lines = [outcome_line].compact
 
     def manual?
       manual = @entry.fetch('manual', false)
@@ -50,17 +46,6 @@ module Shaka
     end
 
     def shas?(values) = values.is_a?(Array) && values.any? && values.all? { |sha| sha.is_a?(String) && SHA.match?(sha) }
-
-    def cleared_line
-      paths = @entry.fetch('cleared_paths', [])
-      unless paths.is_a?(Array) && paths.all? { |path| repository_path?(path) }
-        raise Error, 'Publication companion_results cleared_paths must list repository-relative paths.'
-      end
-
-      "**Cleared paths:** #{code_list(paths)}" if paths.any?
-    end
-
-    def repository_path?(path) = path.is_a?(String) && !path.empty? && !UNSAFE_PATH.match?(path)
 
     def code_list(values) = values.map { |value| "`#{value}`" }.join(', ')
   end

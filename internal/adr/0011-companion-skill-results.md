@@ -203,7 +203,7 @@ implementation PR delivers decisions 2 to 6, and its description links the trigg
 section cannot answer whether a companion skill helped. The maintainer named the reader:
 a later retrospective that counts outcomes per skill, with the PR reviewer second. The
 [accepted plan](https://github.com/shakacode/shaka/issues/1285#issuecomment-7205630613)
-adds four optional entry keys. It extends decision 2's field list with them. For a manual
+adds three optional entry keys. It extends decision 2's field list with them. For a manual
 check only, it replaces decision 2's code-span rendering of `command` and decision 3's
 command rules; every other decision stands.
 
@@ -217,24 +217,25 @@ command rules; every other decision stands.
   so a collector counts labels instead of reading `result` prose.
 - `caused_commits`: the full SHAs a `changed_code` outcome led to. Ruby requires it
   with that outcome and refuses the key, even an empty list, with any other.
-- `cleared_paths`: repository-relative paths or globs the run found safe. Ruby refuses a
-  leading `/` or `~`, `..` segments, and any whitespace, colon, backslash, backtick, angle
-  bracket, or control or format character. A value that passes can hold no absolute path,
-  drive, or URI, so glob syntax needs no special case; a path containing a space is refused
-  too. A collector can compare these with later review findings and human comments.
 
-Ruby still checks shape only. Whether a commit followed from a finding, and whether a
-path was safe, stay the agent's account.
+Ruby still checks shape only. Whether a commit followed from a finding stays the
+agent's account.
 
 Left out, with reasons:
 
 - **One table with Skills used.** The alternative above still holds: a record describes
   a skill and a result describes a run.
 - **A stale label that names changed paths.** It serves the PR reviewer and adds a GitHub
-  comparison to each publication. `cleared_paths` records what such a label would need.
+  comparison to each publication.
 - **Resolved revisions.** Counting needs a consistent pack and version, which is
   [#1027](https://github.com/shakacode/shaka/issues/1027).
 - **A proof level.** It is one pack's scale; `result` and `artifacts` carry the proof.
+- **Paths a run cleared (`cleared_paths`).** A list of files the run found safe would let a
+  collector count misses: later findings in files a skill vouched for. Four review rounds
+  each found a new way a path could slip past or be wrongly refused, and a refused value
+  blocked the whole description, while nothing reads the list yet. On 2026-11-26 the
+  maintainer chose to drop it until the collector shows it needs one. `checked` and
+  `not_covered` keep that scope in prose.
 - **Counting misses.** That belongs to the collector in [ADR 0010](0010-retrospective-over-merged-prs.md).
 
 On 2026-11-26, three shakacode PRs contained the section, so real-use frequency is still unknown.

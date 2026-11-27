@@ -9,7 +9,7 @@ class PublicationCompanionResultOutcomesTest < Minitest::Test
 
   def test_a_run_without_outcome_fields_renders_as_before
     description = render(results: [run_record])
-    ['**Outcome:**', '**Cleared paths:**', '**Manual check:**'].each { |label| refute_includes description, label }
+    ['**Outcome:**', '**Manual check:**'].each { |label| refute_includes description, label }
   end
 
   def test_shows_each_outcome_with_a_fixed_label
@@ -39,26 +39,6 @@ class PublicationCompanionResultOutcomesTest < Minitest::Test
       assert_refused(run_record('outcome' => 'changed_code', 'caused_commits' => [sha]), 'caused_commits')
     end
     assert_refused(run_record('outcome' => 'changed_code', 'caused_commits' => FIX), 'caused_commits')
-  end
-
-  def test_lists_cleared_paths_as_code
-    entry = run_record('cleared_paths' => ['.github/workflows/validate.yml', 'docs/**/*.md'])
-    assert_includes render(results: [entry]),
-                    "- **Cleared paths:** `.github/workflows/validate.yml`, `docs/**/*.md`\n"
-    refute_includes render(results: [run_record('cleared_paths' => [])]), '**Cleared paths:**'
-    globs = ['**/bin/**', '*/tmp/x', 'packages/[ab]/bin/**', 'lib/{a,b}/opt/?.rb']
-    assert_includes render(results: [run_record('cleared_paths' => globs)]),
-                    '`**/bin/**`, `*/tmp/x`, `packages/[ab]/bin/**`, `lib/{a,b}/opt/?.rb`'
-  end
-
-  def test_refuses_cleared_paths_outside_the_repository_or_unsafe_to_render
-    ['/etc/hosts', '../other/file.rb', 'lib/../../x', 'a`b', "a\nb", '', ' ', 'docs/</details>', nil,
-     'C:\\Users\\x', '~/notes.md', '~other/notes.md', 'file:///Users/example/x', 'https://example.org/a',
-     'docs /Users/example/x', ' /custom-root/report.txt ', 'docs/a.md ', '?C:/Users/me', 'my file.rb',
-     "docs/\u202Etxt.md", "docs/a\u200B.md"].each do |path|
-      assert_refused(run_record('cleared_paths' => [path]), 'cleared_paths')
-    end
-    assert_refused(run_record('cleared_paths' => 'docs/a.md'), 'cleared_paths')
   end
 
   def test_a_manual_check_renders_as_prose_not_a_command
