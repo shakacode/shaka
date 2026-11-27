@@ -806,8 +806,8 @@ phases:
         `trigger_hosted_ci` command when present. Skip that local `validate` when a check the saved
         helper's `pr` reports as required runs it, as that check's workflow at the trusted base shows,
         and this PR changes neither that workflow nor the script it runs. The check's passing run on
-        the pushed head is then the full validation; when that run skipped the suite, run the local
-        `validate` after all. Later fixes need fresh evidence.
+        the pushed head is then the full validation when it ran the steps the local `validate` would
+        run; otherwise run the local `validate` after all. Later fixes need fresh evidence.
       - When the user expressly asks to resolve PR comments, follow the packaged
         [settlement procedure](<{{package_root}}/skills/shaka/references/comment-settlement.md>). Keep
         ownership until each known optional review settles or reaches its bounded handoff. Do not
