@@ -79,6 +79,8 @@ Set up Shaka just for me if needed. Ask me before merging. Go
 
 Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, GitHub Copilot, or OpenCode.
 For Pi, load the installed skill. See [other coding agents](docs/coding-agents.md).
+If your agent doesn't recognize `$shaka` or `/shaka` right after installing, start a new chat
+and send the task again.
 Your agent uses shared project settings when they exist. Otherwise, individual
 setup keeps your settings in your local copy of the project.
 

@@ -19,7 +19,7 @@ Use the latest published stable release. If none is published, install from sour
 
 Prefer to install it manually? Follow [manual installation](manual-installation.md).
 
-After installation, start a new chat and check the setup:
+After installation, check the setup:
 
 ```text
 /shaka doctor
@@ -32,7 +32,8 @@ The agent explains what is ready and what needs fixing. Missing project settings
 are expected before project setup. Ask the agent to help resolve other problems
 before starting your task.
 
-If Shaka doesn't appear, restart your coding tool and try again.
+If your agent doesn't recognize `/shaka` or `$shaka`, start a new chat and try again.
+If Shaka still doesn't appear, restart your coding tool.
 
 Shaka never installs updates on its own. To keep it current, ask your agent to
 set up a [daily update or update check](keep-shaka-up-to-date.md).
