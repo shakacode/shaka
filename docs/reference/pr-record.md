@@ -124,13 +124,15 @@ Comments that only run a command, such as `+deploy`, can be
 Under **Shaka metrics**, expand **🤙 Shaka details** (**Details** on older PRs), then **Skills used**, to see the
 skills the agent reported during planning,
 implementation, review, and integration, with their sources and revisions when
-available. A **Pack** column, shown when the agent named one, gives the upstream pack a
-skill came from, such as `cursor/plugins/pstack`, so you can count a pack's use even when a
-copy or port renamed its skills. **Agent-reported** means the agent says it applied the skill. The agent
+available. **Agent-reported** means the agent says it applied the skill. The agent
 selects **Corroborated** when a record confirms the skill was invoked or loaded.
 Shaka checks the shape of these entries, not that record or whether the agent
 followed the skill, and the list may be incomplete. Shaka itself is not listed;
 **Execution details** names the Shaka version that ran.
+
+A **Pack** column, shown when the agent named one, gives the upstream pack a skill
+came from, such as `cursor/plugins/pstack`. Use it to count a pack's use even when a
+copy or port renamed its skills.
 
 ## Before and after merge
 
