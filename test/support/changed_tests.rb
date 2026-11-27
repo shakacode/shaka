@@ -161,13 +161,15 @@ class ChangedTests
 
     def tests = @revision ? paths.grep(%r{\Atest/.*_test\.rb\z}) : Dir.glob('test/**/*_test.rb', base: @root)
 
-    # An executable or linked file, before or after the change, is not plain, as
-    # bin/docs-only-change also decides. Without BASE, a deletion's old mode is unknown.
+    # A file executable or linked at the base, at HEAD, in the index, or on disk is not plain,
+    # as bin/docs-only-change also decides. Without BASE, a deletion's old mode is unknown.
     def plain?(path, status, base)
       full = File.join(@root, path)
       return false if File.symlink?(full) || File.executable?(full)
+      return status != 'D' unless base
 
-      base ? [nil, '100644'].include?(git('ls-tree', base, '--', path).split.first) : status != 'D'
+      modes = [base, 'HEAD'].map { git('ls-tree', it, '--', path) } << git('ls-files', '--stage', '--', path)
+      modes.filter_map { it.split.first }.all?('100644')
     end
 
     def file?(path) = @revision ? paths.include?(path) : File.file?(File.join(@root, path))

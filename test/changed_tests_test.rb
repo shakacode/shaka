@@ -133,6 +133,15 @@ class ChangedTestsDataTest < Minitest::Test
     assert_empty @selector.tests_for([%w[D internal/notes.md]], base:)
   end
 
+  def test_a_data_file_staged_as_executable_runs_the_whole_suite
+    base = commit_fixture
+    FileUtils.mkdir_p(File.join(@root, 'docs'))
+    File.write(File.join(@root, 'docs/staged.md'), '')
+    git('add', '--chmod=+x', 'docs/staged.md')
+
+    assert_nil @selector.tests_for([%w[A docs/staged.md]], base:)
+  end
+
   def test_an_executable_or_linked_data_file_runs_the_whole_suite
     add_executable_and_link
 
