@@ -28,8 +28,6 @@ module Shaka
       REPOSITORY = 'https://github.com/shakacode/shaka.git'
       RECORD = Locations::RECORD
       attr_reader :root, :record, :repository, :release
-      # The requested skills folder, which a refusal checks for links into a linked worktree.
-      attr_writer :skills_dir
 
       # fresh_install is the installer's command for these selections in the default location.
       def initialize(directory, repository: nil, branch: nil, release: nil, fresh_install: nil)
@@ -64,6 +62,12 @@ module Shaka
       end
 
       def pending? = @record['pending_revision'] == revision
+
+      # The requested skills folder and the installer that is running, which the linked-worktree refusal uses.
+      def refusal_inputs(skills_dir, installer)
+        @skills_dir = skills_dir
+        @installer = installer
+      end
 
       def save(targets, identity)
         data = { 'schema_version' => 1, 'directory' => @root, 'repository' => @repository,

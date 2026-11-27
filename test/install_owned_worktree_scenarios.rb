@@ -53,7 +53,7 @@ module OwnedWorktreeScenarios
     File.chmod(0o775, root)
     output = refusal(feature, '--directory', feature)
     refute_includes output, File.join(File.realpath(root), 'bin/install')
-    assert_includes output, "#{File.realpath(feature)}/bin/install --status"
+    assert_includes output, "#{feature}/bin/install --status"
   ensure
     File.chmod(0o755, root) if root
   end
@@ -65,6 +65,15 @@ module OwnedWorktreeScenarios
     feature = File.join(@directory, 'feature')
     git('-C', root, 'worktree', 'add', '-q', feature)
     assert_includes refusal(feature, '--directory', feature), 'Install from a separate clone. Next: '
+  end
+
+  # A host skills folder that is itself a link into the worktree would go with it.
+  def test_a_skills_folder_linked_into_the_worktree_goes_to_a_person
+    _root, feature = owned_worktree
+    custom = File.join(@directory, 'linked-skills')
+    File.symlink(File.join(feature, 'skills'), custom)
+    output = refusal(feature, '--directory', feature, '--skills-dir', custom)
+    assert_includes output, "Next: a person must decide where the skills links #{custom}/shaka"
   end
 
   private

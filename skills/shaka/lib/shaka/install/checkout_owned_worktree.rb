@@ -34,12 +34,12 @@ module Shaka
         return unless default && SettingsLocation.real(owner) == default
 
         owner_step(default)
-      rescue ArgumentError
+      rescue ArgumentError, SystemCallError
         status_step("how to clear #{@root} from the installation at #{default}")
       end
 
       # The installation's own command only when it is safe to read, hosts this worktree, and serves no link
-      # from any of its worktrees; otherwise status, run from this worktree, names the next step.
+      # from any of its worktrees; otherwise status, run by the installer the person ran, names the next step.
       def owner_step(default)
         record = Checkout.new(default).read_record
         return unless record
@@ -66,15 +66,16 @@ module Shaka
 
       def status_step(question)
         { decision: Refusal.decide(question, 'to see the next step',
-                                   Refusal.command(File.join(@root, 'bin/install'), '--status')) }
+                                   Refusal.command(@installer || File.join(@root, 'bin/install'), '--status')) }
       end
 
       def links_into(record, worktrees)
         link_folders(record).flat_map { |folder| Package::ALLOWED.map { |name| File.join(folder, name) } }
-                            .select { |link| File.symlink?(link) && inside?(link, worktrees) }
+                            .select { |link| inside?(link, worktrees) }
       end
 
-      # The host folders, the installation's recorded folders, and a requested skills folder.
+      # The host folders, the installation's recorded folders, and a requested skills folder. A skill resolves
+      # into a worktree through its own link or through a linked folder.
       def link_folders(record)
         hosts = Locations::HOSTS.values.map { |folder| File.join(Dir.home, folder) }
         requested = [@skills_dir].compact.map { File.expand_path(it) }

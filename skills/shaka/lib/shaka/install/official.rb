@@ -32,7 +32,7 @@ module Shaka
         @owner = owning_checkout(selected, options[:skills_dir], registered_source(source)) if options[:take_over]
         @source = source
         @checkout = Checkout.new(selected, **source_options(options), fresh_install: fresh_command(source, options))
-        @checkout.skills_dir = @skills_dir
+        @checkout.refusal_inputs(@skills_dir, File.join(source, 'bin/install'))
       end
 
       def run(action)
