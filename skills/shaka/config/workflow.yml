@@ -801,11 +801,12 @@ phases:
         Remaining demonstrated defects still block until fixed, declined with evidence, or the
         maintainer decides. Follow the packaged
         [review guide](<{{package_root}}/skills/shaka/references/review.md>).
-      - After repairs, validate the repaired head as Verify does, then run the resolved
-        `trigger_hosted_ci` command when present. Also run the deferred resolved `validate`
-        command locally, unless a required hosted check runs that full `validate` on the pushed
-        head, as its trusted workflow shows; its pass on that head is then the full validation.
-        Later fixes need fresh evidence.
+      - After repairs, validate the repaired head as Verify does. Then run the deferred resolved
+        `validate` command locally, followed by the resolved `trigger_hosted_ci` command when present.
+        Skip that local `validate` when a check `pr` lists as required runs it on the pushed head,
+        as that check's workflow at the trusted base shows. Its passing run on the head, having
+        executed the suite rather than skipped it, is then the full validation. Later fixes need
+        fresh evidence.
       - When the user expressly asks to resolve PR comments, follow the packaged
         [settlement procedure](<{{package_root}}/skills/shaka/references/comment-settlement.md>). Keep
         ownership until each known optional review settles or reaches its bounded handoff. Do not
