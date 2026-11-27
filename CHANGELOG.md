@@ -63,9 +63,9 @@ did not run for 1.0.0; it applies again to later releases.
   together, with each exact overage. When a description has no validation or
   review results of its own, it links the published review that still covers
   its commit, if there is one. Descriptions and walkthroughs refuse a bare
-  finding ID such as `N3` in visible prose; describe the finding in words. When
-  the writer's settings cannot be read, the first line shows only the known
-  identity fields and lists the rest under **Missing values**.
+  finding ID such as `N3` in visible prose; describe the finding in words.
+  When an identity field is unknown, the first line keeps the agent and drops
+  the other unknown fields; the full identity appears under **Missing values**.
 - Local Codex reviews run without connected ChatGPT apps, web search, or image
   viewing. Read-only shell inspection remains available. With file-backed
   sign-in, they also skip your global `AGENTS.md`.
@@ -111,7 +111,8 @@ did not run for 1.0.0; it applies again to later releases.
   aimed at a worktree of the default install gives a next step that works for
   that worktree's state.
 - In a public repository, `shaka reply` links a cited comment whose author
-  `shaka comments` would withhold instead of quoting it.
+  `shaka comments` would withhold instead of quoting it. Your own comments
+  are still quoted.
 - Validation keeps evidence tied to the tested tree and settings. Fixes to a base
   branch are tracked separately when that branch already fails a check.
 - Claude Code cloud sessions can read PR status and publish PR descriptions when
