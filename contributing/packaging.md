@@ -59,7 +59,7 @@ Applications that only need the experimental public-comment screen can load
 
 The package also contains `shaka-install`, which runs `bin/install`. It installs the
 official checkout, cloning it into `~/.local/share/shaka/source` unless `--directory DIR`
-names another place, and links the selected hosts to it. In the next approved gem,
+names another place, and links the selected hosts to it. From gem `1.0.0`,
 new installations select the tag matching that gem's version, rather than newer
 development code. Existing registered installations keep their source selection;
 an explicit repository or branch overrides the default. The

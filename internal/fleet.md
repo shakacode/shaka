@@ -10,7 +10,7 @@ Two different identifiers appear in this work. They are not interchangeable:
 
 | Name | Current value | Meaning |
 | --- | --- | --- |
-| Gem / skill version | Source: `1.0.0`; published: `0.1.0.pre.1` | The source candidate is unpublished, and the version does not establish pilot acceptance. Gem versions before `1.0.0` lack the current workflow. Consumer rows below retain their recorded target until separately upgraded. |
+| Gem / skill version | Source: `1.0.0` | Check RubyGems for published versions; a version does not establish pilot acceptance. Gem versions before `1.0.0` lack the current workflow. Consumer rows below retain their recorded target until separately upgraded. |
 | Seam contract | `version: 1` | Integer field in `.agents/shaka/config.yml`. It identifies the typed contract, not the gem version. |
 
 Predecessor seams have no schema version and use a different set of keys.
