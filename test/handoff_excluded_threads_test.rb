@@ -127,6 +127,27 @@ class HandoffThreadTrustTest < Minitest::Test
     assert_equal %w[outsider outsider], reads
   end
 
+  def test_a_lasting_batch_lookup_failure_is_tried_twice_however_many_threads
+    reads = []
+    authors = (1..8).map { |number| "outsider#{number}" }
+    threads = %w[T1 T2 T3].map { |id| thread(id, opener: 'stranger', replies: authors) }
+    result = handoff(visibility: 'public', batch_reads: reads, threads:)
+
+    assert_equal ['Reply on review threads waiting for an answer: T1, T2, T3.'], result['owed']
+    assert_equal 2, reads.size
+  end
+
+  # GitHub names no author for a deleted account's comment; REST shows it as `ghost`, whom `reply`
+  # excludes too, so owing the thread would restore the #1323 loop.
+  def test_a_comment_with_no_named_author_is_a_note
+    deleted = thread('T1', opener: 'outsider')
+    deleted['comments']['nodes'].first['author'] = nil
+    result = handoff(visibility: 'public', threads: [deleted])
+
+    assert_empty result['owed']
+    assert_includes result['notes'], EXCLUDED_T1
+  end
+
   def test_configured_bots_and_team_members_stay_owed
     threads = [thread('T1', opener: 'coderabbitai[bot]'), thread('T2', opener: 'teammate')]
     result = handoff(visibility: 'public', bots: ['coderabbitai'], teams: [%w[owner core]], team_members: ['teammate'],

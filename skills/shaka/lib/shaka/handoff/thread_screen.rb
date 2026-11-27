@@ -46,15 +46,25 @@ module Shaka
       end
 
       # Threads with the same other authors share one screen, so a PR with many threads from one
-      # reviewer reads each permission once. After a failed read the next such thread asks GitHub
-      # once more; a second failure is kept, so an outage costs two reads, not one per thread.
+      # reviewer reads each permission once. After a failed read, returned or raised, the next
+      # such thread asks GitHub once more; a second failure is kept, so an outage costs two reads,
+      # not one per thread.
       def screened(logins)
         key = logins.sort_by(&:to_s)
-        return @screens[key] if @screens.key?(key)
+        kept = @screens.fetch(key) { return keep(key, logins) }
+        raise kept if kept.is_a?(Error)
 
+        kept
+      end
+
+      def keep(key, logins)
         rows = screen(logins)
-        @screens[key] = rows unless rows.any? { |row| row['verification_unavailable'] } && @retried.add?(key)
+        failed = rows.any? { |row| row['verification_unavailable'] }
+        @screens[key] = rows unless failed && @retried.add?(key)
         rows
+      rescue Error => e
+        @screens[key] = e unless @retried.add?(key)
+        raise
       end
 
       # Authors reads REST comments, so each login becomes one with a numbered ID and the user type

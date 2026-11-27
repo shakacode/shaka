@@ -30,12 +30,13 @@ class HandoffFakeGitHub
   def viewer_login = @pull.fetch(:viewer, 'shaka-agent')
   def issue_comments = @pull[:comments]
 
-  def graphql(query, **variables)
+  # The batched writer lookup passes its variables as a positional hash; it always fails here.
+  def graphql(query, batch = nil, **variables)
+    batch_failure(batch) if batch
     return { 'repository' => @pull.fetch(:queue_settings) } if query.include?('squashMergeCommitMessage')
     return closing_references if query.include?('closingIssuesReferences')
 
-    trust_query = @pull[:allowlist] && query.match?(/defaultBranchRef|object\(/)
-    return trust_settings(query, variables[:expression]) if trust_query
+    return trust_settings(query, variables[:expression]) if trust_query?(query)
     raise Shaka::Error, 'GraphQL failed or returned missing data.' if @pull[:threads] == :unreadable
 
     page = { 'nodes' => @pull.fetch(:threads, []), 'pageInfo' => { 'hasNextPage' => false } }
@@ -59,6 +60,13 @@ class HandoffFakeGitHub
 
     { 'body' => @pull[:body], 'head' => { 'sha' => @pull.fetch(:final_head, @pull[:head]) } }
   end
+
+  def batch_failure(batch)
+    @pull[:batch_reads]&.push(batch.size)
+    raise Shaka::Error, 'collaborator batch failed'
+  end
+
+  def trust_query?(query) = @pull[:allowlist] && query.match?(/defaultBranchRef|object\(/)
 
   # The default branch's trusted-actor file, when a test supplies :allowlist. Only the copy at the
   # default branch's commit exists, so reading any other revision fails.
