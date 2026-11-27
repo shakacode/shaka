@@ -96,15 +96,17 @@ module Shaka
       def refuse_redirected_push
         ["branch.#{@branch}.pushRemote", 'remote.pushDefault'].each do |key|
           value = config_values(key).last # Git uses the last value of a repeated key.
-          if value && value != REMOTE
-            raise Error,
-                  "#{key} sends pushes to #{value}; Shaka pushes task branches to origin only."
-          end
+          raise Error, "#{key} sends pushes to #{value}; Shaka pushes to origin only." if value && value != REMOTE
         end
-        return unless config_values('remote.origin.push').any?
+        raise Error, 'origin has a push refspec; remove remote.origin.push.' if config_values('remote.origin.push').any?
+        raise Error, 'origin is set to mirror pushes; remove remote.origin.mirror.' if mirror?
+      end
 
-        raise Error,
-              'origin has a custom push refspec; remove remote.origin.push.'
+      # A mirror remote refuses the single-branch push, so it pauses at the check, not at the push.
+      def mirror?
+        output, _error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', '--type=bool', '--get',
+                                                'remote.origin.mirror')
+        status.success? && output.strip == 'true'
       end
 
       # git config exits 1 for a missing key; any other failure is a failed read, never "not configured".

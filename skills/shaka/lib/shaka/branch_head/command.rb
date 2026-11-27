@@ -35,13 +35,19 @@ module Shaka
 
       def outcome(operation, options)
         pull = (pr_head(options[:root], options[:pr]) if options[:pr])
-        return finished(operation, pull) if pull && pull['state'] != 'OPEN'
+        head = BranchHead.new(root: options[:root], pr_head: (pull if pull&.fetch('state') == 'OPEN'))
+        return finished(operation, pull, head.branch) if pull && pull['state'] != 'OPEN'
 
-        perform(operation, BranchHead.new(root: options[:root], pr_head: pull), options)
+        perform(operation, head, options)
       end
 
-      # A merged or closed PR ends the branch check, even when its fork is gone; there is nothing left to push.
-      def finished(operation, pull)
+      # A merged or closed PR for this branch ends the branch check, even when its fork is gone; there is nothing
+      # left to push. A finished PR for another branch says nothing about this one.
+      def finished(operation, pull, branch)
+        unless pull['branch'] == branch
+          raise Error,
+                "PR is for #{pull['branch']}, not #{branch}; pass this branch's PR."
+        end
         raise Error, "The PR is #{pull['state'].downcase}; there is nothing to #{operation}." if operation != 'check'
 
         { 'state' => BranchHead::FINISHED, 'pr_state' => pull['state'],
@@ -113,7 +119,8 @@ module Shaka
 
       # The host origin pushes to, which may differ from the host it fetches from.
       def push_host(root)
-        url, error, status = Open3.capture3('git', '-C', root, 'remote', 'get-url', '--push', 'origin')
+        url, error, status = Open3.capture3(Destination::ENVIRONMENT, 'git', '-C', root, 'remote', 'get-url', '--push',
+                                            'origin')
         raise Error, "Cannot read origin's push URL: #{error.strip}" unless status.success?
 
         URI(GitOrigin.canonical_url(url.strip)).host
@@ -121,7 +128,7 @@ module Shaka
 
       # A deleted fork leaves no head repository, so there is no destination to match.
       def head_of(pull, number)
-        return { 'state' => pull['state'] } unless pull['state'] == 'OPEN'
+        return { 'state' => pull['state'], 'branch' => pull['headRefName'] } unless pull['state'] == 'OPEN'
 
         owner = pull.dig('headRepositoryOwner', 'login')
         name = pull.dig('headRepository', 'name')

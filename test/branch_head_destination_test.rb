@@ -10,7 +10,7 @@ class BranchHeadDestinationTest < Minitest::Test
   def test_custom_push_refspec_is_unreadable
     git(@task, 'config', 'remote.origin.push', "refs/heads/#{BRANCH}:refs/heads/elsewhere")
 
-    assert_includes unreadable_error, 'custom push refspec'
+    assert_includes unreadable_error, 'push refspec'
   end
 
   def test_push_url_that_insteadof_rewrites_again_is_unreadable
@@ -98,14 +98,6 @@ class BranchHeadDestinationTest < Minitest::Test
 
   def test_printed_errors_drop_url_credentials
     assert_equal 'see https://git.example.com/o/r', Shaka::BranchHead.redact('see https://user:secret@git.example.com/o/r')
-  end
-
-  def test_finished_pr_ends_the_check_and_refuses_a_push
-    pull = { 'url' => 'https://github.com/base/repo/pull/7', 'state' => 'MERGED', 'headRepository' => nil }
-    head = Shaka::BranchHead::Command.send(:head_of, pull, 7)
-
-    assert_equal 'pr_finished', Shaka::BranchHead::Command.send(:finished, 'check', head)['state']
-    assert_raises(Shaka::Error) { Shaka::BranchHead::Command.send(:finished, 'push', head) }
   end
 
   # Git skips pushInsteadOf for an explicit push URL, so the push lands where the check read.

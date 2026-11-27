@@ -33,6 +33,8 @@ module Shaka
                       'preserve local work, and report the error.'
     }.freeze
 
+    attr_reader :branch
+
     def initialize(root:, pr_head: nil)
       @root = root
       @branch = current_branch
@@ -62,15 +64,13 @@ module Shaka
       check
     end
 
-    # Pushes the commit HEAD named at the check, only from a safe state and leased on the accepted head, then
+    # Pushes the task branch tip read at the check, only from a safe state and leased on the accepted head, then
     # accepts it. Dropping the accepted head from history needs rewrite: true, as an intended rebase does.
     # A push that lands but cannot be accepted reports the pushed commit and keeps the pausing state.
     def push(rewrite: false)
       before = check
       return before.merge('pushed' => false) unless SAFE.include?(before['state'])
-      if before['rewrites'] && !rewrite
-        raise Error, "HEAD lacks the accepted head #{before['accepted']}; pass --rewrite only for an intended rebase."
-      end
+      raise Error, "Missing #{before['accepted']}; use --rewrite for a rebase." if before['rewrites'] && !rewrite
 
       # Git leaves an up-to-date branch alone, so the commit got there by someone else's push.
       return check.merge('pushed' => false) unless @destination.push(before['accepted'], before['local'])
@@ -111,7 +111,7 @@ module Shaka
       live == accepted ? 'unchanged' : 'moved'
     end
 
-    # A leased push from a HEAD that lacks the accepted head drops pushed commits, which only a rebase intends.
+    # A leased push from a tip that lacks the accepted head drops pushed commits, which only a rebase intends.
     # An accepted commit missing from this clone counts as a rewrite, since its ancestry cannot be shown.
     def rewrites?(accepted, local)
       return false unless accepted
