@@ -76,11 +76,14 @@ module Shaka
         links = WorktreeLinks.into(worktrees.map { |entry| entry[:path] }, link_folders)
         return if links.empty?
 
-        named = links.map { |link| link.gsub(/[[:cntrl:]]/) { |character| format('\\x%02X', character.ord) } }
+        named = links.map { |link| link.gsub(/[[:cntrl:]\\]/) { |character| escaped(character) } }
         { decision: "a person must decide where #{named.join(', ')} should point, because they lead into " \
                     'the linked worktrees this step would remove, or could not be read to rule that out; repoint ' \
                     'them, then run this command again' }
       end
+
+      # A backslash is doubled, so an escaped control character cannot be confused with a name that spells one.
+      def escaped(character) = character == '\\' ? '\\\\' : format('\\x%02X', character.ord)
 
       def unread_decision(unread, held)
         also = held.empty? ? '' : ", and whether to keep #{Refusal.paths(held)}"

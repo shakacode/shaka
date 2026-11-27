@@ -15,7 +15,7 @@ module Shaka
         roots = Roots.new(roots)
         return [] if roots.empty?
 
-        folders.compact.map { |folder| File.expand_path(folder) }.uniq.flat_map do |folder|
+        folders.compact.map { |folder| expanded(folder) }.uniq.flat_map do |folder|
           next [folder] if reaches?(folder, roots)
 
           entries = listing(folder)
@@ -32,12 +32,19 @@ module Shaka
         nil
       end
 
+      # A folder named as ~user for an unknown user stays as given, and the walk names it as unreadable.
+      def expanded(folder)
+        File.expand_path(folder)
+      rescue ArgumentError
+        folder
+      end
+
       # A link inside a root that leads back out still passes through the root, so every path on the way
-      # counts, not only where it ends.
+      # counts, not only where it ends. A path that cannot be looked up, or expanded, may reach a root.
       def reaches?(path, roots)
         Walk.new(path).each { |step| return true if roots.include?(step) }
         false
-      rescue SystemCallError
+      rescue SystemCallError, ArgumentError
         true
       end
 
@@ -78,8 +85,9 @@ module Shaka
         end
       end
 
-      # Resolves one path a name at a time, following each link where it appears. A chain longer than the
-      # system allows stops early, as it opens nothing.
+      # Resolves one path a name at a time, following each link where it appears. A missing name, or one under
+      # a file, ends the walk there, as the system resolves no further; a lookup it is denied raises. A chain
+      # longer than the system allows stops early, as it opens nothing.
       class Walk
         def initialize(path)
           @pending = WorktreeLinks.names(File.expand_path(path))
@@ -98,12 +106,19 @@ module Shaka
           return @current = File.dirname(@current) if name == '..'
 
           candidate = File.join(@current, name)
-          if File.symlink?(candidate)
+          if link?(candidate)
             follow(candidate)
           else
             @current = candidate
           end
           candidate
+        end
+
+        def link?(path)
+          File.lstat(path).symlink?
+        rescue Errno::ENOENT, Errno::ENOTDIR
+          @pending.clear
+          false
         end
 
         def follow(link)

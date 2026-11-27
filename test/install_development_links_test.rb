@@ -23,6 +23,13 @@ module DevelopmentLinkSteps
     git('-C', root, 'config', "branch.#{branch}.merge", "refs/heads/#{branch}")
   end
 
+  def with_mode(folder, mode)
+    File.chmod(mode, folder)
+    yield
+  ensure
+    File.chmod(0o755, folder)
+  end
+
   def host_link(relative, target)
     link = File.join(@home, relative)
     FileUtils.mkdir_p(File.dirname(link))
@@ -77,15 +84,23 @@ class InstallDevelopmentLinksTest < Minitest::Test
     assert_names_link(root, feature, link)
   end
 
-  # A folder Shaka can pass through but not list could hold a link into the worktree, so it is named.
-  def test_an_unlistable_skills_folder_goes_to_a_person
+  # A folder Shaka can pass through but not list, or list but not look into, could hold a link into the
+  # worktree, so it or its entry is named. Root reads past these modes, so the check needs another account.
+  def test_an_unreadable_skills_folder_goes_to_a_person
+    skip 'root reads every folder' if Process.uid.zero?
+
     root, feature = default_with_worktree
     link = host_link('.claude/skills/shaka-dev', File.join(feature, 'skills/shaka'))
-    folder = File.dirname(link)
-    File.chmod(0o311, folder)
-    assert_names_link(root, feature, folder)
-  ensure
-    File.chmod(0o755, folder) if folder
+    { 0o311 => File.dirname(link), 0o644 => link }.each do |mode, named|
+      with_mode(File.dirname(link), mode) { assert_names_link(root, feature, named) }
+    end
+  end
+
+  # A name that does not exist ends resolution, so a .. after it never reaches the worktree.
+  def test_a_link_through_a_missing_folder_keeps_the_removal
+    root, feature = default_with_worktree
+    host_link('.claude/skills/stale', File.join(File.dirname(feature), 'missing/../feature'))
+    assert_includes status(root)['next_command'], 'worktree remove'
   end
 
   def test_a_skills_folder_linked_into_a_worktree_goes_to_a_person
