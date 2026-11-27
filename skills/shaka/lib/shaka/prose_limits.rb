@@ -15,8 +15,6 @@ module Shaka
     BASE_WORDS = 150
     QUOTED_WORDS = 8
     FINDING_ID = /(?<![[:alnum:]_.-])N\d{1,3}(?![[:alnum:]_-]|\.\d)/
-    # A range such as N3-N5 names both ends; N3-N5D is not a range.
-    FINDING_RANGE = /(N\d{1,3})-(?=N\d{1,3}(?![[:alnum:]_-]|\.\d))/
     ADVICE = 'Split long sentences and paragraphs, move supporting detail into details, ' \
              'and link to the code instead of retelling it. Each labeled field renders on its own line, ' \
              'so after trimming, check that every field still makes sense without its neighbors.'
@@ -75,7 +73,7 @@ module Shaka
     # collide with ordinary terms, so only this form is checked. Inline code is not scanned, so an
     # author writes another term of that shape as code.
     def finding_ids(paragraphs)
-      ids = paragraphs.flatten.flat_map { |sentence| sentence.gsub(FINDING_RANGE, '\1 ').scan(FINDING_ID) }.uniq
+      ids = paragraphs.flatten.flat_map { |sentence| sentence.scan(FINDING_ID) }.uniq
       return [] if ids.empty?
 
       ["it cites review findings by ledger ID (#{ids.join(', ')}), which a reader cannot look up; " \
