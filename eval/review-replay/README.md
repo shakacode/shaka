@@ -85,8 +85,9 @@ The ledger checks settled spend before each call. The last call can cross the
 cap, and missing usage leaves an unresolved reservation that stops later calls.
 The CLI exits unsuccessfully for a partial run. Retain completed records and
 include any gaps in the report. Each v1 arm cost $0.67 to $2.79 cache-neutral
-in the four-case run. Expect a v2 arm, with two and a half times the cases, to
-cost about two and a half times that. A Codex pair can approach the $15 limit.
+in the four-case run. Scaling by case count, a v2 arm would cost about
+$1.70 to $7, so a Codex pair can approach the $15 limit and stop with an
+incomplete case.
 
 ## Linux qualification
 
@@ -129,8 +130,8 @@ Cases r01 to r04 form v1. v2 keeps them unchanged and adds r05 to r10, chosen
 across code and documentation defects. Every new reviewed head is reachable from
 its public PR ref. For five new cases, the source study ran the fix's regression
 test and saw it fail at the reviewed head. r08 rests on reading the guide against
-the validation code. v2 leaves out the largest verified diffs so that one pair of
-arms stays under the per-PR budget limit.
+the validation code. v2 leaves out the largest verified diffs to keep one pair of
+arms under the per-PR budget limit; that cost is an estimate until a v2 run.
 
 Reveal the arm labels and report, for each arm, the known findings found and
 missed, confirmed new findings, unsupported claims, incomplete cases, and both
