@@ -54,6 +54,10 @@ If your repository [waits for every CI review](settings.md#reviewci_review_wait)
 <a id="on-github-or-in-chat"></a>
 <a id="in-your-editor"></a>
 
+When the result is something you judge by reading it, such as documentation or an
+article, the agent shows you a draft in chat before its slower checks. It says what
+it hasn't checked yet. Reply to redirect it; if you don't, the checks continue.
+
 Say what you want changed in the same chat:
 
 ```text
