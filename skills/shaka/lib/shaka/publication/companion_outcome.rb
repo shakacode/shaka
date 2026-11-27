@@ -9,8 +9,9 @@ module Shaka
                'no_findings' => 'No findings' }.freeze
     SHA = /\A\h{40}\z/
     # Repository-relative paths and globs only, so a cleared path can be compared with a PR's changed files.
-    # Home directories and URI schemes are refused here; workstation roots anywhere in the value, by LOCAL_PATH.
-    UNSAFE_PATH = %r{\A[/~]|\A[a-zA-Z][\w+.-]*:|(?:\A|/)\.\.(?:/|\z)|[`\\<>[:cntrl:]]}
+    # Without whitespace, a colon, or a leading slash or tilde, no part of the value can be an absolute path, a home
+    # directory, a drive, or a URI, so glob syntax needs no special case. Paths containing spaces are refused too.
+    UNSAFE_PATH = %r{\A[/~]|(?:\A|/)\.\.(?:/|\z)|[:`\\<>[:space:][:cntrl:]\p{Cf}]}
 
     def initialize(entry)
       @entry = entry
@@ -59,11 +60,7 @@ module Shaka
       "**Cleared paths:** #{code_list(paths)}" if paths.any?
     end
 
-    def repository_path?(path)
-      # Markdown trims a code span's edge spaces, so a padded value could render as an absolute path.
-      path.is_a?(String) && !path.empty? && path == path.strip && !UNSAFE_PATH.match?(path) &&
-        !CompanionResults::LOCAL_PATH.match?(path.tr('*?', 'x')) # a glob's `**/bin/` is not a workstation root
-    end
+    def repository_path?(path) = path.is_a?(String) && !path.empty? && !UNSAFE_PATH.match?(path)
 
     def code_list(values) = values.map { |value| "`#{value}`" }.join(', ')
   end

@@ -217,10 +217,11 @@ command rules; every other decision stands.
   so a collector counts labels instead of reading `result` prose.
 - `caused_commits`: the full SHAs a `changed_code` outcome led to. Ruby requires it
   with that outcome and refuses the key, even an empty list, with any other.
-- `cleared_paths`: repository-relative paths or globs the run found safe. Ruby refuses
-  absolute and home-directory paths, URI schemes, workstation roots anywhere in the value,
-  surrounding whitespace, `..` segments, backslashes, backticks, angle brackets, and control
-  characters. A collector can compare these with later review findings and human comments.
+- `cleared_paths`: repository-relative paths or globs the run found safe. Ruby refuses a
+  leading `/` or `~`, `..` segments, and any whitespace, colon, backslash, backtick, angle
+  bracket, or control or format character. A value that passes can hold no absolute path,
+  drive, or URI, so glob syntax needs no special case; a path containing a space is refused
+  too. A collector can compare these with later review findings and human comments.
 
 Ruby still checks shape only. Whether a commit followed from a finding, and whether a
 path was safe, stay the agent's account.
