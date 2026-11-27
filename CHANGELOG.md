@@ -5,7 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 From 1.0.0, a change that stops an existing `.agents/shaka/config.yml` or a
-documented `shaka` command from working is a major version.
+command listed in [what stays compatible in 1.x](https://shaka.shakacode.com/docs/migration#what-stays-compatible-in-1x)
+from working is a major version.
 
 ## [Unreleased]
 
@@ -83,14 +84,14 @@ did not run for 1.0.0; it applies again to later releases.
 
 ### Removed
 
-- Migrate the pilot layout `.agents/agent-workflow.yml` and `.agents/bin/` to
-  `.agents/shaka/` before switching to 1.0. Check out Shaka at
+- **Breaking:** Migrate the pilot layout `.agents/agent-workflow.yml` and
+  `.agents/bin/` to `.agents/shaka/` before switching to 1.0. Check out Shaka at
   [`a01a3a7`](https://github.com/shakacode/shaka/tree/a01a3a7e9705be165b7bf339b0cc6d2b727ce4d7).
   From that checkout, run `skills/shaka/scripts/shaka seam upgrade --root DIR`
   to preview, then add `--apply --digest PREVIEW_DIGEST`. Validate the converted
   settings with Shaka 1.0 and run the moved commands before merging the settings PR.
-- Replace `wip.include_locations` with `wip.include_checkout_path`.
-- Move paths covered by `merge.auto_max_review_floor` or
+- **Breaking:** Replace `wip.include_locations` with `wip.include_checkout_path`.
+- **Breaking:** Move paths covered by `merge.auto_max_review_floor` or
   `pr_description.human_review_floors` to `high_risk_areas` or `medium_risk_areas`.
   Then remove those retired keys. Use `merge.auto_merge_max_risk` to set the
   highest risk eligible for Auto. Shaka 1.0 rejects the retired keys. See
