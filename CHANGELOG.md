@@ -9,7 +9,7 @@ documented `shaka` command from working is a major version.
 
 ## [Unreleased]
 
-## [1.0.0] - Unpublished
+## [1.0.0] - 2026-11-27
 
 Shaka 1.0 is the first stable release of the Shaka skill for AI coding agents.
 Give your agent a task and get a pull request with the checks it ran, an
