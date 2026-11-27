@@ -26,42 +26,72 @@ module Shaka
       # Reads the URL a push writes to, which may differ from the fetch URL. ls-remote matches refs by suffix,
       # so only the exact ref counts; a failure or timeout is unreadable, never absent.
       def head
-        url = single_push_url
-        return url if url.is_a?(Hash)
-
-        output, error, success = bounded(READ_SECONDS, 'ls-remote', url, "refs/heads/#{@branch}")
+        output, error, success = bounded(READ_SECONDS, 'ls-remote', push_url, "refs/heads/#{@branch}")
         return { error: error.strip.empty? ? 'git ls-remote failed' : error.strip } unless success
 
         exact_head(output)
+      rescue Error => e
+        { error: e.message }
       end
 
       # Pushes one commit to the branch alone, leased on the accepted head; an empty lease means the branch must
-      # not exist yet. --no-follow-tags keeps push.followTags from sending tags beside it.
+      # not exist yet. Tags and submodules stay unpushed whatever push.followTags or push.recurseSubmodules say.
       def push(accepted, sha)
         lease = "--force-with-lease=refs/heads/#{@branch}:#{accepted}"
-        _output, error, success = bounded(PUSH_SECONDS, 'push', '--quiet', '--no-follow-tags', lease, @remote,
-                                          "#{sha}:refs/heads/#{@branch}")
-        raise Error, "git push to #{@remote}/#{@branch} was refused or failed: #{error.strip}" unless success
+        _output, error, success = bounded(PUSH_SECONDS, 'push', '--quiet', '--no-follow-tags',
+                                          '--recurse-submodules=no', lease, @remote, "#{sha}:refs/heads/#{@branch}")
+        return if success
+
+        raise Error, "git push of #{sha} to #{@remote}/#{@branch} was refused, failed, or timed out, so it may " \
+                     "have landed: #{error.strip}"
       end
 
       private
 
-      # One push URL and no custom push refspec, so the branch read is the branch a push writes.
-      def single_push_url
-        unless lines('config', '--get-all', "remote.#{@remote}.push").empty?
-          return { error: "#{@remote} has a custom push refspec; push the task branch by hand." }
-        end
+      # The one URL a push of this branch writes to. Configurations where the read could reach another branch or
+      # repository than the push are refused rather than guessed: a custom push refspec, a push remote other than
+      # the branch's same-named upstream, several push URLs, or a URL that insteadOf would rewrite again on read.
+      def push_url
+        refuse_redirected_push
+        urls = git_lines('remote', 'get-url', '--push', '--all', @remote)
+        raise Error, "#{@remote} has #{urls.size} push URLs; configure one for the task branch." unless urls.one?
 
-        urls = lines('remote', 'get-url', '--push', '--all', @remote)
-        return { error: "Cannot resolve the push URL of #{@remote}." } if urls.empty?
-        return { error: "#{@remote} has #{urls.size} push URLs; configure one for the task branch." } if urls.size > 1
+        reread = git_lines('ls-remote', '--get-url', urls.first)
+        raise Error, "insteadOf rewrites #{urls.first} again; configure a direct push URL." unless reread == urls
 
         urls.first
       end
 
-      def lines(*)
-        output, _error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, *)
-        status.success? ? output.lines.map(&:strip).reject(&:empty?) : []
+      def refuse_redirected_push
+        if config_values("remote.#{@remote}.push").any?
+          raise Error, "#{@remote} has a custom push refspec; push the task branch by hand."
+        end
+
+        upstream_mismatch
+      end
+
+      def upstream_mismatch
+        upstream = config_values("branch.#{@branch}.remote").first
+        return unless upstream && upstream != @remote
+        return unless config_values("branch.#{@branch}.merge").first == "refs/heads/#{@branch}"
+
+        raise Error, "#{@branch} tracks #{upstream}/#{@branch} but pushes to #{@remote}; make them agree."
+      end
+
+      # git config exits 1 for a missing key; any other failure is a failed read, never "not configured".
+      def config_values(key)
+        output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', '--get-all', key)
+        return [] if status.exitstatus == 1
+        raise Error, "Cannot read #{key}: #{error.strip}" unless status.success?
+
+        output.lines.map(&:strip).reject(&:empty?)
+      end
+
+      def git_lines(*)
+        output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, *)
+        raise Error, "git #{[*].first(2).join(' ')} failed: #{error.strip}" unless status.success?
+
+        output.lines.map(&:strip).reject(&:empty?)
       end
 
       def exact_head(output)

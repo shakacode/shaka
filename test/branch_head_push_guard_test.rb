@@ -53,8 +53,8 @@ class BranchHeadPushGuardTest < Minitest::Test
     result = head.push
 
     assert_true result['pushed']
-    assert_equal result['local'], result['pushed_head']
-    assert_equal 'moved', result['state']
+    assert_equal git(@task, 'rev-parse', 'HEAD').strip, result['pushed_head']
+    assert_equal 'unconfirmed', result['state']
   end
 
   def test_several_push_urls_are_unreadable

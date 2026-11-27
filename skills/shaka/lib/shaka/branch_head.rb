@@ -20,8 +20,11 @@ module Shaka
                  'new commits, and report them. Accept the head once reconciled.',
       'unrecorded' => 'The branch is on the remote but this checkout never accepted a head. Pause, inspect ' \
                       'the remote commits, and accept the head once reconciled.',
-      'disappeared' => 'The remote branch this task pushed is gone. Pause, preserve local work, and report it. ' \
-                       'If the user wants it pushed again, run `branch accept --absent`, then `branch push`.',
+      'disappeared' => 'The remote branch this task pushed is gone. Unless its PR merged or closed, pause, ' \
+                       'preserve local work, and report it. If the user wants it pushed again, run ' \
+                       '`branch accept --absent`, then `branch push`.',
+      'unconfirmed' => 'The push landed but its head could not be recorded. Pause, run `branch check`, and ' \
+                       'accept pushed_head only if the remote still holds it.',
       'unreadable' => 'The remote branch could not be read, so a teammate push cannot be ruled out. Pause, ' \
                       'preserve local work, and report the error.'
     }.freeze
@@ -71,11 +74,13 @@ module Shaka
 
     private
 
+    # A failed acceptance after a landed push pauses as unconfirmed, without another read that could fail too.
     def record_push(sha)
       pushed = { 'pushed' => true, 'pushed_head' => sha }
       accept(sha).merge(pushed)
     rescue Error => e
-      check.merge(pushed).merge('error' => e.message)
+      { 'state' => 'unconfirmed', 'branch' => @branch, 'remote' => @remote, 'guidance' => GUIDANCE['unconfirmed'],
+        'error' => e.message }.merge(pushed)
     end
 
     def accept_head(head, live)
