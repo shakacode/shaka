@@ -13,14 +13,17 @@ class WindowsProduct < WindowsSession
                    test/evidence_windows_check_test.rb].freeze
   EVIDENCE_RUN = %w[evidence run --repository shakacode/shaka --command test].freeze
   TEST = %w[-- test/executable_file_test.rb].freeze
+  REVIEW_TESTS = %w[test/windows_local_review_test.rb test/windows_review_lookup_test.rb
+                    test/doctor_windows_stop_test.rb test/windows_check_pipes_test.rb].freeze
   # Not bash.exe: System32 ships one as the WSL launcher.
   UNIX_TOOL_NAMES = %w[sh.exe env.exe dirname.exe].freeze
   UNIX_TOOLS = %r{msys64|[\\/]Git[\\/](?:usr[\\/]bin|bin|mingw64[\\/]bin)[\\/]?\z}i
 
   def call
     # One record per file, so a failing file does not hide the others' counts.
-    START_TESTS.each { |file| record("start test #{File.basename(file)}") { start_test(file) } }
+    (START_TESTS + REVIEW_TESTS).each { |file| record("start test #{File.basename(file)}") { start_test(file) } }
     record('evidence run starts a repository command') { evidence_run }
+    record('review run reads the change and looks for the reviewer') { review_run }
     INSTALLS.each { |name, scenario| record(name) { install { |home, branch| send(scenario, home, branch) } } }
     self
   end
@@ -41,6 +44,18 @@ class WindowsProduct < WindowsSession
     return if success && completed?(output)
 
     raise "evidence run did not complete the test command: #{excerpt(output)}"
+  end
+
+  # No reviewer CLI is installed here, so a run that read the change through Git ends at the lookup.
+  def review_run
+    head = git_output('rev-parse', 'HEAD')
+    output, error, = capture([native_path, *helper, 'review', 'run', '--root', root, '--head', head, '--base', head,
+                              '--reviewer', 'anthropic/claude', '--timeout-seconds', '60'], 300)
+    result = JSON.parse(output[(output.index('{') || 0)..])
+    puts "  #{result['failure_stage']}: #{result['reason']}"
+    return if result['failure_stage'] == 'executable_missing'
+
+    raise "review run stopped before the reviewer lookup: #{excerpt(error)}"
   end
 
   # The result JSON follows the command output on standard output.
