@@ -84,11 +84,12 @@ class HandoffExcludedThreadsTest < Minitest::Test
   end
 
   def test_unreadable_trusted_actor_settings_keep_the_thread_owed
-    result = handoff(visibility: 'public', trust_from_github: true, threads: [thread('T1', opener: 'outsider')])
+    threads = [thread('T1', opener: 'outsider'), thread('T2', opener: 'stranger')]
+    result = handoff(visibility: 'public', trust_from_github: true, threads:)
 
-    assert_equal ['Reply on review threads waiting for an answer: T1.'], result['owed']
-    assert_includes result['notes'],
-                    'Thread authors are unscreened on T1: Trusted default-branch commit is unavailable.'
+    assert_equal ['Reply on review threads waiting for an answer: T1, T2.'], result['owed']
+    assert_equal(1, result['notes'].count { |note| note.start_with?('Thread authors are unscreened') })
+    assert_includes result['notes'], 'Thread authors are unscreened: Trusted default-branch commit is unavailable.'
   end
 
   # An earlier agent reply lets `resolve` run, so the note claims only that the reply is refused.

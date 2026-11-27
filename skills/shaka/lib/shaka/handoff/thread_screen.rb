@@ -30,6 +30,7 @@ module Shaka
         result = Result.new([], [], {})
         return result if posts.empty? || !public?
 
+        config # One trust-settings failure stops the whole screen, not each thread in turn.
         posts.each { |id, comments| sort(result, id, comments, account) }
         result
       end
