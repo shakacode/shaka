@@ -206,10 +206,10 @@ PR title and an empty body.
 When reviewers need to compare before and after, one annotated image puts both
 views side by side. The original captures can go in collapsed details.
 Recordings can show a flow and animations. The explanation names what was tested
-and what remains unverified. When the agent posted captures with its UI check, the
-**Screenshots** link beside **Checkpoint** at the top of the description opens the newest
-set. The link appears when the same GitHub account publishes both. The check's heading
-names the commit it shows. Captures and tests provide different evidence:
+and what remains unverified. When the agent posted a UI check, the **Screenshots** link
+beside **Checkpoint** at the top of the description opens the latest one. The link appears
+when the same GitHub account publishes both. The check's heading names the commit it shows.
+Captures and tests provide different evidence:
 
 | Change | Useful evidence |
 | --- | --- |
