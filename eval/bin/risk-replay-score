@@ -5,7 +5,7 @@ require 'json'
 require 'open3'
 require 'optparse'
 require_relative '../lib/shaka/evaluation/risk_replay_score'
-require_relative '../../skills/shaka/lib/shaka/trusted_config_source'
+require_relative '../../skills/shaka/lib/shaka/configuration'
 
 # Scores the private records a `review-replay --checkpoint-risk` run left in its state directory.
 SOURCE = File.realpath('../..', __dir__)
@@ -35,21 +35,37 @@ def changed_paths(row)
   output.split("\0")
 end
 
-# Each arm's own settings commit decides its risk areas, as the trusted settings would have.
-def areas(records)
+# Each arm's own committed settings decide its risk areas and threshold, as they did in the replay's fresh
+# fixture; a settings preview or individual settings in this checkout must not stand in for them.
+def settings(records)
   records.to_h { |record| [record.fetch('arm'), record.dig('selection', 'criteria')] }.transform_values do |ref|
-    Shaka::PostImplementationRisk.areas(Shaka::TrustedConfigSource.from_ref(root: SOURCE, ref:))
+    config = Shaka::Configuration.trusted(root: SOURCE, ref:, candidate_commands: false)
+    high, medium = Shaka::PostImplementationRisk.areas(config)
+    { 'high' => high, 'medium' => medium, 'max_risk' => Shaka::PostImplementationRisk.max_risk(config) }
   end
+end
+
+# A state directory holds one comparison; records from another would be pooled under the same arm names.
+def one_comparison!(records)
+  mixed = records.group_by { |record| record.fetch('arm') }.select do |_, runs|
+    runs.map { |run| run['selection'] }.uniq.size > 1
+  end
+  return if mixed.empty?
+
+  raise ArgumentError, "The state directory mixes comparisons for #{mixed.keys.join(' and ')}; " \
+                       'score each comparison from its own state directory'
 end
 
 begin
   saved = records(options.fetch(:state))
   raise ArgumentError, 'No replay records in the state directory' if saved.empty?
 
+  one_comparison!(saved)
+
   cases = File.foreach(CASES).to_h { |line| JSON.parse(line).then { |row| [row.fetch('id'), row] } }
   paths = cases.transform_values { |row| changed_paths(row) }
   puts JSON.pretty_generate(Shaka::Evaluation::RiskReplayScore.score(records: saved, cases:, paths:,
-                                                                     areas: areas(saved)))
+                                                                     settings: settings(saved)))
 rescue ArgumentError, IOError, SystemCallError, JSON::ParserError, OptionParser::ParseError, Shaka::Error => e
   warn "Score incomplete: #{e.message}"
   exit 1

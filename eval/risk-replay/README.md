@@ -33,7 +33,13 @@ checkpoint's replacement prompt. The installed helper supplies the packaged rati
 rubric, so comparing changes to that rubric needs two helpers and is not covered here.
 
 Each run calls `shaka post-implementation run` on the case's head with its frozen
-packet. The settings commit decides the custom prompt and the risk areas.
+packet. The arm's settings commit, not the one in force when the PR merged, decides
+the custom prompt, the risk areas, and the threshold; it is the setting under test.
+
+Use a new state directory for each comparison. The first call that ends without a
+rating stops the run, as in the reviewer replay; rerun the same comparison into the
+same directory to fill in the rest. Before scoring, check the transcripts for reads of
+the case file or other scoring material, as the reviewer replay guide describes.
 
 ## Score it
 
@@ -41,17 +47,22 @@ packet. The settings commit decides the custom prompt and the risk areas.
 eval/bin/risk-replay-score --state PRIVATE_STATE_DIR
 ```
 
-The scorer prints JSON for each arm and case. It keeps the model's judgment apart from
-Shaka's deterministic merge rule:
+The scorer prints JSON for each arm and case, and refuses a state directory that
+holds more than one comparison. It keeps the model's judgment apart from Shaka's
+deterministic risk gate:
 
-- `ratings`, `consistent`: what the reviewer said on each repeat, and whether the
-  repeats agree.
+- `attempted`, `rated`, `ratings`, `consistent`: the repeats run, the ones that gave a
+  rating, what each said, and whether they agree. Agreement is `UNKNOWN` with fewer
+  than two ratings.
 - `matches_published`: repeats matching the rating the original checkpoint published.
 - `against_reference`: `under`, `over`, or `match` against the maintainer's rating.
   An under-rating is the costly error, because it can let Auto merge the PR.
-- `auto`: for `merge.auto_merge_max_risk` set to `low` and to `medium`, how many repeats
-  Auto would merge after the arm's risk areas raise the rating. `wrong_merges` and
-  `needless_holds` compare that with what the maintainer's rating would allow.
+- `risk_gate`: for `merge.auto_merge_max_risk` set to `low` and to `medium`, how many
+  repeats pass after the arm's risk areas raise the rating. `configured_max_risk` names
+  the arm's own setting; the other value shows what changing it would do.
+  `wrong_passes` and `needless_holds` compare with what the maintainer's rating would
+  allow. Merge also checks verification adequacy, size limits, hold labels, and
+  required checks, so a pass here is not a merge.
 - `failed`, `dollars`, `duration_ms`: runs with no rating, and their cost and time.
   Missing usage or timing makes a total `UNKNOWN`.
 
@@ -66,11 +77,14 @@ Comparisons with the maintainer's rating stay `UNKNOWN` until a case records one
 | k03 | [#1308](https://github.com/shakacode/shaka/pull/1308) | medium | Code that the risk areas raised to high |
 | k04 | [#1314](https://github.com/shakacode/shaka/pull/1314) | low | Agent guidance that the risk areas raised to high |
 
-Each case pins the head the published checkpoint rated and the merge base it forked
-from. Its packet holds the summary, intent, and verification from the PR description,
-so the reviewer reads what the original checkpoint read. Each packet leaves out later
-review results, the published rating, and the merge outcome. The original repair
-history was not kept, so every packet says so.
+Each case pins the head the published checkpoint rated, which is also the merged head,
+and the merge base it forked from. Its packet was written by hand from the summary,
+intent, and verification in the PR description as it read on 2026-11-27, so the
+reviewer reads close to what the original checkpoint read. The original content file
+was not kept, so a description edited after the checkpoint could differ; any
+difference applies to every arm alike. Each packet leaves out later review results,
+the published rating, and the merge outcome. The original repair history was not
+kept either, so every packet says so.
 
 Keep v1 frozen. A maintainer adds reference ratings by setting `reference` to `low`,
 `medium`, or `high` in a new version, together with the cases that tune a prompt kept

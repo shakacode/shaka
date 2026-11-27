@@ -5,42 +5,43 @@ require_relative '../../../../skills/shaka/lib/shaka/post_implementation_report'
 
 module Shaka
   module Evaluation
-    # Scores replayed checkpoint ratings. The rating is the model's judgment; the merge decision applies Shaka's
-    # deterministic risk areas and auto_merge_max_risk to it, so both are reported separately.
+    # Scores replayed checkpoint ratings. The rating is the model's judgment; the risk gate applies Shaka's
+    # deterministic risk areas and merge.auto_merge_max_risk to it. Merge also checks verification adequacy,
+    # size limits, hold labels and required checks, which this score leaves out, so a gate pass is not a merge.
     module RiskReplayScore
       LEVELS = PostImplementationRisk::LEVELS
       THRESHOLDS = %w[low medium].freeze
 
       module_function
 
-      # records: saved run records; cases: frozen rows by id; paths: changed files by case id; areas: the
-      # [high, medium] risk areas each arm's settings commit configures, keyed by arm.
-      def score(records:, cases:, paths:, areas:)
+      # records: saved run records of one comparison; cases: frozen rows by id; paths: changed files by case id;
+      # settings: each arm's risk areas and threshold from its settings commit, as
+      # { 'high' => areas, 'medium' => areas, 'max_risk' => level }, keyed by arm.
+      def score(records:, cases:, paths:, settings:)
         records.group_by { |record| record.fetch('arm') }.to_h do |arm, runs|
-          [arm, arm_score(runs, cases, paths, areas.fetch(arm))]
+          [arm, arm_score(runs, cases, paths, settings.fetch(arm))]
         end
       end
 
-      def arm_score(runs, cases, paths, areas)
-        by_case = ratings_by_case(runs)
-        { 'runs' => runs.size, 'failed' => runs.size - by_case.values.sum(&:size), **costs(runs),
-          'cases' => by_case.to_h { |id, ratings| [id, case_score(ratings, cases.fetch(id), paths[id], areas)] } }
+      def arm_score(runs, cases, paths, settings)
+        by_case = runs.group_by { |run| run.fetch('case') }
+        { 'runs' => runs.size, 'failed' => runs.count { |run| rating(run).nil? }, **costs(runs),
+          'configured_max_risk' => settings.fetch('max_risk'),
+          'cases' => by_case.to_h { |id, attempts| [id, case_score(attempts, cases.fetch(id), paths[id], settings)] } }
       end
 
-      def ratings_by_case(runs)
-        rated = runs.filter_map { |run| rating(run)&.then { |value| [run.fetch('case'), value] } }
-        rated.group_by(&:first).transform_values { |pairs| pairs.map(&:last) }
-      end
-
-      def case_score(ratings, row, paths, areas)
+      # A case whose repeats all failed still appears, and agreement needs at least two ratings.
+      def case_score(attempts, row, paths, settings)
+        ratings = attempts.filter_map { |run| rating(run) }
         reference = row['reference']
-        { 'ratings' => ratings, 'consistent' => ratings.uniq.one?,
+        { 'attempted' => attempts.size, 'rated' => ratings.size, 'ratings' => ratings,
+          'consistent' => ratings.size < 2 ? 'UNKNOWN' : ratings.uniq.one?,
           'published' => row['published'], 'matches_published' => ratings.count(row['published']),
           'reference' => reference || 'UNKNOWN', 'against_reference' => against(ratings, reference),
-          'auto' => THRESHOLDS.to_h { |max| [max, auto(ratings, reference, paths, areas, max)] } }
+          'risk_gate' => THRESHOLDS.to_h { |max| [max, gate(ratings, reference, paths, settings, max)] } }
       end
 
-      # Underestimates are the costly error: a rating below the maintainer's can let Auto merge it.
+      # Underestimates are the costly error: a rating below the maintainer's can pass the risk gate.
       def against(ratings, reference)
         return 'UNKNOWN' unless reference
 
@@ -56,19 +57,19 @@ module Shaka
       # unknown counts as high, as the checkpoint treats it.
       def rank(rating) = LEVELS.index(rating) || (LEVELS.size - 1)
 
-      def auto(ratings, reference, paths, areas, max)
-        decisions = ratings.map { |rating| merges?(rating, paths, areas, max) }
-        result = { 'merges' => decisions.count(true), 'holds' => decisions.count(false) }
-        return result.merge('wrong_merges' => 'UNKNOWN', 'needless_holds' => 'UNKNOWN') unless reference
+      def gate(ratings, reference, paths, settings, max)
+        decisions = ratings.map { |rating| passes?(rating, paths, settings, max) }
+        result = { 'passes' => decisions.count(true), 'holds' => decisions.count(false) }
+        return result.merge('wrong_passes' => 'UNKNOWN', 'needless_holds' => 'UNKNOWN') unless reference
 
-        wanted = merges?(reference, paths, areas, max)
-        result.merge('wrong_merges' => wanted ? 0 : decisions.count(true),
+        wanted = passes?(reference, paths, settings, max)
+        result.merge('wrong_passes' => wanted ? 0 : decisions.count(true),
                      'needless_holds' => wanted ? decisions.count(false) : 0)
       end
 
-      def merges?(rating, paths, areas, max)
-        level = PostImplementationRisk.assess(rating, areas.first, paths, areas.last).fetch('level')
-        PostImplementationRisk.within?(level, max)
+      def passes?(rating, paths, settings, max)
+        level = PostImplementationRisk.assess(rating, settings.fetch('high'), paths, settings.fetch('medium'))
+        PostImplementationRisk.within?(level.fetch('level'), max)
       end
 
       def costs(runs)

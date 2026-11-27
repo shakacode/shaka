@@ -12,9 +12,10 @@ module Shaka
 
       private
 
-      # Repeats measure whether one setting rates the same change the same way twice.
+      # Repeats measure whether one setting rates the same change the same way twice. Shifting the index
+      # alternates which arm goes first on each repeat, as the reviewer replay alternates it by case.
       def replay_pair(row, index)
-        @options.fetch(:repeat, 1).times { super }
+        @options.fetch(:repeat, 1).times { |repeat| super(row, index + repeat) }
       end
 
       def completed?(result, row)
