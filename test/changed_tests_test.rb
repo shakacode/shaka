@@ -3,7 +3,8 @@
 require_relative 'test_helper'
 require_relative 'support/changed_tests'
 
-class ChangedTestsTest < Minitest::Test
+# Builds a small repository for the selector to map.
+module ChangedTestsFixture
   FILES = {
     'skills/shaka/lib/shaka/alpha.rb' => "require_relative 'beta'\n",
     'skills/shaka/lib/shaka/beta.rb' => "PATH = '../../config/defaults.yml'\n",
@@ -35,6 +36,24 @@ class ChangedTestsTest < Minitest::Test
     FileUtils.remove_entry(@root)
   end
 
+  def commit_fixture
+    git('init', '--quiet', '--initial-branch=main')
+    git('add', '.')
+    git('commit', '--quiet', '-m', 'base')
+    git('switch', '--quiet', '-c', 'work')
+    Open3.capture2('git', '-C', @root, 'rev-parse', 'HEAD').first.strip
+  end
+
+  def git(*)
+    _, error, status = Open3.capture3('git', '-C', @root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+                                      '-c', 'commit.gpgsign=false', *)
+    assert_predicate status, :success?, error
+  end
+end
+
+class ChangedTestsTest < Minitest::Test
+  include ChangedTestsFixture
+
   def test_a_library_change_selects_the_tests_that_load_it_directly_or_transitively
     assert_equal %w[test/alpha_test.rb test/beta_test.rb test/configuration_boundary_test.rb],
                  @selector.tests_for([%w[M skills/shaka/lib/shaka/beta.rb]])
@@ -65,26 +84,6 @@ class ChangedTestsTest < Minitest::Test
     end
   end
 
-  def test_a_data_file_selects_tests_that_reach_a_file_naming_it_or_a_reader_of_its_place
-    assert_equal %w[test/alpha_test.rb test/beta_test.rb test/install_test.rb],
-                 @selector.tests_for([%w[M skills/shaka/config/defaults.yml]])
-    assert_equal %w[test/install_test.rb], @selector.tests_for([%w[D skills/shaka/references/guide.md]])
-  end
-
-  def test_a_data_file_no_test_reads_selects_no_tests
-    assert_empty @selector.tests_for([%w[M internal/notes.md], %w[A docs/new-guide.md]])
-  end
-
-  def test_an_executable_or_linked_data_file_runs_the_whole_suite
-    FileUtils.mkdir_p(File.join(@root, 'docs'))
-    File.write(File.join(@root, 'docs/run.md'), '')
-    File.chmod(0o755, File.join(@root, 'docs/run.md'))
-    File.symlink('run.md', File.join(@root, 'docs/link.md'))
-
-    assert_nil @selector.tests_for([%w[A docs/run.md]])
-    assert_nil @selector.tests_for([%w[A docs/link.md]])
-  end
-
   def test_a_renamed_library_file_selects_the_tests_that_reached_it_at_the_base
     base = commit_fixture
     File.rename(File.join(@root, 'skills/shaka/lib/shaka/beta.rb'), File.join(@root, 'skills/shaka/lib/shaka/delta.rb'))
@@ -107,20 +106,46 @@ class ChangedTestsTest < Minitest::Test
     assert_equal [%w[A test/new_test.rb], %w[M skills/shaka/lib/shaka/alpha.rb],
                   %w[M skills/shaka/lib/shaka/beta.rb]], @selector.files.changes('main').sort
   end
+end
+
+class ChangedTestsDataTest < Minitest::Test
+  include ChangedTestsFixture
+
+  def test_a_data_file_selects_tests_that_reach_a_file_naming_it_or_a_reader_of_its_place
+    assert_equal %w[test/alpha_test.rb test/beta_test.rb test/install_test.rb],
+                 @selector.tests_for([%w[M skills/shaka/config/defaults.yml]])
+    assert_equal %w[test/install_test.rb], @selector.tests_for([%w[A skills/shaka/references/guide.md]])
+  end
+
+  def test_a_data_file_no_test_reads_selects_no_tests
+    assert_empty @selector.tests_for([%w[M internal/notes.md], %w[A docs/new-guide.md]])
+  end
+
+  def test_a_data_file_that_was_executable_or_linked_at_the_base_runs_the_whole_suite
+    add_executable_and_link
+    base = commit_fixture
+    File.chmod(0o644, File.join(@root, 'docs/run.md'))
+    File.delete(File.join(@root, 'docs/link.md'))
+
+    assert_nil @selector.tests_for([%w[M docs/run.md]], base:)
+    assert_nil @selector.tests_for([%w[D docs/link.md]], base:)
+    assert_nil @selector.tests_for([%w[D internal/notes.md]])
+    assert_empty @selector.tests_for([%w[D internal/notes.md]], base:)
+  end
+
+  def test_an_executable_or_linked_data_file_runs_the_whole_suite
+    add_executable_and_link
+
+    assert_nil @selector.tests_for([%w[A docs/run.md]])
+    assert_nil @selector.tests_for([%w[A docs/link.md]])
+  end
 
   private
 
-  def commit_fixture
-    git('init', '--quiet', '--initial-branch=main')
-    git('add', '.')
-    git('commit', '--quiet', '-m', 'base')
-    git('switch', '--quiet', '-c', 'work')
-    Open3.capture2('git', '-C', @root, 'rev-parse', 'HEAD').first.strip
-  end
-
-  def git(*)
-    _, error, status = Open3.capture3('git', '-C', @root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
-                                      '-c', 'commit.gpgsign=false', *)
-    assert_predicate status, :success?, error
+  def add_executable_and_link
+    FileUtils.mkdir_p(File.join(@root, 'docs'))
+    File.write(File.join(@root, 'docs/run.md'), '')
+    File.chmod(0o755, File.join(@root, 'docs/run.md'))
+    File.symlink('run.md', File.join(@root, 'docs/link.md'))
   end
 end

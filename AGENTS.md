@@ -198,13 +198,12 @@ Publish tested changes as bounded PRs, preferably below 500 changed lines each.
 Explain necessary larger changes; split independent work instead of hiding size.
 Required evidence is the PR's current commit, actual validation results, and review.
 For local evidence on the head you push, run `validate_local`, which runs the tests the change
-can reach and RuboCop on the changed files. A documentation-only change runs no tests. A
-deleted Ruby file runs the tests that loaded it, and Markdown, YAML, and JSON files in places
-`test/support/changed_tests.rb` lists run the tests that read them. Any other file runs the
-whole suite, and a change to RuboCop's settings or gems lints every file. Run the full `validate` locally only
-when the trusted settings lack `validate_local` or the workflow asks for it. The required hosted
-`validate` check runs the full suite on code changes and gates merge. When a check fails,
-fix it and review the new head.
+can reach and RuboCop on the changed files. A documentation-only change runs no tests;
+otherwise `test/support/changed_tests.rb` chooses the tests, running the whole suite for a
+change it cannot map. A change to RuboCop's settings or gems lints every file. Run the full
+`validate` locally only when the trusted settings lack `validate_local` or the workflow asks
+for it. The required hosted `validate` check runs the full suite on code changes and gates
+merge. When a check fails, fix it and review the new head.
 No extra closeout audit, receipt, automatic issue, heartbeat, or parallel tracker.
 Fill the Changelog section of the [PR template](.github/pull_request_template.md)
 instead of editing `CHANGELOG.md`; only a release PR edits that file. No check

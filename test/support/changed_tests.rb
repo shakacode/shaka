@@ -74,7 +74,7 @@ class ChangedTests
 
   def tests_for_path(status, path, base)
     return nil if FOUNDATIONS.include?(path) || !%w[M A D].include?(status)
-    return data_readers(path) unless path.end_with?('.rb')
+    return data_readers(path, status, base) unless path.end_with?('.rb')
     return code_readers(path) unless status == 'D'
 
     base && deleted_readers(path, base)
@@ -87,8 +87,8 @@ class ChangedTests
   end
 
   # A file names a data file by its last two path segments, such as config/defaults.yml.
-  def data_readers(path)
-    readers = data_place(path)
+  def data_readers(path, status, base)
+    readers = data_place(path, status, base)
     return nil unless readers
 
     name = path.split('/').last(2).join('/')
@@ -96,9 +96,8 @@ class ChangedTests
     map.select { |_, files| files.any? { reads[it] } }.keys
   end
 
-  # An executable or linked file is not plain data, as bin/docs-only-change also decides.
-  def data_place(path)
-    return nil unless path.match?(DATA) && @files.plain?(path)
+  def data_place(path, status, base)
+    return nil unless path.match?(DATA) && @files.plain?(path, status, base)
 
     DATA_PLACES.find { |key, _| key.end_with?('/') ? path.start_with?(key) : path == key }&.last
   end
@@ -162,9 +161,13 @@ class ChangedTests
 
     def tests = @revision ? paths.grep(%r{\Atest/.*_test\.rb\z}) : Dir.glob('test/**/*_test.rb', base: @root)
 
-    def plain?(path)
+    # An executable or linked file, before or after the change, is not plain, as
+    # bin/docs-only-change also decides. Without BASE, a deletion's old mode is unknown.
+    def plain?(path, status, base)
       full = File.join(@root, path)
-      !File.symlink?(full) && !File.executable?(full)
+      return false if File.symlink?(full) || File.executable?(full)
+
+      base ? [nil, '100644'].include?(git('ls-tree', base, '--', path).split.first) : status != 'D'
     end
 
     def file?(path) = @revision ? paths.include?(path) : File.file?(File.join(@root, path))
