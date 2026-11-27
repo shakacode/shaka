@@ -9,8 +9,9 @@ criteria commits and the same model on both arms.
 
 ## Run the paired review
 
-Use this pilot on macOS. The Codex command isolation check was verified with
-Codex CLI 0.170.0. A full score across the four cases remains follow-up work.
+Use this pilot on macOS. Codex CLI 0.170.0 passed the isolation check, and
+0.172.0 completed subscription-backed control replays. See the
+[Linux qualification results](#linux-qualification) before trying another host.
 
 Sign in to `claude` with your Claude subscription or to `codex` with ChatGPT.
 Supply your trusted installed helper by absolute path. The runner strips
@@ -67,7 +68,20 @@ cap, and missing usage leaves an unresolved reservation that stops later calls.
 The CLI exits unsuccessfully for a partial run. Retain completed records and
 include any gaps in the report.
 
+## Linux qualification
+
+Linux subscription replay remains unqualified. On ARM64 with Codex CLI 0.172.0,
+Ubuntu 24.04.4 failed to start the sandbox. On Debian 13 with a system-installed
+Codex package, the sandbox read the fixture and hid the dummy login, prior
+transcript, and saved report. Linux reported those private files as absent.
+The replay preflight requires an explicit permission denial and stopped before
+login or budget reservation. These checks used dummy data in VMs with no host
+directory mounts.
+
 ## Score the results
+
+See [#1283](https://github.com/shakacode/shaka/issues/1283) for evidence from
+the four-case run on both subscription paths.
 
 Extract each completed record's `result.report`, label the two reports with
 opaque IDs, and save the ID-to-arm mapping separately. For each case, compare

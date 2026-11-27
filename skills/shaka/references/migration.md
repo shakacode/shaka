@@ -2,9 +2,14 @@
 
 ## Migrate an older contract
 
-Use `shaka seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA` to preview a
-migration of `.agents/shaka/config.yml` at that commit. A repository without that
-file at the commit first converts with the steps in the changelog's breaking-changes entry.
+For a release cutover, check out the official target tag separately while the
+previous installation stays active. Use the absolute path to that checkout's
+`skills/shaka/scripts/shaka` and set `SHAKA_RUBY` to the absolute path to Ruby
+3.4 or later for each invocation of the target helper.
+
+Run the target helper with `seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA`
+to preview the migration of `.agents/shaka/config.yml` at that commit. If that
+file is absent, follow the converter steps in the changelog's breaking-changes entry.
 Inspect every retained, moved, retired, and blocking field before
 adding `--apply`. Settings the current contract accepts carry over unchanged, but
 `--apply` rewrites the YAML, so restore any comments before committing. An existing
@@ -30,21 +35,31 @@ For the old command-path mapping, migrate in this order:
 1. With the previous Shaka still installed, prepare the mapping-free YAML and fixed
    scripts. Preserve adapters at old paths. Where old and new roles conflict,
    make both run the stricter checks until the new contract is trusted.
-2. Validate the candidate with the previous installation and old trusted SHA.
-   Separately validate it with the target Shaka using `--local`. Both must pass
-   before the migration PR merges through normal gates.
-3. Upgrade Shaka, load the new default-branch SHA with `--ref`, then remove obsolete
-   adapters in a follow-up PR. Optional names use hyphens: `validate-local` and
-   `trigger-hosted-ci`.
+2. In the fresh checkout used for the target checks below, verify the retained
+   adapters and validate using the previous installation's helper and old trusted SHA.
+   Both validations must pass before the migration PR merges through normal gates.
+3. After switching to the verified target installation, remove obsolete adapters
+   in a follow-up PR. The optional paths are `validate-local` and `trigger-hosted-ci`.
+
+Before merging any shared settings migration, run the target helper's
+`seam check --root ROOT --local` in a fresh checkout of the exact PR commit.
+Check each fixed wrapper and retained adapter in that commit with
+`git ls-tree PR_SHA -- PATH`. Require mode `100755` on the file or on the
+tracked executable that a tracked symlink resolves to.
+Review moved wrappers and run the affected local checks. Run a
+`trigger-hosted-ci` wrapper only as part of an authorized CI run. Merge the PR
+after the target settings, tracked wrappers, and affected local checks pass.
+After merge,
+check the new trusted default-branch SHA using the target helper's `seam check
+--root ROOT --ref NEW_DEFAULT_SHA` before switching the active installation.
 
 A newly renamed key can also make an older installation reject trusted policy.
 Coordinate the contract change with the installation upgrade, including tasks
 already running when the change merges.
 
-`version` remains `1` for pilot changes that reject old keys loudly. It becomes
-`2` when an otherwise valid key changes meaning or default, or when repositories
-outside the pilot depend on the contract. Unknown keys never silently take a
-new meaning.
+Keep `version: 1` for configurations supported by Shaka 1.x. Apply the
+[published compatibility policy](https://github.com/shakacode/shaka/blob/main/docs/migration.md#what-stays-compatible-in-1x)
+when planning a change to the contract.
 
 Finish by checking the new installation against the merged default-branch commit.
 Report the installed revision, configuration changes, and any active tasks still
