@@ -22,7 +22,7 @@ class DescriptionIdentityTest < Minitest::Test
     rendered = unread
     assert_equal "🤖 Codex - AI spend: $1.44\n", rendered.lines.first
     refute_includes rendered, "_#{NOTE}_"
-    assert_operator rendered.index('<summary>Details</summary>'), :<, rendered.index(ENTRY)
+    assert_operator rendered.index('<summary>🤙 Shaka details</summary>'), :<, rendered.index(ENTRY)
     assert_includes rendered, "<summary>Missing values</summary>\n\n#{ENTRY}\n"
   end
 

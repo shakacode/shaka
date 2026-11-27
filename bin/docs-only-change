@@ -24,8 +24,6 @@ done < "$inventory"
 
 for path in "${paths[@]}"; do
   case "$path" in
-    # test/skill_test.rb reads this guide, so a change to it still runs the tests.
-    internal/improving-shaka.md) exit 1 ;;
     README.md | docs/*.md | docs/sidebars.json | docs/img/* | internal/*.md) ;;
     *) exit 1 ;;
   esac
@@ -42,4 +40,4 @@ for path in "${paths[@]}"; do
   [[ ! -e "$path" || (-f "$path" && ! -L "$path" && ! -x "$path") ]] || exit 1
 done
 
-printf 'Documentation-only change; Ruby tests and RuboCop are not needed.\n'
+printf 'Documentation-only change; RuboCop is not needed, and only the tests that name a changed page run.\n'
