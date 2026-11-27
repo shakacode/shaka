@@ -446,6 +446,7 @@ The Task line in Intent shows where the work came from:
 
 The optional `intent.task_understanding` is an object with one-line `goal` and
 `done_when` strings, rendered as **Goal** and **Done when** under the Task line.
+An optional boolean `confirmed` renders as **Confirmed by a person**.
 Plain text from older callers renders there as **As understood**. Callers can omit
 it; this prose belongs to Intent, not the provenance metadata allowlist.
 
