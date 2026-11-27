@@ -70,6 +70,12 @@ class SquashMessageTest < Minitest::Test
     assert_equal ['#1242', '#2'], squash(body:).reference_check.dig('squash_message_references', 'references')
   end
 
+  def test_a_closing_word_ending_one_line_does_not_exempt_the_next
+    check = squash(title: 'Improve fixes', body: "Improve fixes\n#1242 introduced the old behavior.").reference_check
+
+    assert_equal ['#1242'], check.dig('squash_message_references', 'references')
+  end
+
   def test_a_number_in_the_title_is_listed_but_the_prs_own_is_not
     check = squash(title: 'Follow up on #1242 (#42)').reference_check
 
@@ -77,7 +83,8 @@ class SquashMessageTest < Minitest::Test
   end
 
   def test_a_body_whose_only_numbers_close_issues_needs_no_check
-    body = "Ends the bullets.\n\nFixes #7\n- Resolves owner/repo#3\nCloses: #9\nIssue&#39;s a#1 at https://x.test/a/b#12"
+    body = "Ends the bullets.\n\nFixes #7\n- Resolves owner/repo#3\nCloses: #9\nIssue&#39;s a#1 " \
+           "at https://x.test/a/b#12 and https://x.test/r?view=#123"
 
     assert_empty squash(body:).reference_check
   end

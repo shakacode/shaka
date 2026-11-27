@@ -14,7 +14,8 @@ module Shaka
     TRAILER = /^co-authored-by:[ \t]*(\S[^<\n]*<[^>\n]+>)[ \t]*$/i
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
     REFERENCE = %r{(?<![\w&/#])(?:[\w.-]+/[\w.-]+)?#\d+\b}
-    CLOSING = /\b(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?|part of):?\s+#{REFERENCE}/i
+    URL = %r{\S+://\S+}
+    CLOSING = /\b(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?|part of):?[ \t]+#{REFERENCE}/i
     REFERENCE_GUIDANCE = 'git log does not link these numbers. Say what each PR or issue did, or drop the number.'
 
     attr_reader :headline, :body
@@ -36,7 +37,7 @@ module Shaka
       title = PublicationText.single_line(content['title'], 'squash title')
       @headline = headline_for(title, number)
       text = plain(content['body'])
-      @references = references("#{title}\n#{text}") - ["##{number}"]
+      @references = (references(title) + references(text)).uniq - ["##{number}"]
       @body = [wrap(text), trailers(commit_messages)].reject(&:empty?).join("\n\n")
     end
 
@@ -55,7 +56,7 @@ module Shaka
       title.strip.end_with?(suffix) ? title.strip : "#{title.strip} #{suffix}"
     end
 
-    def references(text) = text.gsub(CLOSING, '').scan(REFERENCE).uniq
+    def references(text) = text.gsub(URL, ' ').gsub(CLOSING, '').scan(REFERENCE).uniq
 
     def plain(body)
       text = PublicationText.required(body, 'squash body')
