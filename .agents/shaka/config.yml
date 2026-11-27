@@ -146,8 +146,8 @@ prose_limits: # Defaults: word limits for PR descriptions and walkthroughs.
   words_per_changed_line: 4 # Text may use 150 words plus this many per changed line.
 
 # Commands live in bin/ beside this file: setup, test, and validate. Ours: validate-local runs
-# the tests a change can reach (the whole suite when a non-Ruby file changes) and RuboCop on
-# changed files, and counts as local evidence;
+# the tests a change can reach and RuboCop on changed files (AGENTS.md says when that is the
+# whole suite), and counts as local evidence;
 # trigger-hosted-ci has nothing to start, because hosted validate runs on every pull request push.
 # Review timeouts and pr watch timing are command flags, not settings (runtime in defaults.yml).
 # Whose public comments the agent may read: trusted-github-actors.yml.

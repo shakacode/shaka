@@ -198,8 +198,8 @@ Publish tested changes as bounded PRs, preferably below 500 changed lines each.
 Explain necessary larger changes; split independent work instead of hiding size.
 Required evidence is the PR's current commit, actual validation results, and review.
 For local evidence on the head you push, run `validate_local`, which runs the tests the change
-can reach and RuboCop on the changed files. Any changed file other than an added or modified
-`.rb` file still runs the whole test suite. Run the full `validate` locally only when the
+can reach and RuboCop on the changed files. A documentation-only change runs no tests; any
+other changed file that is not an added or modified `.rb` file runs the whole suite. Run the full `validate` locally only when the
 trusted settings lack `validate_local` or the workflow asks for it. The required hosted
 `validate` check runs the full suite on code changes and gates merge. When a check fails,
 fix it and review the new head.
