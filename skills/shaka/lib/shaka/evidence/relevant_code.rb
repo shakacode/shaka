@@ -14,7 +14,8 @@ module Shaka
     # The built-in defaults count because the review runner reads its timeouts from them directly, and
     # the rate card because reviewer settings read their model names from it. The launcher picks the Ruby
     # that runs everything, and subcommands.rb routes `evidence` and `review` to their code. On Windows,
-    # executable_file.rb starts a check and windows_job.rb holds it for the stop.
+    # executable_file.rb starts a check, bounded_command.rb finds Git's sh, and windows_job.rb holds
+    # the check for the stop.
     # The review folder counts whole, comment rendering included: listing those files apart would
     # have spared 3 of 315 commits on main.
     module RelevantCode
@@ -37,7 +38,7 @@ module Shaka
         lib/shaka/configuration/machine_reviewers.rb
         lib/shaka/configuration/paths.rb
         lib/shaka/configuration/sources.rb
-        lib/shaka/doctor/{cli_inventory,windows_job}.rb
+        lib/shaka/doctor/{bounded_command,cli_inventory,windows_job}.rb
         lib/shaka/usage/google_rates.rb
         lib/shaka/usage/rate_card.rb
         scripts/shaka

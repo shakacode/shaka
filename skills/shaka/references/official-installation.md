@@ -9,6 +9,12 @@ and ignores project Ruby and Bundler settings. Never edit the dedicated checkout
 
 ## Install
 
+For a request for the latest stable release, check the official GitHub releases
+for the latest published version at or above 1.0.0, excluding drafts and
+prereleases. If one exists, follow [Install a published release](#install-a-published-release).
+If the lookup succeeds with no suitable version, use source when the user allowed
+that fallback. Report a failed lookup as unverified.
+
 Review the source and installer, then clone into a directory outside the
 project repositories the user works in:
 
@@ -18,6 +24,10 @@ mkdir -p "$HOME/.local/share/shaka"
 git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
 "$HOME/.local/share/shaka/source/bin/install" --agent codex
 ```
+
+On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the `git clone`, or the
+installer refuses the checkout because Git converted its line endings. From PowerShell or cmd,
+start the installer as `ruby PATH\bin\install`, since Windows cannot run the extensionless script.
 
 Default: `~/.local/share/shaka/source`; respect chosen locations with `--directory DIR`.
 The installer refuses `~/.agents/` and every directory under it, where settings live. An install
@@ -75,7 +85,9 @@ the user's approval for the wider change before running take-over.
 
 ### Install a published release
 
-For an approved published version, use `bin/install --release VERSION --directory NEW`.
+Clone and inspect the official release tag in a dedicated checkout. For a first
+installation, run its `bin/install --release VERSION --directory DIR --agent HOST`.
+Use the requested host or pass `--skills-dir DIR` for a custom skills directory.
 The installer selects `refs/tags/vVERSION`, checks the declared version, and records
 its commit in a detached checkout. `--branch` and `--release` are mutually exclusive.
 Tags missing the release-installation module are refused before host links change.

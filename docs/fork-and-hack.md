@@ -66,6 +66,23 @@ revision, run this example for Codex. For other agents, see the
   "$shaka_source/bin/install" --verify
 ```
 
+On Windows, use PowerShell. The clone keeps the stored line endings the installer needs, and
+Ruby starts the installer, which Windows cannot run directly:
+
+```powershell
+$fork_url = "https://github.com/YOU/shaka.git"
+$fork_branch = "mine"
+$shaka_source = "$HOME\.local\share\shaka\source"
+git clone --config core.autocrlf=false --config core.eol=lf --branch $fork_branch $fork_url $shaka_source
+```
+
+After inspecting the checkout:
+
+```powershell
+ruby "$shaka_source\bin\install" --directory $shaka_source --repository $fork_url --branch $fork_branch --agent codex
+ruby "$shaka_source\bin\install" --verify
+```
+
 </details>
 
 ## Hack on it

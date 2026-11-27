@@ -80,7 +80,7 @@ high_risk_areas: # Defaults: a change here is always high risk, whatever the che
                     'skills/shaka/lib/shaka/{pull_changed_files,required_checks,ci_review_wait,review_coverage}.rb',
                     'skills/shaka/lib/shaka/{public_comments,defaults,seam,repository_config,configuration}.rb',
                     'skills/shaka/lib/shaka/{public_comments,evidence,seam,repository_config,configuration}/**/*',
-                    'skills/shaka/lib/shaka/publication/{feature_guard,verification_gates}.rb',
+                    skills/shaka/lib/shaka/publication/feature_guard.rb,
                     'skills/shaka/lib/shaka/post_implementation/**/*', 'skills/shaka/lib/shaka/post_implementation*.rb',
                     'skills/shaka/config/{post-implementation-*.md,workflow.yml,enforcement.yml,defaults.yml}',
                     skills/shaka/SKILL.md, skills/shaka/scripts/shaka.rb]
@@ -145,7 +145,9 @@ prose_limits: # Defaults: word limits for PR descriptions and walkthroughs.
   max_description_words: 300
   words_per_changed_line: 4 # Text may use 150 words plus this many per changed line.
 
-# Commands live in bin/ beside this file: setup, test, and validate. Optional, unused here:
-# validate-local (faster checks before local review) and trigger-hosted-ci (needs validate-local).
+# Commands live in bin/ beside this file: setup, test, and validate. Ours: validate-local runs
+# the tests a change can reach and RuboCop on changed files (AGENTS.md says when that is the
+# whole suite), and counts as local evidence;
+# trigger-hosted-ci has nothing to start, because hosted validate runs on every pull request push.
 # Review timeouts and pr watch timing are command flags, not settings (runtime in defaults.yml).
 # Whose public comments the agent may read: trusted-github-actors.yml.

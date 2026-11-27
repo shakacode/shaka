@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require 'shaka/executable_file'
 require 'shaka/evidence/timed_check'
 require 'shaka/evidence/tree_watch'
+require 'shaka/install/release_checkout'
 require 'shaka/install/source'
 
 # Native Windows starts a repository command through Git's sh, runs a check without a process
@@ -36,11 +37,34 @@ class WindowsCommandStartTest < Minitest::Test
     end
   end
 
+  # Git's sh is refused when it resolves into the checkout, as git.exe already is.
+  def test_git_shell_refuses_an_sh_inside_the_checkout
+    skip 'Windows runners may lack the symlink privilege' if Shaka::ExecutableFile.windows?
+
+    Dir.mktmpdir('shaka-windows-shell') do |directory|
+      checkout = File.join(directory, 'checkout')
+      FileUtils.mkdir_p([checkout, File.join(directory, 'git/bin')])
+      File.write(File.join(checkout, 'sh.exe'), '')
+      File.symlink(File.join(checkout, 'sh.exe'), File.join(directory, 'git/bin/sh.exe'))
+
+      error = assert_raises(Shaka::Error) { Shaka::Evidence::TimedCheck.trusted_shell(File.join(directory, 'git'), checkout) }
+      assert_match(/resolves inside the checkout/, error.message)
+    end
+  end
+
+  # Only Windows clones override line endings; elsewhere the user's Git settings stay in charge.
+  def test_installer_clones_set_line_endings_only_on_windows
+    assert_includes Shaka::Install::ReleaseCheckout.clone_config(windows: true), 'core.eol=lf'
+    assert_empty Shaka::Install::ReleaseCheckout.clone_config(windows: false)
+  end
+
   def test_windows_install_accepts_an_executable_record_without_an_execute_bit
     with_helper_without_execute_bit do |source, path|
       tracked = { 'skills/shaka/scripts/shaka' => %w[100755 blob] }
 
       assert source.send(:matching_modes?, tracked, windows: true)
+      refute source.send(:matching_modes?, { 'skills/shaka/scripts/shaka' => %w[120000 blob] }, windows: true),
+             'a symlink written out as a plain file matched'
       refute source.send(:matching_modes?, tracked, windows: false) unless Shaka::ExecutableFile.windows?
       File.chmod(0o646, path)
       refute source.send(:matching_modes?, tracked, windows: true) unless Shaka::ExecutableFile.windows?

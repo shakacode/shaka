@@ -86,13 +86,14 @@ module Shaka
       end
 
       # Windows reports no execute bit for an extensionless file, so there only the blob and the
-      # writable check can tell a changed file from the revision.
+      # writable check can tell a changed file from the revision. Only the execute bit is waived, not a
+      # symlink or submodule entry that Git wrote out as a plain file.
       def matching_modes?(tracked, windows: ExecutableFile.windows?)
         tracked.all? do |path, (mode, _object)|
           actual = File.join(@root, path)
           file_mode = File.stat(actual).mode
           expected_mode = file_mode.anybits?(0o100) ? '100755' : '100644'
-          file_mode.nobits?(0o002) && (mode == expected_mode || windows)
+          file_mode.nobits?(0o002) && (mode == expected_mode || (windows && %w[100644 100755].include?(mode)))
         end
       end
 

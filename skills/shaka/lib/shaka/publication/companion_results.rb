@@ -2,6 +2,7 @@
 
 require 'uri'
 require_relative 'text'
+require_relative 'companion_outcome'
 
 module Shaka
   # A companion run joins the attributed skill across phases and compares its reported commit to the live head.
@@ -9,7 +10,7 @@ module Shaka
     SUMMARY = 'Companion skill results'
     REQUIRED = %w[skill command checked result not_covered commit artifacts].freeze
     DISCRIMINATORS = %w[source revision].freeze
-    SHA = /\A\h{40}\z/
+    SHA = CompanionOutcome::SHA
     # Recognize workstation roots and paths attached to flags such as -I or -L.
     LOCAL_PATH = %r{
       (?<![\w./-])(?:--?[a-zA-Z][\w-]*)?(?:file:(?://(?:localhost)?)?)?(?:
@@ -42,15 +43,19 @@ module Shaka
       name = line(entry, 'skill')
       identity = skill_identity(entry)
       lines = ["**Source:** #{line(identity, 'source')}", "**Revision:** #{line(identity, 'revision')}",
-               "**Command:** `#{command(entry['command'])}`",
-               "**What it checked:** #{line(entry, 'checked')}", "**Result:** #{line(entry, 'result')}",
-               "**Not covered:** #{line(entry, 'not_covered')}", commit_line(entry), artifact_line(entry['artifacts'])]
+               command_line(entry), *findings(entry), *CompanionOutcome.new(entry).lines,
+               commit_line(entry), artifact_line(entry['artifacts'])]
       "**#{name}**\n\n#{lines.compact.map { |item| "- #{item}" }.join("\n")}"
+    end
+
+    def findings(entry)
+      ["**What it checked:** #{line(entry, 'checked')}", "**Result:** #{line(entry, 'result')}",
+       "**Not covered:** #{line(entry, 'not_covered')}"]
     end
 
     def validate_fields(entry)
       return if entry.is_a?(Hash) && (REQUIRED - entry.keys).empty? &&
-                (entry.keys - REQUIRED - DISCRIMINATORS).empty?
+                (entry.keys - REQUIRED - DISCRIMINATORS - CompanionOutcome::FIELDS).empty?
 
       raise Error, 'Publication companion_results run fields do not match the allowlist.'
     end
@@ -75,6 +80,13 @@ module Shaka
       value = entry[field]
       refuse_path(value, field)
       PublicationText.summary_text(value, "companion_results #{field}")
+    end
+
+    # A check done by reading or inspection has no command to rerun, so it renders as prose.
+    def command_line(entry)
+      return "**Manual check:** #{line(entry, 'command')}" if CompanionOutcome.new(entry).manual?
+
+      "**Command:** `#{command(entry['command'])}`"
     end
 
     def command(value)

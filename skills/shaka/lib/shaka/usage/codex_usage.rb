@@ -28,10 +28,10 @@ module Shaka
     end
 
     # `codex exec --json` announces its thread first; that thread's saved session holds its token counts.
-    def self.announced_session(events)
+    def self.announced_session(events, environment: ENV)
       events.each_line do |line|
         event = JSON.parse(line)
-        return session_file(event['thread_id']) if event.is_a?(Hash) && event['type'] == 'thread.started'
+        return session_file(event['thread_id'], environment:) if event.is_a?(Hash) && event['type'] == 'thread.started'
       rescue JSON::ParserError, EncodingError
         next
       end
@@ -43,7 +43,9 @@ module Shaka
       return unless identity.is_a?(String) && identity.match?(/\A[0-9a-f-]{36}\z/)
 
       home = environment.fetch('CODEX_HOME', File.expand_path('~/.codex'))
-      files = Dir.glob(File.join(home, 'sessions', '*', '*', '*', "*#{identity}.jsonl"))
+      # The home is a literal directory; only the dated folders and file name are a pattern.
+      sessions = File.join(home, 'sessions')
+      files = Dir.glob("*/*/*/*#{identity}.jsonl", base: sessions).map { File.join(sessions, it) }
       return unless files.one?
 
       metadata = JSON.parse(File.open(files.first, encoding: 'UTF-8', &:readline))
