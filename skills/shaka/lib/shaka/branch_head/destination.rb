@@ -90,7 +90,7 @@ module Shaka
       # A plain push follows the branch upstream, a named remote or a URL, so any upstream besides origin redirects it.
       def upstream_redirect
         upstream = config_values("branch.#{@branch}.remote").last
-        return if upstream.nil? || [REMOTE, '.'].include?(upstream)
+        return if upstream.nil? || upstream == REMOTE
 
         "#{@branch} tracks #{upstream}; Shaka pushes to origin only."
       end
@@ -107,11 +107,12 @@ module Shaka
       # git config exits 1 for a missing key; any other failure is a failed read, never "not configured".
       # Empty values stay, since an empty last value still overrides an earlier origin.
       def config_values(key, *type)
-        output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', *type, '--get-all', key)
+        output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', '-z', *type, '--get-all', key)
         return [] if status.exitstatus == 1
         raise Error, "Cannot read #{key}: #{error.strip}" unless status.success?
 
-        output.lines.map(&:chomp)
+        # NUL-delimited, so a value containing a newline stays one value.
+        output.delete_suffix("\0").split("\0", -1)
       end
 
       def git_lines(*)

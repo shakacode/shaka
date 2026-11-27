@@ -22,6 +22,15 @@ class BranchHeadSettingsTest < Minitest::Test
     assert_includes check['error'], 'tracks fork'
   end
 
+  # Only an unset upstream or exactly origin passes; `.` and a value with an embedded newline both pause.
+  def test_upstream_other_than_origin_pauses_however_written
+    ['.', "fork\norigin"].each do |upstream|
+      git(@task, 'config', "branch.#{BRANCH}.remote", upstream)
+
+      assert_equal 'unreadable', check['state'], upstream.inspect
+    end
+  end
+
   # A mirror remote refuses a single-branch push, so the check pauses before any edit.
   def test_mirror_remote_pauses_the_check
     %w[true 2].each do |value|
