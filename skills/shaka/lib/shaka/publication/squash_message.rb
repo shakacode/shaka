@@ -13,7 +13,7 @@ module Shaka
     COMMIT_PAGES = 3
     TRAILER = /^co-authored-by:[ \t]*(\S[^<\n]*<[^>\n]+>)[ \t]*$/i
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
-    REFERENCE = %r{(?<![\w&#])(?:[\w.-]+/[\w.-]+)?#\d+\b}
+    REFERENCE = %r{(?<![\p{Word}&#])(?:[\w.-]+/[\w.-]+)?#\d+\b}
     REFERENCE_GUIDANCE = 'Check each number against the squash message rules in references/writing.md.'
 
     attr_reader :headline, :body
@@ -36,7 +36,8 @@ module Shaka
       title = PublicationText.single_line(content['title'], 'squash title')
       @headline = headline_for(title, number)
       text = plain(content['body'])
-      @references = (references(title) + references(text)).uniq - ["##{number}", "#{repository}##{number}"]
+      own = ["##{number}", "#{repository}##{number}".downcase]
+      @references = (references(title) + references(text)).uniq.reject { |ref| own.include?(ref.downcase) }
       @body = [wrap(text), trailers(commit_messages)].reject(&:empty?).join("\n\n")
     end
 

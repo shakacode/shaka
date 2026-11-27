@@ -65,7 +65,7 @@ class SquashMessageTest < Minitest::Test
   end
 
   def test_the_prs_own_number_with_its_repository_is_not_listed
-    message = Shaka::SquashMessage.new({ 'title' => 'T', 'body' => 'Follows owner/repo#42 and other/repo#42.' },
+    message = Shaka::SquashMessage.new({ 'title' => 'T', 'body' => 'Follows Owner/Repo#42, other/repo#42, café#17.' },
                                        number: 42, repository: 'owner/repo')
 
     assert_equal ['other/repo#42'], message.reference_check.dig('squash_message_references', 'references')
