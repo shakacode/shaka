@@ -57,8 +57,8 @@ A settings PR becomes the team's default after it merges into the default branch
 You can also select it for one task before adoption. Local settings do not override
 shared settings.
 
-Individual setup honors the same settings as shared setup, except merge settings: reviewers,
-custom code-review instructions, checkpoint choices, writing limits, opening checks, and
+Individual setup honors the same settings as shared setup: reviewers, custom
+code-review instructions, checkpoint choices, writing limits, opening checks, and
 WIP reporting. [Prompt files](#where-shaka-reads-a-prompt-file) are the one
 setting whose location matters.
 
@@ -275,7 +275,7 @@ may merge. Label names match without regard to case.
 
 With individual setup, `shaka merge` checks the default `hold` label instead of your local
 `merge.hold_labels`. If your file lists `[hold, do-not-merge]`, `hold` still stops a merge and
-`do-not-merge` does not.
+`do-not-merge` does not, even though the agent's handoff reports `do-not-merge` as a hold.
 
 The hold governs only Shaka. GitHub does not know about it, so it does not stop anyone from
 clicking merge, and it does not take a PR out of a merge queue it has already joined. While
