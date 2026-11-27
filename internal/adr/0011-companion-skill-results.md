@@ -209,9 +209,9 @@ command rules; every other decision stands.
 
 - `manual`: `true` when the check was reading or inspection. `command` then renders as
   a **Manual check** line of escaped prose instead of a code span, because there is no
-  command to rerun. A manual `command` follows the rules for `checked`: one nonempty line
-  without a local absolute path, with HTML escaped, so a backtick or `</` is published as
-  text rather than refused. #1259 published `manual source inspection and gemspec check`
+  command to rerun. A manual `command` passes the same publication-text checks as `checked`,
+  including the refusal of local absolute paths, and is HTML-escaped, so a backtick or `</`
+  is published as text rather than refused. #1259 published `manual source inspection and gemspec check`
   as a command.
 - `outcome`: `findings_applied`, `findings_not_applied`, or `no_findings`. The set is fixed
   so a collector counts labels instead of reading `result` prose.
