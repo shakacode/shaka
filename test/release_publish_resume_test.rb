@@ -63,11 +63,14 @@ class ReleasePublishResumeTest < Minitest::Test
   end
 
   def test_the_cli_refuses_an_invalid_approval_without_a_backtrace
-    File.write(@approval, JSON.generate(JSON.parse(File.read(@approval)).merge('version' => 'not a version')))
-    output, error, status = Open3.capture3(RbConfig.ruby, File.join(__dir__, '../bin/release'), 'publish',
-                                           '--approval', @approval, '--dry-run', chdir: @root)
-    refute_predicate status, :success?
-    assert_equal ['', "Release refused: approval file has an invalid version\n"], [output, error]
+    { JSON.generate(JSON.parse(File.read(@approval)).merge('version' => 'not a version')) => 'has an invalid version',
+      '[]' => 'must hold a JSON object' }.each do |text, message|
+      File.write(@approval, text)
+      output, error, status = Open3.capture3(RbConfig.ruby, File.join(__dir__, '../bin/release'), 'publish',
+                                             '--approval', @approval, '--dry-run', chdir: @root)
+      refute_predicate status, :success?
+      assert_equal ['', "Release refused: approval file #{message}\n"], [output, error]
+    end
   end
 
   def test_a_remote_lightweight_tag_is_refused_before_upload

@@ -107,11 +107,14 @@ module ShakaRelease
 
     def check_release(release)
       name = "GitHub release v#{version}"
-      refuse "#{name} is a draft; publish or delete it, then rerun" if release.fetch('isDraft')
-      refuse "#{name} has the wrong prerelease flag" unless release.fetch('isPrerelease') == @approval.prerelease?
+      refuse "#{name} has the wrong prerelease flag; delete it and rerun" unless
+        release.fetch('isPrerelease') == @approval.prerelease?
       # GitHub appends its generated notes, so the approved text need only appear in the body.
-      refuse "#{name} lacks the approved notes" unless
+      refuse "#{name} lacks the approved notes; delete it and rerun" unless
         lf(release.fetch('body').to_s).include?(lf(@approval.release_body).strip)
+      # Checked last, so the advice to publish a draft only follows a draft that matches.
+      refuse "#{name} is a draft with the approved notes; publish or delete it, then rerun" if
+        release.fetch('isDraft')
     end
 
     # GitHub may return either line ending, so compare with LF on both sides.

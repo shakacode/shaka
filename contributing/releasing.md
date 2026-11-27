@@ -111,20 +111,20 @@ surprise. Run every `gh` command as `GH_HOST=github.com gh ... --repo shakacode/
    `refs/tags/vVERSION^{}` with `git ls-remote`; the version at
    `https://rubygems.org/api/v2/rubygems/shaka/versions/VERSION.json`; and the GitHub
    release with `gh release view --json isDraft,isPrerelease,body`. No tag lines at all
-   means the tag is not pushed yet. Stop and prepare a new version when:
-   - the tag line has no peeled line (it is not annotated) or peels to another commit;
-   - RubyGems reports a `sha` other than the approved gem digest;
-   - the release is a draft, its prerelease flag differs from the version, or its body
-     lacks the approved notes (with the skipped-gate line when the gate did not run).
+   means the tag is not pushed yet. Stop and prepare a new version when the tag line has no
+   peeled line (it is not annotated), the tag peels to another commit, or RubyGems reports
+   a `sha` other than the approved gem digest. A GitHub release can be replaced: when its
+   prerelease flag differs from the version or its body lacks the approved notes, delete
+   it and continue. A draft with the approved notes can be published or deleted.
 2. Without a remote tag, confirm remote `main` is still the approved commit, create the
    annotated tag `vVERSION` on that commit, push only that tag with `--no-follow-tags`, and
    read it back until its peeled line shows the approved commit.
 3. When RubyGems lacks the version, check the gem against its approved digest, then
    `gem push --host https://rubygems.org`.
-4. When no GitHub release exists, check the notes against their approved digest, then
-   create the release with `gh release create --verify-tag --generate-notes`, adding
-   `--prerelease` for a prerelease version and the skipped-gate line when the gate did not
-   run.
+4. When no GitHub release exists, check the notes against their approved digest. Create the
+   release with `gh release create --verify-tag --generate-notes --notes-file NOTES`, where
+   `NOTES` is the approved notes file, or a copy with the skipped-gate line added when the
+   gate did not run. Add `--prerelease` for a prerelease version.
 5. Set both `GEM_HOME` and `GEM_PATH` to a new temporary directory, install the version
    with `gem install --remote --clear-sources --source https://rubygems.org`, run its
    `shaka --help`, and delete the directory.

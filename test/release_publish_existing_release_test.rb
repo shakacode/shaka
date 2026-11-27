@@ -8,9 +8,11 @@ class ReleasePublishExistingReleaseTest < Minitest::Test
   include ReleasePublishFixture
 
   def test_a_draft_or_unreadable_release_is_refused_before_publishing
-    File.write(state('release'), '{}')
     File.write(state('draft'), '')
-    assert_refused 'is a draft'
+    write_release([], 'Unrelated notes')
+    assert_refused 'lacks the approved notes; delete it'
+    write_release([], "Fixes things.\n")
+    assert_refused 'is a draft with the approved notes; publish or delete it'
     File.write(state('gh_fails'), '')
     assert_refused 'Cannot read the GitHub release'
     assert_nil remote_tag

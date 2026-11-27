@@ -14,10 +14,9 @@ module ShakaRelease
 
     def initialize(path)
       @values = JSON.parse(File.read(path))
+      refuse 'approval file must hold a JSON object' unless @values.is_a?(Hash)
       missing = REQUIRED.reject { |key| @values[key] }
       refuse "approval file lacks #{missing.join(', ')}" unless missing.empty?
-      refuse 'approval file was not ready for approval' unless @values['status'] == 'ready_for_approval'
-      refuse 'approval file has an invalid version' unless Gem::Version.correct?(@values['version'].to_s)
       check_shape
     end
 
@@ -43,6 +42,8 @@ module ShakaRelease
 
     # Checked before any publication step, so a malformed file cannot stop publish halfway.
     def check_shape
+      refuse 'approval file was not ready for approval' unless @values['status'] == 'ready_for_approval'
+      refuse 'approval file has an invalid version' unless Gem::Version.correct?(@values['version'].to_s)
       refuse 'approval file has an invalid commit' unless @values['commit'].to_s.match?(/\A\h{40}\z/)
       gate = @values['behavior_gate']
       refuse 'approval file has an invalid behavior gate' unless
