@@ -64,10 +64,12 @@ class DecisionLabelsTest < Minitest::Test
   end
 
   def test_an_unclosed_fence_does_not_hide_a_published_decision
-    body = "```\nstill open\n<!-- shaka:decisions -->\n## Decisions to make\n"
-    error = assert_raises(Shaka::Error) { Shaka::DecisionLabels.guard(client, {}, body) }
+    ["```\n", "```ruby\n", "~~~ `ruby`\n"].each do |opener|
+      body = "#{opener}still open\n<!-- shaka:decisions -->\n## Decisions to make\n"
+      error = assert_raises(Shaka::Error) { Shaka::DecisionLabels.guard(client, {}, body) }
 
-    assert_includes error.message, 'empty list'
+      assert_includes error.message, 'empty list'
+    end
   end
 
   def test_a_shorter_fence_does_not_close_a_longer_opener
@@ -75,6 +77,21 @@ class DecisionLabelsTest < Minitest::Test
     error = assert_raises(Shaka::Error) { Shaka::DecisionLabels.guard(client, {}, body) }
 
     assert_includes error.message, 'empty list'
+  end
+
+  # CommonMark renders a backtick run followed by more backticks on the line as inline code.
+  def test_inline_code_at_line_start_does_not_open_a_fence
+    body = "```js``` blocks need a newer highlighter.\n\n<!-- shaka:decisions -->\n## Decisions to make\n" \
+           "\n```sh\nbin/setup\n```\n"
+    error = assert_raises(Shaka::Error) { Shaka::DecisionLabels.guard(client, {}, body) }
+
+    assert_includes error.message, 'empty list'
+  end
+
+  def test_a_tilde_fence_info_string_may_contain_backticks
+    body = "~~~ `ruby`\n<!-- shaka:decisions -->\n~~~\n"
+    assert_nil Shaka::DecisionLabels.guard(client, {}, body)
+    assert_empty @calls
   end
 
   def test_a_tilde_fence_keeps_a_backtick_line_inside_it
