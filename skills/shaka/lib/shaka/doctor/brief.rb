@@ -18,6 +18,11 @@ module Shaka
 
       GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/getting-started.md#1-install-shaka'
       SKILL = File.expand_path('../../..', __dir__)
+      # The workflow shows this report in the agent's first reply, so a user who skipped setup reads these
+      # lines before anything else and does not mistake a task without settings for a full Shaka run.
+      NOT_SET_UP = 'Shaka is not set up in this repository, so it cannot run its full workflow here yet.'
+      NEXT_STEP = 'Next step: say "Set up Shaka just for me" to try it privately in this clone, or ' \
+                  '"Configure this repository for Shaka" to open a team setup PR.'
 
       def self.run(arguments, options)
         refuse_extra!(arguments, options)
@@ -45,11 +50,13 @@ module Shaka
 
       def items = @items ||= [*installation_checks, *@checks]
 
-      def report = ["Shaka start check: #{worst.upcase}", *items.map { |item| render(item) }].join("\n")
+      def report = [*not_set_up, "Shaka start check: #{worst.upcase}", *items.map { |item| render(item) }].join("\n")
 
       def blocked? = worst == 'failed'
 
       private
+
+      def not_set_up = items.any? { |item| item[:settings_missing] } ? [NOT_SET_UP, NEXT_STEP, ''] : []
 
       def worst = items.map { |item| item.fetch(:status) }.max_by { |status| SEVERITY.fetch(status) }
 
