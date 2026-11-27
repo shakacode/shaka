@@ -30,7 +30,9 @@ module Shaka
         result = Result.new([], [], {})
         return result if posts.empty? || !public?
 
-        config # One trust-settings failure stops the whole screen, not each thread in turn.
+        # One trust-settings failure stops the whole screen, not each thread in turn. Like `reply`, a
+        # thread with only this account's comments needs no trust settings.
+        config if posts.values.flatten(1).any? { |login, _| login != account }
         posts.each { |id, comments| sort(result, id, comments, account) }
         result
       end

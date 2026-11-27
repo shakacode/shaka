@@ -148,6 +148,14 @@ class HandoffThreadTrustTest < Minitest::Test
     assert_includes result['notes'], EXCLUDED_T1
   end
 
+  def test_a_thread_with_only_the_persons_comments_reads_no_trust_settings
+    threads = [thread('T1', opener: ['shaka-agent', 'Rename this.'])]
+    result = handoff(visibility: 'public', trust_from_github: true, threads:)
+
+    assert_equal ['Reply on review threads waiting for an answer: T1.'], result['owed']
+    assert_empty result['notes']
+  end
+
   def test_configured_bots_and_team_members_stay_owed
     threads = [thread('T1', opener: 'coderabbitai[bot]'), thread('T2', opener: 'teammate')]
     result = handoff(visibility: 'public', bots: ['coderabbitai'], teams: [%w[owner core]], team_members: ['teammate'],
