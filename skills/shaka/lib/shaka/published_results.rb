@@ -15,6 +15,8 @@ module Shaka
     # and the line at the top of the Evidence and limitations fold.
     FOLD = "<summary>Evidence and limitations</summary>\n\n"
     COMPACT = 'Validation passed; local review completed at '
+    # A fenced example in the summary may show these headings; GitHub renders it as code, not a section.
+    FENCE = /^(```|~~~)[^\n]*\n.*?^[^\n]*$/m
 
     module_function
 
@@ -22,7 +24,8 @@ module Shaka
     def read(pull, repository)
       return unless pull.dig('head', 'repo', 'full_name').to_s.casecmp?(repository)
 
-      region = Publishing.managed_region(pull['body'])
+      # A person who saved the description in GitHub's editor may have left CRLF line endings.
+      region = Publishing.managed_region(pull['body'].to_s.gsub("\r\n", "\n"))&.gsub(FENCE, '')
       line, gaps = region && own_line(region, pull.dig('head', 'sha').to_s[0, 7])
       line && { 'kept_line' => line, 'kept_gaps' => gaps&.match?(GAPS) ? gaps : nil }
     end
@@ -33,7 +36,7 @@ module Shaka
       return unless region.scan(HEADING).one?
 
       first, second = paragraphs_after(region, HEADING)
-      return [first[verified_line(short_head)], second] unless first.to_s.start_with?("#{COMPACT}#{short_head}")
+      return [first.to_s[verified_line(short_head)], second] unless first.to_s.start_with?("#{COMPACT}#{short_head}")
       return unless region.scan(FOLD).one?
 
       [paragraphs_after(region, FOLD).first.to_s[verified_line(short_head)], nil]

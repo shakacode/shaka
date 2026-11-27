@@ -84,7 +84,7 @@ class PublicationVerificationLineTest < Minitest::Test
   end
 
   # https://github.com/shakacode/shaka/issues/887: a completed review folded even when fewer
-  # reviewers ran than the repository configured. The folded evidence keeps only the line.
+  # reviewers ran than the repository configured.
   def test_a_reviewer_shortfall_keeps_the_line_visible_and_names_the_missing_provider
     rendered = render(bound(shortfall: SHORTFALL), 'review' => URL)
 

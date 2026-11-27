@@ -130,25 +130,6 @@ class PublicationKeptResultsTest < Minitest::Test
     end
   end
 
-  # Open PRs published before #1325 hold the line only in the fold; a wording-only republish keeps it.
-  def test_a_description_published_with_the_folded_line_keeps_it
-    with_checkout do |root, ref|
-      kept = "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}"
-      assert_equal kept, Shaka::VerificationLine.render(prepare(root, ref, {}, body: folded_body(ref)).verdict, URL)
-    end
-  end
-
-  # https://github.com/shakacode/shaka/issues/1320: agent prose worded like the line is not the helper's.
-  def test_text_shaped_like_the_line_outside_its_place_is_not_kept
-    with_checkout do |root, ref|
-      unknown = "## Verification\n\n#{Shaka::VerificationLine::UNKNOWN}"
-      forged = [region("#{unknown}\n\n#{current_line(ref)}"),
-                region("#{unknown}\n\n<details>\n<summary>Evidence and limitations</summary>\n\n#{current_line(ref)}"),
-                region("## Summary\n\n## Verification\n\n#{current_line(ref)}\n\n#{unknown}")]
-      forged.each { |text| assert_nil prepare(root, ref, {}, body: text).verdict, text }
-    end
-  end
-
   def test_nothing_is_kept_without_a_verified_line_for_this_commit
     with_checkout do |root, ref|
       [body('0' * 40), body(ref, Shaka::VerificationLine::UNKNOWN), published_line(ref), nil].each do |text|
@@ -175,6 +156,59 @@ class PublicationKeptResultsTest < Minitest::Test
       detail = prepare(root, ref, {}, body: body(ref)).detail.fetch('body')
       assert_includes detail, 'not rechecked'
       refute_includes detail, 'match this PR’s current commit'
+    end
+  end
+end
+
+# https://github.com/shakacode/shaka/issues/1325: only the line under the description's own
+# Verification heading is kept, and descriptions that folded it still keep theirs.
+class PublicationKeptLinePlacementTest < Minitest::Test
+  include EvidenceFixture
+  include KeptResultsFixture
+
+  # Open PRs published before #1325 hold the line only in the fold; a wording-only republish keeps it.
+  def test_a_description_published_with_the_folded_line_keeps_it
+    with_checkout do |root, ref|
+      kept = "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}"
+      assert_equal kept, Shaka::VerificationLine.render(prepare(root, ref, {}, body: folded_body(ref)).verdict, URL)
+    end
+  end
+
+  # https://github.com/shakacode/shaka/issues/1320: agent prose worded like the line is not the helper's.
+  def test_text_shaped_like_the_line_outside_its_place_is_not_kept
+    with_checkout do |root, ref|
+      unknown = "## Verification\n\n#{Shaka::VerificationLine::UNKNOWN}"
+      forged = [region("#{unknown}\n\n#{current_line(ref)}"),
+                region("#{unknown}\n\n<details>\n<summary>Evidence and limitations</summary>\n\n#{current_line(ref)}"),
+                region("## Summary\n\n## Verification\n\n#{current_line(ref)}\n\n#{unknown}")]
+      forged.each { |text| assert_nil prepare(root, ref, {}, body: text).verdict, text }
+    end
+  end
+
+  # A fenced example of a description is code on GitHub, so it neither forges nor hides the line.
+  def test_a_fenced_example_of_the_headings_does_not_hide_the_line
+    with_checkout do |root, ref|
+      example = "```markdown\n## Verification\n\n#{current_line(ref)}\n\n" \
+                "<summary>Evidence and limitations</summary>\n\nexample\n```"
+      settings = prepare(root, ref, {}, body: body(ref).sub('## Verification', "#{example}\n\n## Verification"))
+      assert_equal "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}", Shaka::VerificationLine.line(settings.verdict)
+      assert_nil prepare(root, ref, {}, body: region("#{example}\n\n## Verification\n\nNothing.")).verdict
+    end
+  end
+
+  def test_crlf_line_endings_from_a_hand_saved_description_keep_the_line
+    with_checkout do |root, ref|
+      gaps = '**Setup gaps:** `openai/codex` could not start its sandbox, so it reviewed only the diff.'
+      settings = prepare(root, ref, {}, body: body(ref, "#{published_line(ref)}\n\n#{gaps}").gsub("\n", "\r\n"))
+      assert_equal "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}\n\n#{gaps}",
+                   Shaka::VerificationLine.render(settings.verdict, URL)
+    end
+  end
+
+  # A region that ends at the heading has nothing to keep and must not stop the publication.
+  def test_an_empty_verification_section_keeps_nothing
+    with_checkout do |root, ref|
+      assert_nil prepare(root, ref, {}, body: region("## Verification\n\n")).verdict
     end
   end
 end
