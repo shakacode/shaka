@@ -88,11 +88,10 @@ class ValidateLocalTest < Minitest::Test
     assert_empty log
   end
 
-  def test_untracked_whitespace_fails_and_an_empty_untracked_file_does_not
+  def test_untracked_whitespace_fails_and_empty_files_and_embedded_checkouts_do_not
     %w[lib/empty.rb --help].each { File.write(File.join(@root, it), '') }
-    _output, status = validate_local
-
-    assert_predicate status, :success?
+    git('init', '-q', File.join(@root, 'lib/embedded'))
+    assert_predicate validate_local.last, :success?
 
     File.write(File.join(@root, 'lib/new.rb'), "z = 1  \n")
     output, status = validate_local
