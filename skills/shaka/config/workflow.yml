@@ -582,13 +582,15 @@ phases:
         complete an item the task may not close. Name each mismatch and the tracker rule behind
         it in the handoff; report an item you cannot read as unverified.
         The helper writes the repository validation and local review line under Verification
-        from `--validation-result` and `--review-result`, so leave those out of `checks`.
+        from `--validation-result` and `--review-result`.
         An optional linked `verification.summary` gives a compact result. `not_verified` stays visible;
         put a gap that limits merging in `merge_limitations`. Checks, tables, and `details` fold under
         Evidence and limitations.
         Use optional `task_history` for the initial request and useful decision history.
-        `verification` lists 1 to 3 `checks`, each proof of this PR's own claim: what was run
-        against the changed behavior and its outcome, citing a link or the command. Its
+        `verification` lists 1 to 3 `checks`, each one short sentence proving this PR's own claim:
+        what ran against the changed behavior and its outcome, citing a link or the command.
+        Checks leave out the repository validation run, hosted or local, its test counts,
+        and local review. The
         `not_verified` line names a claim this PR makes that went unproven and why that is
         acceptable; work outside the change's scope stays out. Write `Nothing.` when every claim
         was proved, and the helper omits the line. An unfinished PR may list no checks
