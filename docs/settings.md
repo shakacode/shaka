@@ -1154,10 +1154,6 @@ add outside it is left alone.
 - The whole text may use 150 words plus `words_per_changed_line` for each
   changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
 - The description also stops at `max_description_words`, however large the change.
-- Visible prose may not cite a review finding by its ledger ID, such as
-  "accepted on N3". Readers of the PR cannot look the ID up, so the agent says
-  what the finding is without the ID. Inline code is not checked, so write another term
-  of that shape, such as an N2 machine type, as code. This rule has no setting.
 
 `shaka description` reports identity, task source, verification check and
 skill metadata errors together before it reads the PR. Shaka reports each
