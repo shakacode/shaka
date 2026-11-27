@@ -39,6 +39,27 @@ class BranchHeadDestinationTest < Minitest::Test
     assert_equal 'not_pushed', check['state']
   end
 
+  # symbolic-ref --short spells a branch shadowed by a same-named tag as heads/NAME.
+  def test_tag_with_the_branch_name_does_not_change_the_branch_read
+    commit(@task, 'first')
+    git(@task, 'tag', BRANCH)
+
+    assert_equal BRANCH, check['branch']
+  end
+
+  def test_pr_head_in_another_repository_is_unreadable
+    result = Shaka::BranchHead.new(root: @task, pr_head: { 'repository' => 'someone/fork', 'branch' => BRANCH }).check
+
+    assert_equal 'unreadable', result['state']
+    assert_includes result['error'], 'someone/fork'
+  end
+
+  def test_pr_head_matching_the_destination_is_checked_normally
+    pr_head = { 'repository' => @origin, 'branch' => BRANCH }
+
+    assert_equal 'not_pushed', Shaka::BranchHead.new(root: @task, pr_head:).check['state']
+  end
+
   private
 
   def unreadable_error

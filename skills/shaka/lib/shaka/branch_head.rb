@@ -29,10 +29,10 @@ module Shaka
                       'preserve local work, and report the error.'
     }.freeze
 
-    def initialize(root:)
+    def initialize(root:, pr_head: nil)
       @root = root
       @branch = current_branch
-      @destination = Destination.new(root:, branch: @branch)
+      @destination = Destination.new(root:, branch: @branch, pr_head:)
       @remote = @destination.remote
     end
 
@@ -128,7 +128,8 @@ module Shaka
     def config_key = "branch.#{@branch}.shakaAcceptedHead"
 
     def current_branch
-      git('symbolic-ref', '--quiet', '--short', 'HEAD').strip
+      # The full ref, since --short spells a branch shadowed by a same-named tag as heads/NAME.
+      git('symbolic-ref', '--quiet', 'HEAD').strip.delete_prefix('refs/heads/')
     rescue Error
       raise Error, 'No branch is checked out; check out the task branch first.'
     end

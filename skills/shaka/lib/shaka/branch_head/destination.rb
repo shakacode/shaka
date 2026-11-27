@@ -3,6 +3,7 @@
 require 'open3'
 require_relative '../doctor/bounded_command'
 require_relative '../error'
+require_relative '../git_origin'
 require_relative '../workflow_version'
 
 module Shaka
@@ -16,9 +17,12 @@ module Shaka
 
       attr_reader :remote
 
-      def initialize(root:, branch:)
+      # pr_head, when given, is the PR's head as { 'repository' => 'OWNER/NAME', 'branch' => NAME }; the
+      # destination must be that branch in that repository.
+      def initialize(root:, branch:, pr_head: nil)
         @root = root
         @branch = branch
+        @pr_head = pr_head
         @remote = push_remote
       end
 
@@ -26,7 +30,7 @@ module Shaka
       # Reads the URL a push writes to, which may differ from the fetch URL. ls-remote matches refs by suffix,
       # so only the exact ref counts; a failure or timeout is unreadable, never absent.
       def head
-        output, error, success = bounded(READ_SECONDS, 'ls-remote', push_url, "refs/heads/#{@branch}")
+        output, error, success = bounded(READ_SECONDS, 'ls-remote', url, "refs/heads/#{@branch}")
         return { error: error.strip.empty? ? 'git ls-remote failed' : error.strip } unless success
 
         exact_head(output)
@@ -39,14 +43,33 @@ module Shaka
       def push(accepted, sha)
         lease = "--force-with-lease=refs/heads/#{@branch}:#{accepted}"
         _output, error, success = bounded(PUSH_SECONDS, 'push', '--quiet', '--no-follow-tags',
-                                          '--recurse-submodules=no', lease, @remote, "#{sha}:refs/heads/#{@branch}")
+                                          '--recurse-submodules=no', lease, url, "#{sha}:refs/heads/#{@branch}")
         return if success
 
         raise Error, "git push of #{sha} to #{@remote}/#{@branch} was refused, failed, or timed out, so it may " \
                      "have landed: #{error.strip}"
       end
 
+      # Resolved once, so the push writes to the very URL the check read.
+      def url
+        @url ||= push_url.tap { |resolved| refuse_other_pr_head(resolved) }
+      end
+
       private
+
+      def refuse_other_pr_head(resolved)
+        return unless @pr_head
+
+        repository = begin
+          GitOrigin.identity(resolved)
+        rescue Error
+          resolved
+        end
+        return if @pr_head['branch'] == @branch && @pr_head['repository'].casecmp?(repository)
+
+        raise Error, "The PR head is #{@pr_head['repository']}:#{@pr_head['branch']}, but this branch pushes to " \
+                     "#{repository}:#{@branch}; check out the PR head and push there."
+      end
 
       # The one URL a push of this branch writes to. Configurations where the read could reach another branch or
       # repository than the push are refused rather than guessed: a custom push refspec, a push remote other than

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'open3'
 require 'optparse'
 require_relative '../branch_head'
 require_relative '../error'
@@ -19,7 +20,8 @@ module Shaka
         options = parse(operation, arguments)
         return 0 unless options
 
-        result = perform(operation, BranchHead.new(root: options[:root]), options)
+        head = BranchHead.new(root: options[:root], pr_head: (pr_head(options[:root], options[:pr]) if options[:pr]))
+        result = perform(operation, head, options)
         puts JSON.pretty_generate(result)
         BranchHead::SAFE.include?(result['state']) ? 0 : PAUSE_EXIT
       rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
@@ -51,8 +53,11 @@ module Shaka
 
       def option_parser(operation, options)
         OptionParser.new do |flags|
-          flags.banner = "Usage: shaka branch #{operation} [--root DIR]"
+          flags.banner = "Usage: shaka branch #{operation} [--root DIR] [--pr NUMBER]"
           flags.on('--root DIR', 'Checkout with the task branch checked out') { |value| options[:root] = value }
+          flags.on('--pr NUMBER', Integer, 'PR whose head must be the push destination') do |value|
+            options[:pr] = value
+          end
           operation_flags(operation, flags, options)
           flags.on('-h', '--help', 'Show usage') { options[:help] = true }
         end
@@ -74,7 +79,18 @@ module Shaka
         flags.on('--absent', 'Accept that the branch is not on the remote') { options[:absent] = true }
       end
 
-      private_class_method :perform, :parse, :option_parser, :operation_flags, :accept_flags
+      # The PR's head repository and branch, read with gh from the checkout's repository.
+      def pr_head(root, number)
+        output, error, status = Open3.capture3('gh', 'pr', 'view', number.to_s, '--json',
+                                               'headRefName,headRepository,headRepositoryOwner', chdir: root)
+        raise Error, "Cannot read PR ##{number}: #{error.strip}" unless status.success?
+
+        pull = JSON.parse(output)
+        { 'repository' => "#{pull.dig('headRepositoryOwner', 'login')}/#{pull.dig('headRepository', 'name')}",
+          'branch' => pull['headRefName'] }
+      end
+
+      private_class_method :pr_head, :perform, :parse, :option_parser, :operation_flags, :accept_flags
     end
   end
 end
