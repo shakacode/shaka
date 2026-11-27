@@ -59,5 +59,5 @@
 - Replace internal terms with what the part does.
   - Instead of: “Without a job, only a leader Ruby has not reaped is ended,
     through Ruby's own handle.”
-  - Write: “When no job is available, a stop ends only the check's main Ruby
-    process, and only while Ruby still holds its handle.”
+  - Write: “When no job is available, a stop ends only the process Shaka
+    started for the check, and only while Ruby still holds its handle.”
