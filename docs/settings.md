@@ -355,8 +355,9 @@ A review of an earlier commit still counts in two cases:
 
 The PR description uses the same two cases. When the agent publishes without
 validation and review results, and the description holds no verified line that
-Shaka wrote for this commit, the Validation and review line says UNKNOWN. Text the
-agent wrote, such as a verification summary, never counts as that line. It then names
+Shaka wrote for this commit, the Validation and review line says UNKNOWN. Shaka
+reads that line from the top of the Evidence and limitations fold, so a verification
+summary or check worded like it does not count. It then names
 a local review published for this commit, or an earlier review that still covers
 it and why, for example: "The local review of `e33df55` covers this revision,
 which only updates it from `main`." The review's findings stay in its comment,

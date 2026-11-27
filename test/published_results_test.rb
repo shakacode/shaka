@@ -13,6 +13,7 @@ class PublishedResultsTest < Minitest::Test
   CODEX = { 'kind' => 'review', 'reviewer' => 'openai/codex', 'status' => 'completed', 'head' => HEAD }.freeze
   BLIND = CODEX.merge('commands' => { 'ran' => 3, 'succeeded' => 0, 'sandbox_failed' => 3 }).freeze
   LINE = '**Validation and review:** `validate` passed; local review by openai/codex at `abcdef1`.'
+  REVIEW_URL = 'https://github.com/shakacode/shaka/pull/1#issuecomment-2'
   GAP = '**Setup gaps:** `openai/codex` could not start its sandbox, so it reviewed only the diff'
   # A list carried from the published body renders between the Verification section and the fold.
   COMMENTS = "<!-- shaka:human-comments -->\n## Human comments\n\n1 comment · read at `abcdef1`\n\n" \
@@ -76,6 +77,18 @@ class PublishedResultsTest < Minitest::Test
     assert_nil kept.fetch('kept_gaps')
   end
 
+  # The reader copies the helper's gap sentences, so every form the helper writes must read back whole.
+  def test_every_setup_gap_the_helper_writes_is_kept_verbatim
+    shortfalls = [{ 'completed' => 1, 'configured' => 2, 'missing' => [] },
+                  { 'completed' => 1, 'configured' => 3, 'missing' => %w[anthropic xai] }]
+    [*shortfalls.product([nil, REVIEW_URL], [CODEX, BLIND]), [nil, nil, BLIND], [nil, REVIEW_URL, BLIND]]
+      .each do |shortfall, url, review|
+        body = render(VALIDATE, review, review: url, shortfall:)
+        shown = body[/^\*\*Setup gaps:\*\* .+$/]
+        assert_equal shown, read(body).fetch('kept_gaps'), body
+      end
+  end
+
   def test_a_line_published_with_crlf_line_endings_is_kept
     kept = read(render(VALIDATE, BLIND).gsub("\n", "\r\n"))
 
@@ -85,20 +98,22 @@ class PublishedResultsTest < Minitest::Test
 
   private
 
-  def render(validation = nil, *reviews, summary: nil, checks: nil, details: [], comments: false) # rubocop:disable Metrics/ParameterLists
-    content = PublicationRegressionTest.new(name).description_content('details' => details)
+  def render(validation = nil, *reviews, summary: nil, checks: nil, details: [], comments: false, **links) # rubocop:disable Metrics/ParameterLists
+    content = PublicationRegressionTest.new(name).description_content('details' => details, 'review' => links[:review])
     content['verification'] = content['verification'].merge('summary' => summary) if summary
     content['verification'] = content['verification'].merge('checks' => checks) if checks
-    Shaka::Publication.description(content, nil, (pull(region(COMMENTS)) if comments), settings(validation, reviews))
+    settings = settings(validation, reviews, links[:shortfall])
+    Shaka::Publication.description(content, nil, (pull(region(COMMENTS)) if comments), settings)
   end
 
-  def settings(validation, reviews)
+  def settings(validation, reviews, shortfall)
     return Shaka::PublicationSettings.new(verdict: nil) unless validation
 
     checks = { 'validation' => [validation], 'review' => reviews }.transform_values do |results|
       results.map { |result| { 'status' => 'bound', 'original' => result } }
     end
-    Shaka::PublicationSettings.new(verdict: { 'status' => 'ready', 'head' => HEAD, 'checks' => checks })
+    verdict = { 'status' => 'ready', 'head' => HEAD, 'checks' => checks }
+    Shaka::PublicationSettings.new(verdict:, reviewer_shortfall: shortfall)
   end
 
   def region(text) = "<!-- shaka:begin -->\n#{text}\n<!-- shaka:end -->"
