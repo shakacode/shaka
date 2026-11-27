@@ -51,8 +51,9 @@ Shaka handles merging. Repository checks and approvals still apply.
 ### Changed
 
 - A PR description for a task other than a prompt or a numbered GitHub issue
-  or PR in the same repository needs a task link or an omission reason. Common
-  description input errors are reported together, with each exact overage.
+  or PR in the same repository needs exactly one of a safe https task link or a
+  visible omission reason. Common description input errors are reported
+  together, with each exact overage.
 - Local Codex reviews run without connected ChatGPT apps, web search, or image
   viewing. Read-only shell inspection remains available.
 - Existing 1.x `.agents/shaka/config.yml` files and documented commands keep
@@ -87,8 +88,9 @@ Shaka handles merging. Repository checks and approvals still apply.
 ### Fixed
 
 - Installer diagnostics give a recovery command or explain which decision you
-  need to make, and `shaka doctor --brief` shows them. Interrupted branch
-  updates can clean up their temporary worktree.
+  need to make. `shaka doctor --brief` shows a warning with the next step, and
+  `shaka install --status` lists every issue. Interrupted branch updates can
+  clean up their temporary worktree.
 - Validation keeps evidence tied to the tested tree and settings. Fixes to a base
   branch are tracked separately when that branch already fails a check.
 - Claude Code cloud sessions can read PR status and publish PR descriptions when
