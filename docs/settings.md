@@ -349,9 +349,10 @@ A review of an earlier commit still counts in two cases:
 
 The PR description uses the same two cases. When the agent publishes without
 validation and review results, the Validation and review line says UNKNOWN. If an
-earlier review still applies, the line names it and says why, for example: "The
-local review of `e33df55` still applies: this revision only adds a clean merge of
-`main`." It never says validation passed.
+earlier review still covers the commit, the line names it and says why, for example:
+"The local review of `e33df55` also covers this revision, which only updates it
+from `main` with no other changes." The review's findings stay in its comment, and
+the line never says validation passed.
 
 When no review applies, `merge` stops before merging. A maintainer can record a
 waiver reason when review was skipped on purpose, a later commit only fixed nits,
@@ -1154,7 +1155,8 @@ add outside it is left alone.
 - The description also stops at `max_description_words`, however large the change.
 - Visible prose may not cite a review finding by its ledger ID alone, such as
   "accepted on N3". Readers of the PR cannot look the ID up, so the agent says
-  what the finding is instead. This rule has no setting.
+  what the finding is instead. Inline code is not checked, so write another term
+  of that shape, such as an N2 machine type, as code. This rule has no setting.
 
 `shaka description` reports identity, task source, verification check and
 skill metadata errors together before it reads the PR. Shaka reports each

@@ -78,10 +78,11 @@ class ProseLimitsTest < Minitest::Test
     error = assert_raises(Shaka::Error) { verify(html('Not verified end to end (accepted on N3).', 'See N12 too.')) }
 
     assert_includes error.message, 'ledger ID (N3, N12)'
+    assert_includes error.message, 'as code'
   end
 
   def test_finding_ids_in_collapsed_content_and_lookalikes_are_allowed
-    verify([html('Run on N2D instances, v1.N3 and NN3 stay, as does N-3.'),
+    verify([html('Run on N2D instances, v1.N3 and NN3 stay, as does N-3 and <code>N2</code>.'),
             '<details><summary>History</summary><p>N3 accepted.</p></details>'].join("\n"))
   end
 

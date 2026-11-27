@@ -69,13 +69,15 @@ module Shaka
     private
 
     # A review ledger numbers its findings N1, N2, and so on. A PR reader never sees the ledger, so a
-    # bare ID such as "accepted on N3" tells them nothing (PR #1301).
+    # bare ID such as "accepted on N3" tells them nothing (PR #1301). Inline code is not scanned, so an
+    # author writes another term of that shape as code.
     def finding_ids(paragraphs)
       ids = paragraphs.flatten.flat_map { |sentence| sentence.scan(FINDING_ID) }.uniq
       return [] if ids.empty?
 
       ["it cites review findings by ledger ID (#{ids.join(', ')}), which a reader cannot look up; " \
-       'say what each finding is instead']
+       'say what each finding is instead, and format a term that is not a finding ID, such as an N2 ' \
+       'machine type, as code']
     end
 
     def long_sentences(paragraphs)

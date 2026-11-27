@@ -15,23 +15,24 @@ class EarlierReviewTest < Minitest::Test
   def test_a_review_of_the_head_is_named
     @client.comments = [attestation(HEAD)]
 
-    assert_equal "A [local review](#{URL}) of this revision is published, but its result was not supplied.", sentence
+    assert_equal "A [local review](#{URL}) of this revision is published, but its result was not passed in.", sentence
   end
 
   def test_an_earlier_review_with_only_markdown_since_still_applies
     @client.comments = [attestation(EARLIER)]
     @client.comparisons = { EARLIER => markdown_only('docs/guide.md') }
 
-    assert_equal "The [local review](#{URL}) of `ccccccc` still applies: only Markdown changed since.", sentence
+    assert_equal "The [local review](#{URL}) of `ccccccc` also covers this revision, which changes only " \
+                 'Markdown since.', sentence
   end
 
   # MergeReviewBaseUpdateTest and MergeTreeProofTest cover the proof; this covers the wording.
   def test_a_clean_merge_of_the_base_names_the_branch_safely
     found = { 'reviewed' => EARLIER, 'comment' => 'javascript:alert(1)', 'basis' => 'unchanged_since_review' }
 
-    assert_equal 'The local review of `ccccccc` still applies: this revision only adds a clean merge of `main`.',
-                 Shaka::EarlierReview.describe(found, 'main')
-    assert_includes Shaka::EarlierReview.describe(found, 'a`b'), 'a clean merge of the base branch.'
+    assert_equal 'The local review of `ccccccc` also covers this revision, which only updates it from `main` ' \
+                 'with no other changes.', Shaka::EarlierReview.describe(found, 'main')
+    assert_includes Shaka::EarlierReview.describe(found, 'a`b'), 'from the base branch with'
   end
 
   def test_nothing_is_said_when_code_changed_since_or_github_fails

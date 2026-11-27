@@ -33,6 +33,17 @@ class CliDescriptionKeptResultsTest < Minitest::Test
     refute result.key?('evidence_kept')
   end
 
+  # PR #1301: without results, the line also names a published review that covers the head.
+  def test_without_results_a_published_review_of_the_head_is_named
+    url = 'https://github.com/owner/repo/pull/1#issuecomment-5'
+    comment = { 'user' => { 'login' => 'agent' }, 'html_url' => url,
+                'body' => "Review.\n\nREVIEWED #{'c' * 40} BY openai/codex EFFORT high FINDINGS 0\n" }
+    published, = republish('', env: { 'PR_COMMENTS' => JSON.generate([comment]) })
+
+    line = "were supplied for this revision. A [local review](#{url}) of this revision is published"
+    assert_includes published, line
+  end
+
   # Issue #1187: a later publication cannot quietly replace the plan-time recommendation.
   def test_a_changed_recommendation_keeps_the_recorded_one_and_says_so
     entry = { 'head' => 'b' * 40, 'workflow' => '`1.0.0` (commit unknown)', 'requested' => 'Not specified',
@@ -46,11 +57,12 @@ class CliDescriptionKeptResultsTest < Minitest::Test
 
   private
 
-  def republish(existing)
+  def republish(existing, env: {})
     with_repository do |root|
       commit(root)
       Dir.mktmpdir do |dir|
-        output, error, status = run_description(dir, root:, env: { 'EXISTING_BODY' => existing }, decisions: false)
+        env = { 'EXISTING_BODY' => existing }.merge(env)
+        output, error, status = run_description(dir, root:, env:, decisions: false)
         assert_predicate status, :success?, error
         return [File.read(File.join(dir, 'published.md')), JSON.parse(output)]
       end
