@@ -9,18 +9,36 @@ module Shaka
   # It stays outside evidence/ so a change here supersedes no earlier result.
   module PublishedResults
     SETTINGS_DRIFT = /\A(?:settings components differ: |public settings snapshot differs)/
-    GAPS = /^#{Regexp.escape(VerificationLine::GAPS)} .+$/
+    # The helper writes the full line as the first paragraph of this fold, even when the Verification
+    # section shows only a short summary, and agent text can come before or after the fold.
+    FOLD = '<summary>Evidence and limitations</summary>'
+    HEADING = '## Verification'
 
     module_function
 
-    # A fork's author can edit its description, so only a same-repository one counts.
+    # A fork's author can edit its description, so only a same-repository one counts. Only the line in
+    # the helper's own place counts: a verification summary or check may repeat the line's wording.
     def read(pull, repository)
       return unless pull.dig('head', 'repo', 'full_name').to_s.casecmp?(repository)
 
       region = Publishing.managed_region(pull['body'])
-      line = region && region[verified_line(pull.dig('head', 'sha').to_s[0, 7])]
-      line && { 'kept_line' => line, 'kept_gaps' => region[GAPS] }
+      return unless region && only_once?(region, FOLD)
+
+      line = region[after(FOLD, verified_line(pull.dig('head', 'sha')))]
+      line && { 'kept_line' => line, 'kept_gaps' => gaps(region, line) }
     end
+
+    # Setup gaps follow the line under the heading and are not repeated in the fold.
+    def gaps(region, line)
+      return unless only_once?(region, HEADING)
+
+      region[after(HEADING, /#{Regexp.escape(line)}[^\r\n]*\r?\n\r?\n\K#{Regexp.escape(VerificationLine::GAPS)} .+$/)]
+    end
+
+    # Agent text that copies the anchor makes it ambiguous, so nothing is kept.
+    def only_once?(region, anchor) = region.scan(/^#{Regexp.escape(anchor)}\r?$/).one?
+
+    def after(anchor, pattern) = /^#{Regexp.escape(anchor)}\r?\n\r?\n\K#{pattern.source}/
 
     # Every required result was supplied, none reports a failure, and only settings keep some from binding.
     def settings_drift?(verdict)
@@ -41,9 +59,9 @@ module Shaka
       entry['status'] == 'bound' || entry['reasons'].all? { |reason| reason.match?(SETTINGS_DRIFT) }
     end
 
-    def verified_line(short_head)
-      /^#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN).* at `#{Regexp.escape(short_head)}`\./
+    def verified_line(head)
+      /#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN).* at `#{Regexp.escape(head.to_s[0, 7])}`\./
     end
-    private_class_method :verified_line, :passed?, :drifted_only?
+    private_class_method :verified_line, :passed?, :drifted_only?, :gaps, :only_once?, :after
   end
 end

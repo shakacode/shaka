@@ -354,8 +354,9 @@ A review of an earlier commit still counts in two cases:
   new review.
 
 The PR description uses the same two cases. When the agent publishes without
-validation and review results, and the description holds no verified line for
-this commit to keep, the Validation and review line says UNKNOWN. It then names
+validation and review results, and the description holds no verified line that
+Shaka wrote for this commit, the Validation and review line says UNKNOWN. Text the
+agent wrote, such as a verification summary, never counts as that line. It then names
 a local review published for this commit, or an earlier review that still covers
 it and why, for example: "The local review of `e33df55` covers this revision,
 which only updates it from `main`." The review's findings stay in its comment,
