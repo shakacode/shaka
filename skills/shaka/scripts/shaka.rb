@@ -194,7 +194,7 @@ def publication_settings(root, pull, options, github)
 end
 
 def kept_notes(notes, evidence, recommendation)
-  notes['evidence_kept'] = Shaka::VerificationGates::KEPT if evidence
+  notes['evidence_kept'] = Shaka::VerificationLine::KEPT if evidence
   notes['recommendation_kept'] = Shaka::ProvenanceRecommendation.note(recommendation) if recommendation
   notes
 end

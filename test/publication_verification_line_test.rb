@@ -4,7 +4,7 @@ require_relative 'publication_test'
 
 # The description already receives the validation and review results, so Ruby writes their
 # line; the agent's checks are left for proof specific to the change.
-class PublicationVerificationGatesTest < Minitest::Test
+class PublicationVerificationLineTest < Minitest::Test
   HEAD = "abcdef1#{'0' * 33}".freeze
   VALIDATE = { 'kind' => 'validation', 'command' => 'validate', 'status' => 'completed', 'exit_code' => 0 }.freeze
   CLAUDE = { 'kind' => 'review', 'reviewer' => 'anthropic/claude', 'status' => 'completed', 'head' => HEAD }.freeze
@@ -67,7 +67,7 @@ class PublicationVerificationGatesTest < Minitest::Test
 
   def test_without_results_the_line_says_none_were_supplied
     rendered = render(nil)
-    assert_includes rendered, "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n"
+    assert_includes rendered, "## Verification\n\n#{Shaka::VerificationLine::UNKNOWN}\n\n"
     refute_includes rendered, '**Setup gaps:**'
   end
 
@@ -96,8 +96,8 @@ class PublicationVerificationGatesTest < Minitest::Test
     covered = 'The local review of `e33df55` covers this revision, which only updates it from `main`.'
     rendered = render(Shaka::PublicationSettings.new.with_earlier_review(covered))
 
-    assert_includes rendered, "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN} #{covered}\n\n"
-    evidence = "<summary>Evidence and limitations</summary>\n\n#{Shaka::VerificationGates::UNKNOWN} #{covered}"
+    assert_includes rendered, "## Verification\n\n#{Shaka::VerificationLine::UNKNOWN} #{covered}\n\n"
+    evidence = "<summary>Evidence and limitations</summary>\n\n#{Shaka::VerificationLine::UNKNOWN} #{covered}"
     assert_includes rendered, evidence
   end
 end
