@@ -64,10 +64,12 @@ class DecisionLabelsTest < Minitest::Test
   end
 
   def test_an_unclosed_fence_does_not_hide_a_published_decision
-    body = "```\nstill open\n<!-- shaka:decisions -->\n## Decisions to make\n"
-    error = assert_raises(Shaka::Error) { Shaka::DecisionLabels.guard(client, {}, body) }
+    ["```\n", "```ruby\n", "~~~ `ruby`\n"].each do |opener|
+      body = "#{opener}still open\n<!-- shaka:decisions -->\n## Decisions to make\n"
+      error = assert_raises(Shaka::Error) { Shaka::DecisionLabels.guard(client, {}, body) }
 
-    assert_includes error.message, 'empty list'
+      assert_includes error.message, 'empty list'
+    end
   end
 
   def test_a_shorter_fence_does_not_close_a_longer_opener
