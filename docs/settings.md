@@ -1253,8 +1253,8 @@ The evidence check accepts either script's result; it does not require a full
 After review repairs, your agent lets a required hosted check that runs your full
 `validate`, defined by a workflow on your default branch, stand in for the deferred
 local full run, so a slow machine does not repeat it. The agent still runs
-`validate` locally when the pull request adds, removes, or changes a workflow or
-that check's script, or when the hosted run skipped steps your local `validate`
+`validate` locally when the pull request adds, removes, or changes any workflow or
+the script it runs, or when the hosted run skipped steps your local `validate`
 would run. The tradeoff: a failure only the full suite catches appears on the hosted
 check after the push instead of before it.
 
