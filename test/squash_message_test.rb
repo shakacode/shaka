@@ -64,14 +64,15 @@ class SquashMessageTest < Minitest::Test
                  squash(title: 'Revert #6 (#42)', body:).reference_check)
   end
 
-  def test_a_number_touching_a_url_is_still_listed
-    check = squash(title: 'See #1242—https://x.test/notes', body: 'See https://x.test/notes—#1242.').reference_check
+  def test_numbers_beside_urls_and_slashes_are_listed
+    body = "See https://x.test/notes—#1242.\n\nCompare #7/#8 and https://x.test/notes/#9."
 
-    assert_equal ['#1242'], check.dig('squash_message_references', 'references')
+    assert_equal ['#1242', '#7', '#8', '#9'],
+                 squash(body:).reference_check.dig('squash_message_references', 'references')
   end
 
   def test_a_body_without_other_numbers_needs_no_check
-    body = "Ends the bullets.\n\nIssue&#39;s a#1 at https://x.test/a/b#12"
+    body = "Ends the bullets.\n\nIssue&#39;s a#1 at https://x.test/notes"
 
     assert_empty squash(body:).reference_check
   end

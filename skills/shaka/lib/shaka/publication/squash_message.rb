@@ -13,7 +13,7 @@ module Shaka
     COMMIT_PAGES = 3
     TRAILER = /^co-authored-by:[ \t]*(\S[^<\n]*<[^>\n]+>)[ \t]*$/i
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
-    REFERENCE = %r{(?<![\w&/#])(?:[\w.-]+/[\w.-]+)?#\d+\b}
+    REFERENCE = %r{(?<![\w&#])(?:[\w.-]+/[\w.-]+)?#\d+\b}
     REFERENCE_GUIDANCE = 'Check each number against the squash message rules in references/writing.md.'
 
     attr_reader :headline, :body
