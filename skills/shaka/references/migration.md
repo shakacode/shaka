@@ -7,7 +7,8 @@ previous installation stays active. Use the absolute path to that checkout's
 `skills/shaka/scripts/shaka` and set `SHAKA_RUBY` to the absolute path to Ruby
 3.4 or later for each invocation of the target helper.
 
-Run the target helper with `seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA`
+Run `seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA` with the target helper for a
+release cutover, otherwise the trusted installed helper,
 to preview the migration of `.agents/shaka/config.yml` at that commit. If that
 file is absent, follow the converter steps in the changelog's breaking-changes entry.
 Inspect every retained, moved, retired, and blocking field before
@@ -41,17 +42,24 @@ For the old command-path mapping, migrate in this order:
 3. After switching to the verified target installation, remove obsolete adapters
    in a follow-up PR. The optional paths are `validate-local` and `trigger-hosted-ci`.
 
-Before merging any shared settings migration, run the target helper's
-`seam check --root ROOT --local` in a fresh checkout of the exact PR commit.
-Check each fixed wrapper and retained adapter in that commit with
-`git ls-tree PR_SHA -- PATH`. Require mode `100755` on the file or on the
-tracked executable that a tracked symlink resolves to.
+Before merging any shared settings migration, run `seam check --root ROOT --ref PR_SHA`
+in a fresh checkout of the exact PR commit. Use the helper that will read these
+settings after merge: the target helper for a release cutover, otherwise the trusted
+installed helper.
+It applies the commit rules the post-merge check uses, including fixed wrapper
+modes, symlink targets, and files the settings name. Treat the result as a
+diagnostic only: `PR_SHA` is a candidate. Disregard the report's `trusted/ref` mode
+and `grants_policy: true`; policy still comes only from the verified default-branch
+SHA. The helper does not check retained adapters; check each with
+`git ls-tree PR_SHA -- PATH` and require mode `100755` on the file, or on the
+tracked executable a relative in-repository symlink resolves to.
 Review moved wrappers and run the affected local checks. Run a
 `trigger-hosted-ci` wrapper only as part of an authorized CI run. Merge the PR
 after the target settings, tracked wrappers, and affected local checks pass.
 After merge,
-check the new trusted default-branch SHA using the target helper's `seam check
---root ROOT --ref NEW_DEFAULT_SHA` before switching the active installation.
+in a fresh checkout at the new default-branch SHA, run that same helper's `seam check
+--root ROOT --ref NEW_DEFAULT_SHA` and require `trusted/ref` for that SHA before
+switching the active installation.
 
 A newly renamed key can also make an older installation reject trusted policy.
 Coordinate the contract change with the installation upgrade, including tasks

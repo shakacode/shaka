@@ -83,6 +83,15 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
    Obtain approval for those exact inputs; stop until it is recorded. The preflight
    is repository maintenance tooling and is not included in the gem.
 
+   **1.0.0 only:** the maintainer decided on
+   [#580](https://github.com/shakacode/shaka/issues/580) to release 1.0.0 without the
+   behavioral gate. For that version, skip running the gate and requiring its passing
+   results in this step, and run every other step. Say that the gate did not run in
+   the 1.0.0 `CHANGELOG.md` entry written in step 1, so the release notes and the
+   preflight digest carry it. The last passing batches
+   ran in October at an older commit ([#905](https://github.com/shakacode/shaka/pull/905)).
+   Every release after 1.0.0 runs the gate.
+
 6. Set the approved version and confirm it is absent from RubyGems, GitHub releases,
    and remote tags. The first command lists existing prereleases; the latter commands
    should report that the target does not exist:
