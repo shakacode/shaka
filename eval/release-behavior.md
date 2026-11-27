@@ -1,8 +1,7 @@
 # Check release safety decisions
 
-When the [release guide](../contributing/releasing.md) requires this gate for a
-release, run a complete release-safety batch against the exact release skill before
-requesting publication approval. This offline gate checks 12 known failure and positive
+Before requesting release publication approval, run a complete release-safety batch
+against the exact release skill. This offline gate checks 12 known failure and positive
 control decisions: the eight [merge-authority cases](decision-replays.md), failed
 checks, stale approval, and release publication with and without explicit approval.
 The actions are simulated; no merge, tag, upload or release runs.
