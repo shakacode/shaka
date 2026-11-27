@@ -59,15 +59,16 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
 
    The command first confirms a clean checkout at `shakacode/shaka`'s `main`, before it
    loads the gemspec, the behavior checker, or validation. `bin/release` itself loads from
-   the checkout, which is why step 2 starts from a clean `main`. It then checks each batch against this commit and runs `validate`
-   through `evidence run`, which takes a while. Pass `--validation FILE` to reuse a completed
-   result for the same commit; prepare copies it into the output directory. Next it builds
-   the gem, saves the version's `CHANGELOG.md` entry as `RELEASE_NOTES.md`, and runs the
+   the checkout, which is why step 2 starts from a clean `main`. It then checks each batch
+   against this commit and runs `validate` through `evidence run`, which takes a while.
+   Pass `--validation FILE` to reuse a completed result whose tested tree and settings
+   match this commit; prepare copies it into the output directory. Next it builds the gem,
+   saves the version's `CHANGELOG.md` entry as `RELEASE_NOTES.md`, and runs the
    `bin/release-preflight` checks: matching validation and settings, package metadata, file
    contents and executable modes, notes that match the changelog, and no existing release
    tag. The output directory then holds the gem, the notes, the validation result, each
-   behavior result, and `approval.json`, which names the commit, version, and their digests.
-   Nothing remote changes. A pass does not establish host compatibility or grant
+   behavior result, and `approval.json`, which names the commit, version, and their
+   digests. Nothing remote changes. A pass does not establish host compatibility or grant
    publication authority.
 5. Ask the maintainer to approve the commit, version, and digests in `approval.json`, and
    stop until the approval is recorded.
@@ -100,23 +101,22 @@ through a pull request instead.
 
 ## Publish without the command
 
-If `bin/release` cannot run, publish the approved files by hand. Before the tag, confirm
-that remote `main` is still the approved commit and that RubyGems, the remote tags, and
-GitHub releases do not have the version yet. If an earlier attempt already finished a
-step, confirm it matches the approval, the tag on `APPROVED_COMMIT` or the RubyGems `sha`
-equal to `APPROVED_GEM_SHA256`, and start the chain below at the first missing step:
+If `bin/release` cannot run, publish the approved files by hand. First read what already
+exists:
 
 ```bash
 shaka_version=VERSION
-git ls-remote https://github.com/shakacode/shaka.git refs/heads/main
+git ls-remote https://github.com/shakacode/shaka.git refs/heads/main \
+  "refs/tags/v$shaka_version" "refs/tags/v$shaka_version^{}"
 curl -fsS "https://rubygems.org/api/v2/rubygems/shaka/versions/$shaka_version.json"
-git ls-remote --exit-code --tags https://github.com/shakacode/shaka.git "refs/tags/v$shaka_version"
 GH_HOST=github.com gh release view "v$shaka_version" --repo shakacode/shaka
 ```
 
-The first command should print the approved commit, and the other three should report
-that the version does not exist. Then publish with one command chain, so a failed step stops
-every step after it:
+On a first attempt, `main` should be `APPROVED_COMMIT`, and the tag, the RubyGems version,
+and the release should not exist. After an earlier attempt, the `^{}` tag line must show
+`APPROVED_COMMIT`, and a published RubyGems `sha` must equal `APPROVED_GEM_SHA256`; anything
+else means stop and prepare a new version. Then run the chain below from the first missing
+step. It is one command chain, so a failed step stops every step after it:
 
 ```bash
 git tag -a "v$shaka_version" APPROVED_COMMIT -m "Release shaka $shaka_version" &&

@@ -17,6 +17,7 @@ module ShakaRelease
       missing = REQUIRED.reject { |key| @values[key] }
       refuse "approval file lacks #{missing.join(', ')}" unless missing.empty?
       refuse 'approval file was not ready for approval' unless @values['status'] == 'ready_for_approval'
+      refuse 'approval file has an invalid version' unless Gem::Version.correct?(@values['version'].to_s)
     end
 
     def commit = @values.fetch('commit')

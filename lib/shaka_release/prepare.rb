@@ -25,7 +25,8 @@ module ShakaRelease
       check_helper
       reserve_out_directory
       commit = run!({}, 'git', '-C', @root, 'rev-parse', 'HEAD').strip
-      # Before any checkout code runs: the gemspec, the behavior checker, or validation.
+      # Before the gemspec, the behavior checker, or validation runs. bin/release and these modules
+      # load from the checkout before this, so the launcher must come from a trusted checkout.
       Preflight.new(root: @root, shaka: @shaka, commit:, gem: nil, validation: nil, notes: nil).check_source
       gate = behavior_gate(commit)
       validation = @validation ? copy_validation : run_validation(commit)

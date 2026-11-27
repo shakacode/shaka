@@ -53,6 +53,20 @@ class ReleasePublishResumeTest < Minitest::Test
     assert_empty git('ls-remote', 'origin', 'refs/tags/private-note')
   end
 
+  def test_a_lightweight_local_tag_is_refused_in_a_dry_run
+    git('tag', 'v1.2.0', @commit)
+    error = assert_raises(Shaka::Error) { publish(dry_run: true) }
+    assert_includes error.message, 'is not annotated'
+  end
+
+  def test_the_cli_refuses_an_invalid_approval_without_a_backtrace
+    File.write(@approval, JSON.generate(JSON.parse(File.read(@approval)).merge('version' => 'not a version')))
+    output, error, status = Open3.capture3(RbConfig.ruby, File.join(__dir__, '../bin/release'), 'publish',
+                                           '--approval', @approval, '--dry-run', chdir: @root)
+    refute_predicate status, :success?
+    assert_equal ['', "Release refused: approval file has an invalid version\n"], [output, error]
+  end
+
   def test_inherited_git_overrides_do_not_redirect_publication
     other = File.join(@directory, 'other')
     Open3.capture3('git', 'init', '-q', other)

@@ -29,6 +29,7 @@ module ShakaRelease
       main = git('ls-remote', '--exit-code', Preflight::REMOTE, 'refs/heads/main').split.first
       refuse 'remote main moved after approval; prepare and approve again' unless main == @commit
       refuse "local tag #{@name} points at another commit; delete it and rerun" unless [nil, @commit].include?(local)
+      refuse "local tag #{@name} is not annotated; delete it and rerun" if local && !annotated?
     end
 
     def push
@@ -48,6 +49,8 @@ module ShakaRelease
     rescue Shaka::Error
       refuse "local tag #{@name} does not name a commit; delete it and rerun"
     end
+
+    def annotated? = git('for-each-ref', '--format=%(objecttype)', "refs/tags/#{@name}").strip == 'tag'
 
     def git(*) = run!(@env, 'git', '-C', @root, *)
   end
