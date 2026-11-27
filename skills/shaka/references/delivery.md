@@ -187,8 +187,8 @@ The renderer uses `REDACTED` for Workspace when the setting is explicitly false,
 `wip.include_checkout_path: false`. Unread or unavailable settings
 withhold Workspace and explain the recovery action:
 rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
-republishing when loading failed. When the checkout has no settings file at all, Workspace
-says so, because no `--ref` can recover settings that do not exist.
+republishing when loading failed. When no settings were read and the checkout has no
+settings file, Workspace says the repository has no Shaka settings instead.
 No setting hides Chat link; supply `UNKNOWN`
 with `wip_disclosure.thread` set to `withheld` when the user asks to keep it off the PR. Unfinished publication remains possible without
 validation/review evidence; the diagnostic establishes no readiness. Retain the
