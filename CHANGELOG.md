@@ -36,12 +36,23 @@ Shaka handles merging. Repository checks and approvals still apply.
   links if needed.
 - See evidence on the PR for what changed, what passed, and what the reviewer
   found. Ask for a code walkthrough, use interactive mode to steer a draft PR,
-  and use timing and token estimates to review your delivery process.
+  and use timing and token estimates to review your delivery process. Usage
+  reports cover Antigravity and price GPT-6.2 and Gemini models.
+- List your team's skills in `.agents/shaka/packs/` so Shaka offers each one at
+  the step where it helps. PRs show the results of those companion skills. See
+  [offer your team's skills](https://shaka.shakacode.com/docs/working-with-shaka#offer-your-teams-skills-at-the-right-step).
+- Add a `<!-- shaka -->` line to your pull request template to choose where
+  Shaka's sections appear. See [use your pull request template](https://shaka.shakacode.com/docs/pr-template).
+- Run Shaka in Claude Code on the web with the
+  [cloud sessions](https://shaka.shakacode.com/docs/cloud-sessions) guide.
 
 ### Changed
 
 - When republishing an older PR description, supply a link or an omission reason
-  for issue or PR references that lack a GitHub issue or PR number.
+  for issue or PR references that lack a GitHub issue or PR number. Common
+  description input errors are reported together, with each exact overage.
+- Local Codex reviews run without connected ChatGPT apps, web search, or image
+  viewing. Read-only shell inspection remains available.
 - Existing 1.x `.agents/shaka/config.yml` files and documented commands keep
   working across 1.x updates. Use the target release to check settings before
   switching. For team settings, run `shaka seam check --root DIR --ref DEFAULT_SHA`
@@ -74,7 +85,8 @@ Shaka handles merging. Repository checks and approvals still apply.
 ### Fixed
 
 - Installer diagnostics give a recovery command or explain which decision you
-  need to make. Interrupted branch updates can clean up their temporary worktree.
+  need to make, and `shaka doctor --brief` shows them. Interrupted branch
+  updates can clean up their temporary worktree.
 - Validation keeps evidence tied to the tested tree and settings. Fixes to a base
   branch are tracked separately when that branch already fails a check.
 - Claude Code cloud sessions can read PR status and publish PR descriptions when
