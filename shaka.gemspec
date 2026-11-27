@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
                    'skills/rct-claude/SKILL.md',
                    'skills/shaka/SKILL.md', 'skills/shaka/references/*.md', 'skills/shaka/references/*.html',
                    'skills/shaka/config/*.yml', 'skills/shaka/config/*.md', 'skills/shaka/lib/**/*.rb',
-                   'skills/shaka/scripts/*', 'bin/install', 'exe/*', 'README.gem.md', 'LICENSE']
+                   'skills/shaka/scripts/*', 'bin/install', 'exe/*', 'README.gem.md', 'CHANGELOG.md', 'LICENSE']
   spec.extra_rdoc_files = ['README.gem.md']
   spec.rdoc_options = %w[--main README.gem.md]
   spec.bindir = 'exe'
