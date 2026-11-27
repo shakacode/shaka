@@ -19,9 +19,6 @@ module Shaka
     REQUESTED = 'Code Walkthrough: _Requested._'
     CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
     DRAFT_MERGE = '**Draft: mark it ready for review before merging**'
-    SETTINGS_MISSING = '**Shaka settings were missing:** this repository has no Shaka settings file, so this PR was ' \
-                       'prepared without them. [Set up Shaka](https://shaka.shakacode.com/docs/getting-started#' \
-                       '2-choose-individual-or-team-setup) to run its full workflow.'
 
     module_function
 
@@ -30,14 +27,7 @@ module Shaka
     # The head check keeps a stale recommendation off the page, so the text need not name the commit.
     # settings is the PublicationSettings whose walkthrough.publish decides whether the walkthrough has a slot.
     # A rendering preview loads these renderers beside an installed settings object that may predate it.
-    # A repository with no settings at all says so after the decision and links, still above the summary, so a
-    # reader never takes the PR for a full Shaka run.
     def lead(content, pull, decisions, settings = nil)
-      [*decision_lead(content, pull, decisions, settings),
-       *(SETTINGS_MISSING if settings.respond_to?(:settings_missing?) && settings.settings_missing?)]
-    end
-
-    def decision_lead(content, pull, decisions, settings)
       publish = settings.walkthrough_publish if settings.respond_to?(:walkthrough_publish)
       links = links(content, pull, deciding: decisions.any?, publish:)
       return [*decisions, links] unless content.key?('checkpoint')

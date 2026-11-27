@@ -2,13 +2,10 @@
 
 require_relative 'evidence_fixture'
 require 'shaka/publication/settings'
-require 'shaka/publication/links'
 
 # A PR published from a repository that never set Shaka up says so where a reader looks first.
 class PublicationSettingsMissingTest < Minitest::Test
   include EvidenceFixture
-
-  CONTENT = { 'deployment' => 'none' }.freeze
 
   def test_a_checkout_without_a_settings_file_is_reported_missing_from_any_directory_in_it
     without_settings do |root, ref|
@@ -44,20 +41,16 @@ class PublicationSettingsMissingTest < Minitest::Test
     Dir.mktmpdir { |directory| refute_predicate prepare(directory, nil, nil), :settings_missing? }
   end
 
-  # A decision waiting on the maintainer stays first; the statement closes the opening lines.
-  def test_the_lead_names_missing_settings_after_the_decision_and_links
-    missing = Object.new
-    def missing.settings_missing? = true
-    lead = Shaka::PublicationLinks.lead(CONTENT, nil, ['**Decision:** Which base?'], missing)
-    assert_equal ['**Decision:** Which base?', Shaka::PublicationLinks::SETTINGS_MISSING], [lead.first, lead.last]
-    assert_includes lead.last, 'Shaka settings were missing'
-    refute_includes Shaka::PublicationLinks.lead(CONTENT, nil, [], Shaka::PublicationSettings.new),
-                    Shaka::PublicationLinks::SETTINGS_MISSING
+  def test_only_a_checkout_without_settings_renders_the_line
+    line = Shaka::PublicationSettings::MISSING_LINE
+    assert_includes line, 'Shaka settings were missing'
+    without_settings { |root, ref| assert_equal [line], prepare(root, nil, ref).missing_lines }
+    with_checkout { |root, ref| assert_empty prepare(root, nil, ref).missing_lines }
   end
 
-  # A rendering preview pairs these renderers with an installed settings object that may predate the question.
-  def test_an_older_settings_object_renders_without_the_line
-    assert_equal 1, Shaka::PublicationLinks.lead(CONTENT, nil, [], Object.new).size
+  # A rendering preview pairs this renderer with an installed settings object that may predate the flag.
+  def test_a_settings_object_without_the_flag_renders_no_line
+    assert_empty Shaka::PublicationSettings.new.missing_lines
   end
 
   private

@@ -4,7 +4,7 @@ require_relative 'test_helper'
 require_relative 'repository_fixture'
 require_relative 'cli_opening_check_fakes'
 require 'json'
-require 'shaka/publication/links'
+require 'shaka/publication/settings'
 
 # The description command, run as an agent runs it in a repository that never set Shaka up, states that fact.
 class CliDescriptionSettingsMissingTest < Minitest::Test
@@ -20,12 +20,12 @@ class CliDescriptionSettingsMissingTest < Minitest::Test
     body = published(remove_settings: true)
     blocks = body.split("\n\n").map(&:strip).reject { it.empty? || it.start_with?('<!--') }
     assert_includes blocks[1], 'Checkpoint'
-    assert_equal Shaka::PublicationLinks::SETTINGS_MISSING, blocks[2]
-    assert_operator body.index(Shaka::PublicationLinks::SETTINGS_MISSING), :<, body.index('## Summary')
+    assert_equal Shaka::PublicationSettings::MISSING_LINE, blocks[2]
+    assert_operator body.index(Shaka::PublicationSettings::MISSING_LINE), :<, body.index('## Summary')
   end
 
   def test_a_description_from_a_checkout_with_settings_does_not
-    refute_includes published(remove_settings: false), Shaka::PublicationLinks::SETTINGS_MISSING
+    refute_includes published(remove_settings: false), Shaka::PublicationSettings::MISSING_LINE
   end
 
   private
