@@ -26,7 +26,7 @@ module Shaka
     end
 
     def missing_values
-      detail = MissingValues.detail(throughput, timings: timings.any?)
+      detail = MissingValues.detail(throughput, @content, timings: timings.any?)
       detail ? [details_block(detail)] : []
     end
 

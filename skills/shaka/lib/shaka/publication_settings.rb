@@ -12,6 +12,7 @@ require_relative 'ready_time'
 require_relative 'local_review/ledger'
 require_relative 'configuration'
 require_relative 'configuration/personal_privacy'
+require_relative 'earlier_review'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.

@@ -40,10 +40,10 @@ module Shaka
 
     # Planning checks the final size without writing comments. Rendering and the
     # original body/head check must succeed before the caller publishes this plan.
-    def prepare(body)
+    def prepare(body, writer: nil)
       return Plan.new(body, -> { body }) if body.length <= LIMIT
 
-      identify_writer(body)
+      identify_writer(body, writer)
       references, publish = planned_references(records(body))
       preview = replace(body, references)
       check_preview(preview)
