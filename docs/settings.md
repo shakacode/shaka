@@ -1244,8 +1244,8 @@ The evidence check accepts either script's result; it does not require a full
 
 After review repairs, your agent can let a required hosted check that runs your full
 `validate` stand in for a second, local full run, so a slow machine does not repeat
-it. The agent still runs `validate` locally when the pull request changes that
-check's workflow or script, or when the hosted run skipped part of the suite. The
+it. The agent still runs `validate` locally when the pull request changes a
+workflow or that check's script, or when the hosted run skipped part of the suite. The
 tradeoff: a failure only the full suite catches appears on the hosted check after
 the push instead of before it.
 

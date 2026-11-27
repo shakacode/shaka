@@ -803,10 +803,11 @@ phases:
         [review guide](<{{package_root}}/skills/shaka/references/review.md>).
       - After repairs, run the deferred resolved `validate` command, then
         the resolved `trigger_hosted_ci` command when present. Later fixes need fresh evidence.
-        A required hosted check that runs that full `validate` can replace the local run: push, run
-        the trigger, and count the check's passing run on the pushed head as the full validation.
-        Run the local `validate` instead when this PR changes that check's workflow or script, or
-        when the run skipped steps the local `validate` would run.
+        A check the saved helper's `pr` reports as required can replace the local run when a
+        workflow at the trusted base defines it and runs that full `validate`: push, run the trigger,
+        and count the check's passing run on the pushed head as the full validation. Run the local
+        `validate` instead when this PR adds, removes, or changes any workflow or the script it runs,
+        or when the run skipped steps the local `validate` would run.
       - When the user expressly asks to resolve PR comments, follow the packaged
         [settlement procedure](<{{package_root}}/skills/shaka/references/comment-settlement.md>). Keep
         ownership until each known optional review settles or reaches its bounded handoff. Do not
