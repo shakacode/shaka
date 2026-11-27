@@ -48,9 +48,7 @@ class BranchHeadPushGuardTest < Minitest::Test
   def test_push_that_lands_but_cannot_be_accepted_names_the_pushed_commit
     accept(push_task('first'))
     commit(@task, 'mine')
-    head = branch_head
-    head.singleton_class.prepend(Module.new { def accept(*) = raise(Shaka::Error, 'read failed') })
-    result = head.push
+    result = failing_accept(branch_head).push
 
     assert_true result['pushed']
     assert_equal git(@task, 'rev-parse', 'HEAD').strip, result['pushed_head']
@@ -75,6 +73,11 @@ class BranchHeadPushGuardTest < Minitest::Test
   end
 
   private
+
+  def failing_accept(head)
+    head.singleton_class.prepend(Module.new { def accept(*) = raise(Shaka::Error, 'read failed') })
+    head
+  end
 
   def push_outcome
     result = branch_head.push
