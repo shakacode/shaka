@@ -27,9 +27,11 @@ while IFS= read -r -d '' path; do
   fi
 done <"$inventory"
 
-# validate already handles a documentation-only change in seconds.
+# validate already handles a documentation-only change in seconds. Without exec, the trap removes
+# the temporary files.
 if [[ -x bin/docs-only-change ]] && bin/docs-only-change "$base" >/dev/null 2>&1; then
-  exec "$root/.agents/shaka/bin/validate"
+  "$root/.agents/shaka/bin/validate"
+  exit
 fi
 
 unset RUBYOPT RUBYLIB
@@ -37,17 +39,18 @@ export BUNDLE_GEMFILE="$root/Gemfile"
 ruby bin/check-docs-navigation
 bundle exec ruby bin/run-tests --changed "$base"
 
-git diff --name-only --no-renames --diff-filter=d -z "$comparison" -- >"$inventory"
+git diff --name-only --no-renames -z "$comparison" -- >"$inventory"
 git ls-files --others --exclude-standard -z >>"$inventory"
 changed=()
 while IFS= read -r -d '' path; do
+  case "$path" in
+    # Changing or deleting RuboCop's settings or gems can make any file offend.
+    .rubocop.yml | Gemfile | Gemfile.lock | .ruby-version)
+      bundle exec rubocop
+      exit
+      ;;
+  esac
+  # ruby-check skips deleted paths.
   changed+=("$path")
 done <"$inventory"
-((${#changed[@]} > 0)) || exit 0
-for path in "${changed[@]}"; do
-  case "$path" in
-    # A change to RuboCop's settings or gems can make any file offend.
-    .rubocop.yml | Gemfile | Gemfile.lock | .ruby-version) exec bundle exec rubocop ;;
-  esac
-done
-bundle exec ruby bin/lefthook/ruby-check lint "${changed[@]}"
+((${#changed[@]} == 0)) || bundle exec ruby bin/lefthook/ruby-check lint "${changed[@]}"
