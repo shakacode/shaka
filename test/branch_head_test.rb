@@ -62,6 +62,7 @@ class BranchHeadTest < Minitest::Test
     result = check
 
     assert_equal 'unreadable', result['state']
+    assert_kind_of String, result['error']
     refute_empty result['error']
   end
 

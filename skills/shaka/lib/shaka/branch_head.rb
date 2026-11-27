@@ -38,8 +38,8 @@ module Shaka
       state = state_for(live, accepted)
       { 'state' => state, 'branch' => @branch, 'remote' => @remote, 'accepted' => accepted,
         'live' => live.is_a?(String) ? live : nil, 'local' => git('rev-parse', 'HEAD').strip,
-        'lease' => lease(accepted), 'guidance' => GUIDANCE.fetch(state),
-        'error' => (live if state == 'unreadable') }.compact
+        'lease' => lease(accepted), 'rewrites' => rewrites?(accepted), 'guidance' => GUIDANCE.fetch(state),
+        'error' => (live[:error] if state == 'unreadable') }.compact
     end
 
     # Accepting records only what the remote holds now, so a stale or mistyped SHA cannot be accepted.
@@ -77,14 +77,23 @@ module Shaka
       live == accepted ? 'unchanged' : 'moved'
     end
 
+    # A leased push from a HEAD that lacks the accepted head drops pushed commits, which only a rebase intends.
+    # An accepted commit missing from this clone counts as a rewrite, since its ancestry cannot be shown.
+    def rewrites?(accepted)
+      return false unless accepted
+
+      _output, _error, status = Open3.capture3('git', '-C', @root, 'merge-base', '--is-ancestor', accepted, 'HEAD')
+      !status.success?
+    end
+
     # The value for `git push --force-with-lease`; an empty expectation means the branch must not exist yet.
     def lease(accepted) = "--force-with-lease=refs/heads/#{@branch}:#{accepted}"
 
     # ls-remote --exit-code returns 2 when the remote answers without the branch; any other failure is unreadable.
     # Its pattern also matches refs that merely end in the branch's path, so only the exact ref counts.
     def live_head
-      output, error, status = Open3.capture3('git', '-C', @root, 'ls-remote', '--exit-code', @remote,
-                                             "refs/heads/#{@branch}")
+      output, error, status = Open3.capture3({ 'GIT_TERMINAL_PROMPT' => '0' }, 'git', '-C', @root, 'ls-remote',
+                                             '--exit-code', @remote, "refs/heads/#{@branch}")
       return exact_head(output) if status.success?
       return if status.exitstatus == 2
 
