@@ -34,10 +34,10 @@ module Shaka
 
     attr_reader :branch
 
-    def initialize(root:, pr_head: nil)
+    def initialize(root:)
       @root = root
       @branch = current_branch
-      @destination = Destination.new(root:, branch: @branch, pr_head:)
+      @destination = Destination.new(root:, branch: @branch)
       @remote = @destination.remote
     end
 

@@ -66,36 +66,6 @@ class BranchHeadDestinationTest < Minitest::Test
     assert_equal BRANCH, check['branch']
   end
 
-  def test_pr_head_in_another_repository_is_unreadable
-    result = Shaka::BranchHead.new(root: @task,
-                                   pr_head: {
-                                     'url' => 'https://github.com/someone/fork', 'branch' => BRANCH
-                                   }).check
-
-    assert_equal 'unreadable', result['state']
-    assert_includes result['error'], 'someone/fork'
-  end
-
-  def test_pr_head_matching_the_destination_is_checked_normally
-    pr_head = { 'url' => @origin, 'branch' => BRANCH }
-
-    assert_equal 'not_pushed', Shaka::BranchHead.new(root: @task, pr_head:).check['state']
-  end
-
-  def test_pr_head_on_another_host_is_unreadable
-    git(@task, 'remote', 'set-url', '--push', 'origin', 'https://git.example.com/someone/fork.git')
-    pr_head = { 'url' => 'https://github.com/someone/fork', 'branch' => BRANCH }
-
-    assert_includes Shaka::BranchHead.new(root: @task, pr_head:).check['error'], 'git.example.com'
-  end
-
-  # A bare number would let gh pick the repository, so --pr names it.
-  def test_pr_option_needs_the_repository
-    _out, err = capture_io { assert_equal 1, Shaka::BranchHead::Command.run(['check', '--root', @task, '--pr', '7']) }
-
-    assert_includes err, 'OWNER/REPO#NUMBER'
-  end
-
   def test_printed_errors_drop_url_credentials
     assert_equal 'see https://git.example.com/o/r', Shaka::BranchHead.redact('see https://user:secret@git.example.com/o/r')
   end
@@ -109,15 +79,6 @@ class BranchHeadDestinationTest < Minitest::Test
 
     assert_equal 'unchanged', branch_head.push['state']
     assert_empty git(@task, 'ls-remote', fork, "refs/heads/#{BRANCH}")
-  end
-
-  def test_pr_view_json_maps_to_the_head_url_and_refuses_a_deleted_fork
-    pull = { 'url' => 'https://github.com/base/repo/pull/7', 'state' => 'OPEN', 'headRefName' => 'topic',
-             'headRepository' => { 'name' => 'repo' }, 'headRepositoryOwner' => { 'login' => 'someone' } }
-
-    assert_equal({ 'url' => 'https://github.com/someone/repo', 'branch' => 'topic' },
-                 Shaka::BranchHead::Command.send(:head_of, pull, 7))
-    assert_raises(Shaka::Error) { Shaka::BranchHead::Command.send(:head_of, pull.merge('headRepository' => nil), 7) }
   end
 
   private

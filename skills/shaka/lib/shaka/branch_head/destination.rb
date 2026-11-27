@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 
 require 'open3'
-require 'uri'
 require_relative '../doctor/bounded_command'
 require_relative '../error'
-require_relative '../git_origin'
 require_relative '../workflow_version'
 
 module Shaka
@@ -18,12 +16,9 @@ module Shaka
       PUSH_SECONDS = 120
       ENVIRONMENT = WorkflowVersion::GIT_ENVIRONMENT.merge('GIT_TERMINAL_PROMPT' => '0').freeze
 
-      # pr_head, when given, is the PR's head as { 'url' => 'https://HOST/OWNER/NAME', 'branch' => NAME }; origin
-      # must be that repository and the checked-out branch that branch.
-      def initialize(root:, branch:, pr_head: nil)
+      def initialize(root:, branch:)
         @root = root
         @branch = branch
-        @pr_head = pr_head
       end
 
       def remote = REMOTE
@@ -58,28 +53,10 @@ module Shaka
 
       # Resolved once per command, so the read and the push name the same URL.
       def url
-        @url ||= push_url.tap { |resolved| refuse_other_pr_head(resolved) }
+        @url ||= push_url
       end
 
       private
-
-      def refuse_other_pr_head(resolved)
-        return unless @pr_head
-
-        repository = repository_key(resolved)
-        return if @pr_head['branch'] == @branch && repository_key(@pr_head['url']) == repository
-
-        raise Error, "The PR head is #{@pr_head['url']}:#{@pr_head['branch']}, but origin is " \
-                     "#{repository}:#{@branch}; work on the PR head from a checkout whose origin holds it."
-      end
-
-      # Host and repository path, whatever the transport, so an SSH origin matches the PR's https URL.
-      def repository_key(url)
-        uri = URI(GitOrigin.canonical_url(url))
-        "#{uri.host}#{uri.path}".downcase
-      rescue Error, URI::Error
-        url
-      end
 
       def push_url
         refuse_redirected_push
