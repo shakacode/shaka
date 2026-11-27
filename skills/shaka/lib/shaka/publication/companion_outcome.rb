@@ -9,7 +9,8 @@ module Shaka
                'no_findings' => 'No findings' }.freeze
     SHA = /\A\h{40}\z/
     # Repository-relative paths and globs only, so a cleared path can be compared with a PR's changed files.
-    UNSAFE_PATH = %r{\A/|\A[a-zA-Z]:|(?:\A|/)\.\.(?:/|\z)|[`\\<>[:cntrl:]]}
+    # Home directories and URI schemes are refused here; workstation roots anywhere in the value, by LOCAL_PATH.
+    UNSAFE_PATH = %r{\A[/~]|\A[a-zA-Z][\w+.-]*:|(?:\A|/)\.\.(?:/|\z)|[`\\<>[:cntrl:]]}
 
     def initialize(entry)
       @entry = entry
@@ -54,7 +55,10 @@ module Shaka
       "**Cleared paths:** #{code_list(paths)}" if paths.any?
     end
 
-    def repository_path?(path) = path.is_a?(String) && !path.strip.empty? && !UNSAFE_PATH.match?(path)
+    def repository_path?(path)
+      path.is_a?(String) && !path.strip.empty? && !UNSAFE_PATH.match?(path) &&
+        !CompanionResults::LOCAL_PATH.match?(path)
+    end
 
     def code_list(values) = values.map { |value| "`#{value}`" }.join(', ')
   end
