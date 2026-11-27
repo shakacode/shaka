@@ -64,10 +64,13 @@ class SquashMessageTest < Minitest::Test
                  squash(body:).reference_check)
   end
 
-  def test_a_closing_word_exempts_only_the_number_it_closes
-    body = "- Fixes the bullets #1242 had.\n\nFixes #7 and see #2"
+  def test_only_a_line_that_just_closes_issues_is_exempt
+    body = "- Fixes the bullets #1242 had.\n\nFixes #7 and see #2\nFixes https://x.test/g #5 had.\n" \
+           "Fixes #7, #8 and #9\n- Closes owner/repo#3"
 
-    assert_equal ['#1242', '#2'], squash(body:).reference_check.dig('squash_message_references', 'references')
+    check = squash(title: 'Revert "Fixes #6"', body:).reference_check
+
+    assert_equal ['#6', '#1242', '#7', '#2', '#5'], check.dig('squash_message_references', 'references')
   end
 
   def test_a_closing_word_ending_one_line_does_not_exempt_the_next

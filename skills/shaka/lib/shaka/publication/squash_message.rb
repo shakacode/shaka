@@ -15,7 +15,9 @@ module Shaka
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
     REFERENCE = %r{(?<![\w&/#])(?:[\w.-]+/[\w.-]+)?#\d+\b}
     URL = %r{\S+://\S+}
-    CLOSING = /\b(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?|part of):?[ \t]+#{REFERENCE}/i
+    # A line that only closes issues, such as `Fixes #7` or `- Closes #7 and #8`.
+    CLOSING = /\A\s*(?:[-*]\s+)?(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?|part\sof):?
+               (?:[\s,]+(?:and\s+)?#{REFERENCE})+\s*\z/ix
     REFERENCE_GUIDANCE = 'git log does not link these numbers. Say what each PR or issue did, or drop the number.'
 
     attr_reader :headline, :body
@@ -56,7 +58,7 @@ module Shaka
       title.strip.end_with?(suffix) ? title.strip : "#{title.strip} #{suffix}"
     end
 
-    def references(text) = text.gsub(URL, ' ').gsub(CLOSING, '').scan(REFERENCE).uniq
+    def references(text) = text.lines.grep_v(CLOSING).join.gsub(URL, 'URL').scan(REFERENCE).uniq
 
     def plain(body)
       text = PublicationText.required(body, 'squash body')
