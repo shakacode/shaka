@@ -85,14 +85,15 @@ module Shaka
     # A description's first line keeps the agent and the fields that were read. Missing values, under
     # Shaka metrics, records the full line and the publisher note. Comments and reviews keep all four
     # fields, because AgentPost tells an agent's post from a person's by counting them.
+    # The agent keeps its place even when unread, so the line never names another field as the agent.
     def description_identity(content)
-      agent, *rest = identity_fields(content['identity'])
-      return publisher_identity(content) unless rest.include?('UNKNOWN')
+      return publisher_identity(content) unless unknown_identity?(content['identity'])
 
+      agent, *rest = identity_fields(content['identity'])
       "🤖 #{[agent, *rest.reject { it == 'UNKNOWN' }].join(' · ')}"
     end
 
-    def unknown_identity?(value) = identity_fields(value).drop(1).include?('UNKNOWN')
+    def unknown_identity?(value) = identity_fields(value).include?('UNKNOWN')
 
     def identity(value) = "🤖 #{identity_fields(value).join(' · ')}"
 

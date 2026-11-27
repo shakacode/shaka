@@ -483,6 +483,8 @@ begin
              description_content = Shaka::DescriptionPreflight.new(supplied).call
              prose, prose_note = description_prose_limits(root, options[:ref])
              notes = prose_note.merge(description_pr_evidence(root, options[:ref]))
+             described = nil
+             writer = -> { Shaka::PublicationText.identity(described['identity']) }
              Shaka::OpeningPublication.with_safe_path(root:) do |candidate_root, gh, neutral|
                raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
 
@@ -492,7 +494,7 @@ begin
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
                described = lookup_note = usage_records = carried = kept = timeline = head = recommendation = nil
-               published = github.description(prose:, deferred: true) do |pull|
+               published = github.description(prose:, deferred: true, writer:) do |pull|
                  described, lookup_note, timeline = description_input(description_content, github, pull, options)
                  rendered, carried, usage_records, kept, timeline = rendered_description(
                    described, github, pull, workflow_version, options.merge(root:, timeline:)

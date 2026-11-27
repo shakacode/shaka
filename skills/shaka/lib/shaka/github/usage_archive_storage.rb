@@ -5,11 +5,17 @@ module Shaka
   module UsageArchiveStorage
     private
 
-    # A description's first line may omit unread fields, and an agent comment needs all four, so prefer the full line.
-    def identify_writer(body)
-      region = Publishing.managed_region(body).to_s
-      @writer = region[MissingValues::WRITER, 1] || region[/^🤖 [^\r\n]+$/] || '🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN'
-      @writer = @writer.split(ThroughputLine::SPEND, 2).first
+    # An agent comment needs all four identity fields. A description's first line drops unread ones, so a caller
+    # without the content reads them from the Missing values entry, and only when that first line is short.
+    def identify_writer(body, writer)
+      @writer = writer || body_writer(Publishing.managed_region(body).to_s)
+    end
+
+    def body_writer(region)
+      opening = region[/^🤖 [^\r\n]+$/]&.split(ThroughputLine::SPEND, 2)&.first
+      return opening if opening && !opening.match?(MissingValues::SHORT)
+
+      region[MissingValues::WRITER, 1] || opening || '🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN'
     end
 
     def planned_references(blocks)

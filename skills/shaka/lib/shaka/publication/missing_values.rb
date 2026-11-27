@@ -11,8 +11,11 @@ module Shaka
     TO_FILL = 'To fill it, the agent passes the original request as `codex_task_start` or its timestamp as ' \
               '`task_started_at`.'
 
-    # The usage archive reads the full line back from here to sign its comments with all four fields.
-    WRITER = /^- \*\*Writer identity\*\* is `(🤖 [^`\r\n·]+(?: · [^`\r\n·]+){3})`/
+    WRITER_LABEL = '- **Writer identity:** the first line shows only the fields that were read. In full:'
+    # The usage archive reads the full line back from here, for a caller without the content, to sign its comments.
+    WRITER = /^#{Regexp.escape(WRITER_LABEL)} (🤖 [^\r\n·]+(?: · [^\r\n·]+){3})$/
+    # An opening with fewer than four fields is the short form.
+    SHORT = /\A🤖 [^\r\n·]+(?: · [^\r\n·]+){0,2}\z/
 
     module_function
 
@@ -29,13 +32,13 @@ module Shaka
       "- **Task start** was not recorded, so #{effects}. #{TO_FILL}"
     end
 
-    # The first line drops unread fields; this keeps each marked UNKNOWN, with the publisher's reason.
+    # The first line drops unread fields; this keeps each marked UNKNOWN, with the publisher's reason on the next line.
     def writer(content)
       return unless PublicationText.unknown_identity?(content['identity'])
 
       note = content['publisher_note']
-      ["- **Writer identity** is `#{PublicationText.identity(content['identity'])}`; the first line shows only " \
-       'the fields that were read.', *(PublicationText.single_line(note, 'publisher note') if note)].join(' ')
+      ["#{WRITER_LABEL} #{PublicationText.identity(content['identity'])}",
+       *("  #{PublicationText.single_line(note, 'publisher note')}" if note)].join("\n")
     end
   end
 end

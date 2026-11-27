@@ -3,18 +3,19 @@
 require_relative 'throughput_helper'
 require_relative 'usage_archive_test'
 require_relative 'canary_test'
+require_relative 'description_usage_archive_test'
 
 # A description's first line names only the identity fields that were read. The rest stay marked
 # UNKNOWN under Missing values, and every reader of that line takes both shapes.
 class DescriptionIdentityTest < Minitest::Test
   include ThroughputHelper
-  include UsageRecordsFixture
 
   NOTE = 'UNKNOWN provider, model, effort: Codex session unavailable or ambiguous.'
   KNOWN = '🤖 Codex · OpenAI · gpt-5.6-terra · low'
   FULL = '🤖 Codex · UNKNOWN · UNKNOWN · UNKNOWN'
-  ENTRY = "- **Writer identity** is `#{FULL}`; the first line shows only the fields that were read. #{NOTE}".freeze
-  BOTH = %r{<summary>Missing values</summary>\n\n- \*\*Task start\*\* [^\n]+\n- \*\*Writer identity\*\* }
+  LABEL = '- **Writer identity:** the first line shows only the fields that were read. In full:'
+  ENTRY = "#{LABEL} #{FULL}\n  #{NOTE}".freeze
+  BOTH = %r{<summary>Missing values</summary>\n\n- \*\*Task start\*\* [^\n]+\n- \*\*Writer identity:\*\* }
   STARTED = { 'task_started_at' => START, 'ci_started_at' => PUSH }.freeze
 
   def test_unread_fields_leave_the_first_line_and_stay_marked_under_missing_values
@@ -28,14 +29,22 @@ class DescriptionIdentityTest < Minitest::Test
   def test_a_partly_read_identity_keeps_its_read_fields_in_order
     rendered = unread('provider' => 'OpenAI', 'effort' => 'high', note: nil)
     assert_equal "🤖 Codex · OpenAI · high - AI spend: $1.44\n", rendered.lines.first
-    assert_includes rendered, '- **Writer identity** is `🤖 Codex · OpenAI · UNKNOWN · high`; the first line ' \
-                              "shows only the fields that were read.\n"
+    assert_includes rendered, "#{LABEL} 🤖 Codex · OpenAI · UNKNOWN · high\n"
   end
 
   def test_an_unread_agent_keeps_its_place_so_the_line_never_starts_with_another_field
     rendered = Shaka::Publication.description(content('$1.44').merge('identity' => { 'model' => 'gpt-test' }))
     assert_equal "🤖 UNKNOWN · gpt-test - AI spend: $1.44\n", rendered.lines.first
-    assert_includes rendered, '`🤖 UNKNOWN · UNKNOWN · gpt-test · UNKNOWN`'
+    assert_includes rendered, "#{LABEL} 🤖 UNKNOWN · UNKNOWN · gpt-test · UNKNOWN\n"
+  end
+
+  # An unread agent alone is still unread, so its note moves into the fold too.
+  def test_an_unread_agent_with_every_other_field_read_moves_its_note_into_the_fold
+    identity = { 'provider' => 'OpenAI', 'model' => 'gpt-test', 'effort' => 'low' }
+    rendered = Shaka::Publication.description(content('$1.44').merge('identity' => identity, 'publisher_note' => NOTE))
+    assert_equal "🤖 UNKNOWN · OpenAI · gpt-test · low - AI spend: $1.44\n", rendered.lines.first
+    refute_includes rendered, "_#{NOTE}_"
+    assert_includes rendered, "#{LABEL} 🤖 UNKNOWN · OpenAI · gpt-test · low\n  #{NOTE}\n"
   end
 
   def test_the_writer_entry_follows_the_task_start_entry_in_one_block
@@ -93,20 +102,53 @@ class DescriptionIdentityTest < Minitest::Test
     assert_equal '$1.44', Shaka::Canary::Spend.from(unread)
   end
 
-  # An archive comment copies the description's writer, and an agent comment needs all four fields.
+  private
+
+  def unread(...) = Shaka::Publication.description(unread_content(...), nil, nil, nil, timeline)
+
+  def unread_content(note: NOTE, **fields)
+    content('$1.44').merge('identity' => { 'agent' => 'Codex' }.merge(fields), 'publisher_note' => note).compact
+  end
+
+  def timeline = { 'opened' => START, 'labels' => [] }.merge(STARTED)
+end
+
+# A usage archive comment copies the description's writer, and an agent comment needs all four fields.
+class DescriptionIdentityArchiveTest < Minitest::Test
+  include UsageRecordsFixture
+
+  LABEL = DescriptionIdentityTest::LABEL
+  KNOWN = DescriptionIdentityTest::KNOWN
+  FULL = DescriptionIdentityTest::FULL
+  ENTRY = DescriptionIdentityTest::ENTRY
+
+  # A caller without the content reads the writer from the body; an agent comment needs all four fields.
+  # A full first line wins over any entry in the body, so supplied text cannot pick the signature.
   def test_usage_archive_comments_carry_four_fields_from_both_shapes
+    decoy = "#{LABEL} 🤖 Someone · else · entirely · here"
     { "🤖 Codex - AI spend: $1.44\n\n#{ENTRY}" => FULL, "#{KNOWN} - AI spend: $1.44" => KNOWN,
-      "#{KNOWN}\n\n_Old note._" => KNOWN }.each do |opening, writer|
-      bodies = archived(opening)
-      refute_empty bodies
-      assert_equal [writer], bodies.map { it.lines.first.chomp }.uniq
-      assert(bodies.all? { Shaka::AgentPost.marked?(it) })
+      "#{KNOWN}\n\n_Old note._" => KNOWN, "#{KNOWN} - AI spend: $1.44\n\n#{decoy}" => KNOWN }.each do |opening, writer|
+      assert_signed(archived(opening), writer)
     end
+  end
+
+  # The description command passes the full line, so the body's text and a backtick in a field do not matter.
+  def test_the_description_command_signs_archive_comments_with_the_identity_it_rendered
+    identity = { 'agent' => 'Codex', 'model' => 'gpt`custom' }
+    github = DescriptionUsageArchiveTest::MemoryGitHub.new
+    writer = -> { Shaka::PublicationText.identity(identity) }
+    github.description(writer:) { "🤖 Codex · gpt`custom - AI spend: $1.44\n\n#{oversized_records}\n" }
+    assert_operator github.stored['body'].length, :<=, 65_536
+    assert_signed(github.comments.values.map { it.fetch('body') }, '🤖 Codex · UNKNOWN · gpt`custom · UNKNOWN')
   end
 
   private
 
-  def unread(...) = Shaka::Publication.description(unread_content(...), nil, nil, nil, timeline)
+  def assert_signed(bodies, writer)
+    refute_empty bodies
+    assert_equal [writer], bodies.map { it.lines.first.chomp }.uniq
+    assert(bodies.all? { Shaka::AgentPost.marked?(it) })
+  end
 
   def archived(opening)
     github = UsageArchiveTest::Comments.new
@@ -114,11 +156,6 @@ class DescriptionIdentityTest < Minitest::Test
     github.comments.each_value.map { it.fetch('body') }
   end
 
-  def unread_content(note: NOTE, **fields)
-    content('$1.44').merge('identity' => { 'agent' => 'Codex' }.merge(fields), 'publisher_note' => note).compact
-  end
-
-  def timeline = { 'opened' => START, 'labels' => [] }.merge(STARTED)
-
-  def oversized = existing(record('codex', 'kept', responses: Array.new(6000) { |i| "response-#{i}" }))
+  def oversized_records = record('codex', 'kept', responses: Array.new(6000) { |i| "response-#{i}" })
+  def oversized = existing(oversized_records)
 end
