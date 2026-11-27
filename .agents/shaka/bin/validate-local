@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Scoped checks for local evidence: the tests the change can reach and RuboCop on the changed
+# Ruby files. The required hosted validate check runs the whole suite on every pull request push.
+set -euo pipefail
+
+root=$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR -u GIT_PREFIX -u GIT_CEILING_DIRECTORIES git -C "$(dirname -- "$0")" rev-parse --show-toplevel) || exit $?
+base=${SHAKA_BASE_REF:-origin/main}
+cd "$root"
+
+# validate already handles a documentation-only change in seconds.
+if [[ -x bin/docs-only-change ]] && bin/docs-only-change "$base" >/dev/null 2>&1; then
+  exec "$root/.agents/shaka/bin/validate"
+fi
+
+comparison=$(git merge-base "$base" HEAD)
+git diff --check "$comparison" HEAD --
+git diff --cached --check HEAD --
+git diff --check --
+
+unset RUBYOPT RUBYLIB
+export BUNDLE_GEMFILE="$root/Gemfile"
+ruby bin/check-docs-navigation
+bundle exec ruby bin/run-tests --changed "$base"
+
+changed=()
+while IFS= read -r -d '' path; do
+  changed+=("$path")
+done < <(git diff --name-only --no-renames --diff-filter=d -z "$comparison" --; git ls-files --others --exclude-standard -z)
+((${#changed[@]} == 0)) || bundle exec ruby bin/lefthook/ruby-check lint "${changed[@]}"
