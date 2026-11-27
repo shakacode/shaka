@@ -28,7 +28,7 @@ module ReleasePublishFixture
       puts JSON.generate('isDraft' => File.exist?(File.join(state, 'draft')))
     when %w[release create]
       notes = ARGV[ARGV.index('--notes-file') + 1]
-      File.write(release, JSON.generate('args' => ARGV, 'body' => File.read(notes)))
+      File.write(release, JSON.generate('args' => ARGV, 'body' => File.read(notes), 'host' => ENV['GH_HOST']))
     end
   RUBY
 

@@ -23,12 +23,13 @@ module ShakaRelease
 
     def run
       check_helper
-      check_out_directory
+      reserve_out_directory
       commit = run!({}, 'git', '-C', @root, 'rev-parse', 'HEAD').strip
+      # Before any checkout code runs: the gemspec, the behavior checker, or validation.
+      Preflight.new(root: @root, shaka: @shaka, commit:, gem: nil, validation: nil, notes: nil).check_source
       gate = behavior_gate(commit)
-      validation = @validation || run_validation(commit)
-      approval = preflight(commit, validation).merge('validation' => File.expand_path(validation),
-                                                     'behavior_gate' => gate)
+      validation = @validation ? copy_validation : run_validation(commit)
+      approval = preflight(commit, validation).merge('validation' => validation, 'behavior_gate' => gate)
       File.write(File.join(@out, 'approval.json'), "#{JSON.pretty_generate(approval)}\n")
       approval
     end
@@ -53,12 +54,22 @@ module ShakaRelease
       refuse "trusted Shaka helper: #{e.message}"
     end
 
-    # A new or empty directory, so a refused run never overwrites an earlier release's approved files.
-    def check_out_directory
-      FileUtils.mkdir_p(@out)
-      @out = File.realpath(@out)
+    # Creating the directory reserves it, so neither a refused run nor a concurrent one can overwrite
+    # another release's approved files.
+    def reserve_out_directory
+      FileUtils.mkdir_p(File.dirname(@out))
+      @out = File.join(File.realpath(File.dirname(@out)), File.basename(@out))
       refuse 'the output directory must be outside the release checkout' if "#{@out}/".start_with?("#{@root}/")
-      refuse 'the output directory must be empty; choose a new one for each prepare' unless Dir.empty?(@out)
+      Dir.mkdir(@out)
+    rescue Errno::EEXIST
+      refuse 'the output directory must not exist yet; choose a new one for each prepare'
+    end
+
+    # A copy inside the output directory, so that directory holds all the approved evidence.
+    def copy_validation
+      path = File.join(@out, 'validation.json')
+      FileUtils.cp(@validation, path)
+      path
     end
 
     # Runs before validation so a missing or failing batch stops the release in seconds.

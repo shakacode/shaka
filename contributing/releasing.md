@@ -54,18 +54,20 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
      --behavior-records /outside/checkout/release-records.json
    ```
 
-   `--out` must be a new or empty directory. Repeat `--behavior-records` for each profile, or
-   pass `--skip-behavior-gate` instead.
-   The command checks each batch against this commit, then runs `validate` through
-   `evidence run`, which takes a while. Pass `--validation FILE` to reuse a completed
-   result for the same commit. It then builds the gem, saves the version's
-   `CHANGELOG.md` entry as `RELEASE_NOTES.md`, and runs the `bin/release-preflight` checks. They
-   confirm a clean checkout at `shakacode/shaka`'s `main`, matching validation and
-   settings, package metadata, file contents and executable modes, notes that match the
-   changelog, and no existing release tag. The output directory then holds the gem, the
-   notes, the validation result, and `approval.json`, which names the commit, version, and
-   their digests. Nothing remote changes. A pass does not establish host compatibility or
-   grant publication authority.
+   `--out` must name a directory that does not exist yet. Repeat `--behavior-records` for
+   each profile, or pass `--skip-behavior-gate` instead.
+
+   The command first confirms a clean checkout at `shakacode/shaka`'s `main`, before any
+   checkout code runs. It then checks each batch against this commit and runs `validate`
+   through `evidence run`, which takes a while. Pass `--validation FILE` to reuse a completed
+   result for the same commit; prepare copies it into the output directory. Next it builds
+   the gem, saves the version's `CHANGELOG.md` entry as `RELEASE_NOTES.md`, and runs the
+   `bin/release-preflight` checks: matching validation and settings, package metadata, file
+   contents and executable modes, notes that match the changelog, and no existing release
+   tag. The output directory then holds the gem, the notes, the validation result, each
+   behavior result, and `approval.json`, which names the commit, version, and their digests.
+   Nothing remote changes. A pass does not establish host compatibility or grant
+   publication authority.
 5. Ask the maintainer to approve the commit, version, and digests in `approval.json`, and
    stop until the approval is recorded.
 6. Check what publication will do, then publish:

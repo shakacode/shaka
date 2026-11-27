@@ -40,9 +40,12 @@ module ShakaRelease
     private
 
     def local
-      output, status = Open3.capture2(@env, 'git', '-C', @root, 'rev-parse', '--verify', '--quiet',
-                                      "refs/tags/#{@name}^{commit}")
-      status.success? ? output.strip : nil
+      return nil unless system(@env, 'git', '-C', @root, 'rev-parse', '--verify', '--quiet', "refs/tags/#{@name}",
+                               out: File::NULL)
+
+      git('rev-parse', '--verify', "refs/tags/#{@name}^{commit}").strip
+    rescue Shaka::Error
+      refuse "local tag #{@name} does not name a commit; delete it and rerun"
     end
 
     def git(*) = run!(@env, 'git', '-C', @root, *)

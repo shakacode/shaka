@@ -38,8 +38,7 @@ module ShakaRelease
       changelog.split(/^## \[#{Regexp.escape(version)}\][^\n]*\n/, 2)[1]&.split(/^## |^\[[^\]]+\]:/, 2)&.first
     end
 
-    private
-
+    # A clean checkout at remote main, at the commit under release.
     def check_source
       refuse 'commit must be a full SHA matching HEAD' unless @commit.match?(/\A[0-9a-f]{40}\z/) &&
                                                               git('rev-parse', 'HEAD').strip == @commit
@@ -48,6 +47,8 @@ module ShakaRelease
       remote = git('ls-remote', '--exit-code', REMOTE, 'refs/heads/main').split
       refuse 'commit differs from remote main' unless remote == [@commit, 'refs/heads/main']
     end
+
+    private
 
     def check_index_flags
       flags = git('ls-files', '-v', '-z').split("\0")

@@ -16,6 +16,7 @@ class ReleasePublishResumeTest < Minitest::Test
   def test_upload_and_install_use_the_public_registry
     publish
     assert_includes File.read(state('pushes')), "push --host #{ShakaRelease::Registry::HOST} "
+    assert_equal 'github.com', release_record.fetch('host')
     assert_includes File.read(state('installs')), "--remote --clear-sources --source #{ShakaRelease::Registry::HOST}"
   end
 
@@ -36,6 +37,13 @@ class ReleasePublishResumeTest < Minitest::Test
     assert_includes error.message, 'local tag v1.2.0 points at another commit'
     assert_refused 'local tag v1.2.0 points at another commit'
     assert_nil remote_tag
+  end
+
+  def test_a_local_tag_that_is_not_a_commit_is_refused_in_a_dry_run
+    blob = git('hash-object', '-w', 'README.md').strip
+    git('tag', 'v1.2.0', blob)
+    error = assert_raises(Shaka::Error) { publish(dry_run: true) }
+    assert_includes error.message, 'does not name a commit'
   end
 
   def test_inherited_git_overrides_do_not_redirect_publication

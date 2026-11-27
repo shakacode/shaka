@@ -78,7 +78,7 @@ module ShakaRelease
         command = ['gh', 'release', 'create', "v#{version}", '--repo', REPOSITORY, '--verify-tag',
                    '--title', "shaka #{version}", '--notes-file', body, '--generate-notes']
         command << '--prerelease' if @approval.prerelease?
-        run!(@env, *command)
+        run!(gh_env, *command)
       end
       say "Created the GitHub release v#{version}."
     end
@@ -96,7 +96,7 @@ module ShakaRelease
 
     # A draft is not public, so it does not count as a published release.
     def release?
-      output, error, status = Open3.capture3(@env, 'gh', 'release', 'view', "v#{version}", '--repo', REPOSITORY,
+      output, error, status = Open3.capture3(gh_env, 'gh', 'release', 'view', "v#{version}", '--repo', REPOSITORY,
                                              '--json', 'isDraft')
       return false if !status.success? && error.include?('release not found')
 
@@ -109,6 +109,8 @@ module ShakaRelease
 
     def commit = @approval.commit
     def version = @approval.version
+    # Pins gh to github.com, where the tag is pushed, whatever host the shell selects.
+    def gh_env = @env.merge('GH_HOST' => 'github.com')
     def say(message) = @out.puts(message)
   end
 end
