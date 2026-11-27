@@ -106,9 +106,12 @@ surprise. Run every `gh` command as `GH_HOST=github.com gh ... --repo shakacode/
 1. Read what exists: remote `main`, `refs/tags/vVERSION`, and its peeled
    `refs/tags/vVERSION^{}` with `git ls-remote`; the version at
    `https://rubygems.org/api/v2/rubygems/shaka/versions/VERSION.json`; and the GitHub
-   release with `gh release view`. Stop and prepare a new version when the tag has no
-   peeled line (it is not annotated) or peels to another commit, when RubyGems reports a
-   `sha` other than the approved gem digest, or when the release is a draft.
+   release with `gh release view --json isDraft,isPrerelease,body`. No tag lines at all
+   means the tag is not pushed yet. Stop and prepare a new version when:
+   - the tag line has no peeled line (it is not annotated) or peels to another commit;
+   - RubyGems reports a `sha` other than the approved gem digest;
+   - the release is a draft, its prerelease flag differs from the version, or its body
+     lacks the approved notes (with the skipped-gate line when the gate did not run).
 2. Without a remote tag, confirm remote `main` is still the approved commit, create the
    annotated tag `vVERSION` on that commit, push only that tag with `--no-follow-tags`, and
    read it back until its peeled line shows the approved commit.
@@ -116,6 +119,6 @@ surprise. Run every `gh` command as `GH_HOST=github.com gh ... --repo shakacode/
 4. Check the notes against their approved digest, then create the release with
    `gh release create --verify-tag --generate-notes`, adding `--prerelease` for a
    prerelease version and the skipped-gate line when the gate did not run.
-5. Install the version into a new temporary `GEM_HOME` with `gem install --remote
-   --clear-sources --source https://rubygems.org`, run its `shaka --help`, and delete
-   the directory.
+5. Set both `GEM_HOME` and `GEM_PATH` to a new temporary directory, install the version
+   with `gem install --remote --clear-sources --source https://rubygems.org`, run its
+   `shaka --help`, and delete the directory.
