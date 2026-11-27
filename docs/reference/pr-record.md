@@ -191,7 +191,8 @@ GitHub's fields. If the checkpoint was explicitly skipped, the agent publishes a
 separate message comment. Use the message for the commit you reviewed.
 The agent supplies the message when it merges for you.
 Git history does not link PR or issue numbers. When the agent publishes the
-message, Shaka lists every number in it other than the PR's own as a reminder.
+message, Shaka's result lists each `#N` or `owner/repo#N` reference in it, other
+than the PR's own, as a reminder.
 The agent keeps closing references and URLs. It explains or drops a bare
 number that says nothing about what that PR or issue did.
 

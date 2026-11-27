@@ -64,6 +64,13 @@ class SquashMessageTest < Minitest::Test
                  squash(title: 'Revert #6 (#42)', body:).reference_check)
   end
 
+  def test_the_prs_own_number_with_its_repository_is_not_listed
+    message = Shaka::SquashMessage.new({ 'title' => 'T', 'body' => 'Follows owner/repo#42 and other/repo#42.' },
+                                       number: 42, repository: 'owner/repo')
+
+    assert_equal ['other/repo#42'], message.reference_check.dig('squash_message_references', 'references')
+  end
+
   def test_numbers_beside_urls_and_slashes_are_listed
     body = "See https://x.test/notes—#1242.\n\nCompare #7/#8 and https://x.test/notes/#9."
 

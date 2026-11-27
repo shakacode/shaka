@@ -26,16 +26,17 @@ module Shaka
         raise Error, 'GitHub listed only some of the PR commits, so co-author trailers would be incomplete.'
       end
 
-      new(content, number: github.number, commit_messages: commits.map { |commit| commit.dig('commit', 'message') })
+      new(content, number: github.number, repository: github.repository,
+                   commit_messages: commits.map { |commit| commit.dig('commit', 'message') })
     end
 
-    def initialize(content, number:, commit_messages: [])
+    def initialize(content, number:, repository: nil, commit_messages: [])
       raise Error, 'Squash message content must be a JSON object.' unless content.is_a?(Hash)
 
       title = PublicationText.single_line(content['title'], 'squash title')
       @headline = headline_for(title, number)
       text = plain(content['body'])
-      @references = (references(title) + references(text)).uniq - ["##{number}"]
+      @references = (references(title) + references(text)).uniq - ["##{number}", "#{repository}##{number}"]
       @body = [wrap(text), trailers(commit_messages)].reject(&:empty?).join("\n\n")
     end
 
