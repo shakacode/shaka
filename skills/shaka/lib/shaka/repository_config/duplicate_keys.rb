@@ -7,6 +7,8 @@ module Shaka
   class RepositoryConfig
     # Rejects ambiguous YAML before Psych silently keeps the last value.
     module DuplicateKeys
+      MERGE_TAG = 'tag:yaml.org,2002:merge'
+
       module_function
 
       def check(source, filename:)
@@ -26,6 +28,8 @@ module Shaka
       def visit_mapping(node)
         keys = node.children.each_slice(2).map do |key, value|
           raise Error, 'YAML keys must be strings' unless key.is_a?(Psych::Nodes::Scalar)
+          # Psych applies a merge key even with aliases off, overriding a value the way a duplicate key would.
+          raise Error, 'YAML merge keys (<<) are not allowed' if key.value == '<<' || key.tag == MERGE_TAG
 
           visit(value)
           key.value

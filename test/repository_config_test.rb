@@ -50,6 +50,41 @@ class RepositoryConfigTest < Minitest::Test
     end
   end
 
+  def test_rejects_a_nested_merge_key_that_would_override_a_value
+    with_repository do |root|
+      path = File.join(root, '.agents/shaka/config.yml')
+      File.write(path, File.read(path).sub("merge:\n", "merge:\n  <<: {preference: ask}\n"))
+
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+      assert_includes error.message, 'YAML merge keys (<<) are not allowed'
+    end
+  end
+
+  def test_rejects_a_top_level_merge_key
+    with_repository do |root|
+      path = File.join(root, '.agents/shaka/config.yml')
+      File.write(path, "#{File.read(path)}<<: {merge: {preference: ask}}\n")
+
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+      assert_includes error.message, 'YAML merge keys (<<) are not allowed'
+    end
+  end
+
+  def test_rejects_a_quoted_or_tagged_merge_key
+    ['"<<": {base_branch: trunk}', '!!merge x: {base_branch: trunk}'].each do |line|
+      with_repository do |root|
+        path = File.join(root, '.agents/shaka/config.yml')
+        File.write(path, "#{File.read(path)}#{line}\n")
+
+        error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+        assert_includes error.message, 'YAML merge keys (<<) are not allowed', line
+      end
+    end
+  end
+
   def test_external_policy_source_requires_trusted_command_availability
     with_repository do |root|
       source = File.read(File.join(root, '.agents/shaka/config.yml'))
