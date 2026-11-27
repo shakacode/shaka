@@ -1043,6 +1043,16 @@ always: |-
   wait, it stays open for comments, head changes, closure, or timeout. A monitor that reports failures only leaves the
   `awaiting-resume` path above for green checks.
 
+  At the start of every turn on a task with a branch, including a resume and a monitor wake,
+  run the saved helper's `branch check --root DIR` before fetching, pulling, or editing. Run it
+  again before each push or PR write. Continue on `unchanged` or `not_pushed`. Any other state
+  pauses edits and publication: preserve local work and report what changed or what could not
+  be read. Reconcile a `moved` or `unrecorded` head with local work, then record it with
+  `branch accept --head SHA` and rerun head-specific validation and review. Accepting a head
+  transfers no ownership; the
+  [takeover procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>)
+  still governs that. Push with the `lease` the check prints, then accept the pushed head.
+
   Before ending any turn on a task that owns an open PR, run the saved helper's
   `handoff OWNER/REPO NUMBER --head SHA --root DIR --ref SHA`. Exit status 2 lists owed work. For an Ask
   handoff, follow [continued feedback intake](<{{package_root}}/skills/shaka/references/continued-feedback.md>):

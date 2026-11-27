@@ -116,6 +116,13 @@ then give Shaka the PR:
 The agent checks the current state and explains what remains. It records the
 handover on the PR and rechecks merge authority before continuing.
 
+If you push to the agent's branch yourself, it notices at its next turn or push. It
+compares the branch on GitHub with the commit it last pushed or accepted. When they
+differ, or the branch is gone or unreadable, the agent stops editing and publishing and
+reports it. It keeps its local work and waits until it has combined your commits with
+its own. A push of its own uses Git's `--force-with-lease`, so it cannot overwrite a
+commit it has not seen.
+
 Before a PR exists, return to the original chat and checkout. An issue's start
 comment may identify the machine holding the work. See
 [interrupted work](expected-experience.md#resume-or-change-your-checkout) for recovery limits.

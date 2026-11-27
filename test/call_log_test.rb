@@ -130,7 +130,8 @@ class CallLogNamesTest < Minitest::Test
 
   def test_recorded_operations_are_the_dispatched_subcommands
     # scripts/shaka.rb dispatches `pr watch` itself, before the other pr commands.
-    assert_equal({ 'configure' => Shaka::ConfigureSettings::OPERATIONS,
+    assert_equal({ 'branch' => Shaka::BranchHead::Command::OPERATIONS,
+                   'configure' => Shaka::ConfigureSettings::OPERATIONS,
                    'evidence' => Shaka::Evidence::Command::ACTIONS.keys, 'pr' => %w[watch],
                    'post-implementation' => Shaka::PostImplementation::ACTIONS, 'prompt' => Shaka::PromptShow::OPERATIONS,
                    'repos' => Shaka::Repos::OPERATIONS, 'review' => Shaka::LocalReview::ACTIONS,
