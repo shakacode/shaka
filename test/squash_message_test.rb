@@ -84,7 +84,7 @@ class SquashMessageTest < Minitest::Test
 
   def test_a_body_whose_only_numbers_close_issues_needs_no_check
     body = "Ends the bullets.\n\nFixes #7\n- Resolves owner/repo#3\nCloses: #9\nIssue&#39;s a#1 " \
-           "at https://x.test/a/b#12 and https://x.test/r?view=#123"
+           'at https://x.test/a/b#12 and https://x.test/r?view=#123'
 
     assert_empty squash(body:).reference_check
   end
