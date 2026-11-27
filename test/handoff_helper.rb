@@ -163,14 +163,17 @@ module HandoffHarness
 
   def description(wip = WIP, extra = {}) = HandoffFixtures.description(wip, extra)
 
-  # pull[:trusted] lists the users the trusted-actor settings name.
+  # pull[:trusted] lists the users the trusted-actor settings name; pull[:trust_from_github] skips
+  # that and loads them as production does.
+  def screen(github, trust_config) = Shaka::Handoff::ThreadScreen.new(github, trust_config:)
+
   def handoff(expected: HEAD, woken_by: nil, post_implementation: nil, walkthrough_publish: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,
                  reviews: [walkthrough(HEAD)], checks: [check('pass')], comments: [] }
     github = HandoffFakeGitHub.new(defaults.merge(pull))
     trust_config = { users: pull.fetch(:trusted, []), bots: [], metadata_bots: [], teams: [] }
     Shaka::Handoff.new(github, post_implementation:, walkthrough_publish:)
-                  .tap { |handoff| handoff.thread_screen = Shaka::Handoff::ThreadScreen.new(github, trust_config:) }
+                  .tap { |item| item.thread_screen = screen(github, trust_config) unless pull[:trust_from_github] }
                   .call(head: expected, woken_by:)
   end
 end

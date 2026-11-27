@@ -12,8 +12,8 @@ module Shaka
     # account's marked ones; an unmarked post from the same account is the person's. A bot's
     # comment after the answer, such as a thank-you, owes nothing. An answered thread may stay
     # open on purpose, so merge approval only counts those for the agent to confirm. A public
-    # thread that includes an excluded author is a note for a person instead, because `reply`
-    # refuses to post there and `resolve` needs a reply first.
+    # thread that includes an author `comments` excludes is a note for a person instead, because
+    # `reply` refuses to post there.
     module ReviewThreads
       attr_writer :thread_screen
 
@@ -39,20 +39,32 @@ module Shaka
                   'confirm each is meant to stay open.'
       end
 
-      # A failed screen keeps every thread owed, so an unread trust setting hides none of them.
+      # Only a confirmed exclusion leaves the owed list. A failed screen keeps a thread owed, so an
+      # unread trust setting or permission hides none of them; a note says why `reply` may refuse.
       def excluded_threads(owed)
-        excluded = thread_screen.excluded(@thread_posts.slice(*owed), @github.viewer_login)
-        @notes << excluded_note(excluded) if excluded.any?
-        excluded
+        result = thread_screen.call(@thread_posts.slice(*owed), @github.viewer_login)
+        screen_notes(result)
+        result.excluded
       rescue Error => e
         @notes << "Thread authors are unscreened: #{e.message}"
         []
       end
 
-      def excluded_note(ids)
-        "Review thread#{'s' if ids.length > 1} #{ids.join(', ')} #{ids.length > 1 ? 'include' : 'includes'} " \
-          'an author `comments` excludes, so the agent cannot reply or resolve there. ' \
-          'A maintainer can answer and resolve it on GitHub, or add the author to the trusted actors.'
+      def screen_notes(result)
+        if result.excluded.any?
+          @notes << "#{threads_named(result.excluded)} an author `comments` excludes, so the agent cannot " \
+                    'reply there. A maintainer can answer on GitHub and resolve it, or add the author to the ' \
+                    'trusted actors.'
+        end
+        if result.unverified.any?
+          @notes << "#{threads_named(result.unverified)} an author whose permission GitHub did not return; " \
+                    '`reply` refuses there until it does.'
+        end
+        result.unscreened.each { |id, message| @notes << "Thread authors are unscreened on #{id}: #{message}" }
+      end
+
+      def threads_named(ids)
+        "Review thread#{'s' if ids.length > 1} #{ids.join(', ')} #{ids.length > 1 ? 'include' : 'includes'}"
       end
 
       def thread_screen = @thread_screen ||= ThreadScreen.new(@github)
