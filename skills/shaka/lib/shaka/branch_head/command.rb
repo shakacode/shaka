@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 require 'json'
-require 'open3'
+require 'uri'
 require 'optparse'
 require_relative '../branch_head'
+require_relative '../doctor/bounded_command'
 require_relative '../error'
 
 module Shaka
@@ -12,6 +13,7 @@ module Shaka
     module Command
       OPERATIONS = %w[check accept push].freeze
       PAUSE_EXIT = 2
+      PR_SECONDS = 30
 
       module_function
 
@@ -81,16 +83,24 @@ module Shaka
 
       # The PR's head repository and branch, read with gh from the checkout's repository.
       def pr_head(root, number)
-        output, error, status = Open3.capture3('gh', 'pr', 'view', number.to_s, '--json',
-                                               'headRefName,headRepository,headRepositoryOwner', chdir: root)
-        raise Error, "Cannot read PR ##{number}: #{error.strip}" unless status.success?
+        fields = 'url,headRefName,headRepository,headRepositoryOwner'
+        output, error, success = Doctor::BoundedCommand.new(timeout: PR_SECONDS)
+                                                       .call(['gh', 'pr', 'view', number.to_s, '--json', fields], root)
+        raise Error, "Cannot read PR ##{number}: #{error.strip}" unless success
 
-        pull = JSON.parse(output)
-        { 'repository' => "#{pull.dig('headRepositoryOwner', 'login')}/#{pull.dig('headRepository', 'name')}",
-          'branch' => pull['headRefName'] }
+        head_of(JSON.parse(output), number)
       end
 
-      private_class_method :pr_head, :perform, :parse, :option_parser, :operation_flags, :accept_flags
+      # A deleted fork leaves no head repository, so there is no destination to match.
+      def head_of(pull, number)
+        owner = pull.dig('headRepositoryOwner', 'login')
+        name = pull.dig('headRepository', 'name')
+        raise Error, "PR ##{number} has no head repository." unless owner && name
+
+        { 'url' => "https://#{URI(pull.fetch('url')).host}/#{owner}/#{name}", 'branch' => pull['headRefName'] }
+      end
+
+      private_class_method :pr_head, :head_of, :perform, :parse, :option_parser, :operation_flags, :accept_flags
     end
   end
 end

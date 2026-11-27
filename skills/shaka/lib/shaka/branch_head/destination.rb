@@ -17,8 +17,8 @@ module Shaka
 
       attr_reader :remote
 
-      # pr_head, when given, is the PR's head as { 'repository' => 'OWNER/NAME', 'branch' => NAME }; the
-      # destination must be that branch in that repository.
+      # pr_head, when given, is the PR's head as { 'url' => 'https://HOST/OWNER/NAME', 'branch' => NAME }; the
+      # destination must be that branch in that repository on that host.
       def initialize(root:, branch:, pr_head: nil)
         @root = root
         @branch = branch
@@ -40,17 +40,21 @@ module Shaka
 
       # Pushes one commit to the branch alone, leased on the accepted head; an empty lease means the branch must
       # not exist yet. Tags and submodules stay unpushed whatever push.followTags or push.recurseSubmodules say.
+      # It pushes through the remote, as `get-url --push` resolved it, and first refuses when that resolution
+      # changed since the read, so push rewriting applies exactly as it did to the URL that was read.
       def push(accepted, sha)
+        raise Error, "#{@remote} now pushes somewhere other than #{url}; check again." unless push_url == url
+
         lease = "--force-with-lease=refs/heads/#{@branch}:#{accepted}"
         _output, error, success = bounded(PUSH_SECONDS, 'push', '--quiet', '--no-follow-tags',
-                                          '--recurse-submodules=no', lease, url, "#{sha}:refs/heads/#{@branch}")
+                                          '--recurse-submodules=no', lease, @remote, "#{sha}:refs/heads/#{@branch}")
         return if success
 
         raise Error, "git push of #{sha} to #{@remote}/#{@branch} was refused, failed, or timed out, so it may " \
                      "have landed: #{error.strip}"
       end
 
-      # Resolved once, so the push writes to the very URL the check read.
+      # Resolved once per command, so the read and the push name the same URL.
       def url
         @url ||= push_url.tap { |resolved| refuse_other_pr_head(resolved) }
       end
@@ -61,13 +65,13 @@ module Shaka
         return unless @pr_head
 
         repository = begin
-          GitOrigin.identity(resolved)
+          GitOrigin.canonical_url(resolved)
         rescue Error
           resolved
         end
-        return if @pr_head['branch'] == @branch && @pr_head['repository'].casecmp?(repository)
+        return if @pr_head['branch'] == @branch && @pr_head['url'].casecmp?(repository)
 
-        raise Error, "The PR head is #{@pr_head['repository']}:#{@pr_head['branch']}, but this branch pushes to " \
+        raise Error, "The PR head is #{@pr_head['url']}:#{@pr_head['branch']}, but this branch pushes to " \
                      "#{repository}:#{@branch}; check out the PR head and push there."
       end
 
@@ -76,7 +80,8 @@ module Shaka
       # the branch's same-named upstream, several push URLs, or a URL that insteadOf would rewrite again on read.
       def push_url
         refuse_redirected_push
-        urls = git_lines('remote', 'get-url', '--push', '--all', @remote)
+        # A remote given as a URL, as `gh pr checkout` records for a fork, is its own push URL.
+        urls = remote_names.include?(@remote) ? git_lines('remote', 'get-url', '--push', '--all', @remote) : [@remote]
         raise Error, "#{@remote} has #{urls.size} push URLs; configure one for the task branch." unless urls.one?
 
         reread = git_lines('ls-remote', '--get-url', urls.first)
@@ -133,8 +138,11 @@ module Shaka
           output, _error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', '--get', key)
           return output.strip if status.success? && !output.strip.empty? && output.strip != '.'
         end
-        'origin'
+        names = remote_names
+        names.one? && !names.include?('origin') ? names.first : 'origin'
       end
+
+      def remote_names = git_lines('remote')
 
       def bounded(seconds, *arguments)
         Doctor::BoundedCommand.new(timeout: seconds).call([ENVIRONMENT, 'git', '-C', @root, *arguments])

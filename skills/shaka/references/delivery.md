@@ -202,8 +202,9 @@ or outdated note after a crash is a reason to inspect live state, not to abandon
 
 **Take over in a new task:** require maintainer confirmation that the previous
 owner stopped or is handing over. An idle task, old timestamp, or missing note
-is insufficient. Then read the live head and publish a complete note with a new
-owner tag before other work. Immediately after it, post a takeover comment with
+is insufficient. Then check out the PR head under its own branch name, run `branch check
+--pr NUMBER`, inspect the head read-only, and accept it with `branch accept --pr NUMBER
+--head SHA`. Then publish a complete note with a new owner tag before other work. Immediately after it, post a takeover comment with
 `reply --key takeover-OWNER_TAG` that names the new Owner and Revision and points
 to WIP Details for the rest; leave Chat link out. It grants no authority. A resume
 by the same owner posts none. Recheck checks, review, and merge authority. Inspect
