@@ -14,9 +14,8 @@ module Shaka
     TRAILER = /^co-authored-by:[ \t]*(\S[^<\n]*<[^>\n]+>)[ \t]*$/i
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
     REFERENCE = %r{(?<![\w&/#])(?:[\w.-]+/[\w.-]+)?#\d+\b}
-    URL = %r{\S+://\S+}
-    REFERENCE_GUIDANCE = 'git log does not link these numbers. Keep one after Fixes or Part of, or one whose ' \
-                         'sentence says what it did. Explain or drop the rest.'
+    URL = %r{[a-z][\w+.-]*://\S+}i
+    REFERENCE_GUIDANCE = 'Check each number against the squash message rules in references/writing.md.'
 
     attr_reader :headline, :body
 
