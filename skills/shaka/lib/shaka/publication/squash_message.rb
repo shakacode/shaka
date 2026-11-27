@@ -15,10 +15,8 @@ module Shaka
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
     REFERENCE = %r{(?<![\w&/#])(?:[\w.-]+/[\w.-]+)?#\d+\b}
     URL = %r{\S+://\S+}
-    # A line that only closes issues, such as `Fixes #7` or `- Closes #7 and #8`.
-    CLOSING = /\A\s*(?:[-*]\s+)?(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?|part\sof):?
-               (?:[\s,]+(?:and\s+)?#{REFERENCE})+\s*\z/ix
-    REFERENCE_GUIDANCE = 'git log does not link these numbers. Say what each PR or issue did, or drop the number.'
+    REFERENCE_GUIDANCE = 'git log does not link these numbers. Keep one after Fixes or Part of, or one whose ' \
+                         'sentence says what it did. Explain or drop the rest.'
 
     attr_reader :headline, :body
 
@@ -43,8 +41,8 @@ module Shaka
       @body = [wrap(text), trailers(commit_messages)].reject(&:empty?).join("\n\n")
     end
 
-    # Ruby cannot tell whether the sentence around a number says what that PR did, so the
-    # result lists every number other than the PR's own and the ones it closes.
+    # Ruby cannot tell whether the sentence around a number closes it or says what that PR
+    # did, so the result lists every number other than the PR's own for the agent to judge.
     def reference_check
       return {} if @references.empty?
 
@@ -58,7 +56,7 @@ module Shaka
       title.strip.end_with?(suffix) ? title.strip : "#{title.strip} #{suffix}"
     end
 
-    def references(text) = text.lines.grep_v(CLOSING).join.gsub(URL, 'URL').scan(REFERENCE).uniq
+    def references(text) = text.gsub(URL, 'URL').scan(REFERENCE).uniq
 
     def plain(body)
       text = PublicationText.required(body, 'squash body')

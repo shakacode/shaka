@@ -190,9 +190,9 @@ top of the description for the prepared title and body, and copy them into
 GitHub's fields. If the checkpoint was explicitly skipped, the agent publishes a
 separate message comment. Use the message for the commit you reviewed.
 The agent supplies the message when it merges for you.
-Git history does not link PR or issue numbers. When a message names one it does
-not close, Shaka lists it for the agent. The agent then says what that PR or issue
-did, or drops the number.
+Git history does not link PR or issue numbers, so Shaka lists each one a message
+names for the agent. The agent keeps a number the message closes, and says what
+any other PR or issue did or drops its number.
 
 A **merge queue** provides no message fields. Add the PR to the queue instead.
 Its repository settings control the message. Shaka's own merge refuses a queue

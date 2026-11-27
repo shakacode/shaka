@@ -58,9 +58,10 @@
   - Instead of: “It shows one before-and-after rewrite from #1242.”
   - Write: “Squash messages now replace internal terms with what each part
     does.”
-  - `squash-message` and ready checkpoint publication list each number under
-    `squash_message_references`, explained or not. When a listed number lacks
-    what it did, add that or drop the number, then publish again.
+  - `squash-message` and ready checkpoint publication list every number but
+    the PR's own under `squash_message_references`. When a listed number
+    neither follows `Fixes` or `Part of` nor says what it did, add that or
+    drop the number, then publish again.
 - Replace internal terms with what the part does.
   - Instead of: “Without a job, only a leader Ruby has not reaped is ended,
     through Ruby's own handle.”

@@ -56,38 +56,16 @@ class SquashMessageTest < Minitest::Test
     end
   end
 
-  def test_a_pr_number_outside_a_closing_line_is_listed_to_check
-    body = "Ends the bullets #1242 had.\n\n- See #12, owner/repo#3, and #1242.\n\nFixes #7\nPart of #8\nCloses: #9"
+  def test_every_pr_number_but_the_prs_own_is_listed_for_the_agent_to_judge
+    body = "Ends the bullets #1242 had.\n\n- See #12, owner/repo#3, and #1242.\n\nFixes #7"
 
-    assert_equal({ 'squash_message_references' => { 'references' => ['#1242', '#12', 'owner/repo#3'],
+    assert_equal({ 'squash_message_references' => { 'references' => ['#6', '#1242', '#12', 'owner/repo#3', '#7'],
                                                     'guidance' => Shaka::SquashMessage::REFERENCE_GUIDANCE } },
-                 squash(body:).reference_check)
+                 squash(title: 'Revert #6 (#42)', body:).reference_check)
   end
 
-  def test_only_a_line_that_just_closes_issues_is_exempt
-    body = "- Fixes the bullets #1242 had.\n\nFixes #7 and see #2\nFixes https://x.test/g #5 had.\n" \
-           "Fixes #7, #8 and #9\n- Closes owner/repo#3"
-
-    check = squash(title: 'Revert "Fixes #6"', body:).reference_check
-
-    assert_equal ['#6', '#1242', '#7', '#2', '#5'], check.dig('squash_message_references', 'references')
-  end
-
-  def test_a_closing_word_ending_one_line_does_not_exempt_the_next
-    check = squash(title: 'Improve fixes', body: "Improve fixes\n#1242 introduced the old behavior.").reference_check
-
-    assert_equal ['#1242'], check.dig('squash_message_references', 'references')
-  end
-
-  def test_a_number_in_the_title_is_listed_but_the_prs_own_is_not
-    check = squash(title: 'Follow up on #1242 (#42)').reference_check
-
-    assert_equal ['#1242'], check.dig('squash_message_references', 'references')
-  end
-
-  def test_a_body_whose_only_numbers_close_issues_needs_no_check
-    body = "Ends the bullets.\n\nFixes #7\n- Resolves owner/repo#3\nCloses: #9\nIssue&#39;s a#1 " \
-           'at https://x.test/a/b#12 and https://x.test/r?view=#123'
+  def test_a_body_without_other_numbers_needs_no_check
+    body = "Ends the bullets.\n\nIssue&#39;s a#1 at https://x.test/a/b#12 and https://x.test/r?view=#123"
 
     assert_empty squash(body:).reference_check
   end
