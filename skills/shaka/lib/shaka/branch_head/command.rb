@@ -22,13 +22,27 @@ module Shaka
         options = parse(operation, arguments)
         return 0 unless options
 
-        head = BranchHead.new(root: options[:root], pr_head: (pr_head(options[:root], options[:pr]) if options[:pr]))
-        result = perform(operation, head, options)
+        result = outcome(operation, options)
         puts JSON.pretty_generate(result)
-        BranchHead::SAFE.include?(result['state']) ? 0 : PAUSE_EXIT
+        [*BranchHead::SAFE, BranchHead::FINISHED].include?(result['state']) ? 0 : PAUSE_EXIT
       rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
-        warn "shaka: #{e.message}"
+        warn "shaka: #{BranchHead.redact(e.message)}"
         1
+      end
+
+      def outcome(operation, options)
+        pull = (pr_head(options[:root], options[:pr]) if options[:pr])
+        return finished(operation, pull) if pull && pull['state'] != 'OPEN'
+
+        perform(operation, BranchHead.new(root: options[:root], pr_head: pull), options)
+      end
+
+      # A merged or closed PR ends the branch check, even when its fork is gone; there is nothing left to push.
+      def finished(operation, pull)
+        raise Error, "The PR is #{pull['state'].downcase}; there is nothing to #{operation}." if operation != 'check'
+
+        { 'state' => BranchHead::FINISHED, 'pr_state' => pull['state'],
+          'guidance' => 'The PR merged or closed, so its branch needs no check. Continue.' }
       end
 
       def perform(operation, head, options)
@@ -83,7 +97,7 @@ module Shaka
 
       # The PR's head repository and branch, read with gh from the checkout's repository.
       def pr_head(root, number)
-        fields = 'url,headRefName,headRepository,headRepositoryOwner'
+        fields = 'url,state,headRefName,headRepository,headRepositoryOwner'
         output, error, success = Doctor::BoundedCommand.new(timeout: PR_SECONDS)
                                                        .call(['gh', 'pr', 'view', number.to_s, '--json', fields], root)
         raise Error, "Cannot read PR ##{number}: #{error.strip}" unless success
@@ -93,14 +107,18 @@ module Shaka
 
       # A deleted fork leaves no head repository, so there is no destination to match.
       def head_of(pull, number)
+        return { 'state' => pull['state'] } unless pull['state'] == 'OPEN'
+
         owner = pull.dig('headRepositoryOwner', 'login')
         name = pull.dig('headRepository', 'name')
         raise Error, "PR ##{number} has no head repository." unless owner && name
 
-        { 'url' => "https://#{URI(pull.fetch('url')).host}/#{owner}/#{name}", 'branch' => pull['headRefName'] }
+        { 'state' => 'OPEN', 'url' => "https://#{URI(pull.fetch('url')).host}/#{owner}/#{name}",
+          'branch' => pull['headRefName'] }
       end
 
-      private_class_method :pr_head, :head_of, :perform, :parse, :option_parser, :operation_flags, :accept_flags
+      private_class_method :outcome, :pr_head, :head_of, :finished, :perform, :parse, :option_parser, :operation_flags,
+                           :accept_flags
     end
   end
 end

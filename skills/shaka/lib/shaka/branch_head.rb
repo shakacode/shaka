@@ -10,6 +10,11 @@ module Shaka
   # overwritten. The accepted head lives in the checkout's own branch config; `accept` and `push` change it.
   class BranchHead
     SAFE = %w[unchanged not_pushed].freeze
+    FINISHED = 'pr_finished'
+    USERINFO = %r{(://)[^/@\s]+@}
+
+    # Drops user:password@ from any URL in text that a command prints.
+    def self.redact(text) = text.to_s.gsub(USERINFO, '\\1')
     SHA = Destination::SHA
     ENVIRONMENT = Destination::ENVIRONMENT
 
@@ -20,9 +25,8 @@ module Shaka
                  'new commits, and report them. Accept the head once reconciled.',
       'unrecorded' => 'The branch is on the remote but this checkout never accepted a head. Pause, inspect ' \
                       'the remote commits, and accept the head once reconciled.',
-      'disappeared' => 'The remote branch this task pushed is gone. Unless its PR merged or closed, pause, ' \
-                       'preserve local work, and report it. If the user wants it pushed again, run ' \
-                       '`branch accept --absent`, then `branch push`.',
+      'disappeared' => 'The pushed branch is gone. Pause, keep local work, and report it. To push it again ' \
+                       'once the user agrees, run `branch accept --absent`, then `branch push`.',
       'unconfirmed' => 'The push landed but its head could not be recorded. Pause, run `branch check`, and ' \
                        'accept pushed_head only if the remote still holds it.',
       'unreadable' => 'The remote branch could not be read, so a teammate push cannot be ruled out. Pause, ' \
@@ -44,7 +48,7 @@ module Shaka
       { 'state' => state, 'branch' => @branch, 'remote' => @remote, 'accepted' => accepted,
         'live' => live.is_a?(String) ? live : nil, 'local' => local,
         'rewrites' => rewrites?(accepted, local), 'guidance' => GUIDANCE.fetch(state),
-        'error' => (live[:error] if state == 'unreadable') }.compact
+        'error' => (BranchHead.redact(live[:error]) if state == 'unreadable') }.compact
     end
 
     # Accepting records only what the remote holds now, so a stale or mistyped SHA cannot be accepted.
@@ -80,7 +84,7 @@ module Shaka
       accept(sha).merge(pushed)
     rescue Error => e
       { 'state' => 'unconfirmed', 'branch' => @branch, 'remote' => @remote, 'guidance' => GUIDANCE['unconfirmed'],
-        'error' => e.message }.merge(pushed)
+        'error' => BranchHead.redact(e.message) }.merge(pushed)
     end
 
     def accept_head(head, live)

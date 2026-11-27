@@ -77,13 +77,24 @@ class BranchHeadDestinationTest < Minitest::Test
     assert_equal %w[upstream not_pushed], result.values_at('remote', 'state')
   end
 
-  # gh pr checkout records a fork PR's remote as a URL.
-  def test_remote_given_as_a_url_is_its_own_push_url
-    git(@task, 'config', "branch.#{BRANCH}.remote", @origin)
+  # gh pr checkout records a fork PR's remote as a URL, which gets push rewriting a read cannot match.
+  def test_remote_given_as_a_url_is_unreadable
+    git(@task, 'config', "branch.#{BRANCH}.remote", 'https://user:secret@git.example.com/someone/fork.git')
     git(@task, 'config', "branch.#{BRANCH}.merge", "refs/heads/#{BRANCH}")
-    commit(@task, 'first')
 
-    assert_equal 'unchanged', branch_head.push['state']
+    assert_includes unreadable_error, 'not a named remote'
+  end
+
+  def test_printed_errors_drop_url_credentials
+    assert_equal 'see https://git.example.com/o/r', Shaka::BranchHead.redact('see https://user:secret@git.example.com/o/r')
+  end
+
+  def test_finished_pr_ends_the_check_and_refuses_a_push
+    pull = { 'url' => 'https://github.com/base/repo/pull/7', 'state' => 'MERGED', 'headRepository' => nil }
+    head = Shaka::BranchHead::Command.send(:head_of, pull, 7)
+
+    assert_equal 'pr_finished', Shaka::BranchHead::Command.send(:finished, 'check', head)['state']
+    assert_raises(Shaka::Error) { Shaka::BranchHead::Command.send(:finished, 'push', head) }
   end
 
   def test_tracking_the_base_branch_while_pushing_to_a_fork_is_allowed
@@ -108,10 +119,10 @@ class BranchHeadDestinationTest < Minitest::Test
   end
 
   def test_pr_view_json_maps_to_the_head_url_and_refuses_a_deleted_fork
-    pull = { 'url' => 'https://github.com/base/repo/pull/7', 'headRefName' => 'topic',
+    pull = { 'url' => 'https://github.com/base/repo/pull/7', 'state' => 'OPEN', 'headRefName' => 'topic',
              'headRepository' => { 'name' => 'repo' }, 'headRepositoryOwner' => { 'login' => 'someone' } }
 
-    assert_equal({ 'url' => 'https://github.com/someone/repo', 'branch' => 'topic' },
+    assert_equal({ 'state' => 'OPEN', 'url' => 'https://github.com/someone/repo', 'branch' => 'topic' },
                  Shaka::BranchHead::Command.send(:head_of, pull, 7))
     assert_raises(Shaka::Error) { Shaka::BranchHead::Command.send(:head_of, pull.merge('headRepository' => nil), 7) }
   end

@@ -80,8 +80,13 @@ module Shaka
       # the branch's same-named upstream, several push URLs, or a URL that insteadOf would rewrite again on read.
       def push_url
         refuse_redirected_push
-        # A remote given as a URL, as `gh pr checkout` records for a fork, is its own push URL.
-        urls = remote_names.include?(@remote) ? git_lines('remote', 'get-url', '--push', '--all', @remote) : [@remote]
+        # A remote given as a URL, as `gh pr checkout` records for a fork, gets push rewriting a read cannot match.
+        unless remote_names.include?(@remote)
+          raise Error,
+                'This branch pushes to a URL, not a named remote; add the URL as a remote.'
+        end
+
+        urls = git_lines('remote', 'get-url', '--push', '--all', @remote)
         raise Error, "#{@remote} has #{urls.size} push URLs; configure one for the task branch." unless urls.one?
 
         reread = git_lines('ls-remote', '--get-url', urls.first)
