@@ -54,8 +54,9 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
      --behavior-records /outside/checkout/release-records.json
    ```
 
-   `--out` must name a directory that does not exist yet. Repeat `--behavior-records` for
-   each profile, or pass `--skip-behavior-gate` instead.
+   `--out` must name a directory that does not exist yet, and a refused run keeps the one it
+   created, so choose a new name to retry. Repeat `--behavior-records` for each profile, or
+   pass `--skip-behavior-gate` instead.
 
    The command first confirms a clean checkout at `shakacode/shaka`'s `main`, before it
    loads the gemspec, the behavior checker, or validation. `bin/release` itself loads from

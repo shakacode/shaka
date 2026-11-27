@@ -33,6 +33,8 @@ module ShakaRelease
       refuse 'remote main moved after approval; prepare and approve again' unless main == @commit
       refuse "local tag #{@name} points at another commit; delete it and rerun" unless [nil, @commit].include?(local)
       refuse "local tag #{@name} is not annotated; delete it and rerun" if local && !annotated?
+      refuse 'the approved commit is not in this checkout; fetch main and rerun' unless
+        system(@env, 'git', '-C', @root, 'rev-parse', '--verify', '--quiet', "#{@commit}^{commit}", out: File::NULL)
     end
 
     def push

@@ -30,6 +30,18 @@ class ReleasePublishResumeTest < Minitest::Test
     assert_nil remote_tag
   end
 
+  def test_an_approved_commit_missing_from_the_checkout_is_refused_in_a_dry_run
+    other = File.join(@directory, 'other')
+    Open3.capture3('git', 'clone', '-q', File.join(@directory, 'origin.git'), other)
+    Open3.capture3('git', '-C', other, '-c', 'user.name=T', '-c', 'user.email=t@example.com', 'commit',
+                   '--allow-empty', '-qm', 'Elsewhere')
+    Open3.capture3('git', '-C', other, 'push', '-q', 'origin', 'HEAD:main')
+    @commit = Open3.capture2('git', '-C', other, 'rev-parse', 'HEAD').first.strip
+    @approval = write_approval('1.2.0')
+    error = assert_raises(Shaka::Error) { publish(dry_run: true) }
+    assert_includes error.message, 'not in this checkout'
+  end
+
   def test_a_local_tag_that_is_not_a_commit_is_refused_in_a_dry_run
     blob = git('hash-object', '-w', 'README.md').strip
     git('tag', 'v1.2.0', blob)
