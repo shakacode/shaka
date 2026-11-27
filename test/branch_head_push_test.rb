@@ -7,14 +7,17 @@ require_relative 'branch_head_fixture'
 class BranchHeadPushTest < Minitest::Test
   include BranchHeadFixture
 
+  # The task builds on the teammate's commit, so a plain push would fast-forward; only the lease refuses it.
   def test_teammate_push_during_the_turn_is_refused_by_the_lease
     accept(push_task('first'))
     lease = check['lease']
-    teammate_push('theirs')
+    theirs = teammate_push('theirs')
+    git(@task, 'pull', '--quiet', '--ff-only', 'origin', BRANCH)
     commit(@task, 'mine')
     _output, status = Open3.capture2e('git', '-C', @task, 'push', lease, 'origin', "HEAD:refs/heads/#{BRANCH}")
 
     refute_predicate status, :success?
+    assert_equal theirs, check['live']
     assert_equal 'moved', check['state']
   end
 
