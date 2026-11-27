@@ -1,44 +1,44 @@
 # frozen_string_literal: true
 
 require 'open3'
+require_relative 'branch_head/destination'
 require_relative 'error'
 
 module Shaka
-  # Compares the live remote head of the task branch with the head this checkout last accepted,
-  # so a teammate's push between or during turns pauses work instead of being built on or overwritten.
-  # The accepted head lives in the checkout's own branch config; only `accept` changes it.
+  # Compares the live head of the checked-out branch at its push destination with the head this checkout
+  # last accepted, so a teammate's push between or during turns pauses work instead of being built on or
+  # overwritten. The accepted head lives in the checkout's own branch config; `accept` and `push` change it.
   class BranchHead
     SAFE = %w[unchanged not_pushed].freeze
-    SHA = /\A\h{40}\z/
+    SHA = Destination::SHA
+    ENVIRONMENT = Destination::ENVIRONMENT
 
     GUIDANCE = {
       'unchanged' => 'The remote branch is where this task left it. Continue.',
       'not_pushed' => 'The branch is not on the remote and this task never pushed it. Continue.',
-      'moved' => 'Someone else changed the remote branch. Pause edits and publication and preserve local ' \
-                 'work. Fetch it, inspect the new commits, and report them. After reconciling, accept the ' \
-                 'new head, then rerun validation and review for the head you push.',
-      'unrecorded' => 'This checkout has no accepted head for a branch that is already on the remote. Pause ' \
-                      'edits and publication, inspect the remote commits, and accept the head once it is ' \
-                      'reconciled with local work.',
-      'disappeared' => 'The remote branch this task pushed is gone. Pause edits and publication, preserve ' \
-                       'local work, and report it. Push again only when the user decides to.',
-      'unreadable' => 'The remote branch could not be read, so a teammate push cannot be ruled out. Pause ' \
-                      'edits and publication, preserve local work, and report the error.'
+      'moved' => 'Someone else changed the remote branch. Pause, preserve local work, fetch and inspect the ' \
+                 'new commits, and report them. Accept the head once reconciled.',
+      'unrecorded' => 'The branch is on the remote but this checkout never accepted a head. Pause, inspect ' \
+                      'the remote commits, and accept the head once reconciled.',
+      'disappeared' => 'The remote branch this task pushed is gone. Pause, preserve local work, and report it.',
+      'unreadable' => 'The remote branch could not be read, so a teammate push cannot be ruled out. Pause, ' \
+                      'preserve local work, and report the error.'
     }.freeze
 
-    def initialize(root:, remote: 'origin', branch: nil)
+    def initialize(root:)
       @root = root
-      @remote = remote
-      @branch = branch || current_branch
+      @branch = current_branch
+      @destination = Destination.new(root:, branch: @branch)
+      @remote = @destination.remote
     end
 
     def check
-      live = live_head
+      live = @destination.head
       accepted = accepted_head
       state = state_for(live, accepted)
       { 'state' => state, 'branch' => @branch, 'remote' => @remote, 'accepted' => accepted,
         'live' => live.is_a?(String) ? live : nil, 'local' => git('rev-parse', 'HEAD').strip,
-        'lease' => lease(accepted), 'rewrites' => rewrites?(accepted), 'guidance' => GUIDANCE.fetch(state),
+        'rewrites' => rewrites?(accepted), 'guidance' => GUIDANCE.fetch(state),
         'error' => (live[:error] if state == 'unreadable') }.compact
     end
 
@@ -46,11 +46,24 @@ module Shaka
     def accept(head, absent: false)
       raise Error, 'Pass --head SHA or --absent.' unless absent ^ !head.nil?
 
-      live = live_head
+      live = @destination.head
       raise Error, "Cannot read #{@remote}/#{@branch}: #{live[:error]}" if live.is_a?(Hash)
 
       absent ? accept_absent(live) : accept_head(head, live)
       check
+    end
+
+    # Pushes HEAD only from a safe state, leased on the accepted head, then accepts what it pushed.
+    # A push that would drop the accepted head from history needs rewrite: true, as an intended rebase does.
+    def push(rewrite: false)
+      before = check
+      return before.merge('pushed' => false) unless SAFE.include?(before['state'])
+      if before['rewrites'] && !rewrite
+        raise Error, "HEAD lacks the accepted head #{before['accepted']}; pass --rewrite only for an intended rebase."
+      end
+
+      @destination.push(before['accepted'])
+      accept(before['local']).merge('pushed' => true)
     end
 
     private
@@ -82,37 +95,15 @@ module Shaka
     def rewrites?(accepted)
       return false unless accepted
 
-      _output, _error, status = Open3.capture3('git', '-C', @root, 'merge-base', '--is-ancestor', accepted, 'HEAD')
+      _output, _error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'merge-base', '--is-ancestor',
+                                               accepted, 'HEAD')
       !status.success?
-    end
-
-    # The value for `git push --force-with-lease`; an empty expectation means the branch must not exist yet.
-    def lease(accepted) = "--force-with-lease=refs/heads/#{@branch}:#{accepted}"
-
-    # ls-remote --exit-code returns 2 when the remote answers without the branch; any other failure is unreadable.
-    # Its pattern also matches refs that merely end in the branch's path, so only the exact ref counts.
-    def live_head
-      output, error, status = Open3.capture3({ 'GIT_TERMINAL_PROMPT' => '0' }, 'git', '-C', @root, 'ls-remote',
-                                             '--exit-code', @remote, "refs/heads/#{@branch}")
-      return exact_head(output) if status.success?
-      return if status.exitstatus == 2
-
-      { error: error.strip.empty? ? "git ls-remote exited #{status.exitstatus}" : error.strip }
-    end
-
-    def exact_head(output)
-      shas = output.lines.filter_map do |line|
-        sha, ref = line.chomp.split("\t", 2)
-        sha if ref == "refs/heads/#{@branch}"
-      end
-      return shas.first if shas.length == 1 && shas.first.match?(SHA)
-
-      shas.empty? ? nil : { error: "Unexpected ls-remote output for refs/heads/#{@branch}." }
     end
 
     # git config --get exits 1 for a missing key; any other failure must not read as "no record".
     def accepted_head
-      output, error, status = Open3.capture3('git', '-C', @root, 'config', '--local', '--get', config_key)
+      output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', '--local', '--get',
+                                             config_key)
       return output.strip if status.success?
       return if status.exitstatus == 1
 
@@ -124,11 +115,11 @@ module Shaka
     def current_branch
       git('symbolic-ref', '--quiet', '--short', 'HEAD').strip
     rescue Error
-      raise Error, 'No branch is checked out; pass --branch NAME.'
+      raise Error, 'No branch is checked out; check out the task branch first.'
     end
 
     def git(*arguments)
-      output, error, status = Open3.capture3('git', '-C', @root, *arguments)
+      output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, *arguments)
       raise Error, "git #{arguments.first} failed: #{error.strip}" unless status.success?
 
       output

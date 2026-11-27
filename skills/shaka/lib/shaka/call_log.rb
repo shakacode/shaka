@@ -23,7 +23,7 @@ module Shaka
                   trial ui-check update-check usage walkthrough work workflow].freeze
     # Commands whose second word selects the operation; any other second word is an argument.
     # A test keeps them equal to each command's own list.
-    OPERATIONS = { 'branch' => %w[check accept], 'configure' => %w[settings],
+    OPERATIONS = { 'branch' => %w[check accept push], 'configure' => %w[settings],
                    'evidence' => %w[run bind verify guard],
                    'post-implementation' => %w[run publish], 'pr' => %w[watch], 'prompt' => %w[show],
                    'repos' => %w[add refresh],

@@ -7,11 +7,8 @@ require_relative 'branch_head_fixture'
 class BranchHeadTest < Minitest::Test
   include BranchHeadFixture
 
-  def test_new_branch_is_not_pushed_and_its_lease_expects_no_branch
-    result = check
-
-    assert_equal 'not_pushed', result['state']
-    assert_equal "--force-with-lease=refs/heads/#{BRANCH}:", result['lease']
+  def test_new_branch_is_not_pushed
+    assert_equal 'not_pushed', check['state']
   end
 
   def test_own_push_then_accept_keeps_the_head_unchanged
@@ -21,7 +18,6 @@ class BranchHeadTest < Minitest::Test
 
     assert_equal 'unchanged', result['state']
     assert_equal pushed, result['accepted']
-    assert_equal "--force-with-lease=refs/heads/#{BRANCH}:#{pushed}", result['lease']
   end
 
   def test_teammate_push_between_turns_reads_as_moved
