@@ -21,7 +21,10 @@ module Shaka
     def self.disposition(recommendation) = "<!-- #{MARK}-disposition #{recommendation} -->"
 
     # The reviewer's verification verdict sits above those lines for the same reason.
-    ADEQUACY_SLUGS = PostImplementationReport::ADEQUACY.to_h { |verdict| [verdict.tr(' ', '_'), verdict] }.freeze
+    # Comments published before the rename carry the earlier slug; it reads as the current name.
+    ADEQUACY_SLUGS = PostImplementationReport::ADEQUACY.to_h { |verdict| [verdict.tr(' ', '_'), verdict] }
+                                                       .merge('adequate_with_accepted_gaps' => 'adequate with named gaps')
+                                                       .freeze
     ADEQUACY = Regexp.new("\n<!-- #{MARK}-adequacy (#{ADEQUACY_SLUGS.keys.join('|')}) -->" \
                           "\n(?:<!-- #{MARK}-disposition (?:#{RECOMMENDATION}) -->\n)?" \
                           "<!-- #{MARK} ([0-9a-f]{40}) (?:ready|blocked) -->\\s*\\z")
