@@ -195,7 +195,8 @@ It supplies setup, full and optional pre-review validation, focused tests, an op
 hosted-CI trigger, base branch, review, merge authority, branch naming, and recovery policy.
 GitHub supplies live protection, required checks, and allowed merge methods. `AGENTS.md`
 supplies human-only context and boundaries.
-`shaka seam check` rejects unknown fields, duplicate, YAML merge (`<<`), and tagged keys, unsafe paths, missing scripts,
+`shaka seam check` rejects unknown fields, duplicate keys, YAML merge keys (`<<`),
+keys tagged other than `!!str`, unsafe paths, missing scripts,
 and invalid values. Read authority from the trusted default-branch copy. Candidate policy
 edits cannot weaken the current task's requirements. Consumer commands stay in their own
 repositories; do not copy Shaka's scripts into them.

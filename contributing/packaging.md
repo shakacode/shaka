@@ -43,7 +43,8 @@ existing pinned source checkout until you can pin a published `1.0.0` or later.
 That command uses the same `RepositoryConfig` implementation as the installed skill.
 A passing payload includes `"mode": "local/candidate"` with `grants_policy` and
 `grants_merge_authority` both `false`. Treat it as structure evidence: unknown keys,
-duplicate, YAML merge (`<<`), and tagged keys, invalid nested values, unsafe paths, missing scripts, and
+duplicate keys, YAML merge keys (`<<`), keys tagged other than `!!str`, invalid nested
+values, unsafe paths, missing scripts, and
 non-executable scripts fail with a non-zero exit. It is not trusted policy and cannot
 authorize a merge. Agents still load merge and review policy with
 `shaka seam check --ref SHA` against an immutable default-branch commit.

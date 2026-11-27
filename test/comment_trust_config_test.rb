@@ -188,7 +188,7 @@ class CommentTrustConfigDuplicateKeyTest < Minitest::Test
         Shaka::PublicComments::TrustConfig.new(client, machine_path: path).load(base_oid: HEAD)
       end
 
-      assert_equal 'Trust config is invalid: YAML keys must not carry tags: PDw=.', error.message
+      assert_equal 'Trust config is invalid: YAML keys must not carry tags other than !!str: PDw=.', error.message
     end
   end
 

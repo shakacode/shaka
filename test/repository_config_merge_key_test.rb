@@ -57,4 +57,18 @@ class RepositoryConfigMergeKeyTest < Minitest::Test
       assert_includes error.message, 'YAML keys must not carry tags'
     end
   end
+
+  def test_a_str_tagged_key_loads_and_still_counts_as_a_duplicate
+    with_repository do |root|
+      path = File.join(root, '.agents/shaka/config.yml')
+      source = File.read(path)
+      File.write(path, source.sub('base_branch: main', '!!str base_branch: main'))
+      assert_equal 'main', Shaka::RepositoryConfig.load(root:).base_branch
+
+      File.write(path, "#{source}!!str base_branch: trunk\n")
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+      assert_includes error.message, 'duplicate key: base_branch'
+    end
+  end
 end
