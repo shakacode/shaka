@@ -203,8 +203,9 @@ implementation PR delivers decisions 2 to 6, and its description links the trigg
 section cannot answer whether a companion skill helped. The maintainer named the reader:
 a later retrospective that counts outcomes per skill, with the PR reviewer second. The
 [accepted plan](https://github.com/shakacode/shaka/issues/1285#issuecomment-7205630613)
-adds four optional entry keys. It extends decision 2's field list with them and, for a
-manual check only, replaces decision 3's command rules; every other decision stands.
+adds four optional entry keys. It extends decision 2's field list with them. For a manual
+check only, it replaces decision 2's code-span rendering of `command` and decision 3's
+command rules; every other decision stands.
 
 - `manual`: `true` when the check was reading or inspection. `command` then renders as
   a **Manual check** line of escaped prose instead of a code span, because there is no

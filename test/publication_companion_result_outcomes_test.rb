@@ -46,6 +46,8 @@ class PublicationCompanionResultOutcomesTest < Minitest::Test
     assert_includes render(results: [entry]),
                     "- **Cleared paths:** `.github/workflows/validate.yml`, `docs/**/*.md`\n"
     refute_includes render(results: [run_record('cleared_paths' => [])]), '**Cleared paths:**'
+    globs = ['**/bin/**', '*/tmp/x', 'lib/**/opt/y']
+    assert_includes render(results: [run_record('cleared_paths' => globs)]), '`**/bin/**`, `*/tmp/x`, `lib/**/opt/y`'
   end
 
   def test_refuses_cleared_paths_outside_the_repository_or_unsafe_to_render

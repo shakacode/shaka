@@ -62,7 +62,7 @@ module Shaka
     def repository_path?(path)
       # Markdown trims a code span's edge spaces, so a padded value could render as an absolute path.
       path.is_a?(String) && !path.empty? && path == path.strip && !UNSAFE_PATH.match?(path) &&
-        !CompanionResults::LOCAL_PATH.match?(path)
+        !CompanionResults::LOCAL_PATH.match?(path.tr('*?', 'x')) # a glob's `**/bin/` is not a workstation root
     end
 
     def code_list(values) = values.map { |value| "`#{value}`" }.join(', ')
