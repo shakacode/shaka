@@ -24,9 +24,10 @@ other skills. Use the resolved name, public source and available revision
 }
 ```
 
-When the skill belongs to a pack, add `pack` with the upstream `OWNER/REPO/PATH`, not a
-URL, such as `cursor/plugins/pstack`, whichever port or copy you installed; `source` still
-names where this copy came from. Omit `pack` when you cannot tell or it is private.
+When the skill belongs to a pack, add `pack` with the upstream `OWNER/REPO`, plus
+`/PATH` when the pack is not the repository root, not a URL: for example
+`cursor/plugins/pstack`, whichever port or copy you installed. `source` still names
+where this copy came from. Omit `pack` when you cannot tell or it is private.
 
 Select `agent-reported` with null `corroboration`, or `corroborated` when a native
 event or recorded tool call confirms invocation/loading; name that record in

@@ -8,7 +8,9 @@ module Shaka
     SUMMARY = 'Skills used'
     FIELDS = %w[name source revision phase contribution evidence corroboration].freeze
     # An upstream repository and optional path, such as cursor/plugins/pstack, so renamed ports count together.
-    PACK = %r{\A[A-Za-z0-9][A-Za-z0-9._-]*(?:/\w[\w.-]*)+\z}
+    # A segment may start with a dot, as in .agents, but may not be . or ..
+    PACK_SEGMENT = %r{(?!\.\.?(?:/|\z))[\w.-]+}
+    PACK = %r{\A#{PACK_SEGMENT}(?:/#{PACK_SEGMENT})+\z}
     LABELS = { 'agent-reported' => 'Agent-reported', 'corroborated' => 'Corroborated' }.freeze
     NOTE = 'Agent-reported use is the agent’s account. The agent selects Corroborated when a record confirms ' \
            'invocation or loading. Shaka does not check that record or instruction compliance. ' \
