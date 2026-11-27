@@ -2,14 +2,14 @@
 
 require_relative '../error'
 require_relative 'authors'
-require_relative '../configuration/trust_config'
+require_relative 'trust_lookup'
 
 module Shaka
   module PublicComments
     # Stops an inline reply when a public thread includes an author comments would exclude.
     # The refusal posts nothing, including no note that the author is approved or excluded.
     class ReplyGuard
-      VISIBILITIES = %w[public private internal].freeze
+      include TrustLookup
 
       def initialize(github, trust_config:, machine_path:)
         @github = github
@@ -44,13 +44,6 @@ module Shaka
         raise Error, 'Inline reply target must be the thread root. No comment was posted.'
       end
 
-      def public?
-        visibility = @github.api("repos/#{@github.repository}")['visibility']
-        raise Error, 'Repository visibility is unavailable.' unless VISIBILITIES.include?(visibility)
-
-        visibility == 'public'
-      end
-
       def excluded(participants, target, account)
         others = participants.reject { |item| own_comment?(item, account) }
         return [] if others.empty?
@@ -63,13 +56,6 @@ module Shaka
       def own_comment?(item, account)
         user = item['user']
         user.is_a?(Hash) && user['login'] == account
-      end
-
-      def config
-        return @trust_config if @trust_config
-
-        loader = TrustConfig.new(@github, machine_path: @machine_path)
-        loader.load(base_oid: loader.default_base_oid)
       end
 
       def index(participants, target)
