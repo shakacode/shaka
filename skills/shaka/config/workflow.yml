@@ -963,11 +963,11 @@ phases:
         checks to pass, then refresh the description and any required rendering preview. Run
         `attention` with `--state merge` so the PR stays in the approval queue while it waits.
         Any other new commit ends the approval.
-      - Under Ask, a `merge-approved` label on the PR is the maintainer's choice of Auto for that PR,
-        and later pushes keep it. Run `attention` with `--state none`, then `merge --auto
-        --label-approval` for the current head; the helper accepts the label from an account with
-        write access and reports who added it. When an Auto gate or the label check refuses, hand
-        the PR back under Ask and leave the label for the maintainer.
+      - Under Ask, a `merge-approved` label on the PR is the maintainer's choice of Auto for that PR.
+        Unlike the per-head approval above, later pushes keep it. Run `attention` with
+        `--state none`, then `merge --auto --label-approval` for the current head; the helper
+        checks who added the label. When an Auto gate or the label check refuses, hand the PR back
+        under Ask. Adding and removing the label stay with the maintainer.
       - Leave repository queue settings and delayed auto-merge unchanged. When the helper submits
         merge, on a queue-disabled base merge immediately while the task is active. On a
         queue-enabled base, enqueue the expected reviewed head, then wait for GitHub's current-base

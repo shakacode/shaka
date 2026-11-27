@@ -13,20 +13,26 @@ class MergeApprovalLabelTest < Minitest::Test
 
   # Answers the event list, collaborator permissions, and repository label reads the label check makes.
   module LabelApi
-    attr_accessor :events, :permissions, :label_status
+    attr_accessor :events, :permissions, :label_status, :create_status
 
     def api_calls = (@api_calls ||= [])
 
     def api_list(path)
       api_calls << ['GET', path]
-      path == EVENTS ? events : []
+      return [] unless path == EVENTS
+      # A list of event lists answers successive reads in turn, the last one repeating.
+      return events unless events.first.is_a?(Array)
+
+      events.length > 1 ? events.shift : events.first
     end
 
     def api(path, method: 'GET', fields: {}, expected: Hash)
       api_calls << [method, path, fields]
       login = permissions.keys.find { |name| path == format(PERMISSION, name) }
       return { 'user' => { 'login' => login }, 'permission' => permissions.fetch(login) } if login
-      raise Shaka::Error.new("HTTP #{label_status}", http_status: label_status) if path == REPO_LABEL && label_status
+
+      status = path == REPO_LABEL ? label_status : (create_status if method == 'POST')
+      raise Shaka::Error.new("HTTP #{status}", http_status: status) if status
 
       expected == Array ? [] : {}
     end
@@ -96,6 +102,18 @@ class MergeApprovalLabelTest < Minitest::Test
     assert_blocked(/the PR does not carry it/)
   end
 
+  def test_a_label_re_added_without_write_access_before_submission_stops_the_merge
+    @client.events = [[labeled('maintainer')], [labeled('maintainer'), labeled('helper')]]
+
+    assert_blocked(/"helper" added it without write access/)
+  end
+
+  def test_an_event_list_too_long_to_read_refuses_and_hands_back
+    @client.define_singleton_method(:api_list) { |_path| Array.new(100) { {} } }
+
+    assert_blocked(/too many events to find who added it. Hand the PR back under Ask/)
+  end
+
   def test_the_label_exempts_no_auto_gate
     @client.head_checks = [passing('Validate'), { 'name' => 'windows', 'state' => 'FAILURE', 'bucket' => 'fail' }]
 
@@ -120,6 +138,16 @@ class MergeApprovalLabelTest < Minitest::Test
 
     @client.label_status = 500
     assert_match(/\Afailed: HTTP 500/, label.ensure_repository_label)
+  end
+
+  def test_a_label_another_run_created_is_present_and_a_forbidden_create_names_who_creates_it
+    label = Shaka::MergeApprovalLabel.new(@client)
+    @client.label_status = 404
+    { 422 => /\Apresent\z/, 403 => /\Anot_created: .*a maintainer creates merge-approved/ }.each do |status, outcome|
+      @client.create_status = status
+
+      assert_match outcome, label.ensure_repository_label
+    end
   end
 
   private

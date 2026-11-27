@@ -63,7 +63,8 @@ module Shaka
 
       verify_snapshot(current, head)
       @target.unchanged!(initial, current, @github)
-      @label_approval&.present!(current)
+      # Read again last, so a label removed, or re-added by someone without write access, stops the merge.
+      @label_approval&.verify!(current)
       @review_evidence.final_check(head)
       # Under Auto no person looked at the findings, so open ones stop it however late they were published.
       MergeWaitReview.new(@github).refuse_open_findings! if @auto

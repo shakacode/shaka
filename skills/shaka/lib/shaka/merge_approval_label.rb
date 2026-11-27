@@ -16,8 +16,9 @@ module Shaka
     # GitHub's REST permission reports maintain as write. Triage may add labels, so it does not count.
     WRITER_PERMISSIONS = %w[write admin].freeze
     NOT_FOUND = 404
-    # 403: the caller may apply labels but not create them. 422: another run created it first.
-    TOLERATED_CREATE_FAILURES = [403, 422].freeze
+    FORBIDDEN = 403
+    # Another run created the label first.
+    ALREADY_EXISTS = 422
 
     def initialize(github)
       @github = github
@@ -39,13 +40,6 @@ module Shaka
       { 'label' => NAME, 'labeled_by' => actor, 'labeled_at' => event['created_at'] }
     end
 
-    # Raises when the label is gone, so a maintainer who removes it stops the merge until submission.
-    def present!(pull)
-      return if MergeHold.new([NAME]).label(MergeHold.new.names(pull))
-
-      raise refusal('the PR does not carry it')
-    end
-
     # Gives the repository the label beside the merge wait, so a maintainer finds it with its meaning.
     # The wait is already labeled, so a failure is reported rather than raised.
     def ensure_repository_label
@@ -57,16 +51,24 @@ module Shaka
 
     private
 
+    def present!(pull)
+      return if MergeHold.new([NAME]).label(MergeHold.new.names(pull))
+
+      raise refusal('the PR does not carry it')
+    end
+
     def refusal(reason)
       Error.new("#{NAME} does not choose Auto: #{reason}. Hand the PR back under Ask")
     end
 
     def latest_labeling
       events = PublicComments::BoundedList.new(@github, max_pages: 10, label: 'PR event list')
-                                         .call("repos/#{@github.repository}/issues/#{@github.number}/events")
+                                          .call("repos/#{@github.repository}/issues/#{@github.number}/events")
       events.reverse.find do |event|
         event['event'] == 'labeled' && event.dig('label', 'name').to_s.casecmp?(NAME)
       end
+    rescue PublicComments::BoundedList::LimitError
+      raise refusal('the PR has too many events to find who added it')
     end
 
     def permission(actor)
@@ -80,7 +82,11 @@ module Shaka
       @github.api("repos/#{@github.repository}/labels", method: 'POST', fields:)
       'created'
     rescue Error => e
-      TOLERATED_CREATE_FAILURES.include?(e.http_status) ? 'not_created' : "failed: #{e.message}"
+      case e.http_status
+      when ALREADY_EXISTS then 'present'
+      when FORBIDDEN then "not_created: this account cannot create labels, so a maintainer creates #{NAME}"
+      else "failed: #{e.message}"
+      end
     end
   end
 end
