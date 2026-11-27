@@ -60,7 +60,10 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
    follows the format the file's header names. Save that entry's body as
    `RELEASE_NOTES.md`. Before requesting publication approval, complete the
    [release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md) for the intended host/model/effort
-   profiles and retain its results. Then run the maintainer preflight from the
+   profiles and retain its results. The maintainer waived this gate for 1.0.0
+   ([decision 3](https://github.com/shakacode/shaka/issues/580#issuecomment-7206389918));
+   skip it and its commit-bound run below for that release only, and say so in the
+   release notes. Then run the maintainer preflight from the
    source checkout, with the gem, original validation JSON, and notes saved outside it:
 
    ```bash

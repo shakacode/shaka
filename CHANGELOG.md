@@ -17,10 +17,14 @@ independent review for substantial changes, and any gaps you still need to asses
 Use [Ask or Auto](https://shaka.shakacode.com/docs/working-with-shaka#choose-a-merge-policy) to choose how
 Shaka handles merging. Repository checks and approvals still apply.
 
+Native Windows support is not in 1.0. The
+[release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md)
+did not run for 1.0.0; it applies again to later releases.
+
 ### Added
 
 - For a fresh install on Ruby 3.4 or later, run `gem install shaka --version 1.0.0`
-  and `shaka-install --agent codex`. The installer links the skill to the matching
+  and `shaka-install _1.0.0_ --agent codex`. The installer links the skill to the matching
   GitHub release. Existing installations keep their registered branch or release.
   See [manual installation](https://shaka.shakacode.com/docs/manual-installation)
   for source installs and how to switch to a published release. The installer can
@@ -55,7 +59,8 @@ Shaka handles merging. Repository checks and approvals still apply.
   visible omission reason. Common description input errors are reported
   together, with each exact overage.
 - Local Codex reviews run without connected ChatGPT apps, web search, or image
-  viewing. Read-only shell inspection remains available.
+  viewing. Read-only shell inspection remains available. With file-backed
+  sign-in, they also skip your global `AGENTS.md`.
 - Existing 1.x `.agents/shaka/config.yml` files and documented commands keep
   working across 1.x updates. Use the target release to check settings before
   switching. For team settings, run `shaka seam check --root DIR --ref DEFAULT_SHA`
@@ -82,8 +87,10 @@ Shaka handles merging. Repository checks and approvals still apply.
 - Replace `wip.include_locations` with `wip.include_checkout_path`.
 - Move paths covered by `merge.auto_max_review_floor` or
   `pr_description.human_review_floors` to `high_risk_areas` or `medium_risk_areas`.
-  Then remove those retired keys. Use `merge.auto_merge_max_risk` to set the
-  highest risk eligible for Auto. Shaka 1.0 rejects the retired keys.
+  Then remove those retired keys; `shaka seam migrate` previews the change. Use
+  `merge.auto_merge_max_risk` to set the highest risk eligible for Auto. Shaka 1.0
+  rejects the retired keys. See
+  [move shared pilot settings](https://shaka.shakacode.com/docs/migration#move-shared-pilot-settings-to-10).
 
 ### Fixed
 
