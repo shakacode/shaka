@@ -55,13 +55,14 @@ class ValidateLocalTest < Minitest::Test
     File.write(File.join(@root, 'lib/example.rb'), "x = 2\n")
     File.write(File.join(@root, 'lib/added.rb'), "y = 1\n")
     git('rm', '-q', 'docs/guide.md')
+    File.write(File.join(@root, 'bin/docs-only-change'), "#!/bin/sh\nexit 0\n") # Ignored: the base copy decides.
     commit('Change Ruby')
 
     _output, status = validate_local
 
     assert_predicate status, :success?
     assert_includes log, "run-tests --changed #{@base}"
-    assert_includes log, 'ruby-check lint docs/guide.md lib/added.rb lib/example.rb'
+    assert_includes log, 'ruby-check lint bin/docs-only-change docs/guide.md lib/added.rb lib/example.rb'
     refute_includes log, 'rubocop'
   end
 
@@ -69,9 +70,7 @@ class ValidateLocalTest < Minitest::Test
     File.write(File.join(@root, 'docs/guide.md'), "# Guide\n\nMore.\n")
     commit('Change docs')
 
-    _output, status = validate_local
-
-    assert_predicate status, :success?
+    assert_predicate validate_local.last, :success?
     assert_equal "validate \n", log
     assert_empty Dir.children(@tmp)
   end
