@@ -3,19 +3,22 @@
 module Shaka
   # Reads and verifies accounting comments through the same repository API.
   module UsageArchiveStorage
+    SHORT_OPENING = /\A🤖 [^\r\n·]+(?: · [^\r\n·]+){0,2}\z/
+
     private
 
-    # An agent comment needs all four identity fields. A description's first line drops unread ones, so a caller
-    # without the content reads them from the Missing values entry, and only when that first line is short.
+    # An agent comment needs all four identity fields. A description's first line drops unread ones and does not
+    # say which, so a caller without the content keeps only the agent from a short line.
     def identify_writer(body, writer)
       @writer = writer || body_writer(Publishing.managed_region(body).to_s)
     end
 
     def body_writer(region)
       opening = region[/^🤖 [^\r\n]+$/]&.split(ThroughputLine::SPEND, 2)&.first
-      return opening if opening && !opening.match?(MissingValues::SHORT)
+      return '🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN' unless opening
+      return opening unless opening.match?(SHORT_OPENING)
 
-      region[MissingValues::WRITER, 1] || opening || '🤖 AGENT · UNKNOWN · UNKNOWN · UNKNOWN'
+      "#{opening.split(' · ').first} · UNKNOWN · UNKNOWN · UNKNOWN"
     end
 
     def planned_references(blocks)

@@ -484,7 +484,7 @@ begin
              prose, prose_note = description_prose_limits(root, options[:ref])
              notes = prose_note.merge(description_pr_evidence(root, options[:ref]))
              described = nil
-             writer = -> { Shaka::PublicationText.identity(described['identity']) }
+             writer = -> { described && Shaka::PublicationText.identity(described['identity']) }
              Shaka::OpeningPublication.with_safe_path(root:) do |candidate_root, gh, neutral|
                raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
 

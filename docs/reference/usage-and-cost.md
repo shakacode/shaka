@@ -7,9 +7,10 @@ cover part of a session, omit tools, or lack attribution to individual commits.
 The model line at the top of the description ends with that USD total. This
 section keeps the full table and does not repeat the total in its title. A missing total says `UNKNOWN`, which is not zero.
 
-That line names the agent, then the provider, model, and effort Shaka read from the
-session. It leaves out a value Shaka could not read. **Missing values** under Shaka
-metrics then shows all four with `UNKNOWN` in the unread places, and the reason.
+That line names the agent, then the provider, model, and effort. When Shaka could not
+find a provider, model, or effort, the line leaves it out; a missing agent still shows
+`UNKNOWN` so the first name is always the agent. **Missing values** under Shaka
+metrics then lists all four, with `UNKNOWN` in each missing place and the reason.
 Comments and reviews always show all four.
 
 ## What the columns mean

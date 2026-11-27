@@ -6,7 +6,6 @@ require 'uri'
 require_relative '../usage/usage_records'
 require_relative 'usage_archive_storage'
 require_relative 'usage_archive_references'
-require_relative '../publication/missing_values'
 require_relative '../publication/throughput_line'
 
 module Shaka

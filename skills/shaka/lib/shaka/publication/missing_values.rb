@@ -12,10 +12,6 @@ module Shaka
               '`task_started_at`.'
 
     WRITER_LABEL = '- **Writer identity:** the first line shows only the fields that were read. In full:'
-    # The usage archive reads the full line back from here, for a caller without the content, to sign its comments.
-    WRITER = /^#{Regexp.escape(WRITER_LABEL)} (🤖 [^\r\n·]+(?: · [^\r\n·]+){3})$/
-    # An opening with fewer than four fields is the short form.
-    SHORT = /\A🤖 [^\r\n·]+(?: · [^\r\n·]+){0,2}\z/
 
     module_function
 

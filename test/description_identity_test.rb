@@ -122,11 +122,11 @@ class DescriptionIdentityArchiveTest < Minitest::Test
   FULL = DescriptionIdentityTest::FULL
   ENTRY = DescriptionIdentityTest::ENTRY
 
-  # A caller without the content reads the writer from the body; an agent comment needs all four fields.
-  # A full first line wins over any entry in the body, so supplied text cannot pick the signature.
+  # A caller without the content signs from the first line alone, so no other text in the body can pick the signature.
+  # A short line does not say which fields it kept, so only its agent survives.
   def test_usage_archive_comments_carry_four_fields_from_both_shapes
     decoy = "#{LABEL} 🤖 Someone · else · entirely · here"
-    { "🤖 Codex - AI spend: $1.44\n\n#{ENTRY}" => FULL, "#{KNOWN} - AI spend: $1.44" => KNOWN,
+    { "🤖 Codex · OpenAI - AI spend: $1.44\n\n#{decoy}" => FULL, "#{KNOWN} - AI spend: $1.44" => KNOWN,
       "#{KNOWN}\n\n_Old note._" => KNOWN, "#{KNOWN} - AI spend: $1.44\n\n#{decoy}" => KNOWN }.each do |opening, writer|
       assert_signed(archived(opening), writer)
     end
