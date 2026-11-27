@@ -46,15 +46,16 @@
 
 ## Squash commit messages
 
-- Open with what changes for users, then the failure the change ends.
+- After the outcome, name the failure the change ends.
 - State the outside fact behind a change before the change, such as "Windows
   ignores shebang lines."
 - When three or more changes touch one area, give the area a short label line
   and list one change per bullet. List known limits and follow-up issues the
   same way, each bullet a full sentence with its own verb.
-- Name a process or part by what it does, not by internal terms such as
-  "leader" or "reaped".
-  - Instead of: “Without a job, only a leader Ruby has not reaped is ended,
-    through Ruby's own handle.”
+- A squash body may list more than the description summary allows. Take the
+  extra changes, limits, and follow-ups from the description's Intent and
+  limitations.
+- Replace internal terms with what the part does.
+  - Instead of: “Without a job, only a leader Ruby has not reaped is ended.”
   - Write: “When no job is available, a stop ends only the check's main Ruby
-    process, and only while Ruby still holds its handle.”
+    process.”
