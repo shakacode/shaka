@@ -106,8 +106,7 @@ module Shaka
     # Keep review guidance between the purpose and its proof.
     def intent_verification
       intent, verification = IntentVerification.render(@content, @settings.verdict, @pull,
-                                                       task: task_line, shortfall: @settings.reviewer_shortfall,
-                                                       earlier: @settings.earlier_review)
+                                                       task: task_line, **@settings.verification_context)
       [intent, *RiskReview.render(@content, @pull), verification]
     end
 
