@@ -58,6 +58,19 @@ class PostImplementationDispositionTest < Minitest::Test
     end
   end
 
+  def test_ready_checkpoint_lists_pr_numbers_the_squash_body_leaves_unexplained
+    with_result do |result, path|
+      result['disposition'] = disposition('Merge')
+      define_singleton_method(:message_file) do |content_path|
+        super(content_path).tap { |message| File.write(message, JSON.generate(title: 'T', body: 'Ends #1242.')) }
+      end
+      _github, status, output = publish(result, path)
+
+      assert_equal 0, status
+      assert_equal ['#1242'], JSON.parse(output).dig('squash_message_references', 'references')
+    end
+  end
+
   def test_ready_checkpoint_collapses_the_squash_message
     with_result do |result, path|
       result['disposition'] = disposition('Merge')

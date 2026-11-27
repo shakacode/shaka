@@ -58,6 +58,8 @@
   - Instead of: “It shows one before-and-after rewrite from #1242.”
   - Write: “Squash messages now replace internal terms with what each part
     does.”
+  - `squash-message` and ready checkpoint publication list each other number
+    under `squash_message_references`. Fix each one, then publish again.
 - Replace internal terms with what the part does.
   - Instead of: “Without a job, only a leader Ruby has not reaped is ended,
     through Ruby's own handle.”

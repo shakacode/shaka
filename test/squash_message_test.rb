@@ -56,6 +56,18 @@ class SquashMessageTest < Minitest::Test
     end
   end
 
+  def test_a_pr_number_outside_a_closing_line_is_listed_to_check
+    body = "Ends the bullets #1242 had.\n\n- See #12, owner/repo#3, and #1242.\n\nFixes #7\nPart of #8\nCloses: #9"
+
+    assert_equal({ 'squash_message_references' => { 'references' => ['#1242', '#12', 'owner/repo#3'],
+                                                    'guidance' => Shaka::SquashMessage::REFERENCE_GUIDANCE } },
+                 squash(body:).reference_check)
+  end
+
+  def test_a_body_whose_only_numbers_close_issues_needs_no_check
+    assert_empty squash(body: "Ends the bullets.\n\nFixes #7\n- Resolves owner/repo#3\nIssue&#39;s a#1").reference_check
+  end
+
   def test_a_multiline_or_missing_title_is_refused
     assert_raises(Shaka::Error) { squash(title: "One\nTwo") }
     assert_raises(Shaka::Error) { squash(title: ' ') }

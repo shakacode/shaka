@@ -13,6 +13,9 @@ module Shaka
     COMMIT_PAGES = 3
     TRAILER = /^co-authored-by:[ \t]*(\S[^<\n]*<[^>\n]+>)[ \t]*$/i
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
+    REFERENCE = %r{(?<![\w&])(?:[\w.-]+/[\w.-]+)?#\d+\b}
+    CLOSING = /\A\s*(?:[-*]\s+)?(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?|part of)\b/i
+    REFERENCE_GUIDANCE = 'git log does not link these numbers. Say what each PR or issue did, or drop the number.'
 
     attr_reader :headline, :body
 
@@ -31,7 +34,17 @@ module Shaka
       raise Error, 'Squash message content must be a JSON object.' unless content.is_a?(Hash)
 
       @headline = headline_for(PublicationText.single_line(content['title'], 'squash title'), number)
-      @body = [wrap(plain(content['body'])), trailers(commit_messages)].reject(&:empty?).join("\n\n")
+      text = plain(content['body'])
+      @references = references(text)
+      @body = [wrap(text), trailers(commit_messages)].reject(&:empty?).join("\n\n")
+    end
+
+    # Ruby cannot tell whether the sentence around a number says what that PR did, so the
+    # result lists every number outside a closing line for the agent to check.
+    def reference_check
+      return {} if @references.empty?
+
+      { 'squash_message_references' => { 'references' => @references, 'guidance' => REFERENCE_GUIDANCE } }
     end
 
     private
@@ -40,6 +53,8 @@ module Shaka
       suffix = "(##{number})"
       title.strip.end_with?(suffix) ? title.strip : "#{title.strip} #{suffix}"
     end
+
+    def references(text) = text.lines.grep_v(CLOSING).flat_map { |line| line.scan(REFERENCE) }.uniq
 
     def plain(body)
       text = PublicationText.required(body, 'squash body')
