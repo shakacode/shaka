@@ -16,12 +16,13 @@ module Shaka
 
     # A block builds the body from the pull request it replaces, using this same read. With `deferred`, a
     # refused renderer moves the checks to the rendering GitHub stores, and a failing write is undone.
-    def description(body: nil, prose: ProseLimits.new, deferred: false)
+    # `writer`, called after the block, gives the four-field identity line that signs any usage archive comments.
+    def description(body: nil, prose: ProseLimits.new, deferred: false, writer: nil)
       current = pull
       archive = UsageArchive.new(self)
       readable = archive_pull(current, archive)
       rendered = publishable(block_given? ? yield(readable) : body)
-      plan = description_plan(archive, current, rendered)
+      plan = description_plan(archive, current, rendered, writer&.call)
       merged, checked = publish_archive(plan, current, prose, deferred)
       return confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged) if checked
 
@@ -30,9 +31,9 @@ module Shaka
 
     private
 
-    def description_plan(archive, current, rendered)
+    def description_plan(archive, current, rendered, writer)
       base = MergeWarningRegion.answered_by_merge(current['body'].to_s, @repository, current)
-      archive.prepare(merge(base, rendered))
+      archive.prepare(merge(base, rendered), writer:)
     end
 
     # Returns the body to write and whether GitHub's renderer checked it.
