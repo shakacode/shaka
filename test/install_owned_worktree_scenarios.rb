@@ -11,13 +11,15 @@ module OwnedWorktreeScenarios
                     "Next: a person must decide whether to keep the uncommitted files in #{File.realpath(feature)}"
   end
 
-  # Another account could replace an unsafe owner's files, so no command is printed for it.
-  def test_an_unsafe_owner_never_names_its_own_installer
+  # Git reads an unsafe owner's config, which can name commands, so the step repairs its modes and nothing runs.
+  def test_an_unsafe_owner_gets_its_mode_repair_and_no_git_read
     root, feature = owned_worktree
+    git('-C', root, 'config', 'core.fsmonitor', "touch #{File.join(@directory, 'ran')}")
     File.chmod(0o775, root)
     output = refusal(feature, '--directory', feature)
     refute_includes output, File.join(File.realpath(root), 'bin/install')
-    assert_includes output, "Next: a person must decide how to make #{File.realpath(root)} safe to read"
+    assert_match(/Next: chmod /, output)
+    refute_path_exists File.join(@directory, 'ran')
   ensure
     File.chmod(0o755, root) if root
   end

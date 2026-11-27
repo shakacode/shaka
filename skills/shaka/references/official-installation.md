@@ -115,11 +115,11 @@ Use the registered helper at the installation's actual path:
 ```
 
 Verification checks checkout identity, cleanliness, links, and Ruby without changes.
-When verification or update refuses, or the user asks which install is in use, run the
-registered helper's `install --status` (`--json` for tools) and relay its state, location,
-and next step. When the helper stops because its recorded Ruby is unavailable, run
-`ruby DIR/bin/install --status` with Ruby 3.4 or later instead. Status is read-only and
-offline; run the next command it names only with the user's approval.
+When verification or update refuses, except for a linked-worktree refusal (show its step instead),
+or the user asks which install is in use, run the registered helper's `install --status`
+(`--json` for tools) and relay its state, location, and next step. When the helper stops because
+its recorded Ruby is unavailable, run `ruby DIR/bin/install --status` with Ruby 3.4 or later instead.
+Status is read-only and offline; run the next command it names only with the user's approval.
 `install --repair` runs the next commands status names that repair can run, until a decision
 remains. Check status first. If repair will run take-over to reunite a split
 installation, follow [Before take-over](#before-take-over). Run repair only with

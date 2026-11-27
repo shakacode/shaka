@@ -31,23 +31,23 @@ module Shaka
         return unless default && SettingsLocation.real(owner) == default
 
         owner_step(default)
+      rescue DirectorySafety::Unsafe => e
+        { command: e.step }
       rescue ArgumentError, SystemCallError => e
         reason = e.message.gsub(/\s+/, ' ').chomp('.')
         person_step("how to repair the installation at #{default}, which cannot be read (#{reason})")
       end
 
-      # The installation's own command only when it is safe to read and hosts this worktree; otherwise a person
-      # decides, with the reason named.
+      # The installation's own command only when its directories are safe, its record reads, and it hosts this
+      # worktree. Directory safety comes first, because Git reads a checkout's config, which can name commands.
       def owner_step(default)
+        [default, File.join(default, '.git')].each { verify_safe_directory(it, 'Installation directory') }
         record = Checkout.new(default).read_record
         return unless record
 
         # Loaded here because the status classes require Official, which requires Checkout.
         require_relative 'status_checkout'
-        checkout = StatusCheckout.new(default, record)
-        return person_step("how to make #{default} safe to read; another account can change it") unless checkout.safe?
-
-        development_step_for(checkout)
+        development_step_for(StatusCheckout.new(default, record))
       end
 
       def development_step_for(checkout)
