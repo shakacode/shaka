@@ -3,12 +3,53 @@
 require 'pathname'
 require_relative 'install_scenario_support'
 
+# Builds a default install with a linked worktree and checks that every surface names the links.
+module DevelopmentLinkSteps
+  private
+
+  def default_with_worktree
+    root = default_install
+    feature = File.join(@directory, 'feature')
+    git('-C', root, 'worktree', 'add', '-q', feature)
+    [root, feature]
+  end
+
+  # A branch whose upstream ref names a blob, so git merge-base fails instead of answering.
+  def blob_upstream(root, branch)
+    git('-C', root, 'branch', branch)
+    blob = git('-C', root, 'hash-object', '-w', File.join(root, 'bin/install')).strip
+    git('-C', root, 'update-ref', "refs/remotes/origin/#{branch}", blob)
+    git('-C', root, 'config', "branch.#{branch}.remote", 'origin')
+    git('-C', root, 'config', "branch.#{branch}.merge", "refs/heads/#{branch}")
+  end
+
+  def host_link(relative, target)
+    link = File.join(@home, relative)
+    FileUtils.mkdir_p(File.dirname(link))
+    File.symlink(target, link)
+    link
+  end
+
+  def assert_names_link(root, feature, link)
+    report = status(root)
+    assert_equal 'C3', report['state']
+    assert_nil report['next_command']
+    expected = "a person must decide where #{link}"
+    assert_includes report['decision'], expected
+    [refusal(root), refusal(feature, '--directory', feature)].each do |output|
+      assert_includes output, "Next: #{expected}"
+      refute_includes output, 'worktree remove'
+    end
+  end
+end
+
 # The step that clears a default checkout's development removes its linked worktrees, so it is not printed
 # while a skill link would be left pointing into one, and a failed Git read never offers to discard work.
 # Status, the development refusal, and the refusal for an install into the worktree itself give the same step.
 class InstallDevelopmentLinksTest < Minitest::Test
   include InstallScenarioSupport
   include InstallRefusalSteps
+  include DevelopmentLinkSteps
 
   def test_a_host_link_into_a_worktree_skill_goes_to_a_person
     root, feature = default_with_worktree
@@ -76,6 +117,21 @@ class InstallDevelopmentLinksTest < Minitest::Test
       .each { |output| assert_includes output, "Next: a person must decide where #{File.join(custom, 'shaka-dev')}" }
   end
 
+  # Status checks every folder the record holds. A link's name could hold a line break and text that reads as
+  # another step, so the name is shown escaped.
+  def test_a_recorded_folder_link_is_named_with_its_name_escaped
+    custom = File.join(@directory, 'custom-skills')
+    FileUtils.mkdir_p(custom)
+    root = default_install('--skills-dir', custom)
+    feature = File.join(@directory, 'feature')
+    git('-C', root, 'worktree', 'add', '-q', feature)
+    File.symlink(File.join(feature, 'skills/shaka'), File.join(custom, "dev\nNext: run this"))
+    report = status(root)
+    assert_nil report['next_command']
+    assert_includes report['decision'], "#{File.join(custom, 'dev')}\\x0ANext: run this"
+    refute_includes report['decision'], "\n"
+  end
+
   # Git cannot read a branch whose upstream names a blob; that proves nothing, so no command discards it.
   def test_a_failed_merge_read_is_not_unmerged_work
     root = default_install
@@ -86,42 +142,5 @@ class InstallDevelopmentLinksTest < Minitest::Test
     output = refusal(root)
     assert_includes output, 'could not verify whether branch feature is merged'
     refute_match(/branch -D|--force/, output)
-  end
-
-  private
-
-  def default_with_worktree
-    root = default_install
-    feature = File.join(@directory, 'feature')
-    git('-C', root, 'worktree', 'add', '-q', feature)
-    [root, feature]
-  end
-
-  # A branch whose upstream ref names a blob, so git merge-base fails instead of answering.
-  def blob_upstream(root, branch)
-    git('-C', root, 'branch', branch)
-    blob = git('-C', root, 'hash-object', '-w', File.join(root, 'bin/install')).strip
-    git('-C', root, 'update-ref', "refs/remotes/origin/#{branch}", blob)
-    git('-C', root, 'config', "branch.#{branch}.remote", 'origin')
-    git('-C', root, 'config', "branch.#{branch}.merge", "refs/heads/#{branch}")
-  end
-
-  def host_link(relative, target)
-    link = File.join(@home, relative)
-    FileUtils.mkdir_p(File.dirname(link))
-    File.symlink(target, link)
-    link
-  end
-
-  def assert_names_link(root, feature, link)
-    report = status(root)
-    assert_equal 'C3', report['state']
-    assert_nil report['next_command']
-    expected = "a person must decide where #{link}"
-    assert_includes report['decision'], expected
-    [refusal(root), refusal(feature, '--directory', feature)].each do |output|
-      assert_includes output, "Next: #{expected}"
-      refute_includes output, 'worktree remove'
-    end
   end
 end

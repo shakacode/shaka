@@ -70,11 +70,14 @@ module Shaka
         hosts + recorded + [@skills_dir]
       end
 
+      # Every link is named, since each one left out would need another run to find. A link's name is any file
+      # name, so control characters are shown escaped and cannot start a line that reads as another step.
       def linked_step(worktrees)
         links = WorktreeLinks.into(worktrees.map { |entry| entry[:path] }, link_folders)
         return if links.empty?
 
-        { decision: "a person must decide where #{Refusal.paths(links)} should point, because they lead into " \
+        named = links.map { |link| link.gsub(/[[:cntrl:]]/) { |character| format('\\x%02X', character.ord) } }
+        { decision: "a person must decide where #{named.join(', ')} should point, because they lead into " \
                     'the linked worktrees this step would remove, or could not be read to rule that out; repoint ' \
                     'them, then run this command again' }
       end

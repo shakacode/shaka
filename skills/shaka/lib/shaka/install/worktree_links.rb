@@ -15,7 +15,7 @@ module Shaka
         roots = Roots.new(roots)
         return [] if roots.empty?
 
-        folders.compact.uniq.flat_map do |folder|
+        folders.compact.map { |folder| File.expand_path(folder) }.uniq.flat_map do |folder|
           next [folder] if reaches?(folder, roots)
 
           entries = listing(folder)
