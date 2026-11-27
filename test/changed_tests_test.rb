@@ -18,7 +18,9 @@ module ChangedTestsFixture
     'test/child_test.rb' => "system('ruby', '-rshaka/orphan', '-e', '')\n",
     'test/cli_support.rb' => "def run_helper = SHAKA_COMMAND\n",
     'test/cli_test.rb' => "require_relative 'test_helper'\nrequire_relative 'cli_support'\n",
-    'test/configuration_boundary_test.rb' => "require_relative 'test_helper'\n"
+    'test/configuration_boundary_test.rb' => "require_relative 'test_helper'\n",
+    'test/docs_support.rb' => "GUIDE = 'docs/guide.md'\nFIGURE = 'img/flow.svg'\n",
+    'test/docs_test.rb' => "require_relative 'docs_support'\n"
   }.freeze
 
   def setup
@@ -117,17 +119,23 @@ end
 class ChangedTestsDataTest < Minitest::Test
   include ChangedTestsFixture
 
-  def test_a_data_file_selects_the_tests_that_reach_a_file_naming_it
-    assert_equal %w[test/alpha_test.rb test/beta_test.rb], @selector.tests_for([%w[M docs/guide.md]])
+  # skills/shaka/lib/shaka/beta.rb names the guide too, but library files do not read docs pages.
+  def test_a_data_file_selects_the_tests_whose_test_files_name_it
+    assert_equal %w[test/docs_test.rb], @selector.tests_for([%w[M docs/guide.md]])
+  end
+
+  def test_a_figure_selects_the_tests_that_name_it_and_no_others
+    assert_equal %w[test/docs_test.rb], @selector.tests_for([%w[M docs/img/flow.svg]])
+    assert_empty @selector.tests_for([%w[A docs/img/new.webp]])
   end
 
   def test_a_data_file_no_test_reads_selects_no_tests
     assert_empty @selector.tests_for([%w[M internal/notes.md], %w[A docs/new-guide.md], %w[D README.md]])
   end
 
-  def test_skill_settings_and_instruction_files_run_the_whole_suite
+  def test_skill_settings_instructions_and_unmapped_files_run_the_whole_suite
     [%w[M skills/shaka/config/defaults.yml], %w[A skills/shaka/references/guide.md],
-     %w[M .agents/shaka/config.yml], %w[M AGENTS.md], %w[M docs/img/flow.svg]].each do |change|
+     %w[M .agents/shaka/config.yml], %w[M AGENTS.md], %w[M internal/adr/diagram.svg]].each do |change|
       assert_nil @selector.tests_for([change]), change.inspect
     end
   end

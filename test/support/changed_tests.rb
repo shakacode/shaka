@@ -7,9 +7,9 @@ require 'stringio'
 # Ruby file it loads through require or require_relative, directly or through other files. A
 # test that starts the helper or a bin script also reaches every file that entry point loads.
 # A deleted Ruby file maps to the tests that reached it at the base. A Markdown, YAML, or JSON
-# file in a place DATA_PLACES lists maps to the tests that reach a file naming it; when none
-# does, the change runs no tests. Any other change it cannot map returns nil, which means the
-# whole suite.
+# file in a place DATA_PLACES lists, or a figure under docs/img/, maps to the tests whose own
+# test files name it; when none does, the change runs no tests. Any other change it cannot map
+# returns nil, which means the whole suite.
 class ChangedTests
   LIBRARY = 'skills/shaka/lib/'
   # Changes here can affect every test, so they always run the whole suite.
@@ -31,6 +31,8 @@ class ChangedTests
   # covers a directory. Skill and settings files stay out: tests reach them through the helper,
   # installs, and globs, so nearly every test reads them anyway.
   DATA_PLACES = %w[docs/ internal/ contributing/ README.md CHANGELOG.md CONTRIBUTING.md].freeze
+  # Tests read figures only by naming them; bin/check-docs-navigation, which every validation runs, parses them all.
+  FIGURES = 'docs/img/'
 
   attr_reader :files
 
@@ -78,13 +80,20 @@ class ChangedTests
     found && (found & map.keys)
   end
 
-  # A file names a data file by its last two path segments, such as docs/settings.md.
+  # A file names a data file by its last two path segments, such as docs/settings.md. Only files
+  # under test/ count: library and bin files name these pages in links and comments, and the
+  # packaged skill cannot read them, so counting those files would select most of the suite.
   def data_readers(path)
-    return nil unless path.match?(DATA) && DATA_PLACES.any? { it.end_with?('/') ? path.start_with?(it) : path == it }
+    return nil unless page?(path)
 
     name = path.split('/').last(2).join('/')
-    reads = Hash.new { |known, file| known[file] = names?(file, name) }
+    reads = Hash.new { |known, file| known[file] = file.start_with?('test/') && names?(file, name) }
     map.select { |_, files| files.any? { reads[it] } }.keys
+  end
+
+  def page?(path)
+    (path.match?(DATA) || path.start_with?(FIGURES)) &&
+      DATA_PLACES.any? { it.end_with?('/') ? path.start_with?(it) : path == it }
   end
 
   def names?(file, name) = @files.file?(file) && @files.read(file).include?(name)

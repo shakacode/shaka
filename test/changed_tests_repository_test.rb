@@ -24,6 +24,7 @@ class ChangedTestsRepositoryTest < Minitest::Test
     selected = ChangedTests.new(ROOT).tests_for([%w[M docs/settings.md]])
 
     assert_includes selected, 'test/configure_settings_test.rb'
-    assert_operator selected.size, :<, Dir.glob('test/**/*_test.rb', base: ROOT).size
+    # Library files name the page only in links, so the selection stays a small share of the suite.
+    assert_operator selected.size, :<, Dir.glob('test/**/*_test.rb', base: ROOT).size / 4
   end
 end
