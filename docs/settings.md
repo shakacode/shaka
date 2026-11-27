@@ -350,8 +350,8 @@ A review of an earlier commit still counts in two cases:
 The PR description uses the same two cases. When the agent publishes without
 validation and review results, the Validation and review line says UNKNOWN. If an
 earlier review still covers the commit, the line names it and says why, for example:
-"The local review of `e33df55` also covers this revision, which only updates it
-from `main` with no other changes." The review's findings stay in its comment, and
+"The local review of `e33df55` covers this revision, which only updates it from
+`main`." The review's findings stay in its comment, and
 the line never says validation passed.
 
 When no review applies, `merge` stops before merging. A maintainer can record a

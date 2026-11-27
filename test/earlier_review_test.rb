@@ -22,17 +22,17 @@ class EarlierReviewTest < Minitest::Test
     @client.comments = [attestation(EARLIER)]
     @client.comparisons = { EARLIER => markdown_only('docs/guide.md') }
 
-    assert_equal "The [local review](#{URL}) of `ccccccc` also covers this revision, which changes only " \
-                 'Markdown since.', sentence
+    assert_equal "The [local review](#{URL}) of `ccccccc` covers this revision, which only changes Markdown since.",
+                 sentence
   end
 
   # MergeReviewBaseUpdateTest and MergeTreeProofTest cover the proof; this covers the wording.
   def test_a_clean_merge_of_the_base_names_the_branch_safely
     found = { 'reviewed' => EARLIER, 'comment' => 'javascript:alert(1)', 'basis' => 'unchanged_since_review' }
 
-    assert_equal 'The local review of `ccccccc` also covers this revision, which only updates it from `main` ' \
-                 'with no other changes.', Shaka::EarlierReview.describe(found, 'main')
-    assert_includes Shaka::EarlierReview.describe(found, 'a`b'), 'from the base branch with'
+    assert_equal 'The local review of `ccccccc` covers this revision, which only updates it from `main`.',
+                 Shaka::EarlierReview.describe(found, 'main')
+    assert_includes Shaka::EarlierReview.describe(found, 'a`b'), 'updates it from the base.'
   end
 
   def test_nothing_is_said_when_code_changed_since_or_github_fails
@@ -43,6 +43,29 @@ class EarlierReviewTest < Minitest::Test
     assert_nil sentence
     assert_nil sentence(client: failing)
     assert_nil sentence({})
+  end
+
+  # The tree proof runs Git, so it gets the checkout only through the vetted PATH.
+  def test_the_proof_gets_the_checkout_only_through_the_vetted_path
+    @client.comments = [attestation(HEAD)]
+    asked = nil
+    vetted = lambda do |root:, select_gh:, &block|
+      asked = [root, select_gh]
+      block.call('/vetted/root')
+    end
+
+    assert_includes Shaka::EarlierReview.vetted_sentence(@client, PULL, root: '/checkout', safe_path: vetted),
+                    'of this revision is published'
+    assert_equal ['/checkout', false], asked
+  end
+
+  def test_a_refused_git_still_names_a_review_without_the_proof
+    @client.comments = [attestation(EARLIER)]
+    @client.comparisons = { EARLIER => markdown_only('docs/guide.md') }
+    refused = ->(**) { raise Shaka::Error, 'git resolves inside the candidate checkout' }
+
+    assert_includes Shaka::EarlierReview.vetted_sentence(@client, PULL, root: '/checkout', safe_path: refused),
+                    'only changes Markdown since'
   end
 
   def test_another_accounts_attestation_is_ignored

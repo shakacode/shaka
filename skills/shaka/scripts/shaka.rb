@@ -190,17 +190,7 @@ def publication_settings(root, pull, options, github)
   settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
   return settings if settings.verdict
 
-  settings.with_earlier_review(earlier_review(root, pull, github))
-end
-
-# Merge's tree proof runs Git, so it gets the checkout only under the vetted PATH a description
-# uses for Git. When that Git is refused, the lookup still runs without the proof.
-def earlier_review(root, pull, github)
-  Shaka::OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
-    Shaka::EarlierReview.sentence(github, pull, root: candidate_root)
-  end
-rescue Shaka::Error, SystemCallError
-  Shaka::EarlierReview.sentence(github, pull)
+  settings.with_earlier_review(Shaka::EarlierReview.vetted_sentence(github, pull, root:))
 end
 
 def kept_notes(notes, evidence, recommendation)

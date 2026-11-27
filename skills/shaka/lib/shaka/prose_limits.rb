@@ -14,7 +14,7 @@ module Shaka
     # Room for a short summary however small the change is.
     BASE_WORDS = 150
     QUOTED_WORDS = 8
-    FINDING_ID = /(?<![[:alnum:]_.-])N\d{1,3}(?![[:alnum:]_-])/
+    FINDING_ID = /(?<![[:alnum:]_.-])N\d{1,3}(?![[:alnum:]_-]|\.\d)/
     ADVICE = 'Split long sentences and paragraphs, move supporting detail into details, ' \
              'and link to the code instead of retelling it. Each labeled field renders on its own line, ' \
              'so after trimming, check that every field still makes sense without its neighbors.'
