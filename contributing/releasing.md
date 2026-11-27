@@ -80,9 +80,9 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
    preflight binding; its installation identity is part of the evidence.
    Keep the JSON with the release evidence. A pass does not establish behavioral or
    host compatibility, check registry availability, or grant publication authority.
-   Run the behavioral gate with this preflight's `commit` as its required `--commit`
-   input. Ruby refuses a mismatched skill or batch. Require passing results for every
-   intended profile before requesting approval.
+   Except for 1.0.0, run the behavioral gate with this preflight's `commit` as its
+   required `--commit` input. Ruby refuses a mismatched skill or batch. Require passing
+   results for every intended profile before requesting approval.
    Obtain approval for those exact inputs; stop until it is recorded. The preflight
    is repository maintenance tooling and is not included in the gem.
 
