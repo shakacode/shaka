@@ -122,12 +122,6 @@ class BranchHeadDestinationTest < Minitest::Test
 
   private
 
-  def bare_copy(name)
-    path = File.join(@dir, name)
-    git(@dir, 'clone', '--quiet', '--bare', @origin, path)
-    path
-  end
-
   def unreadable_error
     result = check
 

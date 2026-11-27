@@ -26,6 +26,12 @@ module BranchHeadFixture
 
   def branch_head = Shaka::BranchHead.new(root: @task)
 
+  def bare_copy(name)
+    path = File.join(@dir, name)
+    git(@dir, 'clone', '--quiet', '--bare', @origin, path)
+    path
+  end
+
   def check = branch_head.check
 
   def accept(sha) = branch_head.accept(sha)

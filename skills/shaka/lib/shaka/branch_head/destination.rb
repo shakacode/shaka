@@ -94,19 +94,32 @@ module Shaka
 
       # Settings that would make a plain push of this branch go somewhere other than origin's same-named branch.
       def refuse_redirected_push
-        ["branch.#{@branch}.pushRemote", 'remote.pushDefault'].each do |key|
-          value = config_values(key).last # Git uses the last value of a repeated key.
-          raise Error, "#{key} sends pushes to #{value}; Shaka pushes to origin only." if value && value != REMOTE
-        end
-        raise Error, 'origin has a push refspec; remove remote.origin.push.' if config_values('remote.origin.push').any?
-        raise Error, 'origin is set to mirror pushes; remove remote.origin.mirror.' if mirror?
+        reason = push_setting_redirect || upstream_redirect || origin_redirect
+        raise Error, reason if reason
       end
 
-      # A mirror remote refuses the single-branch push, so it pauses at the check, not at the push.
-      def mirror?
-        output, _error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', '--type=bool', '--get',
-                                                'remote.origin.mirror')
-        status.success? && output.strip == 'true'
+      def push_setting_redirect
+        ["branch.#{@branch}.pushRemote", 'remote.pushDefault'].each do |key|
+          value = config_values(key).last # Git uses the last value of a repeated key.
+          return "#{key} sends pushes to #{value}; Shaka pushes to origin only." if value && value != REMOTE
+        end
+        nil
+      end
+
+      # A plain push follows a named upstream remote, so tracking another remote's branch redirects it too.
+      def upstream_redirect
+        upstream = config_values("branch.#{@branch}.remote").last
+        return unless upstream != REMOTE && git_lines('remote').include?(upstream.to_s)
+
+        "#{@branch} tracks #{upstream}; Shaka pushes to origin only."
+      end
+
+      def origin_redirect
+        return 'origin has a push refspec; remove remote.origin.push.' if config_values('remote.origin.push').any?
+
+        # A mirror remote refuses the single-branch push, so it pauses at the check, not at the push.
+        mirror = config_values('remote.origin.mirror').last.to_s.downcase
+        'origin is set to mirror pushes; remove remote.origin.mirror.' if %w[true yes on 1].include?(mirror)
       end
 
       # git config exits 1 for a missing key; any other failure is a failed read, never "not configured".

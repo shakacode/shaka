@@ -92,6 +92,7 @@ module Shaka
       raise Error, "--head must be a full 40-character SHA, not #{head.inspect}." unless head.match?(SHA)
       raise Error, "#{@remote}/#{@branch} is not on the remote; nothing to accept." unless live
       raise Error, "#{@remote}/#{@branch} is at #{live}, not #{head}; check it again." unless live == head
+      raise Error, "#{@branch} lacks #{head}; combine it first." unless ancestor?(head, "refs/heads/#{@branch}")
 
       git('config', '--local', config_key, head)
     end
@@ -112,12 +113,13 @@ module Shaka
 
     # A leased push from a tip that lacks the accepted head drops pushed commits, which only a rebase intends.
     # An accepted commit missing from this clone counts as a rewrite, since its ancestry cannot be shown.
-    def rewrites?(accepted, local)
-      return false unless accepted
+    def rewrites?(accepted, local) = accepted ? !ancestor?(accepted, local) : false
 
-      _output, _error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'merge-base', '--is-ancestor',
-                                               accepted, local)
-      !status.success?
+    # Accepting a head the local branch lacks would let work continue on a stale tip.
+    def ancestor?(commit, descendant)
+      _output, _error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'merge-base', '--is-ancestor', commit,
+                                               descendant)
+      status.success?
     end
 
     # git config --get exits 1 for a missing key; any other failure must not read as "no record".

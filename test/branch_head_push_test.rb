@@ -66,12 +66,4 @@ class BranchHeadPushTest < Minitest::Test
     assert_equal 'unrecorded', JSON.parse(out)['state']
     capture_io { assert_equal 0, Shaka::BranchHead::Command.run(['accept', '--root', @task, '--head', pushed]) }
   end
-
-  private
-
-  def bare_copy(name)
-    path = File.join(@dir, name)
-    git(@dir, 'clone', '--quiet', '--bare', @origin, path)
-    path
-  end
 end

@@ -89,6 +89,15 @@ class BranchHeadPrTest < Minitest::Test
     assert_includes check['error'], 'origin only'
   end
 
+  # A plain push follows a named upstream remote, so tracking a fork's branch would send the push there.
+  def test_upstream_on_another_remote_pauses_the_check
+    git(@task, 'remote', 'set-url', '--push', 'origin', @origin)
+    git(@task, 'remote', 'add', 'fork', bare_copy('fork.git'))
+    git(@task, 'config', "branch.#{BRANCH}.remote", 'fork')
+
+    assert_includes check['error'], 'tracks fork'
+  end
+
   # A mirror remote refuses a single-branch push, so the check pauses before any edit.
   def test_mirror_remote_pauses_the_check
     git(@task, 'remote', 'set-url', '--push', 'origin', @origin)

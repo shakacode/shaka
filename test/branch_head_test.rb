@@ -90,4 +90,15 @@ class BranchHeadTest < Minitest::Test
 
     assert_equal task_tip, head.check['local']
   end
+
+  # Accepting a head the local branch lacks would let work continue on a stale tip.
+  def test_accept_refuses_a_head_the_local_branch_lacks
+    accept(push_task('first'))
+    theirs = teammate_push('theirs')
+
+    assert_raises(Shaka::Error) { accept(theirs) }
+    git(@task, 'pull', '--quiet', '--ff-only', 'origin', BRANCH)
+
+    assert_equal 'unchanged', accept(theirs)['state']
+  end
 end
