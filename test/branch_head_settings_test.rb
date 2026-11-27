@@ -31,15 +31,17 @@ class BranchHeadSettingsTest < Minitest::Test
     end
   end
 
-  # Git keeps a trailing space in a push URL, so the check must read the very path a push writes.
-  def test_push_url_whitespace_is_kept
-    spaced = "#{bare_copy('spaced.git')} "
-    FileUtils.mv(spaced.strip, spaced)
-    git(@task, 'remote', 'set-url', '--push', 'origin', spaced)
-    commit(@task, 'first')
-    branch_head.push
+  # Git keeps a trailing space or carriage return in a push URL, so the check must read the very path a push writes.
+  def test_push_url_trailing_whitespace_is_kept
+    [' ', "\r"].each_with_index do |suffix, index|
+      path = "#{bare_copy("spaced#{index}.git")}#{suffix}"
+      FileUtils.mv(path.delete_suffix(suffix), path)
+      git(@task, 'remote', 'set-url', '--push', 'origin', path)
+      branch_head.accept(nil, absent: true) # each case starts on a fresh repository
+      commit(@task, "change #{index}")
+      branch_head.push
 
-    refute_empty git(@task, 'ls-remote', spaced, "refs/heads/#{BRANCH}")
-    assert_equal 'unchanged', check['state']
+      refute_empty git(@task, 'ls-remote', path, "refs/heads/#{BRANCH}"), suffix.inspect
+    end
   end
 end

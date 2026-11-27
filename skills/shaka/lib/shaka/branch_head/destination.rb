@@ -114,8 +114,8 @@ module Shaka
         output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, *)
         raise Error, "git #{[*].first(2).join(' ')} failed: #{error.strip}" unless status.success?
 
-        # Only the line ending goes: Git keeps other whitespace in a URL, so trimming could name another repository.
-        output.lines.map(&:chomp).reject(&:empty?)
+        # Only Git's newline goes: a URL may end in a space or carriage return, and trimming it names another path.
+        output.lines.map { |line| line.delete_suffix("\n") }.reject(&:empty?)
       end
 
       def exact_head(output)
