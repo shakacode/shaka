@@ -164,7 +164,8 @@ end
 
 SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 
-# A docs-only change skips the tests, so each figure must at least parse as an SVG document.
+# A docs-only change runs only the tests that name a changed file, so each figure must at least
+# parse as an SVG document.
 # The classifier accepts any name under img/, so the scan includes hidden paths and .SVG.
 def malformed_figures(docs, paths)
   figures = paths.filter_map { |path| path.delete_prefix("#{docs}/") if path.start_with?("#{docs}/img/") }
