@@ -117,6 +117,15 @@ class HandoffThreadTrustTest < Minitest::Test
                                      'add the author to the trusted actors.'
   end
 
+  def test_a_lasting_permission_failure_is_read_twice_however_many_threads
+    reads = []
+    threads = %w[T1 T2 T3 T4].map { |id| thread(id, opener: 'outsider') }
+    result = handoff(visibility: 'public', unverifiable: ['outsider'], permission_reads: reads, threads:)
+
+    assert_equal ['Reply on review threads waiting for an answer: T1, T2, T3, T4.'], result['owed']
+    assert_equal %w[outsider outsider], reads
+  end
+
   def test_configured_bots_and_team_members_stay_owed
     threads = [thread('T1', opener: 'coderabbitai[bot]'), thread('T2', opener: 'teammate')]
     result = handoff(visibility: 'public', bots: ['coderabbitai'], teams: [%w[owner core]], team_members: ['teammate'],

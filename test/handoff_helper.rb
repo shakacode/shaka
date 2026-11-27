@@ -10,6 +10,7 @@ class HandoffFakeGitHub
   LABELS = 'repos/owner/repo/issues/42/labels'
   REVIEWS = 'repos/owner/repo/pulls/42/reviews'
   COMMENTS = 'repos/owner/repo/issues/42/comments'
+  TRUST_FILE = '.agents/shaka/trusted-github-actors.yml'
 
   attr_reader :repository, :number
 
@@ -29,10 +30,12 @@ class HandoffFakeGitHub
   def viewer_login = @pull.fetch(:viewer, 'shaka-agent')
   def issue_comments = @pull[:comments]
 
-  def graphql(query, **)
+  def graphql(query, **variables)
     return { 'repository' => @pull.fetch(:queue_settings) } if query.include?('squashMergeCommitMessage')
     return closing_references if query.include?('closingIssuesReferences')
-    return trust_settings(query) if @pull[:allowlist] && query.match?(/defaultBranchRef|object\(/)
+
+    trust_query = @pull[:allowlist] && query.match?(/defaultBranchRef|object\(/)
+    return trust_settings(query, variables[:expression]) if trust_query
     raise Shaka::Error, 'GraphQL failed or returned missing data.' if @pull[:threads] == :unreadable
 
     page = { 'nodes' => @pull.fetch(:threads, []), 'pageInfo' => { 'hasNextPage' => false } }
@@ -57,10 +60,12 @@ class HandoffFakeGitHub
     { 'body' => @pull[:body], 'head' => { 'sha' => @pull.fetch(:final_head, @pull[:head]) } }
   end
 
-  # The default branch's trusted-actor file, when a test supplies :allowlist.
-  def trust_settings(query)
+  # The default branch's trusted-actor file, when a test supplies :allowlist. Only the copy at the
+  # default branch's commit exists, so reading any other revision fails.
+  def trust_settings(query, expression)
     base = { 'repository' => { 'defaultBranchRef' => { 'target' => { 'oid' => 'b' * 40 } } } }
     return base unless query.include?('object(')
+    raise Shaka::Error, "no trust file at #{expression}" unless expression == "#{'b' * 40}:#{TRUST_FILE}"
 
     text = @pull.fetch(:allowlist)
     { 'repository' => { 'object' => { '__typename' => 'Blob', 'isBinary' => false, 'isTruncated' => false,

@@ -20,6 +20,8 @@ module Shaka
         @github = github
         @trust_config = trust_config
         @machine_path = machine_path
+        @screens = {}
+        @retried = Set.new
       end
 
       # posts maps each thread ID to its comments as [login, body], as PublicComments::Threads reads
@@ -43,15 +45,14 @@ module Shaka
       end
 
       # Threads with the same other authors share one screen, so a PR with many threads from one
-      # reviewer reads each permission once. A screen with a failed read is not kept, so the next
-      # thread asks GitHub again.
+      # reviewer reads each permission once. After a failed read the next such thread asks GitHub
+      # once more; a second failure is kept, so an outage costs two reads, not one per thread.
       def screened(logins)
-        @screens ||= {}
         key = logins.sort_by(&:to_s)
         return @screens[key] if @screens.key?(key)
 
         rows = screen(logins)
-        @screens[key] = rows unless rows.any? { |row| row['verification_unavailable'] }
+        @screens[key] = rows unless rows.any? { |row| row['verification_unavailable'] } && @retried.add?(key)
         rows
       end
 
