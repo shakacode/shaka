@@ -39,7 +39,7 @@ phases:
         there; the same call reports the default branch the plan step needs.
       - Run the saved helper's `doctor --brief --root ROOT` and show its output to the user in
         your first reply. When it opens by saying Shaka is not set up, start that reply with
-        those first two lines, unchanged.
+        those first two lines, unchanged, ahead of any `Chat name:` line.
       - Ask for a missing issue number, URL, or description. Resolve bare issue numbers against
         the verified repository. After intake, confirm the task matches the checkout; if it does
         not, resolve the target checkout, reread its trusted instructions, and reassess
