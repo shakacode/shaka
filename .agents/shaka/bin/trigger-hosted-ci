@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# The required hosted validate check (.github/workflows/validate.yml) runs on every push to a pull
+# request, so there is no deferred CI to start here.
+set -euo pipefail
+
+echo 'Hosted validate runs on every pull request push; nothing to start.'
