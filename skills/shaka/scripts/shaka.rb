@@ -506,7 +506,7 @@ begin
                attention = Shaka::DecisionLabels.sync(github, carried)
                opening = opening_result(options.merge(root:), described['summary'],
                                         prose: Shaka::OpeningProse.call(described))
-               refresh = Shaka::CursorUsageRefresh.bind(repository, number, carried['usage'], writer) if carried in Hash
+               refresh = Shaka::CursorUsageRefresh.bind(repository, number, carried['usage']) if carried.is_a?(Hash)
                notes = kept_notes(notes.merge(Shaka::ClosingIssues.note(described, github)), kept, recommendation)
                published.merge('opening' => opening, 'usage_records' => usage_records).merge(notes).tap do |result|
                  result['attention'] = attention if attention

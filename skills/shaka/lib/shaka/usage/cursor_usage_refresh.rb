@@ -7,7 +7,6 @@ require_relative '../github'
 require_relative '../publication/usage_details'
 require_relative '../publication/throughput_stats'
 require_relative '../publication/rendering_preview'
-require_relative '../publication/agent_post'
 require_relative 'cursor_usage'
 require_relative 'cursor_usage_store'
 require_relative 'usage_records'
@@ -26,7 +25,6 @@ module Shaka
   # Stores the Cursor selection and pull request until the stop hook writes the record.
   class CursorUsageRequest
     MAX_SELECTIONS = 20
-    WRITER = /\A#{AgentPost::IDENTITY}\z/
 
     def self.remember(options, inferred:)
       id = CursorUsageRefresh.conversation_id
@@ -37,12 +35,11 @@ module Shaka
       nil
     end
 
-    # `writer` returns the description's four-field identity line; a later refresh signs any archive comments with it.
-    def self.bind(repository, number, usage, writer = nil)
+    def self.bind(repository, number, usage)
       id = CursorUsageRefresh.conversation_id
       return unless id && cursor_usage?(usage)
 
-      update(id) { |request| request['publication'] = publication(repository, number, usage, writer&.call) }
+      update(id) { |request| request['publication'] = publication(repository, number, usage) }
       'bound'
     rescue Error, SystemCallError, JSON::ParserError
       nil
@@ -83,14 +80,13 @@ module Shaka
     class << self
       private
 
-      def publication(repository, number, usage, writer)
+      def publication(repository, number, usage)
         unless repository.is_a?(String) && repository.match?(%r{\A[\w.-]+/[\w.-]+\z})
           raise Error, 'Cursor usage refresh expected OWNER/REPO.'
         end
         raise Error, 'Cursor usage refresh expected a pull request number.' unless number.to_s.match?(/\A[1-9]\d*\z/)
 
-        stored = { 'repository' => repository, 'number' => number.to_i, 'usage' => stored_usage(usage) }
-        writer.to_s.match?(WRITER) ? stored.merge('writer' => writer) : stored
+        { 'repository' => repository, 'number' => number.to_i, 'usage' => stored_usage(usage) }
       end
 
       def stored_usage(usage)
@@ -228,7 +224,7 @@ module Shaka
     OPENING = "<details>\n<summary>#{UsageDetails::SUMMARY}".freeze
 
     def self.remember(options, inferred:) = CursorUsageRequest.remember(options, inferred:)
-    def self.bind(repository, number, usage, writer = nil) = CursorUsageRequest.bind(repository, number, usage, writer)
+    def self.bind(repository, number, usage) = CursorUsageRequest.bind(repository, number, usage)
 
     def self.after_write(record)
       id = record['conversation_id']
@@ -299,12 +295,9 @@ module Shaka
         documents.filter_map { |document| document['note'] if readable?(document['record']) }.last || note
       end
 
-      # A request bound before the writer was stored signs from the description's first line instead.
       def publish(publication, usage)
         github = GitHub.new(publication['repository'], publication['number'])
-        github.description(writer: -> { publication['writer'] }) do |pull|
-          refreshed_region(pull['body'], usage_for(pull, usage))
-        end
+        github.description { |pull| refreshed_region(pull['body'], usage_for(pull, usage)) }
       end
 
       def usage_for(pull, usage)

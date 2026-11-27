@@ -132,15 +132,6 @@ class DescriptionIdentityArchiveTest < Minitest::Test
     end
   end
 
-  # A writer stored before another session republished the description no longer matches its first line.
-  def test_a_supplied_writer_that_does_not_match_the_first_line_gives_way_to_the_body
-    { "#{KNOWN} - AI spend: $1.44" => KNOWN, '🤖 Claude Code · Anthropic - AI spend: $1.44' =>
-      '🤖 Claude Code · UNKNOWN · UNKNOWN · UNKNOWN' }.each do |opening, writer|
-      assert_signed(archived(opening, writer: FULL), writer)
-    end
-    assert_signed(archived('🤖 Codex - AI spend: $1.44', writer: FULL), FULL)
-  end
-
   # The description command passes the full line, so the body's text and a backtick in a field do not matter.
   def test_the_description_command_signs_archive_comments_with_the_identity_it_rendered
     identity = { 'agent' => 'Codex', 'model' => 'gpt`custom' }
@@ -159,9 +150,9 @@ class DescriptionIdentityArchiveTest < Minitest::Test
     assert(bodies.all? { Shaka::AgentPost.marked?(it) })
   end
 
-  def archived(opening, writer: nil)
+  def archived(opening)
     github = UsageArchiveTest::Comments.new
-    Shaka::UsageArchive.new(github).prepare(oversized.sub("\nS\n", "\n#{opening}\n"), writer:).publish
+    Shaka::UsageArchive.new(github).prepare(oversized.sub("\nS\n", "\n#{opening}\n")).publish
     github.comments.each_value.map { it.fetch('body') }
   end
 
