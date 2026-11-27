@@ -7,9 +7,10 @@ previous installation stays active. Use the absolute path to that checkout's
 `skills/shaka/scripts/shaka` and set `SHAKA_RUBY` to the absolute path to Ruby
 3.4 or later for each invocation of the target helper.
 
-Run `seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA` with the target helper for a
-release cutover, otherwise the trusted installed helper,
-to preview the migration of `.agents/shaka/config.yml` at that commit. If that
+In this section, "the helper" is the target helper for a release cutover and
+otherwise the trusted installed helper. Run the helper's `seam migrate --root ROOT
+--from-ref OLD_DEFAULT_SHA` to preview the migration of `.agents/shaka/config.yml` at
+that commit. If that
 file is absent, follow the converter steps in the changelog's breaking-changes entry.
 Inspect every retained, moved, retired, and blocking field before
 adding `--apply`. Settings the current contract accepts carry over unchanged, but
@@ -43,9 +44,7 @@ For the old command-path mapping, migrate in this order:
    in a follow-up PR. The optional paths are `validate-local` and `trigger-hosted-ci`.
 
 Before merging any shared settings migration, run `seam check --root ROOT --ref PR_SHA`
-in a fresh checkout of the exact PR commit. Use the helper that will read these
-settings after merge: the target helper for a release cutover, otherwise the trusted
-installed helper.
+with the helper in a fresh checkout of the exact PR commit.
 It applies the commit rules the post-merge check uses, including fixed wrapper
 modes, symlink targets, and files the settings name. Treat the result as a
 diagnostic only: `PR_SHA` is a candidate. Disregard the report's `trusted/ref` mode
@@ -57,7 +56,7 @@ Review moved wrappers and run the affected local checks. Run a
 `trigger-hosted-ci` wrapper only as part of an authorized CI run. Merge the PR
 after the target settings, tracked wrappers, and affected local checks pass.
 After merge,
-in a fresh checkout at the new default-branch SHA, run that same helper's `seam check
+in a fresh checkout at the new default-branch SHA, run the helper's `seam check
 --root ROOT --ref NEW_DEFAULT_SHA` and require `trusted/ref` for that SHA before
 switching the active installation.
 
