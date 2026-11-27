@@ -60,7 +60,10 @@ did not run for 1.0.0; it applies again to later releases.
 - A PR description for a task other than a prompt or a numbered GitHub issue
   or PR in the same repository needs exactly one of a safe https task link or a
   visible omission reason. Common description input errors are reported
-  together, with each exact overage.
+  together, with each exact overage. A description without validation or review
+  results links the review that still covers its commit. When the writer's
+  settings cannot be read, its first line shows only the known identity fields
+  and lists the rest under **Missing values**.
 - Local Codex reviews run without connected ChatGPT apps, web search, or image
   viewing. Read-only shell inspection remains available. With file-backed
   sign-in, they also skip your global `AGENTS.md`.
@@ -102,7 +105,10 @@ did not run for 1.0.0; it applies again to later releases.
   need to make. `shaka doctor --brief` and `shaka install --status` show the main
   issue and its next step; `shaka install --status --json` lists every finding.
   On an older Ruby, the installer suggests mise or rbenv. Interrupted branch
-  updates can clean up their temporary worktree.
+  updates can clean up their temporary worktree. `bin/install --directory`
+  aimed at a worktree of the default install prints a cleanup step that works.
+- `shaka reply` links a cited comment from an untrusted author instead of
+  quoting it.
 - Validation keeps evidence tied to the tested tree and settings. Fixes to a base
   branch are tracked separately when that branch already fails a check.
 - Claude Code cloud sessions can read PR status and publish PR descriptions when
