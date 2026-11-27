@@ -23,7 +23,8 @@ successful skill evaluation or repeated without a changed hypothesis.
 Prepared tier 1 tasks can use the [native decision replay API](decision-replays.md)
 for accounting, fingerprint capture and exact ordered-action scoring.
 The [release behavioral gate](release-behavior.md) checks a complete 12-case native
-decision batch before publication approval; it does not run models or authorize a release.
+decision batch before publication approval, except where the release procedure records
+a waiver; it does not run models or authorize a release.
 The expanded action vocabulary re-versions the shared merge-authority replay protocol.
 Keep original pins for historical reports; new comparisons require matching grading fingerprints.
 The future tier 3 driver can retain [protected review readbacks](delivery-readback.md);

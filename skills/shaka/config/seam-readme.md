@@ -1,8 +1,7 @@
 {{marker}}
 # Shaka configuration
 
-This repository uses Shaka {{version}} (pilot stage {{stage}})
-with contract `version: 1`. The files below hold its configuration.
+This repository uses Shaka {{version}} with contract `version: 1`. The files below hold its configuration.
 
 | Path | Purpose |
 | --- | --- |

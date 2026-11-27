@@ -1,8 +1,8 @@
 # Releasing the Gem
 
 Shaka uses an explicit RubyGems release flow adapted from
-`shakacode/control-plane-flow`. The source prepares `1.0.0`; it is not published.
-The existing `0.1.0.pre.1` gem only reserves the name and lacks the current workflow.
+`shakacode/control-plane-flow`. The source prepares `1.0.0`.
+Gem versions before `1.0.0` lack the current workflow.
 A release starts from an approved version on `main`, validates the packaged artifact,
 tags that exact commit, publishes the gem, and creates the matching GitHub release.
 Registry publication requires explicit maintainer approval because a published version
@@ -60,7 +60,10 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
    follows the format the file's header names. Save that entry's body as
    `RELEASE_NOTES.md`. Before requesting publication approval, complete the
    [release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md) for the intended host/model/effort
-   profiles and retain its results. Then run the maintainer preflight from the
+   profiles and retain its results. The maintainer waived this gate for 1.0.0
+   ([decision 3](https://github.com/shakacode/shaka/issues/580#issuecomment-7206389918));
+   skip it and its commit-bound run below for that release only, and say so in the
+   release notes. Then run the maintainer preflight from the
    source checkout, with the gem, original validation JSON, and notes saved outside it:
 
    ```bash
@@ -77,9 +80,9 @@ cannot be replaced. A version change does not close pilot acceptance or qualify 
    preflight binding; its installation identity is part of the evidence.
    Keep the JSON with the release evidence. A pass does not establish behavioral or
    host compatibility, check registry availability, or grant publication authority.
-   Run the behavioral gate with this preflight's `commit` as its required `--commit`
-   input. Ruby refuses a mismatched skill or batch. Require passing results for every
-   intended profile before requesting approval.
+   Except for 1.0.0, run the behavioral gate with this preflight's `commit` as its
+   required `--commit` input. Ruby refuses a mismatched skill or batch. Require passing
+   results for every intended profile before requesting approval.
    Obtain approval for those exact inputs; stop until it is recorded. The preflight
    is repository maintenance tooling and is not included in the gem.
 
