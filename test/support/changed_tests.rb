@@ -7,9 +7,9 @@ require 'stringio'
 # Ruby file it loads through require or require_relative, directly or through other files. A
 # test that starts the helper or a bin script also reaches every file that entry point loads.
 # A deleted Ruby file maps to the tests that reached it at the base. A Markdown, YAML, or JSON
-# file in a place DATA_PLACES lists maps to the tests that reach a file naming it, or one of
-# that place's readers; when none does, the change runs no tests. Any other change it cannot
-# map returns nil, which means the whole suite.
+# file in a place DATA_PLACES lists maps to the tests that reach a file naming it; when none
+# does, the change runs no tests. Any other change it cannot map returns nil, which means the
+# whole suite.
 class ChangedTests
   LIBRARY = 'skills/shaka/lib/'
   # Changes here can affect every test, so they always run the whole suite.
@@ -27,18 +27,10 @@ class ChangedTests
     'bin/report-instruction-growth' => /report-instruction-growth/
   }.freeze
   DATA = /\.(?:md|ya?ml|json)\z/
-  # Places whose data files tests read, each with the files that read it without naming each file,
-  # such as by copying the skill or globbing its Markdown. A key ending in / covers a directory.
-  DATA_PLACES = {
-    'skills/' => %w[skills/shaka/lib/shaka/install/tree.rb skills/shaka/lib/shaka/companions/points.rb
-                    skills/shaka/lib/shaka/evidence/relevant_code.rb skills/shaka/lib/shaka/workflow_version.rb
-                    bin/report-instruction-growth test/install_reference_links_test.rb test/skill_test.rb
-                    test/package_test_helpers.rb],
-    '.agents/shaka/' => %w[skills/shaka/lib/shaka/configuration/fingerprint/inputs.rb bin/report-instruction-growth],
-    'AGENTS.md' => %w[bin/report-instruction-growth],
-    'docs/' => [], 'internal/' => [], 'contributing/' => [],
-    'README.md' => [], 'CHANGELOG.md' => [], 'CONTRIBUTING.md' => []
-  }.freeze
+  # Places whose Markdown, YAML, and JSON files tests read only by naming them. A key ending in /
+  # covers a directory. Skill and settings files stay out: tests reach them through the helper,
+  # installs, and globs, so nearly every test reads them anyway.
+  DATA_PLACES = %w[docs/ internal/ contributing/ README.md CHANGELOG.md CONTRIBUTING.md].freeze
 
   attr_reader :files
 
@@ -74,7 +66,7 @@ class ChangedTests
 
   def tests_for_path(status, path, base)
     return nil if FOUNDATIONS.include?(path) || !%w[M A D].include?(status)
-    return data_readers(path, status, base) unless path.end_with?('.rb')
+    return data_readers(path) unless path.end_with?('.rb')
     return code_readers(path) unless status == 'D'
 
     base && deleted_readers(path, base)
@@ -86,20 +78,13 @@ class ChangedTests
     found && (found & map.keys)
   end
 
-  # A file names a data file by its last two path segments, such as config/defaults.yml.
-  def data_readers(path, status, base)
-    readers = data_place(path, status, base)
-    return nil unless readers
+  # A file names a data file by its last two path segments, such as docs/settings.md.
+  def data_readers(path)
+    return nil unless path.match?(DATA) && DATA_PLACES.any? { it.end_with?('/') ? path.start_with?(it) : path == it }
 
     name = path.split('/').last(2).join('/')
-    reads = Hash.new { |known, file| known[file] = readers.include?(file) || names?(file, name) }
+    reads = Hash.new { |known, file| known[file] = names?(file, name) }
     map.select { |_, files| files.any? { reads[it] } }.keys
-  end
-
-  def data_place(path, status, base)
-    return nil unless path.match?(DATA) && @files.plain?(path, status, base)
-
-    DATA_PLACES.find { |key, _| key.end_with?('/') ? path.start_with?(key) : path == key }&.last
   end
 
   def names?(file, name) = @files.file?(file) && @files.read(file).include?(name)
@@ -160,17 +145,6 @@ class ChangedTests
     end
 
     def tests = @revision ? paths.grep(%r{\Atest/.*_test\.rb\z}) : Dir.glob('test/**/*_test.rb', base: @root)
-
-    # A file executable or linked at the base, at HEAD, in the index, or on disk is not plain,
-    # as bin/docs-only-change also decides. Without BASE, a deletion's old mode is unknown.
-    def plain?(path, status, base)
-      full = File.join(@root, path)
-      return false if File.symlink?(full) || File.executable?(full)
-      return status != 'D' unless base
-
-      modes = [base, 'HEAD'].map { git('ls-tree', it, '--', path) } << git('ls-files', '--stage', '--', path)
-      modes.filter_map { it.split.first }.all?('100644')
-    end
 
     def file?(path) = @revision ? paths.include?(path) : File.file?(File.join(@root, path))
 

@@ -7,8 +7,7 @@ require_relative 'support/changed_tests'
 module ChangedTestsFixture
   FILES = {
     'skills/shaka/lib/shaka/alpha.rb' => "require_relative 'beta'\n",
-    'skills/shaka/lib/shaka/beta.rb' => "PATH = '../../config/defaults.yml'\n",
-    'skills/shaka/lib/shaka/install/tree.rb' => '',
+    'skills/shaka/lib/shaka/beta.rb' => "GUIDE = 'docs/guide.md'\n",
     'skills/shaka/lib/shaka/gamma.rb' => '',
     'skills/shaka/lib/shaka/orphan.rb' => '',
     'skills/shaka/lib/shaka/unused.rb' => '',
@@ -19,8 +18,7 @@ module ChangedTestsFixture
     'test/child_test.rb' => "system('ruby', '-rshaka/orphan', '-e', '')\n",
     'test/cli_support.rb' => "def run_helper = SHAKA_COMMAND\n",
     'test/cli_test.rb' => "require_relative 'test_helper'\nrequire_relative 'cli_support'\n",
-    'test/configuration_boundary_test.rb' => "require_relative 'test_helper'\n",
-    'test/install_test.rb' => "require 'shaka/install/tree'\n"
+    'test/configuration_boundary_test.rb' => "require_relative 'test_helper'\n"
   }.freeze
 
   def setup
@@ -79,9 +77,17 @@ class ChangedTestsTest < Minitest::Test
     [[%w[M test/test_helper.rb]], [%w[M Gemfile.lock]], [%w[M bin/run-tests]],
      [%w[M skills/shaka/lib/shaka/unused.rb]], [%w[D skills/shaka/lib/shaka/beta.rb]],
      [%w[M test/alpha_test.rb], %w[M test/test_helper.rb]], [%w[T test/alpha_test.rb]], [%w[M eval/notes.md]],
-     [%w[M skills/shaka/scripts/shaka]], [%w[A docs/img/flow.png]], []].each do |changes|
+     [%w[M skills/shaka/scripts/shaka]], []].each do |changes|
       assert_nil @selector.tests_for(changes), changes.inspect
     end
+  end
+
+  def test_a_deleted_library_file_selects_the_tests_that_still_load_it
+    base = commit_fixture
+    File.delete(File.join(@root, 'skills/shaka/lib/shaka/orphan.rb'))
+
+    assert_equal %w[test/child_test.rb test/configuration_boundary_test.rb],
+                 @selector.tests_for(@selector.files.changes('main'), base:)
   end
 
   def test_a_renamed_library_file_selects_the_tests_that_reached_it_at_the_base
@@ -111,50 +117,18 @@ end
 class ChangedTestsDataTest < Minitest::Test
   include ChangedTestsFixture
 
-  def test_a_data_file_selects_tests_that_reach_a_file_naming_it_or_a_reader_of_its_place
-    assert_equal %w[test/alpha_test.rb test/beta_test.rb test/install_test.rb],
-                 @selector.tests_for([%w[M skills/shaka/config/defaults.yml]])
-    assert_equal %w[test/install_test.rb], @selector.tests_for([%w[A skills/shaka/references/guide.md]])
+  def test_a_data_file_selects_the_tests_that_reach_a_file_naming_it
+    assert_equal %w[test/alpha_test.rb test/beta_test.rb], @selector.tests_for([%w[M docs/guide.md]])
   end
 
   def test_a_data_file_no_test_reads_selects_no_tests
-    assert_empty @selector.tests_for([%w[M internal/notes.md], %w[A docs/new-guide.md]])
+    assert_empty @selector.tests_for([%w[M internal/notes.md], %w[A docs/new-guide.md], %w[D README.md]])
   end
 
-  def test_a_data_file_that_was_executable_or_linked_at_the_base_runs_the_whole_suite
-    add_executable_and_link
-    base = commit_fixture
-    File.chmod(0o644, File.join(@root, 'docs/run.md'))
-    File.delete(File.join(@root, 'docs/link.md'))
-
-    assert_nil @selector.tests_for([%w[M docs/run.md]], base:)
-    assert_nil @selector.tests_for([%w[D docs/link.md]], base:)
-    assert_nil @selector.tests_for([%w[D internal/notes.md]])
-    assert_empty @selector.tests_for([%w[D internal/notes.md]], base:)
-  end
-
-  def test_a_data_file_staged_as_executable_runs_the_whole_suite
-    base = commit_fixture
-    FileUtils.mkdir_p(File.join(@root, 'docs'))
-    File.write(File.join(@root, 'docs/staged.md'), '')
-    git('add', '--chmod=+x', 'docs/staged.md')
-
-    assert_nil @selector.tests_for([%w[A docs/staged.md]], base:)
-  end
-
-  def test_an_executable_or_linked_data_file_runs_the_whole_suite
-    add_executable_and_link
-
-    assert_nil @selector.tests_for([%w[A docs/run.md]])
-    assert_nil @selector.tests_for([%w[A docs/link.md]])
-  end
-
-  private
-
-  def add_executable_and_link
-    FileUtils.mkdir_p(File.join(@root, 'docs'))
-    File.write(File.join(@root, 'docs/run.md'), '')
-    File.chmod(0o755, File.join(@root, 'docs/run.md'))
-    File.symlink('run.md', File.join(@root, 'docs/link.md'))
+  def test_skill_settings_and_instruction_files_run_the_whole_suite
+    [%w[M skills/shaka/config/defaults.yml], %w[A skills/shaka/references/guide.md],
+     %w[M .agents/shaka/config.yml], %w[M AGENTS.md], %w[M docs/img/flow.svg]].each do |change|
+      assert_nil @selector.tests_for([change]), change.inspect
+    end
   end
 end
