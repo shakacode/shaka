@@ -154,8 +154,7 @@ Shaka uses your account's existing GitHub
 permissions; an account that can bypass protection needs no extra Shaka setting.
 
 Set a task's preference with `Use merge policy auto`.
-To choose Auto for one PR that waits under Ask, other than a first-setup preview, add the
-`merge-approved` label on GitHub,
+To choose Auto for one PR that waits under Ask, add the `merge-approved` label on GitHub,
 then resume the agent that owns the PR; the label alone does not wake it. The agent merges
 once Auto's gates pass. The label covers the PR, not one commit, so later pushes keep it.
 Remove it before the agent submits the merge to take the choice back. On a merge-queue
@@ -163,7 +162,8 @@ branch, a PR already queued stays queued until you remove it from the queue. `sh
 --auto --label-approval` counts the label only when the PR's events show that the last
 account to add it has write access now. When the agent hands a PR back with
 `awaiting-merge-approval`, it also tries to create `merge-approved`, with a description, if
-the repository lacks it.
+the repository lacks it. The label does not apply to a first-setup preview or to a PR whose
+base is neither the [`base_branch`](#base_branch) nor the default branch; both stay Ask.
 [First-setup previews](#preview-settings-before-adopting-them) use Ask.
 This is a task instruction;
 editing the PR's settings does not change its own merge authority. Required human
