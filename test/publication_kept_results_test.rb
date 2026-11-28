@@ -216,12 +216,13 @@ class PublicationKeptLinePlacementTest < Minitest::Test
     end
   end
 
-  # In a description from before the marker, a copied fold makes the helper's own unclear.
-  def test_an_older_description_with_two_folds_keeps_nothing
+  # In a description from before the marker, an agent details item titled like the fold sits inside it.
+  def test_an_older_description_keeps_its_line_beside_a_details_item_titled_like_the_fold
     with_checkout do |root, ref|
-      copied = "```\n<details>\n<summary>Evidence and limitations</summary>\n\n#{current_line(ref)}\n```"
-      assert_nil prepare(root, ref, {},
-                         body: folded_body(ref).sub('## Verification', "#{copied}\n\n## Verification")).verdict
+      item = "<details>\n<summary>Evidence and limitations</summary>\n\nNotes.\n\n</details>"
+      text = folded_body(ref).sub('- A check.', "- A check.\n\n#{item}")
+      assert_equal "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}",
+                   Shaka::VerificationLine.line(prepare(root, ref, {}, body: text).verdict)
     end
   end
 

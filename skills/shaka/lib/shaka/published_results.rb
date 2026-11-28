@@ -36,7 +36,7 @@ module Shaka
     # Supplied text cannot carry a Shaka marker, so only the line after the helper's one marker, which
     # sits alone on its own line, counts, and a summary, section, or check worded like the line is
     # never kept. Returns that line and the helper's Setup gaps sentence when it follows. A
-    # description without the marker is read from the top of its one Evidence and limitations fold,
+    # description without the marker is read from the top of its first Evidence and limitations fold,
     # where older helpers wrote the line.
     def own_line(region, head)
       marked = region.scan(VerificationLine::MARKER).size
@@ -51,9 +51,9 @@ module Shaka
       [first.to_s[/\A#{verified_line(head).source}/], second.to_s.strip[/\A#{GAPS.source}\z/]]
     end
 
-    # A second fold, such as a copied example, leaves the helper's own unclear, so it keeps nothing.
+    # An agent details item titled like the fold renders inside it, after the helper's line.
     def legacy_line(region, head)
-      fold = region.match(FOLD) if region.scan(FOLD).one?
+      fold = region.match(FOLD)
       line = fold && fold.post_match[/\A#{verified_line(head).source}/]
       [line, line && legacy_gaps(region, line)]
     end
