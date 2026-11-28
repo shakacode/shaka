@@ -342,14 +342,16 @@ the harness, the way your tests do, ask:
 Make our verification harness part of Shaka validation for every PR
 ```
 
-The agent adds the harness to your
-[validation scripts](settings.md#standard-command-scripts) in a separate settings PR.
-After it merges, each time the agent validates a PR, the harness runs, and Shaka ties the
-result to the exact code tested. A PR whose harness fails isn't ready to merge.
+The agent adds the harness to your `validate` script, and to `validate-local` if you have
+one, since Shaka accepts a pass from either
+[validation script](settings.md#standard-command-scripts). It makes this change in a
+separate settings PR; PRs opened before that one merges aren't checked by the harness.
+After it merges, each time the agent validates a PR through Shaka, the harness runs, and
+Shaka ties the result to the exact code tested. A PR whose harness fails can't pass
+validation.
 
-The harness has to run on its own, on your machine and in CI. One that needs a person,
-such as one that waits for a sign-in code, can't be part of validation; keep reporting
-those runs in **Companion skill results**.
+The harness has to run without a person. One that waits for a sign-in code, for example,
+can't be part of validation; keep reporting those runs in **Companion skill results**.
 
 ## Review a session for improvements
 
