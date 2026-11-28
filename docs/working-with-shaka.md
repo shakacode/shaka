@@ -132,8 +132,8 @@ The agent also stops and tells you in these cases:
 - The branch was deleted. It pushes the branch again only if you agree.
 - GitHub can't be read, or a push landed but couldn't be recorded. It checks again before
   continuing.
-- The checkout pushes somewhere other than the branch of the same name on `origin`. It waits
-  until you remove that setting.
+- The branch tracks a remote other than `origin`, or the checkout pushes somewhere other than
+  the branch of the same name on `origin`. It waits until you change the setting it names.
 
 Before a PR exists, return to the original chat and checkout. An issue's start
 comment may identify the machine holding the work. See

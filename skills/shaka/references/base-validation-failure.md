@@ -44,8 +44,8 @@ security/trust violations introduced by the task, or an unresolved review decisi
 Run the normal evidence verification and retain its nonzero `not_ready` result.
 Failed validation stays failed; binding or copying it cannot establish readiness.
 A verified base failure permits the push despite that validation blocker only.
-Push with `branch push --root DIR`. Create the PR with `gh pr create --draft --body ''`,
-or mark the adopted PR draft before pushing. Publish the description without `--validation-result` or
+Mark an adopted PR draft before pushing. Then push with `branch push --root DIR`, and create
+a new PR with `gh pr create --draft --body ''`. Publish the description without `--validation-result` or
 `--review-result`: the existing renderer requires ready evidence when those flags
 are supplied. Its UNKNOWN settings columns remain UNKNOWN. Publish the completed
 review separately through the normal review publication command.

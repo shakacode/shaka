@@ -111,8 +111,8 @@ module Shaka
         return [] if status.exitstatus == 1
         raise Error, "Cannot read #{key}: #{error.strip}" unless status.success?
 
-        # NUL-delimited, so a value containing a newline stays one value.
-        output.delete_suffix("\0").split("\0", -1)
+        # NUL-delimited, so a value containing a newline stays one value and an empty value is still a value.
+        output.split("\0", -1)[0...-1]
       end
 
       def git_lines(*)

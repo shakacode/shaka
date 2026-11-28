@@ -7,6 +7,12 @@ require_relative 'branch_head_fixture'
 class BranchHeadSettingsTest < Minitest::Test
   include BranchHeadFixture
 
+  def test_single_empty_push_default_pauses
+    git(@task, 'config', 'remote.pushDefault', '')
+
+    assert_includes check['error'], 'origin only'
+  end
+
   def test_empty_last_push_default_still_overrides_origin
     git(@task, 'config', '--add', 'remote.pushDefault', 'origin')
     git(@task, 'config', '--add', 'remote.pushDefault', '')
@@ -24,7 +30,7 @@ class BranchHeadSettingsTest < Minitest::Test
 
   # Only an unset upstream or exactly origin passes; `.` and a value with an embedded newline both pause.
   def test_upstream_other_than_origin_pauses_however_written
-    ['.', "fork\norigin"].each do |upstream|
+    ['.', "fork\norigin", ''].each do |upstream|
       git(@task, 'config', "branch.#{BRANCH}.remote", upstream)
 
       assert_equal 'unreadable', check['state'], upstream.inspect
