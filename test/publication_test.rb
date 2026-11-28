@@ -1059,7 +1059,7 @@ class PublicationCheckpointTest < Minitest::Test
     end
     assert_includes lead.call('cannot judge'), "Checkpoint: _Not published yet._\n\n" \
                                                "**Checkpoint on verification:** Cannot judge.\n\n**Next:**"
-    assert_empty(['adequate', 'adequate with accepted gaps'].map(&lead).grep(/Checkpoint on verification/))
+    assert_empty(['adequate', 'adequate with named gaps'].map(&lead).grep(/Checkpoint on verification/))
     assert_raises(Shaka::Error) { lead.call('fine') }
   end
 

@@ -37,9 +37,9 @@ class CheckpointRecommendationTest < Minitest::Test
   end
 
   def test_the_verification_verdict_comes_from_the_published_checkpoint
-    comments = [checkpoint('Merge', adequacy: 'adequate with accepted gaps')]
+    comments = [checkpoint('Merge', adequacy: 'adequate with named gaps')]
     resolved = resolve({ 'checkpoint' => { 'head' => HEAD } }, comments)
-    assert_equal 'adequate with accepted gaps', resolved.dig('checkpoint', 'verification_adequacy')
+    assert_equal 'adequate with named gaps', resolved.dig('checkpoint', 'verification_adequacy')
   end
 
   def test_an_agent_supplied_verification_verdict_is_refused
