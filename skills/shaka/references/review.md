@@ -189,7 +189,8 @@ trusted seam's `validate_local` command before review when it is available; othe
 run its `validate` command. Obtain both executable paths from
 `shaka seam check --root ROOT --ref TRUSTED_SHA` and run those paths from the candidate checkout.
 The optional `trigger_hosted_ci` command requires `validate_local`; after batching fixes,
-run the full `validate` script and then the trigger. This follows the React on Rails pattern: draft
+run the full `validate` script and then the trigger, or skip that local run when the workflow's
+Review step lets a required hosted check stand in for it. This follows the React on Rails pattern: draft
 creation and review do not request its broad hosted matrix.
 
 This ordering applies only to optional staged suites. Never suppress an always-on

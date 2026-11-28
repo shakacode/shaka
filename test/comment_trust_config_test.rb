@@ -171,6 +171,27 @@ class CommentTrustConfigDuplicateKeyTest < Minitest::Test
     end
   end
 
+  def test_merge_key_is_refused
+    with_machine(nil) do |path|
+      github = client(blob("trusted_users: [alice]\n<<: {trusted_users: [mallory]}\n"))
+      error = assert_raises(Shaka::Error) do
+        Shaka::PublicComments::TrustConfig.new(github, machine_path: path).load(base_oid: HEAD)
+      end
+
+      assert_equal 'Trust config is invalid: YAML merge keys (<<) are not allowed.', error.message
+    end
+  end
+
+  def test_tagged_machine_key_is_refused
+    with_machine("trusted_users: [alice]\n!!binary PDw=: {trusted_users: [mallory]}\n") do |path|
+      error = assert_raises(Shaka::Error) do
+        Shaka::PublicComments::TrustConfig.new(client, machine_path: path).load(base_oid: HEAD)
+      end
+
+      assert_equal 'Trust config is invalid: YAML keys must not carry tags other than !!str: PDw=.', error.message
+    end
+  end
+
   def test_comment_only_allowlist_stays_empty
     with_machine("# no machine-wide actors yet\n") do |path|
       result = Shaka::PublicComments::TrustConfig.new(client(blob('')), machine_path: path).load(base_oid: HEAD)
