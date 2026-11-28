@@ -573,7 +573,7 @@ begin
              end
            when 'squash-message'
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))
-             github.squash_comment(head: options.fetch(:head), message:)
+             github.squash_comment(head: options.fetch(:head), message:).merge(message.reference_check)
            when 'handoff'
              Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint, review: merge_wait,
                                         walkthrough_publish:)

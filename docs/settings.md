@@ -354,8 +354,10 @@ A review of an earlier commit still counts in two cases:
   new review.
 
 The PR description uses the same two cases. When the agent publishes without
-validation and review results, and the description holds no verified line for
-this commit to keep, the Validation and review line says UNKNOWN. It then names
+validation and review results, and the description holds no verified line that
+Shaka wrote for this commit, the Validation and review line says UNKNOWN. Shaka
+marks the line it writes with a hidden comment and keeps only that line, so a
+verification summary or check worded like it does not count. It then names
 a local review published for this commit, or an earlier review that still covers
 it and why, for example: "The local review of `e33df55` covers this revision,
 which only updates it from `main`." The review's findings stay in its comment,
@@ -1196,7 +1198,7 @@ Connect your existing tools at these fixed paths:
 | --- | --- | --- |
 | `.agents/shaka/bin/setup` | Yes | Install dependencies |
 | `.agents/shaka/bin/test` | Yes | Run tests; accept focused arguments |
-| `.agents/shaka/bin/validate` | Yes | Complete checks before publishing |
+| `.agents/shaka/bin/validate` | Yes | Complete checks |
 | `.agents/shaka/bin/validate-local` | No | Faster checks before local review; a pass [counts as evidence](#count-a-faster-check-as-validation) |
 | `.agents/shaka/bin/trigger-hosted-ci` | No | Start deferred CI after local fixes; requires `validate-local` |
 
@@ -1255,6 +1257,14 @@ arguments can skip checks your settings never approved.
 
 The evidence check accepts either script's result; it does not require a full
 `validate` run.
+
+After review repairs, your agent lets a required hosted check that runs your full
+`validate`, defined by a workflow on your default branch, stand in for the deferred
+local full run, so a slow machine does not repeat it. The agent still runs
+`validate` locally when the pull request adds, removes, or changes any workflow or
+the script it runs, or when the hosted run skipped steps your local `validate`
+would run. The tradeoff: a failure only the full suite catches appears on the hosted
+check after the push instead of before it.
 
 ### Run the scripts in a CI container
 

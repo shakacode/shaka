@@ -9,13 +9,17 @@ module Shaka
   # It stays outside evidence/ so a change here supersedes no earlier result.
   module PublishedResults
     SETTINGS_DRIFT = /\A(?:settings components differ: |public settings snapshot differs)/
-    GAPS = /\A#{Regexp.escape(VerificationLine::GAPS)} .+\z/
-    # Descriptions published before the marker hold the line under their Verification heading, or,
-    # for a routine run, a compact sentence there and the line at the top of the Evidence and
-    # limitations fold. Delete this reading once no open PR was described before #1325.
-    HEADING = /^## Verification\n\n/
-    FOLD = %r{^<summary>Evidence and limitations</summary>\n\n}
-    COMPACT = 'Validation passed; local review completed at '
+    # Helpers before #1325 wrote the full line first in the first Evidence and limitations fold, even
+    # when the Verification section showed only a short summary. Agent details items render later,
+    # inside that fold. Delete this reading once no open PR was described before #1325.
+    FOLD = %r{^<details>\n<summary>Evidence and limitations</summary>\n\n}
+    CODES = /`[^`\n]+`(?:, `[^`\n]+`)*/
+    COMMENT_LINK = %r{ \(\[review comment\]\(https://[^)\s]+\)\)}
+    SHORTFALL = /\d+ of \d+ configured reviewers completed(?:; #{CODES} did not)?(?:#{COMMENT_LINK})?\./
+    WHY = Regexp.escape("([why](#{VerificationLine::CONTAINER_GUIDE})).")
+    BLIND = /#{CODES} could not start (?:its|their) sandbox, so (?:it|they) reviewed only the diff #{WHY}/
+    # Only the sentences the helper writes for a missing reviewer or a sandbox that refused every command.
+    GAPS = /#{Regexp.escape(VerificationLine::GAPS)} (?:#{SHORTFALL}(?: #{BLIND})?|#{BLIND})/
 
     module_function
 
@@ -25,37 +29,33 @@ module Shaka
 
       # A person who saved the description in GitHub's editor may have left CRLF line endings.
       region = Publishing.managed_region(pull['body'].to_s.gsub("\r\n", "\n"))
-      line, gaps = region && own_line(region, pull.dig('head', 'sha').to_s[0, 7])
-      line && { 'kept_line' => line, 'kept_gaps' => gaps&.match?(GAPS) ? gaps : nil }
+      line, gaps = region && own_line(region, pull.dig('head', 'sha'))
+      line && { 'kept_line' => line, 'kept_gaps' => gaps }
     end
 
-    # Supplied text cannot carry a Shaka marker, so only the paragraph after the helper's marker counts,
-    # and a summary or check worded like the line is never kept. Returns that line and the paragraph
-    # after it. A description without the marker is read where older helpers wrote the line, and
-    # keeps nothing when its headings or folds repeat.
-    def own_line(region, short_head)
+    # Supplied text cannot carry a Shaka marker, so only the paragraph after the helper's one marker
+    # counts, and a summary, section, or check worded like the line is never kept. Returns that line
+    # and the helper's Setup gaps sentence when it follows. A description without the marker is read
+    # from the top of its first Evidence and limitations fold, where older helpers wrote the line.
+    def own_line(region, head)
       marked = region.scan(VerificationLine::MARKER).size
       return if marked > 1
-      return line_after(region, VerificationLine::MARKER, short_head) if marked == 1
-      return unless region.scan(HEADING).one?
+      return legacy_line(region, head) if marked.zero?
 
-      first, second = line_after(region, HEADING, short_head)
-      return [first, second] unless paragraphs_after(region, HEADING).first.match?(compact(short_head))
-
-      [line_after(region, FOLD, short_head).first, nil] if region.scan(FOLD).one?
+      first, second = region.split(VerificationLine::MARKER, 2).last.strip.split("\n\n", 3)
+      line = first.to_s[/\A#{verified_line(head).source}/]
+      [line, second.to_s.strip[/\A#{GAPS.source}\z/]]
     end
 
-    # The whole sentence older helpers wrote, with or without its evidence link.
-    def compact(short_head) = /\A#{Regexp.escape("#{COMPACT}#{short_head}")}(?: \(\[evidence\]\(\S+\)\))?\.\z/
-
-    def line_after(region, marker, short_head)
-      first, second = paragraphs_after(region, marker)
-      [first[verified_line(short_head)], second]
+    def legacy_line(region, head)
+      fold = region.match(FOLD)
+      line = fold && region[fold.end(0)..][/\A#{verified_line(head).source}/]
+      [line, line && legacy_gaps(region, line)]
     end
 
-    # The first paragraph is always a string, so a section that ends at the marker keeps nothing.
-    def paragraphs_after(region, marker)
-      [*region.split(marker, 2).last.strip.split("\n\n", 3).first(2).map(&:strip), '']
+    # Older helpers wrote Setup gaps after the line under the heading and did not repeat them in the fold.
+    def legacy_gaps(region, line)
+      region[/^## Verification\n\n#{Regexp.escape(line)}[^\n]*\n\n\K#{GAPS.source}(?=$)/]
     end
 
     # Every required result was supplied, none reports a failure, and only settings keep some from binding.
@@ -77,9 +77,9 @@ module Shaka
       entry['status'] == 'bound' || entry['reasons'].all? { |reason| reason.match?(SETTINGS_DRIFT) }
     end
 
-    def verified_line(short_head)
-      /\A#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN).* at `#{Regexp.escape(short_head)}`\./
+    def verified_line(head)
+      /#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN)[^\n]* at `#{Regexp.escape(head.to_s[0, 7])}`\./
     end
-    private_class_method :own_line, :compact, :line_after, :paragraphs_after, :verified_line, :passed?, :drifted_only?
+    private_class_method :own_line, :legacy_line, :legacy_gaps, :verified_line, :passed?, :drifted_only?
   end
 end

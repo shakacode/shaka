@@ -582,13 +582,15 @@ phases:
         complete an item the task may not close. Name each mismatch and the tracker rule behind
         it in the handoff; report an item you cannot read as unverified.
         The helper writes the repository validation and local review line under Verification
-        from `--validation-result` and `--review-result`, so leave those out of `checks`.
+        from `--validation-result` and `--review-result`.
         An optional linked `verification.summary` gives a compact result. `not_verified` stays visible;
         put a gap that limits merging in `merge_limitations`. Checks, tables, and `details` fold under
         Evidence and limitations.
         Use optional `task_history` for the initial request and useful decision history.
-        `verification` lists 1 to 3 `checks`, each proof of this PR's own claim: what was run
-        against the changed behavior and its outcome, citing a link or the command. Its
+        `verification` lists 1 to 3 `checks`, each one short sentence proving this PR's own claim:
+        what ran against the changed behavior and its outcome, citing a link or the command.
+        Checks leave out the repository validation run, hosted or local, its test counts,
+        and local review. The
         `not_verified` line names a claim this PR makes that went unproven and why that is
         acceptable; work outside the change's scope stays out. Write `Nothing.` when every claim
         was proved, and the helper omits the line. An unfinished PR may list no checks
@@ -807,6 +809,12 @@ phases:
         [review guide](<{{package_root}}/skills/shaka/references/review.md>).
       - After repairs, run the deferred resolved `validate` command, then
         the resolved `trigger_hosted_ci` command when present. Later fixes need fresh evidence.
+        A check the saved helper's `pr` reports as required replaces that deferred run when a
+        workflow at the trusted base defines it and runs that full `validate`: validate the repaired
+        head as Verify does, push, run the trigger when present, and count the check's passing run
+        on the pushed head as the full validation. Run the local `validate` instead when this PR
+        adds, removes, or changes any workflow or the script it runs, or when the run skipped steps
+        the local `validate` would run.
       - When the user expressly asks to resolve PR comments, follow the packaged
         [settlement procedure](<{{package_root}}/skills/shaka/references/comment-settlement.md>). Keep
         ownership until each known optional review settles or reaches its bounded handoff. Do not
