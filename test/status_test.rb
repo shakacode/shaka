@@ -36,6 +36,17 @@ class StatusTest < Minitest::Test
     assert_equal 'seam', result['requiredChecksSource']
   end
 
+  def test_status_adds_seam_required_checks_to_native_ones
+    native = [{ 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    head = [{ 'name' => 'windows', 'state' => 'PENDING', 'bucket' => 'pending' }]
+    github = client(snapshot_response, response(native, status: 8), *no_configured_requirements,
+                    response(head, status: 8), snapshot_response)
+    result = Shaka::Status.new(github, seam_required_checks: ['windows']).call
+
+    assert_equal native + head, result['requiredChecks']
+    assert_equal 'github+seam', result['requiredChecksSource']
+  end
+
   def test_status_reports_absent_required_checks_without_failing
     empty = ['', "no required checks reported on the 'main' branch\n", STATUS.new(1)]
     result = Shaka::Status.new(client(snapshot_response, empty, *no_configured_requirements, snapshot_response)).call

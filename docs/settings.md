@@ -163,9 +163,10 @@ readiness; the agent establishes your task-scoped authority. See
 
 ## `merge.required_checks`
 
-**Optional.** CI checks that must pass before Shaka treats a PR as ready. Use it
-when GitHub cannot require checks, such as on a private repository on the GitHub
-Free plan.
+**Optional.** CI checks that must pass before Shaka treats a PR as ready, in
+addition to any GitHub requires. Use it when GitHub cannot require checks, such as
+on a private repository on the GitHub Free plan, or when you want the agent to wait
+for a check you have not made a GitHub requirement.
 
 ```yaml
 merge:
@@ -174,10 +175,8 @@ merge:
     - test
 ```
 
-GitHub's required checks come first. If the base branch requires any, Shaka uses
-those and ignores this list.
-
-Otherwise, each listed check must appear on the PR and pass. Neutral and skipped
+Shaka adds this list to the checks GitHub requires on the base branch; a name on
+both counts once. Each listed check must appear on the PR and pass. Neutral and skipped
 results count as passing, as they do on GitHub. If a listed check never appears,
 the PR is blocked, so a renamed job cannot quietly drop out of the gate. Use the
 names `gh pr checks` shows: CircleCI, for example, reports one check per workflow,

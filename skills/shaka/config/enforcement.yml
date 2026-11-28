@@ -746,14 +746,14 @@ rules:
     detector: >-
       `Merge#verify_checks` refuses any check that is not passing, and an empty list unless
       `--empty-checks-confirmed-head` names the merged head, and `Merge#verify_snapshot` refuses a head that moved since verification. That
-      covers the path where the helper submits the merge. When no required check has reported
-      and `GitHub#configured_required_checks` finds none configured in classic protection or
-      rulesets, `RequiredChecks` substitutes the trusted seam's `merge.required_checks`, read
-      at `--ref`, and reports a declared check absent from the head as MISSING so it blocks.
+      covers the path where the helper submits the merge. `RequiredChecks` adds each check the
+      trusted seam's `merge.required_checks` names, read at `--ref`, to the native ones, and
+      reports a declared check absent from the head as MISSING so it blocks.
       When none of the configured native checks has reported yet, each appears as a MISSING row
       rather than an empty set. Once some have reported, the list holds only those, and GitHub's
-      own protection enforces the rest. `Merge` reads seam checks again after the review evidence,
-      because GitHub cannot refuse a merge when one of them fails in that window.
+      own protection enforces the rest. `Merge` reads the gate again after the review evidence
+      whenever the seam added a check, because GitHub cannot refuse a merge when one of those
+      fails in that window.
       In Ask mode the maintainer clicks merge and the helper never runs, so the gate there
       is the repository's own protection: shakacode/shaka's "Protect main" ruleset supplies
       `required_status_checks`, and a repository without it has nothing in that path beyond

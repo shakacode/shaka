@@ -321,7 +321,7 @@ nor completion.
 An Auto preference cannot compensate for missing protection or checks. The
 [merge boundary](https://github.com/shakacode/shaka/blob/main/internal/requirements.md#merge-boundary) requires observable native checks
 enforced for the acting account. The one exception is a base branch with no required
-checks configured, where the trusted seam's `merge.required_checks` stands in and
+checks configured, where the trusted seam's `merge.required_checks` supplies the gate and
 `shaka merge` verifies them. Without either, retain the prepared PR and report the
 limitation; do not switch submission paths to evade the guard. A tower does not grant deployment or other consequential authority.
 

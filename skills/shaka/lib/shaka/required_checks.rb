@@ -3,9 +3,9 @@
 require_relative 'error'
 
 module Shaka
-  # Chooses the checks that gate a PR. GitHub's native required checks win; the trusted
-  # seam's merge.required_checks applies only when GitHub enforces none, as on a private
-  # repository whose plan offers no branch protection.
+  # Chooses the checks that gate a PR: GitHub's native required checks plus any the trusted
+  # seam's merge.required_checks adds. The source is `github`, `seam` when GitHub enforces
+  # none, or `github+seam`; any seam source means GitHub will not stop a merge on those checks.
   class RequiredChecks
     def initialize(github, seam_names: nil)
       @github = github
@@ -18,13 +18,11 @@ module Shaka
 
       # The required-only report omits configured checks that never reported, and an empty
       # one can omit checks already present on the head.
-      reported = native.map { |row| row['name'] if row.is_a?(Hash) }
-      unreported = @github.configured_required_checks - reported
-      checks = native + check_rows(unreported)
-      return github(checks) unless checks.empty?
-      return github([]) unless @seam_names&.any?
+      checks = native + check_rows(@github.configured_required_checks - names(native))
+      added = Array(@seam_names) - names(checks)
+      return github(checks) if added.empty?
 
-      { 'source' => 'seam', 'checks' => check_rows(@seam_names) }
+      { 'source' => checks.empty? ? 'seam' : 'github+seam', 'checks' => checks + check_rows(added) }
     end
 
     def self.verify_passing!(checks)
@@ -51,6 +49,8 @@ module Shaka
 
     def github(checks) = { 'source' => 'github', 'checks' => checks }
 
+    def names(rows) = rows.map { |row| row['name'] if row.is_a?(Hash) }
+
     def missing(name) = { 'name' => name, 'state' => 'MISSING', 'bucket' => 'missing' }
 
     # A declared check that never reported on the head must block, so a renamed or removed
@@ -58,7 +58,7 @@ module Shaka
     def check_rows(names)
       return [] if names.empty?
 
-      head = @github.checks
+      head = (@head ||= @github.checks)
       names.flat_map do |name|
         rows = head.select { |row| row.is_a?(Hash) && row['name'] == name }
         rows.empty? ? [missing(name)] : rows

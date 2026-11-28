@@ -333,6 +333,26 @@ class MergeCheckTest < Minitest::Test
     assert_blocked(/Required check is not passing/)
   end
 
+  def test_a_seam_check_beside_passing_native_checks_still_gates_merge
+    @client.checks = [{ 'name' => 'Validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    @client.head_checks = [{ 'name' => 'windows', 'state' => 'FAILURE', 'bucket' => 'fail' }]
+    @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['windows'])
+
+    assert_blocked(/Required check is not passing.*windows/)
+  end
+
+  # GitHub does not enforce the seam's extra check either, so merge rereads it after the review reads.
+  def test_a_seam_check_beside_native_checks_that_fails_during_review_reads_blocks
+    @client.checks = [{ 'name' => 'Validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    @client.head_checks = [[{ 'name' => 'windows', 'state' => 'SUCCESS', 'bucket' => 'pass' }],
+                           [{ 'name' => 'windows', 'state' => 'FAILURE', 'bucket' => 'fail' }]]
+    @client.snapshots = [snapshot, snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['windows'])
+
+    assert_blocked(/Required check is not passing.*windows/)
+  end
+
   def test_failed_pending_cancelled_or_unknown_checks_block
     %w[FAILURE ERROR PENDING IN_PROGRESS CANCELLED TIMED_OUT EXPECTED FUTURE_STATE].each do |state|
       @client.checks = [{ 'name' => 'Validate', 'state' => state, 'bucket' => 'pass' }]

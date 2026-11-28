@@ -80,10 +80,10 @@ module CliAttentionFixture
 
   CLEAN_OUTCOME = 'No open findings; closed and optional findings are in history.'
 
-  def with_policy(required)
+  def with_policy(required, merge: merge_policy)
     review = review_policy('required' => required)
     review = review.except('ci_review_jobs') if required == 'none'
-    with_repository('merge' => merge_policy, 'review' => review, 'checkpoint' => { 'enabled' => false }) do |root|
+    with_repository('merge' => merge, 'review' => review, 'checkpoint' => { 'enabled' => false }) do |root|
       commit_repository(root)
       FileUtils.mkdir_p(File.join(root, 'fake-bin'))
       File.write(fake = File.join(root, 'fake-bin', 'gh'), FAKE)
@@ -186,6 +186,20 @@ class CliAttentionGateTest < Minitest::Test
 
       assert_predicate status, :success?, error
       assert_path_exists @label_file
+    end
+  end
+
+  # GitHub requires only validate here; the seam's windows check still holds the label.
+  def test_merge_handoff_waits_for_a_seam_check_beside_native_ones
+    checks = [{ 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' },
+              { 'name' => 'windows', 'state' => 'PENDING', 'bucket' => 'pending' }]
+    with_policy('meaningful_changes', merge: merge_policy.merge('required_checks' => ['windows'])) do |root, ref|
+      _output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)],
+                                                env: { 'PR_CHECKS' => JSON.generate(checks) })
+
+      refute_predicate status, :success?
+      assert_includes error, 'windows'
+      refute_path_exists @label_file
     end
   end
 
