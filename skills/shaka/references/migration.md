@@ -5,12 +5,13 @@
 For an ordinary settings migration with an already suitable installed Shaka,
 use that trusted installed helper and skip the separate checkout and
 installation switch below (still coordinate the pause below if any installation
-in use rejects renamed keys). For a release cutover, prepare a separate
-detached tag checkout with no local branches following
+in use rejects the merged contract). For a release cutover, prepare a separate
+detached tag checkout using only the clone and detach steps under
 [Install a published release](official-installation.md#install-a-published-release)
 while the previous installation stays active, and record its `HEAD` commit. Use
-the absolute path to that checkout's `skills/shaka/scripts/shaka` and set
-`SHAKA_RUBY` to the absolute path to Ruby 3.4 or later for each invocation of
+the absolute path to that checkout's `skills/shaka/scripts/shaka` (or
+`ruby …\skills\shaka\scripts\shaka.rb` on native Windows) and set `SHAKA_RUBY`
+to the absolute path to Ruby 3.4 or later for each POSIX-launcher invocation of
 the target helper.
 
 In this section, "the helper" is the target helper for a release cutover and
@@ -74,9 +75,10 @@ recorded commit, then follow
 (including [Before take-over](official-installation.md#before-take-over)) with
 that verified checkout as `--directory DIR`.
 
-A newly renamed key can also make an older installation reject trusted policy.
-Whenever a migration introduces renamed keys that any installation in use
-rejects, finish running affected tasks on those installations and hold new ones
+An older installation can reject trusted policy when the merged contract
+introduces renamed keys, drops command-path mappings, or otherwise fails that
+installation's validation. Whenever any installation in use rejects the merged
+contract, finish running affected tasks on those installations and hold new ones
 before merging the settings PR, then resume once the helper verifies
 `trusted/ref` for the merged default-branch SHA and affected installations are
 ready.

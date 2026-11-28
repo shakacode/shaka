@@ -81,8 +81,10 @@ git -C DIR checkout --detach "refs/tags/v1.0.0"
 
 On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the
 `git clone`. Record `git -C DIR rev-parse HEAD` so the later switch can reuse
-this checkout. Use `DIR/skills/shaka/scripts/shaka` as the helper. Set
-`SHAKA_RUBY` to the absolute path to Ruby 3.4 or later for the command. Use the
+this checkout. Use `DIR/skills/shaka/scripts/shaka` as the helper, or on native
+Windows PowerShell or cmd run `ruby DIR\skills\shaka\scripts\shaka.rb` (the
+POSIX launcher needs Git Bash or another POSIX shell). Set `SHAKA_RUBY` to the
+absolute path to Ruby 3.4 or later when you use the POSIX launcher. Use the
 project's verified default-branch commit for `DEFAULT_SHA`.
 
 - For team settings, run the helper with `seam check --root PROJECT --ref DEFAULT_SHA`

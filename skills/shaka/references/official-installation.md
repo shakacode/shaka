@@ -96,8 +96,8 @@ the user's approval for the wider change before running take-over.
 
 ### Install a published release
 
-Prepare a dedicated detached tag checkout `DIR` with no local branches (the
-installer rejects release checkouts that keep a local branch such as `main`):
+Prepare a dedicated detached tag checkout `DIR` (the installer requires a
+detached HEAD, not an attached branch such as `main`):
 
 ```bash
 git clone --no-checkout --branch "vVERSION" -- https://github.com/shakacode/shaka.git DIR
@@ -110,9 +110,12 @@ checkout because Git converted its line endings. From PowerShell or cmd, start
 the installer as `ruby DIR\bin\install`, since Windows cannot run the
 extensionless script.
 
-Confirm `git -C DIR branch --list` is empty, inspect the checked-out files, and
-record `git -C DIR rev-parse HEAD` if you are previewing a release cutover. For
-a first installation, run `DIR/bin/install --release VERSION --directory DIR --agent HOST`.
+Confirm `git -C DIR branch --show-current` prints nothing (detached HEAD). Do
+not use `git branch --list` for that check: it can print a detached-HEAD display
+line even when no local branch is checked out. Inspect the checked-out files,
+and record `git -C DIR rev-parse HEAD` if you are previewing a release cutover.
+For a first installation, run
+`DIR/bin/install --release VERSION --directory DIR --agent HOST`.
 Use the requested host or pass `--skills-dir SKILLS_DIR` for a custom skills directory.
 The installer selects `refs/tags/vVERSION`, checks the declared version, and records
 its commit in a detached checkout. `--branch` and `--release` are mutually exclusive.
