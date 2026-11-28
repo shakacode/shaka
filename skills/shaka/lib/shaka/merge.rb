@@ -44,18 +44,20 @@ module Shaka
       @head = head
       initial = @github.snapshot
       verify_snapshot(initial, head, @target)
-      approval = verify_label_approval(initial)
       gate = verify_gate
-      evidence = verify_reviews(head, base, walkthrough, gate).merge(excused_checks(gate, head), approval)
-      merged = submit(initial, @github.snapshot, head)
+      evidence = verify_reviews(head, base, walkthrough, gate).merge(excused_checks(gate, head))
+      merged = submit_approved(initial, head)
       AutoMergedLabel.new(@github, enabled: @auto).mark(merged).merge(evidence, base_failure_evidence)
     end
 
     private
 
     # The label chooses Auto and exempts nothing: the caller pairs it with --auto, whose gates all apply.
-    def verify_label_approval(pull)
-      @label_approval ? { 'merge_approval' => @label_approval.verify!(pull) } : {}
+    # It is read once the gates pass and again just before submission; the result names who added it then.
+    def submit_approved(initial, head)
+      @approval = @label_approval&.verify!(initial)
+      merged = submit(initial, @github.snapshot, head)
+      @approval ? merged.merge('merge_approval' => @approval) : merged
     end
 
     def submit(initial, current, head)
@@ -63,14 +65,15 @@ module Shaka
 
       verify_snapshot(current, head)
       @target.unchanged!(initial, current, @github)
-      # Read again last, so a label removed, or re-added by someone without write access, stops the merge.
-      @label_approval&.verify!(current)
       @review_evidence.final_check(head)
       # Under Auto no person looked at the findings, so open ones stop it however late they were published.
       MergeWaitReview.new(@github).refuse_open_findings! if @auto
       # Base failures let Auto accept UNSTABLE, which no longer shows a check that failed since the
       # first read, so every check is read again last.
       verify_gate if @auto && @base_failures
+      # Read again just before submitting, so a label removed, or re-added by someone without write
+      # access, stops the merge. GitHub cannot tie the merge to the label, so a change after this read is not seen.
+      @approval = @label_approval&.verify!(current)
       @submission.call(current, head)
     end
 

@@ -3,6 +3,40 @@
 require_relative 'merge_test'
 require 'shaka/merge_approval_label'
 
+# Answers the event list, collaborator permissions, and repository label reads the label check makes.
+module MergeApprovalLabelApi
+  attr_accessor :events, :permissions, :label_status, :create_status
+
+  def api_calls = (@api_calls ||= [])
+
+  def api_list(path)
+    api_calls << ['GET', path]
+    return [] unless path == MergeApprovalLabelTest::EVENTS
+    # A list of event lists answers successive reads in turn, the last one repeating.
+    return events unless events.first.is_a?(Array)
+
+    events.length > 1 ? events.shift : events.first
+  end
+
+  def api(path, method: 'GET', fields: {}, expected: Hash)
+    api_calls << [method, path, fields]
+    login = permissions.keys.find { |name| path == format(MergeApprovalLabelTest::PERMISSION, name) }
+    return { 'user' => { 'login' => login }, 'permission' => permissions.fetch(login) } if login
+
+    status = path == MergeApprovalLabelTest::REPO_LABEL ? next_label_status : (create_status if method == 'POST')
+    raise Shaka::Error.new("HTTP #{status}", http_status: status) if status
+
+    expected == Array ? [] : {}
+  end
+
+  # A list of statuses answers successive label reads in turn, the last one repeating.
+  def next_label_status
+    return label_status unless label_status.is_a?(Array)
+
+    label_status.length > 1 ? label_status.shift : label_status.first
+  end
+end
+
 # A merge-approved label from a write-access maintainer chooses Auto for the PR, later pushes included.
 class MergeApprovalLabelTest < Minitest::Test
   include MergeFixtures
@@ -11,36 +45,9 @@ class MergeApprovalLabelTest < Minitest::Test
   PERMISSION = 'repos/owner/repo/collaborators/%s/permission'
   REPO_LABEL = 'repos/owner/repo/labels/merge-approved'
 
-  # Answers the event list, collaborator permissions, and repository label reads the label check makes.
-  module LabelApi
-    attr_accessor :events, :permissions, :label_status, :create_status
-
-    def api_calls = (@api_calls ||= [])
-
-    def api_list(path)
-      api_calls << ['GET', path]
-      return [] unless path == EVENTS
-      # A list of event lists answers successive reads in turn, the last one repeating.
-      return events unless events.first.is_a?(Array)
-
-      events.length > 1 ? events.shift : events.first
-    end
-
-    def api(path, method: 'GET', fields: {}, expected: Hash)
-      api_calls << [method, path, fields]
-      login = permissions.keys.find { |name| path == format(PERMISSION, name) }
-      return { 'user' => { 'login' => login }, 'permission' => permissions.fetch(login) } if login
-
-      status = path == REPO_LABEL ? label_status : (create_status if method == 'POST')
-      raise Shaka::Error.new("HTTP #{status}", http_status: status) if status
-
-      expected == Array ? [] : {}
-    end
-  end
-
   def setup
     super
-    @client.extend(LabelApi)
+    @client.extend(MergeApprovalLabelApi)
     @client.head_checks = [passing('Validate')]
     @client.permissions = { 'maintainer' => 'admin', 'helper' => 'read', 'writer' => 'write' }
     @client.events = [labeled('maintainer')]
@@ -68,7 +75,6 @@ class MergeApprovalLabelTest < Minitest::Test
   end
 
   def test_a_push_after_the_label_keeps_the_choice
-    # The events list a commit after the label; nothing compares the label with the head.
     @client.events = [labeled('maintainer'), { 'event' => 'committed', 'created_at' => '2026-11-27T21:00:00Z' }]
 
     assert_equal 'maintainer', merge.fetch('merge_approval').fetch('labeled_by')
@@ -108,6 +114,18 @@ class MergeApprovalLabelTest < Minitest::Test
     assert_blocked(/"helper" added it without write access/)
   end
 
+  def test_a_removal_the_snapshot_has_not_caught_up_with_refuses
+    @client.events = [labeled('maintainer'), labeled('maintainer', event: 'unlabeled')]
+
+    assert_blocked(/GitHub lists its removal after it was added/)
+  end
+
+  def test_the_result_names_who_added_the_label_the_last_read_accepted
+    @client.events = [[labeled('maintainer')], [labeled('maintainer'), labeled('writer')]]
+
+    assert_equal 'writer', merge.fetch('merge_approval').fetch('labeled_by')
+  end
+
   def test_an_event_list_too_long_to_read_refuses_and_hands_back
     @client.define_singleton_method(:api_list) { |_path| Array.new(100) { {} } }
 
@@ -135,19 +153,21 @@ class MergeApprovalLabelTest < Minitest::Test
     assert_includes @client.api_calls, ['POST', 'repos/owner/repo/labels',
                                         { name: 'merge-approved', color: '0E8A16',
                                           description: Shaka::MergeApprovalLabel::DESCRIPTION }]
-
-    @client.label_status = 500
-    assert_match(/\Afailed: HTTP 500/, label.ensure_repository_label)
   end
 
-  def test_a_label_another_run_created_is_present_and_a_forbidden_create_names_who_creates_it
+  # GitHub answers 422 both when another run created the label and when it rejects the create.
+  def test_a_refused_create_is_present_only_when_a_read_finds_the_label
     label = Shaka::MergeApprovalLabel.new(@client)
-    @client.label_status = 404
-    { 422 => /\Apresent\z/, 403 => /\Anot_created: .*a maintainer creates merge-approved/ }.each do |status, outcome|
-      @client.create_status = status
+    @client.create_status = 422
+    @client.label_status = [404, nil]
+    assert_equal 'present', label.ensure_repository_label
 
-      assert_match outcome, label.ensure_repository_label
-    end
+    @client.label_status = [404, 404]
+    assert_match(/\Afailed: HTTP 404/, label.ensure_repository_label)
+
+    @client.create_status = 403
+    @client.label_status = 404
+    assert_match(/\Anot_created: .*a maintainer creates merge-approved/, label.ensure_repository_label)
   end
 
   private

@@ -16,8 +16,8 @@ module Shaka
     # GitHub's REST permission reports maintain as write. Triage may add labels, so it does not count.
     WRITER_PERMISSIONS = %w[write admin].freeze
     NOT_FOUND = 404
+    LABEL_CHANGES = %w[labeled unlabeled].freeze
     FORBIDDEN = 403
-    # Another run created the label first.
     ALREADY_EXISTS = 422
 
     def initialize(github)
@@ -28,8 +28,9 @@ module Shaka
     # the PR's events rather than from the agent's account, or raises naming why the label does not count.
     def verify!(pull)
       present!(pull)
-      event = latest_labeling
+      event = latest_label_change
       raise refusal('GitHub lists no event adding it') unless event
+      raise refusal('GitHub lists its removal after it was added') if event['event'] == 'unlabeled'
 
       actor = event.dig('actor', 'login')
       permission = permission(actor)
@@ -42,11 +43,13 @@ module Shaka
 
     # Gives the repository the label beside the merge wait, so a maintainer finds it with its meaning.
     # The wait is already labeled, so a failure is reported rather than raised.
-    def ensure_repository_label
+    def ensure_repository_label(creating: true)
       @github.api("repos/#{@github.repository}/labels/#{NAME}")
       'present'
     rescue Error => e
-      e.http_status == NOT_FOUND ? create : "failed: #{e.message}"
+      return create if e.http_status == NOT_FOUND && creating
+
+      "failed: #{e.message}"
     end
 
     private
@@ -61,11 +64,12 @@ module Shaka
       Error.new("#{NAME} does not choose Auto: #{reason}. Hand the PR back under Ask")
     end
 
-    def latest_labeling
+    # The newest event that added or removed the label; a removal the snapshot has not caught up with counts.
+    def latest_label_change
       events = PublicComments::BoundedList.new(@github, max_pages: 10, label: 'PR event list')
                                           .call("repos/#{@github.repository}/issues/#{@github.number}/events")
       events.reverse.find do |event|
-        event['event'] == 'labeled' && event.dig('label', 'name').to_s.casecmp?(NAME)
+        LABEL_CHANGES.include?(event['event']) && event.dig('label', 'name').to_s.casecmp?(NAME)
       end
     rescue PublicComments::BoundedList::LimitError
       raise refusal('the PR has too many events to find who added it')
@@ -83,7 +87,8 @@ module Shaka
       'created'
     rescue Error => e
       case e.http_status
-      when ALREADY_EXISTS then 'present'
+      # GitHub also answers 422 for a rejected create, so only a read confirms another run made it.
+      when ALREADY_EXISTS then ensure_repository_label(creating: false)
       when FORBIDDEN then "not_created: this account cannot create labels, so a maintainer creates #{NAME}"
       else "failed: #{e.message}"
       end
