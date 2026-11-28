@@ -1171,11 +1171,11 @@ rating, do not count, so the same text fits at every rating.
 Shaka counts those words exactly as the agent wrote them, without reading the
 Markdown, so the count is predictable and the same when GitHub declines to render.
 Tables, headings, quotes, code, and collapsed details inside those fields count.
-A link's address adds no word, because it joins the link text's last word. Put
-supporting material in the description's `details` or `table`, or in
-verification checks, which do not count. Sentence and paragraph limits still apply
-to everything a reader sees, and a walkthrough's length counts all its visible
-prose.
+A link address written right after its text, as in `[guide](URL)`, adds no word,
+because it joins the link text's last word. Put supporting material in the
+description's `details` or `table`, or in verification checks, which do not count.
+Sentence and paragraph limits still apply to the prose a reader sees, as described
+above, and a walkthrough's length counts all its visible prose.
 
 `shaka description` reports identity, task source, verification check and
 skill metadata errors together before it reads the PR. Shaka reports each

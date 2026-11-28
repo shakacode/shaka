@@ -130,6 +130,15 @@ class DescriptionDeferredRenderingTest < Minitest::Test
     assert_includes github.body, 'A person wrote this.'
   end
 
+  # With supplied prose, only the sentence and paragraph limits went unchecked: the length was checked before writing.
+  def test_beside_a_persons_text_the_status_names_only_the_unchecked_limits
+    github = RefusedRendererGitHub.new("A person wrote this.\n\n#{REGION}")
+    written = publish(github, supplied: -> { { 'summary' => 'Fits.' } })
+
+    assert_equal Shaka::DescriptionPublishing::SHAPE_UNCHECKED, written['rendering']
+    refute_equal Shaka::DescriptionPublishing::PROSE_UNCHECKED, written['rendering']
+  end
+
   # Comments render as nothing, so they leave the body all Shaka text. An unclosed comment, or text
   # between two comments, does not.
   def test_only_whole_comments_outside_the_region_keep_prose_limits_checked

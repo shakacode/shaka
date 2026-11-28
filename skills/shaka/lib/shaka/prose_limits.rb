@@ -58,6 +58,8 @@ module Shaka
       dup.tap { it.supplied = SuppliedProse.words(content) }
     end
 
+    def supplied? = !@supplied.nil?
+
     protected attr_writer :supplied
 
     # Measures GitHub's rendering of body; the pull request supplies the change size.
