@@ -24,12 +24,11 @@ other skills. Use the resolved name, public source and available revision
 }
 ```
 
-When the skill belongs to a pack, add `pack` with the upstream `OWNER/REPO`, plus
-`/PATH` when the pack is not the repository root, not a URL: for example
-`cursor/plugins/pstack`, whichever port or copy you installed. `source` still names
-where this copy came from. Each part may use ASCII letters, digits, `.`, `_`, and
-`-`, and may not be `.` or `..`. Omit `pack` when you cannot tell, it is private, or
-it needs other characters.
+When the skill came from a pack, a set of skills published together, add `pack`: the
+repository and folder where the original pack is published, such as
+`cursor/plugins/pstack`. Name the original even when you installed a fork or a renamed
+copy; `source` still says where your copy came from. Omit `pack` when you cannot tell
+or the pack is private. A malformed value is refused with the accepted form.
 
 Select `agent-reported` with null `corroboration`, or `corroborated` when a native
 event or recorded tool call confirms invocation/loading; name that record in

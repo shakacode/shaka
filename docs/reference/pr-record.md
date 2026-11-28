@@ -130,9 +130,13 @@ Shaka checks the shape of these entries, not that record or whether the agent
 followed the skill, and the list may be incomplete. Shaka itself is not listed;
 **Execution details** names the Shaka version that ran.
 
-A **Pack** column, shown when the agent named one, gives the upstream pack a skill
-came from, such as `cursor/plugins/pstack`. Use it to count a pack's use even when a
-copy or port renamed its skills.
+Some skills come from a skill pack, a set of skills published together, such as
+[pstack](../pstack.md). When the agent knows a skill's pack, the table adds a **Pack**
+column naming where the pack is published, such as `cursor/plugins/pstack`. The agent
+names the original pack even when you installed a fork or a copy that renamed its
+skills, so `pstack-tdd` from a fork still shows `cursor/plugins/pstack`. To see how
+often a pack helped, search your PRs for that one value. You don't need to do anything;
+the agent fills it in.
 
 ## Before and after merge
 

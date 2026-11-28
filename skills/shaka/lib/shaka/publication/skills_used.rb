@@ -72,7 +72,8 @@ module Shaka
       # A code span keeps Markdown such as _core_ literal, so the rendered key matches the recorded one.
       return "`#{record['pack']}`" if record['pack'].is_a?(String) && record['pack'].match?(PACK)
 
-      raise Error, 'Publication skills_used pack must be a repository and optional path, such as cursor/plugins/pstack.'
+      raise Error, 'Publication skills_used pack must be OWNER/REPO or OWNER/REPO/PATH, such as ' \
+                   'cursor/plugins/pstack, using ASCII letters, digits, ., _, and -, with no . or .. part.'
     end
 
     def corroboration(record)
