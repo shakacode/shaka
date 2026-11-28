@@ -79,8 +79,11 @@ module Shaka
     end
 
     # Whether a trusted snapshot names this commit, so handoff can tell if the head's usage is on the PR.
+    # Combining first raises on the conflicts `collect` refuses, so a journal no successor can read never passes.
     def covers?(commit)
-      stored_records.any? { |record| record['commits'].any? { |named| named.casecmp?(commit) } }
+      UsageJournalRecords.combine(stored_records).any? do |record|
+        record['commits'].any? { |named| named.casecmp?(commit) }
+      end
     end
 
     private

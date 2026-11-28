@@ -654,7 +654,7 @@ phases:
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
           [--opening-reviewer PROVIDER/FAMILY] [--opening-model MODEL] [--opening-effort LEVEL]
         attention OWNER/REPO NUMBER --state answer|merge|resume|none [--root DIR --ref SHA] [--review-waiver REASON]
-        handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
+        handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] [--usage-gap REASON] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH [--walkthrough REVIEW_ID] --root DIR
           --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto [--base-failure NAME]] [--limits-confirmed-head SHA]

@@ -28,9 +28,8 @@ module Shaka
                                "#{@github.number} --commit #{live} --contribution CATEGORY --event handoff` and " \
                                "this task's source selection, or pass `--usage-gap REASON` when this host has no " \
                                'usage reader.')
+    # A gap excuses only a host with no reader; a journal no one can read still needs its comment repaired.
     rescue Error => e
-      return note('usage gap', "Usage snapshots are unread: #{e.message} #{@usage_gap}") if @usage_gap
-
       owe('usage unread', "Usage snapshots are unread: #{e.message}")
     end
   end

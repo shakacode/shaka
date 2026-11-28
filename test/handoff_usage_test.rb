@@ -52,15 +52,41 @@ class HandoffUsageTest < Minitest::Test
     assert_includes result.fetch('owed').join, 'Usage snapshots are unread'
   end
 
+  # `collect` refuses two measurements of one response, so a successor could not recover this usage.
+  def test_a_conflicting_journal_is_owed_even_when_it_names_the_head
+    snapshots = [HandoffFixtures.usage_snapshot(HEAD, id: 901, response: 'r1'),
+                 HandoffFixtures.usage_snapshot(OLD, id: 902, response: 'r1', input: '9')]
+    result = handoff(usage: snapshots)
+
+    assert_includes result.fetch('owed').join, 'conflicting input for response r1'
+  end
+
+  # A gap excuses a host with no usage reader, never a journal comment someone has to repair.
+  def test_a_gap_does_not_excuse_an_unreadable_journal
+    broken = HandoffFixtures.comment(901, "#{Shaka::UsageJournal::MARK}\nnot a record")
+    result = run_with_gap('Copilot has no usage reader.', usage: [broken])
+
+    assert_includes result.fetch('owed').join, 'Usage snapshots are unread'
+  end
+
   def test_a_blank_gap_is_refused
     error = assert_raises(Shaka::Error) { run_with_gap(' ') }
     assert_equal '--usage-gap needs a reason.', error.message
   end
 
-  def test_the_journal_comment_is_not_an_unanswered_person_comment
-    result = handoff(comments: [])
+  # The PR author's own account publishes usage too; its marked snapshot is not a comment awaiting a reply.
+  def test_the_authors_journal_comment_is_not_an_unanswered_comment
+    result = handoff(author: 'person', usage: [HandoffFixtures.usage_snapshot(HEAD, author: 'person')])
 
+    assert_empty result.fetch('owed')
     refute_includes result.fetch('status'), 'unanswered'
+  end
+
+  def test_the_cli_refuses_a_usage_gap_outside_handoff
+    _output, error, status = Open3.capture3(*SHAKA_COMMAND, 'pr', 'owner/repo', '42', '--usage-gap', 'none')
+
+    refute_predicate status, :success?
+    assert_includes error, '--usage-gap is only for handoff.'
   end
 
   private
