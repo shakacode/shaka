@@ -255,9 +255,11 @@ Queue submission retains GitHub’s default message and reports that custom text
 
 - Run `bundle install` for development setup and `bin/validate` locally and in CI.
   When the trusted classifier proves a change contains only regular, non-executable
-  `README.md` or `docs/**/*.md` files, that validation entry point and the hosted
-  Validate workflow run whitespace checks without Ruby tests or RuboCop. Ambiguous
-  changes use the full gate, and always-on security checks still run.
+  documentation files, such as `README.md`, `docs/*.md`, figures under `docs/img/`, and
+  `internal/*.md`, `.agents/shaka/bin/validate` (which `validate-local` calls) and the
+  hosted Validate workflow run whitespace and docs navigation checks and only the Ruby
+  tests that name a changed page, without RuboCop. Ambiguous changes use the full gate,
+  and always-on security checks still run.
 - Test failed/pending/missing checks, API errors, stale heads, unsupported merge state,
   rejected merges, queued submission and replay, and safe argument handling.
 - Install in an isolated skills directory; repeat installation, preserve foreign
@@ -296,8 +298,8 @@ accepted changes; describe its uncertainty before making savings claims.
 
 Public source publication and reviewed, verified implementation PR merges are
 authorized. Runtime prerequisites are Ruby 3.4, Git, authenticated GitHub CLI,
-and GitHub PRs. The source prepares the `1.0.0` candidate; the published
-`0.1.0.pre.1` gem only reserves the project name. Registry publication and broader
+and GitHub PRs. The source prepares `1.0.0`; gem versions
+before `1.0.0` predate the current workflow. Registry publication and broader
 adoption require separate evidence and explicit decisions. Preparing a version
 does not establish the real-use acceptance criteria above.
 [Packaging](../contributing/packaging.md) describes the tested gem.

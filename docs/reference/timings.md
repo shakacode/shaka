@@ -69,7 +69,7 @@ ready time was recorded; it does not establish whether the PR is ready to merge.
 Skipped CI reviews can leave that measurement pending until merge.
 
 Without a task start, the cost line shows no time at all, and **Missing values**
-under Shaka metrics → Details says so. A description published before Shaka
+under Shaka metrics → 🤙 Shaka details (Details on older PRs) says so. A description published before Shaka
 added that note keeps `ready in UNKNOWN` until the agent publishes it again. The
 agent can select the original Codex request, supply its timestamp directly, or
 use a usage report that covers the whole task.

@@ -95,11 +95,11 @@ class DocsOnlyChangeTest < DocsOnlyChangeTestSupport
     assert_predicate status, :success?, output
   end
 
-  # test/skill_test.rb reads the maintenance guide, so editing it must run the tests.
-  def test_rejects_the_maintenance_guide_the_tests_read
+  # bin/run-tests --changed runs test/skill_test.rb, which names this guide, so it needs no exception.
+  def test_accepts_the_maintenance_guide_the_tests_read
     write('internal/improving-shaka.md', "Guide\n")
-    _output, status = classify
-    refute_predicate status, :success?
+    output, status = classify
+    assert_predicate status, :success?, output
   end
 
   def test_rejects_non_markdown_under_internal

@@ -52,7 +52,9 @@ rules:
       managed section carries the writer identifier, keeping surrounding human text intact.
     enforced_by: agent
     note: >-
-      Publication helpers render supplied identity fields and show UNKNOWN for missing values.
+      Publication helpers render supplied identity fields and show UNKNOWN for missing values;
+      a description's first line omits an unread provider, model, or effort, and its Missing values
+      entry keeps all four.
       Nothing intercepts direct gh posts or verifies the writer's actual model and effort;
       the agent checks the attributed body, including attachment and verification comments.
   - id: durable-task-plan

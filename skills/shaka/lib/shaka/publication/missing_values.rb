@@ -11,14 +11,30 @@ module Shaka
     TO_FILL = 'To fill it, the agent passes the original request as `codex_task_start` or its timestamp as ' \
               '`task_started_at`.'
 
+    WRITER_LABEL = '- **Writer identity:** the first line shows only the known fields. In full:'
+
     module_function
 
+    def detail(throughput, content, timings:)
+      items = [task_start(throughput, timings), writer(content)].compact
+      { 'summary' => SUMMARY, 'body' => items.join("\n") } unless items.empty?
+    end
+
     # Timings is named only when the description renders that section.
-    def detail(throughput, timings:)
+    def task_start(throughput, timings)
       return if ThroughputStats.task_started?(throughput)
 
       effects = timings ? "#{COST_LINE}, and #{TIMINGS}" : COST_LINE
-      { 'summary' => SUMMARY, 'body' => "- **Task start** was not recorded, so #{effects}. #{TO_FILL}" }
+      "- **Task start** was not recorded, so #{effects}. #{TO_FILL}"
+    end
+
+    # The first line drops unread fields; this keeps each marked UNKNOWN, with the publisher's reason on the next line.
+    def writer(content)
+      return unless PublicationText.unknown_identity?(content['identity'])
+
+      note = content['publisher_note']
+      ["#{WRITER_LABEL} #{PublicationText.identity(content['identity'])}",
+       *("  #{PublicationText.single_line(note, 'publisher note')}" if note)].join("\n")
     end
   end
 end

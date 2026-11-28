@@ -451,7 +451,9 @@ phases:
         `🤖 AGENT · PROVIDER · MODEL · EFFORT`, using actual writer settings and
         `UNKNOWN` for unavailable values. This includes verification updates and
         attachment comments posted directly through `gh`; reviewer identity belongs
-        in the review record. Preserve human text and label mixed work AI-edited.
+        in the review record. A helper-rendered description omits an unread provider,
+        model, or effort there.
+        Preserve human text and label mixed work AI-edited.
         Before submission, check that the first visible line of the AI-authored post or
         managed section carries the writer identifier, keeping surrounding human text intact.
       - Push the reviewed head, then open or adopt its PR. Open a new PR with an empty body
@@ -653,7 +655,9 @@ phases:
         `post-implementation publish --squash-message`, `squash-message`, and
         `merge --squash-message` read the same JSON: `title`, the PR title,
         and `body`, plain text for a `git log` reader that says what changed and why, drawn from
-        the description summary without its links, tables, or evidence. The helper appends
+        the whole description without its links, tables, or evidence, so it may list more
+        than the summary's bullets. Write it by the
+        [squash message rules](<{{package_root}}/skills/shaka/references/writing.md#squash-commit-messages>). The helper appends
         `(#N)`, wraps the body, and carries the branch commits' `Co-authored-by` trailers.
         Ready checkpoint publication embeds copyable title and body blocks in the checkpoint.
         `squash-message` remains the standalone path for an opted-out checkpoint and older installations.

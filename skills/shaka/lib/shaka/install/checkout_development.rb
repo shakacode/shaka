@@ -20,19 +20,6 @@ module Shaka
         warn "Warning: #{detail} Pulls, branches, and commits there stop updates. #{step}"
       end
 
-      # A worktree disappears when its branch merges, taking every host link with it, so no action proceeds.
-      def refuse_linked_worktree
-        return unless File.file?(File.join(@root, '.git'))
-
-        git_directory, common = git('rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir').split("\n")
-        return if git_directory == common
-
-        raise ArgumentError, "Installation checkout #{@root} is a linked worktree of #{File.dirname(common)}. " \
-                             "Install from a separate clone. Next: #{fresh_install}"
-      end
-
-      private
-
       # The installer and status give the same step. The default location cannot hand its hosts to a fresh
       # checkout there, so it clears the development itself; anywhere else the hosts move to a fresh checkout.
       def development_step
@@ -43,6 +30,10 @@ module Shaka
         command = SettingsLocation.take_over(@root, home, @record)
         command ? { command: } : { decision: SettingsLocation.decision(home) }
       end
+
+      def linked_worktrees = worktree_entries.map { |entry| entry[:path] }
+
+      private
 
       # The installer passes the same selections into the default location; status always has a record.
       def fresh_install
@@ -133,8 +124,6 @@ module Shaka
       def extra_branches
         git('for-each-ref', '--format=%(refname:lstrip=2)', 'refs/heads/').lines.map(&:strip) - [@branch]
       end
-
-      def linked_worktrees = worktree_entries.map { |entry| entry[:path] }
 
       # Prunable entries no longer exist on disk. A staging worktree a killed update left is not development;
       # status reports it as B7.

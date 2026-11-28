@@ -49,7 +49,9 @@ An explicit task choice takes
 precedence where an option supports it, such as choosing Ask for one task.
 Each option below describes any such override. Individual settings govern
 delivery preferences, such as AI reviewers and writing limits; they cannot
-disable required merge gates or authorize merging.
+disable required merge gates or authorize merging. `shaka merge` also ignores the merge
+settings in your file and uses Shaka's defaults, including the default
+[hold label](#mergehold_labels).
 
 A settings PR becomes the team's default after it merges into the default branch.
 You can also select it for one task before adoption. Local settings do not override
@@ -271,6 +273,10 @@ label added while the agent checks the PR still stops it. The agent then names t
 hands the PR back to you. No confirmation in chat gets past a hold; remove the label when the PR
 may merge. Label names match without regard to case.
 
+With individual setup, `shaka merge` checks the default `hold` label instead of your local
+`merge.hold_labels`. If your file lists `[hold, do-not-merge]`, `hold` still stops a merge and
+`do-not-merge` does not, even though the agent's handoff reports `do-not-merge` as a hold.
+
 The hold governs only Shaka. GitHub does not know about it, so it does not stop anyone from
 clicking merge, and it does not take a PR out of a merge queue it has already joined. While
 `preference` is `ask`, the ready checkpoint's Auto merge preview names a hold label the PR carries.
@@ -346,6 +352,14 @@ A review of an earlier commit still counts in two cases:
   `gemini`, or `skill` (such as `AGENTS.override.md` or `CLAUDE.local.md`), and
   files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or `skills/` need a
   new review.
+
+The PR description uses the same two cases. When the agent publishes without
+validation and review results, and the description holds no verified line for
+this commit to keep, the Validation and review line says UNKNOWN. It then names
+a local review published for this commit, or an earlier review that still covers
+it and why, for example: "The local review of `e33df55` covers this revision,
+which only updates it from `main`." The review's findings stay in its comment,
+and the line never says validation passed. When no review applies, it says UNKNOWN alone.
 
 When no review applies, `merge` stops before merging. A maintainer can record a
 waiver reason when review was skipped on purpose, a later commit only fixed nits,
@@ -1469,7 +1483,10 @@ the schema default.
 - **Workspace** is the checkout path. It can reveal local directory names. With
   `false`, the description shows `REDACTED` in its place.
 - **Chat link** is the chat locator. It stays in WIP Details whatever this
-  setting says, and reads `UNKNOWN` when the host has no supported locator.
+  setting says, and reads `UNKNOWN` when the host has no supported locator. A Claude Code
+  session link (`claude://claude.ai/epitaxy/local_` and a UUID) or Codex thread
+  link (`codex://threads/` and a lowercase UUID) also leads the Shaka details fold
+  as a copyable block; anything else appears only in WIP Details.
 
 Owner, revision, state, and next action also stay visible. When settings were
 not read or could not load, the description withholds the checkout path, says

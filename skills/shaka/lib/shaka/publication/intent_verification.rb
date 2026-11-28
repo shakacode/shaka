@@ -22,8 +22,9 @@ module Shaka
     # The verdict binds the validation and review results; nil when description received none.
     # The shortfall compares the bound reviews with the trusted reviewer count; nil when none.
     # An intent review_effort, the retired 1-5 rating, is ignored.
-    def render(content, verdict = nil, pull = nil, task: nil, shortfall: nil)
-      verification_line = VerificationLine.render(verdict, content['review'], shortfall)
+    # Without results, earlier is the published review that still covers the head, or nil.
+    def render(content, verdict = nil, pull = nil, task: nil, shortfall: nil, earlier: nil) # rubocop:disable Metrics/ParameterLists
+      verification_line = VerificationLine.render(verdict, content['review'], shortfall, earlier)
       spec = object(content, 'verification')
       checks_for(content)
       [intent(object(content, 'intent'), pull, task),
