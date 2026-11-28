@@ -22,13 +22,26 @@ module Shaka
       def threads_fact
         answered, owed, unknown = classified_threads
         thread_notes(answered, unknown)
-        owed -= excluded_threads(owed)
+        excluded, doubtful = screened_threads(owed)
+        owed -= excluded
         return if owed.empty?
 
+        withdraw_merge_wait if (owed - doubtful).any?
         owe("#{owed.length} unanswered thread#{'s' if owed.length > 1}",
             "Reply on review threads waiting for an answer: #{owed.join(', ')}.")
       rescue Error => e
         note(nil, "Review threads are unread: #{e.message}")
+      end
+
+      # A thread waiting for an answer is feedback the person clicking merge has not seen settled, so the
+      # merge wait comes off until the agent assesses it. Only a thread whose authors screening allowed counts,
+      # so an author whose permission or trust settings went unread cannot take the PR out of the merge queue.
+      def withdraw_merge_wait
+        return unless merge_requested?
+
+        @owed << 'Review threads wait for an answer while awaiting-merge-approval is set. Before working on ' \
+                 'actionable feedback, run `attention --state none` and withdraw the merge-ready handoff in WIP ' \
+                 'Details, even when no code changes; a reply alone settles non-actionable feedback.'
       end
 
       def thread_notes(answered, unknown)
@@ -41,13 +54,14 @@ module Shaka
 
       # Only a confirmed exclusion leaves the owed list. A failed screen keeps a thread owed, so an
       # unread trust setting or permission hides none of them; a note says why `reply` may refuse.
-      def excluded_threads(owed)
+      # Returns the excluded threads and the owed ones whose screen did not finish.
+      def screened_threads(owed)
         result = thread_screen.call(@thread_posts.slice(*owed), @github.viewer_login)
         screen_notes(result)
-        result.excluded
+        [result.excluded, result.unverified + result.unscreened.keys]
       rescue Error => e
         @notes << "Thread authors are unscreened: #{e.message}"
-        []
+        [[], owed]
       end
 
       def screen_notes(result)
