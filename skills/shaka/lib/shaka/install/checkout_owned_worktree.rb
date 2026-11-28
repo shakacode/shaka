@@ -47,7 +47,7 @@ module Shaka
 
         # Loaded here because the status classes require Official, which requires Checkout.
         require_relative 'status_checkout'
-        development_step_for(StatusCheckout.new(default, record))
+        development_step_for(StatusCheckout.new(default, record, skills_dir: @skills_dir))
       end
 
       def development_step_for(checkout)

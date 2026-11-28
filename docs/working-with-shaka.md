@@ -110,7 +110,8 @@ names the pending review.
 ## Resume unfinished work
 
 Return to the original chat: in the PR description, open **🤙 Shaka details**, use
-the copy button on the **Chat link**, and paste it into your browser's address bar.
+the copy button on the **Chat link**, and paste it into your browser's address bar
+on the machine that holds the chat; the label names it when known, such as **Chat link on laptop**.
 When the fold does not open with a **Chat link** block, read **WIP Details → Chat
 link** inside the fold, or below Shaka metrics on PRs published before this
 layout. When neither shows a link, the PR has none published.

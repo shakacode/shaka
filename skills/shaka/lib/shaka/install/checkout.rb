@@ -29,14 +29,18 @@ module Shaka
       RECORD = Locations::RECORD
       attr_reader :root, :record, :repository, :release
 
-      # fresh_install is the installer's command for these selections in the default location.
-      def initialize(directory, repository: nil, branch: nil, release: nil, fresh_install: nil)
+      # The installer's run names fresh_install, its command for these selections in the default location, and
+      # skills_dir, the --skills-dir the development step checks for links into worktrees it would remove.
+      def initialize(directory, repository: nil, branch: nil, release: nil, **run)
         @root = File.expand_path(directory)
         @root = File.realpath(@root) if File.directory?(@root)
         @repository = repository
         @branch = branch
         @release = release
-        @fresh_install = fresh_install
+        unknown = run.keys - %i[fresh_install skills_dir]
+        raise ArgumentError, "Unknown checkout options: #{unknown.join(', ')}" unless unknown.empty?
+
+        @fresh_install, @skills_dir = run.values_at(:fresh_install, :skills_dir)
       end
 
       def prepare(action)

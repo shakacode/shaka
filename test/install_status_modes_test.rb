@@ -10,7 +10,7 @@ class InstallStatusModesTest < Minitest::Test
   def test_a_file_owned_by_another_account_gets_a_decision
     Dir.mktmpdir do |root|
       skills = write_skill(root)
-      checkout = Shaka::Install::StatusCheckout.new(root, 'targets' => [{ 'names' => ['shaka'] }])
+      checkout = Shaka::Install::StatusCheckout.new(root, { 'targets' => [{ 'names' => ['shaka'] }] })
       checkout.define_singleton_method(:owned?) { |path| path != skills }
       finding = checkout.send(:unsafe_files)
       assert_equal ['B10', nil], finding.values_at('id', 'next_command')
