@@ -40,11 +40,9 @@ module Shaka
                    "marker back from the pull request body. Name it without `<!--`, such as `#{name}`."
     end
 
-    # A section heading renders after `## `, so the heading text alone would supply the first anchor.
+    # A section the agent heads Verification renders after Shaka's own, so the reader never meets it first.
     def refuse_anchor(text, path)
-      anchor = text[ANCHOR]
-      anchor ||= "## #{text.strip}" if path.end_with?('.heading') && text.strip.casecmp?('Verification')
-      return unless anchor
+      anchor = text[ANCHOR] or return
 
       raise Error, "#{path.delete_prefix('content.')} starts a line with `#{anchor}`; Shaka reads its " \
                    'Verification line back from that text. Reword the line so it starts differently.'
