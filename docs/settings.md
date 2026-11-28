@@ -156,11 +156,13 @@ permissions; an account that can bypass protection needs no extra Shaka setting.
 Set a task's preference with `Use merge policy auto`.
 To choose Auto for one PR that waits under Ask, add the `merge-approved` label on GitHub,
 then resume the agent that owns the PR; the label alone does not wake it. The agent merges
-once Auto's gates pass. The label covers the PR, not one commit, so later pushes keep it;
-remove it to take the choice back. `shaka merge --auto --label-approval` counts the label
-only when the PR's events show that the last account to add it has write access now.
-Labeling a PR `awaiting-merge-approval` also creates `merge-approved`, with a description,
-when the repository lacks it.
+once Auto's gates pass. The label covers the PR, not one commit, so later pushes keep it.
+Remove it before the agent submits the merge to take the choice back. On a merge-queue
+branch, a PR already queued stays queued until you remove it from the queue. `shaka merge
+--auto --label-approval` counts the label only when the PR's events show that the last
+account to add it has write access now. When the agent hands a PR back with
+`awaiting-merge-approval`, it also tries to create `merge-approved`, with a description, if
+the repository lacks it.
 [First-setup previews](#preview-settings-before-adopting-them) use Ask.
 This is a task instruction;
 editing the PR's settings does not change its own merge authority. Required human
@@ -238,8 +240,9 @@ Shaka rejects the former `merge.auto_max_review_floor` and
 into [`high_risk_areas`](#high_risk_areas) or [`medium_risk_areas`](#medium_risk_areas).
 
 **Optional. Default: `low`.** The highest [risk](#high_risk_areas) the agent may merge without
-your approval. Each level includes the ones below it. Under `preference: ask` you approve every
-merge anyway, so this setting matters under `preference: auto`.
+your approval. Each level includes the ones below it. It applies whenever the agent merges under
+Auto, including a PR you labeled `merge-approved` under `preference: ask`; otherwise you approve
+every merge under Ask anyway.
 
 - `low` lets the agent merge only a PR whose checkpoint rates it low risk.
 - `medium` lets the agent merge a PR rated low or medium.
