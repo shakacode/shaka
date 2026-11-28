@@ -20,7 +20,7 @@ end
 
 def register_arguments(flags, options)
   arguments = %w[helper:PATH reviewer:ID criteria:SHA candidate-criteria:SHA baseline-model:MODEL candidate-model:MODEL
-                 effort:LEVEL state:DIR budget:DIR pr:NUMBER cap:USD case:ID]
+                 effort:LEVEL state:DIR budget:DIR pr:NUMBER cap:USD case:ID bank:VERSION]
   arguments.each do |argument|
     name, value_name = argument.split(':')
     flags.on("--#{name} #{value_name}") { |value| options[name.tr('-', '_').to_sym] = value }
@@ -98,8 +98,11 @@ def repository_marker?(directory)
     (directory.join('HEAD').file? && directory.join('objects').directory? && directory.join('refs').directory?)
 end
 
-def rows(case_id)
-  rows = File.foreach(File.join(__dir__, '../review-replay/v1.jsonl')).map { |line| JSON.parse(line) }
+def rows(bank, case_id)
+  path = File.join(__dir__, "../review-replay/#{bank}.jsonl")
+  raise ArgumentError, 'Unknown replay bank' unless bank.match?(/\Av\d+\z/) && File.file?(path)
+
+  rows = File.foreach(path).map { |line| JSON.parse(line) }
   rows.select! { |row| row['id'] == case_id } if case_id
   raise ArgumentError, 'Unknown replay case' if rows.empty?
 
@@ -109,7 +112,7 @@ end
 begin
   options = parse_options
   validate_options(options)
-  Shaka::Evaluation::ReviewReplay.new(options).run(rows(options[:case]))
+  Shaka::Evaluation::ReviewReplay.new(options).run(rows(options.fetch(:bank, 'v2'), options[:case]))
 rescue ArgumentError, IOError, SystemCallError, JSON::ParserError, Shaka::Evaluation::Budget::Stopped,
        Shaka::Evaluation::BudgetError, OptionParser::ParseError => e
   warn "Replay incomplete: #{e.message}"
