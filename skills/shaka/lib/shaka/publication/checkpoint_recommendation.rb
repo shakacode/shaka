@@ -10,11 +10,14 @@ module Shaka
   # Reads the description's recommendation and verification verdict from the checkpoint published for its head,
   # so the headline cannot disagree with that checkpoint.
   module CheckpointRecommendation
+    LINK_WITHOUT_HEAD = 'Description post_implementation links a checkpoint, so supply checkpoint with this ' \
+                        "PR's full head SHA as head; without it the description reports the head as not rated."
+
     module_function
 
     def resolve(content, github)
       checkpoint = content['checkpoint']
-      return content unless checkpoint.is_a?(Hash)
+      return refuse_link_without_head!(content) unless checkpoint.is_a?(Hash)
 
       supplied = checkpoint.keys & %w[recommendation verification_adequacy]
       raise Error, "Description checkpoint #{supplied.first} comes from the published checkpoint; omit it." if
@@ -22,6 +25,13 @@ module Shaka
 
       published = published(PostImplementationEvidence.new(github), checkpoint['head'])
       published.empty? ? content : content.merge('checkpoint' => checkpoint.merge(published))
+    end
+
+    # A linked checkpoint rated some head; without the checkpoint object the description would call it unrated.
+    def refuse_link_without_head!(content)
+      raise Error, LINK_WITHOUT_HEAD unless content['post_implementation'].to_s.strip.empty?
+
+      content
     end
 
     def published(evidence, head)
