@@ -29,7 +29,8 @@ module Shaka
 
     def trailing(content)
       [*OpeningProse.verification_lines(object(content['verification'])).map(&:last),
-       object(content['risk_record'])['summary'], *Array(content['sections']).map { object(it)['body'] }]
+       object(content['risk_record'])['summary'],
+       *Array(content['sections']).flat_map { object(it).values_at('heading', 'body') }]
     end
 
     def object(value) = value.is_a?(Hash) ? value : {}

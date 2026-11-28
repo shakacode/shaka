@@ -24,7 +24,7 @@ class SuppliedProseTest < Minitest::Test
            "```sh\nx=`printf one`\n```\n\n| --- | --- |"
     content = { 'summary' => 'One.', 'sections' => [{ 'heading' => 'Heading words', 'body' => body }] }
 
-    assert_equal 11, Shaka::SuppliedProse.words(content)
+    assert_equal 13, Shaka::SuppliedProse.words(content)
   end
 
   # Shaka's publisher attribution writes the note, so it is helper text.

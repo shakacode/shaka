@@ -1164,7 +1164,7 @@ add outside it is left alone.
 In a description, the two length limits count only the words the agent writes
 in its summary, decisions, checkpoint next action, intent fields (including
 review focus reasons and the task understanding), verification summary and gaps,
-risk record summary, and sections. The lines Shaka adds, such as the links line,
+risk record summary, and section headings and bodies. The lines Shaka adds, such as the links line,
 metrics, field labels, publisher note, and the risk text that grows with the risk
 rating, do not count, so the same text fits the length limits at every rating.
 
