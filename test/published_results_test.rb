@@ -13,6 +13,7 @@ class PublishedResultsTest < Minitest::Test
   CODEX = { 'kind' => 'review', 'reviewer' => 'openai/codex', 'status' => 'completed', 'head' => HEAD }.freeze
   BLIND = CODEX.merge('commands' => { 'ran' => 3, 'succeeded' => 0, 'sandbox_failed' => 3 }).freeze
   LINE = '**Validation and review:** `validate` passed; local review by openai/codex at `abcdef1`.'
+  PLACEHOLDER = 'Agent `placeholder` text.'
   REVIEW_URL = 'https://github.com/shakacode/shaka/pull/1#issuecomment-2'
   GAP = '**Setup gaps:** `openai/codex` could not start its sandbox, so it reviewed only the diff'
   # A list carried from the published body renders between the Verification section and the fold.
@@ -69,9 +70,10 @@ class PublishedResultsTest < Minitest::Test
   end
 
   # Without real gaps the agent's summary follows the line; only the helper's whole gap sentence counts.
+  # Since #1344 description refuses such a summary, but a body published earlier may hold one.
   def test_a_summary_worded_like_a_gap_is_not_kept_as_one
     summary = '**Setup gaps:** 1 of 2 configured reviewers completed, see `x`.'
-    kept = read(render(FAILED, CODEX, summary:))
+    kept = read(render(FAILED, CODEX, summary: PLACEHOLDER).sub(PLACEHOLDER, summary))
 
     assert kept.fetch('kept_line').start_with?('**Validation and review:** `validate` failed (exit 1)')
     assert_nil kept.fetch('kept_gaps')
