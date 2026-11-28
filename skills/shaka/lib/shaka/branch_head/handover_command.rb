@@ -2,6 +2,7 @@
 
 require 'json'
 require 'optparse'
+require 'uri'
 require_relative '../branch_head'
 require_relative '../doctor/bounded_command'
 require_relative '../error'
@@ -20,7 +21,7 @@ module Shaka
       OPERATIONS = %w[release pickup status].freeze
       CONTINUE = %w[holds picked_up].freeze
       PR = %r{\A(?<repository>[\w.-]+/[\w.-]+)#(?<number>\d+)\z}
-      FIELDS = 'state,headRefName,headRefOid,headRepository,headRepositoryOwner,statusCheckRollup,body'
+      FIELDS = 'url,state,headRefName,headRefOid,headRepository,headRepositoryOwner,statusCheckRollup,body'
       SECONDS = 30
       AUTHORITY = { 'release' => ['--maintainer', 'Release for an owner who cannot (maintain or admin role)'],
                     'pickup' => ['--override', 'Take over an unreleased PR a maintainer confirmed abandoned'] }.freeze
@@ -89,6 +90,7 @@ module Shaka
 
       def summary(pull)
         { 'state' => pull['state'], 'branch' => pull['headRefName'], 'head' => pull['headRefOid'],
+          'host' => (URI(pull['url'].to_s).host if pull['url']),
           'repository' => [pull.dig('headRepositoryOwner', 'login'), pull.dig('headRepository', 'name')].join('/'),
           'checks' => pull['statusCheckRollup'], 'body' => pull['body'] }
       end

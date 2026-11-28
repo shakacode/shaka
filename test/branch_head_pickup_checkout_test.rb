@@ -13,6 +13,7 @@ class PickupCheckoutTest < Minitest::Test
 
     assert_true pushes_to?('base/repo')
     assert_false pushes_to?('mirror/repo')
+    assert_false pushes_to?('base/repo', 'github.com'), 'a mirror on another host'
   end
 
   def test_a_push_url_that_names_no_repository_never_matches
@@ -21,8 +22,7 @@ class PickupCheckoutTest < Minitest::Test
 
   private
 
-  def pushes_to?(repository)
-    Shaka::BranchHead::PickupCheckout.pushes_to?(@task, 'branch' => BRANCH,
-                                                        'repository' => repository)
+  def pushes_to?(repository, host = 'github.example.com')
+    Shaka::BranchHead::PickupCheckout.pushes_to?(@task, 'branch' => BRANCH, 'repository' => repository, 'host' => host)
   end
 end

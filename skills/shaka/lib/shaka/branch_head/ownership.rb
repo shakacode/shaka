@@ -95,6 +95,8 @@ module Shaka
                      '.[] | select(.body | contains("<!-- shaka:ownership ")) | ' \
                      '{id, url: .html_url, body, login: .user.login, type: .user.type}')
         listing.lines.filter_map { |line| event(JSON.parse(line)) }.sort_by { it['id'] }
+      rescue JSON::ParserError => e
+        raise Error, "Cannot parse the ownership comments on #{@repository}##{@number}: #{e.message}"
       end
 
       def write(path, method, body) = JSON.parse(gh('api', path, '-X', method, '-f', "body=#{body}"))

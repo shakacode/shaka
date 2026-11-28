@@ -40,7 +40,10 @@ module Shaka
       end
 
       # The first pickup GitHub stores after the latest release wins. A loser's comment is edited to say so.
-      def pickup(pull, override: false)
+      # Pickups in one worktree take turns, so a second one reads the state the first left and its tag survives.
+      def pickup(pull, override: false) = OwnerTag.locked(@root) { locked_pickup(pull, override) }
+
+      def locked_pickup(pull, override)
         before = @ownership.state
         return own(before['url']) if holds?(before) && OwnerTag.recorded(@root) == @tag
 
@@ -55,8 +58,7 @@ module Shaka
         OwnerTag.record(@root, @tag)
         lead = override ? 'Took over this PR as a maintainer override.' : 'Picked up this PR.'
         result = outcome(post(lead, { 'New owner' => "`#{@tag}`" }, mark(before, 'pickup', override)))
-        # Another pickup in this worktree may have recorded its own tag since; leave that one alone.
-        OwnerTag.restore(@root, earlier) if result['state'] != 'picked_up' && OwnerTag.recorded(@root) == @tag
+        OwnerTag.restore(@root, earlier) unless result['state'] == 'picked_up'
         result
       end
 

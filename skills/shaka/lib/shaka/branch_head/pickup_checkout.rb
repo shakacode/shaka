@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'uri'
 require_relative '../error'
 require_relative '../git_origin'
 require_relative 'destination'
@@ -25,7 +26,8 @@ module Shaka
 
       def pushes_to?(root, pull)
         url = Destination.new(root:, branch: pull['branch']).url
-        GitOrigin.identity(url).delete_suffix('.git').casecmp?(pull['repository'].to_s)
+        GitOrigin.identity(url).delete_suffix('.git').casecmp?(pull['repository'].to_s) &&
+          URI(GitOrigin.canonical_url(url)).host.to_s.casecmp?(pull['host'].to_s)
       rescue Error
         false
       end

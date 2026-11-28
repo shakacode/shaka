@@ -78,13 +78,19 @@ class BranchHeadHandoverRaceTest < Minitest::Test
     assert_paused 'taken_over', linked
   end
 
-  # Two pickups in one worktree: the loser does not take the winner's recorded tag away.
-  def test_a_losing_pickup_leaves_a_winner_in_the_same_worktree
+  # Pickups in one worktree take turns: one waiting on the lock reads the state the first left behind.
+  def test_a_second_pickup_in_the_same_worktree_waits_and_leaves_the_winner
     released_task
     teammate_clone
-    @github.before_post = -> { pickup(@teammate, 'winner', as: 'other') }
+    holder = Thread.new { Shaka::BranchHead::OwnerTag.locked(@teammate) { sleep 1 } }
+    sleep 0.2
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    pickup(@teammate, 'winner')
+    holder.join
 
-    assert_equal 'lost', pickup(@teammate, 'loser')['state']
+    assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :>=, 0.5, 'the pickup waited'
+
+    assert_raises(Shaka::Error) { pickup(@teammate, 'loser') }
     assert_equal 'winner', Shaka::BranchHead::OwnerTag.recorded(@teammate)
   end
 

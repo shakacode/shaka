@@ -26,6 +26,14 @@ module Shaka
         write(root, tags(root).except(branch(root)))
       end
 
+      # Holds this worktree's tag file for the block, so two pickups here cannot interleave their reads and writes.
+      def locked(root)
+        File.open("#{file(root)}.lock", File::RDWR | File::CREAT, 0o600) do |lock|
+          lock.flock(File::LOCK_EX)
+          yield
+        end
+      end
+
       # The checked-out branch, which a pickup requires to be the PR head branch.
       def branch(root) = git(root, 'symbolic-ref', '--quiet', 'HEAD').delete_prefix('refs/heads/')
 
