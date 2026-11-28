@@ -38,7 +38,7 @@ module Shaka
       # not exist yet. Tags and submodules stay unpushed whatever push.followTags or push.recurseSubmodules say.
       # Returns false when Git reports the branch already at that commit: someone else put it there.
       def push(accepted, sha)
-        raise Error, "origin now pushes somewhere other than #{url}; check again." unless push_url == url
+        raise Error, "origin's push URL changed since the check; check again." unless push_url == url
 
         lease = "--force-with-lease=refs/heads/#{@branch}:#{accepted}"
         output, error, success = bounded(PUSH_SECONDS, 'push', '--porcelain', '--no-follow-tags',

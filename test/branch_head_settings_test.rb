@@ -7,6 +7,12 @@ require_relative 'branch_head_fixture'
 class BranchHeadSettingsTest < Minitest::Test
   include BranchHeadFixture
 
+  def test_rejected_push_remote_value_is_never_printed
+    git(@task, 'config', "branch.#{BRANCH}.pushRemote", 'https://user:two words@git.example.com/o/r')
+
+    refute_includes JSON.generate(check), 'words'
+  end
+
   def test_single_empty_push_default_pauses
     git(@task, 'config', 'remote.pushDefault', '')
 

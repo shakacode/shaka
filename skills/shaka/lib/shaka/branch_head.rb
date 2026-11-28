@@ -10,10 +10,12 @@ module Shaka
   # overwritten. The accepted head lives in the checkout's own branch config; `accept` and `push` change it.
   class BranchHead
     SAFE = %w[unchanged not_pushed].freeze
-    USERINFO = %r{(://)[^/@]+@}
+    # From :// to the last @ on the same line, so a password with spaces, slashes, or @ never prints;
+    # it may also drop text after a URL on that line, but never crosses into the next line.
+    USERINFO = %r{://[^\n]*@}
 
     # Drops user:password@ from any URL in text that a command prints.
-    def self.redact(text) = text.to_s.gsub(USERINFO, '\\1')
+    def self.redact(text) = text.to_s.gsub(USERINFO, '://')
     SHA = Destination::SHA
     ENVIRONMENT = Destination::ENVIRONMENT
 

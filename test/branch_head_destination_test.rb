@@ -67,9 +67,12 @@ class BranchHeadDestinationTest < Minitest::Test
   end
 
   def test_printed_errors_drop_url_credentials
-    assert_equal 'see https://git.example.com/o/r', Shaka::BranchHead.redact('see https://user:secret@git.example.com/o/r')
-    assert_equal 'see https://git.example.com/o/r',
-                 Shaka::BranchHead.redact('see https://user:two words@git.example.com/o/r')
+    ['user:secret', 'user:two words', 'user:pa/ss', 'user:p@ss'].each do |userinfo|
+      assert_equal 'see https://git.example.com/o/r', Shaka::BranchHead.redact("see https://#{userinfo}@git.example.com/o/r")
+    end
+    diagnostic = "fatal: unable to access 'https://git.example.com'\nhint: contact ops@example.com"
+
+    assert_equal diagnostic, Shaka::BranchHead.redact(diagnostic), 'redaction stays on one line'
   end
 
   # A rejected upstream is never echoed, so a password the redaction cannot parse still stays out of the output.
