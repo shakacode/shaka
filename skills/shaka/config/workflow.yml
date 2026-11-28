@@ -669,7 +669,7 @@ phases:
         handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] [--usage-gap REASON] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH [--walkthrough REVIEW_ID] --root DIR
-          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto [--base-failure NAME]] [--limits-confirmed-head SHA]
+          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--auto [--base-failure NAME] [--label-approval]] [--limits-confirmed-head SHA]
           [--empty-checks-confirmed-head SHA] [--adequacy-confirmed-head SHA] [--review-waiver REASON]
         usage --commit SHA --contribution CATEGORY [--since-time TASK_START_UTC]
         ```
@@ -942,7 +942,13 @@ phases:
         readiness and the Ask handoff unchanged.
       - In Ask mode, after that refresh, any due walkthrough, and required gates, finish remaining
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
-        stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge
+        stop. When merge is the only remaining action, nothing above forced Ask, the task has no
+        explicit Ask choice, and the PR carries `merge-approved`, the maintainer chose Auto for this
+        PR and later pushes keep that choice
+        ([settings](https://github.com/shakacode/shaka/blob/main/docs/settings.md#mergepreference)):
+        take the Auto path below with `--label-approval`, and continue here after a label refusal.
+        Adding and removing the label stay with the maintainer. Otherwise, if merge is the only
+        remaining action, refresh the WIP Details note for this GitHub merge
         click, run `attention OWNER/REPO NUMBER --state merge --root DIR --ref SHA` to label the PR
         `awaiting-merge-approval`; every `--state merge` takes those flags when trusted settings exist,
         because `review.required` comes from them. It refuses while the published local review reports
