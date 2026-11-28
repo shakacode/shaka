@@ -17,7 +17,7 @@ puts "platform #{RUBY_PLATFORM}"
 puts "root #{root}"
 
 runner = case section
-         when 'doctor' then abort('THROWAWAY: deliberate doctor failure for #1381 evidence')
+         when 'doctor' then WindowsDoctor.new(root).call
          when 'commands' then WindowsCommands.new(root).call
          when 'cursor' then WindowsCursor.new(root).call
          when 'product' then WindowsProduct.new(root).call
