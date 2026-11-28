@@ -192,6 +192,18 @@ class CommentTrustConfigDuplicateKeyTest < Minitest::Test
     end
   end
 
+  # YAML.safe_load reads only the first document, so a second one would be silently ignored (issue #1353).
+  def test_second_yaml_document_is_refused
+    with_machine(nil) do |path|
+      github = client(blob("trusted_users: [alice]\n---\ntrusted_users: [bob]\n"))
+      error = assert_raises(Shaka::Error) do
+        Shaka::PublicComments::TrustConfig.new(github, machine_path: path).load(base_oid: HEAD)
+      end
+
+      assert_equal 'Trust config must contain one YAML document.', error.message
+    end
+  end
+
   def test_comment_only_allowlist_stays_empty
     with_machine("# no machine-wide actors yet\n") do |path|
       result = Shaka::PublicComments::TrustConfig.new(client(blob('')), machine_path: path).load(base_oid: HEAD)

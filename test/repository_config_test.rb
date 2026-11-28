@@ -325,6 +325,16 @@ class RepositoryConfigRequiredChecksTest < Minitest::Test
       end
     end
   end
+
+  # GitHub label names carry no surrounding spaces, so a padded entry could never hold a PR (issue #1352).
+  def test_rejects_a_hold_label_with_surrounding_spaces
+    ['hold ', ' hold'].each do |label|
+      with_repository('merge' => merge_policy.merge('hold_labels' => ['wip', label])) do |root|
+        message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+        assert_includes message, "merge.hold_labels[1] has spaces around #{label.inspect}", label
+      end
+    end
+  end
 end
 
 class RepositoryStartupCheckTest < Minitest::Test
