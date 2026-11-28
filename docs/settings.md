@@ -1174,8 +1174,8 @@ rating, do not count, so the same text fits the length limits at every rating.
 Shaka counts those words exactly as the agent wrote them, without reading the
 Markdown, so the count is predictable and the same when GitHub declines to render.
 Tables, headings, quotes, code, and collapsed details inside those fields count.
-A link address written right after its text, as in `[guide](URL)`, adds no word,
-because it joins the link text's last word. Put supporting material in the
+Shaka counts each space-separated piece that holds a letter or digit as one word.
+A link written as `[guide](URL)` is one piece, and a bare URL is one word. Put supporting material in the
 description's `details` or `table`, or in verification checks, which do not count.
 Sentence and paragraph limits still apply to the prose a reader sees, as described
 above.
