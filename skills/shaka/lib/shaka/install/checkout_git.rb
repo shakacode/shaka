@@ -69,9 +69,9 @@ module Shaka
         end
       end
 
-      # Clone and fetch fail alike when origin lacks the branch and when Git cannot reach origin. ls-remote's
-      # exit status tells them apart, because Git's wording changes with version and locale. When origin has the
-      # branch, the failure is neither, so Git's own message stands.
+      # Clone and fetch fail alike when origin lacks the branch and when Git cannot reach origin. ls-remote tells
+      # them apart by its exit status and the exact ref it lists, because Git's wording changes with version and
+      # locale. When origin has the branch, the failure is neither, so Git's own message stands.
       def reaching(remote)
         yield
       rescue ArgumentError => e
@@ -81,11 +81,13 @@ module Shaka
       # The printed check runs where the probe ran, so a relative repository path names the same repository,
       # and -- keeps a repository that starts with a hyphen from being read as an option.
       def remote_refusal(remote)
-        _, _, status = run_git('ls-remote', '--exit-code', '--heads', '--', remote, "refs/heads/#{@branch}")
-        return if status.success?
+        ref = "refs/heads/#{@branch}"
+        output, _, status = run_git('ls-remote', '--exit-code', '--heads', '--', remote, ref)
+        # The pattern also matches longer names that end in it, such as refs/heads/x/refs/heads/main.
+        return if status.success? && output.lines.any? { it.chomp.end_with?("\t#{ref}") }
 
         list = Refusal.command('git', '-C', @root, 'ls-remote', '--heads', '--', Refusal.url(remote))
-        return missing_branch(list) if status.exitstatus == 2
+        return missing_branch(list) if status.success? || status.exitstatus == 2
 
         Refusal.message('Installation could not download Shaka', "Git could not reach #{Refusal.url(@repository)}",
                         "run #{list} to check the network and access, then run this command again")
