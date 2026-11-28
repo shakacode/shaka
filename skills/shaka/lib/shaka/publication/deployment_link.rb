@@ -5,7 +5,7 @@ require_relative 'cloudflare_preview'
 
 module Shaka
   # Resolves `deployment: auto` from head-bound deployment evidence, with an
-  # authenticated Cloudflare Pages check fallback when that API has no live URL.
+  # authenticated Cloudflare Pages check fallback when that lookup finishes with no live URL.
   module DeploymentLink
     AUTO = 'auto'
     PAGE = 100

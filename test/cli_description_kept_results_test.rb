@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'cli_description_decisions_test'
+require 'shaka/publication/verification_line'
 
 # PR #998: a wording-only rewrite after an install update had nowhere to go but UNKNOWN.
 class CliDescriptionKeptResultsTest < Minitest::Test
@@ -24,6 +25,25 @@ class CliDescriptionKeptResultsTest < Minitest::Test
     refute_includes published, '(exit 0)'
     refute_includes published, 'UNKNOWN: no validation or review results'
     assert_includes result.fetch('evidence_kept'), KEPT
+  end
+
+  # The helper marks the line it writes, and the command reads that line back.
+  def test_rewording_keeps_the_marked_line
+    marker = Shaka::VerificationLine::MARKER
+    marked = "## Verification\n\n#{marker}\n#{SHOWN}"
+    published, result = republish("<!-- shaka:begin -->\n#{marked}\n<!-- shaka:end -->")
+
+    assert_includes published, "#{marker}\n#{SHOWN} Kept from this commit’s earlier description"
+    assert_includes result.fetch('evidence_kept'), KEPT
+  end
+
+  # https://github.com/shakacode/shaka/issues/1320: a summary worded like the line was kept as verified.
+  def test_a_summary_worded_like_the_line_is_not_kept
+    unknown = '**Validation and review:** UNKNOWN: no validation or review results were supplied for this revision.'
+    published, result = republish("<!-- shaka:begin -->\n## Verification\n\n#{unknown}\n\n#{SHOWN}\n<!-- shaka:end -->")
+
+    assert_includes published, unknown
+    assert_nil result['evidence_kept']
   end
 
   def test_a_description_without_a_verified_line_still_shows_unknown
