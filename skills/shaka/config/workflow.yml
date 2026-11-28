@@ -937,7 +937,7 @@ phases:
         `merge` only for that SHA or a rebased head the Ask approval item allows. When
         `requiredChecksSource` is `seam`, GitHub will not stop that click, so name each seam-declared
         check and its state at that SHA in the handoff. Run `attention` with `--state none` when work
-        on the PR resumes, except on the `merge-approved` route below. Never set `awaiting-merge-approval` in Auto
+        on the PR resumes. Never set `awaiting-merge-approval` in Auto
         mode. In Auto mode, run `merge --auto` with the current head, any due walkthrough's ID, and
         `--squash-message` content. It labels the PR `auto-merged` once GitHub confirms the merge;
         report a failed or queue-deferred label in the handoff. Add `--base-failure NAME` for each
@@ -963,12 +963,11 @@ phases:
         checks to pass, then refresh the description and any required rendering preview. Run
         `attention` with `--state merge` so the PR stays in the approval queue while it waits.
         Any other new commit ends the approval.
-      - Under Ask, once nothing above holds the task at Ask, a `merge-approved` label chooses Auto
-        for the PR, unlike the per-head approval above
+      - Under Ask, once nothing above holds the task at Ask, a `merge-approved` label on the PR is the
+        maintainer's choice of Auto for it, and later pushes keep it, unlike the per-head approval above
         ([settings](https://github.com/shakacode/shaka/blob/main/docs/settings.md#mergepreference)).
-        When the PR carries it, run `merge --auto --label-approval` for the current head. Keep the merge
-        wait, even on resuming, until the merge succeeds, then run `attention` with `--state none`. On a
-        refusal, handle the blocker it names. Adding and removing the label stay with the maintainer.
+        Follow the Auto path, passing `--label-approval` with `--auto`; a label refusal returns the PR
+        to Ask. Adding and removing the label stay with the maintainer.
       - Leave repository queue settings and delayed auto-merge unchanged. When the helper submits
         merge, on a queue-disabled base merge immediately while the task is active. On a
         queue-enabled base, enqueue the expected reviewed head, then wait for GitHub's current-base
@@ -1027,7 +1026,7 @@ always: |-
   list once the answer is in: the section is omitted and `awaiting-answer` is removed.
   Do not publish a non-empty `decisions` list while the PR waits for merge approval: that wait
   keeps `awaiting-merge-approval` as Finish describes. Run `attention` with `--state none`
-  when work resumes outside the `merge-approved` route and no decision is still open. When the turn ends with work left and nothing
+  when work resumes and no decision is still open. When the turn ends with work left and nothing
   will wake this session, such as checks still running under a host monitor that reports only
   failures, a host without background commands, or a planned pause, run it with
   `--state resume` and make WIP Details `Next action` the resume prompt: the host's Shaka
