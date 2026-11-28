@@ -49,7 +49,12 @@ module Shaka
 
     # Raises when pull, a snapshot carrying the PR's labels, no longer shows the label.
     def present!(pull)
-      return if MergeHold.new([NAME]).label(MergeHold.new.names(pull))
+      names = begin
+        MergeHold.new.names(pull)
+      rescue Error
+        raise refusal("GitHub did not return the PR's complete label list")
+      end
+      return if MergeHold.new([NAME]).label(names)
 
       raise refusal('the PR does not carry it')
     end

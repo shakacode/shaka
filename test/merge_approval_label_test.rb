@@ -235,6 +235,10 @@ class MergeApprovalLabelTimingTest < Minitest::Test
 
     @client.events = [labeled('maintainer').except('created_at')]
     assert_blocked(/GitHub did not say when it was added/)
+
+    @client.snapshots = [approved.merge('labels' => { 'totalCount' => 2,
+                                                      'nodes' => [{ 'name' => MergeApprovalLabelTest::NAME }] })]
+    assert_blocked(/complete label list. Hand the PR back under Ask/)
   end
 
   def test_a_queued_pr_reconciles_after_the_label_is_removed

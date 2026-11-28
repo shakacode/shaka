@@ -39,8 +39,8 @@ module Shaka
 
     # `squash_message` is a SquashMessage, or nil for the repository's squash default.
     def call(head:, base:, walkthrough: nil, limits: MergeLimits.new, squash_message: nil)
-      initial = approved_snapshot
       @target = MergeTarget.required!(head, base, limits, @risk_gate, @hold)
+      initial = approved_snapshot
       @submission.message = squash_message
       @head = head
       verify_snapshot(initial, head, @target)

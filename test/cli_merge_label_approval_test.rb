@@ -33,9 +33,7 @@ class CliMergeLabelApprovalTest < Minitest::Test
   RUBY_SCRIPT
 
   def test_a_pr_without_the_label_is_handed_back_under_ask
-    with_merge_repository do |root, ref, mutation|
-      _, error, status = run_merge(root, ref, mutation, '--auto', '--label-approval', env: { 'PR_LABELS' => 'bug' })
-
+    labeled('maint', 'write', labels: 'bug') do |_output, error, status, mutation|
       refute_predicate status, :success?
       assert_match(/merge-approved does not choose Auto: the PR does not carry it. Hand the PR back under Ask/, error)
       refute_path_exists mutation
@@ -61,14 +59,14 @@ class CliMergeLabelApprovalTest < Minitest::Test
   private
 
   # A trusted Ask repository whose PR carries merge-approved, added by labeler with permission.
-  def labeled(labeler, permission)
+  def labeled(labeler, permission, labels: 'merge-approved')
     with_merge_repository(merge_policy.merge('preference' => 'ask',
                                              'auto_merge_max_risk' => 'low')) do |root, ref, mutation|
       fake = File.join(root, 'fake-bin', 'gh')
       File.write(fake, File.read(fake).sub("require 'json'\n", "require 'json'\n#{LABEL_GH}"))
       event = { 'event' => 'labeled', 'actor' => { 'login' => labeler }, 'label' => { 'name' => 'merge-approved' },
                 'created_at' => '2026-11-27T20:00:00Z' }
-      env = { 'PR_LABELS' => 'merge-approved', 'LABEL_EVENTS' => JSON.generate([event]), 'LABELER' => labeler,
+      env = { 'PR_LABELS' => labels, 'LABEL_EVENTS' => JSON.generate([event]), 'LABELER' => labeler,
               'PERMISSION' => permission, 'CHECKPOINT_COMMENTS' => JSON.generate([checkpoint]) }
       yield(*run_merge(root, ref, mutation, '--auto', '--label-approval', env:), mutation)
     end
