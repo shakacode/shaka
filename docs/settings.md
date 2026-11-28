@@ -1148,10 +1148,10 @@ prose_limits:
 ```
 
 The values above are the defaults. Set any key to a positive integer to change
-it; omitted keys keep their default. The sentence and paragraph limits, and a
-walkthrough's length, count the prose a reader sees: code blocks, tables, headings,
-quotes, link addresses, and the body of a collapsed details block do not count. A collapsed block's summary label counts,
-and an inline code span counts as one word.
+it; omitted keys keep their default. Shaka measures sentences, paragraphs, and a
+walkthrough's length in the prose a reader sees. It skips code blocks, tables,
+headings, quotes, link addresses, and the body of a collapsed details block. A
+collapsed block's summary label is measured, and an inline code span is one word.
 In a description, only the part Shaka manages counts; text that people or other tools
 add outside it is left alone.
 
@@ -1176,7 +1176,7 @@ A link address written right after its text, as in `[guide](URL)`, adds no word,
 because it joins the link text's last word. Put supporting material in the
 description's `details` or `table`, or in verification checks, which do not count.
 Sentence and paragraph limits still apply to the prose a reader sees, as described
-above, and a walkthrough's length counts all its visible prose.
+above.
 
 `shaka description` reports identity, task source, verification check and
 skill metadata errors together before it reads the PR. Shaka reports each
