@@ -78,7 +78,7 @@ class EvaluationRiskReplayScoreTest < Minitest::Test
   end
 
   def test_scoring_refuses_records_read_from_another_case_file
-    assert_includes score_directory([{ 'case_file' => 'older' }]), 'case file changed since this replay'
+    assert_match(/Changed since this replay: .*case file/, score_directory([{ 'case_file' => 'older' }]))
   end
 
   private

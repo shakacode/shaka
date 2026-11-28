@@ -29,7 +29,10 @@ def records(state)
 end
 
 def changed_paths(row)
-  output, error, status = Open3.capture3('git', '-C', SOURCE, 'diff', '--name-only', '--no-renames', '-z',
+  # The fixture's sanitized Git environment, so a replacement ref or redirected repository cannot change the files.
+  environment = Shaka::Evaluation::ReviewReplayFixture::GIT_ENVIRONMENT
+  output, error, status = Open3.capture3(environment, 'git', *Shaka::Evaluation::ReviewReplayFixture::GIT_CONFIG,
+                                         '-C', SOURCE, 'diff', '--name-only', '--no-renames', '-z',
                                          row.fetch('base'), row.fetch('head'))
   raise IOError, "Cannot read #{row.fetch('id')} files: #{error.strip}" unless status.success?
 
@@ -47,17 +50,38 @@ def settings(plan)
 end
 
 # A state directory holds one replay invocation; records from another would be pooled under the same arm names.
-# Returns its plan, and refuses one whose case file has changed since, which would rescore it silently.
 def one_comparison!(records)
   plans = records.map { |record| record['comparison'] }.uniq
-  unless plans.one? && plans.first
-    raise ArgumentError, 'The state directory mixes comparisons; score each comparison from its own state directory'
-  end
-  if plans.first['case_file'] == Digest::SHA256.file(Shaka::Evaluation::RiskReplay::CASE_FILE).hexdigest
-    return plans.first
-  end
+  return plans.first if plans.one? && plans.first
 
-  raise ArgumentError, 'The case file changed since this replay; score it with the case file it read'
+  raise ArgumentError, 'The state directory mixes comparisons; score each comparison from its own state directory'
+end
+
+# A case file or packet edited since the replay would rescore it silently against inputs it never read.
+def unchanged_inputs!(plan)
+  rows = File.foreach(Shaka::Evaluation::RiskReplay::CASE_FILE).map { |line| JSON.parse(line) }
+  planned = rows.select { |row| plan.fetch('cases').include?(row.fetch('id')) }
+  changed = recorded_inputs(plan, planned).filter_map { |name, (digest, path)| name if digest != sha256(path) }
+  raise ArgumentError, "Changed since this replay: #{changed.join(', ')}" if changed.any?
+
+  planned
+end
+
+def sha256(path) = Digest::SHA256.file(path).hexdigest
+
+# Each input the replay read, with the digest it recorded and the file as it stands now.
+def recorded_inputs(plan, planned)
+  planned.to_h do |row|
+    ["#{row.fetch('id')} packet",
+     [plan.dig('packets', row.fetch('id')), File.join(Shaka::Evaluation::RiskReplay::CASES, row.fetch('packet'))]]
+  end.merge('case file' => [plan['case_file'], Shaka::Evaluation::RiskReplay::CASE_FILE])
+end
+
+# A prompt or model comparison keeps policy fixed, so a gate difference comes from the rating alone.
+def same_policy!(settings)
+  return settings if settings.values.uniq.one?
+
+  raise ArgumentError, 'The arms apply different risk areas or thresholds; keep them the same in both settings commits'
 end
 
 begin
@@ -65,11 +89,10 @@ begin
   raise ArgumentError, 'No replay records in the state directory' if saved.empty?
 
   plan = one_comparison!(saved)
-  rows = File.foreach(Shaka::Evaluation::RiskReplay::CASE_FILE).map { |line| JSON.parse(line) }
-  cases = rows.to_h { |row| [row.fetch('id'), row] }.slice(*plan.fetch('cases'))
+  cases = unchanged_inputs!(plan).to_h { |row| [row.fetch('id'), row] }
   paths = cases.transform_values { |row| changed_paths(row) }
-  score = Shaka::Evaluation::RiskReplayScore.score(records: saved, cases:, paths:, settings: settings(plan),
-                                                   plan:)
+  policy = same_policy!(settings(plan))
+  score = Shaka::Evaluation::RiskReplayScore.score(records: saved, cases:, paths:, settings: policy, plan:)
   puts JSON.pretty_generate(score)
 rescue ArgumentError, IndexError, IOError, SystemCallError, JSON::ParserError, OptionParser::ParseError,
        Shaka::Error => e

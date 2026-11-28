@@ -17,16 +17,14 @@ class EvaluationRiskReplayTest < Minitest::Test
   end
 
   def test_replay_runs_the_checkpoint_with_the_frozen_packet_and_each_arm_model
-    replay = Shaka::Evaluation::RiskReplay.new(reviewer: 'openai/codex', effort: 'medium',
-                                               baseline: { criteria: 'a' * 40, model: 'base-model' })
-    row = { 'base' => 'b' * 40, 'head' => 'c' * 40, 'packet' => 'packets/k01.json' }
+    Dir.mktmpdir do |scratch|
+      arguments = baseline_arguments(scratch)
+      options = arguments.drop(2).each_slice(2).to_h
 
-    arguments = replay.send(:review_arguments, row, :baseline, '/fixture', 'd' * 40)
-
-    assert_equal %w[post-implementation run], arguments.first(2)
-    expected = { '--content-file' => File.join(CASES, 'packets/k01.json'), '--ref' => 'd' * 40,
-                 '--model' => 'base-model', '--effort' => 'medium' }
-    assert_equal(expected, expected.keys.to_h { |name| [name, arguments[arguments.index(name) + 1]] })
+      assert_equal %w[post-implementation run], arguments.first(2)
+      assert_equal ['d' * 40, 'base-model', 'medium'], options.values_at('--ref', '--model', '--effort')
+      assert_equal 'frozen packet', File.read(options.fetch('--content-file'))
+    end
   end
 
   def test_repeats_replay_each_pair_and_alternate_which_arm_goes_first
@@ -71,6 +69,15 @@ class EvaluationRiskReplayTest < Minitest::Test
   end
 
   private
+
+  # The checkpoint call the baseline arm makes for a packet copied when the replay started.
+  def baseline_arguments(scratch)
+    replay = Shaka::Evaluation::RiskReplay.new(reviewer: 'openai/codex', effort: 'medium',
+                                               baseline: { criteria: 'a' * 40, model: 'base-model' })
+    replay.instance_variable_set(:@packets, { 'k01' => 'frozen packet' })
+    row = { 'id' => 'k01', 'base' => 'b' * 40, 'head' => 'c' * 40, 'packet' => 'packets/k01.json' }
+    replay.send(:review_arguments, row, :baseline, File.join(scratch, 'fixture'), 'd' * 40)
+  end
 
   # The comparison and repeat each replayed call would save, without running a fixture or a model.
   def saved_plans(replay)

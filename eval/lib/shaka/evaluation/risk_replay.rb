@@ -29,8 +29,12 @@ module Shaka
                         arms: options.slice(:baseline, :candidate) }
       end
 
+      # Each arm reads the packet copy taken here, so an edit to a packet mid-run cannot reach one arm only;
+      # the digests let the scorer refuse a packet that has changed since.
       def run(rows)
         @comparison[:cases] = rows.map { |row| row.fetch('id') }
+        @packets = rows.to_h { |row| [row.fetch('id'), File.binread(File.join(CASES, row.fetch('packet')))] }
+        @comparison[:packets] = @packets.transform_values { |bytes| Digest::SHA256.hexdigest(bytes) }
         super
       end
 
@@ -51,12 +55,14 @@ module Shaka
         super(id, case_id, arm, record.merge('comparison' => @comparison, 'repeat' => @repeat))
       end
 
-      # The packet is the description content the original checkpoint read, frozen without later review results.
+      # The packet is reconstructed from the PR description, without later review results.
       def review_arguments(row, arm, root, snapshot)
+        packet = File.join(File.dirname(root), "#{row.fetch('id')}.packet.json")
+        File.binwrite(packet, @packets.fetch(row.fetch('id')))
         chosen = @options.fetch(arm)
         arguments = ['post-implementation', 'run', '--root', root, '--base', row.fetch('base'),
                      '--head', row.fetch('head'), '--reviewer', @reviewer, '--ref', snapshot,
-                     '--content-file', File.join(CASES, row.fetch('packet')), '--timeout-seconds', '300',
+                     '--content-file', packet, '--timeout-seconds', '300',
                      '--model', chosen.fetch(:model)]
         arguments.push('--effort', @options.fetch(:effort)) if @options[:effort]
         arguments
