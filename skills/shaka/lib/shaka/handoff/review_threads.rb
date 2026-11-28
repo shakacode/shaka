@@ -39,8 +39,9 @@ module Shaka
       def withdraw_merge_wait
         return unless merge_requested?
 
-        @owed << 'Review threads wait for an answer while awaiting-merge-approval is set: run ' \
-                 '`attention --state none` and withdraw the merge-ready handoff in WIP Details before working on them.'
+        @owed << 'Review threads wait for an answer while awaiting-merge-approval is set. Before working on ' \
+                 'actionable feedback, run `attention --state none` and withdraw the merge-ready handoff in WIP ' \
+                 'Details; a reply alone settles feedback that needs no work.'
       end
 
       def thread_notes(answered, unknown)

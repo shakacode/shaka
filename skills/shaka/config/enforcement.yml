@@ -747,7 +747,7 @@ rules:
       label (or, with `--woken-by`, still carries one; with `--woken-by`, a required check held for a manual
       approval voids it and is owed until a person approves it or the agent drops `--woken-by`), holds
       `awaiting-merge-approval` with
-      required checks not passing or a review thread waiting for an answer,
+      required checks not passing or a review thread withdraw-merge-wait-on-feedback counts,
       with findings open in the published local review (`attention --state merge` refuses the same state before
       labeling), or without this account's checkpoint and, unless the base has a merge queue, squash message for
       the live head, or has a walkthrough
