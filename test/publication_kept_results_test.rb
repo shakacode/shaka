@@ -198,6 +198,16 @@ class PublicationKeptLinePlacementTest < Minitest::Test
     end
   end
 
+  # Only the whole sentence an older helper wrote sends the reader to the fold.
+  def test_the_fold_is_read_only_after_the_whole_compact_sentence
+    with_checkout do |root, ref|
+      plain = folded_body(ref).sub(" ([evidence](#{URL})).", '.')
+      assert prepare(root, ref, {}, body: plain).verdict
+      edited = folded_body(ref).sub(" ([evidence](#{URL})).", ' was proposed wording.')
+      assert_nil prepare(root, ref, {}, body: edited).verdict
+    end
+  end
+
   def test_crlf_line_endings_from_a_hand_saved_description_keep_the_line
     with_checkout do |root, ref|
       gaps = '**Setup gaps:** `openai/codex` could not start its sandbox, so it reviewed only the diff.'

@@ -12,7 +12,7 @@ module Shaka
     GAPS = /\A#{Regexp.escape(VerificationLine::GAPS)} .+\z/
     # Descriptions published before the marker hold the line under their Verification heading, or,
     # for a routine run, a compact sentence there and the line at the top of the Evidence and
-    # limitations fold.
+    # limitations fold. Delete this reading once no open PR was described before #1325.
     HEADING = "## Verification\n\n"
     FOLD = "<summary>Evidence and limitations</summary>\n\n"
     COMPACT = 'Validation passed; local review completed at '
@@ -40,10 +40,13 @@ module Shaka
       return unless region.scan(HEADING).one?
 
       first, second = line_after(region, HEADING, short_head)
-      return [first, second] unless paragraphs_after(region, HEADING).first.start_with?("#{COMPACT}#{short_head}")
+      return [first, second] unless paragraphs_after(region, HEADING).first.match?(compact(short_head))
 
       [line_after(region, FOLD, short_head).first, nil] if region.scan(FOLD).one?
     end
+
+    # The whole sentence older helpers wrote, with or without its evidence link.
+    def compact(short_head) = /\A#{Regexp.escape("#{COMPACT}#{short_head}")}(?: \(\[evidence\]\(\S+\)\))?\.\z/
 
     def line_after(region, marker, short_head)
       first, second = paragraphs_after(region, marker)
@@ -77,6 +80,6 @@ module Shaka
     def verified_line(short_head)
       /\A#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN).* at `#{Regexp.escape(short_head)}`\./
     end
-    private_class_method :own_line, :line_after, :paragraphs_after, :verified_line, :passed?, :drifted_only?
+    private_class_method :own_line, :compact, :line_after, :paragraphs_after, :verified_line, :passed?, :drifted_only?
   end
 end
