@@ -72,7 +72,11 @@ reported errors. When every project passes, switch with the verified-checkout pr
 <details>
 <summary>Run the checks from a terminal</summary>
 
-Clone the official release tag in a separate directory. Use that checkout's
+Prepare a branchless detached release checkout (no local `main`) the same way
+your agent prepares a published release: `git clone --no-checkout --branch
+"v1.0.0"`, then `git checkout --detach "refs/tags/v1.0.0"`, and on Windows add
+`--config core.autocrlf=false --config core.eol=lf` to the clone. Record that
+checkout's `HEAD` so the later switch can reuse it. Use that checkout's
 `skills/shaka/scripts/shaka` as the helper. Set `SHAKA_RUBY` to the absolute path
 to Ruby 3.4 or later for the command. Use the project's verified default-branch
 commit for `DEFAULT_SHA`.

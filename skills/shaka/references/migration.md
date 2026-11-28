@@ -46,8 +46,11 @@ For the old command-path mapping, migrate in this order:
 2. In the fresh checkout used for the target checks below, verify the retained
    adapters and validate using the previous installation's helper and old trusted SHA.
    Both validations must pass before the migration PR merges through normal gates.
-3. After switching to the verified target installation, remove obsolete adapters
-   in a follow-up PR. The optional paths are `validate-local` and `trigger-hosted-ci`.
+3. After the merged default-branch SHA verifies with the helper as
+   `trusted/ref`, and after affected users no longer need the old paths, remove
+   obsolete adapters in a follow-up PR. When this migration also switches
+   installations, wait until that switch finishes before the cleanup PR. The
+   optional paths are `validate-local` and `trigger-hosted-ci`.
 
 Before merging any shared settings migration, run `seam check --root ROOT --ref PR_SHA`
 with the helper in a fresh checkout of the exact PR commit.
