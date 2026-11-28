@@ -2,10 +2,16 @@
 
 ## Migrate an older contract
 
-For a release cutover, check out the official target tag separately while the
-previous installation stays active. Use the absolute path to that checkout's
-`skills/shaka/scripts/shaka` and set `SHAKA_RUBY` to the absolute path to Ruby
-3.4 or later for each invocation of the target helper.
+For an ordinary settings migration with an already suitable installed Shaka,
+use that trusted installed helper and skip the separate checkout and
+installation switch below (still coordinate the pause below if any installation
+in use rejects renamed keys). For a release cutover, prepare a separate
+detached tag checkout with no local branches following
+[Install a published release](official-installation.md#install-a-published-release)
+while the previous installation stays active, and record its `HEAD` commit. Use
+the absolute path to that checkout's `skills/shaka/scripts/shaka` and set
+`SHAKA_RUBY` to the absolute path to Ruby 3.4 or later for each invocation of
+the target helper.
 
 In this section, "the helper" is the target helper for a release cutover and
 otherwise the trusted installed helper. Run the helper's `seam migrate --root ROOT
@@ -55,22 +61,30 @@ tracked executable a relative in-repository symlink resolves to.
 Review moved wrappers and run the affected local checks. Run a
 `trigger-hosted-ci` wrapper only as part of an authorized CI run. Merge the PR
 after the target settings, tracked wrappers, and affected local checks pass.
-After merge,
-in a fresh checkout at the new default-branch SHA, run the helper's `seam check
---root ROOT --ref NEW_DEFAULT_SHA` and require `trusted/ref` for that SHA before
-switching the active installation.
+After merge, check the new trusted default-branch SHA in a clean checkout with
+no selected preview using the helper's `seam check --root ROOT --ref
+NEW_DEFAULT_SHA`, and confirm it reports `trusted/ref` for `NEW_DEFAULT_SHA`.
+During a release cutover, switch the active installation only after that check
+passes: confirm the verified preview checkout's `HEAD` still matches the
+recorded commit, then follow
+[Install a published release](official-installation.md#install-a-published-release)
+(including [Before take-over](official-installation.md#before-take-over)) with
+that verified checkout as `--directory DIR`.
 
 A newly renamed key can also make an older installation reject trusted policy.
-Coordinate the contract change with the installation upgrade, including tasks
-already running when the change merges.
+Whenever a migration introduces renamed keys that any installation in use
+rejects, finish running affected tasks on those installations and hold new ones
+before merging the settings PR, then resume once the helper verifies
+`trusted/ref` for the merged default-branch SHA and affected installations are
+ready.
 
 Keep `version: 1` for configurations supported by Shaka 1.x. Apply the
 [published compatibility policy](https://github.com/shakacode/shaka/blob/main/docs/migration.md#what-stays-compatible-in-1x)
 when planning a change to the contract.
 
-Finish by checking the new installation against the merged default-branch commit.
-Report the installed revision, configuration changes, and any active tasks still
-using the previous installation.
+Finish by checking the active installation against the merged default-branch
+commit (confirming `trusted/ref` for that SHA). Report the installed revision,
+configuration changes, and any active tasks still using a previous installation.
 
 The old `swift` setting skipped CI review after a different-provider local review.
 Migration uses `one` to preserve its CI backstop; choose `none` explicitly if you

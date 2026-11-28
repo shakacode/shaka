@@ -4,6 +4,7 @@ For most installations, ask your coding agent:
 
 ```text
 Install Shaka from https://github.com/shakacode/shaka for this coding agent
+Use the latest published stable release (1.0.0 or later). If none is published, install from source
 ```
 
 Use [Start here](getting-started.md) for your first task. This page also explains
@@ -30,8 +31,9 @@ authenticated [GitHub CLI](https://cli.github.com/).
 
 ### Install a published release
 
-For a first installation, use the gem once the version appears in
-[Shaka's RubyGems versions](https://rubygems.org/gems/shaka/versions).
+For a first terminal installation with the gem, wait until the version appears in
+[Shaka's RubyGems versions](https://rubygems.org/gems/shaka/versions) (agent
+installations check GitHub releases directly).
 
 ```sh
 gem install shaka --version 1.0.0
@@ -39,12 +41,14 @@ shaka-install _1.0.0_ --agent codex
 ```
 
 `_1.0.0_` selects that gem version when several are installed. Replace `codex`
-with your coding agent's identifier from the table below. The
+with your coding agent's `--agent` value from the table below. The
 installer fetches the release tag and links the skill at that commit. Start a new
 chat and run the [health check](getting-started.md#1-install-shaka).
 
-If you already have Shaka installed, [check your project settings](migration.md#check-your-projects-against-10)
-before updating.
+If you are upgrading from a pilot installation to `1.0.0`,
+[check your project settings](migration.md#check-your-projects-against-10) first.
+For later `1.x` upgrades, see [what stays compatible in 1.x](migration.md#what-stays-compatible-in-1x)
+and check against the exact release you plan to install if you want a pre-upgrade check.
 
 ### Install from source
 
@@ -82,25 +86,27 @@ On macOS or Linux:
 "$shaka_install_dir/bin/install" --directory "$shaka_install_dir" --agent codex
 ```
 
-Replace `codex` with your coding agent: `claude`, `cursor`, `opencode`, or `copilot`.
-Repeat `--agent` to select more than one. Pi loads the shared skill linked for
-`codex`. Keep the checkout outside `~/.agents/`, which holds settings.
-
-| Agent | Skills directory |
-| --- | --- |
-| Codex | `~/.agents/skills` |
-| Claude Code | `~/.claude/skills` |
-| Cursor | `~/.cursor/skills` |
-| OpenCode | `~/.config/opencode/skills` |
-| GitHub Copilot | `~/.copilot/skills` |
-
-The installer links `shaka` inside each selected directory. Pass
-`--skills-dir DIR` for a custom directory in place of `--agent`.
+Keep the checkout outside `~/.agents/`, which holds settings.
 
 </details>
 
-The installer reports which checkout and skill links it uses. Start a new chat,
-check the installation, and [set up your project](getting-started.md#2-set-up-your-project).
+### Coding agent options
+
+Repeat `--agent` to install for several agents. Pi loads the shared skill linked
+for `codex`. Pass `--skills-dir DIR` in place of `--agent` for a custom skills
+directory.
+
+| Agent | `--agent` | Skills directory |
+| --- | --- | --- |
+| Codex | `codex` | `~/.agents/skills` |
+| Claude Code | `claude` | `~/.claude/skills` |
+| Cursor | `cursor` | `~/.cursor/skills` |
+| OpenCode | `opencode` | `~/.config/opencode/skills` |
+| GitHub Copilot | `copilot` | `~/.copilot/skills` |
+
+The installer links `shaka` inside each selected directory and reports which
+checkout and skill links it uses. Start a new chat, check the installation, and
+[set up your project](getting-started.md#2-set-up-your-project).
 
 ## Install your own fork
 
@@ -116,7 +122,9 @@ Keep my current version available for rollback
 ```
 
 If no suitable stable release is available, ask the agent to explain the official
-installation options before choosing one. A release stays at its recorded commit.
+installation options before choosing one. When switching after a compatibility
+check, replace `the latest published stable Shaka release` with the exact version
+and verified checkout you checked. A release stays at its recorded commit.
 The installer can keep the earlier version available while it moves the skill links.
 
 ## Verify and update

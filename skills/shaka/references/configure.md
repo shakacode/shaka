@@ -98,6 +98,9 @@ number, path, or text under a key the repository already sets. Say in the step t
 installations older than the date refuse the settings, so the maintainer can judge whether
 anyone needs it.
 
-List it as `after merge`: Update Shaka (`shaka install --update`), who: everyone running
-Shaka on this repository, where: each machine with an installation, verify: `shaka doctor
---brief` reports Repository seam HEALTHY. Ruby checks none of this; the agent applies it.
+List it as `after merge`: Update Shaka (branch installations: `shaka install --update`;
+pinned releases: switch to a compatible release using
+[keep a tested release](https://github.com/shakacode/shaka/blob/main/docs/manual-installation.md#keep-a-tested-release)),
+who: everyone running Shaka on this repository, where: each machine with an
+installation, verify: `shaka doctor --brief` reports Repository seam HEALTHY.
+Ruby checks none of this; the agent applies it.

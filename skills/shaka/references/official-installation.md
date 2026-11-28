@@ -9,11 +9,15 @@ and ignores project Ruby and Bundler settings. Never edit the dedicated checkout
 
 ## Install
 
-For a request for the latest stable release, check the official GitHub releases
-for the latest published version at or above 1.0.0, excluding drafts and
-prereleases. If one exists, follow [Install a published release](#install-a-published-release).
-If the lookup succeeds with no suitable version, use source when the user allowed
-that fallback. Report a failed lookup as unverified.
+When the request names a release version, follow
+[Install a published release](#install-a-published-release) with that version.
+Otherwise, when the request does not name a branch or source install, check the
+official GitHub releases for the latest published version at or above 1.0.0
+(compared by semantic version, excluding GitHub drafts and prereleases). If one
+exists, follow [Install a published release](#install-a-published-release). If
+the lookup succeeds with no suitable release, install from source unless the
+user asked for a published release only. If the lookup fails, report it as
+unverified and ask before falling back to source.
 
 Review the source and installer, then clone into a directory outside the
 project repositories the user works in:
@@ -86,9 +90,18 @@ the user's approval for the wider change before running take-over.
 
 ### Install a published release
 
-Clone and inspect the official release tag in a dedicated checkout. For a first
-installation, run its `bin/install --release VERSION --directory DIR --agent HOST`.
-Use the requested host or pass `--skills-dir DIR` for a custom skills directory.
+Prepare a dedicated detached tag checkout `DIR` with no local branches (the
+installer rejects release checkouts that keep a local branch such as `main`):
+
+```bash
+git clone --no-checkout --branch "vVERSION" -- https://github.com/shakacode/shaka.git DIR
+git -C DIR checkout --detach "refs/tags/vVERSION"
+```
+
+Confirm `git -C DIR branch --list` is empty, inspect the checked-out files, and
+record `git -C DIR rev-parse HEAD` if you are previewing a release cutover. For
+a first installation, run `DIR/bin/install --release VERSION --directory DIR --agent HOST`.
+Use the requested host or pass `--skills-dir SKILLS_DIR` for a custom skills directory.
 The installer selects `refs/tags/vVERSION`, checks the declared version, and records
 its commit in a detached checkout. `--branch` and `--release` are mutually exclusive.
 Tags missing the release-installation module are refused before host links change.
@@ -97,8 +110,13 @@ New gem installations select their own version. To reuse an existing custom inst
 run its registered helper or pass `--directory DIR`; installation there keeps its source
 selection. An explicit repository or branch overrides the gem default.
 
-Follow [Before take-over](#before-take-over) when changing releases.
-To install a new release, use a separate directory with `--release VERSION --take-over`.
+Follow [Before take-over](#before-take-over) when switching from an existing installation.
+To install a new release, run `DIR/bin/install --release VERSION --directory DIR --take-over`
+in a separate directory `DIR` (add `--skills-dir SKILLS_DIR` when replacing a
+custom-only install, and `--repository URL` when the target checkout's origin
+differs from the previous installation's recorded URL). When switching after a
+cutover check, reuse the verified checkout as `DIR` and confirm its `HEAD`
+matches the recorded commit before running take-over.
 To roll back, [restore the saved installation](installation.md#restore-the-saved-installation).
 Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
 that the remote tag still resolves to the recorded commit; it never advances to `main`
