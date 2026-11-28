@@ -41,6 +41,17 @@ class BranchHeadPathTest < Minitest::Test
     assert_includes error.message, 'git is not on PATH outside the checkout'
   end
 
+  # On a case-insensitive filesystem, a PATH entry spelled with other case is still the checkout.
+  def test_planted_git_under_a_case_alias_never_runs
+    alias_bin = File.join(File.dirname(@task), File.basename(@task).upcase, 'bin')
+    marker = plant_git
+    skip 'case-sensitive filesystem' unless File.directory?(alias_bin)
+
+    with_path("#{alias_bin}#{File::PATH_SEPARATOR}#{ENV.fetch('PATH')}") { check }
+
+    refute_path_exists marker
+  end
+
   private
 
   def plant_git

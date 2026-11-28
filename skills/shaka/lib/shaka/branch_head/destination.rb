@@ -26,7 +26,7 @@ module Shaka
         checkout = worktree_root(File.realpath(root))
         path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: checkout, drop_candidate: true)
         git = LocalReviewPathGuard.safe_executable(path, 'git', checkout)
-        raise Error, 'git is not on PATH outside the checkout' unless git
+        raise Error, 'git is not on PATH outside the checkout, or its directory links into the checkout' unless git
 
         [ENVIRONMENT.merge('PATH' => path), git]
       end
