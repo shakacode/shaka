@@ -613,7 +613,7 @@ phases:
         with the live full `head`; the helper reads the recommendation that opens the links line
         from this head's published checkpoint `disposition`, with an `inadequate` or `cannot judge`
         verification verdict on the next line, and non-empty `decisions` head the description instead. While this head's
-        checkpoint recommends Merge, `description` refuses non-empty `decisions`; follow its error. Add a one-sentence `checkpoint.next_action` only for a dependency, check, or
+        checkpoint recommends Merge, `description` refuses non-empty `decisions`. Add a one-sentence `checkpoint.next_action` only for a dependency, check, or
         approval the recommendation does not already say, such as `Merge after #570 lands.`
         Neither line names the commit; leave checks and any table without a commit
         unless one covers an earlier commit. Summarize consequential decisions,

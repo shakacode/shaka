@@ -332,13 +332,15 @@ publication, and the branch was never pushed.
 
 - **Saving:** `bin/report-instruction-growth --tokens` measured startup falling from
   30,565 to 28,776 Claude tokens and from 20,469 to 19,226 Codex tokens, about 6%. A task
-  that publishes reads the 746-word help later, so its total stays about the same.
+  that publishes would read the 746-word help later, so its total would likely stay about
+  the same. That total is an estimate; no run measured it.
 - **Risk:** the moved text held guidance no code checks, such as supplying
   `intent.user_impact` and `intent.task_understanding`. Of 55 recent merged PRs with
-  Shaka descriptions, 54 had each. Claude Code transcripts on one machine showed agents
-  following similar "read X before Y" pointers in only 38% to 50% of sessions over 30
-  days. In those sessions agents ran `guidance pr_evidence` before their first
-  `description` and read `walkthrough-notes.md` before their first walkthrough.
+  Shaka descriptions, 54 had a User impact line and 54 had a Goal line. Claude Code
+  transcripts on one machine over 30 days showed agents following two existing "read X
+  before Y" pointers in only some sessions: 84 of 169 ran `guidance pr_evidence` before
+  their first `description`, and 83 of 217 read `walkthrough-notes.md` before their first
+  walkthrough. Nobody measured how often agents would read `description --help`.
 - **What survived:** review found five places where Explain's text disagreed with the
   code. The PR that adds this section corrects them in place.
 
