@@ -315,6 +315,12 @@ phases:
   - id: verify
     title: Verify
     body: |-
+      - When a person can see this chat, has not yet seen this draft, and the main question is
+        whether the result is what they wanted, as with documentation, articles, or visible
+        copy, show a rendered draft in chat before local review and full validation,
+        withholding any credential or private content in it, and say what is still
+        unverified. Continue the checks without waiting; a reply redirects the work once
+        read. This adds no gate and skips none.
       - Before review run the resolved `validate_local` command when present in the trusted seam,
         otherwise its resolved `validate` command, plus focused checks. Run each fixed command through
         `shaka evidence run --root DIR --ref TRUSTED_SHA --repository OWNER/REPO --command NAME --base BASE_BRANCH [-- ARGS]`
