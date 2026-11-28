@@ -20,7 +20,7 @@ module ConfigurationBoundaryFileIO
     usage/cursor_usage_store.rb usage/opencode_usage.rb usage/pi_usage.rb usage/rate_card.rb pr_watch/command.rb
     checkpoint.rb workflow_config.rb seam/private_recovery.rb seam/private_recovery/copies.rb update_check.rb
     seam/private_recovery/preparation.rb seam/private_recovery/rotation.rb seam/private_recovery/identity.rb defaults.rb
-    seam/private_recovery/exclusion.rb
+    seam/private_recovery/exclusion.rb branch_head/handover_command.rb
     seam/private_recovery/seed.rb seam/private_seed.rb ui_check.rb install/refusal.rb install/ruby_record.rb
     install/status_checkout.rb install/status_inventory.rb install/checkout_record.rb install/take_over.rb
     update_check/cache.rb install/session_hook.rb ruby_requirement.rb startup_notice/marks.rb

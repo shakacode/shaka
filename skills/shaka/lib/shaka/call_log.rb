@@ -18,12 +18,13 @@ module Shaka
     VARIABLE = 'SHAKA_CALL_LOG'
     # Only these names are recorded, so a mistyped call cannot put an argument in the log.
     COMMANDS = %w[attention branch checkpoint claim comments companions configure description doctor enforcement
-                  evidence guidance handoff install issue-create merge post-implementation pr prefix prompt
+                  evidence guidance handoff handover install issue-create merge post-implementation pr prefix prompt
                   recommendation reply repos resolve review review-prompt reviewer seam squash-message start timings
                   trial ui-check update-check usage walkthrough work workflow].freeze
     # Commands whose second word selects the operation; any other second word is an argument.
     # A test keeps them equal to each command's own list.
     OPERATIONS = { 'branch' => %w[check accept push], 'configure' => %w[settings],
+                   'handover' => %w[release pickup status],
                    'evidence' => %w[run bind verify guard],
                    'post-implementation' => %w[run publish], 'pr' => %w[watch], 'prompt' => %w[show],
                    'repos' => %w[add refresh],

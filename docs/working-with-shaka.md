@@ -123,15 +123,37 @@ When the fold does not open with a **Chat link** block, read **WIP Details → C
 link** inside the fold, or below Shaka metrics on PRs published before this
 layout. When neither shows a link, the PR has none published.
 
-If you need a new chat, make sure the previous agent has stopped,
-then give Shaka the PR:
+To hand the PR to someone else, ask that chat to release it:
 
 ```text
-/shaka take over https://github.com/OWNER/REPO/pull/N
+Release this PR so a teammate can pick it up
 ```
 
-The agent checks the current state and explains what remains. It records the
-handover on the PR and rechecks merge authority before continuing.
+The agent pushes what should travel with the PR and stops its monitors. It then posts
+a release comment with the head commit, the check results, the remaining work, and any
+work it could not push. The next developer asks their own agent to pick it up:
+
+```text
+/shaka pick up https://github.com/OWNER/REPO/pull/N
+```
+
+The agent posts a pickup comment that announces the new owner. It then checks the
+current state, explains what remains, and rechecks merge authority. If two developers
+pick up the same PR at once, the comment GitHub stores first wins. The other agent
+reports who owns the PR and stops. Only comments from accounts with write access count.
+
+If the previous owner cannot release the PR, a maintainer (an account with the
+maintain or admin role) can do it for them. The release then says their unpushed work
+is unknown. A maintainer can also take over an unreleased PR after confirming the
+previous agent has stopped:
+
+```text
+/shaka take over https://github.com/OWNER/REPO/pull/N because the previous agent has stopped
+```
+
+After a release or pickup, the old chat stops at its next turn, even when a monitor
+wakes it. It keeps its local work, leaves the branch and the PR alone, and tells you
+what it held.
 
 You can push to the agent's branch yourself. At its next turn or push, the agent notices,
 stops editing and publishing, and tells you. It combines your commits with its own before it
