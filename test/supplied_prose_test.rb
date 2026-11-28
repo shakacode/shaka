@@ -32,6 +32,14 @@ class SuppliedProseTest < Minitest::Test
     assert_equal 1, Shaka::SuppliedProse.words('summary' => 'One.', 'publisher_note' => 'Two more words.')
   end
 
+  # The Task line shows the agent's reason when it leaves out the task link.
+  def test_a_reason_for_omitting_the_task_link_counts
+    content = { 'summary' => 'One.', 'provenance' => { 'task_source' => 'description',
+                                                       'task_url_omission_reason' => 'Private tracker.' } }
+
+    assert_equal 3, Shaka::SuppliedProse.words(content)
+  end
+
   def test_the_same_supplied_prose_fits_whatever_the_helper_adds
     content = { 'summary' => sentence(30), 'intent' => INTENT, 'verification' => VERIFICATION }
     limits = Shaka::ProseLimits.new.with_supplied(content)

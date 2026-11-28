@@ -1164,7 +1164,8 @@ add outside it is left alone.
 In a description, the two length limits count only the words the agent writes
 in its summary, decisions, checkpoint next action, intent fields (including
 review focus reasons and the task understanding), verification summary and gaps,
-risk record summary, and section headings and bodies. The lines Shaka adds, such as the links line,
+risk record summary, section headings and bodies, and any reason for leaving out
+the task link. The lines Shaka adds, such as the links line,
 metrics, field labels, publisher note, and the risk text that grows with the risk
 rating, do not count, so the same text fits the length limits at every rating.
 
@@ -1188,8 +1189,8 @@ limits.
 If GitHub declines to render a description before publication, Shaka checks the
 saved version when the body contains only Shaka's section, whitespace and HTML
 comments. If the body contains other content outside that section, Shaka still
-checks the length of the agent's prose before writing, and reports the sentence and
-paragraph limits as unchecked.
+checks the length of the agent's prose before writing, and reports its other prose
+limits as unchecked.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and

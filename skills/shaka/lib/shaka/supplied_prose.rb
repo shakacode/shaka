@@ -18,7 +18,11 @@ module Shaka
       [*lead(content), *intent(object(content['intent'])), *trailing(content)].grep(String).join("\n\n")
     end
 
-    def lead(content) = [content['summary'], *Array(content['decisions']), object(content['checkpoint'])['next_action']]
+    # A task given without a link shows the agent's reason for omitting it.
+    def lead(content)
+      [content['summary'], *Array(content['decisions']), object(content['checkpoint'])['next_action'],
+       object(content['provenance'])['task_url_omission_reason']]
+    end
 
     def intent(spec)
       understanding = spec['task_understanding']

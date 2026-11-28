@@ -14,8 +14,9 @@ module Shaka
     PROSE_UNCHECKED = "#{CHECKED_AFTER}; prose limits not checked, because text outside Shaka's region " \
                       'cannot be told apart in the stored rendering'.freeze
     # The supplied prose's length needs no rendering, so it was checked before writing.
-    SHAPE_UNCHECKED = "#{CHECKED_AFTER}; sentence and paragraph limits not checked, because text outside " \
-                      "Shaka's region cannot be told apart in the stored rendering".freeze
+    SHAPE_UNCHECKED = "#{CHECKED_AFTER}; only the supplied prose's length was checked, before writing; other " \
+                      "prose limits not checked, because text outside Shaka's region cannot be told apart in the " \
+                      'stored rendering'.freeze
 
     # A block builds the body from the pull request it replaces, using this same read. With `deferred`, a
     # refused renderer moves the checks to the rendering GitHub stores, and a failing write is undone.

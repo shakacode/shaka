@@ -100,7 +100,7 @@ review checks each comment after GitHub stores it and takes back one that render
 including a reviewer report that shows `\n` outside code; publish that review locally.
 The comment is public, and GitHub sends its notifications, until it is taken back. If the
 comment was already published unchanged, or taking it back fails, the error names the live comment.
-A PR description is checked the same way; an edit made just before a restore can be lost. Its length limit is checked before writing, but its sentence and paragraph limits go unchecked when it holds text Shaka did not write.
+A PR description is checked the same way; an edit made just before a restore can be lost. Its length limit is checked before writing, but its other prose limits go unchecked when it holds text Shaka did not write.
 Other PR actions still need GraphQL.
 
 The opt-in [DeepSeek reviewer](settings.md#reviewlocal_review_agents) runs through
