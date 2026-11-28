@@ -335,24 +335,21 @@ not part of this flow.
 
 create-verification-skill can also leave you a script, often called a harness, that
 drives your app the way a person would and reports pass or fail. A run the agent reports
-is only its account, and the next commit can make it out of date. To hold every PR to the
-harness the way you hold it to your tests, add it to your
-[validate script](settings.md#standard-command-scripts):
+is only its account, and the next commit can make it out of date. To check every PR with
+the harness, the way your tests do, ask:
 
 ```text
-Add our verification harness to .agents/shaka/bin/validate so a harness failure fails validation
+Make our verification harness part of Shaka validation for every PR
 ```
 
-When the agent runs validate while delivering a PR, Shaka records the result together
-with the exact code it tested. Before calling a PR ready, the agent needs a passing result
-for the PR's latest code, so a failing harness holds the PR back.
+The agent adds the harness to your
+[validation scripts](settings.md#standard-command-scripts) in a separate settings PR.
+After it merges, each time the agent validates a PR, the harness runs, and Shaka ties the
+result to the exact code tested. A PR whose harness fails isn't ready to merge.
 
-- If you also have a faster
-  [`validate-local`](settings.md#count-a-faster-check-as-validation) script, the agent may
-  run it instead of validate during local review. Add the harness to `validate-local` too,
-  or those runs won't check it.
-- A harness that needs a person, such as one that waits for a sign-in code, can't run in
-  validate. Keep reporting those runs in **Companion skill results**.
+The harness has to run on its own, on your machine and in CI. One that needs a person,
+such as one that waits for a sign-in code, can't be part of validation; keep reporting
+those runs in **Companion skill results**.
 
 ## Review a session for improvements
 
