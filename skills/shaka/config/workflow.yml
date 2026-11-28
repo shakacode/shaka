@@ -189,16 +189,16 @@ phases:
         request that already chooses, gets no new question. When the user chooses to agree first,
         follow [agree on the design first](<{{package_root}}/skills/shaka/references/delivery.md#agree-on-the-design-first>),
         and do not make implementation edits until the user approves the design.
-      - When the task changes merge, trust, or risk policy, such as merge gates, risk areas,
+      - When the task changes how work is reviewed or merged, such as merge gates, risk areas,
         review requirements, or the settings that govern them, settle that policy before the
-        first edit. List every path class the change touches with the risk area it belongs in,
-        high, medium, or none, and every setting it retires or renames with its upgrade path.
-        Rate the planned paths with the trusted risk areas, as
+        first edit, even after a start instruction. List every path class the change touches
+        with the risk area it belongs in, high, medium, or none, and every setting it retires or
+        renames with its upgrade path. Rate the planned change with the checkpoint's rubric,
+        then raise it with the trusted risk areas, as
         [Shaka rates risk](https://github.com/shakacode/shaka/blob/main/docs/settings.md#change-how-risk-is-rated).
         Ask the maintainer every policy question the request leaves open, together, each with a
-        recommendation. Planning is complete when every touched path has an assigned area;
-        every retired setting has an upgrade path, renamed settings included; and the
-        maintainer has answered those questions. First team setup follows
+        recommendation, and wait for the answers. Planning is complete when every touched path has an assigned area; every retired setting has an upgrade path.
+        A renamed setting needs one too. First team setup skips this step and follows
         [its own procedure](<{{package_root}}/skills/shaka/references/repository-setup.md#publish-team-configuration>).
       - For a planning-only request, include the rendered recommendation in a compact execution
         prompt with the usage report. Follow
@@ -254,7 +254,7 @@ phases:
     done_when: >-
       The seam, settings, and PR shape are settled, review consent is resolved,
       selected CLI reviewers passed the startup probe or it is disabled, any fresh-host fallback
-      has an established review path, open policy questions are answered, and the checkpoint says proceed.
+      has an established review path, any open policy questions are answered, and the checkpoint says proceed.
   - id: implement
     title: Implement
     body: |-
