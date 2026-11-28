@@ -11,13 +11,15 @@ and ignores project Ruby and Bundler settings. Never edit the dedicated checkout
 
 When the request names a release version, follow
 [Install a published release](#install-a-published-release) with that version.
-Otherwise, when the request does not name a branch or source install, check the
-official GitHub releases for the latest published version at or above 1.0.0
-(compared by semantic version, excluding GitHub drafts and prereleases). If one
-exists, follow [Install a published release](#install-a-published-release). If
-the lookup succeeds with no suitable release, install from source when the user
-allowed that fallback. If the lookup fails, report it as unverified and ask
-before falling back to source.
+When the request names a branch, follow the source clone below with that branch
+(`git clone --branch NAME` and `bin/install --branch NAME`). Otherwise, when the
+request does not name a branch or source install, check the official GitHub
+releases for the latest published version at or above 1.0.0 (compared by
+semantic version, excluding GitHub drafts and prereleases). If one exists, follow
+[Install a published release](#install-a-published-release). If the lookup
+succeeds with no suitable release, install from source when the user allowed
+that fallback. If the lookup fails, report it as unverified and ask before
+falling back to source.
 
 Review the source and installer, then clone into a directory outside the
 project repositories the user works in:
@@ -28,6 +30,10 @@ mkdir -p "$HOME/.local/share/shaka"
 git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
 "$HOME/.local/share/shaka/source/bin/install" --agent codex
 ```
+
+For a named branch `NAME`, clone with `--branch NAME` and install with
+`--branch NAME` (and `--directory DIR` when the checkout is not the default
+path).
 
 On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the `git clone`, or the
 installer refuses the checkout because Git converted its line endings. From PowerShell or cmd,

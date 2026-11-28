@@ -72,14 +72,18 @@ reported errors. When every project passes, switch with the verified-checkout pr
 <details>
 <summary>Run the checks from a terminal</summary>
 
-Prepare a branchless detached release checkout (no local `main`) the same way
-your agent prepares a published release: `git clone --no-checkout --branch
-"v1.0.0"`, then `git checkout --detach "refs/tags/v1.0.0"`, and on Windows add
-`--config core.autocrlf=false --config core.eol=lf` to the clone. Record that
-checkout's `HEAD` so the later switch can reuse it. Use that checkout's
-`skills/shaka/scripts/shaka` as the helper. Set `SHAKA_RUBY` to the absolute path
-to Ruby 3.4 or later for the command. Use the project's verified default-branch
-commit for `DEFAULT_SHA`.
+Prepare a branchless detached release checkout (no local `main`):
+
+```bash
+git clone --no-checkout --branch "v1.0.0" -- https://github.com/shakacode/shaka.git DIR
+git -C DIR checkout --detach "refs/tags/v1.0.0"
+```
+
+On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the
+`git clone`. Record `git -C DIR rev-parse HEAD` so the later switch can reuse
+this checkout. Use `DIR/skills/shaka/scripts/shaka` as the helper. Set
+`SHAKA_RUBY` to the absolute path to Ruby 3.4 or later for the command. Use the
+project's verified default-branch commit for `DEFAULT_SHA`.
 
 - For team settings, run the helper with `seam check --root PROJECT --ref DEFAULT_SHA`
   in a clean checkout at that commit. Confirm it reports `trusted/ref` for the same SHA.
